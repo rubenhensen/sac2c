@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.30  1998/03/03 14:02:09  cg
+ * Last occurrence of function Error() replaced by macro SYSABORT
+ *
  * Revision 1.29  1997/11/23 14:23:48  dkr
  * 2nd argument of MakeType(): NULL -> 0
  *
@@ -191,7 +194,7 @@ enum type_class {
         node->status = 0;                                                                \
         DBUG_PRINT ("PRIM_FUN", ("param: %s" P_FORMAT, type_string[type], node));        \
     } else                                                                               \
-        Error ("out of memory", 1)
+        SYSABORT (("Out of memory"))
 #else
 #define GEN_TYPE_NODE(types, simpletype)                                                 \
     types = MakeType (simpletype, SCALAR, NULL, NULL, NULL)
