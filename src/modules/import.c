@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/26 15:43:01  cg
+ * Bug fixed in FindSymbolInModule.
+ * Internal module representations arising from SIB interpretation
+ * are now handled correctly.
+ *
  * Revision 3.1  2000/11/20 18:00:54  sacbase
  * new release made
  *
@@ -1475,8 +1480,13 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
                 found = new;
             }
 
-            if (recursive == 1) {
-                /* Now, we recursively investigate all imports! */
+            if ((recursive == 1) && (tmpmod->moddec != NULL)) {
+                /*
+                 * Now, we recursively investigate all recursive imports!
+                 *
+                 * However, we do so only if the module has explicitly been
+                 * imported rather than implicitly via a SIB.
+                 */
 
                 imports = tmpmod->moddec->node[1]; /* pointer to imports ! */
 
