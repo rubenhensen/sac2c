@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.13  1998/06/12 14:18:07  cg
+# added compilation of scheduling.c
+#
 # Revision 1.12  1998/05/12 14:22:28  dkr
 # make deps done
 #
@@ -46,12 +49,16 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../print
+INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../print  \
+     -I../compile
 
-all: spmdregions.o
+all: spmdregions.o scheduling.o
 
 spmdregions.o: spmdregions.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o spmdregions.o -c spmdregions.c $(INCS)
+
+scheduling.o: scheduling.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o scheduling.o -c scheduling.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -62,6 +69,13 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+scheduling.o: /usr/include/string.h /usr/include/sys/feature_tests.h
+scheduling.o: /usr/include/varargs.h /usr/include/sys/va_list.h
+scheduling.o: ../global/types.h ../global/tree_basic.h
+scheduling.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+scheduling.o: /usr/include/stdio.h ../global/my_debug.h /usr/include/malloc.h
+scheduling.o: ../global/traverse.h ../global/Error.h /usr/include/stdlib.h
+scheduling.o: ../global/globals.h ../compile/precompile.h
 spmdregions.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 spmdregions.o: ../global/tree_compound.h ../global/Error.h
 spmdregions.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
