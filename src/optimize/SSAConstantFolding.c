@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2002/09/13 22:13:44  dkr
+ * detects (. % 0) now -> division by zero
+ *
  * Revision 1.35  2002/09/11 23:07:59  dkr
  * rf_node_info.mac modified.
  *
@@ -834,7 +837,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
     case F_div_SxS:
         if (swap && COIsZero (co, FALSE)) {
             /* any 0 in divisor, x/0 -> err */
-            ABORT (expr->lineno, ("Division by zero expected"));
+            ABORT (NODE_LINE (expr), ("Division by zero expected"));
         } else if (swap && COIsOne (co, TRUE)) { /* x/1 -> x */
             result = DupTree (expr);
         } else if ((!swap) && COIsZero (co, TRUE)) { /* 0/x -> 0 */
@@ -842,7 +845,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
             if (target_shp != NULL) {
                 /* Create ZeroConstant of same type and shape as expression */
                 tmp_co = COMakeZero (COGetType (co), target_shp);
-                WARN (expr->lineno, ("expression 0/x replaced by 0"));
+                WARN (NODE_LINE (expr), ("expression 0/x replaced by 0"));
             }
         }
         break;
@@ -2170,7 +2173,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 if (COIsZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
-                    SYSABORT (("Division by zero expected"));
+                    ABORT (NODE_LINE (arg_expr[1]), ("Division by zero expected"));
                 } else {
                     new_co = CODiv (arg_co[0], arg_co[1]);
                 }
@@ -2186,7 +2189,11 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COMod (arg_co[0], arg_co[1]);
+                if (COIsZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
+                    ABORT (NODE_LINE (arg_expr[1]), ("Division by zero expected"));
+                } else {
+                    new_co = COMod (arg_co[0], arg_co[1]);
+                }
             }
         break;
 
