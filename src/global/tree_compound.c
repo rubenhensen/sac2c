@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/03/10 11:13:43  srs
+ * changed parameters of IsConstantArray()
+ *
  * Revision 1.35  1998/03/07 17:01:19  srs
  * added IsConstantArray()
  *
@@ -750,33 +753,49 @@ CopyNodelist (nodelist *nl)
  *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
  *   returns 0.
  *
+ *   The parameter type specified the necessary type all elements have to
+ *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.
+ *
  ******************************************************************************/
 
 int
-IsConstantArray (node *array)
+IsConstantArray (node *array, nodetype type)
 {
-    int elems = 0;
+    int elems = 0, ok = 1;
 
     DBUG_ENTER ("IsConstantArray");
 
     if (N_array == NODE_TYPE (array))
         array = ARRAY_AELEMS (array);
     else
-        array = NULL;
+        ok = 0;
 
-    while (array) {
+    while (ok) {
         switch (NODE_TYPE (EXPRS_EXPR (array))) {
         case N_num:
+            if (N_ok != type && type != N_num)
+                ok = 0;
         case N_char:
+            if (N_ok != type && type != N_char)
+                ok = 0;
         case N_float:
+            if (N_ok != type && type != N_float)
+                ok = 0;
         case N_double:
+            if (N_ok != type && type != N_double)
+                ok = 0;
         case N_bool:
-            elems++;
-            array = EXPRS_NEXT (array);
-            break;
+            if (N_ok != type && type != N_bool)
+                ok = 0;
+
+            if (ok) {
+                elems++;
+                array = EXPRS_NEXT (array);
+                break;
+            }
         default:
             elems = 0;
-            array = NULL;
+            ok = 0;
         }
     }
 
