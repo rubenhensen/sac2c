@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/04/23 15:09:52  dkr
+ * INLfundef(): calls InferDFMs() in order to get correct DFMs
+ *
  * Revision 3.15  2001/04/18 10:06:45  dkr
  * signature of InlineSingleApplication modified
  *
@@ -116,6 +119,7 @@
 #include "typecheck.h"
 #include "internal_lib.h"
 
+#include "InferDFMs.h"
 #include "optimize.h"
 #include "LoopInvariantRemoval.h"
 #include "DupTree.h"
@@ -129,6 +133,7 @@
 #define INLINE_PREFIX "__inl"
 
 static int inline_nr = 0;
+static bool inline_done = FALSE;
 
 /******************************************************************************
  *
@@ -539,6 +544,7 @@ DoInline (node *let_node, node *arg_info)
     }
 #endif
 
+    inline_done = TRUE;
     inline_nr++;
     INFO_INL_LUT (arg_info) = RemoveLUT (INFO_INL_LUT (arg_info));
 
@@ -586,6 +592,8 @@ INLfundef (node *arg_node, node *arg_info)
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
+        inline_done = FALSE;
+
         ResetInlineNo (INFO_INL_MODUL (arg_info));
         INFO_INL_VARDECS (arg_info) = NULL;
         INFO_INL_FUNDEF (arg_info) = arg_node;
@@ -594,6 +602,13 @@ INLfundef (node *arg_node, node *arg_info)
 
         FUNDEF_VARDEC (arg_node)
           = AppendVardec (FUNDEF_VARDEC (arg_node), INFO_INL_VARDECS (arg_info));
+
+        if (inline_done) {
+            /*
+             * we must correct the DFMs of the current function
+             */
+            arg_node = InferDFMs (arg_node, HIDE_LOCALS_NEVER);
+        }
     }
 
     if (FUNDEF_NEXT (arg_node)) {
