@@ -104,7 +104,7 @@ All (node *segs, node *parms, node *cubes, int dims)
     }
 
     segs = MakeWLseg (dims, DupTree (cubes, NULL), NULL);
-    WLSEG_SV (segs) = CalcSV (segs, WLSEG_SV (segs));
+    WLSEG_SV (segs) = CalcSV (WLSEG_CONTENTS (segs), WLSEG_SV (segs));
 
     segs = NoBlocking (segs, parms, cubes, dims);
 
@@ -138,7 +138,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
          * build new segment
          */
         new_seg = MakeWLseg (dims, DupNode (cubes), NULL);
-        new_seg = CalcSV (new_seg, WLSEG_SV (new_seg));
+        WLSEG_SV (new_seg) = CalcSV (WLSEG_CONTENTS (new_seg), WLSEG_SV (new_seg));
         /*
          * append 'new_seg' at 'segs'
          */
