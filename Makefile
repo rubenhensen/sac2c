@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.6  1999/05/10 13:27:18  sbs
+# libs changed for we are using bison now
+# (due to some problems with the linux-version.....)
+#
 # Revision 2.5  1999/05/10 10:50:58  bs
 # make deps done
 #
@@ -148,7 +152,7 @@ OS        := SOLARIS_SPARC
 # Currently, these are popen(), pclose(), tempnam(), and strdup().
 #
 SOLARIS_SPARC_FLAGS := -D__EXTENSIONS__
-SOLARIS_SPARC_LIBS  := -ll -ly
+SOLARIS_SPARC_LIBS  := -ll
 
 #
 # LINUX_X86 specific flags and libraries:
