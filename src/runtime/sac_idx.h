@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/07/26 18:20:19  dkr
+ * SAC_ND_KS_USE_GENVAR_OFFSET: macro SAC_WL_DEST used instead of
+ * ##__destptr
+ *
  * Revision 2.3  2000/07/25 13:55:36  dkr
  * superfluous parameter 'line' in ICMs for array-prfs removed
  *
@@ -128,6 +132,6 @@
     }                                                                                    \
     SAC_ND_WRITE_ARRAY (res, s) = val;
 
-#define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
+#define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_DEST (res);
 
 #endif /* SAC_IDX_H */
