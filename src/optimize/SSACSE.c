@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/03/15 14:23:24  nmw
+ * SSACSE does not longer modify unique vardecs
+ *
  * Revision 1.4  2001/03/12 09:17:05  nmw
  * do not substitute SSAPHITARGET
  *
@@ -51,6 +54,7 @@ static ids *SetSubstAttributes (ids *subst, ids *with);
 
 /* helper functions for internal use only */
 static node *FindCSE (node *cselist, node *let);
+static bool ForbiddenSubstitution (ids *chain);
 
 /******************************************************************************
  *
@@ -208,11 +212,39 @@ SetSubstAttributes (ids *subst, ids *with)
 
         AVIS_SUBST (IDS_AVIS (tmpsubst)) = IDS_AVIS (tmpwith);
 
+        /* vardec has no definition anymore */
+        AVIS_SSAASSIGN (IDS_AVIS (tmpsubst)) = NULL;
+
         tmpsubst = IDS_NEXT (tmpsubst);
         tmpwith = IDS_NEXT (tmpwith);
     }
 
     DBUG_RETURN (subst);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool ForbiddenSubstitution(ids *chain)
+ *
+ * description:
+ *   Checks if there is any ids in chain with vardec marked as SA_unique
+ *
+ *
+ ******************************************************************************/
+static bool
+ForbiddenSubstitution (ids *chain)
+{
+    bool res;
+
+    DBUG_ENTER ("ForbiddenSubstitution");
+    res = FALSE;
+    while ((chain != NULL) && (res == FALSE)) {
+        res |= (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (chain))) == ST_unique);
+        chain = IDS_NEXT (chain);
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -453,8 +485,15 @@ SSACSElet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     match = FindCSE (INFO_SSACSE_CSE (arg_info), arg_node);
-    if ((match != NULL) && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == FALSE)) {
-        /* found matching common subexpression, and let is no phicopytarget */
+
+    /*
+     * found matching common subexpression?
+     * if let is NO phicopytarget
+     * and let is NO assignment to some UNIQUE variable
+     * do the necessary substitution.
+     */
+    if ((match != NULL) && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == FALSE)
+        && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));
 
