@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/06/30 16:00:11  jhs
+ * Expanded backend, so compilation of fold-with-loops is now possible
+ * during SPMD-Blocks containing more than one SYNC-Block.
+ *
  * Revision 2.5  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -604,21 +608,24 @@ ICM_END( MT_SPMD_FUN_DEC, (name, from, narg, vararg))
 
 #if defined(MT_SPMD_FUN_RET) || defined(ICM_ALL)
 ICM_DEF( MT_SPMD_FUN_RET, TRACE_NONE)
+  ICM_INT(barrier_id)
   ICM_INT(narg)
   ICM_VAR((2*narg), vararg)
-ICM_END( MT_SPMD_FUN_RET, (narg, vararg))
+ICM_END( MT_SPMD_FUN_RET, (barrier_id, narg, vararg))
 #endif
 
 #if defined(MT_START_SYNCBLOCK) || defined(ICM_ALL)
 ICM_DEF( MT_START_SYNCBLOCK, TRACE_NONE)
+  ICM_INT(barrier_id)
   ICM_INT(narg)
   ICM_VAR((3*narg), vararg)
-ICM_END( MT_START_SYNCBLOCK, (narg, vararg))
+ICM_END( MT_START_SYNCBLOCK, (barrier_id, narg, vararg))
 #endif
 
 #if defined(MT_SYNC_NONFOLD) || defined(ICM_ALL)
 ICM_DEF( MT_SYNC_NONFOLD, TRACE_NONE)
-ICM_END( MT_SYNC_NONFOLD, ())
+  ICM_INT(barrier_id)
+ICM_END( MT_SYNC_NONFOLD, (barrier_id))
 #endif
 
 #if defined(MT_SYNC_FOLD) || defined(ICM_ALL)
@@ -630,11 +637,12 @@ ICM_END( MT_SYNC_FOLD, (narg, vararg))
 
 #if defined(MT_SYNC_ONEFOLD) || defined(ICM_ALL)
 ICM_DEF( MT_SYNC_ONEFOLD, TRACE_NONE)
+  ICM_INT(barrier_id)
   ICM_STR(foldtype)
   ICM_STR(accu_var)
   ICM_STR(tmp_var)
   ICM_STR(foldop)
-ICM_END( MT_SYNC_ONEFOLD, (foldtype, accu_var, tmp_var, foldop))
+ICM_END( MT_SYNC_ONEFOLD, (barrier_id, foldtype, accu_var, tmp_var, foldop))
 #endif
 
 #if defined(MT_SYNC_ONEFOLD_NONFOLD) || defined(ICM_ALL)
@@ -651,6 +659,34 @@ ICM_DEF( MT_SYNC_FOLD_NONFOLD, TRACE_NONE)
   ICM_INT(narg)
   ICM_VAR((4*narg), vararg)
 ICM_END( MT_SYNC_FOLD_NONFOLD, (narg, vararg))
+#endif
+
+#if defined(MT_MASTER_SEND_FOLDRESULTS) || defined(ICM_ALL)
+ICM_DEF( MT_MASTER_SEND_FOLDRESULTS, TRACE_NONE)
+  ICM_INT(nfoldargs)
+  ICM_VAR((2*nfoldargs), foldargs)
+ICM_END( MT_MASTER_SEND_FOLDRESULTS, (nfoldargs, foldargs))
+#endif
+
+#if defined(MT_MASTER_RECEIVE_FOLDRESULTS) || defined(ICM_ALL)
+ICM_DEF( MT_MASTER_RECEIVE_FOLDRESULTS, TRACE_NONE)
+  ICM_INT(nfoldargs)
+  ICM_VAR((2*nfoldargs), foldargs)
+ICM_END( MT_MASTER_RECEIVE_FOLDRESULTS, (nfoldargs, foldargs))
+#endif
+
+#if defined(MT_MASTER_SEND_SYNCARGS) || defined(ICM_ALL)
+ICM_DEF( MT_MASTER_SEND_SYNCARGS, TRACE_NONE)
+  ICM_INT(nsyncargs)
+  ICM_VAR(nsyncargs, syncargs)
+ICM_END( MT_MASTER_SEND_SYNCARGS, (nsyncargs, syncargs))
+#endif
+
+#if defined(MT_MASTER_RECEIVE_SYNCARGS) || defined(ICM_ALL)
+ICM_DEF( MT_MASTER_RECEIVE_SYNCARGS, TRACE_NONE)
+  ICM_INT(nsyncargs)
+  ICM_VAR(nsyncargs, syncargs)
+ICM_END( MT_MASTER_RECEIVE_SYNCARGS, (nsyncargs, syncargs))
 #endif
 
 #if defined(MT_CONTINUE) || defined(ICM_ALL)

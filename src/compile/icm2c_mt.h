@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/30 16:00:11  jhs
+ * Expanded backend, so compilation of fold-with-loops is now possible
+ * during SPMD-Blocks containing more than one SYNC-Block.
+ *
  * Revision 2.2  1999/06/03 13:09:04  jhs
  * Changed ICMCompileMT_CONTINUE to handle exchanges of new allocated
  * arrays between master and slaves threads.
@@ -58,15 +62,21 @@
 #define ICM2C_MT_H
 
 extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg);
-extern void ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg);
-extern void ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg);
+extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg);
+extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg);
 extern void ICMCompileMT_SYNC_FOLD (int narg, char **vararg);
-extern void ICMCompileMT_SYNC_NONFOLD ();
-extern void ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var,
-                                       char *foldop);
+extern void ICMCompileMT_SYNC_NONFOLD (int barrier_id);
+extern void ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var,
+                                       char *tmp_var, char *foldop);
 extern void ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var,
                                                char *tmp_var, char *foldop);
 extern void ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg);
+
+extern void ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs);
+extern void ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs);
+extern void ICMCompileMT_MASTER_SEND_SYNCARGS (int nsyncargs, char **syncargs);
+extern void ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs);
+
 extern void ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs,
                                    char **syncargs);
 extern void ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg);

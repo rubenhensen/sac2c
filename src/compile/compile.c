@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/06/30 16:00:11  jhs
+ * Expanded backend, so compilation of fold-with-loops is now possible
+ * during SPMD-Blocks containing more than one SYNC-Block.
+ *
  * Revision 2.14  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -692,6 +696,21 @@
 #include "free.h"
 #include "scheduling.h"
 
+/******************************************************************************
+ *
+ * global variable:  int barrier_id
+ *
+ * description:
+ *
+ *   An unambigious barrier identification is required because of the use of
+ *   labels in the barrier implementation and the fact that several
+ *   synchronisation blocks may be found within a single spmd block which
+ *   means that several synchronisation barriers are situated in one function.
+ *
+ ******************************************************************************/
+
+static int barrier_id = 0;
+
 #define TYP_IF(n, d, p, f, sz) sz
 
 int basetype_size[] = {
@@ -971,6 +990,45 @@ int basetype_size[] = {
 
 static int label_nr = 0;
 
+/* ####jhs compound??? */
+node *
+MakeExprsNum (int num)
+{
+    node *result;
+
+    DBUG_ENTER (" MakeExprsNum");
+
+    result = MakeExprs (MakeNum (num), NULL);
+
+    DBUG_RETURN (result);
+}
+
+/* ####jhs compound??? */
+node *
+MakeAssignIcm (char *name, node *args)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeAssignIcm");
+
+    result = MakeAssign (MakeIcm (name, args, NULL), NULL);
+
+    DBUG_RETURN (result);
+}
+
+/* ####jhs compound??? */
+node *
+AppendAssignIcm (node *assign, char *name, node *args)
+{
+    node *result;
+
+    DBUG_ENTER ("AppendAssignIcm");
+
+    result = AppendAssign (assign, MakeAssignIcm (name, args));
+
+    DBUG_RETURN (result);
+}
+
 /******************************************************************************
  *
  * function:
@@ -1139,10 +1197,8 @@ MakeAllocArrayICMs (ids *mm_ids)
                                                         NULL, ST_regular),
                                                 MakeExprs (MakeId2 (
                                                              DupOneIds (mm_ids, NULL)),
-                                                           MakeExprs (MakeNum (
-                                                                        IDS_REFCNT (
-                                                                          mm_ids)),
-                                                                      NULL))),
+                                                           MakeExprsNum (
+                                                             IDS_REFCNT (mm_ids)))),
                                      NULL),
                             NULL);
 
@@ -1193,8 +1249,7 @@ MakeAllocArrayICMs_reuse (ids *mm_ids)
                                                         NULL, ST_regular),
                                                 MakeExprs (MakeId2 (
                                                              DupOneIds (mm_ids, NULL)),
-                                                           MakeExprs (MakeNum (0),
-                                                                      NULL))),
+                                                           MakeExprsNum (0))),
                                      NULL),
                             MakeAssign (MakeIcm ("ND_INC_RC",
                                                  MakeExprs (MakeId2 (
@@ -2488,6 +2543,17 @@ COMPFundef (node *arg_node, node *arg_info)
 
     INFO_COMP_FUNDEF (arg_info) = arg_node;
 
+    /********** begin: traverse body **********/
+
+    /*
+     *  During compilation of a N_sync, the prioir N_sync (if exists) is needed.
+     *  INFO_COMP_LAST_SYNC provides these information, it is initialized here with
+     *  NULL and will be updated by each compilation of a N_sync (one needs to
+     *  compile them ordered!), this includes the destruction of such an N_sync-tree.
+     *  After compilation of the function the last known sync is destroyed then.
+     */
+    INFO_COMP_LAST_SYNC (arg_info) = NULL;
+
     /*
      * traverse body
      */
@@ -2495,6 +2561,16 @@ COMPFundef (node *arg_node, node *arg_info)
         INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
+    /*
+     *  Destruction of last known N_sync is done here, all others have be killed
+     *  while traversing.
+     */
+    if (INFO_COMP_LAST_SYNC (arg_info) != NULL) {
+        INFO_COMP_LAST_SYNC (arg_info) = FreeTree (INFO_COMP_LAST_SYNC (arg_info));
+        INFO_COMP_LAST_SYNC (arg_info) = NULL;
+    }
+
+    /********** end: traverse body **********/
 
     /*
      * compile return types
@@ -2583,7 +2659,7 @@ COMPFundef (node *arg_node, node *arg_info)
 
         rettypes = rettypes->next;
         cnt_param++;
-    }
+    } /* while */
 
     if ((rettypes != NULL) && (TYPES_BASETYPE (rettypes) == T_dots)) {
         MAKENODE_ID (tag_node, "in");
@@ -5310,6 +5386,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
     }
 
     args = MakeExprs (MakeNum (cnt_params), args);
+    args = MakeExprs (MakeNum (barrier_id), args);
 
     arg_node = MakeIcm ("MT_SPMD_FUN_RET", args, NULL);
     FUNDEF_RETURN (INFO_COMP_FUNDEF (arg_info)) = arg_node;
@@ -6132,14 +6209,16 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
             this_tag = tag;
         }
         icm_args
-          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+          = MakeExprs (MakeId (StringCopy (this_tag), NULL, ST_regular),
                        MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
                                           NULL, ST_regular),
                                   MakeExprs (MakeId (StringCopy (
                                                        VARDEC_OR_ARG_NAME (vardec)),
                                                      NULL, ST_regular),
                                              icm_args)));
-        num_args++;
+        *num_args = *num_args + 1;
+
+        DBUG_PRINT ("SPMD", ("bpbdfm %i %s", *num_args, VARDEC_OR_ARG_NAME (vardec)));
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -6162,8 +6241,7 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 node *
 COMPSpmd (node *arg_node, node *arg_info)
 {
-    node *fundef, *vardec, *icm_args, *assigns;
-    char *tag;
+    node *fundef, *icm_args, *assigns;
     int num_args;
 
     DBUG_ENTER ("COMPSpmd");
@@ -6265,13 +6343,20 @@ COMPSpmd (node *arg_node, node *arg_info)
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args1, *icm_args2, *icm_args3, *vardec, *with, *tmp, *instr,
-      *assign, *last_assign, *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
+    node *icm_args, *icm_args2, *icm_args3, *vardec, *with, *tmp, *instr, *assign,
+      *last_assign, *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
     ids *with_ids;
     types *type;
     simpletype s_type;
     char *tag, *icm_name, *var_name, *fold_type;
     int num_args, num_folds, prolog, epilog, count_nesting;
+
+    node *backup;
+    node *let;
+    node *last_sync;
+    node *fold_args;
+    node *sync_args;
+    int num_fold_args;
     int num_sync_args;
 
     DBUG_ENTER ("COMPSync");
@@ -6305,22 +6390,82 @@ COMPSync (node *arg_node, node *arg_info)
     }
     icm_args3 = MakeExprs (MakeNum (num_args), icm_args3);
 
+    DBUG_PRINT ("COMPi", ("--- Enter sync ---"));
+
+    DBUG_PRINT ("COMPi", ("Enter sync-args"));
+
     /* inter-thread sync parameters */
-    icm_args1 = NULL;
+    sync_args = NULL;
     num_sync_args = 0;
     vardec = DFMGetMaskEntryDeclSet (SYNC_INOUT (arg_node));
     while (vardec != NULL) {
 
-        icm_args1
-          = AppendExprs (icm_args1,
+        sync_args
+          = AppendExprs (sync_args,
                          MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
                                             NULL, ST_regular),
                                     NULL));
 
+        DBUG_PRINT ("COMPi", ("%s", VARDEC_OR_ARG_NAME (vardec)));
+
         num_sync_args++;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-    icm_args1 = MakeExprs (MakeNum (num_sync_args++), icm_args1);
+    sync_args = MakeExprs (MakeNum (num_sync_args), sync_args);
+
+    DBUG_PRINT ("COMPi", ("Enter fold-args"));
+
+    last_sync = INFO_COMP_LAST_SYNC (arg_info);
+    fold_args = NULL;
+    num_fold_args = 0;
+    if (last_sync != NULL) {
+        DBUG_PRINT ("COMPi", ("last-sync found"));
+        /*
+         *  Traverse assignments
+         */
+        assign = BLOCK_INSTR (SYNC_REGION (last_sync));
+
+        while (assign != NULL) {
+            DBUG_PRINT ("COMPi", ("assign found"));
+
+            DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("wrong node type"));
+
+            let = ASSIGN_INSTR (assign);
+            DBUG_ASSERT ((NODE_TYPE (let) == N_let), ("wrong node type"));
+
+            with = LET_EXPR (let);
+            DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2), ("wrong node type"));
+
+            with_ids = LET_IDS (let);
+
+            if ((NWITH2_TYPE (with) == WO_foldprf)
+                || (NWITH2_TYPE (with) == WO_foldfun)) {
+                num_fold_args++;
+
+                type = IDS_TYPE (with_ids);
+                if (TYPES_DIM (type) > 0) {
+                    fold_type = StringCopy ("array");
+                } else {
+                    GET_BASIC_SIMPLETYPE (s_type, type);
+                    fold_type = StringCopy (type_string[s_type]);
+                }
+
+                /*
+                 * <fold_type>, <accu_var>
+                 */
+                fold_args
+                  = MakeExprs (MakeId (fold_type, NULL, ST_regular),
+                               MakeExprs (MakeId (StringCopy (IDS_NAME (with_ids)), NULL,
+                                                  ST_regular),
+                                          fold_args));
+
+                DBUG_PRINT ("COMPi", ("last's folds %s", IDS_NAME (with_ids)));
+            }
+            assign = ASSIGN_NEXT (assign);
+        } /* while (SYNC_WITH_PTRS( last_sync) != NULL) */
+    }
+
+    DBUG_PRINT ("COMPi", ("--- end ---"));
 
     /*
      * build arguments of ICMs (use 'SYNC_WITH_PTRS')
@@ -6353,8 +6498,9 @@ COMPSync (node *arg_node, node *arg_info)
                                                      NULL, ST_regular),
                                              NULL));
 
-            icm_args1 = AppendExprs (icm_args1, icm_args);
-            icm_args2 = AppendExprs (icm_args2, DupTree (icm_args, NULL));
+            icm_args2 = AppendExprs (icm_args2, icm_args);
+
+            DBUG_PRINT ("COMP", ("%s", IDS_NAME (with_ids)));
 
             /*
              * <tmp_var>, <fold_op>
@@ -6386,7 +6532,7 @@ COMPSync (node *arg_node, node *arg_info)
     /*
      * finish arguments of ICM 'MT_CONTINUE'
      */
-    icm_args1 = MakeExprs (MakeNum (num_folds), icm_args1);
+    fold_args = MakeExprs (MakeNum (num_fold_args), fold_args);
 
     /*
      * finish arguments of ICM 'MT_SYNC_...'
@@ -6396,8 +6542,12 @@ COMPSync (node *arg_node, node *arg_info)
     }
 
     /*
-     * compile the sync-region
+     *  compile the sync-region
+     *  backup is needed, so one could use the block while compiling the next
+     *  N_sync. One needs to copy that here, because further compiling
+     *  is destructive.
      */
+    backup = DupTree (BLOCK_INSTR (SYNC_REGION (arg_node)), NULL);
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
     /*
@@ -6543,23 +6693,40 @@ COMPSync (node *arg_node, node *arg_info)
      *  -> insert ICM (MT_CONTINUE),
      */
     if (!SYNC_FIRST (arg_node)) {
+        /*    assigns = AppendAssignIcm( assigns,
+                                       "MT_MASTER_BEGIN",
+                                       MakeExprsNum( barrier_id)); */
         assigns = AppendAssign (assigns, prolog_icms);
-        assigns
-          = AppendAssign (assigns,
-                          MakeAssign (MakeIcm ("MT_CONTINUE", icm_args1, NULL), NULL));
+        assigns = AppendAssignIcm (assigns, "MT_MASTER_SEND_FOLDRESULTS", fold_args);
+        assigns = AppendAssignIcm (assigns, "MT_MASTER_SEND_SYNCARGS", sync_args);
+        assigns = AppendAssignIcm (assigns, "MT_START_WORKERS", NULL);
+        assigns = AppendAssignIcm (assigns, "MT_MASTER_END", MakeExprsNum (barrier_id));
+        assigns = AppendAssignIcm (assigns, "MT_WORKER_BEGIN", MakeExprsNum (barrier_id));
+        assigns = AppendAssignIcm (assigns, "MT_WORKER_WAIT", NULL);
+        assigns = AppendAssignIcm (assigns, "MT_MASTER_RECEIVE_FOLDRESULTS",
+                                   DupTree (fold_args, NULL));
+        assigns = AppendAssignIcm (assigns, "MT_MASTER_RECEIVE_SYNCARGS",
+                                   DupTree (sync_args, NULL));
+        assigns = AppendAssignIcm (assigns, "MT_WORKER_END", MakeExprsNum (barrier_id));
+        assigns = AppendAssignIcm (assigns, "MT_RESTART", MakeExprsNum (barrier_id));
+
     } else {
         /*
          * this sync-region is the first one of the current SPMD-region.
-         *  -> remove already built arguments for ICM MT_CONTINUE.
+         *  -> remove already built arguments for ICMs SEND and RECEIVE
          *  -> store prolog ICMs for subsequent compilation of corresponding
          *     spmd-block.
          */
-        if (icm_args1 != NULL) {
-            icm_args1 = FreeTree (icm_args1);
+        if (sync_args != NULL) {
+            sync_args = FreeTree (sync_args);
+        }
+        if (fold_args != NULL) {
+            fold_args = FreeTree (fold_args);
         }
 
         BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = prolog_icms;
     }
+    barrier_id++;
 
     /*
      * insert ICM 'MT_START_SYNCBLOCK',
@@ -6567,13 +6734,19 @@ COMPSync (node *arg_node, node *arg_info)
      */
     assigns
       = AppendAssign (assigns,
-                      MakeAssign (MakeIcm ("MT_START_SYNCBLOCK", icm_args3, NULL),
+                      MakeAssign (MakeIcm ("MT_START_SYNCBLOCK",
+                                           MakeExprs (MakeNum (barrier_id), icm_args3),
+                                           NULL),
                                   MakeAssign (SCHCompileSchedulingBegin (SYNC_SCHEDULING (
                                                                            arg_node),
                                                                          arg_node),
                                               BLOCK_INSTR (SYNC_REGION (arg_node)))));
 
-    BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
+    /*
+     *  see comment on setting backup!
+     *  the modified code is now attached to another tree-part.
+     */
+    BLOCK_INSTR (SYNC_REGION (arg_node)) = backup;
 
     /*
      * insert ICM 'MT_SCHEDULER_END'
@@ -6597,6 +6770,7 @@ COMPSync (node *arg_node, node *arg_info)
                 icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
             }
         } else {
+            icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
             icm_name = "MT_SYNC_NONFOLD";
         }
     } else {
@@ -6605,22 +6779,41 @@ COMPSync (node *arg_node, node *arg_info)
             icm_name = "MT_SYNC_FOLD";
         } else {
             /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
+            icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
             icm_name = "MT_SYNC_ONEFOLD";
         }
     }
 
-    assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
+    assigns = AppendAssignIcm (assigns, icm_name, icm_args2);
 
     /*
      * insert extracted epilog-ICMs (free).
      */
+
+    /*
+     *  Begins Block structure of value exchanges blocks or function return
+     *  This has to be done, before epilogs ar inserted, which belong to the
+     *  master-part of this blocks.
+     */
+    if (!SYNC_LAST (arg_node)) {
+        assigns = AppendAssignIcm (assigns, "MT_MASTER_BEGIN", MakeExprsNum (barrier_id));
+    } else {
+        assigns
+          = AppendAssignIcm (assigns, "MT_MASTER_BEGIN", /* ####jhs use other name? */
+                             MakeExprsNum (barrier_id));
+    }
+
     assigns = AppendAssign (assigns, epilog_icms);
 
     /*
-     * remove remain of N_sync node
+     *  Exchanging LAST_SYNC, an free the last one.
+     *  Will be needed for next N_sync, if no next N_sync exists COMPFundef
+     *  will take care of this tree.
      */
-    arg_node = FreeTree (arg_node);
+    if (INFO_COMP_LAST_SYNC (arg_info) != NULL) {
+        INFO_COMP_LAST_SYNC (arg_info) = FreeTree (INFO_COMP_LAST_SYNC (arg_info));
+    }
+    INFO_COMP_LAST_SYNC (arg_info) = arg_node;
 
     DBUG_RETURN (assigns);
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/30 16:00:11  jhs
+ * Expanded backend, so compilation of fold-with-loops is now possible
+ * during SPMD-Blocks containing more than one SYNC-Block.
+ *
  * Revision 2.3  1999/06/25 15:41:47  jhs
  * Just to provide compilablity.
  *
@@ -109,21 +113,6 @@
 
 /******************************************************************************
  *
- * global variable:  int barrier_id
- *
- * description:
- *
- *   An unambigious barrier identification is required because of the use of
- *   labels in the barrier implementation and the fact that several
- *   synchronisation blocks may be found within a single spmd block which
- *   means that several synchronisation barriers are situated in one function.
- *
- ******************************************************************************/
-
-static int barrier_id = 0;
-
-/******************************************************************************
- *
  * function:
  *   node *SearchFoldImplementation(char *foldop)
  *
@@ -219,12 +208,12 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FUN_RET(int narg, char **vararg)
+ *   void ICMCompileMT_SPMD_FUN_RET( int barrier_id, int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_RET( narg [, tag, param]*)
+ *   MT_SPMD_FUN_RET( barrier_id, narg [, tag, param]*)
  *
  *   This ICM implements the return statement of an spmd-function,
  *   i.e. it has to realize the return of several out parameters.
@@ -233,7 +222,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
+ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg)
 {
     int i;
 
@@ -274,7 +263,7 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
-
+    /* ####jhs */
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
@@ -283,12 +272,12 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_START_SYNCBLOCK(int narg, char **vararg)
+ *   void ICMCompileMT_START_SYNCBLOCK(int barrier_id, int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_START_SYNCBLOCK(narg [, tag, type, param]*)
+ *   MT_START_SYNCBLOCK(int barrier_id, narg [, tag, type, param]*)
  *
  *   This ICM implements the begin of a synchronisation block. Essentially,
  *   the reference counters of the arguments tagged in_rc are shadowed by
@@ -303,7 +292,7 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg)
+ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
 {
     int i;
 
@@ -313,8 +302,6 @@ ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_START_SYNCBLOCK
-
-    barrier_id++;
 
     INDENT;
     fprintf (outfile, "{\n");
@@ -373,13 +360,14 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SYNC_ONEFOLD(char *foldtype, char *accu_var,
+ *   void ICMCompileMT_SYNC_ONEFOLD(int barrier_id,
+ *                                  char *foldtype, char *accu_var,
  *                                  char *tmp_var, char *foldop)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_ONEFOLD( foldtype, accu_var, tmp_var, foldop)
+ *   MT_SYNC_ONEFOLD( barrier_id, foldtype, accu_var, tmp_var, foldop)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain exactly one fold with-loop.
@@ -393,7 +381,8 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *foldop)
+ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char *tmp_var,
+                           char *foldop)
 {
 #ifndef BEtest
     node *fold_code;
@@ -455,13 +444,20 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 
     fprintf (outfile, "\n");
 
+    /*
+     * This is now done by the compilation of N_sync.
+     * ####jhs no longer needed
+     */
+
+    /*
     INDENT;
-    fprintf (outfile, "{\n");
+    fprintf(outfile, "{\n");
 
     indent++;
 
     INDENT;
-    fprintf (outfile, "label_master_continue_%d:\n", barrier_id);
+    fprintf(outfile, "label_master_continue_%d:\n", barrier_id);
+    */
 
 #ifndef BEtest
     FreeTree (fold_code);
@@ -478,7 +474,7 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_NONFOLD( )
+ *   MT_SYNC_NONFOLD( int barrier_id)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain exclusively modarray/genarray with-loops.
@@ -486,7 +482,7 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
  ******************************************************************************/
 
 void
-ICMCompileMT_SYNC_NONFOLD ()
+ICMCompileMT_SYNC_NONFOLD (int barrier_id)
 {
     DBUG_ENTER ("ICMCompileMT_SYNC_NONFOLD");
 
@@ -505,13 +501,19 @@ ICMCompileMT_SYNC_NONFOLD ()
 
     fprintf (outfile, "\n");
 
+    /*
+     * This is now done by the compilation of N_sync.
+     * ####jhs no longer needed
+     */
+    /*
     INDENT;
-    fprintf (outfile, "{\n");
+    fprintf(outfile, "{\n");
 
     indent++;
 
     INDENT;
-    fprintf (outfile, "label_master_continue_%d:\n", barrier_id);
+    fprintf(outfile, "label_master_continue_%d:\n", barrier_id);
+    */
 
     DBUG_VOID_RETURN;
 }
@@ -591,6 +593,153 @@ ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileMT_MASTER_SEND_FOLDRESULTS( int nfoldargs, char **foldargs)
+ *
+ * description:
+ *   compiles the corresponding ICM:
+ *
+ *   MT_MASTER_SEND_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *
+ *   As part of the value exchange between two SYNC-blocks it is responsible
+ *   to send results of fold with-loops to the SPMD-frame ... BUT ...
+ *
+ *   ... All results from fold-with-loops will be stored automatically in the
+ *   barrier, so one does not need to put them in the frame too (they will
+ *   be fetched from the barrier instead). The ICM is needed only to have a
+ *   complete set of macros, so the code is readable.
+ *
+ ******************************************************************************/
+void
+ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs)
+{
+    DBUG_ENTER ("ICMCompileMT_NASTER_SEND_FOLDRESULTS");
+
+#define MT_MASTER_SEND_FOLDRESULTS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MASTER_SEND_FOLDRESULTS
+
+    if (nfoldargs > 0) {
+        INDENT;
+        fprintf (outfile, "/* all needed values are already stored in the barrier */");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS( int nfoldargs, char **foldargs)
+ *
+ * description:
+ *   compiles the corresponding ICM:
+ *
+ *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *
+ *   As part of the value exchange between two SYNC-blocks it is responsible
+ *   to receive results of fold with-loops from the SPMD-frame ... BUT ...
+ *
+ *   ... All results from fold-with-loops will be stored automatically in the
+ *   barrier, so one does not put them in the frame. Here they will be fetched
+ *   from the barrier instead.
+ *
+ ******************************************************************************/
+void
+ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs)
+{
+    int i, j;
+
+    DBUG_ENTER ("ICMCompileMT_NASTER_RECEIVE_FOLDRESULTS");
+
+#define MT_MASTER_RECEIVE_FOLDRESULTS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MASTER_RECEIVE_FOLDRESULTS
+
+    for (i = 0, j = 1; i < 2 * nfoldargs; i += 2, j++) {
+        INDENT;
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(0, %d, %s);\n", foldargs[i + 1],
+                 j, foldargs[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MASTER_SEND_SYNCARGS( int nsyncargs, char **syncargs)
+ *
+ * description:
+ *   compiles the corresponding ICM:
+ *
+ *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *
+ *   As part of the value exchange between two SYNC-blocks it is responsible
+ *   to send values changed in the master part.
+ *   The values are put in the SPMD-frame.
+ *
+ ******************************************************************************/
+void
+ICMCompileMT_MASTER_SEND_SYNCARGS (int nsyncargs, char **syncargs)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_MASTER_SEND_SYNCARGS");
+
+#define MT_MASTER_SEND_SYNCARGS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MASTER_SEND_SYNCARGS
+
+    for (i = 0; i < nsyncargs; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SPMD_RET_shared_rc( %s);\n", syncargs[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_MASTER_RECEIVE_SYNCARGS( int nsyncargs, char **syncargs)
+ *
+ * description:
+ *   compiles the corresponding ICM:
+ *
+ *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *
+ *   As part of the value exchange between two SYNC-blocks it is responsible
+ *   to receive values changed in the master part.
+ *   The values are fetched from the SPMD-frame.
+ *
+ ******************************************************************************/
+void
+ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_MASTER_RECEIVE_SYNCARGS");
+
+#define MT_MASTER_SEND_SYNCARGS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_MASTER_SEND_SYNCARGS
+
+    for (i = 0; i < nsyncargs; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SPMD_GET_shared_rc( %s);\n", syncargs[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ * ####jhs no longer needed, but kept for references
+ *
+ * function:
  *   void ICMCompileMT_CONTINUE(int nfoldargs, int nsyncargs,
  *                              char **vararg, char **syncargs)
  *
@@ -613,6 +762,7 @@ void
 ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **syncargs)
 {
     int i, j;
+    int barrier_id = -88; /* former global variable */
 
     DBUG_ENTER ("ICMCompileMT_CONTINUE");
 
@@ -675,7 +825,7 @@ This ICM is no longer used. It is replaced by the more modular ICMs
 MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
 MT_SPMD_SETUP
 MT_SPMD_EXECUTE
-  
+  #### can it be deleted then ??? 
 
 /******************************************************************************
  *
