@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/08/03 11:44:02  jhs
+ * Comments.
+ *
  * Revision 2.4  1999/07/30 13:48:12  jhs
  * Added comments.
  *
@@ -103,7 +106,7 @@ ReduceOccurences (node *block, int *counters, DFMmask_t mask)
  *   is at least one left handed occurence
  *
  * attention:
- *   Contens of first_out are changed.
+ *   Contents of first_out are changed.
  *
  ******************************************************************************/
 DFMmask_t
