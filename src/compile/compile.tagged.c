@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  2003/04/15 15:28:14  dkr
+ * COMPApIds(): WARNing is an ERROR now
+ *
  * Revision 1.67  2003/04/15 14:17:01  dkr
  * workaround for non-AKS return values without descriptor removed
  *
@@ -771,13 +774,7 @@ MakeAllocDescIcm (char *name, types *type, int rc, node *assigns)
     if (RC_IS_ACTIVE (rc)) {
         int dim = GetDim (type);
 
-        if (dim < 0) {
-            /**
-             * this is most likely a return value from an external C function which
-             * does not create a descriptor.
-             */
-            DBUG_ASSERT ((0), "dimension undefined -> size of descriptor unknown");
-        }
+        DBUG_ASSERT ((dim >= 0), "dimension undefined -> size of descriptor unknown");
 
         assigns = MakeAssignIcm2 ("ND_ALLOC__DESC", MakeId_Copy_NT (name, type),
                                   MakeNum (dim), assigns);
@@ -2763,10 +2760,8 @@ COMPApIds (node *ap, node *arg_info)
                       = GetShapeClassFromTypes (IDS_TYPE (((ids *)argtab->ptr_out[i])));
                     DBUG_ASSERT ((sc != C_unknowns), "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
-                        DBUG_ASSERT ((0), "Return value with undefined shape/dimension "
-                                          "found!");
-                        WARN (linenum,
-                              ("Return value with undefined shape/dimension found"));
+                        ERROR (linenum,
+                               ("Return value with undefined shape/dimension found"));
                     }
                 }
 
