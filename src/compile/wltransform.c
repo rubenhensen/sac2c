@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.6  2000/12/12 13:08:37  dkr
+ * fixed in bug in WLTRAwith:
+ * NWITH_OUT_MASK no longer accidentially removed
+ *
  * Revision 3.5  2000/12/12 11:43:45  dkr
  * NWITH2_IN renamed into NWITH2_IN_MASK
  * NWITH2_INOUT removed
@@ -6252,6 +6256,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 
         NWITH_DEC_RC_IDS (arg_node) = NULL;
         NWITH_IN_MASK (arg_node) = NULL;
+        NWITH_OUT_MASK (arg_node) = NULL;
         NWITH_LOCAL_MASK (arg_node) = NULL;
 
         if (WL_break_after >= WL_PH_cubes) {
