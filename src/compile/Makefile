@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/06/16 17:21:37  rob
+# Add support for TAGGED_ARRAYS.
+#
 # Revision 2.5  1999/05/20 14:11:14  cg
 # *** empty log message ***
 #
@@ -231,7 +234,8 @@ INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount \
 MACS=icm.data icm_comment.c icm_trace.c
 
 all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
-     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o
+     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o \
+     icm2c_utils.o
 
 wltransform.o: wltransform.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
@@ -254,6 +258,9 @@ icm2c.o: icm2c.c icm.data icm_vars.c
 icm2c_std.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_std.o -c icm2c_std.c $(INCS)
 
+icm2c_utils.o: icm2c_utils.c 
+	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_utils.o -c icm2c_utils.c $(INCS)
+
 icm2c_wl.o: icm2c_wl.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_wl.o -c icm2c_wl.c $(INCS)
 
@@ -272,10 +279,10 @@ Old2NewWith.o: Old2NewWith.c
 
 
 BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.BEtest.o \
-        icm2c_wl.BEtest.o icm2c_mt.BEtest.o ../global/globals.o 
+        icm2c_wl.BEtest.o icm2c_mt.BEtest.o ../global/globals.o icm2c_utils.BEtest.o
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
         ../../lib/dbug.o icm2c_std.BEtest.o icm2c_wl.BEtest.o \
-        icm2c_mt.BEtest.o ../global/globals.o 
+        icm2c_utils.BEtest.o icm2c_mt.BEtest.o ../global/globals.o 
 
 icm2c_std.BEtest.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
@@ -285,6 +292,9 @@ icm2c_wl.BEtest.o: icm2c_wl.c $(MACS)
 
 icm2c_mt.BEtest.o: icm2c_mt.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_mt.BEtest.o -c icm2c_mt.c $(INCS)
+
+icm2c_utils.BEtest.o: icm2c_utils.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_utils.BEtest.o -c icm2c_utils.c $(INCS)
 
 
 deps:
@@ -301,8 +311,9 @@ BEtest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 BEtest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 BEtest.o: /usr/include/malloc.h /usr/include/sys/types.h
 BEtest.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-BEtest.o: ../../inc/dbug.h ../global/globals.h ../global/types.h icm2c_std.h
-BEtest.o: icm2c_wl.h icm2c_mt.h icm_vars.c icm.data icm_betest.c
+BEtest.o: ../../inc/dbug.h ../global/globals.h ../global/types.h
+BEtest.o: icm2c_utils.h icm2c_std.h icm2c_wl.h icm2c_mt.h icm_vars.c icm.data
+BEtest.o: icm_betest.c
 Old2NewWith.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 Old2NewWith.o: ../global/tree_compound.h ../global/Error.h
 Old2NewWith.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -372,13 +383,18 @@ icm2c_std.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 icm2c_std.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 icm2c_std.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 icm2c_std.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-icm2c_std.o: /usr/include/ctype.h icm2c_basic.h ../../inc/dbug.h
-icm2c_std.o: ../global/my_debug.h ../print/convert.h ../global/types.h
-icm2c_std.o: ../global/globals.h ../print/print.h ../global/tree.h
-icm2c_std.o: ../global/tree_basic.h ../global/tree_compound.h
-icm2c_std.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+icm2c_std.o: /usr/include/ctype.h icm2c_basic.h icm2c_utils.h
+icm2c_std.o: ../../inc/dbug.h ../global/my_debug.h ../print/convert.h
+icm2c_std.o: ../global/types.h ../global/globals.h ../print/print.h
+icm2c_std.o: ../global/tree.h ../global/tree_basic.h
+icm2c_std.o: ../global/tree_compound.h ../global/Error.h
+icm2c_std.o: /usr/include/string.h /usr/include/stdlib.h
 icm2c_std.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
 icm2c_std.o: icm.data icm_trace.c
+icm2c_utils.o: icm2c_utils.h ../../inc/dbug.h /usr/include/stdio.h
+icm2c_utils.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+icm2c_utils.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+icm2c_utils.o: /usr/include/stdio_impl.h /usr/include/string.h
 icm2c_wl.o: /usr/include/malloc.h /usr/include/sys/types.h
 icm2c_wl.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 icm2c_wl.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
