@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/12/29 10:41:52  cg
+ * Revision 1.3  1996/01/02 16:09:21  cg
+ * some bugs fixed
+ *
+ * Revision 1.2  1995/12/29  10:41:52  cg
  * first running revision for new SIBs
  *
  * Revision 1.1  1995/12/23  17:28:39  cg
@@ -26,8 +29,18 @@
 #include "scnprs.h"
 #include "filemgr.h"
 
+/*
+ *  global variables :
+ */
+
 static node *sibs = NULL; /* start of list of N_sib nodes storing parsed
                              SAC Information Blocks    */
+
+/*
+ *  forward declarations
+ */
+
+extern nodelist *EnsureExistTypes (ids *type, node *modul, node *sib);
 
 /*
  *
@@ -302,9 +315,7 @@ ExtractObjFromSib (node *obj, node *sib, node *modul)
         OBJDEF_NEXT (tmp) = OBJDEF_NEXT (obj);
     }
 
-    if (0 != strcmp (MOD (OBJDEF_MOD (obj)), SIB_NAME (sib))) {
-        OBJDEF_LINKMOD (obj) = SIB_NAME (sib);
-    }
+    OBJDEF_LINKMOD (obj) = SIB_NAME (sib);
 
     if (MODUL_OBJS (modul) == NULL) {
         MODUL_OBJS (modul) = obj;
@@ -449,6 +460,7 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
 {
     node *find;
     nodelist *objlist = NULL;
+    ids *objtype;
 
     DBUG_ENTER ("EnsureExistObjects");
 
@@ -458,9 +470,10 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
         if (find == NULL) {
             find = SearchObjdef (IDS_NAME (object), IDS_MOD (object), SIB_OBJS (sib));
 
-            DBUG_ASSERT (find != NULL,
-                         ("No info about object %s in SIB %s",
-                          ModName (IDS_MOD (object), IDS_NAME (object)), SIB_NAME (sib)));
+            DBUG_PRINT ("READSIB", ("Looking for implicitly used object %s",
+                                    ModName (IDS_MOD (object), IDS_NAME (object))));
+
+            DBUG_ASSERT (find != NULL, "No info about object in SIB");
 
             ExtractObjFromSib (find, sib, modul);
 
@@ -472,6 +485,10 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
 
             DBUG_PRINT ("READSIB",
                         ("Implicitly used object %s inserted.", ItemName (find)));
+
+            objtype = MakeIds (StringCopy (OBJDEF_TNAME (find)), OBJDEF_TMOD (find),
+                               ST_regular);
+            EnsureExistTypes (objtype, modul, sib);
         } else {
             DBUG_PRINT ("READSIB",
                         ("Implicitly used object %s already exists.", ItemName (find)));
@@ -519,11 +536,12 @@ EnsureExistTypes (ids *type, node *modul, node *sib)
         find = SearchTypedef (IDS_NAME (type), IDS_MOD (type), MODUL_TYPES (modul));
 
         if (find == NULL) {
-            find = SearchTypedef (IDS_NAME (type), IDS_MOD (type), SIB_OBJS (sib));
+            find = SearchTypedef (IDS_NAME (type), IDS_MOD (type), SIB_TYPES (sib));
 
-            DBUG_ASSERT (find != NULL,
-                         ("No info about type %s in SIB %s",
-                          ModName (IDS_MOD (type), IDS_NAME (type)), SIB_NAME (sib)));
+            DBUG_PRINT ("READSIB", ("Looking for implicitly used type %s",
+                                    ModName (IDS_MOD (type), IDS_NAME (type))));
+
+            DBUG_ASSERT (find != NULL, "No info about type in SIB ");
 
             ExtractTypeFromSib (find, sib, modul);
 
@@ -585,11 +603,12 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
         find = SearchFundef (fundef, MODUL_FUNS (modul));
 
         if (find == NULL) {
+            DBUG_PRINT ("READSIB",
+                        ("Looking for implicitly used function %s", ItemName (fundef)));
+
             next = FUNDEF_NEXT (fundef);
 
-            if (0 != strcmp (MOD (FUNDEF_MOD (fundef)), SIB_NAME (sib))) {
-                FUNDEF_LINKMOD (fundef) = SIB_NAME (sib);
-            }
+            FUNDEF_LINKMOD (fundef) = SIB_NAME (sib);
 
             FUNDEF_SIB (fundef) = sib;
 
@@ -665,6 +684,7 @@ RSIBfundef (node *arg_node, node *arg_info)
             FUNDEF_INLINE (arg_node) = FUNDEF_INLINE (sib_entry);
             FUNDEF_ARGS (arg_node) = FUNDEF_ARGS (sib_entry);
             FUNDEF_TYPES (arg_node) = FUNDEF_TYPES (sib_entry);
+            FUNDEF_LINKMOD (arg_node) = SIB_NAME (sib);
             FUNDEF_PRAGMA (arg_node) = FUNDEF_PRAGMA (sib_entry);
 
             if (FUNDEF_PRAGMA (sib_entry) != NULL) {
