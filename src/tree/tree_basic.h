@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.152  2002/10/10 09:21:34  mwe
+ * INFO_AL_ macros added
+ *
  * Revision 3.151  2002/10/09 02:04:56  dkr
  * INFO_PRINT_... macros modified
  *
@@ -2723,6 +2726,18 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        DIMS              (dimensions of the inner WLs)
  ***    node*      BLOCK             (N_block in which the WLS is to take place)
  ***
+ ***
+ ***  when used in AssociativeLaw.c
+ ***    nodelist*  CONSTANTLIST      (nodes with constant elements)
+ ***    nodelist*  VARIABLELIST      (nodes with variable elements)
+ ***    nodelist*  OPTCONSTANTLIST   (nodes with optimized constant elements)
+ ***    nodelist*  OPTVARIABLELIST   (nodes with optimized variable elements)
+ ***    types*     TYPE              (type node needed to create new type nodes)
+ ***    int        NUMBEROFCONSTANTS (number of constant elements in CONSTANTLIST)
+ ***    int        NUMBEROFVARIABLES (number of variable elements in VARIABLELIST)
+ ***    node*      BLOCKNODE         (current block node)
+ ***    prf        CURRENTPRF        (current used primitive function)
+ ***
  ***  remarks:
  ***
  ***    N_info is used in many other phases without access macros :((
@@ -3208,6 +3223,17 @@ extern node *MakeInfo ();
 #define INFO_WLS_WITHOP(n) (n->node[1])
 #define INFO_WLS_DIMS(n) (n->varno)
 #define INFO_WLS_BLOCK(n) (n->node[2])
+
+/* when used in AssociativeLaw.c */
+#define INFO_AL_CONSTANTLIST(n) ((nodelist *)(n->info2))
+#define INFO_AL_VARIABLELIST(n) ((nodelist *)(n->info3))
+#define INFO_AL_OPTCONSTANTLIST(n) ((nodelist *)(n->dfmask[2]))
+#define INFO_AL_OPTVARIABLELIST(n) ((nodelist *)(n->dfmask[1]))
+#define INFO_AL_TYPE(n) ((types *)(n->dfmask[0]))
+#define INFO_AL_NUMBEROFCONSTANTS(n) (n->counter)
+#define INFO_AL_NUMBEROFVARIABLES(n) (n->varno)
+#define INFO_AL_BLOCKNODE(n) (n->node[0])
+#define INFO_AL_CURRENTPRF(n) (n->info->prf)
 
 /*--------------------------------------------------------------------------*/
 
