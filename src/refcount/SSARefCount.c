@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.8  2004/05/05 15:34:05  ktr
+ * Log added.
+ *
+ *
+ */
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.5  2004/05/05 15:34:05  ktr
+ * Log added.
+ *
+ *
+ */
+
 #ifndef _sac_ssarefcount_h
 #define _sac_ssarefcount_h
 
