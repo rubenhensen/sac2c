@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1999/01/22 14:32:25  sbs
+ * ND_PRF_MODARRAY_AxVxA_CHECK_REUSE and
+ * ND_PRF_MODARRAY_AxVxA
+ *
+ * added.
+ *
  * Revision 1.52  1998/10/29 20:37:29  dkr
  * signature of ICM WL_FOLD_NOOP changed
  *
@@ -44,123 +50,7 @@
  * Revision 1.40  1998/05/24 00:43:08  dkr
  * changed signature of some WL-ICMs
  *
- * Revision 1.39  1998/05/19 15:43:08  dkr
- * ICMs for fold changed
- *
- * Revision 1.38  1998/05/16 16:38:07  dkr
- * WL_END is now a h-icm
- *
- * Revision 1.37  1998/05/15 23:54:58  dkr
- * changed signature of WL_... macros
- *
- * Revision 1.36  1998/05/15 09:19:29  cg
- * added ICMs MT_SYNC_NONFOLD and MT_SYNC_ONEFOLD_NONFOLD
- *
- * Revision 1.35  1998/05/14 21:36:35  dkr
- * changed some WL-ICMs
- *
- * Revision 1.34  1998/05/13 14:48:03  cg
- * added ICM MT_SYNC_ONEFOLD
- *
- * Revision 1.33  1998/05/13 09:24:04  dkr
- * added new with-loop ICMs
- *
- * Revision 1.32  1998/05/13 07:15:14  cg
- * added ICMs for multi-threaded execution
- *
- * Revision 1.31  1998/05/12 13:27:48  dkr
- * added WL_FOLD... macros
- *
- * Revision 1.30  1998/05/07 16:22:07  dkr
- * changed signature of WL_BEGIN, WL_ASSIGN, WL_END
- *
- * Revision 1.29  1998/05/04 15:35:52  dkr
- * added WL_ASSIGN
- *
- * Revision 1.28  1998/05/03 13:09:02  dkr
- * added ICMs WL_BEGIN, WL_END
- *
- * Revision 1.27  1998/04/25 16:25:20  sbs
- *  new icm2c / BEtest mechanism implemented!
- *
- * Revision 1.26  1998/04/24 18:45:38  sbs
- * ICM_END corrected in ND_PRF_MODARRAY_AxCxA_CHECK_REUSE and ND_PRF_MODARRAY_AxCxA
- *
- * Revision 1.25  1996/08/04 14:40:12  sbs
- * modarray_AxVxA with and without reuse check inserted.
- *
- * Revision 1.24  1996/01/21  14:04:31  cg
- * added icm ND_CREATE_CONST_ARRAY_H
- *
- * Revision 1.23  1995/12/18  16:25:39  cg
- * ICMs ND_FUN_DEC, ND_FUN_AP and ND_FUN_RET modified
- * new ICMs ND_KS_DECL_GLOBAL_ARRAY and ND_KD_DECL_EXTERN_ARRAY for
- * arrays as global objects.
- *
- * Revision 1.22  1995/10/08  11:22:36  sbs
- * some bugs fixed
- *
- * Revision 1.21  1995/08/15  14:41:41  hw
- * added ICMs ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, ND_PRF_MODARRAY_AxCxS,
- * ND_PRF_MODARRAY_AxCxA and  ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
- *
- * Revision 1.20  1995/07/13  16:35:27  hw
- * - changed N_icm ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
- *
- * Revision 1.19  1995/06/09  15:29:19  hw
- * changed PSI N_icm's (linenumber inserted)
- *
- * Revision 1.18  1995/06/08  18:32:08  hw
- * - changed args-name of ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
- *
- * Revision 1.17  1995/06/07  13:36:53  hw
- * - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
- * - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
- *
- * Revision 1.16  1995/06/02  08:48:13  hw
- * ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN and ND_END_FOLD inserted
- *
- * Revision 1.15  1995/05/24  15:28:01  sbs
- * inclusion of trace.h eliminated
- *
- * Revision 1.14  1995/05/24  13:58:31  sbs
- * ND_KS_DECL_ARRAY_ARG inserted
- *
- * Revision 1.13  1995/05/04  11:42:34  sbs
- * trf inserted in ICM-macros
- *
- * Revision 1.12  1995/04/27  12:57:05  sbs
- * WITH-LOOP ICM s inserted.
- *
- * Revision 1.11  1995/04/18  14:49:08  sbs
- * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated
- *
- * Revision 1.10  1995/04/18  11:02:40  sbs
- * ND_KD_ROT_SxSxA_A eliminated
- *
- * Revision 1.9  1995/04/13  09:12:59  sbs
- * ND_KD_ROT_SxSxA_A inserted
- *
- * Revision 1.8  1995/04/12  15:15:34  sbs
- * ND_KD_ROT_SxSxA_A commented out
- *
- * Revision 1.7  1995/04/12  15:14:00  sbs
- * cat & rot inserted.
- *
- * Revision 1.6  1995/04/11  16:08:48  sbs
- * some minor bugs fixed
- *
- * Revision 1.5  1995/04/11  15:03:13  sbs
- * ND_FUN_[DEC/AP/RET] inserted
- *
- * Revision 1.4  1995/04/07  09:30:52  sbs
- * dima's inserted in psi*_A, take & drop
- *
- * Revision 1.3  1995/04/03  13:58:57  sbs
- * first "complete" version
- *
- * Revision 1.2  1995/03/31  13:57:34  sbs
- * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
+ * ... [eliminated] ...
  *
  * Revision 1.1  1995/03/10  17:26:51  sbs
  * Initial revision
@@ -434,6 +324,32 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
 ICM_END( ND_PRF_MODARRAY_AxCxA, (line,res_type,dimres,res,old,val,dimv,vi) )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxVxA_CHECK_REUSE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_STR( val)
+  ICM_INT(dim)
+  ICM_STR( v)
+ICM_END( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, (line,res_type,dimres,res,old,val,dim,v) )
+#endif
+ 
+#if defined(ND_PRF_MODARRAY_AxVxA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_STR(val)
+  ICM_INT(dim)
+  ICM_STR( v)
+ICM_END( ND_PRF_MODARRAY_AxVxA, (line,res_type,dimres,res,old,val,dim,v) )
 #endif
 
 #if defined(ND_BEGIN_GENARRAY) || defined(ICM_ALL)

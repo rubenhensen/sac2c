@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/01/22 14:32:25  sbs
+ * ND_PRF_MODARRAY_AxVxA_CHECK_REUSE and
+ * ND_PRF_MODARRAY_AxVxA
+ *
+ * added.
+ *
  * Revision 1.2  1998/08/06 17:19:04  dkr
  * changed signature of ICM ND_KS_VECT2OFFSET
  *
@@ -57,6 +63,12 @@ extern void ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimre
 extern void ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type,
                                                          int dimres, char *res, char *old,
                                                          char *val, int dimv, char **vi);
+extern void ICMCompileND_PRF_MODARRAY_AxVxA (int line, char *res_type, int dimres,
+                                             char *res, char *old, char *val, int dim,
+                                             char *v);
+extern void ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (int line, char *res_type,
+                                                         int dimres, char *res, char *old,
+                                                         char *val, int dim, char *v);
 extern void ICMCompileND_BEGIN_GENARRAY (char *res, int dimres, char *from, char *to,
                                          char *idx, int idxlen);
 extern void ICMCompileND_BEGIN_MODARRAY (char *res, int dimres, char *a, char *from,
