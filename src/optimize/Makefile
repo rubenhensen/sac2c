@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.50  1998/05/21 09:51:57  dkr
+# make deps done
+#
 # Revision 1.49  1998/05/13 14:07:29  srs
 # added WLUnroll
 #
@@ -324,7 +327,8 @@ WLUnroll.o: ../global/globals.h ../global/types.h ../global/tree.h
 WLUnroll.o: ../global/tree_basic.h ../global/tree_compound.h
 WLUnroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 WLUnroll.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-WLUnroll.o: /usr/include/malloc.h ../global/traverse.h optimize.h DupTree.h
+WLUnroll.o: /usr/include/malloc.h ../global/traverse.h
+WLUnroll.o: ../typecheck/typecheck.h optimize.h DupTree.h WithloopFolding.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.17  1998/05/21 09:51:47  dkr
+# make deps done
+#
 # Revision 1.16  1998/05/20 20:16:07  sbs
 # since flatten.c uses DupNode ../optimize had to be added
 # to the include-paths!
@@ -73,5 +76,5 @@ flatten.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
 flatten.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 flatten.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 flatten.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-flatten.o: ../global/traverse.h ../global/access_macros.h ../global/free.h
-flatten.o: /usr/include/malloc.h flatten.h
+flatten.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
+flatten.o: ../optimize/DupTree.h flatten.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.61  1998/05/21 09:52:01  dkr
+# make deps done
+#
 # Revision 1.60  1998/05/19 09:17:57  cg
 # Now, different object files for icm2c_XX.c are generated when
 # compiling for target BEtest. This allows for slightly different
@@ -277,7 +280,8 @@ Old2NewWith.o: ../typecheck/typecheck.h ../global/free.h ../../inc/dbug.h
 Old2NewWith.o: ../global/my_debug.h /usr/include/malloc.h
 Old2NewWith.o: ../optimize/DupTree.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-compile.o: /usr/include/string.h ../global/tree.h ../global/types.h
+compile.o: /usr/include/string.h /usr/include/limits.h
+compile.o: /usr/include/sys/isa_defs.h ../global/tree.h ../global/types.h
 compile.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 compile.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
@@ -299,12 +303,13 @@ icm2c.o: ../global/my_debug.h icm2c_std.h icm2c_wl.h icm2c_mt.h icm_vars.c
 icm2c.o: icm.data icm_icm2c.c
 icm2c_mt.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c_mt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-icm2c_mt.o: icm2c_basic.h ../../inc/dbug.h ../global/my_debug.h
-icm2c_mt.o: ../print/convert.h ../global/tree.h ../global/types.h
-icm2c_mt.o: ../global/tree_basic.h ../global/tree_compound.h
-icm2c_mt.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+icm2c_mt.o: /usr/include/string.h icm2c_basic.h ../../inc/dbug.h
+icm2c_mt.o: ../global/my_debug.h ../print/convert.h ../global/tree.h
+icm2c_mt.o: ../global/types.h ../global/tree_basic.h
+icm2c_mt.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdlib.h
 icm2c_mt.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
-icm2c_mt.o: icm_comment.c icm.data icm_trace.c
+icm2c_mt.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
+icm2c_mt.o: ../global/traverse.h icm_comment.c icm.data icm_trace.c
 icm2c_std.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c_std.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 icm2c_std.o: /usr/include/ctype.h icm2c_basic.h ../../inc/dbug.h
@@ -354,4 +359,3 @@ wltransform.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 wltransform.o: ../global/my_debug.h /usr/include/malloc.h
 wltransform.o: ../global/traverse.h ../optimize/DataFlowMask.h
 wltransform.o: ../optimize/optimize.h wlpragma_funs.h ../optimize/DupTree.h
-wltransform.o: /usr/include/limits.h /usr/include/sys/isa_defs.h

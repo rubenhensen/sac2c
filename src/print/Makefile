@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.28  1998/05/21 09:51:51  dkr
+# make deps done
+#
 # Revision 1.27  1998/05/12 14:22:19  dkr
 # make deps done
 #
@@ -114,5 +117,5 @@ print.o: ../global/globals.h ../global/internal_lib.h print.h
 print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/DataFlowMask.h ../optimize/optimize.h ../global/free.h
 print.o: /usr/include/malloc.h ../modules/filemgr.h
-print.o: ../compile/gen_startup_code.h ../compile/icm.data
-print.o: ../global/prf_node_info.mac
+print.o: ../compile/gen_startup_code.h ../optimize/WithloopFolding.h
+print.o: ../compile/icm.data ../global/prf_node_info.mac
