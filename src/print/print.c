@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.208  1998/04/30 12:57:26  dkr
+ * changed output in PrintSync
+ *
  * Revision 1.207  1998/04/29 20:16:10  dkr
  * changed PrintSpmd, PrintSync
  *
@@ -2151,7 +2154,6 @@ PrintSync (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintSync");
 
     fprintf (outfile, "/*** begin of sync region ***\n");
-    INDENT;
     DBUG_EXECUTE ("MASK", char *text;
                   text = PrintMask (SYNC_IN (arg_node), SYNC_VARNO (arg_node));
                   fprintf (outfile, "**IN:    %s\n", text);
