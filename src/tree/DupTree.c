@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/10/12 09:49:06  khf
+ * WLGRID_CODE, WLGRIDVAR_CODE can be NULL!
+ *
  * Revision 3.105  2004/10/11 14:57:53  sah
  * made INC/DEC NCODE_USED explicit 
  *
@@ -2385,7 +2388,9 @@ DupWLgrid (node *arg_node, info *arg_info)
 
     WLGRID_FITTED (new_node) = WLGRID_FITTED (arg_node);
     WLGRID_NOOP (new_node) = WLGRID_NOOP (arg_node);
-    NCODE_INC_USED (WLGRID_CODE (new_node));
+    if (WLGRID_CODE (new_node) != NULL) {
+        NCODE_INC_USED (WLGRID_CODE (new_node));
+    }
 
     /*
      * duplicated grids are not modified yet ;)
@@ -2416,7 +2421,9 @@ DupWLgridVar (node *arg_node, info *arg_info)
 
     WLGRIDVAR_FITTED (new_node) = WLGRIDVAR_FITTED (arg_node);
     WLGRIDVAR_NOOP (new_node) = WLGRIDVAR_NOOP (arg_node);
-    NCODE_INC_USED (WLGRIDVAR_CODE (new_node));
+    if (WLGRIDVAR_CODE (new_node) != NULL) {
+        NCODE_INC_USED (WLGRIDVAR_CODE (new_node));
+    }
 
     CopyCommonNodeData (new_node, arg_node);
 
