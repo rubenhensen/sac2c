@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.96  1998/06/05 15:32:34  cg
+ * Attributes COND_THENVARS COND_ELSEVARS DO_USEVARS DO_DEFVARS are
+ * now duplicated as ids-chains
+ *
  * Revision 1.95  1998/05/28 23:51:00  dkr
  * fixed a bug in DupNwithop:
  *   NWITHOP_FUNDEF is copied not duplicated
@@ -645,8 +649,8 @@ DupCond (node *arg_node, node *arg_info)
 
     DUP (arg_node, new_node);
 
-    COND_THENVARS (arg_node) = DUPTRAV (COND_THENVARS (arg_node));
-    COND_ELSEVARS (arg_node) = DUPTRAV (COND_ELSEVARS (arg_node));
+    COND_THENVARS (new_node) = DupIds (COND_THENVARS (arg_node), arg_info);
+    COND_ELSEVARS (new_node) = DupIds (COND_ELSEVARS (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -669,8 +673,8 @@ DupLoop (node *arg_node, node *arg_info)
 
     DUP (arg_node, new_node);
 
-    DO_USEVARS (new_node) = DUPTRAV (DO_USEVARS (arg_node));
-    DO_DEFVARS (new_node) = DUPTRAV (DO_DEFVARS (arg_node));
+    DO_USEVARS (new_node) = DupIds (DO_USEVARS (arg_node), arg_info);
+    DO_DEFVARS (new_node) = DupIds (DO_DEFVARS (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
