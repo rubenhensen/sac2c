@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/04/06 15:55:31  dkr
+ * number of hash keys reduced
+ *
  * Revision 3.9  2001/04/06 15:29:09  dkr
  * function RemoveContentLUT added
  *
@@ -144,8 +147,8 @@
  * number of different hash keys
  * (== size of hash table == # collision tables)
  */
-#define HASH_KEYS_POINTER 256 /* 2^8 */
-#define HASH_KEYS_STRING 101  /* should be a prime number */
+#define HASH_KEYS_POINTER 16 /* 2^4 */
+#define HASH_KEYS_STRING 17  /* should be a prime number */
 #define HASH_KEYS ((HASH_KEYS_POINTER) + (HASH_KEYS_STRING))
 
 /*
@@ -195,10 +198,10 @@ GetHashKey_Pointer (void *data)
     DBUG_ASSERT ((data != NULL), "NULL has no hash key!");
 
     /*
-     * hash key: bits 11 .. 4
-     *  ->  0 <= key < 2^8
+     * hash key: bits 7 .. 4
+     *  ->  0 <= key < 2^4
      */
-    hash_key = (((long)data) & 0xff0) >> 4;
+    hash_key = (((long)data) & 0xf0) >> 4;
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (HASH_KEYS_POINTER))),
                  "hash key for pointers out of bounds!");
