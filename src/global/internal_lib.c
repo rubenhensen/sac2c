@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/09 15:58:27  nmw
+ * VarName for ssalir/lirmov traversal completed
+ *
  * Revision 3.4  2001/03/27 11:29:56  dkr
  * OptCmp() removed
  *
@@ -516,6 +519,10 @@ TmpVar ()
         s = "blkli";
     } else if (act_tab == undossa_tab) {
         s = "ussa";
+    } else if (act_tab == ssalir_tab) {
+        s = "lir";
+    } else if (act_tab == lirmov_tab) {
+        s = "lir";
     } else {
         s = "unknown";
     }
