@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/11/10 19:28:16  dkr
+ * removed a bug with NEWTREE
+ *
  * Revision 1.49  1997/11/05 16:29:46  dkr
  * moved nnode[] from tree_compound.[ch] to traverse.[ch]
  *
@@ -728,7 +731,7 @@ node *
 Trav (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("Trav");
-    DBUG_ASSERT ((NULL != arg_node), "wrong argument:NULL pointer");
+    DBUG_ASSERT ((NULL != arg_node), "wrong argument: NULL pointer");
     DBUG_ASSERT ((arg_node->nodetype <= N_ok), "wrong argument: Type-tag out of range!");
 #ifndef NEWTREE
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x number of nodes: %d",
