@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/11/27 05:03:19  ktr
+ * blah
+ *
  * Revision 3.36  2004/11/27 01:59:16  mwe
  * new funs added
  *
@@ -84,6 +87,7 @@ extern node *PRTempty (node *arg_node, info *arg_info);
 extern node *PRTarray (node *arg_node, info *arg_info);
 extern node *PRTexprs (node *arg_node, info *arg_info);
 extern node *PRTid (node *arg_node, info *arg_info);
+extern node *PRTids (node *arg_node, info *arg_info);
 extern node *PRTnum (node *arg_node, info *arg_info);
 extern node *PRTfloat (node *arg_node, info *arg_info);
 extern node *PRTdouble (node *arg_node, info *arg_info);

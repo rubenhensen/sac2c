@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.187  2004/11/27 05:03:19  ktr
+ * blah
+ *
  * Revision 3.186  2004/11/27 02:25:56  mwe
  * renaiming
  *
@@ -839,7 +842,11 @@ PRTids (node *arg_node, info *arg_info)
 
     if (arg_node != NULL) {
 
-        fprintf (global.outfile, "%s", IDS_NAME (arg_node));
+        if (IDS_AVIS (arg_node) != NULL) {
+            fprintf (global.outfile, "%s", IDS_NAME (arg_node));
+        } else {
+            fprintf (global.outfile, "%s", IDS_SPNAME (arg_node));
+        }
 
         if (NULL != IDS_NEXT (arg_node)) {
             fprintf (global.outfile, ", ");
@@ -2388,11 +2395,15 @@ PRTid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTid");
 
-    fprintf (global.outfile, "%s",
-             (((global.compiler_phase == PH_genccode) || print_nt)
-              && (ID_NT_TAG (arg_node) != NULL))
-               ? ID_NT_TAG (arg_node)
-               : ID_NAME (arg_node));
+    if (ID_AVIS (arg_node) != NULL) {
+        fprintf (global.outfile, "%s",
+                 (((global.compiler_phase == PH_genccode) || print_nt)
+                  && (ID_NT_TAG (arg_node) != NULL))
+                   ? ID_NT_TAG (arg_node)
+                   : ID_NAME (arg_node));
+    } else {
+        fprintf (global.outfile, "%s", ID_SPNAME (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
