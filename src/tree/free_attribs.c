@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/09/30 20:15:10  sah
+ * fixed signature of FreeRCCounterAttrib
+ *
  * Revision 1.4  2004/09/30 19:52:43  sah
  * added RCCounter support
  *
@@ -804,10 +807,10 @@ FreeConstantAttrib (constant *attr)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-constant *
-FreeConstantAttrib (constant *attr)
+rc_counter *
+FreeRCCounterAttrib (rc_counter *attr)
 {
-    DBUG_ENTER ("FreeConstantAttrib");
+    DBUG_ENTER ("FreeRCCounterAttrib");
 
     DBUG_ASSERT ((attr == NULL), "Found an RCCounter outside of emm!!!");
 
