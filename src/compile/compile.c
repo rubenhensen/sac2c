@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.80  2000/07/28 17:17:10  cg
+ * Compilation of N_vardec nodes modified: ICM now is temporary
+ * attribute of N_vardec node which is no longer removed during
+ * code generation.
+ *
  * Revision 2.79  2000/07/28 12:30:48  cg
  * N_typedef nodes are no longer replaced by N_icm node during
  * code generation. Instead an N_icm node is added to the N_typedef
@@ -2708,7 +2713,7 @@ COMPLet (node *arg_node, node *arg_info)
 node *
 COMPVardec (node *arg_node, node *arg_info)
 {
-    node *assign, *id_node, *n_dim, *id_type, *icm_arg;
+    node *icm, *id_node, *n_dim, *id_type, *icm_arg;
 #ifdef TAGGED_ARRAYS
     node *shape_elems;
     char *macvalues[] = {"ND_DECL_AKS", "ND_DECL_SCL"};
@@ -2729,8 +2734,7 @@ COMPVardec (node *arg_node, node *arg_info)
          */
 
         id_type = MakeId1 (type_string[TYPES_BASETYPE (full_type)]);
-        /* declared type */
-        id_node = MakeId1 (VARDEC_NAME (arg_node)); /* name of variable */
+        id_node = MakeId1 (VARDEC_NAME (arg_node));
         n_dim = MakeNum (TYPES_DIM (full_type));
 
         /* now create N_icm */
@@ -2749,135 +2753,78 @@ COMPVardec (node *arg_node, node *arg_info)
             mymac = macvalues[1];
         else
             mymac = macvalues[0];
-        assign = MakeAssign (MakeIcm4 (mymac, id_type, id_node, n_dim, shape_elems),
-                             VARDEC_NEXT (arg_node));
 
-#else  /* TAGGED_ARRAYS */
+        icm = MakeIcm4 (mymac, id_type, id_node, n_dim, shape_elems);
+    }
+
+#else /* TAGGED_ARRAYS */
+
     if (TYPES_DIM (full_type) > SCALAR) {
         /*
          * full_type is an array with known shape.
          */
 
         id_type = MakeId1 (type_string[TYPES_BASETYPE (full_type)]);
-        /* declared type */
-        id_node = MakeId1 (VARDEC_NAME (arg_node)); /* name of variable */
+        id_node = MakeId1 (VARDEC_NAME (arg_node));
         n_dim = MakeNum (TYPES_DIM (full_type));
 
-        /* now create N_icm */
-        assign = MakeAssign (MakeIcm0 ("ND_KS_DECL_ARRAY"), VARDEC_NEXT (arg_node));
+        icm = MakeIcm0 ("ND_KS_DECL_ARRAY");
 
-        ICM_ARGS (ASSIGN_INSTR (assign)) = MakeExprs (id_type, NULL);
-        icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
+        /* Now, append ICM arguments. */
+        ICM_ARGS (icm) = MakeExprs (id_type, NULL);
+        icm_arg = ICM_ARGS (icm);
         MAKE_NEXT_ICM_ARG (icm_arg, id_node);
         MAKE_NEXT_ICM_ARG (icm_arg, n_dim);
 
         for (i = 0; i < TYPES_DIM (full_type); i++) {
             /* the shape information will be converted & added */
-            MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (full_type->shpseg->shp[i]));
+            MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (TYPES_SHAPE (full_type, i)));
         }
+    }
+
 #endif /* TAGGED_ARRAYS */
 
-        /* now free some nodes */
-        if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
-            FREE_TYPE (full_type);
-        }
-
-        FREE_VARDEC (arg_node);
-        arg_node = assign; /* set arg_node, because this node will be returned */
-
-        if ((NULL != ASSIGN_NEXT (arg_node))
-            && (NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_vardec)) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), NULL);
-            /* dkr: Trav(...) with (arg_info == NULL) !?!? */
-        }
-    } else if (TYPES_DIM (full_type) == UNKNOWN_SHAPE) {
+    else if (TYPES_DIM (full_type) == UNKNOWN_SHAPE) {
         /*
          *  full_type is an array with unknown shape and dimension.
          */
 
         id_type = MakeId1 (type_string[TYPES_BASETYPE (full_type)]);
-        /* declared type */
-        id_node = MakeId1 (VARDEC_NAME (arg_node)); /* name of variable */
+        id_node = MakeId1 (VARDEC_NAME (arg_node));
 
-        /* now create N_icm */
-        assign = MakeAssign (MakeIcm0 ("ND_DECL_ARRAY"), VARDEC_NEXT (arg_node));
-
-        ICM_ARGS (ASSIGN_INSTR (assign)) = MakeExprs (id_type, NULL);
-        icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
-        MAKE_NEXT_ICM_ARG (icm_arg, id_node);
-
-        /* now free some nodes */
-        if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
-            FREE_TYPE (full_type);
-        }
-
-        FREE_VARDEC (arg_node);
-        arg_node = assign; /* set arg_node, because this node will be returned */
-
-        if ((NULL != ASSIGN_NEXT (arg_node))
-            && (NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_vardec)) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), NULL);
-            /* dkr: Trav(...) with (arg_info == NULL) !?!? */
-        }
+        icm = MakeIcm2 ("ND_DECL_ARRAY", id_type, id_node);
     } else if (TYPES_DIM (full_type) < KNOWN_DIM_OFFSET) {
         /*
          *  full_type is an array with unknown shape and known dimension.
          */
 
         id_type = MakeId1 (type_string[TYPES_BASETYPE (full_type)]);
-        /* declared type */
-        id_node = MakeId1 (VARDEC_NAME (arg_node)); /* name of variable */
+        id_node = MakeId1 (VARDEC_NAME (arg_node));
         n_dim = MakeNum (KNOWN_DIM_OFFSET - TYPES_DIM (full_type));
 
-        /* now create N_icm */
-        assign = MakeAssign (MakeIcm0 ("ND_KD_DECL_ARRAY"), VARDEC_NEXT (arg_node));
-
-        ICM_ARGS (ASSIGN_INSTR (assign)) = MakeExprs (id_type, NULL);
-        icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
-        MAKE_NEXT_ICM_ARG (icm_arg, id_node);
-        MAKE_NEXT_ICM_ARG (icm_arg, n_dim);
-
-        /* now free some nodes */
-        if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
-            FREE_TYPE (full_type);
-        }
-
-        FREE_VARDEC (arg_node);
-        arg_node = assign; /* set arg_node, because this node will be returned */
-
-        if ((NULL != ASSIGN_NEXT (arg_node))
-            && (NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_vardec)) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), NULL);
-            /* dkr: Trav(...) with (arg_info == NULL) !?!? */
-        }
+        icm = MakeIcm3 ("ND_KD_DECL_ARRAY", id_type, id_node, n_dim);
     } else if (IsNonUniqueHidden (VARDEC_TYPE (arg_node))) {
-        CREATE_2_ARY_ICM (assign, "ND_DECL_RC", MakeId1 ("void*"),
-                          MakeId1 (VARDEC_NAME (arg_node)));
+        /*
+         *  full_type is non-unique abstract data type (implicit type)
+         */
 
-        if ((VARDEC_NEXT (arg_node) != NULL)
-            && (NODE_TYPE (VARDEC_NEXT (arg_node))) == N_vardec) {
-            ASSIGN_NEXT (assign) = Trav (VARDEC_NEXT (arg_node), NULL);
-            /* dkr: Trav(...) with (arg_info == NULL) !?!? */
-        }
-        FREE_VARDEC (arg_node);
-        arg_node = assign;
-    } else if (TYPES_DIM (VARDEC_TYPE (arg_node)) < 0) {
-        /* current vardec-node has unknown shape and will be removed */
-        node *tmp;
-        tmp = arg_node;
-        if ((VARDEC_NEXT (arg_node) != NULL)
-            && (NODE_TYPE (VARDEC_NEXT (arg_node))) == N_vardec) {
-            arg_node = Trav (VARDEC_NEXT (arg_node), NULL);
-            /* dkr: Trav(...) with (arg_info == NULL) !?!? */
-        } else {
-            arg_node = NULL;
-        }
-        FREE_VARDEC (tmp);
-    } else if ((VARDEC_NEXT (arg_node) != NULL)
-               && (NODE_TYPE (VARDEC_NEXT (arg_node))) == N_vardec) {
-        /* traverse next N_vardec node if any */
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), NULL);
-        /* dkr: Trav(...) with (arg_info == NULL) !?!? */
+        id_type = MakeId1 (StringCopy ("void*"));
+        id_node = MakeId1 (VARDEC_NAME (arg_node));
+
+        icm = MakeIcm2 ("ND_DECL_RC", id_type, id_node);
+    } else {
+        icm = NULL;
+    }
+
+    VARDEC_ICM (arg_node) = icm;
+
+    /* now free some nodes */
+    if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
+        FREE_TYPE (full_type);
+    }
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
