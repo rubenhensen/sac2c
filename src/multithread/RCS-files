@@ -1,4 +1,5 @@
 Makefile
+adjust_calls.c
 barriers_init.c
 barriers_init.h
 blocks_cons.c
