@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1997/11/26 14:06:26  srs
+ * removed use of old macros from acssass_macros.h
+ *
  * Revision 1.20  1997/11/07 14:18:15  dkr
  * with defined NEWTREE node.nnode is not used anymore
  *
@@ -954,10 +957,12 @@ CheckUp (node *arg_node, node *arg_info)
         } else
         /*
          * Unswitch conditional ?
+         * arg_node->node[0] ist N_cond
          */
         {
-            if (N_id == arg_node->node[0]->node[0]->nodetype)
-                cond = arg_node->node[0]->node[0]->IDS_VARNO;
+            if (N_id == NODE_TYPE (COND_COND (arg_node->node[0])))
+                /* srs        cond = arg_node->node[0]->node[0]->IDS_VARNO; */
+                cond = VARDEC_VARNO (ID_VARDEC (COND_COND (arg_node->node[0])));
 
             if (-1 == cond)
                 MOVE = UNSWITCH;
@@ -1171,6 +1176,7 @@ CheckDown (node *arg_node, node *arg_info)
     if (((CAUTION_UNSWITCH == MOVE) || (UNSWITCH == MOVE))
         && (N_id == arg_node->node[0]->node[0]->nodetype))
         cond = arg_node->node[0]->node[0]->IDS_VARNO;
+    cond = VARDEC_VARNO (ID_VARDEC (arg_node->node[0]->node[0]));
 
     if (CAUTION_UNSWITCH == MOVE) {
         trap = TRUE;
