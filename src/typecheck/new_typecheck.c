@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2003/06/17 10:53:14  dkr
+ * ; removed from error message
+ *
  * Revision 3.29  2003/05/30 17:55:22  sbs
  * patched NTCcond to deal with function predicates better!
  * This is not the proper solution to the conceptual problem
@@ -1735,7 +1738,7 @@ NTCNwithop (node *arg_node, node *arg_info)
         ok = SSINewTypeRel (TYGetProductMember (fold_res, 0), elems);
 
         if (!ok) {
-            ABORT (linenum, ("illegal fold function in fold with loop; "));
+            ABORT (linenum, ("illegal fold function in fold with loop"));
         }
         break;
 
