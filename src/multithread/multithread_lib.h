@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/08/05 17:42:19  skt
+ * TagAllocs added
+ *
  * Revision 3.5  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -66,5 +69,7 @@ extern node *MUTHInsertEX (node *assign, node *fundef);
 extern node *MUTHInsertST (node *assign, node *fundef);
 extern node *MUTHInsertMT (node *assign, node *fundef);
 extern node *MUTHGetLastExpression (node *expression);
+void TagAllocs (node *withloop, int executionmode);
+node *RenewExecutionmode (node *assign, int executionmode);
 
 #endif /* _SAC_CONCURRENT_LIB_H_ */

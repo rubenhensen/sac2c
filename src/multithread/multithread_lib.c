@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/08/05 17:42:19  skt
+ * TagAllocs added
+ *
  * Revision 3.7  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -72,7 +75,8 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "generatemasks.h"
-
+#include "multithread_lib.h"
+#include "multithread.h"
 #include "internal_lib.h"
 
 /******************************************************************************
@@ -470,4 +474,107 @@ MUTHGetLastExpression (node *expression)
     }
 
     DBUG_RETURN (tmp);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TagAllocs(node *withloop, int executionmode)
+ *
+ *   @brief This function tags the executionmode of the allocation-assignments
+ *          belonging to the with-loop, i.e. the allocations of the withop an
+ *          of the withid
+ *   <pre>
+ *         There are two miniphases that call TagAllocs: TagExecutionmode and
+ *         PropagateExecutionmode. A call by the 1st one means, the with-loop
+ *         is tagged to be calculated parallel, which implicits
+ *         - allocation of the wlops has to be made in ST- or EX-mode (depends
+ *           on their original executionmode)
+ *         - allocation of the with-id has to be made in MT-mode
+ *         A call by the 2nd one means, the executionmode of the with-loop
+ *         differs from the inferred executionmode in TagExecutionmode, so
+ *         let's adapt the allocations:
+ *         - allocation of the wlops has to be made in ST- or EX-mode (depends
+ *           on their original executionmode and on the 2nd parameter)
+ *         - allocation of the with-id has to be done in executionmode
+ *   </pre>
+ *
+ *   @param withloop
+ *   @param executionmode the actual executionmode of the with-loop
+ *   @return nothing at all
+ *
+ *****************************************************************************/
+void
+TagAllocs (node *withloop, int executionmode)
+{
+    node *assign;
+    node *wlops;
+    ids *iterator;
+    DBUG_ENTER ("TagAllocs");
+    DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
+                 "TagAllocs expects a N_Nwith2 as #1 argument");
+    DBUG_ASSERT (((executionmode == MUTH_ANY) || (executionmode == MUTH_EXCLUSIVE)
+                  || (executionmode == MUTH_SINGLE) || (executionmode == MUTH_MULTI)),
+                 "TagAllocs expects a valid executionmode as #2 argument");
+
+    /* work on the withop */
+    wlops = NWITH2_WITHOP (withloop);
+    while (wlops != NULL) {
+        if ((NWITHOP_TYPE (wlops) == WO_genarray)
+            || (NWITHOP_TYPE (wlops) == WO_modarray)) {
+            assign = AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (wlops)));
+
+            DBUG_ASSERT ((ASSIGN_EXECMODE (assign) != MUTH_MULTI),
+                         "The execmode of the alloc-assign must'n be MUTH_MULTI");
+
+            assign = RenewExecutionmode (assign, executionmode);
+        }
+        wlops = NWITHOP_NEXT (wlops);
+    }
+
+    /* handle the with-id vector */
+    iterator = NWITHID_VEC (NWITH2_WITHID (withloop));
+    ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = executionmode;
+
+    /* handle the with-id vector elements */
+    iterator = NWITHID_IDS (NWITH2_WITHID (withloop));
+    while (iterator != NULL) {
+        ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = executionmode;
+
+        iterator = IDS_NEXT (iterator);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RenewExecutionmode(node *assign, int executionmode)
+ *
+ *   @brief renew the executionmode of the assignment
+ *
+ *   @param assign an allocation, somehow involved with a with-loop
+ *   @param executionmode the executiomode of the with-loop
+ *   @return the assignment with the renewed executionmode
+ *
+ *****************************************************************************/
+node *
+RenewExecutionmode (node *assign, int executionmode)
+{
+    DBUG_ENTER ("RenewExecutionmode");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "RenewExecutionmode expects a N_assign as #1 arg.");
+    DBUG_ASSERT (((executionmode == MUTH_ANY) || (executionmode == MUTH_EXCLUSIVE)
+                  || (executionmode == MUTH_SINGLE) || (executionmode == MUTH_MULTI)),
+                 "RenewExecutionmode expects a valid executionmode as #2 arg.");
+
+    /* change the executionmode, if it's no MUTH_EXCLUSIVE already */
+    if (ASSIGN_EXECMODE (assign) != MUTH_EXCLUSIVE) {
+        if (executionmode == MUTH_EXCLUSIVE) {
+            ASSIGN_EXECMODE (assign) = MUTH_EXCLUSIVE;
+        } else {
+            ASSIGN_EXECMODE (assign) = MUTH_SINGLE;
+        }
+    }
+
+    DBUG_RETURN (assign);
 }
