@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.112  1998/02/16 01:08:09  dkr
+ * bugs fixed
+ *
  * Revision 1.111  1998/02/16 00:50:45  dkr
  * removed bugs
  *
@@ -699,8 +702,6 @@ int basetype_size[] = {
 #define FREE_VARDEC(a)                                                                   \
     FREE_TYPE (VARDEC_TYPE (a))                                                          \
     FREE (a)
-
-#define FREE_TREE(a) FreeTree (a)
 
 #define FREE_IDS(a)                                                                      \
     {                                                                                    \
@@ -3601,7 +3602,7 @@ CompPrf (node *arg_node, node *arg_info)
         case F_reshape: {
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            FREE_TREE (arg1);
+            FreeTree (arg1);
             FREE (arg_node->node[0]);
             if (N_array == NODE_TYPE (arg2)) {
                 arg_node = CompArray (arg2, arg_info);
@@ -3840,7 +3841,7 @@ CompPrf (node *arg_node, node *arg_info)
                 DEC_OR_FREE_RC_ND (id_node, n_node);
                 INSERT_ASSIGN;
             }
-            FREE_TREE (arg_node->node[0]);
+            FreeTree (arg_node->node[0]);
             break;
         }
         case F_shape: {
@@ -3875,7 +3876,7 @@ CompPrf (node *arg_node, node *arg_info)
 
                 DEC_OR_FREE_RC_ND (id_node, n_node);
             }
-            FREE_TREE (old_arg_node);
+            FreeTree (old_arg_node);
             INSERT_ASSIGN;
             break;
         }
@@ -5304,7 +5305,7 @@ CompWith (node *arg_node, node *arg_info)
  *   node *MakeProj(node *bound1, node *bound2, node *offset, node *step, node *width)
  *
  * description:
- *   generates a new N_indexproj-node
+ *   generates a new N_index-node
  *
  ******************************************************************************/
 
@@ -5331,7 +5332,7 @@ MakeProj (node *bound1, node *bound2, node *offset, node *step, node *width)
  *   node *ProjNormalize(node *proj, int shape)
  *
  * description:
- *   returns the normalized values of the N_indexproj-node 'proj'
+ *   returns the normalized values of the N_index-node 'proj'
  *   (maximally shape; (width < step) or (width = step = 1))
  *
  ******************************************************************************/
@@ -5402,7 +5403,7 @@ IsEmpty (int bound1, int bound2, int offset)
  *
  * description:
  *   computes, whether 'proj' is an empty index-set or not
- *   ('proj' is a N_indexproj-node)
+ *   ('proj' is a N_index-node)
  *
  ******************************************************************************/
 
@@ -5456,10 +5457,10 @@ lcm (int x, int y)
  *
  * description:
  *   returns the intersection of 'proj1' and 'proj2'
- *     (as a N_exprs-chain of normalized N_indexproj-nodes);
+ *     (as a N_exprs-chain of normalized N_index-nodes);
  *   returns NULL if intersection is empty.
  *
- *   'proj1', 'proj2' are normalized (!!!) N_indexproj-nodes.
+ *   'proj1', 'proj2' are normalized (!!!) N_index-nodes.
  *
  ******************************************************************************/
 
@@ -5542,7 +5543,7 @@ ProjIntersect (node *proj1, node *proj2, int shape)
  *
  * description:
  *   computes, whether the intersection of 'proj1', 'proj2' is empty or not.
- *   ('proj1', 'proj2' are N_indexproj-nodes)
+ *   ('proj1', 'proj2' are N_index-nodes)
  *
  ******************************************************************************/
 
@@ -5564,7 +5565,7 @@ ProjEmptyIsect (node *proj1, node *proj2, int shape)
  *   int ProjCompare(node *proj1, node *proj2)
  *
  * description:
- *   compares 'proj1' and 'proj2' (N_indexproj-nodes)
+ *   compares 'proj1' and 'proj2' (N_index-nodes)
  *
  *   return: -1 -> 'proj1' < 'proj2'
  *            1 -> 'proj1' > 'proj2'
@@ -5631,7 +5632,7 @@ ProjCompare (node *proj1, node *proj2)
  *   inserts the elements of 'to_insert' in the sorted chain 'projs'.
  *   any element of 'to_insert', that is already found in 'projs', is freed!!
  *
- *   'to_insert' and 'projs' are N_exprs-chains of N_indexproj-nodes
+ *   'to_insert' and 'projs' are N_exprs-chains of N_index-nodes
  *
  ******************************************************************************/
 
@@ -5705,11 +5706,11 @@ ProjInsert (node *insert, node *projs)
  *   withpart: any N_Npart-node
  *   shape: N_array-node containing the shape
  *   prev_projs: set of previous projections (dimensions 0..d-1)
- *               ('prev_proj' is a N_exprs-chain of d N_indexproj-nodes)
+ *               ('prev_proj' is a N_exprs-chain of d N_index-nodes)
  *
  *   return: the projections (dimension d) of the generator-index-sets ('withpart'),
  *           which lie in 'prev_projs'
- *           (returned as a N_exprs-chain of normalized N_indexproj-nodes)
+ *           (returned as a N_exprs-chain of normalized N_index-nodes)
  *
  ******************************************************************************/
 
@@ -5747,7 +5748,7 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
             DBUG_ASSERT ((step != NULL), "step of generator not found");
             DBUG_ASSERT ((width != NULL), "width of generator not found");
 
-            /* build a N_indexproj-node */
+            /* build a N_index-node */
             PROJ_BOUND1 (EXPRS_EXPR (tmp)) = EXPRS_EXPR (bound1);
             PROJ_BOUND2 (EXPRS_EXPR (tmp)) = EXPRS_EXPR (bound2);
             PROJ_STEP (EXPRS_EXPR (tmp)) = EXPRS_EXPR (step);
@@ -5776,7 +5777,7 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
             DBUG_ASSERT ((step != NULL), "step of generator not found");
             DBUG_ASSERT ((width != NULL), "width of generator not found");
 
-            /* build a N_indexproj-node */
+            /* build a N_index-node */
             insert
               = MakeExprs (MakeProj (MakeNum (NUM_VAL (EXPRS_EXPR (bound1))),
                                      MakeNum (NUM_VAL (EXPRS_EXPR (bound2))), MakeNum (0),
@@ -5809,10 +5810,10 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
  *   withpart: NWITH_PART(...)
  *   shape: N_array-node containing the shape
  *   prev_proj: set of previous projections (dimensions 0..d-1)
- *              ('prev_proj' is a N_exprs-chain with d N_indexproj-nodes)
+ *              ('prev_proj' is a N_exprs-chain with d N_index-nodes)
  *
  *   return: partition of the current projection
- *           (N_exprs-chain of N_indexproj-nodes)
+ *           (N_exprs-chain of N_index-nodes)
  *
  ******************************************************************************/
 
@@ -5857,13 +5858,6 @@ ProjPartition (node *withpart, node *shape, node *prev_proj)
                     PROJ_ISECTED (EXPRS_EXPR (proj1)) = PROJ_ISECTED (EXPRS_EXPR (proj2))
                       = 1;
                     projs = ProjInsert (isection, projs);
-#if 0
-          tmp = isection;
-          while (EXPRS_NEXT(tmp) != NULL)
-            tmp = EXPRS_NEXT(tmp);
-          EXPRS_NEXT(tmp) = projs;
-          projs = isection;
-#endif
                 }
 
                 proj2 = EXPRS_NEXT (proj2);
@@ -5877,10 +5871,6 @@ ProjPartition (node *withpart, node *shape, node *prev_proj)
             if (PROJ_ISECTED (EXPRS_EXPR (tmp)) == 0) {
                 /* insert 'proj1' in 'projs' */
                 projs = ProjInsert (tmp, projs);
-#if 0
-        EXPRS_NEXT(tmp) = projs;
-        projs = tmp;
-#endif
             } else {
                 /* 'proj1' is no longer needed */
 #if 0
