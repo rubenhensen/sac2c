@@ -1,5 +1,4 @@
 Makefile
-cleanup_decls.h
 flatten.c
 flatten.h
 fun2lac.c
