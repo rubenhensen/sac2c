@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/10/20 09:23:32  cg
+ * Revision 1.27  1995/10/22 17:27:04  cg
+ * added new break option -bd to stop after checking
+ * module/class declaration.
+ *
+ * Revision 1.26  1995/10/20  09:23:32  cg
  * added new break parameter to -by to break after analysis
  *
  * Revision 1.25  1995/10/16  17:56:25  cg
@@ -104,6 +108,7 @@ usage (char *prg_name)
 
     printf ("\nSTOP OPTIONS:\n");
     printf ("\t -bp \t\t\tstop after scan/parse\n");
+    printf ("\t -bd \t\t\tstop after checking module/class declaration\n");
     printf ("\t -bj \t\t\tstop after object init transformation\n");
     printf ("\t -bi \t\t\tstop after module imports\n");
     printf ("\t -bf \t\t\tstop after flatten\n");
