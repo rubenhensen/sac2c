@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/06/29 10:23:05  mab
+ * renamed APCNwith to APCwith
+ *
  * Revision 1.5  2000/06/15 14:38:01  mab
  * dummies for APC block and let added
  *
@@ -40,7 +43,7 @@ void APcollect ();
 extern node *APCarg (node *arg_node, node *arg_info);
 extern node *APCvardec (node *arg_node, node *arg_info);
 extern node *APCarray (node *arg_node, node *arg_info);
-extern node *APCNwith (node *arg_node, node *arg_info);
+extern node *APCwith (node *arg_node, node *arg_info);
 extern node *APCap (node *arg_node, node *arg_info);
 extern node *APCexprs (node *arg_node, node *arg_info);
 extern node *APCid (node *arg_node, node *arg_info);

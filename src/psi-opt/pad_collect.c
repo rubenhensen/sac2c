@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/06/29 10:23:05  mab
+ * renamed APCNwith to APCwith
+ *
  * Revision 1.5  2000/06/15 14:38:01  mab
  * dummies for APC block and let added
  *
@@ -141,7 +144,7 @@ APCarray (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCNwith(node *arg_node, node *arg_info)
+ *   node *APCwith(node *arg_node, node *arg_info)
  *
  * description:
  *   only a dummy for now
@@ -149,11 +152,11 @@ APCarray (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCNwith (node *arg_node, node *arg_info)
+APCwith (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("APCNwith");
+    DBUG_ENTER ("APCwith");
 
-    DBUG_PRINT ("AP", ("Nwith-node detected\n"));
+    DBUG_PRINT ("AP", ("with-node detected\n"));
 
     DBUG_RETURN (arg_node);
 }
