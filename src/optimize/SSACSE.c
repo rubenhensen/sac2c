@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2002/10/10 00:43:42  dkr
+ * SSACSElet(): DBUG_PRINT modified
+ *
  * Revision 1.26  2002/10/09 22:17:39  dkr
  * SSACSElet() modified: type propagation added
  * SSACSEPropagateSubst2Args() modified: type propagation added
@@ -150,6 +153,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
+#include "convert.h"
 #include "DupTree.h"
 #include "SSACSE.h"
 #include "compare_tree.h"
@@ -1123,9 +1127,21 @@ SSACSElet (node *arg_node, node *arg_info)
             LET_IDS (arg_node)
               = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
 
-            DBUG_PRINT ("SSACSE", ("copy assignment  %s = %s  eliminated in line %d",
-                                   IDS_NAME (LET_IDS (arg_node)),
-                                   ID_NAME (LET_EXPR (arg_node)), NODE_LINE (arg_node)));
+            {
+                char *type1, *type2;
+                type1 = Type2String (VARDEC_OR_ARG_TYPE (
+                                       AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node)))),
+                                     0, TRUE);
+                type2 = Type2String (VARDEC_OR_ARG_TYPE (
+                                       AVIS_VARDECORARG (ID_AVIS (LET_EXPR (arg_node)))),
+                                     0, TRUE);
+                DBUG_PRINT ("SSACSE",
+                            ("copy assignment  %s:%s = %s:%s  eliminated in line %d",
+                             IDS_NAME (LET_IDS (arg_node)), type1,
+                             ID_NAME (LET_EXPR (arg_node)), type2, NODE_LINE (arg_node)));
+                type1 = Free (type1);
+                type2 = Free (type2);
+            }
             cse_expr++;
 
             /* remove copy assignment */
