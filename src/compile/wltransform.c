@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2003/06/17 15:57:54  dkr
+ * comment in header extended
+ *
  * Revision 3.77  2003/04/20 20:28:01  dkr
  * EmptyWl2Expr() added [not completed yet]
  *
@@ -229,7 +232,16 @@
  * description:
  *
  * This module implements the transformation of the with-loops from the
- * frontend representation (N_Nwith) into the backend representation (N_Nwith2).
+ * frontend representation (N_Nwith) into the backend representation
+ * (N_Nwith or N_Nwith2).
+ *
+ * If the index vector of a with-loop is AKS (array of known shape), the
+ * N_Nwith node is transformed into a N_Nwith2 node.
+ * If the index vector is AKD or AUD (array of unknown shape), the with-loop
+ * can not be transformed into a N_Nwith2 node, and the backend must create
+ * totally different C code. Hence, the N_Nwith node is left untouched.
+ *
+ * ==> After this phase the AST constains N_Nwith as well as N_Nwith2 nodes <==
  *
  * *** CAUTION ***
  * For a successful transformation the AST has to meet some requirements:
@@ -1475,6 +1487,11 @@ Internal representation in the abstract syntax tree:
 
     WLcode:    cblock    (block)
                cexpr     ("expr")
+
+
+  Furthermore, for each of these nodes (except for WLcode) exists also a variant
+  which can handle non-constant bounds. These nodes have an additional postfix
+  "Var" in their names. Note: A WLseg node must not contain any ...Var nodes!!
 
 
 *****************************************************************************/
