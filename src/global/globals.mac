@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/23 19:59:52  cg
+ * Added some profiling support.
+ *
  * Revision 1.8  2004/11/23 19:43:26  cg
  * Added flags for triggering tracing, cache simulation and runtime checks.
  *
@@ -379,13 +382,12 @@ GLOBAL (char *, cachesim_dir, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * Profiling information storage facilities
  */
-#if 0
-GLOBAL( int,  PFfuncntr, 0)
-GLOBAL( char *, PFfunnme[PF_MAXFUN] ,  { "main" })
-GLOBAL( int,  PFfunapcntr[PF_MAXFUN], "")
-GLOBAL( int,  PFfunapline[PF_MAXFUN][PF_MAXFUNAP], "")
-GLOBAL( int,  PFfunapmax, 1)
-#endif
+
+GLOBAL (int, profile_funcntr, 0)
+GLOBAL (char **, profile_funnme, (char **)ILIBmalloc (PF_MAXFUN * sizeof (char *)))
+GLOBAL (int *, profile_funapcntr, (int *)ILIBmalloc (PF_MAXFUN * sizeof (int)))
+
+GLOBAL (int, profile_funapmax, 1)
 
 /*
  * Compile time options
