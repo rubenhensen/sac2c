@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/06/23 12:53:19  cg
+ * added traversal function PRECspmd in order to correctly rename
+ * the identifiers stored in SPMD_INOUT_IDS.
+ *
  * Revision 1.71  1998/06/18 13:44:04  cg
  * file is now able to deal correctly with data objects of
  * the abstract data type for the representation of schedulings.
@@ -1566,6 +1570,38 @@ PRECsync (node *arg_node, node *arg_info)
     }
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRECspmd(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *   Since the scheduling specification may contain the names of local
+ *   identifiers, these have to be renamed according to the general renaming
+ *   scheme implemented by this compiler phase.
+ *
+ * remark:
+ *
+ *   This function will be superfluous as soon as the compilation of an
+ *   spmd-block to an MT_SPMD_BLOCK ICM has been improved in the sense that
+ *   all memory management operations are made explicit rather than hiding
+ *   them behind a monster ICM.
+ *
+ ******************************************************************************/
+
+node *
+PRECspmd (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PRECspmd");
+
+    SPMD_INOUT_IDS (arg_node) = PrecompileIds (SPMD_INOUT_IDS (arg_node));
+
+    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

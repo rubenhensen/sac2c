@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/06/23 12:53:19  cg
+ * added traversal function PRECspmd in order to correctly rename
+ * the identifiers stored in SPMD_INOUT_IDS.
+ *
  * Revision 1.20  1998/06/18 13:44:04  cg
  * file is now able to deal correctly with data objects of
  * the abstract data type for the representation of schedulings.
@@ -101,6 +105,7 @@ extern node *PRECwith (node *arg_node, node *arg_info);
 extern node *PRECNwith2 (node *arg_node, node *arg_info);
 extern node *PRECNcode (node *arg_node, node *arg_info);
 extern node *PRECsync (node *arg_node, node *arg_info);
+extern node *PRECspmd (node *arg_node, node *arg_info);
 extern node *PRECWLseg (node *arg_node, node *arg_info);
 
 extern char *PRECRenameLocalIdentifier (char *id);
