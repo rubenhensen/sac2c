@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/04/14 10:33:06  sbs
+ * bug 35 - errorneous wlgenerator property resolved
+ *
  * Revision 1.27  2003/11/28 13:53:14  sbs
  * sco's created by SCOExpr2StructConstant may SHARE the array components!!
  * Therefore, we have to make sure these are copied BEFORE deletion!
@@ -147,6 +150,11 @@
 #include "SSAWLT.h"
 
 typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
+
+#ifndef DBUG_OFF
+
+static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
+#endif
 
 /******************************************************************************
  *
@@ -739,31 +747,31 @@ PropagateArrayConstants (node **expr)
 /******************************************************************************
  *
  * function:
- *   gen_prop_t CheckGeneratorBounds( node *wl, shape *max_shp)
+ *   node * CropBounds( node *wl, shape *max_shp)
  *
  * description:
  *   expects the bound expression for lb and ub to be constants!
- *   checks, whether these fit into the shape given by max_shp.
+ *   expects also the WL either to ba WO_modarray or WO_genarray!
+ *
+ *   Checks, whether lb and ub fit into the shape given by max_shp.
  *   If they exceed max_shp, they are "fitted"!
- *   Furthermore, it is checked whether the generator is empty (GPT_empty is
- *   returned) or may cover the entire range (GPT_full is returned).
- *   Otherwise GPT_partial is returned.
+ *   The potentially modified WL is returned.
  *
  ******************************************************************************/
 
-static gen_prop_t
-CheckGeneratorBounds (node *wl, shape *max_shp)
+static node *
+CropBounds (node *wl, shape *max_shp)
 {
     node *lbe, *ube;
     int dim;
     int lbnum, ubnum, tnum;
-    gen_prop_t res;
 
-    DBUG_ENTER ("CheckGeneratorBounds");
+    DBUG_ENTER ("CropBounds");
 
+    DBUG_ASSERT (((NWITH_TYPE (wl) == WO_modarray) || (NWITH_TYPE (wl) == WO_genarray)),
+                 "CropBounds applied to wrong WL type!");
     lbe = ARRAY_AELEMS (NWITH_BOUND1 (wl));
     ube = ARRAY_AELEMS (NWITH_BOUND2 (wl));
-    res = GPT_full;
 
     dim = 0;
     while (lbe) {
@@ -774,38 +782,104 @@ CheckGeneratorBounds (node *wl, shape *max_shp)
         lbnum = NUM_VAL (EXPRS_EXPR (lbe));
         ubnum = NUM_VAL (EXPRS_EXPR (ube));
 
-        if ((NWITH_TYPE (wl) == WO_modarray) || (NWITH_TYPE (wl) == WO_genarray)) {
-            DBUG_ASSERT ((dim < SHGetDim (max_shp)),
-                         "dimensionality of lb greater than that of the result!");
-            tnum = SHGetExtent (max_shp, dim);
-            if (lbnum < 0) {
-                lbnum = NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-                WARN (NODE_LINE (wl),
-                      ("lower bound of WL-generator in dim %d below zero: set to 0",
-                       dim));
-            } else if (lbnum > 0) {
-                res = GPT_partial;
-            }
-            if (ubnum > tnum) {
-                ubnum = NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-                WARN (NODE_LINE (wl),
-                      ("upper bound of WL-generator in dim %d greater than shape:"
-                       " set to %d",
-                       dim, tnum));
-            } else if (ubnum < tnum) {
-                res = GPT_partial;
-            }
+        DBUG_ASSERT ((dim < SHGetDim (max_shp)),
+                     "dimensionality of lb greater than that of the result!");
+        tnum = SHGetExtent (max_shp, dim);
+        if (lbnum < 0) {
+            NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+            WARN (NODE_LINE (wl),
+                  ("lower bound of WL-generator in dim %d below zero: set to 0", dim));
         }
-
-        if (lbnum >= ubnum) {
-            /* empty set of indices */
-            res = GPT_empty;
+        if (ubnum > tnum) {
+            NUM_VAL (EXPRS_EXPR (ube)) = tnum;
+            WARN (NODE_LINE (wl),
+                  ("upper bound of WL-generator in dim %d greater than shape:"
+                   " set to %d",
+                   dim, tnum));
         }
 
         dim++;
         lbe = EXPRS_NEXT (lbe);
         ube = EXPRS_NEXT (ube);
     }
+    DBUG_RETURN (wl);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   gen_prop_t ComputeGeneratorProperties( node *wl, shape *max_shp)
+ *
+ * description:
+ *   Computes the properties of the given WLs generator.
+ *
+ ******************************************************************************/
+
+static gen_prop_t
+ComputeGeneratorProperties (node *wl, shape *max_shp)
+{
+    node *lbe, *ube, *steps, *width;
+    gen_prop_t res = GPT_unknown;
+    bool const_bounds;
+    constant *lbc, *ubc, *shpc, *tmpc;
+
+    DBUG_ENTER ("ComputeGeneratorProperties");
+
+    lbe = NWITH_BOUND1 (wl);
+    ube = NWITH_BOUND2 (wl);
+    steps = NWITH_STEP (wl);
+    width = NWITH_WIDTH (wl);
+
+    lbc = COAST2Constant (lbe);
+    ubc = COAST2Constant (ube);
+    if (max_shp != NULL) {
+        shpc = COMakeConstantFromShape (max_shp);
+    } else {
+        shpc = NULL;
+    }
+    const_bounds = ((lbc != NULL) && (ubc != NULL));
+
+    /**
+     * First, we check for emptyness:
+     * (this is done prior to checking on GPT_full, as we may have both properties
+     *  GPT_empty and GPT_full, in which case we prefer to obtain GPT_empty as
+     *  result....)
+     */
+    if (const_bounds) {
+        tmpc = COGe (lbc, ubc);
+        if (COIsTrue (tmpc, TRUE)) {
+            res = GPT_empty;
+        }
+        tmpc = COFreeConstant (tmpc);
+    }
+
+    if (res == GPT_unknown) {
+        if ((NWITH_TYPE (wl) == WO_foldprf) || (NWITH_TYPE (wl) == WO_foldfun)) {
+            res = GPT_full;
+        } else {
+            /**
+             * We are dealing with a modarray or a genarray WL here!
+             * Only if the bounds are constant and the shape is known,
+             * we can do any better than GPT_unknown!
+             */
+            if (const_bounds && (shpc != NULL)) {
+                tmpc = COEq (ubc, shpc);
+                if (COIsZero (lbc, TRUE) && COIsTrue (tmpc, TRUE)) {
+                    if (steps == NULL) {
+                        res = GPT_full;
+                    } else {
+                        res = GPT_partial;
+                    }
+                } else {
+                    res = GPT_partial;
+                }
+                tmpc = COFreeConstant (tmpc);
+            }
+        }
+    }
+    DBUG_PRINT ("SSAWLT", ("generator property of with loop in line %d : %s", linenum,
+                           gen_prop_str[res]));
+
     DBUG_RETURN (res);
 }
 
@@ -1325,7 +1399,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
     node *wln;
     ids *let_ids;
     shape *shp;
-    bool is_const, check_bounds, foldable;
+    bool is_const, const_bounds, foldable;
     gen_prop_t res;
 
     DBUG_ENTER ("SSAWLTNgenerator");
@@ -1334,14 +1408,14 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
     /*
      * First, we try to propagate (structural) constants into all sons:
      */
-    check_bounds = TRUE;
+    const_bounds = TRUE;
     is_const = PropagateArrayConstants (&(NGEN_BOUND1 (arg_node)));
-    check_bounds = (check_bounds && is_const);
+    const_bounds = (const_bounds && is_const);
 
     is_const = PropagateArrayConstants (&(NGEN_BOUND2 (arg_node)));
-    check_bounds = (check_bounds && is_const);
+    const_bounds = (const_bounds && is_const);
 
-    foldable = check_bounds;
+    foldable = const_bounds;
     is_const = PropagateArrayConstants (&(NGEN_STEP (arg_node)));
     foldable = (foldable && is_const);
 
@@ -1350,19 +1424,21 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
 
     NWITH_FOLDABLE (wln) = foldable;
 
-    /*
-     * check bound ranges
+    /**
+     * find out the generator properties:
      */
     let_ids = LET_IDS (INFO_WLI_LET (arg_info));
-    if (check_bounds && (GetShapeDim (IDS_TYPE (let_ids)) >= 0)) {
+
+    if (GetShapeDim (IDS_TYPE (let_ids)) >= 0) {
         shp = SHOldTypes2Shape (IDS_TYPE (let_ids));
-        res = CheckGeneratorBounds (wln, shp);
-        shp = SHFreeShape (shp);
-        if ((res == GPT_full) && (NGEN_STEP (arg_node) != NULL)) {
-            res = GPT_partial;
+        if (const_bounds
+            && ((NWITH_TYPE (wln) == WO_modarray) || (NWITH_TYPE (wln) == WO_genarray))) {
+            wln = CropBounds (wln, shp);
         }
+        res = ComputeGeneratorProperties (wln, shp);
+        shp = SHFreeShape (shp);
     } else {
-        res = GPT_unknown;
+        res = ComputeGeneratorProperties (wln, NULL);
     }
 
     INFO_WLT_GENPROP (arg_info) = res;
