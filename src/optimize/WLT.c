@@ -1,6 +1,11 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.15  1999/02/02 18:51:34  srs
+ * Generation of full partition in special case enabled. See comment
+ * 'genarray check' in function CreateFullPartition().
+ * New function check_genarray_full_part().
+ *
  * Revision 1.14  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -232,6 +237,48 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
 /******************************************************************************
  *
  * function:
+ *   int check_genarray_full_part(node *ln)
+ * description:
+ *   check wether the generator of this genarray-WL specifies a full partition
+ *
+ *
+ ******************************************************************************/
+int
+check_genarray_full_part (node *wln)
+{
+    node *lowern, *uppern, *shapen;
+    int result;
+
+    shapen = NWITHOP_SHAPE (NWITH_WITHOP (wln));
+    lowern = NGEN_BOUND1 (NPART_GEN (NWITH_PART (wln)));
+    uppern = NGEN_BOUND2 (NPART_GEN (NWITH_PART (wln)));
+
+    result = 1;
+
+    /* check lower bound */
+    lowern = ARRAY_AELEMS (lowern);
+    while (result && lowern) {
+        if (0 != NUM_VAL (EXPRS_EXPR (lowern)))
+            result = 0;
+        lowern = EXPRS_NEXT (lowern);
+    }
+
+    /* check upper bound */
+    uppern = ARRAY_AELEMS (uppern);
+    shapen = ARRAY_AELEMS (shapen);
+    while (result && uppern) {
+        if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern)))
+            result = 0;
+        uppern = EXPRS_NEXT (uppern);
+        shapen = EXPRS_NEXT (shapen);
+    }
+
+    return (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node * CreateFullPartition(node *wln, node *arg_info)
  *
  * description:
@@ -265,24 +312,28 @@ CreateFullPartition (node *wln, node *arg_info)
     /* this is the shape of the index vector (generator) */
     gen_shape = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
 
-    /* genarray check */
-    if (do_create && WO_genarray == NWITH_TYPE (wln))
-        do_create = 0 == TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln))));
-
     /* modarray check */
     if (do_create && WO_modarray == NWITH_TYPE (wln)) {
-        /* this check has been deactivated because we cannot be sure
-           to have MRD-information (needed for StartSearchWL()) at this
-           time. So we always create a full partition, even if we cannot
-           fold this WL later. But this doen't matter because the same
-           code will be derived. */
-        /*     base_wl = StartSearchWL(NWITHOP_ARRAY(NWITH_WITHOP(wln)), */
-        /*                             INFO_WLI_ASSIGN(arg_info), 2); */
-        /*     do_create = (base_wl && */
-        /*                  N_Nwith == NODE_TYPE((base_wl =  */
-        /*                                        LET_EXPR(ASSIGN_INSTR(base_wl)))) && */
-        /*                  gen_shape == IDS_SHAPE(NPART_VEC(NWITH_PART(base_wl)),0) && */
-        /*                  NWITH_FOLDABLE(base_wl)); */
+    }
+    /* genarray check
+       if the CEXPR of a genarray WL is not a scalar, we have to create
+       new parts where the CEXPR is a null-vector. Other than the
+       modarray case, we have to create this null-vector first. In general,
+       this can lead to worse code, because another WL is inserted and
+       it is not guaranteed that we can fold later. So we don't create
+       a full partition here.
+
+       But there is a special case: If the original generator is a
+       full partition itself, we do not have to create the null-vector
+       and so can create a partition with NWITH_PARTS == 1.
+       */
+    if (do_create && WO_genarray == NWITH_TYPE (wln)) {
+        if (!NGEN_STEP (NPART_GEN (NWITH_PART (wln))) && /* not grid */
+            check_genarray_full_part (wln)) {
+            do_create = 0;
+            NWITH_PARTS (wln) = 1;
+        } else
+            do_create = 0 == TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln))));
     }
 
     /* start creation*/
