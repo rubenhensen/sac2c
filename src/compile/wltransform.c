@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/07/08 13:02:00  dkr
+ * added ; behind DBUG_VOID_RETURN
+ *
  * Revision 1.25  1998/06/16 13:59:02  dkr
  * fixed a bug:
  *   call of NormalizeWL now with correct WLSEG_IDX_MAX
@@ -2342,7 +2345,7 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
         }
     }
 
-    DBUG_VOID_RETURN
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -2795,7 +2798,7 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
         }
     }
 
-    DBUG_VOID_RETURN
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
