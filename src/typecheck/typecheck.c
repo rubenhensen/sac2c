@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/02/22 11:44:20  dkr
+ * works with simplified TYPES structure now :-))
+ *
  * Revision 3.36  2002/02/21 18:18:18  dkr
  * access macros used for TYPES structure (finished :-)
  *
@@ -391,14 +394,26 @@
 #define BODY 0 /* checking plane part of function, no branch */
 
 /* macro used for type_tab access */
-#define T_TYPES(i) TYPEDEF_TYPE ((tab + i)->node)
+#define T_TYPE(i) TYPEDEF_TYPE ((tab + i)->node)
+#define T_NAME(i) TYPEDEF_NAME ((tab + i)->node)
+#define T_MOD(i) TYPEDEF_MOD ((tab + i)->node)
 
+#if 1
+#define CMP_TYPEDEF_ID(a, b)                                                             \
+    ((NULL == TYPEDEF_MOD (a))                                                           \
+       ? ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b))) && (NULL == TYPEDEF_MOD (b)))   \
+       : ((NULL == TYPEDEF_MOD (b))                                                      \
+            ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                             \
+            : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
+               && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
+#else
 #define CMP_TYPE_ID(a, b)                                                                \
     ((NULL == a->id_mod)                                                                 \
        ? ((!strcmp (a->id, b->id)) && (NULL == b->id_mod))                               \
        : ((NULL == b->id_mod)                                                            \
             ? (!strcmp (a->id, b->id))                                                   \
             : ((!strcmp (a->id, b->id)) && (!strcmp (a->id_mod, b->id_mod)))))
+#endif
 
 #define CMP_TYPE_NAME(a, b)                                                              \
     ((NULL == a->name_mod)                                                               \
@@ -406,17 +421,6 @@
        : ((NULL == b->name_mod)                                                          \
             ? (!strcmp (a->name, b->name))                                               \
             : ((!strcmp (a->name, b->name)) && (!strcmp (a->name_mod, b->name_mod)))))
-
-#define CMP_TYPE_HIDDEN(a, b)                                                            \
-    ((NULL == a->name)                                                                   \
-       ? ((NULL == b->name)                                                              \
-            ? 0                                                                          \
-            : (!(strcmp (a->id, b->name) && CMP_MOD (a->id_mod, b->name_mod))))          \
-       : ((NULL == b->name)                                                              \
-            ? (!(strcmp (a->name, b->id) && CMP_MOD (a->name_mod, b->id_mod)))           \
-            : (!(strcmp (a->name, b->name) && CMP_MOD (a->name_mod, b->name_mod)))))
-
-#define CMP_FUN_NAME(a, b) CMP_TYPE_ID (a, b)
 
 #define CMP_TYPE_MOD(a, b) ((NULL == a) ? 1 : ((NULL == b) ? 0 : (!strcmp (a, b))))
 
@@ -2342,12 +2346,6 @@ CheckFunctionDeclaration (node *arg_node, int all)
  *                  2) N_arg node of another function
  *  description   : checks whether the functions have equal domain
  *                  returns 1 if domain is equal, 0 else
- *  global vars   : ----
- *  internal funs : ----
- *  external funs : ----
- *  macros        : DBUG..., NULL, DIM, TYPES, CMP_TYPE_ID, SIMPLETYPE
- *
- *  remarks       : ----
  *
  */
 
@@ -2821,13 +2819,12 @@ InitTypeTab (node *modul_node)
                 /* look whether current type is defined more than once */
                 for (k = 0; k < i; k++)
 #ifdef OLD_TEST
-                    if (!strcmp (name, T_TYPES (k)->id)
-                        && (((NULL == mod_name) || (NULL == T_TYPES (k)->id_mod))
-                              ? (mod_name == T_TYPES (k)->id_mod)
-                              : (!strcmp (mod_name, T_TYPES (k)->id_mod))))
+                    if (!strcmp (name, T_NAME (k))
+                        && (((NULL == mod_name) || (NULL == T_MOD (k)))
+                              ? (mod_name == T_MOD (k))
+                              : (!strcmp (mod_name, T_MOD (k)))))
 #else
-                    if (!strcmp (name, T_TYPES (k)->id)
-                        && CMP_TYPE_MOD (mod_name, T_TYPES (k)->id_mod))
+                    if (!strcmp (name, T_NAME (k)) && CMP_TYPE_MOD (mod_name, T_MOD (k)))
 #endif /* OLD_TEST */
                     {
                         if (NULL == TYPEDEF_MOD (tmp)) {
@@ -2918,28 +2915,25 @@ InitTypeTab (node *modul_node)
             /* look for based on type */
             for (j = 0; j < i; j++)
 #ifdef OLD_TEST
-                if (!strcmp (name, T_TYPES (j)->id)
-                    && (((NULL == mod_name) || (NULL == T_TYPES (j)->id_mod))
-                          ? (mod_name == T_TYPES (j)->id_mod)
-                          : (!strcmp (mod_name, T_TYPES (j)->id_mod))))
+                if (!strcmp (name, T_NAME (j))
+                    && (((NULL == mod_name) || (NULL == T_MOD (j)))
+                          ? (mod_name == T_MOD (j))
+                          : (!strcmp (mod_name, T_MOD (j)))))
 #else
-                if (!strcmp (name, T_TYPES (j)->id)
-                    && CMP_TYPE_MOD (mod_name, T_TYPES (j)->id_mod))
+                if (!strcmp (name, T_NAME (j)) && CMP_TYPE_MOD (mod_name, T_MOD (j)))
 #endif /* OLD_TEST */
                 {
                     if (-1 != TYPEDEF_TYPE (tmp)->dim) {
                         /* look whether current type is defined more than once */
                         for (k = 0; k < i; k++)
 #ifdef OLD_TEST
-                            if (!strcmp (TYPEDEF_NAME (tmp), T_TYPES (k)->id)
-                                && (((NULL == TYPEDEF_MOD (tmp))
-                                     || (NULL == T_TYPES (k)->id_mod))
-                                      ? (TYPEDEF_MOD (tmp) == T_TYPES (k)->id_mod)
-                                      : (!strcmp (TYPEDEF_MOD (tmp),
-                                                  T_TYPES (k)->id_mod))))
+                            if (!strcmp (TYPEDEF_NAME (tmp), T_NAME (k))
+                                && (((NULL == TYPEDEF_MOD (tmp)) || (NULL == T_MOD (k)))
+                                      ? (TYPEDEF_MOD (tmp) == T_MOD (k))
+                                      : (!strcmp (TYPEDEF_MOD (tmp), T_MOD (k)))))
 #else
-                            if (!strcmp (TYPEDEF_NAME (tmp), T_TYPES (k)->id)
-                                && CMP_TYPE_MOD (TYPEDEF_MOD (tmp), T_TYPES (k)->id_mod))
+                            if (!strcmp (TYPEDEF_NAME (tmp), T_NAME (k))
+                                && CMP_TYPE_MOD (TYPEDEF_MOD (tmp), T_MOD (k)))
 #endif /* OLD_TEST */
                             {
                                 if (NULL == TYPEDEF_MOD (tmp)) {
@@ -2958,34 +2952,32 @@ InitTypeTab (node *modul_node)
 
                         /* insert type to 'tab' and reduce it to primitive type */
                         (tab + i)->node = tmp;
-                        switch (TYPES_BASETYPE (T_TYPES (j))) {
+                        switch (TYPES_BASETYPE (T_TYPE (j))) {
                         case T_hidden:
-                            TYPES_BASETYPE (T_TYPES (i)) = T_hidden;
-                            if (NULL != T_TYPES (j)->name)
-                                T_TYPES (i)->name = StringCopy (T_TYPES (j)->name);
-                            if (NULL != T_TYPES (j)->name_mod)
-                                T_TYPES (i)->name_mod
-                                  = StringCopy (T_TYPES (j)->name_mod);
+                            TYPES_BASETYPE (T_TYPE (i)) = T_hidden;
+                            if (NULL != T_TYPE (j)->name)
+                                T_TYPE (i)->name = StringCopy (T_TYPE (j)->name);
+                            if (NULL != T_TYPE (j)->name_mod)
+                                T_TYPE (i)->name_mod = StringCopy (T_TYPE (j)->name_mod);
                             break;
                         case T_int:
                         case T_bool:
                         case T_float:
                         case T_str:
-                            if (0 <= T_TYPES (j)->dim) {
-                                TYPES_BASETYPE (T_TYPES (i))
-                                  = TYPES_BASETYPE (T_TYPES (j));
-                                T_TYPES (i)->name = NULL;
-                                T_TYPES (i)->name_mod = NULL;
-                                if ((0 < T_TYPES (j)->dim) && (0 == T_TYPES (i)->dim)) {
-                                    T_TYPES (i)->shpseg = MakeShpseg (NULL);
+                            if (0 <= T_TYPE (j)->dim) {
+                                TYPES_BASETYPE (T_TYPE (i)) = TYPES_BASETYPE (T_TYPE (j));
+                                T_TYPE (i)->name = NULL;
+                                T_TYPE (i)->name_mod = NULL;
+                                if ((0 < T_TYPE (j)->dim) && (0 == T_TYPE (i)->dim)) {
+                                    T_TYPE (i)->shpseg = MakeShpseg (NULL);
                                 }
 
-                                for (k = 0; k < T_TYPES (j)->dim; k++) {
-                                    T_TYPES (i)->dim += 1;
-                                    DBUG_ASSERT ((T_TYPES (i)->dim <= SHP_SEG_SIZE),
+                                for (k = 0; k < T_TYPE (j)->dim; k++) {
+                                    T_TYPE (i)->dim += 1;
+                                    DBUG_ASSERT ((T_TYPE (i)->dim <= SHP_SEG_SIZE),
                                                  "shape out off range ");
-                                    T_TYPES (i)->shpseg->shp[T_TYPES (i)->dim - 1]
-                                      = T_TYPES (j)->shpseg->shp[k];
+                                    T_TYPE (i)->shpseg->shp[T_TYPE (i)->dim - 1]
+                                      = T_TYPE (j)->shpseg->shp[k];
                                 }
                             } else {
                                 ABORT (NODE_LINE (tmp),
@@ -3115,7 +3107,7 @@ InitTypeTab (node *modul_node)
  *  internal funs : Malloc, CheckFunctionDeclaration, LookupFun, CmpFunParam
  *  external funs : sizeof
  *  macros        : DBUG..., ERROR, TYPES, IS_CHECKED, NOT_CHECKED,
- *                  MOD_NAME_CON, INSERT_FUN ,CMP_FUN_NAME, NULL
+ *                  MOD_NAME_CON, INSERT_FUN, NULL
  *  remarks       : ----
  *
  */
@@ -3329,9 +3321,6 @@ Typecheck (node *arg_node)
      */
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "Typecheck() not called with N_modul node!");
-#if 0
-  syntax_tree = arg_node;
-#endif
 
     /*
      * if compiling for a c library, search for specializations
@@ -3496,10 +3485,6 @@ Typecheck (node *arg_node)
  *  arguments     : 1) first type
  *                  2) second type,
  *  description   : compares two type informations
- *  global vars   : ----
- *  internal funs : Type2String
- *  external funs : ----
- *  macros        : DBUG..., GEN_NODE, Free, CMP_TYPE_ID, NULL
  *
  *  remarks       : return_values
  *                  0 if there is an incompatibility
@@ -3534,9 +3519,18 @@ CmpTypes (types *type_one, types *type_two)
     if (TYPES_BASETYPE (type_one) == TYPES_BASETYPE (type_two)) {
         int ok = 1;
 
-        if (T_hidden == TYPES_BASETYPE (type_one))
+        if (T_hidden == TYPES_BASETYPE (type_one)) {
+#if 1
+            /*
+             * ugly hack (dkr):
+             * TYPEDEF_NAME is no longer part of the types structure
+             *  -> hidden types must already be handled by CompatibleTypes()
+             */
+            DBUG_ASSERT ((0), "hidden type found!");
+#else
             ok = CMP_TYPE_ID (type_one, type_two);
-        else if (T_user == TYPES_BASETYPE (type_one)) {
+#endif
+        } else if (T_user == TYPES_BASETYPE (type_one)) {
             if (!strcmp (type_one->name, type_two->name)) {
                 if ((NULL != type_one->name_mod) && (NULL != type_two->name_mod))
                     ok = !(strcmp (type_one->name_mod, type_two->name_mod));
@@ -3832,7 +3826,24 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
                    && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
         } else {
-            compare = CmpTypes (type_1, type_2);
+#if 1
+            /*
+             * ugly hack (dkr):
+             * CmpTypes() cannot handle hidden types
+             *  -> handle them here
+             */
+            node *tdef1 = NULL, *tdef2 = NULL;
+            tdef1 = TYPES_TDEF (type_one);
+            tdef2 = TYPES_TDEF (type_two);
+            if ((tdef1 != NULL) && (tdef2 != NULL)
+                && ((TYPEDEF_BASETYPE (tdef1) == T_hidden)
+                    || (TYPEDEF_BASETYPE (tdef2) == T_hidden))) {
+                compare = CMP_TYPEDEF_ID (tdef1, tdef2);
+            } else
+#endif
+            {
+                compare = CmpTypes (type_1, type_2);
+            }
         }
     }
 
@@ -4889,13 +4900,6 @@ TypeInference (node *arg_node, node *arg_info)
     case N_ap:
         return_type = TI_ap (arg_node, arg_info);
 
-        if (return_type->id != NULL) {
-            return_type->id = Free (return_type->id);
-        }
-        if (return_type->id_mod != NULL) {
-            return_type->id_mod = NULL;
-        }
-
         cnt = 0;
         tmp_types = return_type;
         while (tmp_types != NULL) {
@@ -5730,21 +5734,14 @@ TCreturn (node *arg_node, node *arg_info)
                              FUNDEF_NAME (INFO_TC_FUNDEF (arg_info)))));
         } else {
             fun_type = FUNDEF_TYPES (fun_p->node);
+            fun_name = FUNDEF_NAME (fun_p->node);
+            fun_mod = FUNDEF_MOD (fun_p->node);
         }
 
         fun_p->node->node[3] = arg_node; /* set node[3] of N_fundef to this N_return
                                           * node.
                                           */
 
-        /*
-         * dkr:
-         * !!!!!! very ugly !!!!!!
-         *
-         * FUNDEF_NAME, FUNDEF_MOD should be used instead of
-         *   fun_type->id, fun_type->id_mod
-         */
-        fun_name = fun_type->id;
-        fun_mod = fun_type->id_mod;
         fun_tmp = fun_type;
         return_tmp = return_type;
         while (fun_type && return_type && is_compatible) {
