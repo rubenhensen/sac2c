@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/02 13:02:21  jhs
+ * Fixed comment.
+ *
  * Revision 1.3  2000/02/11 16:21:01  jhs
  * Expanded traversals ...
  *
@@ -15,7 +18,7 @@
 
 /*****************************************************************************
  *
- * file:   blocks_init.h
+ * file:   repfuns_init.h
  *
  * description:
  *   header file for blocks_init.c
