@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/25 14:50:48  jhs
+ * Changed some macros. I had problems with multiple poccurences of ## during
+ * expansion of combinated macros. I introduced a Macro called CAT, this solution
+ * is described in Kernighan/Ritchie A.12.3.
+ *
  * Revision 2.3  1999/04/14 16:22:03  jhs
  * Option for secure malloc(0) added.
  *
@@ -111,8 +116,9 @@
  *
  */
 
-#define SAC_ND_A_RC(name) *name##__rc
-#define SAC_ND_A_RCP(name) name##__rc
+#define CAT(x, y) x##y
+#define SAC_ND_A_RC(name) CAT (*name, __rc)
+#define SAC_ND_A_RCP(name) CAT (name, __rc)
 
 /*
  * ICMs for declaring refcounted data:
