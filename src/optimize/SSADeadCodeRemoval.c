@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/05/04 14:26:19  khf
+ * NCODE_CEXPR in SSADCRNcode() replaced by NCODE_CEXPRS
+ *
  * Revision 1.20  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -712,7 +715,7 @@ SSADCRNpart (node *arg_node, node *arg_info)
  *   node *SSADCRNcode(node *arg_node , node *arg_info)
  *
  * description:
- *   traverses expr, block and next in this order
+ *   traverses exprs, block and next in this order
  *
  *****************************************************************************/
 node *
@@ -721,8 +724,8 @@ SSADCRNcode (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSADCRNcode");
 
     /* traverse expression */
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    if (NCODE_CEXPRS (arg_node) != NULL) {
+        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     }
 
     /* traverse code block */
