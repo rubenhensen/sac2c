@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.11  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -769,7 +775,7 @@ InvokeCC ()
             lib_efence = "";
         }
 
-        if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
+        if (mtmode != MT_none) {
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");

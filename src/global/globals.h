@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.35  2003/12/10 17:33:16  khf
  * OPT_WLFS added for with-loop fusion
  *
@@ -219,12 +225,7 @@ extern bool dynamic_shapes;
 
 extern char *target_name;
 
-extern int gen_mt_mode;
-
-#define GEN_MT_NONE 0
-#define GEN_MT_STARTSTOP 1
-#define GEN_MT_LIFTWAIT 2
-#define GEN_MT_MTSTBLOCK 3
+extern mtmode_t mtmode;
 
 extern int num_threads;
 extern int max_sync_fold;

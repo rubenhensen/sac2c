@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.55  2003/12/10 17:33:16  khf
  * OPT_WLFS added for with-loop fusion
  *
@@ -393,7 +399,7 @@ void
 AnalyseCommandline (int argc, char *argv[])
 {
     int store_num_threads = 0;
-    int store_mt_mode = 0;
+    mtmode_t store_mtmode = MT_none;
 
     DBUG_ENTER ("AnalyseCommandline");
 
@@ -845,10 +851,10 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_FLAG ("mt", {
-        if (store_mt_mode == 0) {
-            gen_mt_mode = GEN_MT_LIFTWAIT; /*default*/
+        if (store_mtmode == MT_none) {
+            mtmode = MT_startstop; /*default*/
         } else {
-            gen_mt_mode = store_mt_mode;
+            mtmode = store_mtmode;
         }
 
         if (store_num_threads > 0) {
@@ -859,9 +865,9 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_OPTION ("mtmode", {
-        ARG_RANGE (store_mt_mode, GEN_MT_STARTSTOP, GEN_MT_MTSTBLOCK);
-        if (gen_mt_mode >= GEN_MT_STARTSTOP && gen_mt_mode <= GEN_MT_MTSTBLOCK)
-            gen_mt_mode = store_mt_mode;
+        ARG_RANGE (store_mtmode, MT_createjoin, MT_mtstblock);
+        if (mtmode != MT_none)
+            mtmode = store_mtmode;
     });
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (max_optcycles));
@@ -904,7 +910,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("numthreads", {
         ARG_RANGE (store_num_threads, 1, max_threads);
-        if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
+        if (mtmode != MT_none) {
             num_threads = store_num_threads;
         }
     });
@@ -1281,8 +1287,8 @@ CheckOptionConsistency ()
     }
 
 #ifdef DISABLE_MT
-    if (gen_mt_mode != GEN_MT_NONE) {
-        gen_mt_mode = GEN_MT_NONE;
+    if (mtmode != MT_none) {
+        mtmode = MT_none;
         num_threads = 1;
         SYSWARN (("Code generation for multi-threaded program execution not"
                   " yet available for " ARCH " running " OS ".\n"
@@ -1299,19 +1305,7 @@ CheckOptionConsistency ()
     }
 #endif
 
-#ifdef TAGGED_ARRAYS
-#if 0
-  if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
-    gen_mt_mode = GEN_MT_NONE;
-    num_threads = 1;
-    SYSWARN( ("Code generation for multi-threaded program execution not"
-              " yet available for TAGGED_ARRAYS.\n"
-              "Code for sequential execution generated instead"));
-  }
-#endif
-#endif /* TAGGED_ARRAYS */
-
-    if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
+    if (mtmode != MT_none) {
         if (cachesim & CACHESIM_YES) {
             SYSERROR (("Cache simulation is not available for multi-threaded "
                        "program execution"));
@@ -1342,10 +1336,9 @@ CheckOptionConsistency ()
     if (generatelibrary == GENERATELIBRARY_NOTHING) {
         generatelibrary = GENERATELIBRARY_SAC;
     }
-    if ((generatelibrary & GENERATELIBRARY_C)
-        && ((gen_mt_mode <= GEN_MT_STARTSTOP) && (gen_mt_mode == GEN_MT_MTSTBLOCK))) {
-        SYSWARN (("Multithreading is not yet available when compiling for "
-                  "a c-library"));
+    if ((generatelibrary & GENERATELIBRARY_C) && (mtmode != MT_none)) {
+        SYSABORT (("Multithreading is not yet available when compiling for "
+                   "a c-library"));
     }
 
     /*

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.42  2003/12/10 17:30:15  khf
  * with-loop fusion deactivated in compilation by default
  *
@@ -349,15 +355,10 @@ bool dynamic_shapes = FALSE; /* Dynamic shapes are disabled by default */
  * Multi-thread options
  */
 
-int gen_mt_mode = GEN_MT_NONE;
+mtmode_t mtmode = MT_none;
+
 /*
- *  will be set to
- *  GEN_MT_STARTSTOP iff the following option is set: -mt & -mtstyle 1
- *  GEN_MT_LIFTWAIT iff one of the following options is set:
- *                        (-mt & -mtstyle 2) || -mt
- *                        (default for gen_mt_mode iff in multithread mode)
- *  GEN_MT_MTSTBLOCK iff the following option is set: -mt & -mtstyle 3
- *  GEN_MT_NONE  otherwise
+ *  will be set to according to -mt and -mtmode compiler flags
  */
 
 int num_threads = 1;

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.104  2003/12/17 15:07:36  skt
  * enabled GEN_MT_LIFTWAIT-options for GEN_MT_STARTSTOP
  *
@@ -919,8 +925,7 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
     DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_DEC"))),
                  "no ND_FUN_DEC icm found!");
 
-    if (((gen_mt_mode == GEN_MT_LIFTWAIT) || (gen_mt_mode == GEN_MT_STARTSTOP))
-        && (optimize & OPT_PHM)) {
+    if (((mtmode == MT_startstop) || (mtmode == MT_createjoin)) && (optimize & OPT_PHM)) {
         args = ICM_EXPRS3 (icm);
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
@@ -963,8 +968,7 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
     DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_AP"))),
                  "no ND_FUN_AP icm found!");
 
-    if (((gen_mt_mode == GEN_MT_LIFTWAIT) || (gen_mt_mode == GEN_MT_STARTSTOP))
-        && (optimize & OPT_PHM)) {
+    if (((mtmode == MT_startstop) || (mtmode == MT_createjoin)) && (optimize & OPT_PHM)) {
         args = ICM_EXPRS3 (icm);
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
@@ -1230,7 +1234,7 @@ MakeFundefIcm (node *fundef, node *arg_info)
      * FUNDEF_ATTRIB, otherwise we check FUNDEF_STATUS to see if this is
      * a spmd-function (old mt==mto) or decide it is a "normal" function.
      */
-    if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
+    if (mtmode == MT_mtstblock) {
         switch (FUNDEF_ATTRIB (fundef)) {
         case ST_call_mtlift:
             icm = MakeIcm_MT2_FUN_DEC ("CALL_MTLIFT", fundef);
@@ -2430,7 +2434,7 @@ COMPReturn (node *arg_node, node *arg_info)
 
     fundef = INFO_COMP_FUNDEF (arg_info);
 
-    if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
+    if (mtmode == MT_mtstblock) {
         switch (FUNDEF_ATTRIB (fundef)) {
         case ST_call_mtlift:
             /* here is no break missing */

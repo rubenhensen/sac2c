@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.7  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -108,7 +114,7 @@ PIHmodul (node *arg_node, node *arg_info)
     liblist[1] = PrintDepEntry (dependencies, ST_system, NULL);
 
     /* determine the needed files of the sac-runtime system */
-    if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode == GEN_MT_MTSTBLOCK)) { /* MT */
+    if (mtmode != MT_none) {                        /* MT */
         if (optimize & OPT_PHM) {                   /* PHM */
             if (runtimecheck & RUNTIMECHECK_HEAP) { /* diag */
                 fprintf (outfile, " * -lsac_heapmgr_mt_diag\n"

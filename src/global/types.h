@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.22  2003/09/16 16:09:51  sbs
  * spec_mode_t added.
  *
@@ -179,7 +185,7 @@ typedef /* unsigned */ int feature_t;
     512                      /* primitive arithmetic operation on arrays                 \
                                 (not index vectors) */
 #define FEATURE_COND 1024    /* conditional containing array accesses */
-#define FEATURE_UNKNOWN 2048 /* no special features but offset not iferable */
+#define FEATURE_UNKNOWN 2048 /* no special features but offset not inferable */
 
 typedef enum {
 #define TYP_IFname(name) name
@@ -258,6 +264,8 @@ typedef enum { CMPT_EQ, CMPT_NEQ, CMPT_UKNWN } cmptree_t;
 typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
 
 typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
+
+typedef enum { MT_none = 0, MT_createjoin, MT_startstop, MT_mtstblock } mtmode_t;
 
 /*
  * new nodes for yacc and the syntax tree

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.25  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -872,7 +878,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_Scheduling");
 
-    if (gen_mt_mode == GEN_MT_NONE) {
+    if (mtmode == MT_none) {
         WARN (line, ("wlcomp-pragma function Scheduling() ignored"
                      " because multi-threading is inactive"));
     } else {
@@ -928,7 +934,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_Tasksel");
 
-    if (gen_mt_mode == GEN_MT_NONE) {
+    if (mtmode == MT_none) {
         WARN (line, ("wlcomp-pragma function Tasksel() ignored"
                      " because multi-threading is inactive"));
     } else {

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/02/05 10:37:14  cg
+ * Re-factorized handling of different modes in multithreaded code
+ * generation:
+ * - Added enumeration type for representation of modes
+ * - Renamed mode identifiers to more descriptive names.
+ *
  * Revision 3.53  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -608,10 +614,9 @@ Usage ()
             "multi-threaded program\n"
             "                    execution.\n"
             "                    Legal values:\n"
-            "                      1: with start-stop-barriers   WARNING: UNDER "
-            "CONSTRUCTION!!!\n"
-            "                      2: with lift-wait-barriers\n"
-            "                      3: with magical new techniques WARNING: UNDER "
+            "                      1: with thread creation/termination\n"
+            "                      2: with start/stop barriers\n"
+            "                      3: with magical new techniques, WARNING: UNDER "
             "CONSTRUCTION!!!\n"
             "                      (default: %d)\n"
             "\n"
@@ -648,7 +653,7 @@ Usage ()
             "                      (default: %d)\n"
             "                    Option applies to \"-mtn\" style parallelization "
             "only.\n",
-            GEN_MT_LIFTWAIT, max_threads, max_sync_fold, min_parallel_size,
+            (int)MT_startstop, max_threads, max_sync_fold, min_parallel_size,
             max_replication_size);
 
 #ifdef TAGGED_ARRAYS
