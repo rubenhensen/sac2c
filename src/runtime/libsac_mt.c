@@ -27,7 +27,7 @@ volatile unsigned int SAC_MT_worker_flag = 0;
 
 unsigned int SAC_MT_not_yet_parallel = 1;
 
-unsigned int SAC_MT_master_class;
+unsigned int SAC_MT_masterclass;
 
 unsigned int SAC_MT_threads;
 
@@ -70,7 +70,7 @@ SAC_MT_ThreadControl (void *arg)
     unsigned int wait_flag = 0;
     unsigned int i;
 
-    for (i = SAC_MT_master_class; i > 1; i >>= 1) {
+    for (i = SAC_MT_masterclass; i > 1; i >>= 1) {
 
         pthread_create (NULL, &SAC_MT_thread_attribs, (void *(*)(void *))ThreadControl,
                         (void *)((i << 16) + i));

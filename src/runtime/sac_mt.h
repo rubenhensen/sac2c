@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 11:15:41  cg
+ * minor errors removed
+ *
  * Revision 1.1  1998/05/07 08:38:05  cg
  * Initial revision
  *
@@ -67,7 +70,7 @@ typedef union {
           * (((sizeof (SAC_MT_barrier_dummy_t) - 1) / SAC_MT_CACHE_LINE_MAX ()) + 1)))
 
 typedef union {
-    char dummy[SAC_MT_BARRIER_OFFSET];
+    char dummy[SAC_MT_BARRIER_OFFSET ()];
     union {
         int result_int;
         float result_float;
@@ -109,6 +112,8 @@ typedef union {
  *  Definition of macro implemented ICMs for global symbol definitions
  */
 
+#define SAC_MT_DEFINE() SAC_MT_DEFINE_BARRIER ()
+
 #if SAC_MT_CACHE_LINE_MAX()
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
@@ -140,14 +145,14 @@ typedef union {
  *  runtime system.
  */
 
-#define SAC_MT_SETUP()
-{
-    SAC_MT_SETUP_BARRIER ();
-    SAC_MT_SETUP_NUMTHREADS ();
-    SAC_MT_SETUP_MASTERCLASS ();
-    SAC_MT_SETUP_PTHREAD ();
-    SAC_MT_SETUP_MASTER ();
-}
+#define SAC_MT_SETUP()                                                                   \
+    {                                                                                    \
+        SAC_MT_SETUP_BARRIER ();                                                         \
+        SAC_MT_SETUP_NUMTHREADS ();                                                      \
+        SAC_MT_SETUP_MASTERCLASS ();                                                     \
+        SAC_MT_SETUP_PTHREAD ();                                                         \
+        SAC_MT_SETUP_MASTER ();                                                          \
+    }
 
 #define SAC_MT_SETUP_PTHREAD()                                                           \
     {                                                                                    \
@@ -160,12 +165,12 @@ typedef union {
 
 #if SAC_MT_CACHE_LINE_MAX()
 
-#define SAC_MT_SETUP_BARRIER()
-{
-    SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)
-                                          - ((unsigned long int)SAC_MT_barrier_space
-                                             % SAC_MT_BARRIER_OFFSET ()));
-}
+#define SAC_MT_SETUP_BARRIER()                                                           \
+    {                                                                                    \
+        SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)         \
+                                              - ((unsigned long int)SAC_MT_barrier_space \
+                                                 % SAC_MT_BARRIER_OFFSET ()));           \
+    }
 
 #else /* SAC_MT_CACHE_LINE_MAX() */
 
@@ -186,18 +191,17 @@ typedef union {
  *  Definition of macro implemented ICMs for handling of spmd-function
  */
 
-#define SAC_MT_SPMD_START(name)
-{
-    SAC_MT_worker_flag = 1 - SAC_MT_worker_flag;
-    name (0, SAC_MT_MASTERCLASS (), 0);
-}
+#define SAC_MT_SPMD_START(name)                                                          \
+    {                                                                                    \
+        SAC_MT_worker_flag = 1 - SAC_MT_worker_flag;                                     \
+        name (0, SAC_MT_MASTERCLASS (), 0);                                              \
+    }
 
-#define SAC_MT_SPMD_FUN_ARGLIST()
-unsigned int SAC_MT_mythread, unsigned int SAC_MT_myworkerclass,
-  unsigned int SAC_MT_wait_flag,
+#define SAC_MT_SPMD_FUN_ARGLIST()                                                        \
+    unsigned int SAC_MT_mythread, unsigned int SAC_MT_myworkerclass,                     \
+      unsigned int SAC_MT_wait_flag,
 
-#define SAC_MT_SPMD_FUN_RETURN()
-  return (SAC_MT_wait_flag);
+#define SAC_MT_SPMD_FUN_RETURN() return (SAC_MT_wait_flag);
 
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
 
@@ -205,8 +209,7 @@ unsigned int SAC_MT_mythread, unsigned int SAC_MT_myworkerclass,
 
 #define SAC_MT_SPMD_FUN_PARAM(name, type, arg) type arg = SAC_MT_argument_buffer.name.arg;
 
-#define SAC_MT_SPMD_FUN_ARG(name, arg)
-SAC_MT_argument_buffer.name.arg = arg;
+#define SAC_MT_SPMD_FUN_ARG(name, arg) SAC_MT_argument_buffer.name.arg = arg;
 
 /*
  *  Definition of macro implemented ICMs for synchronisation
@@ -275,7 +278,7 @@ extern volatile unsigned int SAC_MT_worker_flag;
 
 extern unsigned int SAC_MT_not_yet_parallel;
 
-extern unsigned int SAC_MT_master_class;
+extern unsigned int SAC_MT_masterclass;
 
 extern unsigned int SAC_MT_threads;
 
@@ -297,24 +300,24 @@ extern void SAC_MT_ThreadControl (void *arg);
 
 #define SAC_MT_MASTERCLASS() SAC_SET_MASTERCLASS
 
-#define SAC_MT_SETUP_NUMTHREADS()
-{
-    SAC_MT_threads = SAC_SET_THREADS;
-}
-
-#define SAC_MT_SETUP_MASTERCLASS()
-{
-    SAC_MT_masterclass = SAC_SET_MASTERCLASS;
-}
-
-#define SAC_MT_SETUP_MASTER()
-{
-    unsigned int i;
-
-    for (i = 1; i <= SAC_SET_MASTERCLASS; i <<= 1) {
-        SAC_MT_CLEAR_BARRIER (i);
+#define SAC_MT_SETUP_NUMTHREADS()                                                        \
+    {                                                                                    \
+        SAC_MT_threads = SAC_SET_THREADS;                                                \
     }
-}
+
+#define SAC_MT_SETUP_MASTERCLASS()                                                       \
+    {                                                                                    \
+        SAC_MT_masterclass = SAC_SET_MASTERCLASS;                                        \
+    }
+
+#define SAC_MT_SETUP_MASTER()                                                            \
+    {                                                                                    \
+        unsigned int i;                                                                  \
+                                                                                         \
+        for (i = 1; i <= SAC_SET_MASTERCLASS; i <<= 1) {                                 \
+            SAC_MT_CLEAR_BARRIER (i);                                                    \
+        }                                                                                \
+    }
 
 /*****************************************************************************/
 
@@ -329,32 +332,33 @@ extern void SAC_MT_ThreadControl (void *arg);
 
 #define SAC_MT_MASTERCLASS() SAC_MT_masterclass
 
-#define SAC_MT_SETUP_NUMTHREADS()
-{
-    unsigned int i;
-
-    for (i = 1; i < __argc; i++) {
-        if (0 == strncmp (__argv[i], "-threads=", 9)) {
-            SAC_MT_threads = atoi (__argv[i] + 9);
-            if ((SAC_MT_threads > 0) && (SAC_MT_threads < (SAC_SET_THREADS_MAX + 1))) {
-                break;
-            }
-
-            SAC_RuntimeError ("Number of threads exceeds legal range (1 to %d)",
-                              SAC_SET_THREADS_MAX);
-        }
-    }
-}
-
-#define SAC_MT_SETUP_MASTERCLASS()
-{
-    for (SAC_MT_masterclass = 1; SAC_MT_masterclass < SAC_MT_threads;
-         SAC_MT_masterclass <<= 1) {
-        SAC_MT_CLEAR_BARRIER (SAC_MT_masterclass);
+#define SAC_MT_SETUP_NUMTHREADS()                                                        \
+    {                                                                                    \
+        unsigned int i;                                                                  \
+                                                                                         \
+        for (i = 1; i < __argc; i++) {                                                   \
+            if (0 == strncmp (__argv[i], "-threads=", 9)) {                              \
+                SAC_MT_threads = atoi (__argv[i] + 9);                                   \
+                if ((SAC_MT_threads > 0)                                                 \
+                    && (SAC_MT_threads < (SAC_SET_THREADS_MAX + 1))) {                   \
+                    break;                                                               \
+                }                                                                        \
+                                                                                         \
+                SAC_RuntimeError ("Number of threads exceeds legal range (1 to %d)",     \
+                                  SAC_SET_THREADS_MAX);                                  \
+            }                                                                            \
+        }                                                                                \
     }
 
-    SAC_MT_masterclass >>= 1;
-}
+#define SAC_MT_SETUP_MASTERCLASS()                                                       \
+    {                                                                                    \
+        for (SAC_MT_masterclass = 1; SAC_MT_masterclass < SAC_MT_threads;                \
+             SAC_MT_masterclass <<= 1) {                                                 \
+            SAC_MT_CLEAR_BARRIER (SAC_MT_masterclass);                                   \
+        }                                                                                \
+                                                                                         \
+        SAC_MT_masterclass >>= 1;                                                        \
+    }
 
 #define SAC_MT_SETUP_MASTER()
 
