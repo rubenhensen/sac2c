@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/23 15:24:04  khf
+ * changed flag for explicit accumulation from ktr to eacc
+ *
  * Revision 1.1  2004/07/21 12:35:41  khf
  * Initial revision
  *
@@ -42,7 +45,7 @@ WLEnhancement (node *arg_node)
 
     DBUG_PRINT ("WLE", ("starting WLEnhancement"));
 
-    if (khf || ktr) {
+    if (eacc || khf) {
         /* transformation in ssa-form */
         arg_node = DoSSA (arg_node);
         /* necessary to guarantee, that the compilation can be stopped
@@ -54,7 +57,7 @@ WLEnhancement (node *arg_node)
             goto DONE;
         }
 
-        if (ktr) {
+        if (eacc) {
             arg_node = ExplicitAccumulate (arg_node);
 
             if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "ea"))) {

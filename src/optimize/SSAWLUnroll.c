@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/07/23 15:24:04  khf
+ * changed flag for explicit accumulation from ktr to eacc
+ *
  * Revision 1.9  2004/07/22 17:36:31  khf
  * support for explicit accumulate (only if ktr is activated) added
  *
@@ -212,7 +215,7 @@ CreateFold (node *assignn, node *index)
 
     partn = opfunarg[0]; /* N_Npart */
 
-    if (!ktr) {
+    if (!eacc) {
 
         acc = opfunarg[1];    /* (ids*) */
         cexpr = opfunarg[2];  /* (node*) */
@@ -264,9 +267,9 @@ CreateFold (node *assignn, node *index)
      */
     bodyn = CreateBodyCode (partn, index);
 
-    if (ktr) {
+    if (eacc) {
         /*
-         * case ktr -> ExplicitAccumulation() was applied.
+         * case eacc -> ExplicitAccumulation() was applied.
          * special handling of
          *       acc = accu(iv,n);
          *       b = <body>
