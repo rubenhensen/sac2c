@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 3.75  2004/11/19 21:02:25  sah
  * added ObjectAnalysus
  *
@@ -273,21 +276,14 @@
 #include "fun2lac.h"
 #include "flatten.h"
 #include "print.h"
-#include "typecheck.h"
 #include "new_typecheck.h"
 #include "type_statistics.h"
 #include "optimize.h"
 #include "filemgr.h"
-#include "import.h"
 #include "allocation.h"
 #include "rcphase.h"
 #include "scnprs.h"
-#include "writesib.h"
-#include "readsib.h"
-#include "implicittypes.h"
 #include "objinit.h"
-#include "analysis.h"
-#include "checkdec.h"
 #include "objects.h"
 #include "uniquecheck.h"
 #include "wltransform.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 3.13  2004/10/05 13:49:35  sah
  * added some defines for NEW_AST mode
  *
@@ -90,7 +93,6 @@
 #include "DupTree.h"
 #include "print.h"
 #include "gen_pseudo_fun.h"
-#include "typecheck.h"
 
 /**
  **

@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.15  2004/11/21 11:22:03  sah
+* removed some old ast infos
+*
 * Revision 1.14  2004/11/19 10:14:30  sah
 * updated objdefs
 *
@@ -63,7 +66,6 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "typecheck.h"
 #include "DupTree.h"        /* for use of DupTree() */
 #include "my_debug.h"
 #include "Error.h"

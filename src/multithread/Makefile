@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.26  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.25  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -96,17 +99,13 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatten \
-       -I../print -I../compile -I../refcount -I../constants
+INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck \
+       -I../flatten -I../print -I../compile -I../refcount -I../constants
 
-OBJS :=
-
-ifeq ($(NEWAST),no)
-  OBJS := multithread.o multithread_lib.o assignments_rearrange.o \
-          tag_executionmode.o propagate_executionmode.o create_cells.o \
-          create_dataflowgraph.o cell_growth.o create_withinwith.o \
-          replicate_functions.o consolidate_cells.o $(OBJS)
-endif
+OBJS := multithread.o multithread_lib.o assignments_rearrange.o \
+        tag_executionmode.o propagate_executionmode.o create_cells.o \
+        create_dataflowgraph.o cell_growth.o create_withinwith.o \
+        replicate_functions.o consolidate_cells.o 
 
 all: $(OBJS) 
 

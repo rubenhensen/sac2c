@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.18  2004/11/08 16:15:31  sah
 # resolvepragma only visible in newast mode now
 #
@@ -83,21 +86,15 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 LIBS      := -ly -ll
 
-INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck -I../flatten \
-     -I../constants
+INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck \
+     -I../flatten -I../constants
 
-ifeq ($(NEWAST),yes)
-  SAC_L := nsac.l
-  SAC_Y := nsac.y
-  NEWASTOBJS := resolvepragma.o
-else
-  SAC_L := sac.l
-  SAC_Y := sac.y
-  NEWASTOBJS := 
-endif
+SAC_L := nsac.l
+SAC_Y := nsac.y
 
+OBJS := resolvepragma.o y.tab.o lex.yy.o scnprs.o handle_dots.o
 
-all: y.tab.o lex.yy.o scnprs.o handle_dots.o $(NEWASTOBJS)
+all: $(OBJS)
 
 
 y.tab.o: y.tab.c

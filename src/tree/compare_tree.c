@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 1.13  2004/08/01 18:44:21  sah
  * switch to new INFO structure
  * PHASE I
@@ -66,7 +69,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "compare_tree.h"
-#include "typecheck.h"
 
 /*
  * INFO structure

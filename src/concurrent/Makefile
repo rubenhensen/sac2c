@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.17  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -81,13 +84,9 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
        -I../flatten -I../print -I../compile -I../constants
 
-OBJS :=
-
-ifeq ($(NEWAST),no)
 OBJS := concurrent.o spmd_init.o spmd_lift.o sync_init.o \
         sync_opt.o schedule.o spmd_trav.o concurrent_lib.o \
         spmd_emm.o
-endif
 
 all: $(OBJS)
 

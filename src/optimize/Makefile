@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.35  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.34  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -90,10 +93,7 @@ OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
         SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o \
-        ConstVarPropagation.o
-ifeq ($(NEWAST),no)
-  OBJS := DistributiveLaw.o $(OBJS)
-endif
+        ConstVarPropagation.o DistributiveLaw.o 
 
 all: $(OBJS)
 

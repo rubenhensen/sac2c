@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 1.7  2004/11/17 19:47:04  sah
  * added visibility support
  *
@@ -60,6 +63,7 @@ extern void STAdd (const char *symbol, STvisibility_t visbility, const char *nam
                    STentrytype_t type, STtable_t *table);
 extern void STRemove (const char *symbol, STtable_t *table);
 extern bool STContains (const char *symbol, STtable_t *table);
+extern bool STContainsEntry (const char *name, STtable_t *table);
 extern STsymbol_t *STGet (const char *symbol, STtable_t *table);
 extern STentry_t *STGetFirstEntry (const char *symbol, STtable_t *table);
 

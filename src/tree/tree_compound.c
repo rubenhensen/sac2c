@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 3.97  2004/11/20 17:25:31  sah
  * added some defines
  *
@@ -358,7 +361,6 @@
 #include "my_debug.h"
 #include "free.h"
 
-#include "typecheck.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"
 #include "globals.h"

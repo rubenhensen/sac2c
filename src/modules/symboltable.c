@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 1.6  2004/11/17 19:47:04  sah
  * added visibility support
  *
@@ -302,6 +305,31 @@ STContains (const char *symbol, STtable_t *table)
     DBUG_ENTER ("STContains");
 
     result = (STLookupSymbol (symbol, table) != NULL);
+
+    DBUG_RETURN (result);
+}
+
+bool
+STContainsEntry (const char *name, STtable_t *table)
+{
+    STsymbol_t *symbol;
+    STentry_t *entry;
+    bool result = FALSE;
+
+    DBUG_ENTER ("STContainsEntry");
+
+    symbol = table->head;
+
+    while ((symbol != NULL) && (!result)) {
+        entry = symbol->head;
+
+        while ((entry != NULL) && (!result)) {
+            result = !strcmp (entry->name, name);
+
+            entry = entry->next;
+        }
+        symbol = symbol->next;
+    }
 
     DBUG_RETURN (result);
 }

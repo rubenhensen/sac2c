@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 3.37  2004/10/28 22:08:11  sah
  * fixed some typoes
  *
@@ -181,7 +184,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "string.h"
-#include "typecheck.h"
 #include "internal_lib.h"
 
 #include "InferDFMs.h"

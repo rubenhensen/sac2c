@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.26  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.25  2004/11/14 15:21:59  sah
 # removed implicittypes in new ast mode
 #
@@ -104,16 +107,11 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
        -I../typecheck -I../compile -I../constants -I../optimize -I.
-OBJS := filemgr.o symboltable.o stringset.o
 
-ifeq ($(NEWAST),no)
-  OBJS := import.o readsib.o writesib.o analysis.o \
-          checkdec.o cccall.o implicittypes.o $(OBJS)
-else
-  OBJS := libmanager.o modulemanager.o libstat.o export.o \
-          ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
-          usesymbols.o prepareinline.o dependencies.o $(OBJS)
-endif
+OBJS := filemgr.o symboltable.o stringset.o \
+        libmanager.o modulemanager.o libstat.o export.o \
+        ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
+        usesymbols.o prepareinline.o dependencies.o
 
 all: $(OBJS)
 

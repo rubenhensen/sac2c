@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.143  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.142  2004/11/19 21:01:58  sah
 # added objanalysis.o
 #
@@ -349,45 +352,30 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RC
 # Collection of object files
 #
 
-NEWASTONLY =
-NEWASTFLAGS =
-ifeq ($(NEWAST),yes)
-  NEWASTONLY = src/tree/node_basic.o src/tree/free_node.o \
-               src/tree/free_attribs.o src/tree/serialize_node.o \
-               src/tree/serialize_attribs.o src/modules/libstat.o \
-               src/modules/modulemanager.o src/modules/libmanager.o \
-               src/tree/deserialize.o src/tree/serialize_buildstack.o \
-               src/modules/export.o src/modules/ccmanager.o \
-               src/modules/libbuilder.o src/tree/serialize_helper.o \
-               src/modules/resolveall.o src/modules/annotatenamespace.o \
-               src/modules/usesymbols.o src/tree/serialize_link.o \
-               src/tree/serialize.o src/tree/serialize_stack.o  \
-               src/modules/prepareinline.o src/modules/dependencies.o \
-               src/scanparse/resolvepragma.o src/objects/objanalysis.o
-  NEWASTFLAGS = $(LDDYNFLAG)
-endif
-
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
         src/global/options.o src/global/NameTuples.o \
         src/global/NameTuplesUtils.o
-GLOBAL_OLD= 
 
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
       src/tree/InferDFMs.o src/tree/cleanup_decls.o src/tree/adjust_ids.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
-      src/tree/scheduling.o src/tree/wl_bounds.o
-TREE_OLD=
+      src/tree/scheduling.o src/tree/wl_bounds.o \
+      src/tree/node_basic.o src/tree/free_node.o \
+      src/tree/free_attribs.o src/tree/serialize_node.o \
+      src/tree/serialize_attribs.o src/tree/deserialize.o \
+      src/tree/serialize_buildstack.o src/tree/serialize_helper.o \
+      src/tree/serialize_link.o src/tree/serialize.o \
+      src/tree/serialize_stack.o
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
-       src/scanparse/scnprs.o src/scanparse/handle_dots.o
-SCANP_OLD=
+       src/scanparse/scnprs.o src/scanparse/handle_dots.o \
+       src/scanparse/resolvepragma.o
 
 PRINT= src/print/print.o src/print/convert.o
-PRINT_OLD=
 
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/fun2lac.o src/flatten/insert_vardec.o \
@@ -395,7 +383,6 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/ToNewTypes.o src/flatten/SSATransform.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
 	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o
-FLATTEN_OLD=
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
@@ -403,7 +390,6 @@ CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/cv2scalar.o src/constants/cv2str.o \
            src/constants/zipcv.o src/constants/basecv.o \
            src/constants/constants_serialize.o
-CONSTANTS_OLD=
 
 TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
@@ -414,7 +400,6 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
            src/typecheck/create_wrapper_code.o \
            src/typecheck/type_statistics.o src/typecheck/typecheck.o
-TYPECHECK_OLD= src/typecheck/prim_fun.o src/typecheck/typecheck_WL.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
@@ -426,11 +411,9 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
           src/optimize/ElimSubDiv.o \
           src/optimize/UndoElimSubDiv.o src/optimize/SelectionPropagation.o \
-          src/optimize/ConstVarPropagation.o
-OPTIMIZE_OLD=src/optimize/DistributiveLaw.o
+          src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o
 
 PROFILE= src/profile/annotate_fun_calls.o
-PROFILE_OLD=
 
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
@@ -442,17 +425,17 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
 	src/psi-opt/WithloopFusion.o src/psi-opt/detectdependencies.o \
 	src/psi-opt/tagdependencies.o src/psi-opt/resolvedependencies.o
-PSIOPT_OLD=
 
 MODULES= src/modules/symboltable.o src/modules/filemgr.o \
-         src/modules/stringset.o
-MODULES_OLD= src/modules/import.o src/modules/writesib.o \
-             src/modules/analysis.o src/modules/cccall.o \
-             src/modules/checkdec.o src/modules/readsib.o \
-             src/modules/implicittypes.o 
+         src/modules/stringset.o src/modules/libstat.o \
+         src/modules/modulemanager.o src/modules/libmanager.o \
+         src/modules/export.o src/modules/ccmanager.o \
+         src/modules/libbuilder.o src/modules/resolveall.o \
+         src/modules/annotatenamespace.o src/modules/usesymbols.o \
+         src/modules/prepareinline.o src/modules/dependencies.o 
 
-OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
-OBJECTS_OLD=
+OBJECTS= src/objects/objinit.o src/objects/objects.o \
+         src/objects/uniquecheck.o src/objects/objanalysis.o
 
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \
@@ -462,27 +445,24 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
           src/refcount/datareuse.o src/refcount/explicitcopy.o \
           src/refcount/reusebranching.o
-REFCOUNT_OLD=
 
-CONCURRENT=
-CONCURRENT_OLD= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
-                src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
-                src/concurrent/sync_opt.o src/concurrent/schedule.o \
-                src/concurrent/spmd_trav.o \
-                src/concurrent/concurrent_lib.o src/concurrent/spmd_emm.o
+CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
+            src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
+            src/concurrent/sync_opt.o src/concurrent/schedule.o \
+            src/concurrent/spmd_trav.o \
+            src/concurrent/concurrent_lib.o src/concurrent/spmd_emm.o
 
-MULTITHREAD=
-MULTITHREAD_OLD= src/multithread/multithread.o \
-                 src/multithread/multithread_lib.o \
-                 src/multithread/tag_executionmode.o \
-                 src/multithread/propagate_executionmode.o \
-                 src/multithread/create_cells.o \
-                 src/multithread/create_dataflowgraph.o \
-                 src/multithread/assignments_rearrange.o \
-                 src/multithread/cell_growth.o \
-                 src/multithread/create_withinwith.o \
-                 src/multithread/replicate_functions.o \
-                 src/multithread/consolidate_cells.o
+MULTITHREAD= src/multithread/multithread.o \
+             src/multithread/multithread_lib.o \
+             src/multithread/tag_executionmode.o \
+             src/multithread/propagate_executionmode.o \
+             src/multithread/create_cells.o \
+             src/multithread/create_dataflowgraph.o \
+             src/multithread/assignments_rearrange.o \
+             src/multithread/cell_growth.o \
+             src/multithread/create_withinwith.o \
+             src/multithread/replicate_functions.o \
+             src/multithread/consolidate_cells.o
 
 COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/precompile.o src/compile/gen_startup_code.o \
@@ -492,31 +472,23 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/ReuseWithArrays.o src/compile/PatchWith.o
-COMPILE_OLD=
 
 CINTERFACE=
-CINTERFACE_OLD= src/c-interface/map_cwrapper.o \
-                src/c-interface/print_interface.o \
-                src/c-interface/import_specialization.o \
-                src/c-interface/print_interface_header.o \
-                src/c-interface/print_interface_wrapper.o
+#CINTERFACE= src/c-interface/map_cwrapper.o \
+                #src/c-interface/print_interface.o \
+                #src/c-interface/import_specialization.o \
+                #src/c-interface/print_interface_header.o \
+                #src/c-interface/print_interface_wrapper.o
 
 OBJ:= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
      $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE) $(NEWASTONLY)
-ifeq ($(NEWAST),no)
-  OBJ:= $(GLOBAL_OLD) $(TREE_OLD) $(SCANP_OLD) $(PRINT_OLD) $(FLATTEN_OLD) \
-       $(TYPECHECK_OLD) $(OPTIMIZE_OLD) $(MODULES_OLD) $(OBJECTS_OLD) \
-       $(REFCOUNT_OLD) $(COMPILE_OLD) $(PSIOPT_OLD) $(CONCURRENT_OLD) \
-       $(MULTITHREAD_OLD) $(CINTERFACE_OLD) $(CONSTANTS_OLD) $(PROFILE_OLD) \
-       $(OBJ)
-endif
+     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE)
 
 #
 #  Rules section
 #
 
-.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux newast oldast
+.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux 
 
 all: check_os tools/bin/cse dummy sac2c
 
@@ -604,10 +576,10 @@ endif
 	(cd src/c-interface; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(NEWASTFLAGS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(LDDYNFLAG)
 
 sac2c.efence: $(OBJ) $(LIB)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(NEWASTFLAGS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
 
 sac2c.prod:  $(OBJ) $(LIB)
 	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -702,9 +674,4 @@ linux: src.tar.gz
             'chmod 644 $(SOURCE_FILES);'   \
             'make OS=LINUX_X86'
 
-newast:
-	touch _NEW_AST
-
-oldast:
-	rm -rf _NEW_AST
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 3.112  2004/11/19 21:03:30  sah
  * added OAN traversal
  *
@@ -371,22 +374,14 @@
 #include "flatten.h"
 #include "insert_vardec.h"
 #include "print.h"
-#include "typecheck.h"
-#include "typecheck_WL.h"
 #include "optimize.h"
 #include "free.h"
 #include "DeadFunctionRemoval.h"
-#include "import.h"
 #include "DupTree.h"
 #include "Inline.h"
 #include "ArrayElimination.h"
 #include "index.h"
-#include "writesib.h"
-#include "readsib.h"
-#include "implicittypes.h"
 #include "objinit.h"
-#include "analysis.h"
-#include "checkdec.h"
 #include "objects.h"
 #include "uniquecheck.h"
 #include "alloc.h"
@@ -397,7 +392,6 @@
 #include "precompile.h"
 #include "compile.h"
 #include "ReuseWithArrays.h"
-#include "cccall.h"
 #include "PatchWith.h"
 #include "wls.h"
 #include "AssociativeLaw.h"

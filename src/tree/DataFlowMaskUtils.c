@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 3.14  2004/11/17 19:00:36  sah
  * fixed ktr changes, should work now as intended by ktr
  *
@@ -101,7 +104,6 @@
 #include "dbug.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "typecheck.h"
 
 /************************************************
  *

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.26  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.25  2004/10/05 13:54:49  sah
 # changed subset of files used in NEW_AST mode
 #
@@ -81,11 +84,7 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
 OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
-      type_statistics.o typecheck.o
-
-ifeq ($(NEWAST),no)
-  OBJS:= prim_fun.o typecheck_WL.o $(OBJS)
-endif
+      type_statistics.o 
 
 all: $(OBJS)
 

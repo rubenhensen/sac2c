@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.11  2004/11/19 21:05:12  sah
 # added objanalysis
 #
@@ -59,17 +62,12 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print \
-       -I../constants -I../flatten
+INCS = -I../global -I../tree -I../../inc -I../typecheck -I../modules \
+       -I../print -I../constants -I../flatten
 
-OBJS := objinit.o objects.o uniquecheck.o
-
-ifeq ($(NEWAST),yes)
-  OBJS := objanalysis.o $(OBJS)
-endif
+OBJS := objinit.o objects.o uniquecheck.o objanalysis.o 
 
 all: $(OBJS)
-
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)

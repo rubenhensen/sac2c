@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/21 11:22:03  sah
+ * removed some old ast infos
+ *
  * Revision 1.9  2004/11/17 19:48:01  sah
  * interface changes
  *
@@ -81,6 +84,7 @@ PrintLibStatCodeReadSymbols (module_t *module, STsymbol_t *symbol, STtable_t *ta
 
     AddSymbolByName (STSymbolName (symbol), SET_wrapperhead, GetModuleName (module));
     AddSymbolByName (STSymbolName (symbol), SET_typedef, GetModuleName (module));
+    AddSymbolByName (STSymbolName (symbol), SET_objdef, GetModuleName (module));
 
     DBUG_VOID_RETURN;
 }

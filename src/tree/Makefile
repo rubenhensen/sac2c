@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.39  2004/11/21 11:22:03  sah
+# removed some old ast infos
+#
 # Revision 3.38  2004/10/26 11:11:30  sah
 # moved some .o files to NEWAST only
 #
@@ -101,27 +104,24 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
-  NEWASTTARGETS := node_basic.o free_node.o free_attribs.o \
-                   serialize_node.o serialize_attribs.o \
-                   deserialize.o serialize_buildstack.o \
-                   serialize_helper.o serialize_link.o \
-                   serialize.o serialize_stack.o
-else
-  NEWASTTARGETS :=
-endif
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
      -I../psi-opt -I../objects -I../concurrent -I../multithread \
      -I../c-interface -I../constants -I../profile -I.
 
-all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
-     DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
-     LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     change_signature.o compare_tree.o wl_bounds.o \
-     $(NEWASTTARGETS)
+OBJS := tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
+        DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
+        LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
+        change_signature.o compare_tree.o wl_bounds.o \
+        node_basic.o free_node.o free_attribs.o \
+        serialize_node.o serialize_attribs.o \
+        deserialize.o serialize_buildstack.o \
+        serialize_helper.o serialize_link.o \
+        serialize.o serialize_stack.o
 
+
+all: $(OBJS)
 
 #
 # the *.[ch] objects are to fool makedepend which does not
