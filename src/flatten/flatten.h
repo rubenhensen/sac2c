@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/05/17 14:57:17  dkr
+ * FltnCon removed (old with-loop)
+ *
  * Revision 2.3  1999/05/12 08:42:26  sbs
  * eliminated external decl of FltnPreTypeCheck
  *
@@ -12,12 +15,6 @@
  *
  * Revision 1.17  1998/05/20 20:16:54  sbs
  * new funs FltnArray and FltnBlock added
- *
- * Revision 1.16  1997/12/02 19:08:38  srs
- * *** empty log message ***
- *
- * Revision 1.15  1997/11/25 12:37:33  srs
- * *** empty log message ***
  *
  * Revision 1.14  1996/09/11 06:10:04  cg
  * Now, arrays as arguments to psi and modarray are abstracted.
@@ -85,7 +82,6 @@ extern node *FltnReturn (node *arg_node, node *arg_info);
 extern node *FltnId (node *arg_node, node *arg_info);
 extern node *FltnLet (node *arg_node, node *arg_info);
 extern node *FltnArgs (node *arg_node, node *arg_info);
-extern node *FltnCon (node *arg_node, node *arg_info);
 extern node *FltnPrf (node *arg_node, node *arg_info);
 extern node *FltnNwith (node *arg_node, node *arg_info);
 extern node *FltnNpart (node *arg_node, node *arg_info);
