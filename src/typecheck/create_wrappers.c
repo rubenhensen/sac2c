@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/03/05 15:51:17  sbs
+ * *** empty log message ***
+ *
  * Revision 1.2  2002/03/05 15:40:40  sbs
  * CRTWRP traversal embedded.
  *
@@ -56,7 +59,7 @@ CreateWrappers (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPFundef(node *arg_node, node *arg_info)
+ *    node *CRTWRPfundef(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -64,9 +67,9 @@ CreateWrappers (node *arg_node)
  ******************************************************************************/
 
 node *
-CRTWRPFundef (node *arg_node, node *arg_info)
+CRTWRPfundef (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("CRTWRPFundef");
+    DBUG_ENTER ("CRTWRPfundef");
 
     DBUG_RETURN (arg_node);
 }
