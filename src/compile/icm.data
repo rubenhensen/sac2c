@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/05/13 07:15:14  cg
+ * added ICMs for multi-threaded execution
+ *
  * Revision 1.31  1998/05/12 13:27:48  dkr
  * added WL_FOLD... macros
  *
@@ -470,6 +473,8 @@ ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
 ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
 #endif
 
+
+
 /*
  * ICMs for compilation of new with-loop
  */
@@ -520,3 +525,70 @@ ICM_DEF( WL_FOLD, TRACE_UDF)
   ICM_VAR(dims, idx_scalar)
 ICM_END( WL_FOLD, (expr, array, idx_vec, dims, idx_scalar))
 #endif
+
+
+
+/*
+ * ICMs for compilation of multi-threaded applications
+ */
+
+#if defined(MT_SPMD_FUN_DEC) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_FUN_DEC, NO_TRACE)
+  ICM_STR(name)
+  ICM_STR(from)
+  ICM_INT(narg)
+  ICM_VAR((3*narg), vararg)
+ICM_END( MT_SPMD_FUN_DEC, (name, from, narg, vararg))
+#endif
+
+#if defined(MT_SPMD_FUN_RET) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_FUN_RET, NO_TRACE)
+  ICM_INT(narg)
+  ICM_VAR((2*narg), vararg)
+ICM_END( MT_SPMD_FUN_RET, (narg, vararg))
+#endif
+
+#if defined(MT_START_SYNCBLOCK) || defined(ICM_ALL)
+ICM_DEF( MT_START_SYNCBLOCK, NO_TRACE)
+  ICM_INT(narg)
+  ICM_VAR((3*narg), vararg)
+ICM_END( MT_START_SYNCBLOCK, (narg, vararg))
+#endif
+
+#if defined(MT_SYNC_FOLD) || defined(ICM_ALL)
+ICM_DEF( MT_SYNC_FOLD, NO_TRACE)
+  ICM_INT(narg)
+  ICM_VAR((4*narg), vararg)
+ICM_END( MT_SYNC_FOLD, (narg, vararg))
+#endif
+
+#if defined(MT_SYNC_FOLD_NONFOLD) || defined(ICM_ALL)
+ICM_DEF( MT_SYNC_FOLD_NONFOLD, NO_TRACE)
+  ICM_INT(narg)
+  ICM_VAR((4*narg), vararg)
+ICM_END( MT_SYNC_FOLD_NONFOLD, (narg, vararg))
+#endif
+
+#if defined(MT_CONTINUE) || defined(ICM_ALL)
+ICM_DEF( MT_CONTINUE, NO_TRACE)
+  ICM_INT(narg)
+  ICM_VAR((2*narg), vararg)
+ICM_END( MT_CONTINUE, (narg, vararg))
+#endif
+
+#if defined(MT_SPMD_BLOCK) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_BLOCK, NO_TRACE)
+  ICM_STR(name)
+  ICM_INT(narg)
+  ICM_VAR((3*narg), vararg)
+ICM_END( MT_SPMD_BLOCK, (name, narg, vararg))
+#endif
+
+#if defined(MT_SPMD_PRESET) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_PRESET, NO_TRACE)
+  ICM_STR(name)
+  ICM_INT(narg)
+  ICM_VAR((2*narg), vararg)
+ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
+#endif
+
