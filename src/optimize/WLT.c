@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.5  1998/04/07 15:49:16  srs
+ * removed unused variable base_wl
+ *
  * Revision 1.4  1998/04/07 08:18:41  srs
  * CreateFullPartition() does not use StartSearchWL() anymore.
  *
@@ -215,7 +218,7 @@ node *
 CreateFullPartition (node *wln, node *arg_info)
 {
     int gen_shape, do_create, *array_null, *array_shape;
-    node *base_wl, *coden, *psi_index, *psi_array, *idn;
+    node *coden, *psi_index, *psi_array, *idn;
     ids *_ids;
     intern_gen *ig;
     char *varname;
