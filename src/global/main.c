@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.101  1997/10/29 14:18:04  srs
+ * removed HAVE_MALLOC_O
+ * changed output for memory allocation statistics
+ *
  * Revision 1.100  1997/10/10 13:41:57  srs
  * counter for mem allocation
  *
@@ -442,6 +446,8 @@ int dbug_active = 0;
 char *dbug_str = "";
 
 unsigned int total_allocated_mem = 0;
+unsigned int current_allocated_mem = 0;
+unsigned int max_allocated_mem = 0;
 
 int print_objdef_for_header_file = 0;
 /*
@@ -1017,14 +1023,6 @@ MAIN
      *  Now, we reset some debugging tools.
      */
 
-#ifdef HAVE_MALLOC_O
-
-    malloc_debug (0);
-
-    DBUG_EXECUTE ("MEMVERIFY", malloc_debug (2););
-
-#endif
-
     filename = sacfilename;
 
     /*
@@ -1280,7 +1278,9 @@ MAIN
         if (break_compilation) {
             NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
         }
-        NOTE2 (("*** allocated memory (bytes): %u", total_allocated_mem));
+#ifdef show_malloc
+        NOTE2 (("*** maximal allocated memory (bytes): %u", max_allocated_mem));
+#endif
 
         NOTE2 (("*** Exit code 0"));
         NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
