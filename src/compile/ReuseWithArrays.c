@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/10/14 13:47:20  sbs
+ * adjusted the call to IdxChangeId to shape rather than types
+ *
  * Revision 3.12  2004/09/07 11:25:09  khf
  * added support for multioperator WLs
  *
@@ -120,6 +123,7 @@
 
 #include "dbug.h"
 #include "types.h"
+#include "shape.h"
 #include "free.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -458,6 +462,8 @@ bool
 ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 {
     bool traverse;
+    types *type;
+    shape *shp;
     char *idx_sel_name;
 
     traverse = TRUE;
@@ -468,8 +474,12 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
             || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
         && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
             == 0)) {
-        idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
-                                    IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
+
+        type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
+        shp = Type2Shape (type);
+        idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        shp = SHFreeShape (shp);
+
         if (!strcmp (ID_NAME (arg1), idx_sel_name)) {
             /*
              * 'arg2' is used in a (flattened) normal WL-sel()
