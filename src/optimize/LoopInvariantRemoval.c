@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/27 13:05:53  sbs
+ * some warnings eliminated
+ *
  * Revision 3.1  2000/11/20 18:00:32  sacbase
  * new release made
  *
@@ -196,7 +199,9 @@ node *
 LoopInvariantRemoval (node *arg_node, node *arg_info)
 {
     funtab *tmp_tab;
+#ifndef DBUG_OFF
     int mem_lir_expr = lir_expr;
+#endif
 
     DBUG_ENTER ("LoopInvariantRemoval");
     DBUG_PRINT ("OPT", ("LOOP INVARIANT REMOVAL"));
@@ -889,6 +894,7 @@ GetUsed (node *arg_node, node *node_behind)
         used_vars = USE;
         break;
     default:
+        used_vars = USE; /* dummy to avoid warning */
         ERROR2 (1,
                 ("INTERNAL ERROR: Assign %s not implemented in loop invariant removal !",
                  mdb_nodetype[arg_node->node[0]->nodetype]));
