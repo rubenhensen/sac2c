@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2002/09/11 23:06:55  dkr
+ * printing of PRFs modified, prf_node_info.mac modified.
+ *
  * Revision 3.117  2002/09/09 19:31:40  dkr
  * prf_name_string added
  *
@@ -270,17 +273,23 @@ static node *last_assignment_icm = NULL;
 #undef ICM_END
 #undef ICM_ALL
 
-#define PRF_IF(n, s, x, y, z) x
 char *prf_string[] = {
+#define PRF_IF(a, b, c, d, e, f, g) c
 #include "prf_node_info.mac"
-};
 #undef PRF_IF
+};
 
-#define PRF_IF(n, s, x, y, z) y
-char *prf_name_string[] = {
+char *prf_symbol[] = {
+#define PRF_IF(a, b, c, d, e, f, g) d
 #include "prf_node_info.mac"
-};
 #undef PRF_IF
+};
+
+bool prf_is_infix[] = {
+#define PRF_IF(a, b, c, d, e, f, g) e
+#include "prf_node_info.mac"
+#undef PRF_IF
+};
 
 #ifndef DBUG_OFF
 
@@ -802,7 +811,7 @@ Argtab2Fundef (node *fundef)
 static node *
 Argtab2Let (node *ap)
 {
-    node *new_let;
+    node *new_let, *new_ap;
     argtab_t *argtab;
     int i;
     ids *_ids = NULL;
@@ -829,7 +838,10 @@ Argtab2Let (node *ap)
         }
     }
 
-    new_let = MakeLet (MakeAp (StringCopy (AP_NAME (ap)), AP_MOD (ap), exprs), _ids);
+    new_ap = MakeAp (StringCopy (AP_NAME (ap)), AP_MOD (ap), exprs);
+    AP_FUNDEF (new_ap) = AP_FUNDEF (ap);
+
+    new_let = MakeLet (new_ap, _ids);
 
     DBUG_RETURN (new_let);
 }
@@ -2192,70 +2204,52 @@ PrintLet (node *arg_node, node *arg_info)
 node *
 PrintPrf (node *arg_node, node *arg_info)
 {
+    prf prf;
+    char *prf_str;
+
     DBUG_ENTER ("PrintPrf");
 
-    DBUG_PRINT ("PRINT", ("%s (%s)" F_PTR, mdb_nodetype[NODE_TYPE (arg_node)],
-                          mdb_prf[PRF_PRF (arg_node)], arg_node));
+    prf = PRF_PRF (arg_node);
+    if (sbs) {
+        prf_str = (compiler_phase < PH_genccode) ? prf_string[prf] : prf_symbol[prf];
+    } else {
+        prf_str = prf_symbol[prf];
+    }
 
-    switch (PRF_PRF (arg_node)) {
-    case F_sel:
+    DBUG_PRINT ("PRINT", ("%s (%s)" F_PTR, mdb_nodetype[NODE_TYPE (arg_node)],
+                          mdb_prf[prf], arg_node));
+
+    if (prf == F_sel) {
         /*
          * F_sel is printed with special [] notation:
          * first the array argument is printed, then a leading '[' followed by
          * the selection vector and finally the closing ']'.
          */
-
         Trav (PRF_ARG2 (arg_node), arg_info);
         fprintf (outfile, "[");
         Trav (PRF_ARG1 (arg_node), arg_info);
         fprintf (outfile, "]");
-        break;
-
-    case F_take:
-    case F_drop:
-    case F_shape:
-    case F_reshape:
-    case F_cat:
-    case F_dim:
-    case F_rotate:
-    case F_not:
-    case F_toi:
-    case F_toi_A:
-    case F_tof:
-    case F_tof_A:
-    case F_tod:
-    case F_tod_A:
-    case F_idx_sel:
-    case F_modarray:
-    case F_genarray:
-    case F_idx_modarray:
-    case F_min:
-    case F_max:
-    case F_abs:
-    case F_type_error:
+    } else if (prf_is_infix[prf]) {
+        /* primitive functions in infix notation */
+        fprintf (outfile, "(");
+        if (PRF_EXPRS2 (arg_node) == NULL) {
+            fprintf (outfile, "%s ", prf_str);
+        }
+        Trav (PRF_ARG1 (arg_node), arg_info);
+        if (PRF_EXPRS2 (arg_node) != NULL) {
+            fprintf (outfile, " %s ", prf_str);
+            DBUG_ASSERT ((PRF_EXPRS3 (arg_node) == NULL), "more than two args found");
+            Trav (PRF_ARG2 (arg_node), arg_info);
+        }
+        fprintf (outfile, ")");
+    } else {
         /* primitive functions that are printed as function application */
-        DBUG_EXECUTE ("PRINT_PRF", fprintf (outfile, "PRF:"););
-
-        fprintf (outfile, "%s(", prf_string[PRF_PRF (arg_node)]);
+        fprintf (outfile, "%s(", prf_str);
         if (PRF_ARGS (arg_node) != NULL) {
             fprintf (outfile, " ");
             Trav (PRF_ARGS (arg_node), arg_info);
         }
         fprintf (outfile, ")");
-        break;
-
-    default:
-        /* primitive functions in infix notation */
-        fprintf (outfile, "(");
-        Trav (PRF_ARG1 (arg_node), arg_info);
-        fprintf (outfile, " %s", prf_string[PRF_PRF (arg_node)]);
-        if (NULL != PRF_EXPRS2 (arg_node)) {
-            fprintf (outfile, " ");
-            DBUG_ASSERT ((PRF_EXPRS3 (arg_node) == NULL), "more than two args found");
-            Trav (PRF_ARG2 (arg_node), arg_info);
-        }
-        fprintf (outfile, ")");
-        break;
     }
 
     DBUG_RETURN (arg_node);
@@ -2276,10 +2270,18 @@ PrintAp (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintAp");
 
-    if (AP_MOD (arg_node) != NULL) {
-        fprintf (outfile, "%s:", AP_MOD (arg_node));
+    if (compiler_phase < PH_precompile) {
+        if (AP_MOD (arg_node) != NULL) {
+            fprintf (outfile, "%s:", AP_MOD (arg_node));
+        }
+        fprintf (outfile, "%s", AP_NAME (arg_node));
+    } else {
+        /*
+         * fundef has been renamed -> print new name!
+         */
+        fprintf (outfile, "%s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
-    fprintf (outfile, "%s(", AP_NAME (arg_node));
+    fprintf (outfile, "(");
 
     if (AP_ARGS (arg_node) != NULL) {
         fprintf (outfile, " ");
@@ -3396,7 +3398,7 @@ PrintNgenerator (node *arg_node, node *arg_info)
         fprintf (outfile, ". (NULL)");
     }
     /* print first operator */
-    fprintf (outfile, " %s ", prf_string[NGEN_OP1 (arg_node)]);
+    fprintf (outfile, " %s ", prf_symbol[NGEN_OP1 (arg_node)]);
 
     /* print indices */
     if (INFO_PRINT_NWITH (arg_info) != NULL) {
@@ -3409,7 +3411,7 @@ PrintNgenerator (node *arg_node, node *arg_info)
     }
 
     /* print second operator */
-    fprintf (outfile, " %s ", prf_string[NGEN_OP2 (arg_node)]);
+    fprintf (outfile, " %s ", prf_symbol[NGEN_OP2 (arg_node)]);
     /* print lower bound */
     if (NGEN_BOUND2 (arg_node)) {
         Trav (NGEN_BOUND2 (arg_node), arg_info);

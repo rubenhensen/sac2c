@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/09/11 23:07:23  dkr
+ * printing of PRFs modified, prf_node_info.mac modified.
+ *
  * Revision 3.11  2002/09/09 19:41:45  dkr
  * prf_name_str renamed into prf_name_string
  *
@@ -164,7 +167,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
-#include "print.h"
 
 #include "import.h"
 #include "convert.h"
@@ -798,9 +800,6 @@ WDECobjdef (node *arg_node, node *arg_info)
 node *
 WDECfundef (node *arg_node, node *arg_info)
 {
-    prf tmp_prf;
-    int fun_name_printed = 0;
-
     DBUG_ENTER ("WDECfundef");
 
     if (FUNDEF_STATUS (arg_node) == ST_regular) {
@@ -808,23 +807,7 @@ WDECfundef (node *arg_node, node *arg_info)
 
         PrintDecTypes (FUNDEF_TYPES (arg_node), (char *)arg_info);
 
-        /*
-         * Here, we have to take care of overloaded primitive functions:
-         * '+' e.g. is stored as '_add'. However, '_add' is, of course, unknown
-         * when the declaration file is reloaded. So, we have to replace '_add'
-         * by '+'.
-         */
-        for (tmp_prf = FIRST_LEGAL_PRF; tmp_prf <= LAST_LEGAL_PRF; tmp_prf++) {
-            if (0 == strcmp (FUNDEF_NAME (arg_node), prf_name_string[tmp_prf])) {
-                fprintf (outfile, " %s(", prf_string[tmp_prf]);
-                fun_name_printed = 1;
-                break;
-            }
-        }
-
-        if (!fun_name_printed) {
-            fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
-        }
+        fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             Trav (FUNDEF_ARGS (arg_node), arg_info);

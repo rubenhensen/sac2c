@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2002/09/11 23:06:41  dkr
+ * printing of PRFs modified, prf_node_info.mac modified.
+ *
  * Revision 3.45  2002/09/09 19:33:25  dkr
  * prf_name_str renamed into prf_name_string
  *
@@ -933,11 +936,12 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
                                                     MakeExprs (array, NULL))),
                                 MakeIds (wl_body_var_elem, NULL, ST_regular)),
                        NULL);
-    body = MakeAssign (MakeLet (MakePrf (F_add, MakeExprs (MakeId (StringCopy (iv), NULL,
-                                                                   ST_regular),
-                                                           MakeExprs (drop_vec, NULL))),
-                                MakeIds (wl_body_var_vec, NULL, ST_regular)),
-                       body);
+    body
+      = MakeAssign (MakeLet (MakePrf (F_add_AxA, MakeExprs (MakeId (StringCopy (iv), NULL,
+                                                                    ST_regular),
+                                                            MakeExprs (drop_vec, NULL))),
+                             MakeIds (wl_body_var_vec, NULL, ST_regular)),
+                    body);
 
     if (tmp_var != NULL) {
         body = MakeAssign (tmp_var, body);
@@ -1078,7 +1082,7 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
 
     body
       = MakeAssign (MakeLet (start_vec, MakeIds (wl_body_var_offset, NULL, ST_regular)),
-                    MakeAssign (MakeLet (MakePrf2 (F_sub,
+                    MakeAssign (MakeLet (MakePrf2 (F_sub_AxA,
                                                    MakeId (StringCopy (iv), NULL,
                                                            ST_regular),
                                                    MakeId (StringCopy (
@@ -1555,7 +1559,6 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
     stype = GetBasetype (neutral_type);
 
     switch (prf_fun) {
-    case F_add:
     case F_add_SxS:
     case F_add_AxA:
         switch (stype) {
@@ -1573,7 +1576,6 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
         }
         break;
 
-    case F_mul:
     case F_mul_SxS:
     case F_mul_AxA:
         switch (stype) {
@@ -4145,7 +4147,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                             /* now look if there is a matching userdefined function
                              * with name of primitive function
                              */
-                            fun_name = prf_name_string[*prf_fun];
+                            fun_name = prf_symbol[*prf_fun];
                             fun_p_store = LookupFun (fun_name, NULL, NULL);
                             if (NULL != fun_p_store)
                                 *prf_fun = -1;
@@ -4911,7 +4913,7 @@ TClet (node *arg_node, node *arg_info)
                     type_arg1 = ID_OR_CAST_TYPE (PRF_ARG1 (LET_EXPR (arg_node)));
                     type_arg2 = ID_OR_CAST_TYPE (PRF_ARG2 (LET_EXPR (arg_node)));
 
-                    if (NULL != LookupFun (prf_name_string[F_sel], "Array", NULL)) {
+                    if (NULL != LookupFun (prf_symbol[F_sel], "Array", NULL)) {
                         if ((TYPES_DIM (type) > SCALAR)
                             && (TYPES_DIM (type_arg1) > SCALAR)
                             && (TYPES_DIM (type_arg2) > SCALAR)) {
@@ -4987,7 +4989,7 @@ TClet (node *arg_node, node *arg_info)
                  * be used, the function application is now replaced by an equivalent
                  * with-loop.
                  */
-                if (NULL != LookupFun (prf_name_string[F_take], "Array", NULL)) {
+                if (NULL != LookupFun (prf_symbol[F_take], "Array", NULL)) {
                     if (TYPES_DIM (type) > SCALAR) {
                         /*
                          * The actual replacement is only performed if the result shape
@@ -5033,7 +5035,7 @@ TClet (node *arg_node, node *arg_info)
                  * be used, the function application is now replaced by an equialent
                  * with-loop.
                  */
-                if (NULL != LookupFun (prf_name_string[F_drop], "Array", NULL)) {
+                if (NULL != LookupFun (prf_symbol[F_drop], "Array", NULL)) {
                     if (TYPES_DIM (type) > SCALAR) {
                         /*
                          * The actual replacement is only performed if the result shape
@@ -5079,7 +5081,7 @@ TClet (node *arg_node, node *arg_info)
                  * be used, the function application is now replaced by 2 equivalent
                  * with-loops.
                  */
-                if (NULL != LookupFun (prf_name_string[F_cat], "Array", NULL)) {
+                if (NULL != LookupFun (prf_symbol[F_cat], "Array", NULL)) {
                     if (TYPES_DIM (type) > SCALAR) {
                         /*
                          * The actual replacement is only performed if the result shape
@@ -6840,7 +6842,7 @@ TI_Nwith (node *arg_node, node *arg_info)
              * has to be used.
              */
             new_fundef = CreatePseudoFoldFun (body_type, NWITHOP_FUN (withop),
-                                              F_toi, /* this is just a dummy! */
+                                              F_toi_A, /* this is just a dummy! */
                                               IDS_NAME (INFO_TC_LHSVARS (arg_info)),
                                               ID_NAME (NWITH_CEXPR (arg_node)));
         }
@@ -6880,7 +6882,7 @@ TI_Nwith (node *arg_node, node *arg_info)
                          "let-exprs only!");
 
             new_fundef = CreatePseudoFoldFun (body_type, NWITHOP_FUN (withop),
-                                              F_toi, /* this is just a dummy! */
+                                              F_toi_A, /* this is just a dummy! */
                                               IDS_NAME (INFO_TC_LHSVARS (arg_info)),
                                               ID_NAME (NWITH_CEXPR (arg_node)));
 
@@ -7220,7 +7222,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
                     NGEN_BOUND2 (gen) = new_shp;
                 } else {
                     NGEN_BOUND2 (gen)
-                      = MakePrf (F_sub,
+                      = MakePrf (F_sub_AxA,
                                  MakeExprs (new_shp, MakeExprs (MakeNum (1), NULL)));
                 }
             }
