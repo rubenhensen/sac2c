@@ -39,3 +39,4 @@ optimize.c
 optimize.h
 rmcasts.c
 rmcasts.h
+AssociativeLaw.h
