@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/11/14 13:19:01  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 1.3  2000/02/18 14:03:55  cg
  * Added reconversion of while- and do-loops. Do-loops are yet untested
  * due to missing corresponding capability of lac2fun.c.
@@ -292,6 +295,9 @@ ReplaceAssignmentByDoLoopFun (node *assign, node *fundef)
 
     DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
                  "Illegal node type in conditional position.");
+
+    loop_pred = COND_COND (cond);
+    COND_COND (cond) = MakeBool (0);
 
     tmp = BLOCK_INSTR (COND_THEN (cond));
 

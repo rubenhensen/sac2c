@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/11/14 13:18:55  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 2.5  2000/08/04 17:21:23  dkr
  * NEWTREE removed
  *
@@ -331,6 +334,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 libtype = "system";
                 break;
             default:
+                libtype = NULL;
                 break;
             }
 
@@ -527,6 +531,7 @@ FindSibEntry (node *item, node *sib)
         break;
 
     default:
+        tmp = NULL;
         DBUG_ASSERT (0, ("Wrong node type in call of function FindSibEntry"));
     }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/11/14 13:19:29  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 1.3  2000/10/24 11:46:10  dkr
  * MakeType renamed into MakeTypes
  *
@@ -868,6 +871,7 @@ TYNestTypes (ntype *outer, ntype *inner)
          *
          */
         if (NTYPE_CON (inner) == TC_aks) {
+            res = NULL;
         } else if (NTYPE_CON (inner) == TC_akd) {
             res = TYMakeAKD (TYCopyType (AKS_BASE (inner)), AKD_DOTS (outer),
                              SHAppendShapes (AKD_SHP (outer), AKS_SHP (inner)));

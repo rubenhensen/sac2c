@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/11/14 13:19:24  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 2.5  2000/08/07 14:09:29  dkr
  * ST_independent replaced by ST_shp_indep and ST_dim_indep
  *
@@ -240,6 +243,7 @@ StoreExportNode (node *insert, node *info)
         break;
 
     default:
+        list = NULL;
         DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreExportNode`");
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.109  2000/11/14 13:19:13  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 2.108  2000/11/05 13:40:34  dkr
  * PrintAST extended: address of strings added to output
  *
@@ -231,15 +234,6 @@
  * This behaviour is implemented with the macro PRINT_CONT.
  */
 
-#if 0 /* Trav() is used in icm2c_wl.c -> (arg_info == NULL) !! */
-#define PRINT_CONT(code_then, code_else)                                                 \
-    DBUG_ASSERT ((arg_info != NULL), "Print(): arg_info is NULL!");                      \
-    if (INFO_PRINT_CONT (arg_info) != arg_node) {                                        \
-        code_then;                                                                       \
-    } else {                                                                             \
-        code_else;                                                                       \
-    }
-#else
 #define PRINT_CONT(code_then, code_else)                                                 \
     if (arg_info != NULL) {                                                              \
         if (INFO_PRINT_CONT (arg_info) != arg_node) {                                    \
@@ -250,7 +244,6 @@
     } else {                                                                             \
         code_then;                                                                       \
     }
-#endif
 
 #define ACLT(arg)                                                                        \
     (arg == ACL_unknown)                                                                 \
@@ -3650,46 +3643,48 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 node *
 PrintCWrapper (node *arg_node, node *arg_info)
 {
-    nodelist *funlist;
-    node *fundef;
-    char *typestring;
-
     DBUG_ENTER ("PrintCWrapper");
 
     if (compiler_phase != PH_genccode) {
         /* internal debug output of mapping-tree of wrappers */
-        DBUG_EXECUTE (
-          "PRINT_CWRAPPER",
-          fprintf (outfile, "CWrapper %s with %d arg(s) and %d result(s)\n",
-                   CWRAPPER_NAME (arg_node), CWRAPPER_ARGCOUNT (arg_node),
-                   CWRAPPER_RESCOUNT (arg_node));
+        DBUG_EXECUTE ("PRINT_CWRAPPER", {
+            nodelist *funlist;
+            node *fundef;
+            char *typestring;
 
-          funlist = CWRAPPER_FUNS (arg_node); while (funlist != NULL) {
-              fundef = NODELIST_NODE (funlist);
+            fprintf (outfile, "CWrapper %s with %d arg(s) and %d result(s)\n",
+                     CWRAPPER_NAME (arg_node), CWRAPPER_ARGCOUNT (arg_node),
+                     CWRAPPER_RESCOUNT (arg_node));
 
-              fprintf (outfile, "  overloaded for (");
-              /* print args of function */
-              if (FUNDEF_ARGS (fundef) != NULL) {
-                  Trav (FUNDEF_ARGS (fundef), arg_info);
-              }
+            funlist = CWRAPPER_FUNS (arg_node);
+            while (funlist != NULL) {
+                fundef = NODELIST_NODE (funlist);
 
-              fprintf (outfile, ") -> (");
+                fprintf (outfile, "  overloaded for (");
+                /* print args of function */
+                if (FUNDEF_ARGS (fundef) != NULL) {
+                    Trav (FUNDEF_ARGS (fundef), arg_info);
+                }
 
-              /* print results of function */
-              typestring = Type2String (FUNDEF_TYPES (fundef), 0);
-              fprintf (outfile, "%s", typestring);
-              FREE (typestring);
+                fprintf (outfile, ") -> (");
 
-              fprintf (outfile, ")\n");
-              funlist = NODELIST_NEXT (funlist);
-          }
+                /* print results of function */
+                typestring = Type2String (FUNDEF_TYPES (fundef), 0);
+                fprintf (outfile, "%s", typestring);
+                FREE (typestring);
 
-          fprintf (outfile, "\n\n");
+                fprintf (outfile, ")\n");
+                funlist = NODELIST_NEXT (funlist);
+            }
 
-          if (CWRAPPER_NEXT (arg_node) != NULL) {
-              PRINT_CONT (Trav (CWRAPPER_NEXT (arg_node), arg_info), );
-          });
+            fprintf (outfile, "\n\n");
+
+            if (CWRAPPER_NEXT (arg_node) != NULL) {
+                PRINT_CONT (Trav (CWRAPPER_NEXT (arg_node), arg_info), );
+            }
+        });
     }
+
     DBUG_RETURN (arg_node);
 }
 

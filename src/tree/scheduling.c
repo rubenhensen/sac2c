@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/11/14 13:19:34  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 1.5  2000/08/17 10:06:55  dkr
  * signature of RenameLocalIdentifier() modified
  *
@@ -841,6 +844,7 @@ CompileSchedulingArgs (sched_t *sched, node *args)
                 new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
                 break;
             default:
+                new_arg = NULL;
                 DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
                                 " implemented");
             }
@@ -1023,6 +1027,7 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
         general_args = CompileSyncblockSchedulingArgs (arg_node, sched);
         break;
     default:
+        general_args = NULL;
         DBUG_ASSERT ((0), "wrong node type found");
     }
 

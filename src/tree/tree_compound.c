@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2000/11/14 13:19:40  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 1.29  2000/10/31 23:31:53  dkr
  * signature of Type2Shpseg, Array2Shpseg modified
  *
@@ -552,6 +555,7 @@ GetDim (types *type)
         } else if (KNOWN_DIMENSION (impl_dim) && KNOWN_DIMENSION (base_dim)) {
             dim = impl_dim + base_dim - KNOWN_DIM_OFFSET;
         } else {
+            dim = 0;
             DBUG_ASSERT ((0), "illegal shape/dim information found!");
         }
     } else {
@@ -2186,6 +2190,7 @@ CreateZeroScalar (simpletype btype)
         ret_node = MakeChar ('\0');
         break;
     default:
+        ret_node = NULL;
         DBUG_ASSERT (0, ("unkown basetype found"));
     }
 

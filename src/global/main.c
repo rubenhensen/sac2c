@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/11/14 13:18:42  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 2.25  2000/07/27 15:22:09  nmw
  * undo to revision 2.23
  *
@@ -240,7 +243,7 @@
 int
 main (int argc, char *argv[])
 {
-    node *syntax_tree;
+    node *syntax_tree = NULL;
     int i;
 
 #ifdef SHOW_MALLOC

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2000/11/14 13:19:19  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 1.40  2000/11/05 13:39:18  dkr
  * bug in DupIds_Id fixed:
  * NAME and MOD are copied now ...
@@ -277,6 +280,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
             INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
             INFO_DUP_ALL (arg_info) = FALSE;
             own_arg_info = TRUE;
+            old_fundef = NULL;
         } else {
             own_arg_info = FALSE;
             old_fundef = INFO_DUP_FUNDEF (arg_info);

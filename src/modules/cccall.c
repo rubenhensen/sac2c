@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/11/14 13:18:50  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 2.17  2000/11/13 16:16:34  sbs
  * changed type of var "current" in GenLibStat to time_t
  * (required on ALPHA...) doesn't harm SUN
@@ -690,8 +693,10 @@ InvokeCC ()
             lib_efence = FindFile (SYSTEMLIB_PATH, "libefence.a");
             if (lib_efence == NULL) {
                 SYSWARN (("Unable to find libefence.a in SYSTEMLIB_PATH"));
-                use_efence = 0;
+                lib_efence = "";
             }
+        } else {
+            lib_efence = "";
         }
 
         if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
@@ -705,7 +710,7 @@ InvokeCC ()
                             ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
                                                                 : "-lsac_heapmgr_mt")
                             : ""),
-                         config.ccmtlink, (use_efence ? lib_efence : ""));
+                         config.ccmtlink, lib_efence);
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
             }
