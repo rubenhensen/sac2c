@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/02/13 15:17:39  nmw
+ * compound macro VARDEC_OR_ARG_AVIS added
+ *
  * Revision 3.18  2001/02/09 13:34:33  dkr
  * some comments corrected
  *
@@ -834,6 +837,7 @@ extern int CmpDomain (node *args1, node *args2);
 #define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
 #define VARDEC_OR_ARG_PADDED(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
+#define VARDEC_OR_ARG_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
 
 #define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
@@ -875,6 +879,13 @@ extern int CmpDomain (node *args1, node *args2);
         ARG_PADDED (n) = (rhs);                                                          \
     } else {                                                                             \
         VARDEC_PADDED (n) = (rhs);                                                       \
+    }
+
+#define L_VARDEC_OR_ARG_AVIS(n, rhs)                                                     \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_AVIS (n) = (rhs);                                                            \
+    } else {                                                                             \
+        VARDEC_AVIS (n) = (rhs);                                                         \
     }
 
 /*
