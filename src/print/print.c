@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1994/12/21 13:25:39  sbs
+ * Revision 1.22  1994/12/31 13:54:17  sbs
+ * id_mod for N_ap inserted
+ *
+ * Revision 1.21  1994/12/21  13:25:39  sbs
  * extern declaration for functions inserted
  *
  * Revision 1.20  1994/12/21  13:18:42  sbs
@@ -387,7 +390,9 @@ PrintAp (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintAp");
 
-    fprintf (outfile, "%s(", arg_node->info.id);
+    if (arg_node->info.fun_name.id_mod != NULL)
+        fprintf (outfile, "%s__", arg_node->info.fun_name.id_mod);
+    fprintf (outfile, "%s(", arg_node->info.fun_name.id);
     if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")");
