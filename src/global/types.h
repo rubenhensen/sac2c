@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/10/19 17:10:41  sbs
+ * .mac format changed for type_info.mac  and typedef for usertype added.
+ *
  * Revision 2.18  1999/10/01 14:57:31  sbs
  * typedef int bool added!
  *
@@ -254,13 +257,18 @@ typedef int bool;
     512 /* primitive arithmetic operation on arrays (not index vectors) */
 #define FEATURE_COND 1024 /* conditional containing array accesses */
 
-#define TYP_IF(n, s, p, f, sz) n
-
+#define TYP_IFname(name) name
 typedef enum {
 #include "type_info.mac"
 } simpletype;
 
-#undef TYP_IF
+/*
+ * usertype is used in the new type representation only!!!
+ * The association between usertype and its definition is
+ * encapsulated in the module "user_types"
+ * (cf. src/typecheck/user_types.[ch]).
+ */
+typedef int usertype;
 
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 
