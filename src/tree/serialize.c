@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/10/22 15:24:29  sah
+ * added STE_wrapperxxx
+ *
  * Revision 1.12  2004/10/17 17:03:20  sah
  * noew the generated code no more contains
  * any sac2c specific types o [3~´´r enums (hopefully)
@@ -264,6 +267,7 @@ GenerateSerFunName (symbolentrytype_t type, node *node)
 
     switch (type) {
     case STE_funbody:
+    case STE_wrapperbody:
         snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), FUNDEF_STATUS (node));
 
@@ -271,6 +275,7 @@ GenerateSerFunName (symbolentrytype_t type, node *node)
 
         break;
     case STE_funhead:
+    case STE_wrapperhead:
         snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), FUNDEF_STATUS (node));
 
@@ -282,6 +287,9 @@ GenerateSerFunName (symbolentrytype_t type, node *node)
         break;
     case STE_objdef:
         result[0] = '\0';
+        break;
+    default:
+        DBUG_ASSERT (0, "Unexpected symboltype found!");
         break;
     }
 
@@ -330,7 +338,9 @@ SerializeFundefBody (node *fundef, info *info)
     INFO_SER_STACK (info) = SerializeBuildSerStack (FUNDEF_BODY (fundef));
 
     SymbolTableAdd (FUNDEF_NAME (fundef), GenerateSerFunName (STE_funbody, fundef),
-                    STE_funbody, INFO_SER_TABLE (info));
+                    (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? STE_wrapperbody
+                                                              : STE_funbody,
+                    INFO_SER_TABLE (info));
 
     GenerateSerFunHead (fundef, STE_funbody, info);
 
@@ -351,7 +361,9 @@ SerializeFundefHead (node *fundef, info *info)
     INFO_SER_STACK (info) = SerializeBuildSerStack (fundef);
 
     SymbolTableAdd (FUNDEF_NAME (fundef), GenerateSerFunName (STE_funhead, fundef),
-                    STE_funhead, INFO_SER_TABLE (info));
+                    (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? STE_wrapperhead
+                                                              : STE_funhead,
+                    INFO_SER_TABLE (info));
 
     GenerateSerFunHead (fundef, STE_funhead, info);
 
