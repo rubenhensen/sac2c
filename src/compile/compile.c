@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.132  1998/04/21 12:28:28  dkr
+ * fixed a bug in CompSPMD
+ *
  * Revision 1.131  1998/04/20 14:07:25  sbs
  * revised CompTypedef !!
  *
@@ -2452,7 +2455,7 @@ CompAssign (node *arg_node, node *arg_info)
 
         /*
          * Now, we skip all those assigns that were inserted during the
-         * traversal of arg_node!
+         * traversal of 'arg_node' !!
          */
         while (old_next_assign
                != BLOCK_INSTR_OR_ASSIGN_NEXT (INFO_COMP_LASTASSIGN (arg_info))) {
@@ -2471,7 +2474,7 @@ CompAssign (node *arg_node, node *arg_info)
     /*
      * although the new assigns are allready inserted correctly into
      * the chain of assignments, we have to return the correct pointer,
-     * since the normal insertion mechanism probably is used!!!!!!!
+     * since the normal insertion mechanism probably is used !!!
      */
     ret_node = BLOCK_INSTR_OR_ASSIGN_NEXT (old_last_assign);
     DBUG_RETURN (ret_node);
@@ -5431,8 +5434,6 @@ CompCond (node *arg_node, node *arg_info)
 node *
 CompTypedef (node *arg_node, node *arg_info)
 {
-    node *tmp_node;
-
     DBUG_ENTER ("CompTypedef");
 
     if (0 != TYPEDEF_DIM (arg_node)) {
@@ -5442,7 +5443,7 @@ CompTypedef (node *arg_node, node *arg_info)
          * Therefore, we have to translate the typedef-node
          * into an ICM-node "ND_TYPEDEF_ARRAY" ....
          */
-        node *type1, *type2, icm_node;
+        node *type1, *type2, *icm_node;
 
         type1 = MakeId (StringCopy (type_string[TYPEDEF_BASETYPE (arg_node)]), NULL,
                         ST_regular);
@@ -5757,7 +5758,7 @@ CompWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CompSPMD(node *arg_node, node *arg_info)
+ *   node *CompSPMD( node *arg_node, node *arg_info)
  *
  * description:
  *   compiles a N_spmd node.
@@ -5769,7 +5770,7 @@ CompSPMD (node *arg_node, node *arg_info)
 {
     simpletype s_type;
     ids *let_ids;
-    node *region, *new_fundef, *body, *icms, *icm_args, *tmp;
+    node *region, *new_fundef, *body, *icm, *icm_args, *tmp;
     node *first_assign, *curr_assign, *last_assign = NULL;
 
     DBUG_ENTER ("CompSPMD");
@@ -5784,16 +5785,18 @@ CompSPMD (node *arg_node, node *arg_info)
      */
     new_fundef = SPMD_FUNDEC (arg_node);
     body = DupTree (region, NULL);
+    /* now we have to append the return-assignment to the body */
     tmp = BLOCK_INSTR (body);
     while (ASSIGN_NEXT (tmp) != NULL) {
         tmp = ASSIGN_NEXT (tmp);
-    } /* we have found the position for the return-assignment */
+    } /* we have found the right position for the return-assignment */
     ASSIGN_NEXT (tmp) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
     FUNDEF_BODY (new_fundef) = body;
     BLOCK_VARDEC (FUNDEF_BODY (new_fundef)) = SPMD_VARDEC (arg_node);
 
     /*
      * insert new fundef into INFO_COMP_SPMDFUNS
+     *  -> CompModul inserts them into the fundef chain of the modul
      */
     FUNDEF_NEXT (new_fundef) = INFO_COMP_SPMDFUNS (arg_info);
     INFO_COMP_SPMDFUNS (arg_info) = new_fundef;
@@ -5818,42 +5821,57 @@ CompSPMD (node *arg_node, node *arg_info)
     curr_assign = first_assign;
 
     /*
-     * ND_ALLOC_ARRAY for every RC-object in LET_IDS(SPMD_AP_LET(arg_node))
+     * insert a ND_ALLOC_ARRAY for every RC-object in LET_IDS( SPMD_AP_LET( arg_node))
      */
 
-    icms = NULL;
     let_ids = LET_IDS (SPMD_AP_LET (arg_node));
     do {
         if (IDS_REFCNT (let_ids) > 0) {
-            icm_args = MakeExprs (MakeNum (IDS_REFCNT (let_ids)), NULL);
-            icm_args = MakeExprs (MakeId2 (DupOneIds (let_ids, NULL)), icm_args);
             GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (IDS_VARDEC (let_ids)));
-            icm_args
-              = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
-                           icm_args);
-            icms = MakeIcm ("ND_ALLOC_ARRAY", icm_args, icms);
+            icm
+              = MakeIcm ("ND_ALLOC_ARRAY",
+                         MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL,
+                                            ST_regular),
+                                    MakeExprs (MakeId2 (DupOneIds (let_ids, NULL)),
+                                               MakeExprs (MakeNum (IDS_REFCNT (let_ids)),
+                                                          NULL))),
+                         NULL);
+            INSERT_INSTR (last_assign, curr_assign, icm, tmp)
         }
 
         let_ids = IDS_NEXT (let_ids);
     } while (let_ids != NULL);
-    INSERT_INSTR (last_assign, curr_assign, icms, tmp)
 
     /*
      * MT_IF_PARALLEL, MT_FUN_AP_..., MT_ELSEIF_SEQUENTIAL
      */
 
-    icm_args = NULL; /* SPMD_AP_LET(arg_node) */
-    icms = MakeIcm ("MT_ELSEIF_SEQUENTIAL", NULL, NULL);
-    icms = MakeIcm ("MT_FUN_AP_RESUME", icm_args, icms);
-    icms = MakeIcm ("MT_FUN_AP_START",
-                    MakeExprs (MakeId (StringCopy (
-                                         AP_NAME (LET_EXPR (SPMD_AP_LET (arg_node)))),
-                                       NULL, ST_regular),
-                               NULL),
-                    icms);
-    icms = MakeIcm ("MT_FUN_AP_SETUP", icm_args, icms);
-    icms = MakeIcm ("MT_IF_PARALLEL", NULL, icms);
-    INSERT_INSTR (last_assign, curr_assign, icms, tmp)
+    /*
+     * to get the args for MT_FUN_AP_SETUP, MT_FUN_AP_RESUME we simply compile
+     *  SMPD_AP_LET( arg_node) --- this is an let node containing the funap of the
+     *  SPMD-function --- and extract the arguments of the resulting ND_FUN_AP icm.
+     */
+
+    icm = Trav (SPMD_AP_LET (arg_node), arg_info);
+    DBUG_ASSERT ((NODE_TYPE (icm) == N_icm), "no icm found");
+    icm_args = ICM_ARGS (icm);
+
+    icm = MakeIcm ("MT_IF_PARALLEL", NULL, NULL);
+    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+
+    icm = MakeIcm ("MT_FUN_AP_SETUP", icm_args, NULL);
+    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+
+    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (icm_args)) == N_id), "wrong arg found");
+    icm = MakeIcm ("MT_FUN_AP_START", MakeExprs (DupNode (EXPRS_EXPR (icm_args)), NULL),
+                   NULL);
+    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+
+    icm = MakeIcm ("MT_FUN_AP_RESUME", icm_args, NULL);
+    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
+
+    icm = MakeIcm ("MT_ELSEIF_SEQUENTIAL", NULL, NULL);
+    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
 
     /*
      * insert sequentiell SPMD-region code
@@ -5861,6 +5879,7 @@ CompSPMD (node *arg_node, node *arg_info)
      * CAUTION: 'last_assign' must point to the predecessor of 'curr_assign'.
      *          take care about the side effect of macro INSERT_INSTR !
      */
+
     DBUG_ASSERT ((last_assign != NULL), "last assign not found");
     last_assign = ASSIGN_NEXT (last_assign) = BLOCK_INSTR (region);
     while (ASSIGN_NEXT (last_assign) != NULL) {
@@ -5872,8 +5891,8 @@ CompSPMD (node *arg_node, node *arg_info)
      * MT_ENDIF_SEQUENTIAL
      */
 
-    icms = MakeIcm ("MT_ENDIF_SEQUENTIAL", NULL, NULL);
-    INSERT_INSTR (last_assign, curr_assign, icms, tmp)
+    icm = MakeIcm ("MT_ENDIF_SEQUENTIAL", NULL, NULL);
+    INSERT_INSTR (last_assign, curr_assign, icm, tmp)
 
     /*
      * remove empty assignment at 'curr_assign')
@@ -5881,16 +5900,21 @@ CompSPMD (node *arg_node, node *arg_info)
      * CAUTION: 'last_assign' must point to the predecessor of 'curr_assign'.
      *          take care about the side effect of macro INSERT_INSTR !
      */
+
     DBUG_ASSERT ((last_assign != NULL), "last assign not found");
     ASSIGN_NEXT (last_assign) = FreeNode (ASSIGN_NEXT (last_assign));
 
     /*
-     * remove useless N_spmd node
+     * remove remain of N_spmd node
      */
+
     BLOCK_INSTR (region) = NULL;
     SPMD_AP_LET (arg_node) = FreeTree (SPMD_AP_LET (arg_node));
     arg_node = FreeTree (arg_node);
 
+    /*
+     * we must take care about the return value !!!
+     */
     arg_node = ASSIGN_INSTR (first_assign);
     DBUG_RETURN (arg_node);
 }
@@ -5898,7 +5922,7 @@ CompSPMD (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CompNcode(node *arg_node, node *arg_info)
+ *   node *CompNcode( node *arg_node, node *arg_info)
  *
  * description:
  *   compiles a Ncode node.
@@ -5929,7 +5953,7 @@ CompNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CompNwith2(node *arg_node, node *arg_info)
+ *   node *CompNwith2( node *arg_node, node *arg_info)
  *
  * description:
  *
