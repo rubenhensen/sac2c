@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.100  2000/08/24 15:57:19  dkr
+ * effect of DBUG-string PRINT_RC modified
+ *
  * Revision 2.99  2000/08/24 12:38:16  dkr
  * bug fixed: printing of wlcomp-pragmas
  *
@@ -87,11 +90,6 @@
  *
  * Revision 2.76  2000/05/30 12:36:30  dkr
  * DoPrintTypesAST() added
- *
- * Revision 2.75  2000/05/29 17:23:27  dkr
- * new function PrintRC()
- * DBUG-string PRINT_RC no longer used
- * the RCs are printed after RC-phase only
  *
  * Revision 2.74  2000/05/29 11:56:28  dkr
  * error in DoPrintAST corrected
@@ -644,15 +642,22 @@ TSIprintInfo (node *arg_node, node *arg_info)
 static void
 PrintRC (int rc, int nrc, int show_rc)
 {
+    bool do_it = show_rc;
+
     DBUG_ENTER ("PrintRC");
 
-    if ((rc != -1) && show_rc) {
-        fprintf (outfile, ":%d", rc);
+    DBUG_EXECUTE ("PRINT_RC", do_it = TRUE;);
+
+    if (do_it) {
+        if (rc >= 0) {
+            fprintf (outfile, ":%d", rc);
+        }
     }
+
     DBUG_EXECUTE ("PRINT_NRC",
-                  if ((nrc != -1) && show_rc) {
+                  if ((nrc >= 0) && show_rc) {
                       fprintf (outfile, "::%d", nrc);
-                  } if ((!(optimize & OPT_RCO)) && show_rc && (rc != -1) && (rc != nrc)) {
+                  } if ((!(optimize & OPT_RCO)) && show_rc && (rc >= 0) && (rc != nrc)) {
                       fprintf (outfile, "**");
                   });
 
@@ -2974,7 +2979,7 @@ PrintNgenerator (node *arg_node, node *arg_info)
         Trav (NGEN_WIDTH (arg_node), arg_info);
     }
 
-    fprintf (outfile, ")");
+    fprintf (outfile, ")\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -2994,10 +2999,7 @@ PrintNcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNcode");
 
-    fprintf (outfile, " ");
-
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "**MASKS - Ncode: \n"); INDENT;
+    DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - Ncode: \n"); INDENT;
                   PrintDefMask (outfile, NCODE_DEFMASK (arg_node),
                                 INFO_PRINT_VARNO (arg_info));
                   INDENT; PrintUseMask (outfile, NCODE_USEMASK (arg_node),
