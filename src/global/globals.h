@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/10/25 15:59:29  mwe
+ * enforce_ieee added
+ * changed DLAW to DL
+ *
  * Revision 3.20  2002/10/24 13:12:32  ktr
  * level of WLS aggressiveness now controlled by flag -wls_aggressive
  *
@@ -212,7 +216,7 @@ extern unsigned int optimize;
 #define OPT_WLF 0x00000400  /* with-loop folding                           */
 #define OPT_IVE 0x00000800  /* index vector elimination                    */
 #define OPT_AE 0x00001000   /* array elimination                           */
-#define OPT_DLAW 0x00002000 /* distributive law                            */
+#define OPT_DL 0x00002000   /* distributive law                            */
 #define OPT_RCO 0x00004000  /* reference count optimization                */
 #define OPT_UIP 0x00008000  /* update-in-place analysis                    */
 #define OPT_TSI 0x00010000  /* with-loop tile size inference               */
@@ -231,6 +235,9 @@ extern unsigned int optimize;
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;
+
+/* disable some optimizations on floats and fold-WithLoops with floats */
+extern bool enforce_ieee;
 
 /* ast is in ssa form */
 extern bool valid_ssaform;
