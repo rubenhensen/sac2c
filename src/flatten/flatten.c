@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/04/26 17:23:03  hw
+ * Revision 1.22  1995/04/28 11:37:40  hw
+ * - added FltnMod
+ * - bug fixed in renameing of variables belonging the assignment of
+ *   a with_loop
+ *
+ * Revision 1.21  1995/04/26  17:23:03  hw
  *  - arrays will be abstacted out of generator part of a with-loop
  *  - index_variable of a with_loop will be renamed, if they are modified
  *    in the body of the with-loop
@@ -679,8 +684,14 @@ FltnWith (node *arg_node, node *arg_info)
     info_node->nnode = 1;
     tmp_tos = tos; /* store tos */
     DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);  /* traverse generator */
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* traverse generator */
+    if (N_modarray == arg_node->node[1]->nodetype)
+        info_node->node[0] = arg_info->node[0];
+
     arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse  body */
+
+    if (N_modarray == arg_node->node[1]->nodetype)
+        arg_info->node[0] = info_node->node[0];
 
     with_level -= 1; /* now decrease it */
 
@@ -1036,7 +1047,7 @@ FltnId (node *arg_node, node *arg_info)
                          " with_level: %d",
                          tmp, arg_node->IDS_ID, tmp->id_new, tmp->w_level, with_level));
 
-            if ((0 < with_level) && (with_level >= tmp->w_level) && (0 < tmp->w_level)) {
+            if ((0 < with_level) && (with_level >= tmp->w_level)) {
                 old_name = arg_node->IDS_ID;
                 arg_node->IDS_ID = StringCopy (tmp->id_new);
                 FREE (old_name);
@@ -1101,9 +1112,10 @@ FltnLet (node *arg_node, node *arg_info)
         tmp = FindId (ids->id);
         if (NULL != tmp) {
             char *new_name;
-            new_name = RenameWithVar (ids->id, -(with_level + 1));
+            new_name = RenameWithVar (ids->id, -(with_level));
             tmp_tos = tos;
-            PUSH (ids->id, new_name, with_level + 1);
+            PUSH (ids->id, new_name, with_level);
+            ids->id = StringCopy (tmp->id_new);
             new_assign = AppendIdentity (new_assign, StringCopy (tmp->id_new), new_name);
         }
     }
@@ -1150,6 +1162,48 @@ FltnArgs (node *arg_node, node *arg_info)
     PUSH (arg_node->ID, arg_node->ID, 0);
     if (NULL != arg_node->node[0])
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnMod
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : flattens N_modarray
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG, NULL
+ *
+ *  remarks       : if the argument of modarray is a N_prf or N_ap
+ *                  node a temporary N_exprs node will be created and
+ *                  flattened
+ *
+ */
+node *
+FltnMod (node *arg_node, node *arg_info)
+{
+    node *tmp_info;
+
+    DBUG_ENTER ("FltnMod");
+
+    if ((N_prf == arg_node->node[0]->nodetype) || (N_ap == arg_node->node[0]->nodetype)) {
+        node *exprs = MakeNode (N_exprs);
+        exprs->node[0] = arg_node->node[0];
+        exprs->nnode = 1;
+        exprs = Trav (exprs, arg_info);
+        arg_node->node[0] = exprs->node[0];
+        FREE (exprs);
+    } else
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    tmp_info = arg_info->node[0];
+    arg_info->node[0] = NULL;
+    /* now traverse body of with_loop */
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    arg_info->node[0] = tmp_info;
 
     DBUG_RETURN (arg_node);
 }
