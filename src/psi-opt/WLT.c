@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.9  1999/05/17 11:20:41  jhs
+ * CopyConstVec will be called only is ID/ARRAY_ISCONST.
+ *
  * Revision 2.8  1999/05/12 11:39:24  jhs
  * Adjusted macros to new access on constant vectors.
  *
@@ -327,10 +330,14 @@ CheckGeneratorBounds (node *arg_node, node *arg_info)
                       = IntVec2Array (ID_VECLEN (nbound), (int *)ID_CONSTVEC (nbound));
                     array = MakeArray (aelems);
                     shpnums = MakeNums (ID_VECLEN (nbound), NULL);
+                    ARRAY_ISCONST (array) = ID_ISCONST (nbound);
+                    ARRAY_VECTYPE (array) = ID_VECTYPE (nbound);
                     ARRAY_VECLEN (array) = ID_VECLEN (nbound);
-                    ARRAY_CONSTVEC (array)
-                      = CopyConstVec (ID_VECTYPE (nbound), ID_VECLEN (nbound),
-                                      ID_CONSTVEC (nbound));
+                    if (ARRAY_ISCONST (array)) {
+                        ARRAY_CONSTVEC (array)
+                          = CopyConstVec (ID_VECTYPE (nbound), ID_VECLEN (nbound),
+                                          ID_CONSTVEC (nbound));
+                    }
                     ARRAY_TYPE (array) = MakeType (T_int, ARRAY_VECLEN (array),
                                                    MakeShpseg (shpnums), NULL, NULL);
                     ARRAY_VECTYPE (array) = T_int;
