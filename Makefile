@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.105  2004/09/27 13:21:02  sah
+# added serialization files
+#
 # Revision 3.104  2004/09/18 16:06:37  ktr
 # added src/concurrent/spmd_emm.c
 #
@@ -242,7 +245,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
       src/tree/InferDFMs.o src/tree/cleanup_decls.o src/tree/adjust_ids.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
-      src/tree/scheduling.o src/tree/wl_bounds.o
+      src/tree/scheduling.o src/tree/wl_bounds.o \
+      src/tree/serialize.o src/tree/serialize_stack.o
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o
@@ -258,7 +262,8 @@ CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
            src/constants/constants_ari_ops.o  src/constants/cv2cv.o \
            src/constants/cv2scalar.o src/constants/cv2str.o \
-           src/constants/zipcv.o src/constants/basecv.o
+           src/constants/zipcv.o src/constants/basecv.o \
+           src/constants/constants_serialize.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
@@ -293,7 +298,8 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/tagdependencies.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
-         src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
+         src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o \
+         src/modules/symboltable.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 REFCOUNT= src/refcount/refcount.o src/refcount/allocation.o \
           src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o

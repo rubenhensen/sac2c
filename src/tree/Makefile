@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.33  2004/09/27 13:19:01  sah
+# added serialization files
+#
 # Revision 3.32  2004/08/09 10:04:35  sah
 # xml generates files are removed on clean
 # now
@@ -96,7 +99,8 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
 all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     change_signature.o compare_tree.o wl_bounds.o $(NEWASTTARGETS)
+     change_signature.o compare_tree.o wl_bounds.o \
+     serialize.o serialize_stack.o $(NEWASTTARGETS)
 
 
 #
