@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/10/17 18:12:07  sacbase
+ * few minor changes
+ *
  * Revision 2.19  1999/09/01 12:21:53  sbs
  * PRF_PRF added
  *
@@ -224,6 +227,8 @@
 #define MAXARG 3
 #define FALSE 0
 #define TRUE 1
+
+extern int linenum;
 
 typedef struct INSIDE_WL {
     char *wl_name;
@@ -1809,8 +1814,7 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
         else
             res_node = DupPartialArray (start, length, array, arg_info);
     } else {
-        WARN (NODE_LINE (INFO_CF_ASSIGN (arg_info)),
-              ("Illegal vector for primitive function psi"));
+        WARN (linenum, ("Illegal vector for primitive function psi"));
     }
     DBUG_RETURN (res_node);
 }
@@ -2228,7 +2232,12 @@ ArrayPrf (node *arg_node, node *arg_info)
          * Therefore, this is the only chance to know about the shape
          * of arg[1]!!
          */
-        array_type = ID_TYPE (arg[1]);
+        if (NODE_TYPE (arg[1]) == N_id) {
+            array_type = ID_TYPE (arg[1]);
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (arg[1]) == N_array), "wrong argument node found!");
+            array_type = ARRAY_TYPE (arg[1]);
+        }
         /*
          * Substitute array iff it refers to a constant!
          *  sbs: added this in order to reach out behind reshape-ops!
