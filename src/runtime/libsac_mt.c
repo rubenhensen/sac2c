@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/07/10 08:08:25  cg
+ * header file stdarg.h used instead of varargs.h which is not
+ * available under Linux.
+ *
  * Revision 1.6  1998/07/02 09:27:04  cg
  * tracing capabilities improved
  *
@@ -39,7 +43,6 @@
 #define _POSIX_C_SOURCE 199506L
 
 #include <pthread.h>
-#include <varargs.h>
 #include <stdio.h>
 
 /*
@@ -47,6 +50,8 @@
  */
 
 #ifdef TRACE
+
+#include <stdarg.h>
 
 #define TRACE_PRINT(msg) SAC_TRMT_Print msg
 
@@ -123,7 +128,7 @@ SAC_TRMT_Print (char *format, ...)
 
     fprintf (stderr, "TR:%2u:-> ", threadid);
 
-    va_start (arg_p);
+    va_start (arg_p, );
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);
 

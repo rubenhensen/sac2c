@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/07/10 08:08:25  cg
+ * header file stdarg.h used instead of varargs.h which is not
+ * available under Linux.
+ *
  * Revision 1.3  1998/06/29 08:50:14  cg
  * added '#define _POSIX_C_SOURCE 199506L' for multi-threaded execution.
  *
@@ -28,7 +32,7 @@
 #define _POSIX_C_SOURCE 199506L
 
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <string.h>
 
 int SAC_TR_array_memcnt = 0;
@@ -41,7 +45,7 @@ SAC_TR_Print (char *format, ...)
 
     fprintf (stderr, "TR-> ");
 
-    va_start (arg_p);
+    va_start (arg_p, );
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);
 
