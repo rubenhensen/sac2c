@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/07/11 17:29:52  dkr
+ * ND_USE_GENVAR_OFFSET added
+ *
  * Revision 3.10  2002/07/10 20:06:29  dkr
  * some bugs modified
  *
@@ -980,7 +983,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
             SAC_ND_WRITE (to_nt, SAC__i) = SAC_ND_READ (from_nt, SAC__i);                \
         }                                                                                \
         SAC_ASSURE_TYPE ((SAC_ND_A_SIZE (to_nt) == SAC_ND_A_SIZE (from_nt)),             \
-                         "Assignment with incompatible types found!")                    \
+                         "Assignment with incompatible types found!");                   \
         SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s) at addr: %p", #from_nt, #to_nt,   \
                            #copyfun, SAC_ND_A_FIELD (to_nt)))                            \
     }
@@ -1313,11 +1316,6 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp)
  * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, dim, ...shp...)
  *
- * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
- * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
- *
- * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
- *
  * ND_PRF_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
  * ND_PRF_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
@@ -1326,21 +1324,40 @@ typedef int SAC_hidden_descriptor; /* reference count */
  ******************************************************************************/
 
 #define SAC_ND_PRF_DIM__DATA(to_nt, to_sdim, from_nt, from_sdim)                         \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_DIM__...( %s, %s, %s, %s)\n", #to_nt, #to_sdim, #from_nt, #from_sdim))    \
     SAC_ND_CREATE__SCALAR__DATA (to_nt, SAC_ND_A_DIM (from_nt))
 
 /* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
 
 #define SAC_ND_PRF_RESHAPE__SHAPE_id(to_nt, to_sdim, shp)
+/* ND_PRF_RESHAPE__SHAPE_arr( ...) is a C-ICM */
+
+#define SAC_ND_PRF_SEL__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
+#define SAC_ND_PRF_SEL__DATA(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
+
+/* ND_PRF_MODARRAY__DATA( ...) is a C-ICM */
+
+/******************************************************************************
+ *
+ * ICMs for IVE
+ * ============
+ *
+ * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ *
+ * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
+ *
+ * ND_USE_GENVAR_OFFSET( offsetvar, res)
+ *
+ ******************************************************************************/
 
 #define SAC_ND_PRF_IDX_SEL__SHAPE(to_nt, to_sdim, from_nt, from_sdim)
 #define SAC_ND_PRF_IDX_SEL__DATA(to_nt, to_sdim, from_nt, from_sdim)
 
 /* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
 
-#define SAC_ND_PRF_SEL__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
-#define SAC_ND_PRF_SEL__DATA(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
-
-/* ND_PRF_MODARRAY__DATA( ...) is a C-ICM */
+#define SAC_ND_USE_GENVAR_OFFSET(offset, wl) offset = SAC_WL_OFFSET (wl);
 
 /******************************************************************************
  *
