@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/04/26 21:53:37  dkr
+ * fixed a bug in PRECSpmd
+ *
  * Revision 1.62  1998/04/26 16:47:26  dkr
  * fixed a bug in Parts2Strides
  *
@@ -252,7 +255,7 @@
 
 /*
  * returns 0 for refcounting-objects and -1 otherwise
- *  (used in 'PRECSPMD')
+ *  (used in 'PRECSpmd')
  */
 #define GET_ZERO_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 0 : -1)
 
@@ -494,7 +497,7 @@ RenameFun (node *fun)
  *   char *SpmdFunName( char *name)
  *
  * description:
- *   create a name for a spmd-fun (called by 'PRECSPMD')
+ *   create a name for a spmd-fun (called by 'PRECSpmd')
  *   this name is build from the name of the current scope ('name')
  *    and an unambiguous number.
  *
@@ -1157,7 +1160,7 @@ PRECId (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECSPMD( node *arg_node, node *arg_info)
+ *   node *PRECSpmd( node *arg_node, node *arg_info)
  *
  * description:
  *   precompiles a N_spmd node:
@@ -1166,7 +1169,7 @@ PRECId (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECSPMD (node *arg_node, node *arg_info)
+PRECSpmd (node *arg_node, node *arg_info)
 {
     node *vardecs, *vardec, *last_vardec;
     node *fargs, *farg, *last_farg;
@@ -1175,7 +1178,7 @@ PRECSPMD (node *arg_node, node *arg_info)
     types *rettypes, *rettype, *last_rettype;
     ids *spmd_ids;
 
-    DBUG_ENTER ("PRECSPMD");
+    DBUG_ENTER ("PRECSpmd");
 
     /*
      * precompile SPMD-region
