@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.98  2004/11/26 13:30:09  sbs
+  feature_t changed from function to literal
+
   Revision 1.97  2004/11/26 13:23:03  sbs
   CODE_WLAAFEATURE added.
 
@@ -156,8 +159,8 @@
     copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
     copy="function" persist="no" />
-    <type name="AccessFeature" ctype="feature_t*" init="NULL"
-    copy="function" persist="no" />
+    <type name="AccessFeature" ctype="feature_t" init="0"
+    copy="literal"  />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
     copy="function" />
     <type name="IntegerPointer" ctype="int*" init="NULL"
