@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.84  2004/04/21 16:42:30  ktr
+# added SSARefCount.o
+#
 # Revision 3.83  2004/04/08 08:06:42  khf
 # WithloopFusion.o added
 #
@@ -233,7 +236,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
-REFCOUNT= src/refcount/refcount.o
+REFCOUNT= src/refcount/refcount.o src/refcount/SSARefCount.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
