@@ -1,9 +1,12 @@
 /*
  *  $Log$
- *  Revision 1.14  1996/02/06 16:15:26  hw
- *  - added overloading of primitive functions  eq, neq, gt,.. with 'chars'
- *    (CxC_B)
+ *  Revision 1.15  1996/05/23 15:02:37  hw
+ *  changed signature of primitive function div
  *
+;; Revision 1.14  1996/02/06  16:15:26  hw
+;; - added overloading of primitive functions  eq, neq, gt,.. with 'chars'
+;;   (CxC_B)
+;;
 ;; Revision 1.13  1996/02/06  13:45:04  hw
 ;; added entries for F_toi_A, F_tod_A, F_tof_A, F_ftoi_A, etc
 ;;
@@ -71,13 +74,13 @@ FT (F_mul, SxA_A, F_mul_SxA)
 FT (F_mul_AxA, AxA_A, F_mul_AxA)
 FT (F_mul_AxS, AxS_A, F_mul_AxS)
 FT (F_mul_SxA, SxA_A, F_mul_SxA)
-FT (F_div, SxS_F, F_div)
-FT (F_div, AxA_F, F_div_AxA)
-FT (F_div, AxS_F, F_div_AxS)
-FT (F_div, SxA_F, F_div_SxA)
-FT (F_div_AxA, AxA_F, F_div_AxA)
-FT (F_div_AxS, AxS_F, F_div_AxS)
-FT (F_div_SxA, SxA_F, F_div_SxA)
+FT (F_div, SxS_S, F_div)
+FT (F_div, AxA_A, F_div_AxA)
+FT (F_div, AxS_A, F_div_AxS)
+FT (F_div, SxA_A, F_div_SxA)
+FT (F_div_AxA, AxA_A, F_div_AxA)
+FT (F_div_AxS, AxS_A, F_div_AxS)
+FT (F_div_SxA, SxA_A, F_div_SxA)
 FT (F_eq, BxB_B, F_eq)
 FT (F_eq, SxS_B, F_eq)
 FT (F_eq, CxC_B, F_eq)
