@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/07/24 08:20:29  dkr
+ * VectToOffset2: DBUG_ASSERT corrected
+ *
  * Revision 1.6  2002/07/12 17:36:40  dkr
  * some spaces in output added
  *
@@ -251,7 +254,7 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
 
     if (v_size != 0) {
         if ((v_size < 0) || (a_dim < 0)) {
-            DBUG_ASSERT (((v_size != NULL) && (a_dim != NULL)),
+            DBUG_ASSERT (((v_size_fun != NULL) && (a_dim_fun != NULL)),
                          "AUD array without access functions found!");
             INDENT;
             fprintf (outfile, "{\n");
