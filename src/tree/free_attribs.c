@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/10/11 14:57:53  sah
+ * made INC/DEC NCODE_USED explicit 
+ *
  * Revision 1.7  2004/10/05 16:16:05  sah
  * recursive self calls of loopfuns are handled
  * correctly now
@@ -139,7 +142,11 @@ FreeLinkAttrib (node *attr)
 {
     DBUG_ENTER ("FreeLinkAttrib");
 
-    /* do nothing */
+    if (attr != NULL) {
+        if (NODE_TYPE (attr) = N_ncode) {
+            NCODE_DEC_USED (attr);
+        }
+    }
 
     DBUG_RETURN ((node *)NULL);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2004/10/11 14:57:53  sah
+ * made INC/DEC NCODE_USED explicit 
+ *
  * Revision 3.101  2004/10/04 16:31:02  skt
  * killed the ex/st/mt-identifier stuff
  *
@@ -1853,9 +1856,6 @@ MakeNPart (node *withid, node *generator, node *code)
     NPART_GEN (tmp) = generator;
     NPART_WITHID (tmp) = withid;
     NPART_CODE (tmp) = code;
-    if (code != NULL) {      /* may be NULL in sac.y */
-        NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
-    }
 
     DBUG_RETURN (tmp);
 }
@@ -2154,9 +2154,6 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *ne
     WLGRID_NEXTDIM (new_node) = nextdim;
     WLGRID_NEXT (new_node) = next;
 
-    if (code != NULL) {
-        NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
-    }
     WLGRID_CODE (new_node) = code;
 
     WLGRID_NOOP (new_node) = FALSE;
@@ -2185,9 +2182,6 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, no
     WLGRIDVAR_NEXTDIM (new_node) = nextdim;
     WLGRIDVAR_NEXT (new_node) = next;
 
-    if (code != NULL) {
-        NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
-    }
     WLGRIDVAR_CODE (new_node) = code;
 
     WLGRIDVAR_NOOP (new_node) = FALSE;

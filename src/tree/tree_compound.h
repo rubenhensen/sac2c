@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/10/11 14:57:53  sah
+ * made INC/DEC NCODE_USED explicit 
+ *
  * Revision 3.94  2004/10/11 14:17:35  ktr
  * Added IDS_NTYPE, PRF_EXPRS4, PRF_ARG4
  *
@@ -2189,11 +2192,13 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
 #define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
-#ifndef NEW_AST
-#define NCODE_INC_USED(n)
-#else
 #define NCODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
-#endif /* NEW_AST */
+#define NCODE_DEC_USED(n)                                                                \
+    if (NCODE_USED (n) == 1) {                                                           \
+        FreeTree (n)                                                                     \
+    } else {                                                                             \
+        NCODE_USED (n) = NCODE_USED (n) - 1;                                             \
+    }
 
 /*--------------------------------------------------------------------------*/
 

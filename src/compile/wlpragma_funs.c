@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/10/11 14:57:53  sah
+ * made INC/DEC NCODE_USED explicit 
+ *
  * Revision 3.26  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -393,6 +396,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid1_b1, grid1_b2, WLGRID_UNROLLING (grids),
                                         nextdim, new_grids, code);
+                        NCODE_INC_USED (code);
                     }
                 }
                 if (grid2_b1 < width) {
@@ -404,6 +408,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid2_b1, grid2_b2, WLGRID_UNROLLING (grids),
                                         DupTree (nextdim), new_grids, code);
+                        NCODE_INC_USED (code);
                     }
                 }
 

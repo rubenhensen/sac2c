@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.224  2004/10/11 14:57:53  sah
+ * made INC/DEC NCODE_USED explicit 
+ *
  * Revision 3.223  2004/10/04 17:14:23  sah
  * moved WLNODE_xxx macros to tree_compound
  * remove MT/ST/EX-Identifier
@@ -4066,7 +4069,8 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    executed _after_ the value of CEXPRS has been used.
  ***
  ***    The USED component is a reference counter for the NPART_CODE pointer.
- ***    MakeNPart increments it if the code parameter is != NULL,
+ ***    On creation of a Part/Stride, it has to be incremented using the
+ ***    NCODE_INC_USED macro defined in tree_compound.h
  ***    FreeNPart decrements it if NPART_CODE is != NULL.
  ***    DupNpart  increments it (implicitly in MakeNPart, see condition above).
  ***
