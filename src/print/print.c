@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2002/03/05 16:24:45  dkr
+ * minor changes done
+ *
  * Revision 3.74  2002/03/01 03:20:50  dkr
  * support for ARGTABs added
  *
@@ -1897,7 +1900,7 @@ PrintCast (node *arg_node, node *arg_info)
 node *
 PrintLet (node *arg_node, node *arg_info)
 {
-    node *ap;
+    node *expr;
 
     DBUG_ENTER ("PrintLet");
 
@@ -1916,20 +1919,20 @@ PrintLet (node *arg_node, node *arg_info)
         INDENT;
     }
 
-    ap = LET_EXPR (arg_node);
-    if ((NODE_TYPE (ap) == N_ap) && (AP_ARGTAB (ap) != NULL)) {
-        node *tmp = Argtab2Let (ap);
+    expr = LET_EXPR (arg_node);
+    if ((NODE_TYPE (expr) == N_ap) && (AP_ARGTAB (expr) != NULL)) {
+        node *tmp = Argtab2Let (expr);
 
         Trav (tmp, arg_info);
         tmp = FreeTree (tmp);
 
-        PrintArgtags (AP_ARGTAB (ap));
+        PrintArgtags (AP_ARGTAB (expr));
     } else {
         if (LET_IDS (arg_node) != NULL) {
             PrintIds (LET_IDS (arg_node), arg_info);
             fprintf (outfile, " = ");
         }
-        Trav (LET_EXPR (arg_node), arg_info);
+        Trav (expr, arg_info);
 
         fprintf (outfile, "; ");
     }
@@ -2156,10 +2159,10 @@ PrintId (node *arg_node, node *arg_info)
         case NO_UNQCONV:
             break;
         case TO_UNQ:
-            fprintf (outfile, " /* to_unq */ ");
+            fprintf (outfile, " /* to_unq() */ ");
             break;
         case FROM_UNQ:
-            fprintf (outfile, " /* from_unq */ ");
+            fprintf (outfile, " /* from_unq() */ ");
             break;
         }
     }
@@ -2174,7 +2177,7 @@ PrintId (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintNum(node *arg_node, node *arg_info)
+ *   node *PrintNum( node *arg_node, node *arg_info)
  *
  * Description:
  *
