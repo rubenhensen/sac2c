@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/06 17:16:50  cg
+ * Revision 1.4  1995/10/12 12:25:19  cg
+ * bug in N_block macros fixed
+ *
+ * Revision 1.3  1995/10/06  17:16:50  cg
  * basic access facilities for new type nodelist added
  * IDS structure modified to store global objects.
  * MakeIds extended to 3 parameters
@@ -580,8 +583,8 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_VARDEC(n) (n->node[1])
 #define DEFMASK(n) (n->mask[0])
 #define USEMASK(n) (n->mask[1])
-#define BLOCK_NEEDFUNS ((nodelist *)(n->node[2]))
-#define BLOCK_NEEDTYPES ((nodelist *)(n->node[3]))
+#define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
+#define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
 
 /*--------------------------------------------------------------------------*/
 
