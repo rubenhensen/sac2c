@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/10/18 13:40:27  sbs
+ * interfacing between the external module name convention
+ * of the old type checker, i.e., mod == NULL, and the new
+ * convention for the new type checker, i.e., mod -> _EXT  made
+ * . This presumes SIBs still to stick to the old convention!!
+ *
  * Revision 3.2  2001/04/26 00:10:10  dkr
  * EnsureExistFuns(): call of FreeZombie() added
  *
@@ -933,7 +939,8 @@ RSIBfundef (node *arg_node, node *arg_info)
     } else {
         if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
              || (FUNDEF_STATUS (arg_node) == ST_imported_class))
-            && (FUNDEF_MOD (arg_node) != NULL)) {
+            && (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), "_EXT") != 0))
+                || ((sbs == 0) && (FUNDEF_MOD (arg_node) != NULL)))) {
             sib = FindSib (FUNDEF_MOD (arg_node));
         }
     }
@@ -1067,7 +1074,8 @@ RSIBobjdef (node *arg_node, node *arg_info)
     } else {
         if (((OBJDEF_STATUS (arg_node) == ST_imported_mod)
              || (OBJDEF_STATUS (arg_node) == ST_imported_class))
-            && (OBJDEF_MOD (arg_node) != NULL)) {
+            && (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), "_EXT") != 0))
+                || ((sbs == 0) && (OBJDEF_MOD (arg_node) != NULL)))) {
             sib = FindSib (OBJDEF_MOD (arg_node));
         }
     }
@@ -1112,7 +1120,9 @@ RSIBtypedef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RSIBtypedef");
 
-    if ((TYPEDEF_BASETYPE (arg_node) == T_hidden) && (TYPEDEF_MOD (arg_node) != NULL)) {
+    if ((TYPEDEF_BASETYPE (arg_node) == T_hidden)
+        && (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), "_EXT") != 0))
+            || ((sbs == 0) && (TYPEDEF_MOD (arg_node) != NULL)))) {
         sib_entry = FindSibEntry (arg_node, FindSib (TYPEDEF_MOD (arg_node)));
 
         if (sib_entry != NULL) {
