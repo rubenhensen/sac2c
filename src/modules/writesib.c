@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/01/02 17:49:05  cg
+ * Revision 1.6  1996/01/05 12:41:18  cg
+ * removed function OpenSibFile, WriteOpen from internal_lib.c
+ * is used instead.
+ *
+ * Revision 1.5  1996/01/02  17:49:05  cg
  * Typedefs in SIBs which are again based on user-defined types are now resolved.
  *
  * Revision 1.4  1996/01/02  16:10:01  cg
@@ -84,38 +88,6 @@ WriteSib (node *syntax_tree)
     act_tab = writesib_tab;
 
     DBUG_RETURN (Trav (syntax_tree, NULL));
-}
-
-/*
- *
- *  functionname  : OpenSibFile
- *  arguments     : 1) name of module/class
- *  description   : opens the respective SIB-file
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcpy, strcat, fopen
- *  macros        : ERROR, DBUG
- *
- *  remarks       :
- *
- */
-
-FILE *
-OpenSibFile (char *name)
-{
-    FILE *tmp;
-
-    DBUG_ENTER ("OpenSibFile");
-
-    strcpy (sibfilename, name);
-    strcat (sibfilename, ".sib");
-    tmp = fopen (sibfilename, "w");
-
-    if (tmp == NULL) {
-        SYSABORT (("Unable to open file \"%s\" for writing", sibfilename));
-    }
-
-    DBUG_RETURN (tmp);
 }
 
 /*
@@ -827,7 +799,7 @@ WSIBmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WSIBmodul");
 
-    sibfile = OpenSibFile (MODUL_NAME (arg_node));
+    sibfile = WriteOpen ("%s%s.sib", store_dirname, MODUL_NAME (arg_node));
 
     fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
 
