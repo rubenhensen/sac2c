@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/10/25 15:57:26  mwe
+ * disabled enforce_ieee by default
+ *
  * Revision 3.24  2002/10/24 13:12:32  ktr
  * level of WLS aggressiveness now controlled by flag -wls_aggressive
  *
@@ -424,6 +427,12 @@ bool valid_ssaform = FALSE;
  * per default do not use aggressive WLS
  */
 bool wls_aggressive = FALSE;
+
+/*
+ * per default do not treat floats as defined in IEEE-754 standard
+ */
+
+bool enforce_ieee = FALSE;
 
 /*
  * Command line options for specifying particular side conditions
