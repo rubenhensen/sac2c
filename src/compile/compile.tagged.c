@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2002/06/06 18:23:22  dkr
+ * some bugs fixed
+ *
  * Revision 1.14  2002/06/02 21:39:02  dkr
  * some more TAGGED_ARRAYS stuff added
  *
@@ -57,6 +60,7 @@
 #include "DataFlowMask.h"
 #include "ReuseWithArrays.h"
 #include "typecheck.h"
+#include "NameTuplesUtils.h"
 #include "scheduling.h"
 #include "wl_bounds.h"
 #include "refcount.h"
@@ -119,6 +123,39 @@ static node *wlstride = NULL;
 /******************************************************************************
  *
  * Function:
+ *   node *DupExprs_NT( node *exprs)
+ *
+ * Description:
+ *   Duplicates a N_exprs chain and transforms all N_id nodes found into
+ *   tagged N_id nodes.
+ *
+ ******************************************************************************/
+
+node *
+DupExprs_NT (node *exprs)
+{
+    node *expr;
+    node *new_exprs = NULL;
+
+    DBUG_ENTER ("DupExprs");
+
+    if (exprs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
+
+        expr = EXPRS_EXPR (exprs);
+        DBUG_ASSERT ((expr != NULL), "N_exprs node contains no data!");
+
+        new_exprs
+          = MakeExprs ((NODE_TYPE (expr) == N_id) ? DupId_NT (expr) : DupNode (expr),
+                       DupExprs_NT (EXPRS_NEXT (exprs)));
+    }
+
+    DBUG_RETURN (new_exprs);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   char *GetBasetypeStr( types *type)
  *
  * Description:
@@ -150,41 +187,6 @@ GetBasetypeStr (types *type)
 /******************************************************************************
  *
  * Function:
- *   node *MakeTypeArg( types *type)
- *
- * Description:
- *   Creates a new N_id node containing the implementation type string of
- *   the given type, i.e. "basetype" if type represents a scalar and
- *   "basetype*" if type represents an array.
- *
- ******************************************************************************/
-
-static node *
-MakeTypeArg (types *type)
-{
-    node *ret_node;
-    char *str, *ret;
-
-    DBUG_ENTER ("MakeTypeArg");
-
-    str = GetBasetypeStr (type);
-
-    if (GetDim (type) != SCALAR) {
-        ret = Malloc (sizeof (char) * (strlen (str) + 3));
-        strcpy (ret, str);
-        strcat (ret, " *");
-    } else {
-        ret = StringCopy (str);
-    }
-
-    ret_node = MakeId (ret, NULL, ST_regular);
-
-    DBUG_RETURN (ret_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *MakeBasetypeArg( types *type)
  *
  * Description:
@@ -203,6 +205,31 @@ MakeBasetypeArg (types *type)
     str = GetBasetypeStr (type);
 
     ret_node = MakeId_Copy (str);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *MakeBasetypeArg_NT( types *type)
+ *
+ * Description:
+ *   Creates a new N_id node containing the basetype string of the given type.
+ *
+ ******************************************************************************/
+
+static node *
+MakeBasetypeArg_NT (types *type)
+{
+    node *ret_node;
+    char *str;
+
+    DBUG_ENTER ("MakeBasetypeArg_NT");
+
+    str = GetBasetypeStr (type);
+
+    ret_node = MakeId_Copy_NT (str, type);
 
     DBUG_RETURN (ret_node);
 }
@@ -668,14 +695,14 @@ MakeAllocIcm (char *name, types *type, int rc, node *pragma, node *assigns)
 
     if (RC_IS_ACTIVE (rc)) {
         if (pragma == NULL) {
-            alloc_icm = MakeIcm2 ("ND_ALLOC", MakeNum (rc),
-                                  MakeTypeArgs (name, type, TRUE, TRUE, TRUE));
+            alloc_icm = MakeIcm2 ("ND_ALLOC", MakeTypeArgs (name, type, TRUE, TRUE, TRUE),
+                                  MakeNum (rc));
         } else {
-            alloc_icm = MakeIcm5 ("ND_ALLOC_PLACE", MakeNum (rc),
-                                  MakeTypeArgs (name, type, TRUE, TRUE, TRUE),
-                                  DupNode (AP_ARG1 (PRAGMA_APL (pragma))),
-                                  DupNode (AP_ARG2 (PRAGMA_APL (pragma))),
-                                  DupNode (AP_ARG3 (PRAGMA_APL (pragma))));
+            alloc_icm
+              = MakeIcm5 ("ND_ALLOC_PLACE", MakeTypeArgs (name, type, TRUE, TRUE, TRUE),
+                          MakeNum (rc), DupNode (AP_ARG1 (PRAGMA_APL (pragma))),
+                          DupNode (AP_ARG2 (PRAGMA_APL (pragma))),
+                          DupNode (AP_ARG3 (PRAGMA_APL (pragma))));
         }
 
         assigns = MakeAssign (alloc_icm, assigns);
@@ -1007,8 +1034,9 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             id = MakeId_Copy ("");
         }
 
-        icm_args = MakeExprs (MakeId_Copy (mdb_argtag[tag]),
-                              MakeExprs (MakeTypeArg (type), MakeExprs (id, icm_args)));
+        icm_args
+          = MakeExprs (MakeId_Copy (mdb_argtag[tag]),
+                       MakeExprs (MakeBasetypeArg (type), MakeExprs (id, icm_args)));
     }
 
     icm_args = MakeExprs (MakeNum (argtab->size - 1), icm_args);
@@ -1016,9 +1044,9 @@ MakeIcm_ND_FUN_DEC (node *fundef)
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
     if (argtab->ptr_out[0] == NULL) {
-        icm_args = MakeExprs (MakeId_Copy ("void"), icm_args);
+        icm_args = MakeExprs (MakeId_Copy (""), icm_args);
     } else {
-        icm_args = MakeExprs (MakeTypeArg (argtab->ptr_out[0]), icm_args);
+        icm_args = MakeExprs (MakeBasetypeArg_NT (argtab->ptr_out[0]), icm_args);
     }
 
     ret_node = MakeIcm2 ("ND_FUN_DEC", MakeId_Copy (FUNDEF_NAME (fundef)), icm_args);
@@ -1080,8 +1108,9 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
             type = ARG_TYPE (argtab->ptr_in[i]);
         }
 
-        icm_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
-                              MakeExprs (MakeTypeArg (type), MakeExprs (id, icm_args)));
+        icm_args
+          = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
+                       MakeExprs (MakeBasetypeArg (type), MakeExprs (id, icm_args)));
     }
     size = argtab->size - 1;
 
@@ -1089,7 +1118,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab is inconsistent!");
     if (argtab->ptr_out[0] != NULL) {
         icm_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[0]]),
-                              MakeExprs (MakeTypeArg (argtab->ptr_out[0]),
+                              MakeExprs (MakeBasetypeArg (argtab->ptr_out[0]),
                                          MakeExprs (MakeArgNode (0, NULL), icm_args)));
         size++;
     }
@@ -1331,8 +1360,8 @@ CheckPrf (ids *let_ids, node *prf, node *arg_info)
  *   bool CheckAp( node *ap, node *arg_info)
  *
  * Description:
- *   Checks whether no one of the refcounted arguments occurs on LHS of the
- *   given application.
+ *   Checks whether no one of the externally refcounted in-arguments occurs
+ *   on the LHS of the given application as well.
  *
  ******************************************************************************/
 
@@ -1366,11 +1395,14 @@ CheckAp (node *ap, node *arg_info)
                     if ((let_ids != NULL) && (ids_idx != arg_idx)
                         && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
 #if TAGGED_ARRAYS
-                        DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
-                                       || (argtab->tag[arg_idx] == ATG_in_nodesc),
+                        DBUG_ASSERT (((argtab->tag[arg_idx] == ATG_in)
+                                      || (argtab->tag[arg_idx] == ATG_in_noshp)
+                                      || (argtab->tag[arg_idx] == ATG_in_norc)
+                                      || (argtab->tag[arg_idx] == ATG_in_nodesc)),
                                      "illegal tag found!");
 
-                        if (argtab->tag[arg_idx] == ATG_in_nodesc) {
+                        if ((argtab->tag[arg_idx] == ATG_in_norc)
+                            || (argtab->tag[arg_idx] == ATG_in_nodesc)) {
                             ok = FALSE;
                         }
 #endif
@@ -1423,7 +1455,7 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
         }
         icm_args
           = MakeExprs (MakeId_Copy (this_tag),
-                       MakeExprs (MakeTypeArg (VARDEC_OR_ARG_TYPE (vardec)),
+                       MakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
                                   MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)),
                                              icm_args)));
         if (num_args != NULL) {
@@ -1476,7 +1508,7 @@ MakeParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_ar
         }
         icm_args
           = MakeExprs (MakeId_Copy (this_tag),
-                       MakeExprs (MakeTypeArg (VARDEC_OR_ARG_TYPE (vardec)),
+                       MakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
                                   MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)),
                                              icm_args)));
         if (num_args != NULL) {
@@ -1799,7 +1831,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
                      */
                     if (argtab->tag[i] == ATG_inout) {
                         assigns = MakeAssignIcm2 ("ND_DECL_PARAM_inout",
-                                                  MakeTypeArg (ARG_TYPE (arg)),
+                                                  MakeBasetypeArg (ARG_TYPE (arg)),
                                                   MakeId_Copy (ARG_NAME (arg)), assigns);
                     }
                 }
@@ -2414,6 +2446,7 @@ static node *
 COMPApIds (node *ap, node *arg_info)
 {
     argtab_t *argtab;
+    argtag_t tag;
     ids *let_ids;
     int i;
     node *ret_node = NULL;
@@ -2428,25 +2461,47 @@ COMPApIds (node *ap, node *arg_info)
     for (i = argtab->size - 1; i >= 0; i--) {
         if (argtab->ptr_out[i] != NULL) {
             let_ids = argtab->ptr_out[i];
+            tag = argtab->tag[i];
 
-            if (argtab->tag[i] == ATG_out) {
+            ret_node
+              = MakeAssignIcm1 ("ND_REFRESH_MIRROR",
+                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                              FALSE, TRUE, FALSE),
+                                ret_node);
+
+#ifdef TAGGED_ARRAYS
+            if ((tag == ATG_out) || (tag == ATG_out_noshp)) {
                 /* function does refcounting */
 
                 ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                             IDS_REFCNT (let_ids),
                                             IDS_REFCNT (let_ids) - 1, ret_node);
             }
-#ifdef TAGGED_ARRAYS
-            else if (argtab->tag[i] == ATG_out_nodesc) {
+
+            if ((tag == ATG_out_norc) || (tag == ATG_out_nodesc)) {
                 /* function does no refcounting */
 
-                ret_node
-                  = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                      IDS_REFCNT (let_ids),
-                                      MakeSetRcIcm (IDS_NAME (let_ids),
-                                                    IDS_TYPE (let_ids),
-                                                    IDS_REFCNT (let_ids), ret_node));
+                ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                         IDS_REFCNT (let_ids), ret_node);
             }
+
+            if ((tag == ATG_out_noshp) || (tag == ATG_out_nodesc)) {
+                /* function sets no shape information */
+
+                ret_node
+                  = MakeAssignIcm1 ("ND_SET_SHP",
+                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                  FALSE, TRUE, TRUE),
+                                    ret_node);
+            }
+
+            if (tag == ATG_out_nodesc) {
+                /* function uses no descriptor at all */
+
+                ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             IDS_REFCNT (let_ids), ret_node);
+            }
+
 #endif
         }
     }
@@ -2598,8 +2653,7 @@ COMPPrfDim (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_dim expected!");
 
     ret_node
-      = MakeAssign (MakeLet (MakeNum (GetDim (ID_TYPE (arg))), DupOneIds (let_ids)),
-                    NULL); /* let_ids = dim( arg) */
+      = MakeAssignIcm2 ("ND_PRF_DIM", DupIds_Id_NT (let_ids), DupId_NT (arg), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -2633,9 +2687,10 @@ COMPPrfShape (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_shape expected!");
 
-    ret_node = MakeAssignIcm3 ("ND_ASSIGN_CONST_VECT", DupIds_Id_NT (let_ids),
-                               MakeNum (GetDim (ID_TYPE (arg))),
-                               Type2Exprs (ID_TYPE (arg)), NULL);
+    ret_node
+      = MakeAssignIcm2 ("ND_PRF_SHAPE", DupIds_Id_NT (let_ids),
+                        MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg), FALSE, TRUE, FALSE),
+                        NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3547,8 +3602,16 @@ COMPIdLet (node *arg_node, node *arg_info)
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
 
-    ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1, NULL);
+    if (GetDataClassFromTypes (IDS_TYPE (let_ids))
+        == GetDataClassFromTypes (ID_TYPE (arg_node))) {
+        ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                    IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1, NULL);
+    } else {
+        ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                    IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1,
+                                    MakeDecRcIcm (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                                  ID_REFCNT (arg_node), 1, NULL));
+    }
 
     /*
      * 'arg_node' and 'res' are both non-unique or both unique
@@ -3562,7 +3625,9 @@ COMPIdLet (node *arg_node, node *arg_info)
          */
         ret_node = MakeAssignIcm0 ("NOOP", ret_node);
     } else {
-        ret_node = MakeAssignIcm2 ("ND_ASSIGN", DupId_NT (arg_node),
+        ret_node = MakeAssignIcm2 ("ND_ASSIGN",
+                                   MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                                 FALSE, TRUE, FALSE),
                                    DupIds_Id_NT (let_ids), ret_node);
     }
 
@@ -3817,39 +3882,20 @@ COMP2Array (node *arg_node, node *arg_info)
     ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                 IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1, NULL);
 
-    if ((array_elem != NULL) && (NODE_TYPE (array_elem) == N_id)) {
-        types *aelem_type = ID_TYPE (array_elem);
-
-        DBUG_ASSERT ((ARRAY_STRING (arg_node) == NULL),
-                     "Inconsistant string information found at N_array node!");
-
-        if (IsArray (aelem_type)) {
-            ret_node = MakeAssignIcm4 ("ND_ASSIGN_CONST_A", DupIds_Id_NT (let_ids),
-                                       MakeNum (GetTypesLength (aelem_type)),
-                                       MakeNum (num_elems),
-                                       DupTree (ARRAY_AELEMS (arg_node)), ret_node);
-        } else if (IsNonUniqueHidden (aelem_type)) {
-            ret_node = MakeAssignIcm4 ("ND_ASSIGN_CONST_H", DupIds_Id_NT (let_ids),
-                                       MakeId_Copy (GenericFun (0, aelem_type)),
-                                       MakeNum (num_elems),
-                                       DupTree (ARRAY_AELEMS (arg_node)), ret_node);
-        } else {
-            /* array elements are scalars */
-            ret_node = MakeAssignIcm3 ("ND_ASSIGN_CONST_VECT", DupIds_Id_NT (let_ids),
-                                       MakeNum (num_elems),
-                                       DupTree (ARRAY_AELEMS (arg_node)), ret_node);
-        }
+    if (ARRAY_STRING (arg_node) != NULL) {
+        /* array is a string */
+        ret_node = MakeAssignIcm2 ("ND_ASSIGN_CONST_STR", DupIds_Id_NT (let_ids),
+                                   MakeStr (ARRAY_STRING (arg_node)), ret_node);
+    } else if ((NODE_TYPE (array_elem) == N_id)
+               && (IsNonUniqueHidden (ID_TYPE (array_elem)))) {
+        ret_node = MakeAssignIcm4 ("ND_ASSIGN_CONST_H", DupIds_Id_NT (let_ids),
+                                   MakeId_Copy (GenericFun (0, ID_TYPE (array_elem))),
+                                   MakeNum (num_elems), DupTree (ARRAY_AELEMS (arg_node)),
+                                   ret_node);
     } else {
-        if (ARRAY_STRING (arg_node) != NULL) {
-            /* array is a string */
-            ret_node = MakeAssignIcm2 ("ND_ASSIGN_CONST_STR", DupIds_Id_NT (let_ids),
-                                       MakeStr (ARRAY_STRING (arg_node)), ret_node);
-        } else {
-            /* array elements are scalars */
-            ret_node = MakeAssignIcm3 ("ND_ASSIGN_CONST_VECT", DupIds_Id_NT (let_ids),
-                                       MakeNum (num_elems),
-                                       DupTree (ARRAY_AELEMS (arg_node)), ret_node);
-        }
+        ret_node = MakeAssignIcm3 ("ND_ASSIGN_CONST_VECT", DupIds_Id_NT (let_ids),
+                                   MakeNum (num_elems),
+                                   DupExprs_NT (ARRAY_AELEMS (arg_node)), ret_node);
     }
 
     ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -5714,7 +5760,8 @@ COMP2Sync (node *arg_node, node *arg_info)
         icm_args3
           = AppendExprs (icm_args3,
                          MakeExprs (MakeId_Copy (mdb_argtag[tag]),
-                                    MakeExprs (MakeTypeArg (VARDEC_OR_ARG_TYPE (vardec)),
+                                    MakeExprs (MakeBasetypeArg (
+                                                 VARDEC_OR_ARG_TYPE (vardec)),
                                                MakeExprs (MakeId_Copy (
                                                             VARDEC_OR_ARG_NAME (vardec)),
                                                           NULL))));
