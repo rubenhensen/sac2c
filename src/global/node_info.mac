@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.139  1997/11/25 10:35:25  dkr
+ * CompNWith inserted
+ *
  * Revision 1.138  1997/11/19 19:38:29  dkr
  * added o2nWith_tab
  * added print-functions for N_Nwith, N_Npart
@@ -767,9 +770,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith, "N_Nwith", NoTrav, NoTrav, PrintNWith, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNWith, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+       FreeNWith, NoTrav, NoTrav, CompNWith, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
+       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
 
   NIF (N_Npart, "N_Npart", NoTrav, NoTrav, PrintNPart, NoTrav, NoTrav, NoTrav, NoTrav,
        FreeNPart, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
