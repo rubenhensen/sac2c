@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.56  2002/08/05 17:01:40  sbs
+# some files for the new type checker added.
+#
 # Revision 3.55  2002/07/09 12:45:21  sbs
 # handle_dots.o added
 #
@@ -96,7 +99,9 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
            src/typecheck/user_types.o src/typecheck/create_wrappers.o \
-           src/typecheck/ssi.o
+           src/typecheck/ssi.o src/typecheck/sig_deps.o src/typecheck/ct_prf.o \
+           src/typecheck/ct_basic.o src/typecheck/ct_fun.o src/typecheck/ct_with.o \
+           src/typecheck/type_errors.o src/typecheck/specialize.o src/typecheck/new2old.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
