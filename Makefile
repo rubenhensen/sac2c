@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1994/12/01 17:32:02  hw
+# Revision 1.6  1994/12/05 15:07:25  hw
+# added path tp convert.o to PRINT
+#
+# Revision 1.5  1994/12/01  17:32:02  hw
 # added TYPCHECK ect.
 #
 # Revision 1.4  1994/11/17  11:11:37  sbs
@@ -22,9 +25,9 @@ LIB=lib/dbug.o
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
-PRINT= src/print/print.o
+PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
-TYPECHECK= src/typecheck/typecheck.o
+TYPECHECK= src/typecheck/typecheck.o 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK)
 
 all: dummy sac2c
