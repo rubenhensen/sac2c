@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/01/12 13:15:00  asi
+ * Revision 1.10  1995/01/17 11:05:16  asi
+ * Added OPT3assign for loop invariant removal
+ * OPT2while now named OPT2loop and used for do and while loops
+ *
+ * Revision 1.9  1995/01/12  13:15:00  asi
  * inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
  * for dead code removal in loops and in conditionals
  *
@@ -39,8 +43,6 @@
 
 #define _optimize_h
 
-long deadcode;
-
 extern node *Optimize (node *);
 extern char *PrintMask (long *);
 
@@ -54,12 +56,15 @@ extern node *OPT1assign (node *, node *);
 extern node *OPT1pp (node *, node *);
 extern node *OPT1block (node *, node *);
 extern node *OPT1cond (node *, node *);
+extern node *OPT1loop (node *, node *);
 
 extern node *OPT2fundef (node *, node *);
 extern node *OPT2assign (node *, node *);
 extern node *OPT2block (node *, node *);
 extern node *OPT2vardec (node *, node *);
 extern node *OPT2cond (node *, node *);
-extern node *OPT2while (node *, node *);
+extern node *OPT2loop (node *, node *);
+
+extern node *OPT3assign (node *, node *);
 
 #endif /* _optimize_h */
