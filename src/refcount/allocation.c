@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/12/01 16:33:57  ktr
+ * Prefun is now used in order to print ALIAS information
+ *
  * Revision 1.7  2004/11/26 23:36:06  jhb
  * ExplicitAllocation to EMAdoAllocation
  *
@@ -43,11 +46,54 @@
 #include "datareuse.h"
 #include "explicitcopy.h"
 #include "reusebranching.h"
+#include "print.h"
 #include <string.h>
+#include <stdio.h>
 
 /** <!--********************************************************************-->
  *
- * @fn ExplicitAllocation
+ * @fn EMAprintPreFun
+ *
+ *   @brief
+ *
+ *   @param  node *arg_node
+ *   @param  info *arg_info
+ *
+ *   @return node *           :  the transformed syntax tree
+ *
+ *****************************************************************************/
+node *
+EMAprintPreFun (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMAprintPreFun");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_arg:
+        if (ARG_ISALIASING (arg_node)) {
+            fprintf (global.outfile, " /* ALIAS */");
+        }
+        break;
+    case N_ret:
+        if (RET_ISALIASING (arg_node)) {
+            fprintf (global.outfile, " /* ALIAS */");
+        }
+        break;
+    case N_vardec:
+        if (AVIS_ISALIAS (VARDEC_AVIS (arg_node))) {
+            INDENT;
+            fprintf (global.outfile, " /* alias */\n");
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn EMAdoAllocation
  *
  *   @brief
  *
@@ -175,6 +221,8 @@ EMAdoAllocation (node *syntax_tree)
         goto DONE;
     }
 
+    TRAVsetPreFun (TR_prt, EMAprintPreFun);
+
     DBUG_PRINT ("EMM", ("Interface analysis (ia)"));
 
     /*
@@ -285,6 +333,8 @@ EMAdoAllocation (node *syntax_tree)
         && (0 == strcmp (global.break_specifier, "dcr3"))) {
         goto DONE;
     }
+
+    TRAVsetPreFun (TR_prt, NULL);
 
 DONE:
     DBUG_RETURN (syntax_tree);
