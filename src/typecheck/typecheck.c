@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.51  2000/10/18 09:42:26  dkr
+ * bug in UpdateType() fixed
+ *
  * Revision 2.50  2000/10/18 09:04:32  sbs
  * ID_OR_CAST_TYPE's inserted.
  *
@@ -1553,6 +1556,8 @@ LookupType (char *type_name, char *mod_name, int line)
 
     DBUG_ENTER ("LookupType");
 
+    DBUG_ASSERT ((type_name != NULL), "No type name found to look up!");
+
     if (NULL != mod_name) {
         if (0 != strcmp (mod_name, (NULL != module_name ? module_name : ""))) {
             /* now look for the module where the type is defined */
@@ -1570,39 +1575,46 @@ LookupType (char *type_name, char *mod_name, int line)
                             if (NULL != mods[i]->next) {
                                 defined += 2;
                                 break;
-                            } else
+                            } else {
                                 defined += 1;
+                            }
                         }
                     }
 
-                    if (0 == defined)
+                    if (0 == defined) {
                         ABORT (line,
                                ("Type '%s` is not defined or imported in module '%s`",
                                 type_name, mod_name));
+                    }
 
-                    if (2 <= defined)
+                    if (2 <= defined) {
                         ABORT (line, ("Type '%s` is defined or"
                                       " imported more than once in module '%s`",
                                       type_name, mod_name));
+                    }
 
                     DBUG_ASSERT ((1 == defined), "defined != 1");
-                    if (NULL == mods[0])
+                    if (NULL == mods[0]) {
                         mod_name = mods[1]->mod->name;
-                    else
+                    } else {
                         mod_name = mods[0]->mod->name;
-                } else
+                    }
+                } else {
                     mod_name = mods[1]->mod->name;
-            } else
+                }
+            } else {
                 mod_name = mods[0]->mod->name;
+            }
         }
-        for (i = 0; i < type_tab_size; i++)
+        for (i = 0; i < type_tab_size; i++) {
             if (CMP_MOD (mod_name, (type_table + i)->node->ID_MOD)
                 && (!strcmp (type_name, (type_table + i)->node->ID))) {
                 ret_node = (type_table + i)->node;
                 break;
             }
+        }
     } else {
-        for (i = 0; i < type_tab_size; i++)
+        for (i = 0; i < type_tab_size; i++) {
             if (!strcmp (type_name, (type_table + i)->node->ID)) {
                 if (1 == (type_table + i)->id_count) {
                     ret_node = (type_table + i)->node;
@@ -1611,6 +1623,7 @@ LookupType (char *type_name, char *mod_name, int line)
                     ABORT (line, ("Type '%s` has more than one definition", type_name));
                 }
             }
+        }
     }
 
     DBUG_RETURN (ret_node);
@@ -1630,7 +1643,7 @@ static stack_elem *
 LookupVar (char *id)
 {
     stack_elem *tmp, *bottom;
-    int is_defined = 0;
+    bool is_defined = FALSE;
 #ifndef DBUG_OFF
     char *db_str;
 #endif
@@ -1642,13 +1655,14 @@ LookupVar (char *id)
     bottom = act_frame;
     tmp = tos - 1;
 
-    while ((tmp >= bottom) && !(is_defined)) {
+    while ((tmp >= bottom) && (!is_defined)) {
         DBUG_PRINT ("TYPE", ("current id: %s" P_FORMAT, tmp->id, tmp));
 
-        if (!(strcmp (tmp->id, id)))
-            is_defined = 1;
-        else
+        if (!strcmp (tmp->id, id)) {
+            is_defined = TRUE;
+        } else {
             tmp--;
+        }
     }
 
     if (is_defined) {
@@ -1659,9 +1673,9 @@ LookupVar (char *id)
 #endif
     } else {
         DBUG_PRINT ("TYPE", ("not found"));
-
         tmp = NULL;
     }
+
     DBUG_RETURN (tmp);
 }
 
@@ -3908,12 +3922,13 @@ UpdateType (types *type_one, types *type_two, int line)
     if ((T_user != TYPES_BASETYPE (t_unknown)) && (T_user == TYPES_BASETYPE (t_known))) {
         t_node = TYPES_TDEF (t_known);
         if (t_node == NULL) {
-            t_node = LookupType (type_two->name, type_two->name_mod, line);
+            t_node = LookupType (TYPES_NAME (t_known), TYPES_MOD (t_known), line);
         }
 
-        if (NULL == t_node)
+        if (NULL == t_node) {
             ABORT (line, ("Type '%s` is unknown",
                           ModName (t_unknown->name_mod, t_unknown->name)));
+        }
         DBUG_ASSERT ((NULL != t_node), "t_node is NULL");
         t_unknown->dim = t_node->DIM + t_known->dim;
         DBUG_ASSERT ((t_unknown->dim <= SHP_SEG_SIZE), "dimension to large");
@@ -3921,28 +3936,32 @@ UpdateType (types *type_one, types *type_two, int line)
         if (KNOWN_SHAPE (t_unknown->dim)) {
             t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
             t_unknown->shpseg->next = NULL;
-            for (i = 0; i < t_known->dim; i++)
+            for (i = 0; i < t_known->dim; i++) {
                 t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
-            for (i = t_known->dim; i < t_unknown->dim; i++)
+            }
+            for (i = t_known->dim; i < t_unknown->dim; i++) {
                 t_unknown->shpseg->shp[i] = t_node->SHP[i - t_known->dim];
+            }
         }
     } else if ((T_user == TYPES_BASETYPE (t_unknown))
                && (T_user != TYPES_BASETYPE (t_known))) {
         t_node = TYPES_TDEF (t_unknown);
         if (t_node == NULL) {
-            t_node = LookupType (t_unknown->name, t_unknown->name_mod, line);
+            t_node = LookupType (TYPES_NAME (t_unknown), TYPES_MOD (t_unknown), line);
         }
 
-        if (NULL == t_node)
+        if (NULL == t_node) {
             ABORT (line,
                    ("Type '%s` is unknown", ModName (t_known->name_mod, t_known->name)));
+        }
         DBUG_ASSERT ((NULL != t_node), "t_node is NULL");
         t_unknown->dim = t_known->dim - t_node->DIM;
         if (KNOWN_SHAPE (t_unknown->dim)) {
             t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
             t_unknown->shpseg->next = NULL;
-            for (i = 0; i < t_unknown->dim; i++)
+            for (i = 0; i < t_unknown->dim; i++) {
                 t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
+            }
         }
     } else {
         DBUG_PRINT ("TYPE", ("array-cast"));
@@ -3970,14 +3989,17 @@ UpdateType (types *type_one, types *type_two, int line)
         t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
         t_unknown->shpseg->next = NULL;
 
-        for (i = 0; i < t_known->dim; i++)
+        for (i = 0; i < t_known->dim; i++) {
             t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
+        }
     }
 
 #ifndef DBUG_OFF
     db_str1 = Type2String (t_unknown, 0);
     db_str2 = Type2String (t_known, 0);
+
     DBUG_PRINT ("TYPE", ("new types :%s , %s ", db_str1, db_str2));
+
     FREE (db_str1);
     FREE (db_str2);
 #endif
