@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/11/16 13:49:00  nmw
+ * removal of generic functions after specialization reenabled
+ *
  * Revision 1.7  2000/10/31 18:19:13  cg
  * New fundef nodes introduced via specialization file are tagged
  * ST_exported to prevent them from subsequent elimination by
@@ -104,9 +107,8 @@ IMPSPECfundef (node *arg_node, node *arg_info)
 
     /* this function can be removed after specialization */
 
-#if 0 /* SBS*/
-   FUNDEF_ATTRIB(generic_fundef) = ST_gen_remove;
-#endif
+    /* SBS bug */
+    FUNDEF_ATTRIB (generic_fundef) = ST_gen_remove;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
