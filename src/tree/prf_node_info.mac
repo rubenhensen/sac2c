@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/03/19 10:32:52  sbs
+ * NTCPRF_cat_VxV and NTCPRF_drop_SxV used now!
+ * Note here, that NTCPRF_drop_SxV can also be used for take
+ * until we get the extension to constant types!
+ *
  * Revision 3.13  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -118,9 +123,9 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_dummy),
   PRF_IF (F_cat, "F_cat", "_cat_", "cat", FALSE, 3, NTCPRF_dummy),
   PRF_IF (F_rotate, "F_rotate", "_rotate_", "rotate", FALSE, 3, NTCPRF_dummy),
 
-  PRF_IF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCPRF_dummy),
-  PRF_IF (F_take_SxV, "F_take_SxV", "_take_SxV_", "take", FALSE, 2, NTCPRF_dummy),
-  PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_dummy),
+  PRF_IF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCPRF_cat_VxV),
+  PRF_IF (F_take_SxV, "F_take_SxV", "_take_SxV_", "take", FALSE, 2, NTCPRF_drop_SxV),
+  PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_drop_SxV),
 
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
           NTCPRF_dummy)
