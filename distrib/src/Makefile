@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.3  2000/04/27 15:44:51  cg
+# Makefile for binary SAC distributions now handles multipart
+# SAC runtime libraries for Solaris as well as Linux.
+#
 # Revision 2.2  1999/05/07 09:44:00  sbs
 # version set to 0.9
 #
@@ -36,7 +40,7 @@ VERSION    =  0_9
 SYSTEMS    =  SOLARIS_SPARC LINUX_X86
 PACKAGES   =  runtime.tar stdlib.tar demo.tar
 FILES      =  install_sac LICENSE README
-SPECIFICS  =  sac2c libsac.a sac2crc
+SPECIFICS  =  sac2c libsac.tar sac2crc
 
 
 #
@@ -108,7 +112,7 @@ $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
 	gzip -f $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar
 	rm -f $(SPECIFICS)
 
-sac2c.for.SOLARIS_SPARC libsac.a.for.SOLARIS_SPARC: 
+sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC: 
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC"
 	@echo "**************************************************************"
@@ -120,7 +124,8 @@ sac2c.for.SOLARIS_SPARC libsac.a.for.SOLARIS_SPARC:
 	(cd $(SOLARIS_DIR); tar xvf src.tar)
 	(cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC)
 	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
-	cp $(SOLARIS_DIR)/src/runtime/libsac.a libsac.a.for.SOLARIS_SPARC
+	(cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a) 
+	cp $(SOLARIS_DIR)/src/runtime/libsac.tar libsac.tar.for.SOLARIS_SPARC
 	@ if [ $${?} -eq 0 ]; then  \
             rm -rf $(SOLARIS_DIR); \
           else \
@@ -129,7 +134,7 @@ sac2c.for.SOLARIS_SPARC libsac.a.for.SOLARIS_SPARC:
             exit 1; \
           fi
 
-sac2c.for.LINUX_X86 libsac.a.for.LINUX_X86: 
+sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86: 
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for LINUX_X86"
 	@echo "**************************************************************"
@@ -149,7 +154,10 @@ sac2c.for.LINUX_X86 libsac.a.for.LINUX_X86:
 	    '$(LX86_MAKE) deps;' \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
 	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c ./sac2c.for.LINUX_X86
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.a ./libsac.a.for.LINUX_X86
+	rsh -l $(LX86_USER) $(LX86_HOST) \
+	    'cd $(LX86_DIR)/src/runtime;'  \
+	    'tar cvfh libsac.tar libsac*.a'
+	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.tar ./libsac.tar.for.LINUX_X86
 	@ if [ $${?} -eq 0 ]; then  \
             rsh -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR)'; \
           else \
