@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/04/16 21:12:48  dkr
+ * GSCPrintMain() added
+ *
  * Revision 3.12  2002/04/16 18:39:21  dkr
  * signature of ObjInitFunctionName() modified
  *
@@ -142,6 +145,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "precompile.h"
+#include "gen_startup_code.h"
 
 /******************************************************************************
  *
@@ -804,10 +808,10 @@ GSCPrintDefines ()
 
 /******************************************************************************
  *
- * function:
+ * Function:
+ *   void GSCPrintMainBegin()
  *
- *
- * description:
+ * Description:
  *
  *
  ******************************************************************************/
@@ -842,10 +846,10 @@ GSCPrintMainBegin ()
 
 /******************************************************************************
  *
- * function:
+ * Function:
+ *   void GSCPrintMainEnd()
  *
- *
- * description:
+ * Description:
  *
  *
  ******************************************************************************/
@@ -861,6 +865,42 @@ GSCPrintMainEnd ()
     fprintf (outfile, "  SAC_PF_PRINT();\n");
     fprintf (outfile, "  SAC_CS_FINALIZE();\n");
     fprintf (outfile, "  SAC_HM_PRINT();\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void GSCPrintMain()
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+GSCPrintMain ()
+{
+    bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
+
+    DBUG_ENTER ("GSCPrintMain");
+
+    fprintf (outfile, "int main( int __argc, char *__argv[])\n");
+    fprintf (outfile, "{\n");
+    if (print_thread_id) {
+        fprintf (outfile, "  SAC_MT_DECL_MYTHREAD()\n");
+    }
+    fprintf (outfile, "  int __res;\n\n");
+    GSCPrintMainBegin ();
+    fprintf (outfile, "  __res = SACf_main_(");
+    if (print_thread_id) {
+        fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
+    }
+    fprintf (outfile, ");\n\n");
+    GSCPrintMainEnd ();
+    fprintf (outfile, "  return( __res);\n");
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
