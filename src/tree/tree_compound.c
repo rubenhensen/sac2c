@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2004/11/26 21:52:28  ktr
+ * LiftArg removed.
+ *
  * Revision 3.115  2004/11/26 16:59:19  skt
  * some includes removed
  *
@@ -3491,95 +3494,6 @@ TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3)
 /***
  ***  N_prf :  *and*  N_ap :
  ***/
-
-/******************************************************************************
- *
- * Function:
- *   node *TCliftArg( node *arg, node *fundef, types *new_type, bool do_rc,
- *                  node **new_assigns)
- *
- * Description:
- *   Lifts the given argument of a function application:
- *    - Generates a new and fresh varname.
- *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
- *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
- *      of ID_TYPE(arg).
- *    - Builds a new assignment and inserts it into the assignment chain
- *      'new_assigns'.
- *    - Returns the new argument.
- *
- ******************************************************************************/
-
-node *
-TCliftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assigns)
-{
-    char *new_name;
-    node *new_vardec;
-    node *new_arg;
-    node *new_ids;
-
-    DBUG_ENTER ("TCliftArg");
-
-    if (NODE_TYPE (arg) == N_id) {
-        new_name = ILIBtmpVarName (ID_NAME (arg));
-        /* Insert vardec for new var */
-        if (new_type == NULL) {
-            new_type = ID_TYPE (arg);
-        }
-    } else {
-        new_name = ILIBtmpVar ();
-        DBUG_ASSERT ((new_type != NULL), "no type found!");
-    }
-
-    new_vardec = TBmakeVardec (TBmakeAvis (ILIBstringCopy (new_name), NULL), NULL);
-    VARDEC_TYPE (new_vardec) = DUPdupAllTypes (new_type);
-
-    fundef = TCaddVardecs (fundef, new_vardec);
-
-    /*
-     * Abstract the given argument out:
-     *   ... = fun( A:n, ...);
-     * is transformed into
-     *   __A:1 = A:n;
-     *   ... = fun( __A:1, ...);
-     */
-    new_ids = TBmakeIds (TBmakeAvis (new_name, NULL), NULL);
-
-    IDS_DECL (new_ids) = new_vardec;
-
-    (*new_assigns) = TBmakeAssign (TBmakeLet (arg, new_ids), (*new_assigns));
-
-    new_arg = DUPdupIdsId (new_ids);
-
-    if (do_rc) {
-        switch (NODE_TYPE (arg)) {
-        case N_num:
-        case N_float:
-        case N_double:
-        case N_bool:
-        case N_char:
-            /* Explicit allocation needed */
-            (*new_assigns)
-              = TBmakeAssign (TBmakeLet (TBmakePrf3 (F_alloc, TBmakeNum (1),
-                                                     TBmakeNum (0),
-                                                     TCcreateZeroVector (0, T_int)),
-                                         DUPdoDupNode (new_ids)),
-                              (*new_assigns));
-            DBUG_ASSERT ((0), "There should be constants here, anyways!");
-            break;
-        case N_id:
-            /*
-             * ID-Lifting is allowed in order to enable the shape-class
-             * conversion hack
-             */
-            break;
-        default:
-            DBUG_ASSERT ((0), "illegal node type found");
-        }
-    }
-
-    DBUG_RETURN (new_arg);
-}
 
 /*--------------------------------------------------------------------------*/
 
