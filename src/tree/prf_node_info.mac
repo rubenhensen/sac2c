@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/07/16 12:10:59  ktr
+ * F_accu added.
+ *
  * Revision 3.26  2004/07/14 15:31:30  ktr
  * introduced alloc,suballoc and copy
  *
@@ -171,7 +174,9 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_drop_SxV,
           CODrop),
 
-  PRF_IF (F_alloc, "F_alloc", "_alloc_", "alloc", FALSE, 0, NTCPRF_drop_SxV, CODrop),
+  PRF_IF (F_accu, "F_accu", "_accu_", "accu", FALSE, 0, NTCPRF_dummy, NULL),
+
+  PRF_IF (F_alloc, "F_alloc", "_alloc_", "alloc", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_suballoc, "F_suballoc", "_suballoc_", "suballoc", FALSE, 0, NTCPRF_dummy,
           NULL),
   PRF_IF (F_fill, "F_fill", "_fill_", "fill", FALSE, 0, NTCPRF_dummy, NULL),
