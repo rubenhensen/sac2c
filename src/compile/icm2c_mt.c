@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/22 13:44:54  dkr
+ * bug in ICMCompileMT_ADJUST_SCHEDULER fixed:
+ * adjustment of offset only allowed if offset is really used!
+ *
  * Revision 3.1  2000/11/20 18:01:15  sacbase
  * new release made
  *
@@ -1296,14 +1300,11 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 void
 ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int upper,
-                               int unrolling, char *array)
+                               int unrolling, char *array, bool adjust_offset)
 {
     int i;
 
@@ -1315,8 +1316,12 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int up
 #undef MT_ADJUST_SCHEDULER
 
     INDENT;
-    fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER(%s, %d, %d, %d, %d, (", array, current_dim,
-             lower, upper, unrolling);
+    fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER");
+    if (adjust_offset) {
+        fprintf (outfile, "_OFFSET");
+    }
+    fprintf (outfile, "(%s, %d, %d, %d, %d, (", array, current_dim, lower, upper,
+             unrolling);
 
     if (current_dim == array_dim - 1) {
         fprintf (outfile, "1");
