@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/08/19 10:16:04  skt
+ * pushed the position of resetting executionmodes_available downwards
+ *
  * Revision 3.14  2004/08/17 15:47:39  skt
  * cell_groth enabled
  *
@@ -444,7 +447,6 @@ MUTHmodul (node *arg_node, info *arg_info)
     arg_node = CreateCells (arg_node);
 
     DBUG_PRINT ("MUTH", ("end CreateCells"));
-    executionmodes_available = FALSE;
     if ((break_after == PH_multithread) && (strcmp ("crece", break_specifier) == 0)) {
         goto cont;
     }
@@ -457,10 +459,11 @@ MUTHmodul (node *arg_node, info *arg_info)
     arg_node = CellGrowth (arg_node);
 
     DBUG_PRINT ("MUTH", ("end CellGrowth"));
-    executionmodes_available = FALSE;
     if ((break_after == PH_multithread) && (strcmp ("cegro", break_specifier) == 0)) {
         goto cont;
     }
+
+    executionmodes_available = FALSE;
     /*
      *  --- RepfunsInit (rfin) ---
      *
@@ -475,20 +478,6 @@ MUTHmodul (node *arg_node, info *arg_info)
 
     if ((break_after == PH_multithread) &&
         (strcmp("rfin", break_specifier)==0)) {
-      goto cont;
-      }*/
-
-    /*
-     *  --- AssignmentsRearrange (asmra) ---
-     */
-    /*DBUG_PRINT( "MUTH", ("begin AssignmentsRearrange"));
-
-    arg_node = AssignmentsRearrange(arg_node, arg_info);
-
-    DBUG_PRINT( "MUTH", ("end AssignmentsRearrange"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("asmra", break_specifier)==0)) {
       goto cont;
       }*/
 
