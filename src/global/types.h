@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/11/22 18:50:07  ktr
+ * typedefs moved from LookUpTables.h SACDevCamp 04
+ *
  * Revision 3.55  2004/11/22 18:48:41  sah
  * *<8-D
  *
@@ -1094,5 +1097,11 @@ typedef struct MASK_T dfmask_t;
  * moved from DataFlowMaskUtils.h:
  */
 typedef struct STACK_T dfmstack_t;
+
+/*******************************************************************************
+ * moved from LookUpTable.h
+ */
+
+typedef struct LUT_T *LUT_t;
 
 #endif /* _SAC_TYPES_H_ */
