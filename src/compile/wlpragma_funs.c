@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/03/09 12:55:58  dkr
+ * some comments added and changed respectively
+ *
  * Revision 2.1  1999/02/23 12:42:55  sacbase
  * new release made
  *
@@ -314,8 +317,8 @@ CalcSV (node *stride, long *sv)
  *   Computes the minimum and maximum of the index-vector found in 'strides'.
  *
  * remark:
- *   if 'strides' is a N_stride-node, this must be a sequence of cubes.
- *   if 'strides' is a N_striVar-node, this must be a fully optimized
+ *   if 'strides' is a N_WLstride-node, this must be a sequence of cubes.
+ *   if 'strides' is a N_WLstriVar-node, this must be a fully optimized
  *     nested stride/grid-tree.
  *   (see wltransform.c)
  *
@@ -332,7 +335,6 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
     switch (NODE_TYPE (strides)) {
 
     case N_WLstride:
-
         /*
          * initialize 'idx_min', 'idx_max'.
          */
@@ -365,7 +367,6 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
         break;
 
     case N_WLstriVar:
-
         /*
          * we have not a cube, but a fully optimized stride/grid-tree.
          *  -> we need to traverse the first stride only.
@@ -379,7 +380,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
                 if (NODE_TYPE (WLSTRIVAR_BOUND1 (strides)) == N_num) {
                     idx_min[d] = NUM_VAL (WLSTRIVAR_BOUND1 (strides));
                 } else {
-                    idx_min[d] = 0;
+                    idx_min[d] = 0; /* *** caution! *** */
                 }
             }
 
@@ -397,7 +398,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
                 if (NODE_TYPE (WLSTRIVAR_BOUND2 (stride)) == N_num) {
                     idx_max[d] = NUM_VAL (WLSTRIVAR_BOUND2 (stride));
                 } else {
-                    idx_max[d] = INT_MAX;
+                    idx_max[d] = INT_MAX; /* *** caution!!!! LONG_MAX??? *** */
                 }
             }
 
