@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/08/13 16:26:47  khf
+ * added duplication of NWITHOP_OFFSET_NEEDED
+ *
  * Revision 3.98  2004/08/06 13:10:15  ktr
  * NWITHOP_MEM is now duplicated as well.
  *
@@ -2069,6 +2072,8 @@ DupNwithop (node *arg_node, info *arg_info)
         DBUG_ASSERT (0, "Unknown N_Nwithop-type found");
         break;
     }
+
+    NWITHOP_OFFSET_NEEDED (new_node) = NWITHOP_OFFSET_NEEDED (arg_node);
 
     NWITHOP_NEXT (new_node) = DUPCONT (NWITHOP_NEXT (arg_node));
 
