@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/10 13:16:53  dkr
+ * WLTNgenerator() modified:
+ * all bounds/step/width vectors (not only constant ones) are propagated
+ * now
+ *
  * Revision 3.7  2001/04/03 20:59:12  dkr
  * warning messages modified
  *
@@ -156,7 +161,7 @@
  are not easily calculated).
 
  Transformations we do:
- - propagate constant arrays into the generator.
+ - propagate arrays into the generator.
  - create new generators to receive a full partition of the array.
    - genarray: Only if the generator has as much elements as the array
                described by the WL.
@@ -170,12 +175,12 @@
  *******************************************************************************
 
  Usage of arg_info:
- - node[0]: NEXT  : store old information in nested WLs
- - node[1]: WL    : reference to base node of current WL (N_Nwith)
- - node[2]: ASSIGN: always the last N_assign node
- - node[3]: FUNDEF: pointer to last fundef node. needed to access vardecs.
- - node[4]: LET   : pointer to N_let node of current WL.
-                    LET_EXPR(ID) == INFO_WLI_WL.
+ - node[0]: NEXT   : store old information in nested WLs
+ - node[1]: WL     : reference to base node of current WL (N_Nwith)
+ - node[2]: ASSIGN : always the last N_assign node
+ - node[3]: FUNDEF : pointer to last fundef node. needed to access vardecs.
+ - node[4]: LET    : pointer to N_let node of current WL.
+                     LET_EXPR(ID) == INFO_WLI_WL.
  - node[5]: REPLACE: if != NULL, replace WL with this node.
  - varno  : number of variables in this function, see optimize.c
  - mask[0]: DEF mask, see optimize.c
@@ -192,10 +197,8 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
-#include "globals.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
 #include "generatemasks.h"
@@ -349,13 +352,15 @@ check_genarray_full_part (node *wln)
     uppern = NWITH_BOUND2 (wln);
 
     DBUG_ASSERT (((NODE_TYPE (lowern) == N_array) && (NODE_TYPE (uppern) == N_array)),
-                 "generator bounds must be constant!");
+                 "generator bounds must be arrays!");
 
     result = 1;
 
     /* check lower bound */
     lowern = ARRAY_AELEMS (lowern);
     while (result && lowern) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (lowern)) == N_num),
+                     "lower generator bound must be constant!");
         if (NUM_VAL (EXPRS_EXPR (lowern)) != 0) {
             result = 0;
         }
@@ -366,6 +371,10 @@ check_genarray_full_part (node *wln)
     uppern = ARRAY_AELEMS (uppern);
     shapen = ARRAY_AELEMS (shapen);
     while (result && uppern) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (uppern)) == N_num),
+                     "shape must be constant!");
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
+                     "upper generator bound must be constant!");
         if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern))) {
             result = 0;
         }
@@ -930,7 +939,7 @@ WLTNwith (node *arg_node, node *arg_info)
  *   node *WLTNpart(node *arg_node, node *arg_info)
  *
  * description:
- *   1. traverse generator to propagate constants,
+ *   1. traverse generator to propagate arrays,
  *   2. traverse appropriate body.
  *
  ******************************************************************************/
@@ -960,9 +969,9 @@ WLTNpart (node *arg_node, node *arg_info)
  *   node *WLTNgenerator(node *arg_node, node *arg_info)
  *
  * description:
- *   constant bounds, step and width vectors are substituted into the
- *   generator. If any son is not a constant vector the N_Nwith attribut
- *   FOLDABLE is set to 0.
+ *   bounds, step and width vectors are substituted into the generator.
+ *   If any son is not a constant vector the N_Nwith attribut FOLDABLE is set
+ *   to FALSE.
  *   Generators that surmount the array bounds (like [-5,3] or [11,10] >
  *   [maxdim1,maxdim2] = [10,10]) are changed to fitting gens.
  *
@@ -982,7 +991,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
     /*
      * All this work has only to be done once for every WL:
-     *  - inserting constant bounds (done here),
+     *  - inserting N_array bounds (done here),
      *  - check bounds (done here),
      *  - creating full partition (WLTNwith).
      * If only one of these points was not successful, another call of WLT
@@ -995,7 +1004,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
     wln = INFO_WLI_WL (arg_info);
     if (-1 == NWITH_PARTS (wln)) {
         /*
-         * try to propagate a constant in all sons
+         * try to propagate a N_array node in all sons
          */
         check_bounds = 1;
         for (i = 1; i <= 4; i++) {
@@ -1017,36 +1026,33 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 break;
             }
 
+            /*
+             * wltransform.[ch] (compiler phase 16) can handle with-loop bounds
+             * of the form '[1,2,3]', '[a,b,c]' and 'A'.
+             *                        ^^^^^^^^^ :-))
+             */
             if ((*bound) != NULL) {
-                if (NODE_TYPE ((*bound)) == N_id) {
+                if (NODE_TYPE ((*bound)) == N_array) {
+                    tmpn = (*bound);
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (*bound) == N_id),
+                                 "type of generator son is neither N_id nor N_array");
                     tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO (arg_info));
-#if 1
-                    if (IsConstArray (tmpn)) {
-#else
-                    /*
-                     * wltransform.[ch] (compiler phase 16) can handle with-loop bounds
-                     * of the form '[1,2,3]', '[a,b,c]' and 'A'.
-                     *                        ^^^^^^^^^ :-))
-                     */
-                    if (NODE_TYPE (tmpn) == N_array) {
-#endif
-                        /* this bound references a constant array, which may be
-                         * substituted. */
+                    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array)) {
+                        /* this bound references an array, which may be substituted */
                         INFO_USE[ID_VARNO (((*bound)))]--;
                         (*bound) = FreeTree (*bound);
                         /* copy const array to *bound */
                         (*bound) = DupTree (tmpn);
-                    } else {
-                        /* non-constant son found */
-                        if (i <= 2) {
-                            /* non-constant lower or upper bound found */
-                            check_bounds = 0;
-                        }
-                        NWITH_FOLDABLE (wln) = FALSE;
                     }
-                } else {
-                    DBUG_ASSERT ((NODE_TYPE (*bound) == N_array),
-                                 "type of generator son is neither N_id nor N_array");
+                }
+                if (!IsConstArray (tmpn)) {
+                    /* non-constant son found */
+                    if (i <= 2) {
+                        /* non-constant lower or upper bound found */
+                        check_bounds = 0;
+                    }
+                    NWITH_FOLDABLE (wln) = FALSE;
                 }
             } else {
                 DBUG_ASSERT ((i > 2), "Unspecified bound (.) in generator found!");
@@ -1069,6 +1075,9 @@ WLTNgenerator (node *arg_node, node *arg_info)
             while (lbe) {
                 DBUG_ASSERT ((ube != NULL),
                              "dimensionality differs in lower and upper bound!");
+                DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
+                              && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
+                             "generator bounds must be constant!");
                 lbnum = NUM_VAL (EXPRS_EXPR (lbe));
                 ubnum = NUM_VAL (EXPRS_EXPR (ube));
 
