@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/07/28 08:32:46  jhs
+# Added spmd_cons.o.
+#
 # Revision 2.6  1999/07/09 11:39:01  cg
 # make deps done
 #
@@ -79,7 +82,7 @@ INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../pri
      -I../compile
 
 all: concurrent.o scheduling.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
-     sync_opt.o schedule.o spmd_trav.o
+     sync_opt.o schedule.o spmd_trav.o spmd_cons.o
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
