@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.18  1998/02/05 11:14:02  srs
  * OBJlet(): added traversal of new withloop analogous to old withloops.
  *
@@ -455,7 +462,7 @@ OBJfundef (node *arg_node, node *arg_info)
  *                  This name is used when making a global object local.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : strlen, strcpy, strcat, Trav, Malloc
+ *  external funs : strlen, sprintf, Trav, Malloc
  *  macros        : DBUG, TREE
  *
  *  remarks       :
@@ -470,11 +477,10 @@ OBJobjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("OBJobjdef");
 
     buffer = Malloc (strlen (OBJDEF_NAME (arg_node))
-                     + strlen (MOD (OBJDEF_MOD (arg_node))) + strlen (mod_name_con) + 1);
+                     + strlen (CHECK_NULL (OBJDEF_MOD (arg_node))) + 3);
 
-    strcpy (buffer, MOD (OBJDEF_MOD (arg_node)));
-    strcat (buffer, mod_name_con);
-    strcat (buffer, OBJDEF_NAME (arg_node));
+    sprintf (buffer, "%s__%s", CHECK_NULL (OBJDEF_MOD (arg_node)),
+             OBJDEF_NAME (arg_node));
 
     DBUG_PRINT ("OBJ", ("Generating varname %s for %s", buffer, ItemName (arg_node)));
 

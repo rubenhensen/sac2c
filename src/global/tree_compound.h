@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.72  1998/06/04 16:59:20  cg
  * added function LookupIds that looks for a given identifier
  * within an ids-chain.
@@ -281,22 +288,6 @@ specific implementation of a function should remain with the source code.
 
 #define CHECK_NULL(a) ((NULL == a) ? "" : a)
 
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-/* macros for module name access                                            */
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-
-#define MOD_NAME_CON "__"
-
-#define MOD(a) ((NULL == a) ? "" : a)
-#define MOD_CON(a) ((NULL == a) ? "" : MOD_NAME_CON)
-#define MOD_NAME(a) MOD (a), MOD_CON (a)
-
-extern char *mod_name_con;
-extern char mod_name_con_1[];
-extern char mod_name_con_2[];
-
 /*
  *
  *  macro name    : CMP_MOD(a,b)
@@ -397,7 +388,7 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 #define CMP_TYPE_USER(a, b)                                                              \
                                                                                          \
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
-     && (!strcmp (MOD (TYPES_MOD (a)), MOD (TYPES_MOD (b)))))
+     && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
 
 /*--------------------------------------------------------------------------*/
 
@@ -837,7 +828,7 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 
 #define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
     ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
-     && (!strcmp (MOD (mod), MOD (TYPEDEF_MOD (tdef)))))
+     && (!strcmp (CHECK_NULL (mod), CHECK_NULL (TYPEDEF_MOD (tdef)))))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1087,7 +1078,7 @@ extern void ObjList2ArgList (node *objdef);
 #define CMP_FUN_ID(a, b)                                                                 \
                                                                                          \
     ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
-     && (0 == strcmp (MOD (FUNDEF_MOD (a)), MOD (FUNDEF_MOD (b)))))
+     && (0 == strcmp (CHECK_NULL (FUNDEF_MOD (a)), CHECK_NULL (FUNDEF_MOD (b)))))
 
 /*
  *

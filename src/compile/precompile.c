@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.68  1998/06/04 17:00:54  cg
  * information about refcounted variables in the context of loops,
  * conditionals and the old with-loop are now stored in ids-chains
@@ -422,7 +429,7 @@ RenameTypes (types *type)
         } else {
             tmp = (char *)Malloc (
               sizeof (char)
-              * (strlen (TYPES_NAME (type)) + strlen (MOD (TYPES_MOD (type))) + 8));
+              * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
             sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
         }
 

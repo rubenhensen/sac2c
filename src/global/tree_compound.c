@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.39  1998/06/04 16:59:20  cg
  * added function LookupIds that looks for a given identifier
  * within an ids-chain.
@@ -144,16 +151,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "free.h"
-
-/***
- ***  mod_name_con
- ***/
-
-char mod_name_con_1[] = "__";
-
-char mod_name_con_2[] = ":";
-
-char *mod_name_con = mod_name_con_1;
 
 /***
  ***  StoreString
@@ -372,7 +369,7 @@ SearchTypedef (char *name, char *mod, node *implementations)
 
     DBUG_ENTER ("SearchTypedef");
 
-    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", MOD (mod), name));
+    DBUG_PRINT ("CHECKDEC", ("Searching type '%s`", ModName (mod, name)));
 
     tmp = implementations;
     while ((tmp != NULL) && (CMP_TYPE_TYPEDEF (name, mod, tmp) == 0)) {
@@ -393,7 +390,7 @@ SearchObjdef (char *name, char *mod, node *implementations)
 
     DBUG_ENTER ("SearchObjdef");
 
-    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", MOD (mod), name));
+    DBUG_PRINT ("CHECKDEC", ("Searching global object '%s`", ModName (mod, name)));
 
     tmp = implementations;
     while ((tmp != NULL) && (CMP_OBJ_OBJDEF (name, mod, tmp) == 0)) {
@@ -735,14 +732,16 @@ AppendAssign (node *assigns, node *assign)
 
     DBUG_ENTER ("AppendAssign");
 
-    if (assigns != NULL) {
-        tmp = assigns;
-        while (ASSIGN_NEXT (tmp) != NULL) {
-            tmp = ASSIGN_NEXT (tmp);
+    if (assign != NULL) {
+        if (assigns != NULL) {
+            tmp = assigns;
+            while (ASSIGN_NEXT (tmp) != NULL) {
+                tmp = ASSIGN_NEXT (tmp);
+            }
+            ASSIGN_NEXT (tmp) = assign;
+        } else {
+            assigns = assign;
         }
-        ASSIGN_NEXT (tmp) = assign;
-    } else {
-        assigns = assign;
     }
 
     DBUG_RETURN (assigns);

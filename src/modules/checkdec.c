@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.13  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -137,7 +144,7 @@ PrintDecTypes (types *type, char *modname)
     DBUG_ENTER ("PrintDecTypes");
 
     do {
-        if (strcmp (MOD (TYPES_MOD (type)), modname) == 0) {
+        if (strcmp (CHECK_NULL (TYPES_MOD (type)), modname) == 0) {
             fprintf (outfile, "%s", Type2String (type, 3));
         } else {
             fprintf (outfile, "%s", Type2String (type, 0));
@@ -206,11 +213,7 @@ CheckDec (node *syntax_tree)
 
         act_tab = writedec_tab;
 
-        mod_name_con = mod_name_con_2;
-
         Trav (syntax_tree, NULL);
-
-        mod_name_con = mod_name_con_1;
 
         ABORT_ON_ERROR;
 
@@ -611,7 +614,7 @@ WDECtypedef (node *arg_node, node *arg_info)
             fprintf (outfile, "  %s;\n", TYPEDEF_NAME (arg_node));
         } else {
             if ((strcmp (TYPEDEF_NAME (arg_node), classname) != 0)
-                || (strcmp (MOD (TYPEDEF_MOD (arg_node)), classname) != 0)) {
+                || (strcmp (CHECK_NULL (TYPEDEF_MOD (arg_node)), classname) != 0)) {
                 fprintf (outfile, "  %s;\n", TYPEDEF_NAME (arg_node));
             }
         }

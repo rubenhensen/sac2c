@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.237  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.236  1998/06/03 14:33:13  cg
  * The preprocessor conditional around spmd-functions is now
  * printed directly by PrintFundef()
@@ -1197,7 +1204,7 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     fprintf (outfile, "typedef %s ", Type2String (TYPEDEF_TYPE (arg_node), 0));
     if (TYPEDEF_MOD (arg_node) != NULL) {
-        fprintf (outfile, "%s%s", TYPEDEF_MOD (arg_node), mod_name_con);
+        fprintf (outfile, "%s:", TYPEDEF_MOD (arg_node));
     }
     fprintf (outfile, "%s;\n", TYPEDEF_NAME (arg_node));
 
@@ -1233,7 +1240,7 @@ PrintObjdef (node *arg_node, node *arg_info)
         fprintf (outfile, "%s ", Type2String (OBJDEF_TYPE (arg_node), 0));
 
         if (OBJDEF_MOD (arg_node) != NULL) {
-            fprintf (outfile, "%s%s", OBJDEF_MOD (arg_node), mod_name_con);
+            fprintf (outfile, "%s:", OBJDEF_MOD (arg_node));
         }
 
         fprintf (outfile, "%s", OBJDEF_NAME (arg_node));
@@ -1271,7 +1278,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     fprintf (outfile, "%s ", Type2String (FUNDEF_TYPES (arg_node), 0));
 
     if (FUNDEF_MOD (arg_node) != NULL) {
-        fprintf (outfile, "%s%s", FUNDEF_MOD (arg_node), mod_name_con);
+        fprintf (outfile, "%s:", FUNDEF_MOD (arg_node));
     }
 
     fprintf (outfile, "%s(", FUNDEF_NAME (arg_node));
@@ -1619,7 +1626,7 @@ PrintAp (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintAp");
 
     if (AP_MOD (arg_node) != NULL) {
-        fprintf (outfile, "%s%s", AP_MOD (arg_node), mod_name_con);
+        fprintf (outfile, "%s:", AP_MOD (arg_node));
     }
     fprintf (outfile, "%s(", AP_NAME (arg_node));
     if (AP_ARGS (arg_node)) {
@@ -1949,12 +1956,11 @@ PrintFoldfun (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (ret_node != NULL, "foldfun without return-statement");
 
+    fprintf (outfile, "fold( ");
     if (NULL != FOLDFUN_MOD (arg_node)) {
-        fprintf (outfile, "fold( %s%s%s, ", FOLDFUN_MOD (arg_node), mod_name_con,
-                 FOLDFUN_NAME (arg_node));
-    } else {
-        fprintf (outfile, "fold( %s, ", FOLDFUN_NAME (arg_node));
+        fprintf (outfile, "%s:", FOLDFUN_MOD (arg_node));
     }
+    fprintf (outfile, "%s, ", FOLDFUN_NAME (arg_node));
 
     Trav (FOLDFUN_NEUTRAL (arg_node), arg_info);
     fprintf (outfile, ", ");
@@ -2650,8 +2656,8 @@ PrintNwithop (node *arg_node, node *arg_info)
         if (NWITHOP_MOD (arg_node) == NULL) {
             fprintf (outfile, "fold/*fun*/( %s, ", NWITHOP_FUN (arg_node));
         } else {
-            fprintf (outfile, "fold/*fun*/( %s%s%s, ", NWITHOP_MOD (arg_node),
-                     mod_name_con, NWITHOP_FUN (arg_node));
+            fprintf (outfile, "fold/*fun*/( %s:%s, ", NWITHOP_MOD (arg_node),
+                     NWITHOP_FUN (arg_node));
         }
         Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         break;
@@ -3082,7 +3088,7 @@ Print (node *syntax_tree)
     old_tab = act_tab;
 
     act_tab = print_tab;
-    mod_name_con = mod_name_con_1;
+
     indent = 0;
 
     if (compiler_phase == PH_genccode) {

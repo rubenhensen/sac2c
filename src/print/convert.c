@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.20  1998/06/03 14:32:41  cg
  * implementation streamlined
  *
@@ -194,7 +201,11 @@ Type2String (types *type, int flag)
         if (TYPES_BASETYPE (type) == T_user) {
             if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
                 strcat (tmp_string, TYPES_MOD (type));
-                strcat (tmp_string, mod_name_con);
+                if (compiler_phase >= PH_precompile) {
+                    strcat (tmp_string, "__");
+                } else {
+                    strcat (tmp_string, ":");
+                }
             }
             strcat (tmp_string, TYPES_NAME (type));
         } else {

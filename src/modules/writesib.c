@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/06/05 15:27:49  cg
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * Now, module name and symbol name are combined correctly by ':'.
+ * Only when it really comes to the generation of C code, the ':' is
+ * replaced by '__'. This is done by the renaming of all identifiers
+ * during the precompilation phase.
+ *
  * Revision 1.16  1997/11/12 10:38:24  sbs
  * break in default of switch constructs added (as required by cc)
  *
@@ -1073,13 +1080,11 @@ WSIBmodul (node *arg_node, node *arg_info)
 
         store_outfile = outfile;
         outfile = sibfile;
-        mod_name_con = mod_name_con_2;
 
         PrintSibTypes (sibfile, INFO_EXPORTTYPES (export), MODUL_NAME (arg_node));
         PrintSibObjs (sibfile, INFO_EXPORTOBJS (export), MODUL_NAME (arg_node));
         PrintSibFuns (sibfile, INFO_EXPORTFUNS (export), MODUL_NAME (arg_node));
 
-        mod_name_con = mod_name_con_1;
         outfile = store_outfile;
 
         /*
