@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/04/13 19:01:47  dkr
+ * support for wlcomp-pragmas added in FreePragma
+ *
  * Revision 1.47  1998/04/10 02:23:24  dkr
  * removed a typo in FreeWLseg
  *
@@ -1533,6 +1536,10 @@ FreePragma (node *arg_node, node *arg_info)
     FREE (PRAGMA_COPYFUN (arg_node));
     FREE (PRAGMA_FREEFUN (arg_node));
     FREE (PRAGMA_INITFUN (arg_node));
+
+    if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
+        PRAGMA_WLCOMP_APS (arg_node) = Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
+    }
 
     /*
     FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
