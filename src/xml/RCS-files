@@ -8,3 +8,4 @@ ast2node_basic_c.xsl
 ast2node_basic_h.xsl
 ast2serialize_attribs_h.xsl
 ast2serialize_buildstack_c.xsl
+ast2serialize_buildstack_h.xsl
