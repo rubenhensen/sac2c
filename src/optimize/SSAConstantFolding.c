@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.83  2005/02/14 15:51:48  mwe
+ * CFids moved to cvp
+ *
  * Revision 1.82  2005/02/01 17:40:26  mwe
  * evaluations of primitive operations done by typechecker via typeupgrade removed from
  * CFfoldPrfExpr
@@ -992,16 +995,19 @@ Shape (node *expr)
         if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
             || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
             || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+
             dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
             /* store known shape as constant (int vector of len dim) */
-            cshape = SHoldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_DECL (ID_AVIS (expr))));
+
+            /*cshape = SHoldTypes2Shape(VARDEC_OR_ARG_TYPE(AVIS_DECL(ID_AVIS(expr)))); */
+            cshape = TYgetShape (AVIS_TYPE (ID_AVIS (expr)));
             int_vec = SHshape2IntVec (cshape);
-            cshape = SHfreeShape (cshape);
 
             result = COmakeConstant (T_int, SHcreateShape (1, dim), int_vec);
         } else {
             result = NULL;
         }
+
     } else {
         result = NULL;
     }
@@ -2634,74 +2640,6 @@ CFprf (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CFids(info *arg_ids, node *arg_info)
- *
- * description:
- *   traverse ids chain and return exprs chain (stored in INFO_CF_RESULT)
- *   and look for constant results.
- *   each constant identifier will be set in an separate assignment (added to
- *   INFO_CF_POSTASSIGN) and substituted in the function application with
- *   a new dummy identifier that can be removed by constant folding later.
- *
- *****************************************************************************/
-
-node *
-CFids (node *arg_ids, info *arg_info)
-{
-    constant *new_co;
-    node *assign_let;
-    node *new_vardec;
-
-    DBUG_ENTER ("CFids");
-
-    if (IDS_NEXT (arg_ids) != NULL) {
-        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
-            new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
-
-            DBUG_PRINT ("CF", ("identifier %s marked as constant",
-                               VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
-
-            /* create one let assign for constant definition, reuse old avis/vardec */
-            assign_let = TCmakeAssignLet (IDS_AVIS (arg_ids), COconstant2AST (new_co));
-
-            /* append new copy assignment to then-part block */
-            INFO_CF_POSTASSIGN (arg_info)
-              = TCappendAssign (INFO_CF_POSTASSIGN (arg_info), assign_let);
-
-            DBUG_PRINT ("CF",
-                        ("create constant assignment for %s", (IDS_NAME (arg_ids))));
-
-            /* create new dummy identifier */
-            new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
-            BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info))
-              = TCappendVardec (BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info)), new_vardec);
-
-            /*
-             * set new dummy values
-             */
-            AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CF_ASSIGN (arg_info);
-            IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
-            AVIS_TYPE (IDS_AVIS (arg_ids))
-              = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign_let)))));
-        }
-
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
-    } else {
-
-        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
-            new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
-
-            LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (arg_ids))))
-              = COconstant2AST (new_co);
-        }
-    }
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *CFwith( node *arg_node, info *arg_info)
  *
  * description:
@@ -3117,7 +3055,9 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             new_node = StructOpReshape (arg_co[0], arg_expr[1]);
             if ((new_node == NULL) && (NODE_TYPE (arg_expr[1]) == N_id)) {
                 /* reshape( shp, a)  ->  a    iff (shp == shape(a)) */
-                shape *shp = SHoldTypes2Shape (TYtype2OldType (ID_NTYPE (arg_expr[1])));
+                /*	shape *shp = SHoldTypes2Shape( TYtype2OldType( ID_NTYPE(
+                 * arg_expr[1])));*/
+                shape *shp = SHcopyShape (TYgetShape (ID_NTYPE (arg_expr[1])));
                 if (shp != NULL) {
                     if (SHcompareWithCArray (shp, COgetDataVec (arg_co[0]),
                                              SHgetExtent (COgetShape (arg_co[0]), 0))) {
