@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/02/07 09:51:59  cg
+ * Changed setting of semicolons in definitions and declarations of
+ * mutex locks in order to avoid nasty warnings from cc.
+ *
  * Revision 2.3  2000/01/17 16:25:58  cg
  * Reorganized implementation of the runtime system for
  * multi-threaded execution.
@@ -73,8 +77,8 @@
 int SAC_TR_array_memcnt = 0;
 int SAC_TR_hidden_memcnt = 0;
 
-SAC_MT_DEFINE_LOCK (SAC_TR_array_memcnt_lock);
-SAC_MT_DEFINE_LOCK (SAC_TR_hidden_memcnt_lock);
+SAC_MT_DEFINE_LOCK (SAC_TR_array_memcnt_lock)
+SAC_MT_DEFINE_LOCK (SAC_TR_hidden_memcnt_lock)
 
 /******************************************************************************
  *

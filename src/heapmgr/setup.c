@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/07 09:51:59  cg
+ * Changed setting of semicolons in definitions and declarations of
+ * mutex locks in order to avoid nasty warnings from cc.
+ *
  * Revision 1.3  2000/01/17 19:48:01  cg
  * Removed debug code.
  *
@@ -63,8 +67,8 @@ extern unsigned int SAC_HM_max_worker_threads;
  * data structures of the heap manager.
  */
 
-SAC_MT_DEFINE_LOCK (SAC_HM_top_arena_lock);
-SAC_MT_DEFINE_LOCK (SAC_HM_diag_counter_lock);
+SAC_MT_DEFINE_LOCK (SAC_HM_top_arena_lock)
+SAC_MT_DEFINE_LOCK (SAC_HM_diag_counter_lock)
 
 /******************************************************************************
  *

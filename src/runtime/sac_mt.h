@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/02/07 09:51:59  cg
+ * Changed setting of semicolons in definitions and declarations of
+ * mutex locks in order to avoid nasty warnings from cc.
+ *
  * Revision 2.12  2000/01/17 16:25:58  cg
  * Reorganized initialization of the runtime system for
  * multithreaded program execution.
@@ -665,13 +669,13 @@ typedef union {
  * Definition of macros implementing a general locking mechanism
  */
 
-#define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER
+#define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER;
 
-#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name
+#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name;
 
-#define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name)
+#define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name);
 
-#define SAC_MT_RELEASE_LOCK(name) pthread_mutex_unlock (&name)
+#define SAC_MT_RELEASE_LOCK(name) pthread_mutex_unlock (&name);
 /*
  * Warning:
  *
@@ -717,9 +721,9 @@ extern pthread_key_t SAC_MT_threadid_key;
 
 extern unsigned int SAC_MT_master_id;
 
-SAC_MT_DECLARE_LOCK (SAC_MT_output_lock);
+SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
 
-SAC_MT_DECLARE_LOCK (SAC_MT_init_lock);
+SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 /*****************************************************************************/
 

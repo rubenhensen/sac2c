@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/02/07 09:51:59  cg
+ * Changed setting of semicolons in definitions and declarations of
+ * mutex locks in order to avoid nasty warnings from cc.
+ *
  * Revision 2.3  2000/01/17 16:25:58  cg
  * Reorganized implementation of the runtime system for
  * multi-threaded execution.
@@ -115,9 +119,9 @@ extern SAC_MT_barrier_t SAC_MT_barrier_space[];
 
 pthread_key_t SAC_MT_threadid_key;
 
-SAC_MT_DEFINE_LOCK (SAC_MT_output_lock);
+SAC_MT_DEFINE_LOCK (SAC_MT_output_lock)
 
-SAC_MT_DEFINE_LOCK (SAC_MT_init_lock);
+SAC_MT_DEFINE_LOCK (SAC_MT_init_lock)
 
 unsigned int SAC_MT_master_id = 0;
 

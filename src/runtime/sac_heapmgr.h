@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/02/07 09:51:59  cg
+ * Changed setting of semicolons in definitions and declarations of
+ * mutex locks in order to avoid nasty warnings from cc.
+ *
  * Revision 1.10  2000/02/04 16:50:20  cg
  * Added MSCA (memory size cache adjustment)
  *
@@ -340,8 +344,8 @@ typedef enum {
  * Mutex locks for multi-threaded execution.
  */
 
-SAC_MT_DECLARE_LOCK (SAC_HM_top_arena_lock);
-SAC_MT_DECLARE_LOCK (SAC_HM_diag_counter_lock);
+SAC_MT_DECLARE_LOCK (SAC_HM_top_arena_lock)
+SAC_MT_DECLARE_LOCK (SAC_HM_diag_counter_lock)
 
 /*
  * Declaration of SAC heap management global variables.
