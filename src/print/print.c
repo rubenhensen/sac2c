@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2002/08/09 10:00:52  dkr
+ * DBUG-string PRINT_NTY added
+ *
  * Revision 3.107  2002/08/06 07:51:47  sbs
  * PrintNtype and PrintDebugNtype made public 8-))
  *
@@ -1406,9 +1409,13 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     if (FUNDEF_NAME (arg_node) != NULL) {
         fprintf (outfile, "%s :: ", FUNDEF_NAME (arg_node));
         if (FUNDEF_TYPE (arg_node) != NULL) {
+            char *(*t2s_fun) (ntype *, bool, int);
+            t2s_fun = TYType2String;
+            DBUG_EXECUTE ("PRINT_NTY", t2s_fun = TYType2DebugString;);
+
             fprintf (outfile, "%s\n",
-                     TYType2String (FUNDEF_TYPE (arg_node), TRUE,
-                                    indent + strlen (FUNDEF_NAME (arg_node)) + 8));
+                     t2s_fun (FUNDEF_TYPE (arg_node), TRUE,
+                              indent + strlen (FUNDEF_NAME (arg_node)) + 8));
         }
     }
     INDENT;
