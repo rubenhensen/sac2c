@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2003/06/23 15:11:36  dkr
+ * comment modified
+ *
  * Revision 3.78  2003/06/17 15:57:54  dkr
  * comment in header extended
  *
@@ -2495,10 +2498,7 @@ GetWlShape (node *wl, int dims, types *wl_type)
              * For the time being constant N_id nodes are substituted into
              * the N_Nwithop node during WLT (SSAWLT.c) ...
              * Note here, that it is not possible to use the SSA form in this
-             * phase yet:
-             *   - The previous phase RC can not handle SSA.
-             *   - This phase can not handle SSA either since all NCODE_CEXPR
-             *     have to have identical names especially in fold-WLs...
+             * phase since the previous phase RC can not handle SSA yet.
              */
         }
         break;
