@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/21 16:30:27  jhs
+ * needed_sync_fold introduced, max_sync_fold_adjusted.
+ *
  * Revision 2.5  1999/07/20 16:59:11  jhs
  * Added counting of FOLDCOUNT.
  *
@@ -43,6 +46,8 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "globals.h"
+#include "internal_lib.h"
 
 /******************************************************************************
  *
@@ -71,7 +76,9 @@ SYNCIassign (node *arg_node, node *arg_info)
 
     sync_let = ASSIGN_INSTR (arg_node);
 
-    /* contains the current assignment a with-loop?? */
+    /*
+     *  contains the current assignment a with-loop??
+     */
     if ((NODE_TYPE (sync_let) == N_let)
         && (NODE_TYPE (LET_EXPR (sync_let)) == N_Nwith2)) {
 
@@ -81,7 +88,7 @@ SYNCIassign (node *arg_node, node *arg_info)
         /*
          * current assignment contains a with-loop
          *  -> create a SYNC-region containing the current assignment only
-         *      and insert it into the syntaxtree.
+         *     and insert it into the syntaxtree.
          */
         sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
         SYNC_FIRST (sync) = INFO_SPMD_FIRST (arg_info);
@@ -90,6 +97,7 @@ SYNCIassign (node *arg_node, node *arg_info)
         withop = NWITH2_WITHOP (with);
         if (NWITHOP_TYPE (withop) == WO_foldfun) {
             SYNC_FOLDCOUNT (sync) = 1;
+            needed_sync_fold = MAX (needed_sync_fold, 1);
         } else {
             SYNC_FOLDCOUNT (sync) = 0;
         }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/21 16:29:37  jhs
+ * needed_sync_fold introduced, max_sync_fold_adjusted.
+ *
  * Revision 2.12  1999/07/20 16:52:32  jhs
  * Added one or two comments.
  *
@@ -428,7 +431,11 @@ PrintGlobalSettings (node *syntax_tree)
              GSCCalcMasterclass (num_threads));
     fprintf (outfile, "#endif\n\n");
 
-    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", max_sync_fold);
+    if (max_sync_fold == -1) {
+        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", needed_sync_fold);
+    } else {
+        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", max_sync_fold);
+    }
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n",

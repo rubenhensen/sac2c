@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/21 16:30:27  jhs
+ * needed_sync_fold introduced, max_sync_fold_adjusted.
+ *
  * Revision 2.2  1999/06/25 15:36:33  jhs
  * Checked these in just to provide compileabilty.
  *
@@ -44,30 +47,36 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "globals.h"
+#include "internal_lib.h"
 
 /******************************************************************************
  *
  * function:
- *   int WithLoopIsWorthParallelExecution(node *wl)
+ *   int WithLoopIsWorthConcurrentExecution(node *wl, ids *let_var)
  *
  * description:
- *
- *   This function decides whether a with-loop is actually to be executed
- *   in parallel. This is necessary because for small with-loops the most
+ *   This function decides whether a with-loop is actually worth to be executed
+ *   concurrenly. This is necessary because for small with-loops the most
  *   efficient way of execution is just sequential.
+ *
+ * attention:
+ *   Each test whether a with-loop is worth to be executed concurrently
+ *   has to follow a test, whether the with-loop is allowed to be executed
+ *   concurrently (by WithLoopIsAllowedConcurrentExecution).
  *
  ******************************************************************************/
 
 static int
-WithLoopIsWorthParallelExecution (node *wl, ids *let_var)
+WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 {
     int res, i, size, target_dim;
 
-    DBUG_ENTER ("WithLoopIsWorthParallelExecution");
+    DBUG_ENTER ("WithLoopIsWorthConcurrentExecution");
 
-    if ((NWITHOP_TYPE (NWITH2_WITHOP (wl)) == WO_foldfun)
-        || (NWITHOP_TYPE (NWITH2_WITHOP (wl)) == WO_foldprf)) {
-        res = 1;
+    if ((NWITHOP_TYPE (NWITH2_WITHOP (withloop)) == WO_foldfun)
+        || (NWITHOP_TYPE (NWITH2_WITHOP (withloop)) == WO_foldprf)) {
+        res = TRUE;
     } else {
         target_dim = VARDEC_DIM (IDS_VARDEC (let_var));
         if (target_dim > 0) {
@@ -76,13 +85,51 @@ WithLoopIsWorthParallelExecution (node *wl, ids *let_var)
                 size *= VARDEC_SHAPE (IDS_VARDEC (let_var), i);
             }
             if (size < min_parallel_size) {
-                res = 0;
+                res = FALSE;
             } else {
-                res = 1;
+                res = TRUE;
             }
         } else {
-            res = 1;
+            res = TRUE;
         }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int WithLoopIsAllowedConcurrentExecution(node *withloop)
+ *
+ * description:
+ *   This function decides whether a with-loop is actually allowed to be
+ *   executed concurrently.
+ *
+ * attention:
+ *   Each test whether a with-loop is allowed to be executed concurrently
+ *   should follow test, whether the with-loop is worth to be executed
+ *   concurrently (by WithLoopIsWorthConcurrentExecution).
+ *
+ ******************************************************************************/
+
+static int
+WithLoopIsAllowedConcurrentExecution (node *withloop)
+{
+    int res;
+    node *withop;
+
+    DBUG_ENTER ("WithLoopIsAllowedConcurrentExecution");
+
+    withop = NWITH2_WITHOP (withloop);
+    if ((NWITHOP_TYPE (withop) == WO_foldfun) || (NWITHOP_TYPE (withop) == WO_foldprf)) {
+        if (max_sync_fold == 0) {
+            res = FALSE;
+        } else {
+            res = TRUE;
+        }
+    } else {
+        res = TRUE;
     }
 
     DBUG_RETURN (res);
@@ -111,7 +158,8 @@ SPMDIassign (node *arg_node, node *arg_info)
 
     /* contains the current assignment a with-loop?? */
     if ((NODE_TYPE (spmd_let) == N_let) && (NODE_TYPE (LET_EXPR (spmd_let)) == N_Nwith2)
-        && WithLoopIsWorthParallelExecution (LET_EXPR (spmd_let), LET_IDS (spmd_let))) {
+        && WithLoopIsAllowedConcurrentExecution (LET_EXPR (spmd_let))
+        && WithLoopIsWorthConcurrentExecution (LET_EXPR (spmd_let), LET_IDS (spmd_let))) {
 
         with = LET_EXPR (spmd_let);
 

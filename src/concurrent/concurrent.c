@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/21 16:30:27  jhs
+ * needed_sync_fold introduced, max_sync_fold_adjusted.
+ *
  * Revision 2.3  1999/07/01 13:01:02  jhs
  * Inserted handling of INFO_SPMD_LAST.
  *
@@ -60,6 +63,7 @@
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
+#include "Error.h"
 
 /******************************************************************************
  *
@@ -115,6 +119,19 @@ CONCmodul (node *arg_node, node *arg_info)
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
+    /*  if (max_sync_fold == 0) {
+        NOTE(("  maximum folds per sync needed could not be evaluated"));
+      } else {
+        NOTE(("  maximum folds per sync needed is %i", needed_sync_fold));
+      }
+      cannot evaluate this!!!
+      because one does not melt all the sync-blocks if limited!!!
+    */
+    if (max_sync_fold == -1) {
+        NOTE (("  maximum folds per sync is set to %i", needed_sync_fold));
+    } else {
+        NOTE (("  maximum folds per sync is set to %i", max_sync_fold));
+    }
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/21 16:30:27  jhs
+ * needed_sync_fold introduced, max_sync_fold_adjusted.
+ *
  * Revision 2.4  1999/07/21 12:28:56  jhs
  * Checking of max_sync_fold adjusted.
  *
@@ -112,9 +115,13 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
         DBUG_PRINT ("SYNCO", ("non-disjunctive"));
     }
 
-    result
-      = result
-        & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync)) <= max_sync_fold);
+    needed_sync_fold = MAX (needed_sync_fold,
+                            SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync));
+    if (max_sync_fold != -1) {
+        result = result
+                 & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync))
+                    <= max_sync_fold);
+    }
 
     if (result) {
         DBUG_PRINT ("SYNCO", ("folds ok"));
