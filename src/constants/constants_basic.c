@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2003/05/22 10:04:49  ktr
+ * Even commenting needs training... :(
+ *
  * Revision 1.19  2003/05/22 09:43:46  ktr
  * Multidimensional N_array nodes are no longer encapsulated by a
  * reshape-Operation. (COConstant2AST)
@@ -760,14 +763,16 @@ COConstant2AST (constant *a)
          *
          * if (dim > dim_elem) the array must be put into a reshape() prf!
          */
-        /*     if (dim > 1) { */
-        /*       res = MakePrf( F_reshape, */
-        /* 		     MakeExprs( SHShape2Array( COGetShape( a)), */
-        /* 				MakeExprs( res, NULL))); */
+        /*
+             if (dim > 1) {
+               res = MakePrf( F_reshape,
+                             MakeExprs( SHShape2Array( COGetShape( a)),
+                                        MakeExprs( res, NULL)));
+            }
+        */
     }
-}
 
-DBUG_RETURN (res);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
