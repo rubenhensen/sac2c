@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/22 12:50:43  nmw
+ * UndoSSATransform after OPTfundef added
+ *
  * Revision 3.4  2001/02/20 15:54:24  nmw
  * ssa-transformation for debugging included
  *
@@ -181,6 +184,7 @@
 #include "convert.h"
 #include "CheckAvis.h"
 #include "SSATransform.h"
+#include "UndoSSATransform.h"
 #include "lac2fun.h"
 
 #include "optimize.h"
@@ -433,7 +437,11 @@ Optimize (node *arg_node)
  *               INL
  *               DFR
  *                |
+ *   switch to ssa-form (optional)
+ *                |
  *   optimize function-wise by calling Trav (and thus OPTfundef)
+ *                |
+ *   undo ssa-form (optional)
  *                |
  *               WLAA
  *               AP
@@ -515,6 +523,15 @@ OPTmodul (node *arg_node, node *arg_info)
         }
     }
 
+    if (use_ssaform) {
+        NOTE (("undo ssa-form"));
+        arg_node = UndoSSATransform (arg_node);
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "uds"))) {
+            goto DONE;
+        }
+    }
+
     /*
      * Now, it's indicated to analyze the array accesses within WLs.
      */
@@ -590,6 +607,9 @@ DONE:
  *    The order in which the optimizations are applied is critical to the
  *    overall effect; so changes made here should be done very CAREFULLY!
  *    The actual course of action is:
+ *
+ *    at the end of the loop the ssa-form is restored (if used) to correct
+ *    code inserted by optimaizations not aware of the ssa form.
  *
  *        AE
  *        DCR
