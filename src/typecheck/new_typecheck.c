@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/12/19 15:48:27  sbs
+ * calls to TNTdoToNewTypes eliminated
+ *
  * Revision 3.67  2004/12/06 12:55:30  sbs
  * some debugging of NTCarg
  *
@@ -161,7 +164,6 @@
 #include "print.h"
 #include "lac2fun.h"
 #include "shape.h"
-#include "ToNewTypes.h"
 #include "SSATransform.h"
 #include "insert_vardec.h"
 #include "create_wrappers.h"
@@ -625,12 +627,6 @@ NTCmodule (node *arg_node, info *arg_info)
         goto DONE;
     }
 
-    arg_node = TNTdoToNewTypes (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "cha"))) {
-        goto DONE;
-    }
-
     arg_node = SSATdoTransformAllowGOs (arg_node);
     if ((global.break_after == PH_typecheck)
         && (0 == strcmp (global.break_specifier, "ssa"))) {
@@ -731,7 +727,6 @@ NTCmodule (node *arg_node, info *arg_info)
      * Convert the wrapper function code into SSA form
      */
     arg_node = L2FdoLac2Fun (arg_node);
-    arg_node = TNTdoToNewTypes (arg_node);
     arg_node = SSATdoTransformAllowGOs (arg_node);
 
 DONE:
