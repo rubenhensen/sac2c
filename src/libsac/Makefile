@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.21  2000/08/24 11:35:44  dkr
+# make deps done
+#
 # Revision 1.20  2000/08/17 10:17:38  dkr
 # make deps done
 #
@@ -163,7 +166,7 @@ cinterface.o: /usr/include/stdarg.h /usr/include/varargs.h
 cinterface.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 cinterface.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cinterface.o: /usr/include/stdio.h /usr/include/stdio_tag.h
-cinterface.o: /usr/include/stdio_impl.h ../runtime/sac.h
+cinterface.o: /usr/include/stdio_impl.h ../runtime/sac.h ../runtime/sac_icm.h
 cinterface.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
 cinterface.o: ../runtime/sac_message.h ../runtime/sac_bool.h
 cinterface.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h
@@ -196,7 +199,7 @@ sac_arg.o: /usr/include/stdarg.h /usr/include/varargs.h
 sac_arg.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 sac_arg.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sac_arg.o: /usr/include/stdio.h /usr/include/stdio_tag.h
-sac_arg.o: /usr/include/stdio_impl.h ../runtime/sac.h
+sac_arg.o: /usr/include/stdio_impl.h ../runtime/sac.h ../runtime/sac_icm.h
 sac_arg.o: ../runtime/sac_boundcheck.h ../runtime/sac_misc.h
 sac_arg.o: ../runtime/sac_message.h ../runtime/sac_bool.h
 sac_arg.o: ../runtime/sac_std.h ../runtime/sac_idx.h ../runtime/sac_prf.h
