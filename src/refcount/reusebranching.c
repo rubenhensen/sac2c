@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/17 11:38:14  ktr
+ * ongoing implementation
+ *
  * Revision 1.3  2004/11/17 09:06:01  ktr
  * Ongoing implementation
  *
@@ -264,6 +267,12 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, DFMmask_t
              */
             cflut = GenerateLUT ();
             cfargs = DFM2Args (inmask, lut);
+            cfargs
+              = MakeArg (TmpVar (), MakeTypes1 (T_bool), ST_regular, ST_regular, cfargs);
+
+            AVIS_TYPE (ARG_AVIS (cfargs))
+              = TYMakeAKS (TYMakeSimpleType (T_bool), SHMakeShape (0));
+
             condfun
               = MakeFundef (GetLacFunName ("ReuseCond"), FUNDEF_MOD (fundef), cftypes,
                             cfargs, MakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
@@ -275,8 +284,11 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, DFMmask_t
             /*
              * Build all parts  of the conditional
              */
-            condids = MakeIds (TmpVar (), NULL, ST_regular);
+            condids = MakeIds (StringCopy (ARG_NAME (cfargs)), NULL, ST_regular);
             cond = MakeIdFromIds (condids);
+            ID_VARDEC (cond) = cfargs;
+            ID_AVIS (cond) = VARDEC_AVIS (ID_VARDEC (cond));
+
             tmplut = DuplicateLUT (cflut);
             thenass = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars),
                                      condfun, inmask, tmplut);
@@ -445,15 +457,20 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, DFMmask_t
              */
             cfap = MakeAp (StringCopy (FUNDEF_NAME (condfun)),
                            StringCopy (FUNDEF_MOD (condfun)),
-                           MakeExprs (MakeIdFromIds (DupOneIds (valids)), NULL));
+                           MakeExprs (MakeIdFromIds (DupOneIds (valids)),
+                                      DFM2ApArgs (inmask, lut)));
 
             AP_FUNDEF (cfap) = condfun;
 
             res = MakeAssign (MakeLet (cfap, cfids), res);
+
             while (cfids != NULL) {
                 AVIS_SSAASSIGN (IDS_AVIS (cfids)) = res;
                 cfids = IDS_NEXT (cfids);
             }
+
+            FUNDEF_EXT_ASSIGNS (condfun) = NodeListAppend (NULL, res, NULL);
+            FUNDEF_USED (condfun) = 1;
 
             /*
              * Create  c  = fill( isreused( a, b), c');
