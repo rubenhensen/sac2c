@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/06/09 16:46:36  dkr
+ * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
+ *
  * Revision 1.15  1998/06/06 15:59:22  dkr
  * renamed some local vars in ICMs
  *
@@ -81,19 +84,17 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_NONFOLD_BEGIN( char *target, char *idx_vec,
- *                                    int dims, char **args)
+ *   void ICMCompileWL_NONFOLD_BEGIN( char *target, char *idx_vec)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_NONFOLD_BEGIN( target, idx_vec,
- *                     dims, [ idx_scalars, idx_min, idx_max ]* )
+ *   WL_NONFOLD_BEGIN( target, idx_vec )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
+ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec)
 {
     int i;
 
@@ -111,6 +112,7 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
     INDENT;
     fprintf (outfile, "int %s__destptr = 0;\n", target);
 
+#if 00
     fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
     for (i = 0; i < dims; i++) {
         INDENT;
@@ -123,6 +125,7 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
                  args[3 * i + 2]);
     }
     fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
+#endif
 
     DBUG_VOID_RETURN;
 }
@@ -130,19 +133,17 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_FOLD_BEGIN( char *target, char *idx_vec,
- *                                 int dims, char **args)
+ *   void ICMCompileWL_FOLD_BEGIN( char *target, char *idx_vec)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_FOLD_BEGIN( target, idx_vec,
- *                  dims, [ idx_scalars, idx_min, idx_max ]* )
+ *   WL_FOLD_BEGIN( target, idx_vec )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
+ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec)
 {
     int i;
 
@@ -157,6 +158,7 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
     fprintf (outfile, "{\n");
     indent++;
 
+#if 00
     fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
     for (i = 0; i < dims; i++) {
         INDENT;
@@ -169,6 +171,7 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
                  args[3 * i + 2]);
     }
     fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
+#endif
 
     DBUG_VOID_RETURN;
 }

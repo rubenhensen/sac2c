@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/06/09 16:46:19  dkr
+ * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
+ *
  * Revision 1.40  1998/05/24 00:43:08  dkr
  * changed signature of some WL-ICMs
  *
@@ -507,18 +510,14 @@ ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
 ICM_DEF( WL_NONFOLD_BEGIN, TRACE_UDF)
   ICM_STR(target)
   ICM_STR(idx_vec)
-  ICM_INT(dims)
-  ICM_VAR( (3*dims), args)
-ICM_END( WL_NONFOLD_BEGIN, (target, idx_vec, dims, args))
+ICM_END( WL_NONFOLD_BEGIN, (target, idx_vec))
 #endif
 
 #if defined(WL_FOLD_BEGIN) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD_BEGIN, TRACE_UDF)
   ICM_STR(target)
   ICM_STR(idx_vec)
-  ICM_INT(dims)
-  ICM_VAR( (3*dims), args)
-ICM_END( WL_FOLD_BEGIN, (target, idx_vec, dims, args))
+ICM_END( WL_FOLD_BEGIN, (target, idx_vec))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)

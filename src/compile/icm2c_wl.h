@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/06/09 16:46:42  dkr
+ * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
+ *
  * Revision 1.10  1998/05/24 00:44:30  dkr
  * changed signature of some WL_ICMs
  *
@@ -38,10 +41,9 @@
 #ifndef _icm2c_wl_h
 #define _icm2c_wl_h
 
-extern void ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims,
-                                        char **args);
+extern void ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec);
 
-extern void ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args);
+extern void ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec);
 
 extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
                                  char *idx_vec, int dims, char **idx_scalars);
