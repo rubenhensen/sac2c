@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.34  2001/07/18 12:57:45  cg
+# Linking of file tree.o eliminated.
+#
 # Revision 3.33  2001/05/30 14:00:22  nmw
 # SSAInferLI.o added
 #
@@ -225,7 +228,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
         src/global/options.o src/global/NameTuples.o
-TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o \
+TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
       src/tree/cleanup_decls.o src/tree/adjust_ids.o src/tree/scheduling.o \
