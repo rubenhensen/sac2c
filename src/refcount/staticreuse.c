@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/23 22:28:38  ktr
+ * renaming done.
+ *
  * Revision 1.5  2004/11/23 17:45:07  ktr
  * COMPILES!
  *
@@ -55,7 +58,7 @@ struct INFO {
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMSRStaticReuse( node *syntax_tree)
+ * @fn node *EMSRdoStaticReuse( node *syntax_tree)
  *
  * @brief starting point of Static reuse inference
  *
@@ -65,9 +68,9 @@ struct INFO {
  *
  *****************************************************************************/
 node *
-EMSRStaticReuse (node *syntax_tree)
+EMSRdoStaticReuse (node *syntax_tree)
 {
-    DBUG_ENTER ("EMSRStaticReuse");
+    DBUG_ENTER ("EMSRdoStaticReuse");
 
     DBUG_PRINT ("EMSR", ("Starting static reuse inference"));
 
