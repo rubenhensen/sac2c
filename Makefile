@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1994/12/09 10:42:25  sbs
+# Revision 1.8  1994/12/11 17:30:35  sbs
+# modules inserted
+#
+# Revision 1.7  1994/12/09  10:42:25  sbs
 # optimize inserted
 #
 # Revision 1.6  1994/12/05  15:07:25  hw
@@ -32,7 +35,8 @@ PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o 
 OPTIMIZE= src/optimize/optimize.o
-OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE)
+MODULES= src/modules/filemgr.o
+OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES)
 
 all: dummy sac2c
 
@@ -43,6 +47,7 @@ dummy:
 	(cd src/flatten; $(MAKE) )
 	(cd src/typecheck; $(MAKE) )
 	(cd src/optimize; $(MAKE) )
+	(cd src/modules; $(MAKE) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -54,6 +59,7 @@ deps:
 	(cd src/flatten; $(MAKE) deps)
 	(cd src/typecheck; $(MAKE) deps)
 	(cd src/optimize; $(MAKE) deps)
+	(cd src/modules; $(MAKE) deps)
         
 clean:
 	(cd src/global; $(MAKE) clean)
@@ -62,4 +68,5 @@ clean:
 	(cd src/flatten; $(MAKE) clean)
 	(cd src/typecheck; $(MAKE) clean)
 	(cd src/optimize; $(MAKE) clean)
+	(cd src/modules; $(MAKE) clean)
 	$(RM) sac2c
