@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2004/11/27 00:52:54  sbs
+ * *** empty log message ***
+ *
  * Revision 3.34  2004/11/27 00:14:38  cg
  * New types are printed whenever available.
  *
@@ -115,7 +118,8 @@ extern node *PRTfold (node *arg_node, info *arg_info);
 
 /* with-loop (backend) */
 extern node *PRTwith2 (node *arg_node, info *arg_info);
-extern node *PRTwlsegx (node *arg_node, info *arg_info);
+extern node *PRTwlseg (node *arg_node, info *arg_info);
+extern node *PRTwlsegvar (node *arg_node, info *arg_info);
 extern node *PRTwlxblock (node *arg_node, info *arg_info);
 extern node *PRTwlstridex (node *arg_node, info *arg_info);
 extern node *PRTwlgridx (node *arg_node, info *arg_info);
