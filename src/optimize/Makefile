@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2001/03/26 15:35:35  nmw
+# SSALIR added
+#
 # Revision 3.14  2001/03/22 20:20:00  dkr
 # make deps done
 #
@@ -109,7 +112,7 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
-     SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o
+     SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
