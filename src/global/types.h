@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/11/01 09:39:36  cg
+ * Revision 1.7  1995/11/16 19:42:54  cg
+ * NIF macro extended by 4 additional parameters
+ *
+ * Revision 1.6  1995/11/01  09:39:36  cg
  * new member of enum statustype: ST_was_reference
  *
  * Revision 1.5  1995/10/20  09:27:00  cg
@@ -164,7 +167,7 @@ typedef struct FUN_NAME {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai)                                                      \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am)                                      \
     n
 
 typedef enum {
