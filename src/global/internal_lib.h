@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2005/03/10 09:41:09  cg
+ * Eliminated deprecated macro definitions.
+ *
  * Revision 3.36  2005/02/14 14:15:04  cg
  * ABORT_ON_ERROR macro replaced by new ctinfo function.
  *
@@ -254,59 +257,6 @@ extern void ILIBdbugMemoryLeakCheck (void);
 /* min, max */
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
-
-/*
- * macros defining the prolog and epilog code for each phase
- */
-
-#define PHASE_PROLOG                                                                     \
-    CHECK_DBUG_START;                                                                    \
-    /* empty */
-
-#define PHASE_DONE_EPILOG                                                                \
-    CTIabortOnError ();                                                                  \
-    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););                              \
-    if (global.treecheck) {                                                              \
-        global.syntax_tree = CHKdoTreeCheck (global.syntax_tree);                        \
-    }
-
-#define PHASE_EPILOG                                                                     \
-    if (global.do_fun2lac[global.compiler_phase]) {                                      \
-        global.syntax_tree = F2LdoFun2Lac (global.syntax_tree);                          \
-        ABORT_ON_ERROR;                                                                  \
-    }                                                                                    \
-    if (global.do_lac2fun[global.compiler_phase + 1]) {                                  \
-        global.syntax_tree = L2FdoLac2Fun (global.syntax_tree);                          \
-        ABORT_ON_ERROR;                                                                  \
-    }                                                                                    \
-    CHECK_DBUG_STOP;
-
-/*
- * macros for steering the DBUG tool
- */
-
-#ifndef DBUG_OFF
-#define CHECK_DBUG_START                                                                 \
-    {                                                                                    \
-        if ((global.my_dbug) && (!global.my_dbug_active)                                 \
-            && (global.compiler_phase >= global.my_dbug_from)                            \
-            && (global.compiler_phase <= global.my_dbug_to)) {                           \
-            DBUG_PUSH (global.my_dbug_str);                                              \
-            global.my_dbug_active = 1;                                                   \
-        }                                                                                \
-    }
-#define CHECK_DBUG_STOP                                                                  \
-    {                                                                                    \
-        if ((global.my_dbug) && (global.my_dbug_active)                                  \
-            && (global.compiler_phase >= global.my_dbug_to)) {                           \
-            DBUG_POP ();                                                                 \
-            global.my_dbug_active = 0;                                                   \
-        }                                                                                \
-    }
-#else /* DBUG_OFF */
-#define CHECK_DBUG_START
-#define CHECK_DBUG_STOP
-#endif /* DBUG_OFF */
 
 /*
  * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
