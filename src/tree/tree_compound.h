@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.158  2004/11/25 21:48:21  sbs
+ * TCmakeIdsCopyString added
+ *
  * Revision 3.157  2004/11/25 21:44:56  skt
  * some debugging
  *
@@ -1503,6 +1506,7 @@ extern node *TCmakeVinfoDollar (node *next);
 #define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 
 extern node *TCmakeIdCopyString (const char *str);
+extern node *TCmakeIdsCopyString (const char *str, node *next);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
 
 /***************************************************************************
