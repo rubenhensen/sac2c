@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/08/26 14:02:36  cg
+ * Enabled emm (new refcounting) by default.
+ *
  * Revision 3.68  2004/08/12 12:04:46  ktr
  * replaced flag reuse with flag noreuse.
  *
@@ -812,6 +815,8 @@ AnalyseCommandline (int argc, char *argv[])
         }
     });
 
+    ARGS_FLAG ("noemm", emm = FALSE);
+
     ARGS_FLAG ("noreuse", reuse = FALSE);
 
     ARGS_OPTION ("no", {
@@ -1105,6 +1110,13 @@ CheckOptionConsistency ()
         if (profileflag != PROFILE_NONE) {
             SYSERROR (("Profiling is not available for multi-threaded "
                        "program execution"));
+        }
+
+        if (emm) {
+            SYSWARN (("Explicit memory management is not available for multi-threaded "
+                      "program execution.\n"
+                      "EMM disabled"));
+            emm = FALSE;
         }
     }
 
