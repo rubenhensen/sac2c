@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.190  1998/04/16 22:50:11  dkr
+ * changed PrintNwith2:
+ *   NWITH2_SEGS can have the value NULL
+ *
  * Revision 1.189  1998/04/16 19:01:05  dkr
  * incremented indent level for N_Nwith, N_Nwith2
  * access macros used
@@ -2432,9 +2436,11 @@ PrintNwith2 (node *arg_node, node *arg_info)
     }
     indent--;
 
-    indent++;
-    NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
-    indent--;
+    if (NWITH2_SEG (arg_node) != NULL) {
+        indent++;
+        NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
+        indent--;
+    }
 
     INDENT
     fprintf (outfile, "/********** conexpr: **********/\n");
