@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.107  1998/02/06 13:32:20  srs
+ * inserted var opt_wlf and switch -noWLF
+ *
  * Revision 1.106  1998/02/05 12:43:37  srs
  * added some comments
  *
@@ -434,7 +437,7 @@ int Make_Old2NewWith = 0;
 int optimize = 1;
 int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1,
-    opt_uns = 1, opt_ae = 1, opt_cse = 1, opt_dfr = 1;
+    opt_uns = 1, opt_ae = 1, opt_cse = 1, opt_wlf = 1, opt_dfr = 1;
 
 int optvar = 50;
 int inlnum = 1;
@@ -890,6 +893,10 @@ MAIN
             opt_cse = 0;
         else if (!strncmp (*argv, "oCSE", 4))
             opt_cse = 0;
+        else if (!strncmp (*argv, "owlf", 4))
+            opt_wlf = 0;
+        else if (!strncmp (*argv, "oWLF", 4))
+            opt_wlf = 0;
         else if (!strncmp (*argv, "oDFR", 4))
             opt_dfr = 0;
         else if (!strncmp (*argv, "orefcount_opt", 3))
