@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.33  2004/11/24 15:18:11  jhb
+# deleted INC
+#
 # Revision 3.32  2004/10/04 17:18:29  sah
 # a different subset of files is compiled, depending
 # on the compiler version to create
@@ -87,11 +90,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-
-INCS = -I../global -I../tree -I../../inc -I../print -I../constants \
-       -I../typecheck -I../refcount -I../optimize -I../psi-opt -I../scanparse \
-       -I../concurrent -I../flatten -I../c-interface
 
 MACS = icm.data icm_comment.c icm_trace.c
 
