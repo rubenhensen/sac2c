@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/07/15 20:39:07  sbs
+ * CFarray added.
+ *
  * Revision 2.16  1999/07/13 16:19:30  bs
  * Bug fixed in ArrayPrf.
  *
@@ -618,6 +621,34 @@ CFlet (node *arg_node, node *arg_info)
 
     INFO_CF_TYPE (arg_info) = NULL;
 
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * CFarray( node * arg_node, node * arg_info)
+ *
+ * description:
+ *   traverses through its elements and after doing so checks whether the array
+ *   has become constant. In that case, the required CONSTVEC annotation is
+ *   created and attached to the N_array node.
+ *
+ ******************************************************************************/
+
+node *
+CFarray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CFarray");
+    if (ARRAY_AELEMS (arg_node) != NULL)
+        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+
+    if (IsConstantArray (arg_node, T_unknown)) {
+        ARRAY_ISCONST (arg_node) = TRUE;
+        ARRAY_VECTYPE (arg_node) = T_int;
+        ARRAY_CONSTVEC (arg_node)
+          = Array2IntVec (ARRAY_AELEMS (arg_node), &ARRAY_VECLEN (arg_node));
+    }
     DBUG_RETURN (arg_node);
 }
 

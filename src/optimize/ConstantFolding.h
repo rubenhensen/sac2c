@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/15 20:39:07  sbs
+ * CFarray added.
+ *
  * Revision 2.1  1999/02/23 12:41:07  sacbase
  * new release made
  *
@@ -67,6 +70,7 @@ extern node *ConstantFolding (node *arg_node, node *arg_info);
 
 extern node *CFlet (node *arg_node, node *arg_info);
 extern node *CFprf (node *arg_node, node *arg_info);
+extern node *CFarray (node *arg_node, node *arg_info);
 extern node *CFid (node *arg_node, node *arg_info);
 extern node *CFfundef (node *arg_node, node *arg_info);
 extern node *CFwhile (node *arg_node, node *arg_info);

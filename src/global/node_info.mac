@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/15 20:39:39  sbs
+ * CFarray added.
+ *
  * Revision 2.8  1999/07/14 12:14:08  sbs
  * some Idx... funs added.
  *
@@ -455,7 +458,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_array, "N_array", TravSons, FltnArray, PrintArray, TravSons, TravSons, TravSons,
-       TravSons, FreeArray, TravSons, TravSons, COMPArray, TravSons, DupArray, TravSons,
+       TravSons, FreeArray, CFarray, TravSons, COMPArray, TravSons, DupArray, TravSons,
        TravSons, TravSons, IdxArray, TravSons, TravSons, TravSons,
 
        PrintArray, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
