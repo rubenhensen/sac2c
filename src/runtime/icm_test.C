@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/03/10 00:04:45  dkrHH
+ * TAGGED_ARRAYS removed
+ *
  * Revision 1.10  2003/11/10 18:56:42  dkrHH
  * missing cpp flags for sac2c added
  *
@@ -52,8 +55,6 @@
 #ifndef _UNQ_
 #define _UNQ_ NUQ /* NUQ, UNQ */
 #endif
-
-#define TAGGED_ARRAYS
 
 #define SAC_DO_CHECK 1
 #define SAC_DO_CHECK_TYPE 1

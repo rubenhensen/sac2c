@@ -189,7 +189,6 @@ CreateCFile (char *prefix, int *use_shp, int *use_hid, int *use_unq)
                     "#endif\n"
                     "\n"
                     "\n"
-                    "#define TAGGED_ARRAYS\n"
 
                     "#define SAC_DO_CHECK           1\n"
                     "#define SAC_DO_CHECK_TYPE      1\n"
