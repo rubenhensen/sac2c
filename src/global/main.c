@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1994/12/20 14:11:51  hw
+ * Revision 1.16  1994/12/21 13:38:41  sbs
+ * some category IV work done...
+ *
+ * Revision 1.15  1994/12/20  14:11:51  hw
  * changed output
  *
  * Revision 1.14  1994/12/20  11:41:52  sbs
@@ -148,8 +151,9 @@ MAIN
     yyparse ();
 
     if (!breakparse) {
-        NOTE (("Resolving Imports: ...\n"));
+        NOTE (("Resolving Imports: ..."));
         syntax_tree = Import (syntax_tree);
+        NOTE (("\n"));
         if (!breakimport) {
             syntax_tree = Flatten (syntax_tree);
             if (!breakflatten) {
