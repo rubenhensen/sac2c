@@ -1,7 +1,9 @@
-
 /*
  *
  * $Log$
+ * Revision 1.4  2000/08/17 10:19:10  dkr
+ * all the NT stuff is now in a separate modul (NameTuples.[ch])
+ *
  * Revision 1.3  1999/06/25 15:22:32  rob
  * Don't gen if not TAGGED_ARRAYS
  *
@@ -10,7 +12,6 @@
  *
  * Revision 1.1  1999/06/16 17:18:13  rob
  * Initial revision
- *
  *
  */
 
@@ -28,12 +29,12 @@
  *****************************************************************************/
 
 #include <string.h>
+
 #include "globals.h"
 #include "types.h"
 #include "icm2c_utils.h"
 #include "dbug.h"
 
-#ifdef TAGGED_ARRAYS
 /******************************************************************************
  *
  * function:
@@ -48,7 +49,9 @@ static int
 FindParen (char *nt, int n)
 {
     int i;
+
     DBUG_ENTER ("FindParen");
+
     DBUG_ASSERT ((NULL != nt), "FindParen was called with NULL nt");
     for (i = 0; '\0' != nt[i]; i++) {
         if ('(' == nt[i]) {
@@ -58,6 +61,7 @@ FindParen (char *nt, int n)
         }
     }
     DBUG_ASSERT ((NULL != nt[i]), "FindParen did not find the paren");
+
     DBUG_RETURN (i);
 }
 
@@ -76,12 +80,14 @@ ICUNameClass (char *nt)
 {
     int nc, i;
     data_class_t z;
+
     DBUG_ENTER ("ICUNameClass");
+
     nc = 1 + FindParen (nt, 1 + NT_CLASS_INDEX);
     i = 0;
     z = C_lastc;
     while ((i != C_lastc) && (z == C_lastc)) {
-        if (0 == strncmp (nt + nc, nt_class_str[i], 3))
+        if (0 == strncmp (nt + nc, nt_class_string[i], 3))
             z = i;
         i++;
     }
@@ -93,30 +99,30 @@ ICUNameClass (char *nt)
 /******************************************************************************
  *
  * function:
- *   uniqueness_class_t ICUUniClass( char *nt)
+ *   unq_class_t ICUUnqClass( char *nt)
  *
  * description:
  *   Returns the Uniqueness Class of an array or other object from an nt
  *
  ******************************************************************************/
 
-uniqueness_class_t
-ICUUniClass (char *nt)
+unq_class_t
+ICUUnqClass (char *nt)
 {
     int nc, i;
-    uniqueness_class_t z;
-    DBUG_ENTER ("ICUUniClass");
-    nc = 1 + FindParen (nt, 1 + NT_UNI_INDEX);
+    unq_class_t z;
+
+    DBUG_ENTER ("ICUUnqClass");
+
+    nc = 1 + FindParen (nt, 1 + NT_UNQ_INDEX);
     i = 0;
     z = C_lastu;
     while ((i != C_lastu) && (z == C_lastu)) {
-        if (0 == strncmp (nt + nc, nt_uni_str[i], 3))
+        if (0 == strncmp (nt + nc, nt_unq_string[i], 3))
             z = i;
         i++;
     }
-    DBUG_ASSERT ((z != C_lastu), "ICUUniClass did not find valid Uniqueness Class");
+    DBUG_ASSERT ((z != C_lastu), "ICUUnqClass did not find valid Uniqueness Class");
 
     DBUG_RETURN (z);
 }
-
-#endif /* TAGGED_ARRAYS */
