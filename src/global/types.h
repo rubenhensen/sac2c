@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/07/03 16:55:51  dkr
+ * unqconv_t removed for TAGGED_ARRAYS
+ *
  * Revision 3.13  2002/04/12 13:57:47  sbs
  * info3 added as N_fundef was too crowded for a pointer to n-type to be added.
  *
@@ -219,7 +222,9 @@ typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t
 
 typedef enum { ADIR_read, ADIR_write } accessdir_t;
 
+#ifndef TAGGED_ARRAYS
 typedef enum { NO_UNQCONV, TO_UNQ, FROM_UNQ } unqconv_t;
+#endif
 
 typedef enum { LOC_usr, LOC_stdlib } locationtype;
 
