@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/10/14 11:47:49  sbs
+ * SHShape2Exprs added
+ *
  * Revision 1.14  2004/09/27 13:15:20  sah
  * added serialization support
  *
@@ -778,6 +781,32 @@ SHShape2IntVec (shape *shp)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SHShape2Exprs( shape *shp)
+ *
+ * @brief creates a nesting of N_exprs nodes from the given shape vector
+ *
+ ******************************************************************************/
+
+node *
+SHShape2Exprs (shape *shp)
+{
+    node *exprs;
+    int dim;
+    int i;
+
+    DBUG_ENTER ("SHShape2Exprs");
+
+    dim = SHAPE_DIM (shp);
+    exprs = NULL;
+    for (i = dim - 1; i >= 0; i--) {
+        exprs = MakeExprs (MakeNum (SHAPE_EXT (shp, i)), exprs);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SHShape2Array( shape *shp)
  *
  * @brief creates a simple int vector from the given shape vector
@@ -790,16 +819,12 @@ SHShape2Array (shape *shp)
     node *array;
     shpseg *shp_seg;
     int dim;
-    int i;
 
     DBUG_ENTER ("SHShape2Array");
 
     dim = SHAPE_DIM (shp);
-    array = NULL;
-    for (i = dim - 1; i >= 0; i--) {
-        array = MakeExprs (MakeNum (SHAPE_EXT (shp, i)), array);
-    }
-    array = MakeFlatArray (array);
+
+    array = MakeFlatArray (SHShape2Exprs (shp));
 
     shp_seg = MakeShpseg (NULL);
     SHPSEG_SHAPE (shp_seg, 0) = dim;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/10/14 11:47:49  sbs
+ * SHShape2Exprs added
+ *
  * Revision 1.9  2004/09/27 13:15:20  sah
  * added serialization support
  *
@@ -74,6 +77,7 @@ extern shape *SHDropFromShape (int n, shape *a);
 extern shape *SHTakeFromShape (int n, shape *a);
 extern char *SHShape2String (int dots, shape *shp);
 extern int *SHShape2IntVec (shape *shp);
+extern node *SHShape2Exprs (shape *shp);
 extern node *SHShape2Array (shape *shp);
 
 extern shape *SHOldTypes2Shape (types *shpseg);
