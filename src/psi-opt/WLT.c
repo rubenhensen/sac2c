@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 2.19  2000/08/07 14:58:44  dkr
+ * some asserts for GEN_BOUND1, GEN_BOUND2 accesses added
+ * compound macros used now
+ *
  * Revision 2.18  2000/07/28 13:21:20  dkr
  * signature of CheckOptimizePsi() and CheckOptimizeArray changed
  *   (no reference parameter **node anymore)
@@ -110,6 +115,7 @@
  *
  * Revision 1.1  1998/03/22 18:21:40  srs
  * Initial revision
+ *
  */
 
 /*******************************************************************************
@@ -308,9 +314,12 @@ check_genarray_full_part (node *wln)
     node *lowern, *uppern, *shapen;
     int result;
 
-    shapen = NWITHOP_SHAPE (NWITH_WITHOP (wln));
-    lowern = NGEN_BOUND1 (NPART_GEN (NWITH_PART (wln)));
-    uppern = NGEN_BOUND2 (NPART_GEN (NWITH_PART (wln)));
+    shapen = NWITH_SHAPE (wln);
+    lowern = NWITH_BOUND1 (wln);
+    uppern = NWITH_BOUND2 (wln);
+
+    DBUG_ASSERT (((NODE_TYPE (lowern) == N_array) && (NODE_TYPE (uppern) == N_array)),
+                 "generator bounds must be constant!");
 
     result = 1;
 
@@ -373,7 +382,7 @@ CreateFullPartition (node *wln, node *arg_info)
     /*
      * this is the shape of the index vector (generator)
      */
-    gen_shape = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
+    gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
 
     /*
      * modarray check
@@ -395,12 +404,13 @@ CreateFullPartition (node *wln, node *arg_info)
      * and so can create a partition with NWITH_PARTS == 1.
      */
     if (do_create && NWITH_TYPE (wln) == WO_genarray) {
-        if (!NGEN_STEP (NPART_GEN (NWITH_PART (wln))) /* not grid */
+        if (!NWITH_STEP (wln) /* no grid */
             && check_genarray_full_part (wln)) {
             do_create = 0;
             NWITH_PARTS (wln) = 1;
-        } else
-            do_create = (TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)))) == 0);
+        } else {
+            do_create = (TYPES_DIM (ID_TYPE (NWITH_CEXPR (wln))) == 0);
+        }
     }
 
     /*
@@ -413,25 +423,23 @@ CreateFullPartition (node *wln, node *arg_info)
         if (NWITH_TYPE (wln) == WO_genarray) {
             /* create upper array bound */
             array_shape = NULL;
-            ArrayST2ArrayInt (NWITHOP_SHAPE (NWITH_WITHOP (wln)), &array_shape,
-                              gen_shape);
+            ArrayST2ArrayInt (NWITH_SHAPE (wln), &array_shape, gen_shape);
         } else { /* modarray */
             /* We can use the *int array of shpseg to create the upper array bound */
-            array_shape
-              = TYPES_SHPSEG (ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln))))->shp;
+            array_shape = TYPES_SHPSEG (ID_TYPE (NWITH_ARRAY (wln)))->shp;
         }
 
         /* determine type of expr in the operator (result of body) */
-        type = ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)));
+        type = ID_TYPE (NWITH_CEXPR (wln));
         /* create code for all new parts */
         if (NWITH_TYPE (wln) == WO_genarray) {
             /* create a zero of the correct type */
             coden = CreateZeroVector (0, TYPES_BASETYPE (type));
         } else { /* modarray */
-            _ids = NPART_VEC (NWITH_PART (wln));
+            _ids = NWITH_VEC (wln);
             psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
             ID_VARDEC (psi_index) = IDS_VARDEC (_ids);
-            psi_array = DupTree (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
+            psi_array = DupTree (NWITH_ARRAY (wln));
             coden = MakePrf (F_psi, MakeExprs (psi_index, MakeExprs (psi_array, NULL)));
         }
         varname = TmpVar ();
@@ -512,7 +520,7 @@ CheckOptimizePsi (node *psi, node *arg_info)
         index = NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (datan)));
 
         /* find index'th scalar index var */
-        _ids = NPART_IDS (NWITH_PART (INFO_WLI_WL (arg_info)));
+        _ids = NWITH_IDS (INFO_WLI_WL (arg_info));
         while (index > 0 && IDS_NEXT (_ids)) {
             index--;
             _ids = IDS_NEXT (_ids);
@@ -560,7 +568,7 @@ CheckOptimizeArray (node *array, node *arg_info)
     DBUG_ASSERT ((N_array == NODE_TYPE (array)), "no N_array node");
 
     /* shape of index vector */
-    _ids = NPART_VEC (NWITH_PART (INFO_WLI_WL (arg_info)));
+    _ids = NWITH_VEC (INFO_WLI_WL (arg_info));
 
     tmpn = ARRAY_AELEMS (array);
     elts = 0;
@@ -858,8 +866,8 @@ WLTNwith (node *arg_node, node *arg_info)
          * generate full partition (genarray, modarray).
          */
         if (NWITH_FOLDABLE (arg_node)
-            && (WO_genarray == NWITH_TYPE (arg_node)
-                || WO_modarray == NWITH_TYPE (arg_node))) {
+            && ((WO_genarray == NWITH_TYPE (arg_node))
+                || (WO_modarray == NWITH_TYPE (arg_node)))) {
             arg_node = CreateFullPartition (arg_node, arg_info);
         }
 
@@ -867,8 +875,8 @@ WLTNwith (node *arg_node, node *arg_info)
          * If withop is fold, we cannot create additional N_Npart nodes (based on what?)
          */
         if (NWITH_FOLDABLE (arg_node)
-            && (WO_foldfun == NWITH_TYPE (arg_node)
-                || WO_foldprf == NWITH_TYPE (arg_node))) {
+            && ((WO_foldfun == NWITH_TYPE (arg_node))
+                || (WO_foldprf == NWITH_TYPE (arg_node)))) {
             NWITH_PARTS (arg_node) = 1;
         }
     }
@@ -942,19 +950,23 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLTNgenerator");
 
-    /* All this work has only to be done once for every WL:
-       - inserting constant bounds (done here),
-       - check bounds (done here),
-       - creating full partition (WLTNwith).
-       If only one of these points was not successful, another call of WLT
-       will try it again (NWITH_PARTS == -1).
-
-       (OptimizePsi() and OptimizeArray() have to be called multiple
-       times!) */
+    /*
+     * All this work has only to be done once for every WL:
+     *  - inserting constant bounds (done here),
+     *  - check bounds (done here),
+     *  - creating full partition (WLTNwith).
+     * If only one of these points was not successful, another call of WLT
+     * will try it again (NWITH_PARTS == -1).
+     *
+     * (OptimizePsi() and OptimizeArray() have to be called multiple
+     * times!)
+     */
 
     wln = INFO_WLI_WL (arg_info);
     if (-1 == NWITH_PARTS (wln)) {
-        /* try to propagate a constant in all 4 sons */
+        /*
+         * try to propagate a constant in all sons
+         */
         check_bounds = 1;
         for (i = 1; i <= 4; i++) {
             switch (i) {
@@ -972,29 +984,39 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 break;
             }
 
-            if (*bound && (NODE_TYPE ((*bound)) == N_id)) {
-                tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO (arg_info));
-                if (IsConstArray (tmpn)) {
-                    /* this bound references a constant array, which may be substituted.
-                     */
-                    INFO_USE[ID_VARNO ((*bound))]--;
-                    FreeTree (*bound);
-                    /* copy const array to *bound */
-                    *bound = DupTree (tmpn);
+            if (*bound != NULL) {
+                if (NODE_TYPE ((*bound)) == N_id) {
+                    tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO (arg_info));
+                    if (IsConstArray (tmpn)) {
+                        /* this bound references a constant array, which may be
+                         * substituted. */
+                        INFO_USE[ID_VARNO ((*bound))]--;
+                        *bound = FreeTree (*bound);
+                        /* copy const array to *bound */
+                        *bound = DupTree (tmpn);
 
-                    DBUG_ASSERT (IsConstArray (*bound),
-                                 "generator contains non constant vector!!");
-
-                } else { /* not all sons are constant */
-                    if (i < 3) {
-                        check_bounds = 0;
+                        DBUG_ASSERT (IsConstArray (*bound),
+                                     "generator contains non-constant vector!!");
+                    } else {
+                        /* non-constant son found */
+                        if (i <= 2) {
+                            /* non-constant lower or upper bound found */
+                            check_bounds = 0;
+                        }
+                        NWITH_FOLDABLE (wln) = FALSE;
                     }
-                    NWITH_FOLDABLE (wln) = FALSE;
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (*bound) == N_array),
+                                 "type of generator son is neither N_id nor N_array");
                 }
+            } else {
+                DBUG_ASSERT ((i > 2), "Unspecified bound (.) in generator found!");
             }
         }
 
-        /* check bound ranges */
+        /*
+         * check bound ranges
+         */
         if (check_bounds) {
             dim = 0;
             empty = 0;
@@ -1063,8 +1085,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
                     /* now modify the code. Only one N_Npart/N_Ncode exists.
                        All elements have to be 0. */
-                    blockn
-                      = NCODE_CBLOCK (NPART_CODE (NWITH_PART (INFO_WLI_WL (arg_info))));
+                    blockn = NWITH_CBLOCK (INFO_WLI_WL (arg_info));
                     tmpn = BLOCK_INSTR (blockn);
                     if (N_empty == NODE_TYPE (tmpn)) {
                         /* there is no instruction in the block right now. */
@@ -1074,21 +1095,19 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         _ids = MakeIds (varname, NULL,
                                         ST_regular); /* use memory from GetTmp() */
                         /* determine type of expr in the operator (result of body) */
-                        type
-                          = ID_TYPE (NCODE_CEXPR (NWITH_CODE (INFO_WLI_WL (arg_info))));
+                        type = ID_TYPE (NWITH_CEXPR (INFO_WLI_WL (arg_info)));
                         IDS_VARDEC (_ids)
                           = CreateVardec (varname, type,
                                           &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
                         /* varname is duplicated here (own mem) */
 
                         /* create nullvec */
-                        tmpn = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
-                                                   - ARRAY_SHAPE (NWITHOP_SHAPE (
-                                                                    NWITH_WITHOP (
-                                                                      INFO_WLI_WL (
-                                                                        arg_info))),
-                                                                  0),
-                                                 T_int);
+                        tmpn
+                          = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
+                                                - ARRAY_SHAPE (NWITH_SHAPE (
+                                                                 INFO_WLI_WL (arg_info)),
+                                                               0),
+                                              T_int);
                         /* replace N_empty with new assignment "_ids = [0,..,0]" */
                         assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
@@ -1099,7 +1118,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         idn = MakeId (StringCopy (varname), NULL,
                                       ST_regular); /* use new mem */
                         ID_VARDEC (idn) = IDS_VARDEC (_ids);
-                        tmpn = NPART_CODE (NWITH_PART (INFO_WLI_WL (arg_info)));
+                        tmpn = NWITH_CODE (INFO_WLI_WL (arg_info));
                         NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
                         NCODE_CEXPR (tmpn) = idn;
                     } else {
@@ -1115,10 +1134,8 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         BLOCK_INSTR (blockn) = assignn;
                         LET_EXPR (ASSIGN_INSTR (assignn))
                           = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
-                                                - ARRAY_SHAPE (NWITHOP_SHAPE (
-                                                                 NWITH_WITHOP (
-                                                                   INFO_WLI_WL (
-                                                                     arg_info))),
+                                                - ARRAY_SHAPE (NWITH_SHAPE (
+                                                                 INFO_WLI_WL (arg_info)),
                                                                0),
                                               T_int);
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
@@ -1127,10 +1144,10 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 } else {
                     if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                         /* replace WL with the base array (modarray). */
-                        tmpn = NWITHOP_ARRAY (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                        tmpn = NWITH_ARRAY (INFO_WLI_WL (arg_info));
                     } else {
                         /* replace WL with neutral element (fold). */
-                        tmpn = NWITHOP_NEUTRAL (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                        tmpn = NWITH_NEUTRAL (INFO_WLI_WL (arg_info));
                     }
                     /* the INFO_WLI_REPLACE-mechanism is used to insert the
                        new id or constant. */
