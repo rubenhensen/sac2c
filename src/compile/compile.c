@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2002/10/08 16:38:00  dkr
+ * - COMP2Objdef() modified
+ * - DBUG_ASSERT about dynamic shapes added
+ *
  * Revision 3.94  2002/09/11 23:09:37  dkr
  * rf_node_info.mac modified.
  *
@@ -1720,6 +1724,7 @@ node *
 COMPObjdef (node *arg_node, node *arg_info)
 {
     node *res_type, *id_node, *dim_node;
+    node *type_exprs;
     node *icm = NULL;
 
     DBUG_ENTER ("COMPObjdef");
@@ -1733,18 +1738,14 @@ COMPObjdef (node *arg_node, node *arg_info)
             || (OBJDEF_STATUS (arg_node) == ST_imported_class)) {
             icm = MakeIcm3 ("ND_KD_DECL_EXTERN_ARRAY", res_type, id_node, dim_node);
         } else {
+            type_exprs = Type2Exprs (OBJDEF_TYPE (arg_node));
+            DBUG_ASSERT ((type_exprs != NULL),
+                         "type with unknown shape found: use *new* backend!!");
             icm = MakeIcm4 ("ND_KS_DECL_GLOBAL_ARRAY", res_type, id_node, dim_node,
-                            Type2Exprs (OBJDEF_TYPE (arg_node)));
+                            type_exprs);
         }
     }
-
     OBJDEF_ICM (arg_node) = icm;
-
-    OBJDEF_EXPR (arg_node) = NULL;
-    /*
-     *  The initialization expression is not freed because it may be used
-     *  in the main function.
-     */
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
@@ -1768,6 +1769,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
 {
     argtab_t *argtab;
     node *arg;
+    node *type_exprs;
     int dim;
     int i;
     node *assigns = NULL;
@@ -1817,10 +1819,12 @@ COMPFundefArgs (node *fundef, node *arg_info)
                      */
                     dim = GetDim (ARG_TYPE (arg));
                     if (dim > 0) {
-                        assigns
-                          = MakeAssignIcm3 ("ND_KS_DECL_ARRAY_ARG",
-                                            MakeId_Copy (ARG_NAME (arg)), MakeNum (dim),
-                                            Type2Exprs (ARG_TYPE (arg)), assigns);
+                        type_exprs = Type2Exprs (ARG_TYPE (arg));
+                        DBUG_ASSERT ((type_exprs != NULL), "type with unknown shape "
+                                                           "found: use *new* backend!!");
+                        assigns = MakeAssignIcm3 ("ND_KS_DECL_ARRAY_ARG",
+                                                  MakeId_Copy (ARG_NAME (arg)),
+                                                  MakeNum (dim), type_exprs, assigns);
                     }
 
 #ifndef TAGGED_ARRAYS
@@ -2007,6 +2011,7 @@ node *
 COMPVardec (node *arg_node, node *arg_info)
 {
     int dim;
+    node *type_exprs;
     node *icm = NULL;
 
     DBUG_ENTER ("COMPVardec");
@@ -2017,10 +2022,12 @@ COMPVardec (node *arg_node, node *arg_info)
         /*
          * array with known shape.
          */
-        icm
-          = MakeIcm4 ("ND_KS_DECL_ARRAY", MakeBasetypeNode (VARDEC_TYPE (arg_node)),
-                      MakeId_Copy (VARDEC_NAME (arg_node)), MakeNum (DIM_NO_OFFSET (dim)),
-                      Type2Exprs (VARDEC_TYPE (arg_node)));
+        type_exprs = Type2Exprs (VARDEC_TYPE (arg_node));
+        DBUG_ASSERT ((type_exprs != NULL),
+                     "type with unknown shape found: use *new* backend!!");
+        icm = MakeIcm4 ("ND_KS_DECL_ARRAY", MakeBasetypeNode (VARDEC_TYPE (arg_node)),
+                        MakeId_Copy (VARDEC_NAME (arg_node)),
+                        MakeNum (DIM_NO_OFFSET (dim)), type_exprs);
     } else if (dim == UNKNOWN_SHAPE) {
         /*
          * array with unknown shape and dimension.
@@ -2690,6 +2697,7 @@ COMPPrfShape (node *arg_node, node *arg_info)
 {
     node *ret_node;
     node *arg;
+    node *type_exprs;
     ids *let_ids;
 
     DBUG_ENTER ("COMPPrfShape");
@@ -2699,9 +2707,11 @@ COMPPrfShape (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_shape expected!");
 
+    type_exprs = Type2Exprs (ID_TYPE (arg));
+    DBUG_ASSERT ((type_exprs != NULL),
+                 "type with unknown shape found: use *new* backend!!");
     ret_node = MakeAssignIcm3 ("ND_CREATE_CONST_ARRAY_S", DupIds_Id (let_ids),
-                               MakeNum (GetDim (ID_TYPE (arg))),
-                               Type2Exprs (ID_TYPE (arg)), NULL);
+                               MakeNum (GetDim (ID_TYPE (arg))), type_exprs, NULL);
 
     DBUG_RETURN (ret_node);
 }
