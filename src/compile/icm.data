@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/06/19 12:30:14  ben
+ * ICMs SCHEDULER_Self modified  with parameter first_task
+ *
  * Revision 3.21  2001/05/11 14:36:56  cg
  * Added specific initialization ICM for each scheduling technique
  * implemented so far.
@@ -810,27 +813,30 @@ ICM_END( MT_SCHEDULER_Static_INIT, (sched_id, tasks_per_thread, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Self_BEGIN, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(tasks_per_thread)
+  ICM_STR(first_task)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_BEGIN, (sched_id, tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_BEGIN, (sched_id, tasks_per_thread, first_task, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Self_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Self_END, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(tasks_per_thread)
+  ICM_STR(first_task)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_END, (sched_id, tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_END, (sched_id, tasks_per_thread, first_task, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Self_INIT) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Self_INIT, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(tasks_per_thread)
+  ICM_STR(first_task)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_INIT, (sched_id, tasks_per_thread, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_INIT, (sched_id, tasks_per_thread, first_task, dim, vararg))
 #endif
 
 
