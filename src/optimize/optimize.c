@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/03/02 16:49:49  mwe
+ * support for CVP added
+ *
  * Revision 3.57  2004/02/25 15:53:06  cg
  * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
  * now provide access to SSA transformations on a per function
@@ -323,6 +326,7 @@
 #include "ElimSubDiv.h"
 #include "UndoElimSubDiv.h"
 #include "SelectionPropagation.h"
+#include "ConstVarPropagation.h"
 
 /**
  *
@@ -365,6 +369,7 @@ int ap_unsupported;
 int al_expr;
 int dl_expr;
 int sp_expr;
+int cvp_expr;
 
 /**
  *
@@ -420,6 +425,7 @@ ResetCounters ()
     al_expr = 0;
     dl_expr = 0;
     sp_expr = 0;
+    cvp_expr = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -434,6 +440,7 @@ ResetCounters ()
  *                          int off_cse_expr, int off_ap_padded,
  *                          int off_ap_unsupported,
  *                          int off_wls_expr, int off_al_expr, int off_dl_expr,
+ *                          int off_sp_expr, int off_cvp_expr,
  *                          int flag)
  *
  *   @brief prints all counters - specified offset provided that the respective
@@ -450,7 +457,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
-                 int off_dl_expr, int off_sp_expr, int flag)
+                 int off_dl_expr, int off_sp_expr, int off_cvp_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -466,6 +473,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = cf_expr - off_cf_expr;
     if ((optimize & OPT_CF) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d primfun application(s) eliminated by constant folding", diff));
+
+    diff = cvp_expr - off_cvp_expr;
+    if ((optimize & OPT_CVP) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d values propagated", diff));
 
     diff = sp_expr - off_sp_expr;
     if ((optimize & OPT_SP) && ((ALL == flag) || (diff > 0)))
@@ -764,7 +775,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * index vector elimination
@@ -807,6 +818,7 @@ DONE:
  * loop1: CSE        |
  *        SSAILI     |   (only in ssa form)
  *        CF         |
+ *        CVP        |
  *        SP         |
  *        WLT        |
  *        WLF        |
@@ -852,6 +864,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_al_expr = al_expr;
     int mem_dl_expr = dl_expr;
     int mem_sp_expr = sp_expr;
+    int mem_cvp_expr = cvp_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -867,6 +880,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_al_expr = al_expr;
     int old_dl_expr = dl_expr;
     int old_sp_expr = sp_expr;
+    int old_cvp_expr = cvp_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1009,6 +1023,7 @@ OPTfundef (node *arg_node, node *arg_info)
             old_al_expr = al_expr;
             old_dl_expr = dl_expr;
             old_sp_expr = sp_expr;
+            old_cvp_expr = cvp_expr;
 
             /*
              * !! Important !!
@@ -1055,6 +1070,15 @@ OPTfundef (node *arg_node, node *arg_info)
 
                 if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                     && (0 == strcmp (break_specifier, "cf"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_CVP) {
+                    arg_node = ConstVarPropagation (arg_node); /* cvp_tab */
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cvp"))) {
                     goto INFO;
                 }
 
@@ -1342,7 +1366,7 @@ OPTfundef (node *arg_node, node *arg_info)
                   || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
                   || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
                   || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
-                  || (sp_expr != old_sp_expr))
+                  || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1471,7 +1495,7 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
-                         mem_dl_expr, mem_sp_expr, NON_ZERO_ONLY);
+                         mem_dl_expr, mem_sp_expr, mem_cvp_expr, NON_ZERO_ONLY);
 
         if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););

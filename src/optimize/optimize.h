@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/03/02 16:49:49  mwe
+ * support for CVP added
+ *
  * Revision 3.6  2003/08/16 08:44:25  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -158,6 +161,7 @@ extern int ap_padded;
 extern int ap_unsupported;
 extern int dl_expr;
 extern int sp_expr;
+extern int cvp_expr;
 
 extern node *Optimize (node *arg_node);
 extern node *OPTmodul (node *arg_node, node *arg_info);
