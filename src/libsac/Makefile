@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.4  1999/07/23 12:42:47  cg
+# Added new target prod to allow local compilations with
+# optimizations enabled.
+#
 # Revision 1.3  1999/07/16 09:41:16  cg
 # Added facilities for heap management diagnostics.
 #
@@ -38,7 +42,7 @@ OBJS_LIBSAC_NOHEAPMGR_MT := heapmgr_disabled_mt.o
 
 
 
-.PHONY: all tar
+.PHONY: all tar clean prod
 
 
 all: libsac.a libsac_mt.a libsac_heapmgr.a libsac_heapmgr_diag.a   \
@@ -92,6 +96,10 @@ cachesim_access_advanced.o: cachesim_access.c
 
 deps:
 	makedepend $(INCS) *.c
+
+prod:
+	$(MAKE) CCFLAGS="$(CCFLAGS) -O3"
+
 
 clean:
 	$(RM) *.o *.a *.bak *.old *~
