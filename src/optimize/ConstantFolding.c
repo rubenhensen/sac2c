@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/07/29 07:32:02  cg
+ * Bug fixed in folding of consecutive modarray() / psi()
+ * operations; the actual value is now determined in the
+ * correct scope.
+ *
  * Revision 2.17  1999/07/15 20:39:07  sbs
  * CFarray added.
  *
@@ -523,9 +528,12 @@ CFassign (node *arg_node, node *arg_info)
     nodetype ntype;
 
     DBUG_ENTER ("CFassign");
+
     DBUG_PRINT ("CF", ("Begin folding of line %d", NODE_LINE (arg_node)));
+
     NODE_LINE (arg_info) = NODE_LINE (arg_node);
     ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
+
     if (N_return != ntype) {
         INFO_CF_ASSIGN (arg_info) = arg_node;
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
@@ -560,6 +568,12 @@ CFassign (node *arg_node, node *arg_info)
         }
     } else
         returnnode = arg_node;
+
+    if (ASSIGN_CF (returnnode) != NULL) {
+        ASSIGN_NEXT (ASSIGN_CF (returnnode)) = returnnode;
+        returnnode = ASSIGN_CF (returnnode);
+        ASSIGN_CF (ASSIGN_NEXT (returnnode)) = NULL;
+    }
 
     DBUG_RETURN (returnnode);
 }
@@ -2190,7 +2204,7 @@ ArrayPrf (node *arg_node, node *arg_info)
     case F_psi: {
         int dim, ok;
         node *shape, *array, *res_array, *first_elem;
-        node *tmpn, *modindex;
+        node *tmpn, *modindex, *assign;
         types *array_type;
         node **mrdmask;
 
@@ -2263,12 +2277,12 @@ ArrayPrf (node *arg_node, node *arg_info)
             tmpn = arg[1];
             mrdmask = MRD_TOS.varlist;
             do {
-                array = mrdmask[ID_VARNO (tmpn)];
+                assign = mrdmask[ID_VARNO (tmpn)];
                 ok = 1;
-                if (array && N_assign == NODE_TYPE (array)
-                    && N_let == NODE_TYPE (ASSIGN_INSTR (array))) {
-                    mrdmask = (node **)ASSIGN_MRDMASK (array);
-                    array = LET_EXPR (ASSIGN_INSTR (array));
+                if (assign && N_assign == NODE_TYPE (assign)
+                    && N_let == NODE_TYPE (ASSIGN_INSTR (assign))) {
+                    mrdmask = (node **)ASSIGN_MRDMASK (assign);
+                    array = LET_EXPR (ASSIGN_INSTR (assign));
                 } else
                     array = NULL;
 
@@ -2283,9 +2297,82 @@ ArrayPrf (node *arg_node, node *arg_info)
                           = MRD_GETDATA (ID_VARNO (modindex), INFO_CF_VARNO (arg_info));
                     if (IsConstantArray (modindex, N_num)
                         && CompareNumArrayType (shape, modindex)) {
-                        if (CompareNumArrayElts (shape, modindex))
-                            res_array = DupTree (PRF_ARG3 (array), NULL);
-                        else {
+                        if (CompareNumArrayElts (shape, modindex)) {
+                            node *val = PRF_ARG3 (array);
+                            if (NODE_TYPE (val) == N_id) {
+                                if (mrdmask[ID_VARNO (val)]
+                                    == ((node **)ASSIGN_MRDMASK (
+                                         INFO_CF_ASSIGN (arg_info)))[ID_VARNO (val)]) {
+                                    res_array = DupTree (val, NULL);
+                                } else {
+                                    /*
+                                     * A variable with the same name has been defined
+                                     * between the calls to modarray() and psi(), i.e. we
+                                     * have to deal with the following situation:
+                                     *
+                                     * A = modarray( A, [0], val);
+                                     * ....
+                                     * val = .... ;
+                                     *
+                                     * ... = psi( [0], A);
+                                     *
+                                     * As a consequence, the call to psi obviously cannot
+                                     * be replaced by the variable 'val'. However, we can
+                                     * use the following trick when inserting a new, fresh
+                                     * identifier:
+                                     *
+                                     * A = modarray( A, [0], val);
+                                     * fresh_var = val;
+                                     * ....
+                                     * val = .... ;
+                                     *
+                                     * ... = psi( [0], A);
+                                     *
+                                     * Now, the call to psi() may safely be replaced by
+                                     * the variable 'fresh_var'.
+                                     *
+                                     * The following lines of code implement exactly this
+                                     * transformation scheme.
+                                     */
+                                    char *fresh_var;
+                                    ids *new_ids;
+                                    node *vardecs, *new_vardec;
+
+                                    if (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (assign)))
+                                        != ID_VARDEC (val)) {
+                                        /*
+                                         * The above condition may not hold only in very
+                                         * rare and dubious circumstance.
+                                         */
+                                        fresh_var = TmpVar ();
+                                        new_ids = MakeIds (fresh_var, NULL, ST_regular);
+
+                                        vardecs
+                                          = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (assign)));
+                                        new_vardec
+                                          = MakeVardec (StringCopy (fresh_var),
+                                                        DuplicateTypes (ID_TYPE (val), 0),
+                                                        VARDEC_NEXT (vardecs));
+                                        VARDEC_NEXT (vardecs) = new_vardec;
+
+                                        VARDEC_VARNO (new_vardec) = -1;
+
+                                        IDS_VARDEC (new_ids) = new_vardec;
+
+                                        ASSIGN_CF (assign)
+                                          = MakeAssign (MakeLet (DupTree (val, NULL),
+                                                                 new_ids),
+                                                        NULL);
+
+                                        res_array = MakeId (StringCopy (fresh_var), NULL,
+                                                            ST_regular);
+                                        ID_VARDEC (res_array) = new_vardec;
+                                    }
+                                }
+                            } else {
+                                res_array = DupTree (val, NULL);
+                            }
+                        } else {
                             /* valid modindex, but not equal index. */
                             tmpn = PRF_ARG1 (array);
                             ok = 0; /* continue searching */
