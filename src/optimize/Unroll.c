@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/02/23 19:08:50  cg
+ * The optimizations LUR and WLUR now issue a notification if
+ * the setting of -maxlur or -maxwlur, respectively, prevents
+ * the unrolling of an otherwise unrollable loop or with-loop.
+ * Currently the upper boundary for issuing such a note is set to 32.
+ *
  * Revision 2.6  2000/01/26 17:27:17  dkr
  * type of traverse-function-table changed.
  *
@@ -530,44 +536,51 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
 
     DBUG_ENTER ("DoUnroll");
 
-    if ((optimize & OPT_LUR) && (loop_info->loop_num <= unrnum)) {
-        DBUG_PRINT ("UNR", ("Unrolling %d times %s in line %d", loop_info->loop_num,
-                            mdb_nodetype[arg_node->nodetype], arg_node->lineno));
-        lunr_expr++;
-        switch (loop_info->loop_num) {
-        case 0:
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
-                       INFO_VARNO (arg_info));
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
-                       INFO_VARNO (arg_info));
-            MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
-            FreeTree (arg_node);
-            arg_node = MakeNode (N_empty);
-            break;
-        case 1:
-            MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
-            unroll = arg_node->node[1]->node[0];
-            arg_node->node[1]->node[0] = NULL;
-            FreeTree (arg_node);
-            arg_node = unroll;
-            break;
-        default:
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
-                       INFO_VARNO (arg_info));
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
-                       INFO_VARNO (arg_info));
-            MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
+    if (optimize & OPT_LUR) {
+        if (loop_info->loop_num <= unrnum) {
+            DBUG_PRINT ("UNR", ("Unrolling %d times %s in line %d", loop_info->loop_num,
+                                mdb_nodetype[arg_node->nodetype], arg_node->lineno));
+            lunr_expr++;
+            switch (loop_info->loop_num) {
+            case 0:
+                MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
+                           INFO_VARNO (arg_info));
+                MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
+                           INFO_VARNO (arg_info));
+                MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
+                FreeTree (arg_node);
+                arg_node = MakeNode (N_empty);
+                break;
+            case 1:
+                MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
+                unroll = arg_node->node[1]->node[0];
+                arg_node->node[1]->node[0] = NULL;
+                FreeTree (arg_node);
+                arg_node = unroll;
+                break;
+            default:
+                MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
+                           INFO_VARNO (arg_info));
+                MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
+                           INFO_VARNO (arg_info));
+                MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
 
-            for (i = 0; i < loop_info->loop_num; i++) {
-                tmp = DupTree (arg_node->node[1]->node[0], NULL);
-                unroll = AppendNodeChain (1, unroll, tmp);
+                for (i = 0; i < loop_info->loop_num; i++) {
+                    tmp = DupTree (arg_node->node[1]->node[0], NULL);
+                    unroll = AppendNodeChain (1, unroll, tmp);
+                }
+                unroll = GenerateMasks (unroll, arg_info);
+                FreeTree (arg_node);
+                arg_node = unroll;
+                break;
             }
-            unroll = GenerateMasks (unroll, arg_info);
-            FreeTree (arg_node);
-            arg_node = unroll;
-            break;
+        } else {
+            if (loop_info->loop_num <= 32) {
+                NOTE (("LUR: -maxlur %d would unroll loop", loop_info->loop_num));
+            }
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 

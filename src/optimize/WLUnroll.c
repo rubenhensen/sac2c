@@ -1,6 +1,12 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.8  2000/02/23 19:08:50  cg
+ * The optimizations LUR and WLUR now issue a notification if
+ * the setting of -maxlur or -maxwlur, respectively, prevents
+ * the unrolling of an otherwise unrollable loop or with-loop.
+ * Currently the upper boundary for issuing such a note is set to 32.
+ *
  * Revision 2.7  1999/11/11 20:05:48  dkr
  * signature and name of function IsConstantArray changed
  *
@@ -541,7 +547,7 @@ CheckUnrollModarray (node *wln)
           && (!NGEN_STEP (genn) || IsConstArray (NGEN_STEP (genn)))
           && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
 
-    while (partn && ok) {
+    while (ok && partn) {
         genn = NPART_GEN (partn);
         /* check if code is a copy of the original array and set NPART_COPY
            for later usage in DoUnrollModarray().
@@ -573,10 +579,22 @@ CheckUnrollModarray (node *wln)
                              ID_NAME (PRF_ARG2 (exprn))));
         }
 
-        if (!NPART_COPY (partn))
-            ok = (elts += CountElements (genn)) <= wlunrnum;
+        if (!NPART_COPY (partn)) {
+            elts += CountElements (genn);
+        }
 
         partn = NPART_NEXT (partn);
+    }
+
+    if (ok && (elts > wlunrnum)) {
+        ok = 0;
+        if (elts <= 32) {
+            /*
+             * Most with-loops can easily be unrolled.
+             * So, we only want to see a warning for small ones.
+             */
+            NOTE (("WLUR: -maxwlur %d would unroll fold with-loop", elts));
+        }
     }
 
     DBUG_RETURN (ok);
@@ -656,7 +674,17 @@ CheckUnrollGenarray (node *wln, node *arg_info)
 
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
     GET_LENGTH (length, type);
-    ok = ok && length <= wlunrnum;
+
+    if (ok && (length > wlunrnum)) {
+        ok = 0;
+        if (length <= 32) {
+            NOTE (("WLUR: -maxwlur %d would unroll genarray with-loop", length));
+            /*
+             * Most with-loops can easily be unrolled.
+             * So, we only want to see a warning for small ones.
+             */
+        }
+    }
 
     DBUG_RETURN (ok);
 }
@@ -764,9 +792,20 @@ CheckUnrollFold (node *wln)
           && (!NGEN_STEP (genn) || IsConstArray (NGEN_STEP (genn)))
           && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
 
-    while (partn && ok) {
-        ok = (elts += CountElements (NPART_GEN (partn))) <= wlunrnum;
+    while (ok && (partn != NULL)) {
+        elts += CountElements (NPART_GEN (partn));
         partn = NPART_NEXT (partn);
+    }
+
+    if (ok && (elts > wlunrnum)) {
+        ok = 0;
+        if (elts <= 32) {
+            NOTE (("WLUR: -maxwlur %d would unroll fold with-loop", elts));
+            /*
+             * Most with-loops can easily be unrolled.
+             * So, we only want to see a warning for small ones.
+             */
+        }
     }
 
     DBUG_RETURN (ok);
