@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/04/24 13:04:40  dkr
+ * type 'id' replaced by 'char'
+ *
  * Revision 3.18  2001/04/24 09:34:07  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -132,7 +135,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 
 %union {
          nodetype        nodetype;
-         id              *id;
+         char            *id;
          ids             *ids;
          types           *types;
          node            *node;
