@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.34  2000/10/12 17:11:55  dkr
+# make deps done
+#
 # Revision 2.33  2000/08/17 10:17:32  dkr
 # make deps done
 #
@@ -211,13 +214,14 @@ compile.o: /usr/include/sys/isa_defs.h /usr/include/string.h ../tree/tree.h
 compile.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 compile.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 compile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
-compile.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
-compile.o: ../tree/DataFlowMask.h compile.h ../print/convert.h
-compile.o: ../tree/DupTree.h ../tree/LookUpTable.h ReuseWithArrays.h
-compile.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
-compile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-compile.o: ../tree/scheduling.h precompile.h ../typecheck/typecheck.h
+compile.o: ../global/globals.h ../global/internal_lib.h ../tree/prf.h
+compile.o: ../print/print.h ../../inc/dbug.h ../global/my_debug.h
+compile.o: ../tree/traverse.h ../tree/DataFlowMask.h compile.h
+compile.o: ../print/convert.h ../tree/DupTree.h ../tree/LookUpTable.h
+compile.o: ReuseWithArrays.h ../tree/free.h /usr/include/malloc.h
+compile.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+compile.o: /usr/include/sys/int_types.h ../tree/scheduling.h precompile.h
+compile.o: ../typecheck/typecheck.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
