@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/08/08 16:05:08  sah
+ * fixed some includes.
+ *
  * Revision 3.6  2001/07/10 09:30:49  ben
  * SCHRemoveTasksel inserted
  *
@@ -74,6 +77,7 @@
 
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "traverse.h"
 #include "scheduling.h"
 

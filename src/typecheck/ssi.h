@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/08/08 16:05:08  sah
+ * fixed some includes.
+ *
  * Revision 1.3  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -19,8 +22,6 @@
 
 #include "new_types.h"
 #include "sig_deps.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
 #include "internal_lib.h"
 
 typedef struct TVAR tvar;

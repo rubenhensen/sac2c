@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/08/08 16:05:08  sah
+ * fixed some includes.
+ *
  * Revision 1.22  2004/03/05 12:07:07  sbs
  * nasty sharing error in NTCCTarray eliminated.
  *
@@ -81,6 +84,7 @@
 #include "constants.h"
 #include "type_errors.h"
 #include "user_types.h"
+#include "Error.h"
 
 ct_funptr NTCPRF_funtab[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) g

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/08 16:05:08  sah
+ * fixed some includes.
+ *
  * Revision 1.4  2004/02/25 15:53:06  cg
  * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
  * now provide access to SSA transformations on a per function
@@ -45,6 +48,8 @@
 #include "SSATransform.h"
 #include "fun2lac.h"
 #include "UndoSSATransform.h"
+#include "string.h"
+#include "tree_basic.h"
 #include "ssa.h"
 
 /** <!--********************************************************************-->

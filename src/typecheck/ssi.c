@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/08/08 16:05:08  sah
+ * fixed some includes.
+ *
  * Revision 1.6  2004/08/08 13:29:44  sbs
  * addded some DBUG_PRINTs
  *
@@ -25,6 +28,7 @@
 
 #include "types.h"
 #include "new_types.h"
+#include "Error.h"
 
 #include "ssi.h"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/08/08 16:05:08  sah
+ * fixed some includes.
+ *
  * Revision 1.3  2004/07/30 17:25:29  sbs
  * UGLY trick for smuggling through info * node instead of node * node:
  * casted. Compare UGLY counterpart in NTCcond (new_typecheck.c).
@@ -24,6 +27,7 @@
 #include "sig_deps.h"
 #include "ct_basic.h"
 #include "traverse.h"
+#include "tree_basic.h"
 
 /*
  * OPEN PROBLEMS:
