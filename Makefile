@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.28  1995/09/01 07:44:25  cg
+# Revision 1.29  1995/09/27 12:15:18  cg
+# included tree_basic.c and tree_compound.c
+#
+# Revision 1.28  1995/09/01  07:44:25  cg
 # linking of sib.o added
 #
 # Revision 1.27  1995/07/28  13:27:20  asi
@@ -94,6 +97,7 @@ RM=rm -f
 LIB=lib/dbug.o /usr/lib/debug/malloc.o /usr/lib/libm.a
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
+	src/global/tree_basic.o src/global/tree_compound.o \
         src/global/free.o src/global/internal_lib.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o src/print/convert.o
