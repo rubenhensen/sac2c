@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/07/10 14:24:53  cg
+ * Artificial return types of functions that are inserted during the
+ * resolution of reference parameters and global objects are now
+ * tagged ST_artificial.
+ *
  * Revision 2.3  2000/06/23 14:00:16  dkr
  * nodetype N_with removed
  *
@@ -374,13 +379,6 @@ OBJfundef (node *arg_node, node *arg_info)
 
     while (need_objs != NULL) {
         obj = NODELIST_NODE (need_objs);
-        /*
-        new_type=MakeType(OBJDEF_BASETYPE(obj),
-                          OBJDEF_DIM(obj),
-                          CopyShpseg(OBJDEF_SHPSEG(obj)),
-                          StringCopy(OBJDEF_TNAME(obj)),
-                          StringCopy(OBJDEF_TMOD(obj)));
-        */
         new_type = DupTypes (OBJDEF_TYPE (obj));
 
         new_arg = MakeArg (StringCopy (OBJDEF_VARNAME (obj)), new_type, ST_artificial,
@@ -544,17 +542,13 @@ OBJarg (node *arg_node, node *arg_info)
             FUNDEF_TNAME (arg_info) = StringCopy (ARG_TNAME (arg_node));
             FUNDEF_TMOD (arg_info) = ARG_TMOD (arg_node);
 
+            TYPES_STATUS (FUNDEF_TYPES (arg_info)) = ST_artificial;
+
             DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
                                 FUNDEF_TMOD (arg_info), FUNDEF_TNAME (arg_info)));
         } else {
-            /*
-            new_return_type=MakeType(ARG_BASETYPE(arg_node),
-                                     ARG_DIM(arg_node),
-                                     CopyShpseg(ARG_SHPSEG(arg_node)),
-                                     StringCopy(ARG_TNAME(arg_node)),
-                                     ARG_TMOD(arg_node));
-            */
             new_return_type = DupTypes (ARG_TYPE (arg_node));
+            TYPES_STATUS (new_return_type) = ST_artificial;
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;
 
