@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/01/29 19:21:21  dkr
+ * fixed a bug in FitWL
+ *
  * Revision 3.21  2001/01/29 18:34:51  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -3981,9 +3984,6 @@ AdjustBlockingFactor (int old_bv, int unroll, bool warn)
  *   Checks whether the extent (difference of upper and lower bound) of
  *   'wlnode' is a multiple of 'unroll'. If not, the incomplete periode at the
  *   tail is split.
- *   The address of the given pointer 'wlnode' is filled with the first part of
- *   the splitted node, the return value is a pointer to the second part of the
- *   splitted node.
  *
  ******************************************************************************/
 
@@ -4022,7 +4022,6 @@ FitNode (node *wlnode, int unroll)
 
                 WLNODE_NEXT (new_wlnode) = WLNODE_NEXT (wlnode);
                 WLNODE_NEXT (wlnode) = new_wlnode;
-                wlnode = new_wlnode;
             }
         }
     }
@@ -6143,6 +6142,13 @@ InferFitted (node *wlnode)
 
     if (wlnode != NULL) {
         switch (NODE_TYPE (wlnode)) {
+        case N_WLsegVar:
+            /* here is no break missing */
+        case N_WLseg:
+            WLSEGX_CONTENTS (wlnode) = InferFitted (WLSEGX_CONTENTS (wlnode));
+            WLSEGX_NEXT (wlnode) = InferFitted (WLSEGX_NEXT (wlnode));
+            break;
+
         case N_WLblock:
             /* here is no break missing */
         case N_WLublock:
@@ -6438,7 +6444,6 @@ WLTRAwith (node *arg_node, node *arg_info)
                      */
                     segs = Cubes (NULL, NULL, cubes, wl_dims, line);
                     segs = InferSegsParams_Pre (segs);
-                    WLSEGX_CONTENTS (segs) = InferFitted (WLSEGX_CONTENTS (segs));
                 } else {
                     segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
 
@@ -6526,9 +6531,6 @@ WLTRAwith (node *arg_node, node *arg_info)
                             }
                         }
 
-                        /* compute WLGRIDX_FITTED */
-                        WLSEGX_CONTENTS (seg) = InferFitted (WLSEGX_CONTENTS (seg));
-
                         seg = WLSEG_NEXT (seg);
                     }
                 }
@@ -6546,6 +6548,11 @@ WLTRAwith (node *arg_node, node *arg_info)
          * compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_HOMSV, SEG_MAXHOMDIM
          */
         segs = InferSegsParams_Post (segs);
+
+        /*
+         * compute WLGRIDX_FITTED
+         */
+        segs = InferFitted (segs);
 
         NWITH2_SEGS (new_node) = segs;
     }
