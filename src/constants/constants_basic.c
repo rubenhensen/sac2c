@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/11/26 23:52:43  mwe
+ * *** empty log message ***
+ *
  * Revision 1.27  2004/11/26 23:46:57  mwe
  * changes according to fit header file
  *
@@ -115,7 +118,7 @@
  ******************************************************************************/
 
 constant *
-COmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
+MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 {
     constant *res;
 
