@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/24 12:57:12  ktr
+ * COMPILES!!!
+ *
  * Revision 1.7  2004/11/24 11:26:46  jhb
  * ismop
  *
@@ -254,7 +257,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
             node *rc;
             node *cfap;
             node *memavis, *valavis;
-            node *condids;
             node *memids, *valids;
             node *thenids, *elseids;
             node *assids;
@@ -263,7 +265,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
             node *cfrets;
             node *cfargs;
             lut_t *cflut, *tmplut;
-            int i;
 
             /*
              * Create condfun return types
@@ -280,6 +281,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
                   = TCappendRets (cfrets,
                                   TBmakeRet (TYcopyType (AVIS_TYPE (IDS_AVIS (assids))),
                                              NULL));
+
                 cftypes = TCappendTypes (cftypes,
                                          TYtype2OldType (AVIS_TYPE (IDS_AVIS (assids))));
                 assids = IDS_NEXT (assids);
@@ -357,13 +359,13 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
 
                 FUNDEF_VARDEC (condfun) = TBmakeVardec (cavis, FUNDEF_VARDEC (condfun));
 
-                cids = TBmakeIds (cavis);
+                cids = TBmakeIds (cavis, NULL);
 
                 /*
                  * create FUNCOND
                  */
                 res
-                  = TCmakeAssign (TBmakeLet (TBmakeFuncond (DUPdoDupNode (cond),
+                  = TBmakeAssign (TBmakeLet (TBmakeFuncond (DUPdoDupNode (cond),
                                                             TBmakeId (IDS_AVIS (thenids)),
                                                             TBmakeId (
                                                               IDS_AVIS (elseids))),
@@ -385,7 +387,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
              * Append return( retexprs);
              */
             ret = TBmakeReturn (retexprs);
-            res = TCappendAssign (res, TCmakeAssign (ret, NULL));
+            res = TCappendAssign (res, TBmakeAssign (ret, NULL));
 
             /*
              * Create conditional
@@ -412,133 +414,83 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
 
             /*
              * Create variable c'
-             *
-             * TODO: continue here
              */
+            memavis = TBmakeAvis (ILIBtmpVarName ("mem"),
+                                  TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+
+            FUNDEF_VARDEC (fundef) = TBmakeVardec (memavis, FUNDEF_VARDEC (fundef));
+
+            memids = TBmakeIds (memavis, NULL);
 
             /*
-             * First, create the avis
+             * Create variable c
              */
-      memavis = TBmakeAvis( ILIBtmpVarName("val"),
-			    TBmakeTypes1( T_bool)));
+            valavis = TBmakeAvis (ILIBtmpVarName ("val"),
+                                  TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-      /*
-       * Put a vardec in the current functions vardec chain
-       */
-      FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-        = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            FUNDEF_VARDEC (fundef) = TBmakeVardec (valavis, FUNDEF_VARDEC (fundef));
 
-#ifdef OLDTYPE
-      /*
-       * For the time being, an old type is required
-       */
-      VARDEC_TYPE (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)))
-        = TYtype2OldType (AVIS_TYPE (valavis));
-#endif
+            valids = TBmakeIds (valavis, NULL);
 
-      /*
-       * Create a LHS identifier for a_val
-       */
-      lhs = TBmakeIds (valavis);
+            /*
+             * Create variables returned by condfun
+             */
+            cfids = NULL;
+            while (cfrets != NULL) {
+                node *cfavis;
 
-      // old
+                cfavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (RET_TYPE (cfrets)));
 
-      FUNDEF_VARDEC (fundef)
-        = TBmakeVardec (ILIBtmpVar (), TBmakeTypes1 (T_bool), FUNDEF_VARDEC (fundef));
+                FUNDEF_VARDEC (fundef) = TBmakeVardec (cfavis, FUNDEF_VARDEC (fundef));
 
-      memavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
-      AVIS_TYPE (memavis) = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
+                cfids = TCappendIds (cfids, TBmakeIds (cfavis, NULL));
 
-      memids = TBmakeIds (ILIBstringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))), NULL,
-                          ST_regular);
-      IDS_AVIS (memids) = memavis;
-      IDS_VARDEC (memids) = AVIS_VARDECORARG (memavis);
+                cfrets = RET_NEXT (cfrets);
+            }
 
-      /*
-       * Create variable c
-       */
-      FUNDEF_VARDEC (fundef)
-        = TBmakeVardec (ILIBtmpVar (), TBmakeTypes1 (T_bool), FUNDEF_VARDEC (fundef));
+            /*
+             * Create application of condfun
+             */
+            cfap = TBmakeAp (condfun, TBmakeExprs (TBmakeId (valavis),
+                                                   DFMUdfm2ApArgs (inmask, lut)));
 
-      valavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
-      AVIS_TYPE (valavis) = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
+            AP_FUNDEF (cfap) = condfun;
 
-      valids = TBmakeIds (ILIBstringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))), NULL,
-                          ST_regular);
-      IDS_AVIS (valids) = valavis;
-      IDS_VARDEC (valids) = AVIS_VARDECORARG (valavis);
+            res = TBmakeAssign (TBmakeLet (cfids, cfap), res);
 
-      /*
-       * Create variables returned by condfun
-       */
-      cfids = NULL;
-      i = 0;
-      while (cftypes != NULL) {
-          node *cfavis;
-          node *newids;
+            while (cfids != NULL) {
+                AVIS_SSAASSIGN (IDS_AVIS (cfids)) = res;
+                cfids = IDS_NEXT (cfids);
+            }
 
-          FUNDEF_VARDEC (fundef) = TBmakeVardec (ILIBtmpVar (), DUPdupOneTypes (cftypes),
-                                                 FUNDEF_VARDEC (fundef));
+            FUNDEF_EXT_ASSIGNS (condfun) = TCnodeListAppend (NULL, res, NULL);
+            FUNDEF_USED (condfun) = 1;
 
-          cfavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
-          AVIS_TYPE (cfavis)
-            = TYcopyType (TYgetProductMember (FUNDEF_RET_TYPE (condfun), i));
+            /*
+             * Create  c  = fill( isreused( a, b), c');
+             */
+            res
+              = TBmakeAssign (TBmakeLet (valids,
+                                         TCmakePrf2 (F_fill,
+                                                     TCmakePrf2 (F_isreused,
+                                                                 DUPdoDupNode (
+                                                                   EXPRS_EXPR (rc)),
+                                                                 DUPdoDupNode (
+                                                                   EXPRS_EXPR (memvars))),
+                                                     TBmakeId (memavis))),
+                              res);
+            AVIS_SSAASSIGN (IDS_AVIS (valids)) = res;
 
-          newids = TBmakeIds (ILIBstringCopy (VARDEC_NAME (AVIS_VARDECORARG (cfavis))),
-                              NULL, ST_regular);
-          IDS_AVIS (newids) = cfavis;
-          IDS_VARDEC (newids) = AVIS_VARDECORARG (cfavis);
+            /*
+             * Create c' = alloc( 0, []);
+             */
+            res = TBmakeAssign (TBmakeLet (memids,
+                                           TCmakePrf2 (F_alloc, TBmakeNum (0),
+                                                       TCcreateZeroVector (0, T_int))),
+                                res);
+            AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
 
-          cfids = TCappendIds (cfids, newids);
-
-          cftypes = TYPES_NEXT (cftypes);
-          i += 1;
-      }
-
-      /*
-       * Create application of condfun
-       */
-      cfap = TBmakeAp (ILIBstringCopy (FUNDEF_NAME (condfun)),
-                       ILIBstringCopy (FUNDEF_MOD (condfun)),
-                       TBmakeExprs (MakeIdFromIds (DUPdupOneIds (valids)),
-                                    DFMUdfm2ApArgs (inmask, lut)));
-
-      AP_FUNDEF (cfap) = condfun;
-
-      res = TCmakeAssign (TBmakeLet (cfap, cfids), res);
-
-      while (cfids != NULL) {
-          AVIS_SSAASSIGN (IDS_AVIS (cfids)) = res;
-          cfids = IDS_NEXT (cfids);
-      }
-
-      FUNDEF_EXT_ASSIGNS (condfun) = TCnodeListAppend (NULL, res, NULL);
-      FUNDEF_USED (condfun) = 1;
-
-      /*
-       * Create  c  = fill( isreused( a, b), c');
-       */
-      res
-        = TCmakeAssign (TBmakeLet (TCmakePrf2 (F_fill,
-                                               TCmakePrf2 (F_isreused,
-                                                           DUPdoDupNode (EXPRS_EXPR (rc)),
-                                                           DUPdoDupNode (
-                                                             EXPRS_EXPR (memvars))),
-                                               MakeIdFromIds (DupOneIds (memids))),
-                                   valids),
-                        res);
-      AVIS_SSAASSIGN (IDS_AVIS (valids)) = res;
-
-      /*
-       * Create c" = alloc( 0, []);
-       */
-      res = TCmakeAssign (TBmakeLet (TCmakePrf2 (F_alloc, TBmakeNum (0),
-                                                 TCcreateZeroVector (0, T_int)),
-                                     memids),
-                          res);
-      AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
-
-      DBUG_EXECUTE ("EMRB", Print (res););
+            DBUG_EXECUTE ("EMRB", PRTdoPrint (res););
         }
     }
 
@@ -609,7 +561,7 @@ EMRBassign (node *arg_node, info *arg_info)
         while (ASSIGN_NEXT (lastass) != NULL) {
             lastass = ASSIGN_NEXT (lastass);
         }
-        ASSIGN_LHS (lastass) = FreeAllIds (ASSIGN_LHS (lastass));
+        ASSIGN_LHS (lastass) = FREEdoFreeTree (ASSIGN_LHS (lastass));
         ASSIGN_LHS (lastass) = ASSIGN_LHS (arg_node);
         ASSIGN_LHS (arg_node) = NULL;
 
