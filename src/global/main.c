@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/03/17 15:45:44  hw
+ * Revision 1.30  1995/03/17 17:40:37  asi
+ * added work reduction
+ *
+ * Revision 1.29  1995/03/17  15:45:44  hw
  * function Typecheck now returns the syntax_tree
  *
  * Revision 1.28  1995/03/13  17:00:06  asi
@@ -119,7 +122,7 @@
 
 FILE *outfile;
 char filename[256];
-int opt_dcr = 1, opt_cf = 1;
+int opt_dcr = 1, opt_cf = 1, opt_wr = 1;
 int optimize = 1;
 int show_refcnt = 0;
 
@@ -169,6 +172,8 @@ MAIN
             opt_dcr = 0;
         if (!strncmp (*argv, "oCF", 3))
             opt_cf = 0;
+        if (!strncmp (*argv, "oWR", 3))
+            opt_wr = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
         if (!strncmp (*argv, "oRC", 3))

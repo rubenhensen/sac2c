@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.4  1995/03/06 11:09:01  asi
+# Revision 1.5  1995/03/17 17:42:24  asi
+# added work reduction
+#
+# Revision 1.4  1995/03/06  11:09:01  asi
 # added -I../typecheck and make deps
 #
 # Revision 1.3  1995/02/13  17:17:59  asi
@@ -19,7 +22,7 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../typecheck
 
-all: optimize.o ConstantFolding.o DeadCodeRemoval.o
+all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o
 
 optimize.o: optimize.c
 	$(CC) -o optimize.o -c optimize.c $(INCS)
@@ -29,6 +32,9 @@ ConstantFolding.o: ConstantFolding.c
 
 DeadCodeRemoval.o: DeadCodeRemoval.c
 	$(CC) -o DeadCodeRemoval.o -c DeadCodeRemoval.c $(INCS)
+
+WorkReduction.o: WorkReduction.c
+	$(CC) -o WorkReduction.o -c WorkReduction.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -51,6 +57,12 @@ DeadCodeRemoval.o: ../global/type_info.mac ../global/node_info.mac
 DeadCodeRemoval.o: ../global/prf_node_info.mac ../global/free.h
 DeadCodeRemoval.o: ../global/Error.h ../../inc/dbug.h ../global/my_debug.h
 DeadCodeRemoval.o: ../global/traverse.h optimize.h DeadCodeRemoval.h
+WorkReduction.o: /usr/include/stdio.h /usr/include/stdlib.h
+WorkReduction.o: /usr/include/sys/stdtypes.h ../global/tree.h
+WorkReduction.o: ../global/type_info.mac ../global/node_info.mac
+WorkReduction.o: ../global/prf_node_info.mac ../global/Error.h
+WorkReduction.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+WorkReduction.o: optimize.h WorkReduction.h
 optimize.o: /usr/include/stdio.h /usr/include/stdlib.h
 optimize.o: /usr/include/sys/stdtypes.h ../global/tree.h
 optimize.o: ../global/type_info.mac ../global/node_info.mac

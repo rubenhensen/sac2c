@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/03/10 10:45:25  hw
+ * Revision 1.15  1995/03/17 17:41:48  asi
+ * added work reduction
+ *
+ * Revision 1.14  1995/03/10  10:45:25  hw
  * refcnt_tab inserted
  *
  * Revision 1.13  1995/02/13  17:22:28  asi
@@ -147,12 +150,12 @@ funptr dead_tab[] = {
 #undef NIF
 
 /*
- * 7) lir_tab
+ * 7) wr_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) y
 
-funptr lir_tab[] = {
+funptr wr_tab[] = {
 #include "node_info.mac"
 };
 

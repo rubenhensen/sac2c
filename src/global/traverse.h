@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/03/10 10:45:25  hw
+ * Revision 1.10  1995/03/17 17:41:48  asi
+ * added work reduction
+ *
+ * Revision 1.9  1995/03/10  10:45:25  hw
  * refcnt_tab inserted
  *
  * Revision 1.8  1995/02/07  10:59:23  asi
@@ -56,9 +59,9 @@ extern funptr opt_tab[];
 
 extern funptr dead_tab[];
 
-extern funptr lir_tab[];
-
 extern funptr cf_tab[];
+
+extern funptr wr_tab[];
 
 extern funptr free_tab[];
 

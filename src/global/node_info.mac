@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.50  1995/03/16 17:42:28  hw
- *  RCwith and RCcon (used for N_genarray and N_modarray) inserted
+ * Revision 1.51  1995/03/17 17:41:13  asi
+ * added work reduction
  *
+;; Revision 1.50  1995/03/16  17:42:28  hw
+;;  RCwith and RCcon (used for N_genarray and N_modarray) inserted
+;;
 ;; Revision 1.49  1995/03/14  18:43:08  hw
 ;; deleted RCwhile
 ;; added RCloop for N_while and N_do
@@ -164,7 +167,7 @@
 */
 
 /*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
- *                             opt_tab       dead_tab       lir_tab      free_tab
+ *                             opt_tab       dead_tab        wr_tab      free_tab
  *                              cf_tab       refcnt_tab      ---            ---
  */
 
@@ -179,7 +182,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
-       DummyFun, FreeModul, OPTmodul, DummyFun, DummyFun, DummyFun),
+       OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_classdec, "N_classdec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,

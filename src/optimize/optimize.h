@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/03/14 11:12:40  asi
+ * Revision 1.20  1995/03/17 17:43:39  asi
+ * added work reduction
+ *
+ * Revision 1.19  1995/03/14  11:12:40  asi
  * added OptTrav
  *
  * Revision 1.18  1995/03/13  17:11:38  asi
@@ -76,14 +79,16 @@
 /*
  * Global variables defined in main.c
  */
+extern int optimize;
 extern int opt_dcr;
 extern int opt_cf;
-extern int optimize;
+extern int opt_wr;
 /* main.c end */
 
 extern int dead_expr;
 extern int dead_var;
 extern int cf_expr;
+extern int wr_expr;
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
