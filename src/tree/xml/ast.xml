@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.31  2004/10/26 09:38:00  sah
+  added PROVED/EXPORTED flags
+  Links are now serialized again
+
   Revision 1.30  2004/10/21 16:59:13  sah
   switched part and code again
 
@@ -121,8 +125,8 @@
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
-    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="no" />
-    <type name="ApLink" ctype="node*" init="NULL" copy="hash" persist="no" />
+    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
+    <type name="ApLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <type name="IntegerArray" ctype="int*" init="NULL"
     copy="function" />
     <type name="Nums" ctype="nums*" init="NULL" copy="function" />
@@ -563,7 +567,13 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="LinkMod" default="NULL" mandatory="yes">
+        <attribute name="LinkMod" default="NULL" mandatory="no">
+          <type name="String" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="SymbolName" default="NULL" mandatory="no">
           <type name="String" />
           <phases>
             <all />
@@ -803,7 +813,10 @@
 	  </phases>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="Exported" />
+        <flag name="Provided" />
+      </flags>
     </node>
     <node name="TCFunInfo">
       <sons>
