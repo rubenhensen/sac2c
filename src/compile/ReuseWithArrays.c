@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/06/09 09:51:51  ktr
+ * adjusted treatment of f_fill to new paramter constellation
+ *
  * Revision 3.7  2004/06/08 14:27:46  ktr
  * New Entryfunction GetReuseCandidates yields an N_exprs chain of
  * identifiers which could be reused.
@@ -106,6 +109,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "DataFlowMask.h"
+#include "DataFlowMaskUtils.h"
 #include "index.h"
 
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
@@ -332,6 +336,14 @@ ReuseNwithop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *ReuseSel( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
 bool
 ReuseSel (node *arg1, node *arg2, node *arg_info)
 {
@@ -357,6 +369,14 @@ ReuseSel (node *arg1, node *arg2, node *arg_info)
     }
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *ReuseIdxSel( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
 bool
 ReuseIdxSel (node *arg1, node *arg2, node *arg_info)
 {
@@ -413,7 +433,6 @@ ReuseLet (node *arg_node, node *arg_info)
 {
     node *arg1, *arg2, *tmpnode;
     ids *tmp;
-    char *idx_sel_name;
     bool traverse;
 
     DBUG_ENTER ("ReuseLet");
@@ -432,16 +451,9 @@ ReuseLet (node *arg_node, node *arg_info)
     traverse = TRUE;
     DBUG_ASSERT ((INFO_REUSE_IDX (arg_info) != NULL), "no idx found");
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
-        if (PRF_PRF (LET_EXPR (arg_node)) == F_fill) {
+        switch (PRF_PRF (LET_EXPR (arg_node))) {
+        case F_fill:
             tmpnode = PRF_ARGS (LET_EXPR (arg_node));
-            while (EXPRS_NEXT (tmpnode) != NULL) {
-                DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info),
-                                      IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
-                DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info),
-                                    IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
-
-                tmpnode = EXPRS_NEXT (tmpnode);
-            }
             if (NODE_TYPE (EXPRS_EXPR (tmpnode)) == N_prf) {
                 switch (PRF_PRF (EXPRS_EXPR (tmpnode))) {
                 case F_sel:
@@ -460,27 +472,35 @@ ReuseLet (node *arg_node, node *arg_info)
                     break;
                 }
             }
-        } else {
-            switch (PRF_PRF (LET_EXPR (arg_node))) {
-            case F_alloc_or_reuse:
-                /* Probably the first two arguments should be traversed */
-                traverse = FALSE;
-                break;
-            case F_sel:
-                arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
-                arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
-                traverse = ReuseSel (arg1, arg2, arg_info);
-                break;
+            tmpnode = EXPRS_NEXT (tmpnode);
+            while (tmpnode != NULL) {
+                DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info),
+                                      IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
+                DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info),
+                                    IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
 
-            case F_idx_sel:
-                arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
-                arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
-                traverse = ReuseIdxSel (arg1, arg2, arg_info);
-                break;
-
-            default:
-                break;
+                tmpnode = EXPRS_NEXT (tmpnode);
             }
+            traverse = FALSE;
+            break;
+        case F_alloc_or_reuse:
+            /* Probably the first two arguments should be traversed */
+            traverse = FALSE;
+            break;
+        case F_sel:
+            arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
+            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
+            traverse = ReuseSel (arg1, arg2, arg_info);
+            break;
+
+        case F_idx_sel:
+            arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
+            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
+            traverse = ReuseIdxSel (arg1, arg2, arg_info);
+            break;
+
+        default:
+            break;
         }
     }
 
