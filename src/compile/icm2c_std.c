@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/08/05 20:42:44  dkr
+ * some bugs fixed
+ *
  * Revision 3.30  2002/08/05 18:48:54  dkr
  * comments corrected
  *
@@ -827,12 +830,11 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
         /*
          * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
          */
+        INDENT;
 #if 0
-      INDENT;
       fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = %d;\n",
                         to_nt, to_nt, dim);
 #else
-        INDENT;
         fprintf (outfile,
                  "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
                  " (\"Assignment with incompatible types found!\"));\n",
@@ -1464,13 +1466,12 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         /*
          * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
          */
+        INDENT;
 #if 0
-      INDENT;
       fprintf( outfile, "SAC_ND_A_DESC_DIM( %s)"
                         " = SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n",
                         to_nt, to_nt, from_nt);
 #else
-        INDENT;
         fprintf (outfile,
                  "SAC_ASSURE_TYPE("
                  " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)),"
@@ -1632,7 +1633,7 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
         }
     }
 
-    if (val_size > 0) {
+    if (val_size <= 0) {
         /*
          * 'A = []' works only for arrays with known dimension/shape!!!
          */
@@ -1688,7 +1689,7 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
         }
     }
 
-    if (val_size == 0) {
+    if (val_size <= 0) {
         /*
          * 'A = []' works only for arrays with known dimension/shape!!!
          */
@@ -1721,13 +1722,12 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
             /*
              * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
              */
+            INDENT;
 #if 0
-        INDENT;
         fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s)"
                           " = SAC_ND_A_DIM( %s) + 1;\n",
                           to_nt, to_nt, vala_any[0]);
 #else
-            INDENT;
             fprintf (outfile,
                      "SAC_ASSURE_TYPE("
                      " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + 1),"
@@ -1735,7 +1735,7 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
                      to_nt, vala_any[0]);
 #endif
             INDENT;
-            fprintf (outfile, "{ int SAC_size = 1;\n");
+            fprintf (outfile, "{ int SAC_i, SAC_size = 1;\n");
             indent++;
             INDENT;
             fprintf (outfile,
@@ -1923,7 +1923,7 @@ ICMCompileND_CREATE__VECT__DATA (char *to_nt, int to_sdim, int val_size, char **
     } else {
         if (val_size > 0) {
             INDENT;
-            fprintf (outfile, "{ int SAC_i = 0; int SAC_j;\n");
+            fprintf (outfile, "{ int SAC_j, SAC_i = 0;\n");
             indent++;
             for (i = 0; i < val_size; i++) {
                 /* check whether all entries have identical size */
@@ -2079,8 +2079,8 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
         /*
          * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
          */
+        INDENT;
 #if 0
-      INDENT;
       fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = ",
                         to_nt, to_nt);
       if (shp_size < 0) {
@@ -2091,7 +2091,6 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
       }
       fprintf( outfile, ";\n");
 #else
-        INDENT;
         fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
         if (shp_size < 0) {
             shp_size_fun (shp);
@@ -2102,7 +2101,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
                           " (\"Assignment with incompatible types found!\"));\n");
 #endif
         INDENT;
-        fprintf (outfile, "{ int SAC_size = 1;\n");
+        fprintf (outfile, "{ int SAC_i, SAC_size = 1;\n");
         indent++;
         INDENT;
         fprintf (outfile,
@@ -2135,7 +2134,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
         fprintf (outfile, "{ int SAC_size = 1;\n");
         indent++;
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        for (i = 1; i < to_dim; i++) {
+        for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (outfile,
                      "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)"
@@ -2475,10 +2474,8 @@ PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
         fprintf (outfile, "}\n");
     } else {
         INDENT;
-        fprintf (outfile, "{ int SAC_idx;\n");
+        fprintf (outfile, "{ int SAC_idx, SAC_i;\n");
         indent++;
-        INDENT;
-        fprintf (outfile, "int SAC_i;\n");
         VectToOffset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun, from_nt,
                       from_dim);
         INDENT;
