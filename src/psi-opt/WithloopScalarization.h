@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/22 15:04:47  ktr
+ * WithloopScalarization now visits special functions, too.
+ *
  * Revision 1.8  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -32,8 +35,9 @@
 #ifndef _WithloopScalarization_h
 #define _WithloopScalarization_h
 
-extern node *WithloopScalarization (node *fundef, node *modul);
+extern node *WithloopScalarization (node *fundef);
 
+extern node *WLSap (node *arg_node, info *arg_info);
 extern node *WLSfundef (node *arg_node, info *arg_info);
 extern node *WLSNwith (node *arg_node, info *arg_info);
 extern node *WLSNpart (node *arg_node, info *arg_info);

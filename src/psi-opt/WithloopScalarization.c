@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2004/07/22 15:04:47  ktr
+ * WithloopScalarization now visits special functions, too.
+ *
  * Revision 1.40  2004/07/19 19:06:24  sah
  * fixed bug in INFO structure
  *
@@ -1779,6 +1782,31 @@ WLSfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *WLSap(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverses into special fundefs
+ *
+ ******************************************************************************/
+node *
+WLSap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSap");
+
+    /*
+     * special functions must be traversed when they are used
+     */
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_WLS_FUNDEF (arg_info))) {
+        AP_FUNDEF (arg_node) = WithloopScalarization (AP_FUNDEF (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *WLSblock(node *arg_node, info *arg_info)
  *
  * description:
@@ -1798,7 +1826,9 @@ WLSblock (node *arg_node, info *arg_info)
     INFO_WLS_BLOCK (arg_info) = arg_node;
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        /* traverse instructions of block */
+        /*
+         * traverse instructions of block
+         */
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -2036,7 +2066,7 @@ WLSNpart (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WithloopScalarization(node *fundef, node *modul)
+ *   node *WithloopScalarization(node *fundef)
  *
  * description:
  *   starting point of WithloopScalarization
@@ -2048,7 +2078,7 @@ WLSNpart (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-WithloopScalarization (node *fundef, node *modul)
+WithloopScalarization (node *fundef)
 {
     info *arg_info;
     funtab *old_tab;
