@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.12  2004/09/25 21:22:08  sah
+  for whatever reason, the funcond node
+  has exprs sons ?!?
+
   Revision 1.11  2004/09/24 20:20:32  sah
   some link attribute changes
 
@@ -134,6 +138,7 @@
         <node name="Array" />
         <node name="Ap" />
         <node name="Prf" />
+        <node name="Funcond" />
 	<node name="Cast" />
 	<node name="Mop" />
       </target>
@@ -1761,17 +1766,17 @@
       <sons>
         <son name="If" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
         <son name="Then" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
         <son name="Else" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
       </sons>
