@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/08/11 17:33:43  sah
+ * added some more macro calls
+ *
  * Revision 3.97  2004/08/06 14:38:59  sah
  * ongoing work to use new AST in sac2c
  *
@@ -793,7 +796,7 @@ fundefargs: args        { $$ = $1;   }
           ;
 
 args: arg COMMA args
-      { $1->node[0] = $3;
+      { ARG_NEXT($1) = $3;
         $$ = $1;
       }
     | arg
@@ -2186,10 +2189,10 @@ fundec: varreturntypes fun_id BRACKET_L fundec2
                        mdb_nodetype[ NODE_TYPE( $$)],
                        $$,
                        FUNDEF_NAME( $$),
-                       mdb_nodetype[ ($$->node[2] == NULL)
+                       mdb_nodetype[ (FUNDEF_ARGS($$) == NULL)
                                        ? T_void
-                                       : (NODE_TYPE( $$->node[2]))],
-                       $$->node[2]));
+                                       : (NODE_TYPE( FUNDEF_ARGS($$)))],
+                       FUNDEF_ARGS($$)));
         }
       ;
 
