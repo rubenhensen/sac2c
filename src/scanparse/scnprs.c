@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/02 15:57:43  cg
+ * Revision 1.4  1996/01/05 12:32:56  cg
+ * Now, the global variables outfilename, cfilename, and
+ * targetdir are set here
+ *
+ * Revision 1.3  1996/01/02  15:57:43  cg
  * added function CheckModuleName
  * The global variables cfilename and outfilename will be set here.
  * The length of module names is limited to 12 characters due to
@@ -53,38 +57,47 @@
 
 /*
  *
- *  functionname  : CheckModuleName
+ *  functionname  : SetFileNames
  *  arguments     : 1) module/class name
- *  description   : checks the length of module name and sets the global
- *                  variables outfilename and cfilename accordingly
- *  global vars   : outfilename, cfilename
+ *  description   : sets the global
+ *                  variables outfilename, cfilename, and targetdir according
+ *                  to the kind of file and the -o command line option.
+ *  global vars   : outfilename, cfilename, targetdir
  *  internal funs : ---
- *  external funs : strcmp, strncpy, strcat, strlen
- *  macros        : MAX_MODNAME
+ *  external funs : strcmp, strcpy, strcat
+ *  macros        :
  *
  *  remarks       :
  *
  */
 
 void
-CheckModuleName (char *name)
+SetFileNames (node *modul)
 {
-    DBUG_ENTER ("CheckModuleName");
+    DBUG_ENTER ("SetFileNames");
 
-    if (0 != strcmp (outfilename, "a.out")) {
-        SYSWARN (("Module/Class name overrides command line option '-o`"));
+    if (MODUL_FILETYPE (modul) == F_prog) {
+        if (outfilename[0] == '\0') {
+            strcpy (outfilename, "a.out");
+            strcpy (cfilename, "a.out.c");
+        } else {
+            strcpy (cfilename, outfilename);
+            strcat (cfilename, ".c");
+        }
+    } else {
+        if (outfilename[0] == '\0') {
+            strcpy (targetdir, "./");
+        } else {
+            strcpy (targetdir, outfilename);
+            strcat (targetdir, "/");
+        }
+
+        strcpy (outfilename, MODUL_NAME (modul));
+        strcat (outfilename, ".o");
+
+        strcpy (cfilename, MODUL_NAME (modul));
+        strcat (cfilename, ".c");
     }
-
-    if (strlen (name) > MAX_MODNAME) {
-        SYSERROR (
-          ("Module/Class name must be no longer than %d characters", MAX_MODNAME));
-    }
-
-    strncpy (cfilename, name, MAX_MODNAME);
-    strcat (cfilename, ".c");
-
-    strncpy (outfilename, name, MAX_MODNAME);
-    strcat (outfilename, ".o");
 
     DBUG_VOID_RETURN;
 }
@@ -141,10 +154,7 @@ ScanParse ()
 
     fclose (yyin);
 
-    if ((MODUL_FILETYPE (syntax_tree) == F_modimp)
-        || (MODUL_FILETYPE (syntax_tree) == F_classimp)) {
-        CheckModuleName (MODUL_NAME (syntax_tree));
-    }
+    SetFileNames (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -185,10 +195,7 @@ ScanParse ()
 
     pclose (yyin);
 
-    if ((MODUL_FILETYPE (syntax_tree) == F_modimp)
-        || (MODUL_FILETYPE (syntax_tree) == F_classimp)) {
-        CheckModuleName (MODUL_NAME (syntax_tree));
-    }
+    SetFileNames (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
