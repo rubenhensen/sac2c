@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.55  1995/06/30 12:14:14  hw
+ * Revision 1.56  1995/07/04 09:24:06  hw
+ * compilation of primitive functions itod, ftod, dtoi & dtof inserted
+ *
+ * Revision 1.55  1995/06/30  12:14:14  hw
  * - renamed macro GET_BASIC_TYPE to GET_BASIC_SIMPLETYPE
  * - changed function CompVardec
  * - compilation of primitive functions itof & ftoi inserted
@@ -952,7 +955,7 @@ CompPrf (node *arg_node, node *arg_info)
       *next_assign, *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2,
       *dim_node, *tmp_rc, *exprs;
     simpletype s_type;
-    int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, is_itof = 0;
+    int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, convert = 0;
 
     DBUG_ENTER ("CompPrf");
 
@@ -1686,7 +1689,19 @@ CompPrf (node *arg_node, node *arg_info)
             break;
         }
         case F_itof_A:
-            is_itof = 1;
+            convert = 2;
+            /* here is NO break missing !! */
+        case F_itod_A:
+            convert = 3;
+            /* here is NO break missing !! */
+        case F_ftod_A:
+            convert = 2;
+            /* here is NO break missing !! */
+        case F_dtoi_A:
+            convert = 4;
+            /* here is NO break missing !! */
+        case F_dtof_A:
+            convert = 5;
             /* here is NO break missing !! */
         case F_ftoi_A: {
             int length;
@@ -1703,12 +1718,29 @@ CompPrf (node *arg_node, node *arg_info)
             SET_VARS_FOR_MORE_ICMS;
 
             if (N_id == arg1->nodetype) {
-                if (is_itof) {
-                    CREATE_2_ARY_ICM (next_assign, "ND_I2F_A", arg1, res);
-                } else {
+                switch (convert) {
+                case 0:
                     CREATE_2_ARY_ICM (next_assign, "ND_F2I_A", arg1, res);
+                    break;
+                case 1:
+                    CREATE_2_ARY_ICM (next_assign, "ND_F2D_A", arg1, res);
+                    break;
+                case 2:
+                    CREATE_2_ARY_ICM (next_assign, "ND_I2F_A", arg1, res);
+                    break;
+                case 3:
+                    CREATE_2_ARY_ICM (next_assign, "ND_I2D_A", arg1, res);
+                    break;
+                case 4:
+                    CREATE_2_ARY_ICM (next_assign, "ND_D2I_A", arg1, res);
+                    break;
+                case 5:
+                    CREATE_2_ARY_ICM (next_assign, "ND_D2F_A", arg1, res);
+                    break;
+                default:
+                    DBUG_ASSERT (0, "wrong tag (convert)");
+                    break;
                 }
-
                 APPEND_ASSIGNS (first_assign, next_assign);
 
                 MAKENODE_NUM (n_node, 1);
@@ -1761,7 +1793,9 @@ CompPrf (node *arg_node, node *arg_info)
             break;
         }
     } else /* (arg_node->info.prf > F_neq) */
-      if ((arg_node->info.prf == F_ftoi) || (arg_node->info.prf == F_itof)) {
+      if ((arg_node->info.prf == F_ftoi) || (arg_node->info.prf == F_ftod)
+          || (arg_node->info.prf == F_itof) || (arg_node->info.prf == F_itod)
+          || (arg_node->info.prf == F_dtof) || (arg_node->info.prf == F_dtoi)) {
         node *dummy = arg_node;
         /* return argument of ftoi */
         arg_node = arg_node->node[0]->node[0];
