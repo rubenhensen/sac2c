@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/14 10:25:49  sbs
+ * _REENTRANT not preset on alpha anymore!
+ *
  * Revision 3.1  2000/11/20 18:02:17  sacbase
  * new release made
  *
@@ -161,8 +164,18 @@
 #define _POSIX_C_SOURCE 199506L
 #endif
 
+/*
+ * On some systems _REENTRANT has to be defined before including system libs
+ * when intending to create thread-safe code. POSIX does not require this.
+ * However, it usually does not harm!
+ * One exception is the ALPHA, where _REENTRANT is defined within pthread.h
+ * which conflicts a prior definition. Therefore, we better do not preset
+ * _REENTRANT on that system.
+ */
+#ifndef SAC_FOR_OSF_ALPHA
 #ifndef _REENTRANT
 #define _REENTRANT
+#endif
 #endif
 
 #include <pthread.h>
