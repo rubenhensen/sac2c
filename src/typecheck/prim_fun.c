@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.7  1999/05/12 08:37:54  jhs
+ * Deleted some warnigs occuring while compiling under Linux
+ * (there are still some left).
+ *
  * Revision 2.6  1999/05/11 16:14:14  jhs
  * Tried to delete some warnings occuring while compiling for
  * Linux.
@@ -1372,8 +1376,9 @@ DropV (node *vec, types *vec_type, types *array)
                     && (NUM_VAL (EXPRS_EXPR (tmp)) >= 0)) {
                     dim2++;
                     tmp = EXPRS_NEXT (tmp);
-                } else
+                } else {
                     ok = 0;
+                }
             }
 
             if ((ok == 0) || ((tmp != NULL) && (dim2 == TYPES_DIM (array_btype)))) {
@@ -1388,20 +1393,19 @@ DropV (node *vec, types *vec_type, types *array)
                         SHAPES_SELEMS (ret_type)
                         [i] = SHAPES_SELEMS (array_btype)[i] - NUM_VAL (EXPRS_EXPR (tmp));
                         tmp = EXPRS_NEXT (tmp);
-                    } else
+                    } else {
                         SHAPES_SELEMS (ret_type)[i] = SHAPES_SELEMS (array_btype)[i];
+                    }
                 }
             }
-        }
-
-        else {
+        } else {
             /*
              * array has got an unknown shape
              */
-            if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
+            if (UNKNOWN_SHAPE == TYPES_DIM (array_btype)) {
                 ret_type = MakeType (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL,
                                      NULL, NULL);
-            else {
+            } else {
                 if (KNOWN_DIM_OFFSET > TYPES_DIM (array_btype)) {
                     /*
                      * one knows only the dimension of array_btype, but not the shape
@@ -1430,6 +1434,10 @@ DropV (node *vec, types *vec_type, types *array)
                         ret_type = MakeType (TYPES_BASETYPE (array_btype),
                                              TYPES_DIM (array_btype), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
+                    } else {
+                        /*  I just filled this in to avoid warning under Linux. (jhs) */
+                        ABORT (NODE_LINE (vec), ("Unknown dimension"));
+                        ret_type = NULL;
                     }
                 } else {
                     DBUG_ASSERT (0, " wrong dimension of array_btype");
@@ -1437,9 +1445,7 @@ DropV (node *vec, types *vec_type, types *array)
                 }
             }
         }
-    }
-
-    else {
+    } else {
         if ((NODE_TYPE (vec) == N_id) && (ID_CONSTARRAY (vec))
             && (TYPES_BASETYPE (vec_type) == T_int)) {
             dim2 = ID_VECLEN (vec);
@@ -1471,9 +1477,7 @@ DropV (node *vec, types *vec_type, types *array)
                             SHAPES_SELEMS (ret_type)[i] = SHAPES_SELEMS (array_btype)[i];
                     }
                 }
-            }
-
-            else {
+            } else {
                 /*
                  * array has got an unknown shape
                  */
@@ -1506,6 +1510,10 @@ DropV (node *vec, types *vec_type, types *array)
                               = MakeType (TYPES_BASETYPE (array_btype),
                                           TYPES_DIM (array_btype), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
+                        } else {
+                            /* Just filled tis in to avoid warnings under Linux (jhs) */
+                            ABORT (NODE_LINE (vec), ("Unknown Dimension"));
+                            ret_type = NULL;
                         }
                     } else {
                         DBUG_ASSERT (0, " wrong dimension of array_btype");
@@ -1658,17 +1666,25 @@ TakeDropS (node *s_node, types *array, int tag)
                 GEN_TYPE_NODE (ret_type, array->simpletype);
                 ret_type->dim = 1;
                 ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                if (1 == tag)
+                if (1 == tag) {
                     /* drop */
                     ret_type->shpseg->shp[0] = array->shpseg->shp[0] - s_node->info.cint;
-                else
+                } else {
                     /* take */
                     ret_type->shpseg->shp[0] = s_node->info.cint;
+                }
 
                 for (i = 1; i < array->dim; i++)
                     ret_type->shpseg->shp[i] = array->shpseg->shp[i];
-            } else
+            } else {
                 GEN_TYPE_NODE (ret_type, T_unknown);
+            }
+        } else {
+            /* I just filled this in to suppress warnings while compiling for
+             * Linux. (jhs)
+             */
+            ABORT (NODE_LINE (s_node), ("Wrong dimension"));
+            ret_type = NULL;
         }
     } else {
         /* for modules only */
@@ -1680,31 +1696,37 @@ TakeDropS (node *s_node, types *array, int tag)
                     GEN_TYPE_NODE (ret_type, array->simpletype);
                     ret_type->dim = 1;
                     ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                    if (1 == tag)
+                    if (1 == tag) {
                         /* drop */
                         ret_type->shpseg->shp[0]
                           = array->shpseg->shp[0] - s_node->info.cint;
-                    else
+                    } else {
                         /* take */
                         ret_type->shpseg->shp[0] = s_node->info.cint;
+                    }
 
                     for (i = 1; i < array->dim; i++)
                         ret_type->shpseg->shp[i] = array->shpseg->shp[i];
-                } else
+                } else {
                     GEN_TYPE_NODE (ret_type, T_unknown);
-            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array))
+                }
+            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array)) {
                 ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
                                      NULL, NULL);
-            else if (UNKNOWN_SHAPE == TYPES_DIM (array))
+            } else if (UNKNOWN_SHAPE == TYPES_DIM (array)) {
                 ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
                                      NULL, NULL);
-            else
+            } else {
                 DBUG_ASSERT (0, "wrong dimension of second argument (array)");
+                ret_type = NULL;
+            }
         } else {
-            /* We don`t know the value of the first argument of 'take' or 'drop'.
+            /* We know (N_num != NODE_TYPE(s_mode)) ...
+             *
+             * We don`t know the value of the first argument of 'take' or 'drop'.
              * We can only infer the dimension, but no shape.
              */
-            if (SCALAR < TYPES_DIM (array))
+            if (SCALAR < TYPES_DIM (array)) {
 #ifndef KNOWN_DIM
                 ret_type
                   = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
@@ -1713,13 +1735,13 @@ TakeDropS (node *s_node, types *array, int tag)
                   = MakeType (TYPES_BASETYPE (array),
                               KNOWN_DIM_OFFSET - TYPES_DIM (array), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
-            else if (KNOWN_DIM_OFFSET > TYPES_DIM (array))
+            } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array)) {
                 ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
                                      NULL, NULL);
-            else if (UNKNOWN_SHAPE == TYPES_DIM (array))
+            } else if (UNKNOWN_SHAPE == TYPES_DIM (array)) {
                 ret_type = MakeType (TYPES_BASETYPE (array), TYPES_DIM (array), NULL,
                                      NULL, NULL);
-            else {
+            } else {
                 DBUG_ASSERT (0, "wrong dimension of second argument (array)");
                 ret_type = NULL;
             }
@@ -2320,11 +2342,12 @@ Genarray_A (node *v_node, types *vec, types *array)
                 dim++;
             }
             TYPES_DIM (ret_type) = dim;
-        } else
+        } else {
             ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+        }
     } else if (kind_of_file == SAC_MOD) {
         /*
-         * we are checking a funktion in a module
+         *  we are checking a funktion in a module
          */
         if ((NODE_TYPE (v_node) == N_array)
             || ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR))) {
@@ -2349,6 +2372,12 @@ Genarray_A (node *v_node, types *vec, types *array)
                     dim++;
                 }
                 TYPES_DIM (ret_type) = dim;
+            } else {
+                /*  this case was left open here. Just filled in the following
+                 *  to suppress warnings while compiling for Linux. (jhs)
+                 */
+                ABORT (NODE_LINE (v_node), ("Wrong TYPES_DIM"));
+                ret_type = NULL;
             }
         } else if (TYPES_DIM (vec) == 1) {
             if (TYPES_DIM (array) > SCALAR) {
@@ -2370,16 +2399,24 @@ Genarray_A (node *v_node, types *vec, types *array)
                 ret_type
                   = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
-            } else if (TYPES_DIM (array) == UNKNOWN_SHAPE)
+            } else if (TYPES_DIM (array) == UNKNOWN_SHAPE) {
                 ret_type
                   = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
-            else
+            } else {
                 ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+            }
         } else if ((TYPES_DIM (vec) == UNKNOWN_SHAPE)
-                   || ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec)))
+                   || ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec))) {
             ret_type = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
-        else
+        } else {
             ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
+        }
+    } else {
+        /*  this case was left open here. Just filled in the following
+         *  to suppress warnings while compiling for Linux. (jhs)
+         */
+        ABORT (NODE_LINE (v_node), ("Unknown modul type"));
+        ret_type = NULL;
     }
     DBUG_RETURN (ret_type);
 }
