@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/05/15 14:20:08  dkr
+ * bug found: Inlining on LaC functions does not work correctly yet :-(
+ *  -> comment and DBUG_ASSERT added in INLfundef()
+ *
  * Revision 3.19  2001/05/08 13:12:29  nmw
  * set AVIS_SSAASSIGN online in ssa form
  *
@@ -603,6 +607,86 @@ node *
 INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
+
+    /*
+     * CAUTION: inlining on LaC functions does not work correctly yet!!
+     *
+     * Example:
+     * ========
+     *
+     * before lac2fun           after lac2fun            after inlining
+     * --------------           -------------            --------------
+     *
+     * inline int fun()         inline int fun()
+     * {                        {
+     *   return( 1);              return( 1);
+     * }                        }
+     *
+     * inline int rec( x)       int cond( int x)         int cond( int x)
+     * {                        {                        {
+     *   if (x > 0) {             if (x > 0) {             if (x > 0) {
+     *     x = rec( x-1);           x = rec( x-1);           x = cond( x-1);
+     *   } else {                 } else {                 } else {
+     *     x = fun();               x = fun();               x = 1;
+     *   }                        }                        }
+     *   return( x);              return( x);              return( x);
+     * }                        }                        }
+     *
+     * int main()               inline int rec( x)       int main()
+     * {                        {                        {
+     *   x = rec( 10);            x = cond( x);            x = cond( 10);
+     *   return( x);              return( x);              return( x);
+     * }                        }                        }
+     *
+     *                          int main()
+     *                          {
+     *                            x = rec( 10);
+     *                            return( x);
+     *                          }
+     *
+     * Now, the LaC function 'cond' is recursive :-((
+     *
+     * Instead, inlining must detect the recursive nature of the function
+     * 'rec' and generate (maxinl - 1) new conditionals in 'main':
+     *
+     * (maxinl == 1)            (maxinl == 2)
+     * -------------            -------------
+     *
+     * int cond( int x)         int cond( int x)
+     * {                        {
+     *   if (x > 0) {             if (x > 0) {
+     *     x = rec( x-1);           x = cond( x-1);
+     *   } else {                 } else {
+     *     x = 1;                   x = 1;
+     *   }                        }
+     *   return( x);              return( x);
+     * }                        }
+     *
+     * inline int rec( x)       inline int rec( x)
+     * {                        {
+     *   x = cond( x);            x = cond( x);
+     *   return( x);              return( x);
+     * }                        }
+     *
+     * int main()               int cond2( int x)
+     * {                        {
+     *   x = cond( 10);           if (x > 0) {
+     *   return( x);                x = cond( x-1);
+     * }                          } else {
+     *                              x = 1;
+     *                            }
+     *                            return( x);
+     *                          }
+     *
+     *                          int main()
+     *                          {
+     *                            x = cond2( 10);
+     *                            return( x);
+     *                          }
+     */
+
+    DBUG_ASSERT ((!FUNDEF_IS_LACFUN (arg_node)),
+                 "inlining on LaC functions does not work correctly yet!");
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
