@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/10/13 15:18:54  sah
+ * disabled SP in NEW_AST mode
+ *
  * Revision 3.66  2004/09/30 20:14:17  sah
  * renamed newast version to 1.00-alpha
  *
@@ -553,6 +556,12 @@ bool patch_with = FALSE;
  * We need to convert this mechanism to a mac-file based one with
  * enumeration type or bit-field as soon as possible!!
  */
+#ifdef NEW_AST
+unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
+                        & (~OPT_TSI)         /* Bugs to be fixed. */
+                        & (~OPT_SP)          /* not working with new ast */
+                        & (~OPT_WLFS);       /* Not yet full operational */
+#else                                        /* NEW_AST */
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
                         & (~OPT_TSI)         /* Bugs to be fixed. */
@@ -564,6 +573,7 @@ unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation 
                         & (~OPT_WLFS);       /* Not yet full operational */
 
 #endif /* PRODUCTION */
+#endif /* NEW_AST */
 
 /*
  * flag indicating whether ast is in valid ssa form
