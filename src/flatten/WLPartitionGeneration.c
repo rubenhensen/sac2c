@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/01/11 11:19:19  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.33  2004/12/16 17:47:10  ktr
  * TYisAKV inserted.
  *
@@ -177,6 +180,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "new_types.h"
 #include "tree_basic.h"
@@ -186,7 +190,7 @@
 #include "shape.h"
 #include "free.h"
 #include "DupTree.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "globals.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -1598,15 +1602,16 @@ CropBounds (node *wl, shape *max_shp)
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            WARN (NODE_LINE (wl),
-                  ("lower bound of WL-generator in dim %d below zero: set to 0", dim));
+            CTIerrorLine (NODE_LINE (wl),
+                          "Lower bound of WL-generator in dim %d below zero: %d", dim,
+                          lbnum);
         }
         if (ubnum > tnum) {
             NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-            WARN (NODE_LINE (wl),
-                  ("upper bound of WL-generator in dim %d greater than shape:"
-                   " set to %d",
-                   dim, tnum));
+            CTIerrorLine (NODE_LINE (wl),
+                          "Upper bound of WL-generator in dim %d greater than shape %d: "
+                          "%d",
+                          dim, tnum, ubnum);
         }
 
         dim++;
@@ -2238,11 +2243,14 @@ WLPGgenerator (node *arg_node, info *arg_info)
         switch (
           NormalizeStepWidth (&GENERATOR_STEP (arg_node), &GENERATOR_WIDTH (arg_node))) {
         case 1:
-            ABORT (NODE_LINE (wln), ("component of width greater than step"));
+            CTIabortLine (NODE_LINE (wln), "Component of width greater than step");
+            break;
         case 2:
-            ABORT (NODE_LINE (wln), ("component of width less 0"));
+            CTIabortLine (NODE_LINE (wln), "Component of width less than zero");
+            break;
         case 3:
-            ABORT (NODE_LINE (wln), ("width vector without step vector"));
+            CTIabortLine (NODE_LINE (wln), "Width vector without step vector");
+            break;
         }
     }
 

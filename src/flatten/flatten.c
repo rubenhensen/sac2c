@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2005/01/11 11:19:19  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.45  2005/01/07 18:05:21  cg
  * Updated usage of ctinfo
  *
@@ -71,9 +74,9 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "globals.h"
-#include "Error.h"
 #include "dbug.h"
 
 #include "types.h"
@@ -84,7 +87,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
-
+#include "ctinfo.h"
 #include "handle_mops.h"
 
 #include "flatten.h"

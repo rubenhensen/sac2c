@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2005/01/11 11:19:19  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.31  2005/01/08 09:52:10  ktr
  * Fixed some issues related to loops.
  *
@@ -149,7 +152,6 @@
 #include "UndoSSATransform.h"
 #include "Inline.h"
 #include "globals.h"
-#include "Error.h"
 
 /*
  * INFO structure

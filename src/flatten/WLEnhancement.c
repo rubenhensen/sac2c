@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/01/11 11:19:19  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.7  2004/11/25 14:12:29  khf
  * SacDevCamp04
  *
@@ -28,10 +31,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tree_basic.h"
 #include "node_basic.h"
-#include "Error.h"
 #include "globals.h"
 #include "dbug.h"
 #include "ssa.h"

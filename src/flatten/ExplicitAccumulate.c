@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/01/11 11:19:19  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.8  2004/12/09 16:51:45  sbs
  * error in calling TBmakeLet fixed
  *
@@ -69,7 +72,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
-#include "Error.h"
 #include "globals.h"
 #include "dbug.h"
 #include "traverse.h"

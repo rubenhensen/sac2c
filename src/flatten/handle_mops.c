@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/01/11 11:19:19  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.20  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -71,7 +74,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "free.h"
 #include "LookUpTable.h"
@@ -214,9 +217,9 @@ LeftAssoc (node *lop, node *rop)
         if (PREC_ASS (prec1) == PREC_ASS (prec2)) {
             res = (PREC_ASS (prec1) == Ass_l);
         } else {
-            WARN (global.linenum,
-                  ("infix function application with non-unique precedence;"
-                   "choosing left associativity"));
+            CTIwarnLine (global.linenum,
+                         "Infix function application with non-unique precedence: "
+                         "choosing left associativity");
             res = TRUE;
         }
     } else {
