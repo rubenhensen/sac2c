@@ -68,6 +68,10 @@ ALblock (node *arg_node, node *arg_info)
 
     if (BLOCK_INSTR (arg_node) != NULL) {
 
+        /* store pointer on actual N_block-node for append of new N_vardec nodes */
+        (*arg_info).node[0] = arg_node;
+        ((types *)(arg_info->dfmask[0])) = VARDEC_TYPE (BLOCK_VARDEC (arg_node));
+
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
@@ -135,6 +139,14 @@ ALassign (node *arg_node, node *arg_info)
 
             /* connect last included element with stored N_assign node */
             ASSIGN_NEXT (akt_nassign) = old_succ;
+
+            /* clear nodelists in arg_info  */
+            FreeNodelist ((nodelist *)(arg_info->info2));
+            FreeNodelist ((nodelist *)(arg_info->info3));
+            (arg_info->info2) = NULL;
+            (arg_info->info3) = NULL;
+            (*arg_info).varno = 0;
+            (*arg_info).counter = 0;
         }
     }
 
@@ -185,59 +197,61 @@ ALlet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ALprf");
     if (LET_EXPR (arg_node) != NULL) {
+        (*arg_info).node[1] = arg_node;
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 /*****************************************************************************
  *
  * function:
- *   AssociativeLawOptimize(node *arg_node, node *arg_info)
+ *   ALprf(node *arg_node, node *arg_info)
  *
  * description:
- *   main-routine for optimization of one N_Assign-node
+ *   traverse N_prf-nodes
  *   start all subroutines
- *   arg_node is a N_prf-node
  *
  ****************************************************************************/
 
 node *
-AssociativeLawOptimize (node *arg_node, node *arg_info)
+ALprf (node *arg_node, node *arg_info)
 {
     int anz_const;
     int anz_all;
     DBUG_ENTER ("AssociativeLawOptimize");
-    if (IsAssociativeAndCommutative (arg_node) == 1) {
+    if (NODE_TYPE (PRF_ARGS (arg_node)) == N_exprs) {
+        if (IsAssociativeAndCommutative (arg_node) == 1) {
 
-        (*arg_info).varno = 0;
-        (*arg_info).counter = 0;
-        (*arg_info).info.prf = PRF_PRF (arg_node);
-
-        arg_info = TravElems (PRF_ARGS (arg_node), arg_info);
-
-        arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
-
-        anz_const = CountConst (arg_info);
-        anz_all = CountVar (arg_info) + anz_const;
-
-        if ((anz_const > 1) && (anz_all > 2)) {
-
-            /* start optimize */
-            SortList (arg_info);
-            CreateNAssignNodes (arg_info);
-            CommitNAssignNodes (arg_info);
-        } else {
-
-            /* nothing to optimize */
-            FreeNodelist ((nodelist *)(arg_info->info2));
-            FreeNodelist ((nodelist *)(arg_info->info3));
             (*arg_info).varno = 0;
             (*arg_info).counter = 0;
+            (*arg_info).info.prf = PRF_PRF (arg_node);
+
+            arg_info = TravElems (PRF_ARGS (arg_node), arg_info);
+
+            arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
+
+            anz_const = CountConst (arg_info);
+            anz_all = CountVar (arg_info) + anz_const;
+
+            if ((anz_const > 1) && (anz_all > 2)) {
+
+                /* start optimize */
+                SortList (arg_info);
+                CreateNAssignNodes (arg_info);
+                CommitNAssignNodes (arg_info);
+            } else {
+
+                /* nothing to optimize */
+                FreeNodelist ((nodelist *)(arg_info->info2));
+                FreeNodelist ((nodelist *)(arg_info->info3));
+                (*arg_info).varno = 0;
+                (*arg_info).counter = 0;
+            }
         }
     }
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 /*****************************************************************************
@@ -295,21 +309,74 @@ TravElems (node *arg_node, node *arg_info)
 
     } else {
 
-        if (OtherPrfOp (arg_node, arg_info)) {
+        if (OtherPrfOp (arg_node, arg_info) || ReachedArgument (EXPRS_EXPR (arg_node))
+            || ReachedDefinition (EXPRS_EXPR (arg_node))) {
 
             arg_info = AddNode (arg_node, arg_info, 0);
 
         } else {
 
-            arg_info = TravElems (PRF_ARGS (LET_EXPR (ID_DEF (EXPRS_EXPR (arg_node)))),
+            arg_info = TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
                                   arg_info);
-            arg_info = TravElems (EXPRS_NEXT (
-                                    PRF_ARGS (LET_EXPR (ID_DEF (EXPRS_EXPR (arg_node))))),
+            arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
                                   arg_info);
         }
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_info);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   bool ReachedArgument(node *arg_node)
+ *
+ * description:
+ *   returns true if the arg_node is an argument of a function
+ *
+ ****************************************************************************/
+
+int
+ReachedArgument (node *arg_node)
+{
+    DBUG_ENTER ("ReachedArgument");
+
+    if (NODE_TYPE (arg_node) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
+            return (1);
+        else
+            return (0);
+    } else
+        return (0);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   bool ReachedDefinition(node *arg_node)
+ *
+ * description:
+ *   returns true if after the arg_node is a definition of a variable
+ *
+ ****************************************************************************/
+
+int
+ReachedDefinition (node *arg_node)
+{
+    DBUG_ENTER ("ReachedDefinition");
+
+    if (NODE_TYPE (arg_node) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
+            return (0);
+        else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
+                 != N_prf)
+            return (1);
+        else
+            return (0);
+    } else
+        return (0);
 }
 
 /*****************************************************************************
@@ -355,26 +422,35 @@ IsConstant (node *arg_node)
 node *
 AddNode (node *arg_node, node *arg_info, bool constant)
 {
-    nodelist *nl;
     nodelist *newnodelistnode = MakeNodelistNode (EXPRS_EXPR (arg_node), NULL);
 
     DBUG_ENTER ("AddNode");
 
     if (constant == 1) {
-        nl = ((nodelist *)(arg_info->info2));
+        /*    nl = ((nodelist *) (arg_info->info2));*/
         (*arg_info).counter = (*arg_info).counter + 1;
     }
 
     else {
-        nl = ((nodelist *)(arg_info->info3));
+        /*    nl = ((nodelist *) (arg_info->info3));*/
         (*arg_info).varno = (*arg_info).varno + 1;
     }
-
-    while (NODELIST_NEXT (nl) != NULL) {
-        nl = NODELIST_NEXT (nl);
+    /*  if (nl == NULL){
+        nl=newnodelistnode;
+      }
+      else{
+        while (NODELIST_NEXT(nl) != NULL){
+          nl=NODELIST_NEXT(nl);
+        }
+      }
+    */
+    if (constant == 1) {
+        NODELIST_NEXT (newnodelistnode) = ((nodelist *)(arg_info->info2));
+        (nodelist *)(arg_info->info2) = newnodelistnode;
+    } else {
+        NODELIST_NEXT (newnodelistnode) = ((nodelist *)(arg_info->info3));
+        (nodelist *)(arg_info->info3) = newnodelistnode;
     }
-
-    NODELIST_NEXT (nl) = newnodelistnode;
 
     DBUG_RETURN (arg_info);
 }
@@ -396,13 +472,20 @@ OtherPrfOp (node *arg_node, node *arg_info)
     int otherOp;
     prf otherPrf;
     DBUG_ENTER ("OtherPrfOp");
+    if (NODE_TYPE (arg_node) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))) == NULL)
+            otherOp = 0;
+        else {
+            otherPrf = PRF_PRF (
+              LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))));
 
-    otherPrf = PRF_PRF (LET_EXPR (ID_DEF (EXPRS_EXPR (arg_node))));
-
-    if ((*arg_info).info.prf == otherPrf)
+            if ((*arg_info).info.prf == otherPrf)
+                otherOp = 0;
+            else
+                otherOp = 1;
+        }
+    } else
         otherOp = 0;
-    else
-        otherOp = 1;
 
     DBUG_RETURN (otherOp);
 }
@@ -485,27 +568,28 @@ SortList (node *arg_info)
 node *
 CreateNAssignNodes (node *arg_info)
 {
-    int zaehl;
+    int count;
     node *listElem, *listElem2, *newvardec, *newnode;
-    char *newname, mod;
-    statustype status;
-    ids *newids;
+    char *newname, *mod;
     nodelist *aktElem, *secElem;
+    statustype status;
+    types *type;
 
     DBUG_ENTER ("CreateNAssignNodes");
 
     aktElem = (nodelist *)(arg_info->info2); /*Pointer on first list element*/
-
-    for (zaehl = 0; zaehl < CountConst (arg_info); zaehl++) {
+    secElem = NULL;
+    for (count = 0; count < CountConst (arg_info); count++) {
         listElem = NODELIST_NODE (aktElem); /*pointer on actual node stored in nodelist*/
-        listElem = DupNode (listElem);      /*pointer on duplicated node */
+        listElem = DupTree (listElem);      /*pointer on duplicated node */
         listElem = MakeExprs (listElem, NULL); /* create N_expr-node */
         NODELIST_NODE (aktElem) = listElem;
+        aktElem = NODELIST_NEXT (aktElem);
     }
     /* all elements of the nodelist are N_expr nodes*/
 
     aktElem = (nodelist *)(arg_info->info2); /*pointer on first list element*/
-    for (zaehl = 0; zaehl < (div (CountConst (arg_info), 2).quot); zaehl++) {
+    for (count = 0; count < (div (CountConst (arg_info), 2).quot); count++) {
         secElem = NODELIST_NEXT (aktElem); /*pointer on next list element*/
         listElem = NODELIST_NODE (aktElem);
         listElem2 = NODELIST_NODE (secElem);
@@ -517,9 +601,31 @@ CreateNAssignNodes (node *arg_info)
          *        create new ids
          *        create new name    */
 
-        listElem = MakeLet (listElem, newids);
+        /*    strcpy( newname ,  TYPES_NAME( ( (types*)(arg_info->dfmask[0]) ) ) );
+            strcpy( mod , TYPES_MOD( (  (types*)(arg_info->dfmask[0])  ) ) );*/
+
+        type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                          TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL, NULL);
+
+        newname = TmpVar (); /* create new name */
+
+        newvardec = MakeVardec (newname, type,
+                                (
+                                  BLOCK_VARDEC (
+                                    arg_info->node[0]))); /* create new N_vardec node,
+                                                             next pointer on first
+                                                             n_vardec of actual N_block */
+
+        BLOCK_VARDEC (arg_info->node[0])
+          = newvardec; /* newvardec as first n_vardec node */
+
+        /* create new N_let, new ids and new N_assign - node */
         listElem = MakeAssignLet (newname, newvardec, listElem);
 
+        VARDEC_OBJDEF (newvardec) = listElem;
+        AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = listElem;
+        /* ??? */ AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = listElem;
+        NODELIST_NODE (aktElem) = listElem;
         NODELIST_NEXT (aktElem) = NODELIST_NEXT (secElem); /* remove second node*/
         secElem = aktElem; /* store pointer on last element */
         aktElem = NODELIST_NEXT (aktElem);
@@ -531,7 +637,17 @@ CreateNAssignNodes (node *arg_info)
         listElem2 = NODELIST_NODE (aktElem); /* pointer on last node in list */
                                              /* to do: create new name, mod, statustype */
 
+        newname = IDS_NAME (LET_IDS (ASSIGN_INSTR (listElem)));
+        if (newname != NULL)
+            strcpy (newname, newname);
+        mod = IDS_MOD (LET_IDS (ASSIGN_INSTR (listElem)));
+        if (mod != NULL)
+            strcpy (mod, mod);
+        status = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (listElem)));
+
         newnode = MakeId (newname, mod, status);
+        ID_AVIS (newnode) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (listElem)));
+        ID_VARDEC (newnode) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (listElem)));
 
         /* to do: connect new N_id-node with correct N_AVIS */
         newnode = MakeExprs (newnode, listElem2); /* create new N_Expr-node */
@@ -541,8 +657,30 @@ CreateNAssignNodes (node *arg_info)
          *        create new ids
          *        create new name       */
 
-        newnode = MakeLet (newnode, newids);
+        /* strcpy( newname ,  TYPES_NAME( ( (types*)(arg_info->dfmask[0]) ) ) );
+            strcpy( mod , TYPES_MOD( ( (types*)(arg_info->dfmask[0]) ) ) );*/
+
+        type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                          TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL, NULL);
+
+        newname = TmpVar (); /* create new name */
+
+        newvardec = MakeVardec (newname, type, /*( (arg_info->info).types ),*/
+                                (
+                                  BLOCK_VARDEC (
+                                    arg_info->node[0]))); /* create new N_vardec node,
+                                                             next pointer on first
+                                                             n_vardec of actual N_block */
+
+        BLOCK_VARDEC (arg_info->node[0])
+          = newvardec; /* newvardec as first n_vardec node */
+
+        /* create new N_let, new ids and new N_assign - node */
         newnode = MakeAssignLet (newname, newvardec, newnode);
+
+        VARDEC_OBJDEF (newvardec) = newnode;
+        AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+        AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
 
         NODELIST_NODE (secElem) = newnode; /* store new node */
         NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
@@ -552,16 +690,17 @@ CreateNAssignNodes (node *arg_info)
 
     aktElem = (nodelist *)(arg_info->info3); /*Pointer on first list element*/
 
-    for (zaehl = 0; zaehl < (CountVar (arg_info)); zaehl++) {
+    for (count = 0; count < (CountVar (arg_info)); count++) {
         listElem = NODELIST_NODE (aktElem); /*pointer on actual node stored in nodelist*/
-        listElem = DupNode (listElem);      /*pointer on duplicated node */
+        listElem = DupTree (listElem);      /*pointer on duplicated node */
         listElem = MakeExprs (listElem, NULL); /* create N_expr-node */
         NODELIST_NODE (aktElem) = listElem;
+        aktElem = NODELIST_NEXT (aktElem);
     }
     /* all elements of the nodelist are N_expr nodes*/
 
     aktElem = (nodelist *)(arg_info->info3); /*pointer on first list element*/
-    for (zaehl = 0; zaehl < (div (CountVar (arg_info), 2).quot); zaehl++) {
+    for (count = 0; count < (div (CountVar (arg_info), 2).quot); count++) {
         secElem = NODELIST_NEXT (aktElem); /*pointer on next list element*/
         listElem = NODELIST_NODE (aktElem);
         listElem2 = NODELIST_NODE (secElem);
@@ -573,9 +712,31 @@ CreateNAssignNodes (node *arg_info)
          *        create new ids
          *        create new name    */
 
-        listElem = MakeLet (listElem, newids);
+        /* strcpy( newname ,  TYPES_NAME( ( (types*)(arg_info->dfmask[0]) ) ) );
+            strcpy( mod , TYPES_MOD( ( (types*)(arg_info->dfmask[0]) ) ) );*/
+
+        type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                          TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL, NULL);
+
+        newname = TmpVar (); /* create new name */
+
+        newvardec = MakeVardec (newname, type,
+                                (
+                                  BLOCK_VARDEC (
+                                    arg_info->node[0]))); /* create new N_vardec node,
+                                                             next pointer on first
+                                                             n_vardec of actual N_block */
+
+        BLOCK_VARDEC (arg_info->node[0])
+          = newvardec; /* newvardec as first n_vardec node */
+
+        /* create new N_let, new ids and new N_assign - node */
         listElem = MakeAssignLet (newname, newvardec, listElem);
 
+        VARDEC_OBJDEF (newvardec) = listElem;
+        AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = listElem;
+        AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = listElem;
+        NODELIST_NODE (aktElem) = listElem;
         NODELIST_NEXT (aktElem) = NODELIST_NEXT (secElem); /* remove second node*/
         secElem = aktElem; /* store pointer on last element */
         aktElem = NODELIST_NEXT (aktElem);
@@ -587,6 +748,14 @@ CreateNAssignNodes (node *arg_info)
         listElem2 = NODELIST_NODE (aktElem); /* pointer on last node in list */
                                              /* to do: create new name, mod, statustype */
 
+        newname = IDS_NAME (LET_IDS (ASSIGN_INSTR (listElem)));
+        if (newname != NULL)
+            strcpy (newname, newname);
+        mod = IDS_MOD (LET_IDS (ASSIGN_INSTR (listElem)));
+        if (mod != NULL)
+            strcpy (mod, mod);
+        status = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (listElem)));
+
         newnode = MakeId (newname, mod, status);
 
         /* to do: connect new N_id-node with correct N_AVIS */
@@ -597,8 +766,30 @@ CreateNAssignNodes (node *arg_info)
          *        create new ids
          *        create new name       */
 
-        newnode = MakeLet (newnode, newids);
+        /* strcpy( newname ,  TYPES_NAME( ( (types*)(arg_info->dfmask[0]) ) ) );
+            strcpy( mod , TYPES_MOD( ( (types*)(arg_info->dfmask[0]) ) ) );*/
+
+        type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                          TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL, NULL);
+
+        newname = TmpVar (); /* create new name */
+
+        newvardec = MakeVardec (newname, type,
+                                (
+                                  BLOCK_VARDEC (
+                                    arg_info->node[0]))); /* create new N_vardec node,
+                                                             next pointer on first
+                                                             n_vardec of actual N_block */
+
+        BLOCK_VARDEC (arg_info->node[0])
+          = newvardec; /* newvardec as first n_vardec node */
+
+        /* create new N_let, new ids and new N_assign - node */
         newnode = MakeAssignLet (newname, newvardec, newnode);
+
+        VARDEC_OBJDEF (newvardec) = newnode;
+        AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+        AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
 
         NODELIST_NODE (secElem) = newnode; /* store new node */
         NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
@@ -622,12 +813,11 @@ CreateNAssignNodes (node *arg_info)
 node *
 CommitNAssignNodes (node *arg_info)
 {
-
-    ids *newids;
     node *newnode, *newvardec, *elem1, *elem2;
     char *newname1, *newname2, *newmod1, *newmod2;
     nodelist *lastListElem, *aktListElem;
     statustype status1, status2;
+    types *type;
 
     DBUG_ENTER ("CommitNAssignNodes");
 
@@ -645,8 +835,36 @@ CommitNAssignNodes (node *arg_info)
 
         /* to do: create new name, mod , statustype */
 
+        /**/
+
+        newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newname1 != NULL)
+            strcpy (newname1, newname1);
+        newmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newmod1 != NULL)
+            strcpy (newmod1, newmod1);
+        status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
+
+        newname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newname2 != NULL)
+            strcpy (newname2, newname2);
+        newmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newmod2 != NULL)
+            strcpy (newmod2, newmod2);
+        status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        /**/
+
         newnode = MakeExprs (MakeId (newname1, newmod1, status1),
-                             MakeId (newname2, newmod2, status2));
+                             MakeExprs (MakeId (newname2, newmod2, status2), NULL));
+
+        ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
 
         newnode = MakePrf ((*arg_info).info.prf, newnode);
 
@@ -654,9 +872,23 @@ CommitNAssignNodes (node *arg_info)
          *        create new ids node
          *        create new vardec node  */
 
-        newnode = MakeLet (newnode, newids);
+        /* strcpy( newname ,  TYPES_NAME( (  (types*)(arg_info->dfmask[0]) ) ) );
+            strcpy( mod , TYPES_MOD( ( (types*)(arg_info->dfmask[0]) ) ) );*/
+
+        type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                          TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL, NULL);
+
+        newname1 = TmpVar ();
+
+        newvardec = MakeVardec (newname1, type, (BLOCK_VARDEC (arg_info->node[0])));
+
+        BLOCK_VARDEC (arg_info->node[0]) = newvardec;
 
         newnode = MakeAssignLet (newname1, newvardec, newnode);
+
+        VARDEC_OBJDEF (newvardec) = newnode;
+        AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+        AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
 
         NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
         lastListElem = NODELIST_NEXT (lastListElem);
@@ -666,22 +898,52 @@ CommitNAssignNodes (node *arg_info)
 
     /* constant nodes ready  */
 
+    /* conect last constant node with first variable node */
+
+    elem1 = NODELIST_NODE (lastListElem);
     aktListElem = (nodelist *)(arg_info->info3);
     lastListElem = aktListElem;
-
     while (NODELIST_NEXT (lastListElem) != NULL) {
         lastListElem = NODELIST_NEXT (lastListElem);
     }
 
-    while (aktListElem != lastListElem) {
-        elem1 = NODELIST_NODE (aktListElem);
-        aktListElem = NODELIST_NEXT (aktListElem);
+    if (aktListElem != lastListElem) {
+
         elem2 = NODELIST_NODE (aktListElem);
+        aktListElem = NODELIST_NEXT (aktListElem);
 
         /* to do: create new name, mod , statustype */
 
+        /**/
+
+        newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newname1 != NULL)
+            strcpy (newname1, newname1);
+        newmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newmod1 != NULL)
+            strcpy (newmod1, newmod1);
+        status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
+
+        newname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newname2 != NULL)
+            strcpy (newname2, newname2);
+        newmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newmod2 != NULL)
+            strcpy (newmod2, newmod2);
+        status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        /**/
+
         newnode = MakeExprs (MakeId (newname1, newmod1, status1),
-                             MakeId (newname2, newmod2, status2));
+                             MakeExprs (MakeId (newname2, newmod2, status2), NULL));
+
+        ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
 
         newnode = MakePrf ((*arg_info).info.prf, newnode);
 
@@ -689,45 +951,190 @@ CommitNAssignNodes (node *arg_info)
          *        create new ids node
          *        create new vardec node  */
 
-        newnode = MakeLet (newnode, newids);
+        /* strcpy( newname ,  TYPES_NAME( ( (types*)(arg_info->dfmask[0]) ) ) );
+            strcpy( mod , TYPES_MOD( ( (types*)(arg_info->dfmask[0]) ) ) );*/
+
+        type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                          TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL, NULL);
+
+        newname1 = TmpVar ();
+
+        newvardec = MakeVardec (newname1, type, (BLOCK_VARDEC (arg_info->node[0])));
+
+        BLOCK_VARDEC (arg_info->node[0]) = newvardec;
 
         newnode = MakeAssignLet (newname1, newvardec, newnode);
+
+        VARDEC_OBJDEF (newvardec) = newnode;
+        AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+        AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
 
         NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
         lastListElem = NODELIST_NEXT (lastListElem);
 
-        aktListElem = NODELIST_NEXT (aktListElem);
+        while (NODELIST_NEXT (aktListElem) != lastListElem) {
+            elem1 = NODELIST_NODE (aktListElem);
+            aktListElem = NODELIST_NEXT (aktListElem);
+            elem2 = NODELIST_NODE (aktListElem);
+
+            /* to do: create new name, mod , statustype */
+
+            /**/
+
+            newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
+            if (newname1 != NULL)
+                strcpy (newname1, newname1);
+            newmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
+            if (newmod1 != NULL)
+                strcpy (newmod1, newmod1);
+            status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
+
+            newname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
+            if (newname2 != NULL)
+                strcpy (newname2, newname2);
+            newmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
+            if (newmod2 != NULL)
+                strcpy (newmod2, newmod2);
+            status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
+
+            /**/
+
+            newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                                 MakeExprs (MakeId (newname2, newmod2, status2), NULL));
+
+            ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
+            ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+              = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
+
+            ID_VARDEC (EXPRS_EXPR (newnode))
+              = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+            ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+              = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
+            newnode = MakePrf ((*arg_info).info.prf, newnode);
+
+            /* to do: create new name
+             *        create new ids node
+             *        create new vardec node  */
+
+            /* strcpy( newname ,  TYPES_NAME( ( (types*)(arg_info->dfmask[0]) ) ) );
+                strcpy( mod , TYPES_MOD( ( (types*)(arg_info->dfmask[0]) ) ) );*/
+
+            type = MakeTypes (TYPES_BASETYPE (((types *)(arg_info->dfmask[0]))),
+                              TYPES_DIM (((types *)(arg_info->dfmask[0]))), NULL, NULL,
+                              NULL);
+
+            newname1 = TmpVar ();
+
+            newvardec = MakeVardec (newname1, type, (BLOCK_VARDEC (arg_info->node[0])));
+
+            BLOCK_VARDEC (arg_info->node[0]) = newvardec;
+
+            newnode = MakeAssignLet (newname1, newvardec, newnode);
+
+            VARDEC_OBJDEF (newvardec) = newnode;
+            AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+            AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
+
+            NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+            lastListElem = NODELIST_NEXT (lastListElem);
+
+            aktListElem = NODELIST_NEXT (aktListElem);
+        }
+
+        /* variable nodes ready  */
+
+        /* connect last two N_assign nodes of variable list */
+
+        elem1 = NODELIST_NODE (aktListElem);
+        elem2 = NODELIST_NODE (lastListElem);
+
+        /* to do create new name, mod, statustype */
+
+        /**/
+
+        newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newname1 != NULL)
+            strcpy (newname1, newname1);
+        newmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newmod1 != NULL)
+            strcpy (newmod1, newmod1);
+        status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
+
+        newname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newname2 != NULL)
+            strcpy (newname2, newname2);
+        newmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newmod2 != NULL)
+            strcpy (newmod2, newmod2);
+        status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        /**/
+
+        newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                             MakeExprs (MakeId (newname2, newmod2, status2), NULL));
+
+        ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        elem1 = PRF_ARGS (arg_info->node[1]);
+
+        /* free elem1 */
+
+        PRF_ARGS (arg_info->node[1]) = newnode;
+
+        /* besser: Pointer auf aktuell zubearbeitenden N_assign-node (N_prf !!!) merken
+         *         und dortige N_exprs-nodes durch die neu erzeugeten ersetzen
+         *         => diesen Knoten nicht mehr in nodelist aufnehmen!
+         */
+
+    } else {
+
+        elem2 = NODELIST_NODE (lastListElem);
+
+        /* to do create new name, mod, statustype */
+
+        /**/
+
+        newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newname1 != NULL)
+            strcpy (newname1, newname1);
+        newmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
+        if (newmod1 != NULL)
+            strcpy (newmod1, newmod1);
+        status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
+
+        newname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newname2 != NULL)
+            strcpy (newname2, newname2);
+        newmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
+        if (newmod2 != NULL)
+            strcpy (newmod2, newmod2);
+        status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        /**/
+
+        newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                             MakeExprs (MakeId (newname2, newmod2, status2), NULL));
+
+        ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+        ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+          = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
+
+        elem1 = PRF_ARGS (arg_info->node[1]);
+
+        /* free elem1 */
+
+        PRF_ARGS (arg_info->node[1]) = newnode;
     }
-
-    /* variable nodes ready  */
-
-    /* connect last N_assign nodes of both lists */
-    lastListElem = (nodelist *)(arg_info->info2);
-
-    while (NODELIST_NEXT (lastListElem) != NULL) {
-        lastListElem = NODELIST_NEXT (lastListElem);
-    }
-
-    elem1 = NODELIST_NODE (aktListElem);
-    elem2 = NODELIST_NODE (lastListElem);
-
-    /* to do create new name, mod, statustype */
-
-    newnode = MakeExprs (MakeId (newname1, newmod1, status1),
-                         MakeId (newname2, newmod2, status2));
-
-    newnode = MakePrf ((*arg_info).info.prf, newnode);
-
-    /* to do: create new name
-     *        create new ids node
-     *        create new vardec node   */
-
-    newnode = MakeLet (newnode, newids);
-
-    newnode = MakeAssignLet (newname1, newvardec, newnode);
-
-    NODELIST_NEXT (aktListElem) = MakeNodelistNode (newnode, NULL);
-
     DBUG_RETURN (arg_info);
 }
 
