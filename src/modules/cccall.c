@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/09/11 06:21:34  cg
+ * Revision 1.9  1996/09/11 16:00:11  cg
+ * small layout change and new standard modules added
+ *
+ * Revision 1.8  1996/09/11  06:21:34  cg
  * Converted to new lib-file format.
  * Added facilities for updating makefiles with dependencies
  * and creating libstat information.
@@ -338,11 +341,30 @@ GenLibStat ()
 int
 IsStandardMod (char *name)
 {
-    static char *standard_modules[]
-      = {"String", "StringBase", "World",     "File",       "TermFile", "StdIO",
-         "CType",  "PrintArray", "SysErr",    "SysErrBase", "ArrayIO",  "Complex",
-         "Env",    "GetEnv",     "FibreScan", "FibrePrint", "MathD",    "MathDBase",
-         "MathF",  "MathFBase",  "Time",      "Random",     ""};
+    static char *standard_modules[] = {"String",
+                                       "StringBase",
+                                       "World",
+                                       "File",
+                                       "TermFile",
+                                       "StdIO",
+                                       "CType",
+                                       "PrintArray",
+                                       "SysErr",
+                                       "ArrayIO",
+                                       "Complex",
+                                       "Env",
+                                       "GetEnv",
+                                       "FibreScan",
+                                       "FibrePrint",
+                                       "MathD",
+                                       "MathDBase",
+                                       "MathF",
+                                       "MathFBase",
+                                       "Time",
+                                       "Random",
+                                       "Rand",
+                                       "Rand48"
+                                       ""};
 
     int i, res;
 
@@ -452,14 +474,14 @@ InvokeCC (node *syntax_tree)
                         "-fno-builtin "
                         "-o %sglobals.o -c %sglobals.c",
                         ccflagsstr, store_dirname, store_dirname);
-            NOTE (("**\n"));
+            NOTE ((" **\n"));
 
             for (i = 1; i < function_counter; i++) {
                 SystemCall ("gcc %s -Wall -Wno-unused -I$RCSROOT/src/compile/ "
                             "-fno-builtin "
                             "-o %sfun%d.o -c %sfun%d.c",
                             ccflagsstr, store_dirname, i, store_dirname, i);
-                NOTE (("**\n"));
+                NOTE ((" **\n"));
             }
         }
     }
