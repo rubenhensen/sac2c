@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/04/27 08:46:18  nmw
+ * CountFunResults() counts void results no more :-)
+ *
  * Revision 3.2  2001/03/22 18:05:35  dkr
  * include of tree.h eliminated
  *
@@ -316,7 +319,8 @@ CountFunResults (node *fundef)
     rettypes = FUNDEF_TYPES (fundef);
 
     while (rettypes != NULL) {
-        if (TYPES_STATUS (rettypes) == ST_regular) {
+        if ((TYPES_STATUS (rettypes) == ST_regular)
+            && (TYPES_BASETYPE (rettypes) != T_void)) {
             count++;
         }
         rettypes = TYPES_NEXT (rettypes);
