@@ -2,7 +2,7 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc
 
-flatten.o: print.c
+print.o: print.c
 	$(CC) -o print.o -c print.c $(INCS)
 
 deps:
