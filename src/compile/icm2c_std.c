@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/08/02 20:59:21  dkr
+ * ND_CREATE__VECT__DIM: comment added
+ *
  * Revision 3.26  2002/08/02 20:48:50  dkr
  * ..__DIM.. icms added
  *
@@ -1612,6 +1615,9 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
             fprintf (outfile, "SAC_ND_A_DIM( %s) + 1", vala_any[0]);
         }
     } else {
+        /*
+         * A=[] works only for arrays with known dimension/shape!!!
+         */
         fprintf (outfile, "SAC_ICM_UNDEF()");
     }
 
