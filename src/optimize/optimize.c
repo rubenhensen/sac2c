@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/03/12 16:29:47  dkr
+ * comment modified
+ *
  * Revision 3.40  2003/02/08 16:00:01  mwe
  * support for DistributiveLaw added
  *
@@ -692,7 +695,7 @@ OPTmodul (node *arg_node, node *arg_info)
             goto DONE;
         }
 
-        /*undo lac2fun transformation */
+        /* undo lac2fun transformation */
         arg_node = Fun2Lac (arg_node);
 
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
