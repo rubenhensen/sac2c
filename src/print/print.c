@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.50  2000/02/23 21:01:00  dkr
- * a missing \n added
+ * Revision 2.51  2000/02/23 23:05:29  dkr
+ * spacing in PrintAp, PrintArgs, PrintFundef, ... slightly changed
  *
  * Revision 2.49  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
@@ -1104,6 +1104,8 @@ PrintObjdef (node *arg_node, node *arg_info)
         if (OBJDEF_PRAGMA (arg_node) != NULL) {
             Trav (OBJDEF_PRAGMA (arg_node), arg_info);
         }
+
+        fprintf (outfile, "\n");
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -1189,11 +1191,13 @@ PrintFundef (node *arg_node, node *arg_info)
                     PrintFunctionHeader (arg_node, arg_info);
                 }
 
-                fprintf (outfile, ";\n\n");
+                fprintf (outfile, ";\n");
 
                 if (FUNDEF_PRAGMA (arg_node) != NULL) {
                     Trav (FUNDEF_PRAGMA (arg_node), arg_info);
                 }
+
+                fprintf (outfile, "\n");
             }
         }
     } else {
@@ -1291,7 +1295,7 @@ PrintPrf (node *arg_node, node *arg_info)
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[PRF_PRF (arg_node)]);
         Trav (PRF_ARGS (arg_node), arg_info);
-        fprintf (outfile, " )");
+        fprintf (outfile, ")");
         break;
     }
     default: {
@@ -1452,9 +1456,9 @@ PrintReturn (node *arg_node, node *arg_info)
             INDENT;
         }
 
-        fprintf (outfile, "return( ");
+        fprintf (outfile, "return (");
         Trav (RETURN_EXPRS (arg_node), arg_info);
-        fprintf (outfile, " );");
+        fprintf (outfile, ");");
     }
 
     if (RETURN_INWITH (arg_node)) {
@@ -1482,7 +1486,9 @@ PrintAp (node *arg_node, node *arg_info)
         /*
          * Here, we are printing a wlcomp pragma.
          */
-        DBUG_ASSERT ((AP_ARGS (arg_node) != NULL), "Illegal wlcomp pragma specification");
+        DBUG_ASSERT ((AP_ARGS (arg_node) != NULL),
+                     "No parameter of wlcomp-pragma found!");
+        fprintf (outfile, " ");
         Trav (EXPRS_EXPR (AP_ARGS (arg_node)), arg_info);
         if (EXPRS_NEXT (AP_ARGS (arg_node)) == NULL) {
             fprintf (outfile, ", Default");
@@ -1494,7 +1500,8 @@ PrintAp (node *arg_node, node *arg_info)
         /*
          * Here, we are printing a regular function application.
          */
-        if (AP_ARGS (arg_node)) {
+        if (AP_ARGS (arg_node) != NULL) {
+            fprintf (outfile, " ");
             Trav (AP_ARGS (arg_node), arg_info);
         }
     }
@@ -1543,7 +1550,7 @@ PrintArg (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", ARG_VARNO (arg_node)););
 
-    fprintf (outfile, "%s",
+    fprintf (outfile, " %s",
              Type2String (ARG_TYPE (arg_node),
                           INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info) ? 0 : 1));
 
@@ -1565,7 +1572,7 @@ PrintArg (node *arg_node, node *arg_info)
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
-        fprintf (outfile, ", ");
+        fprintf (outfile, ",");
         PRINT_CONT (Trav (ARG_NEXT (arg_node), arg_info));
     }
 
@@ -2196,8 +2203,6 @@ PrintPragma (node *arg_node, node *arg_info)
         Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
         INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 0;
     }
-
-    fprintf (outfile, "\n");
 
     DBUG_RETURN (arg_node);
 }
