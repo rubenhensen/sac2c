@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/10/27 15:53:14  khf
+ * WLFS activated
+ *
  * Revision 3.68  2004/10/23 12:00:31  ktr
  * Added switches for static reuse / static free.
  *
@@ -564,22 +567,19 @@ unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation 
                         & (~OPT_TSI)         /* Bugs to be fixed. */
                         & (~OPT_SP)          /* not working with new ast */
                         & (~OPT_SRF)         /* not yet fully operational */
-                        & (~OPT_LRO)         /* not yet fully operational */
-                        & (~OPT_WLFS);       /* Not yet fully operational */
+                        & (~OPT_LRO);        /* not yet fully operational */
 #else                                        /* NEW_AST */
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
                         & (~OPT_SRF)         /* not yet fully operational */
                         & (~OPT_LRO)         /* not yet fully operational */
-                        & (~OPT_TSI)         /* Bugs to be fixed. */
-                        & (~OPT_WLFS);       /* Not yet fully operational */
+                        & (~OPT_TSI);        /* Bugs to be fixed. */
 
 #else /* PRODUCTION */
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
                         & (~OPT_SRF)         /* not yet fully operational */
                         & (~OPT_LRO)         /* not yet fully operational */
-                        & (~OPT_TSI)         /* Bugs to be fixed. */
-                        & (~OPT_WLFS);       /* Not yet fully operational */
+                        & (~OPT_TSI);        /* Bugs to be fixed. */
 
 #endif /* PRODUCTION */
 #endif /* NEW_AST */
