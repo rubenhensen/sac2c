@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/08/09 15:45:27  dkr
+ * L_VARDEC_OR_ARG_REFCNT, ... added
+ *
  * Revision 2.13  1999/07/14 12:14:36  sbs
  * proper support for arg_info during IVE added.
  *
@@ -596,26 +599,37 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
     (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
 
+/*
+ * CAUTION: Do not use the following macros as l-values!!!
+ *          (this is *no* ANSI C style!)
+ *          Use the L_VARDEC_OR_... macros instead!!
+ */
 #define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
-
 #define VARDEC_OR_ARG_COLCHN(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
-
 #define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
-
 #define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
-
 #define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
     ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
-
+#define VARDEC_OR_ARG_VARNO(n)                                                           \
+    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
-
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
     ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
 
-#define VARDEC_OR_ARG_VARNO(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
+#define L_VARDEC_OR_ARG_REFCNT(n, r)                                                     \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_REFCNT (n) = (r);                                                            \
+    } else {                                                                             \
+        VARDEC_REFCNT (n) = (r);                                                         \
+    }
+#define L_VARDEC_OR_ARG_NAIVE_REFCNT(n, r)                                               \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_NAIVE_REFCNT (n) = (r);                                                      \
+    } else {                                                                             \
+        VARDEC_NAIVE_REFCNT (n) = (r);                                                   \
+    }
 
 /*--------------------------------------------------------------------------*/
 
