@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/19 14:16:59  dkr
+ * include of DupTree.h added
+ *
  * Revision 3.5  2001/01/19 11:54:55  dkr
  * NameOrVal_MakeNode() modified
  *
@@ -83,6 +86,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "DupTree.h"
 
 #include "dbug.h"
 #include "my_debug.h"
