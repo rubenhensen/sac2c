@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/06/02 12:13:35  sbs
+ * Revision 1.24  1995/06/06 15:19:36  sbs
+ * DummyFun2 inserted
+ *
+ * Revision 1.23  1995/06/02  12:13:35  sbs
  * NIF macro prolongated
  *
  * Revision 1.22  1995/05/26  14:23:42  asi
@@ -354,6 +357,24 @@ DummyFun (node *arg_node, node *arg_info)
     DBUG_ENTER ("DummyFun");
     for (i = 0; i < arg_node->nnode; i++)
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+**  dummy function for funtab entries not yet done
+**  recursively invoces Trav on all subnodes
+**  does NOT depend on nnode but on existance of node[i] !
+*/
+
+node *
+DummyFun2 (node *arg_node, node *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("DummyFun");
+    for (i = 0; i < 6; i++)
+        if (arg_node->node[i])
+            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
     DBUG_RETURN (arg_node);
 }
 

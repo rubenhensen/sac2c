@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/06/02 12:14:19  sbs
+ * Revision 1.18  1995/06/06 15:19:36  sbs
+ * DummyFun2 inserted
+ *
+ * Revision 1.17  1995/06/02  12:14:19  sbs
  * idx_tab inserted
  *
  * Revision 1.16  1995/05/26  14:23:42  asi
@@ -65,6 +68,8 @@ typedef node *(*funptr) (node *, node *);
 extern node *Trav (node *arg_node, node *arg_info);
 
 extern node *DummyFun (node *arg_node, node *arg_info);
+
+extern node *DummyFun2 (node *arg_node, node *arg_info);
 
 extern node *NoTrav (node *arg_node, node *arg_info);
 
