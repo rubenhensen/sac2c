@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/22 11:44:14  cg
+ * Moved spec_mode_str from globals.c to this file.
+ *
  * Revision 1.5  2004/07/30 17:29:21  sbs
  * switch to new INFO structure
  * PHASE I
@@ -91,6 +94,12 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/**
+ * static global variables
+ */
+
+static char spec_mode_str[][4] = {"aks", "akd", "aud"};
 
 /** <!--********************************************************************-->
  *
