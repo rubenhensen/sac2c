@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/02/11 18:31:17  dkr
+ * INFO_PRINT_CONT added
+ *
  * Revision 1.13  2000/02/11 16:21:41  jhs
  * Added RFINfundef, INFO_RFIN_xxx
  *
@@ -2629,6 +2632,7 @@ extern node *MakeInfo ();
 #define INFO_FUNDEF(n) (n->node[0])
 
 /* Print */
+#define INFO_PRINT_CONT(n) ((node *)(n->info2))
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
