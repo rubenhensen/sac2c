@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/02/23 11:02:35  cg
+ * ThreadControl_MT1 not compiled in TRACE version.
+ *
  * Revision 3.15  2004/02/05 10:39:30  cg
  * Implementation for MT mode 1 (thread create/join) added.
  *
@@ -588,8 +591,10 @@ SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
     }
 }
 
+#ifndef TRACE
+
 static void
-ThreadControl_mt0 (void *arg)
+ThreadControl_MT1 (void *arg)
 {
     const unsigned int my_thread_id = (unsigned int)arg;
     unsigned int worker_flag = 0;
@@ -598,14 +603,10 @@ ThreadControl_mt0 (void *arg)
 
     pthread_setspecific (SAC_MT_threadid_key, &my_thread_id);
 
-    SAC_TR_PRINT (("This is worker thread #%u.", my_thread_id));
-
     SAC_MT_RELEASE_LOCK (SAC_MT_init_lock);
 
     worker_flag = (*SAC_MT_spmd_function) (my_thread_id, 0, worker_flag);
 }
-
-#ifndef TRACE
 
 void
 SAC_MT1_StartWorkers ()
@@ -615,7 +616,7 @@ SAC_MT1_StartWorkers ()
     for (i = 1; i < SAC_MT_threads; i++) {
         if (0
             != pthread_create (&SAC_MT1_internal_id[i], &SAC_MT_thread_attribs,
-                               (void *(*)(void *))ThreadControl_mt0, (void *)(i))) {
+                               (void *(*)(void *))ThreadControl_MT1, (void *)(i))) {
 
             SAC_RuntimeError ("Master thread failed to create worker thread #%u", i);
         }
