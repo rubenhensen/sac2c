@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/11/26 23:01:36  ktr
+ * From denmark with love.
+ *
  * Revision 3.67  2004/11/24 22:43:37  cg
  * Moved NumberOfDigits() from Error.c.
  *
@@ -194,16 +197,14 @@
  * [...]
  *
  */
+#include "internal_lib.h"
 
-/*#include <stdlib.h>*/
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
 
 #include "dbug.h"
-
-#include "internal_lib.h"
 
 #include "Error.h"
 #include "DupTree.h"

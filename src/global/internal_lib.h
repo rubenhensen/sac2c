@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/11/26 23:01:36  ktr
+ * From denmark with love.
+ *
  * Revision 3.32  2004/11/24 22:43:37  cg
  * Moved NumberOfDigits() from Error.c.
  *
@@ -210,7 +213,9 @@ extern void ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile)
 
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
+
 extern char *ILIBreplaceSpecialCharacters (char *name);
+extern char *ILIBrenameLocalIdentifier (char *name);
 
 #ifdef SHOW_MALLOC
 extern void ILIBcomputeMallocAlignStep (void);
