@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.56  1995/08/21 13:09:30  cg
+ * Revision 1.57  1995/09/05 09:51:40  hw
+ * added macro MAKENODE_DOUBLE
+ *
+ * Revision 1.56  1995/08/21  13:09:30  cg
  * new type charlist added.
  * new entries ST_prototype, ST_duplicate, ST_inline_import added to statustype.
  *
@@ -360,6 +363,10 @@ typedef struct NODE {
 #define MAKENODE_FLOAT(no, nr)                                                           \
     no = MakeNode (N_float);                                                             \
     no->info.cfloat = nr
+
+#define MAKENODE_DOUBLE(no, nr)                                                          \
+    no = MakeNode (N_double);                                                            \
+    no->info.cdbl = nr
 
 #define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
     no = MakeNode (N_id);                                                                \
