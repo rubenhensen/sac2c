@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/09/06 09:57:54  dkr
+ * ifdef-instruction for TAGGED_ARRAYS corrected
+ *
  * Revision 3.21  2002/09/06 09:37:19  dkr
  * ND_IDXS2OFFSET added
  *
@@ -244,12 +247,12 @@ extern void ICMCompileND_PRF_MODARRAY_AxCxA (char *res_btype, int dimres, char *
 extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res,
                                              char *old, char *val, int dim, char *v);
 
-#endif /* TAGGED_ARRAYS */
-
 extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
                                          int dims, char **shp_any);
 
-extern void ICMCompileND_KS_IDXS2OFFSET (char *off, int idxs_size, char **idxs,
-                                         int shp_size, char **shpa_any);
+extern void ICMCompileND_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
+                                      char **shpa_any);
+
+#endif /* TAGGED_ARRAYS */
 
 #endif /* _icm2c_std_h */
