@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/15 12:32:53  ktr
+ * Interfaceanalysis now works with old types again until ... and uniqueness
+ * issues are sorted out with the new TC
+ *
  * Revision 1.3  2004/11/09 19:32:33  ktr
  * Bugfix
  *
@@ -141,7 +145,9 @@ EMIAInterfaceAnalysis (node *syntax_tree)
 
     while (unaliased != 0) {
         unaliased = 0;
+        DBUG_PRINT ("EMIA", ("Starting interface analysis traversal..."));
         syntax_tree = Trav (syntax_tree, NULL);
+        DBUG_PRINT ("EMIA", ("Interface analysis traversal complete."));
         counter += unaliased;
     }
 
@@ -175,9 +181,13 @@ InitializeRetAlias (node *fundef)
     DBUG_ENTER ("InitializeRetAlias");
 
     if (FUNDEF_RETALIAS (fundef) == NULL) {
-        int retvals = TYGetProductSize (FUNDEF_RET_TYPE (fundef));
-        DBUG_PRINT ("EMAA",
+        int retvals = 0;
+
+        retvals = CountTypes (FUNDEF_TYPES (fundef));
+
+        DBUG_PRINT ("EMIA",
                     ("FUNDEF_RETALIAS initialized function: %s", FUNDEF_NAME (fundef)));
+
         while (retvals > 0) {
             FUNDEF_RETALIAS (fundef)
               = MakeNodelistNode (MakeBool (TRUE), FUNDEF_RETALIAS (fundef));
@@ -191,6 +201,7 @@ InitializeRetAlias (node *fundef)
 static bool
 GetRetAlias (node *fundef, int num)
 {
+    bool res = TRUE;
     nodelist *nl;
 
     DBUG_ENTER ("GetRetAlias");
@@ -198,12 +209,16 @@ GetRetAlias (node *fundef, int num)
     fundef = InitializeRetAlias (fundef);
 
     nl = FUNDEF_RETALIAS (fundef);
-    while (num > 0) {
+    while ((nl != NULL) && (num > 0)) {
         nl = NODELIST_NEXT (nl);
         num -= 1;
     }
 
-    DBUG_RETURN (BOOL_VAL (NODELIST_NODE (nl)));
+    if (nl != NULL) {
+        res = BOOL_VAL (NODELIST_NODE (nl));
+    }
+
+    DBUG_RETURN (res);
 }
 
 static node *
@@ -469,6 +484,7 @@ EMIAfundef (node *arg_node, info *arg_info)
 {
     int count;
     bool retalias;
+    bool retvals = 0;
 
     DBUG_ENTER ("EMIAfundef");
 
@@ -513,21 +529,25 @@ EMIAfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    for (count = 0; count < TYGetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
-        ntype *scl;
-        scl = TYGetScalar (TYGetProductMember (FUNDEF_RET_TYPE (arg_node), count));
-        if (IsUniqueNT (scl)) {
-            arg_node = SetRetAlias (arg_node, count, FALSE);
+    if (FUNDEF_RET_TYPE (arg_node) == NULL) {
+        WARN (0, ("No FUNDEF_RET_TYPE found in function %s", FUNDEF_NAME (arg_node)));
+    } else {
+        for (count = 0; count < TYGetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
+            ntype *scl;
+            scl = TYGetScalar (TYGetProductMember (FUNDEF_RET_TYPE (arg_node), count));
+            if (IsUniqueNT (scl)) {
+                arg_node = SetRetAlias (arg_node, count, FALSE);
+            }
         }
-    }
 
-    /*
-     * If no return value is aliased, no argument is aliased
-     */
-    retalias = FALSE;
+        /*
+         * If no return value is aliased, no argument is aliased
+         */
+        retalias = FALSE;
 
-    for (count = 0; count < TYGetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
-        retalias = retalias || GetRetAlias (arg_node, count);
+        for (count = 0; count < TYGetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
+            retalias = retalias || GetRetAlias (arg_node, count);
+        }
     }
 
     if (!retalias) {
