@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.28  2004/11/23 22:14:15  mwe
+  ElimSubDiv added
+
   Revision 1.27  2004/11/23 22:07:26  ktr
   added EMLR, EMLRO
 
@@ -209,6 +212,20 @@
           <node name="Id" />
         </travuser>
         <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="ESD" name="ElimSubDiv" defaults="sons" include="ElimSubDiv.c" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Prf" />
+	</travuser>
+	<travsons>
         </travsons>
         <travnone>
         </travnone>
