@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.44  2004/11/24 14:10:11  khf
+  added DDEPEND, TDEPEND, RDEPEND, WLFS
+
   Revision 1.43  2004/11/24 13:52:27  ktr
   TYPEDEF_ISUNIQUE added.
 
@@ -288,6 +291,20 @@
       </traversal>
     </phase>
     <phase id="sacopt" name="Running SAC optimizations">
+       <traversal id="AL" name="AssociativeLaw" defaults="sons" include="AssociativeLaw.h" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Prf" />
+	</travuser>
+	<travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
           <node name="Id" />
@@ -299,12 +316,40 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="AL" name="AssociativeLaw" defaults="sons" include="AssociativeLaw.h" >
+      <traversal id="CVP" name="Constant Variable Propagation" defaults="sons" include="ConstVarPropagation.h" >
 	<travuser>
+	  <node name="Fundef" />
 	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
+	  <node name="Code" />
+	  <node name="Cond" />
+	  <node name="With" />
+	  <node name="Genarray" />
+	  <node name="Modarray" />
+	  <node name="Fold" />
+	  <node name="Ap" />
 	  <node name="Prf" />
+	  <node name="Exprs" />
+	  <node name="Id" />
+	  <node name="Return" />
+	  <node name="Array" />
+	  <node name="Funcond" />
+	</travuser>
+	<travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="DDEPEND" name="Detect Dependencies" defaults="sons" include="detectdependencies.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Prf" />
+	  <node name="Id" />
+	  <node name="With" />
+          <node name="Code" />
 	</travuser>
 	<travsons>
         </travsons>
@@ -342,6 +387,44 @@
         <traverror>
         </traverror>
       </traversal>
+      <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Vardec" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="RDEPEND" name="Resolve Dependencies" defaults="sons" include="resolvedependencies.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Prf" />
+   	</travuser>
+	<travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="TDEPEND" name="Tag Dependencies" defaults="sons" include="tagdependencies.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Id" />
+	  <node name="With" />
+   	</travuser>
+	<travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
       <traversal id="UESD" name="UndoElimSubDiv" defaults="sons" include="UndoElimSubDiv.h" >
         <travuser>
 	  <node name="Block" />
@@ -356,40 +439,21 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="CVP" name="Constant Variable Propagation" defaults="sons" include="ConstVarPropagation.h" >
+      <traversal id="WLFS" name="With-Loop-Fusion" defaults="sons" include="WithloopFusion.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Block" />
 	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Code" />
-	  <node name="Cond" />
+	  <node name="Ap" />
+	  <node name="Id" />
 	  <node name="With" />
 	  <node name="Genarray" />
 	  <node name="Modarray" />
 	  <node name="Fold" />
-	  <node name="Ap" />
-	  <node name="Prf" />
-	  <node name="Exprs" />
-	  <node name="Id" />
-	  <node name="Return" />
-	  <node name="Array" />
-	  <node name="Funcond" />
+	  <node name="Part" />
+	  <node name="Generator" />
 	</travuser>
 	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-        </travuser>
-        <travsons>
         </travsons>
         <travnone>
         </travnone>
@@ -3494,7 +3558,7 @@
       </attributes>
       <flags>
         <flag name="Visited" />
-        <flag name="HasResolveabledDependencies" />
+        <flag name="HasResolveableDependencies" />
 	<flag name="IsDummyCode" />
       </flags>
     </node>
