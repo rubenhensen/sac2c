@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/03/21 13:34:30  dkr
+ * macro PRINT_VECT added
+ *
  * Revision 2.6  2000/03/15 14:54:16  dkr
  * PrintNodeTree renamed to PrintAST
  * PrintNodeAST added
@@ -115,11 +118,9 @@
  * Revision 1.2  1994/11/10  15:35:18  sbs
  * RCS-header inserted
  *
- *
  */
 
 #ifndef _sac_print_h
-
 #define _sac_print_h
 
 #include "tree.h"
@@ -128,8 +129,24 @@
 #define INDENT                                                                           \
     {                                                                                    \
         int j;                                                                           \
-        for (j = 0; j < indent; j++)                                                     \
+        for (j = 0; j < indent; j++) {                                                   \
             fprintf (outfile, "  ");                                                     \
+        }                                                                                \
+    }
+
+#define PRINT_VECT(file, vect, dims, format)                                             \
+    {                                                                                    \
+        int d;                                                                           \
+        if (vect != NULL) {                                                              \
+            fprintf (file, "[ ");                                                        \
+            for (d = 0; d < dims; d++) {                                                 \
+                fprintf (file, format, (vect)[d]);                                       \
+                fprintf (file, " ");                                                     \
+            }                                                                            \
+            fprintf (file, "]");                                                         \
+        } else {                                                                         \
+            fprintf (file, "NULL");                                                      \
+        }                                                                                \
     }
 
 extern char *prf_string[];
