@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2005/03/19 23:18:02  sbs
+ * initial call to NT2OTdoTransform eliminated. THIS IS ESSENTIAL for AUD wls.
+ * Furthermore NT2OTdoTransform should NEVER EVER be called outside of typecheck!!!
+ * This phase does much more than just new 2 old types!
+ * One should use ToOldTypes instead!!.
+ *
  * Revision 3.111  2005/01/07 17:24:50  cg
  * Removed legacy code meanwhile moved to subphases.
  * Some code brushing done.
@@ -35,7 +41,7 @@
 #include "functionprecompile.h"
 #include "typeconv_precompile.h"
 #include "renameidentifiers.h"
-#include "new2old.h"
+#include "ToOldTypes.h"
 #include "setlinksign.h"
 #include "internal_lib.h"
 
@@ -59,12 +65,6 @@ node *
 PRECdoPrecompile (node *syntax_tree)
 {
     DBUG_ENTER ("Precompile");
-
-    /*
-     * Fix Oldtypes in ast
-     */
-    DBUG_PRINT ("PREC", ("step -1: fix oldtypes"));
-    syntax_tree = NT2OTdoTransform (syntax_tree);
 
     /*
      * Set Linksign
