@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.155  2002/10/15 17:55:27  sbs
+ * INFO_INSVD_OBJDEFS added.
+ *
  * Revision 3.154  2002/10/15 11:03:54  mwe
  * new INFO_AL_-macro added
  *
@@ -3218,8 +3221,9 @@ extern node *MakeInfo ();
 #define INFO_SSAILI_ARGCHAIN(n) (n->node[1])
 
 /* when used in insert_vardec.c */
-#define INFO_INSVD_VARDECS(n) (n->node[0])
-#define INFO_INSVD_ARGS(n) (n->node[1])
+#define INFO_INSVD_OBJDEFS(n) (n->node[0])
+#define INFO_INSVD_VARDECS(n) (n->node[1])
+#define INFO_INSVD_ARGS(n) (n->node[2])
 
 /* when used in WithloopScalarization.c */
 #define INFO_WLS_POSSIBLE(n) (n->flag)
