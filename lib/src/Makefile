@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:44  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:43:30  sacbase
 # new release made
 #
@@ -43,4 +46,3 @@ clean:
 
 dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 dbug.o: /usr/include/sys/va_list.h
-

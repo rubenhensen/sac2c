@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:39  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:40:41  sacbase
 # new release made
 #
@@ -173,4 +176,3 @@ typecheck_WL.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
 typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
 typecheck_WL.o: ../global/free.h /usr/include/malloc.h
 typecheck_WL.o: ../optimize/ConstantFolding.h
-

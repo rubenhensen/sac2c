@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:43  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:43:10  sacbase
 # new release made
 #
@@ -26,15 +29,6 @@
 # Revision 1.15  1997/11/11 16:49:32  sbs
 # make deps done
 #
-# Revision 1.14  1997/11/05 11:35:21  dkr
-# *** empty log message ***
-#
-# Revision 1.13  1997/08/05 11:32:31  sbs
-# make deps done
-#
-# Revision 1.12  1997/04/25 12:04:11  sbs
-# make deps done
-#
 # Revision 1.11  1996/07/18  12:23:42  sbs
 # ArrayElimination.o included in clean-line
 #
@@ -50,20 +44,11 @@
 # Revision 1.7  1995/12/15  10:41:13  cg
 # make deps done
 #
-# Revision 1.6  1995/10/08  11:30:00  sbs
-# make deps done
-#
-# Revision 1.5  1995/07/24  11:56:09  asi
-# make deps done
-#
 # Revision 1.4  1995/07/24  11:54:09  asi
 # added array elimination
 #
 # Revision 1.3  1995/07/14  08:33:01  sbs
 # make deps done
-#
-# Revision 1.2  1995/07/14  08:31:48  sbs
-# *** empty log message ***
 #
 # Revision 1.1  1995/06/02  10:09:27  sbs
 # Initial revision
@@ -77,7 +62,8 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules
 
-all: index.o psi-opt.o ArrayElimination.o tile_size_inference.o
+all: index.o psi-opt.o ArrayElimination.o tile_size_inference.o \
+     WithloopFolding.o WLT.o WLI.o WLF.o
 
 index.o: index.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
@@ -90,6 +76,18 @@ ArrayElimination.o: ArrayElimination.c
 
 tile_size_inference.o: tile_size_inference.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o tile_size_inference.o -c tile_size_inference.c $(INCS)
+
+WithloopFolding.o: WithloopFolding.c WithloopFolding.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WithloopFolding.o -c WithloopFolding.c $(INCS)
+
+WLT.o: WLT.c WLT.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLT.o -c WLT.c $(INCS)
+
+WLI.o: WLI.c WLI.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLI.o -c WLI.c $(INCS)
+
+WLF.o: WLF.c WLF.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -113,6 +111,43 @@ ArrayElimination.o: ../global/tree_basic.h ../global/tree_compound.h
 ArrayElimination.o: ../optimize/optimize.h ../optimize/generatemasks.h
 ArrayElimination.o: ../optimize/Inline.h ../optimize/LoopInvariantRemoval.h
 ArrayElimination.o: ArrayElimination.h
+WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLF.o: /usr/include/sys/va_list.h /usr/include/stdlib.h /usr/include/limits.h
+WLF.o: /usr/include/sys/isa_defs.h ../global/tree.h ../global/types.h
+WLF.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+WLF.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+WLF.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+WLF.o: /usr/include/malloc.h ../optimize/DupTree.h ../global/traverse.h
+WLF.o: ../optimize/optimize.h ../optimize/generatemasks.h
+WLF.o: ../optimize/ConstantFolding.h WithloopFolding.h WLF.h
+WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLI.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+WLI.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+WLI.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLI.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WLI.o: ../global/my_debug.h /usr/include/malloc.h ../global/traverse.h
+WLI.o: ../optimize/optimize.h ../optimize/generatemasks.h
+WLI.o: ../optimize/ConstantFolding.h WithloopFolding.h WLI.h
+WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLT.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+WLT.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+WLT.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLT.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WLT.o: ../global/my_debug.h /usr/include/malloc.h ../optimize/DupTree.h
+WLT.o: ../global/traverse.h ../optimize/optimize.h
+WLT.o: ../optimize/generatemasks.h WithloopFolding.h WLT.h
+WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+WithloopFolding.o: ../global/tree_compound.h ../global/Error.h
+WithloopFolding.o: /usr/include/string.h ../global/globals.h
+WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
+WithloopFolding.o: ../optimize/DupTree.h ../global/traverse.h
+WithloopFolding.o: ../optimize/optimize.h ../optimize/generatemasks.h
+WithloopFolding.o: ../optimize/Inline.h ../typecheck/typecheck.h
+WithloopFolding.o: ../optimize/ConstantFolding.h WithloopFolding.h WLT.h
+WithloopFolding.o: WLI.h WLF.h
 index.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 index.o: /usr/include/sys/va_list.h /usr/include/string.h ../../inc/dbug.h
 index.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -136,4 +171,3 @@ tile_size_inference.o: /usr/include/stdlib.h ../global/globals.h
 tile_size_inference.o: ../global/traverse.h ../global/free.h
 tile_size_inference.o: ../global/my_debug.h /usr/include/malloc.h
 tile_size_inference.o: ../global/internal_lib.h
-

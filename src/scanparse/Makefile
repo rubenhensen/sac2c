@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:38  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:40:29  sacbase
 # new release made
 #
@@ -142,4 +145,3 @@ y.tab.o: ../global/internal_lib.h ../typecheck/typecheck.h
 y.tab.o: ../optimize/DupTree.h ../global/my_debug.h ../global/free.h
 y.tab.o: /usr/include/malloc.h ../modules/readsib.h ../global/resource.h
 y.tab.o: /usr/include/values.h
-

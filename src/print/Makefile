@@ -1,30 +1,18 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:37  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:40:19  sacbase
 # new release made
 #
 # Revision 1.31  1999/02/09 20:04:19  dkr
 # make deps done
 #
-# Revision 1.30  1998/06/23 11:42:08  cg
-# make deps done
-#
 # Revision 1.29  1998/06/18 13:28:22  cg
 # added ../concurrent as include directory
 #
 # Revision 1.28  1998/05/21 09:51:51  dkr
-# make deps done
-#
-# Revision 1.27  1998/05/12 14:22:19  dkr
-# make deps done
-#
-# Revision 1.26  1998/04/20 02:43:37  dkr
-# make deps done
-#
-# Revision 1.25  1998/03/24 14:41:45  dkr
-# make deps done
-#
-# Revision 1.24  1998/03/19 17:08:30  dkr
 # make deps done
 #
 # Revision 1.23  1998/03/04 00:10:33  dkr
@@ -41,12 +29,6 @@
 # Revision 1.20  1997/11/11 16:49:23  sbs
 # make deps done
 #
-# Revision 1.19  1997/08/05 11:32:24  sbs
-# make deps done
-#
-# Revision 1.18  1997/05/28 12:48:27  sbs
-# make deps done
-#
 # Revision 1.17  1996/07/18  12:22:08  sbs
 # convert.o included in clean-line
 #
@@ -57,21 +39,6 @@
 # Now, we look even in ../modules for include files
 #
 # Revision 1.14  1996/01/04  18:11:06  cg
-# make deps done
-#
-# Revision 1.13  1995/12/15  10:41:07  cg
-# make deps done
-#
-# Revision 1.12  1995/10/08  11:29:46  sbs
-# make deps done
-#
-# Revision 1.11  1995/05/26  12:12:23  asi
-# make deps done
-#
-# Revision 1.10  1995/05/15  13:38:44  asi
-# make deps done
-#
-# Revision 1.9  1995/04/04  09:30:39  sbs
 # make deps done
 #
 # Revision 1.8  1995/04/03  14:02:12  sbs
@@ -96,7 +63,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../optimize -I../compile -I../modules -I../concurrent
+INCS=-I../global -I../../inc -I../optimize -I../psi-opt -I../compile -I../modules -I../concurrent
 
 all: print.o convert.o
 
@@ -129,6 +96,5 @@ print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/DataFlowMask.h ../optimize/optimize.h ../global/free.h
 print.o: /usr/include/malloc.h ../optimize/generatemasks.h
 print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
-print.o: ../optimize/WithloopFolding.h ../concurrent/scheduling.h
+print.o: ../psi-opt/WithloopFolding.h ../concurrent/scheduling.h
 print.o: ../compile/icm.data ../global/prf_node_info.mac
-

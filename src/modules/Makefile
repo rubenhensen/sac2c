@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:40  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:41:56  sacbase
 # new release made
 #
@@ -225,4 +228,3 @@ writesib.o: ../global/my_debug.h /usr/include/malloc.h
 writesib.o: ../global/internal_lib.h ../global/traverse.h ../print/convert.h
 writesib.o: filemgr.h ../print/print.h ../global/tree.h
 writesib.o: ../typecheck/typecheck.h
-

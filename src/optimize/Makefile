@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:40  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:41:25  sacbase
 # new release made
 #
@@ -72,8 +75,7 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
-     WithloopFolding.o WLT.o WLI.o WLF.o DataFlowMask.o WLUnroll.o \
-     DeadFunctionRemoval.o freemasks.o
+     DataFlowMask.o WLUnroll.o DeadFunctionRemoval.o freemasks.o
 
 freemasks.o: freemasks.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o freemasks.o -c freemasks.c $(INCS)
@@ -116,18 +118,6 @@ Unswitch.o: Unswitch.c
 
 CSE.o: CSE.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o CSE.o -c CSE.c $(INCS)
-
-WithloopFolding.o: WithloopFolding.c WithloopFolding.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WithloopFolding.o -c WithloopFolding.c $(INCS)
-
-WLT.o: WLT.c WLT.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLT.o -c WLT.c $(INCS)
-
-WLI.o: WLI.c WLI.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLI.o -c WLI.c $(INCS)
-
-WLF.o: WLF.c WLF.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
 
 DataFlowMask.o: DataFlowMask.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) -o DataFlowMask.o -c DataFlowMask.c $(INCS)
@@ -228,30 +218,6 @@ Unswitch.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 Unswitch.o: /usr/include/malloc.h ../global/traverse.h
 Unswitch.o: ../global/access_macros.h optimize.h generatemasks.h
 Unswitch.o: ConstantFolding.h DupTree.h Unroll.h Unswitch.h
-WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLF.o: /usr/include/sys/va_list.h /usr/include/stdlib.h /usr/include/limits.h
-WLF.o: /usr/include/sys/isa_defs.h ../global/tree.h ../global/types.h
-WLF.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-WLF.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLF.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-WLF.o: /usr/include/malloc.h ../print/print.h DupTree.h ../global/traverse.h
-WLF.o: optimize.h generatemasks.h ConstantFolding.h WithloopFolding.h WLF.h
-WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLI.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
-WLI.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-WLI.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-WLI.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-WLI.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h
-WLI.o: ../global/traverse.h optimize.h generatemasks.h ConstantFolding.h
-WLI.o: WithloopFolding.h WLI.h
-WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WLT.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
-WLT.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-WLT.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-WLT.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-WLT.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
-WLT.o: ../global/traverse.h optimize.h generatemasks.h WithloopFolding.h
-WLT.o: WLT.h
 WLUnroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLUnroll.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WLUnroll.o: ../global/globals.h ../global/types.h ../global/tree.h
@@ -260,17 +226,7 @@ WLUnroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 WLUnroll.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 WLUnroll.o: /usr/include/malloc.h ../global/traverse.h
 WLUnroll.o: ../typecheck/typecheck.h ../compile/compile.h optimize.h Inline.h
-WLUnroll.o: DupTree.h WithloopFolding.h
-WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
-WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-WithloopFolding.o: ../global/tree_compound.h ../global/Error.h
-WithloopFolding.o: /usr/include/string.h ../global/globals.h
-WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
-WithloopFolding.o: ../print/print.h DupTree.h ../global/traverse.h optimize.h
-WithloopFolding.o: generatemasks.h Inline.h ../typecheck/typecheck.h
-WithloopFolding.o: ConstantFolding.h WithloopFolding.h WLT.h WLI.h WLF.h
+WLUnroll.o: DupTree.h ../psi-opt/WithloopFolding.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WorkReduction.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -296,7 +252,8 @@ generatemasks.o: ../global/my_debug.h /usr/include/malloc.h
 generatemasks.o: ../global/traverse.h ../print/print.h optimize.h
 generatemasks.o: generatemasks.h ConstantFolding.h DeadCodeRemoval.h
 generatemasks.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
-generatemasks.o: ../psi-opt/ArrayElimination.h CSE.h WithloopFolding.h
+generatemasks.o: ../psi-opt/ArrayElimination.h CSE.h
+generatemasks.o: ../psi-opt/WithloopFolding.h
 optimize.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 optimize.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 optimize.o: /usr/include/string.h ../global/tree.h ../global/types.h
@@ -307,5 +264,4 @@ optimize.o: /usr/include/malloc.h ../global/traverse.h ../print/print.h
 optimize.o: ../print/convert.h optimize.h generatemasks.h freemasks.h
 optimize.o: ConstantFolding.h DeadCodeRemoval.h DeadFunctionRemoval.h
 optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
-optimize.o: ../psi-opt/ArrayElimination.h CSE.h WithloopFolding.h
-
+optimize.o: ../psi-opt/ArrayElimination.h CSE.h ../psi-opt/WithloopFolding.h

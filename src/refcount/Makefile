@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:42  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:43:03  sacbase
 # new release made
 #
@@ -83,4 +86,3 @@ refcount.o: ../../inc/dbug.h ../optimize/DupTree.h ../typecheck/typecheck.h
 refcount.o: ../optimize/DataFlowMask.h ../global/traverse.h
 refcount.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
 refcount.o: ../optimize/generatemasks.h refcount.h
-

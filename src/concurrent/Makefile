@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:45  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:44:03  sacbase
 # new release made
 #
@@ -119,4 +122,3 @@ sync_init.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
 sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 sync_opt.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
-

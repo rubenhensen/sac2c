@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:45  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:43:33  sacbase
 # new release made
 #
@@ -95,9 +98,14 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-libsac_cachesim.o: /usr/include/memory.h /usr/include/stdio.h
-libsac_cachesim.o: /usr/include/sys/feature_tests.h
-libsac_cachesim.o: /usr/include/sys/va_list.h sac_cachesim.h
+libsac_cachesim_access.o: /usr/include/memory.h /usr/include/stdlib.h
+libsac_cachesim_access.o: /usr/include/sys/feature_tests.h
+libsac_cachesim_access.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+libsac_cachesim_access.o: sac_cachesim.h
+libsac_cachesim_basic.o: /usr/include/memory.h /usr/include/stdlib.h
+libsac_cachesim_basic.o: /usr/include/sys/feature_tests.h
+libsac_cachesim_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+libsac_cachesim_basic.o: sac_cachesim.h
 libsac_malloc.o: /usr/include/malloc.h /usr/include/stdio.h
 libsac_malloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 libsac_malloc.o: sac_message.h
@@ -109,7 +117,7 @@ libsac_mt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 libsac_mt.o: /usr/include/sys/machtypes.h /usr/include/sys/signal.h
 libsac_mt.o: /usr/include/sys/unistd.h /usr/include/sys/time.h
 libsac_mt.o: /usr/include/sched.h /usr/include/stdio.h
-libsac_mt.o: /usr/include/sys/va_list.h
+libsac_mt.o: /usr/include/sys/va_list.h sac_message.h
 libsac_profile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_profile.o: /usr/include/sys/va_list.h /usr/include/sys/time.h
 libsac_profile.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
@@ -117,4 +125,3 @@ libsac_profile.o: /usr/include/sys/machtypes.h /usr/include/sys/resource.h
 libsac_trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_trace.o: /usr/include/sys/va_list.h /usr/include/stdarg.h
 libsac_trace.o: /usr/include/varargs.h /usr/include/string.h
-

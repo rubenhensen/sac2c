@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:36  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:39:06  sacbase
 # new release made
 #
@@ -81,4 +84,3 @@ flatten.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 flatten.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
 flatten.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
 flatten.o: ../optimize/DupTree.h flatten.h
-

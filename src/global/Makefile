@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/02/26 14:17:37  dkr
+# make deps done
+#
 # Revision 2.1  1999/02/23 12:39:14  sacbase
 # new release made
 #
@@ -327,7 +330,7 @@ interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
 interrupt.o: /usr/include/sys/signal.h /usr/include/sys/unistd.h
 interrupt.o: /usr/include/stdio.h /usr/include/sys/va_list.h Error.h
 interrupt.o: /usr/include/string.h /usr/include/stdlib.h types.h globals.h
-interrupt.o: interrupt.h
+interrupt.o: interrupt.h internal_lib.h usage.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
 main.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h tree.h
 main.o: types.h tree_basic.h tree_compound.h Error.h /usr/include/string.h
@@ -369,8 +372,8 @@ traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 traverse.o: ../refcount/refcount.h ../compile/wltransform.h
 traverse.o: ../compile/precompile.h ../compile/compile.h
 traverse.o: ../compile/ReuseWithArrays.h ../modules/cccall.h
-traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h
-traverse.o: ../optimize/WLT.h ../optimize/WLI.h ../optimize/WLF.h
+traverse.o: ../compile/Old2NewWith.h ../psi-opt/WithloopFolding.h
+traverse.o: ../psi-opt/WLT.h ../psi-opt/WLI.h ../psi-opt/WLF.h
 traverse.o: ../compile/gen_startup_code.h ../concurrent/scheduling.h
 traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
 traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
@@ -395,5 +398,5 @@ tree_compound.o: /usr/include/sys/va_list.h /usr/include/string.h
 tree_compound.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
 tree_compound.o: free.h /usr/include/malloc.h internal_lib.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-usage.o: /usr/include/sys/va_list.h globals.h types.h ../../inc/dbug.h
-
+usage.o: /usr/include/sys/va_list.h usage.h globals.h types.h
+usage.o: ../../inc/dbug.h
