@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2004/11/24 11:35:14  skt
+ * N_WLseg -> N_wlseg
+ *
  * Revision 3.126  2004/11/24 10:56:11  sah
  * *** empty log message ***
  *
@@ -1681,7 +1684,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 #define WITH_VEC(n) (PART_VEC (WITH_PART (n)))
 
 /*
- * BOUND1, BOUND2, STEP, WIDTH of the *first* N_Npart-node
+ * BOUND1, BOUND2, STEP, WIDTH of the *first* N_part-node
  * (useful *before* with-loop-folding only!!!)
  */
 #define WITH_BOUND1(n) (PART_BOUND1 (WITH_PART (n)))
@@ -1837,7 +1840,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_WLseg :
+ ***  N_wlseg :
  ***/
 
 #define WLSEG_IDX_PRINT(handle, n, field)                                                \
@@ -1846,7 +1849,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_WLsegVar :
+ ***  N_wlsegVar :
  ***/
 
 #define WLSEGVAR_IDX_PRINT(handle, n, field)                                             \
@@ -1856,7 +1859,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
         if (vect != NULL) {                                                              \
             fprintf (handle, "[ ");                                                      \
             for (d = 0; d < WLSEGVAR_DIMS (n); d++) {                                    \
-                NodeOrInt_Print (handle, N_WLsegVar, &(vect[d]), d);                     \
+                NodeOrInt_Print (handle, N_wlsegVar, &(vect[d]), d);                     \
                 fprintf (handle, " ");                                                   \
             }                                                                            \
             fprintf (handle, "]");                                                       \
@@ -1868,36 +1871,36 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_WLseg :  *and*  N_WLsegVar :
+ ***  N_wlseg :  *and*  N_wlsegVar :
  ***/
 
 #define WLSEGX_IDX_MIN(n)                                                                \
-    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_IDX_MIN (n) : WLSEGVAR_IDX_MIN (n))
+    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_IDX_MIN (n) : WLSEGVAR_IDX_MIN (n))
 
 #define WLSEGX_IDX_MAX(n)                                                                \
-    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_IDX_MAX (n) : WLSEGVAR_IDX_MAX (n))
+    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_IDX_MAX (n) : WLSEGVAR_IDX_MAX (n))
 
-#define WLSEGX_DIMS(n) ((NODE_TYPE (n) == N_WLseg) ? WLSEG_DIMS (n) : WLSEGVAR_DIMS (n))
+#define WLSEGX_DIMS(n) ((NODE_TYPE (n) == N_wlseg) ? WLSEG_DIMS (n) : WLSEGVAR_DIMS (n))
 
 #define WLSEGX_CONTENTS(n)                                                               \
-    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_CONTENTS (n) : WLSEGVAR_CONTENTS (n))
+    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_CONTENTS (n) : WLSEGVAR_CONTENTS (n))
 
-#define WLSEGX_NEXT(n) ((NODE_TYPE (n) == N_WLseg) ? WLSEG_NEXT (n) : WLSEGVAR_NEXT (n))
+#define WLSEGX_NEXT(n) ((NODE_TYPE (n) == N_wlseg) ? WLSEG_NEXT (n) : WLSEGVAR_NEXT (n))
 
 #define WLSEGX_SCHEDULING(n)                                                             \
-    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_SCHEDULING (n) : WLSEGVAR_SCHEDULING (n))
+    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_SCHEDULING (n) : WLSEGVAR_SCHEDULING (n))
 
 #define WLSEGX_TASKSEL(n)                                                                \
-    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_TASKSEL (n) : WLSEGVAR_TASKSEL (n))
+    ((NODE_TYPE (n) == N_wlseg) ? WLSEG_TASKSEL (n) : WLSEGVAR_TASKSEL (n))
 
 #define WLSEGX_IDX_GET_ADDR(n, field, dim)                                               \
-    ((NODE_TYPE (n) == N_WLseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
-                                : ((NODE_TYPE (n) == N_WLsegVar)                         \
+    ((NODE_TYPE (n) == N_wlseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
+                                : ((NODE_TYPE (n) == N_wlsegVar)                         \
                                      ? (void *)&(((node **)(WLSEGVAR_##field (n)))[dim]) \
                                      : NULL))
 
 #define WLSEGX_IDX_PRINT(handle, n, field)                                               \
-    if (NODE_TYPE (n) == N_WLseg) {                                                      \
+    if (NODE_TYPE (n) == N_wlseg) {                                                      \
         WLSEG_IDX_PRINT (handle, n, field);                                              \
     } else {                                                                             \
         WLSEGVAR_IDX_PRINT (handle, n, field);                                           \
