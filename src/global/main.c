@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.79  1995/12/29 10:21:43  cg
+ * Revision 1.80  1996/01/02 15:46:31  cg
+ * The whole file handling is moved to print.c scnprs.c and cccall.c
+ * main.c exclusively evaluates command line options and triggers
+ * the compilation process.
+ *
+ * Revision 1.79  1995/12/29  10:21:43  cg
  * added new compiler phase readsib
  *
  * Revision 1.78  1995/12/21  16:09:20  cg
@@ -266,6 +271,7 @@
 #include "main.h"
 #include "tree.h"
 #include "free.h"
+#include "my_debug.h"
 
 #include "Error.h"
 #include "usage.h"
@@ -290,16 +296,35 @@
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
 #include "precompile.h"
+#include "cccall.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-extern int malloc_debug (int level);
+/*
+ *  Global variables to store command line parameters
+ */
 
 FILE *outfile;
+/* stream to write result to */
 
-char filename[MAX_FILE_NAME];         /* used for error messages and others */
-char sibfilename[MAX_FILE_NAME] = ""; /* used for error messages and others */
+char sacfilename[MAX_FILE_NAME] = "";
+/* name of file to be compiled */
+
+char prgname[MAX_FILE_NAME];
+/* name of the compiler, e.g. sac2c */
+
+char outfilename[MAX_FILE_NAME] = "a.out";
+/* name of executable or archive    */
+
+char cfilename[MAX_FILE_NAME] = "a.out.c";
+/* name of C source code file       */
+
+char ccflagsstr[MAX_FILE_NAME] = "";
+/* flags which are handed to gcc    */
+
+int Ccodeonly = 0;
+int break_compilation = 0;
 
 int optimize = 1;
 int sac_optimize = 1;
@@ -321,33 +346,31 @@ int show_idx = 0;
 int show_icm = 0;
 int traceflag = 0;
 
-int check_boundary = 0;
-int linkstyle = 0;
 int breakae = 0;
+
+int check_boundary = 0;
+
+/*
+ *  And now, the main function which triggers the whole compilation.
+ */
 
 MAIN
 {
-    int set_outfile = 0;
-    int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakpsiopt = 0, breakref = 0, breakreadsib = 0, breakwritesib = 0,
         breakimpltype = 0, breakobjinit = 0, breakanalysis = 0, breakcheckdec = 0,
-        breakobjects = 0, breakuniquecheck = 0, breakrmvoidfun = 0, breakprecompile = 0;
+        breakobjects = 0, breakuniquecheck = 0, breakrmvoidfun = 0, breakprecompile = 0,
+        breakcompile = 0;
 
-    char prgname[MAX_FILE_NAME];
-    char outfilename[MAX_FILE_NAME];
-    char cfilename[MAX_FILE_NAME];
-    char cccallstr[MAX_PATH_LEN];
-    char ccflagsstr[MAX_FILE_NAME] = "";
-    char *pathname = NULL;
-
-    malloc_debug (0);
-    strcpy (prgname, argv[0]);
-    strcpy (filename, prgname);
+    node *syntax_tree;
 
     /*
-     *  First, we scan the given options...
+     *  First, we evaluate the given command line options...
      */
+
+    NOTE_COMPILER_PHASE;
+
+    strcpy (prgname, argv[0]);
 
     OPT ARG 'I' : PARM
     {
@@ -383,6 +406,7 @@ MAIN
     }
     ARG 'b' : PARM
     {
+        break_compilation = 1;
         Ccodeonly = 1;
         switch (**argv) {
         case 'p':
@@ -416,6 +440,7 @@ MAIN
             show_refcnt = 1;
             break;
         case 'c':
+            breakcompile = 1;
             show_icm = 1;
             break;
         case 'w':
@@ -504,23 +529,6 @@ MAIN
             break;
         default:
             SYSWARN (("Unknown verbose level '%s`", *argv));
-        }
-    }
-    NEXTOPT
-    ARG 'l' : PARM
-    {
-        switch (**argv) {
-        case '0':
-            linkstyle = 0;
-            break;
-        case '1':
-            linkstyle = 1;
-            break;
-        case '2':
-            linkstyle = 2;
-            break;
-        default:
-            SYSWARN (("Unknown link style '%s`", *argv));
         }
     }
     NEXTOPT
@@ -629,7 +637,6 @@ MAIN
         strcpy (outfilename, *argv);
         strcpy (cfilename, *argv);
         strcat (cfilename, ".c");
-        set_outfile = 1;
     }
     NEXTOPT
     ARG 'f' : PARM
@@ -646,76 +653,44 @@ MAIN
     }
     ENDOPT
 
-    /* Now, we set our search paths for the source program, modul declarations,
-     * and modul implementations...
-     */
+    if (argc == 1) {
+        strcpy (sacfilename, *argv);
+    }
 
-    NOTE_COMPILER_PHASE;
+    /*
+     * Now, we set our search paths for the source program, module declarations,
+     * and module implementations...
+     */
 
     if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
+
     if (AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
+
     if (AppendEnvVar (PATH, "SAC_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
 
-    strcpy (filename, "stdin"); /*default value */
+    ABORT_ON_ERROR;
+    compiler_phase++;
 
-#ifdef NO_CPP
+    /*
+     *  Now, we reset some debugging tools.
+     */
 
-    if (argc == 1) {
-        pathname = FindFile (PATH, *argv);
-        yyin = fopen (pathname, "r");
-        strcpy (filename, *argv);
-        if (yyin == NULL) {
-            SYSABORT (("Unable to open file \"%s\"", *argv));
-        }
-    }
-
-#else /* NO_CPP */
-
-    if (argc == 1) {
-        pathname = FindFile (PATH, *argv);
-        sprintf (cccallstr, "gcc -E -P -C -x c %s", pathname);
-        strcpy (filename, *argv);
-    } else {
-        sprintf (cccallstr, "cpp -P -C ");
-    }
-
-    yyin = popen (cccallstr, "r");
-
-#endif /* NO_CPP */
+    malloc_debug (0);
 
     DBUG_EXECUTE ("MEMVERIFY", malloc_debug (2););
 
-    if (Ccodeonly) {
-        if (set_outfile) {
-            outfile = fopen (outfilename, "w");
-            if (outfile == NULL) {
-                SYSABORT (("Unable to open file \"%s\" for writing", outfilename));
-            }
-        } else
-            outfile = stdout;
-    }
+    filename = sacfilename;
 
-    else {
-        if (!set_outfile) {
-            strcpy (outfilename, "a.out");
-            strcpy (cfilename, "a.out.c");
-        }
-        outfile = fopen (cfilename, "w");
-        if (outfile == NULL)
-            SYSABORT (("Unable to open file \"%s\" for writing", cfilename));
-    }
+    /*
+     *  Finally the compilation process is started.
+     */
 
-    ABORT_ON_ERROR;
+    NOTE_COMPILER_PHASE;
+    syntax_tree = ScanParse ();
 
-    if (pathname != NULL) {
-        NOTE (("Parsing file \"%s\" ...", pathname));
-    }
-
-    start_token = PARSE_PRG;
-    yyparse ();
     ABORT_ON_ERROR;
     compiler_phase++;
 
@@ -845,103 +820,15 @@ MAIN
                                                                         ABORT_ON_ERROR;
                                                                         compiler_phase++;
 
-                                                                        if (!Ccodeonly) {
+                                                                        if (
+                                                                          (!Ccodeonly)
+                                                                          && (!breakcompile)) {
                                                                             NOTE_COMPILER_PHASE;
-                                                                            if (
-                                                                              MODUL_FILETYPE (
-                                                                                syntax_tree)
-                                                                              == F_prog) {
-                                                                                sprintf (
-                                                                                  cccallstr,
-                                                                                  "gcc "
-                                                                                  "%s-"
-                                                                                  "Wall "
-                                                                                  "-Wno-"
-                                                                                  "unused"
-                                                                                  " -I "
-                                                                                  "$RCSRO"
-                                                                                  "OT/"
-                                                                                  "src/"
-                                                                                  "compil"
-                                                                                  "e/"
-                                                                                  " -o "
-                                                                                  "%s %s "
-                                                                                  "%s",
-                                                                                  ccflagsstr,
-                                                                                  outfilename,
-                                                                                  cfilename,
-                                                                                  GenLinkerList ());
-                                                                            } else {
-                                                                                if (
-                                                                                  (MODUL_FILETYPE (
-                                                                                     syntax_tree)
-                                                                                   == F_modimp)
-                                                                                  || (MODUL_FILETYPE (
-                                                                                        syntax_tree)
-                                                                                      == F_classimp)) {
-                                                                                    sprintf (
-                                                                                      cccallstr,
-                                                                                      "gc"
-                                                                                      "c "
-                                                                                      "%s"
-                                                                                      "-W"
-                                                                                      "al"
-                                                                                      "l "
-                                                                                      "-W"
-                                                                                      "no"
-                                                                                      "-u"
-                                                                                      "nu"
-                                                                                      "se"
-                                                                                      "d "
-                                                                                      "-I"
-                                                                                      " $"
-                                                                                      "RC"
-                                                                                      "SR"
-                                                                                      "OO"
-                                                                                      "T/"
-                                                                                      "sr"
-                                                                                      "c/"
-                                                                                      "co"
-                                                                                      "mp"
-                                                                                      "il"
-                                                                                      "e/"
-                                                                                      " -"
-                                                                                      "o "
-                                                                                      "%s"
-                                                                                      ".o"
-                                                                                      " -"
-                                                                                      "c "
-                                                                                      "%"
-                                                                                      "s",
-                                                                                      ccflagsstr,
-                                                                                      (NULL
-                                                                                       != module_name)
-                                                                                        ? module_name
-                                                                                        : outfilename,
-                                                                                      cfilename);
-                                                                                } else {
-                                                                                    DBUG_ASSERT (
-                                                                                      0,
-                                                                                      "wr"
-                                                                                      "on"
-                                                                                      "g "
-                                                                                      "va"
-                                                                                      "lu"
-                                                                                      "e "
-                                                                                      "of"
-                                                                                      " k"
-                                                                                      "in"
-                                                                                      "d_"
-                                                                                      "of"
-                                                                                      "_f"
-                                                                                      "il"
-                                                                                      "e"
-                                                                                      " ");
-                                                                                }
-                                                                            }
+                                                                            syntax_tree
+                                                                              = PrepareLinking (
+                                                                                syntax_tree);
                                                                             ABORT_ON_ERROR;
-                                                                            compiler_phase
-                                                                              = 0;
+                                                                            compiler_phase++;
                                                                         }
                                                                     }
                                                                 }
@@ -963,25 +850,22 @@ MAIN
 
     Print (syntax_tree);
 
-    if (outfile != stdout) {
-        fclose (outfile);
-    }
-
-    FreeTree (syntax_tree);
-
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
+
+    if (break_compilation) {
+        NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
+    }
+
     NOTE2 (("*** Exit code 0"));
     NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
     NEWLINE (2);
 
     if (!Ccodeonly) {
-        NOTE2 (("*** Invoking C-compiler:"));
-        NOTE2 (("%s", cccallstr));
-        NEWLINE (2);
-
-        system (cccallstr);
+        InvokeCC (syntax_tree);
     }
+
+    FreeTree (syntax_tree);
 
     return (0);
 }
