@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/03/05 12:52:17  dkr
+ * some debug output for PRINT_RC added
+ *
  * Revision 3.22  2001/02/14 14:39:58  dkr
  * DoPrintStatusAST modified
  *
@@ -581,7 +584,7 @@ PrintRC (int rc, int nrc, bool show_rc)
 /******************************************************************************
  *
  * Function:
- *   void PrintIds(ids *arg, node *arg_info)
+ *   void PrintIds( ids *arg, node *arg_info)
  *
  * Description:
  *
@@ -1490,7 +1493,7 @@ PrintDo (node *arg_node, node *arg_info)
 
     fprintf (outfile, "do \n");
 
-    DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
+    DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
                   PrintIds (DO_DEFVARS (arg_node), arg_info); fprintf (outfile, " | ");
                   PrintIds (DO_NAIVE_DEFVARS (arg_node), arg_info);
                   fprintf (outfile, "\n"); INDENT;
@@ -1547,7 +1550,7 @@ PrintWhile (node *arg_node, node *arg_info)
     Trav (WHILE_COND (arg_node), arg_info);
     fprintf (outfile, ") \n");
 
-    DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
+    DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
                   PrintIds (WHILE_DEFVARS (arg_node), arg_info); fprintf (outfile, " | ");
                   PrintIds (WHILE_NAIVE_DEFVARS (arg_node), arg_info);
                   fprintf (outfile, "\n"); INDENT;
@@ -1605,7 +1608,7 @@ PrintCond (node *arg_node, node *arg_info)
                       INDENT; PrintUseMask (outfile, COND_THENUSEMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info)););
 
-        DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - then: ");
+        DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - then: ");
                       PrintIds (COND_THENVARS (arg_node), arg_info);
                       fprintf (outfile, " | ");
                       PrintIds (COND_NAIVE_THENVARS (arg_node), arg_info);
@@ -1626,7 +1629,7 @@ PrintCond (node *arg_node, node *arg_info)
                       INDENT; PrintUseMask (outfile, COND_ELSEUSEMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info)););
 
-        DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - else: ");
+        DBUG_EXECUTE ("PRINT_VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - else: ");
                       PrintIds (COND_ELSEVARS (arg_node), arg_info);
                       fprintf (outfile, " | ");
                       PrintIds (COND_NAIVE_ELSEVARS (arg_node), arg_info);
@@ -2624,7 +2627,7 @@ PrintMTalloc (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintNwith(node *arg_node, node *arg_info)
+ *   node *PrintNwith( node *arg_node, node *arg_info)
  *
  * description:
  *   prints Nwith node.
@@ -2649,10 +2652,9 @@ PrintNwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintNwith");
 
     buffer = INFO_PRINT_INT_SYN (arg_info);
+
     tmp_nwith = INFO_PRINT_NWITH (arg_info);
     INFO_PRINT_NWITH (arg_info) = arg_node;
-
-    indent += 2;
 
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
@@ -2663,10 +2665,22 @@ PrintNwith (node *arg_node, node *arg_info)
                            NWITH_REFERENCES_FOLDED (arg_node), NWITH_FOLDABLE (arg_node),
                            NWITH_NO_CHANCE (arg_node)););
 
+    indent++;
+
     if (NWITH_PRAGMA (arg_node) != NULL) {
         Trav (NWITH_PRAGMA (arg_node), arg_info);
         INDENT;
     }
+
+    DBUG_EXECUTE ("PRINT_RC", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "/* DEC_RC: "); if (
+                    NWITH_DEC_RC_IDS (arg_node)
+                    != NULL) { PrintIds (NWITH_DEC_RC_IDS (arg_node), arg_info); } else {
+                      fprintf (outfile, "-");
+                  } fprintf (outfile, " */\n");
+                  INDENT;);
+
+    indent++;
 
     /*
      * check wether to use output format 1 (multiple NParts)
@@ -2691,13 +2705,14 @@ PrintNwith (node *arg_node, node *arg_info)
 
     if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
         /*
-         * output format 2: now we have in
-         * INFO_PRINT_INT_SYN(arg_info) the last expr.
+         * output format 2:
+         * now, INFO_PRINT_INT_SYN(arg_info) contains the last expr.
          */
-        if (WO_modarray == NWITH_TYPE (arg_node))
+        if (WO_modarray == NWITH_TYPE (arg_node)) {
             fprintf (outfile, ", dummy, ");
-        else
+        } else {
             fprintf (outfile, ", ");
+        }
         Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
     }
     fprintf (outfile, ")");
@@ -2828,6 +2843,13 @@ PrintNcode (node *arg_node, node *arg_info)
                                 INFO_PRINT_VARNO (arg_info));
                   INDENT; PrintUseMask (outfile, NCODE_USEMASK (arg_node),
                                         INFO_PRINT_VARNO (arg_info)););
+
+    DBUG_EXECUTE ("PRINT_RC", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "/* INC_RC: "); if (
+                    NCODE_INC_RC_IDS (arg_node)
+                    != NULL) { PrintIds (NCODE_INC_RC_IDS (arg_node), arg_info); } else {
+                      fprintf (outfile, "-");
+                  } fprintf (outfile, " */\n"););
 
     /* print the code section; the body first */
     Trav (NCODE_CBLOCK (arg_node), arg_info);
@@ -2993,15 +3015,25 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintNwith2");
 
+    tmp_nwith2 = INFO_PRINT_NWITH (arg_info);
+    INFO_PRINT_NWITH (arg_info) = arg_node;
+
+    indent++;
+
     if (NWITH2_PRAGMA (arg_node) != NULL) {
         Trav (NWITH2_PRAGMA (arg_node), arg_info);
         INDENT;
     }
 
-    tmp_nwith2 = INFO_PRINT_NWITH (arg_info);
-    INFO_PRINT_NWITH (arg_info) = arg_node;
+    DBUG_EXECUTE ("PRINT_RC", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "/* DEC_RC: "); if (
+                    NWITH2_DEC_RC_IDS (arg_node)
+                    != NULL) { PrintIds (NWITH2_DEC_RC_IDS (arg_node), arg_info); } else {
+                      fprintf (outfile, "-");
+                  } fprintf (outfile, " */\n");
+                  INDENT;);
 
-    indent += 2;
+    indent++;
 
     fprintf (outfile, "with2 (");
     Trav (NWITH2_WITHID (arg_node), arg_info);
