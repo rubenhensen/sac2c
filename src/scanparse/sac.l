@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/09/16 19:00:42  sbs
+ * changed the pattern for source file annotations by the C preprocessor.
+ * Now, they should only be recognized if not used within comments.
+ * cf bug 55
+ *
  * Revision 3.23  2003/11/04 17:26:38  cg
  * Fixed a bug in printing/scanning of individual escape characters.
  * Escape characters are stored in OCTAL representation !!
@@ -463,8 +468,11 @@ int charpos = 0;
 
 "\f"                       { charpos += yyleng; }
 
-#\ *[0-9]+.*\n             { linenum=atoi(yytext+1)-1;
-                             { int start, len;
+#\ *[0-9]+\ \".*\"         { charpos += yyleng;
+                             if( commlevel == 0) {
+                               int start, len;
+
+                               linenum=atoi(yytext+1)-1;
                                start = strcspn( yytext, "\"")+1;
                                len   = strcspn( yytext + start, "\"");
                                if( ((yytext + start)[0] == '.')
@@ -478,7 +486,6 @@ int charpos = 0;
                                filename[len] = '\0';
                                DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
                              }
-                             yyless( yyleng - 1);
                            }
 
 .                          { charpos += yyleng;
