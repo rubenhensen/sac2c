@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/10/31 23:02:37  dkr
+ * local functions are static now
+ *
  * Revision 2.20  2000/10/27 02:40:24  dkr
  * some function headers corrected
  *
@@ -163,7 +166,7 @@ void **opfunarg;
  *
  ******************************************************************************/
 
-node *
+static node *
 CreateBodyCode (node *partn, node *index)
 {
     node *res, *letn, *coden;
@@ -211,7 +214,7 @@ CreateBodyCode (node *partn, node *index)
  *
  ******************************************************************************/
 
-node *
+static node *
 CreateModGenarray (node *assignn, node *index)
 {
     node *exprs, *letexpr, *cexpr, *tmpn, *bodyn;
@@ -258,7 +261,7 @@ CreateModGenarray (node *assignn, node *index)
  *
  ******************************************************************************/
 
-node *
+static node *
 CreateFold (node *assignn, node *index)
 {
     node *partn, *cexpr, *withop, *fundef, *accvar, *funap, *assigns, *bodyn;
@@ -335,7 +338,7 @@ CreateFold (node *assignn, node *index)
  *
  ******************************************************************************/
 
-node *
+static node *
 ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *assignn)
 {
     int count, act_w, i;
@@ -391,7 +394,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
  *
  ******************************************************************************/
 
-node *
+static node *
 ForEachElement (node *partn, node *assignn)
 {
     node *res;
@@ -434,7 +437,7 @@ ForEachElement (node *partn, node *assignn)
  ******************************************************************************/
 
 #define ELT(n) NUM_VAL (EXPRS_EXPR (n))
-int
+static int
 CountElements (node *genn)
 {
     int elts, tmp, d, m, dim, i;
@@ -731,7 +734,7 @@ node *
 DoUnrollGenarray (node *wln, node *arg_info)
 {
     node *partn, *res;
-    node *letn, *args, *let_expr;
+    node *letn, *let_expr;
     void *arg[2];
     ids *arrayname;
     int elements;
@@ -754,7 +757,20 @@ DoUnrollGenarray (node *wln, node *arg_info)
         partn = NPART_NEXT (partn);
     }
 
-    /* finally add arrayname = reshape(...,[0,...,0]) */
+    /*
+     * finally add   arrayname = reshape( ..., [0,...,0])
+     */
+
+    type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
+    elements = GetTypesLength (type);
+    stype = GetBasetype (type);
+
+#if 0
+  let_expr = MakePrf( F_reshape,
+                      MakeExprs( DupTree( NWITH_SHAPE(wln)),
+                                 MakeExprs( CreateZeroVector( elements, stype),
+                                            NULL)));
+#else
     /*
      * attention: the above reshape() is correct. But it seems that it
      * is not necessary anymore after the TC. reshape() is ignored in
@@ -764,24 +780,8 @@ DoUnrollGenarray (node *wln, node *arg_info)
      * here. If we drop the reshape, further compilation should(!!!)
      * work without problems and CF can fold all elements.
      */
-    args = DupTree (NWITH_SHAPE (wln));
-
-    type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
-    elements = GetTypesLength (type);
-    stype = GetBasetype (type);
-
-#if 0
-  /* drop reshape() */
-  args = MakeExprs( args,
-                    MakeExprs( CreateZeroVector( elements, stype),
-                               NULL));
-  let_expr = MakePrf( F_reshape, args);
+    let_expr = CreateZeroVector (elements, stype);
 #endif
-    if (elements != 0) {
-        let_expr = CreateZeroVector (elements, stype);
-    } else {
-        let_expr = MakeArray (NULL);
-    }
     letn = MakeLet (let_expr, DupOneIds (arrayname));
     res = MakeAssign (letn, res);
 
