@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/01/26 17:26:12  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.12  1999/11/24 15:38:25  bs
  * tilesizing mechanism splitted into CalcTSInnerDim and CalcTSOuterDims.
  *
@@ -508,7 +511,7 @@ TileSizeInference (node *arg_node)
 {
     node *arg_info;
     int *cacheparam;
-    funptr *tmp_tab;
+    funtab *tmp_tab;
 
     DBUG_ENTER ("TileSizeInference");
 

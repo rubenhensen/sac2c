@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/01/26 17:25:08  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.9  2000/01/25 13:42:25  dkr
  * function FindVardec moved to tree_compound.h and renamed to
  * FindVardec_Varno
@@ -137,7 +140,7 @@ LetWithFunction (node *let)
 {
     int result;
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("LetWithFunction");
 
@@ -208,7 +211,7 @@ node *
 DeleteNested (node *arg_node)
 {
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("DeleteNested");
 
@@ -303,7 +306,7 @@ void
 ProduceMasks (node *arg_node, node *spmd, node *fundef)
 {
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("ProduceMasks");
 
@@ -427,7 +430,7 @@ CountOccurences (node *block, DFMmask_t which, node *fundef)
 {
     int *result;
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("CountOccurences");
 
@@ -602,7 +605,7 @@ void
 ReduceOccurences (node *block, int *counters, DFMmask_t mask)
 {
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("ReduceOccurences");
 
@@ -762,7 +765,7 @@ DFMmask_t
 ReduceMasks (node *block, DFMmask_t first_out)
 {
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
     DFMmask_t result;
 
     DBUG_ENTER ("ReduceMasks");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/01/26 17:26:59  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.1  1999/02/23 12:41:13  sacbase
  * new release made
  *
@@ -36,7 +39,7 @@ node *
 DeadFunctionRemoval (node *arg_node, node *info_node)
 
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     int mem_dead_fun = dead_fun;
 
     DBUG_ENTER ("DeadFunctionRemoval");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/01/26 17:25:31  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 1.4  2000/01/26 15:07:00  jhs
  * Traversal of inner wl's now correct.
  *
@@ -49,7 +52,7 @@
 node *
 ScheduleInit (node *arg_node, node *arg_info)
 {
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("ScheduleInit");
 

@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.29  2000/01/26 14:57:59  dkr
- * type of traverse-function-table changed
+ * Revision 2.30  2000/01/26 17:29:42  dkr
+ * type of traverse-function-table changed.
  *
  * Revision 2.28  1999/11/15 18:06:44  dkr
  * usage of ExpandMRDL changed
@@ -504,7 +504,7 @@ IsConst (node *arg_node)
 node *
 ConstantFolding (node *arg_node, node *info_node)
 {
-    funtab tmp_tab;
+    funtab *tmp_tab;
 #ifndef DBUG_OFF
     int mem_cf_expr = cf_expr;
 #endif

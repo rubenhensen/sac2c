@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/26 17:29:22  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.11  2000/01/25 13:39:03  dkr
  * all the Constvec stuff moved to tree_compound.c
  *
@@ -500,127 +503,87 @@ TmpVar ()
 
     if (act_tab == imp_tab) {
         s = "imp";
-    }
-    if (act_tab == flat_tab) {
+    } else if (act_tab == flat_tab) {
         s = "flat";
-    }
-    if (act_tab == print_tab) {
+    } else if (act_tab == print_tab) {
         s = "prt";
-    }
-    if (act_tab == type_tab) {
+    } else if (act_tab == type_tab) {
         s = "type";
-    }
-    if (act_tab == genmask_tab) {
+    } else if (act_tab == genmask_tab) {
         s = "gnm";
-    }
-    if (act_tab == dcr_tab) {
+    } else if (act_tab == dcr_tab) {
         s = "dcr";
-    }
-    if (act_tab == cf_tab) {
+    } else if (act_tab == cf_tab) {
         s = "cf";
-    }
-    if (act_tab == free_tab) {
+    } else if (act_tab == free_tab) {
         s = "free";
-    }
-    if (act_tab == refcnt_tab) {
+    } else if (act_tab == refcnt_tab) {
         s = "refcnt";
-    }
-    if (act_tab == comp_tab) {
+    } else if (act_tab == comp_tab) {
         s = "comp";
-    }
-    if (act_tab == lir_tab) {
+    } else if (act_tab == lir_tab) {
         s = "lir";
-    }
-    if (act_tab == lir_mov_tab) {
+    } else if (act_tab == lir_mov_tab) {
         s = "lirm";
-    }
-    if (act_tab == dup_tab) {
+    } else if (act_tab == dup_tab) {
         s = "dup";
-    }
-    if (act_tab == inline_tab) {
+    } else if (act_tab == inline_tab) {
         s = "inl";
-    }
-    if (act_tab == unroll_tab) {
+    } else if (act_tab == unroll_tab) {
         s = "unr";
-    }
-    if (act_tab == unswitch_tab) {
+    } else if (act_tab == unswitch_tab) {
         s = "uns";
-    }
-    if (act_tab == idx_tab) {
+    } else if (act_tab == idx_tab) {
         s = "idx";
-    }
-    if (act_tab == wlt_tab) {
+    } else if (act_tab == wlt_tab) {
         s = "wlt";
-    }
-    if (act_tab == wli_tab) {
+    } else if (act_tab == wli_tab) {
         s = "wli";
-    }
-    if (act_tab == wlf_tab) {
+    } else if (act_tab == wlf_tab) {
         s = "wlf";
-    }
-    if (act_tab == ae_tab) {
+    } else if (act_tab == ae_tab) {
         s = "ae";
-    }
-    if (act_tab == writesib_tab) {
+    } else if (act_tab == writesib_tab) {
         s = "wsib";
-    }
-    if (act_tab == obj_tab) {
+    } else if (act_tab == obj_tab) {
         s = "obj";
-    }
-    if (act_tab == impltype_tab) {
+    } else if (act_tab == impltype_tab) {
         s = "impl";
-    }
-    if (act_tab == objinit_tab) {
+    } else if (act_tab == objinit_tab) {
         s = "obji";
-    }
-    if (act_tab == analy_tab) {
+    } else if (act_tab == analy_tab) {
         s = "analy";
-    }
-    if (act_tab == checkdec_tab) {
+    } else if (act_tab == checkdec_tab) {
         s = "cdec";
-    }
-    if (act_tab == writedec_tab) {
+    } else if (act_tab == writedec_tab) {
         s = "wdec";
-    }
-    if (act_tab == unique_tab) {
+    } else if (act_tab == unique_tab) {
         s = "uniq";
-    }
-    if (act_tab == rmvoid_tab) {
+    } else if (act_tab == rmvoid_tab) {
         s = "rmvoid";
-    }
-    if (act_tab == precomp_tab) {
+    } else if (act_tab == precomp_tab) {
         s = "pcomp";
-    }
-    if (act_tab == readsib_tab) {
+    } else if (act_tab == readsib_tab) {
         s = "rsib";
-    }
-    if (act_tab == cse_tab) {
+    } else if (act_tab == cse_tab) {
         s = "cse";
-    }
-    if (act_tab == dfr_tab) {
+    } else if (act_tab == dfr_tab) {
         s = "dfr";
-    }
-    if (act_tab == o2nWith_tab) {
+    } else if (act_tab == o2nWith_tab) {
         s = "o2nW";
-    }
-    if (act_tab == spmdinit_tab) {
+    } else if (act_tab == spmdinit_tab) {
         s = "spmdi";
-    }
-    if (act_tab == spmdopt_tab) {
+    } else if (act_tab == spmdopt_tab) {
         s = "spmdo";
-    }
-    if (act_tab == spmdlift_tab) {
+    } else if (act_tab == spmdlift_tab) {
         s = "spmdl";
-    }
-    if (act_tab == syncinit_tab) {
+    } else if (act_tab == syncinit_tab) {
         s = "synci";
-    }
-    if (act_tab == syncopt_tab) {
+    } else if (act_tab == syncopt_tab) {
         s = "synco";
-    }
-
-    if (!s)
+    } else {
         s = "unknown";
+    }
 
     sprintf (result, "_%s_%d", s, counter);
     counter++;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/01/26 17:27:22  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.4  1999/11/15 18:05:19  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -113,7 +116,7 @@ node *
 Unswitch (node *arg_node, node *arg_info)
 {
     int mem_uns_expr = uns_expr;
-    funptr *tmp_tab;
+    funtab *tmp_tab;
 
     DBUG_ENTER ("Unswitch");
     DBUG_PRINT ("OPT", ("LOOP UNSWITCHING"));

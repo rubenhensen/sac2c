@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/01/26 17:26:20  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.10  1999/11/24 14:53:58  bs
  * Another wlaa feature added: FEATURE_UNKNOWN for an noninferable offset.
  *
@@ -115,7 +118,7 @@
 node *
 WLAccessAnalyze (node *arg_node)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     node *arg_info;
 
     DBUG_ENTER ("WLAccessAnalyze");

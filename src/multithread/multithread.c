@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/01/26 17:25:24  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 1.4  2000/01/24 18:24:21  jhs
  * Added some infrastructure ...
  *
@@ -54,7 +57,7 @@
 node *
 BuildMultiThread (node *syntax_tree)
 {
-    funptr *old_tab;
+    funtab *old_tab;
 
     node *arg_info;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/01/26 17:26:39  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.6  1999/12/13 16:57:57  dkr
  * in function Equal:
  *   a combined assignment ID_DEF(arg1) = arg1 = ... splitted into single
@@ -98,7 +101,7 @@
 node *
 CSE (node *arg_node, node *info_node)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
 #ifndef DBUG_OFF
     int mem_cse_expr = cse_expr;
 #endif

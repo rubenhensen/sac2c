@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/01/26 17:30:02  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.16  2000/01/21 13:22:05  jhs
  * Adapted to new mt ...
  *
@@ -331,7 +334,7 @@ PrintGlobalSwitches ()
 static void
 PrintSpmdData (node *syntax_tree)
 {
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("PrintSpmdData");
 

@@ -1,8 +1,8 @@
 /*      $Id$
  *
  * $Log$
- * Revision 2.7  2000/01/26 14:49:14  dkr
- * type from traverse-function-table changed from funptr* to funtab
+ * Revision 2.8  2000/01/26 17:28:16  dkr
+ * type of traverse-function-table changed.
  *
  * Revision 2.6  1999/11/11 20:05:32  dkr
  * signature and name of function IsConstantArray changed
@@ -24,9 +24,6 @@
  *
  * Revision 2.1  1999/02/23 12:41:00  sacbase
  * new release made
- *
- * Revision 1.2  1998/04/29 08:51:47  srs
- * *** empty log message ***
  *
  * Revision 1.1  1998/04/28 15:48:09  srs
  * Initial revision
@@ -220,7 +217,7 @@ TCWLprf (node *arg_node, node *arg_info)
 node *
 ReduceGenarrayShape (node *arg_node, types *expr_type)
 {
-    funtab old_tab;
+    funtab *old_tab;
     node *infon;
 
     DBUG_ENTER ("ReduceGenarrayShape");

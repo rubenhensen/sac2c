@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/01/26 17:29:49  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.2  1999/09/01 17:11:01  jhs
  * Fixed Duplicating of masks in DupAssign.
  *
@@ -130,7 +133,7 @@ static int inline_nr = 0;
 node *
 Inline (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     int mem_inl_fun = inl_fun;
 
     DBUG_ENTER ("Inline");
@@ -360,7 +363,7 @@ node *
 InlineSingleApplication (node *let_node, node *fundef_node)
 {
     node *arg_info, *assigns;
-    funptr *mem_tab;
+    funtab *mem_tab;
 
     DBUG_ENTER ("InlineSingleApplication");
 

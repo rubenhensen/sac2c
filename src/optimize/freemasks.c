@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/01/26 17:27:29  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.1  1999/02/23 12:41:47  sacbase
  * new release made
  *
@@ -47,7 +50,7 @@
 node *
 FreeMasks (node *arg_node)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     DBUG_ENTER ("FreeMasks");
 
     DBUG_PRINT ("OPT", ("FREEMASKS"));

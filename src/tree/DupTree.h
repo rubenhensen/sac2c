@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/26 17:27:53  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 1.1  2000/01/21 11:16:27  dkr
  * Initial revision
  *
@@ -148,5 +151,11 @@ extern node *DupWLgridVar (node *arg_node, node *arg_info);
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
+
+/****** pre-processing *******/
+extern node *DupPre (node *arg_node, node *arg_info);
+
+/****** post-processing ******/
+extern node *DupPost (node *arg_node, node *arg_info);
 
 #endif /* _sac_DupTree_h */

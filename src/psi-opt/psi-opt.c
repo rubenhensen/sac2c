@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/01/26 17:26:31  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.3  1999/07/14 12:10:47  sbs
  * N_info node allocated for IVE!
  *
@@ -63,7 +66,7 @@ int ive_expr, ive_op;
 node *
 PsiOpt (node *arg_node)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     node *info_node;
 
     DBUG_ENTER ("PsiOpt");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/26 17:27:50  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 1.1  2000/01/21 11:16:25  dkr
  * Initial revision
  *
@@ -212,7 +215,7 @@
 node *
 DupTree (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     node *new_node = NULL;
     int new_arg_info = 0;
 
@@ -250,7 +253,7 @@ DupTree (node *arg_node, node *arg_info)
 node *
 DupNode (node *arg_node)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     node *arg_info;
     node *new_node = NULL;
 
@@ -1543,4 +1546,24 @@ DupWLgridVar (node *arg_node, node *arg_info)
                               DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
 
     DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupPre (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DupPre");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+DupPost (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DupPost");
+
+    DBUG_RETURN (arg_node);
 }

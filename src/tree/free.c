@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/26 17:27:42  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 1.1  2000/01/21 15:38:21  dkr
  * Initial revision
  *
@@ -538,7 +541,7 @@ FreeAllAccess (access_t *fr)
 node *
 FreeNode (node *free_node)
 {
-    funptr *store_tab;
+    funtab *store_tab;
 
     DBUG_ENTER ("FreeNode");
 
@@ -557,7 +560,7 @@ FreeNode (node *free_node)
 node *
 FreeTree (node *free_node)
 {
-    funptr *store_tab;
+    funtab *store_tab;
 
     DBUG_ENTER ("FreeTree");
 

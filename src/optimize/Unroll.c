@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/01/26 17:27:17  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.5  1999/11/15 18:05:12  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -111,7 +114,7 @@
 node *
 Unroll (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     int mem_lunr_expr = lunr_expr;
     int mem_wlunr_expr = wlunr_expr;
 

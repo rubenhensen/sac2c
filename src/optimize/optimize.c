@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.11  2000/01/26 14:50:25  dkr
- * type of traverse-function-table changed from funptr* to funtab
+ * Revision 2.12  2000/01/26 17:26:53  dkr
+ * type of traverse-function-table changed.
  *
  * Revision 2.10  1999/10/28 19:39:16  dkr
  * DBUG-string MASK changed to PRINT_MASKS
@@ -324,7 +324,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
 node *
 Optimize (node *arg_node)
 {
-    funtab tmp_tab;
+    funtab *tmp_tab;
 
     DBUG_ENTER ("Optimize");
 

@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.9  2000/01/26 17:26:04  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.8  1999/07/15 20:38:11  sbs
  * ARRAY_ISCONST set where MakeArray is called.
  *
@@ -1318,7 +1321,7 @@ MakeNullVec (int dim, simpletype type)
 node *
 WithloopFolding (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     int expr;
 
     DBUG_ENTER ("WithloopFolding");
@@ -1386,7 +1389,7 @@ WithloopFolding (node *arg_node, node *arg_info)
 node *
 WithloopFoldingWLT (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     int expr;
 
     DBUG_ENTER ("WithloopFoldingWLT");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/26 17:24:51  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.11  1999/08/27 11:58:47  jhs
  * Added DBUG_PRINTS.
  * Added function SPMDoptimize. to do spmd-opt from the outside.
@@ -92,7 +95,7 @@ node *
 SPMDoptimize (node *arg_node, node *fundef)
 {
     node *arg_info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("SPMDoptimize");
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/01/26 17:30:08  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.1  1999/02/23 12:42:24  sacbase
  * new release made
  *
@@ -408,7 +411,7 @@ node *
 GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
 {
     node *info;
-    funptr *old_tab;
+    funtab *old_tab;
 
     DBUG_ENTER ("GetReuseArrays");
 

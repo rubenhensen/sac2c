@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/01/26 17:29:54  dkr
+ * type of traverse-function-table changed.
+ *
  * Revision 2.5  1999/11/15 18:04:29  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -173,7 +176,7 @@ int invaruns = 1;
 node *
 LoopInvariantRemoval (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab *tmp_tab;
     int mem_lir_expr = lir_expr;
 
     DBUG_ENTER ("LoopInvariantRemoval");

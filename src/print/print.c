@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.39  2000/01/26 14:45:14  dkr
- * type of traverse-function-table changed from funptr* to funtab
+ * Revision 2.40  2000/01/26 17:29:30  dkr
+ * type of traverse-function-table changed.
  *
  * Revision 2.38  1999/11/18 12:52:28  bs
  *  FEATURE_UNKNOWN added.
@@ -3037,7 +3037,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 node *
 Print (node *syntax_tree)
 {
-    funtab old_tab;
+    funtab *old_tab;
     node *arg_info;
 
     DBUG_ENTER ("Print");
