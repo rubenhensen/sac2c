@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/19 13:41:00  mwe
+ * TravSons in TNTarray, TNTcast, TNTtypedef added
+ *
  * Revision 1.1  2004/11/18 14:33:57  mwe
  * Initial revision
  *
@@ -406,19 +409,22 @@ node *
 TNTarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TNTarray");
-#if 0
-  if (ARRAY_NTYPE(arg_node) == NULL){
 
-    DBUG_ASSERT((ARRAY_TYPE(arg_node) != NULL),"whether 'types' or 'ntype' structure found");
+    if (ARRAY_NTYPE (arg_node) == NULL) {
 
-    ARRAY_NTYPE(arg_node) = TYOldType2Type( ARRAY_TYPE(arg_node));    
-  }
+        DBUG_ASSERT ((ARRAY_TYPE (arg_node) != NULL),
+                     "whether 'types' or 'ntype' structure found");
+
+        ARRAY_NTYPE (arg_node) = TYOldType2Type (ARRAY_TYPE (arg_node));
+    }
 
 #ifdef MWE_NTYPE_READY
-  if ( (ARRAY_TYPE(arg_node) != NULL) && (compiler_phase > PH_typecheck) )
-    ARRAY_TYPE(arg_node) = FreeAllTypes(ARRAY_TYPE(arg_node));
+    if ((ARRAY_TYPE (arg_node) != NULL) && (compiler_phase > PH_typecheck))
+        ARRAY_TYPE (arg_node) = FreeAllTypes (ARRAY_TYPE (arg_node));
 #endif
-#endif
+
+    arg_node = TravSons (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -435,19 +441,22 @@ node *
 TNTcast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TNTcast");
-#if 0
-  if (CAST_NTYPE(arg_node) == NULL){
 
-    DBUG_ASSERT((CAST_TYPE(arg_node) != NULL),"whether 'types' or 'ntype' structure found");
+    if (CAST_NTYPE (arg_node) == NULL) {
 
-    CAST_NTYPE(arg_node) = TYOldType2Type( CAST_TYPE(arg_node));    
-  }
+        DBUG_ASSERT ((CAST_TYPE (arg_node) != NULL),
+                     "whether 'types' or 'ntype' structure found");
+
+        CAST_NTYPE (arg_node) = TYOldType2Type (CAST_TYPE (arg_node));
+    }
 
 #ifdef MWE_NTYPE_READY
-  if ( (CAST_TYPE(arg_node) != NULL) && (compiler_phase > PH_typecheck) )
-    CAST_TYPE(arg_node) = FreeAllTypes(CAST_TYPE(arg_node));
+    if ((CAST_TYPE (arg_node) != NULL) && (compiler_phase > PH_typecheck))
+        CAST_TYPE (arg_node) = FreeAllTypes (CAST_TYPE (arg_node));
 #endif
-#endif
+
+    arg_node = TravSons (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -465,22 +474,24 @@ TNTtypedef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TNTtypedef");
 
-#if 0
-  if (TYPEDEF_NTYPE(arg_node) == NULL){
+    if (TYPEDEF_NTYPE (arg_node) == NULL) {
 
-    DBUG_ASSERT((TYPEDEF_TYPE(arg_node) != NULL),"whether 'types' or 'ntype' structure found");
+        DBUG_ASSERT ((TYPEDEF_TYPE (arg_node) != NULL),
+                     "whether 'types' or 'ntype' structure found");
 
-    TYPEDEF_NTYPE(arg_node) = TYOldType2Type( TYPEDEF_TYPE(arg_node));    
-  }
+        TYPEDEF_NTYPE (arg_node) = TYOldType2Type (TYPEDEF_TYPE (arg_node));
+    }
 
 #ifdef MWE_NTYPE_READY
-  if ( (TYPEDEF_TYPE(arg_node) != NULL) && (compiler_phase > PH_typecheck) )
-    TYPEDEF_TYPE(arg_node) = FreeAllTypes(TYPEDEF_TYPE(arg_node));
+    if ((TYPEDEF_TYPE (arg_node) != NULL) && (compiler_phase > PH_typecheck))
+        TYPEDEF_TYPE (arg_node) = FreeAllTypes (TYPEDEF_TYPE (arg_node));
 #endif
 
-  if (TYPEDEF_NEXT(arg_node) != NULL)
-    TYPEDEF_NEXT(arg_node) = Trav(TYPEDEF_NEXT(arg_node), arg_info);
-#endif
+    if (TYPEDEF_NEXT (arg_node) != NULL)
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+
+    arg_node = TravSons (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
