@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1999/01/15 15:14:32  cg
+ * added tsi_tab for new compiler module tile size inference.
+ *
  * Revision 1.50  1999/01/07 14:02:33  sbs
  * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
  *
@@ -218,6 +221,7 @@ extern funptr o2nWith_tab[];
 extern funptr sched_tab[];
 extern funptr conc_tab[];
 extern funptr opt_tab[];
+extern funptr tsi_tab[];
 
 extern int nnode[];
 
