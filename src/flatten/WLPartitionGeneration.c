@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/06/30 12:20:07  khf
+ * WLPGfundef(): application of Constant Folding added
+ * (PH_wlpartgen)
+ *
  * Revision 1.5  2004/05/28 16:30:10  sbs
  * *** empty log message ***
  *
@@ -45,6 +49,7 @@
 #define INFO_WLPG_FUNDEF(n) (n->node[1])
 #define INFO_WLPG_LET(n) (n->node[2])
 #define INFO_WLPG_NASSIGNS(n) (n->node[3])
+#define INFO_WLPG_MODUL(n) (n->node[4])
 #define INFO_WLPG_GENPROP(n) (n->counter)
 #define INFO_WLPG_GENSHP(n) (n->int_data)
 
@@ -361,6 +366,7 @@ AppendPart2WL (node *wln, node *partn)
     }
 
     NPART_NEXT (parts) = partn;
+    no_parts++;
     NWITH_PARTS (wln) = no_parts;
 
     DBUG_RETURN (wln);
@@ -473,7 +479,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
 
         /* and modifiy array bounds to continue with next dimension */
         if (NODE_TYPE (EXPRS_EXPR (le)) == N_num) {
-            NUM_VAL (EXPRS_EXPR (lsce)) = lnum;
+            NUM_VAL (EXPRS_EXPR (lsce)) = NUM_VAL (EXPRS_EXPR (le));
         } else {
             EXPRS_EXPR (lsce) = FreeTree (EXPRS_EXPR (lsce));
             EXPRS_EXPR (lsce) = DupTree (EXPRS_EXPR (le));
@@ -485,7 +491,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
 
         if ((NODE_TYPE (EXPRS_EXPR (ue)) == N_num)
             && (NODE_TYPE (EXPRS_EXPR (usce)) == N_num)) {
-            NUM_VAL (EXPRS_EXPR (usce)) = unum;
+            NUM_VAL (EXPRS_EXPR (usce)) = NUM_VAL (EXPRS_EXPR (ue));
         } else {
             EXPRS_EXPR (usce) = FreeTree (EXPRS_EXPR (usce));
             EXPRS_EXPR (usce) = DupTree (EXPRS_EXPR (ue));
@@ -1256,6 +1262,8 @@ WLPGmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLPGmodul");
 
+    INFO_WLPG_MODUL (arg_info) = arg_node;
+
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
@@ -1267,8 +1275,9 @@ WLPGmodul (node *arg_node, node *arg_info)
  *
  * @fn node *WLPGfundef(node *arg_node, node *arg_info)
  *
- *   @brief resets INFO components WL and FUNDEF, and starts the traversal
- *          of the given fundef
+ *   @brief resets INFO components WL and FUNDEF, apply Constant Folding if
+ *          we are in phase PH_wlpartgen and starts the traversal of the given
+ *          fundef
  *
  *   @param  node *arg_node:  N_fundef
  *           node *arg_info:  N_info
@@ -1283,12 +1292,38 @@ WLPGfundef (node *arg_node, node *arg_info)
     INFO_WLPG_WL (arg_info) = NULL;
     INFO_WLPG_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node)) {
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
-    }
+    if (compiler_phase == PH_wlpartgen) {
+        /*
+         * to compute primitive function for constant expressions, especially
+         * for bounds, steps and widths of WL's generator.
+         */
+        if (optimize & OPT_CF) {
+            arg_node
+              = SSAConstantFolding (arg_node, INFO_WLPG_MODUL (arg_info)); /* ssacf_tab */
+        }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        if ((break_after == PH_wlpartgen) && (0 == strcmp (break_specifier, "cf"))) {
+            if (FUNDEF_NEXT (arg_node) != NULL) {
+                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            }
+        } else {
+            if (FUNDEF_BODY (arg_node)) {
+                FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+            }
+
+            if (FUNDEF_NEXT (arg_node) != NULL) {
+                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            }
+        }
+    } else {
+        /* compiler_phase == PH_sacopt */
+        if (FUNDEF_BODY (arg_node)) {
+            FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+        }
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1733,7 +1768,7 @@ WLPartitionGeneration (node *arg_node)
     arg_node = DoSSA (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
        during the call of DoSSA */
-    if ((break_after == PH_sacopt)
+    if ((break_after == PH_wlpartgen)
         && ((0 == strcmp (break_specifier, "l2f"))
             || (0 == strcmp (break_specifier, "cha"))
             || (0 == strcmp (break_specifier, "ssa")))) {
@@ -1754,7 +1789,7 @@ WLPartitionGeneration (node *arg_node)
     arg_node = UndoSSA (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
        during the call of UndoSSA */
-    if ((break_after == PH_sacopt)
+    if ((break_after == PH_wlpartgen)
         && ((0 == strcmp (break_specifier, "ussa"))
             || (0 == strcmp (break_specifier, "f2l")))) {
         goto DONE;
