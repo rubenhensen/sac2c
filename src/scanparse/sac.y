@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.139  1997/11/07 12:31:23  srs
+ * changed another nnode part
+ *
  * Revision 1.138  1997/11/04 11:25:18  srs
  * fixed little bug with NEWTREE
  *
@@ -1705,7 +1708,9 @@ assignblock: SEMIC
                    {
                       $$=$<node>2;
                       $$->node[0]=$3;
+#ifndef NEWTREE
                       $$->nnode=1;
+#endif
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s"P_FORMAT", %s"P_FORMAT,
