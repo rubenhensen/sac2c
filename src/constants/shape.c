@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/05/31 14:54:28  sbs
+ * *** empty log message ***
+ *
  * Revision 1.6  2001/05/22 14:59:08  nmw
  * OldTypes2Shape is now aware of user defined types
  *
@@ -369,7 +372,7 @@ SHShape2String (int dots, shape *shp)
     int i, j, n;
 
     DBUG_ENTER ("SHShape2String");
-    DBUG_ASSERT ((shp != NULL), ("SHSHape2String called with NULL shape!"));
+    DBUG_ASSERT ((shp != NULL), ("SHShape2String called with NULL shape!"));
 
     tmp += sprintf (tmp, "[");
     for (i = 0; i < dots; i++) {
