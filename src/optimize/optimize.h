@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1997/04/24 15:03:43  sbs
+ * Revision 1.44  1997/04/25 12:13:00  sbs
+ * MAlloc replaced by Malloc from internal.lib
+ *
+ * Revision 1.43  1997/04/24  15:03:43  sbs
  * HAVE_MALLOC_O inserted
  *
  * Revision 1.42  1996/08/09  16:42:52  asi
@@ -181,10 +184,10 @@ typedef struct STACK {
 stack *mrdl_stack;
 
 #define MAKE_MRDL_STACK                                                                  \
-    mrdl_stack = MAlloc (sizeof (stack));                                                \
+    mrdl_stack = Malloc (sizeof (stack));                                                \
     mrdl_stack->tos = -1;                                                                \
     mrdl_stack->st_len = MIN_STACK_SIZE;                                                 \
-    mrdl_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
+    mrdl_stack->stack = (stelm *)Malloc (sizeof (stelm) * MIN_STACK_SIZE);
 
 #define FREE_MRDL_STACK                                                                  \
     FREE (mrdl_stack->stack);                                                            \
@@ -259,7 +262,6 @@ extern int malloc_debug(int level);
 
 extern node *Optimize (node *arg_node);
 
-extern void *MAlloc (int size);
 extern char *PrintMask (long *mask, int varno);
 extern void PrintMasks (node *arg_node, node *arg_info);
 extern void SetMask (long *mask, long value, int varno);

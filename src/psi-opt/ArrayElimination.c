@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/07/16 15:26:40  asi
+ * Revision 1.5  1997/04/25 12:13:00  sbs
+ * MAlloc replaced by Malloc from internal.lib
+ *
+ * Revision 1.4  1996/07/16  15:26:40  asi
  * macros from access_macros.h no longer used
  *
  * Revision 1.3  1996/01/17  14:17:52  asi
@@ -164,7 +167,7 @@ GetNumber (node *vector)
     node *expr_node;
 
     DBUG_ENTER ("GetNumber");
-    number = (char *)MAlloc (sizeof (char) * ((minarray / 10) + 2));
+    number = (char *)Malloc (sizeof (char) * ((minarray / 10) + 2));
     number[0] = atoi ("\0");
     expr_node = vector->node[0];
     do {
@@ -197,7 +200,7 @@ GenIds (node *arg[2])
     DBUG_ENTER ("GenIds");
     number = GetNumber (arg[0]);
     old_name = ID_NAME (arg[1]);
-    new_name = (char *)MAlloc (sizeof (char) * (strlen (old_name) + strlen (number))
+    new_name = (char *)Malloc (sizeof (char) * (strlen (old_name) + strlen (number))
                                + AE_PREFIX_LENGTH);
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
     ids_node = MakeIds (new_name, NULL, ST_regular);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/01/17 14:44:57  asi
+ * Revision 1.9  1997/04/25 12:13:00  sbs
+ * MAlloc replaced by Malloc from internal.lib
+ *
+ * Revision 1.8  1996/01/17  14:44:57  asi
  * new dataflow-information 'most-recently-defined-Listen' MRD used,
  * new trav-function OPTTrav used and some functions uses new access-macros for
  * virtuell syntax-tree
@@ -541,7 +544,7 @@ UNRdo (node *arg_node, node *arg_info)
     if (N_id == NODE_TYPE (cond_node))
         MRD_GETLAST (ID_DEF (cond_node), ID_VARNO (cond_node), INFO_VARNO);
 
-    loop_info = (linfo *)MAlloc (sizeof (linfo));
+    loop_info = (linfo *)Malloc (sizeof (linfo));
     loop_info->loop_num = UNDEF;
     loop_info->ltype = N_do;
 
