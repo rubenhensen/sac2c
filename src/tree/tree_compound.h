@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/09/24 11:15:14  khf
+ * ID_NTYPE added
+ *
  * Revision 3.87  2004/09/20 08:42:44  ktr
  * added NWITHOP_MEM
  *
@@ -1836,6 +1839,7 @@ extern node *MakeVinfoDollar (node *next);
 
 #define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_VARDEC (n))
 #define ID_TYPE(n) VARDEC_OR_ARG_TYPE (ID_VARDEC (n))
+#define ID_NTYPE(n) AVIS_TYPE (ID_AVIS (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
 #define ID_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n)))
 #define ID_SHAPE(n, x) SHPSEG_SHAPE (ID_SHPSEG (n), x)
