@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.26  2000/07/11 15:42:51  jhs
+ * Changed usage of DFMDuplicateMask to DupDFMmask,
+ * DFM_BASE will be provided by lut now, not via special
+ * flag at arg_info.
+ *
  * Revision 1.25  2000/07/11 10:25:26  dkr
  * macro GEN_NODE replaced by MALLOC
  *
@@ -591,8 +596,12 @@ DupDFMmask (DFMmask_t mask, node *arg_info)
 
     DBUG_ENTER ("DupDFMmask");
 
-    new_mask = DFMDuplicateMask (mask, SearchInLUT (INFO_DUP_LUT (arg_info),
-                                                    DFMGetMaskBase (mask)));
+    if (mask != NULL) {
+        new_mask = DFMDuplicateMask (mask, SearchInLUT (INFO_DUP_LUT (arg_info),
+                                                        DFMGetMaskBase (mask)));
+    } else {
+        new_mask = NULL;
+    }
 
     DBUG_RETURN (new_mask);
 }
@@ -820,10 +829,8 @@ DupReturn (node *arg_node, node *arg_info)
 
     INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
-    RETURN_USEMASK (new_node)
-      = DFMDuplicateMask (RETURN_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
-    RETURN_DEFMASK (new_node)
-      = DFMDuplicateMask (RETURN_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+    RETURN_USEMASK (new_node) = DupDFMmask (RETURN_USEMASK (arg_node), arg_info);
+    RETURN_DEFMASK (new_node) = DupDFMmask (RETURN_DEFMASK (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -958,7 +965,6 @@ DupVardec (node *arg_node, node *arg_info)
     VARDEC_FLAG (new_node) = VARDEC_FLAG (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
 #if 0
-  VARDEC_TYPEDEF( new_node) = ???;
   VARDEC_ACTCHN( new_node) = ???;
   VARDEC_COLCHN( new_node) = ???;
 #endif
@@ -1024,10 +1030,8 @@ DupLet (node *arg_node, node *arg_info)
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
 
-    LET_USEMASK (new_node)
-      = DFMDuplicateMask (LET_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
-    LET_DEFMASK (new_node)
-      = DFMDuplicateMask (LET_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+    LET_USEMASK (new_node) = DupDFMmask (LET_USEMASK (arg_node), arg_info);
+    LET_DEFMASK (new_node) = DupDFMmask (LET_DEFMASK (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -1444,16 +1448,11 @@ DupSpmd (node *arg_node, node *arg_info)
      *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
      *  Further information: see DupFundef
      */
-    SPMD_IN (new_node)
-      = DFMDuplicateMask (SPMD_IN (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SPMD_INOUT (new_node)
-      = DFMDuplicateMask (SPMD_INOUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SPMD_OUT (new_node)
-      = DFMDuplicateMask (SPMD_OUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SPMD_LOCAL (new_node)
-      = DFMDuplicateMask (SPMD_LOCAL (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SPMD_SHARED (new_node)
-      = DFMDuplicateMask (SPMD_SHARED (arg_node), INFO_DUP_DFMBASE (arg_info));
+    SPMD_IN (new_node) = DupDFMmask (SPMD_IN (arg_node), arg_info);
+    SPMD_INOUT (new_node) = DupDFMmask (SPMD_INOUT (arg_node), arg_info);
+    SPMD_OUT (new_node) = DupDFMmask (SPMD_OUT (arg_node), arg_info);
+    SPMD_LOCAL (new_node) = DupDFMmask (SPMD_LOCAL (arg_node), arg_info);
+    SPMD_SHARED (new_node) = DupDFMmask (SPMD_SHARED (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -1477,16 +1476,11 @@ DupSync (node *arg_node, node *arg_info)
      *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
      *  Further information: see DupFundef
      */
-    SYNC_IN (new_node)
-      = DFMDuplicateMask (SYNC_IN (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SYNC_INOUT (new_node)
-      = DFMDuplicateMask (SYNC_INOUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SYNC_OUT (new_node)
-      = DFMDuplicateMask (SYNC_OUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SYNC_OUTREP (new_node)
-      = DFMDuplicateMask (SYNC_OUTREP (arg_node), INFO_DUP_DFMBASE (arg_info));
-    SYNC_LOCAL (new_node)
-      = DFMDuplicateMask (SYNC_LOCAL (arg_node), INFO_DUP_DFMBASE (arg_info));
+    SYNC_IN (new_node) = DupDFMmask (SYNC_IN (arg_node), arg_info);
+    SYNC_INOUT (new_node) = DupDFMmask (SYNC_INOUT (arg_node), arg_info);
+    SYNC_OUT (new_node) = DupDFMmask (SYNC_OUT (arg_node), arg_info);
+    SYNC_OUTREP (new_node) = DupDFMmask (SYNC_OUTREP (arg_node), arg_info);
+    SYNC_LOCAL (new_node) = DupDFMmask (SYNC_LOCAL (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -1531,14 +1525,10 @@ DupNwith (node *arg_node, node *arg_info)
      *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
      *  Further information: see DupFundef
      */
-    NWITH_IN (new_node)
-      = DFMDuplicateMask (NWITH_IN (arg_node), INFO_DUP_DFMBASE (arg_info));
-    NWITH_INOUT (new_node)
-      = DFMDuplicateMask (NWITH_INOUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    NWITH_OUT (new_node)
-      = DFMDuplicateMask (NWITH_OUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    NWITH_LOCAL (new_node)
-      = DFMDuplicateMask (NWITH_LOCAL (arg_node), INFO_DUP_DFMBASE (arg_info));
+    NWITH_IN (new_node) = DupDFMmask (NWITH_IN (arg_node), arg_info);
+    NWITH_INOUT (new_node) = DupDFMmask (NWITH_INOUT (arg_node), arg_info);
+    NWITH_OUT (new_node) = DupDFMmask (NWITH_OUT (arg_node), arg_info);
+    NWITH_LOCAL (new_node) = DupDFMmask (NWITH_LOCAL (arg_node), arg_info);
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
@@ -1707,14 +1697,10 @@ DupNwith2 (node *arg_node, node *arg_info)
      *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
      *  Further information: see DupFundef
      */
-    NWITH2_IN (new_node)
-      = DFMDuplicateMask (NWITH2_IN (arg_node), INFO_DUP_DFMBASE (arg_info));
-    NWITH2_INOUT (new_node)
-      = DFMDuplicateMask (NWITH2_INOUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    NWITH2_OUT (new_node)
-      = DFMDuplicateMask (NWITH2_OUT (arg_node), INFO_DUP_DFMBASE (arg_info));
-    NWITH2_LOCAL (new_node)
-      = DFMDuplicateMask (NWITH2_LOCAL (arg_node), INFO_DUP_DFMBASE (arg_info));
+    NWITH2_IN (new_node) = DupDFMmask (NWITH2_IN (arg_node), arg_info);
+    NWITH2_INOUT (new_node) = DupDFMmask (NWITH2_INOUT (arg_node), arg_info);
+    NWITH2_OUT (new_node) = DupDFMmask (NWITH2_OUT (arg_node), arg_info);
+    NWITH2_LOCAL (new_node) = DupDFMmask (NWITH2_LOCAL (arg_node), arg_info);
 
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
         NWITH2_SCHEDULING (new_node) = SCHCopyScheduling (NWITH2_SCHEDULING (arg_node));
@@ -1936,12 +1922,9 @@ DupMt (node *arg_node, node *arg_info)
     new_node = MakeMT (DUPTRAV (MT_REGION (arg_node)));
     MT_IDENTIFIER (new_node) = MT_IDENTIFIER (arg_node);
 
-    MT_USEMASK (new_node)
-      = DFMDuplicateMask (MT_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
-    MT_DEFMASK (new_node)
-      = DFMDuplicateMask (MT_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
-    MT_NEEDLATER (new_node)
-      = DFMDuplicateMask (MT_NEEDLATER (arg_node), INFO_DUP_DFMBASE (arg_info));
+    MT_USEMASK (new_node) = DupDFMmask (MT_USEMASK (arg_node), arg_info);
+    MT_DEFMASK (new_node) = DupDFMmask (MT_DEFMASK (arg_node), arg_info);
+    MT_NEEDLATER (new_node) = DupDFMmask (MT_NEEDLATER (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -1958,14 +1941,10 @@ DupSt (node *arg_node, node *arg_info)
     new_node = MakeST (DUPTRAV (ST_REGION (arg_node)));
     ST_IDENTIFIER (new_node) = ST_IDENTIFIER (arg_node);
 
-    ST_USEMASK (new_node)
-      = DFMDuplicateMask (ST_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
-    ST_DEFMASK (new_node)
-      = DFMDuplicateMask (ST_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
-    ST_NEEDLATER_ST (new_node)
-      = DFMDuplicateMask (ST_NEEDLATER_ST (arg_node), INFO_DUP_DFMBASE (arg_info));
-    ST_NEEDLATER_MT (new_node)
-      = DFMDuplicateMask (ST_NEEDLATER_MT (arg_node), INFO_DUP_DFMBASE (arg_info));
+    ST_USEMASK (new_node) = DupDFMmask (ST_USEMASK (arg_node), arg_info);
+    ST_DEFMASK (new_node) = DupDFMmask (ST_DEFMASK (arg_node), arg_info);
+    ST_NEEDLATER_ST (new_node) = DupDFMmask (ST_NEEDLATER_ST (arg_node), arg_info);
+    ST_NEEDLATER_MT (new_node) = DupDFMmask (ST_NEEDLATER_MT (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -1978,8 +1957,7 @@ DupMTsignal (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupMTsignal");
 
     new_node = MakeMTsignal ();
-    MTSIGNAL_IDSET (new_node)
-      = DFMDuplicateMask (MTSIGNAL_IDSET (arg_node), INFO_DUP_DFMBASE (arg_info));
+    MTSIGNAL_IDSET (new_node) = DupDFMmask (MTSIGNAL_IDSET (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -1995,15 +1973,13 @@ DupMTsync (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("DUP", ("hit0"));
 
-    MTSYNC_WAIT (new_node)
-      = DFMDuplicateMask (MTSYNC_WAIT (arg_node), INFO_DUP_DFMBASE (arg_info));
+    MTSYNC_WAIT (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
     DBUG_PRINT ("DUP", ("hit1"));
 
     MTSYNC_FOLD (new_node) = CopyDFMfoldmask (MTSYNC_FOLD (arg_node));
     DBUG_PRINT ("DUP", ("hit2"));
 
-    MTSYNC_ALLOC (new_node)
-      = DFMDuplicateMask (MTSYNC_WAIT (arg_node), INFO_DUP_DFMBASE (arg_info));
+    MTSYNC_ALLOC (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
     DBUG_PRINT ("DUP", ("hit3"));
 
     DBUG_RETURN (new_node);
@@ -2018,9 +1994,6 @@ DupMTalloc (node *arg_node, node *arg_info)
 
     new_node = MakeMTalloc ();
     MTALLOC_IDSET (new_node) = DupDFMmask (MTALLOC_IDSET (arg_node), arg_info);
-    /*
-        DFMDuplicateMask( MTALLOC_IDSET( arg_node), INFO_DUP_DFMBASE( arg_info));
-    */
 
     DBUG_RETURN (new_node);
 }
