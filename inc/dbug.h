@@ -113,7 +113,7 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
 #define DBUG_FILE (stderr)
 #define DBUG_SETJMP setjmp
 #define DBUG_LONGJMP longjmp
-#define DBUG_ASSERT(p, q)
+#define DBUG_ASSERT(p, q) (0)
 #define DBUG_LPRINT(key1, key2, arglist)
 #define DBUG_PRINTE(keyword, arglist)                                                    \
     {                                                                                    \
