@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/11/26 18:15:20  skt
+ * renamed prefix IDX into IVE
+ *
  * Revision 3.63  2004/11/26 12:13:57  sbs
  * compiles
  *
@@ -1495,14 +1498,14 @@ CreateVect2OffsetIcm (node *vardec, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXmodule(node *arg_node, info *arg_info)
+ * @fn node *IVEmodule(node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IDXmodule (node *arg_node, info *arg_info)
+IVEmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXmodule");
+    DBUG_ENTER ("IVEmodule");
 
     if (NULL != MODULE_FUNS (arg_node)) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -1513,14 +1516,14 @@ IDXmodule (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXfundef(node *arg_node, info *arg_info)
+ * @fn node *IVEfundef(node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IDXfundef (node *arg_node, info *arg_info)
+IVEfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXfundef");
+    DBUG_ENTER ("IVEfundef");
 
     INFO_IVE_FUNDEF (arg_info) = arg_node;
 
@@ -1566,7 +1569,7 @@ IDXfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXarg( node *arg_node, info *arg_info)
+ * @fn node *IVEarg( node *arg_node, info *arg_info)
  *
  * @brief  Depending on the existance of arg_info, 2 different things happen:
  *   Iff (arg_info != NULL) , backrefs to the actual fundef are inserted and
@@ -1577,12 +1580,12 @@ IDXfundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IDXarg (node *arg_node, info *arg_info)
+IVEarg (node *arg_node, info *arg_info)
 {
     node *newassign, *block, *vinfo;
     int dim;
 
-    DBUG_ENTER ("IDXarg");
+    DBUG_ENTER ("IVEarg");
 
     if (arg_info != NULL) {
         /* This is the first pass; insert backref to fundef
@@ -1635,7 +1638,7 @@ IDXarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXblock( node *arg_node, info *arg_info )
+ * @fn node *IVEblock( node *arg_node, info *arg_info )
  *
  * @brief Make sure that the vardecs are traversed BEFORE the body!
  *   NB: this is done to initialize all int[x] / int[.] vars by DOLLAR!
@@ -1647,9 +1650,9 @@ IDXarg (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IDXblock (node *arg_node, info *arg_info)
+IVEblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXblock");
+    DBUG_ENTER ("IVEblock");
 
     /*
      * First pass through the vardecs: all int[.] vars are initialized by $!
@@ -1675,7 +1678,7 @@ IDXblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXvardec( node *arg_node, info *arg_info )
+ * @fn node *IVEvardec( node *arg_node, info *arg_info )
  *
  * @brief
  *   if( arg_info != NULL)
@@ -1687,12 +1690,12 @@ IDXblock (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IDXvardec (node *arg_node, info *arg_info)
+IVEvardec (node *arg_node, info *arg_info)
 {
     int dim;
     node *next;
 
-    DBUG_ENTER ("IDXvardec");
+    DBUG_ENTER ("IVEvardec");
 
     if (arg_info != NULL) {
         /*
@@ -1756,14 +1759,14 @@ IDXvardec (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXassign( node *arg_node, info *arg_info )
+ * @fn node *IVEassign( node *arg_node, info *arg_info )
  *
  ******************************************************************************/
 
 node *
-IDXassign (node *arg_node, info *arg_info)
+IVEassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXassign");
+    DBUG_ENTER ("IVEassign");
 
     /* Bottom up traversal!! */
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -1784,7 +1787,7 @@ IDXassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXreturn(node *arg_node, info *arg_info)
+ * @fn node *IVEreturn(node *arg_node, info *arg_info)
  *
  * @brief initiates the uses-collection. In order to guarantee a "VECT" attribution
  *   for array-variables, INFO_IVE_TRANSFORM_VINFO( arg_info) has to be NULL,
@@ -1793,9 +1796,9 @@ IDXassign (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IDXreturn (node *arg_node, info *arg_info)
+IVEreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXreturn");
+    DBUG_ENTER ("IVEreturn");
 
     INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
     if (RETURN_EXPRS (arg_node) != NULL) {
@@ -1807,7 +1810,7 @@ IDXreturn (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXlet(node *arg_node, info *arg_info)
+ * @fn node *IVElet(node *arg_node, info *arg_info)
  *
  * @brief This is the central mechanism for steering the code transformation.
  *   It duplicates assignments - if required - and adds the transformation
@@ -1816,13 +1819,13 @@ IDXreturn (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IDXlet (node *arg_node, info *arg_info)
+IVElet (node *arg_node, info *arg_info)
 {
     node *vars;
     node *vardec, *vinfo, *act_let, *newassign = NULL;
     node *current_assign, *next_assign, *chain, *rest_chain;
 
-    DBUG_ENTER ("IDXlet");
+    DBUG_ENTER ("IVElet");
 
     /* *
      * First, we attach the collected uses-attributes( they are in the
@@ -1927,7 +1930,7 @@ IDXlet (node *arg_node, info *arg_info)
                 DBUG_ASSERT (((NODE_TYPE (act_let) == N_let)
                               && (NODE_TYPE (INFO_IVE_CURRENTASSIGN (arg_info))
                                   == N_assign)),
-                             "wrong let/assign node generated in IDXLet!");
+                             "wrong let/assign node generated in IVELet!");
                 if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
                     if (VINFO_FLAG (VINFO_NEXT (vinfo)) != DOLLAR) {
                         /* We have to transform the assignment AND there are more indices
@@ -2048,7 +2051,7 @@ IDXlet (node *arg_node, info *arg_info)
 
 /*
  *
- *  functionname  : IDXprf
+ *  functionname  : IVEprf
  *  arguments     :
  *  description   : case prf of:
  *                    sel   : SetIdx
@@ -2059,7 +2062,7 @@ IDXlet (node *arg_node, info *arg_info)
  */
 
 node *
-IDXprf (node *arg_node, info *arg_info)
+IVEprf (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *arg3, *vinfo;
 #ifdef MWE_NTYPE_READY
@@ -2067,7 +2070,7 @@ IDXprf (node *arg_node, info *arg_info)
 #else
     types *type1, *type2;
 #endif
-    DBUG_ENTER ("IDXprf");
+    DBUG_ENTER ("IVEprf");
 
     /*
      * INFO_IVE_MODE( arg_info) indicates whether this traversal infers
@@ -2328,7 +2331,7 @@ IDXprf (node *arg_node, info *arg_info)
 
 /*
  *
- *  functionname  : IDXid
+ *  functionname  : IVEid
  *  arguments     :
  *  description   : examines whether variable is a one-dimensional array;
  *                  if so, examine INFO_IVE_TRANSFORM_VINFO( arg_info):
@@ -2340,13 +2343,13 @@ IDXprf (node *arg_node, info *arg_info)
  */
 
 node *
-IDXid (node *arg_node, info *arg_info)
+IVEid (node *arg_node, info *arg_info)
 {
     shape *shp;
     node *vardec;
     char *newid;
 
-    DBUG_ENTER ("IDXid");
+    DBUG_ENTER ("IVEid");
 
     vardec = ID_DECL (arg_node);
     DBUG_ASSERT (((NODE_TYPE (vardec) == N_vardec) || (NODE_TYPE (vardec) == N_arg)),
@@ -2360,17 +2363,17 @@ IDXid (node *arg_node, info *arg_info)
             && (DIM_NO_OFFSET (VARDEC_DIM (vardec)) == 1)) {
 #endif
             if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
-                DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
+                DBUG_PRINT ("IVE", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
                 VARDEC_COLCHN (vardec) = SetVect (VARDEC_COLCHN (vardec));
             } else {
                 shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-                DBUG_PRINT ("IDX", ("assigning IDX to %s:", ID_NAME (arg_node)));
+                DBUG_PRINT ("IVE", ("assigning IDX to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetIdx (VARDEC_ACTCHN (vardec), shp);
                 VARDEC_COLCHN (vardec) = SetIdx (VARDEC_COLCHN (vardec), shp);
                 if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
                     newid = IdxChangeId (ID_NAME (arg_node), shp);
-                    DBUG_PRINT ("IDX",
+                    DBUG_PRINT ("IVE",
                                 ("renaming id %s into %s", ID_NAME (arg_node), newid));
                     ID_NAME (arg_node) = ILIBfree (ID_NAME (arg_node));
                     ID_NAME (arg_node) = newid;
@@ -2388,17 +2391,17 @@ IDXid (node *arg_node, info *arg_info)
         if ((ARG_BASETYPE (vardec) == T_int) && (DIM_NO_OFFSET (ARG_DIM (vardec)) == 1)) {
 #endif
             if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
-                DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
+                DBUG_PRINT ("IVE", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
                 ARG_COLCHN (vardec) = SetVect (ARG_COLCHN (vardec));
             } else {
                 shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-                DBUG_PRINT ("IDX", ("assigning IDX to %s:", ID_NAME (arg_node)));
+                DBUG_PRINT ("IVE", ("assigning IDX to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetIdx (ARG_ACTCHN (vardec), shp);
                 ARG_COLCHN (vardec) = SetIdx (ARG_COLCHN (vardec), shp);
                 if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
                     newid = IdxChangeId (ID_NAME (arg_node), shp);
-                    DBUG_PRINT ("IDX",
+                    DBUG_PRINT ("IVE",
                                 ("renaming id %s into %s", ID_NAME (arg_node), newid));
                     newid = ILIBfree (newid);
                     vardec = VardecIdx (vardec, shp);
@@ -2413,7 +2416,7 @@ IDXid (node *arg_node, info *arg_info)
 
 /*
  *
- *  functionname  : IDXarray
+ *  functionname  : IVEarray
  *  arguments     : 1) node*: N_array node
  *                  2) node*: INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo
  *                  R) node*: index of N_array in unrolling of shape
@@ -2432,14 +2435,14 @@ IDXid (node *arg_node, info *arg_info)
  */
 
 node *
-IDXarray (node *arg_node, info *arg_info)
+IVEarray (node *arg_node, info *arg_info)
 {
     shape *shp;
     node *idx;
     node *expr;
     int i;
 
-    DBUG_ENTER ("IDXarray");
+    DBUG_ENTER ("IVEarray");
 
     if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
         if (ARRAY_AELEMS (arg_node) != NULL) {
@@ -2478,7 +2481,7 @@ IDXarray (node *arg_node, info *arg_info)
 
 /*
  *
- *  functionname  : IDXnum
+ *  functionname  : IVEnum
  *  arguments     : 1) node*: N_num node
  *                  2) node*: INFO_IVE_TRANSFORM_VINFO( arg_info) = shape
  *                  R) node*: index of N_array in unrolling of shape
@@ -2489,17 +2492,17 @@ IDXarray (node *arg_node, info *arg_info)
  */
 
 node *
-IDXnum (node *arg_node, info *arg_info)
+IVEnum (node *arg_node, info *arg_info)
 {
     int val, i, len_iv, dim_array, sum;
     shape *shp;
 
-    DBUG_ENTER ("IDXnum");
+    DBUG_ENTER ("IVEnum");
 
     if ((INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
         && (INFO_IVE_MODE (arg_info) == M_uses_and_transform)) {
         DBUG_ASSERT ((NODE_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info)) == N_vinfo),
-                     "corrupted arg_info node in IDXnum!");
+                     "corrupted arg_info node in IVEnum!");
         shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
         val = NUM_VAL (arg_node);
         dim_array = SHgetDim (shp);
@@ -2520,14 +2523,14 @@ IDXnum (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXwith( node *arg_node, info *arg_info)
+ * @fn node *IVEwith( node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IDXwith (node *arg_node, info *arg_info)
+IVEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXwith");
+    DBUG_ENTER ("IVEwith");
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -2543,7 +2546,7 @@ IDXwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXpart( node *arg_node, info *arg_info)
+ * @fn node *IVEpart( node *arg_node, info *arg_info)
  *
  * @brief Here we make sure that all parts of the generator will be traversed
  *    correctly. Furthermore, we eliminate superfluous generator vars
@@ -2552,11 +2555,11 @@ IDXwith (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IDXpart (node *arg_node, info *arg_info)
+IVEpart (node *arg_node, info *arg_info)
 {
     node *decl, *mem_transform;
 
-    DBUG_ENTER ("IDXpart");
+    DBUG_ENTER ("IVEpart");
 
 #ifdef REFCOUNT_PROBLEM_SOLVED
     if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
@@ -2606,14 +2609,14 @@ IDXpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXcode( node *arg_node, info *arg_info)
+ * @fn node *IVEcode( node *arg_node, info *arg_info)
  *
  * @brief arg_info points to the previous N_let node!
  *
  ******************************************************************************/
 
 node *
-IDXcode (node *arg_node, info *arg_info)
+IVEcode (node *arg_node, info *arg_info)
 {
     node *with, *idx_decl, *vinfo, *col_vinfo, *new_assign, *let_node, *current_assign,
       *new_id, *array_id, *tmp_withop;
@@ -2626,7 +2629,7 @@ IDXcode (node *arg_node, info *arg_info)
     shape *arr_shape;
     bool use_genvar_offset;
 
-    DBUG_ENTER ("IDXcode");
+    DBUG_ENTER ("IVEcode");
 
     /*
      * we traverse the current code block
@@ -2635,7 +2638,7 @@ IDXcode (node *arg_node, info *arg_info)
     let_node = ASSIGN_INSTR (current_assign);
 
     /*
-     * this is an implicit return statement! (see IDXreturn())
+     * this is an implicit return statement! (see IVEreturn())
      */
     INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
 
@@ -2773,14 +2776,14 @@ IDXcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXcond( node *arg_node, info *arg_info)
+ * @fn node *IVEcond( node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IDXcond (node *arg_node, info *arg_info)
+IVEcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDXcond");
+    DBUG_ENTER ("IVEcond");
 
     /* Now, we duplicate the topmost chain of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
@@ -2802,16 +2805,16 @@ IDXcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IDXdo( node *arg_node, info *arg_info)
+ * @fn node *IVEdo( node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IDXdo (node *arg_node, info *arg_info)
+IVEdo (node *arg_node, info *arg_info)
 {
     int old_uses_mode;
 
-    DBUG_ENTER ("IDXdo");
+    DBUG_ENTER ("IVEdo");
 
     /* Now, we duplicate the topmost chain of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
