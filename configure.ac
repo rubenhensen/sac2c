@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.40  2004/11/29 09:35:11  sah
+dnl added better test for GNU indent
+dnl
 dnl Revision 1.39  2004/11/23 14:44:27  ktr
 dnl added compilation options for Mac OS X
 dnl
@@ -230,16 +233,24 @@ AC_PROG_GCC_TRADITIONAL
 
 dnl check whether its gnu indent
 AC_MSG_CHECKING([whether GNU indent works])
-GNUINDENT=$(indent --version)
+GNUINDENT=$(indent --version 2>/dev/null)
 case "$GNUINDENT" in
   *GNU*) 
     CB="indent"
     AC_MSG_RESULT(yes)
     ;;
   *) 
-    CB="\$(PROJECT_ROOT)/tools/bin/cb"
-    AC_MSG_RESULT(no)
-    ;;
+    GNUINDENT=$(gindent --version 2>/dev/null)
+    case "$GNUINDENT" in
+    *GNU*)
+      CB="gindent"
+      AC_MSG_RESULT(yes)
+      ;;
+    *)
+      CB="\$(PROJECT_ROOT)/tools/bin/cb"
+      AC_MSG_RESULT(no)
+      ;;
+    esac
 esac
 AC_SUBST(CB, $CB)
 
