@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/31 16:24:33  jhs
+ * improved
+ *
  * Revision 1.2  2000/03/30 15:07:24  jhs
  * Tried to build in removal of st-interior ...
  *
@@ -142,11 +145,14 @@ ADJCA2let (node *arg_node, node *arg_info)
         ap = LET_EXPR (arg_node);
 
         old_fundef = AP_FUNDEF (ap);
+        DBUG_PRINT ("ADJCA", ("old_fundef=%s", NODE_TEXT (old_fundef)));
 
         DBUG_ASSERT ((INFO_ADJCA_ATTRIB (arg_info) == ST_call_mt_worker),
                      "actual attrib wrong");
-        DBUG_PRINT ("ADJCA", ("%s", mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
-        DBUG_ASSERT ((FUNDEF_ATTRIB (arg_node) == ST_call_mt_master),
+        DBUG_PRINT ("ADJCA", ("%s status=%s attrib=%s", FUNDEF_NAME (old_fundef),
+                              mdb_statustype[FUNDEF_STATUS (old_fundef)],
+                              mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
+        DBUG_ASSERT ((FUNDEF_ATTRIB (old_fundef) == ST_call_mt_master),
                      "fundef attrib wrong");
 
         if (FUNDEF_ATTRIB (old_fundef) != INFO_ADJCA_ATTRIB (arg_info)) {

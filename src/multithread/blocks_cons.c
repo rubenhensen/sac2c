@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/03/31 16:24:45  jhs
+ * improved
+ *
  * Revision 1.5  2000/03/30 15:10:19  jhs
  * changed ST_call_mt to ST_call_mt_master
  *
@@ -209,7 +212,7 @@ BLKCOfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_ATTRIB (arg_node) == ST_call_mt_master)
         || (FUNDEF_ATTRIB (arg_node) == ST_call_st)) {
-        /* push current attribute, fetch actual attribute from fundtion */
+        /* push current attribute, fetch actual attribute from function */
         old_attrib = INFO_BLKCO_CURRENTATTRIB (arg_info);
         INFO_BLKCO_CURRENTATTRIB (arg_info) = FUNDEF_ATTRIB (arg_node);
 
