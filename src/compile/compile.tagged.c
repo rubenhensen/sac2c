@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  2003/03/14 11:41:24  dkr
+ * MakeIcmArgs_WL_LOOP1(): 3rd arg is tagged now
+ *
  * Revision 1.59  2003/03/13 19:12:01  dkr
  * GetShapeDim() used instead of GetShapeClassFromTypes()
  *
@@ -4726,7 +4729,7 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
       MakeNum (dim),
       MakeExprs (
         DupIds_Id_NT (NWITH2_VEC (wlnode)),
-        MakeExprs (DupIds_Id (GetIndexIds (NWITH2_IDS (wlnode), dim)),
+        MakeExprs (DupIds_Id_NT (GetIndexIds (NWITH2_IDS (wlnode), dim)),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLNODE_GET_ADDR (arg_node, BOUND1),
                                                    dim, wlids),
