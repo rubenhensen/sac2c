@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/09/22 11:59:46  dkr
+ * SAC_ND_PRF_CAT__DATA added
+ *
  * Revision 1.5  2003/09/19 15:24:26  dkr
  * CHECK macro added
  *
@@ -117,6 +120,10 @@ CHECK (SAC_IS_REUSED__BLOCK_ELSE ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))),
                                   (from_nt, (_SHP_, (_HID_, (_UNQ_, ))))))
 CHECK (SAC_IS_REUSED__BLOCK_END ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))),
                                  (from_nt, (_SHP_, (_HID_, (_UNQ_, ))))))
+
+CHECK (SAC_ND_PRF_CAT__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
+                             (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
+                             (from2_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1))
 
 CHECK (SAC_MT_SPMD_ARG_in (int, (nt, (_SHP_, (_HID_, (_UNQ_, ))))))
 CHECK (SAC_MT_SPMD_ARG_out (int, (nt, (_SHP_, (_HID_, (_UNQ_, ))))))
