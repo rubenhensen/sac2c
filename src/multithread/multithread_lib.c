@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/21 18:05:11  dkr
+ * INFO_DUP_... no longer used here
+ *
  * Revision 3.1  2000/11/20 18:03:12  sacbase
  * new release made
  *
@@ -179,13 +182,10 @@ MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
     DBUG_ENTER ("MUTHMeltBlocksOnCopies");
 
     arg_info = MakeInfo ();
-    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
-    INFO_DUP_ALL (arg_info) = TRUE;
     first_block = DupTree (first_block);
     arg_info = FreeTree (arg_info);
+
     arg_info = MakeInfo ();
-    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
-    INFO_DUP_ALL (arg_info) = TRUE;
     second_block = DupTree (second_block);
     arg_info = FreeTree (arg_info);
 
