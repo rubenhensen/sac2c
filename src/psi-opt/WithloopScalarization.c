@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2002/11/02 18:46:47  ktr
+ * Withloopification phase now handles arrays of arrays correctly.
+ *
  * Revision 1.22  2002/10/31 17:58:31  ktr
  * fixed a nasty bug about handling inner WLs with more than 2 parts.
  *
@@ -110,14 +113,30 @@
  *       neutral element.
  *
  *
- *   - Phase 2: Distribution
+ *   - Phase 2: Withloopification
+ *
+ *     Withloopification makes WLS more applicable in case of the inner
+ *     non-scalar not being a withloop.
+ *     If the inner non-scalar is an N_array-node then a withloop with a
+ *     part for each field in the Array is created, otherwise a copy-
+ *     withloop is inserted.
+ *
+ *
+ *   - Phase 3: Generator normalization
+ *
+ *     Since WLS cannot handle non-scalar ids in the boundaries of a part's
+ *     generator, these ids are transformed to N_array nodes containg
+ *     scalar values for each member of the previous vector.
+ *
+ *
+ *   - Phase 4: Distribution
  *
  *     In this step, we distribute the parts of the outer WL over
  *     all the parts of the inner WLs in order to get an outer WL which's
  *     parts contain a WL holding exactly ONE part each.
  *
  *
- *   - Phase 3: Scalarization
+ *   - Phase 4: Scalarization
  *
  *     After the structure has been simplified in phase 2, we can now
  *     start the main process of scalarization:
@@ -136,17 +155,20 @@
  *
  *  Usage of arg_info:
  *
- *  - flag:    POSSIBLE  : WL nesting is transformable.
+ *  - flag   : POSSIBLE  : WL nesting is transformable.
  *                         (Detected in phase PROBE)
- *  - linno:   PHASE     : Phase of the WithloopScalarization
- *                         (PROBE | DISTRIBUTE | SCALARIZE | CODE_CORRECT)
- *  - node[0]: FUNDEF    : pointer to current fundef node,
+ *  - linno  : PHASE     : Phase of the WithloopScalarization
+ *                         (PROBE | WITHLOOPIFICATION| NORMGEN |
+ *                          DISTRIBUTE | SCALARIZE)
+ *  - node[3]: FUNDEF    : pointer to current fundef node,
  *                         needed to access vardecs
  *  - counter: PARTS     : Number of parts of the new MG-Withloop
  *                         (calculated in phase DISTRIBUTE)
- *  - ids:     WITHVEC   : reference to the new MG-Withloop's withvec
+ *  - node[0]: WITHID    : reference to the outer WL's withid
  *  - node[1]: WITHOP    : reference to the outer WL's withop,
  *                         needed to check if both WL's types match
+ *  - varno  : DIMS      : used in PROBE to count the inner wls' indexscalars
+ *  - node[2]: BLOCK     : reference to the surrounding block of a wl
  *
  ****************************************************************************/
 
@@ -183,7 +205,6 @@ typedef enum {
     wls_normgen,
     wls_distribute,
     wls_scalarize,
-    wls_codecorrect
 } wls_phase_type;
 
 #define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
@@ -576,8 +597,8 @@ probePart (node *arg_node, node *arg_info)
                 || (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node)))
                &&
 
-               /* In non aggressive mode, all the inner WLs must iterate over the same
-                  dimensions */
+               /* In non aggressive mode, all the inner WLs must
+                  iterate over the same dimensions */
                ((wls_aggressive)
                 || (INFO_WLS_DIMS (arg_info)
                     == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
@@ -585,7 +606,8 @@ probePart (node *arg_node, node *arg_info)
 
         } else {
             INFO_WLS_POSSIBLE (arg_info) =
-              /* In non aggressive mode, assignment of CEXPR must not be inside the WL */
+              /* In non aggressive mode, assignment of CEXPR
+                 must not be inside the WL */
               (((wls_aggressive)
                 || (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
                                           BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
@@ -728,29 +750,37 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
     if (exprs != NULL) {
         expr = DupNode (EXPRS_EXPR (exprs));
 
-        assid = MakeId (TmpVar (), NULL, ST_regular);
+        if (NODE_TYPE (expr) == N_id) {
+            /* vardec = MakeVardec( StringCopy( ID_NAME(assid)),
+                                 DupOneTypes( ID_TYPE(expr)),
+                                 vardec); */
 
-        if (NODE_TYPE (expr) == N_id)
-            vardec = MakeVardec (StringCopy (ID_NAME (assid)),
-                                 DupOneTypes (ID_TYPE (expr)), vardec);
-        else
+            res = MakeNPart (withid,
+                             MakeNGenerator (Shpseg2Array (shppos, dim),
+                                             Shpseg2Array (UpperBound (shppos, dim), dim),
+                                             F_le, F_lt, NULL, NULL),
+                             MakeNCode (MakeBlock (MakeEmpty (), NULL), expr));
+        } else {
+            assid = MakeId (TmpVar (), NULL, ST_regular);
+
             vardec
               = MakeVardec (StringCopy (ID_NAME (assid)), MakeTypes1 (btype), vardec);
 
-        ID_VARDEC (assid) = vardec;
-        ID_AVIS (assid) = VARDEC_AVIS (vardec);
+            ID_VARDEC (assid) = vardec;
+            ID_AVIS (assid) = VARDEC_AVIS (vardec);
 
-        AddVardecs (fundef, vardec);
+            AddVardecs (fundef, vardec);
 
-        res
-          = MakeNPart (withid,
-                       MakeNGenerator (Shpseg2Array (shppos, dim),
-                                       Shpseg2Array (UpperBound (shppos, dim), dim), F_le,
-                                       F_lt, NULL, NULL),
-                       MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (assid)),
-                                                            vardec, expr),
-                                             NULL),
-                                  DupNode (assid)));
+            res = MakeNPart (withid,
+                             MakeNGenerator (Shpseg2Array (shppos, dim),
+                                             Shpseg2Array (UpperBound (shppos, dim), dim),
+                                             F_le, F_lt, NULL, NULL),
+                             MakeNCode (MakeBlock (MakeAssignLet (StringCopy (
+                                                                    ID_NAME (assid)),
+                                                                  vardec, expr),
+                                                   NULL),
+                                        DupNode (assid)));
+        }
 
         shppos = IncreaseShpseg (shppos, shpmax, dim);
         next = CreateExprsPart (EXPRS_NEXT (exprs), partcount, withid, shppos, shpmax,
@@ -927,8 +957,9 @@ withloopifyPart (node *arg_node, node *arg_info)
                                    BLOCK_INSTR (NPART_CBLOCK (arg_node))))
           && (compatWLTypes (INFO_WLS_WITHOP (arg_info),
                              NWITH_WITHOP (NPART_LETEXPR (arg_node)))))) {
-        /* if it is an array or a reshape command for an array, the array is converted
-           to a withloop. Otherwise a copy withloop is inserted. */
+        /* if it is an array or a reshape command for an array,
+           the array is converted to a withloop.
+           Otherwise a copy withloop is inserted. */
         if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
             || ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_prf)
                 && (PRF_PRF (NPART_LETEXPR (arg_node)) == F_reshape)
@@ -938,6 +969,12 @@ withloopifyPart (node *arg_node, node *arg_info)
             arg_node = Array2Withloop (arg_node, arg_info);
         else
             arg_node = InsertCopyWithloop (arg_node, arg_info);
+
+        /* Now we need to apply the WLS to the newly created withloops */
+        /* traverse all CODES */
+        if (NPART_CODE (arg_node) != NULL) {
+            NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1445,7 +1482,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
  *
  * description:
  *   The heart of the WithloopScalarization.
- *   This function takes a part of MG-withloop that contains exactly one withloop
+ *   This function takes a part of MG-withloop that contains one withloop
  *   with one part and applies the above join-functions to create a single part
  *   that iterates over both old parts' dimensions.
  *
@@ -1781,15 +1818,6 @@ WLSNpart (node *arg_node, node *arg_info)
         if (NPART_NEXT (arg_node) != NULL) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
         }
-        break;
-
-    case wls_codecorrect:
-        if (NPART_NEXT (arg_node) != NULL) {
-            NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (NPART_NEXT (arg_node));
-
-            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
-        } else
-            NCODE_NEXT (NPART_CODE (arg_node)) = NULL;
         break;
     }
     DBUG_RETURN (arg_node);
