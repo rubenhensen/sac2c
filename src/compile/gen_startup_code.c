@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/06 13:36:09  cg
+ * added startup code for cache simulation
+ *
  * Revision 2.1  1999/02/23 12:42:32  sacbase
  * new release made
  *
@@ -354,28 +357,53 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
-    fprintf (outfile, "#endif\n");
+    fprintf (outfile, "#endif\n\n");
 
     fprintf (outfile, "#ifndef SAC_SET_THREADS\n");
     fprintf (outfile, "#define SAC_SET_THREADS           %d\n", num_threads);
-    fprintf (outfile, "#endif\n");
+    fprintf (outfile, "#endif\n\n");
 
     fprintf (outfile, "#ifndef SAC_SET_MASTERCLASS\n");
     fprintf (outfile, "#define SAC_SET_MASTERCLASS       %d\n",
              GSCCalcMasterclass (num_threads));
-    fprintf (outfile, "#endif\n");
+    fprintf (outfile, "#endif\n\n");
 
-    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
+    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", max_sync_fold);
+
+    switch (cachesim) {
+    case NO_CACHESIM:
+        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_NONE\n\n");
+        break;
+    case CACHESIM_FILE:
+        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_FILE\n\n");
+        break;
+    case CACHESIM_SIMPLE:
+        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_SIMPLE\n\n");
+        break;
+    case CACHESIM_ADVANCED:
+        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_ADVANCED\n\n");
+        break;
+    default:
+        DBUG_ASSERT (0, "Illegal value for global variable cachesim");
+    }
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n", config.cache1_line);
     fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC     %d\n", config.cache1_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_WRITEPOL  SAC_CS_%s\n\n",
+             config.cache1_writepol);
+
     fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE      %d\n", config.cache2_size);
     fprintf (outfile, "#define SAC_SET_CACHE_2_LINE      %d\n", config.cache2_line);
     fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC     %d\n", config.cache2_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_WRITEPOL  SAC_CS_%s\n\n",
+             config.cache2_writepol);
+
     fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE      %d\n", config.cache3_size);
     fprintf (outfile, "#define SAC_SET_CACHE_3_LINE      %d\n", config.cache3_line);
     fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC     %d\n", config.cache3_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL  SAC_CS_%s\n\n",
+             config.cache3_writepol);
 
     fprintf (outfile, "#define SAC_SET_MAXFUN            %d\n", PFfuncntr);
     fprintf (outfile, "#define SAC_SET_MAXFUNAP          %d\n", PFfunapmax);
@@ -639,6 +667,7 @@ GSCPrintMainBegin ()
 
     fprintf (outfile, "  SAC_PF_SETUP();\n");
     fprintf (outfile, "  SAC_MT_SETUP();\n");
+    fprintf (outfile, "  SAC_CS_SETUP();\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -664,7 +693,8 @@ GSCPrintMainEnd ()
     /*
      * outfile is already indented by 2
      */
-    fprintf (outfile, "SAC_PF_PRINT();\n");
+    fprintf (outfile, "\n  SAC_PF_PRINT();\n");
+    fprintf (outfile, "  SAC_CS_PRINT();\n\n");
 
     DBUG_VOID_RETURN;
 }
