@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2002/10/28 14:04:58  sbs
+ * NTCcast added
+ *
  * Revision 3.108  2002/10/23 06:36:23  sbs
  * NT2OTwithid added
  *
@@ -1655,7 +1658,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, NTCcast, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
