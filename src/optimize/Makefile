@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.51  1998/06/17 14:47:39  sbs
+# further includes added 8-)
+#
 # Revision 1.50  1998/05/21 09:51:57  dkr
 # make deps done
 #
@@ -157,7 +160,8 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__ -DNEWTREE
 
 
-INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
+INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
+     -I../compile -I../concurrent
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
