@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.24  2005/02/16 14:10:19  mwe
+ * some renaming done
+ *
  * Revision 1.23  2005/02/14 15:51:48  mwe
  * bug fixed
  *
@@ -569,7 +572,7 @@ TryStaticDispatch (node *fundef, node *args)
     char *funname;
     DBUG_ENTER ("TryStaticDispatch");
 
-    if ((FUNDEF_ISWRAPPERFUN (fundef)) && (NULL != args) && (global.optimize.dofdp)) {
+    if ((FUNDEF_ISWRAPPERFUN (fundef)) && (NULL != args) && (global.optimize.dosfd)) {
 
         /*
          * current fundef belongs to wrapper function

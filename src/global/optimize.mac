@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/02/16 14:10:19  mwe
+ * some renaming done
+ *
  * Revision 1.10  2005/02/15 14:52:22  mwe
  * esd_rec und esd_neg
  * added
@@ -95,12 +98,12 @@ OPTIMIZE ("al", al, FALSE, FALSE, "associative law")
 OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
-OPTIMIZE ("tup", tup, FALSE, FALSE, "type upgrade")
-OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
-OPTIMIZE ("rtup", rtup, FALSE, FALSE, "reverse type upgrade")
-OPTIMIZE ("fdp", fdp, FALSE, FALSE, "function dispatch")
-OPTIMIZE ("fsp", fsp, FALSE, FALSE, "function specilization")
-OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
+OPTIMIZE ("tup", tup, TRUE, FALSE, "type upgrade")
+OPTIMIZE ("sisi", sisi, TRUE, FALSE, "signature simplification")
+OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
+OPTIMIZE ("sfd", sfd, TRUE, FALSE, "static function dispatch")
+OPTIMIZE ("fsp", fsp, TRUE, FALSE, "function specilization")
+OPTIMIZE ("esd", esd, TRUE, FALSE, "eliminate substraction and division")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
