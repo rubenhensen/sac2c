@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/24 16:09:52  nmw
+ * SingleFundef calls renamed to OneFunction calls
+ *
  * Revision 3.19  2001/04/20 11:17:29  nmw
  * SSALoopUnrolling added to OPTfundef cycle
  *
@@ -812,8 +815,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
         if (optimize & OPT_DCR) {
             if (use_ssaform) {
-                arg_node = CheckAvisSingleFundef (arg_node);
-                arg_node = SSATransformSingleFundef (arg_node);
+                arg_node = CheckAvisOneFunction (arg_node);
+                arg_node = SSATransformOneFunction (arg_node);
                 arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
             } else {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
@@ -848,8 +851,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_CSE) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisSingleFundef (arg_node);
-                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = CSE (arg_node, arg_info);
@@ -864,8 +867,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_CF) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisSingleFundef (arg_node);
-                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
@@ -924,8 +927,8 @@ OPTfundef (node *arg_node, node *arg_info)
                  */
                 if (optimize & OPT_CF) {
                     if (use_ssaform) {
-                        arg_node = CheckAvisSingleFundef (arg_node);
-                        arg_node = SSATransformSingleFundef (arg_node);
+                        arg_node = CheckAvisOneFunction (arg_node);
+                        arg_node = SSATransformOneFunction (arg_node);
                         arg_node
                           = SSAConstantFolding (arg_node, INFO_OPT_MODUL (
                                                             arg_info)); /* ssacf_tab */
@@ -943,8 +946,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_DCR) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisSingleFundef (arg_node);
-                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = DeadCodeRemoval (arg_node, arg_info);
@@ -959,8 +962,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisSingleFundef (arg_node);
-                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
 
                     /* apply a normal unrolling, too, to get WLUR */
@@ -986,8 +989,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_LIR) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisSingleFundef (arg_node);
-                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node
                       = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
@@ -1004,8 +1007,8 @@ OPTfundef (node *arg_node, node *arg_info)
             /* restore ssa-from for usage in next cycle */
             if (use_ssaform) {
                 DBUG_PRINT ("SSA", ("restoring SSA form:"));
-                arg_node = CheckAvisSingleFundef (arg_node);
-                arg_node = SSATransformSingleFundef (arg_node);
+                arg_node = CheckAvisOneFunction (arg_node);
+                arg_node = SSATransformOneFunction (arg_node);
                 if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                     && (0 == strcmp (break_specifier, "ssa"))) {
                     goto INFO;
@@ -1041,8 +1044,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_CF) {
                 if (use_ssaform) {
-                    arg_node = CheckAvisSingleFundef (arg_node);
-                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = CheckAvisOneFunction (arg_node);
+                    arg_node = SSATransformOneFunction (arg_node);
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
@@ -1078,8 +1081,8 @@ OPTfundef (node *arg_node, node *arg_info)
          */
         if (optimize & OPT_DCR) {
             if (use_ssaform) {
-                arg_node = CheckAvisSingleFundef (arg_node);
-                arg_node = SSATransformSingleFundef (arg_node);
+                arg_node = CheckAvisOneFunction (arg_node);
+                arg_node = SSATransformOneFunction (arg_node);
                 arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
             } else {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
