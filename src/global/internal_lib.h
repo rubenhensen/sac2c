@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/01/25 13:39:26  dkr
+ * all the constvec stuff moved to tree_compound.h
+ *
  * Revision 2.8  1999/07/20 11:48:29  cg
  * Definition (!) of global variable malloc_align_step removed;
  * malloc_align_step is now defined in globals.c.
@@ -15,7 +18,6 @@
  * Revision 2.5  1999/05/12 08:41:11  sbs
  * CopyIntVector and friends eliminated ; instead,
  * CopyConstVec, AllocConstVec, and ModConstVec have been added.
- * /.
  *
  * Revision 2.4  1999/04/19 09:56:42  jhs
  * TRUE and FALSE added
@@ -89,26 +91,32 @@
 
 #include "types.h"
 
+/*********************************
+ * function prototypes
+ *********************************/
+
 extern void *Malloc (int size);
 extern char *StringCopy (char *source);
 
-extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
-extern void *AllocConstVec (simpletype vectype, int veclen);
-extern void *ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node);
-extern node *AnnotateIdWithConstVec (node *expr, node *id);
-
 extern int lcm (int x, int y);
 extern char *itoa (long number);
+
 extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
+
 extern char *TmpVar ();
 extern char *TmpVarName (char *postfix);
+
 extern int OptCmp (char *first, char *second);
 
 #ifdef SHOW_MALLOC
 extern void ComputeMallocAlignStep (void);
 #endif
+
+/*********************************
+ * macro definitions
+ *********************************/
 
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
@@ -135,7 +143,6 @@ extern void ComputeMallocAlignStep (void);
             my_dbug_active = 1;                                                          \
         }                                                                                \
     }
-
 #define CHECK_DBUG_STOP                                                                  \
     {                                                                                    \
         if ((my_dbug) && (my_dbug_active) && (compiler_phase <= my_dbug_to)) {           \
