@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2003/03/13 17:10:03  dkr
+ * fixed a bug in GetHiddenClassFromTypes()
+ * handling of -minarrayrep flag corrected
+ *
  * Revision 1.8  2003/03/13 15:49:09  dkr
  * handling of -minarrayrep option added
  *
@@ -62,7 +66,12 @@ GetShapeClassFromTypes (types *type)
     } else {
         int dim = GetShapeDim (type);
 
-        if ((dim == SCALAR) && (min_array_rep <= MIN_ARRAY_REP_SCL_AUD)) {
+        if ((dim == SCALAR)
+            && ((min_array_rep <= MIN_ARRAY_REP_SCL_AUD) || IsHidden (type))) {
+            /*
+             * C_scl can not be deactivated for hidden objects in order to prevent
+             * inconsistency with the implementation of the hidden type.
+             */
             z = C_scl;
         } else if (KNOWN_SHAPE (dim) && (min_array_rep <= MIN_ARRAY_REP_SCL_AKS)) {
             z = C_aks;
@@ -103,9 +112,9 @@ GetHiddenClassFromTypes (types *type)
         DBUG_ASSERT ((0), "illegal data class found!");
         z = C_unknownh;
     } else if (IsHidden (type)) {
-        z = C_unq;
+        z = C_hid;
     } else {
-        z = C_nuq;
+        z = C_nhd;
     }
 
     DBUG_RETURN (z);
