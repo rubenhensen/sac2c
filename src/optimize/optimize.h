@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/05/13 13:44:32  srs
+ * renamed unr_expr to lunr_expr and inserted wlunr_expr
+ *
  * Revision 1.62  1998/05/12 15:11:41  srs
  * added ae_tab to MRD_TAB
  *
@@ -215,7 +218,8 @@ extern int dead_fun;
 extern int cf_expr;
 extern int lir_expr;
 extern int inl_fun;
-extern int unr_expr;
+extern int lunr_expr;
+extern int wlunr_expr;
 extern int uns_expr;
 extern int optvar_counter;
 extern int elim_arrays;
