@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2002/08/14 13:34:36  sbs
+ * bug in modarray shorthand (better 8-) fixed...
+ *
  * Revision 3.56  2002/08/14 12:55:01  sbs
  * error in modarray shorthand eliminated.
  *
@@ -1051,16 +1054,21 @@ letassign: ids LET { $<cint>$ = linenum; } expr
          | id SQBR_L exprs SQBR_R LET { $<cint>$ = linenum; } expr
              { if( CountExprs( $3) > 1) {
                  $3 = MakeArray( $3);
+               } else {
+                 node * tmp;
+
+                 tmp = $3;
+                 $3 = EXPRS_EXPR( $3);
+                 EXPRS_EXPR( tmp) = NULL;
+                 tmp = FreeNode( tmp);
                }
                $$ = MakeLet( MakePrf( F_modarray,
                                MakeExprs( MakeId( $1, NULL, ST_regular) ,
-                                 MakeExprs( EXPRS_EXPR( $3),
+                                 MakeExprs( $3,
                                    MakeExprs( $7,
                                      NULL)))),
                              MakeIds( StringCopy( $1), NULL, ST_regular));
                NODE_LINE( $$) = $<cint>5;
-               EXPRS_EXPR( $3) = NULL;
-               $3 = FreeNode( $3);
              }
          | expr_ap { $$ = MakeLet( $1, NULL); }
          | id INC { $$ = MAKE_INCDEC_LET( $1, F_add); }
