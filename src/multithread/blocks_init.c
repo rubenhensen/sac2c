@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2000/07/13 09:34:46  jhs
+ * Changed InsertXX to MUTHInsertXX.
+ * Added multithread_lib.h inclusion.
+ *
  * Revision 1.18  2000/07/13 08:23:13  jhs
  * Moved DupMask_ InsertBlock, InsertMT and InsertST to multithread_lib.c.
  *
@@ -85,6 +89,7 @@
 #include "generatemasks.h"
 #include "globals.h"
 #include "my_debug.h"
+#include "multithread_lib.h"
 
 #include "internal_lib.h"
 
