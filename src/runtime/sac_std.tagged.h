@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/09/29 23:46:27  dkr
+ * SAC_IS_REUSED__BLOCK_BEGIN__SCL corrected
+ *
  * Revision 3.48  2003/09/29 22:52:18  dkr
  * some icms removed/renamed/added.
  * some comments corrected
@@ -1651,7 +1654,7 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_IS_LASTREF__BLOCK_END(var_NT) }
 
 #define SAC_IS_REUSED__BLOCK_BEGIN(to_NT, from_NT)                                       \
-    if (SAC_ND_A_FIELD (to_NT) == SAC_ND_A_FIELD (from_NT)) {
+    CAT17 (SAC_IS_REUSED__BLOCK_BEGIN__, NT_SHP (to_NT) BuildArgs2 (to_NT, from_NT))
 #define SAC_IS_REUSED__BLOCK_ELSE(to_NT, from_NT)                                        \
     }                                                                                    \
     else                                                                                 \
@@ -1680,12 +1683,17 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ(var_NT) if (1) {
 #define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_HID_NUQ(var_NT) if (SAC_ND_A_RC (var_NT) == 1) {
 
+#define SAC_IS_REUSED__BLOCK_BEGIN__SCL(to_NT, from_NT) if (0) {
+
 /*
  * AKS, NUQ
  */
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ(var_NT)                                     \
     SAC_IS_LASTREF__BLOCK_BEGIN__SCL_HID_NUQ (var_NT)
+
+#define SAC_IS_REUSED__BLOCK_BEGIN__AKS(to_NT, from_NT)                                  \
+    if (SAC_ND_A_FIELD (to_NT) == SAC_ND_A_FIELD (from_NT)) {
 
 /*
  * AKD, NUQ
@@ -1694,12 +1702,18 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_IS_LASTREF__BLOCK_BEGIN__AKD_NUQ(var_NT)                                     \
     SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ (var_NT)
 
+#define SAC_IS_REUSED__BLOCK_BEGIN__AKD(to_NT, from_NT)                                  \
+    SAC_IS_REUSED__BLOCK_BEGIN__AKS (to_NT, from_NT)
+
 /*
  * AUD, NUQ
  */
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN__AUD_NUQ(var_NT)                                     \
     SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ (var_NT)
+
+#define SAC_IS_REUSED__BLOCK_BEGIN__AUD(to_NT, from_NT)                                  \
+    SAC_IS_REUSED__BLOCK_BEGIN__AKS (to_NT, from_NT)
 
 /******************************************************************************
  *
