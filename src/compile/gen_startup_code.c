@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/01/17 16:25:58  cg
+ * Added new options to control initial heap sizes separately
+ * for master's arena of arenas, workers' arena of arenas and the
+ * top arena.
+ *
  * Revision 2.13  1999/07/21 16:29:37  jhs
  * needed_sync_fold introduced, max_sync_fold_adjusted.
  *
@@ -286,6 +291,10 @@ PrintGlobalSwitches ()
     fprintf (outfile, "#define SAC_DO_THREADS_STATIC  %d\n", (num_threads == 0) ? 0 : 1);
     fprintf (outfile, "\n");
 
+    fprintf (outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
+             ((filetype == F_modimp) || (filetype == F_classimp)) ? 1 : 0);
+    fprintf (outfile, "\n");
+
     DBUG_VOID_RETURN;
 }
 
@@ -416,7 +425,12 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "#define NULL                      (void*) 0\n\n");
 
-    fprintf (outfile, "#define SAC_SET_INITIAL_HEAPSIZE  %d\n\n", initial_heapsize);
+    fprintf (outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE   %d\n",
+             initial_master_heapsize * 1024);
+    fprintf (outfile, "#define SAC_SET_INITIAL_WORKER_HEAPSIZE   %d\n",
+             initial_worker_heapsize * 1024);
+    fprintf (outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE  %d\n\n",
+             initial_unified_heapsize * 1024);
 
     fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
@@ -537,6 +551,7 @@ PrintDefines ()
 
     fprintf (outfile, "SAC_MT_DEFINE()\n");
     fprintf (outfile, "SAC_PF_DEFINE()\n");
+    fprintf (outfile, "SAC_HM_DEFINE()\n");
 
     DBUG_VOID_RETURN;
 }
@@ -737,8 +752,9 @@ GSCPrintMainBegin ()
 {
     DBUG_ENTER ("GSCPrintMainBegin");
 
-    fprintf (outfile, "  SAC_HM_SETUP();\n");
+    fprintf (outfile, "  SAC_MT_SETUP_INITIAL();\n");
     fprintf (outfile, "  SAC_PF_SETUP();\n");
+    fprintf (outfile, "  SAC_HM_SETUP();\n");
     fprintf (outfile, "  SAC_MT_SETUP();\n");
     fprintf (outfile, "  SAC_CS_SETUP();\n\n");
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/01/17 16:25:58  cg
+ * Added new options to control initial heap sizes separately
+ * for master's arena of arenas, workers' arena of arenas and the
+ * top arena.
+ *
  * Revision 2.23  1999/11/30 20:33:12  dkr
  * flag -wlconv added for activation of Old2NewWith()
  *
@@ -316,7 +321,9 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_FLAG ("help", usage (); exit (0));
     ARGS_FLAG ("h", usage (); exit (0));
 
-    ARGS_OPTION ("initheap", ARG_NUM (initial_heapsize));
+    ARGS_OPTION ("initmheap", ARG_NUM (initial_master_heapsize));
+    ARGS_OPTION ("initwheap", ARG_NUM (initial_worker_heapsize));
+    ARGS_OPTION ("inituheap", ARG_NUM (initial_unified_heapsize));
 
     ARGS_OPTION ("intrinsic", {
         ARG_FLAGMASK_BEGIN ();
@@ -585,12 +592,14 @@ CheckOptionConsistency ()
                        "program execution"));
         }
 
+        /*
         if (optimize & OPT_PHM) {
-            SYSWARN (("Private heap management is not (yet) available for "
-                      "multi-threaded program execution.\n"
-                      "Conventional heap management is used instead"));
-            optimize &= ~OPT_PHM;
+          SYSWARN(("Private heap management is not (yet) available for "
+                   "multi-threaded program execution.\n"
+                   "Conventional heap management is used instead"));
+          optimize &= ~OPT_PHM;
         }
+        */
     }
 
     if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {

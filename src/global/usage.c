@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/01/17 16:25:58  cg
+ * Added new options to control initial heap sizes separately
+ * for master's arena of arenas, workers' arena of arenas and the
+ * top arena.
+ *
  * Revision 2.16  1999/11/09 21:50:23  dkr
  * *** empty log message ***
  *
@@ -422,10 +427,18 @@ usage ()
             "\t\t\t\t<no> times be specialized.\n"
             "\t\t\t\t  Default: -maxspecialize %d\n",
             max_overload);
-    printf ("\t -initheap <size>\tat program startup initially request <size> MB\n"
-            "\t\t\t\tof heap memory from operating system.\n"
-            "\t\t\t\t  Default: -heapsize %d\n",
-            initial_heapsize);
+    printf ("\t -initmheap <size>\tat program startup initially request <size> KB\n"
+            "\t\t\t\tof heap memory for usage by the master thread.\n"
+            "\t\t\t\t  Default: -initmheap %d\n",
+            initial_master_heapsize);
+    printf ("\t -initwheap <size>\tat program startup initially request <size> KB\n"
+            "\t\t\t\tof heap memory for usage by each worker thread.\n"
+            "\t\t\t\t  Default: -initwheap %d\n",
+            initial_worker_heapsize);
+    printf ("\t -inituheap <size>\tat program startup initially request <size> KB\n"
+            "\t\t\t\tof heap memory for usage by all threads (unified heap).\n"
+            "\t\t\t\t  Default: -inituheap %d\n",
+            initial_unified_heapsize);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
