@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1997/11/23 14:24:31  dkr
+ * FreeFundef():
+ * FUNDEF_ICM, FUNDEF_RETURN are stored in the same real son.
+ * Because of that the test (NODE_TYPE(FUNDEF_ICM(.)) == N_icm) must happen before ...
+ * ... FREETRAV(FUNDEF_BODY(.)) !!!
+ *
  * Revision 1.27  1997/11/18 18:03:59  srs
  * changed new WL-functions
  *
@@ -686,18 +692,19 @@ FreeFundef (node *arg_node, node *arg_info)
 
     tmp = FREECONT (FUNDEF_NEXT (arg_node));
 
+    if (FUNDEF_ICM (arg_node) != NULL)
+        if (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm) {
+            FREETRAV (FUNDEF_ICM (arg_node));
+
+            /*
+             *  FUNDEF_ICM may not be freed without precondition, because it's
+             *  stored on the same real son node as FUNDEF_RETURN.
+             */
+        }
+
     FREETRAV (FUNDEF_BODY (arg_node));
     FREETRAV (FUNDEF_ARGS (arg_node));
     FREETRAV (FUNDEF_PRAGMA (arg_node));
-
-    if ((FUNDEF_ICM (arg_node) != NULL) && (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm)) {
-        FREETRAV (FUNDEF_ICM (arg_node));
-
-        /*
-         *  FUNDEF_ICM may not be freed without precondition, because it's
-         *  stored on the same real son node as FUNDEF_RETURN.
-         */
-    }
 
     FREE (FUNDEF_NAME (arg_node));
     FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
