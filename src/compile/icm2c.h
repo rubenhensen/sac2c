@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/06/26 16:55:57  sbs
+ * Revision 1.23  1995/06/30 12:19:57  hw
+ * macros  ND_F2I_A & ND_I2F_A inserted
+ *
+ * Revision 1.22  1995/06/26  16:55:57  sbs
  * ND_KS_USE_GENVAR_OFFSET inserted
  *
  * Revision 1.21  1995/06/26  12:02:30  hw
@@ -359,6 +362,19 @@
  * =============================
  */
 #define ND_TYPEDEF_ARRAY(type1, type2) typedef type1 *type2;
+
+/*
+ * Macro for primitive function itof & ftoi:
+ * ===================================
+ */
+#define ND_F2I_A(a1, res)                                                                \
+    {                                                                                    \
+        int __i;                                                                         \
+        for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a1)[__i];                                \
+    }
+
+#define ND_I2F_A(a1, res) ND_F2I_A (a1, res)
 
 /* and now some macros that don't belong to N_icm
  */
