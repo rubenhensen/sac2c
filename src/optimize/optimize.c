@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/25 12:14:02  nmw
+ * moved call of WLUR to SSALoopUnrolling
+ *
  * Revision 3.20  2001/04/24 16:09:52  nmw
  * SingleFundef calls renamed to OneFunction calls
  *
@@ -965,9 +968,11 @@ OPTfundef (node *arg_node, node *arg_info)
                     arg_node = CheckAvisOneFunction (arg_node);
                     arg_node = SSATransformOneFunction (arg_node);
                     arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
-
-                    /* apply a normal unrolling, too, to get WLUR */
-                    arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
+                    /*
+                     * important:
+                     *   SSALoopUnrolling internally calls the old Unroll() function
+                     *   to get the WithLoopUnrolling.
+                     */
                 } else {
                     arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
                 }
