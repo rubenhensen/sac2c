@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2003/04/14 10:49:49  sbs
+ * no double usage of TEPrfArg2Obj anymore as this fun uses static buffers 8-)
+ *
  * Revision 1.15  2003/04/11 17:56:37  sbs
  * implementation of NTCPRF_reshape extended for akv types.
  *
@@ -420,7 +423,7 @@ NTCPRF_reshape (te_info *info, ntype *args)
     TEAssureIntVect (TEPrfArg2Obj (TEGetNameStr (info), 1), new_shp);
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
     TEAssureProdValMatchesProdShape (TEPrfArg2Obj (TEGetNameStr (info), 1), new_shp,
-                                     TEPrfArg2Obj (TEGetNameStr (info), 2), array);
+                                     TEArg2Obj (2), array);
 
     scalar = TYGetScalar (array);
 
