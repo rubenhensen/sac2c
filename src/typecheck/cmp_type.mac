@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2002/09/26 12:49:01  sbs
+ * trailing comma eliminated
+ *
  * Revision 3.2  2001/02/09 17:11:42  cg
  * Removed type comparison results CMP_different_shapes and
  * CMP_different_dimension due to buggy implementation and general
@@ -30,4 +33,4 @@
 
 CMP_T (CMP_incompatible, "incompatible"), CMP_T (CMP_equal, "equal"),
   CMP_T (CMP_one_unknown_shape, "one_unknown_shape"),
-  CMP_T (CMP_both_unknown_shape, "both_unknown_shapes"),
+  CMP_T (CMP_both_unknown_shape, "both_unknown_shapes")
