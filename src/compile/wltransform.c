@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/10/24 18:32:57  dkr
+ * Fixed a bug in InferInnerStep
+ *
  * Revision 1.35  1998/08/14 22:16:45  dkr
  * bug fixed in IsHom():
  *   ASSERT-condition now correct
@@ -3079,6 +3082,10 @@ MergeWL (node *nodes)
             WLSTRIDE_CONTENTS (node1) = MergeWL (grids);
             break;
 
+        case N_WLgridVar:
+            /* nothing to do for non-constant strides */
+            break;
+
         case N_WLstriVar:
             /* nothing to do for non-constant strides */
             break;
@@ -3220,7 +3227,7 @@ IsEqualWLnodes (node *tree1, node *tree2)
 /******************************************************************************
  *
  * function:
- *   node *OptimizeWL( node *nodes)
+ *   node *OptWL( node *nodes)
  *
  * description:
  *   returns the optimized N_WL...-tree 'nodes'.
@@ -3228,20 +3235,21 @@ IsEqualWLnodes (node *tree1, node *tree2)
  ******************************************************************************/
 
 node *
-OptimizeWL (node *nodes)
+OptWL (node *nodes)
 {
     node *next, *grids, *comp1, *comp2;
     int offset;
 
-    DBUG_ENTER ("OptimizeWL");
+    DBUG_ENTER ("OptWL");
 
     if (nodes != NULL) {
-        if ((NODE_TYPE (nodes) != N_WLstriVar) && (NODE_TYPE (nodes) != N_WLgridVar)) {
+
+        if (NODE_TYPE (nodes) != N_WLstriVar) {
 
             /*
              * optimize the next node
              */
-            next = WLNODE_NEXT (nodes) = OptimizeWL (WLNODE_NEXT (nodes));
+            next = WLNODE_NEXT (nodes) = OptWL (WLNODE_NEXT (nodes));
 
             /*
              * optimize the type-specific sons
@@ -3260,8 +3268,7 @@ OptimizeWL (node *nodes)
                      */
                     DBUG_ASSERT ((WLBLOCK_CONTENTS (nodes) == NULL),
                                  "data in NEXTDIM *and* CONTENTS found");
-                    comp1 = WLBLOCK_NEXTDIM (nodes)
-                      = OptimizeWL (WLBLOCK_NEXTDIM (nodes));
+                    comp1 = WLBLOCK_NEXTDIM (nodes) = OptWL (WLBLOCK_NEXTDIM (nodes));
                     if (next != NULL) {
                         comp2 = WLBLOCK_NEXTDIM (next);
                     }
@@ -3269,8 +3276,7 @@ OptimizeWL (node *nodes)
                     /*
                      * compare CONTENTS (NEXTDIM is NULL)
                      */
-                    comp1 = WLBLOCK_CONTENTS (nodes)
-                      = OptimizeWL (WLBLOCK_CONTENTS (nodes));
+                    comp1 = WLBLOCK_CONTENTS (nodes) = OptWL (WLBLOCK_CONTENTS (nodes));
                     if (next != NULL) {
                         comp2 = WLBLOCK_CONTENTS (next);
                     }
@@ -3279,8 +3285,7 @@ OptimizeWL (node *nodes)
 
             case N_WLstride:
 
-                comp1 = WLSTRIDE_CONTENTS (nodes)
-                  = OptimizeWL (WLSTRIDE_CONTENTS (nodes));
+                comp1 = WLSTRIDE_CONTENTS (nodes) = OptWL (WLSTRIDE_CONTENTS (nodes));
                 if (next != NULL) {
                     comp2 = WLSTRIDE_CONTENTS (next);
                 }
@@ -3320,7 +3325,7 @@ OptimizeWL (node *nodes)
                      */
                     DBUG_ASSERT ((WLGRID_CODE (nodes) == NULL),
                                  "data in NEXTDIM *and* CODE found");
-                    comp1 = WLGRID_NEXTDIM (nodes) = OptimizeWL (WLGRID_NEXTDIM (nodes));
+                    comp1 = WLGRID_NEXTDIM (nodes) = OptWL (WLGRID_NEXTDIM (nodes));
                     if (next != NULL) {
                         comp2 = WLGRID_NEXTDIM (next);
                     }
@@ -3357,6 +3362,9 @@ OptimizeWL (node *nodes)
                     }
                 }
             }
+
+        } else {
+            /* nothing to do for non-constant strides */
         }
     }
 
@@ -3366,12 +3374,11 @@ OptimizeWL (node *nodes)
 /******************************************************************************
  *
  * function:
- *   int GetMaxUnroll( node *nodes, int unroll, int dim)
+ *   int GetMaxUnroll( node *nodes, int dim)
  *
  * description:
  *   returns the maximally number elements that must be unrolled
- *     in dimension 'dim' of N_WL...-tree 'nodes'.
- *   'unroll' is the initial value for the computation (normally 1).
+ *     in dimension 'dim' of the WL-tree 'nodes'.
  *
  *   we must search for the first N_WLublock- or N_WLstride-node in each
  *     leaf of the 'nodes'-tree and get the step of this node.
@@ -3379,13 +3386,15 @@ OptimizeWL (node *nodes)
  ******************************************************************************/
 
 int
-GetMaxUnroll (node *nodes, int unroll, int dim)
+GetMaxUnroll (node *nodes, int dim)
 {
+    int unroll = 1;
+
     DBUG_ENTER ("GetMaxUnroll");
 
     if (nodes != NULL) {
 
-        unroll = GetMaxUnroll (WLNODE_NEXT (nodes), unroll, dim);
+        unroll = GetMaxUnroll (WLNODE_NEXT (nodes), dim);
 
         if ((WLNODE_DIM (nodes) == dim)
             && ((NODE_TYPE (nodes) == N_WLublock) || (NODE_TYPE (nodes) == N_WLstride))) {
@@ -3406,18 +3415,18 @@ GetMaxUnroll (node *nodes, int unroll, int dim)
                 /* here is no break missing! */
             case N_WLublock:
 
-                unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), unroll, dim);
-                unroll = GetMaxUnroll (WLBLOCK_CONTENTS (nodes), unroll, dim);
+                unroll = MAX (unroll, GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), dim));
+                unroll = MAX (unroll, GetMaxUnroll (WLBLOCK_CONTENTS (nodes), dim));
                 break;
 
             case N_WLstride:
 
-                unroll = GetMaxUnroll (WLSTRIDE_CONTENTS (nodes), unroll, dim);
+                unroll = MAX (unroll, GetMaxUnroll (WLSTRIDE_CONTENTS (nodes), dim));
                 break;
 
             case N_WLgrid:
 
-                unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), unroll, dim);
+                unroll = MAX (unroll, GetMaxUnroll (WLBLOCK_NEXTDIM (nodes), dim));
                 break;
 
             default:
@@ -3449,91 +3458,94 @@ FitWL (node *nodes, int curr_dim, int dims)
 
     DBUG_ENTER ("FitWL");
 
-    if (NODE_TYPE (nodes) == N_WLstride) {
-        if (curr_dim < dims) {
+    if (nodes != NULL) {
 
-            /*
-             * traverse the whole chain
-             */
-            tmp = nodes;
-            while (tmp != NULL) {
-
-                switch (NODE_TYPE (tmp)) {
-
-                case N_WLblock:
-
-                    if (curr_dim < dims - 1) {
-                        /*
-                         * fit in next dimension;
-                         *   compute unrolling information
-                         */
-                        WLBLOCK_NEXTDIM (tmp)
-                          = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
-                        unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), 1, curr_dim);
-                    } else {
-                        unroll = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), 1, curr_dim);
-                    }
-                    break;
-
-                case N_WLublock:
-
-                    if (curr_dim < dims - 1) {
-                        /*
-                         * fit in next dimension;
-                         *   get unrolling information
-                         */
-                        WLBLOCK_NEXTDIM (tmp)
-                          = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
-                    }
-                    unroll = WLUBLOCK_STEP (tmp);
-                    break;
-
-                case N_WLstride:
-
-                    grids = WLSTRIDE_CONTENTS (tmp);
-                    if (curr_dim < dims - 1) {
-                        /*
-                         * fit for all grids in next dimension;
-                         *   get unrolling information
-                         */
-                        while (grids != NULL) {
-                            WLGRID_NEXTDIM (grids)
-                              = FitWL (WLGRID_NEXTDIM (grids), curr_dim + 1, dims);
-                            grids = WLGRID_NEXT (grids);
-                        }
-                    }
-                    unroll = WLSTRIDE_STEP (tmp);
-                    break;
-
-                default:
-
-                    DBUG_ASSERT ((0), "wrong node type");
-                }
+        if (NODE_TYPE (nodes) != N_WLstriVar) {
+            if (curr_dim < dims) {
 
                 /*
-                 * fit current dimension:
-                 *   split a uncompleted periode at the end of index range
+                 * traverse the whole chain
                  */
-                width = WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp);
-                remain = width % unroll;
-                if ((remain > 0) && (width > remain)) {
-                    /*
-                     *  uncompleted periode found -> split
-                     */
-                    new_node = DupNode (tmp);
-                    WLNODE_BOUND2 (new_node) = WLNODE_BOUND2 (tmp);
-                    WLNODE_BOUND2 (tmp) = WLNODE_BOUND1 (new_node)
-                      = WLNODE_BOUND2 (tmp) - remain;
-                    WLNODE_NEXT (new_node) = WLNODE_NEXT (tmp);
-                    WLNODE_NEXT (tmp) = new_node;
-                    tmp = new_node;
-                }
+                tmp = nodes;
+                while (tmp != NULL) {
 
-                tmp = WLNODE_NEXT (tmp);
+                    switch (NODE_TYPE (tmp)) {
+
+                    case N_WLblock:
+
+                        if (curr_dim < dims - 1) {
+                            /*
+                             * fit in next dimension;
+                             *   compute unrolling information
+                             */
+                            WLBLOCK_NEXTDIM (tmp)
+                              = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
+                            unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), curr_dim);
+                        } else {
+                            unroll = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), curr_dim);
+                        }
+                        break;
+
+                    case N_WLublock:
+
+                        if (curr_dim < dims - 1) {
+                            /*
+                             * fit in next dimension;
+                             *   get unrolling information
+                             */
+                            WLBLOCK_NEXTDIM (tmp)
+                              = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
+                        }
+                        unroll = WLUBLOCK_STEP (tmp);
+                        break;
+
+                    case N_WLstride:
+
+                        grids = WLSTRIDE_CONTENTS (tmp);
+                        if (curr_dim < dims - 1) {
+                            /*
+                             * fit for all grids in next dimension;
+                             *   get unrolling information
+                             */
+                            while (grids != NULL) {
+                                WLGRID_NEXTDIM (grids)
+                                  = FitWL (WLGRID_NEXTDIM (grids), curr_dim + 1, dims);
+                                grids = WLGRID_NEXT (grids);
+                            }
+                        }
+                        unroll = WLSTRIDE_STEP (tmp);
+                        break;
+
+                    default:
+
+                        DBUG_ASSERT ((0), "wrong node type");
+                    }
+
+                    /*
+                     * fit current dimension:
+                     *   split a uncompleted periode at the end of index range
+                     */
+                    width = WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp);
+                    remain = width % unroll;
+                    if ((remain > 0) && (width > remain)) {
+                        /*
+                         *  uncompleted periode found -> split
+                         */
+                        new_node = DupNode (tmp);
+                        WLNODE_BOUND2 (new_node) = WLNODE_BOUND2 (tmp);
+                        WLNODE_BOUND2 (tmp) = WLNODE_BOUND1 (new_node)
+                          = WLNODE_BOUND2 (tmp) - remain;
+                        WLNODE_NEXT (new_node) = WLNODE_NEXT (tmp);
+                        WLNODE_NEXT (tmp) = new_node;
+                        tmp = new_node;
+                    }
+
+                    tmp = WLNODE_NEXT (tmp);
+                }
             }
+        } else {
+            /* nothing to do for non-constant strides */
         }
-    } else {
-        /* nothing to do for non-constant strides */
     }
 
     DBUG_RETURN (nodes);
@@ -3641,7 +3653,7 @@ NormalizeWLnodes (node *nodes, int *width)
 /******************************************************************************
  *
  * function:
- *   node *NormalizeWL( node *nodes, int *idx_max)
+ *   node *NormWL( node *nodes, int *idx_max)
  *
  * description:
  *   returns the normalized N_WL...-tree 'nodes'.
@@ -3650,11 +3662,11 @@ NormalizeWLnodes (node *nodes, int *width)
  ******************************************************************************/
 
 node *
-NormalizeWL (node *nodes, int *idx_max)
+NormWL (node *nodes, int *idx_max)
 {
-    DBUG_ENTER ("NormalizeWL");
+    DBUG_ENTER ("NormWL");
 
-    if (NODE_TYPE (nodes) == N_WLstride) {
+    if (NODE_TYPE (nodes) != N_WLstriVar) {
         nodes = NormalizeWLnodes (nodes, idx_max);
     } else {
         /* nothing to do for non-constant strides */
@@ -3682,90 +3694,94 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
 
     DBUG_ENTER ("InferInnerStep");
 
-    if (NODE_TYPE (nodes) == N_WLstride) {
+    if (curr_dim < dims) {
+        /*
+         * traverse the whole chain
+         */
+        tmp = nodes;
+        while (tmp != NULL) {
 
-        if (curr_dim < dims) {
-            /*
-             * traverse the whole chain
-             */
-            tmp = nodes;
-            while (tmp != NULL) {
+            switch (NODE_TYPE (tmp)) {
 
-                switch (NODE_TYPE (tmp)) {
+            case N_WLblock:
 
-                case N_WLblock:
-
-                    if (curr_dim < dims - 1) {
-                        /*
-                         * inspect next dimension;
-                         *   compute unrolling information
-                         */
-                        WLBLOCK_NEXTDIM (tmp)
-                          = InferInnerStep (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
-                        unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), 1, curr_dim);
-                    } else {
-                        unroll = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), 1, curr_dim);
-                    }
-
+                if (WLBLOCK_NEXTDIM (tmp) != NULL) {
                     /*
-                     * store unroll-information in WL..._INNERSTEP
+                     * inspect next dimension;
+                     *   compute unrolling information and store it in WLBLOCK_INNERSTEP;
                      */
-                    WLBLOCK_INNERSTEP (tmp) = unroll;
-                    break;
+                    DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp) == NULL),
+                                 "next blocking *and* inner of block found");
+                    WLBLOCK_NEXTDIM (tmp)
+                      = InferInnerStep (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
 
-                case N_WLublock:
-
-                    if (curr_dim < dims - 1) {
-                        /*
-                         * inspect next dimension;
-                         *   get unrolling information
-                         */
-                        WLBLOCK_NEXTDIM (tmp)
-                          = InferInnerStep (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
-                    }
-                    unroll = WLUBLOCK_STEP (tmp);
-
+                    WLBLOCK_INNERSTEP (tmp)
+                      = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), curr_dim);
+                } else {
                     /*
-                     * store unroll-information in WL..._INNERSTEP
+                     * compute unrolling information and store it in WLBLOCK_INNERSTEP.
                      */
-                    WLSTRIDE_INNERSTEP (tmp) = unroll;
-                    break;
+                    DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp) != NULL),
+                                 "inner of block not found");
 
-                case N_WLstride:
+                    WLBLOCK_INNERSTEP (tmp)
+                      = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), curr_dim);
+                }
+                break;
 
-                    grids = WLSTRIDE_CONTENTS (tmp);
-                    if (curr_dim < dims - 1) {
-                        /*
-                         * inspect all grids in next dimension;
-                         *   get unrolling information
-                         */
-                        while (grids != NULL) {
-                            WLGRID_NEXTDIM (grids)
-                              = InferInnerStep (WLGRID_NEXTDIM (grids), curr_dim + 1,
-                                                dims);
-                            grids = WLGRID_NEXT (grids);
-                        }
-                    }
-                    unroll = WLSTRIDE_STEP (tmp);
+            case N_WLublock:
 
+                if (WLUBLOCK_NEXTDIM (tmp) != NULL) {
                     /*
-                     * store unroll-information in WL..._INNERSTEP
+                     * inspect next dimension
                      */
-                    WLSTRIDE_INNERSTEP (tmp) = unroll;
-                    break;
-
-                default:
-
-                    DBUG_ASSERT ((0), "wrong node type");
+                    DBUG_ASSERT ((WLUBLOCK_CONTENTS (tmp) == NULL),
+                                 "next ublocking *and* inner of ublock found");
+                    WLUBLOCK_NEXTDIM (tmp)
+                      = InferInnerStep (WLUBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
                 }
 
-                tmp = WLNODE_NEXT (tmp);
-            }
-        }
-    } else {
-        /* non-constant stride */
+                /*
+                 * compute unroll-information and store it in WLUBLOCK_INNERSTEP
+                 */
+                WLUBLOCK_INNERSTEP (tmp) = WLUBLOCK_STEP (tmp);
+                break;
 
-        /* not yet implemented :-( */
+            case N_WLstride:
+
+                grids = WLSTRIDE_CONTENTS (tmp);
+                if (curr_dim < dims - 1) {
+                    /*
+                     * inspect all grids in next dimension;
+                     *   get unrolling information
+                     */
+                    while (grids != NULL) {
+                        WLGRID_NEXTDIM (grids)
+                          = InferInnerStep (WLGRID_NEXTDIM (grids), curr_dim + 1, dims);
+                        grids = WLGRID_NEXT (grids);
+                    }
+                }
+
+                /*
+                 * get unroll-information and store it in WL..._INNERSTEP
+                 */
+                WLSTRIDE_INNERSTEP (tmp) = WLSTRIDE_STEP (tmp);
+                break;
+
+            case N_WLstriVar:
+                /* non-constant stride */
+            case N_WLgridVar:
+                /* non-constant grids */
+
+                /* not yet implemented :-( */
+
+            default:
+
+                DBUG_ASSERT ((0), "wrong node type");
+            }
+
+            tmp = WLNODE_NEXT (tmp);
+        }
     }
 
     DBUG_RETURN (nodes);
@@ -3790,10 +3806,8 @@ IsHom (node *wlnode, int sv_d)
 
     width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
     DBUG_ASSERT ((WLNODE_INNERSTEP (wlnode) > 0), "illegal INNERSTEP found");
-#if 1
     DBUG_ASSERT ((sv_d % WLNODE_INNERSTEP (wlnode) == 0),
                  "INNERSTEP is not a divisor of SV");
-#endif
     DBUG_RETURN (((width % sv_d) == 0));
 }
 
@@ -3815,16 +3829,22 @@ InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
     DBUG_ENTER ("InferMaxHomDim");
 
     if (wlnode != NULL) {
+
         if (IsHom (wlnode, sv[WLNODE_DIM (wlnode)])) {
+
             max_hom_dim = InferMaxHomDim (WLNODE_NEXT (wlnode), sv, max_hom_dim);
+
             if (max_hom_dim > WLNODE_DIM (wlnode)) {
+
                 switch (NODE_TYPE (wlnode)) {
+
                 case N_WLblock:
                     /* here is no break missing */
                 case N_WLublock:
                     max_hom_dim
                       = InferMaxHomDim (WLNODE_NEXTDIM (wlnode), sv, max_hom_dim);
                     break;
+
                 case N_WLstride:
                     grid = WLSTRIDE_CONTENTS (wlnode);
                     do {
@@ -3833,10 +3853,16 @@ InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
                         grid = WLGRID_NEXT (grid);
                     } while ((grid != NULL) && (max_hom_dim > WLSTRIDE_DIM (wlnode)));
                     break;
+
+                case N_WLstriVar:
+                    /* not yet implemented :( */
+                    break;
+
                 default:
                     DBUG_ASSERT ((0), "wrong node type found");
                 }
             }
+
         } else {
             max_hom_dim = WLNODE_DIM (wlnode) - 1;
         }
@@ -4832,7 +4858,7 @@ WLTRANwith (node *arg_node, node *arg_info)
                 /* optimization */
                 if (WL_break_after >= WL_PH_opt) {
                     DBUG_EXECUTE ("WLprec", NOTE (("step 7: optimization\n")));
-                    WLSEGX_CONTENTS (seg) = OptimizeWL (WLSEGX_CONTENTS (seg));
+                    WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
                 }
 
                 /* fitting */
@@ -4845,11 +4871,13 @@ WLTRANwith (node *arg_node, node *arg_info)
                 if (WL_break_after >= WL_PH_norm) {
                     DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
                     WLSEGX_CONTENTS (seg)
-                      = NormalizeWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
+                      = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
                 }
 
-                /* infer WLSEGX_MAXHOMDIM and WL..._INNERSTEP */
-                seg = InferParams (seg);
+#if 0
+        /* infer WLSEGX_MAXHOMDIM and WL..._INNERSTEP */
+        seg = InferParams( seg);
+#endif
 
                 seg = WLSEG_NEXT (seg);
             }
