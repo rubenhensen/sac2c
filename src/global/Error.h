@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/10/18 16:47:34  cg
+ * Revision 1.12  1995/10/19 10:04:45  cg
+ * new function ItemName for convenient output of combined names
+ * of types, functions, or global objects.
+ *
+ * Revision 1.11  1995/10/18  16:47:34  cg
  * some beautifications
  *
  * Revision 1.10  1995/10/18  13:30:47  cg
@@ -44,6 +48,8 @@
 #define _sac_Error_h
 
 #include <stdio.h>
+
+#include "types.h"
 
 /*
  *  The following macros should be used for all compiler messages.
@@ -200,12 +206,9 @@ extern int compiler_phase;
 extern char filename[]; /* is set in main.c */
 
 extern void DoPrint (char *format, ...);
-extern char *ModName (char *, char *);
 
-extern void Error (char *string, int status);
-/* string ist die Fehlermeldung
- * status gibt an mit welchem Wert das Programm beendet wird.
- */
+extern char *ModName (char *, char *);
+extern char *ItemName (node *);
 
 /*
  *   below this line for compatibility only
@@ -232,5 +235,10 @@ extern void Error (char *string, int status);
         fprintf (stderr, "\n\n");                                                        \
         exit (n);                                                                        \
     }
+
+extern void Error (char *string, int status);
+/* string ist die Fehlermeldung
+ * status gibt an mit welchem Wert das Programm beendet wird.
+ */
 
 #endif /* _sac_Error_h */

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/10/18 13:32:32  cg
+ * Revision 1.8  1995/10/19 10:04:45  cg
+ * new function ItemName for convenient output of combined names
+ * of types, functions, or global objects.
+ *
+ * Revision 1.7  1995/10/18  13:32:32  cg
  * new function ModName(char*, char*) allows for easy
  * printing of combined names of types, functions and objects.
  * mainly designed for use with error macros.
@@ -31,6 +35,9 @@
 #include <string.h>
 
 #include "Error.h"
+
+#include "tree_basic.h"
+
 #include "dbug.h"
 #include "internal_lib.h"
 
@@ -105,6 +112,45 @@ ModName (char *mod, char *name)
     }
 
     DBUG_RETURN (tmp);
+}
+
+/*
+ *
+ *  functionname  : ItemName
+ *  arguments     : 1) pointer to fundef, objdef or typedef node
+ *  description   : generates the full combined name of the item,
+ *                  including the module name when present.
+ *  global vars   : ---
+ *  internal funs : ModName
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
+char *
+ItemName (node *item)
+{
+    char *ret;
+
+    DBUG_ENTER ("ItemName");
+
+    switch (NODE_TYPE (item)) {
+    case N_fundef:
+        ret = ModName (FUNDEF_MOD (item), FUNDEF_NAME (item));
+        break;
+    case N_typedef:
+        ret = ModName (TYPEDEF_MOD (item), TYPEDEF_NAME (item));
+        break;
+    case N_objdef:
+        ret = ModName (OBJDEF_MOD (item), OBJDEF_NAME (item));
+        break;
+    default:
+        DBUG_ASSERT (0, "Wrong item in call of function 'ItemName`");
+    }
+
+    DBUG_RETURN (ret);
 }
 
 void
