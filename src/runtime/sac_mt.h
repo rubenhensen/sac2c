@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/19 11:56:51  dkr
+ * SAC_WL_DEST renamed into SAC_WL_OFFSET
+ *
  * Revision 3.3  2000/12/29 14:24:41  cg
  * When compiling for multithreaded execution, any function gets one additional
  * parameter to hold the thread ID, which is needed for heap management.
@@ -650,7 +653,7 @@ typedef union {
             if (tmp) {                                                                   \
                 tmp = unrolling - tmp;                                                   \
                 SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
-                SAC_WL_DEST (array) += tmp * (offset);                                   \
+                SAC_WL_OFFSET (array) += tmp * (offset);                                 \
             }                                                                            \
         }                                                                                \
     }

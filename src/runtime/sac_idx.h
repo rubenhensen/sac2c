@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/19 11:57:07  dkr
+ * SAC_WL_DEST renamed into SAC_WL_OFFSET
+ *
  * Revision 3.1  2000/11/20 18:02:15  sacbase
  * new release made
  *
@@ -135,6 +138,6 @@
     }                                                                                    \
     SAC_ND_WRITE_ARRAY (res, s) = val;
 
-#define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_DEST (res);
+#define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_OFFSET (res);
 
 #endif /* SAC_IDX_H */
