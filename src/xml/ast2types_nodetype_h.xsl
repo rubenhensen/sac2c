@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/24 18:15:09  sah
+  added a newline
+
   Revision 1.2  2004/11/24 17:47:01  sah
   update
 
@@ -41,7 +44,9 @@
     <xsl:call-template name="newline" />
     <xsl:apply-templates select="/definition/syntaxtree" />
     <xsl:text>
+
 #endif /* _SAC_TYPES_NODETYPE_H_ */
+
     </xsl:text>
   </xsl:template>
 
