@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/01 13:35:54  cg
+ * added lots of '(' and ')' to avoid ambiguity warnings.
+ * bug fixed in conversion of float and double constants into
+ * strings.
+ *
  * Revision 2.1  1999/02/23 12:40:20  sacbase
  * new release made
  *
@@ -147,10 +152,15 @@ Float2String (float val)
     /*
      * 256 chars + "." + "e+1000" + ".0f" + "\0" = 267
      */
-    if ((val == floor (val)) && (val > -1000) && (val < 1000))
-        sprintf (tmp_string, "%.256g.0f", val);
-    else
-        sprintf (tmp_string, "%.256gf", val);
+
+    sprintf (tmp_string, "%.256g", val);
+
+    if (strchr (tmp_string, '.') == NULL) {
+        strcat (tmp_string, ".0");
+    }
+
+    strcat (tmp_string, "f");
+
     DBUG_RETURN (tmp_string);
 }
 
@@ -180,10 +190,12 @@ Double2String (double val)
     /*
      * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
      */
-    if ((val == floor (val)) && (val > -1000) && (val < 1000))
-        sprintf (tmp_string, "%.256g.0", val);
-    else
-        sprintf (tmp_string, "%.256g", val);
+
+    sprintf (tmp_string, "%.256g", val);
+
+    if (strchr (tmp_string, '.') == NULL) {
+        strcat (tmp_string, ".0");
+    }
 
     DBUG_RETURN (tmp_string);
 }
@@ -237,52 +249,65 @@ Type2String (types *type, int flag)
             }
         }
 
-        if (0 != type->dim)
-            if (-1 == type->dim)
+        if (0 != type->dim) {
+            if (-1 == type->dim) {
                 strcat (tmp_string, "[]");
-            else if (ARRAY_OR_SCALAR == TYPES_DIM (type))
-                strcat (tmp_string, "[?]");
-            else {
-                int i, dim;
-                static char int_string[INT_STRING_LENGTH];
-                int known_shape = 1;
-                if (2 == flag)
-                    strcat (tmp_string, "_");
-                else
-                    strcat (tmp_string, "[");
-                if (KNOWN_DIM_OFFSET > TYPES_DIM (type)) {
-                    dim = 0 - TYPES_DIM (type) + KNOWN_DIM_OFFSET;
-                    known_shape = 0;
-                } else
-                    dim = TYPES_DIM (type);
-
-                for (i = 0; i < dim; i++)
-                    if (i != (dim - 1)) {
-                        if (2 == flag)
-                            if (1 == known_shape)
-                                sprintf (int_string, "%d_", type->shpseg->shp[i]);
-                            else
-                                sprintf (int_string, "._");
-                        else if (1 == known_shape)
-                            sprintf (int_string, "%d, ", type->shpseg->shp[i]);
-                        else
-                            sprintf (int_string, "., ");
-
-                        strcat (tmp_string, int_string);
+            } else {
+                if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
+                    strcat (tmp_string, "[?]");
+                } else {
+                    int i, dim;
+                    static char int_string[INT_STRING_LENGTH];
+                    int known_shape = 1;
+                    if (2 == flag) {
+                        strcat (tmp_string, "_");
                     } else {
-                        if (2 == flag)
-                            if (1 == known_shape)
-                                sprintf (int_string, "%d_", type->shpseg->shp[i]);
-                            else
-                                sprintf (int_string, "._");
-                        else if (1 == known_shape)
-                            sprintf (int_string, "%d]", type->shpseg->shp[i]);
-                        else
-                            sprintf (int_string, ".]");
-
-                        strcat (tmp_string, int_string);
+                        strcat (tmp_string, "[");
                     }
+                    if (KNOWN_DIM_OFFSET > TYPES_DIM (type)) {
+                        dim = 0 - TYPES_DIM (type) + KNOWN_DIM_OFFSET;
+                        known_shape = 0;
+                    } else {
+                        dim = TYPES_DIM (type);
+                    }
+
+                    for (i = 0; i < dim; i++) {
+                        if (i != (dim - 1)) {
+                            if (2 == flag) {
+                                if (1 == known_shape) {
+                                    sprintf (int_string, "%d_", type->shpseg->shp[i]);
+                                } else {
+                                    sprintf (int_string, "._");
+                                }
+                            } else {
+                                if (1 == known_shape) {
+                                    sprintf (int_string, "%d, ", type->shpseg->shp[i]);
+                                } else {
+                                    sprintf (int_string, "., ");
+                                }
+                            }
+                            strcat (tmp_string, int_string);
+                        } else {
+                            if (2 == flag) {
+                                if (1 == known_shape) {
+                                    sprintf (int_string, "%d_", type->shpseg->shp[i]);
+                                } else {
+                                    sprintf (int_string, "._");
+                                }
+                            } else {
+                                if (1 == known_shape) {
+                                    sprintf (int_string, "%d]", type->shpseg->shp[i]);
+                                } else {
+                                    sprintf (int_string, ".]");
+                                }
+                            }
+
+                            strcat (tmp_string, int_string);
+                        }
+                    }
+                }
             }
+        }
 
         if ((type->attrib == ST_reference) || (type->attrib == ST_readonly_reference)
             || (1 == flag)) {
@@ -291,8 +316,10 @@ Type2String (types *type, int flag)
 
         if (type->attrib == ST_reference) {
             strcat (tmp_string, "&");
-        } else if (type->attrib == ST_readonly_reference) {
-            strcat (tmp_string, "(&)");
+        } else {
+            if (type->attrib == ST_readonly_reference) {
+                strcat (tmp_string, "(&)");
+            }
         }
 
         if ((NULL != type->id) && (1 == flag)) {
@@ -300,8 +327,9 @@ Type2String (types *type, int flag)
         }
 
         type = type->next;
-        if (NULL != type)
+        if (NULL != type) {
             strcat (tmp_string, ", ");
+        }
     } while (NULL != type);
 
     DBUG_RETURN (tmp_string);
