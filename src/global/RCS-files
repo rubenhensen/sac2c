@@ -13,7 +13,6 @@ internal_lib.h
 interrupt.c
 interrupt.h
 main.c
-my_debug.c
 my_debug.h
 nt_info.mac
 options.c
