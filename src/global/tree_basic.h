@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.209  1999/01/19 20:31:40  srs
+ * inserted NWITH_REFERENCES_FOLDED
+ *
  * Revision 1.208  1999/01/18 10:05:31  cg
  * added access macros for the usage of N_info in readsib.c
  *
@@ -2282,6 +2285,7 @@ extern node *MakeSync (node *region, int first);
  ***    node*      PRAGMA     (N_pragma)  (scanparse -> precompile ! )
  ***    int        REFERENCED             (wlt -> wlf !!
  ***    int        REFERENCED_FOLD        (wlt -> wlf !!)
+ ***    int        REFERENCES_FOLDED      (wlt -> wlf !!)
  ***    int        COMPLEX                (wlt -> wlf !!)
  ***    int        FOLDABLE               (wlt -> wlf !!)
  ***    int        NO_CHANCE              (wlt -> wlf !!)
@@ -2303,6 +2307,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
 #define NWITH_REFERENCED(n) (((wl_info *)(n->info2))->referenced)
 #define NWITH_REFERENCED_FOLD(n) (((wl_info *)(n->info2))->referenced_fold)
+#define NWITH_REFERENCES_FOLDED(n) (((wl_info *)(n->info2))->references_folded)
 #define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
 #define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
