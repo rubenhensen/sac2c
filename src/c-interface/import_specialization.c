@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2005/01/07 17:02:50  cg
+ * Converted compile time output from Errro.h to ctinfo.c
+ *
  * Revision 3.12  2004/02/23 12:59:21  cg
  * Bug fixed in separation of function definitions and declarations.
  *
@@ -78,7 +81,7 @@
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "convert.h"
 #include "filemgr.h"
 #include "globals.h"
@@ -443,27 +446,26 @@ ScanParseSpecializationFile (char *modname)
     yyin = fopen (pathname, "r");
 
     if (yyin == NULL) {
-        NOTE (("No additional specialization-file found !"));
+        CTInote ("No additional specialization-file found !");
         spec = 0;
     } else {
         abspathname = AbsolutePathname (pathname);
 
-        NOTE (("Loading own specializations !"));
-        NOTE (("  Parsing file \"%s\" ...", abspathname));
+        CTInote ("Loading own specializations !");
+    CTInote("  Parsing file \"%s\" ...", abspathname));
 
-        linenum = 1;
-        old_filename = filename; /* required for restauration */
-        filename = buffer;
-        start_token = PARSE_SPEC;
-        My_yyparse ();
-        fclose (yyin);
+    linenum = 1;
+    old_filename = filename; /* required for restauration */
+    filename = buffer;
+    start_token = PARSE_SPEC;
+    My_yyparse ();
+    fclose (yyin);
 
-        if ((strcmp (MODSPEC_NAME (spec_tree), MODUL_NAME (syntax_tree)) != 0)
-            || (NODE_TYPE (spec_tree) != N_modspec)) {
-            SYSERROR (("File \"%s\" provides wrong specialization data", filename));
-            ABORT_ON_ERROR;
-        }
-        spec = spec_tree;
+    if ((strcmp (MODSPEC_NAME (spec_tree), MODUL_NAME (syntax_tree)) != 0)
+        || (NODE_TYPE (spec_tree) != N_modspec)) {
+        CTIsysabort ("File \"%s\" provides wrong specialization data", filename);
+    }
+    spec = spec_tree;
     }
 
     DBUG_RETURN (spec);

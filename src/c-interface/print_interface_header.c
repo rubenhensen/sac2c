@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2005/01/07 17:02:50  cg
+ * Converted compile time output from Errro.h to ctinfo.c
+ *
  * Revision 3.8  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -46,7 +49,7 @@
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "convert.h"
 #include "filemgr.h"
 #include "globals.h"
@@ -314,7 +317,7 @@ PIHarg (node *arg_node, node *arg_info)
         break;
 
     default:
-        SYSERROR (("undefined case in PIWtypes!\n"));
+        CTIsyserror ("undefined case in PIWtypes");
         break;
     }
 
@@ -365,7 +368,7 @@ PIHtypes (types *arg_type, node *arg_info)
         break;
 
     default:
-        SYSERROR (("undefined case in PIWtypes!\n"));
+        CTIsyserror ("undefined case in PIWtypes");
         break;
     }
 
