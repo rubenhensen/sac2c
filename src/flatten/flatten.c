@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1994/12/15 11:47:06  hw
+ * Revision 1.11  1995/01/06 16:45:15  hw
+ * added FltnFundef
+ *
+ * Revision 1.10  1994/12/15  11:47:06  hw
  * inserted FltnModul
  *
  * Revision 1.9  1994/12/12  16:03:59  asi
@@ -569,6 +572,38 @@ FltnModul (node *arg_node, node *arg_info)
     DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "blaaa");
 
     arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnFundef
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : call Trav to flatten the user defined functions
+ *                  if function body is not empty
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnFundef (node *arg_node, node *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("FltnFundef");
+
+    if (NULL == arg_node->node[0]) {
+        if (NULL != arg_node->node[1])
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    } else
+        for (i = 0; i < arg_node->nnode; i++)
+            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
 
     DBUG_RETURN (arg_node);
 }
