@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.165  2004/11/26 11:59:25  ktr
+ * changed *_NOOP into *_ISNOOP
+ *
  * Revision 3.164  2004/11/26 11:52:38  sbs
  * changed IDS_VARDEC into IDS_DECL
  *
@@ -2006,7 +2009,8 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
  ***  N_wlblock :
  ***/
 
-#define WLBLOCK_NOOP(n) ((WLBLOCK_NEXTDIM (n) == NULL) && (WLBLOCK_CONTENTS (n) == NULL))
+#define WLBLOCK_ISNOOP(n)                                                                \
+    ((WLBLOCK_NEXTDIM (n) == NULL) && (WLBLOCK_CONTENTS (n) == NULL))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2014,7 +2018,7 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
  ***  N_wlublock :
  ***/
 
-#define WLUBLOCK_NOOP(n)                                                                 \
+#define WLUBLOCK_ISNOOP(n)                                                               \
     ((WLUBLOCK_NEXTDIM (n) == NULL) && (WLUBLOCK_CONTENTS (n) == NULL))
 
 /*--------------------------------------------------------------------------*/
@@ -2023,8 +2027,8 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
  ***  N_wlblock :  *and*  N_wlublock :
  ***/
 
-#define WLXBLOCK_NOOP(n)                                                                 \
-    ((NODE_TYPE (n) == N_wlblock) ? WLBLOCK_NOOP (n) : WLUBLOCK_NOOP (n))
+#define WLXBLOCK_ISNOOP(n)                                                               \
+    ((NODE_TYPE (n) == N_wlblock) ? WLBLOCK_ISNOOP (n) : WLUBLOCK_ISNOOP (n))
 
 #define WLXBLOCK_LEVEL(n)                                                                \
     ((NODE_TYPE (n) == N_wlblock) ? WLBLOCK_LEVEL (n) : WLUBLOCK_LEVEL (n))
@@ -2056,7 +2060,7 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
  ***  N_wlstride :
  ***/
 
-#define WLSTRIDE_NOOP(n) (WLSTRIDE_CONTENTS (n) == NULL)
+#define WLSTRIDE_ISNOOP(n) (WLSTRIDE_CONTENTS (n) == NULL)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2064,7 +2068,7 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
  ***  N_wlstridevar :
  ***/
 
-#define WLSTRIDEVAR_NOOP(n) (WLSTRIDEVAR_CONTENTS (n) == NULL)
+#define WLSTRIDEVAR_ISNOOP(n) (WLSTRIDEVAR_CONTENTS (n) == NULL)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2077,8 +2081,8 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
        ? (void *)&(WLSTRIDE_##field (n))                                                 \
        : ((NODE_TYPE (n) == N_wlstridevar) ? (void *)&(WLSTRIDEVAR_##field (n)) : NULL))
 
-#define WLSTRIDEX_NOOP(n)                                                                \
-    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_NOOP (n) : WLSTRIDEVAR_NOOP (n))
+#define WLSTRIDEX_ISNOOP(n)                                                              \
+    ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_ISNOOP (n) : WLSTRIDEVAR_ISNOOP (n))
 
 #define WLSTRIDEX_LEVEL(n)                                                               \
     ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_LEVEL (n) : WLSTRIDEVAR_LEVEL (n))
@@ -2137,8 +2141,8 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
 #define WLGRIDX_CODE(n)                                                                  \
     ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_CODE (n) : WLGRIDVAR_CODE (n))
 
-#define WLGRIDX_NOOP(n)                                                                  \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISNOOP (n) : WLGRIDVAR_ISNOOP (n))
+#define WLGRIDX_ISNOOP(                                                                  \
+  n((NODE_TYPE(n) == N_wlgrid) ? WLGRID_ISNOOP(n) : WLGRIDVAR_ISNOOP(n))
 
 #define WLGRIDX_CBLOCK(n) (CODE_CBLOCK (WLGRIDX_CODE (n)))
 #define WLGRIDX_CEXPR(n) (CODE_CEXPR (WLGRIDX_CODE (n)))
@@ -2190,18 +2194,18 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
                                 ? (void *)&(WLUBLOCK_##field (n))                        \
                                 : NULL))))))
 
-#define WLNODE_NOOP(n)                                                                   \
+#define WLNODE_ISNOOP(n)                                                                 \
     ((NODE_TYPE (n) == N_wlblock)                                                        \
-       ? WLBLOCK_NOOP (n)                                                                \
+       ? WLBLOCK_ISNOOP (n)                                                              \
        : ((NODE_TYPE (n) == N_wlublock)                                                  \
-            ? WLUBLOCK_NOOP (n)                                                          \
+            ? WLUBLOCK_ISNOOP (n)                                                        \
             : ((NODE_TYPE (n) == N_wlstride)                                             \
-                 ? WLSTRIDE_NOOP (n)                                                     \
+                 ? WLSTRIDE_ISNOOP (n)                                                   \
                  : ((NODE_TYPE (n) == N_wlstridevar)                                     \
-                      ? WLSTRIDEVAR_NOOP (n)                                             \
+                      ? WLSTRIDEVAR_ISNOOP (n)                                           \
                       : ((NODE_TYPE (n) == N_wlgrid)                                     \
-                           ? WLGRID_NOOP (n)                                             \
-                           : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_NOOP (n)        \
+                           ? WLGRID_ISNOOP (n)                                           \
+                           : ((NODE_TYPE (n) == N_wlgridvar) ? WLGRIDVAR_ISNOOP (n)      \
                                                              : FALSE))))))
 
 #define WLNODE_NEXT(n)                                                                   \
