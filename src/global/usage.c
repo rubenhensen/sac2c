@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/07 15:13:28  dkr
+ * minor changes done
+ *
  * Revision 3.12  2001/05/07 14:21:24  dkr
  * all output lines contain <= 80 characters now
  *
@@ -434,14 +437,14 @@ usage ()
             "\t -# <str>\t\toptions (string) for DBUG information\n"
             "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
             "\t\t\t\t  <from>..<to>\n"
-            "\t\t\t\t  Default: <from> = first compiler phase,\n"
-            "\t\t\t\t           <to>   = last compiler phase\n\n"
+            "\t\t\t\tdefault: <from> = first compiler phase,\n"
+            "\t\t\t\t         <to>   = last compiler phase\n\n"
 
             "\t -lac2fun <ph>[:<ph>]*\ttransformation of loops and conditions into\n"
             "\t\t\t\t  functions before the compiler phases <ph>.\n"
             "\t -fun2lac <ph>[:<ph>]*\ttransformation vice versa after the compiler\n"
             "\t\t\t\t  phases <ph>.\n"
-            "\t\t\t\t  Note: -b<ph> stops the compiler *after* the\n"
+            "\t\t\t\tnote: -b<ph> stops the compiler *after* the\n"
             "\t\t\t\t  lac2fun transformation of phase <ph+1>!\n");
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
