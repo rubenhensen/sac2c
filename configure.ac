@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.35  2004/11/04 16:05:57  ktr
+dnl Made some modifications for Mac OS X Panther.
+dnl
 dnl Revision 1.34  2004/08/09 15:52:06  sah
 dnl well, we set __STDC__=0 again. This
 dnl will only work with gcc 2.xx as the
@@ -441,11 +444,11 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
-  AC_SUBST(RCCCFLAGS, ["-Wall -traditional-cpp -Wno-unused -fno-builtin"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -no-cpp-precomp -Wno-unused -fno-builtin"])
   AC_SUBST(MKCCFLAGS, ["-g"])
   AC_SUBST(PDCCFLAGS, ["-g"])
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["cpp -C"])
+  AC_SUBST(CPPFILE, ["cpp3 -C -traditional-cpp"])
   AC_SUBST(CCMTLINK, [""])
   AC_MSG_RESULT([Apple cc settings])
 else
@@ -488,7 +491,7 @@ case "$target_os" in
     OSFLAGS=["-D_OSF_SOURCE"]
     ;;
   *darwin*)      
-    OSFLAGS=["-traditional-cpp -Wno-long-double"]
+    OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
     ;;
 esac
 AC_SUBST(OSFLAGS)
