@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/21 18:09:33  dkr
+ * bug fixed
+ *
  * Revision 3.4  2001/03/21 17:50:17  dkr
  * Inlining recoded
  *
@@ -332,7 +335,6 @@ DoInline (node *let_node, node *arg_info)
     /*
      * duplicate function body (with LUT to get the right back-references!)
      */
-    INFO_DUP_TYPE (arg_info) = DUP_INLINE;
     inl_nodes = DupTreeLUT_Type (BLOCK_INSTR (FUNDEF_BODY (inl_fundef)),
                                  INFO_INL_LUT (arg_info), DUP_INLINE);
 
