@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.149  2004/03/01 15:02:34  sbs
+ * Now, fundefs are preceeded by the correct comment 8-)
+ *
  * Revision 3.148  2004/02/20 08:17:09  mwe
  * now finctions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -1251,7 +1254,7 @@ PrintModul (node *arg_node, node *arg_info)
         if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
-                              " *  function declarations (FUNDEFS)\n"
+                              " *  function definitions (FUNDEFS)\n"
                               " */\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
