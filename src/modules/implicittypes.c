@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/09/22 13:52:44  dkr
+ * STR_OR_NULL used for DBUG_PRINT
+ *
  * Revision 2.2  2000/08/04 17:21:59  dkr
  * NEWTREE removed
  *
@@ -93,22 +96,25 @@ SearchImplementation (types *type, node *alltypes)
     DBUG_ENTER ("SearchImplementation");
 
     DBUG_PRINT ("IMPLTYPES", ("Searching implementation of user-defined type %s:%s",
-                              TYPES_MOD (type), TYPES_NAME (type)));
+                              STR_OR_NULL (TYPES_MOD (type), "?"),
+                              STR_OR_NULL (TYPES_NAME (type), "?")));
 
     tdef = SearchTypedef (TYPES_NAME (type), TYPES_MOD (type), alltypes);
 
     if (tdef == NULL) {
-        SYSABORT (("Definition of implicit type '%s:%s` missing", TYPES_MOD (type),
-                   TYPES_NAME (type)));
+        SYSABORT (("Definition of implicit type '%s:%s` missing",
+                   STR_OR_NULL (TYPES_MOD (type), "?"),
+                   STR_OR_NULL (TYPES_NAME (type), "?")));
     }
 
     /*
      *  tdef points to the typedef which defines 'type'.
      */
 
-    DBUG_PRINT ("IMPLTYPES", ("Found defining typedef BT:%s, Name:%s, Dim:%d",
-                              type_string[TYPEDEF_BASETYPE (tdef)], TYPEDEF_TNAME (tdef),
-                              TYPEDEF_DIM (tdef)));
+    DBUG_PRINT ("IMPLTYPES",
+                ("Found defining typedef BT:%s, Name:%s, Dim:%d",
+                 type_string[TYPEDEF_BASETYPE (tdef)],
+                 STR_OR_NULL (TYPEDEF_TNAME (tdef), "?"), TYPEDEF_DIM (tdef)));
 
     if (TYPEDEF_BASETYPE (tdef) == T_hidden) {
         if (TYPEDEF_TNAME (tdef) != NULL) {
@@ -266,7 +272,8 @@ IMPLmodul (node *arg_node, node *arg_info)
              */
 
             DBUG_PRINT ("IMPLTYPES", ("use SIB-info for implicit type %s:%s",
-                                      TYPEDEF_MOD (tmp), TYPEDEF_NAME (tmp)));
+                                      STR_OR_NULL (TYPEDEF_MOD (tmp), "?"),
+                                      STR_OR_NULL (TYPEDEF_NAME (tmp), "?")));
 
             if (TYPEDEF_BASETYPE (tmp) == T_user) {
                 /*
@@ -289,7 +296,8 @@ IMPLmodul (node *arg_node, node *arg_info)
                                      ST_regular, MODUL_TYPES (arg_node));
 
                     DBUG_PRINT ("IMPLTYPES", ("Generating new hidden-typedef %s:%s",
-                                              TYPEDEF_TMOD (tmp), TYPEDEF_TMOD (tmp)));
+                                              STR_OR_NULL (TYPEDEF_TMOD (tmp), "?"),
+                                              STR_OR_NULL (TYPEDEF_TMOD (tmp), "?")));
 
                     MODUL_TYPES (arg_node) = new_typedef;
                 } else {
@@ -317,7 +325,8 @@ IMPLmodul (node *arg_node, node *arg_info)
 
                         DBUG_PRINT ("IMPLTYPES",
                                     ("Shifting hidden-typedef %s:%s to front of chain",
-                                     TYPEDEF_TMOD (tmp), TYPEDEF_TMOD (tmp)));
+                                     STR_OR_NULL (TYPEDEF_TMOD (tmp), "?"),
+                                     STR_OR_NULL (TYPEDEF_TMOD (tmp), "?")));
                     }
                 }
             }
