@@ -1,9 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.14  1999/05/10 08:26:52  jhs
- * Repaired bug in isBoundEmpty, ID_VECLEN and ID_CONSTARRAY will
- * be checked for empty arrays now.
+ * Revision 2.15  1999/05/11 16:12:52  jhs
+ * Done some cosmetics to learn about the code.
  *
  * Revision 2.13  1999/05/07 15:19:36  jhs
  * Fixed Bugs in BuildDropWithLoop and is_empty_array.
@@ -7026,7 +7025,8 @@ isBoundEmpty (node *arg_node, node *bound_node)
         }
     } else if (NODE_TYPE (bound_node) == N_cast) {
         /* behind the cast must be an array somewhere,
-         * so we call this by recursiov */
+         * so we call this by recursion, until we reach
+         * type of another, we can tell something about. */
         return (isBoundEmpty (arg_node, CAST_EXPR (bound_node)));
     } else {
         ABORT (NODE_LINE (arg_node), ("Wrong type of bound node!"));
@@ -7304,9 +7304,9 @@ TI_Nwith (node *arg_node, node *arg_info)
 
         if (lowerbound_empty && upperbound_empty) {
 
-            if ((NWITHOP_TYPE(withop) == WO_modarray) || 
-          (NWITHOP_TYPE(withop) == WO_genarray)/* ||
-          (NWITHOP_TYPE(withop) == WO_Nfoldprf)*/) {
+            if ((NWITHOP_TYPE (withop) == WO_modarray)
+                || (NWITHOP_TYPE (withop) == WO_genarray)
+                || (NWITHOP_TYPE (withop) == WO_foldfun)) {
                 if ((NGEN_OP1_ORIG (generator) == F_le)
                     && (NGEN_OP2_ORIG (generator) == F_le)) {
                     /*  replace
