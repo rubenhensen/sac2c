@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/03/27 23:01:20  dkr
+ * NodeOrInt_GetNameOrVal() modified
+ *
  * Revision 3.21  2001/03/27 15:40:17  nmw
  * Array2Vec as wrapper for different Array2<XYZ>Vec added
  *
@@ -2911,6 +2914,7 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
     }
 
     switch (nt) {
+    case N_WLsegVar:
     case N_WLstrideVar:
     case N_WLgridVar:
         if (NODE_TYPE ((*((node **)node_or_int))) == N_id) {
@@ -2924,6 +2928,7 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
         }
         break;
 
+    case N_WLseg:
     case N_WLblock:
     case N_WLublock:
     case N_WLstride:
