@@ -22,3 +22,4 @@ distrib/binpacks
 
 src/libsac
 src/tools
+src/heapmgr
