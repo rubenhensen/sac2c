@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/02/03 18:28:22  mwe
+ * counter added
+ *
  * Revision 3.15  2005/02/02 18:09:50  mwe
  * new counter added
  * signature simplification added
@@ -94,6 +97,8 @@ extern int tup_tu_expr;
 extern int tup_wdp_expr;
 extern int tup_fdp_expr;
 extern int tup_rtu_expr;
+extern int tup_fsp_expr;
+extern int sisi_expr;
 
 extern node *OPTdoOptimize (node *arg_node);
 extern node *OPTmodule (node *arg_node, info *arg_info);
