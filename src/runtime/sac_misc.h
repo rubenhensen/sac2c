@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/09/15 13:02:40  dkr
+ * SAC_MIN, SAC_MAX added
+ *
  * Revision 3.6  2002/07/03 15:32:41  dkr
  * comments beautyfied
  *
@@ -53,7 +56,7 @@
 
 extern void SAC_String2Array (char *array, const char *string);
 
-/******************************************************************************
+/*****************************************************************************
  *
  * Miscellaneous ICMs
  * ==================
@@ -66,7 +69,10 @@ extern void SAC_String2Array (char *array, const char *string);
  * BLOCK_BEGIN() : begin of new block
  * BLOCK_END()   : end of new block
  *
- ******************************************************************************/
+ * MIN( a, b)    : minimum of 'a' and 'b'
+ * MAX( a, b)    : maximum of 'a' and 'b'
+ *
+ *****************************************************************************/
 
 #define SAC_ICM_UNDEF()                                                                  \
     _ICM_IS_UNDEFINED_ /* CC will report undefined symbol _ICM_IS_UNDEFINED_ */
@@ -78,7 +84,10 @@ extern void SAC_String2Array (char *array, const char *string);
 #define SAC_BLOCK_BEGIN() {
 #define SAC_BLOCK_END() }
 
-/******************************************************************************
+#define SAC_MIN(a, b) ((a) < (b) ? (a) : (b))
+#define SAC_MAX(a, b) ((a) > (b) ? (a) : (b))
+
+/*****************************************************************************
  *
  * ICMs for do-loop
  * ================
@@ -86,7 +95,7 @@ extern void SAC_String2Array (char *array, const char *string);
  * ND_LABEL( label)
  * ND_GOTO( label)
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 #define SAC_ND_LABEL(label)                                                              \
     label:
