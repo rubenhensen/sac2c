@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/28 17:20:46  sah
+ * now deserialize as an internal state
+ *
  * Revision 1.3  2004/10/26 09:36:20  sah
  * ongoing implementation
  *
@@ -20,8 +23,11 @@
 #include "types.h"
 #include "modulemanager.h"
 
-extern node *AddFunctionBodyToHead (node *fundef, node *module);
-extern void AddSymbolToAst (const char *symbol, module_t *module, node *ast);
+extern void InitDeserialize (node *module);
+extern void FinishDeserialize (node *module);
+
+extern node *AddFunctionBodyToHead (node *fundef);
+extern void AddSymbolToAst (const char *symbol, module_t *module);
 extern node *DeserializeLookupFunction (const char *module, const char *symbol,
                                         info *info);
 
