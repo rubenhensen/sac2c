@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2003/03/19 10:34:10  sbs
+ * TEAssureVect added.
+ *
  * Revision 1.5  2002/09/04 12:59:46  sbs
  * TEArrayElem2Obj and TEAssureSameScalarType added.
  *
@@ -273,6 +276,29 @@ TEAssureScalar (char *obj, ntype *type)
 
     if (!MatchScalar (type)) {
         ABORT (linenum, ("%s should be a scalar; type found: %s", obj,
+                         TYType2String (type, FALSE, 0)));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEAssureVect( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEAssureVect (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEAssureVect");
+
+    if (!MatchVect (type)) {
+        ABORT (linenum, ("%s should be a vector; type found: %s", obj,
                          TYType2String (type, FALSE, 0)));
     }
 

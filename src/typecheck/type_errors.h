@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2003/03/19 10:34:10  sbs
+ * TEAssureVect added.
+ *
  * Revision 1.4  2002/09/04 12:59:46  sbs
  * TEArrayElem2Obj and TEAssureSameScalarType added.
  *
@@ -28,6 +31,7 @@ extern char *TEArg2Obj (int pos);
 extern char *TEArrayElem2Obj (int pos);
 
 extern void TEAssureScalar (char *obj, ntype *type);
+extern void TEAssureVect (char *obj, ntype *type);
 extern void TEAssureBoolS (char *obj, ntype *type);
 extern void TEAssureBoolA (char *obj, ntype *type);
 extern void TEAssureSimpleType (char *obj, ntype *type);
