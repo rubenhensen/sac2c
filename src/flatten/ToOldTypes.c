@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/24 17:16:49  mwe
+ * SacDevCamp: Compiles!
+ *
  * Revision 1.1  2004/11/19 10:50:43  mwe
  * Initial revision
  *
@@ -23,42 +26,12 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "new_types.h"
+#include "node_basic.h"
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
 #include "ToOldTypes.h"
-
-/***************************************************************
- *
- * function:
- *   node *TOTcast(node *arg_node, node *arg_info)
- *
- *
- * description:
- *   Transforms ntype-structure to types-structure.
- *   Removes ntype-structure.
- *
- ***************************************************************/
-
-node *
-TOTcast (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("TOTcast");
-
-#ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != CAST_NTYPE (arg_node)), "missing ntype information");
-
-    if (CAST_TYPE (arg_node) != NULL)
-        CAST_TYPE (arg_node) = FreeAllTypes (CAST_TYPE (arg_node));
-
-    CAST_TYPE (arg_node) = TYType2OldType (CAST_NTYPE (arg_node));
-
-    CAST_NTYPE (arg_node) = TYFreeType (CAST_NTYPE (arg_node));
-#endif
-
-    DBUG_RETURN (arg_node);
-}
 
 /***************************************************************
  *
@@ -73,21 +46,20 @@ TOTcast (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-TOTarray (node *arg_node, node *arg_info)
+TOTarray (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTarray");
 
-#ifdef MWE_NTYPE_READY
     DBUG_ASSERT ((NULL != ARRAY_NTYPE (arg_node)), "missing ntype information");
 
-    if (ARRAY_TYPE (arg_node) != NULL)
-        ARRAY_TYPE (arg_node) = FreeAllTypes (ARRAY_TYPE (arg_node));
+    if (ARRAY_TYPE (arg_node) != NULL) {
+        ARRAY_TYPE (arg_node) = FREEfreeAllTypes (ARRAY_TYPE (arg_node));
+    }
 
-    ARRAY_TYPE (arg_node) = TYType2OldType (ARRAY_NTYPE (arg_node));
+    ARRAY_TYPE (arg_node) = TYtype2OldType (ARRAY_NTYPE (arg_node));
 
-    ARRAY_NTYPE (arg_node) = TYFreeType (ARRAY_NTYPE (arg_node));
-#endif
+    ARRAY_NTYPE (arg_node) = TYfreeType (ARRAY_NTYPE (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -104,13 +76,13 @@ TOTarray (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-TOTlet (node *arg_node, node *arg_info)
+TOTlet (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTlet");
 
     if (LET_EXPR (arg_node) != NULL)
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -125,16 +97,16 @@ TOTlet (node *arg_node, node *arg_info)
  *
  ***************************************************************/
 node *
-TOTassign (node *arg_node, node *arg_info)
+TOTassign (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTassign");
 
     if (ASSIGN_INSTR (arg_node) != NULL)
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL)
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -152,24 +124,26 @@ TOTassign (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-TOTvardec (node *arg_node, node *arg_info)
+TOTvardec (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTvardec");
 
 #ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != VARDEC_NTYPE (arg_node)), "missing ntype information");
+    DBUG_ASSERT ((NULL != AVIS_TYPE (VARDEC_AVIS (arg_node))),
+                 "missing ntype information");
 
-    if (VARDEC_TYPE (arg_node) != NULL)
-        VARDEC_TYPE (arg_node) = FreeAllTypes (VARDEC_TYPE (arg_node));
+    if (VARDEC_TYPE (arg_node) != NULL) {
+        VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
+    }
 
-    VARDEC_TYPE (arg_node) = TYType2OldType (VARDEC_NTYPE (arg_node));
+    VARDEC_TYPE (arg_node) = TYtype2OldType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
 
-    VARDEC_NTYPE (arg_node) = TYFreeType (VARDEC_NTYPE (arg_node));
+    AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
 #endif
 
     if (VARDEC_NEXT (arg_node) != NULL)
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -187,24 +161,24 @@ TOTvardec (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-TOTarg (node *arg_node, node *arg_info)
+TOTarg (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTarg");
 
 #ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != ARG_NTYPE (arg_node)), "missing ntype information");
+    DBUG_ASSERT ((NULL != AVIS_TYPE (ARG_AVIS (arg_node))), "missing ntype information");
 
     if (ARG_TYPE (arg_node) != NULL)
-        ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
+        ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
 
-    ARG_TYPE (arg_node) = TYType2OldType (ARG_NTYPE (arg_node));
+    ARG_TYPE (arg_node) = TYtype2OldType (AVIS_TYPE (ARG_AVIS (arg_node)));
 
-    ARG_NTYPE (arg_node) = TYFreeType (ARG_NTYPE (arg_node));
+    AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
 #endif
 
     if (ARG_NEXT (arg_node) != NULL)
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -220,16 +194,16 @@ TOTarg (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-TOTblock (node *arg_node, node *arg_info)
+TOTblock (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTblock");
 
     if (BLOCK_INSTR (arg_node) != NULL)
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     if (BLOCK_VARDEC (arg_node) != NULL)
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
@@ -246,93 +220,19 @@ TOTblock (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-TOTfundef (node *arg_node, node *arg_info)
+TOTfundef (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TOTfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL)
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
     if (FUNDEF_ARGS (arg_node) != NULL)
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-
-#ifdef MWE_NTYPE_READY
-
-#endif
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
 
     if (FUNDEF_NEXT (arg_node) != NULL)
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/***************************************************************
- *
- * function:
- *   node *TOTobjdef(node *arg_node, node *arg_info)
- *
- *
- * description:
- *   Transforms ntype-structure to types-structure.
- *   Removes ntype-structure.
- *
- ***************************************************************/
-
-node *
-TOTobjdef (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("TOTobjdef");
-
-#ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != OBJDEF_NTYPE (arg_node)), "missing ntype information");
-
-    if (OBJDEF_TYPE (arg_node) != NULL)
-        OBJDEF_TYPE (arg_node) = FreeAllTypes (OBJDEF_TYPE (arg_node));
-
-    OBJDEF_TYPE (arg_node) = TYType2OldType (OBJDEF_NTYPE (arg_node));
-
-    OBJDEF_NTYPE (arg_node) = TYFreeType (OBJDEF_NTYPE (arg_node));
-#endif
-
-    if (OBJDEF_NEXT (arg_node) != NULL)
-        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/***************************************************************
- *
- * function:
- *   node *TOTtypedef(node *arg_node, node *arg_info)
- *
- *
- * description:
- *   Transforms ntype-structure to types-structure.
- *   Removes ntype-structure.
- *
- ***************************************************************/
-
-node *
-TOTtypedef (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("TOTtypedef");
-
-#ifdef MWE_NTYPE_READY
-    DBUG_ASSERT ((NULL != TYPEDEF_NTYPE (arg_node)), "missing ntype information");
-
-    if (TYPEDEF_TYPE (arg_node) != NULL)
-        TYPEDEF_TYPE (arg_node) = FreeAllTypes (TYPEDEF_TYPE (arg_node));
-
-    TYPEDEF_TYPE (arg_node) = TYType2OldType (TYPEDEF_NTYPE (arg_node));
-
-    TYPEDEF_NTYPE (arg_node) = TYFreeType (TYPEDEF_NTYPE (arg_node));
-#endif
-
-    if (TYPEDEF_NEXT (arg_node) != NULL)
-        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -349,18 +249,17 @@ TOTtypedef (node *arg_node, node *arg_info)
  ***************************************************************/
 
 node *
-ToOldTypes (node *syntax_tree)
+TOTdoToOldTypes (node *syntax_tree)
 {
-    funtab *old_tab;
 
     DBUG_ENTER ("ToOldTypes");
 
-    old_tab = act_tab;
-    act_tab = tot_tab;
+    if (global.compiler_phase > PH_typecheck) {
 
-    syntax_tree = Trav (syntax_tree, NULL);
-
-    act_tab = old_tab;
+        TRAVpush (TR_tot);
+        syntax_tree = TRAVdo (syntax_tree, NULL);
+        TRAVpop ();
+    }
 
     DBUG_RETURN (syntax_tree);
 }
