@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/01/17 19:46:26  cg
+ * Adjusted target architecture discrimination to new project wide standard.
+ *
  * Revision 1.8  2000/01/17 17:58:45  cg
  * Added support for optimized allocation of refernce counters.
  *
@@ -66,21 +69,20 @@ typedef int SAC_HM_size_unit_t;
 
 #ifndef SAC_COMPILE_SACLIB
 
-#if (OS == SOLARIS_SPARC)
+#if defined(SAC_FOR_SOLARIS_SPARC)
 #include <sys/types.h>
 /* typedef unsigned int size_t;  */
 
-#elif (OS == LINUX_X86)
+#elif defined(SAC_FOR_LINUX_X86)
 #include <sys/types.h>
 /* typedef unsigned int size_t;  */
 
-#elif (OS == OSF_ALPHA)
+#elif defined(SAC_FOR_OSF_ALPHA)
 #include <sys/types.h>
 /* typedef unsigned int size_t;  */
 
 #else
-#include <sys/types.h>
-/* typedef unsigned int size_t;  */
+typedef UNKNOWN_OS size_t;
 
 #endif
 

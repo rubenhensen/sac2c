@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/17 19:47:44  cg
+ * Adjusted target architecture discrimination to new project wide standard.
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Moved some declarations to sac_heapmgr.h
  *
@@ -242,7 +245,24 @@
  * Macro definition of sbrk() system call
  */
 
-#define SBRK(size) sbrk ((intptr_t) (size))
+#if defined(SAC_FOR_SOLARIS_SPARC)
+
+/*#define SBRK(size)  sbrk((intptr_t) (size))  works on Solaris 2.7 only !! */
+#define SBRK(size) sbrk (size)
+
+#elif defined(SAC_FOR_LINUX_X86)
+
+#define SBRK(size) sbrk ((ptrdiff_t) (size))
+
+#elif defined(SAC_FOR_OSF_ALPHA)
+
+#define SBRK(size) UNKNOWN_SBRK
+
+#else
+
+#define SBRK(size) UNKNOWN_OS
+
+#endif
 
 /*
  * Initialization of some basic values/sizes.
