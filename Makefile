@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.113  2004/10/10 09:53:36  ktr
+# added src/refcount/rcopt.o
+#
 # Revision 3.112  2004/10/07 12:38:11  ktr
 # Replaced the old With-Loop Scalarization with a new implementation.
 #
@@ -356,7 +359,7 @@ MODULES_OLD= src/modules/import.o src/modules/writesib.o \
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 OBJECTS_OLD=
 
-REFCOUNT= src/refcount/allocation.o \
+REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
 REFCOUNT_OLD=
 
