@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/10/05 13:54:07  sah
+ * added a NEW_AST define
+ *
  * Revision 3.94  2004/09/28 14:08:45  ktr
  * removed old refcount and generatemasks
  *
@@ -3708,7 +3711,9 @@ Precompile (node *syntax_tree)
 
     DBUG_ENTER ("Precompile");
 
+#ifndef NEW_AST
     syntax_tree = MapCWrapper (syntax_tree);
+#endif /* NEW_AST */
 
     DBUG_EXECUTE ("PREC", NOTE (("step 0: renaming MemVals\n")));
     syntax_tree = MarkMemVals (syntax_tree);
