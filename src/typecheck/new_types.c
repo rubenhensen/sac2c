@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/11/27 02:53:46  khf
+ * adjusted names
+ *
  * Revision 3.78  2004/11/27 02:33:59  ktr
  * *** empty log message ***
  *
@@ -1973,7 +1976,7 @@ TYmakedft_res (ntype *type, int max_funs)
  ******************************************************************************/
 
 dft_res *
-TYfreedft_res (dft_res *res)
+TYfreeDft_res (dft_res *res)
 {
     DBUG_ENTER ("TYfreedft_res");
 
@@ -5057,7 +5060,7 @@ SplitWrapperType (ntype *type, bool *finished)
 }
 
 ntype *
-TYSplitWrapperType (ntype *type, bool *finished)
+TYsplitWrapperType (ntype *type, bool *finished)
 {
     DBUG_ENTER ("TYSplitWrapperType");
 
@@ -5669,7 +5672,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                 assigns = BuildApAssign (fundef, args, vardecs, new_vardecs);
             }
 
-            res = TYfreedft_res (res);
+            res = TYfreeDft_res (res);
         } else {
             assigns = CreateWrapperCode (IRES_TYPE (type), state, lower, funname,
                                          ARG_NEXT (arg), args, vardecs, new_vardecs);
