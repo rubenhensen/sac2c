@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/05/15 12:36:39  dkr
+ * removed a bug with 'arg_info' in RCNwith2
+ *
  * Revision 1.52  1998/05/12 15:52:07  dkr
  * removed ???_VARINFO
  *
@@ -661,12 +664,6 @@ RestoreRC (int *dump)
  * description:
  *   starts the refcount-traversal (sets act_tab).
  *
- * remarks:
- *   INFO_RC_PRF( arg_info) is relevant for N_id nodes only.
- *   (INFO_RC_PRF != NULL) indicates that a N_id node is argument of a
- *    primitive function (exept F_reshape) or ICM.
- *   INFO_RC_PRF then points to this prf/icm.
- *
  ******************************************************************************/
 
 node *
@@ -683,8 +680,6 @@ Refcount (node *arg_node)
 
     act_tab = refcnt_tab;
     arg_info = MakeInfo ();
-    INFO_RC_PRF (arg_info) = NULL;
-    INFO_RC_WITH (arg_info) = NULL;
 
     if (N_modul == NODE_TYPE (arg_node)) {
         if (MODUL_FUNS (arg_node) != NULL) {
@@ -1257,12 +1252,10 @@ RCid (node *arg_node, node *arg_info)
     }
 
     if (INFO_RC_WITH (arg_info) != NULL) {
-
         /*
          * if we have found the index-vector of a with-loop, we set RC of
          *  'NWITH_VEC' to 0.
          */
-
         if (strcmp (IDS_NAME (NWITH_VEC (INFO_RC_WITH (arg_info))), ID_NAME (arg_node))
             == 0) {
             IDS_REFCNT (NWITH_VEC (INFO_RC_WITH (arg_info))) = 0;
@@ -1601,7 +1594,7 @@ RCgen (node *arg_node, node *arg_info)
 node *
 RCNwith (node *arg_node, node *arg_info)
 {
-    node *vardec;
+    node *vardec, *tmp_with, *tmp_rcdump;
     ids *new_ids, *last_ids;
     int *ref_dump;
 
@@ -1610,6 +1603,7 @@ RCNwith (node *arg_node, node *arg_info)
     /*
      * 'INFO_RC_WITH( arg_info)' points to current with-loop node.
      */
+    tmp_with = INFO_RC_WITH (arg_info);
     INFO_RC_WITH (arg_info) = arg_node;
 
     /*
@@ -1639,6 +1633,7 @@ RCNwith (node *arg_node, node *arg_info)
                                     }
                                 }
                             }) /* FOREACH_VARDEC_AND_ARG */
+    tmp_rcdump = INFO_RC_RCDUMP (arg_info);
     INFO_RC_RCDUMP (arg_info) = StoreRC ();
 
     /*************************************************************
@@ -1710,9 +1705,10 @@ RCNwith (node *arg_node, node *arg_info)
                             }) /* FOREACH_VARDEC_AND_ARG */
 
     /*
-     * we leave the with-loop -> reset 'INFO_RC_WITH( arg_info)'.
+     * we leave the with-loop -> reset 'INFO_RC_...( arg_info)'.
      */
-    INFO_RC_WITH (arg_info) = NULL;
+    INFO_RC_WITH (arg_info) = tmp_with;
+    INFO_RC_RCDUMP (arg_info) = tmp_rcdump;
 
     DBUG_RETURN (arg_node);
 }
