@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/08/03 10:05:54  ktr
+ * All genarray/modarray results are named equally now.
+ *
  * Revision 1.7  2004/08/01 13:18:36  ktr
  * added MMVwlsegx
  *
@@ -110,12 +113,14 @@ struct INFO {
     ids *lhs;
     ids *lhs_wl;
     node *withop;
+    node *fundef;
 };
 
 #define INFO_MMV_LUT(n) (n->lut)
 #define INFO_MMV_LHS(n) (n->lhs)
 #define INFO_MMV_LHS_WL(n) (n->lhs_wl)
 #define INFO_MMV_WITHOP(n) (n->withop)
+#define INFO_MMV_FUNDEF(n) (n->fundef)
 
 /**
  * INFO functions
@@ -133,6 +138,7 @@ MakeInfo ()
     INFO_MMV_LHS (result) = NULL;
     INFO_MMV_LHS_WL (result) = NULL;
     INFO_MMV_WITHOP (result) = NULL;
+    INFO_MMV_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -203,6 +209,8 @@ node *
 MMVfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVfundef");
+
+    INFO_MMV_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_EXECUTE ("MMV", PrintNode (arg_node););
@@ -433,6 +441,9 @@ MMVprfAccu (node *arg_node, info *arg_info)
 static node *
 MMVprfSuballoc (node *arg_node, info *arg_info)
 {
+    char *subname;
+    node *vardec;
+
     DBUG_ENTER ("MMVprfSuballoc");
 
     /*
@@ -449,8 +460,34 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
     PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
 
     /*
-     *
+     * look for Vardec of A_sub
      */
+    subname = StringConcat (ID_NAME (PRF_ARG1 (arg_node)), "_sub");
+
+    vardec = FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info));
+    while ((vardec != NULL) && (strcmp (VARDEC_NAME (vardec), subname))) {
+        vardec = VARDEC_NEXT (vardec);
+    }
+    /*
+     * if no vardec was found we need to create one
+     */
+    if (vardec == NULL) {
+        vardec = MakeVardec (subname, DupOneTypes (IDS_TYPE (INFO_MMV_LHS (arg_info))),
+                             FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
+        FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)) = vardec;
+    } else {
+        Free (subname);
+    }
+
+    /*
+     * Insert pair (a, A_sub) into LUT
+     */
+    InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                     VARDEC_NAME (vardec));
+
+    InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                     vardec);
+
     DBUG_RETURN (arg_node);
 }
 
