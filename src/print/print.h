@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/04/08 19:59:01  dkr
+ * PrintInfo() added
+ *
  * Revision 3.13  2001/03/27 22:14:21  dkr
  * no changes done
  *
@@ -135,6 +138,7 @@ extern node *PrintMTalloc (node *arg_node, node *arg_info);
 extern node *PrintSSAcnt (node *arg_node, node *arg_info);
 extern node *PrintCSEinfo (node *arg_node, node *arg_info);
 extern node *PrintAvis (node *arg_node, node *arg_info);
+extern node *PrintInfo (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *PrintNwith (node *arg_node, node *arg_info);
