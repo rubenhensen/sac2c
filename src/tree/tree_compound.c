@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/07/22 14:19:48  ktr
+ * LiftArgs now introduces an alloc() assignment when needed
+ *
  * Revision 3.80  2004/07/14 14:21:37  sah
  * moved NodeBehindCast from LoopInvariantRemoval here
  *
@@ -306,6 +309,7 @@
 #include "DataFlowMask.h"
 #include "wltransform.h"
 #include "refcount.h"
+#include "globals.h"
 
 /*
  * macro template for append functions
@@ -3959,17 +3963,37 @@ LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assign
     new_arg = DupIds_Id (new_ids);
 
     if (do_rc) {
-        if (NODE_TYPE (arg) == N_id) {
-            if (RC_IS_ACTIVE (ID_REFCNT (arg))) {
-                IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = 1;
-            } else if (RC_IS_INACTIVE (ID_REFCNT (new_arg))) {
-                IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = RC_INACTIVE;
-            } else {
-                DBUG_ASSERT ((0), "illegal RC value found!");
+        if (ktr) {
+            switch (NODE_TYPE (arg)) {
+            case N_num:
+            case N_float:
+            case N_double:
+            case N_bool:
+            case N_char:
+                break;
+            default:
+                DBUG_ASSERT ((0), "illegal node type found");
             }
+            /* Explicit allocation needed */
+            (*new_assigns)
+              = MakeAssign (MakeLet (MakePrf3 (F_alloc, MakeNum (1), MakeNum (0),
+                                               CreateZeroVector (0, T_int)),
+                                     DupOneIds (new_ids)),
+                            (*new_assigns));
         } else {
-            IDS_REFCNT (new_ids) = ID_REFCNT (new_arg)
-              = TYPE_MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
+            /* old refcounting */
+            if (NODE_TYPE (arg) == N_id) {
+                if (RC_IS_ACTIVE (ID_REFCNT (arg))) {
+                    IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = 1;
+                } else if (RC_IS_INACTIVE (ID_REFCNT (new_arg))) {
+                    IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = RC_INACTIVE;
+                } else {
+                    DBUG_ASSERT ((0), "illegal RC value found!");
+                }
+            } else {
+                IDS_REFCNT (new_ids) = ID_REFCNT (new_arg)
+                  = TYPE_MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
+            }
         }
     }
 
