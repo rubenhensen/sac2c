@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.33  2004/10/26 16:13:58  sah
+  fixed a type
+
   Revision 1.32  2004/10/26 12:14:27  ktr
   added avis_aliasmask
 
@@ -757,7 +760,7 @@
           </phases>
         </attribute>
         <attribute name="TCStat" mandatory="yes">
-          <type name="Bool" />
+          <type name="Integer" />
           <phases>
             <phase name="typecheck" />
           </phases>
