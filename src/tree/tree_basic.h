@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2001/04/25 13:55:06  dkr
+ * ST_zombiefun added
+ *
  * Revision 3.85  2001/04/24 18:36:50  dkr
  * comment about FUNDEF_USED modified
  *
@@ -1022,6 +1025,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *   ST_condfun        : function representing an if-else-clause (LaC function)
  *   ST_dofun          : function representing a do-loop (LaC function)
  *   ST_whilefun       : function representing a while-loop (LaC function)
+ *   ST_zombiefun      : zombie function
  *
  * before multithreading:
  * ATTRIB:

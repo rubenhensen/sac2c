@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/25 13:55:14  dkr
+ * ST_zombiefun added
+ *
  * Revision 3.6  2001/03/26 10:44:51  nmw
  * ST_inlinefun added for special functions without conditional
  * that will be inlined during the opt cycle
@@ -181,7 +184,10 @@ SELECT (ST_undef, "ST_undef",
           /* fundef: unused generic fundef when compiling for c library      */),
 
   SELECT (ST_inlinefun, "ST_inlinefun",
-          /* fundef: special function without conditional - to be inlined */)
+          /* fundef: special function without conditional - to be inlined    */),
+
+  SELECT (ST_zombiefun, "ST_zombiefun",
+          /* fundef: zombie function                                         */)
 
 #undef SELECT
 
