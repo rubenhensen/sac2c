@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 1.8  2002/08/08 13:03:07  dkr
  * bug in NodeOrInt_Print() fixed
  *
@@ -13,7 +16,7 @@
  * (even C-ICMs can handle N_num and N_icm args now :-)
  *
  * Revision 1.5  2002/07/15 14:28:01  dkr
- * modifications for TAGGED_ARRAYS done
+ * modifications for new backend done
  *
  * Revision 1.4  2001/05/17 11:33:25  dkr
  * MALLOC/FREE eliminated
@@ -350,33 +353,19 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids)
 
     if (NameOrVal_IsInt (name, val)) {
         if (val == IDX_SHAPE) {
-#ifdef TAGGED_ARRAYS
             index = MakeIcm2 ("ND_A_SHAPE", DupIds_Id_NT (wl_ids), MakeNum (dim));
-#else
-            index = MakeIcm2 ("ND_A_SHAPE", DupIds_Id (wl_ids), MakeNum (dim));
-#endif
         } else {
             index = MakeNum (val);
         }
     } else {
-#ifdef TAGGED_ARRAYS
         int sel_dim;
-#endif
 
         DBUG_ASSERT ((ID_VARDEC ((*((node **)node_or_int))) != NULL), "no vardec found!");
 
-#ifdef TAGGED_ARRAYS
         sel_dim = (ID_DIM ((*((node **)node_or_int))) == SCALAR) ? 0 : dim;
 
         index
           = MakeIcm2 ("ND_READ", DupId_NT ((*((node **)node_or_int))), MakeNum (sel_dim));
-#else
-        if (ID_DIM ((*((node **)node_or_int))) == SCALAR) {
-            index = DupNode (*((node **)node_or_int));
-        } else {
-            index = MakeIcm2 ("ND_READ_ARRAY", MakeId_Copy (name), MakeNum (dim));
-        }
-#endif
     }
 
     DBUG_RETURN (index);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 1.27  2002/10/16 12:11:50  dkr
  * code for RESOLVE_REFERENCES removed:
  * reference parameters are considered in-parameters only (not
@@ -19,7 +22,7 @@
  * INFDFMSicm() simplified
  *
  * Revision 1.22  2002/07/12 17:00:46  dkr
- * INFDFMSicm(): modifications for TAGGED_ARRAYS done
+ * INFDFMSicm(): modifications for new backend done
  *
  * Revision 1.20  2002/04/16 18:27:15  dkr
  * INFO_DFMBASE renamed into INFO_DFM_BASE
@@ -1704,7 +1707,6 @@ INFDFMSicm (node *arg_node, node *arg_info)
          */
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
     } else if (strstr (name, "VECT2OFFSET") != NULL) {
-#ifdef TAGGED_ARRAYS
         /*
          * VECT2OFFSET( off_nt, ., from_nt, ., ...):
          *   off_nt = ... from_nt ...;
@@ -1714,17 +1716,6 @@ INFDFMSicm (node *arg_node, node *arg_info)
          */
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
         arg_info = UsedId (arg_info, ICM_ARG3 (arg_node));
-#else
-        /*
-         * VECT2OFFSET( off_name, from_name, ., ., ...):
-         *   off_name = ... from_name ...;
-         *
-         * def: 1st arg
-         * use: 2nd arg
-         */
-        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
-        arg_info = UsedId (arg_info, ICM_ARG2 (arg_node));
-#endif
     } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
          * IDXS2OFFSET( off_nt, i, idxs_nt, ., ...):

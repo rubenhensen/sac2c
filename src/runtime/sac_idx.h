@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/03/09 23:56:15  dkrHH
+ * old backend removed
+ *
  * Revision 3.12  2003/09/25 13:44:59  dkr
  * ND_WRITE replaced by ND_WRITE_COPY
  *
@@ -20,7 +23,7 @@
  * ICMs ND_PRF_IDX_... moved from sac_prf.h to sac_idx.h
  *
  * Revision 3.6  2002/07/11 09:24:27  dkr
- * all macros deactivated for TAGGED_ARRAYS
+ * all macros deactivated for new backend
  *
  * Revision 3.5  2002/04/30 08:45:57  dkr
  * no changes done
@@ -91,8 +94,6 @@
 #ifndef _SAC_IDX_H
 #define _SAC_IDX_H
 
-#ifdef TAGGED_ARRAYS
-
 /******************************************************************************
  *
  * ICMs for primitive functions after IVE
@@ -115,71 +116,5 @@
 
 #define SAC_ND_USE_GENVAR_OFFSET(off_NT, wl_NT)                                          \
     SAC_ND_WRITE_COPY (off_NT, 0, SAC_WL_OFFSET (wl_NT), );
-
-#else /* TAGGED_ARRAYS */
-
-/*
- * Macros used for primitive function idx_sel:
- * ===========================================
- */
-
-#define SAC_ND_IDX_SEL_S(s, a, res)                                                      \
-    SAC_TR_PRF_PRINT (("ND_IDX_SEL_S( %s, %s, %s)\n", #s, #a, #res));                    \
-    res = SAC_ND_READ_ARRAY (a, s);
-
-#define SAC_ND_IDX_SEL_A(s, a, res)                                                      \
-    SAC_TR_PRF_PRINT (("ND_IDX_SEL_A( %s, %s, %s)\n", #s, #a, #res));                    \
-    {                                                                                    \
-        int __i, __s;                                                                    \
-        for (__i = 0, __s = s; __i < SAC_ND_A_SIZE (res); __i++, __s++) {                \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __s);                  \
-        }                                                                                \
-    }
-
-/*
- * Macros used for primitive function idx_modarray:
- * ================================================
- */
-
-#define SAC_ND_IDX_MODARRAY_AxVxA(basetype, res, a, s, val)                              \
-    if (SAC_ND_A_FIELD (a) != SAC_ND_A_FIELD (res)) {                                    \
-        int __i, __s;                                                                    \
-        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s)\n", #basetype,    \
-                           #res, #a, #s, #val));                                         \
-        for (__i = 0; __i < s; __i++) {                                                  \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-        }                                                                                \
-        for (__s = 0; __s < SAC_ND_A_SIZE (val); __i++, __s++) {                         \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
-        }                                                                                \
-        for (; __i < SAC_ND_A_SIZE (res); __i++) {                                       \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-        }                                                                                \
-    } else {                                                                             \
-        int __i, __s;                                                                    \
-        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA__REUSE( %s, %s, %s, %s, %s)\n",        \
-                           #basetype, #res, #a, #s, #val));                              \
-        for (__i = s, __s = 0; __s < SAC_ND_A_SIZE (val); __i++, __s++) {                \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
-        }                                                                                \
-    }
-
-#define SAC_ND_IDX_MODARRAY_AxVxS(basetype, res, a, s, val)                              \
-    if (SAC_ND_A_FIELD (a) != SAC_ND_A_FIELD (res)) {                                    \
-        int __i;                                                                         \
-        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s)\n", #basetype,    \
-                           #res, #a, #s, #val));                                         \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++) {                                \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-        }                                                                                \
-    } else {                                                                             \
-        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS__REUSE( %s, %s, %s, %s, %s)\n",        \
-                           #basetype, #res, #a, #s, #val));                              \
-    }                                                                                    \
-    SAC_ND_WRITE_ARRAY (res, s) = val;
-
-#define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_OFFSET (res);
-
-#endif /* TAGGED_ARRAYS */
 
 #endif /* _SAC_IDX_H */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/03/09 23:56:15  dkrHH
+ * old backend removed
+ *
  * Revision 3.19  2003/11/10 20:22:56  dkrHH
  * debug output: NT objs are converted into strings correctly now
  *
@@ -33,7 +36,7 @@
  * SAC_ND_PRF_DIM__DATA modified
  *
  * Revision 3.9  2003/03/08 20:56:10  dkr
- * macros for TAGGED_ARRAYS revisited
+ * macros for new backend revisited
  *
  * Revision 3.8  2002/08/03 03:16:35  dkr
  * ND_PRF_SEL__DIM icms removed
@@ -102,8 +105,6 @@
 
 #define SAC_ND_UNIOP(op, arg) (op (arg))
 #define SAC_ND_BINOP(op, arg1, arg2) ((arg1)op (arg2))
-
-#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
@@ -280,67 +281,5 @@
                                          SAC_ND_READ (from2_NT, SAC_i)), );              \
         }                                                                                \
     }
-
-#else /* TAGGED_ARRAYS */
-
-#define SAC_ND_ABS(arg) (((arg) < 0) ? (-(arg)) : (arg))
-
-#define SAC_ND_MIN(arg1, arg2) SAC_MIN (arg1, arg2)
-#define SAC_ND_MAX(arg1, arg2) SAC_MAX (arg1, arg2)
-
-/*
- * Macros for primitve arithmetic operations:
- * ==========================================
- *
- * ND_BINOP_SxA_A( op, s, a2, res)        : realizes res = (s op a2)
- * ND_BINOP_AxS_A( op, s, a2, res)        : realizes res = (a2 op s)
- * ND_BINOP_AxA_A( op, a1, a2, res)       : realizes res = (a1 op a2)
- */
-
-#define SAC_ND_BINOP_AxA_A(op, a1, a2, res)                                              \
-    SAC_TR_PRF_PRINT (("ND_BINOP_AxA_A( %s, %s, %s, %s)\n", #op, #a1, #a2, #res));       \
-    {                                                                                    \
-        int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++) {                          \
-            SAC_ND_WRITE_ARRAY (res, SAC_i)                                              \
-              = SAC_ND_READ_ARRAY (a1, SAC_i) op SAC_ND_READ_ARRAY (a2, SAC_i);          \
-        }                                                                                \
-    }
-
-#define SAC_ND_BINOP_AxS_A(op, a1, s, res)                                               \
-    SAC_TR_PRF_PRINT (("ND_BINOP_AxS_A( %s, %s, %s, %s)\n", #op, #a1, #s, #res));        \
-    {                                                                                    \
-        int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++) {                          \
-            SAC_ND_WRITE_ARRAY (res, SAC_i) = SAC_ND_READ_ARRAY (a1, SAC_i) op s;        \
-        }                                                                                \
-    }
-
-#define SAC_ND_BINOP_SxA_A(op, s, a2, res)                                               \
-    SAC_TR_PRF_PRINT (("ND_BINOP_SxA_A( %s, %s, %s, %s)\n", #op, #s, #a2, #res));        \
-    {                                                                                    \
-        int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++) {                          \
-            SAC_ND_WRITE_ARRAY (res, SAC_i) = s op SAC_ND_READ_ARRAY (a2, SAC_i);        \
-        }                                                                                \
-    }
-
-/*
- * Macros for primitive type conversion functions on arrays
- */
-
-#define SAC_ND_CONV_A(a1, res)                                                           \
-    {                                                                                    \
-        int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++) {                          \
-            SAC_ND_WRITE_ARRAY (res, SAC_i) = SAC_ND_READ_ARRAY (a1, SAC_i);             \
-        }                                                                                \
-    }
-
-#define SAC_ND_2I_A(a1, res) SAC_ND_CONV_A (a1, res)
-#define SAC_ND_2F_A(a1, res) SAC_ND_CONV_A (a1, res)
-#define SAC_ND_2D_A(a1, res) SAC_ND_CONV_A (a1, res)
-
-#endif /* TAGGED_ARRAYS */
 
 #endif /* _SAC_PRF_H_ */

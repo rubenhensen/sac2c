@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 3.38  2004/03/02 16:41:27  mwe
  * cvp_tab added
  *
@@ -237,7 +240,6 @@ extern funtab *wlf_tab;
 extern funtab *free_tab;
 extern funtab *cf_tab;
 extern funtab *refcnt_tab;
-extern funtab *comp_tab;
 extern funtab *lir_tab;
 extern funtab *lir_mov_tab;
 extern funtab *dup_tab;
@@ -327,7 +329,7 @@ extern funtab *ssawli_tab;
 extern funtab *ssawlf_tab;
 extern funtab *rmcasts_tab;
 extern funtab *ssaili_tab;
-extern funtab *comp2_tab;
+extern funtab *comp_tab;
 extern funtab *insvd_tab;
 extern funtab *crtwrp_tab;
 extern funtab *wls_tab;

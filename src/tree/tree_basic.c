@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 3.81  2004/03/05 19:20:05  mwe
  * support for new node N_funcond added
  *
@@ -79,7 +82,7 @@
  * MakeIcm(): IS_LASTREF__BLOCK_ELSE added
  *
  * Revision 3.56  2002/07/03 16:55:20  dkr
- * ID_UNQCONV removed for TAGGED_ARRAYS
+ * ID_UNQCONV removed for new backend
  *
  * Revision 3.55  2002/06/25 14:09:29  sbs
  * N_dot added including MakeDot

@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/03/09 23:56:15  dkrHH
+ * old backend removed
+ *
  * Revision 3.5  2002/11/01 00:02:51  dkr
- * SAC_hidden removed for TAGGED_ARRAYS
+ * SAC_hidden removed for new backend
  *
  * Revision 3.4  2002/07/30 16:08:35  dkr
  * _hidden_ renamed into SAC_hidden
@@ -51,11 +54,6 @@
  * Makros for compiling the SAC <-> c Interface wrapper functions
  *
  */
-
-#ifndef TAGGED_ARRAYS
-/* this is a workaround to avoid errors after renaming the internal type */
-typedef void *SAC_hidden;
-#endif
 
 /* check for refcount >=1 , decrement refcounter */
 #define SAC_IW_CHECKDEC_RC(a, CONST_T_HIDDEN)                                            \

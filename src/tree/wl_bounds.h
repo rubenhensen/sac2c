@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 1.7  2002/08/08 13:02:40  dkr
  * GET_SHAPE_IDX modified: shape is no SHPSEG but a int*
  *
@@ -8,7 +11,7 @@
  * signature of NodeOrInt_MakeIndex() modified
  *
  * Revision 1.5  2002/07/15 14:28:12  dkr
- * modifications for TAGGED_ARRAYS done
+ * modifications for new backend done
  *
  * Revision 1.4  2001/06/28 08:50:03  sbs
  * _sac_wl_bounds_h_ after endif preproc directive put into

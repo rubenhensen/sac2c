@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 3.90  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -79,7 +82,7 @@
  * basic support for N_mop written.
  *
  * Revision 3.66  2002/07/03 16:55:16  dkr
- * ID_UNQCONV removed for TAGGED_ARRAYS
+ * ID_UNQCONV removed for new backend
  *
  * Revision 3.65  2002/07/02 09:27:59  dkr
  * DupExprs_NT() moved from compile.tagged.c to DupTree.c

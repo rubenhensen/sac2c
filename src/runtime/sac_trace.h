@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/03/09 23:56:15  dkrHH
+ * old backend removed
+ *
  * Revision 3.11  2003/11/10 20:22:56  dkrHH
  * debug output: NT objs are converted into strings correctly now
  *
@@ -9,7 +12,7 @@
  * SAC_TR_REF_PRINT_RC prints addr of data vector now
  *
  * Revision 3.9  2003/09/17 17:47:42  dkr
- * SAC_TR_MT_PRINT_FOLD_RESULT redefined for TAGGED_ARRAYS
+ * SAC_TR_MT_PRINT_FOLD_RESULT redefined for new backend
  *
  * Revision 3.8  2003/03/09 21:31:26  dkr
  * , moved from SAC_ND_WRITE__AKS to SAC_TR_AA_PRINT
@@ -177,16 +180,11 @@ typedef enum {
     SAC_TR_foldres_int,
     SAC_TR_foldres_float,
     SAC_TR_foldres_double,
-#ifndef TAGGED_ARRAYS
-    SAC_TR_foldres_array,
-    SAC_TR_foldres_array_rc,
-#endif
     SAC_TR_foldres_hidden
 } SAC_TR_foldres_t;
 
 #define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg);
 
-#ifdef TAGGED_ARRAYS
 #define SAC_TR_MT_PRINT_FOLD_RESULT(basetype, accu_NT, msg)                              \
     CAT13 (SAC_TR_MT_PRINT_FOLD_RESULT__,                                                \
            NT_SHP (accu_NT) BuildArgs3 (basetype, accu_NT, msg))
@@ -245,32 +243,6 @@ typedef enum {
     SAC_TR_MT_PRINT_FOLD_RESULT__AKS (basetype, accu_NT, msg)
 #define SAC_TR_MT_PRINT_FOLD_RESULT__AUD(basetype, accu_NT, msg)                         \
     SAC_TR_MT_PRINT_FOLD_RESULT__AKS (basetype, accu_NT, msg)
-#else /* TAGGED_ARRAYS */
-#define SAC_TR_MT_PRINT_FOLD_RESULT(basetype, accu_var, msg)                             \
-    {                                                                                    \
-        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##basetype;               \
-        switch (SAC_TR_foldres) {                                                        \
-        case SAC_TR_foldres_int:                                                         \
-            SAC_TR_MT_PRINT ((msg " (int) %d", accu_var));                               \
-            break;                                                                       \
-        case SAC_TR_foldres_float:                                                       \
-            SAC_TR_MT_PRINT ((msg " (float) %.15g", accu_var));                          \
-            break;                                                                       \
-        case SAC_TR_foldres_double:                                                      \
-            SAC_TR_MT_PRINT ((msg " (double) %.15g", accu_var));                         \
-            break;                                                                       \
-        case SAC_TR_foldres_array:                                                       \
-            SAC_TR_MT_PRINT ((msg " (array) %p", accu_var));                             \
-            break;                                                                       \
-        case SAC_TR_foldres_array_rc:                                                    \
-            SAC_TR_MT_PRINT ((msg " (array) %p", accu_var));                             \
-            break;                                                                       \
-        case SAC_TR_foldres_hidden:                                                      \
-            SAC_TR_MT_PRINT ((msg " (hidden)"));                                         \
-            break;                                                                       \
-        }                                                                                \
-    }
-#endif /* TAGGED_ARRAYS */
 
 #else /* SAC_DO_TRACE_MT */
 

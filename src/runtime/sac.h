@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/03/09 23:56:15  dkrHH
+ * old backend removed
+ *
  * Revision 3.7  2003/09/15 13:02:29  dkr
  * include of sac_icm.h moved
  *
@@ -23,8 +26,7 @@
  * new release made
  *
  * Revision 2.11  2000/08/18 13:56:15  dkr
- * sac_icm.h always included (the cat?-macros are usefull even without
- * TAGGED_ARRAYS)
+ * sac_icm.h always included (the cat?-macros are usefull even for old backend)
  *
  * Revision 2.10  2000/08/01 14:02:26  nmw
  * sac_free_interface_handler.h removed
@@ -33,7 +35,7 @@
  * include of sac_free_interface_handler.h added
  *
  * Revision 2.8  2000/07/06 08:15:38  dkr
- * include for TAGGED_ARRAYS changed
+ * include for new backend changed
  *
  * Revision 2.7  2000/07/05 12:51:41  nmw
  * sac_arg.h added
@@ -45,12 +47,12 @@
  * Include of sac_malloc.h replaced by include of mew file sac_heapmgr.h
  *
  * Revision 2.4  1999/06/24 14:01:27  sbs
- * sac_icm.h only included iff TAGGED_ARRAYS.
+ * sac_icm.h only included iff new backend is used.
  *
  * Revision 2.3  1999/06/16 17:36:03  rob
  * Include ifdef to pick different sac_std.h file to ease
  * mental anguish and angry programmers over transition to
- * TAGGED_ARRAYS.
+ * new backend.
  *
  * Revision 2.2  1999/04/06 13:43:12  cg
  * added include of sac_cachesim.h
@@ -90,25 +92,16 @@
 #ifndef _SAC_H_
 #define _SAC_H_
 
+#include "sac_misc.h"
 #include "sac_icm.h"
 
-#include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_runtimecheck.h"
 #include "sac_bool.h"
-
-#ifdef TAGGED_ARRAYS
-#include "sac_std.tagged.h"
-#include "sac_wl.tagged.h"
-#include "sac_mt.tagged.h"
-#include "sac_heapmgr.tagged.h"
-#else /* TAGGED_ARRAYS */
 #include "sac_std.h"
 #include "sac_wl.h"
 #include "sac_mt.h"
 #include "sac_heapmgr.h"
-#endif /* TAGGED_ARRAYS */
-
 #include "sac_idx.h"
 #include "sac_prf.h"
 #include "sac_trace.h"

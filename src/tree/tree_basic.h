@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.184  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 3.183  2004/03/09 14:37:19  cg
  * Mapped FUNDEF_IDENTIFIER to less ambiguous struct entry.
  *
@@ -159,9 +162,6 @@
  *
  * Revision 3.135  2002/07/10 17:50:57  dkr
  * MakeStr_Copy() added
- *
- * Revision 3.134  2002/07/03 17:08:33  dkr
- * modifications for TAGGED_ARRAYS removed
  *
  * Revision 3.132  2002/07/02 13:42:54  sah
  * added DOT_ISSINGLE macro.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/03/09 23:57:59  dkrHH
+ * old backend removed
+ *
  * Revision 3.48  2004/03/02 16:41:27  mwe
  * cvp_tab added
  *
@@ -201,7 +204,6 @@
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
-#include "compile.tagged.h"
 #include "ReuseWithArrays.h"
 #include "cccall.h"
 #include "PatchWith.h"
@@ -397,15 +399,8 @@ static funtab refcnt_tab_rec = {{
 funtab *refcnt_tab = &refcnt_tab_rec;
 
 /*
- *  (11) comp_tab
+ *  (11) unused1_tab
  */
-static funtab comp_tab_rec = {{
-#define NIFcomp(it_comp) it_comp
-#include "node_info.mac"
-                              },
-                              NULL,
-                              NULL};
-funtab *comp_tab = &comp_tab_rec;
 
 /*
  *  (12) lir_tab
@@ -1398,15 +1393,15 @@ static funtab ssaili_tab_rec = {{
 funtab *ssaili_tab = &ssaili_tab_rec;
 
 /*
- *  (102) comp2_tab
+ *  (102) comp_tab
  */
-static funtab comp2_tab_rec = {{
-#define NIFcomp2(it_comp2) it_comp2
+static funtab comp_tab_rec = {{
+#define NIFcomp(it_comp) it_comp
 #include "node_info.mac"
-                               },
-                               NULL,
-                               NULL};
-funtab *comp2_tab = &comp2_tab_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *comp_tab = &comp_tab_rec;
 
 /*
  *  (103) precomp3_tab
