@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/09/27 16:47:52  dkr
+ * a = fun( a) is flattened now
+ *
  * Revision 2.23  2000/06/23 13:53:39  dkr
  * nodetype N_with removed
  *
@@ -86,7 +89,6 @@
  *
  * Revision 1.2  1994/11/10  15:39:42  sbs
  * RCS-header inserted
- *
  *
  */
 
@@ -213,7 +215,7 @@ DbugPrintStack (void)
  *
  ******************************************************************************/
 
-simpletype
+static simpletype
 FltnPreTypecheck (nodetype act_node_t, simpletype elem_type)
 {
     DBUG_ENTER ("PreTypecheck");
@@ -270,7 +272,7 @@ FltnPreTypecheck (nodetype act_node_t, simpletype elem_type)
  *
  ******************************************************************************/
 
-char *
+static char *
 RenameWithVar (char *name, int level)
 {
     char *string;
@@ -302,7 +304,7 @@ RenameWithVar (char *name, int level)
  *
  ******************************************************************************/
 
-node *
+static node *
 InsertRenaming (node *block_or_assign, char *new_name, char *old_name)
 {
     node **insert_at;
@@ -346,7 +348,7 @@ InsertRenaming (node *block_or_assign, char *new_name, char *old_name)
  *
  ******************************************************************************/
 
-local_stack *
+static local_stack *
 FindId (char *name)
 {
     local_stack *tmp;
@@ -380,7 +382,7 @@ FindId (char *name)
  *
  ******************************************************************************/
 
-local_stack *
+static local_stack *
 FindIdInSeg (char *name, int seg_sz, local_stack *seg)
 {
     local_stack *tmp;
@@ -415,7 +417,7 @@ FindIdInSeg (char *name, int seg_sz, local_stack *seg)
  *
  ******************************************************************************/
 
-local_stack *
+static local_stack *
 CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
 {
     local_stack *seg;
@@ -449,7 +451,7 @@ CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
  *
  ******************************************************************************/
 
-node *
+static node *
 Abstract (node *arg_node, node *arg_info)
 {
     char *tmp;
@@ -479,35 +481,42 @@ Abstract (node *arg_node, node *arg_info)
  * description:
  *   eliminates nested function applications:
  *
- *     a = f( a+b, c)            =>   __flat_<n> = a+b;
- *                                    a          = f( __flat_<n>, c);
+ *     a = f( a+b, c);         =>   __flat_<n> = a+b;
+ *                                  a          = f( __flat_<n>, c);
  *
- *   renames vars that are defined by a with-loop AND have been defined before
- *   that with-loop:
- *     ...                            ...
- *     a = ...                        a = ...
- *     ...                       =>   ...
- *     a = with ... a ...             __flat_<n> = with ... a ...
- *                                    a = __flat_<n>;
+ *   and renames vars that occur on the LHS as well as in argument position
+ *   of a function application:
+ *
+ *     a, b, a = f( a, b);     =>   __flat_<n>, __flat_<m>, __flat_<n> = f( a, b);
+ *                                  a = __flat_<n>;
+ *                                  b = __flat_<m>;
+ *
+ *   and renames vars that are defined by a with-loop AND have been defined
+ *   before that with-loop:
+ *     ...                          ...
+ *     a = ...                      a = ...
+ *     ...                     =>   ...
+ *     a = with ... a ...           __flat_<n> = with ... a ...
+ *                                  a = __flat_<n>;
  *
  *   and renames vars that have been defined before a with-loop AND
  *   are redefined in the with-loop:
- *     ...                            ...
- *     a = ...                        a = ...
- *     ...                            ...
- *     b = with(...) {                b = with(...) {
- *                                          __w<i>a = a;
- *           ... a ...           =>         ... __w<i>a ...
- *           a = ...                        __w<i>a = ...
- *           ... a ...                      ... __w<i>a ...
- *         } ...                          } ...
+ *     ...                          ...
+ *     a = ...                      a = ...
+ *     ...                          ...
+ *     b = with(...) {              b = with(...) {
+ *                                        __w<i>a = a;
+ *           ... a ...         =>         ... __w<i>a ...
+ *           a = ...                      __w<i>a = ...
+ *           ... a ...                    ... __w<i>a ...
+ *         } ...                        } ...
  *
  *   and gives the generator-variables of WLs unique names:
  *
- *     iv = ...                        iv = ...
- *     ...                             ...
- *     a = with(... iv ...)      =>    a = with(... __flat<n>iv ...)
- *           v = ... iv ...                  __w<i>iv = ... __flat<n>iv ...
+ *     iv = ...                      iv = ...
+ *     ...                           ...
+ *     a = with(... iv ...)    =>    a = with(... __flat<n>iv ...)
+ *           v = ... iv ...                __w<i>iv = ... __flat<n>iv ...
  *
  *  NOTE: For the old WL, this renaming only occurs, if iv has been previously
  *  defined. In the new WL, this is done always!
@@ -748,7 +757,21 @@ FltnAssign (node *arg_node, node *arg_info)
  *  node *FltnLet(node *arg_node, node *arg_info)
  *
  * description:
- *   - for each id from the LHS do:
+ *   BEFORE the traversal of the RHS (since the vars on the RHS should still
+ *   have the original names)
+ *   for each id from the LHS we do:
+ *     - if we have   a ... a = fun( ... a ... )
+ *       then we rename each LHS   a   into a temp-var   __flat<n>   and insert
+ *       an assignment of the form   a = __flat<n>;   after the function
+ *       application.
+ *       NOTE HERE, that we neither have to push  __flat<n>  nor we have to
+ *       take care of any required renamings of   a   as indicated by <x> and
+ *       <wl> since that new assignment will be traversed later and thus a
+ *       required renaming will take place in that invocation of FltnLet !!
+ *
+ *   AFTER the traversal of the RHS (since the vars on the LHS should not be on
+ *   the stack during that traversal)
+ *   for each id from the LHS we do:
  *     - if we have   a = with ...   AND it is absolutely sure
  *       that a has been defined before, i.e.,
  *         if a has been defined within a conditional, it has been defined
@@ -756,12 +779,11 @@ FltnAssign (node *arg_node, node *arg_info)
  *         it has been defined before as well
  *         <=>  there exists an entry [a, <x>, <wl>] on the stack,
  *       then we rename   a   into a temp-var   __flat<n>   and insert an
- *       assignment of the form    a = __flat<n>;   after the with-loop.
- *       NOTE HERE, that we neither have to push  __flat<n>  nor we
- *       have to take care of any required renamings of   a   as indicated
- *       by <x> and <wl> since that assignment will be traversed later and thus
- *       a required renaming will take place in that invocation of
- *       FltnLet !!
+ *       assignment of the form   a = __flat<n>;   after the with-loop.
+ *       NOTE HERE, that we neither have to push  __flat<n>  nor we have to
+ *       take care of any required renamings of   a   as indicated by <x> and
+ *       <wl> since that new assignment will be traversed later and thus a
+ *       required renaming will take place in that invocation of FltnLet !!
  *     - if this LET-node is within a with-loop AND it is absolutely
  *       sure that   a   has been defined before, i.e.,
  *         there exists an entry [a, <x>, <wl>] on the stack,
@@ -773,29 +795,85 @@ FltnAssign (node *arg_node, node *arg_info)
  *           __w<with_level>a = <x>;
  *         at the beginning of the with-loop (this can be done via
  *         INFO_FLTN_WL_BLOCK( arg_info)),
- *         and push [ a, __w<with_level>a, <with_level>] on the stack.
- *       - otherwise, this is  NOT the first assignment to    a   in the
+ *         and push [a, __w<with_level>a, <with_level>] on the stack.
+ *       - otherwise, this is  NOT the first assignment to   a   in the
  *         actual with-loop, i.e.,
  *           <wl> == with_level,
  *         then we simply rename it to   __w<with_level>a.
- *     - in all other cases we simply push [ a, a, with_level] on the stack
- *
- *   - NOTE, that the RHS has to be traversed first, since the vars on the
- *     LHS should not be on the stack during that traversal!!
+ *     - in all other cases we simply push [a, a, with_level] on the stack
  *
  ******************************************************************************/
 
 node *
 FltnLet (node *arg_node, node *arg_info)
 {
-    ids *ids;
+    ids *ids, *ids2;
     char *var_name, *tmp_var;
     local_stack *tmp;
-    node *mem_last_assign;
+    node *mem_last_assign, *arg, *id;
 
     DBUG_ENTER ("FltnLet");
 
     mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+    ids = LET_IDS (arg_node);
+
+    if (ids != NULL) {
+        DBUG_PRINT ("RENAME",
+                    ("checking LHS of let-assignment to %s for renaming (part 1)",
+                     IDS_NAME (ids)));
+    }
+
+    while (ids != NULL) {
+        var_name = IDS_NAME (ids);
+
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+            /*
+             * does 'var_name' occur as an argument of the function application??
+             */
+            arg = AP_ARGS (LET_EXPR (arg_node));
+            while (arg != NULL) {
+                id = EXPRS_EXPR (arg);
+                if (NODE_TYPE (id) == N_id) {
+                    if (!strcmp (ID_NAME (id), var_name)) {
+                        DBUG_PRINT ("RENAME",
+                                    ("renaming LHS (%s) of function application",
+                                     var_name));
+                        tmp_var = TmpVar ();
+                        /*
+                         * Now, we insert an assignment    var_name = tmp_var;   AFTER
+                         * the actual assignment! This id done
+                         * by using InsertRenaming with a pointer to the actual
+                         * assignment-node which can be found in mem_last_assign!!!
+                         */
+                        mem_last_assign
+                          = InsertRenaming (mem_last_assign, var_name, tmp_var);
+
+                        /*
+                         * rename all other occurences of 'var_name' on the LHS
+                         */
+                        ids2 = IDS_NEXT (ids);
+                        while (ids2 != NULL) {
+                            if (!strcmp (IDS_NAME (ids2), var_name)) {
+                                FREE (IDS_NAME (ids2));
+                                IDS_NAME (ids2) = StringCopy (tmp_var);
+                            }
+                            ids2 = IDS_NEXT (ids2);
+                        }
+
+                        /*
+                         * and we rename the actual LHS
+                         */
+                        FREE (var_name);
+                        IDS_NAME (ids) = tmp_var;
+                        break;
+                    }
+                }
+                arg = EXPRS_NEXT (arg);
+            }
+        }
+        ids = IDS_NEXT (ids);
+    }
+
     ids = LET_IDS (arg_node);
 
     if (ids != NULL) {
@@ -806,8 +884,9 @@ FltnLet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     if (ids != NULL) {
-        DBUG_PRINT ("RENAME", ("checking LHS of let-assignment to %s for renaming",
-                               IDS_NAME (ids)));
+        DBUG_PRINT ("RENAME",
+                    ("checking LHS of let-assignment to %s for renaming (part 2)",
+                     IDS_NAME (ids)));
     }
 
     while (ids != NULL) {
@@ -819,7 +898,7 @@ FltnLet (node *arg_node, node *arg_info)
             /*
              * this PUSH operation covers the whole "third case" from the description
              * above. if var_name is found in the stack and non of the other cases
-             * is given, then (with_level == 0) holds and [ var_name, var_name, 0]
+             * is given, then (with_level == 0) holds and [var_name, var_name, 0]
              * has been pushed anyway!!
              */
         } else {
@@ -1485,6 +1564,7 @@ FltnDo (node *arg_node, node *arg_info)
  *   increments with_level and saves local stack only.
  *
  ******************************************************************************/
+
 node *
 FltnNwith (node *arg_node, node *arg_info)
 {
@@ -1528,6 +1608,7 @@ FltnNwith (node *arg_node, node *arg_info)
  *           or is flattened otherwise. It is optional.
  *
  ******************************************************************************/
+
 node *
 FltnNwithop (node *arg_node, node *arg_info)
 {
@@ -1597,6 +1678,7 @@ FltnNwithop (node *arg_node, node *arg_info)
  *   substitute B in A and i is bound to index variable of A.
  *
  ******************************************************************************/
+
 node *
 FltnNpart (node *arg_node, node *arg_info)
 {
@@ -1743,6 +1825,7 @@ DBUG_RETURN (arg_node);
  *   it's important to have Npart flattened before to avoid name clashes.
  *
  ******************************************************************************/
+
 node *
 FltnNcode (node *arg_node, node *arg_info)
 {
