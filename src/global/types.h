@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/06/09 13:56:43  jhs
+ * Added new variable naive_refcnt in ids.
+ *
  * Revision 2.12  1999/06/03 14:23:52  jhs
  * Brushed up some comments I 'hacked in' earlier.
  *
@@ -427,6 +430,7 @@ typedef struct IDS {
     char *id;
     char *mod;
     int refcnt;
+    int naive_refcnt;
     int flag;          /* the flag is used for ids-status */
                        /* (loop invariant/not loop invariant , ...) */
     struct NODE *node; /* ptr. to declaration */
