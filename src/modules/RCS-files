@@ -1,5 +1,4 @@
 Makefile
-analysis.c
 analysis.h
 checkdec.c
 checkdec.h
