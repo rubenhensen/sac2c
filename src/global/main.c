@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/09/20 11:32:34  jhs
+ * Added commented FreeTree after syntaxtree is not used anymore,
+ * but it is not possible to free the tree ... :((
+ *
  * Revision 2.7  1999/07/09 11:52:18  cg
  * Added consistency check for command line options.
  *
@@ -578,6 +582,7 @@ main (int argc, char *argv[])
     NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
     NEWLINE (2);
 
+    /*  FreeTree (syntax_tree); */
     return (0);
 
 BREAK:
