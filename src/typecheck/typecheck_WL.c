@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/07/16 21:49:35  sah
+ * one has to be very careful when using
+ * * and / in a log message;)
+ *
  * Revision 3.10  2004/07/16 21:43:00  sah
  * extended constant folding capabilities of
- * the old typechecker. Now, +-*/ is supported
+ * the old typechecker. Now, +*-/ is supported
  * on shapevectors in withloop generators even
  * for SxA and AxS prfs
  *
@@ -63,9 +67,15 @@
  * Revision 2.2  1999/05/31 16:56:45  sbs
  * constant-folding for wls extended
  * Now, with(...) genarray( [2+2,3],...);
-*works as well.**Revision 2.1 1999 / 02
-  / 23 12 : 41 : 00 sacbase *new release made **Revision 1.1 1998 / 04
-  / 28 15 : 48 : 09 srs *Initial revision ** /
+ * works as well.
+ *
+ * Revision 2.1  1999/02/23 12:41:00  sacbase
+ * new release made
+ *
+ * Revision 1.1  1998/04/28 15:48:09  srs
+ * Initial revision
+ *
+ */
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -86,26 +96,26 @@
 #include "typecheck.h"
 #include "DupTree.h"
 
-  /*
-   * This files exports a function ReduceGenarrayShape() which tries to
-   * constantfold the expression in the genarray operator.
-   * Foldable expressions only contain
-   *  - shape(Id)   (not shape(Id*2))
-   *  - prf +,-,*,/ with only shape() or constants as arguments.
-   * Examples for valid expressions:
-   * 1) shape(A)*2+3;
-   * 2) (shape(A)+2)*(shape(A)*2)
-   *
-   * Why is CF restricted that way?
-   * CF does not need masks (USE, DEF, MRD) for these expressions except
-   * for the Id inside shape(). The shape()-evaluation is patched so it can be
-   * called from TC.
-   *
-   */
+/*
+ * This files exports a function ReduceGenarrayShape() which tries to
+ * constantfold the expression in the genarray operator.
+ * Foldable expressions only contain
+ *  - shape(Id)   (not shape(Id*2))
+ *  - prf +,-,*,/ with only shape() or constants as arguments.
+ * Examples for valid expressions:
+ * 1) shape(A)*2+3;
+ * 2) (shape(A)+2)*(shape(A)*2)
+ *
+ * Why is CF restricted that way?
+ * CF does not need masks (USE, DEF, MRD) for these expressions except
+ * for the Id inside shape(). The shape()-evaluation is patched so it can be
+ * called from TC.
+ *
+ */
 
-  /* To avaoid conflicts with usage of arg_info in CF we better use
-     a global var to store our result*/
-  int expr_ok;
+/* To avaoid conflicts with usage of arg_info in CF we better use
+   a global var to store our result*/
+int expr_ok;
 
 /******************************************************************************
  *
@@ -240,8 +250,10 @@ TCWLprf (node *arg_node, node *arg_info)
                        constant folder as it has been removed */
 
                     /* sah: I have not found any code dealing with
-                       shape applied to a num, there has to be a reason
-                       for this (isn't it always []?) */
+                     * shape applied to a num, there has to be a reason
+                     * for this (isn't it always []?) Maybe because
+                     * the old tc cannot handle empty arrays?
+                     */
                 }
             }
         }
