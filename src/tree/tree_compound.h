@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/01/10 14:27:32  dkr
+ * function MakeWLsegX added
+ *
  * Revision 3.7  2001/01/10 11:30:18  dkr
  * some WLGRIDX_... macros added
  *
@@ -1762,6 +1765,14 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 /***
  ***  N_WLsegVar :
  ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLseg :  *and*  N_WLsegVar :
+ ***/
+
+extern node *MakeWLsegX (int dims, int full_range, node *contents, node *next);
 
 /*--------------------------------------------------------------------------*/
 
