@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2005/03/10 09:41:09  cg
+ * Added #include "DupTree.h"
+ *
  * Revision 3.82  2005/03/04 21:21:42  cg
  * Useless conditional eliminated.
  * Integration of silently duplicated LaC funs at the end of the
@@ -376,6 +379,7 @@
 #include "print.h"
 #include "convert.h"
 #include "new_types.h"
+#include "DupTree.h"
 
 #include "optimize.h"
 #include "DeadFunctionRemoval.h"
