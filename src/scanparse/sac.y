@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  2000/10/24 11:29:08  dkr
+ * function MakeTypes() used
+ *
  * Revision 2.26  2000/10/17 16:51:02  dkr
  * _MAIN replaced by macro MAIN_MOD_NAME
  *
@@ -2417,7 +2420,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
        | sibevclass TYPEDEF IMPLICIT id SEMIC sibpragmas
            {
              $$=MakeTypedef($4, NULL,
-                            MakeType(T_hidden, 0, NULL, NULL, NULL),
+                            MakeTypes(T_hidden),
                             $1, NULL);
              TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$6;
@@ -2430,7 +2433,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
        | sibevclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4,
-                            MakeType(T_hidden, 0, NULL, NULL, NULL),
+                            MakeTypes(T_hidden),
                             $1, NULL);
              TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$8;
@@ -2671,7 +2674,7 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                  {
                    $$=MakeFundef($1, NULL,
-                                 MakeType(T_unknown, 0, NULL, NULL, NULL),
+                                 MakeTypes(T_unknown),
                                  $3, NULL, NULL);
                    FUNDEF_STATUS($$)=sib_imported_status;
                    
@@ -2682,7 +2685,7 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                | id COLON fun_name BRACKET_L sibarglist BRACKET_R
                  {
                    $$=MakeFundef($3, $1,
-                                 MakeType(T_unknown, 0, NULL, NULL, NULL),
+                                 MakeTypes(T_unknown),
                                  $5, NULL, NULL);
 
                    FUNDEF_STATUS($$)=sib_imported_status;
@@ -2954,7 +2957,7 @@ node *GenVardec( types *type, ids *ids_p)
     tmp=MakeNode(N_vardec);
     tmp->node[0]=vardec_p;
     vardec_p=tmp;
-    type_p=MakeType(T_int, 0, NULL, NULL, NULL);
+    type_p=MakeTypes(T_int);
     type_p=(types*) memcpy((void*)type_p, (void*)type, sizeof(types)) ;
     vardec_p->info.types=type_p;
     vardec_p->info.types->id=ids_p->id;
