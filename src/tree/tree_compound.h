@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2002/02/20 17:03:54  dkr
+ * some FUNDEF_... macros added or removed
+ *
  * Revision 3.51  2001/12/13 15:15:44  dkr
  * signature of MakeAssignIcm?() modified
  *
@@ -765,29 +768,14 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 
 #define FUNDEF_LINKNAME(n) (PRAGMA_LINKNAME (FUNDEF_PRAGMA (n)))
 #define FUNDEF_LINKSIGN(n) (PRAGMA_LINKSIGN (FUNDEF_PRAGMA (n)))
-#define FUNDEF_EFFECT(n) (PRAGMA_EFFECT (FUNDEF_PRAGMA (n)))
-#define FUNDEF_TOUCH(n) (PRAGMA_TOUCH (FUNDEF_PRAGMA (n)))
-#define FUNDEF_READONLY(n) (PRAGMA_READONLY (FUNDEF_PRAGMA (n)))
 #define FUNDEF_REFCOUNTING(n) (PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (n)))
-#define FUNDEF_PRATYPES(n) (PRAGMA_NEEDTYPES (FUNDEF_PRAGMA (n)))
-#define FUNDEF_PRAFUNS(n) (PRAGMA_NEEDFUNS (FUNDEF_PRAGMA (n)))
-#define FUNDEF_PRALINKMOD(n) (PRAGMA_LINKMOD (FUNDEF_PRAGMA (n)))
 
 #define FUNDEF_IS_LACFUN(n)                                                              \
     ((FUNDEF_STATUS (n) == ST_condfun) || (FUNDEF_STATUS (n) == ST_dofun)                \
      || (FUNDEF_STATUS (n) == ST_whilefun))
-
 #define FUNDEF_IS_CONDFUN(n) (FUNDEF_STATUS (n) == ST_condfun)
-
 #define FUNDEF_IS_LOOPFUN(n)                                                             \
     ((FUNDEF_STATUS (n) == ST_dofun) || (FUNDEF_STATUS (n) == ST_whilefun))
-
-#define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
-    ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
-
-#define FUNDEF_WANTS_REFCOUNT(n, idx)                                                    \
-    ((FUNDEF_PRAGMA (n) != NULL) && (FUNDEF_REFCOUNTING (n) != NULL)                     \
-     && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx) && (FUNDEF_REFCOUNTING (n)[idx]))
 
 /*
  *  The following compound access macros are useful whenever a fundef
