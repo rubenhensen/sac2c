@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1994/12/15 17:09:16  sbs
+ * Revision 1.30  1994/12/15 17:29:16  sbs
+ * bug in fundef2 inline fixed
+ *
+ * Revision 1.29  1994/12/15  17:09:16  sbs
  * typecasts as (: type) inserted.
  * The colon is due the context dependencies resulting from
  * expressions like ( ID ) [ expr ]
@@ -304,16 +307,20 @@ fundefs: fundef fundefs { $1->node[1]=$2;
 	;
 
 fundef: types fundef2 
-        {
-           id *function_name;
+        { id *function_name;
+
            $$=$2;
            function_name=$2->info.id;
            $$->info.types=$1;          /*  Typ der Funktion */
            $$->info.types->id=function_name;
         }
 	| types INLINE {warn("inline not yet implemented!");} fundef2
-            {$$=$4;
+            {id *function_name;
+
+             $$=$4;
+             function_name=$4->info.id;
              $$->info.types=$1;          /*  Typ der Funktion */
+             $$->info.types->id=function_name;
             }
 
 fundef2: ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
