@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2003/10/15 12:25:48  dkrHH
+ * indent warning deactivated for SPMD-funs only
+ *
  * Revision 3.140  2003/09/25 10:54:39  dkr
  * to_unq() and from_unq() are prfs now
  *
@@ -1713,9 +1716,9 @@ PrintFundef (node *arg_node, node *arg_info)
 
     if (indent != old_indent) {
 #ifdef WARN_INDENT
-        if (gen_mt_code != GEN_MT_OLD) {
+        if (FUNDEF_STATUS (INFO_PRINT_FUNDEF (arg_info)) != ST_spmdfun) {
             /*
-             * for the time being (old) code for MT is always unbalanced :-(
+             * for the time being, indentation of MT funs is always unbalanced :-(
              */
             SYSWARN (("Indentation unbalanced while printing function %s."
                       " Indentation at beginning of function: %i."
@@ -1943,9 +1946,9 @@ PrintBlock (node *arg_node, node *arg_info)
 
     if (indent != old_indent) {
 #ifdef WARN_INDENT
-        if (gen_mt_code != GEN_MT_OLD) {
+        if (FUNDEF_STATUS (INFO_PRINT_FUNDEF (arg_info)) != ST_spmdfun) {
             /*
-             * for the time being (old) code for MT is always unbalanced :-(
+             * for the time being, indentation of MT funs is always unbalanced :-(
              */
             SYSWARN (("Indentation unbalanced while printing block of function %s."
                       " Indentation at beginning of block: %i."
