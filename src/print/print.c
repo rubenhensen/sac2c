@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.59  1995/05/04 11:41:20  sbs
+ * Revision 1.60  1995/05/17 14:49:27  hw
+ * changed PrintBool (TRUE => true; FALSE =>false )
+ *
+ * Revision 1.59  1995/05/04  11:41:20  sbs
  * ICM-macros adjusted to trf's
  *
  * Revision 1.58  1995/04/28  15:25:20  hw
@@ -523,9 +526,9 @@ PrintBool (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintBool");
 
     if (0 == arg_node->info.cint)
-        fprintf (outfile, "FALSE");
+        fprintf (outfile, "false");
     else
-        fprintf (outfile, "TRUE");
+        fprintf (outfile, "true");
 
     DBUG_RETURN (arg_node);
 }
