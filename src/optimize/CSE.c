@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.10  2000/10/23 10:36:55  dkr
+ * function MakeId2 removed
+ *
  * Revision 2.9  2000/07/14 10:11:12  dkr
  * DupIds() called with arg_info=NULL now
  *
@@ -504,12 +507,14 @@ GenNodes4Ap (ids *ids1, ids *ids2, node *arg_info)
     node *id_node, *let_node;
 
     DBUG_ENTER ("GenNodes4Ap");
+
     if (NULL != IDS_NEXT (ids1)) {
         new_node = GenNodes4Ap (IDS_NEXT (ids1), IDS_NEXT (ids2), arg_info);
         IDS_NEXT (ids1) = NULL;
         IDS_NEXT (ids2) = NULL;
     }
-    id_node = MakeId2 (ids2);
+    id_node = MakeId (NULL, NULL, ST_regular);
+    ID_IDS (id_node) = ids2;
     let_node = MakeLet (id_node, ids1);
     new_node = AppendNodeChain (1, MakeAssign (let_node, NULL), new_node);
     DBUG_RETURN (new_node);
@@ -530,7 +535,8 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     case N_str:
     case N_bool:
         ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
-        id_node = MakeId2 (ids_node);
+        id_node = MakeId (NULL, NULL, ST_regular);
+        ID_IDS (id_node) = ids_node;
         ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
         let_node = MakeLet (id_node, ids_node);
         new_node = MakeAssign (let_node, NULL);
@@ -541,7 +547,8 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     case N_prf:
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
             ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
-            id_node = MakeId2 (ids_node);
+            id_node = MakeId (NULL, NULL, ST_regular);
+            ID_IDS (id_node) = ids_node;
             ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
             let_node = MakeLet (id_node, ids_node);
             new_node = MakeAssign (let_node, NULL);
