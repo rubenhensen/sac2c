@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.62  1998/02/05 16:47:34  srs
+# removed WorkReduction from OPTIMIZE
+#
 # Revision 1.61  1998/01/28 13:46:49  srs
 # SHOW_MALLOC is now default
 #
@@ -239,7 +242,7 @@ PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
-          src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
+          src/optimize/DeadCodeRemoval.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o \
           src/optimize/Unswitch.o src/optimize/CSE.o
