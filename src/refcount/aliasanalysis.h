@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/12 10:18:49  ktr
+ * Alias property of inner identifiers is no longer ignored.
+ *
  * Revision 1.3  2004/11/02 14:31:11  ktr
  * Aliasanalysis is now performed seperately for each branch of a
  * conditional.
@@ -31,6 +34,7 @@ extern node *EMAAcode (node *arg_node, info *arg_info);
 extern node *EMAAcond (node *arg_node, info *arg_info);
 extern node *EMAAfuncond (node *arg_node, info *arg_info);
 extern node *EMAAfundef (node *arg_node, info *arg_info);
+extern node *EMAAicm (node *arg_node, info *arg_info);
 extern node *EMAAid (node *arg_node, info *arg_info);
 extern node *EMAAlet (node *arg_node, info *arg_info);
 extern node *EMAAprf (node *arg_node, info *arg_info);

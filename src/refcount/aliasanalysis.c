@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/12 10:18:49  ktr
+ * Alias property of inner identifiers is no longer ignored.
+ *
  * Revision 1.5  2004/11/02 14:31:11  ktr
  * Aliasanalysis is now performed seperately for each branch of a
  * conditional.
@@ -60,6 +63,7 @@ struct INFO {
     node *fundef;
     ids *lhs;
     DFMmask_t mask;
+    DFMmask_t localmask;
     node *apargs;
     DFMmask_t apmask;
     node *funargs;
@@ -72,6 +76,7 @@ struct INFO {
 #define INFO_AA_FUNDEF(n) (n->fundef)
 #define INFO_AA_LHS(n) (n->lhs)
 #define INFO_AA_MASK(n) (n->mask)
+#define INFO_AA_LOCALMASK(n) (n->localmask)
 #define INFO_AA_APMASK(n) (n->apmask)
 #define INFO_AA_APARGS(n) (n->apargs)
 #define INFO_AA_FUNARGS(n) (n->funargs)
@@ -97,6 +102,7 @@ MakeInfo (node *fundef)
     INFO_AA_FUNDEF (result) = fundef;
     INFO_AA_LHS (result) = NULL;
     INFO_AA_MASK (result) = NULL;
+    INFO_AA_LOCALMASK (result) = NULL;
     INFO_AA_APARGS (result) = NULL;
     INFO_AA_APMASK (result) = NULL;
     INFO_AA_FUNARGS (result) = NULL;
@@ -170,17 +176,22 @@ SetAvisAlias (node *avis, bool newval)
 static bool
 GetRetAlias (node *fundef, int num)
 {
+    bool res = TRUE;
     nodelist *nl;
 
     DBUG_ENTER ("GetRetAlias");
 
     nl = FUNDEF_RETALIAS (fundef);
-    while (num > 0) {
+    while ((nl != NULL) && (num > 0)) {
         nl = NODELIST_NEXT (nl);
         num -= 1;
     }
 
-    DBUG_RETURN (BOOL_VAL (NODELIST_NODE (nl)));
+    if (nl != NULL) {
+        res = BOOL_VAL (NODELIST_NODE (nl));
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -341,14 +352,25 @@ EMAAcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMAAcode");
 
     if (NCODE_CBLOCK (arg_node) != NULL) {
-        DFMmask_t oldmask;
+        DFMmask_t oldmask, oldlocalmask;
 
         oldmask = INFO_AA_MASK (arg_info);
+        oldlocalmask = INFO_AA_LOCALMASK (arg_info);
+
         INFO_AA_MASK (arg_info) = DFMGenMaskCopy (oldmask);
+        INFO_AA_LOCALMASK (arg_info) = DFMGenMaskCopy (oldlocalmask);
+        DFMSetMaskClear (INFO_AA_LOCALMASK (arg_info));
 
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
+        DFMSetMaskAnd (INFO_AA_MASK (arg_info), INFO_AA_LOCALMASK (arg_info));
+        DFMSetMaskOr (oldmask, INFO_AA_MASK (arg_info));
+        DFMSetMaskOr (oldlocalmask, INFO_AA_LOCALMASK (arg_info));
+
         INFO_AA_MASK (arg_info) = DFMRemoveMask (INFO_AA_MASK (arg_info));
+        INFO_AA_LOCALMASK (arg_info) = DFMRemoveMask (INFO_AA_LOCALMASK (arg_info));
+
+        INFO_AA_LOCALMASK (arg_info) = oldlocalmask;
         INFO_AA_MASK (arg_info) = oldmask;
     }
 
@@ -463,6 +485,7 @@ EMAAfundef (node *arg_node, info *arg_info)
             maskbase = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
             INFO_AA_MASK (info) = DFMGenMaskClear (maskbase);
+            INFO_AA_LOCALMASK (info) = DFMGenMaskClear (maskbase);
 
             if (arg_info != NULL) {
                 INFO_AA_APARGS (info) = INFO_AA_APARGS (arg_info);
@@ -522,6 +545,7 @@ EMAAfundef (node *arg_node, info *arg_info)
              * Clean up
              */
             INFO_AA_MASK (info) = DFMRemoveMask (INFO_AA_MASK (info));
+            INFO_AA_LOCALMASK (info) = DFMRemoveMask (INFO_AA_LOCALMASK (info));
 
             maskbase = DFMRemoveMaskBase (maskbase);
 
@@ -587,6 +611,39 @@ EMAAid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @node EMAAicm( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMAAicm (node *arg_node, info *arg_info)
+{
+    char *name;
+
+    DBUG_ENTER ("EMAAicm");
+
+    name = ICM_NAME (arg_node);
+
+    if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
+        || (strstr (name, "VECT2OFFSET") != NULL)
+        || (strstr (name, "IDXS2OFFSET") != NULL)) {
+        DFMSetMaskEntrySet (INFO_AA_LOCALMASK (arg_info), NULL,
+                            ID_VARDEC (ICM_ARG1 (arg_node)));
+    } else {
+        DBUG_ASSERT ((0), "Unknown ICM found during EMRI");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @node EMAAlet( node *arg_node, info *arg_info)
  *
  * @brief
@@ -600,10 +657,20 @@ EMAAid (node *arg_node, info *arg_info)
 node *
 EMAAlet (node *arg_node, info *arg_info)
 {
+    ids *_ids;
     DBUG_ENTER ("EMAAlet");
 
     INFO_AA_CONTEXT (arg_info) = AA_let;
     INFO_AA_LHS (arg_info) = LET_IDS (arg_node);
+
+    /*
+     * Mark LHS identifiers as local
+     */
+    _ids = LET_IDS (arg_node);
+    while (_ids != NULL) {
+        DFMSetMaskEntrySet (INFO_AA_LOCALMASK (arg_info), NULL, IDS_VARDEC (_ids));
+        _ids = IDS_NEXT (_ids);
+    }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -641,6 +708,7 @@ EMAAprf (node *arg_node, info *arg_info)
     case F_accu:
         _ids = INFO_AA_LHS (arg_info);
         while (_ids != NULL) {
+            DBUG_PRINT ("EMAA", ("%s is returned by accu()", IDS_NAME (_ids)));
             DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_VARDEC (_ids));
             _ids = IDS_NEXT (_ids);
         }
@@ -767,6 +835,10 @@ node *
 EMAAvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAvardec");
+
+    if (DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, arg_node)) {
+        DBUG_PRINT ("EMAA", ("%s could not be unaliased", VARDEC_NAME (arg_node)));
+    }
 
     VARDEC_AVIS (arg_node)
       = SetAvisAlias (VARDEC_AVIS (arg_node),
