@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/02 21:40:09  dkr
+ * include of NameTuples.h added
+ *
  * Revision 3.3  2001/05/11 14:36:56  cg
  * Include of new header file icm2c_sched.h added
  *
@@ -35,6 +38,7 @@
 #include "globals.h"
 #include "convert.h"
 #include "my_debug.h"
+#include "NameTuples.h"
 
 #include "icm2c_std.h"
 #include "icm2c_wl.h"
