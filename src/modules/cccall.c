@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/06/23 15:06:55  cg
+ * Command line option -dcccall implemented.
+ *
  * Revision 1.15  1998/03/25 10:41:43  cg
  * library format of SAC libraries slightly modified:
  * archives are now called lib<modname>.a instead of <modname>.a
@@ -528,9 +531,22 @@ InvokeCC ()
     }
 
     if (filetype == F_prog) {
+        char *linklist = GenLinklist (dependencies);
+        FILE *shellscript;
+
         SystemCall ("%s %s %s -L%s %s -o %s %s %s %s", config.cc, config.ccflags,
                     config.ccdir, tmp_dirname, opt_buffer, outfilename, cfilename,
-                    GenLinklist (dependencies), config.cclink);
+                    linklist, config.cclink);
+
+        if (gen_cccall) {
+            shellscript = WriteOpen (".sac2c");
+            fprintf (shellscript, "#!/bin/sh -v\n\n");
+            fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s\n\n", config.cc,
+                     config.ccflags, config.ccdir, tmp_dirname, opt_buffer, outfilename,
+                     cfilename, linklist, config.cclink);
+            fclose (shellscript);
+            SystemCall ("chmod a+x .sac2c");
+        }
     } else {
         if (linkstyle == 1) {
             SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
