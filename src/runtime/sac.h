@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/08/18 13:56:15  dkr
+ * sac_icm.h always included (the cat?-macros are usefull even without
+ * TAGGED_ARRAYS)
+ *
  * Revision 2.10  2000/08/01 14:02:26  nmw
- * sac_free_interface_handler.h
- * removed
+ * sac_free_interface_handler.h removed
  *
  * Revision 2.9  2000/07/20 12:46:07  dkr
  * include of sac_free_interface_handler.h added
@@ -67,9 +70,7 @@
 #ifndef SAC_H
 #define SAC_H
 
-#ifdef TAGGED_ARRAYS
 #include "sac_icm.h"
-#endif /* TAGGED_ARRAYS */
 
 #include "sac_boundcheck.h"
 #include "sac_misc.h"
