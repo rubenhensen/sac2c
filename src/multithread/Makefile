@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.4  2000/12/08 10:05:27  dkr
+# include path extended
+#
 # Revision 3.3  2000/12/07 14:19:55  dkr
 # include path modified
 #
@@ -50,7 +53,7 @@ CCFLAGS   := -ansi -Wall -g -O3
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatten \
-     -I../print -I../compile
+     -I../print -I../compile -I../refcount
 
 all: multithread.o \
      multithread_lib.o \
