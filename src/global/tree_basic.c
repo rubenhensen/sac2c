@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1998/08/03 10:49:59  cg
+ * added initialization of WLSEG_MAXHOMDIM
+ *
  * Revision 1.77  1998/06/24 10:37:43  dkr
  * removed WL_END from indent-mechanismus
  *
@@ -1750,6 +1753,12 @@ MakeWLseg (int dims, node *contents, node *next)
     for (d = 0; d < dims; d++) {
         (WLSEG_SV (new_node))[d] = 1;
     }
+
+    WLSEG_MAXHOMDIM (new_node) = -1;
+    /*
+     * By default, no dimension is homogenious. Since dimensions are counted
+     * starting by 0, we must set  MAXHOMDIM to -1 here.
+     */
 
     DBUG_RETURN (new_node);
 }
