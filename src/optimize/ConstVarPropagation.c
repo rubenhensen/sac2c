@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/03/06 20:06:40  mwe
+ * CVPfuncond added
+ *
  * Revision 1.1  2004/03/02 16:58:34  mwe
  * Initial revision
  *
@@ -262,6 +265,35 @@ CVPreturn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/********************************************************************
+ *
+ * function:
+ *   node* CVPcondfun(node* arg_node, node* arg_info)
+ *
+ * description:
+ *   traverse in the exprs of the condfun node
+ *
+ ********************************************************************/
+
+node *
+CVPfuncond (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("CVPcondfun");
+
+    if (FUNCOND_IF (arg_node) != NULL) {
+        FUNCOND_IF (arg_node) = Trav (FUNCOND_IF (arg_node), arg_info);
+    }
+    if (FUNCOND_THEN (arg_node) != NULL) {
+        FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+    }
+    if (FUNCOND_ELSE (arg_node) != NULL) {
+        FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -402,7 +434,7 @@ CVPcond (node *arg_node, node *arg_info)
     DBUG_ENTER ("CVPcond");
 
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    /*  COND_COND(arg_node) = Trav(COND_COND(arg_node), arg_info);*/
 
     if (COND_THEN (arg_node) != NULL) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
@@ -607,6 +639,8 @@ ConstVarPropagation (node *arg_node)
 
     old_tab = act_tab;
     act_tab = cvp_tab;
+
+    DBUG_PRINT ("CVP", ("start with function %s", FUNDEF_NAME (arg_node)));
 
     arg_node = Trav (arg_node, arg_info);
 

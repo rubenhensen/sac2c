@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/03/06 20:06:40  mwe
+ * CVPfuncond added
+ *
  * Revision 1.1  2004/03/02 16:58:51  mwe
  * Initial revision
  *
@@ -24,4 +27,5 @@ extern node *CVPexprs (node *arg_node, node *arg_info);
 extern node *CVPid (node *arg_node, node *arg_info);
 extern node *CVPreturn (node *arg_node, node *arg_info);
 extern node *CVParray (node *arg_node, node *arg_info);
+extern node *CVPfuncond (node *arg_node, node *arg_info);
 #endif

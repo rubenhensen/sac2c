@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2004/03/06 20:06:40  mwe
+ * CVPfuncond added
+ *
  * Revision 1.35  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -1123,7 +1126,6 @@ SSACSElet (node *arg_node, node *arg_info)
 {
     node *match;
     nodetype nt_expr;
-    int cmp;
 
     DBUG_ENTER ("SSACSElet");
 
@@ -1172,6 +1174,11 @@ SSACSElet (node *arg_node, node *arg_info)
 
 /* start exclution */
 #if 0
+
+  /* needed by this part of code
+   * please reinsert on top when including code again
+   */
+  int cmp;
 
   } else if ((nt_expr == N_id)
 #ifndef CREATE_UNIQUE_BY_HEAP

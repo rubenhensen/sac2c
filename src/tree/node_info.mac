@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2004/03/06 20:06:40  mwe
+ * CVPfuncond added
+ *
  * Revision 3.135  2004/03/05 19:32:06  sbs
  * NTCfuncond added.
  *
@@ -2467,7 +2470,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, CVPfuncond, TravSons, 3),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
