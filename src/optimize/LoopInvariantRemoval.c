@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/10/24 12:54:34  dkr
+ * AppendIdsChain renamed into AppendIds
+ *
  * Revision 2.10  2000/07/12 15:15:57  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -569,7 +572,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 arg_node->node[0]->info.ids = new_ids->next;
                 new_ids->next = NULL;
                 move_node->node[0]->info.ids
-                  = AppendIdsChain (move_node->node[0]->info.ids, new_ids);
+                  = AppendIds (move_node->node[0]->info.ids, new_ids);
                 break;
             case MOVE_DOWN:
                 /* make new node below loop */
@@ -592,7 +595,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 new_ids->node = new_vardec;
                 new_ids->flag = NONE;
                 move_node->node[0]->info.ids
-                  = AppendIdsChain (move_node->node[0]->info.ids, new_ids);
+                  = AppendIds (move_node->node[0]->info.ids, new_ids);
                 INC_VAR (move_node->mask[0], new_vardec->varno);
 
                 new_node->node[0] = MakeNode (N_let);
@@ -632,7 +635,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 new_ids->flag = NONE;
                 new_ids->node = new_vardec;
                 move_node->node[0]->info.ids
-                  = AppendIdsChain (move_node->node[0]->info.ids, new_ids);
+                  = AppendIds (move_node->node[0]->info.ids, new_ids);
                 INC_VAR (move_node->mask[0], new_vardec->varno);
 
                 new_node->node[0] = MakeNode (N_let);

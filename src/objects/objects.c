@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/10/24 12:55:06  dkr
+ * AppendIdsChain renamed into AppendIds
+ *
  * Revision 2.4  2000/07/10 14:24:53  cg
  * Artificial return types of functions that are inserted during the
  * resolution of reference parameters and global objects are now
@@ -659,10 +662,6 @@ OBJid (node *arg_node, node *arg_info)
  *                  If this is a function application, then the additional
  *                  return values of this function are considered and bound
  *                  to the current arguments by extending the ids-chain.
- *  global vars   : ---
- *  internal funs :
- *  external funs : MakeIds, AppendIdsChain, Malloc, strlen, strcpy
- *  macros        : TREE, DBUG
  *
  *  remarks       : The arg_info flag is necessary, because OBJlet is used
  *                  in different ways in the two traversals of the function
@@ -749,7 +748,7 @@ OBJlet (node *arg_node, node *arg_info)
                 params = ARG_NEXT (params);
             }
 
-            LET_IDS (arg_node) = AppendIdsChain (new_ids, LET_IDS (arg_node));
+            LET_IDS (arg_node) = AppendIds (new_ids, LET_IDS (arg_node));
         }
     }
 
