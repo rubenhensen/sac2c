@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/12/06 12:56:11  sbs
+ * some debugging in TYcreateWrapperCode
+ *
  * Revision 3.79  2004/11/27 02:53:46  khf
  * adjusted names
  *
@@ -5693,14 +5696,11 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 node *
 TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 {
-    node *assigns;
-    ntype *type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+    node *assigns = NULL;
 
     DBUG_ENTER ("TYcreateWrapperCode");
 
-    if (type == NULL) {
-        assigns = NULL;
-    } else if (TYgetConstr (type) == TC_prod) {
+    if (FUNDEF_ARGS (fundef) == NULL) {
         DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
         assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
                                  new_vardecs);
@@ -5709,11 +5709,10 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
                      "wrapper function with ... return type found!");
         DBUG_ASSERT ((!FUNDEF_HASDOTARGS (fundef)),
                      "wrapper function with ... argument found!");
-        assigns
-          = CreateWrapperCode (type, NULL, 0, FUNDEF_NAME (fundef), FUNDEF_ARGS (fundef),
-                               FUNDEF_ARGS (fundef), vardecs, new_vardecs);
+        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0,
+                                     FUNDEF_NAME (fundef), FUNDEF_ARGS (fundef),
+                                     FUNDEF_ARGS (fundef), vardecs, new_vardecs);
     }
-    type = TYfreeType (type);
 
     DBUG_RETURN (assigns);
 }
