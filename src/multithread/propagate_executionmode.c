@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/06 12:49:43  skt
+ * fixed a bug in UpdateCondExecmode
+ *
  * Revision 1.6  2004/08/05 17:42:19  skt
  * moved handling of the allocation around the withloop from create_cells
  *
@@ -516,6 +519,7 @@ UpdateCondExecmode (node *condassign, int execmode)
                 DBUG_ASSERT (0, "condassign has an invalid executionmode");
                 break;
             }
+            break;
         default:
             DBUG_ASSERT (0, "UpdateCondExecmode expects a valid executionmode");
             break;
