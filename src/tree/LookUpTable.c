@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/04/10 09:59:34  dkr
+ * DuplicateLUT added
+ *
  * Revision 3.10  2001/04/06 15:55:31  dkr
  * number of hash keys reduced
  *
@@ -168,7 +171,9 @@ typedef struct LUT_T {
     long size;
 } lut_t;
 
-typedef long (*hash_key_fun_t) (void *);
+typedef long hash_key_t;
+
+typedef hash_key_t (*hash_key_fun_t) (void *);
 typedef bool (*is_equal_fun_t) (void *, void *);
 
 /*
@@ -178,7 +183,7 @@ typedef bool (*is_equal_fun_t) (void *, void *);
 /******************************************************************************
  *
  * function:
- *   long GetHashKey_Pointer( void *data)
+ *   hash_key_t GetHashKey_Pointer( void *data)
  *
  * description:
  *   Calculates the hash key for a given pointer.
@@ -188,20 +193,18 @@ typedef bool (*is_equal_fun_t) (void *, void *);
  *
  ******************************************************************************/
 
-static long
+static hash_key_t
 GetHashKey_Pointer (void *data)
 {
-    long hash_key;
+    hash_key_t hash_key;
 
     DBUG_ENTER ("GetHashKey_Pointer");
-
-    DBUG_ASSERT ((data != NULL), "NULL has no hash key!");
 
     /*
      * hash key: bits 7 .. 4
      *  ->  0 <= key < 2^4
      */
-    hash_key = (((long)data) & 0xf0) >> 4;
+    hash_key = (((hash_key_t)data) & 0xf0) >> 4;
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (HASH_KEYS_POINTER))),
                  "hash key for pointers out of bounds!");
@@ -212,7 +215,7 @@ GetHashKey_Pointer (void *data)
 /******************************************************************************
  *
  * function:
- *   long GetHashKey_String( void *data)
+ *   hash_key_t GetHashKey_String( void *data)
  *
  * description:
  *   Calculates the hash key for a given string.
@@ -222,21 +225,21 @@ GetHashKey_Pointer (void *data)
  *
  ******************************************************************************/
 
-static long
+static hash_key_t
 GetHashKey_String (void *data)
 {
     char *str;
-    long hash_key;
+    hash_key_t hash_key;
 
     DBUG_ENTER ("GetHashKey_String");
 
-    DBUG_ASSERT ((data != NULL), "NULL has no hash key!");
-
     hash_key = 0;
-    for (str = (char *)data; ((*str) != '\0'); str++) {
-        hash_key += (*str);
+    if (data != NULL) {
+        for (str = (char *)data; ((*str) != '\0'); str++) {
+            hash_key += (*str);
+        }
+        hash_key %= (HASH_KEYS_STRING);
     }
-    hash_key %= (HASH_KEYS_STRING);
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (HASH_KEYS_STRING))),
                  "hash key for strings out of bounds!");
@@ -335,8 +338,11 @@ ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
             }
         }
         diff = max - min;
-        DBUG_PRINT ("LUT", ("%s --- min: |lut[%i]| = %i, max: |lut[%i]| = %i", note,
-                            min_k, min, max_k, max));
+
+        DBUG_PRINT ("LUT", ("%s --- min: |lut[%i]| = %i, max: |lut[%i]| = %i,"
+                            " diff: %i/%i",
+                            note, min_k, min, max_k, max, diff, LUT_SIZE));
+
         DBUG_ASSERT ((diff <= LUT_SIZE), "LUT: unballanced collision tables detected!");
     } else {
         diff = 0;
@@ -348,8 +354,7 @@ ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
 /******************************************************************************
  *
  * function:
- *   void *SearchInLUT( lut_t *lut, void *old_item,
- *                      hash_key_fun_t hash_key_fun,
+ *   void *SearchInLUT( lut_t *lut, void *old_item, hash_key_t k,
  *                      is_equal_fun_t is_equal_fun)
  *
  * description:
@@ -361,23 +366,17 @@ ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
  ******************************************************************************/
 
 static void *
-SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
-             is_equal_fun_t is_equal_fun)
+SearchInLUT (lut_t *lut, void *old_item, hash_key_t k, is_equal_fun_t is_equal_fun)
 {
     void **new_item_p;
     void **tmp;
-    long k, i;
+    long i;
 
     DBUG_ENTER ("SearchInLUT");
 
     new_item_p = NULL;
     if (lut != NULL) {
         if (old_item != NULL) {
-            /*
-             * calcutate hash key of 'old_item'
-             */
-            k = hash_key_fun (old_item);
-
             /*
              * search in the collision table for 'old_item'
              */
@@ -397,29 +396,6 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
                     tmp = *tmp;
                 }
             }
-
-            if (new_item_p == NULL) {
-                if (k < (HASH_KEYS_POINTER)) {
-                    DBUG_PRINT ("LUT", ("finished:"
-                                        " pointer 0x%p (hash key %li) *not* found :-(",
-                                        old_item, k));
-                } else {
-                    DBUG_PRINT ("LUT", ("finished:"
-                                        " string \"%s\" (hash key %li) *not* found :-(",
-                                        (char *)old_item, k - (HASH_KEYS_POINTER)));
-                }
-            } else {
-                if (k < (HASH_KEYS_POINTER)) {
-                    DBUG_PRINT ("LUT", ("finished:"
-                                        " pointer 0x%p (hash key %li) found -> 0x%p",
-                                        old_item, k, *new_item_p));
-                } else {
-                    DBUG_PRINT ("LUT", ("finished:"
-                                        " string \"%s\" (hash key %li) found -> \"%s\"",
-                                        (char *)old_item, k - (HASH_KEYS_POINTER),
-                                        (char *)(*new_item_p)));
-                }
-            }
         } else {
             DBUG_PRINT ("LUT", ("finished: pointer/string is NULL"));
         }
@@ -434,7 +410,7 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
  *
  * function:
  *   lut_t *InsertIntoLUT( lut_t *lut, void *old_item, void *new_item,
- *                         hash_key_fun_t hash_key_fun)
+ *                         hash_key_t k)
  *
  * description:
  *   Inserts the given pair of data (old_item, new_item) into the correct
@@ -443,38 +419,26 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
  ******************************************************************************/
 
 static lut_t *
-InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_fun_t hash_key_fun)
+InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t k)
 {
-    long k;
-
     DBUG_ENTER ("InsertIntoLUT");
 
     if (lut != NULL) {
-        DBUG_ASSERT ((old_item != NULL), "Key of LUT entry must be != NULL!");
+        DBUG_ASSERT ((old_item != NULL), "LUT entry must not be NULL!");
 
-        k = hash_key_fun (old_item);
         *(lut[k].next++) = old_item;
         *(lut[k].next++) = new_item;
         lut[k].size++;
         DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
-
-        if (k < (HASH_KEYS_POINTER)) {
-            DBUG_PRINT ("LUT", ("new pointers inserted (hash key %li)"
-                                " -> [ 0x%p , 0x%p ]",
-                                k, old_item, new_item));
-        } else {
-            DBUG_PRINT ("LUT",
-                        ("new strings inserted (hash key %li)"
-                         " -> [ \"%s\" , \"%s\" ]",
-                         k - (HASH_KEYS_POINTER), (char *)old_item, (char *)new_item));
-        }
 
         if (lut[k].size % (LUT_SIZE) == 0) {
             /*
              * the last table entry has been used -> allocate a new one.
              */
             *lut[k].next = (void **)MALLOC ((2 * (LUT_SIZE) + 1) * sizeof (void *));
-            DBUG_PRINT ("LUT", ("new LUT segment created -> 0x%p", lut[k].next));
+
+            DBUG_PRINT ("LUT", ("new LUT segment created -> " F_PTR, lut[k].next));
+
             /*
              * move 'next' to the first entry of the new table.
              */
@@ -515,7 +479,7 @@ lut_t *
 GenerateLUT (void)
 {
     lut_t *lut;
-    long k;
+    hash_key_t k;
 
     DBUG_ENTER ("GenerateLUT");
 
@@ -525,9 +489,70 @@ GenerateLUT (void)
         lut[k].next = lut[k].first;
         lut[k].size = 0;
     }
+
     DBUG_PRINT ("LUT", ("finished"));
 
     DBUG_RETURN (lut);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   lut_t *DuplicateLUT( lut_t *lut)
+ *
+ * description:
+ *   Duplicates a LUT.
+ *
+ ******************************************************************************/
+
+lut_t *
+DuplicateLUT (lut_t *lut)
+{
+    lut_t *new_lut;
+    void **tmp;
+    hash_key_t k;
+    long i;
+
+    DBUG_ENTER ("DuplicateLUT");
+
+    if (lut != NULL) {
+        new_lut = GenerateLUT ();
+
+        for (k = 0; k < (HASH_KEYS_POINTER); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+            tmp = lut[k].first;
+            for (i = 0; i < lut[k].size; i++) {
+                new_lut = InsertIntoLUT (new_lut, tmp[0], tmp[1], k);
+                tmp += 2;
+                if ((i + 1) % (LUT_SIZE) == 0) {
+                    /*
+                     * the last table entry is reached
+                     *  -> enter the next table of the chain
+                     */
+                    tmp = *tmp;
+                }
+            }
+        }
+        for (k = (HASH_KEYS_POINTER); k < (HASH_KEYS); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+            tmp = lut[k].first;
+            for (i = 0; i < lut[k].size; i++) {
+                new_lut = InsertIntoLUT (new_lut, (char *)(tmp[0]), (char *)(tmp[1]), k);
+                tmp += 2;
+                if ((i + 1) % (LUT_SIZE) == 0) {
+                    tmp = *tmp;
+                }
+            }
+        }
+
+        DBUG_PRINT ("LUT", ("finished"));
+    } else {
+        new_lut = NULL;
+
+        DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
+    }
+
+    DBUG_RETURN (new_lut);
 }
 
 /******************************************************************************
@@ -544,7 +569,8 @@ lut_t *
 RemoveContentLUT (lut_t *lut)
 {
     void **first, **tmp;
-    long k, i;
+    hash_key_t k;
+    long i;
 
     DBUG_ENTER ("RemoveContentLUT");
 
@@ -584,6 +610,7 @@ RemoveContentLUT (lut_t *lut)
             lut[k].first = lut[k].next = first;
             lut[k].size = 0;
         }
+
         DBUG_PRINT ("LUT", ("finished"));
     } else {
         DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
@@ -606,7 +633,8 @@ lut_t *
 RemoveLUT (lut_t *lut)
 {
     void **first, **tmp;
-    long k, i;
+    hash_key_t k;
+    long i;
 
     DBUG_ENTER ("RemoveLUT");
 
@@ -643,6 +671,7 @@ RemoveLUT (lut_t *lut)
             FREE (first);
         }
         FREE (lut);
+
         DBUG_PRINT ("LUT", ("finished"));
     } else {
         DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
@@ -668,15 +697,26 @@ SearchInLUT_P (lut_t *lut, void *old_item)
 {
     void **new_item_p;
     void *new_item;
+    hash_key_t k;
 
     DBUG_ENTER ("SearchInLUT_P");
 
-    new_item_p = SearchInLUT (lut, old_item, GetHashKey_Pointer, IsEqual_Pointer);
+    k = GetHashKey_Pointer (old_item);
+
+    new_item_p = SearchInLUT (lut, old_item, k, IsEqual_Pointer);
 
     if (new_item_p == NULL) {
         new_item = old_item;
+
+        DBUG_PRINT ("LUT", ("finished:"
+                            " pointer " F_PTR " (hash key %li) *not* found :-(",
+                            old_item, k));
     } else {
         new_item = *new_item_p;
+
+        DBUG_PRINT ("LUT", ("finished:"
+                            " pointer " F_PTR " (hash key %li) found -> " F_PTR,
+                            old_item, k, new_item));
     }
 
     DBUG_RETURN (new_item);
@@ -699,15 +739,26 @@ SearchInLUT_S (lut_t *lut, char *old_item)
 {
     char **new_item_p;
     char *new_item;
+    hash_key_t k;
 
     DBUG_ENTER ("SearchInLUT_S");
 
-    new_item_p = (char **)SearchInLUT (lut, old_item, GetHashKey_String, IsEqual_String);
+    k = GetHashKey_String (old_item);
+
+    new_item_p = (char **)SearchInLUT (lut, old_item, k, IsEqual_String);
 
     if (new_item_p == NULL) {
         new_item = old_item;
+
+        DBUG_PRINT ("LUT", ("finished:"
+                            " string \"%s\" (hash key %li) *not* found :-(",
+                            old_item, k - (HASH_KEYS_POINTER)));
     } else {
         new_item = *new_item_p;
+
+        DBUG_PRINT ("LUT", ("finished:"
+                            " string \"%s\" (hash key %li) found -> \"%s\"",
+                            old_item, k - (HASH_KEYS_POINTER), new_item));
     }
 
     DBUG_RETURN (new_item);
@@ -734,15 +785,21 @@ SearchInLUT_S (lut_t *lut, char *old_item)
 lut_t *
 InsertIntoLUT_P (lut_t *lut, void *old_item, void *new_item)
 {
+    hash_key_t k;
+
     DBUG_ENTER ("InsertIntoLUT_P");
 
+    k = GetHashKey_Pointer (old_item);
+
     DBUG_EXECUTE ("LUT_CHECK",
-                  DBUG_ASSERT ((SearchInLUT (lut, old_item, GetHashKey_Pointer,
-                                             IsEqual_Pointer)
-                                == NULL),
+                  DBUG_ASSERT ((SearchInLUT (lut, old_item, k, IsEqual_Pointer) == NULL),
                                "LUT: item already present!"););
 
-    lut = InsertIntoLUT (lut, old_item, new_item, GetHashKey_Pointer);
+    lut = InsertIntoLUT (lut, old_item, new_item, k);
+
+    DBUG_PRINT ("LUT", ("new pointers inserted (hash key %li)"
+                        " -> [ " F_PTR " , " F_PTR " ]",
+                        k, old_item, new_item));
 
     DBUG_RETURN (lut);
 }
@@ -768,16 +825,21 @@ InsertIntoLUT_P (lut_t *lut, void *old_item, void *new_item)
 lut_t *
 InsertIntoLUT_S (lut_t *lut, char *old_item, char *new_item)
 {
+    hash_key_t k;
+
     DBUG_ENTER ("InsertIntoLUT_S");
 
+    k = GetHashKey_String (old_item);
+
     DBUG_EXECUTE ("LUT_CHECK",
-                  DBUG_ASSERT ((SearchInLUT (lut, old_item, GetHashKey_String,
-                                             IsEqual_String)
-                                == NULL),
+                  DBUG_ASSERT ((SearchInLUT (lut, old_item, k, IsEqual_String) == NULL),
                                "LUT: item already present!"););
 
-    lut = InsertIntoLUT (lut, StringCopy (old_item), StringCopy (new_item),
-                         GetHashKey_String);
+    lut = InsertIntoLUT (lut, StringCopy (old_item), StringCopy (new_item), k);
+
+    DBUG_PRINT ("LUT", ("new strings inserted (hash key %li)"
+                        " -> [ \"%s\" , \"%s\" ]",
+                        k - (HASH_KEYS_POINTER), old_item, new_item));
 
     DBUG_RETURN (lut);
 }
@@ -802,18 +864,30 @@ lut_t *
 UpdateLUT_P (lut_t *lut, void *old_item, void *new_item, void **found_item)
 {
     void **found_item_p;
+    hash_key_t k;
 
     DBUG_ENTER ("UpdateLUT_P");
 
-    found_item_p = SearchInLUT (lut, old_item, GetHashKey_String, IsEqual_String);
+    k = GetHashKey_String (old_item);
+
+    found_item_p = SearchInLUT (lut, old_item, k, IsEqual_String);
 
     if (found_item != NULL) {
         (*found_item) = (found_item_p != NULL) ? (*found_item_p) : NULL;
     }
 
     if (found_item_p == NULL) {
-        lut = InsertIntoLUT_P (lut, old_item, new_item);
+        lut = InsertIntoLUT (lut, old_item, new_item, k);
+
+        DBUG_PRINT ("LUT", ("new pointers inserted (hash key %li)"
+                            " -> [ " F_PTR " , " F_PTR " ]",
+                            k, old_item, new_item));
     } else {
+        DBUG_PRINT ("LUT", ("pointers replaced (hash key %li)"
+                            " [ " F_PTR " , " F_PTR " ]"
+                            " -> [ " F_PTR " , " F_PTR " ]",
+                            k, old_item, (*found_item_p), old_item, new_item));
+
         (*found_item_p) = new_item;
     }
 
@@ -840,19 +914,30 @@ lut_t *
 UpdateLUT_S (lut_t *lut, char *old_item, char *new_item, char **found_item)
 {
     char **found_item_p;
+    hash_key_t k;
 
     DBUG_ENTER ("UpdateLUT_S");
 
-    found_item_p
-      = (char **)SearchInLUT (lut, old_item, GetHashKey_String, IsEqual_String);
+    k = GetHashKey_String (old_item);
+
+    found_item_p = (char **)SearchInLUT (lut, old_item, k, IsEqual_String);
 
     if (found_item != NULL) {
         (*found_item) = (found_item_p != NULL) ? (*found_item_p) : NULL;
     }
 
     if (found_item_p == NULL) {
-        lut = InsertIntoLUT_S (lut, old_item, new_item);
+        lut = InsertIntoLUT (lut, StringCopy (old_item), StringCopy (new_item), k);
+
+        DBUG_PRINT ("LUT", ("new strings inserted (hash key %li)"
+                            " -> [ \"%s\" , \"%s\" ]",
+                            k - (HASH_KEYS_POINTER), old_item, new_item));
     } else {
+        DBUG_PRINT ("LUT", ("strings replaced (hash key %li)"
+                            " [ \"%s\" , \"%s\" ] -> [ \"%s\" , \"%s\" ]",
+                            k - (HASH_KEYS_POINTER), old_item, *found_item_p, old_item,
+                            new_item));
+
         (*found_item_p) = new_item;
     }
 
@@ -872,8 +957,9 @@ UpdateLUT_S (lut_t *lut, char *old_item, char *new_item, char **found_item)
 void
 PrintLUT (FILE *handle, lut_t *lut)
 {
-    long k, i;
     void **tmp;
+    hash_key_t k;
+    long i;
 
     DBUG_ENTER ("PrintLUT");
 
@@ -913,6 +999,7 @@ PrintLUT (FILE *handle, lut_t *lut)
             }
             fprintf (handle, "number of entries: %li\n", lut[k].size);
         }
+
         DBUG_PRINT ("LUT", ("finished"));
     } else {
         DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
