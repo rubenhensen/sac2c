@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/30 20:04:19  dkr
+ * prefix for varnames is SAC_ instead of SAC__ now
+ *
  * Revision 3.15  2002/07/12 17:17:10  dkr
  * some modifications for TAGGED_ARRAYS done
  *
@@ -98,11 +101,11 @@
  *** these macros is used to generate names of aux-variables
  ***/
 
-#define SAC_WL_VAR(type, idx_scl) CAT0 (CAT0 (CAT0 (SAC__, type), _), idx_scl)
+#define SAC_WL_VAR(type, idx_scl) CAT0 (CAT0 (CAT0 (SAC_, type), _), idx_scl)
 
-#define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC__schedule_start, dim)
+#define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC_schedule_start, dim)
 
-#define SAC_WL_MT_SCHEDULE_STOP(dim) CAT0 (SAC__schedule_stop, dim)
+#define SAC_WL_MT_SCHEDULE_STOP(dim) CAT0 (SAC_schedule_stop, dim)
 
 /*****************************************************************************/
 
