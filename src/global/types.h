@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/04/01 08:01:03  srs
+ * removed NEWTREE
+ *
  * Revision 1.27  1998/03/26 18:05:10  srs
  * modified struct WL_INFO
  *
@@ -393,20 +396,16 @@ typedef union {
  */
 
 typedef struct NODE {
-    nodetype nodetype;    /* type of node */
-    infotype info;        /* node dependent information */
-    void *info2;          /* any node dependent information */
-    int refcnt;           /* reference count information */
-    int flag;             /* the flag is used for node-status */
-                          /* (loop invariant/not loop invariant,...) */
-    int counter;          /* needed for the enumeration of fundefs!  */
-    int varno;            /* number of variables - 1 */
-    long *mask[MAX_MASK]; /* special information about variables */
-                          /* mainly used for optimizations       */
-#ifndef NEWTREE
-    int nnode; /* number of used child nodes */
-               /* the traversal mechanism depends on it */
-#endif
+    nodetype nodetype;           /* type of node */
+    infotype info;               /* node dependent information */
+    void *info2;                 /* any node dependent information */
+    int refcnt;                  /* reference count information */
+    int flag;                    /* the flag is used for node-status */
+                                 /* (loop invariant/not loop invariant,...) */
+    int counter;                 /* needed for the enumeration of fundefs!  */
+    int varno;                   /* number of variables - 1 */
+    long *mask[MAX_MASK];        /* special information about variables */
+                                 /* mainly used for optimizations       */
     int lineno;                  /* line number in source code */
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
