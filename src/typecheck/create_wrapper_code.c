@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/11/10 19:35:09  sbs
+ * INFO_CWC_WITH now is stacked properly in CWCnwith...
+ *
  * Revision 1.23  2004/11/07 18:12:48  sah
  * added some dbug statements
  *
@@ -741,15 +744,17 @@ CWCap (node *arg_node, info *arg_info)
 node *
 CWCwith (node *arg_node, info *arg_info)
 {
+    node *old_with;
     DBUG_ENTER ("CWCwith");
 
+    old_with = INFO_CWC_WITH (arg_info);
     INFO_CWC_WITH (arg_info) = arg_node;
 
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-    INFO_CWC_WITH (arg_info) = NULL;
+    INFO_CWC_WITH (arg_info) = old_with;
 
     DBUG_RETURN (arg_node);
 }
