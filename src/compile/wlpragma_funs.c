@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/04/20 02:38:38  dkr
+ * includes now tree.h
+ *
  * Revision 1.7  1998/04/17 17:32:32  dkr
  * removed unused vars
  *
@@ -22,8 +25,7 @@
  *
  */
 
-#include "types.h"
-#include "tree_basic.h"
+#include "tree.h"
 #include "free.h"
 #include "DupTree.h"
 #include "precompile.h"

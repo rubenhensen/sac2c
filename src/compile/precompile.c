@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/04/20 02:39:15  dkr
+ * includes now tree.h
+ *
  * Revision 1.55  1998/04/20 00:43:57  dkr
  * removed a bug in PrecSPMD:
  *   no sharing of strings anymore
@@ -186,9 +189,7 @@
  *
  */
 
-#include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
+#include "tree.h"
 #include "free.h"
 
 #include "internal_lib.h"

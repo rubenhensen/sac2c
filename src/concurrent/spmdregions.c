@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/04/20 02:39:33  dkr
+ * includes now tree.h
+ *
  * Revision 1.3  1998/04/19 23:18:00  dkr
  * changed comments
  *
@@ -13,9 +16,7 @@
  *
  */
 
-#include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
+#include "tree.h"
 #include "free.h"
 
 #include "internal_lib.h"
