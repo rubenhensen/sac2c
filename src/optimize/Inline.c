@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/04/06 15:25:41  dkr
+ * minor changes done
+ *
  * Revision 3.13  2001/04/05 12:32:54  nmw
  * correct handling for global objects in Inline traversal added
  *
@@ -359,6 +362,7 @@ InlineVardec (node *arg_node, node *arg_info)
      * build a new vardec based on 'arg_node' and rename it
      */
     new_vardec = DupNode (arg_node);
+
     new_name = CreateInlineName (VARDEC_NAME (arg_node), arg_info);
     FREE (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
@@ -370,6 +374,7 @@ InlineVardec (node *arg_node, node *arg_info)
     INFO_INL_VARDECS (arg_info) = new_vardec;
 
     new_avis = AdjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
+
     /*
      * insert pointers ['old_avis', 'new_avis'] into INFO_INL_LUT
      */
@@ -454,7 +459,6 @@ DoInline (node *let_node, node *arg_info)
 {
     node *ap_node;
     node *inl_fundef;
-    node *ret_exprs;
     node *inl_nodes;
 
     DBUG_ENTER ("DoInline");
@@ -497,9 +501,9 @@ DoInline (node *let_node, node *arg_info)
      */
     if (FUNDEF_RETURN (inl_fundef) != NULL) {
         INFO_INL_IDS (arg_info) = LET_IDS (let_node);
-        ret_exprs = RETURN_EXPRS (FUNDEF_RETURN (inl_fundef));
-        if (ret_exprs != NULL) {
-            ret_exprs = InlineRetExprs (ret_exprs, arg_info);
+        if (RETURN_EXPRS (FUNDEF_RETURN (inl_fundef)) != NULL) {
+            RETURN_EXPRS (FUNDEF_RETURN (inl_fundef))
+              = InlineRetExprs (RETURN_EXPRS (FUNDEF_RETURN (inl_fundef)), arg_info);
         }
     }
 
