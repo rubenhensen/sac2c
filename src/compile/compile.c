@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.87  1996/09/11 06:27:38  cg
+ * Revision 1.88  1997/04/24 14:57:25  sbs
+ * HAVE_MALLOC_O included
+ *
+ * Revision 1.87  1996/09/11  06:27:38  cg
  * Some very dirty bugs fixed.
  *
  * Revision 1.86  1996/08/29  17:45:27  sbs
@@ -2383,9 +2386,9 @@ Compile (node *arg_node)
 
     DBUG_ENTER ("Compile");
 
-#ifdef MALLOC_TOOL
+#ifdef HAVE_MALLOC_O
     malloc_debug (2);
-#endif /* MALLOC_TOOL */
+#endif /* HAVE_MALLOC_O */
 
     act_tab = comp_tab; /* set new function-table for traverse */
     info = MakeInfo ();
@@ -2405,10 +2408,10 @@ Compile (node *arg_node)
     }
     FREE (info);
 
-#ifdef MALLOC_TOOL
+#ifdef HAVE_MALLOC_O
     malloc_verify ();
     malloc_debug (0);
-#endif /* MALLOC_TOOL */
+#endif /* HAVE_MALLOC_O */
 
     DBUG_RETURN (arg_node);
 }
