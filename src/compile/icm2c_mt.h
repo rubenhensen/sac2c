@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/04 11:48:23  ben
+ *  MT_SCHEDULER_Even_... deleted
+ *  MT_SCHEDULER_Cyclic_... renamed to _Static_
+ *  MT_SCHEDULER_Afs_... renamed to Affinity
+ *
  * Revision 3.12  2001/04/03 19:41:07  dkr
  * MT_ADJUST_SCHEDULER renamed into MT_ADJUST_SCHEDULER__OFFSET.
  * signature for MT_ADJUST_SCHEDULER_... icms modified.
@@ -148,16 +153,19 @@ extern void ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int tasks_per_thread, int dim,
+                                                 char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_END (int tasks_per_thread, int dim,
+                                               char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int param, int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Cyclic_END (int param, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int tasks_per_thread, int dim,
+                                               char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_END (int tasks_per_thread, int dim,
+                                             char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int param, int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg);
-
-extern void ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Afs_END (int param, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int tasks_per_thread, int dim,
+                                                   char **vararg);
+extern void ICMCompileMT_SCHEDULER_Affinity_END (int tasks_per_thread, int dim,
+                                                 char **vararg);
 
 #endif /* _SAC_ICM2C_MT_H_ */
