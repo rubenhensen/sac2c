@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2000/12/14 17:42:24  dkr
+ * indentation warning deactivated for old MT
+ *
  * Revision 3.7  2000/12/12 15:33:55  dkr
  * handling of ..._ICM sons corrected
  *
@@ -910,10 +913,15 @@ PrintBlock (node *arg_node, node *arg_info)
 
     if (indent != old_indent) {
 #ifdef WARN_INDENT
-        SYSWARN (("Indentation unbalanced while printing block of function %s."
-                  " Indentation at beginning of block: %i."
-                  " Indentation at end of block: %i",
-                  FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent, indent));
+        if (gen_mt_code != GEN_MT_OLD) {
+            /*
+             * for the time being (old) code for MT is always unbalanced :-(
+             */
+            SYSWARN (("Indentation unbalanced while printing block of function %s."
+                      " Indentation at beginning of block: %i."
+                      " Indentation at end of block: %i",
+                      FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent, indent));
+        }
 #endif
         indent = old_indent;
     }
@@ -1508,10 +1516,15 @@ PrintFundef (node *arg_node, node *arg_info)
 
     if (indent != old_indent) {
 #ifdef WARN_INDENT
-        SYSWARN (("Indentation unbalanced while printing function %s."
-                  " Indentation at beginning of function: %i."
-                  " Indentation at end of function: %i",
-                  FUNDEF_NAME (arg_node), old_indent, indent));
+        if (gen_mt_code != GEN_MT_OLD) {
+            /*
+             * for the time being (old) code for MT is always unbalanced :-(
+             */
+            SYSWARN (("Indentation unbalanced while printing function %s."
+                      " Indentation at beginning of function: %i."
+                      " Indentation at end of function: %i",
+                      FUNDEF_NAME (arg_node), old_indent, indent));
+        }
 #endif
         indent = old_indent;
     }
