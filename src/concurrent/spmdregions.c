@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/04/19 23:18:00  dkr
+ * changed comments
+ *
  * Revision 1.2  1998/04/17 19:16:20  dkr
  * lifting of spmd-fun is performed in precompile now
  *
@@ -26,11 +29,11 @@
 /******************************************************************************
  *
  * function:
- *   node *CpmdFundef(node *arg_node, node *arg_info)
+ *   node *SpmdFundef(node *arg_node, node *arg_info)
  *
  * description:
- *   fills INFO_SPMD_FUNDEF(info_node) with the current fundef
- *    --- needed for creation of spmd-funs.
+ *   fills 'INFO_SPMD_FUNDEF(info_node)' with the current fundef
+ *    --- needed for creation of used/defined-masks in 'SpmdAssign'.
  *
  ******************************************************************************/
 
@@ -65,9 +68,9 @@ SpmdFundef (node *arg_node, node *arg_info)
  * description:
  *   At the moment we simply generate one SPMD region for each
  *    first level with-loop.
- *   Then we build the fundec, funap and local vardecs for the lifted
- *    spmd-function and save them in SPMD_FUNDEC, SPMD_AP_LET and
- *    SPMD_VARDEC.
+ *   Then we store in SPMD_USEDVARS, SPMD_DEFVARS the used/defined-masks
+ *    (occurrences of vars which scope is not the whole SPMD region
+ *    --- e.g. local vars of with-loops --- are already subtracted).
  *
  ******************************************************************************/
 
