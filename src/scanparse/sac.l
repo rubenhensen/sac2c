@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/08/14 09:55:23  sbs
+ * Free s on ID tokens eliminated since that code in fact never was and never should
+ * be reached!!!!!
+ *
  * Revision 3.15  2002/08/13 14:04:13  sbs
  * several minor bugs fixed
  *
@@ -275,13 +279,11 @@ int charpos = 0;
                              } else {
                                yylval.id=StringCopy(yytext);
                                FILTER( ID );
-                               Free(yylval.id);
                              }
                            }
 "default"                  { if( compiler_phase==PH_setup) {
                                yylval.id=StringCopy(yytext);
                                FILTER( ID );
-                               Free(yylval.id);
                              } else {
                                FILTER( C_KEYWORD );
                              }
@@ -290,7 +292,6 @@ int charpos = 0;
 [-/][_A-Za-z0-9]*          { if( compiler_phase==PH_setup) {
                                yylval.id=StringCopy(yytext);
                                FILTER( OPTION );
-                               Free(yylval.id);
                              } else {
                                switch (yytext[0]) {
                                  case '-':
@@ -301,17 +302,14 @@ int charpos = 0;
                                    yyless(1);
                                    yylval.id=StringCopy(yytext);
                                    FILTER( ID);
-                                   Free(yylval.id);
                                    break;
                                  case '_':
                                    yylval.id=StringCopy(yytext);
                                    FILTER( PRIVATEID);
-                                   Free(yylval.id);
                                    break;
                                  default:
                                    yylval.id=StringCopy(yytext);
                                    FILTER( ID);
-                                   Free(yylval.id);
                                }
                              }
                            }
@@ -320,22 +318,18 @@ int charpos = 0;
 \"([^"\n]|(\\\"))*\"       { yylval.id=StringCopy(yytext+sizeof(char));
                              yylval.id[strlen(yylval.id)-1]='\0';
                              FILTER( STR );
-                             Free(yylval.id);
                            }
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
                              yylval.id=StringCopy(yytext);
                              FILTER( ID );
-                             Free(yylval.id);
                            }
 [|&>!%=-]+           { yylval.id=StringCopy(yytext);
                              FILTER( ID );
-                             Free(yylval.id);
                            }
 
 [_A-Za-z][_A-Za-z0-9]*     { yylval.id=StringCopy(yytext);
                              FILTER( PRIVATEID );
-                             Free(yylval.id);
                            }
 
 '.'                        { yylval.cchar=yytext[1];
