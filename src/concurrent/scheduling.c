@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/25 14:51:28  rob
+ * Introduce definitions and utility infrastructure for tagged array support.
+ * Introduce definitions and utility infrastructure for tagged array support.
+ *
  * Revision 2.1  1999/02/23 12:44:09  sacbase
  * new release made
  *
@@ -797,7 +801,12 @@ SCHPrecompileScheduling (sched_t *sched)
 
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
+#ifdef TAGGED_ARRAYS
+            sched->args[i].arg.id
+              = PRECRenameLocalIdentifier (sched->args[i].arg.id, C_scl, C_nuq);
+#else  /* TAGGED_ARRAYS */
             sched->args[i].arg.id = PRECRenameLocalIdentifier (sched->args[i].arg.id);
+#endif /* TAGGED_ARRAYS */
         }
     }
 
