@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/08/14 22:16:45  dkr
+ * bug fixed in IsHom():
+ *   ASSERT-condition now correct
+ *
  * Revision 1.34  1998/08/13 22:20:53  dkr
  * InferMaxHomDim finished
  *
@@ -3786,8 +3790,10 @@ IsHom (node *wlnode, int sv_d)
 
     width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
     DBUG_ASSERT ((WLNODE_INNERSTEP (wlnode) > 0), "illegal INNERSTEP found");
-    DBUG_ASSERT (((WLNODE_INNERSTEP (wlnode) % sv_d) == 0),
-                 "INNERSTEP and SV not consistent");
+#if 1
+    DBUG_ASSERT ((sv_d % WLNODE_INNERSTEP (wlnode) == 0),
+                 "INNERSTEP is not a divisor of SV");
+#endif
     DBUG_RETURN (((width % sv_d) == 0));
 }
 
