@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/03/22 15:32:31  dkr
+ * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2.
+ *
  * Revision 1.48  1998/03/22 14:21:45  dkr
  * WLBLOCK_BLOCKING -> WLBLOCK_STEP
  *
@@ -1483,7 +1486,7 @@ MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int dim, int offset, int width, int unrolling, node *nextdim, node *code,
+MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node *code,
             node *next)
 {
     node *new_node;
@@ -1494,8 +1497,8 @@ MakeWLgrid (int dim, int offset, int width, int unrolling, node *nextdim, node *
     NODE_TYPE (new_node) = N_WLgrid;
 
     WLGRID_DIM (new_node) = dim;
-    WLGRID_OFFSET (new_node) = offset;
-    WLGRID_WIDTH (new_node) = width;
+    WLGRID_BOUND1 (new_node) = bound1;
+    WLGRID_BOUND2 (new_node) = bound2;
     WLGRID_UNROLLING (new_node) = unrolling;
     WLGRID_NEXTDIM (new_node) = nextdim;
     WLGRID_CODE (new_node) = code;
