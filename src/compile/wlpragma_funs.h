@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/08 16:12:37  dkr
+ * function ExtractNaiveCompPragma added
+ *
  * Revision 3.3  2001/01/08 13:40:25  dkr
  * functions ExtractAplPragma... moved from wltransform.c to
  * wlpragma_funs.c
@@ -31,6 +34,8 @@
 
 #ifndef _sac_wlpragma_funs_h_
 #define _sac_wlpragma_funs_h_
+
+extern bool ExtractNaiveCompPragma (node *pragma, int line);
 
 extern node *ExtractAplPragma (node *pragma, int line);
 
