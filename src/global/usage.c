@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/07/07 13:41:08  cg
+ * implemented the command line option -mt-all
+ *
  * Revision 1.73  1998/06/30 12:41:43  cg
  * dynamic command line option -threads replaced by -mt.
  *
@@ -377,6 +380,11 @@ usage ()
       "\t\t\t\tbound for the number of threads specified. The exact\n"
       "\t\t\t\tnumber of threads must be given upon application startup\n"
       "\t\t\t\tusing the generic command line option '-mt <no>`.\n"
+      "\t -mt-all <no>\t\tcompile program for multi-threaded execution and derive\n"
+      "\t\t\t\t<no>+1 executables, one that is compiled for the dynamic\n"
+      "\t\t\t\tspecification of the number of threads with <no> as upper\n"
+      "\t\t\t\tlimit and <no> ones using the respective number of threads\n"
+      "\t\t\t\tstatically.\n"
       "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
       "\t\t\t\tsynchronisation block.\n");
     printf ("\t\t\t\t Default: -maxsyncfold %d.\n", max_sync_fold);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.136  1998/07/07 13:41:08  cg
+ * implemented the command line option -mt-all
+ *
  * Revision 1.135  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
@@ -956,6 +959,12 @@ MAIN
             --argc;
             max_threads = atoi (*argv);
             num_threads = 0;
+        } else if (0 == strncmp (*argv, "t-all", 5)) {
+            ++argv;
+            --argc;
+            max_threads = atoi (*argv);
+            num_threads = max_threads;
+            all_threads = max_threads;
         } else if (0 == strncmp (*argv, "axsyncfold", 10)) {
             ++argv;
             --argc;
