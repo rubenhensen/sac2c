@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.6  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -43,13 +46,13 @@
  *
  *****************************************************************************/
 
-#ifndef _icm2c_utils_h
-#define _icm2c_utils_h
+#ifndef _SAC_ICM2C_UTILS_H_
+#define _SAC_ICM2C_UTILS_H_
 
-#include "NameTuples.h"
+#include "types.h"
 
 extern shape_class_t ICUGetShapeClass (char *var_NT);
 extern hidden_class_t ICUGetHiddenClass (char *var_NT);
 extern unique_class_t ICUGetUniqueClass (char *var_NT);
 
-#endif /* _icm2c_utils_h */
+#endif /* _SAC_ICM2C_UTILS_H_ */

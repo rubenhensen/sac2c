@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.20  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -66,8 +69,8 @@
  *
  */
 
-#ifndef _icm2c_basic_h_
-#define _icm2c_basic_h_
+#ifndef _ICM2C_BASIC_H_
+#define _ICM2C_BASIC_H_
 
 extern int print_comment; /* bool */
 
@@ -227,4 +230,4 @@ extern void Vect2Offset (char *off_ANY, void *v_ANY, int v_dim,
                          void (*v_size_fun) (void *),
                          void (*v_read_fun) (void *, char *, int), void *a_NT, int a_dim);
 
-#endif /* _icm2c_basic_h_ */
+#endif /* _ICM2C_BASIC_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.32  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -117,10 +120,8 @@
  *
  */
 
-#ifndef _icm2c_std_h_
-#define _icm2c_std_h_
-
-#include "types.h"
+#ifndef _SAC_ICM2C_STD_H_
+#define _SAC_ICM2C_STD_H_
 
 extern void ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt,
                                   char **vararg);
@@ -189,4 +190,4 @@ extern void ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT
 extern void ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT,
                                       int shp_size, char **shpa_ANY);
 
-#endif /* _icm2c_std_h_ */
+#endif /* _SAC_ICM2C_STD_H_ */

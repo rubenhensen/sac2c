@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.6  2002/10/30 14:13:44  dkr
  * signature of WLP macro modified
  *
@@ -38,8 +41,10 @@
  *
  */
 
-#ifndef _sac_wlpragma_funs_h_
-#define _sac_wlpragma_funs_h_
+#ifndef _SAC_WLPRAGMA_FUNS_H_
+#define _SAC_WLPRAGMA_FUNS_H_
+
+#include "types.h"
 
 extern bool ExtractNaiveCompPragma (node *pragma, int line);
 
@@ -50,4 +55,4 @@ extern node *ExtractAplPragma (node *pragma, int line);
 #include "wlpragma_funs.mac"
 #undef WLP
 
-#endif /* _sac_wlpragma_funs_h_ */
+#endif /* _SAC_WLPRAGMA_FUNS_H_ */

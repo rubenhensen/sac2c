@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.3  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -12,10 +15,8 @@
  *
  */
 
-#ifndef _icm2c_prf_h_
-#define _icm2c_prf_h_
-
-#include "types.h"
+#ifndef _SAC_ICM2C_PRF_H_
+#define _SAC_ICM2C_PRF_H_
 
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT,
                                           int from_sdim);
@@ -74,4 +75,4 @@ extern void ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT
 extern void ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT,
                                          int from1_sdim, char *from2_NT, int from2_sdim);
 
-#endif /* _icm2c_prf_h_ */
+#endif /* _SAC_ICM2C_PRF_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.4  2003/09/17 12:56:28  dkr
  * postfix _any renamed into _ANY
  *
@@ -15,10 +18,10 @@
  *
  */
 
-#ifndef _icm2c_error_h_
-#define _icm2c_error_h_
+#ifndef _SAC_ICM2C_ERROR_H_
+#define _SAC_ICM2C_ERROR_H_
 
 extern void ICMCompileTYPE_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
                                   char **from_ANY);
 
-#endif /* _icm2c_error_h_ */
+#endif /* _SAC_ICM2C_ERROR_H_ */

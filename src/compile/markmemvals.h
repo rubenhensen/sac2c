@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.6  2004/09/18 16:07:23  ktr
  * SPMD blocks and functions are treated as well
  *
@@ -23,21 +26,32 @@
  *
  */
 
-#ifndef _sac_markmemvals_h
-#define _sac_markmemvals_h
+#ifndef _SAC_MARKMEMVALS_H_
+#define _SAC_MARKMEMVALS_H_
 
-extern node *MarkMemVals (node *syntax_tree);
+#include "types.h"
 
+/******************************************************************************
+ *
+ * Mark Memory Vals traversal ( mmv_tab)
+ *
+ * Prefix: MMV
+ *
+ *****************************************************************************/
+extern node *MMVdoMarkMemVals (node *syntax_tree);
+
+extern node *MMVcode (node *arg_node, info *arg_info);
 extern node *MMVdo (node *arg_node, info *arg_info);
+extern node *MMVfold (node *arg_node, info *arg_info);
 extern node *MMVfundef (node *arg_node, info *arg_info);
+extern node *MMVgenarray (node *arg_node, info *arg_info);
 extern node *MMVid (node *arg_node, info *arg_info);
 extern node *MMVlet (node *arg_node, info *arg_info);
+extern node *MMVmodarray (node *arg_node, info *arg_info);
 extern node *MMVprf (node *arg_node, info *arg_info);
 extern node *MMVspmd (node *arg_node, info *arg_info);
 extern node *MMVwith (node *arg_node, info *arg_info);
 extern node *MMVwith2 (node *arg_node, info *arg_info);
-extern node *MMVwithop (node *arg_node, info *arg_info);
 extern node *MMVwlsegx (node *arg_node, info *arg_info);
-extern node *MMVcode (node *arg_node, info *arg_info);
 
-#endif /* _sac_precompile_h */
+#endif /* _SAC_MARKMEMVALS_H_ */

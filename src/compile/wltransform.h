@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.11  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -61,8 +64,10 @@
  *
  */
 
-#ifndef _sac_wltransform_h
-#define _sac_wltransform_h
+#ifndef _SAC_WLTRANSFORM_H_
+#define _SAC_WLTRANSFORM_H_
+
+#include "types.h"
 
 #define PRINT_HOMSV(handle, vect, dims)                                                  \
     {                                                                                    \
@@ -83,15 +88,16 @@
         }                                                                                \
     }
 
-extern node *WlTransform (node *syntax_tree);
+extern node *WLTRAdoWlTransform (node *syntax_tree);
 
 extern node *WLTRAassign (node *arg_node, info *arg_info);
+extern node *WLTRAcode (node *arg_node, info *arg_info);
 extern node *WLTRAlet (node *arg_node, info *arg_info);
 extern node *WLTRAwith (node *arg_node, info *arg_info);
-extern node *WLTRAcode (node *arg_node, info *arg_info);
 
-extern node *InsertWLnodes (node *nodes, node *insert_nodes);
-extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
-extern bool AllStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim);
+extern bool WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim);
 
-#endif /* _sac_wltransform_h */
+extern node *WLTRAinsertWLnodes (node *nodes, node *insert_nodes);
+extern int WLTRAgridOffset (int new_bound1, int bound1, int step, int grid_b2);
+
+#endif /* _SAC_WLTRANSFORM_H_ */

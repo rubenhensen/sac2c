@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.23  2004/10/28 17:50:22  khf
  * splitted WL_OFFSET into WL_OFFSET and WL_OFFSET_SHAPE_FACR
  * to avoid mixed declarations and code
@@ -79,8 +82,8 @@
  *
  */
 
-#ifndef _icm2c_wl_h_
-#define _icm2c_wl_h_
+#ifndef _SAC_ICM2C_WL_H_
+#define _SAC_ICM2C_WL_H_
 
 extern void ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim,
                                                     char *shp_NT, int val_size,
@@ -134,4 +137,4 @@ extern void ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_NT,
                                      int to_sdim, char *idx_vec_NT, int dims,
                                      char **idxa_scl_NT);
 
-#endif /* _icm2c_wl_h_ */
+#endif /* _SAC_ICM2C_WL_H_ */

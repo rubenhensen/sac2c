@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.4  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -64,6 +67,13 @@ extern void GSCPrintMainEnd ();
 
 extern int GSCCalcMasterclass (int num_threads);
 
+/******************************************************************************
+ *
+ * Generate startup code traversal ( gsc_tab)
+ *
+ * Prefix: GSC
+ *
+ *****************************************************************************/
 extern node *GSCfundef (node *arg_node, info *arg_info);
 extern node *GSCspmd (node *arg_node, info *arg_info);
 extern node *GSCicm (node *arg_node, info *arg_info);

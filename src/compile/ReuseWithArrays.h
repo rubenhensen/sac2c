@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/21 22:04:36  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.3  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -20,21 +23,28 @@
  * Revision 1.1  1998/06/07 18:43:12  dkr
  * Initial revision
  *
- *
- *
  */
+#ifndef _SAC_REUSEWITHARRAYS_H_
+#define _SAC_REUSEWITHARRAYS_H_
 
-#ifndef _sac_ReuseWithArrays_h
+#include "types.h"
 
-#define _sac_ReuseWithArrays_h
+/******************************************************************************
+ *
+ * Reuse with-arrays traversal ( reuse_tab)
+ *
+ * Prefix: REUSE
+ *
+ *****************************************************************************/
+extern node *REUSEdoGetReuseArrays (node *syntax_tree, node *fundef, node *wl_ids);
+extern node *REUSEdoGetReuseCandidates (node *syntax_tree, node *fundef, node *wl_ids);
 
-extern node *GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids);
-extern node *GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids);
+extern node *REUSEfold (node *arg_node, info *arg_info);
+extern node *REUSEfundef (node *arg_node, info *arg_info);
+extern node *REUSEgenarray (node *arg_node, info *arg_info);
+extern node *REUSEid (node *arg_node, info *arg_info);
+extern node *REUSElet (node *arg_node, info *arg_info);
+extern node *REUSEmodarray (node *arg_node, info *arg_info);
+extern node *REUSEwith2 (node *arg_node, info *arg_info);
 
-extern node *ReuseFundef (node *arg_node, info *arg_info);
-extern node *ReuseNwith2 (node *arg_node, info *arg_info);
-extern node *ReuseNwithop (node *arg_node, info *arg_info);
-extern node *ReuseLet (node *arg_node, info *arg_info);
-extern node *ReuseId (node *arg_node, info *arg_info);
-
-#endif /* _sac_ReuseWithArrays_h */
+#endif /* _SAC_REUSEWITHARRAYS_H_ */
