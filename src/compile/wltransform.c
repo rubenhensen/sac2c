@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/05/15 23:45:20  dkr
+ * removed a unused var and a unused param in NormalizeWL()
+ *
  * Revision 1.14  1998/05/15 23:02:31  dkr
  * fixed some minor bugs
  *
@@ -2227,20 +2230,17 @@ NormalizeWLnodes (node *nodes, int *width)
 /******************************************************************************
  *
  * function:
- *   node *NormalizeWL( node *nodes, int dims, int *idx_max)
+ *   node *NormalizeWL( node *nodes, int *idx_max)
  *
  * description:
  *   returns the normalized N_WL...-tree 'nodes'.
- *   'dims' is the number of dimension in 'nodes', 'idx_max' is the supremum
- *   of the index-vector.
+ *   'idx_max' is the supremum of the index-vector.
  *
  ******************************************************************************/
 
 node *
-NormalizeWL (node *nodes, int dims, int *idx_max)
+NormalizeWL (node *nodes, int *idx_max)
 {
-    int d;
-
     DBUG_ENTER ("NormalizeWL");
 
     nodes = NormalizeWLnodes (nodes, idx_max);
@@ -3021,8 +3021,8 @@ WLTRANwith (node *arg_node, node *arg_info)
                     /* normalization */
                     if (WL_break_after >= WL_PH_norm) {
                         DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
-                        WLSEG_CONTENTS (seg) = NormalizeWL (WLSEG_CONTENTS (seg), dims,
-                                                            NWITH2_IDX_MAX (new_node));
+                        WLSEG_CONTENTS (seg)
+                          = NormalizeWL (WLSEG_CONTENTS (seg), NWITH2_IDX_MAX (new_node));
                     }
 
                     seg = WLSEG_NEXT (seg);
