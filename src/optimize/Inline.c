@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/10/28 22:08:11  sah
+ * fixed some typoes
+ *
  * Revision 3.36  2004/10/28 18:40:59  sah
  * Inlining is not performed on used functions
  * from another module.
@@ -824,10 +827,8 @@ INLfundef (node *arg_node, info *arg_info)
      * exist in a compiled version within the module), this inlining
      * would be of no use at all!
      */
-  if (  (FUNDEF_SYMBOL( arg_node) == NULL)
-     && (FUNDEF_BODY( arg_node) != NULL)
-     && (! FUNDEF_INLNE( arg_node)
-     ) {
+    if ((FUNDEF_SYMBOLNAME (arg_node) == NULL) && (FUNDEF_BODY (arg_node) != NULL)
+        && (!FUNDEF_INLINE (arg_node))) {
 #else
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_INLINE (arg_node))) {
 #endif
@@ -841,13 +842,13 @@ INLfundef (node *arg_node, info *arg_info)
 
         FUNDEF_VARDEC (arg_node)
           = AppendVardec (FUNDEF_VARDEC (arg_node), INFO_INL_VARDECS (arg_info));
-  }
+    }
 
-  if (FUNDEF_NEXT( arg_node)) {
+    if (FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-  }
-    
-  DBUG_RETURN( arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
