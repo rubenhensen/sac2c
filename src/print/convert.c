@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/04 13:32:48  sbs
+ * Revision 1.7  1995/01/05 11:51:25  sbs
+ * MOD_NAME_CON macro inserted for mod-name generation for
+ * types and functions.
+ *
+ * Revision 1.6  1995/01/04  13:32:48  sbs
  * error in Type2String fixed.
  *
  * Revision 1.5  1994/12/31  13:54:17  sbs
@@ -64,7 +68,7 @@ Type2String (types *type, int print_id)
     do {
         if (type->name_mod != NULL) {
             strcat (tmp_string, type->name_mod);
-            strcat (tmp_string, "__");
+            strcat (tmp_string, MOD_NAME_CON);
         }
         strcat (tmp_string, SIMPLE2STR (type));
 

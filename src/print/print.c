@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/01/02 19:45:20  sbs
+ * Revision 1.25  1995/01/05 11:51:25  sbs
+ * MOD_NAME_CON macro inserted for mod-name generation for
+ * types and functions.
+ *
+ * Revision 1.24  1995/01/02  19:45:20  sbs
  * PrintTypedef extended for types->id_mod!
  *
  * Revision 1.23  1994/12/31  14:07:01  sbs
@@ -243,7 +247,7 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     fprintf (outfile, "typedef %s ", Type2String (arg_node->info.types, 0));
     if (arg_node->info.types->id_mod != NULL)
-        fprintf (outfile, "%s__", arg_node->info.types->id_mod);
+        fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
     fprintf (outfile, "%s;\n", arg_node->info.types->id);
 
     if (1 == arg_node->nnode)
@@ -264,7 +268,7 @@ PrintFundef (node *arg_node, node *arg_info)
         fprintf (outfile, "extern ");
     fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
     if (arg_node->info.types->id_mod != NULL)
-        fprintf (outfile, "%s__", arg_node->info.types->id_mod);
+        fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
     fprintf (outfile, "%s(", arg_node->info.types->id);
     if (arg_node->node[2] != NULL)
         Trav (arg_node->node[2], arg_info); /* print args of function */
@@ -401,7 +405,7 @@ PrintAp (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintAp");
 
     if (arg_node->info.fun_name.id_mod != NULL)
-        fprintf (outfile, "%s__", arg_node->info.fun_name.id_mod);
+        fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.fun_name.id_mod);
     fprintf (outfile, "%s(", arg_node->info.fun_name.id);
     if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
