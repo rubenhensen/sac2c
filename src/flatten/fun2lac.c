@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/26 13:26:29  dkr
+ * BuildRenamingAssigns() and ReturnVarsAreIdentical() added
+ *
  * Revision 3.6  2001/04/26 01:43:44  dkr
  * - InlineSingleApplication() used for inlining now :-)
  * - Probably the transformation scheme is too regide yet, especially for
@@ -51,13 +54,14 @@
  *
  *****************************************************************************/
 
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
-#include "dbug.h"
+#include "DupTree.h"
 #include "print.h"
 #include "Inline.h"
 
@@ -100,6 +104,84 @@ IsRecursiveCall (node *assign, node *fundef)
 
     DBUG_RETURN (res);
 }
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *BuildRenamingAssigns( node *ext_args, node *int_args)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+BuildRenamingAssigns (node *ext_args, node *int_args)
+{
+    node *int_expr;
+    node *assign;
+    node *assigns = NULL;
+
+    DBUG_ENTER ("BuildRenamingAssigns");
+
+    DBUG_ASSERT ((CountArgs (ext_args) == CountExprs (int_args)),
+                 "arguments of BuildRenamingAssigns() are inconsistent!");
+
+    if (ext_args != NULL) {
+        int_expr = EXPRS_EXPR (int_args);
+        if ((NODE_TYPE (int_expr) != N_id)
+            || (strcmp (ARG_NAME (ext_args), ID_NAME (int_expr)))) {
+            assign = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args,
+                                    DupNode (int_expr));
+            ASSIGN_NEXT (assign) = assigns;
+            assigns = assign;
+        }
+
+        ext_args = ARG_NEXT (ext_args);
+        int_args = EXPRS_NEXT (int_args);
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+#ifndef DBUG_OFF
+/******************************************************************************
+ *
+ * Function:
+ *   bool ReturnVarsAreIdentical( node *ext_rets, ids *int_rets)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static bool
+ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
+{
+    node *ext_expr;
+    bool ok = TRUE;
+
+    DBUG_ENTER ("ReturnVarsAreIdentical");
+
+    DBUG_ASSERT ((CountExprs (ext_rets) == CountIds (int_rets)),
+                 "arguments of ReturnVarsAreIdentical() are inconsistent!");
+
+    if (ext_rets != NULL) {
+        ext_expr = EXPRS_EXPR (ext_rets);
+        DBUG_ASSERT ((NODE_TYPE (ext_expr) == N_id),
+                     "return value of special Lac function must be a N_id node!");
+
+        if (strcmp (ID_NAME (ext_expr), IDS_NAME (int_rets))) {
+            ok = FALSE;
+        }
+
+        ext_rets = EXPRS_NEXT (ext_rets);
+        int_rets = IDS_NEXT (int_rets);
+    }
+
+    DBUG_RETURN (ok);
+}
+#endif
 
 /******************************************************************************
  *
@@ -148,7 +230,7 @@ TransformIntoWhileLoop (node *fundef)
 {
     node *cond_assign, *cond;
     node *loop_body, *loop_pred;
-    node *int_call;
+    node *int_call, *ret;
     node *tmp;
 
     DBUG_ENTER ("TransformIntoWhileLoop");
@@ -168,13 +250,14 @@ TransformIntoWhileLoop (node *fundef)
          */
 
         if (NODE_TYPE (cond) != N_return) {
+            ret = ASSIGN_INSTR (ASSIGN_NEXT (cond_assign));
+
             DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
                          "Illegal structure of while-loop function.");
             DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
                          "else part of conditional in while-loop function must be"
                          " empty");
-            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (cond_assign)))
-                          == N_return),
+            DBUG_ASSERT ((NODE_TYPE (ret) == N_return),
                          "after conditional in while-loop funtion no assignments are"
                          " allowed");
 
@@ -184,24 +267,58 @@ TransformIntoWhileLoop (node *fundef)
             /*
              * cond_assign: if (false) { ... }  return(...);
              * cond:        if (false) { <statements>  ... = WhileLoopFun(...); }
+             * ret:         return(...);
              * loop_pred:   <pred>
              */
 
             tmp = BLOCK_INSTR (COND_THEN (cond));
             if (IsRecursiveCall (tmp, fundef)) {
-                loop_body = MakeBlock (MakeEmpty (), NULL);
+                loop_body = NULL;
             } else {
                 while (!IsRecursiveCall (ASSIGN_NEXT (tmp), fundef)) {
                     tmp = ASSIGN_NEXT (tmp);
                     DBUG_ASSERT ((tmp != NULL),
                                  "recursive call of while-loop function not found");
                 }
-                loop_body = MakeBlock (BLOCK_INSTR (COND_THEN (cond)), NULL);
+                loop_body = BLOCK_INSTR (COND_THEN (cond));
                 BLOCK_INSTR (COND_THEN (cond)) = ASSIGN_NEXT (tmp);
                 ASSIGN_NEXT (tmp) = NULL;
                 tmp = BLOCK_INSTR (COND_THEN (cond));
             }
             int_call = tmp;
+
+            DBUG_ASSERT ((ReturnVarsAreIdentical (RETURN_EXPRS (ret),
+                                                  ASSIGN_LHS (int_call))),
+                         "vars on LHS of recursive call and in return statement"
+                         " are not identical!");
+
+            /*
+             * cond_assign: if (false) { ... }  return(...);
+             * cond:        if (false) { ... = WhileLoopFun(...); }
+             * ret:         return(...);
+             * loop_pred:   <pred>
+             * loop_body:   <statements>
+             * int_call:    ... = WhileLoopFun(...);
+             */
+
+            loop_body
+              = AppendAssign (loop_body,
+                              BuildRenamingAssigns (FUNDEF_ARGS (fundef),
+                                                    AP_ARGS (ASSIGN_RHS (int_call))));
+
+            if (loop_body == NULL) {
+                loop_body = MakeEmpty ();
+            }
+            loop_body = MakeBlock (loop_body, NULL);
+
+            /*
+             * cond_assign: if (false) { ... }  return(...);
+             * cond:        if (false) { ... = WhileLoopFun(...); }
+             * ret:         return(...);
+             * loop_pred:   <pred>
+             * loop_body:   { <statements> a_i = A_i; }
+             * int_call:    ... = WhileLoopFun(...);
+             */
 
             DBUG_ASSERT ((ASSIGN_NEXT (int_call) == NULL),
                          "recursive call of while-loop funtion must be the last"
@@ -210,8 +327,9 @@ TransformIntoWhileLoop (node *fundef)
             /*
              * cond_assign: if (false) { ... }  return(...);
              * cond:        if (false) { ... = WhileLoopFun(...); }
+             * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { <statements> }
+             * loop_body:   { <statements> a_i = A_i; }
              * int_call:    ... = WhileLoopFun(...);
              */
 
@@ -272,7 +390,7 @@ TransformIntoDoLoop (node *fundef)
     node *assigns;
     node *cond_assign, *cond;
     node *loop_body, *loop_pred;
-    node *int_call;
+    node *int_call, *ret;
     node *tmp;
 
     DBUG_ENTER ("TransformIntoDoLoop");
@@ -287,7 +405,7 @@ TransformIntoDoLoop (node *fundef)
 
         if (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_cond) {
             cond_assign = assigns;
-            loop_body = MakeBlock (NULL, NULL);
+            loop_body = NULL;
         } else {
             tmp = assigns;
             while ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_cond)
@@ -298,23 +416,24 @@ TransformIntoDoLoop (node *fundef)
             }
             cond_assign = ASSIGN_NEXT (tmp);
             ASSIGN_NEXT (tmp) = NULL;
-            loop_body = MakeBlock (assigns, NULL);
+            loop_body = assigns;
         }
         cond = ASSIGN_INSTR (cond_assign);
 
         /*
          * cond_assign: if (<pred>) { ... }  return(...);
          * cond:        if (<pred>) { ... }
-         * loop_body:   { <statements> }
+         * loop_body:   <statements>
          */
 
         if (NODE_TYPE (cond) != N_return) {
+            ret = ASSIGN_INSTR (ASSIGN_NEXT (cond_assign));
+
             DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
                          "Illegal node type in conditional position.");
             DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
                          "else part of conditional in do-loop must be empty");
-            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (cond_assign)))
-                          == N_return),
+            DBUG_ASSERT ((NODE_TYPE (ret) == N_return),
                          "after conditional in do-loop funtion no assignments are"
                          " allowed");
 
@@ -324,8 +443,9 @@ TransformIntoDoLoop (node *fundef)
             /*
              * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
              * cond:        if (false) { ... = DoLoopFun(...); }
+             * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { <statements> }
+             * loop_body:   <statements>
              */
 
             int_call = BLOCK_INSTR (COND_THEN (cond));
@@ -334,11 +454,36 @@ TransformIntoDoLoop (node *fundef)
                          "recursive call of do-loop function must be the only"
                          " assignment in the conditional");
 
+            DBUG_ASSERT ((ReturnVarsAreIdentical (RETURN_EXPRS (ret),
+                                                  ASSIGN_LHS (int_call))),
+                         "vars on LHS of recursive call and in return statement"
+                         " are not identical!");
+
             /*
              * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
              * cond:        if (false) { ... = DoLoopFun(...); }
+             * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { <statements> }
+             * loop_body:   <statements>
+             * int_call:    ... = DoLoopFun(...);
+             */
+
+            loop_body
+              = AppendAssign (loop_body,
+                              BuildRenamingAssigns (FUNDEF_ARGS (fundef),
+                                                    AP_ARGS (ASSIGN_RHS (int_call))));
+
+            if (loop_body == NULL) {
+                loop_body = MakeEmpty ();
+            }
+            loop_body = MakeBlock (loop_body, NULL);
+
+            /*
+             * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
+             * cond:        if (false) { ... = DoLoopFun(...); }
+             * ret:         return(...);
+             * loop_pred:   <pred>
+             * loop_body:   { <statements> a_i = A_i; }
              * int_call:    ... = DoLoopFun(...);
              */
 
@@ -539,11 +684,6 @@ FUN2LACfundef (node *arg_node, node *arg_info)
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if (FUNDEF_IS_LACFUN (arg_node)) {
-        /* only a zombie function remains in the fundef chain */
-        arg_node = FreeNode (arg_node);
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -566,6 +706,11 @@ FUN2LACmodul (node *arg_node, node *arg_info)
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
 
+        /*
+         * After inlining the special LaC functions and removing the external
+         * reference (N_ap node) of it, all LaC functions should be zombies
+         * with (FUNDEF_USED == 0), now.
+         */
         arg_node = RemoveAllZombies (arg_node);
     }
 
