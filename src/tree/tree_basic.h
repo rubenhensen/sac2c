@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2001/04/30 12:27:23  nmw
+ * INFO_AE_FUNDEF, INFO_GNM_FUDNEF added
+ *
  * Revision 3.89  2001/04/27 17:35:28  nmw
  * INFO_COMP_ASSIGN added
  *
@@ -2776,6 +2779,7 @@ extern node *MakeInfo ();
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
+#define INFO_AE_FUNDEF(n) (n->node[2])
 
 /* compile */
 #define INFO_COMP_MODUL(n) (n->node[0])
@@ -2802,6 +2806,9 @@ extern node *MakeInfo ();
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
 #define INFO_VARNO(n) (n->varno)
+
+/* generatemasks */
+#define INFO_GNM_FUNDEF(n) (n->node[1])
 
 /* inline */
 #define INFO_INL_TYPE(n) (n->flag)
