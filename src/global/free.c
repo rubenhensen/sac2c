@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/03/24 17:13:32  dkr
+ * changed FreeNPart:
+ *   (code == NULL) is allowed (as provided in MakeNpart, DupNpart, ...)
+ *
  * Revision 1.40  1998/03/24 12:19:44  srs
  * NWITHIF_VEC() has not been set free in FreeNWithID
  *
@@ -1452,13 +1456,15 @@ FreeNPart (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FreeNPart");
     DBUG_PRINT ("FREE", ("Removing N_NPart node ..."));
-    DBUG_ASSERT (NPART_CODE (arg_node), ("N_Npart node has no valid NPART_CODE"));
 
     FREETRAV (NPART_WITHID (arg_node));
     FREETRAV (NPART_GEN (arg_node));
 
-    NCODE_USED (NPART_CODE (arg_node))--; /* see remarks of N_Ncode in tree_basic.h */
-    DBUG_ASSERT (0 >= NCODE_USED (NPART_CODE (arg_node)), ("NCODE_USED dropped below 0"));
+    if (NPART_CODE (arg_node) != NULL) {
+        NCODE_USED (NPART_CODE (arg_node))--; /* see remarks of N_Ncode in tree_basic.h */
+        DBUG_ASSERT (0 >= NCODE_USED (NPART_CODE (arg_node)),
+                     ("NCODE_USED dropped below 0"));
+    }
 
     tmp = FREECONT (NPART_NEXT (arg_node));
 
