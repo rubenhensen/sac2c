@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/12/10 15:00:57  dkr
+ * flag dkr removed
+ *
  * Revision 3.15  2001/11/19 20:21:01  dkr
  * global vars 'errors' and 'warnings' renamed into
  * 'errors_cnt' and 'warnings_cnt' respectively in order
@@ -202,7 +205,6 @@
  * special hidden options!
  */
 bool sbs = FALSE;
-bool dkr = FALSE;
 
 /*
  *  Version control
