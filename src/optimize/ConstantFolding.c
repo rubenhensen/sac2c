@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/02/28 18:35:00  asi
+ * Revision 1.5  1995/03/07 10:17:47  asi
+ * added CFcast, constant folding within with loops
+ * modified CFlet : determining basetype for user defined types
+ *
+ * Revision 1.4  1995/02/28  18:35:00  asi
  * added Cfwith
  * added counter for primfun application elimination
  * bug fixed in routines for shape, reshape and dim
@@ -28,9 +32,12 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
+#include "typecheck.h"
 
 #include "optimize.h"
 #include "ConstantFolding.h"
+
+extern char filename[]; /* is set temporary; will be set later on in main.c */
 
 typedef struct STELM {
     int vl_len;
@@ -339,6 +346,44 @@ CFid (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (return_node);
 }
+/*
+ *
+ *  functionname  : CFcast
+ *  arguments     : 1) cast-node
+ *                  2) info-node
+ *                  R) cast-node
+ *  description   :
+ *  global vars   : syntax_tree, info_node
+ *  internal funs : --
+ *  external funs : Trav
+ *  macros        : DBUG...
+ *
+ *  remarks       : --
+ *
+ */
+node *
+CFcast (node *arg_node, node *arg_info)
+{
+    node *returnnode;
+
+    DBUG_ENTER ("CFcast");
+
+    returnnode = arg_node;
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    switch (arg_node->node[0]->nodetype) {
+    case N_num:
+    case N_float:
+    case N_bool:
+    case N_array:
+        returnnode = arg_node->node[0];
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (returnnode);
+}
 
 /*
  *
@@ -425,6 +470,33 @@ CFassign (node *arg_node, node *arg_info)
 
 /*
  *
+ *  functionname  : GetType
+ *  arguments     : 1) type
+ *                  R) real type
+ *  description   : determines real type
+ *  global vars   : syntax_tree
+ *  internal funs : --
+ *  external funs : LookupType
+ *  macros        : DBUG...
+ *
+ *  remarks       : --
+ *
+ */
+types *
+GetType (types *type)
+{
+    node *tnode;
+
+    DBUG_ENTER ("GetType");
+    if (T_user == type->simpletype) {
+        tnode = LookupType (type->name, type->name_mod, 0);
+        type = tnode->info.types;
+    }
+    DBUG_RETURN (type);
+}
+
+/*
+ *
  *  functionname  : CFlet
  *  arguments     : 1) let-node
  *		    2) info-node
@@ -444,10 +516,14 @@ CFassign (node *arg_node, node *arg_info)
 node *
 CFlet (node *arg_node, node *arg_info)
 {
+
     DBUG_ENTER ("CFlet");
+
     arg_info->nnode = 1;
-    arg_info->info.types = arg_node->info.ids->node->info.types;
+    arg_info->info.types = GetType (arg_node->info.ids->node->info.types);
+
     arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav expression */
+
     arg_info->info.types = NULL;
     if (arg_info->nnode == 1)
         VAR (arg_node->info.ids->node->varno) = arg_node->node[0];
@@ -457,6 +533,7 @@ CFlet (node *arg_node, node *arg_info)
         && (arg_node->node[0]->nodetype == N_prf))
         VAR (arg_node->info.ids->node->varno)
           = arg_node->node[0]->node[0]->node[1]->node[0];
+
     DBUG_RETURN (arg_node);
 }
 
@@ -502,6 +579,7 @@ CFwhile (node *arg_node, node *arg_info)
             PlusMask (arg_info->mask[0], a_node->mask[0], VARNO);
             PlusMask (arg_info->mask[1], a_node->mask[1], VARNO);
             FreeTree (arg_node);
+            cf_expr++;
             arg_node = MakeNode (N_empty);
             break;
         }
@@ -542,15 +620,17 @@ CFdo (node *arg_node, node *arg_info)
             VAR (i) = NULL;
     }
 
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav do-body */
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav do-condition */
 
     MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
 
     if ((arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
         WARN1 (("WARNING in line %d: endless loop expected\n", a_node->varno));
-    } else {
+    }
+    if ((!arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
+        cf_expr++;
         tmp = arg_node;
         arg_node = arg_node->node[1]->node[0];
         tmp->node[1]->nnode = 0;
@@ -605,12 +685,14 @@ CFcond (node *arg_node, node *arg_info)
             PlusMask (oldmask[0], arg_node->node[2]->mask[0], VARNO);
             PlusMask (oldmask[1], arg_node->node[2]->mask[1], VARNO);
             FreeTree (arg_node->node[2]);
+            cf_expr++;
             returnnode = arg_node->node[1]->node[0];
             free (arg_node->node[1]);
         } else {
             PlusMask (oldmask[0], arg_node->node[1]->mask[0], VARNO);
             PlusMask (oldmask[1], arg_node->node[1]->mask[1], VARNO);
             FreeTree (arg_node->node[1]);
+            cf_expr++;
             returnnode = arg_node->node[2]->node[0];
             free (arg_node->node[2]);
         }
@@ -643,7 +725,7 @@ CFcond (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : CF_with
+ *  functionname  : CFwith
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -657,7 +739,57 @@ CFcond (node *arg_node, node *arg_info)
 node *
 CFwith (node *arg_node, node *arg_info)
 {
+    long *oldmask[2];
+    int i;
+    types *oldtype;
+
     DBUG_ENTER ("CFwith");
+    oldmask[0] = arg_info->mask[0];
+    oldmask[1] = arg_info->mask[1];
+    arg_info->mask[0] = GenMask (VARNO);
+    arg_info->mask[1] = GenMask (VARNO);
+    oldtype = arg_info->info.types;
+    arg_info->info.types = arg_node->node[0]->info.ids->node->info.types;
+
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav generator */
+
+    arg_info->info.types = oldtype;
+    MinusMask (arg_node->node[0]->mask[1], arg_info->mask[1], VARNO);
+    PlusMask (oldmask[1], arg_info->mask[1], VARNO);
+    ClearMask (arg_info->mask[1], VARNO);
+
+    if (arg_node->node[1]->nodetype == N_genarray) {
+        arg_node->node[1]->node[0] = Trav (arg_node->node[1]->node[0], arg_info);
+
+        MinusMask (arg_node->node[1]->mask[1], arg_info->mask[1], VARNO);
+        PlusMask (oldmask[1], arg_info->mask[1], VARNO);
+        ClearMask (arg_info->mask[1], VARNO);
+    }
+
+    PushDupVL ();
+    for (i = 0; i < TOS.vl_len; i++) {
+        if ((ReadMask (arg_info->mask[0], i) != 0)
+            || (ReadMask (arg_info->node[0]->mask[0], i) != 0))
+            VAR (i) = NULL;
+    }
+
+    if ((arg_node->node[1]->nodetype == N_genarray)
+        || (arg_node->node[1]->nodetype == N_modarray))
+        arg_node->node[1]->node[1]
+          = Trav (arg_node->node[1]->node[1], arg_info); /* Trav body */
+    else
+        arg_node->node[1]->node[0]
+          = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
+
+    MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
+    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+    PlusMask (oldmask[0], arg_info->mask[0], VARNO);
+    PlusMask (oldmask[1], arg_info->mask[1], VARNO);
+    free (arg_info->mask[0]);
+    free (arg_info->mask[1]);
+    arg_info->mask[0] = oldmask[0];
+    arg_info->mask[1] = oldmask[1];
+    PopVL ();
     DBUG_RETURN (arg_node);
 }
 
@@ -677,7 +809,7 @@ CFwith (node *arg_node, node *arg_info)
 node *
 GetReturnType (int res_int, node **arg, node *arg_info)
 {
-    DBUG_ENTER ("CleanupCF");
+    DBUG_ENTER ("GetReturnType");
     if (res_int == -1)
         arg[0]->nodetype = N_bool;
     else
@@ -751,7 +883,7 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
             if (SELARG (arg[1]) != 0) {
                 ARI (/, arg[0], arg[1]);
             } else {
-                WARN1 (("WARNING in line %d: division by zero error expected\n",
+                WARN1 (("WARNING %s, %d: division by zero error expected\n", filename,
                         arg_info->node[0]->lineno));
                 returnnode = arg_node;
             }
@@ -783,11 +915,59 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
         default:
             returnnode = arg_node;
         }
-    } else
-        returnnode = arg_node;
+    } else {
+        switch (arg_node->info.prf) {
+        case F_and:
+            if ((arg[0]->nodetype == N_bool) && (!SELARG (arg[0]))) {
+                returnnode = arg[0];
+                cf_expr++;
+                break;
+            }
+            if ((arg[1]->nodetype == N_bool) && (!SELARG (arg[1]))) {
+                returnnode = arg[1];
+                cf_expr++;
+                break;
+            }
+            returnnode = arg_node;
+            break;
+        case F_or:
+            if ((arg[0]->nodetype == N_bool) && (SELARG (arg[0]))) {
+                returnnode = arg[0];
+                cf_expr++;
+                break;
+            }
+            if ((arg[1]->nodetype == N_bool) && (SELARG (arg[1]))) {
+                returnnode = arg[1];
+                cf_expr++;
+                break;
+            }
+            returnnode = arg_node;
+            break;
+        default:
+            returnnode = arg_node;
+            break;
+        }
+    }
     DBUG_RETURN (returnnode);
 }
 
+node *
+GotoExprNr (int n, node *arg_node)
+{
+    int i;
+
+    DBUG_ENTER ("ArrayPrf");
+
+    for (i = 0; i < n; i++)
+        if (NULL != arg_node->node[1])
+            arg_node = arg_node->node[1];
+        else {
+            arg_node = NULL;
+            break;
+        }
+
+    DBUG_RETURN (arg_node);
+}
 /*
  *
  *  functionname  : ArrayPrf
@@ -828,12 +1008,13 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             returnnode = arg_node;
             break;
         }
-        if (arg[0]->nodetype != N_array) {
+        if (arg[0]->nodetype != N_array) { /* swaps the arguments of primitive function,
+                                              SkalarPrf will react */
             swap = 1;
             returnnode = arg[1];
             arg[1] = arg[0];
             arg[0] = returnnode;
-        } else {
+        } else { /* no swapping */
             swap = 0;
             returnnode = arg[0];
         }
@@ -876,6 +1057,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg[0]->node[0]->node[1] = 0;
             free (arg_node);
             returnnode = arg[0];
+            cf_expr++;
             break;
         case N_id:
             returnnode = MakeNode (N_array);
@@ -894,6 +1076,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 expr[0]->node[0] = MakeNode (N_num);
                 expr[0]->node[0]->info.cint = shape->shp[i];
             }
+            cf_expr++;
             break;
         default:
             returnnode = arg_node;
@@ -909,6 +1092,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg_node->nnode = 0;
             arg_node->node[0] = NULL;
             returnnode = arg_node;
+            cf_expr++;
             break;
         case N_id:
             arg_node->info.cint = arg[0]->node[0]->info.types->dim;
@@ -917,13 +1101,46 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg_node->nnode = 0;
             arg_node->node[0] = NULL;
             returnnode = arg_node;
+            cf_expr++;
             break;
-        case N_cast:
         default:
             returnnode = arg_node;
             break;
         }
         break; /* dim */
+    case F_psi:
+        switch (arg[1]->nodetype) {
+        case N_array:
+            expr[0] = GotoExprNr (arg[0]->node[0]->node[0]->info.cint, arg[1]->node[0]);
+            if (NULL == expr[0]) {
+                WARN1 (
+                  ("WARNING %s, %d: array to small for primitive function psi(%d,.)\n",
+                   filename, arg_info->node[0]->lineno,
+                   arg[0]->node[0]->node[0]->info.cint));
+                returnnode = arg_node;
+                break;
+            }
+            arg_node->nodetype = expr[0]->node[0]->nodetype;
+            if (expr[0]->node[0]->nodetype == N_float)
+                arg_node->info.cfloat = expr[0]->node[0]->info.cfloat;
+            else
+                arg_node->info.cint = expr[0]->node[0]->info.cint;
+            arg_node->nnode = 0;
+            FreeTree (arg[0]->node[0]);
+            arg_node->node[0] = NULL;
+            returnnode = arg_node;
+            cf_expr++;
+            break;
+        case N_id:
+        default:
+            returnnode = arg_node;
+            break;
+        }
+        break;
+    case F_rotate:
+    case F_take:
+    case F_drop:
+    case F_cat:
     default:
         returnnode = arg_node;
     }
@@ -960,8 +1177,17 @@ CFprf (node *arg_node, node *arg_info)
     prf = arg_node->info.prf;
     spezial_prf = ((prf == F_dim) || (prf == F_shape) || (prf == F_psi) || (prf == F_take)
                    || (prf == F_drop) || (prf == F_cat) || (prf == F_rotate));
+
     if (!spezial_prf)
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    if ((prf == F_psi) || (prf == F_take) || (prf == F_drop) || (prf == F_reshape)
+        || (prf == F_cat) || (prf == F_rotate))
+        arg_node->node[0]->node[0] = Trav (arg_node->node[0]->node[0], arg_info);
+
+    if (prf == F_rotate)
+        arg_node->node[0]->node[1]->node[0]
+          = Trav (arg_node->node[0]->node[1]->node[0], arg_info);
 
     for (i = 0; i < 3; i++)
         arg[i] = NULL;
@@ -978,7 +1204,6 @@ CFprf (node *arg_node, node *arg_info)
         arg_no--;
 
     if (arg_info->info.types == NULL) {
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         returnnode = SkalarPrf (-1, arg, arg_no, 0, arg_node, arg_info);
     } else {
         res_int = ((arg_info->info.types->simpletype == T_int)
