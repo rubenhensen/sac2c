@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/11/18 16:17:42  dkr
+ * NWITHOP_DEFAULT freed as well now
+ *
  * Revision 3.49  2003/06/11 22:03:09  ktr
  * ARRAY_SHAPE is now deleted
  *
@@ -2024,6 +2027,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
 
     /* removes _SHAPE or _ARRAY as well */
     NWITHOP_NEUTRAL (arg_node) = FREETRAV (NWITHOP_NEUTRAL (arg_node));
+    NWITHOP_DEFAULT (arg_node) = FREETRAV (NWITHOP_DEFAULT (arg_node));
 
     /*
      * if WithOp is WO_foldfun the function name has to be freed.
