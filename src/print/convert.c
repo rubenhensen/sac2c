@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/10/19 12:57:25  sacbase
+ * inclusion of type_info.mac adjusted to new .mac mechanism
+ *
  * Revision 2.6  1999/04/15 15:00:56  cg
  * Now, enough memory is allocated for string representation
  * of floating point numbers.
@@ -124,20 +127,18 @@
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
 /* strings for primitve types */
-#define TYP_IF(n, d, p, f, sz) p
 
+#define TYP_IFpr_str(str) str
 char *type_string[] = {
 #include "type_info.mac"
 };
-#undef TYP_IF
 
 /* strings for primitve types used for renaming of functions*/
-#define TYP_IF(n, d, p, f, sz) f
 
+#define TYP_IFfunr_str(str) str
 static char *rename_type[] = {
 #include "type_info.mac"
 };
-#undef TYP_IF
 
 /*
  *

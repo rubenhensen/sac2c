@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/10/19 12:56:48  sacbase
+ * inclusion of type_info.mac adjusted to new .mac mechanism
+ *
  * Revision 2.2  1999/07/23 17:17:46  jhs
  * Restructured node_info.mac and simplified it's usage.
  *
@@ -102,11 +105,9 @@ char *mdb_prf[] = {
 };
 #undef PRF_IF
 
-#define TYP_IF(n, s, p, f, sz) s
-
+#define TYP_IFdb_str(str) str
 char *mdb_type[] = {
 #include "type_info.mac"
 };
-#undef TYP_IF
 
 /* #endif  DBUG_OFF */
