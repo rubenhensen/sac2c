@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2002/07/15 19:00:51  dkr
+ * minor changes done
+ *
  * Revision 1.28  2002/07/15 18:39:27  dkr
  * COMPPrf(): more prfs added
  *
@@ -3912,13 +3915,6 @@ COMP2Prf (node *arg_node, node *arg_info)
                                     &set_shape_icm);
         break;
 
-    case F_toi_A:
-    case F_tof_A:
-    case F_tod_A:
-        ret_node = COMPPrfConvertArray (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                        &set_shape_icm);
-        break;
-
     case F_add_SxA:
     case F_add_AxS:
     case F_add_AxA:
@@ -3938,6 +3934,13 @@ COMP2Prf (node *arg_node, node *arg_info)
         /*
          *  ARRAY_ARGS_NON_INTRINSIC( PRF_PRF( arg_node))
          */
+
+    case F_toi_A:
+    case F_tof_A:
+    case F_tod_A:
+        ret_node = COMPPrfConvertArray (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                        &set_shape_icm);
+        break;
 
     case F_take:
     case F_drop:
