@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.235  2004/11/21 20:31:16  sah
+ * SaCDevCamp 04 ISMOP II
+ *
  * Revision 3.234  2004/11/21 20:28:52  sah
  * SaCDevCamp 04 ISMOP
  *
@@ -179,7 +182,7 @@ extern int *TBcreateIntegerArray( int size, ...);
  * new attribut ATTRIB2 which can store any suitable information.
  * Functions to handle a general node list can be found in tree_compound.h,
  * starting with NodeList... .
- * MakeNodelist(), MakeNodelistNode() are not needed to create the general
+ * TBmakeNodelist(), TBmakeNodelistNode() are not needed to create the general
  * node list.
  */
 
@@ -239,8 +242,8 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
  ***
  ***/
 
-extern dffoldmask_t *MakeDFMfoldmask (node *vardec, node *foldop, dffoldmask_t *next);
-extern dffoldmask_t *CopyDFMfoldmask (dffoldmask_t *mask);
+extern dffoldmask_t *TBmakeDFMfoldmask (node *vardec, node *foldop, dffoldmask_t *next);
+extern dffoldmask_t *TBcopyDFMfoldmask (dffoldmask_t *mask);
 
 #define DFMFM_VARDEC(n) (n->vardec)
 #define DFMFM_FOLDOP(n) (n->foldop)
