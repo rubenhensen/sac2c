@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2002/09/09 17:50:05  dkr
+ * PREC3code(), PREC3withop(): support for N_Nwith added
+ *
  * Revision 3.56  2002/08/12 10:31:11  dkr
  * no more cc warnings (hopefully)
  *
@@ -2287,8 +2290,10 @@ PREC3withop (node *arg_node, node *arg_info)
     let_ids = LET_IDS (INFO_PREC3_LET (arg_info));
     let_expr = LET_EXPR (INFO_PREC3_LET (arg_info));
 
-    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
-    if (NWITH2_IS_FOLD (let_expr)) {
+    DBUG_ASSERT (((NODE_TYPE (let_expr) == N_Nwith)
+                  || (NODE_TYPE (let_expr) == N_Nwith2)),
+                 "neither N_Nwith nor N_Nwith2 node found!");
+    if (NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
         /*
          * We have to make the formal parameters of each pseudo fold-fun identical
          * to the corresponding application in order to allow for simple code
@@ -2345,8 +2350,10 @@ PREC3code (node *arg_node, node *arg_info)
 
     let_expr = LET_EXPR (INFO_PREC3_LET (arg_info));
 
-    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
-    if (NWITH2_IS_FOLD (let_expr)) {
+    DBUG_ASSERT (((NODE_TYPE (let_expr) == N_Nwith)
+                  || (NODE_TYPE (let_expr) == N_Nwith2)),
+                 "neither N_Nwith nor N_Nwith2 node found!");
+    if (NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
         /*
          * fold with-loop:
          * check whether all NCODE_CEXPR nodes have identical names
