@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2000/12/06 08:15:02  cg
+ * Added some new features that improve casting between user-defined
+ * and primitive array types.
+ *
  * Revision 3.5  2000/11/28 11:50:29  sbs
  * compiler warnings eliminated 8-)
  *
@@ -3417,6 +3421,8 @@ CmpTypes (types *type_one, types *type_two)
                     t_node = TYPES_TDEF (type_one);
                     if (t_node == NULL) {
                         t_node = LookupType (type_one->name, NULL, -064);
+                    } else {
+                        TYPES_TDEF (type_one) = t_node;
                     }
 
                     ok = !(
@@ -3580,6 +3586,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
             ABORT (line, ("Type '%s` is unknown",
                           ModName (type_one->name_mod, type_one->name)));
         } else {
+            TYPES_TDEF (type_one) = t_node;
             type_1 = DupTypes (t_node->TYPES);
             if (type_one->dim > 0) {
                 if (type_1->dim >= 0) {
@@ -3611,6 +3618,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
             ABORT (line, ("Type '%s` is unknown",
                           ModName (type_two->name_mod, type_two->name)));
         } else {
+            TYPES_TDEF (type_two) = t_node;
             type_2 = DupTypes (t_node->TYPES);
             if (type_two->dim > 0) {
                 if (type_2->dim >= 0) {
@@ -3708,6 +3716,44 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
         } else {
             compare = CmpTypes (type_1, type_2);
         }
+    }
+
+    /*
+     * Hack to enable complex type spacialization.
+     */
+
+    if ((compare == CMP_incompatible) && (TYPES_BASETYPE (type_one) == T_user)
+        && (TYPES_BASETYPE (type_two) == T_user)
+        && (TYPES_TDEF (type_one) == TYPES_TDEF (type_two))) {
+
+        if ((TYPES_DIM (type_one) == UNKNOWN_SHAPE)
+            && (TYPES_DIM (type_two) == UNKNOWN_SHAPE)) {
+            compare = CMP_both_unknown_shape;
+        } else if ((TYPES_DIM (type_one) == UNKNOWN_SHAPE)
+                   && (TYPES_DIM (type_two) > 0)) {
+            compare = CMP_one_unknown_shape;
+        } else if ((TYPES_DIM (type_one) > 0)
+                   && (TYPES_DIM (type_two) == UNKNOWN_SHAPE)) {
+            compare = CMP_one_unknown_shape;
+        }
+    }
+
+    if ((compare == CMP_incompatible) && (TYPES_BASETYPE (type_one) == T_user)
+        && (TYPES_BASETYPE (type_two) != T_user)
+        && (TYPEDEF_BASETYPE (TYPES_TDEF (type_one)) == TYPES_BASETYPE (type_two))
+        && (TYPEDEF_DIM (TYPES_TDEF (type_one)) > 0)
+        && (TYPES_DIM (type_one) == UNKNOWN_SHAPE) && (TYPES_DIM (type_two) > 0)) {
+
+        compare = CMP_one_unknown_shape;
+    }
+
+    if ((compare == CMP_incompatible) && (TYPES_BASETYPE (type_two) == T_user)
+        && (TYPES_BASETYPE (type_one) != T_user)
+        && (TYPEDEF_BASETYPE (TYPES_TDEF (type_two)) == TYPES_BASETYPE (type_one))
+        && (TYPEDEF_DIM (TYPES_TDEF (type_two)) > 0)
+        && (TYPES_DIM (type_two) == UNKNOWN_SHAPE) && (TYPES_DIM (type_one) > 0)) {
+
+        compare = CMP_one_unknown_shape;
     }
 
     if (NULL != shpseg_1) {
@@ -3809,6 +3855,7 @@ UpdateType (types *type_one, types *type_two, int line)
             ABORT (line, ("Type '%s` is unknown",
                           ModName (t_unknown->name_mod, t_unknown->name)));
         }
+        TYPES_TDEF (t_known) = t_node;
         DBUG_ASSERT ((NULL != t_node), "t_node is NULL");
         t_unknown->dim = t_node->DIM + t_known->dim;
         DBUG_ASSERT ((t_unknown->dim <= SHP_SEG_SIZE), "dimension to large");
@@ -3833,6 +3880,8 @@ UpdateType (types *type_one, types *type_two, int line)
             ABORT (line,
                    ("Type '%s` is unknown", ModName (t_known->name_mod, t_known->name)));
         }
+        TYPES_TDEF (t_unknown) = t_node;
+
         DBUG_ASSERT ((NULL != t_node), "t_node is NULL");
         t_unknown->dim = t_known->dim - t_node->DIM;
         if (KNOWN_SHAPE (t_unknown->dim)) {
@@ -6560,31 +6609,6 @@ TI_cast (node *arg_node, node *arg_info)
             CAST_TDEF (arg_node) = t_node;
         }
     }
-
-#if 0
-   type=ret_type;
-   cast_node=CAST_EXPR(arg_node);
-   while( N_cast == NODE_TYPE(cast_node)) {
-      type->next=DupTypes(cast_node->TYPES);
-      type=type->next;
-      if( (T_user == TYPES_BASETYPE(type)) && (NULL == type->name_mod)) {
-         t_node=LookupType(type->name, NULL, NODE_LINE(cast_node));
-         if(NULL == t_node) {
-           ABORT(NODE_LINE(cast_node),
-                 ("Type '%s` unknown",
-                  ret_type->name));
-         } else {
-            type->name_mod=t_node->ID_MOD;
-            TYPES_TDEF(type) = t_node;
-            cast_node->NAME_MOD=t_node->ID_MOD;
-         }
-      }
-      cast_node=CAST_EXPR(cast_node);
-   }
-   
-   /* get the type of casted expression */
-   inf_type=TI(cast_node, arg_info);
-#endif
 
     inf_type = TI (CAST_EXPR (arg_node), arg_info);
     if (NULL == inf_type)
