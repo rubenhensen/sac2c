@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2004/11/26 12:50:08  mwe
+ * changes according to changes in tree_compound.h
+ *
  * Revision 1.20  2004/11/25 22:50:01  mwe
  * changes according to changes in ast.xml
  *
@@ -1686,9 +1689,6 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
     } else {
         IDS_AVIS (arg_ids) = new_avis;
     }
-
-    /* restore all depended attributes with correct values */
-    IDS_VARDEC (arg_ids) = AVIS_DECL (IDS_AVIS (arg_ids));
 
     if (INFO_SSA_WITHID (arg_info) != NULL) {
         AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);

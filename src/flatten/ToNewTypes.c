@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/26 12:50:08  mwe
+ * changes according to changes in tree_compound.h
+ *
  * Revision 1.6  2004/11/25 22:50:01  mwe
  * changes according to changes in ast.xml
  *
@@ -596,7 +599,7 @@ TNTids (node *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TNTids");
 
-    if (IDS_AVIS (arg_ids) != DECL_AVIS (AVIS_DECL (IDS_VARDEC (arg_ids)))) {
+    if (IDS_AVIS (arg_ids) != DECL_AVIS (AVIS_DECL (IDS_AVIS (arg_ids)))) {
         /* wrong back reference */
         DBUG_PRINT ("TNT", ("backreference from ids %s to N_avis (" F_PTR ") corrected.",
                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/11/26 12:50:08  mwe
+ * changes according to changes in tree_compound.h
+ *
  * Revision 3.29  2004/11/25 15:28:50  mwe
  * ID_ISGLOBAL and ID_ISREFERENCE removed
  *
@@ -490,10 +493,10 @@ ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ext_rets)) == N_id),
                      "return value of special LaC function must be a N_id node!");
         DBUG_ASSERT (((ID_DECL (EXPRS_EXPR (ext_rets)) != NULL)
-                      && (IDS_VARDEC (int_rets) != NULL)),
+                      && (IDS_DECL (int_rets) != NULL)),
                      "vardec not found!");
 
-        if (ID_DECL (EXPRS_EXPR (ext_rets)) != IDS_VARDEC (int_rets)) {
+        if (ID_DECL (EXPRS_EXPR (ext_rets)) != IDS_DECL (int_rets)) {
             ok = FALSE;
             break;
         }
