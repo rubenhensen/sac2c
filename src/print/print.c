@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/04/03 12:08:32  dkr
+ * GSCPrintFileHeader() modified: PrintDefines() must be called *after* the
+ * typedefs have been printed because the defines may contain user
+ * defined types!
+ *
  * Revision 3.41  2001/04/03 09:16:27  dkr
  * fixed a bug in PrintWLsegx()
  *
@@ -753,16 +758,18 @@ PrintModul (node *arg_node, node *arg_info)
             Trav (MODUL_TYPES (arg_node), arg_info); /* print typedefs */
         }
 
+        GSCPrintDefines ();
+
         if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
-            INFO_PRINT_PROTOTYPE (arg_info) = 1;
+            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
             Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations */
-            INFO_PRINT_PROTOTYPE (arg_info) = 0;
+            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
-            print_objdef_for_header_file = 1;
+            print_objdef_for_header_file = TRUE;
             Trav (MODUL_OBJS (arg_node), arg_info); /* print object declarations */
         }
 
@@ -770,16 +777,16 @@ PrintModul (node *arg_node, node *arg_info)
 
         outfile = WriteOpen ("%s/globals.c", tmp_dirname);
         fprintf (outfile, "#include \"header.h\"\n\n");
-        fprintf (outfile, "int SAC__%s__dummy_value_which_is_completely_useless = 0;\n\n",
+        fprintf (outfile,
+                 "int SAC__%s__dummy_value_which_is_completely_useless"
+                 " = 0;\n\n",
                  MODUL_NAME (arg_node));
 
         if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
-            print_objdef_for_header_file = 0;
+            print_objdef_for_header_file = FALSE;
             Trav (MODUL_OBJS (arg_node), arg_info); /* print object definitions */
         }
-
-        fclose (outfile);
 
         /*
          *  Maybe there's nothing to compile in this module because all functions
@@ -794,6 +801,8 @@ PrintModul (node *arg_node, node *arg_info)
          *  nasty warnings. These are suppressed by the above dummy symbol.
          */
 
+        fclose (outfile);
+
         if (NULL != MODUL_FUNS (arg_node)) {
             Trav (MODUL_FUNS (arg_node), arg_info); /* print function definitions */
                                                     /*
@@ -804,10 +813,19 @@ PrintModul (node *arg_node, node *arg_info)
     } else {
         switch (MODUL_FILETYPE (arg_node)) {
         case F_modimp:
-            fprintf (outfile, "\n/*\n *  Module %s :\n */\n", MODUL_NAME (arg_node));
+            fprintf (outfile,
+                     "\n"
+                     "/*\n"
+                     " *  Module %s :\n"
+                     " */\n",
+                     MODUL_NAME (arg_node));
             break;
         case F_classimp:
-            fprintf (outfile, "\n/*\n *  Class %s :\n", MODUL_NAME (arg_node));
+            fprintf (outfile,
+                     "\n"
+                     "/*\n"
+                     " *  Class %s :\n",
+                     MODUL_NAME (arg_node));
             if (MODUL_CLASSTYPE (arg_node) != NULL) {
                 type_str = Type2String (MODUL_CLASSTYPE (arg_node), 0, TRUE);
                 fprintf (outfile, " *  classtype %s;\n", type_str);
@@ -816,7 +834,12 @@ PrintModul (node *arg_node, node *arg_info)
             fprintf (outfile, " */\n");
             break;
         case F_prog:
-            fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", puresacfilename);
+            fprintf (outfile,
+                     "\n"
+                     "/*\n"
+                     " *  SAC-Program %s :\n"
+                     " */\n",
+                     puresacfilename);
             break;
         default:
             break;
@@ -828,44 +851,46 @@ PrintModul (node *arg_node, node *arg_info)
         }
 
         if (MODUL_TYPES (arg_node) != NULL) {
-            fprintf (outfile, "\n\n");
-            fprintf (outfile, "/*\n");
-            fprintf (outfile, " *  type definitions\n");
-            fprintf (outfile, " */\n\n");
+            fprintf (outfile, "\n\n"
+                              "/*\n"
+                              " *  type definitions\n"
+                              " */\n\n");
             Trav (MODUL_TYPES (arg_node), arg_info); /* print typedefs */
         }
 
+        GSCPrintDefines ();
+
         if (MODUL_FUNS (arg_node) != NULL) {
-            fprintf (outfile, "\n\n");
-            fprintf (outfile, "/*\n");
-            fprintf (outfile, " *  function declarations\n");
-            fprintf (outfile, " */\n\n");
-            INFO_PRINT_PROTOTYPE (arg_info) = 1;
-            Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations*/
-            INFO_PRINT_PROTOTYPE (arg_info) = 0;
+            fprintf (outfile, "\n\n"
+                              "/*\n"
+                              " *  function declarations\n"
+                              " */\n\n");
+            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations */
+            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (MODUL_OBJS (arg_node) != NULL) {
-            fprintf (outfile, "\n\n");
-            fprintf (outfile, "/*\n");
-            fprintf (outfile, " *  global objects\n");
-            fprintf (outfile, " */\n\n");
+            fprintf (outfile, "\n\n"
+                              "/*\n"
+                              " *  global objects\n"
+                              " */\n\n");
             Trav (MODUL_OBJS (arg_node), arg_info); /* print objdefs */
         }
 
         if (MODUL_FUNS (arg_node) != NULL) {
-            fprintf (outfile, "\n\n");
-            fprintf (outfile, "/*\n");
-            fprintf (outfile, " *  function definitions\n");
-            fprintf (outfile, " */\n");
+            fprintf (outfile, "\n\n"
+                              "/*\n"
+                              " *  function definitions\n"
+                              " */\n");
             Trav (MODUL_FUNS (arg_node), arg_info); /* print function definitions */
         }
 
         DBUG_EXECUTE ("PRINT_CWRAPPER", if (MODUL_CWRAPPER (arg_node) != NULL) {
-            fprintf (outfile, "\n\n");
-            fprintf (outfile, "/*\n");
-            fprintf (outfile, " *  c wrapper functions\n");
-            fprintf (outfile, " */\n");
+            fprintf (outfile, "\n\n"
+                              "/*\n"
+                              " *  c wrapper functions\n"
+                              " */\n");
             Trav (MODUL_CWRAPPER (arg_node), arg_info); /* print wrapper mappings */
         });
     }
@@ -899,32 +924,29 @@ PrintImplist (node *arg_node, node *arg_info)
         fprintf (outfile, "{");
         if (IMPLIST_ITYPES (arg_node) != NULL) {
             fprintf (outfile, "\n  implicit types: ");
-            PrintIds (IMPLIST_ITYPES (arg_node),
-                      arg_info); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_ITYPES (arg_node), arg_info);
             fprintf (outfile, ";");
         }
         if (IMPLIST_ETYPES (arg_node) != NULL) {
             fprintf (outfile, "\n  explicit types: ");
-            PrintIds (IMPLIST_ETYPES (arg_node),
-                      arg_info); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_ETYPES (arg_node), arg_info);
             fprintf (outfile, ";");
         }
         if (IMPLIST_OBJS (arg_node) != NULL) {
             fprintf (outfile, "\n  global objects: ");
-            PrintIds (IMPLIST_OBJS (arg_node),
-                      arg_info); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_OBJS (arg_node), arg_info);
             fprintf (outfile, ";");
         }
         if (IMPLIST_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n  funs: ");
-            PrintIds (IMPLIST_FUNS (arg_node),
-                      arg_info); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_FUNS (arg_node), arg_info);
             fprintf (outfile, ";");
         }
         fprintf (outfile, "\n}\n");
     }
 
-    if (IMPLIST_NEXT (arg_node) != NULL) { /* print further imports */
+    if (IMPLIST_NEXT (arg_node) != NULL) {
+        /* print further imports */
         PRINT_CONT (Trav (IMPLIST_NEXT (arg_node), arg_info), );
     }
 
@@ -1910,12 +1932,12 @@ PrintPrf (node *arg_node, node *arg_info)
     default:
         /* primitive functions in infix notation */
         fprintf (outfile, "(");
-        Trav (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_info);
-        fprintf (outfile, " %s ", prf_string[PRF_PRF (arg_node)]);
-        if (NULL != EXPRS_NEXT (PRF_ARGS (arg_node))) {
-            DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (arg_node))) == NULL),
-                         "more than two args found");
-            Trav (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info);
+        Trav (PRF_ARG1 (arg_node), arg_info);
+        fprintf (outfile, " %s", prf_string[PRF_PRF (arg_node)]);
+        if (NULL != PRF_EXPRS2 (arg_node)) {
+            fprintf (outfile, " ");
+            DBUG_ASSERT ((PRF_EXPRS3 (arg_node) == NULL), "more than two args found");
+            Trav (PRF_ARG2 (arg_node), arg_info);
         }
         fprintf (outfile, ")");
         break;
@@ -1957,7 +1979,7 @@ PrintAp (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintEmpty(node *arg_node, node *arg_info)
+ *   node *PrintEmpty( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1978,7 +2000,7 @@ PrintEmpty (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintArray(node *arg_node, node *arg_info)
+ *   node *PrintArray( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -3683,10 +3705,10 @@ PrintTrav (node *syntax_tree, node *arg_info)
         case 2:
             /*
              * The current file is a module/class implementation. The functions and
-             * global objects are all printed to separate files allowing for separate
-             * compilation and the building of an archive. An additional header file
-             * is generated for global variable and type declarations as well as
-             * function prototypes.
+             * global objects are all printed to separate files allowing for
+             * separate compilation and the building of an archive. An additional
+             * header file is generated for global variable and type declarations
+             * as well as function prototypes.
              */
             INFO_PRINT_SEPARATE (arg_info) = 1;
             Trav (syntax_tree, arg_info);
