@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/07 16:20:43  dkr
+ * changed signature of ICMs
+ *
  * Revision 1.5  1998/05/07 08:10:02  cg
  * C implemented ICMs converted to new naming conventions.
  *
@@ -36,18 +39,18 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_BEGIN( char *array, char *offset, char *idx_vec,
+ *   void ICMCompileWL_BEGIN( char *array, char *idx_vec,
  *                            int dims, char **idx_scalar)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_BEGIN( array, offset, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_BEGIN( array, idx_vec, dims, [ idx_scalar ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_BEGIN (char *array, char *offset, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
 {
     int i;
 
@@ -63,7 +66,7 @@ ICMCompileWL_BEGIN (char *array, char *offset, char *idx_vec, int dims, char **i
 
     indent++;
     INDENT;
-    fprintf (outfile, "int %s = 0;\n", offset);
+    fprintf (outfile, "int %s__destptr = 0;\n", array);
 
     for (i = 0; i < dims; i++) {
         INDENT;
@@ -84,21 +87,19 @@ ICMCompileWL_BEGIN (char *array, char *offset, char *idx_vec, int dims, char **i
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_END( char *offset, int dims, char *idx_vec,
+ *   void ICMCompileWL_END( char *array, char *idx_vec,
  *                          int dims, char **idx_scalar)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_END( array, offset, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_END( array, idx_vec, dims, [ idx_scalar ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_END (char *array, char *offset, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_END (char *array, char *idx_vec, int dims, char **idx_scalar)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileWL_END");
 
 #define WL_END
@@ -116,20 +117,18 @@ ICMCompileWL_END (char *array, char *offset, char *idx_vec, int dims, char **idx
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN( char *expr,
- *                             char *array, char *offset, char *idx_vec,
+ *   void ICMCompileWL_ASSIGN( char *expr, char *array, char *idx_vec,
  *                             int dims, char **idx_scalar)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ASSIGN( expr, array, offset, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_ASSIGN( expr, array, idx_vec, dims, [ idx_scalar ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN (char *expr, char *array, char *offset, char *idx_vec, int dims,
-                     char **idx_scalar)
+ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims, char **idx_scalar)
 {
     DBUG_ENTER ("ICMCompileWL_ASSIGN");
 
@@ -139,7 +138,7 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *offset, char *idx_vec, int d
 #undef WL_ASSIGN
 
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s] = %s;\n", array, offset, expr);
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr] = %s;\n", array, array, expr);
 
 #if 0
   {
@@ -158,7 +157,7 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *offset, char *idx_vec, int d
 #endif
 
     INDENT;
-    fprintf (outfile, "%s++;\n", offset);
+    fprintf (outfile, "%s__destptr++;\n", array);
 
     DBUG_VOID_RETURN;
 }
