@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.96  2000/08/17 10:12:55  dkr
+ * DBUG-string PRINT_NT added
+ *
  * Revision 2.95  2000/08/14 12:50:33  dkr
  * PrintAST modified
  *
@@ -137,6 +141,7 @@
  *
  * Revision 1.6  1994/11/10  15:34:26  sbs
  * RCS-header inserted
+ *
  */
 
 /*
@@ -174,6 +179,7 @@
 #include "scheduling.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
+#include "NameTuples.h"
 
 #define WARN_INDENT
 
@@ -214,8 +220,6 @@
            ? ("ACL_irregular")                                                           \
            : ((arg == ACL_offset) ? ("ACL_offset:")                                      \
                                   : ((arg == ACL_const) ? ("ACL_const :") : (""))))
-
-#define IV(a) ((a) == 0) ? ("") : ("%s + ", VARDEC_NAME ())
 
 #define PRINT_LINE_PRAGMA_IN_SIB(file_handle, node)                                      \
     if (compiler_phase == PH_writesib) {                                                 \
@@ -368,7 +372,15 @@ DbugPrintArray (node *arg_node)
     return;
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 static void
 WLAAprintAccesses (node *arg_node, node *arg_info)
@@ -535,7 +547,15 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 static void
 TSIprintInfo (node *arg_node, node *arg_info)
@@ -601,7 +621,15 @@ TSIprintInfo (node *arg_node, node *arg_info)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 static void
 PrintRC (int rc, int nrc, int show_rc)
@@ -621,20 +649,38 @@ PrintRC (int rc, int nrc, int show_rc)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 void
 PrintIds (ids *arg, node *arg_info)
 {
+    bool print_nt = FALSE;
+
     DBUG_ENTER ("PrintIds");
 
-    while (arg != NULL) {
+    if (arg != NULL) {
         DBUG_PRINT ("PRINT", ("%s", IDS_NAME (arg)));
 
         if (IDS_MOD (arg) != NULL) {
             fprintf (outfile, "%s:", IDS_MOD (arg));
         }
-        fprintf (outfile, "%s", IDS_NAME (arg));
+
+        DBUG_EXECUTE ("PRINT_NT", if (IDS_VARDEC (arg) != NULL) {
+            PrintNT (IDS_NAME (arg), IDS_TYPE (arg));
+            print_nt = TRUE;
+        });
+
+        if (!print_nt) {
+            fprintf (outfile, "%s", IDS_NAME (arg));
+        }
 
         PrintRC (IDS_REFCNT (arg), IDS_NAIVE_REFCNT (arg), show_refcnt);
 
@@ -644,13 +690,21 @@ PrintIds (ids *arg, node *arg_info)
         if (NULL != IDS_NEXT (arg)) {
             fprintf (outfile, ", ");
         }
-        arg = IDS_NEXT (arg);
+        PrintIds (IDS_NEXT (arg), arg_info);
     }
 
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 void
 PrintNums (nums *n)
@@ -670,7 +724,15 @@ PrintNums (nums *n)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintAssign (node *arg_node, node *arg_info)
@@ -679,12 +741,14 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**MASKS - assign: \n");
-                  PrintDefUseMasks (outfile, ASSIGN_DEFMASK (arg_node),
-                                    ASSIGN_USEMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info));
-                  PrintMrdMask (outfile, ASSIGN_MRDMASK (arg_node),
-                                INFO_PRINT_VARNO (arg_info)););
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**MASKS - assign: \n"); INDENT;
+                  PrintDefMask (outfile, ASSIGN_DEFMASK (arg_node),
+                                INFO_PRINT_VARNO (arg_info));
+                  INDENT; PrintUseMask (outfile, ASSIGN_USEMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info));
+                  INDENT; PrintMrdMask (outfile, ASSIGN_MRDMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info)););
 
     DBUG_EXECUTE ("WLI", if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))
                              && F_psi == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))
@@ -706,6 +770,7 @@ PrintAssign (node *arg_node, node *arg_info)
         }
     } else {
         PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
+
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
 
         if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
@@ -724,7 +789,15 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintBlock (node *arg_node, node *arg_info)
@@ -785,7 +858,15 @@ PrintBlock (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintLet (node *arg_node, node *arg_info)
@@ -817,7 +898,15 @@ PrintLet (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintAnnotate (node *arg_node, node *arg_info)
@@ -858,7 +947,15 @@ PrintAnnotate (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintModul (node *arg_node, node *arg_info)
@@ -1006,7 +1103,15 @@ PrintModul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintImplist (node *arg_node, node *arg_info)
@@ -1056,7 +1161,15 @@ PrintImplist (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintTypedef (node *arg_node, node *arg_info)
@@ -1093,7 +1206,15 @@ PrintTypedef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintObjdef (node *arg_node, node *arg_info)
@@ -1152,7 +1273,15 @@ PrintObjdef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 void
 PrintFunctionHeader (node *arg_node, node *arg_info)
@@ -1182,15 +1311,19 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
-
-/*
- * Remark for PrintFundef:
+/******************************************************************************
  *
- *  If C-code is to be generated, which means that an N_icm node already
- *  hangs on node[3], additional extern declarations for function
- *  definitions are printed.
- */
+ * Function:
+ *   node *PrintFundef(node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ * Remark:
+ *   If C-code is to be generated, which means that an N_icm node already
+ *   hangs on node[3], additional extern declarations for function
+ *   definitions are printed.
+ *
+ ******************************************************************************/
 
 node *
 PrintFundef (node *arg_node, node *arg_info)
@@ -1263,9 +1396,10 @@ PrintFundef (node *arg_node, node *arg_info)
             }
 
             DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**MASKS - function: \n");
-                          PrintDefUseMasks (outfile, FUNDEF_DEFMASK (arg_node),
-                                            FUNDEF_USEMASK (arg_node),
-                                            INFO_PRINT_VARNO (arg_info)););
+                          PrintDefMask (outfile, FUNDEF_DEFMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info));
+                          PrintUseMask (outfile, FUNDEF_USEMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info)););
 
             if ((FUNDEF_ICM (arg_node) != NULL)
                 && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
@@ -1316,7 +1450,15 @@ PrintFundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintPrf (node *arg_node, node *arg_info)
@@ -1371,7 +1513,15 @@ PrintPrf (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintStr (node *arg_node, node *arg_info)
@@ -1385,11 +1535,21 @@ PrintStr (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintId (node *arg_node, node *arg_info)
 {
+    bool print_nt = FALSE;
+
     DBUG_ENTER ("PrintId");
 
     DBUG_ASSERT ((N_id == NODE_TYPE (arg_node)), "wrong node type");
@@ -1398,7 +1558,14 @@ PrintId (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
 
-    fprintf (outfile, "%s", ID_NAME (arg_node));
+    DBUG_EXECUTE ("PRINT_NT", if (ID_VARDEC (arg_node) != NULL) {
+        PrintNT (ID_NAME (arg_node), ID_TYPE (arg_node));
+        print_nt = TRUE;
+    });
+
+    if (!print_nt) {
+        fprintf (outfile, "%s", ID_NAME (arg_node));
+    }
 
     PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), show_refcnt);
 
@@ -1409,7 +1576,15 @@ PrintId (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintNum (node *arg_node, node *arg_info)
@@ -1421,7 +1596,15 @@ PrintNum (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintChar (node *arg_node, node *arg_info)
@@ -1438,7 +1621,15 @@ PrintChar (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintFloat (node *arg_node, node *arg_info)
@@ -1454,7 +1645,15 @@ PrintFloat (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintDouble (node *arg_node, node *arg_info)
@@ -1470,7 +1669,15 @@ PrintDouble (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintBool (node *arg_node, node *arg_info)
@@ -1486,7 +1693,15 @@ PrintBool (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintReturn (node *arg_node, node *arg_info)
@@ -1522,7 +1737,15 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintAp (node *arg_node, node *arg_info)
@@ -1563,7 +1786,15 @@ PrintAp (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintCast (node *arg_node, node *arg_info)
@@ -1576,14 +1807,22 @@ PrintCast (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintExprs (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintExprs");
 
-    EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+    Trav (EXPRS_EXPR (arg_node), arg_info);
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         fprintf (outfile, ", ");
@@ -1593,18 +1832,36 @@ PrintExprs (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintArg (node *arg_node, node *arg_info)
 {
+    bool print_nt = FALSE;
+
     DBUG_ENTER ("PrintArg");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", ARG_VARNO (arg_node)););
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, " **%d:", ARG_VARNO (arg_node)););
 
-    fprintf (outfile, " %s",
-             Type2String (ARG_TYPE (arg_node),
-                          INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info) ? 0 : 1));
+    fprintf (outfile, " %s", Type2String (ARG_TYPE (arg_node), 0));
+
+    if ((!INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
+
+        DBUG_EXECUTE ("PRINT_NT", PrintNT (ARG_NAME (arg_node), ARG_TYPE (arg_node));
+                      print_nt = TRUE;);
+
+        if (!print_nt) {
+            fprintf (outfile, " %s", ARG_NAME (arg_node));
+        }
+    }
 
     PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), show_refcnt);
 
@@ -1620,12 +1877,21 @@ PrintArg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintVardec (node *arg_node, node *arg_info)
 {
     char *type_string;
+    bool print_nt = FALSE;
 
     DBUG_ENTER ("PrintVardec");
 
@@ -1634,9 +1900,17 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", VARDEC_VARNO (arg_node)););
 
     if (VARDEC_ICM (arg_node) == NULL) {
-        type_string = Type2String (VARDEC_TYPE (arg_node), 1);
-        fprintf (outfile, "%s", type_string);
+        type_string = Type2String (VARDEC_TYPE (arg_node), 0);
+        fprintf (outfile, "%s ", type_string);
         FREE (type_string);
+
+        DBUG_EXECUTE ("PRINT_NT",
+                      PrintNT (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node));
+                      print_nt = TRUE;);
+
+        if (!print_nt) {
+            fprintf (outfile, "%s", VARDEC_NAME (arg_node));
+        }
 
         if (VARDEC_COLCHN (arg_node) && show_idx) {
             Trav (VARDEC_COLCHN (arg_node), arg_info);
@@ -1655,35 +1929,47 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**used vars - do loop: ");
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**used vars - do loop: ");
                   PrintDefUseMask (outfile, DO_TERMMASK (arg_node),
-                                   INFO_PRINT_VARNO (arg_info)););
+                                   INFO_PRINT_VARNO (arg_info));
+                  INDENT;);
 
     fprintf (outfile, "do \n");
 
-    DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
-                  PrintIds (DO_DEFVARS (arg_node), arg_info); fprintf (outfile, "\n");
+    DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
+                  PrintIds (DO_DEFVARS (arg_node), arg_info); fprintf (outfile, " | ");
                   PrintIds (DO_NAIVE_DEFVARS (arg_node), arg_info);
-                  fprintf (outfile, "\n**(NAIVE)USEVARS\n");
-                  PrintIds (DO_USEVARS (arg_node), arg_info); fprintf (outfile, "\n");
+                  fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**(NAIVE)USEVARS: ");
+                  PrintIds (DO_USEVARS (arg_node), arg_info); fprintf (outfile, " | ");
                   PrintIds (DO_NAIVE_USEVARS (arg_node), arg_info);
                   fprintf (outfile, "\n"););
 
     if (DO_BODY (arg_node) != NULL) {
 
-        DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**MASKS - do body: \n");
-                      PrintDefUseMasks (outfile, DO_DEFMASK (arg_node),
-                                        DO_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info));
-                      PrintMrdMask (outfile, DO_MRDMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info)););
+        DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - do body: \n");
+                      INDENT; PrintDefMask (outfile, DO_DEFMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info));
+                      INDENT; PrintUseMask (outfile, DO_USEMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info));
+                      INDENT; PrintMrdMask (outfile, DO_MRDMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info)););
 
         Trav (DO_BODY (arg_node), arg_info); /* traverse body of loop */
         fprintf (outfile, "\n");
@@ -1697,7 +1983,15 @@ PrintDo (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintEmpty (node *arg_node, node *arg_info)
@@ -1710,37 +2004,50 @@ PrintEmpty (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**used vars - while loop: ");
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**used vars - while loop: ");
                   PrintDefUseMask (outfile, WHILE_TERMMASK (arg_node),
-                                   INFO_PRINT_VARNO (arg_info)););
+                                   INFO_PRINT_VARNO (arg_info));
+                  INDENT;);
 
     fprintf (outfile, "while (");
     Trav (WHILE_COND (arg_node), arg_info);
     fprintf (outfile, ") \n");
 
-    DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
-                  PrintIds (WHILE_DEFVARS (arg_node), arg_info); fprintf (outfile, "\n");
+    DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)DEFVARS: ");
+                  PrintIds (WHILE_DEFVARS (arg_node), arg_info); fprintf (outfile, " | ");
                   PrintIds (WHILE_NAIVE_DEFVARS (arg_node), arg_info);
-                  fprintf (outfile, "\n**(NAIVE)USEVARS\n");
-                  PrintIds (WHILE_USEVARS (arg_node), arg_info); fprintf (outfile, "\n");
+                  fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**(NAIVE)USEVARS: ");
+                  PrintIds (WHILE_USEVARS (arg_node), arg_info); fprintf (outfile, " | ");
                   PrintIds (WHILE_NAIVE_USEVARS (arg_node), arg_info);
                   fprintf (outfile, "\n"););
 
     if (WHILE_BODY (arg_node) != NULL) {
 
-        DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**MASKS - while body: \n");
-                      PrintDefUseMasks (outfile, WHILE_DEFMASK (arg_node),
-                                        WHILE_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info));
-                      PrintMrdMask (outfile, WHILE_MRDMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info)););
+        DBUG_EXECUTE ("PRINT_MASKS", INDENT;
+                      fprintf (outfile, "**MASKS - while body: \n"); INDENT;
+                      PrintDefMask (outfile, WHILE_DEFMASK (arg_node),
+                                    INFO_PRINT_VARNO (arg_info));
+                      INDENT; PrintUseMask (outfile, WHILE_USEMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info));
+                      INDENT; PrintMrdMask (outfile, WHILE_MRDMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info)););
 
         Trav (WHILE_BODY (arg_node), arg_info); /* traverse body of loop */
     }
@@ -1748,32 +2055,42 @@ PrintWhile (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintCond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintCond");
 
-    fprintf (outfile, "if (");
+    fprintf (outfile, "if ");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**used vars - cond: ");
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - cond: ");
                   PrintDefUseMask (outfile, COND_CONDUSEMASK (arg_node),
                                    INFO_PRINT_VARNO (arg_info)););
 
+    fprintf (outfile, "(");
     Trav (COND_COND (arg_node), arg_info);
     fprintf (outfile, ") \n");
 
     if (COND_THEN (arg_node) != NULL) {
 
-        DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**MASKS - then: \n");
-                      PrintDefUseMasks (outfile, COND_THENDEFMASK (arg_node),
-                                        COND_THENUSEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info)););
+        DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - then: \n");
+                      INDENT; PrintDefMask (outfile, COND_THENDEFMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info));
+                      INDENT; PrintUseMask (outfile, COND_THENUSEMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info)););
 
-        DBUG_EXECUTE ("VARS", fprintf (outfile, "\n**(NAIVE)VARS - then\n");
+        DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - then: ");
                       PrintIds (COND_THENVARS (arg_node), arg_info);
-                      fprintf (outfile, "\n");
+                      fprintf (outfile, " | ");
                       PrintIds (COND_NAIVE_THENVARS (arg_node), arg_info);
                       fprintf (outfile, "\n"););
 
@@ -1786,14 +2103,15 @@ PrintCond (node *arg_node, node *arg_info)
 
     if (COND_ELSE (arg_node) != NULL) {
 
-        DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**MASKS - else: \n");
-                      PrintDefUseMasks (outfile, COND_ELSEDEFMASK (arg_node),
-                                        COND_ELSEUSEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info)););
+        DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - else: \n");
+                      INDENT; PrintDefMask (outfile, COND_ELSEDEFMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info));
+                      INDENT; PrintUseMask (outfile, COND_ELSEUSEMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info)););
 
-        DBUG_EXECUTE ("VARS", fprintf (outfile, "\n**(NAIVE)VARS - else\n");
+        DBUG_EXECUTE ("VARS", INDENT; fprintf (outfile, "**(NAIVE)VARS - else: ");
                       PrintIds (COND_ELSEVARS (arg_node), arg_info);
-                      fprintf (outfile, "\n");
+                      fprintf (outfile, " | ");
                       PrintIds (COND_NAIVE_ELSEVARS (arg_node), arg_info);
                       fprintf (outfile, "\n"););
 
@@ -1803,7 +2121,15 @@ PrintCond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintArray (node *arg_node, node *arg_info)
@@ -1825,7 +2151,15 @@ PrintArray (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintDec (node *arg_node, node *arg_info)
@@ -1837,7 +2171,15 @@ PrintDec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintInc (node *arg_node, node *arg_info)
@@ -1849,7 +2191,15 @@ PrintInc (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintPost (node *arg_node, node *arg_info)
@@ -1863,7 +2213,15 @@ PrintPost (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintPre (node *arg_node, node *arg_info)
@@ -1877,12 +2235,21 @@ PrintPre (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintVectInfo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintVectInfo");
+
     if (show_idx) {
         switch (VINFO_FLAG (arg_node)) {
         case DOLLAR:
@@ -1902,10 +2269,19 @@ PrintVectInfo (node *arg_node, node *arg_info)
             PRINT_CONT (Trav (VINFO_NEXT (arg_node), arg_info), );
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintIcm (node *arg_node, node *arg_info)
@@ -1969,7 +2345,15 @@ PrintIcm (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintPragma (node *arg_node, node *arg_info)
@@ -2063,7 +2447,15 @@ PrintPragma (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintSpmd (node *arg_node, node *arg_info)
@@ -2136,7 +2528,15 @@ PrintSpmd (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintSync (node *arg_node, node *arg_info)
@@ -2176,7 +2576,7 @@ PrintSync (node *arg_node, node *arg_info)
     INDENT;
     fprintf (outfile, " */\n");
 
-    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+    Trav (SYNC_REGION (arg_node), arg_info);
 
     fprintf (outfile, "\n");
     INDENT;
@@ -2185,7 +2585,15 @@ PrintSync (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintMT (node *arg_node, node *arg_info)
@@ -2217,7 +2625,7 @@ PrintMT (node *arg_node, node *arg_info)
 
     indent++;
     if (MT_REGION (arg_node) != NULL) {
-        MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+        Trav (MT_REGION (arg_node), arg_info);
     } else {
         INDENT;
         fprintf (outfile, "/* ... Empty ... */");
@@ -2231,7 +2639,15 @@ PrintMT (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintST (node *arg_node, node *arg_info)
@@ -2269,7 +2685,7 @@ PrintST (node *arg_node, node *arg_info)
 
     indent++;
     if (ST_REGION (arg_node) != NULL) {
-        ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
+        Trav (ST_REGION (arg_node), arg_info);
     } else {
         INDENT;
         fprintf (outfile, "/* ... Empty ... */");
@@ -2283,14 +2699,22 @@ PrintST (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintMTsignal (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintMTsignal");
 
-    /* PrintAssign already indents and prints \n*/
+    /* PrintAssign already indents and prints \n */
     fprintf (outfile, "MTsignal (");
 
     DFMPrintMask (outfile, " %s", MTSIGNAL_IDSET (arg_node));
@@ -2300,7 +2724,15 @@ PrintMTsignal (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintMTsync (node *arg_node, node *arg_info)
@@ -2344,7 +2776,15 @@ PrintMTsync (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 PrintMTalloc (node *arg_node, node *arg_info)
@@ -2420,16 +2860,16 @@ PrintNwith (node *arg_node, node *arg_info)
         INFO_PRINT_INT_SYN (arg_info) = NULL;
         fprintf (outfile, "with\n");
         indent++;
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        Trav (NWITH_PART (arg_node), arg_info);
         indent--;
     } else {
         /* output format 2 */
         INFO_PRINT_INT_SYN (arg_info) = (node *)!NULL; /* set != NULL */
         fprintf (outfile, "with ");
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        Trav (NWITH_PART (arg_node), arg_info);
     }
 
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    Trav (NWITH_WITHOP (arg_node), arg_info);
 
     if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
         /*
@@ -2561,33 +3001,20 @@ PrintNgenerator (node *arg_node, node *arg_info)
 node *
 PrintNcode (node *arg_node, node *arg_info)
 {
-    node *block;
-
     DBUG_ENTER ("PrintNcode");
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**MASKS - Ncode: \n");
-                  PrintDefUseMasks (outfile, NCODE_DEFMASK (arg_node),
-                                    NCODE_USEMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info)););
 
-    /* print the code section; first the body */
-    block = NCODE_CBLOCK (arg_node);
-    fprintf (outfile, " {");
-    if (block != NULL) {
-        fprintf (outfile, "\n");
-        indent++;
+    fprintf (outfile, " ");
 
-        if (BLOCK_VARDEC (block) != NULL) {
-            BLOCK_VARDEC (block) = Trav (BLOCK_VARDEC (block), arg_info);
-            fprintf (outfile, "\n");
-        }
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**MASKS - Ncode: \n"); INDENT;
+                  PrintDefMask (outfile, NCODE_DEFMASK (arg_node),
+                                INFO_PRINT_VARNO (arg_info));
+                  INDENT; PrintUseMask (outfile, NCODE_USEMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info)););
 
-        if (BLOCK_INSTR (block) != NULL) {
-            BLOCK_INSTR (block) = Trav (BLOCK_INSTR (block), arg_info);
-        }
+    /* print the code section; the body first */
+    Trav (NCODE_CBLOCK (arg_node), arg_info);
 
-        indent--;
-        INDENT;
-    }
     /*
      *  NCODE_WLAA_INFO(arg_node) is set to NULL by initializing the N_Ncode node.
      */
@@ -2601,8 +3028,6 @@ PrintNcode (node *arg_node, node *arg_info)
         TSIprintInfo (arg_node, arg_info);
     });
 
-    fprintf (outfile, "}");
-
     /*
      * print the expression if internal syntax should be used.
      * else return expr in INFO_PRINT_INT_SYN(arg_info)
@@ -2612,7 +3037,7 @@ PrintNcode (node *arg_node, node *arg_info)
             INFO_PRINT_INT_SYN (arg_info) = NCODE_CEXPR (arg_node);
         } else {
             fprintf (outfile, " : ");
-            NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+            Trav (NCODE_CEXPR (arg_node), arg_info);
         }
     }
 
@@ -2633,21 +3058,25 @@ node *
 PrintNpart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNpart");
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**MASKS - Npart: \n");
-                  PrintDefUseMasks (outfile, NPART_DEFMASK (arg_node),
-                                    NPART_USEMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info)););
+
+    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
+                  fprintf (outfile, "**MASKS - Npart: \n"); INDENT;
+                  PrintDefMask (outfile, NPART_DEFMASK (arg_node),
+                                INFO_PRINT_VARNO (arg_info));
+                  INDENT; PrintUseMask (outfile, NPART_USEMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info));
+                  INDENT;);
 
     /* print generator */
     if (INFO_PRINT_INT_SYN (arg_info) == NULL) {
         INDENT; /* each gen in a new line. */
     }
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    Trav (NPART_GEN (arg_node), arg_info);
 
     DBUG_ASSERT ((NPART_CODE (arg_node) != NULL),
                  "part within WL without pointer to N_Ncode");
 
-    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+    Trav (NPART_CODE (arg_node), arg_info);
 
     if (NPART_NEXT (arg_node) != NULL) {
         fprintf (outfile, ",\n");
@@ -2680,10 +3109,11 @@ PrintNwithop (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNwithop");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**MASKS - Nwithop: \n");
-                  PrintDefUseMasks (outfile, NWITHOP_DEFMASK (arg_node),
-                                    NWITHOP_USEMASK (arg_node),
-                                    INFO_PRINT_VARNO (arg_info)););
+    DBUG_EXECUTE ("PRINT_MASKS", INDENT; fprintf (outfile, "**MASKS - Nwithop: \n");
+                  INDENT; PrintDefMask (outfile, NWITHOP_DEFMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info));
+                  INDENT; PrintUseMask (outfile, NWITHOP_USEMASK (arg_node),
+                                        INFO_PRINT_VARNO (arg_info)););
 
     INDENT;
     switch (NWITHOP_TYPE (arg_node)) {
@@ -2739,7 +3169,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
     indent += 2;
 
     fprintf (outfile, "with2 (");
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    Trav (NWITH2_WITHID (arg_node), arg_info);
     fprintf (outfile, ")\n");
 
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
@@ -2754,9 +3184,9 @@ PrintNwith2 (node *arg_node, node *arg_info)
     code = NWITH2_CODE (arg_node);
     while (code != NULL) {
         INDENT;
-        fprintf (outfile, "op_%d =", NCODE_NO (code));
+        fprintf (outfile, "op_%d =\n", NCODE_NO (code));
         indent++;
-        code = Trav (code, arg_info);
+        Trav (code, arg_info);
         indent--;
         code = NCODE_NEXT (code);
 
@@ -2768,12 +3198,12 @@ PrintNwith2 (node *arg_node, node *arg_info)
     }
 
     if (NWITH2_SEGS (arg_node) != NULL) {
-        NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+        Trav (NWITH2_SEGS (arg_node), arg_info);
     }
 
     INDENT;
     fprintf (outfile, "/********** conexpr: **********/\n");
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    Trav (NWITH2_WITHOP (arg_node), arg_info);
     fprintf (outfile, ")");
 
     indent -= 2;
@@ -2803,21 +3233,20 @@ PrintWLseg (node *arg_node, node *arg_info)
 
     seg = arg_node;
     while (seg != NULL) {
-        if (WLSEG_SCHEDULING (seg) == NULL) {
-            INDENT;
-            fprintf (outfile, "/********** segment %d: **********/\n", i++);
-        } else {
-            INDENT;
-            fprintf (outfile, "/********** segment %d: **********\n", i++);
+        INDENT;
+        fprintf (outfile, "/********** segment %d: **********", i++);
+        if (WLSEG_SCHEDULING (seg) != NULL) {
+            fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " * scheduling: ");
             SCHPrintScheduling (outfile, WLSEG_SCHEDULING (seg));
             fprintf (outfile, "\n");
             INDENT;
-            fprintf (outfile, " */\n");
+            fprintf (outfile, " *");
         }
+        fprintf (outfile, "/\n");
 
-        WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
+        Trav (WLSEG_CONTENTS (seg), arg_info);
         PRINT_CONT (seg = WLSEG_NEXT (seg), seg = NULL)
     }
 
@@ -2847,14 +3276,14 @@ PrintWLblock (node *arg_node, node *arg_info)
     if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
         indent++;
-        WLBLOCK_NEXTDIM (arg_node) = Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
+        Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
         indent--;
     }
 
     if (WLBLOCK_CONTENTS (arg_node) != NULL) {
         fprintf (outfile, "\n");
         indent++;
-        WLBLOCK_CONTENTS (arg_node) = Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
+        Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
         indent--;
     }
 
@@ -2888,14 +3317,14 @@ PrintWLublock (node *arg_node, node *arg_info)
     if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
         indent++;
-        WLUBLOCK_NEXTDIM (arg_node) = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
+        Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
         indent--;
     }
 
     if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
         fprintf (outfile, "\n");
         indent++;
-        WLUBLOCK_CONTENTS (arg_node) = Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
+        Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
         indent--;
     }
 
@@ -2931,7 +3360,7 @@ PrintWLstride (node *arg_node, node *arg_info)
              WLSTRIDE_DIM (arg_node), WLSTRIDE_STEP (arg_node));
 
     indent++;
-    WLSTRIDE_CONTENTS (arg_node) = Trav (WLSTRIDE_CONTENTS (arg_node), arg_info);
+    Trav (WLSTRIDE_CONTENTS (arg_node), arg_info);
     indent--;
 
     if (WLSTRIDE_NEXT (arg_node) != NULL) {
@@ -2966,7 +3395,7 @@ PrintWLgrid (node *arg_node, node *arg_info)
     indent++;
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
-        WLGRID_NEXTDIM (arg_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+        Trav (WLGRID_NEXTDIM (arg_node), arg_info);
     } else {
         if (WLGRID_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
@@ -3037,7 +3466,7 @@ PrintWLsegVar (node *arg_node, node *arg_info)
             fprintf (outfile, " */\n");
         }
 
-        WLSEGVAR_CONTENTS (seg) = Trav (WLSEGVAR_CONTENTS (seg), arg_info);
+        Trav (WLSEGVAR_CONTENTS (seg), arg_info);
         PRINT_CONT (seg = WLSEGVAR_NEXT (seg), seg = NULL);
     }
 
@@ -3061,17 +3490,14 @@ PrintWLvar (node *arg_node, int dim)
 
     switch (NODE_TYPE (arg_node)) {
     case N_num:
-
         fprintf (outfile, "%d", NUM_VAL (arg_node));
         break;
 
     case N_id:
-
         fprintf (outfile, "%s[%d]", ID_NAME (arg_node), dim);
         break;
 
     default:
-
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
@@ -3108,7 +3534,7 @@ PrintWLstriVar (node *arg_node, node *arg_info)
     fprintf (outfile, "\n");
 
     indent++;
-    WLSTRIVAR_CONTENTS (arg_node) = Trav (WLSTRIVAR_CONTENTS (arg_node), arg_info);
+    Trav (WLSTRIVAR_CONTENTS (arg_node), arg_info);
     indent--;
 
     if (WLSTRIVAR_NEXT (arg_node) != NULL) {
@@ -3147,7 +3573,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
     indent++;
     if (WLGRIDVAR_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
-        WLGRIDVAR_NEXTDIM (arg_node) = Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
+        Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
     } else {
         if (WLGRIDVAR_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
@@ -3273,11 +3699,10 @@ PrintTrav (node *syntax_tree, node *arg_info)
              * The current file is a SAC program.
              * Therefore, the C file is generated within the target directory.
              */
-
             outfile = WriteOpen ("%s%s", targetdir, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader (syntax_tree);
-            syntax_tree = Trav (syntax_tree, arg_info);
+            Trav (syntax_tree, arg_info);
             fclose (outfile);
             break;
 
@@ -3287,11 +3712,10 @@ PrintTrav (node *syntax_tree, node *arg_info)
              * are nevertheless not compiled separatly to the archive.
              * Therefore, the C file is generated within the temprorary directory.
              */
-
             outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader (syntax_tree);
-            syntax_tree = Trav (syntax_tree, arg_info);
+            Trav (syntax_tree, arg_info);
             fclose (outfile);
             break;
 
@@ -3304,7 +3728,7 @@ PrintTrav (node *syntax_tree, node *arg_info)
              * function prototypes.
              */
             INFO_PRINT_SEPARATE (arg_info) = 1;
-            syntax_tree = Trav (syntax_tree, arg_info);
+            Trav (syntax_tree, arg_info);
             INFO_PRINT_SEPARATE (arg_info) = 0;
             break;
         }
@@ -3313,7 +3737,7 @@ PrintTrav (node *syntax_tree, node *arg_info)
     else {
         outfile = stdout;
         fprintf (outfile, "\n-----------------------------------------------\n");
-        syntax_tree = Trav (syntax_tree, arg_info);
+        Trav (syntax_tree, arg_info);
         fprintf (outfile, "\n-----------------------------------------------\n");
     }
 
