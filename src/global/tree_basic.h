@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1997/11/21 09:45:15  srs
+ * *** empty log message ***
+ *
  * Revision 1.57  1997/11/18 18:05:43  srs
  * changed new WL-macros
  *
@@ -1972,15 +1975,20 @@ extern node *MakeNWithid (WithIdType type, ids *_ids);
  ***
  ***  sons:
  ***
- ***    node*  BOUND1    ("N_expr")
- ***    node*  BOUND2    ("N_expr")
- ***    node*  STEP      ("N_expr")
- ***    node*  WIDTH     ("N_expr")
+ ***    node*  BOUND1    (O)  ("N_expr")
+ ***    node*  BOUND2    (O)  ("N_expr")
+ ***    node*  STEP      (O)  ("N_expr")
+ ***    node*  WIDTH     (O)  ("N_expr")
  ***
  ***  permanent attributes:
  ***
  ***    prf    OP1
  ***    prf    OP2
+ ***
+ ***  remarks:
+ ***    the BOUNDs are NULL if upper or lower bounds are not specified.
+ ***    if STEP is NULL, step 1 is assumed (no grid)
+ ***    if WIDTH is NULL, width 1 is assumed
  ***
  ***/
 
