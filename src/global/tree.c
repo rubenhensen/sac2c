@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/03/14 14:11:24  asi
+ * Revision 1.13  1995/03/15 16:59:01  asi
+ * Bug fixed : initialization of mask in MakeNode
+ *
+ * Revision 1.12  1995/03/14  14:11:24  asi
  * added initialization of 'bblock' in MakeNode
  *
  * Revision 1.11  1995/03/13  16:04:19  asi
@@ -117,7 +120,7 @@ MakeNode (nodetype nodetype)
     tmp->varno = 0;
     tmp->lineno = linenum;
     tmp->refcnt = 0;
-    for (i = 0; i < MAX_MASK - 1; i++)
+    for (i = 0; i < MAX_MASK; i++)
         tmp->mask[i] = NULL;
 
     DBUG_PRINT ("MAKENODE",
