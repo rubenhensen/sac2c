@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.81  1996/03/05 15:31:22  cg
+ * Revision 1.82  1996/03/12 17:01:48  hw
+ * bug fixed in function AddVardec (now using macro APPEND_VARDECS )
+ *
+ * Revision 1.81  1996/03/05  15:31:22  cg
  * bug fixed in handling of functions with variable argument list
  *
  * Revision 1.80  1996/03/05  09:27:42  cg
@@ -727,10 +730,7 @@ AddVardec (node *vardec, types *type, char *name)
         DBUG_ASSERT ((NULL != tmp) ? (NULL == VARDEC_NEXT (tmp)) : 1,
                      "VARDEC_NEXT(tmp) != NULL");
 
-        if (NULL != tmp)
-            VARDEC_NEXT (tmp) = new_vardec;
-        else
-            vardec = new_vardec;
+        APPEND_VARDECS (tmp, new_vardec);
     }
 
     DBUG_RETURN (vardec);
