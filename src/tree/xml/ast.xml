@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.34  2004/10/28 17:26:09  sah
+  added dependencies attribute to module node
+
   Revision 1.33  2004/10/26 16:13:58  sah
   fixed a type
 
@@ -197,6 +200,8 @@
     copy="literal" />
     <type name="RCCounter" ctype="rc_counter*" init="NULL"
     copy="function" persist="no" />
+    <type name="StringSet" ctype="stringset_t *" init="NULL"
+    copy="function" persist="no" />
   </attributetypes>
   <nodesets>
     <nodeset name="Expr">
@@ -320,6 +325,12 @@
           <phases>
             <range from="compile" to="final" />
           </phases>
+        </attribute>
+	<attribute name="Dependencies" mandatory="yes">
+	  <type name="StringSet" />
+	  <phases>
+	    <range from="annotatenamespace" to="final" />
+	  </phases>
         </attribute>
       </attributes>
       <flags></flags>
