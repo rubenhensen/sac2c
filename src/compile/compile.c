@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.100  1997/11/05 09:39:34  dkr
+ * CompCond() now uses the new array nnode[]
+ *
  * Revision 1.99  1997/11/03 16:22:14  dkr
  * removed a bug with the nnode-elimination
  *
@@ -5975,7 +5978,7 @@ CompCond (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < nnode[arg_node->type]; i++)
         if (arg_node->node[i] != NULL)
 #endif
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
