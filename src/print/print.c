@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.58  1995/04/28 15:25:20  hw
+ * Revision 1.59  1995/05/04 11:41:20  sbs
+ * ICM-macros adjusted to trf's
+ *
+ * Revision 1.58  1995/04/28  15:25:20  hw
  * changed PrintGenator ( refcount of index_vector will be shown )
  *
  * Revision 1.57  1995/04/15  15:11:44  asi
@@ -194,7 +197,7 @@ int indent = 0;
  */
 
 #define ICM_ALL
-#define ICM_DEF(prf) extern void Print##prf (node *ex);
+#define ICM_DEF(prf, trf) extern void Print##prf (node *ex);
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
@@ -875,7 +878,7 @@ PrintIcm (node *arg_node, node *arg_info)
 
     if (show_icm == 0)
 #define ICM_ALL
-#define ICM_DEF(prf)                                                                     \
+#define ICM_DEF(prf, trf)                                                                \
     if (strcmp (arg_node->info.fun_name.id, #prf) == 0) {                                \
         Print##prf (arg_node->node[0]);                                                  \
         compiled_icm = 1;                                                                \
@@ -918,8 +921,14 @@ Print (node *arg_node)
     DBUG_ENTER ("Print");
 
     act_tab = print_tab;
-    if (show_icm == 0)
+    if (show_icm == 0) {
+        if (traceflag != 0) {
+            fprintf (outfile, "#include <stdio.h>\n");
+            if (traceflag & TRACE_REF)
+                fprintf (outfile, "#define TRACE_REF\n");
+        }
         fprintf (outfile, "#include \"icm2c.h\"\n");
+    }
 
     DBUG_RETURN (Trav (arg_node, NULL));
 }
