@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/02/24 15:55:53  dkr
+ * RETURN_INWITH removed
+ * (needed for old with-loop only, therefore obsolete now)
+ *
  * Revision 1.11  2000/02/22 12:00:04  jhs
  * Adapted NODE_TEXT.
  * /
@@ -727,7 +731,6 @@ DupReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupReturn");
 
     new_node = MakeReturn (DUPTRAV (RETURN_EXPRS (arg_node)));
-    RETURN_INWITH (new_node) = RETURN_INWITH (arg_node);
 
     RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 

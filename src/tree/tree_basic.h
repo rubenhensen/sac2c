@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/02/24 15:54:34  dkr
+ * RETURN_INWITH removed
+ * (needed for old with-loop only, therefore obsolete now)
+ *
  * Revision 1.19  2000/02/23 23:07:24  dkr
  * ..._IN_VARS, ..._OUT_VARS, ..._LOCAL_VARS for COND, DO and WHILE added
  * INFO_LAC2FUN_DFMBASE removed
@@ -1335,11 +1339,6 @@ extern node *MakeCast (node *expr, types *type);
  ***
  ***    node*  EXPRS      (N_exprs)  (O)
  ***
- ***
- ***  permanent attributes:
- ***
- ***    int    INWITH
- ***
  ***  temporary attributes:
  ***
  ***    node*  REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
@@ -1349,9 +1348,6 @@ extern node *MakeCast (node *expr, types *type);
  *  REFERENCE: List of artificial return values which correspond to
  *             reference parameters.
  *
- *  INWITH is used to mark those return statements which are used in the
- *  internal representation of with loops.
- *
  *  ATTENTION: node[1] of N_return node already used by compile.c
  */
 
@@ -1359,7 +1355,6 @@ extern node *MakeReturn (node *exprs);
 
 #define RETURN_EXPRS(n) (n->node[0])
 #define RETURN_REFERENCE(n) (n->node[2])
-#define RETURN_INWITH(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
