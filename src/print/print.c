@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/04/19 15:36:03  dkr
+ * DBUG output for COND_CONDUSEMASK removed
+ *
  * Revision 3.47  2001/04/19 15:16:45  dkr
  * stuff for DBUG string PRINT_VARS removed
  *
@@ -35,9 +38,6 @@
  *
  * Revision 3.36  2001/03/29 01:35:51  dkr
  * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
- *
- * Revision 3.35  2001/03/22 19:26:15  dkr
- * include of tree.h eliminated
  *
  * Revision 3.34  2001/03/22 14:07:35  sbs
  * F_abs now printed prefix rather than infix 8-)
@@ -148,9 +148,6 @@
  * Revision 3.2  2000/11/23 16:08:29  sbs
  * definitions of DbugPrintArray, WLAAprintAccesses, and TSIprintInfo
  * enclosed in ifndef DBUG_OFF to avoid warnings in product version!
- *
- * Revision 3.1  2000/11/20 17:59:45  sacbase
- * new release made
  *
  * [ eliminated ]
  *
@@ -1680,7 +1677,7 @@ PrintDo (node *arg_node, node *arg_info)
     INDENT;
     fprintf (outfile, "while (");
     Trav (DO_COND (arg_node), arg_info);
-    fprintf (outfile, ");\n");
+    fprintf (outfile, ");");
 
     DBUG_RETURN (arg_node);
 }
@@ -1736,10 +1733,6 @@ PrintCond (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintCond");
 
     fprintf (outfile, "if ");
-
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**used vars - cond: ");
-                  PrintDefUseMask (outfile, COND_CONDUSEMASK (arg_node),
-                                   INFO_PRINT_VARNO (arg_info)););
 
     fprintf (outfile, "(");
     Trav (COND_COND (arg_node), arg_info);
