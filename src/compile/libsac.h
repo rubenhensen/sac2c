@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1997/10/10 13:25:27  dkr
+ * added a prototype for prf abs(): int abs(int)
+ *
  * Revision 1.12  1997/08/29 12:36:49  sbs
  * PRINT_PRF inserted
  *
@@ -51,6 +54,8 @@
 #define false 0
 
 typedef int bool;
+
+extern int abs (int x);
 
 extern int __SAC__Runtime_hidden_memcnt;
 extern int __SAC__Runtime_array_memcnt;
