@@ -1,0 +1,46 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  1995/06/02 10:06:56  sbs
+ * Initial revision
+ *
+ *
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "tree.h"
+#include "Error.h"
+#include "dbug.h"
+#include "traverse.h"
+#include "psi-opt.h"
+#include "optimize.h"
+
+/*
+ *
+ *  functionname  : PsiOpt
+ *  arguments     : 1) ptr to root of the syntaxtree
+ *                  R) ptr to root of the optimized syntaxtree
+ *  description   : Optimizes the intermediate sac-code at psi level
+ *  global vars   : syntax_tree, opt_cf, opt_dcr
+ *  internal funs : ---
+ *  external funs : Trav
+ *  macros        : DBUG...
+ *
+ *  remarks       : Optimizations supported: - index
+ *
+ */
+node *
+PsiOpt (node *arg_node)
+{
+    DBUG_ENTER ("PsiOpt");
+    if (optimize && psi_optimize) {
+        NOTE (("Optimizing arrays: ...\n"));
+        if (psi_opt_ive) {
+            NOTE (("traversing :->\n"));
+        }
+    }
+    DBUG_RETURN (arg_node);
+}
