@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.61  1995/10/05 16:02:24  cg
+ * Revision 1.62  1995/10/16 12:01:20  cg
+ * added new compilation phase 'objinit'.
+ * added new break parameter '-bj'.
+ *
+ * Revision 1.61  1995/10/05  16:02:24  cg
  * new break option -bm to stop after resolving implicit types.
  * resolving implicit types started.
  *
@@ -219,6 +223,7 @@
 #include "psi-opt.h"
 #include "sib.h"
 #include "implicittypes.h"
+#include "objinit.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -256,7 +261,7 @@ MAIN
     int set_outfile = 0;
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0;
+        breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -309,6 +314,9 @@ MAIN
         switch (**argv) {
         case 'p':
             breakparse = 1;
+            break;
+        case 'j':
+            breakobjinit = 1;
             break;
         case 'i':
             breakimport = 1;
@@ -563,52 +571,58 @@ MAIN
     NOTE (("\n"));
 
     if (!breakparse) {
-        NOTE (("Resolving Imports: ...\n"));
-        syntax_tree = Import (syntax_tree);
+        NOTE (("Resolving global object initializations: ...\n"));
+        syntax_tree = objinit (syntax_tree);
         NOTE (("\n"));
 
-        if (!breakimport) {
-            NOTE (("Flattening: ...\n"));
-            syntax_tree = Flatten (syntax_tree);
+        if (!breakobjinit) {
+            NOTE (("Resolving Imports: ...\n"));
+            syntax_tree = Import (syntax_tree);
             NOTE (("\n"));
 
-            if ((!breakflatten) && (0 == errors)) {
-                NOTE (("Typechecking: ...\n\n"));
-                syntax_tree = Typecheck (syntax_tree);
-                NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
+            if (!breakimport) {
+                NOTE (("Flattening: ...\n"));
+                syntax_tree = Flatten (syntax_tree);
                 NOTE (("\n"));
 
-                if ((!breaktype) && (errors == 0)) {
-                    NOTE (("Resolving implicit types: ...\n"));
-                    syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                if ((!breakflatten) && (0 == errors)) {
+                    NOTE (("Typechecking: ...\n\n"));
+                    syntax_tree = Typecheck (syntax_tree);
+                    NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                     NOTE (("\n"));
 
-                    if ((!breakimpltype) && (0 == errors)) {
-                        if (write_sib) {
-                            NOTE (("Writing SIB: ...\n"));
-                            syntax_tree = WriteSib (syntax_tree);
-                            NOTE (("\n"));
-                        }
+                    if ((!breaktype) && (errors == 0)) {
+                        NOTE (("Resolving implicit types: ...\n"));
+                        syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                        NOTE (("\n"));
 
-                        if ((!breaksib) && (errors == 0)) {
-                            NOTE (("Optimizing: ...\n"));
-                            syntax_tree = Optimize (syntax_tree);
-                            NOTE (("\n"));
+                        if ((!breakimpltype) && (0 == errors)) {
+                            if (write_sib) {
+                                NOTE (("Writing SIB: ...\n"));
+                                syntax_tree = WriteSib (syntax_tree);
+                                NOTE (("\n"));
+                            }
 
-                            if (!breakopt) {
-                                NOTE (("Psi-Optimizing: ...\n"));
-                                syntax_tree = PsiOpt (syntax_tree);
+                            if ((!breaksib) && (errors == 0)) {
+                                NOTE (("Optimizing: ...\n"));
+                                syntax_tree = Optimize (syntax_tree);
                                 NOTE (("\n"));
 
-                                if (!breakpsiopt) {
-                                    NOTE (("Refcounting: ...\n"));
-                                    syntax_tree = Refcount (syntax_tree);
+                                if (!breakopt) {
+                                    NOTE (("Psi-Optimizing: ...\n"));
+                                    syntax_tree = PsiOpt (syntax_tree);
                                     NOTE (("\n"));
 
-                                    if (!breakref) {
-                                        NOTE (("Compiling: ...\n"));
-                                        syntax_tree = Compile (syntax_tree);
+                                    if (!breakpsiopt) {
+                                        NOTE (("Refcounting: ...\n"));
+                                        syntax_tree = Refcount (syntax_tree);
                                         NOTE (("\n"));
+
+                                        if (!breakref) {
+                                            NOTE (("Compiling: ...\n"));
+                                            syntax_tree = Compile (syntax_tree);
+                                            NOTE (("\n"));
+                                        }
                                     }
                                 }
                             }
