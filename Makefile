@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.43  1996/02/16 09:37:55  sbs
+# Revision 1.44  1996/05/24 14:23:00  sbs
+# tags line inserted.
+#
+# Revision 1.43  1996/02/16  09:37:55  sbs
 # -lm inserted; floor is needed in src/print/convert.c !
 #
 # Revision 1.42  1996/01/17  16:49:21  asi
@@ -231,3 +234,6 @@ clean:
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	$(RM) sac2c
+
+tags:
+	ctags src/*/*.[ch] >/dev/null
