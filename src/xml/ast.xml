@@ -465,6 +465,7 @@
           <node name="Cast" />
           <node name="Let" />
           <node name="Fold" />
+          <node name="Part" />
           <node name="Withid" />
         </travuser>
       </traversal>

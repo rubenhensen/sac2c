@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/03/20 00:22:02  sbs
+ * NT2OTpart added.
+ *
  * Revision 1.10  2004/12/08 18:00:11  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -49,6 +52,7 @@ extern node *NT2OTvardec (node *arg_node, info *arg_info);
 extern node *NT2OTcast (node *arg_node, info *arg_info);
 extern node *NT2OTlet (node *arg_node, info *arg_info);
 extern node *NT2OTfold (node *arg_node, info *arg_info);
+extern node *NT2OTpart (node *arg_node, info *arg_info);
 extern node *NT2OTwithid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_NEW2OLD_H_ */
