@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/23 09:43:51  ben
+ * some minor bugs in Self_INIT fixed
+ *
  * Revision 3.6  2001/05/21 12:44:57  ben
  * SAC_MT_SCHEDULER_Self_INIT modified for discriminate between
  * FIRST_TASK_STATIC and FIRST_TASK_DYNAMIC
@@ -584,8 +587,8 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread, int dim,
 
     if (sched_id == 0) {
         INDENT;
-        fprintf (outfile,
-                 "SAC_MT_TASK(sched_id,0,SAC_MT_SET_NUM_SCHEDULERS)=SAC_MT_THREADS();\n");
+        fprintf (outfile, "SAC_MT_TASK(%d,0,SAC_SET_NUM_SCHEDULERS)=SAC_MT_THREADS();\n",
+                 sched_id);
     }
 
     INDENT;
