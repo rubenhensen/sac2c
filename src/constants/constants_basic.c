@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2004/12/07 20:36:16  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 1.30  2004/11/27 01:18:05  ktr
  * Fixed some things.
  *
@@ -755,15 +758,6 @@ COconstant2AST (constant *a)
           = TBmakeTypes (CONSTANT_TYPE (a), CONSTANT_DIM (a),
                          SHshape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
 #endif
-        /*
-         * Note here, that in some situation the calling function has to add
-         * constvec infos. This is not done here, since it is not yet clear how
-         * the representation of constant arrays should be in the long term....
-         */
-        ARRAY_ISCONST (res) = TRUE;
-        ARRAY_VECTYPE (res) = CONSTANT_TYPE (a);
-        ARRAY_VECLEN (res) = CONSTANT_VLEN (a);
-        ARRAY_CONSTVEC (res) = TCarray2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res), NULL);
     }
 
     DBUG_RETURN (res);

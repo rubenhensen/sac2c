@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/12/07 20:36:58  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 1.2  2004/11/26 21:18:50  sah
  * pour Bodo *<8-)
  *
@@ -751,60 +754,6 @@ SATserializeSimpleType (info *info, simpletype attr, node *parent)
     DBUG_ENTER ("SATserializeSimpleType");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SATserializeConstVecPointer
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeConstVecPointer (info *info, void *attr, node *parent)
-{
-    DBUG_ENTER ("SATserializeConstVecPointer");
-
-    DBUG_ASSERT (((NODE_TYPE (parent) == N_array) || (NODE_TYPE (parent) == N_id)),
-                 "Found ConstVecPointer as attribute of a node different to N_array"
-                 " and N_id!");
-
-    if (attr == NULL) {
-        fprintf (INFO_SER_FILE (info), "NULL");
-    } else {
-        int size;
-        int veclen;
-        simpletype vectype;
-        char *vect;
-        int cnt;
-
-        if (NODE_TYPE (parent) == N_array) {
-            veclen = ARRAY_VECLEN (parent);
-            vectype = ARRAY_VECTYPE (parent);
-        } else {
-            veclen = ARRAY_VECLEN (parent);
-            vectype = ARRAY_VECTYPE (parent);
-        }
-
-        vect = (char *)attr;
-
-        size = global.basetype_size[vectype] * veclen;
-
-        fprintf (INFO_SER_FILE (info), "MemCopy( %d, \"", size);
-
-        for (cnt = 0; cnt < size; cnt++) {
-            fprintf (INFO_SER_FILE (info), "\%d", (int)vect[cnt]);
-        }
-
-        fprintf (INFO_SER_FILE (info), "\")");
-    }
 
     DBUG_VOID_RETURN;
 }

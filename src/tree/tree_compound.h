@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.182  2004/12/07 20:35:53  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.181  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -380,51 +383,8 @@ extern bool TCnumsContains (int val, node *nums);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  ConstVec :
- ***/
-
-/* TODO  - eleminate the void* */
-extern void *TCcopyConstVec (simpletype vectype, int veclen, void *const_vec);
-
-extern void *TCallocConstVec (simpletype vectype, int veclen);
-
-extern void *TCmodConstVec (simpletype vectype, void *const_vec, int idx,
-                            node *const_node);
-
-extern node *TCannotateIdWithConstVec (node *expr, node *id);
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  NODELIST :
  ***/
-
-#if 0 /* TODO - to be deleted after SACDevCampDK 2k4 */
-/*
- *
- *  functionname  : TCtidyUpNodelist
- *  arguments     : 1) beginning of nodelist
- *  description   : frees all those entries of a node list which have
- *                  status 'ST_artificial'
- *  remarks       : returns the beginning of the resulting nodelist
- *
- */
-
-extern nodelist *TCtidyUpNodelist(nodelist *list);
-
-
-/*
- *
- *  functionname  : TCconcatNodelist
- *  arguments     : 1) first node list
- *                  2) second node list
- *  description   : concatenates two node lists without checking double
- *                  occurrences
- *
- */
-
-extern nodelist *TCconcatNodelist(nodelist *first, nodelist *second);
-#endif
 
 /******************************************************************************
  *
@@ -1248,7 +1208,6 @@ extern node *TCnodeBehindCast (node *arg_node);
  *  compound access macros
  */
 
-#define ARRAY_BASETYPE(n) (TYPES_BASETYPE (ARRAY_TYPE (n)))
 #define ARRAY_DIM(n) (SHgetDim (ARRAY_SHAPE (n)))
 
 /*
@@ -1289,31 +1248,6 @@ extern node *TCids2Array (node *ids_arg);
  ******************************************************************************/
 
 extern node *TCintVec2Array (int length, int *intvec);
-
-/*****************************************************************************
- *
- * Function:
- *   node *TCadjustVectorShape( node *array)
- *
- * Description:
- *   adjusts ARRAY_SHAPE according to the number of elements.
- *   Note that the array will always be one-dimensional
- *
- *****************************************************************************/
-
-extern node *TCadjustVectorShape (node *array);
-
-/*****************************************************************************
- *
- * Function:
- *   node *TCconcatVecs( node* vec1, node *vec2 )
- *
- * Description:
- *   concatenates two vectors.
- *
- *****************************************************************************/
-
-extern node *TCconcatVecs (node *vec1, node *vec2);
 
 /******************************************************************************
  *
@@ -1382,12 +1316,10 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
 
-#define ID_NAME_OR_SPNAME(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_SPNAME (n))
+#define ID_NAME_OR_ICMTEXT(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_ICMTEXT (n))
 
 extern node *TCmakeIdCopyString (const char *str);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
-
-extern node *TCmakeIdsCopyString (const char *str, node *next);
 
 /***************************************************************************
  *

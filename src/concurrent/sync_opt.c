@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/12/07 20:35:21  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.6  2004/11/24 19:29:17  skt
  * Compiler Switch during SACDevCampDK 2k4
  *
@@ -245,7 +248,6 @@ AssertSimpleBlock (node *block)
     DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
     DBUG_ASSERT (BLOCK_SPMD_PROLOG_ICMS (block) == NULL, "BLOCK_SPMD_... not NULL");
     DBUG_ASSERT (BLOCK_CACHESIM (block) == NULL, "BLOCK_CACHESIM not NULL");
-    DBUG_ASSERT (BLOCK_VARNO (block) == 0, "BLOCK_VARNO not 0");
 
     DBUG_VOID_RETURN;
 }

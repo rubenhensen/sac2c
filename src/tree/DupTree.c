@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.134  2004/12/07 20:35:53  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.133  2004/12/06 13:21:19  sah
  * added copying of flags to all other nodes
  * (hopefully)
@@ -994,33 +997,15 @@ DUPid (node *arg_node, info *arg_info)
         }
     }
 
-    ID_FLAGSTRUCTURE (new_node) = ID_FLAGSTRUCTURE (arg_node);
-
-    /*
-     * Coping the attibutes of constantvectors.
-     * CONSTVEC itself can only be copied, if ISCONST flag is set,
-     * otherwise VECTYPE might be T_unkown.
-     */
-    ID_ISCONST (new_node) = ID_ISCONST (arg_node);
-    ID_VECTYPE (new_node) = ID_VECTYPE (arg_node);
-    ID_VECLEN (new_node) = ID_VECLEN (arg_node);
-    if (ID_ISCONST (new_node)) {
-        ID_CONSTVEC (new_node)
-          = TCcopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
-                            ID_CONSTVEC (arg_node));
-    } else {
-        ID_CONSTVEC (new_node) = NULL;
-    }
-
     if (ID_NT_TAG (arg_node) != NULL) {
         ID_NT_TAG (new_node) = ILIBstringCopy (ID_NT_TAG (arg_node));
     }
 
     /*
-     * furthermore, we have to copy the SPNAME attribute
+     * furthermore, we have to copy the ICMTEXT attribute
      * if it still exists
      */
-    ID_SPNAME (new_node) = ILIBstringCopy (ID_SPNAME (arg_node));
+    ID_ICMTEXT (new_node) = ILIBstringCopy (ID_ICMTEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1364,8 +1349,6 @@ DUPblock (node *arg_node, info *arg_info)
     new_node = TBmakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardecs);
     BLOCK_CACHESIM (new_node) = ILIBstringCopy (BLOCK_CACHESIM (arg_node));
 
-    BLOCK_VARNO (new_node) = BLOCK_VARNO (arg_node);
-
     /*
      * BLOCK_SSACOUNTER is adjusted correctly later on by DupFundef()
      */
@@ -1611,8 +1594,6 @@ DUPids (node *arg_node, info *arg_info)
 
     new_node = TBmakeIds (avis, DUPCONT (IDS_NEXT (arg_node)));
 
-    IDS_SPNAME (new_node) = ILIBstringCopy (IDS_SPNAME (arg_node));
-
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -1763,17 +1744,6 @@ DUParray (node *arg_node, info *arg_info)
 
     ARRAY_TYPE (new_node) = DupTypes (ARRAY_TYPE (arg_node), arg_info);
     ARRAY_NTYPE (new_node) = TYcopyType (ARRAY_NTYPE (arg_node));
-
-    ARRAY_FLAGSTRUCTURE (new_node) = ARRAY_FLAGSTRUCTURE (arg_node);
-
-    ARRAY_ISCONST (new_node) = ARRAY_ISCONST (arg_node);
-    ARRAY_VECLEN (new_node) = ARRAY_VECLEN (arg_node);
-    ARRAY_VECTYPE (new_node) = ARRAY_VECTYPE (arg_node);
-    if (ARRAY_ISCONST (new_node)) {
-        ARRAY_CONSTVEC (new_node)
-          = TCcopyConstVec (ARRAY_VECTYPE (arg_node), ARRAY_VECLEN (arg_node),
-                            ARRAY_CONSTVEC (arg_node));
-    }
 
     CopyCommonNodeData (new_node, arg_node);
 

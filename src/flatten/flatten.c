@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/12/07 20:32:19  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.41  2004/12/07 14:54:24  sah
  * Spap nodes are flattened now
  *
@@ -120,10 +123,6 @@ struct INFO {
     node *lastassign;
     node *lastwlblock;
     node *finalassign;
-    void *constvec;
-    int veclen;
-    simpletype vectype;
-    int isconst;
 };
 
 /**
@@ -133,11 +132,6 @@ struct INFO {
 #define INFO_FLAT_LASTASSIGN(n) (n->lastassign)
 #define INFO_FLAT_LASTWLBLOCK(n) (n->lastwlblock)
 #define INFO_FLAT_FINALASSIGN(n) (n->finalassign)
-
-#define INFO_FLAT_CONSTVEC(n) (n->constvec)
-#define INFO_FLAT_VECLEN(n) (n->veclen)
-#define INFO_FLAT_VECTYPE(n) (n->vectype)
-#define INFO_FLAT_ISCONST(n) (n->isconst)
 
 /**
  * INFO functions
@@ -155,10 +149,6 @@ MakeInfo ()
     INFO_FLAT_LASTASSIGN (result) = NULL;
     INFO_FLAT_LASTWLBLOCK (result) = NULL;
     INFO_FLAT_FINALASSIGN (result) = NULL;
-    INFO_FLAT_CONSTVEC (result) = NULL;
-    INFO_FLAT_VECLEN (result) = 0;
-    INFO_FLAT_VECTYPE (result) = T_unknown;
-    INFO_FLAT_ISCONST (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -1015,8 +1005,6 @@ FLATlet (node *arg_node, info *arg_info)
  *
  * description:
  *  set the context-flag of arg_info to CT_array, traverse the arguments,
- *  in the case of constant integers store the array in compact form
- *  additionally, and finally restore the old context-flag.
  *
  ******************************************************************************/
 
@@ -1024,63 +1012,27 @@ node *
 FLATarray (node *arg_node, info *arg_info)
 {
     contextflag old_context;
-    int old_isconst;
-    simpletype old_vectype;
-    int old_veclen;
-    void *old_constvec;
 
     DBUG_ENTER ("FLATarray");
 
-    /*
-     * if we are dealing with an empty array, things are easy: we do not have
-     * to use the info-node mechanism to find out whether it is constant....
-     * Instead, we can directly set the attributes correctly.
-     * Only ARRAY_VECTYPE is not known here; therefore, it is set to the
-     * dummy value T_nothing. This will be straightened during type checking.
-     * T_nothin on the right hand side has to be casted or an arror will occur.
-     */
-    if (ARRAY_AELEMS (arg_node) == NULL) {
-        ARRAY_ISCONST (arg_node) = TRUE;
-        ARRAY_VECTYPE (arg_node) = T_nothing;
-        ARRAY_VECLEN (arg_node) = 0;
-        ARRAY_CONSTVEC (arg_node) = NULL;
-    } else {
+    if (ARRAY_AELEMS (arg_node) != NULL) {
         /*
-         *  The array is not empty; so we have to traverse it and - while
-         *  doing so - collect infos whether the array is constant in the info_node.
+         *  The array is not empty; so we have to traverse it
          *
          *  During the following traversal some values of arg_info will be changed,
-         *  so we need to save the actual values here, so they can be restored later.
+         *  so we need to save the actual values here, so they can be restored
+         *  later.
          */
         old_context = INFO_FLAT_CONTEXT (arg_info);
-        old_isconst = INFO_FLAT_ISCONST (arg_info);
-        old_vectype = INFO_FLAT_VECTYPE (arg_info);
-        old_veclen = INFO_FLAT_VECLEN (arg_info);
-        old_constvec = INFO_FLAT_CONSTVEC (arg_info);
 
         INFO_FLAT_CONTEXT (arg_info) = CT_array;
-        INFO_FLAT_ISCONST (arg_info) = FALSE;
-        INFO_FLAT_VECTYPE (arg_info) = T_nothing; /* T_unknown would indicate
-                                                   * non-constant components!
-                                                   */
-        INFO_FLAT_VECLEN (arg_info) = 0;
-        INFO_FLAT_CONSTVEC (arg_info) = NULL;
 
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
-
-        ARRAY_ISCONST (arg_node) = INFO_FLAT_ISCONST (arg_info);
-        ARRAY_VECLEN (arg_node) = INFO_FLAT_VECLEN (arg_info);
-        ARRAY_VECTYPE (arg_node) = INFO_FLAT_VECTYPE (arg_info);
-        ARRAY_CONSTVEC (arg_node) = INFO_FLAT_CONSTVEC (arg_info);
 
         /*
          *  As mentioned above, the values are restored now.
          */
         INFO_FLAT_CONTEXT (arg_info) = old_context;
-        INFO_FLAT_ISCONST (arg_info) = old_isconst;
-        INFO_FLAT_VECTYPE (arg_info) = old_vectype;
-        INFO_FLAT_VECLEN (arg_info) = old_veclen;
-        INFO_FLAT_CONSTVEC (arg_info) = old_constvec;
     }
 
     DBUG_RETURN (arg_node);
@@ -1195,12 +1147,10 @@ FLATreturn (node *arg_node, info *arg_info)
 node *
 FLATexprs (node *arg_node, info *arg_info)
 {
-    int info_fltn_array_index, abstract;
+    bool abstract;
     node *expr, *expr2;
 
     DBUG_ENTER ("FLATexprs");
-
-    info_fltn_array_index = INFO_FLAT_VECLEN (arg_info);
 
     expr = EXPRS_EXPR (arg_node);
 
@@ -1233,9 +1183,6 @@ FLATexprs (node *arg_node, info *arg_info)
         abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
                     || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
-        INFO_FLAT_VECTYPE (arg_info)
-          = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLAT_VECTYPE (arg_info));
-        INFO_FLAT_VECLEN (arg_info) = info_fltn_array_index + 1;
         break;
     default:
         DBUG_ASSERT (0, "illegal context !");
@@ -1259,7 +1206,6 @@ FLATexprs (node *arg_node, info *arg_info)
          */
         EXPRS_EXPR (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
-        TCannotateIdWithConstVec (expr, EXPRS_EXPR (arg_node));
     } else {
         expr2 = TRAVdo (expr, arg_info);
     }
@@ -1270,34 +1216,8 @@ FLATexprs (node *arg_node, info *arg_info)
     /*
      * Last but not least remaining exprs have to be done:
      */
-    if (EXPRS_NEXT (arg_node) == NULL) {
-        /*
-         * iff we are within an array, we can now decide whether the array
-         * is constant; if so, we allocate a constvec for collecting
-         * the constant values and insert the last one.
-         */
-        if ((INFO_FLAT_CONTEXT (arg_info) == CT_array)
-            && (INFO_FLAT_VECTYPE (arg_info) != T_unknown)) {
-            INFO_FLAT_ISCONST (arg_info) = TRUE;
-            INFO_FLAT_CONSTVEC (arg_info) = TCallocConstVec (INFO_FLAT_VECTYPE (arg_info),
-                                                             INFO_FLAT_VECLEN (arg_info));
-            INFO_FLAT_CONSTVEC (arg_info) = TCmodConstVec (INFO_FLAT_VECTYPE (arg_info),
-                                                           INFO_FLAT_CONSTVEC (arg_info),
-                                                           info_fltn_array_index, expr);
-        }
-    } else {
+    if (EXPRS_NEXT (arg_node) != NULL) {
         EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
-
-        /*
-         * iff we are within a constant array, insert the actual value in
-         * the constvec.
-         */
-        if ((INFO_FLAT_CONTEXT (arg_info) == CT_array)
-            && (INFO_FLAT_VECTYPE (arg_info) != T_unknown)) {
-            INFO_FLAT_CONSTVEC (arg_info) = TCmodConstVec (INFO_FLAT_VECTYPE (arg_info),
-                                                           INFO_FLAT_CONSTVEC (arg_info),
-                                                           info_fltn_array_index, expr);
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1659,7 +1579,6 @@ FLATmodarray (node *arg_node, info *arg_info)
         || (NODE_TYPE (expr) == N_cast)) {
         MODARRAY_ARRAY (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
-        TCannotateIdWithConstVec (expr, MODARRAY_ARRAY (arg_node));
     } else {
         expr2 = TRAVdo (expr, arg_info);
     }
@@ -1692,7 +1611,6 @@ FLATfold (node *arg_node, info *arg_info)
     if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
         FOLD_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
-        TCannotateIdWithConstVec (expr, FOLD_NEUTRAL (arg_node));
 
         DBUG_ASSERT ((expr == expr2),
                      "return-node differs from arg_node while flattening an expr!");
@@ -1834,7 +1752,6 @@ FLATgenerator (node *arg_node, info *arg_info)
             if (N_id != NODE_TYPE (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
                 act_son_expr2 = TRAVdo (act_son_expr, arg_info);
-                TCannotateIdWithConstVec (act_son_expr, *act_son);
             } else {
                 act_son_expr2 = TRAVdo (act_son_expr, arg_info);
             }
@@ -1902,7 +1819,6 @@ FLATcode (node *arg_node, info *arg_info)
     if (NODE_TYPE (expr) != N_id) {
         EXPRS_EXPR (CODE_CEXPRS (arg_node)) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
-        TCannotateIdWithConstVec (expr, EXPRS_EXPR (CODE_CEXPRS (arg_node)));
     } else {
         expr2 = TRAVdo (expr, arg_info);
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/12/07 20:34:18  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.21  2004/11/29 17:29:49  sah
  * use of new compound macro ID_NAME_OR_SPNAME
  *
@@ -254,7 +257,7 @@ GetNextNt (char **ret, node *exprs)
      * as the backend creates id nodes without avis nodes, we
      * have to make sure to use the right name
      */
-    if ((ID_NAME_OR_SPNAME (expr))[0] != '\0') {
+    if ((ID_NAME_OR_ICMTEXT (expr))[0] != '\0') {
         DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
         (*ret) = ILIBstringCopy (ID_NT_TAG (expr));
     } else {
@@ -285,11 +288,11 @@ GetNextId (char **ret, node *exprs)
     DBUG_ASSERT ((ID_NT_TAG (expr) == NULL), "wrong icm-arg: tag found");
 
     /*
-     * we may have to use SPNAME here, as the backend does not
+     * we may have to use ICMTEXT here, as the backend does not
      * store the name in the avis (NAME), but directly
-     * inside of the id node (SPNAME)
+     * inside of the id node (ICMTEXT)
      */
-    (*ret) = ILIBstringCopy (ID_NAME_OR_SPNAME (expr));
+    (*ret) = ILIBstringCopy (ID_NAME_OR_ICMTEXT (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 

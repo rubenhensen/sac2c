@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2004/12/07 20:35:53  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.122  2004/12/06 17:31:50  sbs
  * eliminated infinite recursion ....
  *
@@ -386,11 +389,6 @@ TCshpseg2Array (shpseg *shape, int dim)
     }
 
     array_node = TCmakeFlatArray (next);
-
-    ARRAY_ISCONST (array_node) = TRUE;
-    ARRAY_VECTYPE (array_node) = T_int;
-    ARRAY_VECLEN (array_node) = dim;
-    ((int *)ARRAY_CONSTVEC (array_node)) = TCarray2IntVec (next, NULL);
 
     array_shape = TBmakeShpseg (NULL);
     SHPSEG_SHAPE (array_shape, 0) = dim;
@@ -1136,292 +1134,8 @@ TCnumsContains (int val, node *nums)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  ConstVec :
- ***/
-
-/******************************************************************************
- *
- * function:
- *  void *TCcopyConstVec( simpletype vectype, int veclen, void *const_vec)
- *
- * description:
- *   allocates a new vector of size veclen*sizeof(vectype) and copies all
- *   elements from const_vec into it.
- *
- ******************************************************************************/
-
-void *
-TCcopyConstVec (simpletype vectype, int veclen, void *const_vec)
-{
-    int n;
-    void *res;
-
-    DBUG_ENTER ("TCcopyConstVec");
-
-    if (veclen > 0) {
-        switch (vectype) {
-        case T_bool:
-        case T_int:
-            n = veclen * sizeof (int);
-            res = ILIBmalloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        case T_float:
-            n = veclen * sizeof (float);
-            res = ILIBmalloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        case T_double:
-            n = veclen * sizeof (double);
-            res = ILIBmalloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        case T_char:
-            n = veclen * sizeof (char);
-            res = ILIBmalloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        default:
-            DBUG_ASSERT ((0), "TCcopyConstVec called with non-const-type!");
-            res = NULL;
-        }
-    } else {
-        res = NULL;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *  void *TCallocConstVec( simpletype vectype, int veclen)
- *
- * description:
- *   allocates a new vector of size veclen*sizeof(vectype).
- *
- ******************************************************************************/
-
-void *
-TCallocConstVec (simpletype vectype, int veclen)
-{
-    void *res;
-
-    DBUG_ENTER ("TCallocConstVec");
-
-    if (veclen > 0) {
-        switch (vectype) {
-        case T_bool:
-        case T_int:
-            res = ILIBmalloc (veclen * sizeof (int));
-            break;
-        case T_float:
-            res = ILIBmalloc (veclen * sizeof (float));
-            break;
-        case T_double:
-            res = ILIBmalloc (veclen * sizeof (double));
-            break;
-        case T_char:
-            res = ILIBmalloc (veclen * sizeof (int));
-            break;
-        default:
-            DBUG_ASSERT ((0), "TCallocConstVec called with non-const-type!");
-            res = NULL;
-        }
-    } else {
-        res = NULL;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *  void *TCmodConstVec( simpletype vectype, void *const_vec, int idx,
- *                                                          node *const_node)
- *
- * description:
- *   modifies const_vec at position idx by inserting the value stored in
- *   const_node.
- *   It is assumed (!!!) that simpletype is compatible to the const_node;
- *   if this requires a cast (e.g. NODE_TYPE(const_node) == N_num &&
- *   vectype==T_double) it will be done implicitly.
- *
- ******************************************************************************/
-
-void *
-TCmodConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
-{
-    DBUG_ENTER ("TCmodConstVec");
-
-    switch (vectype) {
-    case T_bool:
-        DBUG_ASSERT ((NODE_TYPE (const_node) == N_bool),
-                     "array element type does not match infered vectype!");
-        ((int *)const_vec)[idx] = BOOL_VAL (const_node);
-        break;
-    case T_int:
-        DBUG_ASSERT ((NODE_TYPE (const_node) == N_num),
-                     "array element type does not match infered vectype!");
-        ((int *)const_vec)[idx] = NUM_VAL (const_node);
-        break;
-    case T_float:
-        DBUG_ASSERT (((NODE_TYPE (const_node) == N_num)
-                      || (NODE_TYPE (const_node) == N_float)),
-                     "array element type does not match infered vectype!");
-        if (NODE_TYPE (const_node) == N_num)
-            ((float *)const_vec)[idx] = (float)NUM_VAL (const_node);
-        else
-            ((float *)const_vec)[idx] = FLOAT_VAL (const_node);
-        break;
-    case T_double:
-        DBUG_ASSERT (((NODE_TYPE (const_node) == N_num)
-                      || (NODE_TYPE (const_node) == N_float)
-                      || (NODE_TYPE (const_node) == N_double)),
-                     "array element type does not match infered vectype!");
-        if (NODE_TYPE (const_node) == N_num)
-            ((double *)const_vec)[idx] = (double)NUM_VAL (const_node);
-        else if (NODE_TYPE (const_node) == N_float)
-            ((double *)const_vec)[idx] = FLOAT_VAL (const_node);
-        else
-            ((double *)const_vec)[idx] = DOUBLE_VAL (const_node);
-        break;
-    case T_char:
-        DBUG_ASSERT ((NODE_TYPE (const_node) == N_char),
-                     "array element type does not match infered vectype!");
-        ((char *)const_vec)[idx] = CHAR_VAL (const_node);
-        break;
-    default:
-        DBUG_ASSERT ((0), "TCmodConstVec called with non-const-type!");
-    }
-
-    DBUG_RETURN (const_vec);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *TCannotateIdWithConstVec(node *expr, node *id)
- *
- * description:
- *   - if expr is an N_array-node or an N_id-node,
- *     the const-array decoration from expr is copied to id.
- *   - leading casts will be ignored.
- *   - returns the id-node.
- *
- ******************************************************************************/
-
-node *
-TCannotateIdWithConstVec (node *expr, node *id)
-{
-    node *behind_casts = expr;
-
-    DBUG_ENTER ("TCannotateIdWithConstVec");
-
-    /*
-     * TODO: the frontend ID has no constant vector. the question here is
-     *       whether there is still a need for constant vectors anyway
-     *       as they are encoded in the type (AKV) now
-     */
-#if 0
-  DBUG_ASSERT( (NODE_TYPE( id)==N_id),
-               "TCannotateIdWithConstVec called with non-compliant arguments!");
-
-  while( NODE_TYPE(behind_casts) == N_cast) {
-    behind_casts = CAST_EXPR(behind_casts);
-  }
-
-  if( NODE_TYPE( behind_casts) == N_array) {
-    ID_ISCONST( id)  = ARRAY_ISCONST( behind_casts);
-    ID_VECTYPE( id)  = ARRAY_VECTYPE( behind_casts);
-    ID_VECLEN( id)   = ARRAY_VECLEN( behind_casts);
-    if (ID_ISCONST( id)) {
-      ID_CONSTVEC( id) = TCcopyConstVec( ARRAY_VECTYPE( behind_casts),
-                                         ARRAY_VECLEN( behind_casts),
-                                         ARRAY_CONSTVEC( behind_casts));
-    }
-  }
-  else if( NODE_TYPE( behind_casts) == N_id) {
-    ID_ISCONST( id)  = ID_ISCONST( behind_casts);
-    ID_VECTYPE( id)  = ID_VECTYPE( behind_casts);
-    ID_VECLEN( id)   = ID_VECLEN( behind_casts);
-    if (ID_ISCONST( id)) {
-      ID_CONSTVEC( id) = TCcopyConstVec( ID_VECTYPE( behind_casts),
-                                       ID_VECLEN( behind_casts),
-                                       ID_CONSTVEC( behind_casts));
-    }
-  }
-#endif
-
-    DBUG_RETURN (id);
-}
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  NODELIST :
  ***/
-#if 0 /* TODO - to be deleted after SACDevCampDK 2k4 */
-nodelist *TCtidyUpNodelist(nodelist *list)
-{
-  nodelist *tmp, *first, *last;
-  
-  DBUG_ENTER("TCtidyUpNodelist");
-
-  while ((list!=NULL) && (NODELIST_STATUS(list)==ST_artificial)) {
-    tmp=list;
-    list=NODELIST_NEXT(list);
-    tmp = Free( tmp);
-  }    
-  
-  first=list;
-  
-  if( list != NULL) {
-    last = list;
-    list=NODELIST_NEXT(list);
-    
-    while (list!=NULL) {
-      if (NODELIST_STATUS(list) == ST_artificial) {
-        tmp=list;
-        NODELIST_NEXT(last)=NODELIST_NEXT(list);
-        list=NODELIST_NEXT(list);
-        tmp = Free( tmp);
-      }
-      else {
-        last=list;
-        list=NODELIST_NEXT(list);
-      }      
-    }
-  }
-  
-  DBUG_RETURN(first);
-}
-
-
-
-nodelist *TCconcatNodelist(nodelist *first, nodelist *second)
-{
-  nodelist *tmp;
-  
-  DBUG_ENTER("TCconcatNodelist");
-  
-  if (first==NULL) {
-    first=second;
-  }
-  else {
-    tmp=first;
-    
-    while (NODELIST_NEXT(tmp)!=NULL) {
-      tmp=NODELIST_NEXT(tmp);
-    }
-    
-    NODELIST_NEXT(tmp)=second;
-  }
-  
-  DBUG_RETURN(first);
-}
-#endif
 
 /******************************************************************************
  *
@@ -2819,32 +2533,6 @@ TCcreateZeroScalar (simpletype btype)
     DBUG_RETURN (ret_node);
 }
 
-/*****************************************************************************
- *
- * Function:
- *   node *TCadjustVectorShape( node *array)
- *
- * Description:
- *   adjusts ARRAY_SHAPE according to the number of elements.
- *   Note that the array will always be one-dimensional
- *
- *****************************************************************************/
-
-node *
-TCadjustVectorShape (node *array)
-{
-    DBUG_ENTER ("TCadjustVectorShape");
-
-    DBUG_ASSERT (array != NULL, "TCadjustVectorShape called with NULL argument!");
-
-    if (ARRAY_SHAPE (array) != NULL)
-        SHfreeShape (ARRAY_SHAPE (array));
-
-    ARRAY_SHAPE (array) = SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (array)));
-
-    DBUG_RETURN (array);
-}
-
 /******************************************************************************
  *
  * function:
@@ -2873,74 +2561,12 @@ TCcreateZeroVector (int length, simpletype btype)
     }
 
     ret_node = TCmakeFlatArray (exprs_node);
-    ARRAY_ISCONST (ret_node) = TRUE;
-    ARRAY_VECTYPE (ret_node) = btype;
-    ARRAY_VECLEN (ret_node) = length;
-
-    switch (btype) {
-    case T_int:
-        ((int *)ARRAY_CONSTVEC (ret_node)) = TCarray2IntVec (exprs_node, NULL);
-        break;
-    case T_float:
-        ((float *)ARRAY_CONSTVEC (ret_node)) = TCarray2FloatVec (exprs_node, NULL);
-        break;
-    case T_double:
-        ((double *)ARRAY_CONSTVEC (ret_node)) = TCarray2DblVec (exprs_node, NULL);
-        break;
-    case T_bool:
-        ((int *)ARRAY_CONSTVEC (ret_node)) = TCarray2BoolVec (exprs_node, NULL);
-        break;
-    case T_char:
-        ((char *)ARRAY_CONSTVEC (ret_node)) = TCarray2CharVec (exprs_node, NULL);
-        break;
-    default:
-        DBUG_ASSERT (0, ("unkown basetype found"));
-    }
 
     /* nums struct is freed inside of MakeShpseg() */
     shpseg = TBmakeShpseg (TBmakeNums (length, NULL));
     ARRAY_TYPE (ret_node) = TBmakeTypes (btype, 1, shpseg, NULL, NULL);
 
     DBUG_RETURN (ret_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *TCconcatVecs( node* vec1, node *vec2 )
- *
- * @brief concatenates two vectors.
- *
- * @param vec1 A N_array node containing the first vector
- * @param vec2 A N_array node containing the second vector
- *
- * @return The concatenation vec1++vec2 as an N_array node
- *
- *****************************************************************************/
-node *
-TCconcatVecs (node *vec1, node *vec2)
-{
-    shpseg *shpseg;
-    node *res;
-
-    DBUG_ENTER ("TCconcatVecs");
-
-    DBUG_ASSERT (((NODE_TYPE (vec1) == N_array) && (NODE_TYPE (vec2) == N_array)
-                  && (SHgetDim (ARRAY_SHAPE (vec1)) == 1)
-                  && (SHgetDim (ARRAY_SHAPE (vec2)) == 1)
-                  && (ARRAY_BASETYPE (vec1) == ARRAY_BASETYPE (vec2))),
-                 "ConcatVecs called with not N_array nodes in vector form");
-
-    res = TCmakeFlatArray (TCcombineExprs (DUPdoDupTree (ARRAY_AELEMS (vec1)),
-                                           DUPdoDupTree (ARRAY_AELEMS (vec2))));
-
-    shpseg = SHshape2OldShpseg (ARRAY_SHAPE (res));
-
-    ARRAY_TYPE (res) = TBmakeTypes (ARRAY_BASETYPE (vec1), 1, shpseg, NULL, NULL);
-
-    ((int *)ARRAY_CONSTVEC (res))
-      = TCarray2Vec (ARRAY_BASETYPE (vec1), ARRAY_AELEMS (res), NULL);
-
-    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -2969,7 +2595,7 @@ TCisConstArray (node *array)
     if (array != NULL) {
         switch (NODE_TYPE (array)) {
         case N_array:
-            isconst = ARRAY_ISCONST (array);
+            isconst = TYisAKV (ARRAY_NTYPE (array));
             if (!isconst) {
                 /*
                  * Although ARRAY_ISCONST is false, the array still may be constant:
@@ -2995,7 +2621,7 @@ TCisConstArray (node *array)
             }
             break;
         case N_id:
-            isconst = ID_ISCONST (array);
+            isconst = TYisAKV (ID_NTYPE (array));
             break;
         default:
             isconst = FALSE;
@@ -3061,8 +2687,6 @@ TCids2Array (node *ids_arg)
         array = TCmakeFlatArray (NULL);
     }
 
-    ARRAY_ISCONST (array) = FALSE;
-
     array_type = DUPdupOneTypes (IDS_TYPE (ids_arg));
     if (TYPES_SHPSEG (array_type) == NULL) {
         TYPES_SHPSEG (array_type) = TBmakeShpseg (NULL);
@@ -3076,20 +2700,6 @@ TCids2Array (node *ids_arg)
     ARRAY_TYPE (array) = array_type;
 
     DBUG_RETURN (array);
-}
-
-node *
-TCintVec2Array (int length, int *intvec)
-{
-    int i;
-    node *aelems = NULL;
-
-    DBUG_ENTER ("TCintVec2Array");
-
-    for (i = length - 1; i >= 0; i--)
-        aelems = TBmakeExprs (TBmakeNum (intvec[i]), aelems);
-
-    DBUG_RETURN (aelems);
 }
 
 int *
@@ -3332,7 +2942,7 @@ TCmakeIdCopyString (const char *str)
 
     result = TBmakeId (NULL);
 
-    ID_SPNAME (result) = ILIBstringCopy (str);
+    ID_ICMTEXT (result) = ILIBstringCopy (str);
 
     DBUG_RETURN (result);
 }
@@ -3357,22 +2967,6 @@ TCmakeIdCopyStringNt (const char *str, types *type)
  ***/
 
 /*--------------------------------------------------------------------------*/
-node *
-TCmakeIdsCopyString (const char *str, node *next)
-{
-    node *result;
-    DBUG_ENTER ("TCmakeIdsCopyString");
-
-    if (str == NULL) {
-        str = "";
-    }
-
-    result = TBmakeIds (NULL, next);
-
-    IDS_SPNAME (result) = ILIBstringCopy (str);
-
-    DBUG_RETURN (result);
-}
 
 /***************************************************************************
  *

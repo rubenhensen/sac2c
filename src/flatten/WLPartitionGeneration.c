@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/12/07 20:32:19  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 1.27  2004/11/27 00:41:57  khf
  * adjusted startfunctions
  *
@@ -499,10 +502,6 @@ CreateEntryFlatArray (int entry, int number)
 
     ARRAY_NTYPE (tmp) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (number));
 
-    ARRAY_ISCONST (tmp) = TRUE;
-    ARRAY_VECTYPE (tmp) = T_int;
-    ARRAY_VECLEN (tmp) = number;
-    ARRAY_CONSTVEC (tmp) = TCarray2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
     DBUG_RETURN (tmp);
 }
 
@@ -578,10 +577,7 @@ NormalizeStepWidth (node **step, node **width)
 
         if ((*width) == NULL) {
             /*  create width with constant 1 */
-            if (ARRAY_ISCONST ((*step)))
-                veclen = ARRAY_VECLEN ((*step));
-            else
-                veclen = TCcountExprs (ARRAY_AELEMS ((*step)));
+            veclen = TCcountExprs (ARRAY_AELEMS ((*step)));
 
             (*width) = CreateEntryFlatArray (1, veclen);
         }
@@ -738,11 +734,6 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             }
             EXPRS_EXPR (ubn) = FREEdoFreeTree (EXPRS_EXPR (ubn));
             EXPRS_EXPR (ubn) = DUPdoDupTree (EXPRS_EXPR (le));
-            if (ARRAY_ISCONST (PART_BOUND2 (partn))) {
-                ARRAY_ISCONST (PART_BOUND2 (partn)) = FALSE;
-                ARRAY_CONSTVEC (PART_BOUND2 (partn))
-                  = FREEdoFreeTree (ARRAY_CONSTVEC (PART_BOUND2 (partn)));
-            }
             wln = AppendPart2WL (wln, partn);
         }
 
@@ -767,12 +758,6 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
             }
             EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
             EXPRS_EXPR (lbn) = DUPdoDupTree (EXPRS_EXPR (ue));
-            if ((NODE_TYPE (EXPRS_EXPR (lbn)) != N_num)
-                && (ARRAY_ISCONST (PART_BOUND1 (partn)))) {
-                ARRAY_ISCONST (PART_BOUND1 (partn)) = FALSE;
-                ARRAY_CONSTVEC (PART_BOUND1 (partn))
-                  = FREEdoFreeTree (ARRAY_CONSTVEC (PART_BOUND1 (partn)));
-            }
             wln = AppendPart2WL (wln, partn);
         }
 
@@ -782,10 +767,6 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
         } else {
             EXPRS_EXPR (lsce) = FREEdoFreeTree (EXPRS_EXPR (lsce));
             EXPRS_EXPR (lsce) = DUPdoDupTree (EXPRS_EXPR (le));
-            if (ARRAY_ISCONST (lsc)) {
-                ARRAY_ISCONST (lsc) = FALSE;
-                ARRAY_CONSTVEC (lsc) = FREEdoFreeTree (ARRAY_CONSTVEC (lsc));
-            }
         }
 
         if ((NODE_TYPE (EXPRS_EXPR (ue)) == N_num)
@@ -794,10 +775,6 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
         } else {
             EXPRS_EXPR (usce) = FREEdoFreeTree (EXPRS_EXPR (usce));
             EXPRS_EXPR (usce) = DUPdoDupTree (EXPRS_EXPR (ue));
-            if ((NODE_TYPE (EXPRS_EXPR (usce)) != N_num) && (ARRAY_ISCONST (usc))) {
-                ARRAY_ISCONST (usc) = FALSE;
-                ARRAY_CONSTVEC (usc) = FREEdoFreeTree (ARRAY_CONSTVEC (usc));
-            }
         }
 
         le = EXPRS_NEXT (le);
@@ -972,10 +949,6 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
         } else {
             EXPRS_EXPR (nwe) = FREEdoFreeTree (EXPRS_EXPR (nwe));
             EXPRS_EXPR (nwe) = DUPdoDupTree (EXPRS_EXPR (wthe));
-            if ((NODE_TYPE (EXPRS_EXPR (nwe)) != N_num) && (ARRAY_ISCONST (nw))) {
-                ARRAY_ISCONST (nw) = FALSE;
-                ARRAY_CONSTVEC (nw) = FREEdoFreeTree (ARRAY_CONSTVEC (nw));
-            }
         }
 
         stpe = EXPRS_NEXT (stpe);
@@ -1097,13 +1070,6 @@ CreateZeros (node *array, node **nassigns, node *fundef)
             array_shape = SHshape2Array (shape);
             ARRAY_NTYPE (array_shape)
               = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
-
-            ARRAY_ISCONST (array_shape) = TRUE;
-            ARRAY_VECTYPE (array_shape) = T_int;
-            ARRAY_VECLEN (array_shape) = dim;
-            ARRAY_CONSTVEC (array_shape)
-              = TCarray2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
-
         } else { /* AKD array */
             assigns = CreateIdxShapeSelAssigns (array, 0, (dim - 1), fundef);
             array_shape = CreateStructConstant (array_shape, assigns);
@@ -1177,12 +1143,6 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
             array_shape = SHshape2Array (mshape);
             ARRAY_NTYPE (array_shape)
               = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
-
-            ARRAY_ISCONST (array_shape) = TRUE;
-            ARRAY_VECTYPE (array_shape) = T_int;
-            ARRAY_VECLEN (array_shape) = dim;
-            ARRAY_CONSTVEC (array_shape)
-              = TCarray2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
 
             if (mshape) {
                 SHfreeShape (mshape);
@@ -1288,12 +1248,6 @@ CreateFullPartition (node *wln, info *arg_info)
             array_shape = SHshape2Array (mshape);
             ARRAY_NTYPE (array_shape)
               = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (gen_shape));
-
-            ARRAY_ISCONST (array_shape) = TRUE;
-            ARRAY_VECTYPE (array_shape) = T_int;
-            ARRAY_VECLEN (array_shape) = gen_shape;
-            ARRAY_CONSTVEC (array_shape)
-              = TCarray2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
 
             if (mshape) {
                 SHfreeShape (mshape);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/12/07 20:34:45  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 1.19  2004/11/24 19:08:51  khf
  * SacDevCamp04: Compiles!
  *
@@ -1037,10 +1040,6 @@ CreateEntryFlatArray (int entry, int number)
 
     ARRAY_NTYPE (tmp) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (number));
 
-    ARRAY_ISCONST (tmp) = TRUE;
-    ARRAY_VECTYPE (tmp) = T_int;
-    ARRAY_VECLEN (tmp) = number;
-    ARRAY_CONSTVEC (tmp) = TCarray2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
     DBUG_RETURN (tmp);
 }
 
@@ -1220,17 +1219,13 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
 
     DBUG_ENTER ("IntersectParts");
 
-    if (ARRAY_ISCONST (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)))) {
-        dim = ARRAY_VECLEN (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
+    const_tmp = COaST2Constant (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
+    if ((const_tmp != NULL)) {
+        dim = SHgetUnrLen (COgetShape (const_tmp));
+        const_tmp = COfreeConstant (const_tmp);
     } else {
-        const_tmp = COaST2Constant (GENERATOR_BOUND1 (PART_GENERATOR (parts_1)));
-        if ((const_tmp != NULL)) {
-            dim = SHgetUnrLen (COgetShape (const_tmp));
-            const_tmp = COfreeConstant (const_tmp);
-        } else {
-            dim = 0;
-            DBUG_ASSERT ((0), "lower bound of generator is not constant!");
-        }
+        dim = 0;
+        DBUG_ASSERT ((0), "lower bound of generator is not constant!");
     }
 
     nparts_1 = nparts_2 = NULL;

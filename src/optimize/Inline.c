@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/12/07 20:33:23  ktr
+ * eliminated CONSTVEC which is superseded by ntypes.
+ *
  * Revision 3.39  2004/11/26 12:30:04  mwe
  * SacDevCamp: compiles!
  *
@@ -436,9 +439,7 @@ InlineArg (node *arg_node, info *arg_info)
      *   VARDEC_NAME( new_vardec) = arg;
      * into INFO_INL_PROLOG
      */
-    tmp_ids = TCmakeIdsCopyString (new_name, NULL);
-    IDS_AVIS (tmp_ids) = DECL_AVIS (new_vardec);
-
+    tmp_ids = TBmakeIds (DECL_AVIS (new_vardec), NULL);
     new_ass = TBmakeAssign (TBmakeLet (tmp_ids, DUPdoDupNode (arg)), NULL);
 
     /* store definition assignment of this new vardec (only in ssaform) */
@@ -458,8 +459,7 @@ InlineArg (node *arg_node, info *arg_info)
         DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "reference argument must be a N_id node");
         tmp_id = DUPdupIdsId (tmp_ids);
 
-        tmp_ids = TCmakeIdsCopyString (ID_NAME (arg), NULL);
-        IDS_AVIS (tmp_ids) = ID_AVIS (arg);
+        tmp_ids = TBmakeIds (ID_AVIS (arg), NULL);
 
         new_ass = TBmakeAssign (TBmakeLet (tmp_ids, tmp_id), NULL);
         global.valid_ssaform = FALSE; /* no valid SSA form anymore ... */

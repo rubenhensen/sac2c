@@ -43,10 +43,8 @@
     copy="function" />
     <type name="Shape" ctype="shape*" init="NULL"
     copy="function" />
-    <type name="SimpleType" ctype="simpletype" init="T_unknown"
+    <type name="SimpleType" ctype="simpletype" init="T_unknown" 
     copy="literal" />
-    <type name="ConstVecPointer" ctype="void*" init="NULL"
-    copy="function" />
     <type name="UseFlag" ctype="useflag" init="DOLLAR"
     copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
@@ -2039,6 +2037,9 @@
           <phases>
             <range from="optimize" to="final" />
           </phases>
+          <description>
+            Deprecated. TODO: This should be eliminated.
+          </description>
         </attribute>
         <attribute name="InlRec" mandatory="yes">
           <type name="Integer" />
@@ -2155,6 +2156,9 @@
           <phases>
             <range from="optimize" to="final" />
           </phases>
+          <description>
+            Deprecated. TODO: This should be eliminated.
+          </description>
         </attribute>
         <attribute name="TypeString" mandatory="yes">
           <type name="String" />
@@ -2246,23 +2250,7 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="VarNo" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <range from="optimize" to="final" />
-          </phases>
-        </attribute>
         <attribute name="SPMD_Prolog_ICMs" mandatory="yes">
-          <type name="Link">
-            <target>
-              <node name="Fundef" />
-            </target>
-          </type>
-          <phases>
-            <phase name="compile" />
-          </phases>
-        </attribute>
-        <attribute name="SPMD_Setup_Args" mandatory="yes">
           <type name="Link">
             <target>
               <node name="Fundef" />
@@ -2365,6 +2353,9 @@
           <phases>
             <range from="optimize" to="final" />
           </phases>
+          <description>
+            Deprecated. TODO: This should be eliminated.
+          </description>
         </attribute>
         <attribute name="Icm" mandatory="no">
           <type name="Node">
@@ -2817,7 +2808,7 @@
       <sons>
         <son name="Expr" mandatory="yes">
           <target>
-            <unknown />
+            <set name="Expr" />
           </target>
         </son>
         <son name="Next" mandatory="no">
@@ -2877,8 +2868,9 @@
         </attribute>
         <attribute name="String" default="NULL" mandatory="no">
           <description>In case of constant character arrays defined
-          as strings, this attribute holds the original
-          definition</description>
+            as strings, this attribute holds the original
+            definition. TODO: This should be eliminated as soon as possible.
+          </description>
           <type name="String" />
           <phases>
             <all />
@@ -2889,34 +2881,19 @@
           <phases>
             <range from="typecheck" to="final" />
           </phases>
+          <description>Deprecated. TODO: This should be eliminated as soon as possible.
+          </description>
         </attribute>
         <attribute name="NType" mandatory="yes">
           <type name="NewType" />
           <phases>
             <range from="typecheck" to="final" />
           </phases>
-        </attribute>
-        <attribute name="VecType" mandatory="no">
-          <type name="SimpleType" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="VecLen" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="ConstVec" mandatory="no">
-          <type name="ConstVecPointer" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
+          <description>Deprecated. TODO: This should be eliminated as soon as possible.
+          </description>
         </attribute>
       </attributes>
       <flags>
-        <flag name="IsConst" />
       </flags>
     </node>
 <!--
@@ -2996,24 +2973,6 @@
             <range from="wli" to="wlf" />
           </phases>
         </attribute>
-        <attribute name="ConstVec" mandatory="no">
-          <type name="ConstVecPointer" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="VecLen" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="VecType" mandatory="no">
-          <type name="SimpleType" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
 	<attribute name="ICMtext" default="NULL" mandatory="no">
 	  <type name="String" />
 	  <phases>
@@ -3034,7 +2993,6 @@
         </attribute>
       </attributes>
       <flags>
-	<flag name="IsConst" />
       </flags>
     </node>
 <!--
