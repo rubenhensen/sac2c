@@ -26,3 +26,4 @@ libstat.h
 export.c
 export.h
 ccmanager.c
+ccmanager.h
