@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/06/12 21:03:08  ktr
+ * Comments added, everything in english
+ *
  * Revision 1.7  2002/06/10 20:44:09  ktr
  * Bugfix: Only scalarize fully partitioned Withloops.
  *
@@ -33,7 +36,78 @@
  *
  * description:
  *
- *   This file realizes the with-loop-scalarization in ssa-form.
+ *   This implements the WithloopScalarization in ssa-form.
+ *
+ *   WithloopScalarization is a high-level optimization which composes
+ *   a single withloop from two nested ones in order to minimize memory-
+ *   transactions and thereby improving time of program execution.
+ *
+ *
+ *   WithloopScalarization works in four phases:
+ *
+ *   - Phase 1: Probing
+ *
+ *     In the probing-phase we check whether all conditions for a
+ *     successful WithloopScalarization are met in the current withloop.
+ *     NOTE: these conditions must be met for ALL Parts of the WL:
+ *
+ *     - a part must be computed by a withloop itself to give WLS sence
+ *     - the computation must take place INSIDE of the part
+ *     - the inner withloop must be a fully partitioned MG-WL
+ *     - nesting of withloops must be perfect,
+ *       i.e. the inner WL has to be the first instruction in the
+ *       part's codeblock
+ *     - all inner generators have to be independent from the outer part's
+ *       generator
+ *     - all inner WLs have to of the same type as the outer WL,
+ *       because scalarization can only by done if we only have
+ *       genarray-WLs OR only fold-WLs with the same fold-opration and
+ *       neutral element.
+ *
+ *
+ *   - Phase 2: Distribution
+ *
+ *     In this step, we distribute the parts of the outer WL over
+ *     all the parts of the inner WLs in order to get an outer WL which's
+ *     parts contain a WL holding exactly ONE part each.
+ *
+ *
+ *   - Phase 3: Scalarization
+ *
+ *     After the structure has been simplified in phase 2, we can now
+ *     start the main process of scalarization:
+ *     For each part of the outer WL, the outer and the inner parts are
+ *     joined into one part of the outer WL:
+ *     - The new generator consists of concatenations of the former
+ *       bound1,bound2,step and width vectors
+ *     - The new code is the code of the inner WL, prepended with
+ *       assignments that bind the old withvecs' names to arrays
+ *       consisting of the same variables as before.
+ *     - The new withids have a new withvec and concatenate the old ids
+ *     Finally the new WLs shape is the concatenation of both old shapes.
+ *
+ *
+ *   - Phase 4: Codecorrection
+ *
+ *     Finally we have to make sure that the NCODE_NEXT and NPART_NEXT
+ *     pointers still point correctly.
+ *
+ *
+ ****************************************************************************
+ *
+ *  Usage of arg_info:
+ *
+ *  - flag:    POSSIBLE  : WL nesting is transformable.
+ *                         (Detected in phase PROBE)
+ *  - linno:   PHASE     : Phase of the WithloopScalarization
+ *                         (PROBE | DISTRIBUTE | SCALARIZE | CODE_CORRECT)
+ *  - node[0]: FUNDEF    : pointer to current fundef node,
+ *                         needed to access vardecs
+ *  - counter: PARTS     : Number of parts of the new MG-Withloop
+ *                         (calculated in phase DISTRIBUTE)
+ *  - ids:     WITHVEC   : reference to the new MG-Withloop's withvec
+ *  - node[1]: WITHOP    : reference to the outer WL's withop,
+ *                         needed to check if both WL's types match
  *
  ****************************************************************************/
 
@@ -45,39 +119,101 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "optimize.h"
-#include "free.h"
-#include "DataFlowMask.h"
 #include "DupTree.h"
 
 #include "WithloopScalarization.h"
 
-#define wls_probe 0
-#define wls_distribute 1
-#define wls_transform 2
-#define wls_codecorrect 3
+/****************************************************************************
+ *
+ * typedef
+ *
+ ****************************************************************************/
 
+/* Several traverse functions of this file are traversed for different
+   purposes. This enum determines ths function, see description at the
+   beginning of this file for details */
+
+typedef enum { wls_probe, wls_distribute, wls_scalarize, wls_codecorrect } wls_phase_type;
+
+#define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
+
+/****************************************************************************
+ *
+ * Helper functions
+ *
+ ****************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateOneVector(int nr)
+ *
+ * description:
+ *   Creates an one-dimensional Array (aka Vector) of length nr whose
+ *   elements are all Nums with value 1.
+ *
+ ******************************************************************************/
 node *
-WLSfundef (node *arg_node, node *arg_info)
+CreateOneVector (int nr)
 {
-    DBUG_ENTER ("WLSfundef");
+    node *res;
+    node *temp;
 
-    INFO_WLS_FUNDEF (arg_info) = arg_node;
+    DBUG_ENTER ("MakeOnes");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    res = CreateZeroVector (nr, T_int);
+
+    temp = ARRAY_AELEMS (res);
+
+    while (temp != NULL) {
+        NUM_VAL (EXPRS_EXPR (temp)) = 1;
+        temp = EXPRS_NEXT (temp);
     }
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        /* traverse args of fundef */
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeExprsIdChain(ids *idschain)
+ *
+ * description:
+ *   Converts a chain of ids into an exprs-node
+ *
+ ******************************************************************************/
+node *
+MakeExprsIdChain (ids *idschain)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeExprsIdChain");
+
+    if (idschain != NULL) {
+        node *id;
+
+        id = MakeId (IDS_NAME (idschain), IDS_MOD (idschain), ST_regular);
+
+        ID_VARDEC (id) = IDS_VARDEC (idschain);
+        ID_AVIS (id) = IDS_AVIS (idschain);
+
+        res = MakeExprs (id, MakeExprsIdChain (IDS_NEXT (idschain)));
+    } else
+        res = NULL;
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ConcatVecs(node *vec1, node *vec2)
+ *
+ * description:
+ *   returns a vector which is the concatenation of vec1++vec2
+ *
+ ******************************************************************************/
 node *
 ConcatVecs (node *vec1, node *vec2)
 {
@@ -108,147 +244,232 @@ ConcatVecs (node *vec1, node *vec2)
     DBUG_RETURN (res);
 }
 
-node *
-WLSNwith (node *arg_node, node *arg_info)
+/****************************************************************************
+ *
+ * Probing functions
+ *
+ ****************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   int isAssignInsideBlock(node *assign, node *instr)
+ *
+ * description:
+ *   checks if an assignment is part of a list of instructions
+ *
+ * parameters:
+ *   node *assign:   the assignment to look for inside of
+ *   node *instr:    the list of instructions
+ *
+ ******************************************************************************/
+int
+isAssignInsideBlock (node *assign, node *instr)
 {
-    /* local variables */
-    node *tmpnode;
+    int res = TRUE;
 
-    DBUG_ENTER ("WLSNwith");
+    DBUG_ENTER ("isAssignInsideBlock");
 
-    DBUG_PRINT ("WLS", ("\nstarting with-loop scalarization in Nwith %s.",
-                        FUNDEF_NAME (arg_node)));
-
-    /* First WLS traverses into the branches in order to scalarize and
-       fold all other With-Loops */
-
-    /* traverse WITHOP */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-    }
-
-    /* traverse all CODES */
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    }
-
-    /* Insert WLF here */
-
-    /* Let's go! */
-
-    /* We have to find out, whether all parts can be scalarized */
-    /* Here we can distinguish between conservative and agressive behaviour */
-
-    tmpnode = arg_info;
-    arg_info = MakeInfo ();
-    INFO_WLS_FUNDEF (arg_info) = INFO_WLS_FUNDEF (tmpnode);
-
-    /* Check if WLS is possible vor all parts */
-
-    INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
-
-    INFO_WLS_POSSIBLE (arg_info) = TRUE;
-
-    if (INFO_WLS_POSSIBLE (arg_info)) {
-        INFO_WLS_PHASE (arg_info) = wls_probe;
-        INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
-
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-    }
-
-    /* create full partitioned outer Withloop */
-    if (INFO_WLS_PARTS (arg_info) < 0) {
-        /*
-
-          CODE TO CREATE A FULL PARTITIONED WITHLOOP
-
-        */
-
-        INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
-    }
-
-    /* Scalarize only complete partitions */
-    INFO_WLS_POSSIBLE (arg_info)
-      = INFO_WLS_POSSIBLE (arg_info) && (INFO_WLS_PARTS (arg_info) > 0);
-
-    /* If all parts are ready for scalarization we can start */
-
-    if (INFO_WLS_POSSIBLE (arg_info)) {
-        /* First, we have to distribute the outer part over all
-           parts of the inner with-loop */
-
-        INFO_WLS_PHASE (arg_info) = wls_distribute;
-
-        /* traverse all parts */
-
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-
-        NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
-        NWITH_PARTS (arg_node) = INFO_WLS_PARTS (arg_info);
-
-        /* Now we can start the scalarization */
-
-        INFO_WLS_PHASE (arg_info) = wls_transform;
-        INFO_WLS_WITHVEC (arg_info) = NULL;
-
-        /* The new shape is the concatenation of both old shapes */
-
-        NWITH_SHAPE (arg_node) = ConcatVecs (NWITH_SHAPE (arg_node),
-                                             NWITH_SHAPE (LET_EXPR (ASSIGN_INSTR (
-                                               BLOCK_INSTR (NWITH_CBLOCK (arg_node))))));
-
-        /* traverse all PARTS  */
-
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-
-        /* correct the Ncode pointers */
-        INFO_WLS_PHASE (arg_info) = wls_codecorrect;
-
-        NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
-
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-    }
-
-    arg_info = FreeTree (arg_info);
-    arg_info = tmpnode;
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-CreateOneVector (int nr)
-{
-    node *res;
-    node *temp;
-
-    DBUG_ENTER ("MakeOnes");
-
-    res = CreateZeroVector (nr, T_int);
-
-    temp = ARRAY_AELEMS (res);
-
-    while (temp != NULL) {
-        NUM_VAL (EXPRS_EXPR (temp)) = 1;
-        temp = EXPRS_NEXT (temp);
-    }
+    if (NODE_TYPE (instr) == N_empty)
+        res = FALSE;
+    else if (assign == instr)
+        res = TRUE;
+    else if (ASSIGN_NEXT (instr) == NULL)
+        res = FALSE;
+    else
+        res = isAssignInsideBlock (assign, ASSIGN_NEXT (instr));
 
     DBUG_RETURN (res);
 }
 
-/*
-   joinGenerators creates the new Generator to iterate the
-   same space as the former two Generators
-*/
+/******************************************************************************
+ *
+ * function:
+ *   int checkExprsDependencies(node *outerpart, node *exprs)
+ *
+ * description:
+ *   checks if one of the Expressions in exprs is computed inside
+ *   the withloop-part outerpart.
+ *   In this case a WLS would be impossible and FALSE is returned.
+ *
+ *   This function is NOT COMPLETED YET
+ *
+ * parameters:
+ *   node *outerpart:   N_NPART
+ *   node *exprs:       N_exprs
+ *
+ ******************************************************************************/
+int
+checkExprsDependencies (node *outerpart, node *exprs)
+{
+    int res = TRUE;
+
+    DBUG_ENTER ("checkExprsDependencies");
+
+    if (exprs == NULL)
+        res = TRUE;
+    else if (NODE_TYPE (exprs) != N_array)
+        res = FALSE; /* INTERESTING!!! */
+    else
+        res = checkExprsDependencies (outerpart, EXPRS_NEXT (exprs));
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int checkGeneratorDependencies(node *outerpart, node *innerpart)
+ *
+ * description:
+ *   checks if one of the generators of the inner withloop depends on
+ *   calculations in the withloop-part outerpart.
+ *   In this case a WLS would be impossible and FALSE is returned.
+ *
+ * parameters:
+ *   node *outerpart:   N_NPART
+ *   node *innerpart:   N_NPART
+ *
+ ******************************************************************************/
+int
+checkGeneratorDependencies (node *outerpart, node *innerpart)
+{
+    int res;
+    node *innergen;
+
+    DBUG_ENTER ("checkGeneratorDependencies");
+
+    if (innerpart == NULL)
+        res = TRUE;
+    else {
+        innergen = NPART_GEN (innerpart);
+
+        res = TRUE;
+
+        if ((res) && (!(checkExprsDependencies (outerpart, NGEN_BOUND1 (innergen)))))
+            res = FALSE;
+
+        if ((res) && (!(checkExprsDependencies (outerpart, NGEN_BOUND2 (innergen)))))
+            res = FALSE;
+        if ((res) && (NGEN_STEP (innergen) != NULL))
+            if (!(checkExprsDependencies (outerpart, NGEN_STEP (innergen))))
+                res = FALSE;
+        if ((res) && (NGEN_WIDTH (innergen) != NULL))
+            if (!(checkExprsDependencies (outerpart, NGEN_WIDTH (innergen))))
+                res = FALSE;
+
+        if (res)
+            res = checkGeneratorDependencies (outerpart, NPART_NEXT (innerpart));
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int compatWLTypes(node *outerWithOP, node *innerWithOP)
+ *
+ * description:
+ *   checks if the two nested withloops have compatible types
+ *
+ *   Compatibility means both Withloops are genarray-WLs OR
+ *   they are both fold-WLs and have the same fold-operation/neutral-element
+ *
+ *   This function is NOT COMPLETED yet.
+ *
+ * parameters:
+ *   node *outerWithOP:   N_NWITHOP
+ *   node *innerWithOP:   N_NWITHOP
+ *
+ ******************************************************************************/
+int
+compatWLTypes (node *outerWithOP, node *innerWithOP)
+{
+    return ((NWITHOP_TYPE (outerWithOP) == WO_genarray)
+            && (NWITHOP_TYPE (innerWithOP) == WO_genarray));
+}
+
+/****************************************************************************
+ *
+ * Distribution functions
+ *
+ ****************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *distributePart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   distributes an outer part over all n parts of an inner withloop,
+ *   creating n outer parts with one inner part each.
+ *
+ * parameters:
+ *   node *arg_node:   N_NPART
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
-joinGenerators (node *outergen, node *innergen, node *arg_info)
+distributePart (node *arg_node, node *arg_info)
+{
+    node *res;
+    node *innerwith;
+    node *tmpnode;
+
+    DBUG_ENTER ("distributePart");
+
+    innerwith
+      = LET_EXPR (ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (arg_node)))));
+
+    if (NWITH_PARTS (innerwith) == 1)
+        res = arg_node;
+    else {
+        tmpnode = DupTree (arg_node);
+        NPART_CODE (tmpnode) = DupTree (NPART_CODE (arg_node));
+        NCODE_USED (NPART_CODE (tmpnode))++;
+
+        NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (tmpnode);
+        NPART_NEXT (arg_node) = tmpnode;
+
+        NWITH_PARTS (innerwith) = -1;
+        NPART_NEXT (NWITH_PART (innerwith)) = NULL;
+        NCODE_NEXT (NWITH_CODE (innerwith)) = NULL;
+
+        innerwith
+          = LET_EXPR (ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (tmpnode)))));
+        NWITH_PARTS (innerwith) -= 1;
+        NWITH_PART (innerwith) = NPART_NEXT (NWITH_PART (innerwith));
+        NWITH_CODE (innerwith) = NCODE_NEXT (NWITH_CODE (innerwith));
+
+        INFO_WLS_PARTS (arg_info) += 1;
+        res = arg_node;
+    }
+    DBUG_RETURN (res);
+}
+
+/****************************************************************************
+ *
+ * Scalarization functions
+ *
+ ****************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *joinGenerators(node *outergen, node *innergen)
+ *
+ * description:
+ *   Creates a new generator that iterates over the same space as the
+ *   two generators specified in the paramters by concatenating
+ *   all the vectors.
+ *
+ * parameters:
+ *   node *outergen:   N_NGEN
+ *   node *innergen:   N_NGEN
+ *
+ ******************************************************************************/
+node *
+joinGenerators (node *outergen, node *innergen)
 {
     node *newgen;
 
@@ -295,6 +516,20 @@ joinGenerators (node *outergen, node *innergen, node *arg_info)
     DBUG_RETURN (newgen);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *joinWithids(node *outerwithid, node *innerwithid, node *arg_info)
+ *
+ * description:
+ *   Creates a new withid by concatenating the WITH_IDS-Vectors and
+ *   adding a new WITH_VEC.
+ *
+ * parameters:
+ *   node *outerwithid:   N_NWITHID
+ *   node *innerwithid:   N_NWITHID
+ *
+ ******************************************************************************/
 node *
 joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
 {
@@ -310,6 +545,7 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
 
     DBUG_ENTER ("joinWithids");
 
+    /* Generate a new WITHVEC if we don't have one already */
     if (INFO_WLS_WITHVEC (arg_info) == NULL) {
         new_name = TmpVar ();
 
@@ -341,28 +577,25 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
     DBUG_RETURN (newwithid);
 }
 
-node *
-MakeExprsIdChain (ids *idschain)
-{
-    node *res;
-
-    DBUG_ENTER ("MakeExprsIdChain");
-
-    if (idschain != NULL) {
-        node *id;
-
-        id = MakeId (IDS_NAME (idschain), IDS_MOD (idschain), ST_regular);
-
-        ID_VARDEC (id) = IDS_VARDEC (idschain);
-        ID_AVIS (id) = IDS_AVIS (idschain);
-
-        res = MakeExprs (id, MakeExprsIdChain (IDS_NEXT (idschain)));
-    } else
-        res = NULL;
-
-    DBUG_RETURN (res);
-}
-
+/******************************************************************************
+ *
+ * function:
+ *   node *joinCodes(node *outercode,   node *innercode,
+ *                   node *outerwithid, node *innerwithid,
+ *                   node *arg_info)
+ *
+ * description:
+ *   Creates a new block which is nothing but the old INNER codeblock
+ *   prepended with definitions of the two old WITHVECs
+ *
+ * parameters:
+ *   node *outercode:   N_NCODE
+ *   node *innercode:   N_NCODE
+ *   node *outerwithid: N_NWITHID
+ *   node *innerwithid: N_NWITHID
+ *   node *arg_info:    N_INFO
+ *
+ ******************************************************************************/
 node *
 joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithid,
            node *arg_info)
@@ -373,8 +606,10 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 
     DBUG_ENTER ("joinCodes");
 
+    /* The new code is the old INNER part's code ... */
     newcode = DupTree (innercode);
 
+    /* prepended with definitions of the two old WITHVECs */
     array = MakeArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
 
     ARRAY_TYPE (array)
@@ -396,17 +631,34 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
       = MakeAssignLet (IDS_NAME (NWITHID_VEC (innerwithid)),
                        IDS_VARDEC (NWITHID_VEC (innerwithid)), array);
 
+    /* Bring everything in the right order */
     if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (newcode))) != N_empty)
         ASSIGN_NEXT (ASSIGN_NEXT (tmp_node)) = BLOCK_INSTR (NCODE_CBLOCK (newcode));
 
+    /* Set all the necessary pointers */
     BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
     NCODE_NEXT (newcode) = NCODE_NEXT (outercode);
+
+    /* Return the new Codeblock */
     DBUG_RETURN (newcode);
 }
 
-/*
-  joinPart joins a part with an inner single-generator withloop
- */
+/******************************************************************************
+ *
+ * function:
+ *   node *joinPart(node *outerpart, node *arg_info)
+ *
+ * description:
+ *   The heart of the WithloopScalarization.
+ *   This function takes a part of MG-withloop that contains exactly one Withloop
+ *   with one part and applies the above join-functions to create a single part
+ *   that iterates over both old parts' dimensions.
+ *
+ * parameters:
+ *   node *outerpart:   N_NPART
+ *   node *arg_info:    N_INFO
+ *
+ ******************************************************************************/
 node *
 joinPart (node *outerpart, node *arg_info)
 {
@@ -420,15 +672,11 @@ joinPart (node *outerpart, node *arg_info)
 
     DBUG_ENTER ("joinPart");
 
-    /*
-      innerpart = NWITH_PART(LET_EXPR(ASSIGN_INSTR(
-                  AVIS_SSAASSIGN(ID_AVIS(NCODE_CEXPR(NPART_CODE(outerpart)))))));
-    */
     innerpart = NWITH_PART (
       LET_EXPR (ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (outerpart))))));
 
     /* Make a new generator */
-    generator = joinGenerators (NPART_GEN (outerpart), NPART_GEN (innerpart), arg_info);
+    generator = joinGenerators (NPART_GEN (outerpart), NPART_GEN (innerpart));
 
     /* Make a new withid */
     withid = joinWithids (NPART_WITHID (outerpart), NPART_WITHID (innerpart), arg_info);
@@ -450,201 +698,268 @@ joinPart (node *outerpart, node *arg_info)
     DBUG_RETURN (newpart);
 }
 
+/******************************************************************************
+ *
+ * traversal functions
+ *
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLSfundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function's sole purpose is to annotate the fundes-node of the
+ *   currently traversed function so that the vardecs can be referenced later
+ *
+ * parameters:
+ *   node *arg_node:   N_FUNDEF
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
-distributePart (node *arg_node, node *arg_info)
+WLSfundef (node *arg_node, node *arg_info)
 {
-    node *res;
-    node *innerwith;
+    DBUG_ENTER ("WLSfundef");
+
+    INFO_WLS_FUNDEF (arg_info) = arg_node;
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        /* traverse block of fundef */
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLSNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   manages the WithloopScalarization by stepping through the various phases,
+ *   but before this can be done, all the codes are traversed in order to
+ *   scalerize nested withloops first.
+ *
+ * parameters:
+ *   node *arg_node:   N_Nwith
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
+node *
+WLSNwith (node *arg_node, node *arg_info)
+{
     node *tmpnode;
 
-    DBUG_ENTER ("distributePart");
+    DBUG_ENTER ("WLSNwith");
 
-    innerwith
-      = LET_EXPR (ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (arg_node)))));
+    DBUG_PRINT ("WLS", ("\nstarting with-loop scalarization in Nwith %s.",
+                        FUNDEF_NAME (arg_node)));
 
-    if (NWITH_PARTS (innerwith) == 1)
-        res = arg_node;
-    else {
-        tmpnode = DupTree (arg_node);
-        NPART_CODE (tmpnode) = DupTree (NPART_CODE (arg_node));
-        NCODE_USED (NPART_CODE (tmpnode))++;
+    /* First WLS traverses into the branches in order to scalarize and
+       fold all other With-Loops */
 
-        NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (tmpnode);
-        NPART_NEXT (arg_node) = tmpnode;
-
-        NWITH_PARTS (innerwith) = -1;
-        NPART_NEXT (NWITH_PART (innerwith)) = NULL;
-        NCODE_NEXT (NWITH_CODE (innerwith)) = NULL;
-
-        innerwith
-          = LET_EXPR (ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (tmpnode)))));
-        NWITH_PARTS (innerwith) -= 1;
-        NWITH_PART (innerwith) = NPART_NEXT (NWITH_PART (innerwith));
-        NWITH_CODE (innerwith) = NCODE_NEXT (NWITH_CODE (innerwith));
-
-        INFO_WLS_PARTS (arg_info) += 1;
-        res = arg_node;
+    /* traverse all CODES */
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
-    DBUG_RETURN (res);
-}
 
-int
-isAssignInsideBlock (node *arg_node, node *instr)
-{
-    int res = TRUE;
+    /**************************************************
 
-    DBUG_ENTER ("isAssignInsideBlock");
+        it could be a good idea to do some WLF here
 
-    if (NODE_TYPE (instr) == N_empty)
-        res = FALSE;
-    else if (arg_node == instr)
-        res = TRUE;
-    else if (ASSIGN_NEXT (instr) == NULL)
-        res = FALSE;
-    else
-        res = isAssignInsideBlock (arg_node, ASSIGN_NEXT (instr));
+    ***************************************************/
 
-    DBUG_RETURN (res);
-}
+    /***************************************************************************
+     *
+     *  PROBING
+     *
+     *  We have to find out, whether all parts can be scalarized
+     *  Here we can distinguish between conservative and agressive behaviour
+     *
+     ***************************************************************************/
 
-int
-checkExprsDependencies (node *outer, node *exprs)
-{
-    int res = TRUE;
+    tmpnode = arg_info;
+    arg_info = MakeInfo ();
+    INFO_WLS_FUNDEF (arg_info) = INFO_WLS_FUNDEF (tmpnode);
 
-    DBUG_ENTER ("checkExprsDependencies");
+    /* Check if WLS is possible vor all parts */
 
-    if (exprs == NULL)
-        res = TRUE;
-    else if (NODE_TYPE (exprs) != N_array)
-        res = FALSE; /* INTERESSANT!!! */
-    else
-        res = checkExprsDependencies (outer, EXPRS_NEXT (exprs));
+    INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
 
-    DBUG_RETURN (res);
-}
+    INFO_WLS_POSSIBLE (arg_info) = TRUE;
 
-int
-checkGeneratorDependencies (node *outer, node *inner)
-{
-    int res;
-    node *innergen;
+    if (INFO_WLS_POSSIBLE (arg_info)) {
+        WLS_PHASE (arg_info) = wls_probe;
+        INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
 
-    DBUG_ENTER ("checkGeneratorDependencies");
-
-    if (inner == NULL)
-        res = TRUE;
-    else {
-        innergen = NPART_GEN (inner);
-
-        res = TRUE;
-
-        if ((res) && (!(checkExprsDependencies (outer, NGEN_BOUND1 (innergen)))))
-            res = FALSE;
-
-        if ((res) && (!(checkExprsDependencies (outer, NGEN_BOUND2 (innergen)))))
-            res = FALSE;
-        if ((res) && (NGEN_STEP (innergen) != NULL))
-            if (!(checkExprsDependencies (outer, NGEN_STEP (innergen))))
-                res = FALSE;
-        if ((res) && (NGEN_WIDTH (innergen) != NULL))
-            if (!(checkExprsDependencies (outer, NGEN_WIDTH (innergen))))
-                res = FALSE;
-
-        if (res)
-            res = checkGeneratorDependencies (outer, NPART_NEXT (inner));
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
     }
-    DBUG_RETURN (res);
+
+    /* create a full partitioned outer Withloop */
+    if (INFO_WLS_PARTS (arg_info) < 0) {
+        /*
+
+          CODE TO CREATE A FULL PARTITIONED WITHLOOP
+
+        */
+
+        INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
+    }
+
+    /* Scalarize only complete partitions */
+    INFO_WLS_POSSIBLE (arg_info)
+      = INFO_WLS_POSSIBLE (arg_info) && (INFO_WLS_PARTS (arg_info) > 0);
+
+    /* If everything is ok, we can start phase 2 */
+    if (INFO_WLS_POSSIBLE (arg_info)) {
+
+        /***************************************************************************
+         *
+         *  DISTRIBUTION
+         *
+         *  First, we have to distribute the outer part over all
+         *  parts of the inner with-loop
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_distribute;
+
+        /* traverse all parts */
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
+        NWITH_PARTS (arg_node) = INFO_WLS_PARTS (arg_info);
+
+        /***************************************************************************
+         *
+         *  SCALARIZATION
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_scalarize;
+
+        INFO_WLS_WITHVEC (arg_info) = NULL;
+
+        /* The new shape is the concatenation of both old shapes */
+
+        NWITH_SHAPE (arg_node) = ConcatVecs (NWITH_SHAPE (arg_node),
+                                             NWITH_SHAPE (LET_EXPR (ASSIGN_INSTR (
+                                               BLOCK_INSTR (NWITH_CBLOCK (arg_node))))));
+
+        /* traverse all PARTS  */
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        /***************************************************************************
+         *
+         *  CODECORRECTION
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_codecorrect;
+
+        NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+    }
+
+    arg_info = FreeTree (arg_info);
+    arg_info = tmpnode;
+
+    DBUG_RETURN (arg_node);
 }
 
-int
-compatWLTypes (node *outerWO, node *innerWO)
-{
-    return ((NWITHOP_TYPE (outerWO) == WO_genarray)
-            && (NWITHOP_TYPE (innerWO) == WO_genarray));
-}
-
+/******************************************************************************
+ *
+ * function:
+ *   node *WLSNpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   performs the different actions that are needed to make in the four phases
+ *
+ * parameters:
+ *   node *arg_node:   N_Npart
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
 node *
 WLSNpart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLSNpart");
 
-    switch (INFO_WLS_PHASE (arg_info)) {
+    switch (WLS_PHASE (arg_info)) {
     case wls_probe:
-        if (NPART_WITHID (arg_node) != NULL) {
-            /* traverse the withid of this part */
-            NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
-        }
-
-        if (NPART_GEN (arg_node) != NULL) {
-            /* traverse into the generator of this part */
-            NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
-        }
-
-        /* Handelt es sich um eine korrekte Schachtelung? */
+        /* Check wheter this part meets all conditions for WLS */
 
         INFO_WLS_POSSIBLE (arg_info)
           = (INFO_WLS_POSSIBLE (arg_info) &&
-             /* Ist der Ausdruck überhaupt nichtskalar? */
+             /* Is the inner CEXPR a nonscalar? */
              (TYPES_DIM (VARDEC_TYPE (
                 AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node))))))
               > 0)
              &&
 
-             /* Ist der Ausdruck eine With-Loop? */
+             /* Is the inner CEXPR computed by a withloop? */
              (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (
                 AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))))
               == N_Nwith)
              &&
 
-             /* Ist die innere WL vollständig partitioniert? */
+             /* Is the inner WL fully partitioned? */
              (NWITH_PARTS (LET_EXPR (ASSIGN_INSTR (
                 AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))))
               > 0)
              &&
 
-             /* Ist der innere Withloop wirklich innen? */
+             /* Is the inner Withloop really inside of this part? */
              (isAssignInsideBlock (AVIS_SSAASSIGN (
                                      ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))),
                                    BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (arg_node)))))
              &&
 
-             /* Ist vor der inneren With-Loop wirklich kein Code mehr? */
-             /* Hier könnte evtl. noch aggressiv optimiert werden! */
+             /* Is this a perfect nesting of WLs? */
              (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (arg_node)))
               == AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))
              &&
 
-             /* Hängt der innere Generator nicht vom äußeren Code ab? */
+             /* Is the inner Generator independent from the outer? */
              (checkGeneratorDependencies (arg_node,
                                           NWITH_PART (LET_EXPR (
                                             ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (
                                               NCODE_CEXPR (NPART_CODE (arg_node)))))))))
              &&
 
-             /* Haben alle inneren With-Loops die gleiche Dimensionalität? */
-             (TRUE) &&
-
-             /* Haben beide Withloops einen kompatiblen Typ? */
+             /* Are both WLs of compatible Type? */
              (compatWLTypes (INFO_WLS_WITHOP (arg_info),
                              NWITH_WITHOP (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
                                ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node))))))))));
 
-        if (NPART_NEXT (arg_node) != NULL) {
-            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
-        }
-        break;
-
-    case wls_transform:
-        arg_node = joinPart (arg_node, arg_info);
-
-        if (NPART_NEXT (arg_node) != NULL) {
+        /* Check the next part for all conditions */
+        if ((INFO_WLS_POSSIBLE (arg_info)) && (NPART_NEXT (arg_node) != NULL)) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
         }
         break;
 
     case wls_distribute:
         arg_node = distributePart (arg_node, arg_info);
+
+        if (NPART_NEXT (arg_node) != NULL) {
+            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        }
+        break;
+
+    case wls_scalarize:
+        arg_node = joinPart (arg_node, arg_info);
 
         if (NPART_NEXT (arg_node) != NULL) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
@@ -706,68 +1021,4 @@ WithloopScalarization (node *fundef, node *modul)
     }
 
     DBUG_RETURN (fundef);
-}
-
-/*
- * TO BE REMOVED
- */
-
-node *
-WLSNwithid (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLSNwithid");
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-WLSNgenerator (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLSNgenerator");
-
-    if (NGEN_BOUND1 (arg_node) != NULL) {
-        Trav (NGEN_BOUND1 (arg_node), arg_info);
-    }
-    if (NGEN_BOUND2 (arg_node) != NULL) {
-        Trav (NGEN_BOUND2 (arg_node), arg_info);
-    }
-    if (NGEN_STEP (arg_node) != NULL) {
-        Trav (NGEN_STEP (arg_node), arg_info);
-    }
-    if (NGEN_WIDTH (arg_node) != NULL) {
-        Trav (NGEN_WIDTH (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-WLSNwithop (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLSNwithop");
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-WLSNcode (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLSNcode");
-
-    /* traverse expression */
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-    }
-
-    /* traverse code block */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
-
-    /* traverse expression */
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
 }
