@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/18 15:11:14  dkr
+ * SAC_ND_ALLOC__DESC_AND_DATA added
+ *
  * Revision 1.3  2003/06/17 18:54:15  dkr
  * comment in header modified
  *
@@ -33,6 +36,7 @@
 #endif
 
 #define TAGGED_ARRAYS
+#define SAC_DO_MULTITHREAD 1
 #include "sac.h"
 
 SAC_ND_A_DESC ((nt, (_SHP_, (_HID_, (_UNQ_, )))))
@@ -78,13 +82,16 @@ SAC_ND_PARAM_in ((nt, (_SHP_, (_HID_, (_UNQ_, )))), int) SAC_ND_PARAM_in_nodesc 
             SAC_ND_DECL_PARAM_inout ((nt, (_SHP_, (_HID_, (_UNQ_, )))), int)
 
               SAC_ND_ALLOC ((nt, (_SHP_, (_HID_, (_UNQ_, )))), rc, get_dim, set_shape_icm)
-                SAC_ND_ALLOC_BEGIN ((nt, (_SHP_, (_HID_, (_UNQ_, )))), rc, dim)
-                  SAC_ND_ALLOC_END ((nt, (_SHP_, (_HID_, (_UNQ_, )))), rc, dim)
-                    SAC_ND_FREE ((nt, (_SHP_, (_HID_, (_UNQ_, )))), freefun)
-                      SAC_ND_ALLOC__DATA ((nt, (_SHP_, (_HID_, (_UNQ_, )))))
-                        SAC_ND_FREE__DATA ((nt, (_SHP_, (_HID_, (_UNQ_, )))), freefun)
-                          SAC_ND_ALLOC__DESC ((nt, (_SHP_, (_HID_, (_UNQ_, )))), dim)
-                            SAC_ND_FREE__DESC ((nt, (_SHP_, (_HID_, (_UNQ_, )))))
+                SAC_ND_ALLOC_BEGIN (
+                  (nt, (_SHP_, (_HID_, (_UNQ_, )))),
+                  rc, dim) SAC_ND_ALLOC_END ((nt, (_SHP_, (_HID_, (_UNQ_, )))), rc, dim)
+                  SAC_ND_ALLOC__DESC ((nt, (_SHP_, (_HID_, (_UNQ_, )))), dim)
+                    SAC_ND_ALLOC__DATA ((nt, (_SHP_, (_HID_, (_UNQ_, )))))
+                      SAC_ND_ALLOC__DESC_AND_DATA ((nt, (_SHP_, (_HID_, (_UNQ_, )))), dim)
+
+                        SAC_ND_FREE ((nt, (_SHP_, (_HID_, (_UNQ_, )))), freefun)
+                          SAC_ND_FREE__DESC ((nt, (_SHP_, (_HID_, (_UNQ_, )))))
+                            SAC_ND_FREE__DATA ((nt, (_SHP_, (_HID_, (_UNQ_, )))), freefun)
 
                               SAC_ND_ASSIGN__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))),
                                                    (from_nt, (_SHP_, (_HID_, (_UNQ_, )))),
@@ -119,3 +126,6 @@ SAC_IS_LASTREF__BLOCK_END
                                (from_nt, (_SHP_, (_HID_, (_UNQ_, )))))
 SAC_IS_REUSED__BLOCK_END
 ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), (from_nt, (_SHP_, (_HID_, (_UNQ_, )))))
+
+  SAC_MT_SPMD_ARG_in (int, (nt, (_SHP_, (_HID_, (_UNQ_, )))))
+    SAC_MT_SPMD_ARG_out (int, (nt, (_SHP_, (_HID_, (_UNQ_, )))))
