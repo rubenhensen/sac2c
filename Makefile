@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  1999/07/30 13:49:50  jhs
+# Added concurrent_lib.o
+#
 # Revision 2.13  1999/07/27 08:33:19  jhs
 # Added spmd_cons.o.
 #
@@ -253,7 +256,8 @@ CONCURRENT= src/concurrent/concurrent.o src/concurrent/scheduling.o  \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o     \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o    \
             src/concurrent/sync_opt.o src/concurrent/schedule.o      \
-            src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o
+            src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o    \
+            src/concurrent/concurrent_lib.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
