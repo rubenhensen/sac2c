@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.12  2003/04/10 11:56:03  dkr
+ * SSAArrayST2ArrayInt modified: returns NULL if argument is a structural
+ * constant only
+ *
  * Revision 1.11  2002/10/09 02:11:39  dkr
  * constants modul used instead of ID/ARRAY_CONSTVEC
  *
@@ -439,11 +443,15 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
         }
     } else if (NODE_TYPE (arrayn) == N_array) {
         tmp_co = COAST2Constant (arrayn);
-        tmp = COGetDataVec (tmp_co);
-        for (i = 0; i < shape; i++) {
-            (*iarray)[i] = tmp[i];
+        if (tmp_co != NULL) {
+            tmp = COGetDataVec (tmp_co);
+            for (i = 0; i < shape; i++) {
+                (*iarray)[i] = tmp[i];
+            }
+            tmp_co = COFreeConstant (tmp_co);
+        } else {
+            *iarray = Free (*iarray);
         }
-        tmp_co = COFreeConstant (tmp_co);
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
         DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
 
@@ -453,7 +461,7 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
                 (*iarray)[i] = tmp[i];
             }
         } else {
-            *iarray = NULL;
+            *iarray = Free (*iarray);
         }
     }
 
