@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  2003/09/13 13:45:34  dkr
+ * COMPSpmdFunReturn(): NT-tags added
+ *
  * Revision 1.71  2003/08/04 18:04:58  dkr
  * some modifications for MT done
  *
@@ -1360,6 +1363,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
                          "no N_arg node found in argtab");
+
             tag = argtab->tag[i];
             type = ARG_TYPE (argtab->ptr_in[i]);
             name = ARG_NAME (argtab->ptr_in[i]);
@@ -1440,16 +1444,16 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
         types *type;
 
         if (argtab->ptr_out[i] != NULL) {
-            id = MakeArgNode (i, NULL);
             type = argtab->ptr_out[i];
+            id = MakeArgNode (i, NULL);
         } else {
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
                          "no N_arg node found in argtab");
 
             name = ARG_NAME (argtab->ptr_in[i]);
-            id = MakeId_Copy (STR_OR_EMPTY (name));
             type = ARG_TYPE (argtab->ptr_in[i]);
+            id = MakeId_Copy_NT (STR_OR_EMPTY (name), type);
         }
 
         icm_args
@@ -1757,7 +1761,7 @@ CheckAp (node *ap, node *arg_info)
  *         at the end of this chain icm_args will be concatenated.
  *
  * ### CODE NOT BRUSHED YET ###
- * ### USED BY NEW MT ONLY ####
+ * ### USED BY MT ONLY ####
  *
  ******************************************************************************/
 
@@ -1797,7 +1801,7 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
  *         at the end of this chain icm_args will be concatenated.
  *
  * ### CODE NOT BRUSHED YET ###
- * ### USED BY NEW MT ONLY ####
+ * ### USED BY MT ONLY ####
  *
  ******************************************************************************/
 
@@ -2568,7 +2572,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
                          "no N_id node found!");
 
             new_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]),
-                                  MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
+                                  MakeExprs (DupId_NT (EXPRS_EXPR (ret_exprs)),
 #if 0
                  MakeExprs( MakeArgNode( i, NULL),
 #endif
