@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/24 18:56:18  sah
+ * COMPILES
+ *
  * Revision 1.6  2004/11/09 01:14:55  sah
  * added a break in default case
  *
@@ -45,14 +48,15 @@ GetCCCall ()
 
     DBUG_ENTER ("GetCCCall");
 
-    buffer = StrBufCreate (128);
+    buffer = ILIBstrBufCreate (128);
 
-    StrBufprintf (buffer, "%s %s %s %s -L%s ", config.cc, config.ccflags, config.ldflags,
-                  config.ccdir, tmp_dirname);
+    ILIBstrBufPrintf (buffer, "%s %s %s %s -L%s ", global.config.cc,
+                      global.config.ccflags, global.config.ldflags, global.config.ccdir,
+                      global.tmp_dirname);
 
-    result = StrBuf2String (buffer);
+    result = ILIBstrBuf2String (buffer);
 
-    buffer = StrBufFree (buffer);
+    buffer = ILIBstrBufFree (buffer);
 
     DBUG_RETURN (result);
 }
@@ -62,18 +66,18 @@ AddOptimizeFlag (str_buf *buffer)
 {
     DBUG_ENTER ("AddOptimizeFlag");
 
-    switch (cc_optimize) {
+    switch (global.cc_optimize) {
     case 0:
-        StrBufprintf (buffer, "%s ", config.opt_O0);
+        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O0);
         break;
     case 1:
-        StrBufprintf (buffer, "%s ", config.opt_O1);
+        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O1);
         break;
     case 2:
-        StrBufprintf (buffer, "%s ", config.opt_O2);
+        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O2);
         break;
     case 3:
-        StrBufprintf (buffer, "%s ", config.opt_O3);
+        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O3);
         break;
     default:
         break;
@@ -87,8 +91,8 @@ AddDebugFlag (str_buf *buffer)
 {
     DBUG_ENTER ("AddDebugFlag");
 
-    if (cc_debug) {
-        StrBufprintf (buffer, "%s ", config.opt_g);
+    if (global.cc_debug) {
+        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_g);
     }
 
     DBUG_VOID_RETURN;
@@ -102,14 +106,14 @@ GetCCFlags ()
 
     DBUG_ENTER ("GetCCFlags");
 
-    buffer = StrBufCreate (1024);
+    buffer = ILIBstrBufCreate (1024);
 
     AddOptimizeFlag (buffer);
     AddDebugFlag (buffer);
 
-    result = StrBuf2String (buffer);
+    result = ILIBstrBuf2String (buffer);
 
-    buffer = StrBufFree (buffer);
+    buffer = ILIBstrBufFree (buffer);
 
     DBUG_RETURN (result);
 }
@@ -119,7 +123,7 @@ AddCCLibs (str_buf *buffer)
 {
     DBUG_ENTER ("AddCCLibs");
 
-    StrBufprintf (buffer, "%s ", config.cclink);
+    ILIBstrBufPrintf (buffer, "%s ", global.config.cclink);
 
     DBUG_VOID_RETURN;
 }
@@ -129,23 +133,23 @@ AddSacLibs (str_buf *buffer)
 {
     DBUG_ENTER ("AddSacLibs");
 
-    if (optimize & OPT_PHM) {
-        if (mtmode == MT_none) {
-            if (runtimecheck & RUNTIMECHECK_HEAP) {
-                StrBufprint (buffer, "-lsac_heapmgr_diag ");
+    if (global.optimize.dophm) {
+        if (global.mtmode == MT_none) {
+            if (global.runtimecheck.heap) {
+                ILIBstrBufPrint (buffer, "-lsac_heapmgr_diag ");
             } else {
-                StrBufprint (buffer, "-lsac_heapmgr ");
+                ILIBstrBufPrint (buffer, "-lsac_heapmgr ");
             }
         } else {
-            if (runtimecheck & RUNTIMECHECK_HEAP) {
-                StrBufprint (buffer, "-lsac_heapmgr_mt_diag ");
+            if (global.runtimecheck.heap) {
+                ILIBstrBufPrint (buffer, "-lsac_heapmgr_mt_diag ");
             } else {
-                StrBufprint (buffer, "-lsac_heapmgr_mt ");
+                ILIBstrBufPrint (buffer, "-lsac_heapmgr_mt ");
             }
         }
     }
 
-    StrBufprint (buffer, "-lsac ");
+    ILIBstrBufPrint (buffer, "-lsac ");
 
     DBUG_VOID_RETURN;
 }
@@ -155,14 +159,14 @@ AddEfenceLib (str_buf *buffer)
 {
     DBUG_ENTER ("AddEfenceLib");
 
-    if (use_efence) {
+    if (global.use_efence) {
         char *efence;
 
-        efence = FindFile (SYSTEMLIB_PATH, "libefence.a");
+        efence = FMGRfindFile (PK_systemlib_path, "libefence.a");
         if (efence == NULL) {
             SYSWARN (("Unable to find `libefence.a' in SYSTEMLIB_PATH"));
         } else {
-            StrBufprintf (buffer, "%s ", efence);
+            ILIBstrBufPrintf (buffer, "%s ", efence);
         }
     }
 
@@ -177,21 +181,21 @@ GetLibs ()
 
     DBUG_ENTER ("GetLibs");
 
-    buffer = StrBufCreate (256);
+    buffer = ILIBstrBufCreate (256);
 
     AddSacLibs (buffer);
     AddCCLibs (buffer);
     AddEfenceLib (buffer);
 
-    result = StrBuf2String (buffer);
+    result = ILIBstrBuf2String (buffer);
 
-    buffer = StrBufFree (buffer);
+    buffer = ILIBstrBufFree (buffer);
 
     DBUG_RETURN (result);
 }
 
 static void *
-BuildDepLibsStringProg (const char *lib, SStype_t kind, void *rest)
+BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 {
     char *result;
     char *libname;
@@ -199,32 +203,32 @@ BuildDepLibsStringProg (const char *lib, SStype_t kind, void *rest)
     DBUG_ENTER ("BuildDepLibsStringProg");
 
     switch (kind) {
-    case SS_saclib:
+    case STRS_saclib:
         /*
          * lookup lib<lib>.a
          */
-        libname = Malloc (sizeof (char) * (strlen (lib) + 6));
+        libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
-        result = FindFile (MODIMP_PATH, libname);
-        libname = Free (libname);
+        result = FMGRfindFile (PK_modimp_path, libname);
+        libname = ILIBfree (libname);
         break;
-    case SS_extlib:
-        result = Malloc (sizeof (char) * (strlen (lib) + 3));
+    case STRS_extlib:
+        result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
         sprintf (result, "-l%s", lib);
         break;
     default:
-        result = StringCopy ("");
+        result = ILIBstringCopy ("");
         break;
     }
 
     if (rest != NULL) {
         char *temp
-          = Malloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+          = ILIBmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 
-        result = Free (result);
-        rest = Free (rest);
+        result = ILIBfree (result);
+        rest = ILIBfree (rest);
         result = temp;
     }
 
@@ -238,12 +242,12 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     DBUG_ENTER ("InvokeCCProg");
 
-    deplibs = (char *)SSFold (&BuildDepLibsStringProg, deps, StringCopy (""));
+    deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, ILIBstringCopy (""));
 
-    SystemCall ("%s %s -o %s %s %s %s", cccall, ccflags, outfilename, cfilename, deplibs,
-                libs);
+    ILIBsystemCall ("%s %s -o %s %s %s %s", cccall, ccflags, global.outfilename,
+                    global.cfilename, deplibs, libs);
 
-    deplibs = Free (deplibs);
+    deplibs = ILIBfree (deplibs);
 
     DBUG_VOID_RETURN;
 }
@@ -253,32 +257,32 @@ InvokeCCModule (char *cccall, char *ccflags)
 {
     DBUG_ENTER ("InvokeCCModule");
 
-    SystemCall ("cd %s; %s %s -c *.c", tmp_dirname, cccall, ccflags);
+    ILIBsystemCall ("cd %s; %s %s -c *.c", global.tmp_dirname, cccall, ccflags);
 
     DBUG_VOID_RETURN;
 }
 
 void
-InvokeCC (stringset_t *deps)
+CCMinvokeCC (stringset_t *deps)
 {
     char *ccflags;
     char *cccall;
     char *libs;
 
-    DBUG_ENTER ("InvokeCC");
+    DBUG_ENTER ("CCMinvokeCC");
 
     cccall = GetCCCall ();
     ccflags = GetCCFlags ();
     libs = GetLibs ();
 
-    if (filetype == F_prog)
+    if (global.filetype == F_prog)
         InvokeCCProg (cccall, ccflags, libs, deps);
     else
         InvokeCCModule (cccall, ccflags);
 
-    cccall = Free (cccall);
-    ccflags = Free (ccflags);
-    libs = Free (libs);
+    cccall = ILIBfree (cccall);
+    ccflags = ILIBfree (ccflags);
+    libs = ILIBfree (libs);
 
     DBUG_VOID_RETURN;
 }

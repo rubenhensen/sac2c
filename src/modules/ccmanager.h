@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 18:56:18  sah
+ * COMPILES
+ *
  * Revision 1.3  2004/11/22 16:57:41  ktr
  * SACDevCamp 04 Ismop
  *
@@ -26,6 +29,7 @@
  * Prefix: CCM
  *
  *****************************************************************************/
+
 extern void CCMinvokeCC (stringset_t *deps);
 
 #endif /* _SAC_CCMANAGER_H_ */
