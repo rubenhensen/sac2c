@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.47  2000/02/21 12:49:48  jhs
+ * Removed superfluous variable nametab and replaced it's only usage with
+ * mdb_nodetype, already used at other places within this file
+ *
  * Revision 2.46  2000/02/11 18:31:27  dkr
  * PrintNode() added
  *
@@ -242,11 +246,6 @@
            ? ("ACL_irregular")                                                           \
            : ((arg == ACL_offset) ? ("ACL_offset:")                                      \
                                   : ((arg == ACL_const) ? ("ACL_const :") : (""))))
-
-#define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
-char *nametab[] = {
-#include "node_info.mac"
-};
 
 #define IV(a) ((a) == 0) ? ("") : ("%s + ", VARDEC_NAME ())
 
@@ -492,7 +491,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                  */
             case ACL_unknown:
 #if 0
-        fprintf(outfile,"ACCESS_IV: %s", nametab[NODE_TYPE(ACCESS_IV(access))]);
+        fprintf(outfile,"ACCESS_IV: %s", mdb_nodetype[NODE_TYPE(ACCESS_IV(access))]);
 #else
                 fprintf (outfile, "psi  ( %s ", VARDEC_NAME (ACCESS_IV (access)));
                 fprintf (outfile, ", %s)", VARDEC_NAME (ACCESS_ARRAY (access)));
