@@ -9,10 +9,9 @@ ND_CREATE__ARRAY__DATA( (A,(AKS,(NHD,(NUQ,)))) 1 3 7 8 9 copyfun )
 clear-indent !
 
 MT_SPMD_FUN_DEC( myspmdfun originalfun 5 in float arg1 out double arg2 in_rc int* arg3 out_rc float* arg4 inout_rc double* arg5 )
-MT_START_SYNCBLOCK( 0 2 in_rc float* arg1 in int arg3 )
+MT_SYNCBLOCK_BEGIN( 0 2 in_rc float arg1 in int arg3 )
+MT_SYNCBLOCK_END( 0 2 in_rc float arg1 in int arg3 )
 MT_SYNC_NONFOLD( 0 )
-MT_CONTINUE( 0 0 )
-MT_START_SYNCBLOCK( 0 2 in float arg1 in_rc int* arg3 )
 MT_SYNC_ONEFOLD( 0 double arg2 tmp foldop )
 MT_SPMD_FUN_RET( 0 2 out arg2 out_rc arg4 )
 clear-indent !
