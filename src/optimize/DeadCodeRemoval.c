@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/02/13 16:37:42  asi
+ * Revision 1.2  1995/02/28 18:33:20  asi
+ * changed arguments for functioncalls ...Mask(..)
+ *
+ * Revision 1.1  1995/02/13  16:37:42  asi
  * Initial revision
  *
  *
@@ -70,12 +73,13 @@ DEADfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DEADfundef");
     DBUG_PRINT ("DEAD", ("Optimizing function: %s", arg_node->info.types->id));
+    VARNO = arg_node->varno;
     arg_info->nodetype = N_fundef;
     if (arg_node->node[0] != NULL) {
         arg_info->lineno = 0;
-        arg_info->mask[0] = GenMask ();
-        arg_info->mask[1] = GenMask ();
-        arg_info->mask[2] = GenMask ();
+        arg_info->mask[0] = GenMask (VARNO);
+        arg_info->mask[1] = GenMask (VARNO);
+        arg_info->mask[2] = GenMask (VARNO);
         arg_node->node[0]
           = Trav (arg_node->node[0], arg_info); /* Trav body of function */
         free (arg_info->mask[0]);               /* Gathering loop infos */
@@ -83,13 +87,14 @@ DEADfundef (node *arg_node, node *arg_info)
         free (arg_info->mask[2]);
 
         arg_info->lineno = 1;
-        arg_info->mask[0] = GenMask ();
-        arg_info->mask[1] = GenMask ();
-        arg_info->mask[2] = GenMask ();
+        arg_info->mask[0] = GenMask (VARNO);
+        arg_info->mask[1] = GenMask (VARNO);
+        arg_info->mask[2] = GenMask (VARNO);
         arg_node->node[0]
-          = Trav (arg_node->node[0], arg_info);           /* Trav body of function */
-        MinusMask (arg_node->mask[0], arg_info->mask[0]); /* with Dead-Code-Removal */
-        MinusMask (arg_node->mask[1], arg_info->mask[1]);
+          = Trav (arg_node->node[0], arg_info); /* Trav body of function */
+        MinusMask (arg_node->mask[0], arg_info->mask[0],
+                   VARNO); /* with Dead-Code-Removal */
+        MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
         free (arg_info->mask[0]);
         free (arg_info->mask[1]);
         free (arg_info->mask[2]);
@@ -137,7 +142,7 @@ DEADvardec (node *arg_node, node *arg_info)
             arg_node->nnode--;
     }
     if (arg_info->mask[1][arg_node->lineno] == 0) {
-        deadvar++;
+        dead_var++;
         DBUG_PRINT ("DEAD",
                     ("Variable decleration %s removed", arg_node->info.types->id));
         return_node = arg_node->node[0];
@@ -155,8 +160,9 @@ DEADvardec (node *arg_node, node *arg_info)
  *  description   : if arg_info->lineno == 0 this function gathers informations about
  *                  used variables in the further controll flow,
  *                  otherwise the function performs dead code removal with this
- * assignment. global vars   : syntax_tree, info_node, optno internal funs : --- external
- * funs : Trav, PlusMask, OrMask, MinusMask, DupMask, GenMask, CheckMask, If3_2Mask, free
+ * assignment. global vars   : syntax_tree, info_node, dead_expr internal funs : ---
+ *  external funs : Trav, PlusMask, OrMask, MinusMask, DupMask, GenMask, CheckMask,
+ *                  If3_2Mask, free
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -181,98 +187,98 @@ DEADassign (node *arg_node, node *arg_info)
     switch (arg_node->node[0]->nodetype) {
     case N_return:
         DBUG_EXECUTE ("DEAD", if ((arg_info->lineno) == 1) arg_node->mask[2]
-                              = DupMask (arg_info->mask[2]););
-        OrMask (arg_info->mask[2], arg_node->mask[1]);
+                              = DupMask (arg_info->mask[2], VARNO););
+        OrMask (arg_info->mask[2], arg_node->mask[1], VARNO);
         break;
     case N_do:
     case N_while:
         if (arg_info->lineno != 0) {
-            if (CheckMask (arg_info->mask[2], arg_node->mask[0])) {
+            if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO)) {
                 DBUG_PRINT ("DEAD", ("Removed node: %08x in line %d", arg_node,
                                      arg_node->lineno));
-                PlusMask (arg_info->mask[0], arg_node->mask[0]);
-                PlusMask (arg_info->mask[1], arg_node->mask[1]);
+                PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+                PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
                 if (olditype != N_fundef)
-                    MinusMask (arg_info->mask[2], arg_node->mask[1]);
+                    MinusMask (arg_info->mask[2], arg_node->mask[1], VARNO);
                 return_node = arg_node->node[1]; /* remove this assignment */
                 arg_node->node[1] = NULL;
                 arg_node->nnode = 1;
                 FreeTree (arg_node);
-                optno++;
+                dead_expr++;
             } else {
                 olditype = arg_node->node[0]->nodetype;
-                oldmask[2] = DupMask (arg_info->mask[2]);
+                oldmask[2] = DupMask (arg_info->mask[2], VARNO);
                 oldmask[0] = arg_info->mask[0]; /* Save old dead def. variables */
-                arg_info->mask[0] = GenMask ();
+                arg_info->mask[0] = GenMask (VARNO);
                 oldmask[1] = arg_info->mask[1]; /* Save old dead used variables */
-                arg_info->mask[1] = GenMask ();
-                OrMask (arg_info->mask[2], arg_node->mask[2]);
+                arg_info->mask[1] = GenMask (VARNO);
+                OrMask (arg_info->mask[2], arg_node->mask[2], VARNO);
                 if (olditype == N_do)
-                    OrMask (arg_info->mask[2], arg_node->node[0]->mask[1]);
+                    OrMask (arg_info->mask[2], arg_node->node[0]->mask[1], VARNO);
 
                 arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
                 /* consider removed definitions in current and previous def_mask */
-                MinusMask (arg_node->mask[0], arg_info->mask[0]);
-                PlusMask (arg_info->mask[0], oldmask[0]);
+                MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
+                PlusMask (arg_info->mask[0], oldmask[0], VARNO);
                 free (oldmask[0]);
                 /* consider removed usages in current and previous used_mask */
-                MinusMask (arg_node->mask[1], arg_info->mask[1]);
-                PlusMask (arg_info->mask[1], oldmask[1]);
+                MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+                PlusMask (arg_info->mask[1], oldmask[1], VARNO);
                 free (oldmask[1]);
                 if (olditype != N_do)
-                    OrMask (arg_info->mask[2], oldmask[2]);
+                    OrMask (arg_info->mask[2], oldmask[2], VARNO);
                 if (olditype == N_while)
-                    OrMask (arg_info->mask[2], arg_node->node[0]->mask[1]);
-                DBUG_EXECUTE ("DEAD", oldmask[1] = DupMask (arg_node->mask[2]););
+                    OrMask (arg_info->mask[2], arg_node->node[0]->mask[1], VARNO);
+                DBUG_EXECUTE ("DEAD", oldmask[1] = DupMask (arg_node->mask[2], VARNO););
                 free (arg_node->mask[2]);
                 arg_node->mask[2] = NULL;
                 DBUG_EXECUTE ("DEAD", arg_node->mask[2] = oldmask[1];);
             }
         } else {
-            oldmask[2] = DupMask (arg_info->mask[2]);
+            oldmask[2] = DupMask (arg_info->mask[2], VARNO);
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-            OrMask (arg_info->mask[2], oldmask[2]);
-            arg_node->mask[2] = DupMask (arg_info->mask[2]);
+            OrMask (arg_info->mask[2], oldmask[2], VARNO);
+            arg_node->mask[2] = DupMask (arg_info->mask[2], VARNO);
         }
         break;
     case N_cond:
-        if (CheckMask (arg_info->mask[2], arg_node->mask[0]) && arg_info->lineno) {
+        if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && arg_info->lineno) {
             DBUG_PRINT ("DEAD",
                         ("Removed node: %08x in line %d", arg_node, arg_node->lineno));
-            PlusMask (arg_info->mask[0], arg_node->mask[0]);
-            PlusMask (arg_info->mask[1], arg_node->mask[1]);
+            PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+            PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
             if (olditype != N_fundef)
-                MinusMask (arg_info->mask[2], arg_node->mask[1]);
+                MinusMask (arg_info->mask[2], arg_node->mask[1], VARNO);
             return_node = arg_node->node[1]; /* remove this assignment */
             arg_node->node[1] = NULL;
             arg_node->nnode = 1;
             FreeTree (arg_node);
-            optno++;
+            dead_expr++;
         } else {
             DBUG_EXECUTE ("DEAD", if ((arg_info->lineno) == 1) arg_node->mask[2]
-                                  = DupMask (arg_info->mask[2]););
+                                  = DupMask (arg_info->mask[2], VARNO););
             DBUG_ASSERT ((arg_node->node[0] != NULL), "While-expr. without body.");
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         }
         break;
     default:
-        if (CheckMask (arg_info->mask[2], arg_node->mask[0]) && arg_info->lineno) {
+        if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && arg_info->lineno) {
             DBUG_PRINT ("DEAD",
                         ("Removed node: %08x in line %d", arg_node, arg_node->lineno));
-            PlusMask (arg_info->mask[0], arg_node->mask[0]);
-            PlusMask (arg_info->mask[1], arg_node->mask[1]);
+            PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+            PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
             if (olditype != N_fundef)
-                MinusMask (arg_info->mask[2], arg_node->mask[1]);
+                MinusMask (arg_info->mask[2], arg_node->mask[1], VARNO);
             return_node = arg_node->node[1]; /* remove this assignment */
             arg_node->node[1] = NULL;
             arg_node->nnode = 1;
             FreeTree (arg_node);
-            optno++;
+            dead_expr++;
         } else {
             DBUG_EXECUTE ("DEAD", if ((arg_info->lineno) == 1) arg_node->mask[2]
-                                  = DupMask (arg_info->mask[2]););
-            If3_2Mask (arg_info->mask[2], arg_node->mask[1], arg_node->mask[0]);
+                                  = DupMask (arg_info->mask[2], VARNO););
+            If3_2Mask (arg_info->mask[2], arg_node->mask[1], arg_node->mask[0], VARNO);
         }
     }
     DBUG_RETURN (return_node);
@@ -325,50 +331,52 @@ DEADcond (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DEADcond");
     if (arg_info->lineno == 0) {
-        oldmask[2] = DupMask (arg_info->mask[2]);
-        oldmask[3] = DupMask (arg_info->mask[2]);
+        oldmask[2] = DupMask (arg_info->mask[2], VARNO);
+        oldmask[3] = DupMask (arg_info->mask[2], VARNO);
         arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav then-subtree */
-        OrMask (oldmask[3], arg_info->mask[2]);
+        OrMask (oldmask[3], arg_info->mask[2], VARNO);
         arg_info->mask[2] = oldmask[2];
         arg_node->node[2] = Trav (arg_node->node[2], arg_info); /* Trav else-subtree */
-        OrMask (arg_info->mask[2], oldmask[3]);
+        OrMask (arg_info->mask[2], oldmask[3], VARNO);
         free (oldmask[3]);
-        OrMask (arg_info->mask[2], arg_node->mask[1]);
+        OrMask (arg_info->mask[2], arg_node->mask[1], VARNO);
     } else {
-        oldmask[3] = DupMask (arg_info->mask[2]);
+        oldmask[3] = DupMask (arg_info->mask[2], VARNO);
         if (arg_node->node[1] != NULL) {
-            if (MaskIsNotZero (arg_node->node[1]->mask[0])
-                && CheckMask (arg_info->mask[2], arg_node->node[1]->mask[0])) {
+            if (MaskIsNotZero (arg_node->node[1]->mask[0], VARNO)
+                && CheckMask (arg_info->mask[2], arg_node->node[1]->mask[0], VARNO)) {
                 FreeTree (arg_node->node[1]->node[0]);
                 arg_node->node[1]->node[0] = MakeNode (N_empty);
-                PlusMask (arg_info->mask[0], arg_node->node[1]->mask[0]);
-                PlusMask (arg_info->mask[1], arg_node->node[1]->mask[1]);
-                MinusMask (arg_node->node[1]->mask[0], arg_node->node[1]->mask[0]);
-                MinusMask (arg_node->node[1]->mask[1], arg_node->node[1]->mask[1]);
-                DBUG_EXECUTE ("DEAD", arg_node->node[1]->mask[2] = DupMask (oldmask[3]););
-                optno++;
+                PlusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
+                PlusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
+                MinusMask (arg_node->node[1]->mask[0], arg_node->node[1]->mask[0], VARNO);
+                MinusMask (arg_node->node[1]->mask[1], arg_node->node[1]->mask[1], VARNO);
+                DBUG_EXECUTE ("DEAD",
+                              arg_node->node[1]->mask[2] = DupMask (oldmask[3], VARNO););
+                dead_expr++;
             } else {
                 /* store later used variables in node */
-                DBUG_EXECUTE ("DEAD", arg_node->node[1]->mask[2] = DupMask (oldmask[3]););
+                DBUG_EXECUTE ("DEAD",
+                              arg_node->node[1]->mask[2] = DupMask (oldmask[3], VARNO););
                 /* save old dead def. variables */
                 oldmask[0] = arg_info->mask[0];
                 /* and gather a new set */
-                arg_info->mask[0] = GenMask ();
+                arg_info->mask[0] = GenMask (VARNO);
                 /* save old dead used variables */
                 oldmask[1] = arg_info->mask[1];
                 /* and gather a new set */
-                arg_info->mask[1] = GenMask ();
+                arg_info->mask[1] = GenMask (VARNO);
 
                 arg_node->node[1]
                   = Trav (arg_node->node[1], arg_info); /* Trav then-subtree */
 
                 /* consider removed definitions in current and lokal def_mask */
-                MinusMask (arg_node->node[1]->mask[0], arg_info->mask[0]);
-                PlusMask (arg_info->mask[0], oldmask[0]);
+                MinusMask (arg_node->node[1]->mask[0], arg_info->mask[0], VARNO);
+                PlusMask (arg_info->mask[0], oldmask[0], VARNO);
                 free (oldmask[0]);
                 /* consider removed usages in current and lokal used_mask */
-                MinusMask (arg_node->node[1]->mask[1], arg_info->mask[1]);
-                PlusMask (arg_info->mask[1], oldmask[1]);
+                MinusMask (arg_node->node[1]->mask[1], arg_info->mask[1], VARNO);
+                PlusMask (arg_info->mask[1], oldmask[1], VARNO);
                 free (oldmask[1]);
                 /* save later used variables for then part of the condition */
                 oldmask[2] = arg_info->mask[2];
@@ -376,49 +384,51 @@ DEADcond (node *arg_node, node *arg_info)
         }
         if (arg_node->node[2] != NULL) {
             /* later used vaiables are the same in the else- as in the then-subtree */
-            arg_info->mask[2] = DupMask (oldmask[3]);
-            if (MaskIsNotZero (arg_node->node[2]->mask[0])
-                && CheckMask (arg_info->mask[2], arg_node->node[2]->mask[0])) {
+            arg_info->mask[2] = DupMask (oldmask[3], VARNO);
+            if (MaskIsNotZero (arg_node->node[2]->mask[0], VARNO)
+                && CheckMask (arg_info->mask[2], arg_node->node[2]->mask[0], VARNO)) {
                 FreeTree (arg_node->node[2]->node[0]);
                 arg_node->node[2]->node[0] = MakeNode (N_empty);
-                PlusMask (arg_info->mask[0], arg_node->node[2]->mask[0]);
-                PlusMask (arg_info->mask[1], arg_node->node[2]->mask[1]);
-                MinusMask (arg_node->node[2]->mask[0], arg_node->node[2]->mask[0]);
-                MinusMask (arg_node->node[2]->mask[1], arg_node->node[2]->mask[1]);
-                DBUG_EXECUTE ("DEAD", arg_node->node[2]->mask[2] = DupMask (oldmask[3]););
-                optno++;
+                PlusMask (arg_info->mask[0], arg_node->node[2]->mask[0], VARNO);
+                PlusMask (arg_info->mask[1], arg_node->node[2]->mask[1], VARNO);
+                MinusMask (arg_node->node[2]->mask[0], arg_node->node[2]->mask[0], VARNO);
+                MinusMask (arg_node->node[2]->mask[1], arg_node->node[2]->mask[1], VARNO);
+                DBUG_EXECUTE ("DEAD",
+                              arg_node->node[2]->mask[2] = DupMask (oldmask[3], VARNO););
+                dead_expr++;
             } else {
                 /* store later used variables in node */
-                DBUG_EXECUTE ("DEAD", arg_node->node[2]->mask[2] = DupMask (oldmask[3]););
+                DBUG_EXECUTE ("DEAD",
+                              arg_node->node[2]->mask[2] = DupMask (oldmask[3], VARNO););
                 /* Save old dead def. variables */
                 oldmask[0] = arg_info->mask[0];
                 /* and gather a new set */
-                arg_info->mask[0] = GenMask ();
+                arg_info->mask[0] = GenMask (VARNO);
                 /* Save old dead used variables */
                 oldmask[1] = arg_info->mask[1];
                 /* and gather a new set */
-                arg_info->mask[1] = GenMask ();
+                arg_info->mask[1] = GenMask (VARNO);
 
                 arg_node->node[2]
                   = Trav (arg_node->node[2], arg_info); /* Trav else-subtree */
 
                 /* consider removed definitions in current and previous def_mask */
-                MinusMask (arg_node->node[2]->mask[0], arg_info->mask[0]);
-                PlusMask (arg_info->mask[0], oldmask[0]);
+                MinusMask (arg_node->node[2]->mask[0], arg_info->mask[0], VARNO);
+                PlusMask (arg_info->mask[0], oldmask[0], VARNO);
                 free (oldmask[0]);
                 /* consider removed usages in current and previous used_mask */
-                MinusMask (arg_node->node[2]->mask[1], arg_info->mask[1]);
-                PlusMask (arg_info->mask[1], oldmask[1]);
+                MinusMask (arg_node->node[2]->mask[1], arg_info->mask[1], VARNO);
+                PlusMask (arg_info->mask[1], oldmask[1], VARNO);
                 free (oldmask[1]);
             }
         }
         if (arg_node->node[1] != NULL) {
-            OrMask (arg_info->mask[2], oldmask[2]);
+            OrMask (arg_info->mask[2], oldmask[2], VARNO);
             free (oldmask[2]);
         }
-        DBUG_EXECUTE ("DEAD", arg_node->mask[2] = DupMask (arg_info->mask[2]););
-        OrMask (arg_info->mask[2], arg_node->mask[1]);
-        OrMask (arg_info->mask[2], oldmask[3]);
+        DBUG_EXECUTE ("DEAD", arg_node->mask[2] = DupMask (arg_info->mask[2], VARNO););
+        OrMask (arg_info->mask[2], arg_node->mask[1], VARNO);
+        OrMask (arg_info->mask[2], oldmask[3], VARNO);
         free (oldmask[3]);
     }
     DBUG_RETURN (arg_node);
