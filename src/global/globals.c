@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/03/26 14:36:23  khf
+ * OPT_WLPG added
+ *
  * Revision 3.46  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -465,13 +468,13 @@ bool patch_with = FALSE;
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
                         & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP) & (~OPT_WLFS)
-                        & (~OPT_CVP);
+                        & (~OPT_CVP) & (~OPT_WLPG);
 #else /* PRODUCTION */
 /* as long as OPT_SBE is shared with OPT_CVP OPT_SBE should be not used here
  * to allow to work with OPT_CVP
  */
 unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
-                        & (~OPT_BLIR) & (~OPT_WLFS);
+                        & (~OPT_BLIR) & (~OPT_WLFS) & (~OPT_WLPG);
 
 #endif /* PRODUCTION */
 

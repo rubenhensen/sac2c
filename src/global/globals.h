@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/03/26 14:36:23  khf
+ * OPT_WLPG added
+ *
  * Revision 3.39  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -282,7 +285,12 @@ extern unsigned int optimize;
 #define OPT_UIP 0x00008000  /* update-in-place analysis                    */
 #define OPT_TSI 0x00010000  /* with-loop tile size inference               */
 #define OPT_TSP 0x00020000  /* with-loop tile size pragmas                 */
+/* OPT_MTO reused for OPT_WLPG
+ * Because of missing space in this bitmap OPT_MTO is overloaded with
+ * OPT_WLPG.
+ * To prevent errors OPT_MTO is deactivated now (in concurrent.c)            */
 #define OPT_MTO 0x00040000  /* multi-thread optimization                   */
+#define OPT_WLPG 0x00040000 /* with-loop partition generation              */
 /* OPT_SBE reused for OPT_CVP
  * Because of missing space in this bitmap OPT_SBE is overloaded with OPT_CVP
  * To prevent errors (executing sbe-phase) the call of the procedure
