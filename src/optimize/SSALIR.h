@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/22 18:33:19  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.5  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -17,48 +20,54 @@
  * Revision 1.1  2001/03/26 15:37:45  nmw
  * Initial revision
  *
- *
- *
  */
+
+#ifndef _SAC_SSALIR_H_
+#define _SAC_SSALIR_H_
+
+#include "types.h"
 
 /*****************************************************************************
  *
- * file:   SSALIR.h
+ * Loop invariants removal ( ssalir_tab)
  *
- * prefix: SSALIR
+ * prefix: LIR
  *
  * description:
  *   this module does loop invariant removal on a function in ssa form.
- *
+ *   traversal functions to infere loop invariant expressions
  *
  *****************************************************************************/
+extern node *LIRdoLoopInvariantRemoval (node *fundef, node *modul);
 
-#ifndef SAC_SSALIR_H
+extern node *LIRfundef (node *arg_node, info *arg_info);
+extern node *LIRarg (node *arg_node, info *arg_info);
+extern node *LIRvardec (node *arg_node, info *arg_info);
+extern node *LIRblock (node *arg_node, info *arg_info);
+extern node *LIRassign (node *arg_node, info *arg_info);
+extern node *LIRlet (node *arg_node, info *arg_info);
+extern node *LIRid (node *arg_node, info *arg_info);
+extern node *LIRap (node *arg_node, info *arg_info);
+extern node *LIRcond (node *arg_node, info *arg_info);
+extern node *LIRreturn (node *arg_node, info *arg_info);
+extern node *LIRwith (node *arg_node, info *arg_info);
+extern node *LIRwithid (node *arg_node, info *arg_info);
+extern node *LIRexprs (node *arg_node, info *arg_info);
 
-#define SAC_SSALIR_H
-
-extern node *SSALoopInvariantRemoval (node *fundef, node *modul);
-
-/* traversal functions to infere loop invariant expressions */
-extern node *SSALIRfundef (node *arg_node, info *arg_info);
-extern node *SSALIRarg (node *arg_node, info *arg_info);
-extern node *SSALIRvardec (node *arg_node, info *arg_info);
-extern node *SSALIRblock (node *arg_node, info *arg_info);
-extern node *SSALIRassign (node *arg_node, info *arg_info);
-extern node *SSALIRlet (node *arg_node, info *arg_info);
-extern node *SSALIRid (node *arg_node, info *arg_info);
-extern node *SSALIRap (node *arg_node, info *arg_info);
-extern node *SSALIRcond (node *arg_node, info *arg_info);
-extern node *SSALIRreturn (node *arg_node, info *arg_info);
-extern node *SSALIRNwith (node *arg_node, info *arg_info);
-extern node *SSALIRNwithid (node *arg_node, info *arg_info);
-extern node *SSALIRexprs (node *arg_node, info *arg_info);
-
-/* traversal functions to move loop invariant expressions */
+/*****************************************************************************
+ *
+ * traversal functions to move loop invariant expressions
+ *
+ * prefix: LIRMOV
+ *
+ * description:
+ *
+ *****************************************************************************/
 extern node *LIRMOVid (node *arg_node, info *arg_info);
-extern node *LIRMOVNwithid (node *arg_node, info *arg_info);
+extern node *LIRMOVwithid (node *arg_node, info *arg_info);
 extern node *LIRMOVblock (node *arg_node, info *arg_info);
 extern node *LIRMOVassign (node *arg_node, info *arg_info);
 extern node *LIRMOVlet (node *arg_node, info *arg_info);
 extern node *LIRMOVreturn (node *arg_node, info *arg_info);
-#endif /* SAC_SSALIR_H */
+
+#endif /* _SAC_SSALIR_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/22 18:33:19  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.3  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -17,16 +20,25 @@
  *
  */
 
-#ifndef _SSAWLUnroll_h_
-#define _SSAWLUnroll_h_
+#ifndef _SAC_SSAWLUNROLL_H_
+#define _SAC_SSAWLUNROLL_H_
 
-extern int SSACheckUnrollModarray (node *wln);
-extern node *SSADoUnrollModarray (node *wln, info *arg_info);
+#include "types."
 
-extern int SSACheckUnrollGenarray (node *wln, info *arg_info);
-extern node *SSADoUnrollGenarray (node *wln, info *arg_info);
+/*****************************************************************************
+ *
+ * SSAWLUnroll
+ *
+ * prefix: WLU
+ *
+ *****************************************************************************/
+extern int WLUcheckUnrollModarray (node *wln);
+extern node *WLUdoUnrollModarray (node *wln, info *arg_info);
 
-extern int SSACheckUnrollFold (node *wln);
-extern node *SSADoUnrollFold (node *wln, info *arg_info);
+extern int WLUcheckUnrollGenarray (node *wln, info *arg_info);
+extern node *WLUdoUnrollGenarray (node *wln, info *arg_info);
 
-#endif /* _SSAWLUnroll_h_ */
+extern int WLUcheckUnrollFold (node *wln);
+extern node *WLUdoUnrollFold (node *wln, info *arg_info);
+
+#endif /* _SAC_SSAWLUNROLL_H_ */

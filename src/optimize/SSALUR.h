@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/22 18:33:19  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.4  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -17,11 +20,16 @@
  *
  */
 
+#ifndef _SAC_SSALUR_H_
+#define _SAC_SSALUR_H_
+
+#include "types.h"
+
 /*****************************************************************************
  *
- * file:   SSALUR.h
+ * SSALUR
  *
- * prefix: SSALUR
+ * prefix: LUR
  *
  * description:
  *
@@ -30,16 +38,11 @@
  *   so we have to deal only with the do loops.
  *
  *****************************************************************************/
+extern node *LURdoLoopUnrolling (node *fundef, node *modul);
 
-#ifndef SAC_SSALUR_H
+extern node *LURfundef (node *arg_node, info *arg_info);
+extern node *LURassign (node *arg_node, info *arg_info);
+extern node *LURap (node *arg_node, info *arg_info);
+extern node *LURwith (node *arg_node, info *arg_info);
 
-#define SAC_SSALUR_H
-
-extern node *SSALoopUnrolling (node *fundef, node *modul);
-
-extern node *SSALURfundef (node *arg_node, info *arg_info);
-extern node *SSALURassign (node *arg_node, info *arg_info);
-extern node *SSALURap (node *arg_node, info *arg_info);
-extern node *SSALURNwith (node *arg_node, info *arg_info);
-
-#endif /* SAC_SSALUR_H */
+#endif /* _SAC_SSALUR_H_ */
