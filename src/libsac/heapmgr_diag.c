@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/11/02 14:29:25  sbs
+ * output changed so that it is more "obvious" that the mem-usage in the arena
+ * actually is a multiple of the binsize!
+ *
  * Revision 1.2  1999/09/17 14:33:34  cg
  * New version of SAC heap manager:
  *  - no special API functions for top arena.
@@ -189,11 +193,11 @@ ShowDiagnosticsForArena (int num, unsigned long int size, unsigned long int bins
     }
 
     fprintf (stderr,
-             "            %lu Bytes (%.1f MB) in %lu bins\n"
+             "            %lu bin(s) totalling %lu Bytes (%.1f MB)\n"
              "            %lu allocs  %lu splittings  (%d%%)\n"
              "            %lu frees   %lu coalascings (%d%%)\n"
              "=================================================================\n",
-             size, ((float)size) / MB, bins, alloc, split,
+             bins, size, ((float)size) / MB, alloc, split,
              (alloc == 0 ? 0 : (int)((((float)split) / (float)alloc) * 100)), free,
              coalasce, (free == 0 ? 0 : (int)((((float)coalasce) / (float)free) * 100)));
 }
