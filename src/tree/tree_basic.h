@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2000/03/31 14:10:26  dkr
+ * comment corrected
+ *
  * Revision 1.37  2000/03/31 12:26:37  jhs
  * Added INFO_DUP_BASEFUNDEF
  *
@@ -3178,7 +3181,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***    bool (int) ISSCHEDULED                    (new mt -> ...)
  ***                       [Signals whether any segment is scheduled or not]
  ***
- ***    DFMmask_t  REUSE                          (compile ! )
+ ***    DFMmask_t  REUSE                          (ReuseWithArrays -> compile ! )
  ***
  ***    SCHsched_t SCHEDULING   (O)               (wltransform -> compile )
  ***/
