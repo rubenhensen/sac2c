@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/10/06 17:19:36  cg
+ * Revision 1.5  1995/10/19 10:07:51  cg
+ * functions InsertNode, InsertNodes and InsertUnresolvedNodes
+ * modified in signature.
+ *
+ * Revision 1.4  1995/10/06  17:19:36  cg
  * functions InsertNode InsertNodes and InsertUnresolvedNodes for dealing with
  * type nodelist added.
  *
@@ -24,6 +28,10 @@
 
 #include "dbug.h"
 #include "my_debug.h"
+
+/***
+ ***  CmpDomain
+ ***/
 
 int
 CmpDomain (node *arg1, node *arg2)
@@ -66,6 +74,10 @@ CmpDomain (node *arg1, node *arg2)
 
     DBUG_RETURN (is_equal);
 }
+
+/***
+ ***  SearchFundef
+ ***/
 
 node *
 SearchFundef (node *fun, node *allfuns)
@@ -125,6 +137,10 @@ Shape2Array (shapes *shp)
     DBUG_RETURN (MakeArray (next));
 }
 
+/***
+ ***  ObjList2ArgList
+ ***/
+
 void
 ObjList2ArgList (node *objdef)
 {
@@ -141,6 +157,10 @@ ObjList2ArgList (node *objdef)
 
     DBUG_VOID_RETURN;
 }
+
+/***
+ ***  SearchTypedef
+ ***/
 
 node *
 SearchTypedef (char *name, char *mod, node *implementations)
@@ -159,6 +179,10 @@ SearchTypedef (char *name, char *mod, node *implementations)
     DBUG_RETURN (tmp);
 }
 
+/***
+ ***  CountNums
+ ***/
+
 int
 CountNums (nums *numsp)
 {
@@ -172,6 +196,10 @@ CountNums (nums *numsp)
 
     DBUG_RETURN (cnt);
 }
+
+/***
+ ***  CopyShpseg
+ ***/
 
 shpseg *
 CopyShpseg (shpseg *old)
@@ -191,6 +219,10 @@ CopyShpseg (shpseg *old)
 
     DBUG_RETURN (new);
 }
+
+/***
+ ***  MergeShpseg
+ ***/
 
 shpseg *
 MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
@@ -213,12 +245,38 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
     DBUG_RETURN (new);
 }
 
+/***
+ ***  InsertNode
+ ***/
+
 nodelist *
-InsertNode (node *insert, nodelist *list)
+InsertNode (node *insert, node *fundef)
 {
-    nodelist *act, *last;
+    nodelist *act, *last, *list;
 
     DBUG_ENTER ("InsertNode");
+
+    switch (NODE_TYPE (insert)) {
+    case N_fundef:
+        list = FUNDEF_NEEDFUNS (fundef);
+        DBUG_PRINT ("FA", ("Function '%s` needs function '%s`", ItemName (fundef),
+                           ItemName (insert)));
+        break;
+
+    case N_objdef:
+        list = FUNDEF_NEEDOBJS (fundef);
+        DBUG_PRINT ("FA", ("Function '%s` needs global object '%s`", ItemName (fundef),
+                           ItemName (insert)));
+        break;
+
+    case N_typedef:
+        list = FUNDEF_NEEDTYPES (fundef);
+        DBUG_PRINT ("FA", ("Function '%s` needs type '%s`", ItemName (fundef),
+                           ItemName (insert)));
+        break;
+    default:
+        DBUG_ASSERT (0, "Wrong insert node in call to function 'InsertNode`");
+    }
 
     if (list == NULL) {
         list = MakeNodelist (insert, ST_artificial, NULL);
@@ -239,27 +297,39 @@ InsertNode (node *insert, nodelist *list)
     DBUG_RETURN (list);
 }
 
+/***
+ ***  InsertNodes
+ ***/
+
 nodelist *
-InsertNodes (nodelist *inserts, nodelist *list)
+InsertNodes (nodelist *inserts, node *fundef)
 {
+    nodelist *list;
+
     DBUG_ENTER ("InsertNodes");
 
     while (inserts != NULL) {
-        list = InsertNode (NODELIST_NODE (inserts), list);
+        list = InsertNode (NODELIST_NODE (inserts), fundef);
         inserts = NODELIST_NEXT (inserts);
     }
 
     DBUG_RETURN (list);
 }
 
+/***
+ ***  InsertUnresolvedNodes
+ ***/
+
 nodelist *
-InsertUnresolvedNodes (nodelist *inserts, nodelist *list)
+InsertUnresolvedNodes (nodelist *inserts, node *fundef)
 {
+    nodelist *list;
+
     DBUG_ENTER ("InsertNodes");
 
     while (inserts != NULL) {
         if (NODELIST_ATTRIB (inserts) == ST_unresolved) {
-            list = InsertNode (NODELIST_NODE (inserts), list);
+            list = InsertNode (NODELIST_NODE (inserts), fundef);
         }
         inserts = NODELIST_NEXT (inserts);
     }

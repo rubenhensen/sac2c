@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/16 12:28:56  cg
+ * Revision 1.6  1995/10/19 10:07:51  cg
+ * functions InsertNode, InsertNodes and InsertUnresolvedNodes
+ * modified in signature.
+ *
+ * Revision 1.5  1995/10/16  12:28:56  cg
  * Bugs in macros FUNDEF_NEEDFUNS and FUNDEF_NEEDTYPES fixed.
  *
  * Revision 1.4  1995/10/06  17:19:36  cg
@@ -50,6 +54,7 @@ specific implementation of a function should remain with the source code.
 
 #include "types.h"
 #include "tree_basic.h"
+#include "Error.h"
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
@@ -216,29 +221,32 @@ extern int CountNums (nums *numsp);
 /*
  *
  *  functionname  : InsertNode
- *  arguments     : 1) pointer to node which has to be inserted
- *                  2) pointer to nodelist
- *  description   : inserts a given node at the end of a nodelist and
+ *  arguments     : 1) node which has to be inserted
+ *                  2) fundef node where 1) has to be inserted
+ *  description   : inserts the given node at the end of the correct
+ *                  nodelist (funlist, objlist, or typelist) of the
+ *                  given fundef node and
  *                  returns a pointer to the extended nodelist.
  *                  If node is already a member of the nodelist, then
  *                  the list is returned unchanged.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
  *
  *  remarks       :
  *
  */
 
-extern nodelist *InsertNode (node *, nodelist *);
+extern nodelist *InsertNode (node *insert, node *fundef);
 
 /*
  *
  *  functionname  : InsertNodes
  *  arguments     : 1) list of nodes
- *                  2) list of nodes
- *  description   : inserts each node of the first list into the second one
+ *                  2) fundef node where inserts are to be done
+ *  description   : inserts each node of the nodelist into the correct
+ *                  nodelist of the fundef node
  *  global vars   : ---
  *  internal funs : InsertNode
  *  external funs : ---
@@ -248,15 +256,16 @@ extern nodelist *InsertNode (node *, nodelist *);
  *
  */
 
-extern nodelist *InsertNodes (nodelist *inserts, nodelist *list);
+extern nodelist *InsertNodes (nodelist *inserts, node *fundef);
 
 /*
  *
  *  functionname  : InsertUnresolvedNodes
  *  arguments     : 1) list of nodes
- *                  2) list of nodes
- *  description   : inserts all those nodes of the first list into the
- *                  second one which have attribute 'unresolved'.
+ *                  2) fundef node where inserts are to be done
+ *  description   : inserts all those nodes of the nodelist into the correct
+ *                  nodelist of the fundef node
+ *                  which have attribute 'unresolved'.
  *  global vars   : ---
  *  internal funs : InsertNode
  *  external funs : ---
@@ -266,7 +275,7 @@ extern nodelist *InsertNodes (nodelist *inserts, nodelist *list);
  *
  */
 
-extern nodelist *InsertUnresolvedNodes (nodelist *inserts, nodelist *list);
+extern nodelist *InsertUnresolvedNodes (nodelist *inserts, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
