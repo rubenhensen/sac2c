@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.12  1995/02/14 12:47:18  sbs
- * N_foldfun, N_foldprf inserted
+ * Revision 1.13  1995/03/02 09:10:10  hw
+ * changed information about N_generator
  *
+# Revision 1.12  1995/02/14  12:47:18  sbs
+# N_foldfun, N_foldprf inserted
+#
 # Revision 1.11  1995/01/16  11:11:21  hw
 # added information about N_ap
 # changed information about struct types
@@ -216,9 +219,9 @@ info.prf          : tag for kind of primitive function (F_add, F_sub,
 
 N_generator:
 ============
-node[0]     : expression for left border of arraymanipulation
-node[1]     : expression for right border of arrymanipulation
-info.id     : name of bound variable for arraymanipulation
+node[0]        : expression for left border of arraymanipulation
+node[1]        : expression for right border of arrymanipulation
+info.ids->id   : name of bound variable for arraymanipulation
 
 N_genarray, N_modarray:
 =======================
