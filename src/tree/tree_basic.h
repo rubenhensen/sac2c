@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2002/02/22 14:08:24  sbs
+ * INFO_INSVD_VARDECS and INFO_INSVD_ARGS added.
+ *
  * Revision 3.110  2002/02/22 13:57:03  dkr
  * some more casts modified (cc demands for it)
  *
@@ -2461,6 +2464,10 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      FUNDEF            (current working fundef)
  ***    node*      ARGCHAIN          (EXPRS chain of recursive funap)
  ***
+ ***  when used in insert_vardec.c
+ ***    node*      VARDECS           (current vardecs)
+ ***    node*      ARGS              (current args)
+ ***
  ***  remarks:
  ***
  ***    N_info is used in many other phases without access macros :((
@@ -2965,6 +2972,10 @@ extern node *MakeInfo ();
 /* when used in SSAInferLI.c */
 #define INFO_SSAILI_FUNDEF(n) (n->node[0])
 #define INFO_SSAILI_ARGCHAIN(n) (n->node[1])
+
+/* when used in insert_vardec.c */
+#define INFO_INSVD_VARDECS(n) (n->node[0])
+#define INFO_INSVD_ARGS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
