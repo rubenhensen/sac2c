@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.62  1998/06/07 18:38:53  dkr
+# added ReuseWithArrays.o
+#
 # Revision 1.61  1998/05/21 09:52:01  dkr
 # make deps done
 #
@@ -198,13 +201,13 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize  \
-     -I../scanparse
+INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount \
+     -I../optimize -I../psi-opt -I../scanparse
 
 MACS=icm.data icm_comment.c icm_trace.c
 
-all: wltransform.o wlpragma_funs.o precompile.o compile.o icm2c.o icm2c_std.o \
-     icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o
+all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
+     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o
 
 wltransform.o: wltransform.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
@@ -217,6 +220,9 @@ precompile.o: precompile.c
 
 compile.o: compile.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o compile.o -c compile.c $(INCS)
+
+ReuseWithArrays.o: ReuseWithArrays.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o ReuseWithArrays.o -c ReuseWithArrays.c $(INCS)
 
 icm2c.o: icm2c.c icm.data icm_vars.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c.o -c icm2c.c $(INCS)
