@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/03/19 23:08:50  dkr
+ * *** empty log message ***
+ *
  * Revision 1.22  1998/03/19 20:57:42  dkr
  * added computation of the rectangles
  *
@@ -1025,80 +1028,6 @@ PRECid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ProjNormalize(node *proj, int shape_int)
- *
- * description:
- *   returns the normalized values of the N_index-node 'proj'
- *   (maximally outline; (width < step) or (width = step = 1))
- *
- ******************************************************************************/
-
-node *ProjNormalize(node *proj, int shape_int)
-{
-  int bound1, bound2, offset, step, width, new_bound1, new_bound2;
-
-  DBUG_ENTER("ProjNormalize");
-
-  bound1 = NUM_VAL(INDEX_BOUND1(proj));
-  bound2 = NUM_VAL(INDEX_BOUND2(proj));
-  offset = NUM_VAL(INDEX_OFFSET(proj));
-  step = NUM_VAL(INDEX_STEP(proj));
-  width = NUM_VAL(INDEX_WIDTH(proj));
-
-  /* assures: (width < step) or (width = step = 1) */
-  if ((width >= step) && (width > 1)) {
-    step = NUM_VAL(INDEX_STEP(proj)) = width = NUM_VAL(INDEX_WIDTH(proj)) = 1;
-  }
-
-  /* maximize the outline */
-  new_bound1 = bound1 - (step - offset - width);
-  new_bound1 = MAX(0, new_bound1);
-
-  if ((bound2 - bound1 - offset) % step >= width) {
-    new_bound2 = bound2 + step - ((bound2 - bound1 - offset) % step);
-    new_bound2 = MIN(new_bound2, shape_int);
-  }
-  else {
-    new_bound2 = bound2;
-  }
-
-  NUM_VAL(INDEX_BOUND1(proj)) = new_bound1;
-  NUM_VAL(INDEX_BOUND2(proj)) = new_bound2;
-  NUM_VAL(INDEX_OFFSET(proj)) = offset + bound1 - new_bound1; 
-
-  DBUG_RETURN(proj);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   int ProjIsEmpty(node *proj)
- *
- * description:
- *   computes, whether 'proj' is an empty index-set or not
- *   ('proj' is a N_index-node)
- *
- ******************************************************************************/
-
-int ProjIsEmpty(node *proj)
-{
-  int empty;
-
-  DBUG_ENTER("ProjIsEmpty");
-
-  empty = IsEmpty(NUM_VAL(INDEX_BOUND1(proj)), NUM_VAL(INDEX_BOUND2(proj)),
-                  NUM_VAL(INDEX_OFFSET(proj)));
-
-  DBUG_RETURN(empty);
-}
-
-
-
-/******************************************************************************
- *
- * function:
  *   node *ProjIntersect(node *proj1, node *proj2, int shape_int)
  *
  * description:
@@ -1293,280 +1222,6 @@ node *ProjDisjOutline(node *proj1, node *proj2, int shape_int)
   }
 
   DBUG_RETURN(disj_out);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   int ProjEmptyIsect(node *proj1, node *proj2)
- *
- * description:
- *   computes, whether the intersection of 'proj1', 'proj2' is empty or not.
- *   ('proj1', 'proj2' are N_index-nodes)
- *
- ******************************************************************************/
-
-int ProjEmptyIsect(node *proj1, node *proj2, int shape_int)
-{
-  int result;
-
-  DBUG_ENTER("ProjEmptyIsect");
-
-  result = (ProjIntersect(proj1, proj2, shape_int) == NULL);
-
-  DBUG_RETURN(result);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   int ProjCompare(node *proj1, node *proj2)
- *
- * description:
- *   compares 'proj1' and 'proj2' (N_index-nodes)
- *
- *   return: -1 -> 'proj1' < 'proj2'
- *            1 -> 'proj1' > 'proj2'
- *            0 -> 'proj1' = 'proj2'
- *
- ******************************************************************************/
-
-int ProjCompare(node *proj1, node *proj2)
-{
-  int bound1_1, bound2_1, offset_1, step_1, width_1,
-      bound1_2, bound2_2, offset_2, step_2, width_2;
-  int result;
-
-  DBUG_ENTER("ProjCompare");
-
-  bound1_1 = NUM_VAL(INDEX_BOUND1(proj1));
-  bound2_1 = NUM_VAL(INDEX_BOUND2(proj1));
-  offset_1 = NUM_VAL(INDEX_OFFSET(proj1));
-  step_1 = NUM_VAL(INDEX_STEP(proj1));
-  width_1 = NUM_VAL(INDEX_WIDTH(proj1));
-
-  bound1_2 = NUM_VAL(INDEX_BOUND1(proj2));
-  bound2_2 = NUM_VAL(INDEX_BOUND2(proj2));
-  offset_2 = NUM_VAL(INDEX_OFFSET(proj2));
-  step_2 = NUM_VAL(INDEX_STEP(proj2));
-  width_2 = NUM_VAL(INDEX_WIDTH(proj2));
-
-#define TEST_BEGIN(a, b)                                                                 \
-    if (a > b) {                                                                         \
-        result = 1;                                                                      \
-    } else {                                                                             \
-        if (a < b) {                                                                     \
-            result = -1;                                                                 \
-        } else {
-#define TEST_END                                                                         \
-    }                                                                                    \
-    }
-
-  TEST_BEGIN(bound1_1, bound1_2)
-    TEST_BEGIN(bound2_1, bound2_2)
-      TEST_BEGIN(offset_1, offset_2)
-        TEST_BEGIN(step_1, step_2)
-          TEST_BEGIN(width_1, width_2)
-            result = 0;
-          TEST_END
-        TEST_END
-      TEST_END
-    TEST_END
-  TEST_END
-
-#undef TEST_BEGIN
-#undef TEST_END
-
-  DBUG_RETURN(result);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   node *ProjInsert(node *to_insert, node *projs)
- *
- * description:
- *   inserts the elements of 'to_insert' in the sorted chain 'projs'.
- *   any element of 'to_insert', that is already found in 'projs', is freed!!
- *
- *   'to_insert' and 'projs' are N_exprs-chains of N_index-nodes
- *
- ******************************************************************************/
-
-node *ProjInsert(node *insert, node *projs)
-{
-  node *to_insert, *insert_here;
-  int compare;
-
-  DBUG_ENTER("ProjInsert");
-
-  if (projs == NULL) {                  /* 'projs' is empty */
-    /* return the 'insert'-chain */
-    projs = insert;
-  }
-  else {                                /* 'projs' contains elements */
-    while (insert != NULL) {
-      /* insert all elements of 'insert'-chain in 'projs' */
-      to_insert = insert;
-      insert = EXPRS_NEXT(insert);
-
-      compare = ProjCompare(EXPRS_EXPR(to_insert), EXPRS_EXPR(projs));
-      if (compare == 0) {
-        /* this projection was found already, hence of no use */
-#if 0
-        EXPRS_NEXT(to_insert) = NULL;
-        FreeTree(to_insert);
-#endif
-      }
-      else {
-        if (compare == -1) {
-          /* insert current element of 'insert'-chain at top of 'projs' */
-          EXPRS_NEXT(to_insert) = projs;
-          projs = to_insert;
-        }
-        else {
-          /* search for insert-position in 'projs' */
-          insert_here = projs;
-          while (EXPRS_NEXT(insert_here) != NULL) {
-            compare = ProjCompare(EXPRS_EXPR(to_insert),
-                                  EXPRS_EXPR(EXPRS_NEXT(insert_here)));
-            if (compare == 0) {
-              /* this projection was found already, hence of no use */
-#if 0
-              EXPRS_NEXT(to_insert) = NULL;
-              FreeTree(to_insert);
-#else
-              to_insert = NULL;
-#endif
-	    }
-            if (compare != 1)
-              break;
-            insert_here = EXPRS_NEXT(insert_here);
-          }
-
-          if (to_insert != NULL) {
-            /* insert current element of 'insert'-chain at the found position */
-            EXPRS_NEXT(to_insert) = EXPRS_NEXT(insert_here);
-            EXPRS_NEXT(insert_here) = to_insert;
-	  }
-	}
-      }
-    }
-  }
-
-  DBUG_RETURN(projs);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   node *GetRelevantProjs(node *withpart, node *shape_vec, node *prev_projs)
- *
- * description:
- *   withpart: any N_Npart-node
- *   shape_vec: N_array-node containing the shape
- *   prev_projs: set of previous projections (dimensions 0..d-1)
- *               ('prev_proj' is a N_exprs-chain of d N_index-nodes)
- *
- *   return: the projections (dimension d) of the generator-index-sets ('withpart'),
- *           which lie in 'prev_projs'
- *           (returned as a N_exprs-chain of normalized N_index-nodes)
- *
- ******************************************************************************/
-
-node *GetRelevantProjs(node *withpart, node *shape_vec, node *prev_projs)
-{
-  int relevant;
-  node *part, *shape_vec1, *prev_proj, *projs, *insert, *tmp,
-       *bound1, *bound2, *step, *width;
-
-  DBUG_ENTER("GetRelevantProjs");
-
-  /* create temporary node */
-  tmp = MakeExprs(MakeIndex(NULL, NULL, MakeNum(0), NULL, NULL, NULL), NULL);
-
-  projs = NULL;
-  part = withpart;
-  /* visit all generator-index-set */
-  while (part != NULL) {
-    relevant = 1;
-    shape_vec1 = ARRAY_AELEMS(shape_vec);
-    prev_proj = prev_projs;
-
-    /* get components of current generator-index-set */
-    bound1 = ARRAY_AELEMS(NGEN_BOUND1(NPART_GEN(part)));
-    bound2 = ARRAY_AELEMS(NGEN_BOUND2(NPART_GEN(part)));
-    step = ARRAY_AELEMS(NGEN_STEP(NPART_GEN(part)));
-    width = ARRAY_AELEMS(NGEN_WIDTH(NPART_GEN(part)));
-
-    /* test, if generator-index-set is relevant */
-    while (prev_proj != NULL) {
-      DBUG_ASSERT((shape_vec1 != NULL), "shape component not found");
-      DBUG_ASSERT((bound1 != NULL), "bound1 of generator not found");
-      DBUG_ASSERT((bound2 != NULL), "bound2 of generator not found");
-      DBUG_ASSERT((step != NULL), "step of generator not found");
-      DBUG_ASSERT((width != NULL), "width of generator not found");
-
-      /* build a N_index-node */
-      INDEX_BOUND1(EXPRS_EXPR(tmp)) = EXPRS_EXPR(bound1);
-      INDEX_BOUND2(EXPRS_EXPR(tmp)) = EXPRS_EXPR(bound2);
-      INDEX_STEP(EXPRS_EXPR(tmp)) = EXPRS_EXPR(step);
-      INDEX_WIDTH(EXPRS_EXPR(tmp)) = EXPRS_EXPR(width);
-
-      if (ProjIsEmpty(EXPRS_EXPR(tmp)) ||
-         (ProjEmptyIsect(EXPRS_EXPR(tmp), EXPRS_EXPR(prev_proj),
-                         NUM_VAL(EXPRS_EXPR(shape_vec1))))) {
-        relevant = 0;
-        break;
-      }
-
-      prev_proj = EXPRS_NEXT(prev_proj);
-      shape_vec1 = EXPRS_NEXT(shape_vec1);
-
-      bound1 = EXPRS_NEXT(bound1);
-      bound2 = EXPRS_NEXT(bound2);
-      step = EXPRS_NEXT(step);
-      width = EXPRS_NEXT(width);
-    }
-
-    if (relevant) {
-      DBUG_ASSERT((shape_vec1 != NULL), "shape component not found");
-      DBUG_ASSERT((bound1 != NULL), "bound1 of generator not found");
-      DBUG_ASSERT((bound2 != NULL), "bound2 of generator not found");
-      DBUG_ASSERT((step != NULL), "step of generator not found");
-      DBUG_ASSERT((width != NULL), "width of generator not found");
-
-      /* build a N_index-node */
-      insert = MakeExprs(MakeIndex(MakeNum(NUM_VAL(EXPRS_EXPR(bound1))),
-                                   MakeNum(NUM_VAL(EXPRS_EXPR(bound2))),
-                                   MakeNum(0),
-                                   MakeNum(NUM_VAL(EXPRS_EXPR(step))),
-                                   MakeNum(NUM_VAL(EXPRS_EXPR(width))),
-                                   NULL),
-                         NULL);
-      EXPRS_EXPR(insert) = ProjNormalize(EXPRS_EXPR(insert),
-                                         NUM_VAL(EXPRS_EXPR(shape_vec1)));
-      /* store relevant generator-index-set */
-      projs = ProjInsert(insert, projs);
-    }
-
-    part = NPART_NEXT(part);
-  }
-
-  /* remove temporary node */
-#if 0
-  FreeTree(tmp);
-#endif
-
-  DBUG_RETURN(projs);
 }
 
 
@@ -1798,93 +1453,6 @@ node *ProjPartition3(node *projs)
 
   DBUG_RETURN(projs);
 }
-
-
-
-/******************************************************************************
- *
- * function:
- *   node *ProjPartition(node *withpart, node *shape_vec, node *prev_proj)
- *
- * description:
- *   withpart: NWITH_PART(...)
- *   shape_vec: N_array-node containing the shape
- *   prev_proj: set of previous projections (dimensions 0..d-1)
- *              ('prev_proj' is a N_exprs-chain with d N_index-nodes)
- *
- *   return: partition of the current projection, based on the relevant
- *           generators (relating to 'prev_proj').
- *           (N_exprs-chain of N_index-nodes)
- *
- ******************************************************************************/
-
-node *ProjPartition(node *withpart, node *shape_vec, node *prev_proj)
-{
-  node *projs;
-  int shape_int;
-
-  DBUG_ENTER("ProjPartition");
-
-  projs = GetRelevantProjs(withpart, shape_vec, prev_proj);
-
-  /* compute the right shape-component */
-  shape_vec = ARRAY_AELEMS(shape_vec);
-  while (prev_proj != NULL) {
-    shape_vec = EXPRS_NEXT(shape_vec);
-    prev_proj = EXPRS_NEXT(prev_proj);
-  }
-  shape_int = NUM_VAL(EXPRS_EXPR(shape_vec));
-
-  projs = ProjPartition1(projs, shape_int);   /* step 1 */
-  projs = ProjPartition2(projs, shape_int);   /* step 2 */
-  projs = ProjPartition3(projs);              /* step 3 */
-
-  DBUG_RETURN(projs);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *   void BuildProjs(int dim, int max_dim, node *withpart, node *shape,
- *                   node *proj, node *last_proj)
- *
- * description:
- *   ???
- *
- ******************************************************************************/
-
-void BuildProjs(int dim, int max_dim, node *withpart, node *shape,
-                node *proj, node *last_proj)
-{
-  node *partition, *curr_proj;
-
-  DBUG_ENTER("BuildProjs");
-
-  if (dim == max_dim) {
-    /* projections complete ('proj') !!! */
-    dim = dim;  /* dummy */
-  }
-  else {
-    partition = ProjPartition(withpart, shape, proj);
-
-    while (partition != NULL) {
-      curr_proj = partition;
-      partition = EXPRS_NEXT(partition);
-      EXPRS_NEXT(curr_proj) = NULL;
-
-      if (last_proj == NULL) {
-        proj = curr_proj;
-      }
-      else {
-        EXPRS_NEXT(last_proj) = curr_proj;
-      }
-
-      BuildProjs(dim+1, max_dim, withpart, shape, proj, curr_proj);
-    }
-  }
-}
 #endif
 
 /******************************************************************************
@@ -1894,9 +1462,8 @@ void BuildProjs(int dim, int max_dim, node *withpart, node *shape,
  *
  * description:
  *   compares the N_WLproj-nodes 'proj1' and 'proj2' IN ALL DIMS.
+ *   ALL GRID DATA IS IGNORED!!!
  *   eventually present next-nodes are ignored.
- *   if in 'proj1' or 'proj2' exists more than one grid, only the first one is
- *     taken
  *
  *   return: -2 => dim('proj1') < dim('proj2')
  *           -1 => dim('proj1') = dim('proj2'), 'proj1' < 'proj2'
@@ -1934,24 +1501,12 @@ CompareProjs (node *proj1, node *proj2)
             } else {
                 grid1 = WLPROJ_INNER (proj1);
                 DBUG_ASSERT ((grid1 != NULL), "grid not found");
-#if 0
-        DBUG_ASSERT((WLGRID_NEXT(grid1) == NULL), "more than one grid found");
-#endif
                 grid2 = WLPROJ_INNER (proj2);
                 DBUG_ASSERT ((grid2 != NULL), "grid not found");
-#if 0
-        DBUG_ASSERT((WLGRID_NEXT(grid2) == NULL), "more than one grid found");
-#endif
 
                 TEST_BEGIN (WLPROJ_BOUND1 (proj1), WLPROJ_BOUND1 (proj2))
                 TEST_BEGIN (WLPROJ_BOUND2 (proj1), WLPROJ_BOUND2 (proj2))
-                TEST_BEGIN (WLPROJ_STEP (proj1), WLPROJ_STEP (proj2))
-                TEST_BEGIN (WLGRID_OFFSET (grid1), WLGRID_OFFSET (grid2))
-                TEST_BEGIN (WLGRID_WIDTH (grid1), WLGRID_WIDTH (grid2))
                 result = 0;
-                TEST_END
-                TEST_END
-                TEST_END
                 TEST_END
                 TEST_END
 
@@ -2225,9 +1780,8 @@ IntersectOutlines (node *proj1, node *proj2, node *shape_elems, node **isect1,
                    node **isect2)
 {
     node *grid1, *grid2, *last_isect1, *last_isect2, *new_isect1, *new_isect2;
-    int bound11, bound21, offset1, step1, width1, bound12, bound22, offset2, step2,
-      width2, bound11b, bound21b, offset1b, offset1c, bound12b, bound22b, offset2b,
-      offset2c;
+    int bound11, step1, width1, bound12, step2, width2, i_bound1, i_bound2, i_offset1,
+      i_offset2;
 
     DBUG_ENTER ("IntersectOutlines");
 
@@ -2244,41 +1798,34 @@ IntersectOutlines (node *proj1, node *proj2, node *shape_elems, node **isect1,
         DBUG_ASSERT ((WLGRID_NEXT (grid2) == NULL), "more than one grid found");
 
         bound11 = WLPROJ_BOUND1 (proj1);
-        bound21 = WLPROJ_BOUND2 (proj1);
         step1 = WLPROJ_STEP (proj1);
-        offset1 = WLGRID_OFFSET (grid1);
         width1 = WLGRID_WIDTH (grid1);
-
         bound12 = WLPROJ_BOUND1 (proj2);
-        bound22 = WLPROJ_BOUND2 (proj2);
         step2 = WLPROJ_STEP (proj2);
-        offset2 = WLGRID_OFFSET (grid2);
         width2 = WLGRID_WIDTH (grid2);
 
-        bound11b = MAX (bound11, bound12);
-        bound21b = MIN (bound21, bound22);
-        offset1b = ComputeOffset (bound11b, bound11, step1, offset1, width1);
-        offset1c = ComputeOffset (bound21b, bound11, step1, offset1, width1);
-        bound12b = bound11b;
-        bound22b = bound21b;
-        offset2b = ComputeOffset (bound12b, bound12, step2, offset2, width2);
-        offset2c = ComputeOffset (bound22b, bound12, step2, offset2, width2);
+        i_bound1 = MAX (bound11, bound12);
+        i_bound2 = MIN (WLPROJ_BOUND2 (proj1), WLPROJ_BOUND2 (proj2));
+        i_offset1
+          = ComputeOffset (i_bound1, bound11, step1, WLGRID_OFFSET (grid1), width1);
+        i_offset2
+          = ComputeOffset (i_bound1, bound12, step2, WLGRID_OFFSET (grid2), width2);
 
-        if ((!IsEmpty (bound11b, bound21b, offset1b))
-            && (!IsEmpty (bound12b, bound22b, offset2b))) {
+        if ((!IsEmpty (i_bound1, i_bound2, i_offset1))
+            && (!IsEmpty (i_bound1, i_bound2, i_offset2))) {
 
             new_isect1
-              = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), bound11b, bound21b,
+              = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1, i_bound2,
                             step1, WLPROJ_UNROLLING (proj1),
-                            MakeWLgrid (WLGRID_DIM (grid1), offset1b, width1,
+                            MakeWLgrid (WLGRID_DIM (grid1), i_offset1, width1,
                                         WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
                             NULL);
             new_isect1 = NormalizeProj_1 (new_isect1, NUM_VAL (EXPRS_EXPR (shape_elems)));
 
             new_isect2
-              = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), bound12b, bound22b,
+              = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1, i_bound2,
                             step2, WLPROJ_UNROLLING (proj2),
-                            MakeWLgrid (WLGRID_DIM (grid2), offset2b, width2,
+                            MakeWLgrid (WLGRID_DIM (grid2), i_offset2, width2,
                                         WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
                             NULL);
             new_isect2 = NormalizeProj_1 (new_isect2, NUM_VAL (EXPRS_EXPR (shape_elems)));
@@ -2340,7 +1887,7 @@ IntersectOutlines (node *proj1, node *proj2, node *shape_elems, node **isect1,
 node *
 MergeProjs (node *proj1, node *proj2)
 {
-    node *grid1, *grid2, *tmp, *last_grid1;
+    node *grid1, *grid2, *new_grid, *tmp;
     int bound11, bound12;
 
     DBUG_ENTER ("MergeProjs");
@@ -2356,12 +1903,16 @@ MergeProjs (node *proj1, node *proj2)
         WLPROJ_BOUND1 (proj1) = MAX (bound11, bound12);
         WLPROJ_BOUND2 (proj1) = MIN (WLPROJ_BOUND2 (proj1), WLPROJ_BOUND2 (proj2));
 
-        /* compute new offset for 'grid2' */
+        /*
+         * compute new offset for 'grid2'
+         */
         WLGRID_OFFSET (grid2)
           = ComputeOffset (WLPROJ_BOUND1 (proj1), bound12, WLPROJ_STEP (proj2),
                            WLGRID_OFFSET (grid2), WLGRID_WIDTH (grid2));
 
-        /* compute new offsets for all grids in 'proj1' */
+        /*
+         * compute new offsets for all grids in 'proj1'
+         */
         tmp = grid1;
         do {
             WLGRID_OFFSET (tmp)
@@ -2370,24 +1921,41 @@ MergeProjs (node *proj1, node *proj2)
             tmp = WLGRID_NEXT (tmp);
         } while (tmp != NULL);
 
-        tmp = grid1;
-        do {
-            if (WLGRID_OFFSET (tmp) == WLGRID_OFFSET (grid2)) {
-                WLGRID_NEXTDIM (tmp)
-                  = MergeProjs (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
-                break;
-            } else {
-                DBUG_ASSERT ((WLGRID_OFFSET (grid2)
-                              >= WLGRID_OFFSET (tmp) + WLGRID_WIDTH (tmp)),
-                             "wrong offset");
+        /*
+         * insert 'grid2'
+         */
+        if (WLGRID_OFFSET (grid1) > WLGRID_OFFSET (grid2)) {
+            /* insert 'grid2' at head of grid list */
+            DBUG_ASSERT ((WLGRID_OFFSET (grid1)
+                          >= WLGRID_OFFSET (grid2) + WLGRID_WIDTH (grid2)),
+                         "wrong offset");
+            new_grid = DupTree (grid2, NULL);
+            WLGRID_NEXT (new_grid) = grid1;
+            WLPROJ_INNER (proj1) = new_grid;
+        } else {
+            /* search for correct position for insertion */
+            tmp = grid1;
+            while ((WLGRID_NEXT (tmp) != NULL)
+                   && (WLGRID_OFFSET (tmp) != WLGRID_OFFSET (grid2))
+                   && (WLGRID_OFFSET (WLGRID_NEXT (tmp)) <= WLGRID_OFFSET (grid2))) {
+                tmp = WLGRID_NEXT (tmp);
             }
 
-            last_grid1 = tmp;
-            tmp = WLGRID_NEXT (tmp);
-        } while (tmp != NULL);
-
-        if (tmp == NULL) {
-            WLGRID_NEXT (last_grid1) = DupTree (grid2, NULL);
+            if (WLGRID_OFFSET (tmp) == WLGRID_OFFSET (grid2)) {
+                /* range of 'grid2' is already in grid list -> merge next dim */
+                WLGRID_NEXTDIM (tmp)
+                  = MergeProjs (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
+            } else {
+                /* insert 'grid2' after 'tmp' */
+                if (WLGRID_NEXT (tmp) != NULL) {
+                    DBUG_ASSERT ((WLGRID_OFFSET (WLGRID_NEXT (tmp))
+                                  >= WLGRID_OFFSET (grid2) + WLGRID_WIDTH (grid2)),
+                                 "wrong offset");
+                }
+                new_grid = DupTree (grid2, NULL);
+                WLGRID_NEXT (new_grid) = WLGRID_NEXT (tmp);
+                WLGRID_NEXT (tmp) = new_grid;
+            }
         }
     }
 
@@ -2429,13 +1997,9 @@ node *
 ComputeRects (node *projs, node *shape_arr)
 {
     node *tmp, *new_projs, *new_proj1, *last_proj2, *isect1, *isect2, *proj1, *proj2;
-    int fixpoint;
+    int fixpoint, new_step;
 
     DBUG_ENTER ("ComputeRects");
-
-#if 1
-    Print (projs);
-#endif
 
     /*
      * step 1: create disjunct outlines -> every proj lies in one and only one rectangle
@@ -2508,6 +2072,7 @@ ComputeRects (node *projs, node *shape_arr)
         /* duplicate first node of 'proj1' */
         WLPROJ_NEXT (proj1) = NULL;
         new_proj1 = DupTree (proj1, NULL);
+        new_step = WLPROJ_STEP (new_proj1); /* initial step value for rectangle */
         WLPROJ_NEXT (proj1) = proj2;
 
         while (proj2 != NULL) {
