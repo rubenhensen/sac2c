@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.209  1998/04/30 18:41:36  srs
+ * removed big in PrintNwith()
+ *
  * Revision 1.208  1998/04/30 12:57:26  dkr
  * changed output in PrintSync
  *
@@ -2240,7 +2243,10 @@ PrintNwith (node *arg_node, node *arg_info)
          * output format 2: now we have in
          * INFO_PRINT_INT_SYN(arg_info) the last expr.
          */
-        fprintf (outfile, ", dummy, ");
+        if (WO_modarray == NWITH_TYPE (arg_node))
+            fprintf (outfile, ", dummy, ");
+        else
+            fprintf (outfile, ", ");
         Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
     }
     fprintf (outfile, ")");
