@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2004/12/06 11:55:56  sah
+ * flag test
+ *
  * Revision 3.131  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -1171,6 +1174,7 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
+    FUNDEF_FLAGSTRUCTURE (new_node) = FUNDEF_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
