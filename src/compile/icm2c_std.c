@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/07/25 10:03:44  nmw
+ * special function handling for SAC_ObjectInit... with
+ * argc and argv to allow TheCommandLine to initialize
+ *
  * Revision 2.17  2000/07/24 15:06:53  dkr
  * redundant parameter 'line' removed from ICMs for array-prfs
  *
@@ -319,6 +323,10 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char **__argv)", name);
+    } else if (strncmp (name, "SACf_GlobalObjInit_for_",
+                        strlen ("SACf_GlobalObjInit_for_"))
+               == 0) {
+        fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else {
         fprintf (outfile, "%s(", name);
 #ifdef TAGGED_ARRAYS
