@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/28 12:51:25  ben
+ * param added to MT_SCHEDULER_(Cyclic,Self,AFS)_...
+ *
  * Revision 3.10  2001/03/27 11:51:51  ben
  * MT_SCHEDULER_Afs_ added
  *
@@ -141,12 +144,12 @@ extern void ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Cyclic_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int param, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Cyclic_END (int param, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Self_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int param, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Afs_BEGIN (int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Afs_END (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Afs_END (int param, int dim, char **vararg);
 #endif /* _ICM2C_MT_H_ */
