@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/01/22 15:55:47  dkr
+ * bug in COMPWLgridx fixed
+ *
  * Revision 3.12  2001/01/22 13:46:24  dkr
  * signature of MT_ADJUST_SCHEDULER modified
  *
@@ -5918,7 +5921,8 @@ COMPWLgridx (node *arg_node, node *arg_info)
     node *icm_args, *icm_args2, *cexpr;
     node *new_assigns;
     ids *ids_vector, *ids_scalar, *withid_ids;
-    char *icm_name, *icm_name_begin, *icm_name_end;
+    char *icm_name = NULL;
+    char *icm_name_begin, *icm_name_end;
     int dim, num_args;
     int cnt_unroll, adjust_dim, i;
     node *assigns = NULL;
@@ -6134,7 +6138,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
         assigns = MakeAssign (MakeIcm1 ("WL_SET_IDXVEC", DupTree (icm_args)), assigns);
     }
 
-    if ((WLGRIDX_CODE (arg_node) == NULL) && (WLGRIDX_NEXTDIM (arg_node) == NULL)) {
+    if ((icm_name != NULL) && (!strncmp (icm_name, "WL_NOOP", 7))) {
         /*
          * nothings happens here!
          * (this is a noop-gap in a fold-wl or with activated naive compilation)
