@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/17 14:17:27  dkr
+ * functions NameOrVal_... and NodeOrInt_... added
+ *
  * Revision 3.8  2001/01/10 14:27:32  dkr
  * function MakeWLsegX added
  *
@@ -55,88 +58,6 @@
  *
  * Revision 1.36  2000/10/16 16:01:03  dkr
  * VARDEC_OR_ARG_OBJDEF added
- *
- * Revision 1.35  2000/10/12 18:02:24  dkr
- * return value type of Is...() functions is bool, now
- *
- * Revision 1.34  2000/10/12 15:44:22  dkr
- * WLGRID_CBLOCK_INSTR and WLGRIDVAR_CBLOCK_INSTR added
- *
- * Revision 1.33  2000/10/09 16:33:50  dkr
- * NWITH2_CEXPR, NWITH2_CBLOCK added
- *
- * Revision 1.32  2000/10/02 09:02:05  sbs
- * ID_OR_CAST_TYPE added.
- *
- * Revision 1.31  2000/08/05 13:02:15  dkr
- * some macros for N_Nwith added
- *
- * Revision 1.30  2000/07/21 14:17:53  mab
- * added EqualShpseg
- *
- * Revision 1.29  2000/07/14 09:37:52  dkr
- * CopyNodelist renamed into DupNodelist and moved to DupTree.[ch]
- *
- * Revision 1.28  2000/07/12 15:19:51  dkr
- * function SearchDecl moved from Inline.h to tree_compound.h
- *
- * Revision 1.27  2000/07/11 14:50:40  dkr
- * function IsHidden added
- *
- * Revision 1.26  2000/07/07 15:44:57  bs
- * The following compound macros moved from tree_basic to tree_compound:
- * INFO_WLAA_ARRAYSHP, INFO_WLAA_INDEXDIM, INFO_WLAA_ARRAYDIM
- * INFO_TSI_ARRAYSHP, INFO_TSI_INDEXDIM, INFO_TSI_ARRAYDIM
- *
- * Revision 1.25  2000/07/05 15:18:02  mab
- * added Shpseg2Array
- *
- * Revision 1.24  2000/07/05 12:23:56  dkr
- * comment corrected
- *
- * Revision 1.23  2000/06/30 13:48:44  mab
- * added Array2Shpseg and DiffShpseg
- *
- * Revision 1.22  2000/06/29 16:07:05  mab
- * added Array2Shpseg
- *
- * Revision 1.21  2000/06/23 14:16:59  dkr
- * macros for old with-loop removed
- *
- * Revision 1.20  2000/06/23 13:04:31  mab
- * renamed *_VNAME to *_VARDEC_NAME, *_VNEXT to *_VARDEC_NEXT
- *
- * Revision 1.19  2000/06/21 15:00:49  mab
- * added macros *_PADDED for ARG and VARDEC
- * added INFO_APT_EXPRESSION_PADDED
- *
- * Revision 1.18  2000/06/13 14:18:11  dkr
- * macros L_NWITH_OR_NWITH2_... added
- *
- * Revision 1.17  2000/05/30 14:31:44  dkr
- * redundant macro APPEND_VARDECS removed
- *
- * Revision 1.16  2000/05/30 14:06:18  dkr
- * some helper functions moved from compile.c to tree_compound.c
- *
- * Revision 1.15  2000/05/25 22:54:16  dkr
- * some macros for N_Nwith, N_Nwith2, N_WLgrid and N_WLgridVar added
- *
- * Revision 1.14  2000/05/24 18:57:50  dkr
- * macros for old with-loop separated
- * macro NCODE_CBLOCK_INSTR added
- *
- * Revision 1.13  2000/03/31 14:09:47  dkr
- * NWITH_OR_NWITH2_... macros added
- *
- * Revision 1.12  2000/03/23 21:39:26  dkr
- * macros VARDEC_OR_ARG_ATTRIB and VARDEC_OR_ARG_STATUS added
- *
- * Revision 1.11  2000/03/21 13:12:56  jhs
- * Added macros: [L_]MT_OR_ST_xxx
- *
- * Revision 1.10  2000/03/15 15:59:53  dkr
- * SET_VARDEC_OR_ARG_ACTCHN renamed to L_VARDEC_OR_ARG_ACTCHN, ...
  *
  * [...]
  *
@@ -1830,6 +1751,30 @@ extern node *MakeWLsegX (int dims, int full_range, node *contents, node *next);
 #define WLGRIDX_CEXPR(n) (NCODE_CEXPR (WLGRIDX_CODE (n)))
 
 #define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
+ ***  N_WLgrid :    *and*  N_WLgridVar :
+ ***/
+
+#define WL_GET_ADDRESS(node, nodetype, macro, field)                                     \
+    (NODE_TYPE (node) == nodetype) ? (void *)&(macro##_##field (node))                   \
+                                   : (void *)&(macro##VAR##_##field (node))
+
+extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
+                                    void *node_or_int);
+
+extern node *NameOrVal_MakeNode (char *name, int val);
+extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
+
+extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2);
+extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
+                          void *node_or_int2);
+
+extern bool NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2);
+extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2);
 
 /*--------------------------------------------------------------------------*/
 

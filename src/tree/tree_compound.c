@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/17 14:17:19  dkr
+ * functions NameOrVal_... and NodeOrInt_... added
+ *
  * Revision 3.3  2001/01/10 14:33:00  dkr
  * function MakeWLsegX added
  *
@@ -66,152 +69,6 @@
  *
  * Revision 1.13  2000/07/12 15:19:40  dkr
  * function SearchDecl moved from Inline.c to tree_compound.c
- *
- * Revision 1.12  2000/07/11 14:59:14  dkr
- * function IsHidden added
- *
- * Revision 1.11  2000/07/10 15:49:32  dkr
- * minor changes done
- *
- * Revision 1.10  2000/07/05 15:18:02  mab
- * added Shpseg2Array
- *
- * Revision 1.9  2000/06/30 15:24:39  jhs
- * CombineExprs can handle arguments being NULL now.
- * This effect can be used within MakeIcmXXX now.
- *
- * Revision 1.8  2000/06/30 13:48:44  mab
- * added Array2Shpseg and DiffShpseg
- *
- * Revision 1.7  2000/06/23 14:04:54  dkr
- * nodetype N_with removed
- *
- * Revision 1.6  2000/05/30 14:06:27  dkr
- * some helper functions moved from compile.c to tree_compound.c
- *
- * Revision 1.5  2000/04/20 11:40:10  jhs
- * Added comment at CountFunctionParams.
- *
- * Revision 1.4  2000/02/23 17:49:22  cg
- * Type property functions IsUnique(<type>), IsBoxed(<type>)
- * moved from refcount.c to tree_compound.c.
- *
- * Revision 1.3  2000/02/22 11:59:06  jhs
- * Adapted NODE_TEXT.
- *
- * Revision 1.2  2000/01/25 13:41:15  dkr
- * some rearrangements made
- * all the constvec stuff moved from internal_lib.c
- * function FindVardec_Name and FindVardec_Varno added
- *
- * Revision 1.1  2000/01/21 15:38:27  dkr
- * Initial revision
- *
- * Revision 2.17  1999/11/15 14:24:16  dkr
- * assert in IsConstArray removed
- *
- * Revision 2.16  1999/11/12 12:41:40  dkr
- * IsConstArray revisited: accidentaly the new version was not activated.
- *   some comments added, some minor changes done.
- *
- * Revision 2.15  1999/11/11 20:07:21  dkr
- * function IsConstantArray changed:
- *   new name (IsConstArray)
- *   new signature (no type parameter anymore)
- *   new return value (boolean instead of #elements)
- *   NOW THIS FUNCTION (hopefully) works correct :)
- *
- * Revision 2.14  1999/11/09 21:15:31  dkr
- * Functions MakeIcm7, MakeAssignIcm7 added.
- *
- * Revision 2.13  1999/10/27 15:12:41  sbs
- * MakeAssignIcmX(...) added.
- *
- * Revision 2.12  1999/10/26 15:51:00  dkr
- * Bug in MakeIcm{4,5,6} fixed
- *
- * Revision 2.11  1999/09/20 11:33:32  jhs
- * Added (L_)VARDEC_OR_ARG_BNEXT.
- * Brushed MakeIcm(0..6).
- *
- * Revision 2.10  1999/09/01 12:31:35  sbs
- * IsConstantArray now is able to deal with NULL-args!
- *
- * Revision 2.9  1999/07/08 14:59:12  sbs
- * Array2BoolVec added
- *
- * Revision 2.8  1999/07/07 05:59:33  sbs
- * Added function MakeVinfoDollar
- *
- * Revision 2.7  1999/05/12 08:38:14  sbs
- * ID_CONSTARRAY changed into ID_ISCONST
- *
- * Revision 2.6  1999/04/26 10:53:59  bs
- * Function 'IsConstantArray' modified.
- * These changes are only temporary ones!!
- *
- * Revision 2.5  1999/04/16 18:48:10  bs
- * Bug fixed in IntVec2Array.
- *
- * Revision 2.4  1999/03/31 10:51:31  bs
- * Function Array2CharVec added.
- *
- * Revision 2.3  1999/03/15 14:09:04  bs
- * Access macros renamed (take a look at tree_basic.h).
- * Functions Array2FloatVec and Array2Dblvec added.
- *
- * Revision 2.2  1999/03/04 10:07:13  bs
- * Functions IntVec2Array() and Array2IntVec() added.
- *
- * Revision 2.1  1999/02/23 12:39:57  sacbase
- * new release made
- *
- * Revision 1.45  1999/02/09 14:47:07  dkr
- * removed unused var in NodeListFind()
- *
- * Revision 1.44  1999/02/06 12:49:59  srs
- * inserted the following functions
- * NodeListAppend()
- * NodeListDelete()
- * NodeListFree()
- * NodeListFind()
- *
- * Revision 1.43  1999/01/26 14:25:46  cg
- * Added functions MakePrf1(), MakePrf2(), and MakePrf3() to
- * create N_prf nodes with 1,2, or 3 arguments, repsectively.
- *
- * Revision 1.42  1999/01/19 14:20:38  sbs
- * some warnings concerning uninitialized values eliminated.
- *
- * Revision 1.41  1998/07/03 10:16:38  cg
- * new functions MakeIcm[012345] added
- * function AppendExpr renamed to AppendExprs
- *
- * Revision 1.40  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
- * Now, module name and symbol name are combined correctly by ':'.
- * Only when it really comes to the generation of C code, the ':' is
- * replaced by '__'. This is done by the renaming of all identifiers
- * during the precompilation phase.
- *
- * Revision 1.39  1998/06/04 16:59:20  cg
- * added function LookupIds that looks for a given identifier
- * within an ids-chain.
- *
- * Revision 1.38  1998/05/12 12:19:48  dkr
- * added AppendAssign, AppendExpr
- *
- * Revision 1.37  1998/03/12 12:45:56  srs
- * fixed IsConstArray()
- *
- * Revision 1.36  1998/03/10 11:13:43  srs
- * changed parameters of IsConstantArray()
- *
- * Revision 1.35  1998/03/07 17:01:19  srs
- * added IsConstantArray()
- *
- * Revision 1.34  1998/02/12 10:34:02  srs
- * changed GetCompoundNode() to work with new WLs
  *
  * [...]
  *
@@ -2874,11 +2731,219 @@ MakeWLsegX (int dims, int full_range, node *contents, node *next)
 
     DBUG_ENTER ("MakeWLsegX");
 
-    if (AllStridesAreConstant (contents)) {
+    if (AllStridesAreConstant (contents, TRUE, TRUE)) {
         new_node = MakeWLseg (dims, full_range, contents, next);
     } else {
         new_node = MakeWLsegVar (dims, full_range, contents, next);
     }
 
     DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
+ ***  N_WLgrid :    *and*  N_WLgridVar :
+ ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   void NodeOrInt_GetNameOrVal( char **ret_name, int *ret_val,
+ *                                nodetype nt, void *node_or_int)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_or_int)
+{
+    DBUG_ENTER ("NodeOrInt_GetNameOrVal");
+
+    *ret_name = NULL;
+    *ret_val = (-1);
+
+    switch (nt) {
+    case N_WLstrideVar:
+    case N_WLgridVar:
+        if (NODE_TYPE ((*((node **)node_or_int))) == N_id) {
+            (*ret_name) = ID_NAME ((*((node **)node_or_int)));
+        } else {
+            (*ret_val) = NUM_VAL ((*((node **)node_or_int)));
+        }
+        break;
+
+    case N_WLstride:
+    case N_WLgrid:
+        (*ret_val) = *((int *)node_or_int);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "wrong node type found!");
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NameOrVal_MakeNode( char *name, int val)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NameOrVal_MakeNode (char *name, int val)
+{
+    node *ret;
+
+    DBUG_ENTER ("NameOrVal_MakeNode");
+
+    if (val >= 0) {
+        ret = MakeNum (val);
+    } else {
+        ret = MakeId_Copy (name);
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NodeOrInt_MakeNode( nodetype nt, void *node_or_int)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
+{
+    char *name;
+    int val;
+    node *ret;
+
+    DBUG_ENTER ("NodeOrInt_MakeNode");
+
+    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
+    ret = NameOrVal_MakeNode (name, val);
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NameOrVal_Eq( char *name1, int val1, char *name2, int val2)
+ *
+ * Description:
+ *   This function is used to compare two parameters of N_WLstride(Var)
+ *   or N_WLgrid(Var) nodes.
+ *
+ ******************************************************************************/
+
+bool
+NameOrVal_Eq (char *name1, int val1, char *name2, int val2)
+{
+    bool ret;
+
+    DBUG_ENTER ("NameOrVal_Eq");
+
+    ret = FALSE;
+    if ((val1 >= 0) && (val2 >= 0)) {
+        ret = (val1 == val2);
+    } else if ((name1 != NULL) && (name2 != NULL)) {
+        ret = (strcmp (name1, name2) == 0);
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NodeOrInt_Eq( nodetype nt1, void *node_or_int1,
+ *                      nodetype nt2, void *node_or_int2)
+ *
+ * Description:
+ *   This function is used to compare two parameters of N_WLstride(Var)
+ *   or N_WLgrid(Var) nodes.
+ *
+ ******************************************************************************/
+
+bool
+NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2)
+{
+    char *name1, *name2;
+    int val1, val2;
+    bool ret;
+
+    DBUG_ENTER ("NodeOrInt_Eq");
+
+    NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
+    NodeOrInt_GetNameOrVal (&name2, &val2, nt2, node_or_int2);
+    ret = NameOrVal_Eq (name1, val1, name2, val2);
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NodeOrInt_IntEq( nodetype nt1, void *node_or_int1, int val2)
+ *
+ * Description:
+ *   This function is used to compare a parameters of a N_WLstride(Var)
+ *   or N_WLgrid(Var) node with an integer value.
+ *
+ ******************************************************************************/
+
+bool
+NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2)
+{
+    char *name1;
+    int val1;
+    bool ret;
+
+    DBUG_ENTER ("NodeOrInt_IntEq");
+
+    NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
+    ret = NameOrVal_Eq (name1, val1, NULL, val2);
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NodeOrInt_StrEq( nodetype nt1, void *node_or_int1, char *name2)
+ *
+ * Description:
+ *   This function is used to compare a parameters of a N_WLstride(Var)
+ *   or N_WLgrid(Var) node with a string.
+ *
+ ******************************************************************************/
+
+bool
+NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2)
+{
+    char *name1;
+    int val1;
+    bool ret;
+
+    DBUG_ENTER ("NodeOrInt_StrEq");
+
+    NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
+    ret = NameOrVal_Eq (name1, val1, name2, (-1));
+
+    DBUG_RETURN (ret);
 }
