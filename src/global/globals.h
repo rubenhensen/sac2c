@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/05/26 14:21:45  sbs
+ * OPT_AP added.
+ *
  * Revision 2.28  2000/03/16 14:27:41  dkr
  * do_lac_fun_transformation replaced by do_lac2fun, do_fun2lac
  *
@@ -138,6 +141,7 @@ extern unsigned int optimize;
 #define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
 #define OPT_RCAO 0x00800000 /* ref count allocation optimization (for PHM) */
 #define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
+#define OPT_AP 0x02000000   /* array padding                               */
 
 extern int optvar;
 extern int inlnum;
