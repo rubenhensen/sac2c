@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/12/08 21:22:02  ktr
+ * minor bugfix
+ *
  * Revision 1.12  2004/11/27 01:35:10  ktr
  * function names fixed.
  *
@@ -250,8 +253,8 @@ EMRIarg (node *arg_node, info *arg_info)
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
-    if (ARG_ISARTIFICIAL (arg_node)) {
-        DFMsetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, arg_node);
+    if (!ARG_ISARTIFICIAL (arg_node)) {
+        DFMsetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, ARG_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
