@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.86  2000/07/19 16:36:30  nmw
+ * flag ICM_END_OF_STATEMENT implemented
+ * output of init flags for objects in header.h and globals.c
+ *
  * Revision 2.85  2000/07/14 11:35:31  dkr
  * minor changes in DoPrintTypesAST() done
  *
@@ -1081,6 +1085,21 @@ PrintObjdef (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, "\n");
+
+        /* print objinit flag */
+        if (generatelibrary & GENERATELIBRARY_C) {
+            if (print_objdef_for_header_file) {
+                fprintf (outfile,
+                         "/* flag, if object has been initialized */\n"
+                         "extern bool SAC_INIT_FLAG_%s;\n",
+                         OBJDEF_NAME (arg_node));
+            } else {
+                fprintf (outfile,
+                         "/* flag, if object has been initialized */\n"
+                         "bool SAC_INIT_FLAG_%s=false;\n",
+                         OBJDEF_NAME (arg_node));
+            }
+        }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -1880,6 +1899,10 @@ PrintIcm (node *arg_node, node *arg_info)
             Trav (ICM_ARGS (arg_node), arg_info);
         }
         fprintf (outfile, ")");
+
+        if (ICM_END_OF_STATEMENT (arg_node)) {
+            fprintf (outfile, ";");
+        }
 
         if (NULL != ICM_NEXT (arg_node)) {
             if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
