@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/03/23 14:01:19  jhs
+ * Brushing around includes of nt_info.mac.
+ * Added DFMfoldmask_t.
+ *
  * Revision 2.28  2000/03/16 14:30:02  dkr
  * phase_info.mac used
  *
@@ -85,150 +89,7 @@
  * Revision 2.1  1999/02/23 12:40:15  sacbase
  * new release made
  *
- * Revision 1.46  1999/02/11 09:18:45  bs
- * contextflag CT_array added.
- *
- * Revision 1.45  1999/02/06 12:50:45  srs
- * expanded type NODELIST
- *
- * Revision 1.44  1999/02/02 18:47:14  dkr
- * definition of type 'feature_t' changed, to fool cc
- *
- * Revision 1.43  1999/01/19 20:32:10  srs
- * added references_folded to struct WL_INFO
- *
- * Revision 1.42  1999/01/15 15:21:24  cg
- * added new types access_t, accessclass_t, and feature_t.
- *
- * Revision 1.41  1998/06/18 13:40:07  cg
- * macro NIF used in node_info.mac enlarged,
- * new traversal function tables added.
- *
- * Revision 1.40  1998/05/28 23:53:44  dkr
- * added ST_foldfun
- *
- * Revision 1.39  1998/05/28 07:48:53  cg
- * added entry ST_spmd_inout for enum statustype.
- *
- * Revision 1.38  1998/05/20 20:14:07  sbs
- * contextflag for INFO_FLTN inserted.
- *
- * Revision 1.37  1998/05/14 12:49:24  sbs
- * contextflag added
- *
- * Revision 1.36  1998/05/06 14:30:07  dkr
- * added DataFlowMasks to NODE type
- *
- * Revision 1.35  1998/04/29 17:10:30  dkr
- * changed usage of NIF
- *
- * Revision 1.34  1998/04/23 18:57:01  dkr
- * added usage of NIF
- *
- * Revision 1.33  1998/04/17 17:26:13  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.32  1998/04/03 11:28:06  dkr
- * concregs renamed to concregions
- *
- * Revision 1.31  1998/04/02 18:17:38  dkr
- * ST_WLfun renamed to ST_concfun
- *
- * Revision 1.30  1998/04/02 16:06:11  dkr
- * added new compiler phase PH_concregs
- *
- * Revision 1.29  1998/04/02 12:49:18  dkr
- * added ST_WLfun
- *
- * Revision 1.28  1998/04/01 08:01:03  srs
- * removed NEWTREE
- *
- * Revision 1.27  1998/03/26 18:05:10  srs
- * modified struct WL_INFO
- *
- * Revision 1.26  1998/03/17 11:23:11  srs
- * added comments to WL_INFO
- *
- * Revision 1.25  1998/03/06 13:28:35  srs
- * added new type WL_INFO
- *
- * Revision 1.24  1998/02/25 09:13:12  cg
- * added type compiler_phase_t
- *
- * Revision 1.23  1997/11/18 18:05:04  srs
- * expanded infotype by GeneratorRel
- * new enum WithIdType
- *
- * Revision 1.22  1997/11/13 16:25:14  srs
- * added enum WithOpType
- * removed struct with_ids
- * added new component info2 (universal infoslot)
- *  to struct NODE
- *
- * Revision 1.21  1997/11/07 15:43:23  srs
- * added alternative with_ids to infotype.
- * with_ids is used in N_withid
- *
- * Revision 1.20  1997/11/05 09:40:49  dkr
- * usage of NIF-macro has changed
- *
- * Revision 1.19  1997/10/29 17:16:02  dkr
- * with defined NEWTREE the component node.nnode does not longer exist
- *
- * Revision 1.18  1997/10/07 16:04:41  srs
- * removed some unused typedefs
- *
- * Revision 1.17  1997/05/14 08:16:43  sbs
- * node->counter inserted.
- *
- * Revision 1.16  1997/03/19  13:39:07  cg
- * Added new data type 'deps'
- *
- * Revision 1.15  1996/01/26  15:29:22  cg
- * added statustype entry ST_classfun
- *
- * Revision 1.14  1996/01/25  16:35:06  hw
- * added macros to use with types->dim to examine whether
- * it is a scalar, an array with known dimension and unknown shape,
- * an array with known shape or an array with unknown shape
- *
- * Revision 1.13  1996/01/16  16:45:45  cg
- * extended macro TYP_IF to 5 positions
- *
- * Revision 1.12  1996/01/02  15:52:26  cg
- * macro NIF extended
- *
- * Revision 1.11  1995/12/29  10:28:16  cg
- * added entries tdef and id_cmod in struct types
- *
- * Revision 1.10  1995/12/20  08:17:37  cg
- * added new entry cchar in info union to store char values.
- *
- * Revision 1.9  1995/12/11  14:01:09  cg
- * added statustype entry ST_Cfun
- *
- * Revision 1.8  1995/12/01  17:11:45  cg
- * removed statustype entries ST_ref and ST_deref
- * added statustype entry ST_inout
- *
- * Revision 1.7  1995/11/16  19:42:54  cg
- * NIF macro extended by 4 additional parameters
- *
- * Revision 1.6  1995/11/01  09:39:36  cg
- * new member of enum statustype: ST_was_reference
- *
- * Revision 1.5  1995/10/20  09:27:00  cg
- * added 4 new items to macro NIF
- *
- * Revision 1.4  1995/10/19  10:08:41  cg
- * new entry in enum statustype: ST_used
- *
- * Revision 1.3  1995/10/16  17:57:00  cg
- * added new member 'ST_objinitfun' of enum statustype
- *
- * Revision 1.2  1995/10/06  17:15:46  cg
- * new type nodelist added.
- * some new statuses inserted into statustype.
+ * [...]
  *
  * Revision 1.1  1995/09/27  15:13:26  cg
  * Initial revision
@@ -280,8 +141,8 @@ typedef int bool;
 #define FEATURE_COND 1024    /* conditional containing array accesses */
 #define FEATURE_UNKNOWN 2048 /* no special features but offset not iferable */
 
-#define TYP_IFname(name) name
 typedef enum {
+#define TYP_IFname(name) name
 #include "type_info.mac"
 } simpletype;
 
@@ -314,12 +175,12 @@ typedef enum {
 
 typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
 
-#define PH_SELelement(it_element) it_element
 typedef enum {
+#define PH_SELelement(it_element) it_element
 #include "phase_info.mac"
 } compiler_phase_t;
 
-/* use mdb_statustype get get reponding char* to print etc. */
+/* use mdb_statustype to get corresponding char* to print etc. */
 typedef enum {
 #define SELECTelement(it_element) it_element
 #include "status_info.mac"
@@ -348,13 +209,13 @@ typedef enum { ADIR_read, ADIR_write } accessdir_t;
  * new nodes for yacc and the syntax tree
  */
 
-#define NIFNode_name(Node_name) Node_name
 typedef enum {
+#define NIFNode_name(Node_name) Node_name
 #include "node_info.mac"
 } nodetype; /* Type of nodes of syntax tree */
 
-#define PRF_IF(n, s, x, y) n
 typedef enum {
+#define PRF_IF(n, s, x, y) n
 #include "prf_node_info.mac"
 } prf;
 #undef PRF_IF
@@ -601,6 +462,17 @@ typedef struct INTERN_GEN {
 } intern_gen;
 
 /*
+ *  Structure to store information during multithread.
+ *  It is needed to store by whcih fold-operation a variable is set.
+ */
+
+typedef struct FM {
+    char *name;
+    node *foldop;
+    struct FM *next;
+} DFMfoldmask_t;
+
+/*
  * This section defines types for tagged array support
  */
 
@@ -608,22 +480,17 @@ typedef struct INTERN_GEN {
  * Enumerated types for DATA class and uniqueness class
  */
 
-#define ATTRIB 1
-#define NTIF(type, str) type
-
 typedef enum {
+#define ATTRIB 1
+#define NTIFtype(it_type) it_type
 #include "nt_info.mac"
 } data_class_t;
 
-#undef ATTRIB
-#define ATTRIB 2
-
 typedef enum {
+#define ATTRIB 2
+#define NTIFtype(it_type) it_type
 #include "nt_info.mac"
 } uniqueness_class_t;
-
-#undef NTIF
-#undef ATTRIB
 
 /*
  * The following defines indicate the position of tags
