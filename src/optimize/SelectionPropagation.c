@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2003/09/26 11:31:45  ktr
+ * Fixed a crash that appeared for scalar with-loops (Had no idea they existed at all).
+ *
  * Revision 1.4  2003/09/16 18:15:26  ktr
  * Index vectors are now treated as structural constants.
  *
@@ -163,31 +166,33 @@ CheckAddToReplaceList (node *assign, node *arg_info)
             elems = ARRAY_AELEMS (array);
             scalars = NWITHID_IDS (widl->withid);
 
-            /* Determine offset */
-            while ((elems != NULL) && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)
-                   && (ID_AVIS (EXPRS_EXPR (elems)) != IDS_AVIS (scalars))) {
-                offset++;
-                elems = EXPRS_NEXT (elems);
-            }
-
-            if ((elems != NULL) && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)) {
-                /* First element is from an index vector! */
-                while ((elems != NULL) && (scalars != NULL)
-                       && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)
-                       && (ID_AVIS (EXPRS_EXPR (elems)) == IDS_AVIS (scalars))) {
-                    scalars = IDS_NEXT (scalars);
+            if (scalars != NULL) {
+                /* Determine offset */
+                while ((elems != NULL) && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)
+                       && (ID_AVIS (EXPRS_EXPR (elems)) != IDS_AVIS (scalars))) {
+                    offset++;
                     elems = EXPRS_NEXT (elems);
                 }
 
-                if (elems == NULL) {
-                    /* Vector is subvector of the current withid */
-                    repl = Malloc (sizeof (replacelist));
-                    repl->withid = widl->withid;
-                    repl->offset = offset;
-                    repl->array = ASSIGN_LHS (assign);
-                    repl->next = INFO_SP_REPLACELIST (arg_info);
-                    INFO_SP_REPLACELIST (arg_info) = repl;
-                    return;
+                if ((elems != NULL) && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)) {
+                    /* First element is from an index vector! */
+                    while ((elems != NULL) && (scalars != NULL)
+                           && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)
+                           && (ID_AVIS (EXPRS_EXPR (elems)) == IDS_AVIS (scalars))) {
+                        scalars = IDS_NEXT (scalars);
+                        elems = EXPRS_NEXT (elems);
+                    }
+
+                    if (elems == NULL) {
+                        /* Vector is subvector of the current withid */
+                        repl = Malloc (sizeof (replacelist));
+                        repl->withid = widl->withid;
+                        repl->offset = offset;
+                        repl->array = ASSIGN_LHS (assign);
+                        repl->next = INFO_SP_REPLACELIST (arg_info);
+                        INFO_SP_REPLACELIST (arg_info) = repl;
+                        return;
+                    }
                 }
             }
             widl = widl->next;
