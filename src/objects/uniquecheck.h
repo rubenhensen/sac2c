@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 3.2  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.1  2000/11/20 18:02:03  sacbase
  * new release made
  *
@@ -29,7 +36,6 @@ extern node *UNQarg (node *arg_node, node *arg_info);
 extern node *UNQlet (node *arg_node, node *arg_info);
 extern node *UNQid (node *arg_node, node *arg_info);
 extern node *UNQdo (node *arg_node, node *arg_info);
-extern node *UNQwhile (node *arg_node, node *arg_info);
 extern node *UNQcond (node *arg_node, node *arg_info);
 extern node *UNQNwith (node *arg_node, node *arg_info);
 

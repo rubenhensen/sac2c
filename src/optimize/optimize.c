@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.55  2004/02/02 16:00:57  skt
  * use DoSSA and UndoSSA instead of calling Lac2Fun, SSATransform etc.
  *
@@ -297,18 +304,11 @@
 #include "tile_size_inference.h"
 #include "index.h"
 #include "pad.h"
-
-#include "CheckAvis.h"
-#include "SSATransform.h"
-#include "UndoSSATransform.h"
-#include "lac2fun.h"
-#include "fun2lac.h"
 #include "ssa.h"
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
 #include "SSAConstantFolding.h"
 #include "SSALIR.h"
-#include "while2do.h"
 #include "SSALUR.h"
 #include "SSAWithloopFolding.h"
 #include "rmcasts.h"

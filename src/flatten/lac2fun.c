@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.23  2003/09/11 08:37:44  sbs
  * DBUG_PRINTs OPT added.
  *
@@ -607,29 +614,6 @@ L2Fcond (node *arg_node, node *arg_info)
 
     arg_node = DoLifting ("Cond", COND_IN_MASK (arg_node), COND_OUT_MASK (arg_node),
                           COND_LOCAL_MASK (arg_node), arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *L2Fwhile( node *arg_node, node *arg_info)
- *
- * description:
- *   Lifts the while-loop and inserts an equivalent function call instead.
- *
- ******************************************************************************/
-
-node *
-L2Fwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("L2Fwhile");
-
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    arg_node = DoLifting ("While", WHILE_IN_MASK (arg_node), WHILE_OUT_MASK (arg_node),
-                          WHILE_LOCAL_MASK (arg_node), arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 3.5  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.4  2002/10/18 15:16:03  sbs
  * bug fixed in ATTRIB -> FLAG translation ;-))
  *
@@ -1080,64 +1087,6 @@ UNQdo (node *arg_node, node *arg_info)
                   PrintUnqstate (unqstate););
 
     AddHistory (unqstate, H_do_leave);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : UNQwhile
- *  arguments     : 1) N_while node of syntax tree
- *                  2) arg_info != NULL used as marker for being inside
- *                  a with-loop
- *  description   : First the current unique state is copied.
- *                  While the loop body is traversed twice in sequential order
- *                  using the original unique state, the copy is left
- *                  untouched. The statements following the loop are then
- *                  checked with both unique states.
- *                  This should detect all uniqueness violations
- *                  caused by a while-loop.
- *  global vars   : unqstate
- *  internal funs : CopyUnqstate, AddHistory, MergeUnqstate
- *  external funs : Trav
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-node *
-UNQwhile (node *arg_node, node *arg_info)
-{
-    unqstatelist *skipped_state;
-
-    DBUG_ENTER ("UNQwhile");
-
-    skipped_state = CopyUnqstate (unqstate);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nskipped state of while\n");
-                  PrintUnqstate (skipped_state););
-
-    AddHistory (unqstate, H_while_enter);
-    AddHistory (skipped_state, H_while_skipped);
-
-    Trav (WHILE_BODY (arg_node), arg_info);
-    AddHistory (unqstate, H_while_repeat);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after while(1)\n");
-                  PrintUnqstate (unqstate););
-
-    Trav (WHILE_BODY (arg_node), arg_info);
-
-    AddHistory (unqstate, H_while_leave);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after while(2)\n");
-                  PrintUnqstate (unqstate););
-
-    unqstate = MergeUnqstate (skipped_state, unqstate);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after merging skip and while\n");
-                  PrintUnqstate (unqstate););
 
     DBUG_RETURN (arg_node);
 }

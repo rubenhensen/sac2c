@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.6  2001/05/08 12:49:42  dkr
  * new RC macros used
  *
@@ -832,50 +839,6 @@ SPMDRMblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("SPMDRMblock");
 
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node SPMDRMwhile (node *arg_node, node *arg_info)
- *
- * description:
- *   while-loops does not make any known problems here, we only need to
- *   traverse the assignments.
- *
- ******************************************************************************/
-node *
-SPMDRMwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SPMDRMwhile");
-
-    DBUG_PRINT ("SPMDRM", ("trav into while"));
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-    DBUG_PRINT ("SPMDRM", ("trav from while"));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node SPMDRMloop (node *arg_node, node *arg_info)
- *
- * description:
- *   do-loops does not make any known problems here, we only need to
- *   traverse the assignments.
- *
- ******************************************************************************/
-node *
-SPMDRMloop (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SPMDRMloop");
-
-    DBUG_PRINT ("SPMDRM", ("trav into do"));
-    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
-    DBUG_PRINT ("SPMDRM", ("trav from do"));
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.2  2001/04/30 12:17:50  nmw
  * AEap added
  *
@@ -33,7 +40,6 @@ extern node *AEfundef (node *arg_node, node *arg_info);
 extern node *AEassign (node *arg_node, node *arg_info);
 extern node *AEcond (node *arg_node, node *arg_info);
 extern node *AEdo (node *arg_node, node *arg_info);
-extern node *AEwhile (node *arg_node, node *arg_info);
 extern node *AENwith (node *arg_node, node *arg_info);
 extern node *AEap (node *arg_node, node *arg_info);
 

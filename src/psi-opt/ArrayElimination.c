@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.17  2003/06/11 21:52:05  ktr
  * Added support for multidimensional arrays.
  *
@@ -456,30 +463,6 @@ AEdo (node *arg_node, node *arg_info)
 
     DO_INSTR (arg_node) = SELTRAV (use_ssaform, DO_INSTR (arg_node), arg_info, arg_node);
     DO_COND (arg_node) = SELTRAV (use_ssaform, DO_COND (arg_node), arg_info, arg_node);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *AEwhile(node *arg_node, node *arg_info)
- *
- * description:
- *   only needed to apply OPTTrav
- *
- *
- ******************************************************************************/
-
-node *
-AEwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("AEwhile");
-
-    WHILE_COND (arg_node)
-      = SELTRAV (use_ssaform, WHILE_COND (arg_node), arg_info, arg_node);
-    WHILE_INSTR (arg_node)
-      = SELTRAV (use_ssaform, WHILE_INSTR (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }

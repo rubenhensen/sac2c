@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.16  2003/06/17 16:07:31  dkr
  * PREC3with() and PREC4with() added
  *
@@ -123,7 +130,6 @@ extern node *PREC4icm (node *arg_node, node *arg_info);
 extern node *PREC4array (node *arg_node, node *arg_info);
 extern node *PREC4id (node *arg_node, node *arg_info);
 extern node *PREC4do (node *arg_node, node *arg_info);
-extern node *PREC4while (node *arg_node, node *arg_info);
 extern node *PREC4cond (node *arg_node, node *arg_info);
 extern node *PREC4with (node *arg_node, node *arg_info);
 extern node *PREC4with2 (node *arg_node, node *arg_info);

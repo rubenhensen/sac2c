@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.1  2000/11/20 18:02:34  sacbase
  * new release made
  *
@@ -75,8 +82,6 @@ extern node *SPMDROassign (node *arg_node, node *arg_info);
 extern DFMmask_t ReduceMasks (node *block, DFMmask_t first_out);
 
 extern node *SPMDRMblock (node *arg_node, node *arg_info);
-extern node *SPMDRMwhile (node *arg_node, node *arg_info);
-extern node *SPMDRMloop (node *arg_node, node *arg_info);
 extern node *SPMDRMcond (node *arg_node, node *arg_info);
 extern node *SPMDRMid (node *arg_node, node *arg_info);
 extern node *SPMDRMlet (node *arg_node, node *arg_info);

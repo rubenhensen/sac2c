@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.1  2000/11/20 18:01:57  sacbase
  * new release made
  *
@@ -51,7 +58,6 @@ extern node *WLAAassign (node *arg_node, node *arg_info);
 extern node *WLAAlet (node *arg_node, node *arg_info);
 extern node *WLAAap (node *arg_node, node *arg_info);
 extern node *WLAAid (node *arg_node, node *arg_info);
-extern node *WLAAwhile (node *arg_node, node *arg_info);
 extern node *WLAAdo (node *arg_node, node *arg_info);
 extern node *WLAAcond (node *arg_node, node *arg_info);
 extern node *WLAAprf (node *arg_node, node *arg_info);

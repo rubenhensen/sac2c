@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.74  2004/02/20 08:25:40  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -3400,33 +3407,6 @@ PREC4do (node *arg_node, node *arg_info)
 
     DO_USEVARS (arg_node) = RenameIds (DO_USEVARS (arg_node));
     DO_DEFVARS (arg_node) = RenameIds (DO_DEFVARS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC4while(node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PREC4while (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC4while");
-
-    WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    WHILE_USEVARS (arg_node) = RenameIds (WHILE_USEVARS (arg_node));
-    WHILE_DEFVARS (arg_node) = RenameIds (WHILE_DEFVARS (arg_node));
 
     DBUG_RETURN (arg_node);
 }

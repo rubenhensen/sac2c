@@ -1,6 +1,13 @@
 #
 #
 # $Log$
+# Revision 3.27  2004/02/25 08:17:44  cg
+# Elimination of while-loops by conversion into do-loops with
+# leading conditional integrated into flatten.
+# Separate compiler phase while2do eliminated.
+# NO while-loops may occur after flatten.
+# While-loop specific code eliminated.
+#
 # Revision 3.26  2004/02/02 15:49:35  skt
 # ssa.o added
 #
@@ -81,7 +88,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants -I../typecheck
 
 
-all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o handle_mops.o\
+all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      CheckAvis.o SSATransform.o UndoSSATransform.o ssa.o
 
 

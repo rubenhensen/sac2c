@@ -1,6 +1,13 @@
 #
 #
 # $Log$
+# Revision 3.79  2004/02/25 08:17:44  cg
+# Elimination of while-loops by conversion into do-loops with
+# leading conditional integrated into flatten.
+# Separate compiler phase while2do eliminated.
+# NO while-loops may occur after flatten.
+# While-loop specific code eliminated.
+#
 # Revision 3.78  2004/02/02 15:49:35  skt
 # ssa.o added
 #
@@ -165,8 +172,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o
 PRINT= src/print/print.o src/print/convert.o
-FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
-         src/flatten/while2do.o src/flatten/insert_vardec.o \
+FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
+         src/flatten/fun2lac.o src/flatten/insert_vardec.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/CheckAvis.o src/flatten/SSATransform.o \
          src/flatten/ssa.o

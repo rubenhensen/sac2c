@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.52  2003/04/28 12:36:07  sbs
  * IdxLet now copes with void functions as well 8-)
  * => fixes bug #4!
@@ -2598,51 +2605,6 @@ IdxCond (node *arg_node, node *arg_info)
 
     /* Now, we merge the topmost chain of actchn into the rest of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (MergeTop, INFO_IVE_VARDECS (arg_info));
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IdxWhile( node *arg_node, node *arg_info)
- *
- ******************************************************************************/
-
-node *
-IdxWhile (node *arg_node, node *arg_info)
-{
-    int old_uses_mode;
-
-    DBUG_ENTER ("IdxWhile");
-
-    /* Now, we duplicate the topmost chain of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
-
-    /*
-     * We have to memorize the old uses_mode in order to
-     * prevent code-transformations during the second traversal of the loop
-     * in case the entire loop resides within an outer loop whose body is
-     * traversed the first time!
-     */
-    old_uses_mode = INFO_IVE_MODE (arg_info);
-    INFO_IVE_MODE (arg_info) = M_uses_only;
-
-    if (WHILE_BODY (arg_node) != NULL)
-        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    /* Now, we merge the topmost chain of actchn into the rest of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (MergeTop, INFO_IVE_VARDECS (arg_info));
-    MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
-
-    /*
-     * Now, we restore the uses_mode to the value set before entering the loop
-     * (see comment above!)
-     */
-    INFO_IVE_MODE (arg_info) = old_uses_mode;
-    if (WHILE_BODY (arg_node) != NULL)
-        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    MAP_TO_ALL_VARDEC_ACTCHNS (FreeTop, INFO_IVE_VARDECS (arg_info));
 
     DBUG_RETURN (arg_node);
 }

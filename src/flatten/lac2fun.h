@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.3  2001/02/28 15:44:16  nmw
  * L2Fassign included in traversal to set correct FUNDEF_EXT_ASSIGN
  *
@@ -40,7 +47,6 @@ extern node *Lac2Fun (node *syntaxtree);
 
 extern node *L2Ffundef (node *arg_node, node *arg_info);
 extern node *L2Fcond (node *arg_node, node *arg_info);
-extern node *L2Fwhile (node *arg_node, node *arg_info);
 extern node *L2Fdo (node *arg_node, node *arg_info);
 extern node *L2Fassign (node *arg_node, node *arg_info);
 

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/02/25 08:17:44  cg
+ * Elimination of while-loops by conversion into do-loops with
+ * leading conditional integrated into flatten.
+ * Separate compiler phase while2do eliminated.
+ * NO while-loops may occur after flatten.
+ * While-loop specific code eliminated.
+ *
  * Revision 3.10  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -715,69 +722,15 @@ WLAAncode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAwhile(node *arg_node, node *arg_info)
- *
- * description:
- *   Syntax tree traversal function for N_while node.
- *
- *   If a with-loop operator contains a sequential loop (for/do/while), then
- *   tile size inference has lost. The only exception is the case where the
- *   loop does not contain any array operations. The function detects exactly
- *   this and sets the features bit mask accordingly.
- *
- *****************************************************************************/
-
-node *
-WLAAwhile (node *arg_node, node *arg_info)
-{
-    access_t *old_access = NULL;
-    feature_t old_feature = 0;
-
-    DBUG_ENTER ("WLAAwhile");
-
-    DBUG_PRINT ("WLAA", ("WLAAwhile"));
-
-    if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
-        old_access = INFO_WLAA_ACCESS (arg_info);
-        old_feature = INFO_WLAA_FEATURE (arg_info);
-        INFO_WLAA_ACCESS (arg_info) = NULL;
-        INFO_WLAA_FEATURE (arg_info) = FEATURE_NONE;
-    }
-
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
-        if ((INFO_WLAA_ACCESS (arg_info) == NULL)
-            && (INFO_WLAA_FEATURE (arg_info) == FEATURE_NONE)) {
-            /*
-             * Nothing harmful happened within the loop.
-             */
-            INFO_WLAA_ACCESS (arg_info) = old_access;
-            INFO_WLAA_FEATURE (arg_info) = old_feature;
-        } else {
-            /*
-             * Something harmful happened within the loop.
-             */
-            FreeAllAccess (INFO_WLAA_ACCESS (arg_info));
-            INFO_WLAA_ACCESS (arg_info) = old_access;
-            INFO_WLAA_FEATURE (arg_info)
-              = INFO_WLAA_FEATURE (arg_info) | FEATURE_LOOP | old_feature;
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *WLAAdo(node *arg_node, node *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_do node.
  *
- *   This function is equivalent to WLAAwhile for while loops. The kind of loop
- *   makes no difference for the purpose of tile size inference.
+ *   If a with-loop operator contains a sequential loop (for/do/while), then
+ *   tile size inference has lost. The only exception is the case where the
+ *   loop does not contain any array operations. The function detects exactly
+ *   this and sets the features bit mask accordingly.
  *
  *****************************************************************************/
 
