@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1999/02/16 21:56:20  sbs
+ * eliminated an error in DoUnswitch:
+ * arg_node1 in the "split-case" is used for generating the final
+ * assign-list.
+ *
  * Revision 1.13  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -739,16 +744,19 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
         MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
 
-        /* isulate loop */
-#ifndef NEWTREE
-        arg_node->nnode = 1;
-#else
-        arg_node1 = arg_node->node[1]; /* not used anymore ??? */
+        /* isolate loop */
+        arg_node1 = arg_node->node[1];
         arg_node->node[1] = NULL;
-#endif
 
         if (cond_info->test_num != cond_info->last_test) {
-            /* creat second loop */
+            /* create second loop */
+            /*
+             * Here, we use a VERY UGLY TRICK !!!
+             * cond_info->insert_node is the N_assign which holds the conditional
+             * and cond_info->chain2 is the N_assign chain of the else-part.
+             * Ergo, we create an N_assign with an N_assign as INSTR!!!
+             * GNMassign in GenerateMasks eliminates this situation!
+             */
             cond_info->insert_node->node[0] = cond_info->chain2;
             second_loop = DupTree (arg_node, NULL);
 
@@ -767,6 +775,10 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
             if (0 != loop_info->loop_num) {
                 tmp_node = second_loop;
+                /*
+                 * Here, we try to apply Loop-Unrolling directly!
+                 * That requires the masks to be set correctly!
+                 */
                 second_loop
                   = DoUnroll (second_loop->node[0], arg_info, (linfo *)loop_info);
                 if (tmp_node->node[0] == second_loop) {
@@ -781,6 +793,7 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         }
 
         /* modify first loop */
+        /* Again, the UGLY TRICK is used here!! (see above) */
         cond_info->insert_node->node[0] = cond_info->chain1;
         arg_node->node[0]->node[0]->info.ids->def->info.prf = cond_info->test_prf;
         arg_node->node[0]->node[0]->info.ids->def->ARG2->info.cint = cond_info->test_num;
@@ -789,13 +802,10 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         arg_node = GenerateMasks (arg_node, arg_info);
 
         /* append later assign nodes to second loop */
-        second_loop = AppendNodeChain (1, second_loop, arg_node->node[1]);
+        second_loop = AppendNodeChain (1, second_loop, arg_node1);
 
         /* and second loop to first loop */
         arg_node->node[1] = second_loop;
-#ifndef NEWTREE
-        arg_node->nnode = 2;
-#endif
 
         break;
 
