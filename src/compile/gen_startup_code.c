@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/03/21 18:05:29  sbs
+ * PrintTargetPlatform eliminated.
+ *
  * Revision 3.24  2003/03/13 17:10:49  dkr
  * support for the -minarrayrep flag added to GSCPrintMain()
  *
@@ -154,30 +157,6 @@ GSCCalcMasterclass (int num_threads)
     res >>= 1;
 
     DBUG_RETURN ((int)res);
-}
-
-/******************************************************************************
- *
- * function:
- *   void PrintTargetPlatform()
- *
- * description:
- *   This function prints macro definitions concerning the respective
- *   target platform.
- *
- ******************************************************************************/
-
-static void
-PrintTargetPlatform ()
-{
-    DBUG_ENTER ("PrintTargetPlatform");
-
-    fprintf (outfile, "/*\n"
-                      " *  Target Platform\n */\n\n");
-
-    fprintf (outfile, "#define SAC_FOR_%s\n", target_platform);
-
-    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -721,7 +700,6 @@ GSCPrintFileHeader (node *syntax_tree)
 {
     DBUG_ENTER ("GSCPrintFileHeader");
 
-    PrintTargetPlatform ();
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
 
@@ -747,7 +725,6 @@ GSCPrintInternalInitFileHeader (node *syntax_tree)
 {
     DBUG_ENTER ("GSCPrintCWrapperFileHeader");
 
-    PrintTargetPlatform ();
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
 
