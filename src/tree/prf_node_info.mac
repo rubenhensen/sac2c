@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/08/05 16:10:29  ktr
+ * added F_wl_assign.
+ *
  * Revision 3.27  2004/07/16 12:10:59  ktr
  * F_accu added.
  *
@@ -177,13 +180,14 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_accu, "F_accu", "_accu_", "accu", FALSE, 0, NTCPRF_dummy, NULL),
 
   PRF_IF (F_alloc, "F_alloc", "_alloc_", "alloc", FALSE, 0, NTCPRF_dummy, NULL),
+  PRF_IF (F_alloc_or_reuse, "F_alloc_or_reuse", "_alloc_or_reuse_", "alloc_or_reuse",
+          FALSE, 0, NTCPRF_dummy, NULL),
+  PRF_IF (F_wl_assign, "F_wl_assign", "_wl_assign_", "wl_assign", FALSE, 0, NTCPRF_dummy,
+          NULL),
   PRF_IF (F_suballoc, "F_suballoc", "_suballoc_", "suballoc", FALSE, 0, NTCPRF_dummy,
           NULL),
   PRF_IF (F_fill, "F_fill", "_fill_", "fill", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_copy, "F_copy", "_copy_", "copy", FALSE, 0, NTCPRF_dummy, NULL),
-
-  PRF_IF (F_alloc_or_reuse, "F_alloc_or_reuse", "_alloc_or_reuse_", "alloc_or_reuse",
-          FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_inc_rc, "F_inc_rc", "_inc_rc_", "inc_rc", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_dec_rc, "F_dec_rc", "_dec_rc_", "dec_rc", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_free, "F_free", "_free_", "free", FALSE, 0, NTCPRF_dummy, NULL),
