@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/09/25 14:03:13  dkr
+ * ND_WRITE_READ corrected
+ *
  * Revision 3.46  2003/09/25 13:45:25  dkr
  * ND_WRITE_READ added.
  * some bugs fixed.
@@ -438,7 +441,9 @@ typedef int *SAC_array_descriptor_t;
     CAT9 (SAC_ND_WRITE__, NT_SHP (to_NT) BuildArgs2 (to_NT, to_pos))
 
 #define SAC_ND_WRITE_READ(to_NT, to_pos, from_NT, from_pos)                              \
-    SAC_ND_WRITE (to_NT, to_pos, SAC_ND_READ (from_NT, from_pos))
+    {                                                                                    \
+        SAC_ND_WRITE (to_NT, to_pos) = SAC_ND_READ (from_NT, from_pos);                  \
+    }
 
 #define SAC_ND_WRITE_COPY(to_NT, to_pos, expr, copyfun)                                  \
     CAT10 (SAC_ND_WRITE_COPY__, NT_HID (to_NT) BuildArgs4 (to_NT, to_pos, expr, copyfun))
