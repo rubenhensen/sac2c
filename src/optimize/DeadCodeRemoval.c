@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/06/09 09:17:12  asi
+ * Revision 1.9  1995/07/24 11:49:46  asi
+ * DEADvardec realizes now, if variable is never used because of array elimination
+ *
+ * Revision 1.8  1995/06/09  09:17:12  asi
  * bug fixed for while loops
  *
  * Revision 1.7  1995/05/15  08:42:08  asi
@@ -167,7 +170,10 @@ DEADvardec (node *arg_node, node *arg_info)
     }
     if ((arg_info->mask[0][arg_node->varno] == 0)
         && (arg_info->mask[1][arg_node->varno] == 0)) {
-        dead_var++;
+        if (arg_node->flag)
+            elim_arrays++;
+        else
+            dead_var++;
         DBUG_PRINT ("DEAD",
                     ("Variable decleration %s removed", arg_node->info.types->id));
         return_node = arg_node->node[0];
