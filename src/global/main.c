@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.51  1995/06/15 14:57:37  hw
+ * Revision 1.52  1995/06/23 10:04:25  sacbase
+ * CPP invocation inserted.
+ *
+ * Revision 1.51  1995/06/15  14:57:37  hw
  * call gcc only if no errors occur before
  *
  * Revision 1.50  1995/06/13  08:31:20  asi
@@ -432,6 +435,8 @@ MAIN
     if (AppendEnvVar (PATH, "SAC_PATH") == 0)
         ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
 
+#ifdef NO_CPP
+
     if (argc == 1) {
         yyin = fopen (FindFile (PATH, *argv), "r");
         strcpy (filename, *argv);
@@ -439,6 +444,19 @@ MAIN
             ERROR2 (1, ("Couldn't open file \"%s\"!\n", *argv));
         }
     }
+
+#else /* NO_CPP */
+
+    if (argc == 1) {
+        sprintf (cccallstr, "cpp -P -C %s", FindFile (PATH, *argv));
+        strcpy (filename, *argv);
+    } else {
+        sprintf (cccallstr, "cpp -P -C ");
+    }
+    NOTE (("%s\n", cccallstr));
+    yyin = popen (cccallstr, "r");
+
+#endif /* NO_CPP */
 
     if (Ccodeonly)
         if (set_outfile)
