@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/08/02 20:48:04  dkr
+ * ND_PRF_SEL__DIM_... icms added
+ *
  * Revision 3.6  2002/07/31 16:34:20  dkr
  * parameter 'copyfun' added for several ICMs
  *
@@ -79,12 +82,14 @@
  * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp_nt)
  * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, shp_size, ...shpa_any...)
  *
+ * ND_PRF_SEL__DIM_id( from_nt, from_sdim, idx_size, idx_nt)
+ * ND_PRF_SEL__DIM_arr( from_nt, from_sdim, idx_size, idxa_any)
  * ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim,
  *                       idx_size, idx_nt)
- * ND_PRF_SEL__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
- *                      idx_size, idx_nt, copyfun)
  * ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
  *                        idx_size, idxa_any)
+ * ND_PRF_SEL__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
+ *                      idx_size, idx_nt, copyfun)
  * ND_PRF_SEL__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
  *                       idx_size, idxa_any, copyfun)
  *
@@ -111,9 +116,11 @@
 /* ND_PRF_RESHAPE__SHAPE_id( ...) is a C-ICM */
 /* ND_PRF_RESHAPE__SHAPE_arr( ...) is a C-ICM */
 
+/* ND_PRF_SEL__DIM_id( ...) is a C-ICM */
+/* ND_PRF_SEL__DIM_arr( ...) is a C-ICM */
 /* ND_PRF_SEL__SHAPE_id( ...) is a C-ICM */
-/* ND_PRF_SEL__DATA_id( ...) is a C-ICM */
 /* ND_PRF_SEL__SHAPE_arr( ...) is a C-ICM */
+/* ND_PRF_SEL__DATA_id( ...) is a C-ICM */
 /* ND_PRF_SEL__DATA_arr( ...) is a C-ICM */
 
 /* ND_PRF_MODARRAY__DATA( ...) is a C-ICM */
