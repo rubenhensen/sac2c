@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.25  1995/07/07 15:00:40  asi
+# Revision 1.26  1995/07/24 11:40:53  asi
+# added ArrayElimination.o
+#
+# Revision 1.25  1995/07/07  15:00:40  asi
 # added loop unswitching
 #
 # Revision 1.24  1995/06/02  09:53:02  sbs
@@ -80,7 +83,7 @@ YACC=yacc -dv
 LIBS=-ly -ll
 RM=rm -f
 
-LIB=lib/dbug.o /usr/lib/debug/malloc.o
+LIB=lib/dbug.o /usr/lib/debug/malloc.o /usr/lib/libm.a
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
         src/global/free.o src/global/internal_lib.o
@@ -91,7 +94,8 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
-	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/Unswitch.o
+	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/Unswitch.o \
+	  src/psi-opt/ArrayElimination.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
