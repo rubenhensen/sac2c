@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2002/09/03 11:56:54  dkr
+ * - CompareTypesImplementation() modified.
+ * - SSACSElet(): support for dynamic shapes added
+ *
  * Revision 1.23  2001/07/10 11:27:44  nmw
  * ifdef added to disable uniqueness special handling in cse and lir
  * so long expressions with unique identifiers are not touched at all
@@ -327,7 +331,7 @@ CmpIdsTypes (ids *ichain1, ids *ichain2)
                                           AVIS_VARDECORARG (IDS_AVIS (ichain1))),
                                         VARDEC_OR_ARG_TYPE (
                                           AVIS_VARDECORARG (IDS_AVIS (ichain2))))
-            == TRUE) {
+            == 0) {
             result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
         } else {
             result = FALSE;
@@ -411,9 +415,9 @@ ForbiddenSubstitution (ids *chain)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEPropagateSubst2Args(node *fun_args,
- *                                   node *ap_args,
- *                                   node *fundef)
+ *   node *SSACSEPropagateSubst2Args( node *fun_args,
+ *                                    node *ap_args,
+ *                                    node *fundef)
  *
  * description:
  *   propagates substitution information into the called special fundef.
@@ -813,7 +817,7 @@ SSACSEfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEarg(node *arg_node, node *arg_info)
+ *   node *SSACSEarg( node *arg_node, node *arg_info)
  *
  * description:
  *   traverses chain of args to init SUBST attribute with NULL.
@@ -835,7 +839,7 @@ SSACSEarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEblock(node *arg_node, node *arg_info)
+ *   node *SSACSEblock( node *arg_node, node *arg_info)
  *
  * description:
  *   traverses chain of vardecs for initialization.
@@ -1032,6 +1036,7 @@ node *
 SSACSElet (node *arg_node, node *arg_info)
 {
     node *match;
+    int cmp;
 
     DBUG_ENTER ("SSACSElet");
 
@@ -1076,24 +1081,26 @@ SSACSElet (node *arg_node, node *arg_info)
                && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)
 #endif
     ) {
+
         /* only substitute ids of equal types */
-        DBUG_ASSERT ((CompareTypesImplementation (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
-                                                    IDS_AVIS (LET_IDS (arg_node)))),
-                                                  VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
-                                                    ID_AVIS (LET_EXPR (arg_node)))))
-                      == TRUE),
-                     "SSACSElet() tries to substitute identifier of different type");
+        cmp = CompareTypesImplementation (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
+                                            IDS_AVIS (LET_IDS (arg_node)))),
+                                          VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
+                                            ID_AVIS (LET_EXPR (arg_node)))));
+        DBUG_ASSERT ((cmp != 2), "SSACSElet() tries to substitute identifier"
+                                 " of incompatible type");
+        if ((cmp == 0) || (cmp == 1)) {
+            /* set subst attributes for results */
+            LET_IDS (arg_node)
+              = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
 
-        /* set subst attributes for results */
-        LET_IDS (arg_node)
-          = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
+            DBUG_PRINT ("SSACSE",
+                        ("copy assignment eliminated in line %d", NODE_LINE (arg_node)));
+            cse_expr++;
 
-        DBUG_PRINT ("SSACSE",
-                    ("copy assignment eliminated in line %d", NODE_LINE (arg_node)));
-        cse_expr++;
-
-        /* remove copy assignment */
-        INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
+            /* remove copy assignment */
+            INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
+        }
 
     } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
                && (FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
@@ -1212,7 +1219,7 @@ SSACSEap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEid(node *arg_node, node *arg_info)
+ *   node *SSACSEid( node *arg_node, node *arg_info)
  *
  * description:
  *   traverse ids data to do substitution.
@@ -1297,7 +1304,7 @@ SSACSENcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSACSEids(ids *arg_ids, node *arg_info)
+ *   ids *SSACSEids( ids *arg_ids, node *arg_info)
  *
  * description:
  *   traverses chain of ids to do variable substitution as
@@ -1376,7 +1383,7 @@ SSACSEids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *TravIDS(ids *arg_ids, node *arg_info)
+ *   ids *TravIDS(ids *arg_ids, node *arg_info)
  *
  * description:
  *   implements a simple TravIDS function like Trav for nodes to have
@@ -1388,7 +1395,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("TravIDS");
 
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
+    DBUG_ASSERT ((arg_ids != NULL), "traversal in NULL ids");
     arg_ids = SSACSEids (arg_ids, arg_info);
 
     DBUG_RETURN (arg_ids);
