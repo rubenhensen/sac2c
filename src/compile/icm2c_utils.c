@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/05/31 17:21:29  dkr
+ * functions renamed
+ *
  * Revision 3.1  2000/11/20 18:01:19  sacbase
  * new release made
  *
@@ -31,9 +34,7 @@
  * prefix: ICU
  *
  * description:
- *
  *   This file contains utility functions used by ICMs.
- *
  *
  *****************************************************************************/
 
@@ -50,7 +51,7 @@
  *   int FindParen( char *nt, int n)
  *
  * description:
- *   Returns the offset of the nTH left parenthesis within nt.
+ *   Returns the offset of the n-th left parenthesis within nt.
  *   It makes NO checks for right parentheses nor for quotes, etc.
  *
  ******************************************************************************/
@@ -62,18 +63,18 @@ FindParen (char *nt, int n)
 
     DBUG_ENTER ("FindParen");
 
-    DBUG_ASSERT ((NULL != nt), "FindParen was called with NULL nt");
+    DBUG_ASSERT ((nt != NULL), "FindParen was called with NULL nt");
 
-    for (i = 0; '\0' != nt[i]; i++) {
-        if ('(' == nt[i]) {
+    for (i = 0; nt[i] != '\0'; i++) {
+        if (nt[i] == '(') {
             n--;
-            if (0 == n) {
+            if (n == 0) {
                 break;
             }
         }
     }
 
-    DBUG_ASSERT (('\0' != nt[i]), "FindParen did not find the paren");
+    DBUG_ASSERT ((nt[i] != '\0'), "FindParen() did not find the parenthesis");
 
     DBUG_RETURN (i);
 }
@@ -81,30 +82,32 @@ FindParen (char *nt, int n)
 /******************************************************************************
  *
  * function:
- *   data_class_t ICUNameClass( char *nt)
+ *   data_class_t ICUGetClass( char *nt)
  *
  * description:
- *   Returns the Data Class of an array or other object from an nt
+ *   Returns the class tag of an array or other object
  *
  ******************************************************************************/
 
 data_class_t
-ICUNameClass (char *nt)
+ICUGetClass (char *nt)
 {
     int nc, i;
     data_class_t z;
 
-    DBUG_ENTER ("ICUNameClass");
+    DBUG_ENTER ("ICUGetClass");
 
-    nc = 1 + FindParen (nt, 1 + NT_CLASS_INDEX);
+    nc = FindParen (nt, NT_CLASS_INDEX + 1) + 1;
     i = 0;
     z = C_unknownc;
     while ((i != C_unknownc) && (z == C_unknownc)) {
-        if (0 == strncmp (nt + nc, nt_class_string[i], 3))
+        if (!strncmp (nt + nc, nt_class_string[i], 3)) {
             z = i;
+        }
         i++;
     }
-    DBUG_ASSERT ((z != C_unknownc), "ICUNameClass did not find valid Name Class");
+
+    DBUG_ASSERT ((z != C_unknownc), "ICUGetClass() did not find valid class tag");
 
     DBUG_RETURN (z);
 }
@@ -112,30 +115,32 @@ ICUNameClass (char *nt)
 /******************************************************************************
  *
  * function:
- *   unq_class_t ICUUnqClass( char *nt)
+ *   unq_class_t ICUGetUnq( char *nt)
  *
  * description:
- *   Returns the Uniqueness Class of an array or other object from an nt
+ *   Returns the uniqueness tag of an array or other object
  *
  ******************************************************************************/
 
 unq_class_t
-ICUUnqClass (char *nt)
+ICUGetUnq (char *nt)
 {
     int nc, i;
     unq_class_t z;
 
-    DBUG_ENTER ("ICUUnqClass");
+    DBUG_ENTER ("ICUGetUnq");
 
-    nc = 1 + FindParen (nt, 1 + NT_UNQ_INDEX);
+    nc = FindParen (nt, NT_UNQ_INDEX + 1) + 1;
     i = 0;
     z = C_unknownu;
     while ((i != C_unknownu) && (z == C_unknownu)) {
-        if (0 == strncmp (nt + nc, nt_unq_string[i], 3))
+        if (!strncmp (nt + nc, nt_unq_string[i], 3)) {
             z = i;
+        }
         i++;
     }
-    DBUG_ASSERT ((z != C_unknownu), "ICUUnqClass did not find valid Uniqueness Class");
+
+    DBUG_ASSERT ((z != C_unknownu), "ICUGetUnq() did not find valid uniqueness tag");
 
     DBUG_RETURN (z);
 }

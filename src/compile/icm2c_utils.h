@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/05/31 17:21:33  dkr
+ * functions renamed
+ *
  * Revision 3.1  2000/11/20 18:01:20  sacbase
  * new release made
  *
@@ -36,7 +39,7 @@
 
 #include "NameTuples.h"
 
-extern data_class_t ICUNameClass (char *nt);
-extern unq_class_t ICUUnqClass (char *nt);
+extern data_class_t ICUGetClass (char *nt);
+extern unq_class_t ICUGetUnq (char *nt);
 
 #endif /* _icm2c_utils_h */
