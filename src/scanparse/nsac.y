@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.23  2004/11/25 22:37:57  sbs
+* for Stephan
+*
 * Revision 1.22  2004/11/25 22:28:51  sbs
 * compiles
 *
@@ -1625,7 +1628,6 @@ varntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
          { $$ = TBmakeRet( $1,NULL);
            have_seen_dots = TRUE;
          }
-       ;
          ;
 
 ntype: basentype
