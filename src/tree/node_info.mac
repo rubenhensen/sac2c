@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/04/12 12:38:57  nmw
+ * SSALIRexpr for traversing return statement added
+ *
  * Revision 3.41  2001/04/09 15:54:39  nmw
  * partial traversal lirmov_tab added
  *
@@ -1551,8 +1554,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSAexprs, TravSons, TravSons,
-       TravSons, TravSons, CMPTTravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, CMPTTravSons, TravSons, TravSons, TravSons, SSALIRexprs,
+       TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_array, "N_array", TravSons, FltnArray, PrintArray, TravSons, TravSons, TravSons,
        TravSons, FreeArray, CFarray, TravSons, COMPArray, TravSons, DupArray, TravSons,
