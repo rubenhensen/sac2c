@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/09/25 10:53:33  dkr
+ * GetFoldCode() added
+ *
  * Revision 1.6  2002/08/07 13:49:46  dkr
  * COMP2With added
  *
@@ -24,9 +27,7 @@
 #ifndef _sac_compile_tagged_h
 #define _sac_compile_tagged_h
 
-#if 0
-extern node *GetFoldCode( node *fundef);
-#endif
+extern node *GetFoldCode (node *fundef);
 
 extern node *Compile_Tagged (node *arg_node);
 
