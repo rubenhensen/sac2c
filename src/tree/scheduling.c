@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/11/27 01:42:37  ktr
+ * included renameidentifiers.h
+ *
  * Revision 3.45  2004/11/27 00:53:42  mwe
  * fixing for linking
  *
@@ -239,7 +242,7 @@
 #include "Error.h"
 #include "wl_bounds.h"
 #include "dbug.h"
-#include "precompile.h"
+#include "renameidentifiers.h"
 
 /******************************************************************************
  *
