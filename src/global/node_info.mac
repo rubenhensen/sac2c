@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.124  1996/02/11 20:19:01  sbs
- * IdxArgs inserted
+ * Revision 1.125  1996/02/21 15:02:42  cg
+ * added function DupPragma for dup_tab
  *
+;; Revision 1.124  1996/02/11  20:19:01  sbs
+;; IdxArgs inserted
+;;
 ;; Revision 1.123  1996/02/06  18:57:36  cg
 ;; added functions WSIBfloat and WSIBdouble for writesib_tab
 ;;
@@ -723,7 +726,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
   NIF (N_pragma, "N_pragma", TravSons, TravSons, PrintPragma, TravSons, TravSons,
-       TravSons, TravSons, FreePragma, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreePragma, TravSons, TravSons, TravSons, TravSons, DupPragma,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
