@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.39  2000/09/29 14:51:03  sbs
+ * CF for selections into array of T_char enabled!
+ *
  * Revision 2.38  2000/07/12 15:13:40  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -1766,6 +1769,9 @@ FetchElem (int pos, node *array)
         elem = DupTree (EXPRS_EXPR (elem));
     } else {
         switch (ARRAY_VECTYPE (array)) {
+        case T_char:
+            elem = MakeChar (((char *)ARRAY_CONSTVEC (array))[pos]);
+            break;
         case T_int:
             elem = MakeNum (((int *)ARRAY_CONSTVEC (array))[pos]);
             break;
