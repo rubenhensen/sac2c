@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/11/25 16:55:50  jhb
+ * compile
+ *
  * Revision 3.16  2002/10/29 17:34:09  dkr
  * Type2String() modified: 'X' used for dot-shapes instead of 'x'
  *
@@ -92,15 +95,6 @@
  *
  */
 
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include "internal_lib.h"
-#include "dbug.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
@@ -118,9 +112,24 @@ static char *rename_type[] = {
 #include "type_info.mac"
 };
 
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "convert.h"
+
+#include "dbug.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "free.h"
+#include "types.h"
+#include "constants_internal.h"
+#include "globals.h"
+#include "internal_lib.h"
+
 /*
  *
- *  functionname  : Float2String
+ *  functionname  : CVfloat2String
  *  arguments     :  1) float-val
  *  description   : prints a float into a string so that the string
  *                  1) does not loose any digits
@@ -129,13 +138,13 @@ static char *rename_type[] = {
  */
 
 char *
-Float2String (float val)
+CVfloat2String (float val)
 {
     char *tmp_string;
 
-    DBUG_ENTER ("Float2String");
+    DBUG_ENTER ("CVfloat2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 270);
+    tmp_string = (char *)ILIBmalloc (sizeof (char) * 270);
     /*
      * 256 chars + "." + "e+1000" + ".0f" + "\0" = 267
      */
@@ -153,7 +162,7 @@ Float2String (float val)
 
 /*
  *
- *  functionname  : Double2String
+ *  functionname  : CVdouble2String
  *  arguments     :  1) double-val
  *  description   : prints a double into a string so that the string
  *                  1) does not loose any digits
@@ -162,13 +171,13 @@ Float2String (float val)
  */
 
 char *
-Double2String (double val)
+CVdouble2String (double val)
 {
     char *tmp_string;
 
-    DBUG_ENTER ("Double2String");
+    DBUG_ENTER ("CVdouble2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 270);
+    tmp_string = (char *)ILIBmalloc (sizeof (char) * 270);
     /*
      * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
      */
@@ -184,7 +193,7 @@ Double2String (double val)
 
 /*
  *
- *  functionname  : Type2String
+ *  functionname  : CVtype2String
  *  arguments     :  1) pointer to type-structure
  *                   2) flag
  *  description   : convertes the infomation in type into a string
@@ -198,13 +207,13 @@ Double2String (double val)
  */
 
 char *
-Type2String (types *type, int flag, bool all)
+CVtype2String (types *type, int flag, bool all)
 {
     char *tmp_string;
 
-    DBUG_ENTER ("Type2String");
+    DBUG_ENTER ("CVtype2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * TYPE_LENGTH);
+    tmp_string = (char *)ILIBmalloc (sizeof (char) * TYPE_LENGTH);
     tmp_string[0] = '\0';
 
     if (type == NULL) {
@@ -214,7 +223,7 @@ Type2String (types *type, int flag, bool all)
             if (TYPES_BASETYPE (type) == T_user) {
                 if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
                     strcat (tmp_string, TYPES_MOD (type));
-                    if (compiler_phase >= PH_precompile) {
+                    if (global.compiler_phase >= PH_precompile) {
                         strcat (tmp_string, "__");
                     } else {
                         strcat (tmp_string, ":");
@@ -318,7 +327,7 @@ Type2String (types *type, int flag, bool all)
 /******************************************************************************
  *
  * function:
- *   char *Shpseg2String(int dim, shpseg *shape)
+ *   char *CVshpseg2String(int dim, shpseg *shape)
  *
  * description:
  *   This function converts a given shpseg integer vector data structure into
@@ -328,13 +337,13 @@ Type2String (types *type, int flag, bool all)
  ******************************************************************************/
 
 char *
-Shpseg2String (int dim, shpseg *shape)
+CVshpseg2String (int dim, shpseg *shape)
 {
     char *buffer;
     char num_buffer[20];
     int i;
 
-    DBUG_ENTER ("Shpseg2String");
+    DBUG_ENTER ("CVshpseg2String");
 
     DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in SetVect()!");
 
@@ -342,7 +351,7 @@ Shpseg2String (int dim, shpseg *shape)
      * Instead of accurately computing the buffer space to be allocated,
      * we make a generous estimation.
      */
-    buffer = (char *)Malloc (dim * 20);
+    buffer = (char *)ILIBmalloc (dim * 20);
 
     buffer[0] = '[';
     buffer[1] = '\0';
@@ -365,7 +374,7 @@ Shpseg2String (int dim, shpseg *shape)
 /******************************************************************************
  *
  * function:
- *   char *Basetype2String(simpletype type)
+ *   char *CVbasetype2String(simpletype type)
  *
  * description:
  *   This function yields a pointer to a static memory area that contains
@@ -374,7 +383,7 @@ Shpseg2String (int dim, shpseg *shape)
  ******************************************************************************/
 
 char *
-Basetype2String (simpletype type)
+CVbasetype2String (simpletype type)
 {
     char *res;
 
@@ -383,7 +392,7 @@ Basetype2String (simpletype type)
 #include "type_info.mac"
     };
 
-    DBUG_ENTER ("Basetype2String");
+    DBUG_ENTER ("CVbasetype2String");
 
     res = ctype_string[type];
 
@@ -393,7 +402,7 @@ Basetype2String (simpletype type)
 /******************************************************************************
  *
  * function:
- *   char *IntBytes2String( unsigned int bytes)
+ *   char *CVintBytes2String( unsigned int bytes)
  *
  * description:
  *   This function yields a pointer to a static memory area that contains
@@ -403,14 +412,14 @@ Basetype2String (simpletype type)
  ******************************************************************************/
 
 char *
-IntBytes2String (unsigned int bytes)
+CVintBytes2String (unsigned int bytes)
 {
     static char res[32];
     char *tmp = &res[0];
     int factor = 1000000000;
     int num;
 
-    DBUG_ENTER ("IntBytes2String");
+    DBUG_ENTER ("CVintBytes2String");
 
     while ((bytes / factor == 0) && (factor >= 1000)) {
         factor /= 1000;
@@ -436,7 +445,7 @@ IntBytes2String (unsigned int bytes)
 /******************************************************************************
  *
  * function:
- *    char *OldTypeSignature2String( node *fundef)
+ *    char *CVoldTypeSignature2String( node *fundef)
  *
  * description:
  *   constructs a string that represents the signature of a fundef
@@ -445,7 +454,7 @@ IntBytes2String (unsigned int bytes)
  ******************************************************************************/
 
 char *
-OldTypeSignature2String (node *fundef)
+CVoldTypeSignature2String (node *fundef)
 {
     static char buf[4096];
     char *tmp = &buf[0];
@@ -453,19 +462,19 @@ OldTypeSignature2String (node *fundef)
     char *tmp_str;
     node *arg;
 
-    DBUG_ENTER ("OldTypeSignature2String");
+    DBUG_ENTER ("CVoldTypeSignature2String");
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        tmp_str = Type2String (ARG_TYPE (arg), 0, FALSE);
+        tmp_str = CVtype2String (ARG_TYPE (arg), 0, FALSE);
         tmp += sprintf (tmp, "%s ", tmp_str);
-        tmp_str = Free (tmp_str);
+        tmp_str = ILIBfree (tmp_str);
         arg = ARG_NEXT (arg);
     }
 
-    tmp_str = Type2String (FUNDEF_TYPES (fundef), 0, TRUE);
+    tmp_str = CVtype2String (FUNDEF_TYPES (fundef), 0, TRUE);
     tmp += sprintf (tmp, "-> %s", tmp_str);
-    tmp_str = Free (tmp_str);
+    tmp_str = ILIBfree (tmp_str);
 
-    DBUG_RETURN (StringCopy (buf));
+    DBUG_RETURN (ILIBstringCopy (buf));
 }
