@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2001/05/17 12:09:02  nmw
+ * missing FreeTree added
+ *
  * Revision 1.20  2001/05/17 12:05:53  nmw
  * MALLOC/FREE changed to Malloc/Free (using Free() result)
  *
@@ -2010,7 +2013,7 @@ SSALoopInvariantRemoval (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        arg_info = Free (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);
