@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/10/22 17:19:03  ktr
+ * F_free is allowed  in the beginning of DOFUN-Conditional branches.
+ *
  * Revision 3.26  2004/09/27 19:05:42  sbs
  * when creating new vars, new types will be created as well!
  *
@@ -651,7 +654,9 @@ TransformIntoDoLoop (node *fundef)
                   && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == N_prf)
                   && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == F_inc_rc)
                       || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
-                          == F_dec_rc))) {
+                          == F_dec_rc)
+                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
+                          == F_free))) {
                     tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond)));
                     ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond))) = NULL;
                     skip = AppendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
@@ -666,7 +671,9 @@ TransformIntoDoLoop (node *fundef)
                   && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == N_prf)
                   && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == F_inc_rc)
                       || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
-                          == F_dec_rc))) {
+                          == F_dec_rc)
+                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
+                          == F_free))) {
                     tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond)));
                     ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond))) = NULL;
                     epilogue = AppendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
