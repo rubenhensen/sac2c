@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.26  1997/08/05 11:31:00  sbs
+# profile.o added in clean-line
+#
 # Revision 1.25  1997/05/28 12:48:31  sbs
 # make deps done
 #
@@ -114,42 +117,47 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) compile.o icm2c.o precompile.o libsac.a libsac.o  \
+	$(RM) profile.o compile.o icm2c.o precompile.o libsac.a libsac.o  \
               *.bak BEtest *.sib *.sac
 
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
+compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-compile.o: ../global/globals.h ../print/print.h ../global/tree.h
-compile.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-compile.o: ../global/traverse.h compile.h ../print/convert.h
-compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ../global/free.h
-compile.o: /usr/include/malloc.h ../global/type_info.mac
-icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
-icm2c.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-icm2c.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-icm2c.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
-icm2c.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
-icm2c.o: ../global/my_debug.h ../../inc/main.h trace.h ../print/convert.h
-icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c icm_trace.c
+compile.o: /usr/include/sys/va_list.h ../global/globals.h ../print/print.h
+compile.o: ../global/tree.h ../global/internal_lib.h ../../inc/dbug.h
+compile.o: ../global/my_debug.h ../global/traverse.h compile.h
+compile.o: ../print/convert.h ../refcount/refcount.h ../typecheck/typecheck.h
+compile.o: ../global/free.h /usr/include/malloc.h ../global/type_info.mac
+icm2c.o: /usr/include/malloc.h /usr/include/stdio.h
+icm2c.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+icm2c.o: ../print/print.h ../global/tree.h ../global/types.h
+icm2c.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+icm2c.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
+icm2c.o: ../../inc/main.h trace.h ../print/convert.h icm_decl.c icm.data
+icm2c.o: icm_args.c icm_comment.c icm_trace.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
 icm_trace.o: icm.data
-libsac.o: /usr/include/sys/time.h /usr/include/sys/time.h
-libsac.o: /usr/include/sys/resource.h /usr/include/stdio.h
-libsac.o: /usr/include/malloc.h profile.h
+libsac.o: /usr/include/sys/time.h /usr/include/sys/feature_tests.h
+libsac.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
+libsac.o: /usr/include/sys/machtypes.h /usr/include/sys/resource.h
+libsac.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+libsac.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/malloc.h
+libsac.o: profile.h
 precompile.o: ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
-precompile.o: /usr/include/stdio.h /usr/include/string.h
-precompile.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
-precompile.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
-precompile.o: ../global/my_debug.h /usr/include/malloc.h
+precompile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+precompile.o: /usr/include/sys/va_list.h /usr/include/string.h
+precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
+precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
-profile.o: ../../inc/dbug.h /usr/include/stdio.h ../global/globals.h
-profile.o: ../global/types.h profile.h
+profile.o: ../../inc/dbug.h /usr/include/stdio.h
+profile.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+profile.o: ../global/globals.h ../global/types.h profile.h
