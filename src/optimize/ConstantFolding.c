@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/04/01 07:37:56  srs
+ * renames INFO_* macros,
+ * added struct INSIDE_WL
+ * changed CFId: no dirty/wrong trick (N_with) is used for N_Nwith
+ *
  * Revision 1.61  1998/03/25 12:34:48  srs
  * changed CFNwith
  *
@@ -248,9 +253,15 @@
  *  This macros selects the right element out of the union info
  */
 #define SELARG(n)                                                                        \
-    ((n->nodetype == N_num)                                                              \
-       ? NUM_VAL (n)                                                                     \
-       : ((n->nodetype == N_float) ? FLOAT_VAL (n) : DOUBLE_VAL (n)))
+    (n->nodetype == N_num ? NUM_VAL (n)                                                  \
+                          : (n->nodetype == N_float ? FLOAT_VAL (n) : DOUBLE_VAL (n)))
+
+typedef struct INSIDE_WL {
+    char *wl_name;
+    struct INSIDE_WL *next;
+} inside_wl;
+
+static inside_wl *inside_wl_root;
 
 /*
  *
@@ -326,8 +337,11 @@ node *
 ConstantFolding (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("ConstantFolding");
+
     act_tab = cf_tab;
+
     info_node = MakeNode (N_info);
+    inside_wl_root = NULL;
 
     arg_node = Trav (arg_node, info_node);
 
@@ -390,7 +404,7 @@ CFassign (node *arg_node, node *arg_info)
     NODE_LINE (arg_info) = NODE_LINE (arg_node);
     ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
     if (N_return != ntype) {
-        INFO_ASSIGN (arg_info) = arg_node;
+        INFO_CF_ASSIGN (arg_info) = arg_node;
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
 
         switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
@@ -477,12 +491,12 @@ CFlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("CFlet");
 
     /* get result type for potential primitive function */
-    INFO_TYPE (arg_info) = GetType (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node))));
+    INFO_CF_TYPE (arg_info) = GetType (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node))));
 
     /* Trav expression */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    INFO_TYPE (arg_info) = NULL;
+    INFO_CF_TYPE (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -508,13 +522,29 @@ node *
 CFid (node *arg_node, node *arg_info)
 {
     node *mrd;
+    inside_wl *iw;
 
     DBUG_ENTER ("CFid");
     MRD_GETSUBST (mrd, ID_VARNO (arg_node), INFO_VARNO);
+
+    /* check if this is an Id introduced by flatten (for WLs). This
+       Ids shall not be replaced by another Id. The CF for the old
+       WLs prevent this with a dirty trick described in optimize.c,
+       OPTTrav(), switch N_assign, N_let. The new WL does it better
+       with inside_wl struct. */
+    if (mrd && N_id == NODE_TYPE (mrd) && inside_wl_root) {
+        iw = inside_wl_root;
+        while (mrd && iw) {
+            if (!strcmp (ID_NAME (mrd), iw->wl_name))
+                mrd = NULL;
+            iw = iw->next;
+        }
+    }
+
     if (mrd) {
         switch (NODE_TYPE (mrd)) {
         case N_id:
-            DEC_VAR (ASSIGN_USEMASK (INFO_ASSIGN (arg_info)), ID_VARNO (arg_node));
+            DEC_VAR (ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), ID_VARNO (arg_node));
 
             if (VARDEC_SHPSEG (ID_VARDEC (mrd)) == NULL
                 && VARDEC_SHPSEG (ID_VARDEC (arg_node)) != NULL) {
@@ -571,7 +601,7 @@ CFid (node *arg_node, node *arg_info)
 
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
-            INC_VAR (ASSIGN_USEMASK (INFO_ASSIGN (arg_info)), ID_VARNO (arg_node));
+            INC_VAR (ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), ID_VARNO (arg_node));
             break;
         case N_num:
         case N_float:
@@ -826,7 +856,7 @@ CFcond (node *arg_node, node *arg_info)
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : OPTTrav (optimize.h)
- *  macros        : INFO_TYPE, WITH_GEN, GEN_VARDEC, VARDEC_TYPE, WITH_OPERATOR,
+ *  macros        : INFO_CF_TYPE, WITH_GEN, GEN_VARDEC, VARDEC_TYPE, WITH_OPERATOR,
  *                  NODE_TYPE, GENARRAY_BODY, MODARRAY_BODY, FOLDPRF_BODY, FOLDFUN_BODY,
  *                  BLOCK_INSTR
  *
@@ -839,15 +869,15 @@ CFwith (node *arg_node, node *arg_info)
     types *oldtype;
 
     DBUG_ENTER ("CFwith");
-    oldtype = INFO_TYPE (arg_info);
+    oldtype = INFO_CF_TYPE (arg_info);
 
     /* srs: this is the analogy to the storage of the return type of a prf in CFlet.
        But I wonder if this is necessary. A bound can only be an identifyer. And
        as far as I know the type information is only needed if we try to fold a
        prf (in CFprf). */
-    INFO_TYPE (arg_info) = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
+    INFO_CF_TYPE (arg_info) = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
     WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
-    INFO_TYPE (arg_info) = oldtype;
+    INFO_CF_TYPE (arg_info) = oldtype;
 
     switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
     case N_genarray:
@@ -892,8 +922,15 @@ node *
 CFNwith (node *arg_node, node *arg_info)
 {
     node *tmpn;
+    inside_wl *iw;
 
     DBUG_ENTER ("CFNwith");
+
+    /* add WL name to inside_wl struct */
+    iw = Malloc (sizeof (inside_wl));
+    iw->next = inside_wl_root;
+    iw->wl_name = IDS_NAME (LET_IDS (ASSIGN_INSTR (INFO_CF_ASSIGN (arg_info))));
+    inside_wl_root = iw;
 
     /* do NOT traverse withop in case of
        - genarray : TC assures constant array anyway
@@ -918,6 +955,10 @@ CFNwith (node *arg_node, node *arg_info)
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NCODE_NEXT (tmpn);
     }
+
+    iw = inside_wl_root;
+    inside_wl_root = iw->next;
+    FREE (iw);
 
     DBUG_RETURN (arg_node);
 }
@@ -1520,16 +1561,16 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     node *res_node = NULL;
 
     DBUG_ENTER ("CalcPsi");
-    GET_BASIC_TYPE (INFO_TYPE (arg_info), INFO_TYPE (arg_info), 47);
+    GET_BASIC_TYPE (INFO_CF_TYPE (arg_info), INFO_CF_TYPE (arg_info), 47);
     GET_BASIC_TYPE (array_type, array_type, 47);
 
     /* Calculate dimension and shape vector of first argument */
     vec_dim = GetShapeVector (shape, vec_shape);
     array_dim = TYPES_DIM (array_type);
     array_shape = TYPES_SHPSEG (array_type);
-    result_dim = TYPES_DIM (INFO_TYPE (arg_info));
+    result_dim = TYPES_DIM (INFO_CF_TYPE (arg_info));
     if (0 < result_dim)
-        result_shape = TYPES_SHPSEG (INFO_TYPE (arg_info));
+        result_shape = TYPES_SHPSEG (INFO_CF_TYPE (arg_info));
 
     /* Calculate length of result array */
     length = 1;
@@ -1563,7 +1604,7 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
             ARRAY_TYPE (res_node) = DuplicateTypes (ARRAY_TYPE (array), 1);
         }
     } else {
-        WARN (NODE_LINE (INFO_ASSIGN (arg_info)),
+        WARN (NODE_LINE (INFO_CF_ASSIGN (arg_info)),
               ("Illegal vector for primitive function psi"));
     }
     DBUG_RETURN (res_node);
@@ -1718,8 +1759,8 @@ ArrayPrf (node *arg_node, node *arg_info)
             do {
                 expr_arg[0] = expr[0]->node[0];
                 expr_arg[1] = expr[1]->node[0];
-                expr[0]->node[0]
-                  = ScalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
+                expr[0]->node[0] = ScalarPrf (expr_arg, arg_node->info.prf,
+                                              INFO_CF_TYPE (arg_info), swap);
                 expr[0] = expr[0]->node[1];
                 expr[1] = expr[1]->node[1];
             } while ((NULL != expr[0]) && (NULL != expr[1]));
@@ -1731,8 +1772,8 @@ ArrayPrf (node *arg_node, node *arg_info)
             expr_arg[1] = arg[1];
             do {
                 expr_arg[0] = expr[0]->node[0];
-                expr[0]->node[0]
-                  = ScalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
+                expr[0]->node[0] = ScalarPrf (expr_arg, arg_node->info.prf,
+                                              INFO_CF_TYPE (arg_info), swap);
                 expr[0] = expr[0]->node[1];
             } while ((NULL != expr[0]));
         }
@@ -1802,7 +1843,7 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Gives Array the correct type
              */
             ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
-            ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_TYPE (arg_info), 0);
+            ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_CF_TYPE (arg_info), 0);
 
             /*
              * Store result
@@ -1813,7 +1854,8 @@ ArrayPrf (node *arg_node, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types, INFO_TYPE (arg_info));
+            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types,
+                           INFO_CF_TYPE (arg_info));
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             FreeTree (arg_node);
             arg_node = tmp;
@@ -1914,7 +1956,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         if (NULL != res_array) {
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
                                prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
-            MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_ASSIGN (arg_info)), INFO_VARNO);
+            MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), INFO_VARNO);
             FreeTree (arg_node);
             /* srs: arg_info is modifies within GenMasks. As least ->mask[0],
                mask[1], nodetype and node[2]. Is this intended to happen? */
@@ -1982,7 +2024,8 @@ CFprf (node *arg_node, node *arg_info)
             && (F_abs == PRF_PRF (arg_node) || F_not == PRF_PRF (arg_node)
                 || IsConst (arg[1]))) {
             if (F_div != PRF_PRF (arg_node) || !FoundZero (arg[1])) {
-                arg[0] = ScalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE (arg_info), FALSE);
+                arg[0]
+                  = ScalarPrf (arg, PRF_PRF (arg_node), INFO_CF_TYPE (arg_info), FALSE);
                 FreePrf2 (arg_node, 0);
                 arg_node = arg[0];
             }
