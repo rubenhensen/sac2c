@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/11/18 17:02:15  dkr
+ * NWITHOP_DEFAULT added
+ *
  * Revision 3.4  2002/10/08 17:08:55  dkr
  * Support for dynamic shapes added:
  * TypesAreEqual(), ReuseLet() modified.
@@ -273,6 +276,7 @@ ReuseNwithop (node *arg_node, node *arg_info)
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
         NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
         break;
     case WO_modarray:
         /*

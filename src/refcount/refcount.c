@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2003/11/18 16:59:09  dkr
+ * NWITHOP_DEFAULT added
+ *
  * Revision 3.26  2003/03/17 14:31:47  dkr
  * refcounting for NWITHID_IDS added
  *
@@ -2203,6 +2206,12 @@ RCNwithop (node *arg_node, node *arg_info)
                 ID_REFCNT (NWITHOP_SHAPE (arg_node)) = -1;
             }
             ID_NAIVE_REFCNT (NWITHOP_SHAPE (arg_node)) = -1;
+        }
+        if (NODE_TYPE (NWITHOP_DEFAULT (arg_node)) == N_id) {
+            if (!INFO_RC_ONLYNAIVE (arg_info)) {
+                ID_REFCNT (NWITHOP_DEFAULT (arg_node)) = -1;
+            }
+            ID_NAIVE_REFCNT (NWITHOP_DEFAULT (arg_node)) = -1;
         }
         break;
 
