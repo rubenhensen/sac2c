@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/09/11 06:26:47  cg
+ * Revision 1.12  1997/03/19 13:53:22  cg
+ * The global dependency tree is written as special pragma linkwith to the SIB
+ *
+ * Revision 1.11  1996/09/11  06:26:47  cg
  * SIB is now written directly to build_dirname.
  *
  * Revision 1.10  1996/02/06  18:58:19  cg
@@ -105,6 +108,76 @@ WriteSib (node *syntax_tree)
     act_tab = writesib_tab;
 
     DBUG_RETURN (Trav (syntax_tree, NULL));
+}
+
+/*
+ *
+ *  functionname  : SIBPrintDependencies
+ *  arguments     : 1) output stream to SIB file
+ *                  2) dependency tree
+ *                  3) recursion level
+ *  description   : prints the dependencies to the sibfile
+ *  global vars   : dependencies
+ *  internal funs : ---
+ *  external funs : fprintf
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+SIBPrintDependencies (FILE *sibfile, deps *depends, int level)
+{
+    deps *tmp;
+    int i;
+
+    DBUG_ENTER ("SIBPrintDependencies");
+
+    if ((dependencies != NULL) && (level == 1)) {
+        fprintf (sibfile, "#pragma linkwith\n");
+    }
+
+    tmp = depends;
+
+    while (tmp != NULL) {
+        if (DEPS_STATUS (tmp) == ST_own) {
+            tmp = DEPS_NEXT (tmp);
+        } else {
+            for (i = 0; i < level; i++) {
+                fprintf (sibfile, " ");
+            }
+
+            switch (DEPS_STATUS (tmp)) {
+            case ST_sac:
+                fprintf (sibfile, "\"%s\"", DEPS_NAME (tmp));
+                break;
+            case ST_external:
+                fprintf (sibfile, "external \"%s\"", DEPS_NAME (tmp));
+                break;
+            case ST_system:
+                fprintf (sibfile, "linkwith \"%s\"", DEPS_NAME (tmp));
+                break;
+            default:
+            }
+
+            if (DEPS_SUB (tmp) != NULL) {
+                fprintf (sibfile, "\n{\n");
+                SIBPrintDependencies (sibfile, DEPS_SUB (tmp), level + 1);
+                fprintf (sibfile, "}\n");
+            }
+
+            tmp = DEPS_NEXT (tmp);
+
+            if (tmp != NULL) {
+                fprintf (sibfile, ",\n");
+            }
+        }
+    }
+
+    fprintf (sibfile, "\n\n");
+
+    DBUG_VOID_RETURN;
 }
 
 /*
@@ -946,9 +1019,9 @@ WSIBexplist (node *arg_node, node *arg_info)
  *  functionname  : WSIBmodul
  *  arguments     :
  *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  global vars   : outfile, dependencies
+ *  internal funs : SIBPrintDependencies, MakeInfo, AddImplicitItems
+ *  external funs : WriteOpen, fclose, Trav, fprintf, FreeNode, FreeNodeList
  *  macros        :
  *
  *  remarks       :
@@ -963,9 +1036,11 @@ WSIBmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WSIBmodul");
 
-    sibfile = WriteOpen ("%s%s.sib", build_dirname, MODUL_NAME (arg_node));
+    sibfile = WriteOpen ("%s/%s.sib", tmp_dirname, MODUL_NAME (arg_node));
 
     fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
+
+    SIBPrintDependencies (sibfile, dependencies, 1);
 
     if (MODDEC_OWN (MODUL_DECL (arg_node)) != NULL) {
         /*
@@ -1004,7 +1079,7 @@ WSIBmodul (node *arg_node, node *arg_info)
         FreeNode (export);
     }
 
-    fprintf (sibfile, "\n<###>");
+    fprintf (sibfile, "\n<###>\n");
 
     fclose (sibfile);
 
