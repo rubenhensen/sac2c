@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.24  2004/07/05 19:20:03  mwe
+ * unused variables removed
+ *
  * Revision 1.23  2004/07/05 18:41:04  mwe
  * support for ntypes added
  * everything done for types* is now done for ntype* also
@@ -619,9 +622,10 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
     ntype *newtype;
     char *newname1, *newname2;
 
-    shpseg *shp;
-    node *shpnode;
-    int shpint;
+    /* types->ntype */
+    /*  shpseg* shp;
+     *node *shpnode;
+     *int shpint;*/
 
     DBUG_ENTER ("MakeAssignNodeFromCurrentNode");
 
