@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/03/28 16:26:16  sbs
+ * all function headers doxygenized.
+ *
  * Revision 3.50  2003/03/26 15:22:17  sbs
  * doxygen again
  *
@@ -977,6 +980,11 @@ MergeVinfoChn (node *ca, node *cb)
  * @{
  */
 
+/**
+ *
+ * "higher-order-function" that maps "fun" to the ACTCHN-attribute of the
+ * vardec chain "vardecin".
+ */
 #define MAP_TO_ALL_VARDEC_ACTCHNS(fun, vardecin)                                         \
     {                                                                                    \
         node *vardec, *actchn;                                                           \
@@ -1140,13 +1148,13 @@ MergeCopyTop (node *actchn)
  * @{
  */
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  char *IdxChangeId( char *varname, types *type)
+ * @fn char *IdxChangeId( char *varname, types *type)
  *
- * description:
- *    appends the shape given by type to the varname; e.g:
+ * @brief appends the shape given by type to the varname.
+ *
+ *    Example:
  *    test, int[1,4,2,3]  =>  test_1_4_2_3__
  *    does not free the argument space!
  *
@@ -1175,13 +1183,11 @@ IdxChangeId (char *varname, types *type)
     DBUG_RETURN (StringCopy (buffer));
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *VardecIdx(node *vardec, types *type)
+ * @fn node *VardecIdx(node *vardec, types *type)
  *
- * description:
- *    vardec points to the N_vardec/ N_arg node of the original
+ * @brief vardec points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
  *    VardecIdx looks up, whether there already exists a declaration of the
  *    "IDX(type)" variant. If so, the pointer to that declaration is returned,
@@ -1227,13 +1233,11 @@ VardecIdx (node *vardec, types *type)
     DBUG_RETURN (VINFO_VARDEC (vinfo));
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *CreateIdxs2OffsetIcm(node * vardec, ids *idxs, types *type)
+ * @fn node *CreateIdxs2OffsetIcm(node * vardec, ids *idxs, types *type)
  *
- * description:
- *    'vardec' points to the N_vardec/ N_arg node of the original
+ * @brief 'vardec' points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
  *    'idxs' points to the "IDS"-version of an index variable set.
  *    'type' indicates which IDX(type) version has to be computed.
@@ -1294,13 +1298,11 @@ CreateIdxs2OffsetIcm (node *vardec, ids *idxs, types *type)
     DBUG_RETURN (MakeAssign (icm, NULL));
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *CreateVect2OffsetIcm(node *vardec, types *type)
+ * @fn node *CreateVect2OffsetIcm(node *vardec, types *type)
  *
- * description:
- *    'vardec' points to the N_vardec/ N_arg node of the original
+ * @brief 'vardec' points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
  *    'type' indicates which IDX(type) version has to be computed.
  *    CreateVect2OffsetIcm creates the required  ND_VECT2OFFSET-ICM, e.g.,
@@ -1379,12 +1381,9 @@ CreateVect2OffsetIcm (node *vardec, types *type)
  * @{
  */
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    node *IdxModul(node *arg_node, node *arg_info)
- *
- * description:
+ * @fn node *IdxModul(node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
@@ -1400,12 +1399,9 @@ IdxModul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    node *IdxFundef(node *arg_node, node *arg_info)
- *
- * description:
+ * @fn node *IdxFundef(node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
@@ -1456,13 +1452,11 @@ IdxFundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *IdxArg( node *arg_node, node *arg_info)
+ * @fn node *IdxArg( node *arg_node, node *arg_info)
  *
- * description:
- *   Depending on the existance of arg_info, 2 different things happen:
+ * @brief  Depending on the existance of arg_info, 2 different things happen:
  *   Iff (arg_info != NULL) , backrefs to the actual fundef are inserted and
  *     for integer vectors the ACTCHNs and the COLCHNs are initialized.
  *   Otherwise, the existing COLCHNs are traversed and missing Vardecs of
@@ -1521,13 +1515,11 @@ IdxArg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *IdxBlock( node *arg_node, node *arg_info )
+ * @fn node *IdxBlock( node *arg_node, node *arg_info )
  *
- * description:
- *   Make sure that the vardecs are traversed BEFORE the body!
+ * @brief Make sure that the vardecs are traversed BEFORE the body!
  *   NB: this is done to initialize all int[x] / int[.] vars by DOLLAR!
  *   After the body has been traversed, a sceond traversal through the
  *   vardecs is made in order to eliminate superfluous vardecs of index
@@ -1563,12 +1555,11 @@ IdxBlock (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *IdxVardec( node *arg_node, node *arg_info )
+ * @fn node *IdxVardec( node *arg_node, node *arg_info )
  *
- * description:
+ * @brief
  *   if( arg_info != NULL)
  *       create an N_vinfo node for all vars with either type int[x]
  *       or type int[.] (needed for the AKD-case!).
@@ -1632,12 +1623,9 @@ IdxVardec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *IdxAssign( node *arg_node, node *arg_info )
- *
- * description:
+ * @fn node *IdxAssign( node *arg_node, node *arg_info )
  *
  ******************************************************************************/
 
@@ -1663,13 +1651,11 @@ IdxAssign (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *IdxReturn(node *arg_node, node *arg_info)
+ * @fn node *IdxReturn(node *arg_node, node *arg_info)
  *
- * description:
- *   initiates the uses-collection. In order to guarantee a "VECT" attribution
+ * @brief initiates the uses-collection. In order to guarantee a "VECT" attribution
  *   for array-variables, INFO_IVE_TRANSFORM_VINFO( arg_info) has to be NULL,
  *   when traversing the return expressions!
  *
@@ -1688,13 +1674,11 @@ IdxReturn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *IdxLet(node *arg_node, node *arg_info)
+ * @fn node *IdxLet(node *arg_node, node *arg_info)
  *
- * description:
- *   This is the central mechanism for steering the code transformation.
+ * @brief This is the central mechanism for steering the code transformation.
  *   It duplicates assignments - if required - and adds the transformation
  *   information into arg_info.
  *
@@ -2322,13 +2306,9 @@ IdxNum (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *IdxNwith( node *arg_node, node *arg_info)
- *
- * description:
- *
+ * @fn node *IdxNwith( node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
@@ -2349,13 +2329,11 @@ IdxNwith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *IdxNpart( node *arg_node, node *arg_info)
+ * @fn node *IdxNpart( node *arg_node, node *arg_info)
  *
- * description:
- *    Here we make sure that all parts of the generator will be traversed
+ * @brief Here we make sure that all parts of the generator will be traversed
  *    correctly. Furthermore, we eliminate superfluous generator vars
  *    (provided REFCOUNT_PROBLEM_SOLVED holds).
  *
@@ -2414,13 +2392,11 @@ IdxNpart (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *IdxNcode( node *arg_node, node *arg_info)
+ * @fn node *IdxNcode( node *arg_node, node *arg_info)
  *
- * description:
- *   arg_info points to the previous N_let node!
+ * @brief arg_info points to the previous N_let node!
  *
  ******************************************************************************/
 
@@ -2578,12 +2554,9 @@ IdxNcode (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *IdxCond( node *arg_node, node *arg_info)
- *
- * description:
+ * @fn node *IdxCond( node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
@@ -2610,12 +2583,9 @@ IdxCond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *IdxWhile( node *arg_node, node *arg_info)
- *
- * description:
+ * @fn node *IdxWhile( node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
@@ -2658,12 +2628,9 @@ IdxWhile (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *IdxDo( node *arg_node, node *arg_info)
- *
- * description:
+ * @fn node *IdxDo( node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
