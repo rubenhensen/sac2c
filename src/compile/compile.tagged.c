@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  2002/10/28 09:23:54  dkr
+ * DBUG_ASSERT in COMPwith2() corrected
+ *
  * Revision 1.53  2002/10/24 20:53:36  dkr
  * MakeDimArg(), MakeShapeArg(), MakeSizeArg() added.
  * signature of some WL ICMs modified.
@@ -5212,14 +5215,19 @@ COMP2With2 (node *arg_node, node *arg_info)
             node *cexpr = NWITH2_CEXPR (arg_node);
 #ifndef DBUG_OFF
             shape_class_t cexpr_sc = GetShapeClassFromTypes (ID_TYPE (cexpr));
+            shape_class_t wlids_sc = GetShapeClassFromTypes (IDS_TYPE (wlids));
 #endif
 
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH2_CEXPR is not a N_id");
+
             /*
-             * for the time being, the WL expression must be AKS or SCL ... 8-(
+             * for the time being, either the WL expression or the LHS of the WL
+             * must be AKS or SCL ... 8-(
              */
-            DBUG_ASSERT (((cexpr_sc == C_scl) || (cexpr_sc == C_aks)),
-                         "genarray-WL with expression of unknown shape found!");
+            DBUG_ASSERT (((cexpr_sc == C_scl) || (cexpr_sc == C_aks)
+                          || (wlids_sc == C_scl) || (wlids_sc == C_aks)),
+                         "genarray-WL found with expression and result both of"
+                         " unknown shape!");
 
             if (dim >= 0) {
                 get_dim = MakeNum (dim);
