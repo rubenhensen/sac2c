@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/01/17 17:58:45  cg
+ * Added support for optimized allocation of refernce counters.
+ *
  * Revision 1.7  2000/01/17 16:25:58  cg
  * Completely revised version:
  * Added multi-threaded heap management.
@@ -172,7 +175,7 @@ typedef union header_t {
 
 #define SAC_HM_UNIT_SIZE (sizeof (SAC_HM_header_t))
 
-#define SAC_HM_UNITS(size) ((((size)-1) / SAC_HM_UNIT_SIZE) + 3)
+#define SAC_HM_BYTES_2_UNITS(size) ((((size)-1) / SAC_HM_UNIT_SIZE) + 1)
 
 /*
  * Type definition for arena data structure
@@ -432,7 +435,7 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 #if SAC_DO_CHECK_HEAP
 #define SAC_HM_PRINT() SAC_HM_ShowDiagnostics ()
-#define SAC_HM_INC_DIAG_COUNTER(counter) counter++
+#define SAC_HM_INC_DIAG_COUNTER(counter) (counter)++
 #else
 #define SAC_HM_PRINT()
 #define SAC_HM_INC_DIAG_COUNTER(counter)
@@ -556,7 +559,8 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 #endif /* SAC_DO_MULTITHREAD */
 
-#if 1
+#if SAC_DO_APS
+
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size)                                              \
     {                                                                                    \
         if ((size) <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                      \
@@ -574,7 +578,7 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
                 }                                                                        \
             }                                                                            \
         } else {                                                                         \
-            const SAC_HM_size_unit_t units = SAC_HM_UNITS (size);                        \
+            const SAC_HM_size_unit_t units = SAC_HM_BYTES_2_UNITS (size) + 2;            \
             if (units < SAC_HM_ARENA_7_MINCS) {                                          \
                 if (units < SAC_HM_ARENA_6_MINCS) {                                      \
                     SAC_HM_MALLOC_LARGE_CHUNK (var, units, 5);                           \
@@ -590,9 +594,44 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
             }                                                                            \
         }                                                                                \
     }
-#else
+
+#else /* SAC_DO_APS */
+
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size) SAC_HM_MALLOC (var, size)
-#endif
+
+#endif /* SAC_DO_APS */
+
+#if SAC_DO_RCAO
+
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));               \
+        var_rc = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));  \
+        SAC_HM_ADDR_ARENA (var_rc) = NULL;                                               \
+    }
+
+#define SAC_HM_MALLOC_WITH_RC(var, var_rc, size)                                         \
+    {                                                                                    \
+        SAC_HM_MALLOC (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));                          \
+        var_rc = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));  \
+        SAC_HM_ADDR_ARENA (var_rc) = NULL;                                               \
+    }
+
+#else /* SAC_DO_RCAO */
+
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (var, (size));                                          \
+        SAC_HM_MALLOC_FIXED_SIZE (var_rc, sizeof (int));                                 \
+    }
+
+#define SAC_HM_MALLOC_WITH_RC(var, var_rc, size)                                         \
+    {                                                                                    \
+        SAC_HM_MALLOC (var, size);                                                       \
+        SAC_HM_MALLOC_FIXED_SIZE (var_rc, sizeof (int));                                 \
+    }
+
+#endif /* SAC_DO_RCAO */
 
 /*
  * Definition of memory de-allocation macros.
@@ -600,34 +639,82 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 #define SAC_HM_FREE(addr) free (addr);
 
-#if 1
+#if SAC_DO_APS
+
+/*
+ * Note, that due to RCAO the size of the allocated chunk might be 2 untits
+ * larger than actually required by the size of the data object to be stored.
+ */
 #define SAC_HM_FREE_FIXED_SIZE(addr, size)                                               \
     {                                                                                    \
-        if ((size) <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                      \
-            SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr, SAC_HM_ADDR_ARENA (addr));   \
+        if ((size) == sizeof (int)) {                                                    \
+            if (SAC_HM_ADDR_ARENA (addr) != NULL) {                                      \
+                SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                          \
+                                       SAC_HM_ADDR_ARENA (addr));                        \
+            }                                                                            \
         } else {                                                                         \
-            if (SAC_HM_UNITS (size) < SAC_HM_ARENA_8_MINCS) {                            \
-                SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                          \
+            if (((size) + 2 * SAC_HM_UNIT_SIZE) <= SAC_HM_ARENA_4_MAXCS_BYTES) {         \
+                SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                          \
                                        SAC_HM_ADDR_ARENA (addr));                        \
             } else {                                                                     \
-                switch (SAC_HM_thread_status) {                                          \
-                case SAC_HM_single_threaded:                                             \
-                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
-                                           SAC_HM_ADDR_ARENA (addr));                    \
-                    break;                                                               \
-                case SAC_HM_multi_threaded:                                              \
-                    SAC_HM_FreeTopArena_mt ((SAC_HM_header_t *)addr);                    \
-                    break;                                                               \
-                case SAC_HM_any_threaded:                                                \
-                    SAC_HM_FreeTopArena_at ((SAC_HM_header_t *)addr);                    \
-                    break;                                                               \
+                if (size <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                \
+                    if (SAC_HM_ADDR_ARENA (addr)->num == 4) {                            \
+                        SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                  \
+                                               SAC_HM_ADDR_ARENA (addr));                \
+                    } else {                                                             \
+                        SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                  \
+                                               SAC_HM_ADDR_ARENA (addr));                \
+                    }                                                                    \
+                } else {                                                                 \
+                    if (SAC_HM_BYTES_2_UNITS (size) + (2 + 2) < SAC_HM_ARENA_8_MINCS) {  \
+                        SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                  \
+                                               SAC_HM_ADDR_ARENA (addr));                \
+                    } else {                                                             \
+                        if (SAC_HM_BYTES_2_UNITS (size) + 2 < SAC_HM_ARENA_8_MINCS) {    \
+                            if (SAC_HM_ADDR_ARENA (addr)->num == 7) {                    \
+                                SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,          \
+                                                       SAC_HM_ADDR_ARENA (addr));        \
+                            } else {                                                     \
+                                switch (SAC_HM_thread_status) {                          \
+                                case SAC_HM_single_threaded:                             \
+                                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,      \
+                                                           &(SAC_HM_arenas               \
+                                                               [0][SAC_HM_TOP_ARENA]));  \
+                                    break;                                               \
+                                case SAC_HM_multi_threaded:                              \
+                                    SAC_HM_FreeTopArena_mt ((SAC_HM_header_t *)addr);    \
+                                    break;                                               \
+                                case SAC_HM_any_threaded:                                \
+                                    SAC_HM_FreeTopArena_at ((SAC_HM_header_t *)addr);    \
+                                    break;                                               \
+                                }                                                        \
+                            }                                                            \
+                        } else {                                                         \
+                            switch (SAC_HM_thread_status) {                              \
+                            case SAC_HM_single_threaded:                                 \
+                                SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,          \
+                                                       &(SAC_HM_arenas                   \
+                                                           [0][SAC_HM_TOP_ARENA]));      \
+                                break;                                                   \
+                            case SAC_HM_multi_threaded:                                  \
+                                SAC_HM_FreeTopArena_mt ((SAC_HM_header_t *)addr);        \
+                                break;                                                   \
+                            case SAC_HM_any_threaded:                                    \
+                                SAC_HM_FreeTopArena_at ((SAC_HM_header_t *)addr);        \
+                                break;                                                   \
+                            }                                                            \
+                        }                                                                \
+                    }                                                                    \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
     }
-#else
+
+#else /* SAC_DO_APS */
+
 #define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
-#endif
+
+#endif /* SAC_DO_APS */
 
 #define SAC_DO_INLINE_FREE 0
 
@@ -664,6 +751,19 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 #define SAC_HM_SETUP()
 #define SAC_HM_PRINT()
 #define SAC_HM_DEFINE()
+
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
+    {                                                                                    \
+        SAC_HM_MALLOC (var, (size));                                                     \
+        SAC_HM_MALLOC (var_rc, sizeof (int));                                            \
+    }
+
+#define SAC_HM_MALLOC_WITH_RC(var, var_rc, size)                                         \
+    {                                                                                    \
+        SAC_HM_MALLOC (var, size);                                                       \
+        SAC_HM_MALLOC (var_rc, sizeof (int));                                            \
+    }
+
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size) SAC_HM_MALLOC (var, size)
 #define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
 

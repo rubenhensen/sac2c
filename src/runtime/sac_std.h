@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/01/17 17:58:45  cg
+ * Added support for optimized allocation of refernce counters.
+ *
  * Revision 2.7  1999/09/22 13:27:03  cg
  * Converted memory allocation macro to command postion (syntactically)
  * rather than expression position. This allows for more flexibility
@@ -330,7 +333,7 @@
 #define SAC_ND_ALLOC_RC(name)                                                            \
     SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));
 
-/*  If SECURE_ALLOC_FREE is defined an extra check wheater the requested size is 0
+/*  If SECURE_ALLOC_FREE is defined an extra check wether the requested size is 0
  *  is done. In that case no call for malloc(0) is executed, but directly NULL set for
  *  the array-variable is done.
  *
@@ -358,10 +361,8 @@
 #else
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
-                                                                                         \
-        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (name),                                 \
-                                  sizeof (basetype) * SAC_ND_A_SIZE (name));             \
-        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                    \
+        SAC_HM_MALLOC_FIXED_SIZE_WITH_RC (SAC_ND_A_FIELD (name), SAC_ND_A_RCP (name),    \
+                                          sizeof (basetype) * SAC_ND_A_SIZE (name));     \
         SAC_ND_A_RC (name) = rc;                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \

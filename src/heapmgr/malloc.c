@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/17 17:58:45  cg
+ * Added support for optimized allocation of refernce counters.
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Added multi-threading capabilities to the heap manager.
  *
@@ -202,19 +205,21 @@ free (void *addr)
 
         DIAG_INC (arena->cnt_free_var_size);
 
-        if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
-            SAC_HM_FreeSmallChunk (addr, arena);
-            return;
-        }
+        if (arena != NULL) {
+            if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
+                SAC_HM_FreeSmallChunk (addr, arena);
+                return;
+            }
 
 #ifdef MT
-        if (arena->num < SAC_HM_TOP_ARENA) {
-            SAC_HM_FreeLargeChunk (addr, arena);
-        } else {
-            SAC_HM_FreeTopArena_at (addr);
-        }
+            if (arena->num < SAC_HM_TOP_ARENA) {
+                SAC_HM_FreeLargeChunk (addr, arena);
+            } else {
+                SAC_HM_FreeTopArena_at (addr);
+            }
 #else  /* MT */
-        SAC_HM_FreeLargeChunk (addr, arena);
+            SAC_HM_FreeLargeChunk (addr, arena);
 #endif /* MT */
+        }
     }
 }

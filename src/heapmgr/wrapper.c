@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/17 17:58:45  cg
+ * Added support for optimized allocation of refernce counters.
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Added multi-threading capabilities to the heap manager.
  *
