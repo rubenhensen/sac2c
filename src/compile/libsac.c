@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/21 14:16:55  cg
+ * Revision 1.4  1996/01/25 15:04:57  cg
+ * added __SAC__Runtime_hidden_memcnt and __SAC__Runtime_array_memcnt
+ *
+ * Revision 1.3  1996/01/21  14:16:55  cg
  * minor layout modification
  *
  * Revision 1.2  1996/01/09  08:52:32  cg
@@ -21,7 +24,8 @@
 
 #define TRACE_BUFFER_SIZE 256
 
-int __SAC__Runtime_trace_memcnt = 0;
+int __SAC__Runtime_array_memcnt = 0;
+int __SAC__Runtime_hidden_memcnt = 0;
 
 static int trace_layout_flag = 0;
 
@@ -104,7 +108,12 @@ __SAC__Runtime_PrintTraceHeader (char *format, ...)
     vsprintf (buffer, format, arg_p);
     va_end (arg_p);
 
-    fprintf (stderr, "%-40s -> ", buffer);
+    if (strlen (buffer) > 40) {
+        fprintf (stderr, "%s\n", buffer);
+        fprintf (stderr, "%-40s -> ", " ");
+    } else {
+        fprintf (stderr, "%-40s -> ", buffer);
+    }
 
     trace_layout_flag = 0;
 }

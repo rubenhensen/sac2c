@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/21 18:07:34  cg
+ * Revision 1.4  1996/01/25 15:04:57  cg
+ * added __SAC__Runtime_hidden_memcnt and __SAC__Runtime_array_memcnt
+ *
+ * Revision 1.3  1996/01/21  18:07:34  cg
  * added declaration of __SAC__Runtime_trace_memcnt
  *
  * Revision 1.2  1996/01/09  08:54:00  cg
@@ -19,7 +22,8 @@
 
 #define _sac_libsac_h
 
-extern int __SAC__Runtime_trace_memcnt;
+extern int __SAC__Runtime_hidden_memcnt;
+extern int __SAC__Runtime_array_memcnt;
 
 extern void __SAC__RuntimeError (char *format, ...);
 extern void __SAC__Runtime_Print (char *format, ...);
