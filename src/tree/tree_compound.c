@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/08/02 19:30:43  sah
+ * moved MakeStr_Copy to tree_compound
+ *
  * Revision 3.84  2004/07/31 16:11:35  sah
  * moved MakeId_xxx functions to tree_compund
  *
@@ -4499,4 +4502,26 @@ MakeWLsegX (int dims, node *contents, node *next)
     }
 
     DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_str :
+ ***/
+
+node *
+MakeStr_Copy (char *str)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeStr_Copy");
+
+    if (str == NULL) {
+        str = "";
+    }
+
+    result = MakeStr (StringCopy (str));
+
+    DBUG_RETURN (result);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.205  2004/08/02 19:30:43  sah
+ * moved MakeStr_Copy to tree_compound
+ *
  * Revision 3.204  2004/08/02 17:18:01  sah
  * removed all the WLxxxX_xxx macros from tree_basic.h
  * and wrote new ones in tree_compound.h
@@ -2240,7 +2243,6 @@ extern node *MakeBool (bool val);
  ***/
 
 extern node *MakeStr (char *str);
-extern node *MakeStr_Copy (char *str);
 
 #define STR_STRING(n) (n->info.id)
 

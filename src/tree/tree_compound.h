@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/08/02 19:30:43  sah
+ * moved MakeStr_Copy to tree_compound
+ *
  * Revision 3.85  2004/08/02 17:18:01  sah
  * removed all the WLxxxX_xxx macros from tree_basic.h
  * and wrote new ones in tree_compound.h
@@ -2578,5 +2581,13 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 #define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
 #define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
 #define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_str :
+ ***/
+
+extern node *MakeStr_Copy (char *str);
 
 #endif /* _sac_tree_compound_h */

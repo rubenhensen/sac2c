@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/08/02 19:30:43  sah
+ * moved MakeStr_Copy to tree_compound
+ *
  * Revision 3.88  2004/07/31 16:11:35  sah
  * moved MakeId_xxx functions to tree_compund
  *
@@ -1389,24 +1392,6 @@ MakeStr (char *str)
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeStr_Copy (char *str)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeStr_Copy");
-
-    if (str == NULL) {
-        str = "";
-    }
-
-    result = MakeStr (StringCopy (str));
-
-    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
