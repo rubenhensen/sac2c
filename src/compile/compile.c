@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2004/07/27 17:21:47  ktr
+ * completed MakeSetShapeIcm
+ *
  * Revision 3.110  2004/07/26 18:44:58  ktr
  * Completed implementation if MakeGetDim.
  *
@@ -1409,7 +1412,6 @@ MakeGetDimIcm (node *arg_node)
         break;
     }
 
-    Print (get_dim);
     DBUG_RETURN (get_dim);
 }
 
@@ -1427,15 +1429,334 @@ MakeGetDimIcm (node *arg_node)
 static node *
 MakeSetShapeIcm (node *arg_node, ids *let_ids)
 {
+    node *arg1, *arg2;
     node *set_shape;
 
     DBUG_ENTER ("MakeSetShapeIcm");
 
     switch (NODE_TYPE (arg_node)) {
     case N_array:
+        /*
+         * [ a, ...]
+         * => ND_SET__SHAPE_arr
+         */
         set_shape = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
                               MakeExprs (MakeNum (CountExprs (ARRAY_AELEMS (arg_node))),
                                          DupTree (ARRAY_AELEMS (arg_node))));
+        break;
+
+    case N_prf:
+        switch (PRF_PRF (arg_node)) {
+        case F_shape:
+            arg_node = PRF_ARG1 (arg_node);
+            switch (NODE_TYPE (arg_node)) {
+            case N_id:
+                /*
+                 * shape( a)
+                 * => ND_COPY__SHAPE
+                 */
+                set_shape
+                  = MakeIcm1 ("ND_COPY__SHAPE",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE,
+                                            MakeTypeArgs (ID_NAME (arg_node),
+                                                          ID_TYPE (arg_node), FALSE, TRUE,
+                                                          FALSE, NULL)));
+                break;
+
+            case N_array:
+                /*
+                 * shape( [ a, ...])
+                 * => ND_CREATE__ARRAY__SHAPE
+                 */
+                {
+                    int i, dim, val0_sdim;
+                    shape *shp;
+                    node *icm_args, *icm_args2;
+
+                    shp = ARRAY_SHAPE (arg_node);
+                    dim = SHGetDim (shp);
+
+                    icm_args = MakeExprs (MakeSizeArg (arg_node, TRUE),
+                                          DupExprs_NT (ARRAY_AELEMS (arg_node)));
+
+                    icm_args2 = NULL;
+                    for (i = dim - 1; i >= 0; i--) {
+                        icm_args2 = MakeExprs (MakeNum (SHGetExtent (shp, i)), icm_args2);
+                    }
+                    icm_args2 = MakeExprs (MakeNum (dim), icm_args2);
+
+                    if (ARRAY_AELEMS (arg_node) != NULL) {
+                        if (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) == N_id) {
+                            val0_sdim = GetShapeDim (
+                              ID_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
+                        } else {
+                            val0_sdim = 0;
+                        }
+                    } else {
+                        val0_sdim = -815; /* array is empty */
+                    }
+
+                    set_shape
+                      = MakeIcm3 ("ND_CREATE__ARRAY__SHAPE",
+                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                FALSE, TRUE, FALSE, icm_args2),
+                                  icm_args, MakeNum (val0_sdim));
+                }
+                break;
+
+            case N_prf:
+                arg1 = PRF_ARG1 (arg_node);
+                arg2 = PRF_ARG2 (arg_node);
+
+                switch (PRF_PRF (arg_node)) {
+                case F_cat_VxV:
+                    /*
+                     * shape( cat( a, b))
+                     * => ND_PRF_CAT__SHAPE
+                     */
+                    {
+                        node *icm_args;
+
+                        DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
+                                     "1st arg of F_cat_VxV is no N_id!");
+                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                                     "2nd arg of F_cat_VxV is no N_id!");
+
+                        icm_args
+                          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
+                                                        FALSE, TRUE, FALSE,
+                                                        MakeTypeArgs (ID_NAME (arg2),
+                                                                      ID_TYPE (arg2),
+                                                                      FALSE, TRUE, FALSE,
+                                                                      NULL)));
+
+                        set_shape = MakeIcm1 ("ND_PRF_CAT__SHAPE", icm_args);
+                    }
+                    break;
+
+                case F_drop_SxV:
+                    /*
+                     * shape( drop( a, b))
+                     * => ND_PRF_DROP_SHAPE
+                     */
+                    {
+                        node *icm_args;
+
+                        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
+                                      || (NODE_TYPE (arg1) == N_num)),
+                                     "1st arg of F_drop_SxV is neither N_id nor N_num!");
+                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                                     "2nd arg of F_drop_SxV is no N_id!");
+
+                        icm_args
+                          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
+                                                        FALSE, TRUE, FALSE,
+                                                        MakeExprs (DupNode_NT (arg1),
+                                                                   NULL)));
+
+                        set_shape = MakeIcm1 ("ND_PRF_DROP__SHAPE", icm_args);
+                    }
+                    break;
+
+                case F_take_SxV:
+                    /*
+                     * shape( take( a, b))
+                     * => ND_PRF_TAKE_SHAPE
+                     */
+                    {
+                        node *icm_args;
+
+                        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
+                                      || (NODE_TYPE (arg1) == N_num)),
+                                     "1st arg of F_take_SxV is neither N_id nor N_num!");
+                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                                     "2nd arg of F_take_SxV is no N_id!");
+
+                        icm_args
+                          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
+                                                        FALSE, TRUE, FALSE,
+                                                        MakeExprs (DupNode_NT (arg1),
+                                                                   NULL)));
+
+                        set_shape = MakeIcm1 ("ND_PRF_TAKE__SHAPE", icm_args);
+                    }
+                    break;
+
+                case F_sel:
+                    switch (NODE_TYPE (PRF_ARG1 (arg1))) {
+                    case N_array:
+                        /*
+                         * shape( sel( [ 1, ...], b))
+                         * => ND_PRF_SEL__SHAPE_arr
+                         */
+                        {
+                            node *icm_args;
+
+                            icm_args = MakeTypeArgs (
+                              IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                              MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                            FALSE,
+                                            MakeExprs (MakeSizeArg (arg1, TRUE),
+                                                       AppendExprs (DupExprs_NT (
+                                                                      ARRAY_AELEMS (
+                                                                        arg1)),
+                                                                    NULL))));
+
+                            set_shape = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", icm_args);
+                        }
+                        break;
+
+                    case N_id:
+                        /*
+                         * shape( sel( id, b))
+                         * => ND_PRF_SEL_SHAPE_id
+                         */
+                        {
+                            node *icm_args;
+
+                            DBUG_ASSERT (((GetBasetype (ID_TYPE (arg1)) == T_int)),
+                                         "1st arg of F_sel is a illegal indexing var!");
+
+                            icm_args
+                              = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                              FALSE, TRUE, FALSE,
+                                              MakeTypeArgs (ID_NAME (arg2),
+                                                            ID_TYPE (arg2), FALSE, TRUE,
+                                                            FALSE,
+                                                            MakeExprs (DupId_NT (arg1),
+                                                                       NULL)));
+
+                            set_shape = MakeIcm1 ("ND_PRF_SEL__SHAPE_id", icm_args);
+                        }
+                        break;
+
+                    default:
+                        DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                        break;
+                    }
+                    break;
+
+                case F_idx_sel:
+                    /*
+                     * shape( idx_sel( a, b))
+                     * => ND_PRF_IDX_SEL_SHAPE
+                     */
+                    {
+                        node *icm_args;
+
+                        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
+                                      || (NODE_TYPE (arg1) == N_num)
+                                      || ((NODE_TYPE (arg1) == N_prf))),
+                                     "1st arg of F_idx_sel is neither N_id nor N_num, "
+                                     "N_prf!");
+                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                                     "2nd arg of F_idx_sel is no N_id!");
+
+                        icm_args
+                          = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                          FALSE, MakeExprs (DupNode_NT (arg1), NULL));
+
+                        set_shape = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE",
+                                              MakeTypeArgs (IDS_NAME (let_ids),
+                                                            IDS_TYPE (let_ids), FALSE,
+                                                            TRUE, FALSE, icm_args));
+                    }
+                    break;
+
+                case F_reshape:
+                    switch (NODE_TYPE (PRF_ARG1 (arg1))) {
+                    case N_array:
+                        /*
+                         * shape( reshape( [ 1, ...], b))
+                         * => ND_RESHAPE_SHAPE_arr
+                         */
+                        set_shape
+                          = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_arr",
+                                      MakeTypeArgs (IDS_NAME (let_ids),
+                                                    IDS_TYPE (let_ids), FALSE, TRUE,
+                                                    FALSE,
+                                                    MakeExprs (MakeSizeArg (arg1, TRUE),
+                                                               DupExprs_NT (
+                                                                 ARRAY_AELEMS (arg1)))));
+                        break;
+
+                    case N_id:
+                        /*
+                         * shape( sel( id, b))
+                         * => ND_RESHAPE_SHAPE_id
+                         */
+                        set_shape
+                          = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_id",
+                                      MakeTypeArgs (IDS_NAME (let_ids),
+                                                    IDS_TYPE (let_ids), FALSE, TRUE,
+                                                    FALSE,
+                                                    MakeExprs (DupId_NT (arg1), NULL)));
+                        break;
+
+                    default:
+                        DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                        break;
+                    }
+                    break;
+
+                case F_genarray:
+                    /*
+                     * shape( genarray( a, b))
+                     * => ND_WL_GENARRAY__SHAPE_id
+                     */
+                    set_shape
+                      = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
+                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                FALSE, TRUE, FALSE,
+                                                MakeExprs (DupId_NT (arg1),
+                                                           MakeTypeArgs (ID_NAME (arg2),
+                                                                         ID_TYPE (arg2),
+                                                                         FALSE, TRUE,
+                                                                         FALSE, NULL))));
+
+                    break;
+
+                default:
+                    DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                    break;
+                }
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                break;
+            }
+            break;
+
+        case F_cat_VxV:
+            /*
+             * cat( [ a, ...], shape( b))
+             * => ND_WL_GENARRAY_SHAPE_arr
+             */
+            arg1 = PRF_ARG1 (arg_node);
+            arg2 = PRF_ARG2 (arg_node);
+
+            set_shape
+              = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
+                          MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                        TRUE, FALSE, NULL),
+                          MakeSizeArg (arg1, TRUE), DupExprs_NT (ARRAY_AELEMS (arg1)),
+                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                        FALSE, NULL));
+
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+            break;
+        }
         break;
 
     default:
@@ -2625,8 +2946,6 @@ COMPAssign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPAssign");
 
-    DBUG_EXECUTE ("COMP", PrintNode (arg_node););
-
     INFO_COMP_ASSIGN (arg_info) = arg_node;
     instr = Trav (ASSIGN_INSTR (arg_node), arg_info);
     next = ASSIGN_NEXT (arg_node);
@@ -3584,16 +3903,12 @@ COMPPrfAlloc (node *arg_node, info *arg_info)
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
 
-    DBUG_EXECUTE ("COMP", Print (arg_node););
-
     rc = NUM_VAL (PRF_ARG1 (arg_node));
     get_dim = MakeGetDimIcm (PRF_ARG2 (arg_node));
     set_shape = MakeSetShapeIcm (PRF_ARG3 (arg_node), let_ids);
 
     ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc, get_dim,
                              set_shape, NULL, NULL);
-
-    DBUG_EXECUTE ("COMP", Print (ret_node););
 
     DBUG_RETURN (ret_node);
 }
@@ -3959,8 +4274,6 @@ COMPPrfIdxSel (node *arg_node, info *arg_info, node **check_reuse1, node **check
 
     DBUG_ENTER ("COMPPrfIdxSel");
 
-    DBUG_EXECUTE ("COMP", Print (arg_node););
-
     let_ids = INFO_COMP_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
@@ -3996,8 +4309,6 @@ COMPPrfIdxSel (node *arg_node, info *arg_info, node **check_reuse1, node **check
                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                              FALSE, TRUE, FALSE, DupTree (icm_args)),
                                MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
-
-    DBUG_EXECUTE ("COMP", Print (ret_node););
 
     DBUG_RETURN (ret_node);
 }
@@ -4831,6 +5142,10 @@ COMPPrf (node *arg_node, info *arg_info)
 
         case F_inc_rc:
             ret_node = COMPPrfIncRC (arg_node, arg_info);
+            break;
+
+        case F_accu:
+            DBUG_ASSERT ((0), "accu should have been eliminated during precompile!");
             break;
 
             /*
