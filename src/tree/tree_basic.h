@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.198  2004/07/28 22:55:21  skt
+ * FUNDEF_DATAFLOWGRAPH added
+ *
  * Revision 3.197  2004/07/26 16:54:05  skt
  * added support for exclusive cells (mt-mode 3)
  *
@@ -1336,6 +1339,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 
 /* multithreading: */
 #define FUNDEF_EXECMODE(n) (n->lineno)
+#define FUNDEF_DATAFLOWGRAPH(n) ((node *)(n->dfmask[3]))
 /* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
