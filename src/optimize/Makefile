@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.46  1998/04/20 12:08:47  dkr
+# make deps done
+#
 # Revision 1.45  1998/03/25 17:03:47  srs
 # made deps
 #
@@ -291,8 +294,7 @@ WLT.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 WLT.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 WLT.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WLT.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
-WLT.o: ../global/traverse.h optimize.h ConstantFolding.h WithloopFolding.h
-WLT.o: WLT.h
+WLT.o: ../global/traverse.h optimize.h WithloopFolding.h WLT.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
