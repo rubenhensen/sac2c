@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.125  2004/11/24 10:50:14  sbs
+ * TCmakeIdsFromVardecs added
+ *
  * Revision 3.124  2004/11/23 22:36:58  sbs
  * TCcountRets added.
  *
@@ -183,7 +186,8 @@ extern bool TCisNonUniqueHidden (types *type);
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
 
 extern node *TCappendIds (node *chain, node *item);
-extern int CountIds (node *ids_arg);
+extern int TCcountIds (node *ids_arg);
+extern node *TCmakeIdsFromVardecs (node *vardecs);
 
 /******************************************************************************
  *

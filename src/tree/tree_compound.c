@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2004/11/24 10:50:14  sbs
+ * TCmakeIdsFromVardecs added
+ *
  * Revision 3.101  2004/11/23 22:36:58  sbs
  * TCcountRets added.
  *
@@ -1057,6 +1060,17 @@ CountIds (ids *ids_arg)
     }
 
     DBUG_RETURN (count);
+}
+
+node *
+TCmakeIdsFromVardecs (node *vardecs)
+{
+    node *ids = NULL;
+    DBUG_ENTER ("TCmakeIdsFromVardecs");
+    while (vardecs != NULL) {
+        ids = TBmakeIds (VARDEC_AVIS (vardecs), ids);
+    }
+    DBUG_RETURN (ids);
 }
 
 /*--------------------------------------------------------------------------*/
