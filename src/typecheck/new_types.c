@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/07/05 17:26:47  sbs
+ * some DBUG output is added.
+ *
  * Revision 3.52  2004/03/05 12:08:54  sbs
  * TYOldType2ScalarType added.
  *
@@ -2944,6 +2947,10 @@ TYCountNoMinAlpha (ntype *type)
 CT_res
 TYCmpTypes (ntype *t1, ntype *t2)
 {
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp_str2;
+#endif
+
     CT_res res = TY_dis;
 
     DBUG_ENTER ("TYCmpTypes");
@@ -3148,6 +3155,10 @@ TYCmpTypes (ntype *t1, ntype *t2)
         }
         break;
     default:
+        DBUG_EXECUTE ("NTY", tmp_str = TYType2String (t1, FALSE, 0);
+                      tmp_str2 = TYType2String (t2, FALSE, 0););
+        DBUG_PRINT ("NTY", ("trying to compare %s and %s", tmp_str, tmp_str2));
+
         DBUG_ASSERT ((0), "Type comparison for non-array types not yet implemented!");
     }
 
