@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/12/29 10:34:19  cg
+ * Revision 1.28  1995/12/29 12:53:23  cg
+ * added function StoreString
+ *
+ * Revision 1.27  1995/12/29  10:34:19  cg
  * added ConcatNodelist
  * added TDEF compound access macros for fundef, typedef, etc
  *
@@ -329,6 +332,23 @@ extern int CountNums (nums *numsp);
 /***
  ***  STRINGS :
  ***/
+
+/*
+ *
+ *  functionname  : StoreString
+ *  arguments     : 1) list of strings
+ *                  2) string to store in 1)
+ *  description   : adds 2) to 1) if it's not yet in the list
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : strcmp
+ *  macros        :
+ *
+ *  remarks       : The strings are not copied !!
+ *
+ */
+
+extern strings *AddToLinkList (strings *list, char *str);
 
 /*--------------------------------------------------------------------------*/
 

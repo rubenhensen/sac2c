@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/12/29 10:33:11  cg
+ * Revision 1.21  1995/12/29 12:53:23  cg
+ * added function StoreString
+ *
+ * Revision 1.20  1995/12/29  10:33:11  cg
  * added ConcatNodelist
  *
  * Revision 1.19  1995/12/21  10:36:55  cg
@@ -95,6 +98,32 @@ char mod_name_con_1[] = "__";
 char mod_name_con_2[] = ":";
 
 char *mod_name_con = mod_name_con_1;
+
+/***
+ ***  StoreString
+ ***/
+
+strings *
+StoreString (strings *list, char *str)
+{
+    strings *tmp;
+
+    DBUG_ENTER ("StoreString");
+
+    tmp = list;
+
+    while ((tmp != NULL) && (strcmp (STRINGS_STRING (tmp), str) != 0)) {
+        tmp = STRINGS_NEXT (tmp);
+    }
+
+    if (tmp == NULL) {
+        tmp = MakeStrings (str, list);
+    } else {
+        tmp = list;
+    }
+
+    DBUG_RETURN (tmp);
+}
 
 /***
  ***  CompatibleAttributes
