@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1996/09/11 06:10:04  cg
+ * Revision 1.44  1997/04/25 12:13:52  sbs
+ * malloc replaced by Malloc
+ *
+ * Revision 1.43  1996/09/11  06:10:04  cg
  * Now, arrays as arguments to psi and modarray are abstracted.
  * This is necessary to overload these functiond with user-defined ones.
  *
@@ -296,7 +299,7 @@ GenTmpVar (int count)
 
     DBUG_ENTER ("GenTmpVar");
 
-    string = (char *)malloc (sizeof (char) * VAR_LENGTH);
+    string = (char *)Malloc (sizeof (char) * VAR_LENGTH);
     sprintf (string, VAR "%d", count);
 
     DBUG_PRINT ("TMP", ("new variable: %s", string));

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1997/03/19 13:32:55  cg
+ * Revision 1.23  1997/04/25 12:13:52  sbs
+ * malloc replaced by Malloc
+ *
+ * Revision 1.22  1997/03/19  13:32:55  cg
  * removed compiler phase 'prepare-linking' ("Checking required external module/class
  * implementations")
  * switched to single tmp directory tmp_dirname instead of build_dirname and
@@ -275,10 +278,10 @@ NumberOfDigits (int number)
  *                  ModName is designed to simplify error messages.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : malloc, strcpy, strcat, strlen
+ *  external funs : Malloc, strcpy, strcat, strlen
  *  macros        :
  *
- *  remarks       : malloc is used instead of Malloc because ModName
+ *  remarks       : Malloc is used instead of Malloc because ModName
  *                  and ItemName should be used in DBUG_PRINTs as well.
  *                  Unfortunately, the usage of DBUG_PRINT in Malloc
  *                  conflicts with other DBUG_PRINTs in nested expressions.
@@ -295,7 +298,7 @@ ModName (char *mod, char *name)
     if (mod == NULL) {
         tmp = name;
     } else {
-        tmp = malloc (strlen (mod) + strlen (name) + 2);
+        tmp = Malloc (strlen (mod) + strlen (name) + 2);
         tmp = strcpy (tmp, mod);
         tmp = strcat (tmp, ":");
         tmp = strcat (tmp, name);

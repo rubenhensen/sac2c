@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1997/03/19 13:44:45  cg
+ * Revision 1.37  1997/04/25 12:13:52  sbs
+ * malloc replaced by Malloc
+ *
+ * Revision 1.36  1997/03/19  13:44:45  cg
  * new token LINKWITH for respective pragma
  *
  * Revision 1.35  1996/09/09  10:05:29  cg
@@ -125,13 +128,14 @@
 #include "tree.h"
 #include "y.tab.h"
 #include "Error.h"
+#include "internal_lib.h"
 
 
 
 #define FILTER(token) if (0==commlevel)  return(token)
 
 #define FILTER2(token) if (0==commlevel)  {                             \
-                         yylval.id=(char *)malloc(sizeof(char)          \
+                         yylval.id=(char *)Malloc(sizeof(char)          \
                                                   *(strlen(yytext)+1)); \
                          strcpy(yylval.id, yytext);                     \
                          return(token); }
@@ -176,7 +180,7 @@
                          return(token); }
         
 #define FILTER9(token) if (0==commlevel)  {                             \
-                         yylval.id=(char *)malloc(sizeof(char)          \
+                         yylval.id=(char *)Malloc(sizeof(char)          \
                                                   *(strlen(yytext)+1)); \
                          strcpy(yylval.id, yytext+sizeof(char));        \
                          yylval.id[strlen(yylval.id)-1]='\0';           \

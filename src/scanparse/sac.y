@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.123  1997/04/25 08:53:07  sbs
+ * Revision 1.124  1997/04/25 12:13:52  sbs
+ * malloc replaced by Malloc
+ *
+ * Revision 1.123  1997/04/25  08:53:07  sbs
  * second arg of MakeType changed from NULL to 0
  *
  * Revision 1.122  1997/03/19  15:31:08  cg
@@ -1489,7 +1492,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
         $$->node[0]=$6;                 /* Funktionsrumpf */
 
         $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
-        $$->info.types->id=(char *)malloc(sizeof(char)*5); 
+        $$->info.types->id=(char *)Malloc(sizeof(char)*5); 
         strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
 
         $$->nnode=1;  /* ein Nachfolgeknoten  */

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1996/02/13 13:59:24  asi
+ * Revision 1.18  1997/04/25 12:13:52  sbs
+ * malloc replaced by Malloc
+ *
+ * Revision 1.17  1996/02/13  13:59:24  asi
  * unknown
  *
  * Revision 1.16  1995/10/06  16:35:40  cg
@@ -64,6 +67,7 @@
 #include <stdlib.h>
 
 #include "tree.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
@@ -330,7 +334,7 @@ LIRloop (node *arg_node, node *arg_info)
  *  description   : allocate string for cse-variable
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : ---
+ *  external funs : Malloc
  *  macros        : ---
  *
  *  remarks       :
@@ -344,7 +348,7 @@ GenCseVar (int count)
 
     DBUG_ENTER ("GenCseVar");
 
-    string = (char *)malloc (sizeof (char) * VAR_LENGTH);
+    string = (char *)Malloc (sizeof (char) * VAR_LENGTH);
     sprintf (string, VAR "%d", count);
 
     DBUG_PRINT ("CSE", ("new variable: %s", string));
