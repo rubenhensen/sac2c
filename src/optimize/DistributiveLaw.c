@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.5  2003/02/15 16:48:00  mwe
+ * bugs removed
+ * chenged assignment for INFO_DL_TYPES (because former assignment was not up to date)
+ *
  * Revision 1.4  2003/02/13 20:15:43  mwe
  * Warnings removed
  *
@@ -124,7 +128,7 @@ DLblock (node *arg_node, node *arg_info)
          * store pointer on actual N_block-node for append of new N_vardec nodes
          */
         if (BLOCK_VARDEC (arg_node) != NULL) {
-            INFO_DL_TYPE (arg_info) = VARDEC_TYPE (BLOCK_VARDEC (arg_node));
+            /*   INFO_DL_TYPE(arg_info) = VARDEC_TYPE( BLOCK_VARDEC(arg_node));*/
             INFO_DL_BLOCKNODE (arg_info) = arg_node;
         }
 
@@ -238,6 +242,10 @@ DLlet (node *arg_node, node *arg_info)
         INFO_DL_LETNODE (arg_info) = arg_node;
         INFO_DL_IEEEFLAG (arg_info) = 0;
 
+        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
+            INFO_DL_TYPE (arg_info)
+              = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
         /*
@@ -260,7 +268,7 @@ DLPrfOrAp (node *arg_node, node *arg_info)
     DBUG_ENTER ("DLprfOrap");
 
     if (((NODE_TYPE (arg_node) == N_prf) && (NODE_TYPE (PRF_ARGS (arg_node)) == N_exprs))
-        || ((NODE_TYPE (arg_node) == N_ap)
+        || ((NODE_TYPE (arg_node) == N_ap) && (AP_ARGS (arg_node) != NULL)
             && (NODE_TYPE (AP_ARGS (arg_node)) == N_exprs))) {
 
         INFO_DL_MAINOPERATOR (arg_info) = arg_node;
