@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/11/18 13:13:10  hw
+ * Revision 1.7  1994/11/22 16:40:08  hw
+ * added FltnDo
+ *
+ * Revision 1.6  1994/11/18  13:13:10  hw
  * changed FltnWhile
  * now the flattened stop condition of the while loop is inserted infront of
  * the while statement and also at the end of the loop body
@@ -352,8 +355,8 @@ FltnWhile (node *arg_node, node *arg_info)
     /*
      *  now we're looking for the last N_assign node in the pointer chain of info_node
      *  to copy the flattend arg_node->node[0] to it.
-     *  This has to be done, because we must "update" (compute) the breaking condition
-     *  of the while loop at the end of the while-loop body
+     *  This has to be done, because we must "update" (compute) the termination
+     *  condition of the while loop at the end of the while-loop body
      *
      */
 
@@ -361,7 +364,7 @@ FltnWhile (node *arg_node, node *arg_info)
 
     /*  looking for last N_assign node.
      *  info _node stores the pointer to the last N_assign nodes, so we look at this
-     *  pointer chain insted of going through the chain behind  arg_node[1]
+     *  pointer chain insted of going through the chain behind  arg_node->node[1]
      */
     info_node = info_node->node[0];
     while (1 != info_node->nnode) {
@@ -409,13 +412,87 @@ FltnWith (node *arg_node, node *arg_info)
 {
     node *info_node;
 
-    DBUG_ENTER ("FltnWhile");
+    DBUG_ENTER ("FltnWith");
 
     info_node = MakeNode (N_info);
     info_node->nnode = 1;
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);  /* traverse generator */
     arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse body */
     free (info_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnDo
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : Flatten each argument of the given node if neccessary
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav, MakeNode
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnDo (node *arg_node, node *arg_info)
+{
+    node *info_node, *tmp, *last_assign;
+
+    DBUG_ENTER ("FltnDo");
+
+    info_node = MakeNode (N_info);
+    info_node->nnode = 1;
+
+    /* travers termination condition */
+    arg_node->node[1] = Trav (arg_node->node[1], info_node);
+
+    DBUG_PRINT ("FLATTEN",
+                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
+                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
+                 info_node->node[0]->node[0]));
+
+    /* store info_node */
+    tmp = info_node;
+
+    /* looking for last N_assign node in the body of the do-loop */
+    info_node = info_node->node[0];
+    while (1 != info_node->nnode) {
+        DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype: != N_assign");
+        info_node = info_node->node[1];
+    }
+
+    DBUG_PRINT ("FLATTEN",
+                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                 mdb_nodetype[info_node->nodetype], info_node,
+                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0]));
+
+    /* store last N_assign node of the body */
+    last_assign = info_node;
+
+    /* clear info_node */
+    info_node = tmp;
+    info_node->node[0] = NULL;
+
+    /* traverse body of do-loop */
+    arg_node->node[0] = Trav (arg_node->node[0], info_node);
+
+    DBUG_PRINT ("FLATTEN",
+                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
+                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
+                 info_node->node[0]->node[0]));
+
+    /* append flattened termination condition to last assignment in the loop's body */
+    last_assign->node[1] = info_node->node[0];
+    if (NULL != last_assign->node[1])
+        last_assign->nnode = 2;
+
+    free (tmp);
 
     DBUG_RETURN (arg_node);
 }

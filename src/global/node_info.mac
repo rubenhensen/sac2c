@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/11/17 16:48:17  hw
- * added FltnWhile
+ * Revision 1.8  1994/11/22 16:40:39  hw
+ * added FltnDo
  *
+;; Revision 1.7  1994/11/17  16:48:17  hw
+;; added FltnWhile
+;;
 ;; Revision 1.6  1994/11/15  14:47:27  hw
 ;; deleted FltnFor
 ;;
@@ -38,7 +41,7 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, PrintArg, DummyFun),
   NIF (N_assign, "N_assign", FltnAssign, PrintAssign, DummyFun),
   NIF (N_return, "N_return", DummyFun, PrintReturn, DummyFun),
-  NIF (N_do, "N_do", DummyFun, PrintDo, DummyFun),
+  NIF (N_do, "N_do", FltnDo, PrintDo, DummyFun),
   NIF (N_while, "N_while", FltnWhile, PrintWhile, DummyFun),
   NIF (N_cond, "N_cond", FltnCond, PrintCond, DummyFun),
   NIF (N_let, "N_let", DummyFun, PrintLet, DummyFun),
