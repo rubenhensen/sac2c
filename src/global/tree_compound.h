@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/06/15 12:31:13  jhs
+ * Added VARDEC_OR_ARG_NAIVE_REFCNT.
+ *
  * Revision 2.5  1999/05/12 08:34:07  sbs
  * some logging info eliminated
  *
@@ -579,6 +582,9 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
+
+#define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
+    ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
 
 #define VARDEC_OR_ARG_VARNO(n)                                                           \
     ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
