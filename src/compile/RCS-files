@@ -45,3 +45,4 @@ renameidentifiers.h
 typeconv_precompile.c
 typeconv_precompile.h
 setlinksign.c
+setlinksign.h
