@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/05/07 10:16:15  dkr
+ * changed FreeSpmd, FreeSync, FreeNwith, ...
+ *
  * Revision 1.58  1998/05/02 17:47:21  dkr
  * changed FreeSync, FreeSpmd, FreeNwith2
  *
@@ -205,10 +208,10 @@
 #include "my_debug.h"
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
+#include "tree.h"
 
 #include "traverse.h"
+#include "DataFlowMask.h"
 
 #include "free.h"
 
@@ -807,6 +810,10 @@ FreeFundef (node *arg_node, node *arg_info)
     FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
 
     FREEMASK (FUNDEF_MASK);
+
+    if (FUNDEF_DFM_BASE (arg_node) != NULL) {
+        FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_fundef node ..."));
 
@@ -1603,10 +1610,19 @@ FreeSpmd (node *arg_node, node *arg_info)
 
     FreeAllIds (SPMD_INOUT_IDS (arg_node));
 
-    FREE (SPMD_IN (arg_node));
-    FREE (SPMD_OUT (arg_node));
-    FREE (SPMD_INOUT (arg_node));
-    FREE (SPMD_LOCAL (arg_node));
+    if (SPMD_IN (arg_node) != NULL) {
+        SPMD_IN (arg_node) = DFMRemoveMask (SPMD_IN (arg_node));
+    }
+    if (SPMD_INOUT (arg_node) != NULL) {
+        SPMD_INOUT (arg_node) = DFMRemoveMask (SPMD_INOUT (arg_node));
+    }
+    if (SPMD_OUT (arg_node) != NULL) {
+        SPMD_OUT (arg_node) = DFMRemoveMask (SPMD_OUT (arg_node));
+    }
+    if (SPMD_LOCAL (arg_node) != NULL) {
+        SPMD_LOCAL (arg_node) = DFMRemoveMask (SPMD_LOCAL (arg_node));
+    }
+
     FREE (SPMD_FUNNAME (arg_node));
 
     FREETRAV (SPMD_ICM (arg_node));
@@ -1633,10 +1649,18 @@ FreeSync (node *arg_node, node *arg_info)
 
     FreeAllIds (SYNC_INOUT_IDS (arg_node));
 
-    FREE (SYNC_IN (arg_node));
-    FREE (SYNC_OUT (arg_node));
-    FREE (SYNC_INOUT (arg_node));
-    FREE (SYNC_LOCAL (arg_node));
+    if (SYNC_IN (arg_node) != NULL) {
+        SYNC_IN (arg_node) = DFMRemoveMask (SYNC_IN (arg_node));
+    }
+    if (SYNC_INOUT (arg_node) != NULL) {
+        SYNC_INOUT (arg_node) = DFMRemoveMask (SYNC_INOUT (arg_node));
+    }
+    if (SYNC_OUT (arg_node) != NULL) {
+        SYNC_OUT (arg_node) = DFMRemoveMask (SYNC_OUT (arg_node));
+    }
+    if (SYNC_LOCAL (arg_node) != NULL) {
+        SYNC_LOCAL (arg_node) = DFMRemoveMask (SYNC_LOCAL (arg_node));
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
 
@@ -1674,6 +1698,19 @@ FreeNWith (node *arg_node, node *arg_info)
     FREETRAV (NWITH_CODE (arg_node));
     FREETRAV (NWITH_WITHOP (arg_node));
     FREE (arg_node->info2);
+
+    if (NWITH_IN (arg_node) != NULL) {
+        NWITH_IN (arg_node) = DFMRemoveMask (NWITH_IN (arg_node));
+    }
+    if (NWITH_INOUT (arg_node) != NULL) {
+        NWITH_INOUT (arg_node) = DFMRemoveMask (NWITH_INOUT (arg_node));
+    }
+    if (NWITH_OUT (arg_node) != NULL) {
+        NWITH_OUT (arg_node) = DFMRemoveMask (NWITH_OUT (arg_node));
+    }
+    if (NWITH_LOCAL (arg_node) != NULL) {
+        NWITH_LOCAL (arg_node) = DFMRemoveMask (NWITH_LOCAL (arg_node));
+    }
 
     FREE (arg_node);
 
@@ -1803,12 +1840,18 @@ FreeNwith2 (node *arg_node, node *arg_info)
     FREETRAV (NWITH2_CODE (arg_node));
     FREETRAV (NWITH2_WITHOP (arg_node));
 
-    FreeAllIds (NWITH2_LETIDS (arg_node));
-
-    FREE (NWITH2_IN (arg_node));
-    FREE (NWITH2_OUT (arg_node));
-    FREE (NWITH2_INOUT (arg_node));
-    FREE (NWITH2_LOCAL (arg_node));
+    if (NWITH2_IN (arg_node) != NULL) {
+        NWITH2_IN (arg_node) = DFMRemoveMask (NWITH2_IN (arg_node));
+    }
+    if (NWITH2_INOUT (arg_node) != NULL) {
+        NWITH2_INOUT (arg_node) = DFMRemoveMask (NWITH2_INOUT (arg_node));
+    }
+    if (NWITH2_OUT (arg_node) != NULL) {
+        NWITH2_OUT (arg_node) = DFMRemoveMask (NWITH2_OUT (arg_node));
+    }
+    if (NWITH2_LOCAL (arg_node) != NULL) {
+        NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
+    }
 
     FREE (arg_node);
 
