@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2001/04/03 14:21:52  nmw
+ * SSADCRlet frees expression to early
+ *
  * Revision 1.10  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -428,11 +431,9 @@ SSADCRlet (node *arg_node, node *arg_info)
         /* let is useless -> can be removed! */
 
         DBUG_PRINT ("SSADCR", ("removing assignment"));
-        arg_node = FreeNode (arg_node);
-
         dead_expr++;
 
-        /* corresponding assign node can also be removed */
+        /* corresponding assign node can be removed */
         INFO_SSADCR_REMASSIGN (arg_info) = TRUE;
     } else {
         /* traverse right side of let (mark needed variables) */
