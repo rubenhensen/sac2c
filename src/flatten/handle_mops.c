@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2002/09/13 12:47:58  sbs
+ * Mop2Ap redone...
+ *
  * Revision 1.14  2002/09/11 23:22:47  dkr
  * HMAdjustFunNames() removed
  *
@@ -202,27 +205,32 @@ LeftAssoc (ids *lop, ids *rop)
 /******************************************************************************
  *
  * function:
- *    node * Mop2Ap( node *mop)
+ *    node * Mop2Ap( ids * op, node *mop)
  *
  * description:
  *   Transformes a N_mop node into a nesting of N_ap nodes according to the
  *   following algorithm (e's are expressions; o's are operations):
  *
- *   e1 : e2
- *      o1            =>  Ap{ o1, e1, e2}
+ *   prec(op) > prec(o1)  =>  mop
  *
- *   e1 : e2 : es         /        / Ap{ o1, e1, e2} : es     \
- *      o1 : o2 : os  =>  |  Mop2Ap\                 o2 : os  /  iff prec(o1)
- *                        |                                           > prec(o2)
- *                        |                    / e2 : es    \
- *                        \  Ap{ o1, e1, Mop2Ap\    o2 : os / }  otherwise
+ *   e1 : e2               /  Ap{ o1, e1, e2} \
+ *      o1            =>   \     ----         /
+ *
+ *   e1 : e2 : es         /              / Ap{ o1, e1, e2} : es     \
+ *      o1 : o2 : os  =>  |  Mop2Ap( op, \                 o2 : os  / ) iff prec(o1)
+ *                        |                                                 > prec(o2)
+ *                        |              / Ap{ o1, e1, e1`} : es`  \
+ *                        |  Mop2Ap( op, \                 os`     /  ) otherwise
+ *                        |  where
+ *                        |     /  e1`:es` \                 / e2:es   \
+ *                        \     \     os`  /   = Mop2Ap( o1, \   o2:os /
  *
  ******************************************************************************/
 
 static node *
-Mop2Ap (node *mop)
+Mop2Ap (ids *op, node *mop)
 {
-    node *res, *exprs, *new_expr, *exprs3;
+    node *res, *exprs, *new_expr, *exprs3, *exprs_prime;
     ids *fun_ids;
     char *name, *mod;
 
@@ -231,40 +239,49 @@ Mop2Ap (node *mop)
     exprs = MOP_EXPRS (mop);
     fun_ids = MOP_OPS (mop);
 
-    if (IDS_NEXT (fun_ids) == NULL) {
-        /* there is just one operation left */
-        res = MakeAp (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
-                      exprs);
-        MOP_EXPRS (mop) = NULL;
-        mop = FreeTree (mop);
-    } else {
-        /* we do have at least two operations */
-        if (LeftAssoc (fun_ids, IDS_NEXT (fun_ids))) {
-            exprs3 = EXPRS_EXPRS3 (exprs);
-            EXPRS_EXPRS3 (exprs) = NULL;
-
-            new_expr = MakeAp (StringCopy (IDS_NAME (fun_ids)),
-                               StringCopy (IDS_MOD (fun_ids)), exprs);
-
-            MOP_EXPRS (mop) = MakeExprs (new_expr, exprs3);
-            MOP_OPS (mop) = FreeOneIds (fun_ids);
-
-            res = Mop2Ap (mop);
+    if (!LeftAssoc (op, fun_ids)) {
+        if (IDS_NEXT (fun_ids) == NULL) {
+            /* there is just one operation left */
+            res = MakeAp (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
+                          exprs);
+            MOP_OPS (mop) = FreeAllIds (MOP_OPS (mop));
+            MOP_EXPRS (mop) = res;
         } else {
-            MOP_EXPRS (mop) = EXPRS_NEXT (exprs);
+            /* we do have at least two operations */
+            if (LeftAssoc (fun_ids, IDS_NEXT (fun_ids))) {
+                exprs3 = EXPRS_EXPRS3 (exprs);
+                EXPRS_EXPRS3 (exprs) = NULL;
 
-            name = StringCopy (IDS_NAME (fun_ids));
-            mod = StringCopy (IDS_MOD (fun_ids));
-            MOP_OPS (mop) = FreeOneIds (fun_ids);
+                new_expr = MakeAp (StringCopy (IDS_NAME (fun_ids)),
+                                   StringCopy (IDS_MOD (fun_ids)), exprs);
 
-            res = MakeAp2 (name, mod, EXPRS_EXPR (exprs), Mop2Ap (mop));
+                MOP_OPS (mop) = FreeOneIds (fun_ids);
+                MOP_EXPRS (mop) = MakeExprs (new_expr, exprs3);
 
-            EXPRS_EXPR (exprs) = NULL;
-            exprs = FreeNode (exprs);
+                mop = Mop2Ap (op, mop);
+            } else {
+                MOP_OPS (mop) = IDS_NEXT (fun_ids);
+                MOP_EXPRS (mop) = EXPRS_NEXT (exprs);
+                mop = Mop2Ap (fun_ids, mop); /* where clause! */
+
+                name = StringCopy (IDS_NAME (fun_ids));
+                mod = StringCopy (IDS_MOD (fun_ids));
+
+                exprs_prime = MOP_EXPRS (mop);
+
+                res = MakeAp2 (name, mod, EXPRS_EXPR (exprs), EXPRS_EXPR (exprs_prime));
+                EXPRS_EXPR (exprs_prime) = res;
+
+                mop = Mop2Ap (op, mop);
+
+                fun_ids = FreeOneIds (fun_ids);
+                EXPRS_EXPR (exprs) = NULL;
+                exprs = FreeNode (exprs);
+            }
         }
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (mop);
 }
 
 /******************************************************************************
@@ -325,7 +342,7 @@ HMmop (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("HMmop");
 
-    res = Mop2Ap (arg_node);
+    res = Mop2Ap (NULL, arg_node);
 
     res = Trav (res, arg_info);
 
