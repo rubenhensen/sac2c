@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/01 18:18:55  dkr
+ * no cc warning '... might be used uninitialized' anymore
+ *
  * Revision 3.1  2000/11/20 18:01:01  sacbase
  * new release made
  *
@@ -89,15 +92,18 @@ static int codetab_lastidx;
 static node *
 ReadOneGenPart (FILE *infile, types *type)
 {
-    node *arr_node, *aelem1, *aelems = NULL;
+    node *arr_node;
     int val, i;
+    node *aelem1 = NULL;
+    node *aelems = NULL;
 
     DBUG_ENTER ("ReadOneGenPart");
 
     for (i = 0; i < SHPSEG_SHAPE (TYPES_SHPSEG (type), 0); i++) {
         if ((error = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF)
-                      || ferror (infile))))
+                      || ferror (infile)))) {
             break;
+        }
         if (aelems == NULL) {
             aelem1 = aelems = MakeExprs (MakeNum (val), NULL);
         } else {

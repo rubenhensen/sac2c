@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/01 18:19:05  dkr
+ * no cc warning '... might be used uninitialized' anymore
+ *
  * Revision 3.1  2000/11/20 18:01:35  sacbase
  * new release made
  *
@@ -1579,12 +1582,12 @@ RCcond (node *arg_node, node *arg_info)
     int *naive_rest_dump;
     int *naive_then_dump;
     int *naive_else_dump;
-    int then_compare;
-    int else_compare;
-    int do_on_normal; /* bool */
-    int do_on_naive;  /* bool */
-    int do_it;        /* bool */
-    int do_use_old;   /* bool */
+    int then_compare = 0;
+    int else_compare = 0;
+    bool do_on_normal = FALSE;
+    bool do_on_naive = FALSE;
+    bool do_it = FALSE;
+    bool do_use_old = FALSE;
 
     DBUG_ENTER ("RCcond");
 
@@ -1854,11 +1857,13 @@ RCprepost (node *arg_node, node *arg_info)
 node *
 RCNwith (node *arg_node, node *arg_info)
 {
-    node *vardec, *neutral_vardec;
-    ids *new_ids, *last_ids;
+    node *vardec;
+    ids *new_ids;
     int *ref_dump, *tmp_rcdump;
     int *naive_ref_dump;
     int *tmp_naive_rcdump;
+    node *neutral_vardec = NULL;
+    ids *last_ids = NULL;
 
     DBUG_ENTER ("RCNwith");
 
@@ -2091,7 +2096,8 @@ node *
 RCNcode (node *arg_node, node *arg_info)
 {
     node *vardec;
-    ids *new_ids, *last_ids;
+    ids *new_ids;
+    ids *last_ids = NULL;
 
     DBUG_ENTER ("RCNcode");
 
@@ -2312,11 +2318,13 @@ RCNwithop (node *arg_node, node *arg_info)
 node *
 RCNwith2 (node *arg_node, node *arg_info)
 {
-    node *vardec, *neutral_vardec;
-    ids *new_ids, *last_ids;
+    node *vardec;
+    ids *new_ids;
     int *ref_dump, *tmp_rcdump;
     int *naive_ref_dump;
     int *tmp_naive_rcdump;
+    node *neutral_vardec = NULL;
+    ids *last_ids = NULL;
 
     DBUG_ENTER ("RCNwith2");
 
