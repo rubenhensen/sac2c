@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/02/27 16:32:58  cg
+ * added correct setting of file names for diagnostic output
+ * while parsing (global variable 'filename')
+ *
  * Revision 1.50  1997/11/07 14:41:54  dkr
  * eliminated another nnode
  *
@@ -2048,6 +2052,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
         NOTE (("  Parsing file \"%s\" ...", abspathname));
 
         linenum = 1;
+        filename = buffer;
         start_token = PARSE_DEC;
         yyparse ();
         fclose (yyin);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/02/27 16:32:58  cg
+ * added correct setting of file names for diagnostic output
+ * while parsing (global variable 'filename')
+ *
  * Revision 1.15  1997/11/12 10:38:24  sbs
  * break in default of switch constructs added (as required by cc)
  *
@@ -297,9 +301,14 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                             /*
                              * Now, the SIB is read and parsed.
                              */
+                            char *puresibname;
 
                             strcpy (buffer, tmp_dirname);
                             strcat (buffer, "/");
+                            puresibname = buffer + strlen (buffer);
+                            /* dirty trick to have file name available for diagnostic
+                             * output */
+
                             strcat (buffer, DEPS_NAME (tmp));
                             strcat (buffer, ".sib");
 
@@ -307,6 +316,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                             DBUG_ASSERT (yyin != NULL, "Failure while opening SIB");
 
                             linenum = 1;
+                            filename = puresibname;
                             start_token = PARSE_SIB;
 
                             yyparse ();
