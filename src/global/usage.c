@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2003/08/05 11:36:19  ktr
+ * Support for maxwls added.
+ *
  * Revision 3.47  2003/07/28 15:35:06  cg
  * Added short version identification option (-V).
  * Full version information is now available with -VV
@@ -540,12 +543,19 @@ Usage ()
       "                      (default: %d)\n\n",
       apdiag_limit);
 
-    printf (
-      "    -wls_aggressive Set WLS optimization level to aggressive.\n"
-      "                    WARNING:\n"
-      "                    Aggressive with-loop scalarization may have the opposite\n"
-      "                    effect as with-loop invariant removal and cause duplication\n"
-      "                    of code execution.\n");
+    printf ("    -wls_aggressive Set WLS optimization level to aggressive.\n"
+            "                    WARNING:\n"
+            "                    Aggressive with-loop scalarization may have the "
+            "opposite\n"
+            "                    effect as with-loop invariant removal and cause "
+            "duplication\n"
+            "                    of code execution.\n\n"
+            "    -maxwls         Set the maximum number of inner with-loop elements for "
+            "which\n"
+            "                    aggressive behaviour will be used even if "
+            "-wls_aggressive is\n"
+            "                    not given. (default: %d)\n",
+            maxwls);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 

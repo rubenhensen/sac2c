@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/08/05 11:36:19  ktr
+ * Support for maxwls added.
+ *
  * Revision 3.27  2003/05/21 16:38:02  ktr
  * added option -ktr
  *
@@ -269,6 +272,7 @@ extern bool valid_ssaform;
 
 /* level of WLS aggressiveness */
 extern bool wls_aggressive;
+extern int maxwls;
 
 extern int optvar;
 extern int inlnum;

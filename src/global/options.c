@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/08/05 11:36:19  ktr
+ * Support for maxwls added.
+ *
  * Revision 3.44  2003/08/04 18:07:31  dkr
  * -mt reactivated for TAGGED_ARRAYS
  *
@@ -910,6 +913,7 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_FLAG ("VV", VersionVerbose (); exit (0));
 
     ARGS_FLAG ("wls_aggressive", wls_aggressive = TRUE);
+    ARGS_OPTION ("maxwls", ARG_NUM (maxwls));
 
     ARGS_FLAG ("wlpatch", patch_with = TRUE);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/08/05 11:36:19  ktr
+ * Support for maxwls added.
+ *
  * Revision 3.34  2003/05/21 16:38:02  ktr
  * added option -ktr
  *
@@ -438,8 +441,10 @@ bool valid_ssaform = FALSE;
 
 /*
  * per default do not use aggressive WLS
+ * except the inner WL has <= wls_bound elems
  */
 bool wls_aggressive = FALSE;
+int maxwls = 1;
 
 /*
  * per default do not treat floats as defined in IEEE-754 standard
