@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/06/03 14:31:26  cg
+ * names of types used for the renaming of functions shortened:
+ * int -> i, double -> d
+ *
  * Revision 1.10  1996/02/21 15:03:40  cg
  * changed print string for N_str from 'char*' to 'string'
  * with respect to usage within SIBs
@@ -47,19 +51,19 @@
 
 /*   type_name       dbug-string    print-string         fun_rename_string  size  */
 
-TYP_IF (T_int, "int", "int", "int", sizeof (int)),
-  TYP_IF (T_short, "short", "short", "short", sizeof (short int)),
-  TYP_IF (T_long, "long", "long", "long", sizeof (long int)),
-  TYP_IF (T_uint, "unsigned int", "unsigned int", "uint", sizeof (int)),
-  TYP_IF (T_ushort, "unsigned short", "unsigned short", "ushort", sizeof (short int)),
-  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ulong", sizeof (long int)),
-  TYP_IF (T_float, "float", "float", "float", sizeof (float)),
-  TYP_IF (T_double, "double", "double", "double", sizeof (double)),
-  TYP_IF (T_longdbl, "long double", "long double", "ldouble", sizeof (long double)),
-  TYP_IF (T_bool, "bool", "bool", "bool", sizeof (int)),
-  TYP_IF (T_str, "string", "string", "string", sizeof (char *)),
-  TYP_IF (T_char, "char", "char", "char", sizeof (char)),
-  TYP_IF (T_hidden, "hidden", "void *", "void", sizeof (void *)),
-  TYP_IF (T_void, "void", "void", "void", 0), TYP_IF (T_dots, "...", "...", "___", 0),
-  TYP_IF (T_user, "user", "_user_", "_user_", 0),
-  TYP_IF (T_unknown, "unknown", "_unknown_", "_unknown_", 0)
+TYP_IF (T_int, "int", "int", "i", sizeof (int)),
+  TYP_IF (T_short, "short", "short", "s", sizeof (short int)),
+  TYP_IF (T_long, "long", "long", "l", sizeof (long int)),
+  TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", sizeof (int)),
+  TYP_IF (T_ushort, "unsigned short", "unsigned short", "us", sizeof (short int)),
+  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", sizeof (long int)),
+  TYP_IF (T_float, "float", "float", "f", sizeof (float)),
+  TYP_IF (T_double, "double", "double", "d", sizeof (double)),
+  TYP_IF (T_longdbl, "long double", "long double", "ld", sizeof (long double)),
+  TYP_IF (T_bool, "bool", "bool", "b", sizeof (int)),
+  TYP_IF (T_str, "string", "string", "st", sizeof (char *)),
+  TYP_IF (T_char, "char", "char", "c", sizeof (char)),
+  TYP_IF (T_hidden, "hidden", "void *", "v", sizeof (void *)),
+  TYP_IF (T_void, "void", "void", "v", 0), TYP_IF (T_dots, "...", "...", "d", 0),
+  TYP_IF (T_user, "user", "_user_", "", 0),
+  TYP_IF (T_unknown, "unknown", "_unknown_", "", 0)
