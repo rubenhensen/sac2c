@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/28 12:40:11  dkr
+ * macro PRINT_VARIDX_VECT added
+ *
  * Revision 3.4  2001/01/17 14:16:28  dkr
  * some new macros and prototypes added
  *
@@ -53,6 +56,27 @@
 #define GET_SHAPE_IDX(shape, dim)                                                        \
     ((shape != NULL) ? SHPSEG_SHAPE (shape, dim) : IDX_SHAPE)
 
+#define PRINT_VARIDX_VECT(handle, vect, dims)                                            \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((vect) != NULL) {                                                            \
+            fprintf (handle, "[ ");                                                      \
+            for (d = 0; d < dims; d++) {                                                 \
+                if (NODE_TYPE (((vect)[d])) == N_num) {                                  \
+                    fprintf (handle, "%i ", NUM_VAL (((vect)[d])));                      \
+                } else {                                                                 \
+                    DBUG_ASSERT ((NODE_TYPE (((vect)[d])) == N_id),                      \
+                                 "entry of var. index vector is neither N_num or "       \
+                                 "N_id!");                                               \
+                    fprintf (handle, "%s ", ID_NAME (((vect)[d])));                      \
+                }                                                                        \
+            }                                                                            \
+            fprintf (handle, "]");                                                       \
+        } else {                                                                         \
+            fprintf (handle, "NULL");                                                    \
+        }                                                                                \
+    }
+
 extern node *WlTransform (node *syntax_tree);
 
 extern node *WLTRAwith (node *arg_node, node *arg_info);
@@ -60,9 +84,7 @@ extern node *WLTRAcode (node *arg_node, node *arg_info);
 extern node *WLTRAlet (node *arg_node, node *arg_info);
 
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
-
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
-
 extern bool AllStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim);
 
 #endif /* _sac_wltransform_h */
