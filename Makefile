@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.147  2004/11/27 00:03:05  sbs
+# traverse_tables.o added
+#
 # Revision 3.146  2004/11/26 23:00:13  sbs
 # adjusted to the SacDevCamp changes
 #
@@ -70,7 +73,7 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
       src/tree/node_basic.o src/tree/free_node.o \
-      src/tree/free_attribs.o
+      src/tree/free_attribs.o src/tree/traverse_tables.o
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
