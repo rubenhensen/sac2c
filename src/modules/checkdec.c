@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/15 16:47:52  dkr
+ * WDECarg: the '&' for reference objects is no longer printed by
+ * Type2String().
+ * Note, that types->attrib is *not* part of the virtual TYPES types.
+ *
  * Revision 3.4  2001/03/15 15:29:28  dkr
  * signature of Type2String modified
  *
@@ -652,19 +657,15 @@ CDECfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : WDECmodul
- *  arguments     : 1) N_modul node of module/class implementation
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *WDECmodul(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 WDECmodul (node *arg_node, node *arg_info)
@@ -720,19 +721,15 @@ WDECmodul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : WDECtypedef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *WDECtypedef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 WDECtypedef (node *arg_node, node *arg_info)
@@ -761,19 +758,15 @@ WDECtypedef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : WDECobjdef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *WDECobjdef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 WDECobjdef (node *arg_node, node *arg_info)
@@ -795,19 +788,15 @@ WDECobjdef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : WDECfundef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *WDECfundef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 WDECfundef (node *arg_node, node *arg_info)
@@ -837,7 +826,7 @@ WDECfundef (node *arg_node, node *arg_info)
         }
 
         if (!fun_name_printed) {
-            fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
+            fprintf (outfile, " %s( ", FUNDEF_NAME (arg_node));
         }
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -854,34 +843,27 @@ WDECfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : WDECarg
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *WDECarg(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 WDECarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WDECarg");
 
-    if (ARG_ATTRIB (arg_node) == ST_readonly_reference) {
-        ARG_ATTRIB (arg_node) = ST_reference;
-        PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
-        ARG_ATTRIB (arg_node) = ST_readonly_reference;
-    } else {
-        PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
-    }
+    PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
 
-    if ((ARG_ATTRIB (arg_node) == ST_unique) || (ARG_ATTRIB (arg_node) == ST_regular)) {
+    if ((ARG_ATTRIB (arg_node) == ST_reference)
+        || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
+        fprintf (outfile, " & ");
+    } else {
         fprintf (outfile, " ");
     }
 
