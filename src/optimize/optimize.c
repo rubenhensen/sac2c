@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/05/22 14:54:17  nmw
+ * call to RemoveCasts() in front of all optimizations added
+ *
  * Revision 3.28  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -290,6 +293,7 @@
 #include "while2do.h"
 #include "SSALUR.h"
 #include "SSAWithloopFolding.h"
+#include "rmcasts.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -556,6 +560,9 @@ OPTmodul (node *arg_node, node *arg_info)
     DBUG_ENTER ("OPTmodul");
 
     INFO_OPT_MODUL (arg_info) = arg_node;
+
+    /* remove all cast from AST */
+    arg_node = RemoveCasts (arg_node); /* rmcasts_tab */
 
     if (optimize & OPT_INL) {
         arg_node = Inline (arg_node); /* inline_tab */
