@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.17  2004/11/18 11:18:54  mwe
+ * usage of DL_EXPRS_FLAG removed (bug80)
+ *
  * Revision 1.16  2004/11/10 18:27:29  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -55,7 +58,10 @@
 #define DL_NODELIST_OPERATOR(n) ((node *)NODELIST_ATTRIB2 (n))
 #define DL_NODELIST_PARENTNODES(n) ((nodelist *)NODELIST_ATTRIB2 (n))
 #define DL_NODELIST_FLAGS(n) (NODELIST_STATUS (n))
+
+#if 0
 #define DL_EXPRS_FLAG(n) (n->flag)
+#endif
 
 /*****************************************************************************
  *
@@ -1942,9 +1948,13 @@ RemoveMostFrequentNode (info *arg_info)
     while (list != NULL) {
 
         top_elem = NODELIST_NODE (list);
-
-        if (DL_EXPRS_FLAG (top_elem) == 1) {
-
+#if 0 
+    if (DL_EXPRS_FLAG(top_elem) == 1 ){
+#endif
+#if 1
+        if ((IsIdenticalNode (INFO_DL_MOSTFREQUENTNODE (arg_info), top_elem))
+            && (EXPRS_NEXT (top_elem) == NULL)) {
+#endif
             /*
              * constant node - MFN is argument of MAINOPERATOR
              * replace MFN with neutral element of MAINOPERATOR
@@ -1952,9 +1962,9 @@ RemoveMostFrequentNode (info *arg_info)
 
             new_son = GetNeutralElement (INFO_DL_SECONDOPERATOR (arg_info), arg_info);
             new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 0);
-
-            DL_EXPRS_FLAG (top_elem) = 0;
-
+#if 0
+      DL_EXPRS_FLAG(top_elem) = 0;
+#endif
         } else {
 
             /*
@@ -2219,7 +2229,9 @@ OptTravElems (node *arg_node, info *arg_info)
             node *node_tmp;
 
             node_tmp = EXPRS_EXPR (arg_node);
-            DL_EXPRS_FLAG (node_tmp) = 1;
+#if 0
+      DL_EXPRS_FLAG(node_tmp) = 1;
+#endif
             newlist = MakeNodelistNode (node_tmp, NULL);
 
             /*
