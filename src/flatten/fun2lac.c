@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/11/25 15:28:50  mwe
+ * ID_ISGLOBAL and ID_ISREFERENCE removed
+ *
  * Revision 3.28  2004/11/25 00:12:30  mwe
  * SacDevCamp Dk: Compiles!!
  *
@@ -425,9 +428,6 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                  * tmp_a_i = a_i;
                  */
                 new_id = TBmakeId (ARG_AVIS (ext_args));
-                ID_ISGLOBAL (new_id)
-                  = (NODE_TYPE (AVIS_DECL (ID_AVIS (new_id))) == N_objdef);
-                ID_ISREFERENCE (new_id) = FALSE;
                 assign = TCmakeAssignLet (DECL_AVIS (*vardecs), new_id);
                 ASSIGN_NEXT (assign) = (*ass1);
                 (*ass1) = assign;
@@ -436,9 +436,6 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                  * a_i = tmp_a_i;
                  */
                 new_id = TBmakeId (VARDEC_AVIS (*vardecs));
-                ID_ISGLOBAL (new_id)
-                  = (NODE_TYPE (AVIS_DECL (ID_AVIS (new_id))) == N_objdef);
-                ID_ISREFERENCE (new_id) = FALSE;
                 assign = TCmakeAssignLet (DECL_AVIS (ext_args), new_id);
                 ASSIGN_NEXT (assign) = (*ass2);
                 (*ass2) = assign;
