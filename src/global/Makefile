@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.17  1995/03/29 11:50:51  hw
+# Revision 1.18  1995/04/05 13:54:01  sbs
+# make deps done
+#
+# Revision 1.17  1995/03/29  11:50:51  hw
 # added -I../compile
 # make deps done
 #
@@ -134,8 +137,8 @@ traverse.o: tree.h type_info.mac node_info.mac prf_node_info.mac free.h
 traverse.o: Error.h ../../inc/dbug.h my_debug.h ../flatten/flatten.h
 traverse.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
-traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
-traverse.o: traverse.h
+traverse.o: ../optimize/WorkReduction.h ../modules/import.h
+traverse.o: ../refcount/refcount.h ../compile/compile.h traverse.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h type_info.mac node_info.mac prf_node_info.mac ../../inc/dbug.h
