@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/14 15:20:47  sah
+ * made CheckUdtAndSetBaseType visible
+ *
  * Revision 3.11  2004/07/30 17:29:21  sbs
  * switch to new INFO structure
  * PHASE I
@@ -51,6 +54,8 @@
 
 extern node *NewTypeCheck (node *arg_node);
 extern ntype *NewTypeCheck_Expr (node *arg_node);
+
+extern ntype *CheckUdtAndSetBaseType (usertype udt, int *visited);
 
 extern node *NTCtypedef (node *arg_node, info *arg_info);
 extern node *NTCobjdef (node *arg_node, info *arg_info);
