@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/02 14:03:50  dkr
+ * comments are printed in top-level ICMs only now
+ *
  * Revision 3.4  2002/06/07 15:44:48  dkr
  * ICM_DEF: one \n removed
  *
@@ -51,8 +54,9 @@
     }
 
 #define ICM_DEF(prf, trf)                                                                \
-    {                                                                                    \
+    if (print_comment) {                                                                 \
         int sep = 0;                                                                     \
+        print_comment = 0;                                                               \
         fprintf (outfile, "/*\n");                                                       \
         INDENT;                                                                          \
         fprintf (outfile, " * %s( ", #prf);
