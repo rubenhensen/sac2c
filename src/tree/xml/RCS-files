@@ -2,3 +2,4 @@ ast.xml
 ast.xsd
 Makefile
 ast2attribs_h.xsl
+ast2html.xsl
