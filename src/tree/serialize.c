@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2004/11/07 18:09:55  sah
+ * changes due to new signature of stringset.h
+ *
  * Revision 1.20  2004/11/04 14:53:43  sah
  * implemented dependencies between modules
  *
@@ -299,13 +302,21 @@ GenerateSerDependencyTableTail (node *module, FILE *file)
 }
 
 static void *
-SerTableEntriesFoldFun (const char *val, void *rest)
+SerTableEntriesFoldFun (const char *val, SStype_t kind, void *rest)
 {
     str_buf *result;
 
     DBUG_ENTER ("SerTableEntriesFoldFun");
 
-    result = StrBufprintf ((str_buf *)rest, "result = SSAdd( \"%s\", result);\n", val);
+    switch (kind) {
+    case SS_saclib:
+    case SS_extlib:
+        result = StrBufprintf ((str_buf *)rest, "result = SSAdd( \"%s\", %d, result);\n",
+                               val, kind);
+        break;
+    default:
+        break;
+    }
 
     DBUG_RETURN (result);
 }
