@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/11/24 14:53:58  bs
+ * Another wlaa feature added: FEATURE_UNKNOWN for an noninferable offset.
+ *
  * Revision 2.9  1999/08/30 18:31:15  bs
  * Bugs fixed.
  *
@@ -598,7 +601,6 @@ WLAAncode (node *arg_node, node *arg_info)
     NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
     NCODE_WLAA_WLARRAY (arg_node) = INFO_WLAA_WLARRAY (arg_info);
     NCODE_WLAA_INDEXVAR (arg_node) = INFO_WLAA_INDEXVAR (arg_info);
-    NCODE_WLAA_ARRAYSHP (arg_node) = VARDEC_SHPSEG (INFO_WLAA_WLARRAY (arg_info));
     FreeInfo (arg_info, NULL);
     arg_info = old_arg_info;
 
@@ -855,6 +857,7 @@ WLAAlet (node *arg_node, node *arg_info)
                 if ((IDS_VARDEC (var) == ACCESS_IV (access))
                     && (ACCESS_CLASS (access) == ACL_unknown)) {
                     ACCESS_CLASS (access) = ACL_irregular;
+                    INFO_WLAA_FEATURE (arg_info) |= FEATURE_UNKNOWN;
                 }
                 access = ACCESS_NEXT (access);
             }
