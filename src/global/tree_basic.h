@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/10/26 15:58:58  cg
+ * Revision 1.12  1995/10/30 09:53:35  cg
+ * added temporary attribute FUNDEF_INLINE(n)
+ *
+ * Revision 1.11  1995/10/26  15:58:58  cg
  * new macro MODUL_STORE_IMPORTS(n)
  *
  * Revision 1.10  1995/10/22  17:33:12  cg
@@ -559,6 +562,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    char*       ALIAS    (O)
  ***    types*      TYPES
  ***    statustype  STATUS
+ ***    int         INLINE
  ***
  ***  temporary attributes:
  ***
@@ -602,6 +606,7 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
 #define FUNDEF_DEFMASK(n) (n->mask[0])
 #define FUNDEF_USEMASK(n) (n->mask[1])
 #define FUNDEF_STATUS(n) (n->info.types->status)
+#define FUNDEF_INLINE(n) (n->flag)
 
 #define FUNDEC_DEF(n) (n->node[3])
 
