@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/22 13:48:45  dkr
+ * bug in WL icms fixed
+ *
  * Revision 3.5  2001/01/19 11:54:10  dkr
  * some with-loop ICMs renamed
  *
@@ -807,9 +810,9 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target, char *ta
             } else {
                 /*
                  * blocking in this dimension
-                 *  -> we use the start index of the current block
+                 *  -> we use the first index of the current block
                  */
-                fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
+                fprintf (outfile, " + SAC_WL_VAR( first, %s) )", idx_scalars[i]);
             }
         }
     }
