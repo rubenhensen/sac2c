@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/25 16:32:54  khf
+ * added ABORT_ON_ERROR
+ *
  * Revision 1.11  2004/11/25 15:23:07  khf
  * more codebrushing
  *
@@ -419,5 +422,6 @@ INSVDdoInsertVardec (node *syntax_tree)
 
     info = FreeInfo (info);
 
+    ABORT_ON_ERROR;
     DBUG_RETURN (syntax_tree);
 }
