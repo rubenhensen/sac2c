@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.5  1999/05/12 11:39:24  jhs
+ * Adjusted macros to new access on constant vectors.
+ *
  * Revision 2.4  1999/03/31 10:52:26  bs
  * Bug in MakeNullVec fixed.
  *
@@ -740,7 +743,7 @@ CreateArrayFromInternGen (int *source, int number, types *type)
         tmpn = MakeExprs (MakeNum (source[--number]), tmpn);
     arrayn = MakeArray (tmpn);
     ARRAY_VECTYPE (arrayn) = T_int;
-    ARRAY_INTVEC (arrayn) = Array2IntVec (tmpn, NULL);
+    ((int *)ARRAY_CONSTVEC (arrayn)) = Array2IntVec (tmpn, NULL);
     ARRAY_VECLEN (arrayn) = number;
     ARRAY_TYPE (arrayn) = DuplicateTypes (type, 1);
 
@@ -1262,19 +1265,19 @@ MakeNullVec (int dim, simpletype type)
         ARRAY_VECLEN (resultn) = dim;
         switch (type) {
         case T_int:
-            ARRAY_INTVEC (resultn) = Array2IntVec (tmpn, NULL);
+            ((int *)ARRAY_CONSTVEC (resultn)) = Array2IntVec (tmpn, NULL);
             break;
         case T_float:
-            ARRAY_FLOATVEC (resultn) = Array2FloatVec (tmpn, NULL);
+            ((float *)ARRAY_CONSTVEC (resultn)) = Array2FloatVec (tmpn, NULL);
             break;
         case T_double:
-            ARRAY_DOUBLEVEC (resultn) = Array2DblVec (tmpn, NULL);
+            ((double *)ARRAY_CONSTVEC (resultn)) = Array2DblVec (tmpn, NULL);
             break;
         case T_bool:
-            ARRAY_INTVEC (resultn) = Array2IntVec (tmpn, NULL);
+            ((int *)ARRAY_CONSTVEC (resultn)) = Array2IntVec (tmpn, NULL);
             break;
         case T_char:
-            ARRAY_CHARVEC (resultn) = Array2CharVec (tmpn, NULL);
+            ((char *)ARRAY_CONSTVEC (resultn)) = Array2CharVec (tmpn, NULL);
             break;
         default:
             DBUG_ASSERT (0, ("unkown type"));

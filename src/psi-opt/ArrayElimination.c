@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/12 11:39:24  jhs
+ * Adjusted macros to new access on constant vectors.
+ *
  * Revision 2.4  1999/04/19 11:29:18  jhs
  * TRUE and FALSE from internal_lib.h ared used from now on.
  *
@@ -251,7 +254,7 @@ GenPsi (ids *ids_node, node *arg_info)
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeArray (exprn);
-        ARRAY_INTVEC (arg[0]) = Array2IntVec (exprn, NULL);
+        ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (exprn, NULL);
         /* srs: AE only works on arrays which have 1 dimension.
            type attribut was missing here. */
         ARRAY_VECTYPE (arg[0]) = T_int;

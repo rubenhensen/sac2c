@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.7  1999/05/12 11:39:24  jhs
+ * Adjusted macros to new access on constant vectors.
+ *
  * Revision 2.6  1999/04/29 07:47:48  bs
  * unused variable declaration erased.
  *
@@ -493,7 +496,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 case N_id:
                     if (!IsConstantArray (constn, N_num))
                         break;
-                    val = ID_INTVEC (constn)[i];
+                    val = ((int *)ID_CONSTVEC (constn))[i];
                     break;
                 default:
                     break;

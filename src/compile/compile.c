@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/05/12 11:39:24  jhs
+ * Adjusted macros to new access on constant vectors.
+ *
  * Revision 2.7  1999/04/21 15:39:51  jhs
  * Nothing intended to be changed since last version,
  * except maybe whitespaces.
@@ -3712,7 +3715,7 @@ COMPPrf (node *arg_node, node *arg_info)
             arg1 = EXPRS_EXPR (PRF_ARGS (arg_node));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
             DBUG_ASSERT (((NODE_TYPE (arg1) == N_array) || (NODE_TYPE (arg1) == N_num)
-                          || ((NODE_TYPE (arg1) == N_id) && (ID_CONSTARRAY (arg1))
+                          || ((NODE_TYPE (arg1) == N_id) && (ID_ISCONST (arg1))
                               && (VARDEC_BASETYPE (ID_VARDEC (arg1)) == T_int))),
                          "first argument of take/drop isn't an array or scalar jhs");
 
@@ -3775,7 +3778,7 @@ COMPPrf (node *arg_node, node *arg_info)
                 } else /* if (NODE_TYPE(arg1) == N_id) */ {
                     int i;
                     for (i = 0; i < n_elems; i++) {
-                        num = MakeNum (ID_INTVEC (arg1)[i]);
+                        num = MakeNum (((int *)ID_CONSTVEC (arg1))[i]);
                         MAKE_NEXT_ICM_ARG (icm_arg, num);
                     }
                 }

@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.5  1999/05/12 11:39:24  jhs
+ * Adjusted macros to new access on constant vectors.
+ *
  * Revision 2.4  1999/03/19 09:46:40  bs
  * Every Call of MakeArray will also create a compact vector propagation.
  *
@@ -1383,7 +1386,7 @@ Modarray2Genarray (node *wln, node *substwln)
     shape = MakeArray (eltn);
     ARRAY_VECTYPE (shape) = T_int;
     ARRAY_VECLEN (shape) = dimensions;
-    ARRAY_INTVEC (shape) = Array2IntVec (eltn, NULL);
+    ((int *)ARRAY_CONSTVEC (shape)) = Array2IntVec (eltn, NULL);
 
     shpseg = MakeShpseg (
       MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
@@ -1494,7 +1497,8 @@ WLFassign (node *arg_node, node *arg_info)
                     tmpn = MakeArray (tmpn);     /* N_Array */
                     ARRAY_VECTYPE (tmpn) = T_int;
                     ARRAY_VECLEN (tmpn) = TYPES_DIM (idt);
-                    ARRAY_INTVEC (tmpn) = Array2IntVec (ARRAY_AELEMS (tmpn), NULL);
+                    ((int *)ARRAY_CONSTVEC (tmpn))
+                      = Array2IntVec (ARRAY_AELEMS (tmpn), NULL);
                     tmpn
                       = MakePrf (F_genarray, /* prf N_genarray */
                                  MakeExprs (tmpn,
@@ -1657,7 +1661,8 @@ WLFid (node *arg_node, node *arg_info)
                     arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
                     ARRAY_VECTYPE (arrayn) = T_int;
                     ARRAY_VECLEN (arrayn) = 1;
-                    ARRAY_INTVEC (arrayn) = Array2IntVec (ARRAY_AELEMS (arrayn), NULL);
+                    ((int *)ARRAY_CONSTVEC (arrayn))
+                      = Array2IntVec (ARRAY_AELEMS (arrayn), NULL);
                     shpseg = MakeShpseg (
                       MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
                     ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);

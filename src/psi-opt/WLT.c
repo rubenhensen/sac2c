@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.8  1999/05/12 11:39:24  jhs
+ * Adjusted macros to new access on constant vectors.
+ *
  * Revision 2.7  1999/05/07 14:54:30  jhs
  * bug fixed in CheckGeneratorBounds.
  *
@@ -304,9 +307,9 @@ CheckGeneratorBounds (node *arg_node, node *arg_info)
 
             if (NODE_TYPE (*bound) == N_array) {
                 array = *bound;
-                if ((ARRAY_INTVEC (array) == NULL) || ARRAY_VECLEN (array) == 0) {
-                    FREE (ARRAY_INTVEC (array));
-                    ARRAY_INTVEC (array)
+                if ((ARRAY_CONSTVEC (array) == NULL) || ARRAY_VECLEN (array) == 0) {
+                    FREE (ARRAY_CONSTVEC (array));
+                    ((int *)ARRAY_CONSTVEC (array))
                       = Array2IntVec (ARRAY_AELEMS (array), &ARRAY_VECLEN (array));
                     ARRAY_VECTYPE (array) = T_int;
                     *bound = array;
@@ -317,15 +320,17 @@ CheckGeneratorBounds (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((NODE_TYPE (nbound) == N_id),
                              "N_id expected in generator-position");
 
-                if (ID_CONSTARRAY (nbound)) {
+                if (ID_ISCONST (nbound)) {
                     DBUG_ASSERT ((ID_VECLEN (nbound) >= 0), "corrupted VECLEN-entry!");
 
-                    aelems = IntVec2Array (ID_VECLEN (nbound), ID_INTVEC (nbound));
+                    aelems
+                      = IntVec2Array (ID_VECLEN (nbound), (int *)ID_CONSTVEC (nbound));
                     array = MakeArray (aelems);
                     shpnums = MakeNums (ID_VECLEN (nbound), NULL);
                     ARRAY_VECLEN (array) = ID_VECLEN (nbound);
-                    ARRAY_INTVEC (array)
-                      = CopyIntVector (ID_VECLEN (nbound), ID_INTVEC (nbound));
+                    ARRAY_CONSTVEC (array)
+                      = CopyConstVec (ID_VECTYPE (nbound), ID_VECLEN (nbound),
+                                      ID_CONSTVEC (nbound));
                     ARRAY_TYPE (array) = MakeType (T_int, ARRAY_VECLEN (array),
                                                    MakeShpseg (shpnums), NULL, NULL);
                     ARRAY_VECTYPE (array) = T_int;
