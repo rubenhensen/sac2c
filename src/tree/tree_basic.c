@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2002/04/12 13:57:06  sbs
+ * FUNDEF_TYPE added
+ *
  * Revision 3.49  2002/03/07 20:28:39  dkr
  * ICM_END_OF_STATEMENT removed
  *
@@ -119,6 +122,7 @@ CreateCleanNode (nodetype nt)
     new_node->info.fun_name.id = NULL;
     new_node->info.fun_name.id_mod = NULL;
     new_node->info2 = NULL;
+    new_node->info3 = NULL;
 
     new_node->refcnt = 0;
     new_node->flag = 0;

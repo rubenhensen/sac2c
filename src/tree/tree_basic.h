@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2002/04/12 13:57:06  sbs
+ * FUNDEF_TYPE added
+ *
  * Revision 3.118  2002/04/09 08:05:58  ktr
  * Support for WithloopScalarization added
  *
@@ -889,6 +892,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    char*           MOD
  ***    char*           LINKMOD
  ***    types*          TYPES
+ ***    ntype*          TYPE
  ***    statustype      STATUS
  ***    statustype      ATTRIB
  ***    bool            INLINE
@@ -997,6 +1001,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_MOD(n) (*((char **)(&(n->mask[5]))))     /* for cc */
 #define FUNDEF_LINKMOD(n) (*((char **)(&(n->mask[6])))) /* for cc */
 #define FUNDEF_TYPES(n) (n->info.types)
+#define FUNDEF_TYPE(n) (ntype *)(n->info3)
 #define FUNDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
 #define FUNDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
 #define FUNDEF_INLINE(n) (n->flag)
