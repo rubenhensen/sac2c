@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/04/20 18:58:25  dkr
+ * WLTRAassign added
+ *
  * Revision 3.9  2001/05/03 17:32:42  dkr
  * PRINT_SV renamed into PRINT_HOMSV
  *
@@ -78,9 +81,10 @@
 
 extern node *WlTransform (node *syntax_tree);
 
+extern node *WLTRAassign (node *arg_node, node *arg_info);
+extern node *WLTRAlet (node *arg_node, node *arg_info);
 extern node *WLTRAwith (node *arg_node, node *arg_info);
 extern node *WLTRAcode (node *arg_node, node *arg_info);
-extern node *WLTRAlet (node *arg_node, node *arg_info);
 
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2003/04/20 18:55:27  dkr
+ * WLTRAassign added
+ *
  * Revision 3.116  2003/03/13 00:06:52  dkr
  * SSAWLTNwithop added
  *
@@ -1461,9 +1464,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, PREC1assign, ACTassign, TravSons, WLTassign, CSEassign, TravSons,
        TravSons, SPMDIassign, SPMDOassign, TravSons, SYNCIassign,
 
-       SYNCOassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAassign, FMTravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons, TravSons,
-       TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
+       SYNCOassign, WLTRAassign, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, WLAAassign, FMTravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons,
+       TravSons, TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
        TravSons, L2Fassign, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
