@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2004/11/27 02:32:32  mwe
+ * function renaming
+ *
  * Revision 1.20  2004/11/26 15:51:50  jhb
  * WLFwithloopFoldingWLT changed WLFwithloopFoldingWlt
  *
@@ -947,7 +950,7 @@ WLFcreateVardec (node *avis, node **vardecs)
  *
  ******************************************************************************/
 node *
-WLFwithloopFolding (node *arg_node, int loop)
+WLFdoWithloopFolding (node *arg_node, int loop)
 {
     DBUG_ENTER ("WLFwithloopFolding");
 
@@ -986,7 +989,7 @@ WLFwithloopFolding (node *arg_node, int loop)
  *
  ******************************************************************************/
 node *
-WLFwithloopFoldingWlt (node *arg_node)
+WLFdoWithloopFoldingWlt (node *arg_node)
 {
     DBUG_ENTER ("WLIwithloopFoldingWLT");
 
