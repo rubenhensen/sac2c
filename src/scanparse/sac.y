@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/02/20 08:17:09  mwe
+ * now finctions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.90  2003/12/23 11:00:21  khf
  * Old syntax for withloops in Print.c removed. Now only multigenerator syntax available.
  * Therefore new genarray pattern with only one expression (without default) added.
@@ -484,7 +488,7 @@ def3: objdefs def4
     ;
 
 def4: fundefs
-      { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1);
+      { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1, NULL);
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR" %s"F_PTR,
@@ -493,7 +497,7 @@ def4: fundefs
                      mdb_nodetype[ NODE_TYPE(  $$->node[2])],
                      $$->node[2]));
       }
-    | { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL);
+    | { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR,

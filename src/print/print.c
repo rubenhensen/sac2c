@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.148  2004/02/20 08:17:09  mwe
+ * now finctions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.147  2003/12/23 10:54:48  khf
  * Old syntax (output format 2) in PrintNwith, PrintNcode, PrintNpart removed.
  * Now only multigenerator syntax (internal syntax) available.
@@ -1120,6 +1124,14 @@ PrintModul (node *arg_node, node *arg_info)
 
         GSCPrintDefines ();
 
+        if (NULL != MODUL_FUNDECS (arg_node)) {
+            fprintf (outfile, "\n\n");
+            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            /* print function declarations */
+            Trav (MODUL_FUNDECS (arg_node), arg_info);
+            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
+        }
+
         if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
@@ -1225,10 +1237,21 @@ PrintModul (node *arg_node, node *arg_info)
 
         GSCPrintDefines ();
 
+        if (MODUL_FUNDECS (arg_node) != NULL) {
+            fprintf (outfile, "\n\n"
+                              "/*\n"
+                              " *  function declarations (FUNDECS)\n"
+                              " */\n\n");
+            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            /* print function declarations */
+            Trav (MODUL_FUNDECS (arg_node), arg_info);
+            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
+        }
+
         if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
-                              " *  function declarations\n"
+                              " *  function declarations (FUNDEFS)\n"
                               " */\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
