@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2002/08/07 12:32:30  dkr
+ * FltnNwithid added
+ *
  * Revision 3.83  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -1863,7 +1866,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, PrintNwithid, TravSons, TravSons,
+  NIF (N_Nwithid, "N_Nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
        TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, TravSons, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
