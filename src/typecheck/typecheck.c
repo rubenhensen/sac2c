@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.57  2000/11/15 14:24:59  sbs
+ * added {}'s in order to please gcc ambitious else warning
+ *
  * Revision 2.56  2000/10/26 14:30:29  dkr
  * MakeShpseg used instead of MALLOC
  *
@@ -2871,7 +2874,7 @@ InitTypeTab (node *modul_node)
                     }
                 }
 
-            if (NULL == tmp->node[0])
+            if (NULL == tmp->node[0]) {
                 if ((type_tab_size - i) < diff) {
                     diff = type_tab_size - i;
                     if (1 == delete) {
@@ -2885,14 +2888,16 @@ InitTypeTab (node *modul_node)
                     }
                     last_node = modul_node;
                     tmp = modul_node->node[1];
-                } else
+                } else {
                     break; /*break while loop */
-            else {
+                }
+            } else {
                 if (1 == delete) {
-                    if (N_modul == last_node->nodetype)
+                    if (N_modul == last_node->nodetype) {
                         last_node->node[1] = tmp->node[0];
-                    else
+                    } else {
                         last_node->node[0] = tmp->node[0];
+                    }
                     tmp = tmp->node[0];
                     delete = 0;
                 } else {
@@ -3432,24 +3437,28 @@ CmpTypes (types *type_one, types *type_two)
                      && (KNOWN_DIM_OFFSET > TYPES_DIM (type_one)))
                 return_value = CMP_both_unknown_shape;
             else if ((SCALAR < TYPES_DIM (type_one))
-                     && (KNOWN_DIM_OFFSET > TYPES_DIM (type_two)))
-                if ((KNOWN_DIM_OFFSET - TYPES_DIM (type_one) == TYPES_DIM (type_two)))
+                     && (KNOWN_DIM_OFFSET > TYPES_DIM (type_two))) {
+                if ((KNOWN_DIM_OFFSET - TYPES_DIM (type_one) == TYPES_DIM (type_two))) {
                     return_value = CMP_one_unknown_shape;
-                else
+                } else {
                     return_value = CMP_incompatible;
-            else if ((SCALAR < TYPES_DIM (type_two))
-                     && (KNOWN_DIM_OFFSET > TYPES_DIM (type_one)))
-                if ((KNOWN_DIM_OFFSET - TYPES_DIM (type_two) == TYPES_DIM (type_one)))
+                }
+            } else if ((SCALAR < TYPES_DIM (type_two))
+                       && (KNOWN_DIM_OFFSET > TYPES_DIM (type_one))) {
+                if ((KNOWN_DIM_OFFSET - TYPES_DIM (type_two) == TYPES_DIM (type_one))) {
                     return_value = CMP_one_unknown_shape;
-                else
+                } else {
                     return_value = CMP_incompatible;
-            else if (((KNOWN_DIM_OFFSET > TYPES_DIM (type_one))
-                      && (KNOWN_DIM_OFFSET > TYPES_DIM (type_two))))
-                if (TYPES_DIM (type_one) == TYPES_DIM (type_two))
+                }
+            } else if (((KNOWN_DIM_OFFSET > TYPES_DIM (type_one))
+                        && (KNOWN_DIM_OFFSET > TYPES_DIM (type_two)))) {
+                if (TYPES_DIM (type_one) == TYPES_DIM (type_two)) {
                     return_value = CMP_equal;
-                else
+                } else {
                     return_value = CMP_different_dimensions;
-            else if ((SCALAR == TYPES_DIM (type_one)) && (SCALAR == TYPES_DIM (type_two)))
+                }
+            } else if ((SCALAR == TYPES_DIM (type_one))
+                       && (SCALAR == TYPES_DIM (type_two)))
                 return_value = CMP_equal;
             else
                 DBUG_ASSERT (0, "wrong dimensions");
@@ -4173,13 +4182,15 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                  */
                                 once_again += 1;
                         } else {
-                            if (1 == once_again)
-                                if (NULL != fun_p_store)
+                            if (1 == once_again) {
+                                if (NULL != fun_p_store) {
                                     *prf_fun = -1;
-                                else
+                                } else {
                                     once_again += 1;
-                            else
+                                }
+                            } else {
                                 once_again += 1;
+                            }
                         } /* if */
                     } else {
                         if (0 == once_again)
@@ -6095,10 +6106,11 @@ TCcond (node *arg_node, node *arg_info)
             DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
             INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
-            if (1 == i)
+            if (1 == i) {
                 DBUG_PRINT ("TYPE", ("checking THEN part"));
-            else
+            } else {
                 DBUG_PRINT ("TYPE", ("checking ELSE part"));
+            }
 #endif
             Trav (arg_node->node[i], arg_info);
             INFO_TC_STATUS (arg_info) -= 1;
@@ -6116,10 +6128,11 @@ TCcond (node *arg_node, node *arg_info)
             arg_info->node[0]->nodetype = old_status;
             INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
-            if (1 == check_again)
+            if (1 == check_again) {
                 DBUG_PRINT ("TYPE", ("checking THEN part again"));
-            else
+            } else {
                 DBUG_PRINT ("TYPE", ("checking ELSE part again"));
+            }
 #endif
             Trav (arg_node->node[check_again], arg_info);
             INFO_TC_STATUS (arg_info) -= 1;
@@ -6136,10 +6149,11 @@ TCcond (node *arg_node, node *arg_info)
             DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
             INFO_TC_STATUS (arg_info) += 1;
 
-            if (1 == i)
+            if (1 == i) {
                 DBUG_PRINT ("TYPE", ("checking THEN part"));
-            else
+            } else {
                 DBUG_PRINT ("TYPE", ("checking ELSE part"));
+            }
 
             Trav (arg_node->node[i], arg_info);
             INFO_TC_STATUS (arg_info) -= 1;
@@ -7537,7 +7551,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 
         tmpn = ARRAY_AELEMS (arg_node);
         while (tmpn)
-            if (dim < SHP_SEG_SIZE)
+            if (dim < SHP_SEG_SIZE) {
                 if (N_num == NODE_TYPE (EXPRS_EXPR (tmpn))) {
                     TYPES_SHAPE (ret_type, dim) = NUM_VAL (EXPRS_EXPR (tmpn));
                     tmpn = EXPRS_NEXT (tmpn);
@@ -7554,7 +7568,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
                     dim = UNKNOWN_SHAPE;
                     tmpn = NULL;
                 }
-            else {
+            } else {
                 ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
             }
 
