@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/07/04 02:44:42  dkrHH
+ * use/definition of GET_SHAPE_IDX modified (iter_shp may be NULL!)
+ * function GetWlIterShape streamlined
+ *
  * Revision 3.87  2004/07/03 17:36:28  sah
  * temporary fix for bug #38
  * variable current_dim now also defined
@@ -2220,7 +2224,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
  *   node *GenerateShapeStrides( int dim, int iter_dims, shpseg* iter_shp)
  *
  * Description:
- *   Returns strides/grids of the size found in 'iter_shp'.
+ *   Returns strides/grids of the size found in 'iter_shp' (which may be NULL!).
  *
  ******************************************************************************/
 
@@ -2237,8 +2241,8 @@ GenerateShapeStrides (int dim, int iter_dims, shpseg *iter_shp)
           = MakeWLgrid (0, dim, 0, 1, FALSE,
                         GenerateShapeStrides (dim + 1, iter_dims, iter_shp), NULL, NULL);
 
-        strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (SHPSEG_ELEMS (iter_shp), dim),
-                                1, FALSE, new_grid, NULL);
+        strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (iter_shp, dim), 1, FALSE,
+                                new_grid, NULL);
     }
 
     DBUG_RETURN (strides);
@@ -2502,105 +2506,70 @@ CheckWithids (node *part)
  *   shpseg *GetWlIterShape( node *wl, int iter_dims, types *res_types)
  *
  * Description:
- *   Returns the shape of the with-loop iteration space.
+ *   Returns the shape of the with-loop iteration space if it can be determined
+ *   statically; returns NULL otherwise.
+ *   In case of a multi-operator WL this shape has to be identical for each
+ *   operand.
  *
  ******************************************************************************/
 
 shpseg *
 GetWlIterShape (node *wl, int iter_dims, types *res_types)
 {
-    node *shp_node, *withop_tmp;
+    node *withop, *shp_node;
     int check_dims;
 #ifndef DBUG_OFF
     int arr_len;
-/* !! REMOVED BY SAH TO FIX BUG 38 !!
-  int current_dim;
- */
 #endif
-    /* !! ADDED BY SAH TO FIX BUG 38 !! */
-    int current_dim;
-    shpseg *iter_shp = NULL, *iter_tmp = NULL;
+    shpseg *iter_shp;            /* iter-shp for a single with-op */
+    shpseg *ret_iter_shp = NULL; /* final iter-shp which will be returned */
 
     DBUG_ENTER ("GetWlIterShape");
 
-    withop_tmp = NWITH_WITHOP (wl);
-    while (withop_tmp != NULL) {
+    /*
+     * multioperator WL:
+     * determine the iter-shp for each operand and merge the results later on
+     */
+    withop = NWITH_WITHOP (wl);
+    while (withop != NULL) {
+        /* initialization */
+        iter_shp = NULL;
 
-        switch (NWITHOP_TYPE (withop_tmp)) {
+        switch (NWITHOP_TYPE (withop)) {
+
         case WO_genarray:
-            shp_node = NWITHOP_SHAPE (withop_tmp);
+            shp_node = NWITHOP_SHAPE (withop);
             if (NODE_TYPE (shp_node) == N_array) {
-
 #ifndef DBUG_OFF
                 arr_len = CountExprs (ARRAY_AELEMS (shp_node));
                 DBUG_ASSERT ((iter_dims == arr_len),
                              "genarray with-loop:"
                              " size of index vector != dimension of WL shape");
 #endif
-
-                if (iter_shp != NULL) {
-                    /* Multioperator WL */
-                    iter_tmp
-                      = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
-                    DBUG_ASSERT ((iter_tmp != NULL),
-                                 "genarray operator:"
-                                 "this operator has a non constant array shape");
-                    DBUG_ASSERT ((EqualShpseg (iter_dims, iter_shp, iter_tmp)),
-                                 "multioperator WL:"
-                                 "shape of iteration space differs");
-                    iter_tmp = FreeShpseg (iter_tmp);
-                } else {
-                    iter_shp
-                      = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
-                    if (iter_shp != NULL)
-                        current_dim = CountExprs (ARRAY_AELEMS (shp_node));
-                }
-
+                iter_shp
+                  = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
             } else {
-                if (iter_shp == NULL) {
-                    DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
-                                 "NWITHOP_SHAPE is neither N_array nor N_id");
-#if 1               /* !!! */
-                    /*
-                     * handling of constant N_id nodes is missing here
-                     *
-                     * For the time being constant N_id nodes are substituted into
-                     * the N_Nwithop node during WLT (SSAWLT.c) ...
-                     * Note here, that it is not possible to use the SSA form in this
-                     * phase since the previous phase RC can not handle SSA yet.
-                     */
+                DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
+                             "NWITHOP_SHAPE is neither N_array nor N_id");
+#if 1 /* !!! */
+                /*
+                 * handling of constant N_id nodes is missing here
+                 *
+                 * For the time being constant N_id nodes are substituted into
+                 * the N_Nwithop node during WLT (SSAWLT.c) ...
+                 * Note here, that it is not possible to use the SSA form in this
+                 * phase since the previous phase RC can not handle SSA yet.
+                 */
+                DBUG_ASSERT ((0), "NWITHOP_SHAPE: handling of N_id not implemented yet!");
 #endif
-                } else {
-                    DBUG_ASSERT ((0), "all NWITHOP_SHAPEs should be from type N_array");
-                }
             }
-
             break;
 
         case WO_modarray:
-            if (iter_shp != NULL) {
-                /* multioperator WL */
-                iter_tmp = Type2Shpseg (res_types, &check_dims);
-                DBUG_ASSERT ((iter_dims <= DIM_NO_OFFSET (check_dims)),
-                             "modarray with-loop:"
-                             " size of index vector > dimension of target array");
-                DBUG_ASSERT ((EqualShpseg (iter_dims, iter_shp, iter_tmp)),
-                             "multioperator WL:"
-                             "shape of iteration space differs");
-                if (current_dim < check_dims) {
-                    iter_shp = FreeShpseg (iter_shp);
-                    iter_shp = iter_tmp;
-                    current_dim = check_dims;
-                } else
-                    iter_tmp = FreeShpseg (iter_tmp);
-            } else {
-                iter_shp = Type2Shpseg (res_types, &check_dims);
-                DBUG_ASSERT ((iter_dims <= DIM_NO_OFFSET (check_dims)),
-                             "modarray operator:"
-                             " size of index vector > dimension of target array");
-                current_dim = check_dims;
-            }
-
+            iter_shp = Type2Shpseg (res_types, &check_dims);
+            DBUG_ASSERT ((iter_dims <= DIM_NO_OFFSET (check_dims)),
+                         "modarray with-loop:"
+                         " size of index vector > dimension of target array");
             break;
 
         case WO_foldfun:
@@ -2608,11 +2577,32 @@ GetWlIterShape (node *wl, int iter_dims, types *res_types)
         case WO_foldprf:
             break;
         }
-        withop_tmp = NWITHOP_NEXT (withop_tmp);
+
+        if (ret_iter_shp != NULL) {
+            /*
+             * multioperator WL:
+             * check whether iter-shp is identical for each operand
+             */
+            if (iter_shp != NULL) {
+                DBUG_ASSERT ((EqualShpseg (iter_dims, iter_shp, ret_iter_shp)),
+                             "multioperator WL:"
+                             " shape of iteration space differs");
+                iter_shp = FreeShpseg (iter_shp);
+            } else {
+                /*
+                 * iter-shp is unknown for this wl-operand but we assume that
+                 * it will match the iter-shp found for the other wl-operands
+                 */
+            }
+        } else {
+            ret_iter_shp = iter_shp;
+        }
+
         res_types = TYPES_NEXT (res_types);
+        withop = NWITHOP_NEXT (withop);
     }
 
-    DBUG_RETURN (iter_shp);
+    DBUG_RETURN (ret_iter_shp);
 }
 
 /******************************************************************************
@@ -2863,6 +2853,9 @@ CurrentComponent_GetNode (node *aelems)
  * Description:
  *   Converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
  *   If ('iter_shp' != NULL) out-of-bounds values are adjusted accordingly.
+ *
+ * Caution:
+ *   The argument 'iter_shp' may be NULL!
  *
  ******************************************************************************/
 
@@ -3164,8 +3157,11 @@ ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
- *   In case of a multioperator Wl new created assignments will be append to
+ *   In case of a multioperator WL new created assignments will be append to
  *   INFO_WL_PREASSIGNS( arg_info)
+ *
+ * Caution:
+ *   The argument 'iter_shp' may be NULL!
  *
  ******************************************************************************/
 
@@ -3366,7 +3362,6 @@ EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter
         }
 
         if (strides != NULL) {
-
             extracted_operators = ExtractOtherOperators ((*wl), arg_info, res_types);
 
             withop_tmp = extracted_operators->withop_ext;
@@ -4912,6 +4907,9 @@ GenerateCompleteDomain (node *stride, int iter_dims, shpseg *iter_shp)
  *
  *   This function is called by 'ComputeOneCube'.
  *
+ * Caution:
+ *   The argument 'iter_shp' may be NULL!
+ *
  ******************************************************************************/
 
 static node *
@@ -4949,7 +4947,7 @@ GenerateCompleteDomainVar (node *stride, int iter_dims, shpseg *iter_shp)
         /*
          * append lower part of complement
          */
-        shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (iter_shp), WLSTRIDEX_DIM (stride));
+        shp_idx = GET_SHAPE_IDX (iter_shp, WLSTRIDEX_DIM (stride));
         stride = FillGapSucc (&new_node, stride, NODE_TYPE (stride),
                               WLSTRIDEX_GET_ADDR (stride, BOUND2), N_WLstride, &shp_idx,
                               FALSE);
@@ -4982,17 +4980,20 @@ GenerateCompleteDomainVar (node *stride, int iter_dims, shpseg *iter_shp)
 /******************************************************************************
  *
  * Function:
- *   node *BuildCubes( node *strides, bool is_fold,
+ *   node *BuildCubes( node *strides, bool has_fold,
  *                                            int iter_dims, shpseg *iter_shp,
  *                     bool *do_naive_comp)
  *
  * Description:
+ *   ...
  *
+ * Caution:
+ *   The parameter 'iter_shp' may be NULL!
  *
  ******************************************************************************/
 
 static node *
-BuildCubes (node *strides, bool is_fold, int iter_dims, shpseg *iter_shp,
+BuildCubes (node *strides, bool has_fold, int iter_dims, shpseg *iter_shp,
             bool *do_naive_comp)
 {
     bool all_const;
@@ -5016,7 +5017,7 @@ BuildCubes (node *strides, bool is_fold, int iter_dims, shpseg *iter_shp,
          *  -> the index-range of the stride is possibly a *proper* subset
          *     of the index-vector-space.
          */
-        if (!is_fold) {
+        if (!has_fold) {
             /* no fold with-loop  ->  add missing indices (init/copy) */
             if (all_const && (iter_shp != NULL)) {
                 cubes = GenerateCompleteDomain (strides, iter_dims, iter_shp);
@@ -6993,6 +6994,7 @@ InsertNoopNodes (node *wlnode)
  *
  * description:
  *   Computes the minimum and maximum of the index-vector found in 'wlnode'.
+ *   The argument 'iter_shp' may be NULL!
  *
  * CAUTION:
  *   This routine fails if a segment has a variable IDX_MAX and contains more
@@ -7077,7 +7079,7 @@ ComputeIndexMinMax (node *wlseg, shpseg *iter_shp, node *wlnode)
         if (dim >= 0) {
             p_idx_min = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, dim);
             p_idx_max = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, dim);
-            shp_idx = GET_SHAPE_IDX (SHPSEG_ELEMS (iter_shp), dim);
+            shp_idx = GET_SHAPE_IDX (iter_shp, dim);
 
             if (NodeOrInt_Le (nt, p_min, NODE_TYPE (wlseg), p_idx_min, shp_idx)) {
                 NodeOrInt_SetNodeOrInt (NODE_TYPE (wlseg), p_idx_min, nt, p_min);
@@ -7099,6 +7101,9 @@ ComputeIndexMinMax (node *wlseg, shpseg *iter_shp, node *wlnode)
  * Description:
  *   Infers the temporary attribute IDX_MIN, IDX_MAX, SV of all the given
  *   segments.
+ *
+ * Caution:
+ *   The argument 'iter_shp' may be NULL!
  *
  ******************************************************************************/
 
@@ -7407,7 +7412,10 @@ InferFitted (node *wlnode)
  *                          bool do_naive_comp)
  *
  * Description:
+ *   ...
  *
+ * Caution:
+ *   The argument 'iter_shp' may be NULL!
  *
  ******************************************************************************/
 
@@ -7562,10 +7570,11 @@ ConvertWith (node *wl, int iter_dims)
     /* extract array-placement pragmas */
     NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (wl), linenum);
 
-#if 0 /*                                                                                 \
-       *for the time beeing array-placement isn't implemented and further on             \
-       *in multioperator WLs *one* of the operators can be a fold operator               \
-       */
+#if 0
+  /*
+   * for the time beeing array-placement isn't implemented and further on
+   * in multioperator WLs *one* of the operators can be a fold operator
+   */
   if ((NWITH2_PRAGMA( new_node) != NULL) && (NWITH_IS_FOLD( wl))) {
     /* no array placement for fold with-loops */
     NWITH2_PRAGMA( new_node) = FreeTree( NWITH2_PRAGMA( new_node));
@@ -7748,8 +7757,9 @@ WLTRAwith (node *arg_node, node *arg_info)
 {
     types *idx_type;
     int idx_sdim;
-    bool is_fold = FALSE;
-    node *new_node = NULL, *tmp_withop;
+    bool has_fold;
+    node *tmp_withop;
+    node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
 
@@ -7760,10 +7770,12 @@ WLTRAwith (node *arg_node, node *arg_info)
     idx_type = IDS_TYPE (NWITH_VEC (arg_node));
     idx_sdim = GetShapeDim (idx_type);
 
+    has_fold = FALSE;
     tmp_withop = NWITH_WITHOP (arg_node);
     while (tmp_withop != NULL) {
-        if (NWITHOP_IS_FOLD (tmp_withop))
-            is_fold = TRUE;
+        if (NWITHOP_IS_FOLD (tmp_withop)) {
+            has_fold = TRUE;
+        }
         tmp_withop = NWITHOP_NEXT (tmp_withop);
     }
 
@@ -7844,7 +7856,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                  */
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 2: build cubes")););
                 cubes
-                  = BuildCubes (strides, is_fold, iter_dims, iter_shp, &do_naive_comp);
+                  = BuildCubes (strides, has_fold, iter_dims, iter_shp, &do_naive_comp);
                 if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
                     goto DONE;
                 }
@@ -7865,7 +7877,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                 } else {
                     simpletype res_btype = GetBasetype (INFO_WL_LHS_TYPE (arg_info));
                     bool fold_float
-                      = (is_fold && ((res_btype == T_float) || (res_btype == T_double)));
+                      = (has_fold && ((res_btype == T_float) || (res_btype == T_double)));
                     segs
                       = SetSegs (NWITH_PRAGMA (arg_node), cubes, iter_dims, fold_float);
                 }
