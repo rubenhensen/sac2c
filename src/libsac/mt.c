@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/23 13:34:06  ben
+ * in  SAC_MT_Setup SAC_MT_TASKLOCK initialization modified
+ *
  * Revision 3.3  2001/03/22 17:37:47  ben
  * Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS in SAC_MT_Setup
  *
@@ -392,7 +395,7 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset)
 
     SAC_TR_PRINT (("Initialzing Tasklocks."));
 
-    for (i = 0; i < SAC_MT_threads; i++) {
+    for (i = 0; i < SAC_MT_threads + 1; i++) {
         pthread_mutex_init (&SAC_MT_TASKLOCK (i), NULL);
         SAC_MT_TASK (i) = 0;
     }
