@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/07/17 08:37:28  nmw
+ * call to MakeArg() without type fixed
+ *
  * Revision 3.12  2001/07/16 08:23:11  cg
  * Old tree construction function MakeNode eliminated.
  *
@@ -410,9 +413,8 @@ InitPrimFunDeclarations ()
 #define TT1(n, a, t1, res)                                                               \
     tmp_node->node[1] = MakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);                 \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
-    arg1 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t1;                                                                                  \
-    arg1->info.types = type;                                                             \
+    arg1 = MakeArg (NULL, type, ST_regular, ST_regular, NULL);                           \
     tmp_node->node[1]->node[2] = arg1;                                                   \
     tmp_node->node[1]->info.prf_dec.tc = a;                                              \
     DBUG_PRINT ("PRIM_FUN", ("tc: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a));     \
@@ -424,13 +426,10 @@ InitPrimFunDeclarations ()
 #define TT2(n, a, t1, t2, res)                                                           \
     tmp_node->node[1] = MakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);                 \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
-    arg1 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    arg2 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t2;                                                                                  \
-    arg2->info.types = type;                                                             \
-    arg1->node[0] = arg2;                                                                \
+    arg2 = MakeArg (NULL, type, ST_regular, ST_regular, NULL);                           \
+    t1;                                                                                  \
+    arg1 = MakeArg (NULL, type, ST_regular, ST_regular, arg2);                           \
     tmp_node->node[1]->node[2] = arg1;                                                   \
     tmp_node->node[1]->info.prf_dec.tc = a;                                              \
     tmp_node->node[1]->info.prf_dec.tag = n;                                             \
@@ -438,17 +437,12 @@ InitPrimFunDeclarations ()
 #define TT3(n, a, t1, t2, t3, res)                                                       \
     tmp_node->node[1] = MakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);                 \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
-    arg1 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    arg2 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
-    t2;                                                                                  \
-    arg2->info.types = type;                                                             \
-    arg3 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t3;                                                                                  \
-    arg3->info.types = type;                                                             \
-    arg2->node[0] = arg3;                                                                \
-    arg1->node[0] = arg2;                                                                \
+    arg3 = MakeArg (NULL, type, ST_regular, ST_regular, NULL);                           \
+    t2;                                                                                  \
+    arg2 = MakeArg (NULL, type, ST_regular, ST_regular, arg3);                           \
+    t1;                                                                                  \
+    arg1 = MakeArg (NULL, type, ST_regular, ST_regular, arg2);                           \
     tmp_node->node[1]->node[2] = arg1;                                                   \
     tmp_node->node[1]->info.prf_dec.tc = a;                                              \
     tmp_node->node[1]->info.prf_dec.tag = n;                                             \
