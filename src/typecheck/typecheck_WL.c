@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.9  2000/05/03 16:49:36  dkr
+ * COFreeConstant returns NULL now
+ *
  * Revision 2.8  2000/01/26 17:28:16  dkr
  * type of traverse-function-table changed.
  *
@@ -27,7 +30,6 @@
  *
  * Revision 1.1  1998/04/28 15:48:09  srs
  * Initial revision
- *
  */
 
 #include <stdlib.h>
@@ -181,11 +183,11 @@ TCWLprf (node *arg_node, node *arg_info)
                     } else {
                         res = CODrop (arg1, arg2);
                     }
-                    COFreeConstant (arg1);
-                    COFreeConstant (arg2);
-                    FreeTree (arg_node);
+                    arg1 = COFreeConstant (arg1);
+                    arg2 = COFreeConstant (arg2);
+                    arg_node = FreeTree (arg_node);
                     arg_node = COConstant2AST (res);
-                    COFreeConstant (res);
+                    res = COFreeConstant (res);
                 }
             } else {
                 arg_node = CFprf (arg_node, arg_info);
@@ -230,9 +232,9 @@ ReduceGenarrayShape (node *arg_node, types *expr_type)
 
     expr_ok = 1;
     arg_node = Trav (arg_node, infon);
-    if (!expr_ok)
+    if (!expr_ok) {
         arg_node = NULL;
-    else {
+    } else {
         /*
          * The arg_node is a constant integer vector, so we have to attribute
          * the CONSTVEC form!!
@@ -246,7 +248,7 @@ ReduceGenarrayShape (node *arg_node, types *expr_type)
 
     act_tab = old_tab;
 
-    FreeTree (infon);
+    infon = FreeTree (infon);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/05/03 16:49:17  dkr
+ * COFreeConstant returns NULL now
+ *
  * Revision 1.2  1999/10/22 14:12:24  sbs
  * inserted comments and added reshape, take, drop, and psi with non
  * scalar results.
@@ -59,7 +62,7 @@ extern shape *COGetShape (constant *a);
  * Functions for handling / converting constants:
  */
 extern constant *COCopyConstant (constant *a);
-extern void COFreeConstant (constant *a);
+extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);
 
 /*
