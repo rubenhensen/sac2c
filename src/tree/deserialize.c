@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/26 09:36:20  sah
+ * ongoing implementation
+ *
  * Revision 1.2  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -20,22 +23,11 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "modulemanager.h"
+#include "symboltable.h"
 #include "serialize.h"
+#include "new2old.h"
 
-/*
- * INFO structure
- */
-struct INFO {
-    node *ret;
-    node *ssacounter;
-};
-
-/*
- * INFO macros
- */
-#define INFO_DS_RETURN(n) n->ret
-#define INFO_DS_SSACOUNTER(n) n->ssacounter
+#include "deserialize_info.h"
 
 /*
  * INFO functions
@@ -51,6 +43,7 @@ MakeInfo ()
 
     INFO_DS_RETURN (result) = NULL;
     INFO_DS_SSACOUNTER (result) = NULL;
+    INFO_DS_AST (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -70,17 +63,121 @@ LoadFunctionBody (node *fundef, node *modnode)
 {
     node *result;
     module_t *module;
+    info *info;
     serfun_p serfun;
 
     DBUG_ENTER ("LoadFunctionBody");
+
+    info = MakeInfo ();
+    INFO_DS_AST (info) = modnode;
 
     module = LoadModule (FUNDEF_MOD (fundef));
 
     serfun = GetDeSerializeFunction (GenerateSerFunName (SET_funbody, fundef), module);
 
-    result = serfun ();
+    result = serfun (info);
+
+    info = FreeInfo (info);
 
     module = UnLoadModule (module);
+
+    DBUG_RETURN (result);
+}
+
+static void
+AddEntryToAst (STentry_t *entry, module_t *module, node *ast)
+{
+    node *entryp;
+    info *info;
+    serfun_p serfun;
+
+    DBUG_ENTER ("AddEntryToAst");
+
+    info = MakeInfo ();
+
+    INFO_DS_AST (info) = ast;
+
+    switch (STEntryType (entry)) {
+    case SET_funhead:
+    case SET_funbody:
+    case SET_wrapperbody:
+        /* these are ignored. All functions are loaded as a dependency
+         * of the wrapperfunction anyways and bodies are loaded on
+         * demand only!
+         */
+        break;
+    case SET_wrapperhead:
+        serfun = GetDeSerializeFunction (STEntryName (entry), module);
+        entryp = serfun (info);
+
+        /* add old types */
+        entryp = NT2OTTransform (entryp);
+
+        FUNDEF_NEXT (entryp) = MODUL_FUNS (ast);
+        MODUL_FUNS (ast) = entryp;
+        break;
+    default:
+        break;
+    }
+
+    info = FreeInfo (info);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+AddSymbolToAst (const char *symbol, module_t *module, node *ast)
+{
+    STtable_t *table;
+    STentryiterator_t *it;
+
+    DBUG_ENTER ("AddSymbolToAst");
+
+    table = GetSymbolTable (module);
+    it = STEntryIteratorGet (symbol, table);
+
+    while (STEntryIteratorHasMore (it)) {
+        AddEntryToAst (STEntryIteratorNext (it), module, ast);
+    }
+
+    it = STEntryIteratorRelease (it);
+    table = STDestroy (table);
+
+    DBUG_VOID_RETURN;
+}
+
+node *
+DeserializeLookupFunction (const char *module, const char *symbol, info *info)
+{
+    node *fundefs = NULL;
+    node *result = NULL;
+    serfun_p serfun;
+    module_t *mod;
+
+    DBUG_ENTER ("DeserializeLookupFunction");
+
+    fundefs = MODUL_FUNS (INFO_DS_AST (info));
+
+    while ((result == NULL) && (fundefs != NULL)) {
+        if (FUNDEF_SYMBOLNAME (fundefs) != NULL) {
+            if (!strcmp (FUNDEF_SYMBOLNAME (fundefs), symbol)) {
+                result = fundefs;
+            }
+        }
+        fundefs = FUNDEF_NEXT (fundefs);
+    }
+
+    if (result == NULL) {
+        mod = LoadModule (module);
+        serfun = GetDeSerializeFunction (symbol, mod);
+        result = serfun (info);
+
+        /* generate the old types */
+        result = NT2OTTransform (result);
+
+        FUNDEF_NEXT (result) = MODUL_FUNS (INFO_DS_AST (info));
+        MODUL_FUNS (INFO_DS_AST (info)) = result;
+    }
 
     DBUG_RETURN (result);
 }
@@ -108,6 +205,12 @@ AddFunctionBodyToHead (node *fundef, node *module)
 
     info = FreeInfo (info);
 
+    /* finaly, we have to do e new2old, as the old types are not
+     * serialized.
+     */
+
+    fundef = NT2OTTransform (fundef);
+
     DBUG_RETURN (fundef);
 }
 
@@ -126,6 +229,18 @@ LookUpSSACounter (node *cntchain, node *arg)
     }
 
     DBUG_RETURN (result);
+}
+
+node *
+DSFundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DSFundef");
+
+    arg_node = TravSons (arg_node, arg_info);
+
+    FUNDEF_RETURN (arg_node) = INFO_DS_RETURN (arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 node *
@@ -174,6 +289,36 @@ DSVardec (node *arg_node, info *arg_info)
     DBUG_ENTER ("DSVardec");
 
     /* nothing to be done here */
+
+    arg_node = TravSons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DSId (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DSId");
+
+    arg_node = TravSons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DSLet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DSLet");
+
+    arg_node = TravSons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DSNWithid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DSNWithid");
 
     arg_node = TravSons (arg_node, arg_info);
 

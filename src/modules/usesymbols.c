@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/26 09:33:56  sah
+ * ongoing implementation
+ *
  * Revision 1.2  2004/10/22 14:48:16  sah
  * fixed some typeos
  *
@@ -18,18 +21,20 @@
 #include "dbug.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
+#include "modulemanager.h"
+#include "deserialize.h"
 
 /*
  * INFO structure
  */
 struct INFO {
-    node *fundefs;
+    node *module;
 };
 
 /*
  * INFO macros
  */
-#define INFO_USS_FUNDEFS(info) (info->fundefs)
+#define INFO_USS_MODULE(info) (info->module)
 
 /*
  * INFO functions
@@ -43,7 +48,7 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
-    INFO_USS_FUNDEFS (result) = NULL;
+    INFO_USS_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -65,7 +70,15 @@ FreeInfo (info *info)
 node *
 USSAp (node *arg_node, info *arg_info)
 {
+    module_t *module;
+
     DBUG_ENTER ("USSAp");
+
+    if (strcmp (AP_MOD (arg_node), MODUL_NAME (INFO_USS_MODULE (arg_info)))) {
+        module = LoadModule (AP_MOD (arg_node));
+
+        AddSymbolToAst (AP_NAME (arg_node), module, INFO_USS_MODULE (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -75,7 +88,7 @@ USSModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSModul");
 
-    INFO_USS_FUNDEFS (arg_info) = MODUL_FUNS (arg_node);
+    INFO_USS_MODULE (arg_info) = arg_node;
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
