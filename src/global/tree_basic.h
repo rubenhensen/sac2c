@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.40  1999/07/22 12:28:51  jhs
+ * Added BLOCK_SPMD_SETUP_ARGS.
+ *
  * Revision 2.39  1999/07/20 16:39:19  jhs
  * Added SYNC_FOLDCOUNT.
  *
@@ -1127,6 +1130,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***    int        VARNO                  (optimize -> )
  ***
  ***    node*      SPMD_PROLOG_ICMS (O)   (N_fundef)  (compile !!)
+ ***    node*      SPMD_SETUP_ARGS (O)    (N_fundef)  (compile !!)
  ***/
 
 /*
@@ -1145,6 +1149,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
 #define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[4])
+#define BLOCK_SPMD_SETUP_ARGS(n) (n->node[5])
 #define BLOCK_CACHESIM(n) (n->info.id)
 
 /*--------------------------------------------------------------------------*/
