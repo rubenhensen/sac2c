@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.57  2004/11/24 20:29:25  sah
+  *** empty log message ***
+
   Revision 1.56  2004/11/24 19:58:00  sbs
   CRTWRP added.
 
@@ -261,6 +264,7 @@
     -->
     <general>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
+      <traversal id="FREE" name="Free Tree" default="sons" include="free_node.h" />
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
@@ -1704,6 +1708,7 @@
         <flag name="HasDotRets" />
         <flag name="IsSpmdfun" />
 	<flag name="IsWrapperfun" />
+	<flag name="IsZombie" />
       </flags>
     </node>
 <!--
