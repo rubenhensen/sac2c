@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.169  1999/01/19 17:25:51  cg
+ * The scanner/parser does now allow to selectively import
+ * overloaded primitive functions including operators.
+ *
  * Revision 1.168  1999/01/19 16:17:08  cg
  * added types like int[?] which match both scalars and arrays;
  * removed special handling of psi and modarray when applied to
@@ -336,7 +340,7 @@ static file_type file_kind = F_prog;
 %type <prf> foldop, Ngenop, monop, binop, triop
 %type <nodetype> modclass
 %type <cint> evextern, sibheader, sibevmarker, dots
-%type <ids> ids, modnames, modname, inherits
+%type <ids> ids, funids, modnames, modname, inherits
 %type <deps> linkwith, linklist, siblinkwith, siblinklist, sibsublinklist
 %type <id> fun_name, prf_name, sibparam, id, string
 %type <nums> nums
@@ -568,7 +572,7 @@ impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
 	     | impdesc4 { $$=$1; }
 	;
 
-impdesc4: FUNS COLON ids SEMIC BRACE_R
+impdesc4: FUNS COLON funids SEMIC BRACE_R
             { $$=MakeNode( N_implist );
               $$->node[3]=(node *)$3; /* dirty trick for keeping ids !*/
 
@@ -2044,6 +2048,15 @@ ids: id COMMA ids
      { $$=MakeIds($1, NULL, ST_regular);
      }
    ;
+
+funids: fun_name COMMA funids 
+       { $$=MakeIds($1, NULL, ST_regular);
+         IDS_NEXT($$)=$3;
+       }
+      | fun_name 
+        { $$=MakeIds($1, NULL, ST_regular);
+        }
+      ;
 
 nums: NUM COMMA nums { $$=MakeNums($1, $3);   }
     | NUM            { $$=MakeNums($1, NULL); }
