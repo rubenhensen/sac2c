@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.185  2004/05/05 15:02:59  ktr
+ * Added new son to Ncode: NCODE_EPILOGUE
+ *
  * Revision 3.184  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -3836,6 +3839,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    node*      CBLOCK    (O) (N_block)
  ***    node*      CEXPRS        (N_exprs)
  ***    node*      NEXT      (O) (N_Ncode)
+ ***    node*      EPILOGUE  (0) (N_block) (ssarefcounting -> )
  ***
  ***  permanent attributes:
  ***
@@ -3871,6 +3875,9 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    In the flatten phase every node unequal N_id is flattened from
  ***    the CEXPR into the CBLOCK.
  ***
+ ***    EPILOGUE points to a block containing ADJUST_RC assignments which have
+ ***    executed _after_ the value of CEXPR has been used.
+ ***
  ***    The USED component is a reference counter for the NPART_CODE pointer.
  ***    MakeNPart increments it if the code parameter is != NULL,
  ***    FreeNPart decrements it if NPART_CODE is != NULL.
@@ -3893,8 +3900,9 @@ extern node *MakeNCodeExprs (node *block, node *exprs);
 #define NCODE_CBLOCK(n) ((n)->node[0])
 #define NCODE_CEXPRS(n) ((n)->node[1])
 #define NCODE_NEXT(n) ((n)->node[2])
+#define NCODE_EPILOGUE(n) ((n)->node[3])
 #define NCODE_INC_RC_IDS(n) ((ids *)((n)->dfmask[0]))
-#define NCODE_USE(n) ((n)->node[3])
+#define NCODE_USE(n) ((n)->node[4])
 #define NCODE_USED(n) ((n)->info.cint)
 #define NCODE_MASK(n, x) ((n)->mask[x])
 #define NCODE_ID(n) ((n)->refcnt)
