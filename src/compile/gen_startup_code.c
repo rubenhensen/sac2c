@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/21 12:44:03  ben
+ * SAC_MT_SET_MAX_SCHEDULERS renamed to SAC_MR_SET_NUM_SCHEDULERS
+ *
  * Revision 3.9  2001/05/17 12:08:44  dkr
  * FREE, MALLOC eliminated
  *
@@ -457,7 +460,7 @@ PrintGlobalSettings (node *syntax_tree)
         fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n", max_sync_fold);
     }
 
-    fprintf (outfile, "#define SAC_SET_MAX_SCHEDULERS       %d\n\n", max_schedulers);
+    fprintf (outfile, "#define SAC_SET_NUM_SCHEDULERS       %d\n\n", max_schedulers);
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
