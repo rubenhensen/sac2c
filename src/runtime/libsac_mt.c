@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/10/23 13:14:56  cg
+ * added explanation for some nasty warnings during compilation
+ *
  * Revision 1.8  1998/07/10 15:21:15  cg
  * bug fixed in vararg macro usage
  *
@@ -69,6 +72,17 @@
  */
 
 #ifdef TRACE
+
+/*
+ * Warning:
+ *
+ * At least on Solaris 2.5.x the static initialization of mutex locks causes
+ * warnings upon compilation. The reason is that in the corresponding file
+ * pthread.h, the definition of PTHREAD_MUTEX_INITIALIZER does NOT fit the
+ * type definition of pthread_mutex_t.
+ *
+ * However, so far it works  :-)))
+ */
 
 pthread_mutex_t SAC_TRMT_array_memcnt_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t SAC_TRMT_hidden_memcnt_lock = PTHREAD_MUTEX_INITIALIZER;
