@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/08/05 18:21:33  dkr
+ * - some shape calcualtions for AKD, AUD implemented
+ * - ND_ASSIGN__SHAPE renamed into ND_ASSIGN__DIMSHP
+ *
  * Revision 3.28  2002/08/03 03:16:20  dkr
  * ND_PRF_SEL__DIM icms removed
  *
@@ -550,7 +554,7 @@ ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -626,7 +630,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -721,7 +725,7 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -817,17 +821,20 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
      */
     switch (to_sc) {
     case C_aud:
+        /*
+         * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+         */
+#if 0
+      INDENT;
+      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = %d;\n",
+                        to_nt, to_nt, dim);
+#else
         INDENT;
         fprintf (outfile,
-                 "/* SAC_ND_A_DESC_DIM( %s) = */ "
-                 /* ND_A_DESC_DIM has already been set by ND_ALLOC__DESC! */
-                 "SAC_ND_A_DIM( %s) = %d;\n",
-                 to_nt, to_nt, dim);
-        INDENT;
-        fprintf (outfile,
-                 "SAC_ASSURE_TYPE( (SAC_ND_A_DESC_DIM( %s) == %d),"
+                 "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
                  " (\"Assignment with incompatible types found!\"));\n",
                  to_nt, dim);
+#endif
         /* here is no break missing! */
 
     case C_akd:
@@ -861,7 +868,7 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -899,7 +906,7 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -964,7 +971,7 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -1092,7 +1099,7 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -1134,7 +1141,7 @@ ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
 
     ICMCompileND_ASSIGN__DESC (to_nt, from_nt);
 
-    ICMCompileND_ASSIGN__SHAPE (to_nt, to_sdim, from_nt, from_sdim);
+    ICMCompileND_ASSIGN__DIMSHP (to_nt, to_sdim, from_nt, from_sdim);
 
     INDENT;
     fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_nt, from_nt, copyfun);
@@ -1234,18 +1241,18 @@ ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN__SHAPE( char *to_nt, int to_sdim,
- *                                    char *from_nt, int from_sdim)
+ *   void ICMCompileND_ASSIGN__DIMSHP( char *to_nt, int to_sdim,
+ *                                     char *from_nt, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_ASSIGN__DIMSHP( to_nt, to_sdim, from_nt, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
 {
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_nt);
@@ -1253,12 +1260,12 @@ ICMCompileND_ASSIGN__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sd
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_ASSIGN__SHAPE");
+    DBUG_ENTER ("ICMCompileND_ASSIGN__DIMSHP");
 
-#define ND_ASSIGN__SHAPE
+#define ND_ASSIGN__DIMSHP
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_ASSIGN__SHAPE
+#undef ND_ASSIGN__DIMSHP
 
     ICMCompileND_CHECK_MIRROR (to_nt, to_sdim, from_nt, from_sdim);
 
@@ -1333,7 +1340,7 @@ ICMCompileND_ASSIGN__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sd
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -1368,7 +1375,7 @@ ICMCompileND_ASSIGN__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sd
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -1451,17 +1458,28 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
      */
     switch (to_sc) {
     case C_aud:
+        /*
+         * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+         */
+#if 0
+      INDENT;
+      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s)"
+                        " = SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n",
+                        to_nt, to_nt, from_nt);
+#else
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_A_DESC_DIM( %s) ="
-                 " SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n",
-                 to_nt, to_nt, from_nt);
+                 "SAC_ASSURE_TYPE("
+                 " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)),"
+                 " (\"Assignment with incompatible types found!\"));\n",
+                 to_nt, from_nt);
+#endif
         /* here is no break missing */
     case C_akd:
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_A_DESC_SIZE( %s) ="
-                 " SAC_ND_A_SIZE( %s) = SAC_ND_A_SIZE( %s);\n",
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = SAC_ND_A_SIZE( %s) = SAC_ND_A_SIZE( %s);\n",
                  to_nt, to_nt, from_nt);
         break;
 
@@ -1473,7 +1491,7 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
     if ((to_sc == C_aud) && (from_sc == C_aud)) {
@@ -1511,8 +1529,8 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (outfile,
-                     "SAC_ND_A_DESC_SHAPE( %s, %d) ="
-                     " SAC_ND_A_SHAPE( %s, %d) = SAC_ND_A_SHAPE( %s, %d);\n",
+                     "SAC_ND_A_DESC_SHAPE( %s, %d) = SAC_ND_A_SHAPE( %s, %d)"
+                     " = SAC_ND_A_SHAPE( %s, %d);\n",
                      to_nt, i, to_nt, i, from_nt, i);
         }
     }
@@ -1573,7 +1591,7 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 }
 
 /******************************************************************************
- *
+ *C
  * function:
  *   void ICMCompileND_CREATE__VECT__DIM( int val_size, char **vala_any)
  *
@@ -1602,26 +1620,24 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
      * 'vala_any[i]' is either a tagged identifier or a constant scalar!!!
      */
 
-    if (val_size > 0) {
-        entries_are_scalars = FALSE;
-        for (i = 0; i < val_size; i++) {
-            if ((vala_any[i][0] != '(') ||
-                /* not a tagged id -> is a constant scalar! */
-                (ICUGetShapeClass (vala_any[i]) == C_scl)) {
-                entries_are_scalars = TRUE;
-            }
+    entries_are_scalars = FALSE;
+    for (i = 0; i < val_size; i++) {
+        if ((vala_any[i][0] != '(') ||
+            /* not a tagged id -> is a constant scalar! */
+            (ICUGetShapeClass (vala_any[i]) == C_scl)) {
+            entries_are_scalars = TRUE;
         }
+    }
 
-        if (entries_are_scalars) {
-            fprintf (outfile, "1");
-        } else {
-            fprintf (outfile, "SAC_ND_A_DIM( %s) + 1", vala_any[0]);
-        }
-    } else {
+    if (val_size > 0) {
         /*
-         * A=[] works only for arrays with known dimension/shape!!!
+         * 'A = []' works only for arrays with known dimension/shape!!!
          */
         fprintf (outfile, "SAC_ICM_UNDEF()");
+    } else if (entries_are_scalars) {
+        fprintf (outfile, "1");
+    } else {
+        fprintf (outfile, "SAC_ND_A_DIM( %s) + 1", vala_any[0]);
     }
 
     DBUG_VOID_RETURN;
@@ -1630,7 +1646,7 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__VECT__SHAPE( char *nt, int sdim,
+ *   void ICMCompileND_CREATE__VECT__SHAPE( char *to_nt, int to_sdim,
  *                                          int val_size, char **vala_any)
  *
  * description:
@@ -1641,11 +1657,12 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int val_size, char **vala_any)
+ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char **vala_any)
 {
-    char *val_size_str;
     bool entries_are_scalars;
     int i;
+    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_CREATE__VECT__SHAPE");
 
@@ -1668,14 +1685,183 @@ ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int val_size, char **vala_
         }
     }
 
-    if (entries_are_scalars) {
-        val_size_str = Malloc (20 * sizeof (char));
+    if (val_size == 0) {
+        /*
+         * 'A = []' works only for arrays with known dimension/shape!!!
+         */
+        DBUG_ASSERT ((to_sc == C_aks), "[] with unknown shape found!");
+    } else if (entries_are_scalars) {
+        char *val_size_str = Malloc (20 * sizeof (char));
         sprintf (val_size_str, "%d", val_size);
-        ICMCompileND_SET__SHAPE (nt, 1, &val_size_str);
+        ICMCompileND_SET__SHAPE (to_nt, 1, &val_size_str);
         val_size_str = Free (val_size_str);
     } else {
-        if (sdim < 0) {
-            DBUG_ASSERT ((0), "not yet implemented!");
+        /*
+         * set descriptor and non-constant part of mirror
+         */
+        switch (to_sc) {
+        case C_aud:
+            /* check whether all entries have identical dimension */
+            for (i = 0; i < val_size; i++) {
+                if (i > 0) {
+                    INDENT;
+                    fprintf (outfile,
+                             "SAC_ASSURE_TYPE("
+                             " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)),"
+                             " (\"Inconsistent vector found:"
+                             " First entry and entry at position %d have"
+                             " different dimensions!\"));\n",
+                             vala_any[i], vala_any[0], i);
+                }
+            }
+
+            /*
+             * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+             */
+#if 0
+        INDENT;
+        fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s)"
+                          " = SAC_ND_A_DIM( %s) + 1;\n",
+                          to_nt, to_nt, vala_any[0]);
+#else
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ASSURE_TYPE("
+                     " (SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + 1),"
+                     " (\"Assignment with incompatible types found!\"));\n",
+                     to_nt, vala_any[0]);
+#endif
+            INDENT;
+            fprintf (outfile, "{ int SAC_size = 1;\n");
+            indent++;
+            INDENT;
+            fprintf (outfile,
+                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, 0)"
+                     " = SAC_ND_A_SHAPE( %s, 0) = %d;\n",
+                     to_nt, to_nt, val_size);
+            INDENT;
+            fprintf (outfile,
+                     "for (SAC_i = 1; SAC_i < SAC_ND_A_DIM( %s); SAC_i++)"
+                     " {\n",
+                     to_nt);
+            indent++;
+            INDENT;
+            fprintf (outfile,
+                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)"
+                     " = SAC_ND_A_SHAPE( %s, SAC_i)"
+                     " = SAC_ND_A_SHAPE( %s, SAC_i - 1);\n",
+                     to_nt, to_nt, vala_any[0]);
+            indent--;
+            INDENT;
+            fprintf (outfile, "}\n");
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ND_A_DESC_SIZE( %s)"
+                     " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                     to_nt, to_nt);
+            indent--;
+            INDENT;
+            fprintf (outfile, "}\n");
+            break;
+
+        case C_akd:
+            /* check whether all entries have identical shape */
+            for (i = 0; i < val_size; i++) {
+                if (i > 0) {
+                    int d;
+                    for (d = 0; d < to_dim - 1; d++) {
+                        INDENT;
+                        fprintf (outfile,
+                                 "SAC_ASSURE_TYPE("
+                                 " (SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( %s, %d)),"
+                                 " (\"Inconsistent vector found:"
+                                 " First entry and entry at position %d have"
+                                 " different shape!\"));\n",
+                                 vala_any[i], d, vala_any[0], d, i);
+                    }
+                }
+            }
+
+            INDENT;
+            fprintf (outfile, "{ int SAC_size = 1;\n");
+            indent++;
+            INDENT;
+            fprintf (outfile,
+                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, 0)"
+                     " = SAC_ND_A_SHAPE( %s, 0) = %d;\n",
+                     to_nt, to_nt, val_size);
+            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+            for (i = 1; i < to_dim; i++) {
+                INDENT;
+                fprintf (outfile,
+                         "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)"
+                         " = SAC_ND_A_SHAPE( %s, %d)"
+                         " = SAC_ND_A_SHAPE( %s, %d);\n",
+                         to_nt, i, to_nt, i, vala_any[0], i - 1);
+            }
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ND_A_DESC_SIZE( %s)"
+                     " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                     to_nt, to_nt);
+            indent--;
+            INDENT;
+            fprintf (outfile, "}\n");
+            break;
+
+        case C_aks:
+            /* here is no break missing */
+        case C_scl:
+            /* noop */
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "Unknown shape class found!");
+            break;
+        }
+
+        /*
+         * check constant parts of mirror
+         */
+        switch (to_sc) {
+        case C_scl:
+            DBUG_ASSERT ((0), "illegal dimension found!");
+            break;
+
+        case C_aks:
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ASSURE_TYPE( (SAC_ND_A_SHAPE( %s, 0) == %d),"
+                     " (\"Assignment with incompatible types"
+                     " found!\"));\n",
+                     to_nt, val_size);
+            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+            for (i = 1; i < to_dim; i++) {
+                INDENT;
+                fprintf (outfile,
+                         "SAC_ASSURE_TYPE("
+                         " (SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( %s, %d)),"
+                         " (\"Assignment with incompatible types found!\"));\n",
+                         to_nt, i, vala_any[0], i - 1);
+            }
+            /* here is no break missing */
+
+        case C_akd:
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ASSURE_TYPE( "
+                     "(SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + 1),"
+                     " (\"Assignment with incompatible types found!\"));\n",
+                     to_nt, vala_any[0]);
+            break;
+
+        case C_aud:
+            /* noop */
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "Unknown shape class found!");
+            break;
         }
     }
 
@@ -1685,7 +1871,7 @@ ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int val_size, char **vala_
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__VECT__DATA( char *nt, int sdim,
+ *   void ICMCompileND_CREATE__VECT__DATA( char *to_nt, int to_sdim,
  *                                         int val_size, char **vala_any,
  *                                         char *copyfun)
  *
@@ -1697,7 +1883,7 @@ ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int val_size, char **vala_
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_any,
+ICMCompileND_CREATE__VECT__DATA (char *to_nt, int to_sdim, int val_size, char **vala_any,
                                  char *copyfun)
 {
     bool entries_are_scalars;
@@ -1727,7 +1913,7 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
     if (entries_are_scalars) {
         for (i = 0; i < val_size; i++) {
             INDENT;
-            fprintf (outfile, "SAC_ND_WRITE_COPY( %s, %d, ", nt, i);
+            fprintf (outfile, "SAC_ND_WRITE_COPY( %s, %d, ", to_nt, i);
             ReadScalar_Check (vala_any[i], NULL, 0);
             fprintf (outfile, ", %s)\n", copyfun);
         }
@@ -1758,7 +1944,7 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
                 indent++;
                 INDENT;
                 fprintf (outfile, "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n",
-                         nt, vala_any[i], copyfun);
+                         to_nt, vala_any[i], copyfun);
                 indent--;
                 INDENT;
                 fprintf (outfile, "}\n");
@@ -1767,7 +1953,7 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
             fprintf (outfile,
                      "SAC_ASSURE_TYPE( (SAC_i == SAC_ND_A_SIZE( %s)),"
                      " (\"Assignment with incompatible types found!\"));\n",
-                     nt);
+                     to_nt);
             indent--;
             INDENT;
             fprintf (outfile, "}\n");
@@ -1851,7 +2037,168 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt, int from_
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown data class found!");
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PrfReshape_Shape( char *to_nt, int to_sdim,
+ *                          void *shp, int shp_size,
+ *                          void (*shp_size_fun)( void *),
+ *                          void (*shp_read_fun)( void *, char *, int))
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
+                  void (*shp_size_fun) (void *),
+                  void (*shp_read_fun) (void *, char *, int))
+{
+    int i;
+    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+
+    DBUG_ENTER ("PrfReshape_Shape");
+
+    /*
+     * set descriptor and non-constant part of mirror
+     */
+    switch (to_sc) {
+    case C_aud:
+        /*
+         * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+         */
+#if 0
+      INDENT;
+      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = ",
+                        to_nt, to_nt);
+      if (shp_size < 0) {
+        shp_size_fun( shp);
+      }
+      else {
+        fprintf( outfile, "%d", shp_size);
+      }
+      fprintf( outfile, ";\n");
+#else
+        INDENT;
+        fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
+        if (shp_size < 0) {
+            shp_size_fun (shp);
+        } else {
+            fprintf (outfile, "%d", shp_size);
+        }
+        fprintf (outfile, "),"
+                          " (\"Assignment with incompatible types found!\"));\n");
+#endif
+        INDENT;
+        fprintf (outfile, "{ int SAC_size = 1;\n");
+        indent++;
+        INDENT;
+        fprintf (outfile,
+                 "for (SAC_i = 0; SAC_i < SAC_ND_A_DIM( %s);"
+                 " SAC_i++) {\n",
+                 to_nt);
+        indent++;
+        INDENT;
+        fprintf (outfile,
+                 "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)"
+                 " = SAC_ND_A_SHAPE( %s, SAC_i) = ",
+                 to_nt, to_nt);
+        shp_read_fun (shp, "SAC_i", -1);
+        fprintf (outfile, ";\n");
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                 to_nt, to_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+        break;
+
+    case C_akd:
+        INDENT;
+        fprintf (outfile, "{ int SAC_size = 1;\n");
+        indent++;
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        for (i = 1; i < to_dim; i++) {
+            INDENT;
+            fprintf (outfile,
+                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)"
+                     " = SAC_ND_A_SHAPE( %s, %d) = ",
+                     to_nt, i, to_nt, i);
+            shp_read_fun (shp, NULL, i);
+            fprintf (outfile, ";\n");
+        }
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                 to_nt, to_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+        break;
+
+    case C_aks:
+        /* here is no break missing */
+    case C_scl:
+        /* noop */
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
+    }
+
+    /*
+     * check constant parts of mirror
+     */
+    switch (to_sc) {
+    case C_scl:
+        DBUG_ASSERT ((0), "illegal dimension found!");
+        break;
+
+    case C_aks:
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        for (i = 0; i < to_dim; i++) {
+            INDENT;
+            fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_SHAPE( %s, %d) == ", to_nt, i);
+            shp_read_fun (shp, NULL, i);
+            fprintf (outfile, "), (\"Assignment with incompatible types"
+                              " found!\"));\n");
+        }
+        /* here is no break missing */
+
+    case C_akd:
+        INDENT;
+        fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
+        if (shp_size < 0) {
+            shp_size_fun (shp);
+        } else {
+            fprintf (outfile, "%d", shp_size);
+        }
+        fprintf (outfile, "),"
+                          " (\"Assignment with incompatible types found!\"));\n");
+        break;
+
+    case C_aud:
+        /* noop */
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
         break;
     }
 
@@ -1893,9 +2240,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt)
              " (\"1st argument of F_reshape has (dim != 1)!\"));\n",
              shp_nt);
 
-    if (to_sdim < 0) {
-        DBUG_ASSERT ((0), "not yet implemented");
-    }
+    PrfReshape_Shape (to_nt, to_sdim, shp_nt, -1, SizeId, ReadId);
 
     DBUG_VOID_RETURN;
 }
@@ -1947,8 +2292,142 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
         }
     }
 
-    if (to_sdim < 0) {
+    PrfReshape_Shape (to_nt, to_sdim, shpa_any, shp_size, NULL, ReadConstArray);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SEL__SHAPE_id( char *to_nt, int to_sdim,
+ *                                        char *from_nt, int from_sdim,
+ *                                        int idx_size, char *idx_nt)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim, idx_size, idx_nt)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+                                int idx_size, char *idx_nt)
+{
+    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+
+    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_id");
+
+#define ND_PRF_SEL__SHAPE_id
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SEL__SHAPE_id
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
+             to_nt, to_sdim, from_nt, from_sdim);
+
+    switch (to_sc) {
+    case C_aud:
+        /*
+         * for the time being implemented for scalar results only!!!
+         */
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
+                 " (\"Result of F_sel has (dim != 0)!\"))\n",
+                 from_nt, idx_size);
+        ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
+        break;
+
+    case C_akd:
+        /* here is no break missing */
+    case C_aks:
         DBUG_ASSERT ((0), "not yet implemented");
+        break;
+
+    case C_scl:
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_nt, int to_sdim,
+ *                                         char *from_nt, int from_sdim,
+ *                                         int idx_size, char **idxa_any)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
+ *                          idx_size, ...idxa_any...)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+                                 int idx_size, char **idxa_any)
+{
+    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+
+    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
+
+#define ND_PRF_SEL__SHAPE_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SEL__SHAPE_arr
+
+    /*
+     * CAUTION:
+     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!!
+     */
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
+             to_nt, to_sdim, from_nt, from_sdim);
+
+    switch (to_sc) {
+    case C_aud:
+        /*
+         * for the time being implemented for scalar results only!!!
+         */
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
+                 " (\"Result of F_sel has (dim != 0)!\"))\n",
+                 from_nt, idx_size);
+        ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
+        break;
+
+    case C_akd:
+        /* here is no break missing */
+    case C_aks:
+        DBUG_ASSERT ((0), "not yet implemented");
+        break;
+
+    case C_scl:
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
     }
 
     DBUG_VOID_RETURN;
@@ -2014,88 +2493,6 @@ PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_id( char *to_nt, int to_sdim,
- *                                        char *from_nt, int from_sdim,
- *                                        int idx_size, char *idx_nt)
- *
- * Description:
- *   implements the compilation of the following ICM:
- *
- *   ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim, idx_size, idx_nt)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                int idx_size, char *idx_nt)
-{
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_id");
-
-#define ND_PRF_SEL__SHAPE_id
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_PRF_SEL__SHAPE_id
-
-    INDENT;
-    fprintf (outfile,
-             "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
-
-    if (to_sdim < 0) {
-        DBUG_ASSERT ((0), "not yet implemented");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_nt, int to_sdim,
- *                                         char *from_nt, int from_sdim,
- *                                         int idx_size, char **idxa_any)
- *
- * Description:
- *   implements the compilation of the following ICM:
- *
- *   ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                          idx_size, ...idxa_any...)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                 int idx_size, char **idxa_any)
-{
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
-
-#define ND_PRF_SEL__SHAPE_arr
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_PRF_SEL__SHAPE_arr
-
-    /*
-     * CAUTION:
-     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!!
-     */
-
-    INDENT;
-    fprintf (outfile,
-             "SAC_TR_PRF_PRINT("
-             " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
-
-    if (to_sdim < 0) {
-        DBUG_ASSERT ((0), "not yet implemented");
     }
 
     DBUG_VOID_RETURN;
@@ -2521,6 +2918,8 @@ void
 ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                                  char *idx_any)
 {
+    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+
     DBUG_ENTER ("ICMCompileND_PRF_IDX_SEL__SHAPE");
 
 #define ND_PRF_IDX_SEL__SHAPE
@@ -2539,8 +2938,25 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int fr
              " (\"ND_PRF_IDX_SEL__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_nt, to_sdim, from_nt, from_sdim, idx_any);
 
-    if (to_sdim < 0) {
+    switch (to_sc) {
+    case C_aud:
+        DBUG_ASSERT ((0), "idx_sel() with unknown dimension found!");
+        break;
+
+    case C_akd:
+        /* here is no break missing */
+    case C_aks:
         DBUG_ASSERT ((0), "not yet implemented");
+        break;
+
+    case C_scl:
+        INDENT;
+        fprintf (outfile, "SAC_NOOP()\n");
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
     }
 
     DBUG_VOID_RETURN;
@@ -2596,7 +3012,7 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt, int fro
     /*
      * idx_sel() works only for arrays with known dimension!!!
      */
-    DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+    DBUG_ASSERT ((to_dim >= 0), "idx_sel() with unknown dimension found!");
 
     if (to_dim == 0) {
         /*
