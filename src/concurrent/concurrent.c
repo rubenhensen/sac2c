@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/03/26 14:36:23  khf
+ * OPT_MTO deaktivated
+ *
  * Revision 3.7  2004/03/02 16:51:22  mwe
  * OPT_SBE deactivated
  *
@@ -239,7 +242,12 @@ CONCfundef (node *arg_node, node *arg_info)
              * Executed only if optimisation MTO is set.
              */
             act_tab = spmdopt_tab;
-            if (optimize & OPT_MTO) {
+            /* as long as the OPT_MTO bit is overloaded with OPT_WLPG (see globals.h for
+             * details) the following conditional has always to be FALSE. if the problem
+             * with globals.h is fixed and there is no overlaoading anymore only the ' &
+             * FALSE' inside the condition has to be removed
+             */
+            if (optimize & OPT_MTO & FALSE) {
                 DBUG_PRINT ("CONC", ("--- begin a SPMDO traversal ---"));
                 DBUG_PRINT ("SPMDO", ("--- begin a SPMDO traversal ---"));
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
