@@ -244,6 +244,6 @@ echo
 echo 'When encountering any problems, please have a look into the FAQs at'
 echo '          http://www.informatik.uni-kiel.de/~sacbase/'
 echo
-echo 'If you don't find your question in the FAQs, please send email to'
+echo 'If you don\'t find your question in the FAQs, please send email to'
 echo '          sacbase@informatik.uni-kiel.de'
 echo  
