@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.216  2004/10/20 08:10:29  khf
+ * added rdepend_tab, DDEPENDprf, DDEPENDcode
+ *
  * Revision 3.215  2004/10/17 14:52:06  sah
  * added export traversal
  *
@@ -461,15 +464,15 @@
  *   ssalur_tab      ssawlt_tab      ssawli_tab      ssawlf_tab
  *
  *   ssaili_tab      comp_tab        precomp2_tab    insvd_tab
- *   crtwrp_tab      wls_tab         precomp4_tab    al_tab4
+ *   crtwrp_tab      wls_tab         precomp4_tab    al_tab
  *   hd_tab          nt2ot_tab       cwc_tab         hm_tab
- *   dl_tab          unused_tab25    esd_tab11       uesd_tab12
+ *   dl_tab          unused_tab25    esd_tab         uesd_tab
  *   sp_tab          ts_tab          cvp_tab         wlfs_tab
  *
  *   asmra_tab       tem_tab         pem_tab         emalloc_tab
  *   ddepend_tab     tdepend_tab     wlsc_tab        wlsb_tab
  *   wlsw_tab        emrco_tab       emfrc_tab       emaa_tab
- *   exp_tab         unused_tab14    unused_tab15    unused_tab16
+ *   exp_tab         rdepend_tab     unused_tab15    unused_tab16
  *   unused_tab17    unused_tab18    unused_tab19    unused_tab20
  *
  *   number_of_sons
@@ -952,8 +955,8 @@
 #ifndef NIFexp
 #define NIFexp(it_exp)
 #endif
-#ifndef NIFunused_14
-#define NIFunused_14(it_unused_14)
+#ifndef NIFrdepend
+#define NIFrdepend(it_rdepend)
 #endif
 #ifndef NIFunused_15
 #define NIFunused_15(it_unused_15)
@@ -1016,8 +1019,8 @@
   it_cvp, it_wlfs,                                                                                     \
                                                                                                        \
   it_asmra, it_tem, it_pem, it_emalloc, it_ddepend, it_tdepend, it_wlsc, it_wlsb,                      \
-  it_wlsw, it_emrco, it_emfrc, it_emaa, it_exp, it_unused_14, it_unused_15,                            \
-  it_unused_16, it_unused_17, it_unused_18, it_unused_19, it_unused_20,                                \
+  it_wlsw, it_emrco, it_emfrc, it_emaa, it_exp, it_rdepend, it_unused_15, it_unused_16,                \
+  it_unused_17, it_unused_18, it_unused_19, it_unused_20,                                              \
                                                                                                        \
   nnode)                                                                                               \
                                                                                                        \
@@ -1097,8 +1100,8 @@
                                                                         it_emrco)                      \
                                                                         NIFemfrc (it_emfrc) NIFemaa (  \
                                                                           it_emaa) NIFexp (it_exp)     \
-                                                                          NIFunused_14 (               \
-                                                                            it_unused_14)              \
+                                                                          NIFrdepend (                 \
+                                                                            it_rdepend)                \
                                                                             NIFunused_15 (             \
                                                                               it_unused_15)            \
                                                                               NIFunused_16 (           \
@@ -1878,7 +1881,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        UESDassign, SPassign, TravSons, CVPassign, WLFSassign,
 
        TravSons, TEMassign, PEMassign, EMALassign, DDEPENDassign, TDEPENDassign, TravSons,
-       TravSons, TravSons, EMRCOassign, EMFRCassign, EMAAassign, TravSons, TravSons,
+       TravSons, TravSons, EMRCOassign, EMFRCassign, EMAAassign, TravSons, RDEPENDassign,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, SBTAnnotate,
@@ -2073,8 +2076,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        HDprf, TravSons, TravSons, TravSons, DLPrfOrAp, TravSons, ESDprf, UESDprf, SPprf,
        TravSons, CVPprf, TravSons,
 
-       TravSons, TEMprf, TravNone, EMALprf, TravSons, TravSons, TravSons, TravSons,
-       TravSons, EMRCOprf, EMFRCprf, EMAAprf, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TEMprf, TravNone, EMALprf, DDEPENDprf, TravSons, TravSons, TravSons,
+       TravSons, EMRCOprf, EMFRCprf, EMAAprf, TravSons, RDEPENDprf, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, SBTAp, TravSons, TravSons,
@@ -2554,7 +2557,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        SPcode, TravSons, CVPNcode, TravSons,
 
-       TravSons, TravSons, TravSons, EMALcode, TravSons, TravSons, WLSCcode, WLSBcode,
+       TravSons, TravSons, TravSons, EMALcode, DDEPENDcode, TravSons, WLSCcode, WLSBcode,
        WLSWcode, TravSons, TravSons, EMAAcode, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -3546,7 +3549,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 #undef NIFemaa
 
 #undef NIFexp
-#undef NIFunused_14
+#undef NIFrdepend
 #undef NIFunused_15
 #undef NIFunused_16
 
