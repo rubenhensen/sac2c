@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/10/08 10:35:57  dkr
+ * some new traversal functions added
+ *
  * Revision 1.3  2002/08/30 16:33:48  dkr
  * NT2OTarray added
  *
@@ -19,9 +22,14 @@
 
 extern node *NT2OTTransform (node *arg_node);
 
+extern node *NT2OTmodul (node *arg_node, node *arg_info);
 extern node *NT2OTfundef (node *arg_node, node *arg_info);
 extern node *NT2OTarg (node *arg_node, node *arg_info);
+extern node *NT2OTblock (node *arg_node, node *arg_info);
 extern node *NT2OTvardec (node *arg_node, node *arg_info);
 extern node *NT2OTarray (node *arg_node, node *arg_info);
+extern node *NT2OTlet (node *arg_node, node *arg_info);
+extern node *NT2OTreturn (node *arg_node, node *arg_info);
+extern node *NT2OTwithop (node *arg_node, node *arg_info);
 
 #endif /* _new2old_h_ */
