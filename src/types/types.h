@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/03/10 09:41:09  cg
+ * Added enumeration type for compiler subphases.
+ *
  * Revision 1.20  2005/01/29 21:40:38  mwe
  * definition of sigspec_mode_t
  *
@@ -234,9 +237,6 @@ typedef int bool;
 #define FALSE 0
 #define TRUE 1
 
-/* value for FUNDEF_USED, if reference counting is inactive */
-#define USED_INACTIVE -99
-
 /*
  * The type faeture_t is used as a bit mask for tile size inference.
  * It stores information about features found within an operator of a
@@ -293,10 +293,18 @@ typedef enum {
 typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
 
 typedef enum {
-#define PH_SELelement(it_element) it_element
+#define PHASEelement(it_element) PH_##it_element,
 #include "phase_info.mac"
-#undef PH_SELelement
+#undef PHASEelement
+    PH_dummy
 } compiler_phase_t;
+
+typedef enum {
+#define SUBPHASEelement(it_element) SUBPH_##it_element,
+#include "phase_info.mac"
+#undef SUBPHASEelement
+    SUBPH_dummy
+} compiler_subphase_t;
 
 /* use mdb_statustype to get corresponding char* to print etc. */
 typedef enum {
