@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/06 15:58:41  dkr
+ * fixed a bug with new variable names
+ *
  * Revision 1.7  1998/06/06 13:55:59  dkr
  * fixed a bug with new variable names in ND_KS_VECT2OFFSET
  *
@@ -45,7 +48,7 @@
 
 #define RetWithArray(res, a)                                                             \
     INDENT;                                                                              \
-    fprintf (outfile, "{ int __i;\n\n");                                                 \
+    fprintf (outfile, "{ int SAC_i;\n\n");                                               \
     indent++;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", a);            \
