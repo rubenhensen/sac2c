@@ -5,7 +5,6 @@ DeadFunctionRemoval.c
 DeadFunctionRemoval.h
 Inline.c
 Inline.h
-LoopInvariantRemoval.c
 LoopInvariantRemoval.h
 Makefile
 SSAConstantFolding.c
