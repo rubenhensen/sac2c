@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/11/22 14:09:15  sah
+  added flag descriptions
+
   Revision 1.4  2004/11/22 13:57:56  sah
   better looking now
 
@@ -324,6 +327,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
               <tr>
                 <td class="subheading">Name</td>
                 <td class="subheading">Default</td>
+                <td class="subheading">Comment</td>
               </tr>
               <xsl:apply-templates select="flags/flag" mode="table" />
             </table>
@@ -361,8 +365,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:value-of select="@default" />
       </td>
       <td>
-        <xsl:apply-templates select="description"
-        mode="table" />
+        <xsl:value-of select="description" />
       </td>
     </xsl:element>
   </xsl:template>
@@ -424,8 +427,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:value-of select="@default" />
       </td>
       <td>
-        <xsl:apply-templates select="description"
-        mode="table" />
+        <xsl:value-of select="description" />
       </td>
     </xsl:element>
   </xsl:template>
@@ -480,6 +482,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           <xsl:value-of select="'FALSE'" />
         </xsl:if>
         <xsl:value-of select="@default" />
+      </td>
+      <td>
+        <xsl:value-of select="description" />
       </td>
     </tr>
   </xsl:template>
