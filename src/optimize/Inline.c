@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1996/01/17 14:40:57  asi
+ * Revision 1.13  1997/04/25 12:26:28  sbs
+ * changed MAlloc to Malloc
+ *
+ * Revision 1.12  1996/01/17  14:40:57  asi
  * added globals.h
  *
  * Revision 1.11  1995/12/21  15:26:46  asi
@@ -368,7 +371,7 @@ INLassign (node *arg_node, node *arg_info)
  *  global vars   : inline_nr
  *  internal funs : ---
  *  external funs : sizeof, strlen, sprintf
- *                  MAlloc                  (optimize.h)
+ *                  Malloc                  (optimize.h)
  *  macros        : INLINE_PREFIX, INLINE_PREFIX_LENGTH
  *
  *  remarks       : ---
@@ -381,7 +384,7 @@ RenameInlinedVar (char *old_name)
 
     DBUG_ENTER ("RenameInlinedVar");
     new_name
-      = (char *)MAlloc ((sizeof (char)) * (strlen (old_name) + INLINE_PREFIX_LENGTH + 5));
+      = (char *)Malloc ((sizeof (char)) * (strlen (old_name) + INLINE_PREFIX_LENGTH + 5));
     sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
     DBUG_RETURN (new_name);
 }
