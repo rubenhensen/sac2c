@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/01/21 14:27:29  jhs
+ * Added muth_tab ...
+ *
  * Revision 2.13  2000/01/21 12:42:14  dkr
  * new traverse table for lac2fun added
  *
@@ -153,6 +156,8 @@
 #include "tile_size_inference.h"
 #include "globals.h" /* needed for linenum only!!! */
 #include "new_typecheck.h"
+#include "multithread.h"
+#include "lac2fun.h"
 
 #include "traverse.h"
 
@@ -635,10 +640,18 @@ funptr ntc_tab[] = {
 };
 
 /*
- *  (60) ntc_tab
+ *  (60) lac2fun_tab
  */
-#define NIFntc(it_ntc) it_ntc
+#define NIFlac2fun(it_lac2fun) it_lac2fun
 funptr lac2fun_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  (61) muth_tab
+ */
+#define NIFmuth(it_muth) it_muth
+funptr muth_tab[] = {
 #include "node_info.mac"
 };
 

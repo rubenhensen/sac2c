@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/01/21 14:27:29  jhs
+ * Added muth_tab ...
+ *
  * Revision 2.10  2000/01/21 12:42:32  dkr
  * new traverse table for lac2fun added
  *
@@ -268,6 +271,7 @@ extern funptr spmdpm_tab[];
 extern funptr spmdco_tab[];
 extern funptr ntc_tab[];
 extern funptr lac2fun_tab[];
+extern funptr muth_tab[];
 
 extern int nnode[];
 
