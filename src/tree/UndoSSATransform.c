@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2002/02/12 15:44:45  dkr
+ * no changes done
+ *
  * Revision 1.16  2001/06/01 16:09:06  nmw
  * removal of assignments like a=a after renaming added
  *
@@ -62,7 +65,7 @@
  * 1. This module renames all artificial identifier to their original
  *    baseid to avoid problems with multiple global object names in the
  *    compiler backend.
- *    All idetifiers marked with AVIS_SSAUNDOFLAG are re-renamed. This
+ *    All identifiers marked with AVIS_SSAUNDOFLAG are re-renamed. This
  *    flag has been set by SSATransform.
  *
  * 2. All result-variables of a multigenerator fold-withloop are made identical
@@ -270,7 +273,6 @@ USSAarg (node *arg_node, node *arg_info)
  *    entry for each vardec (AVIS_SUBSTUSSA overrides AVIS_SUBST entry).
  *
  ******************************************************************************/
-
 node *
 USSAvardec (node *arg_node, node *arg_info)
 {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2002/02/12 15:44:20  dkr
+ * no changes done
+ *
  * Revision 1.21  2001/05/17 11:38:56  dkr
  * MALLOC FREE aliminated
  *
@@ -1033,6 +1036,7 @@ SSAcond (node *arg_node, node *arg_info)
                              FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
 
     INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_NOCOND;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1150,6 +1154,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
     if (IDS_NEXT (arg_ids) != NULL) {
         IDS_NEXT (arg_ids) = TravLeftIDS (IDS_NEXT (arg_ids), arg_info);
     }
+
     DBUG_RETURN (arg_ids);
 }
 
