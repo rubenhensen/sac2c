@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/08/27 11:57:37  jhs
+ * Added copying of varnos (fundef and vardecs) while lifting the
+ * spmd-blocks to spmd-functions.
+ *
  * Revision 2.4  1999/08/09 11:32:20  jhs
  * Cleaned up info-macros for concurrent-phase.
  *
@@ -236,7 +240,9 @@ SPMDLspmd (node *arg_node, node *arg_info)
             new_farg = MakeArg (StringCopy (ARG_NAME (vardec)),
                                 DuplicateTypes (VARDEC_TYPE (vardec), 1), ST_regular,
                                 ST_regular, fargs);
+            /* refcnt and varno also need corrections */
             ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
+            ARG_VARNO (new_farg) = VARDEC_VARNO (vardec);
 
             DBUG_PRINT ("SPMDL", ("inserted arg %s", ARG_NAME (vardec)));
         }
@@ -297,6 +303,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
 
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
     FUNDEF_LIFTEDFROM (new_fundef) = fundef;
+    FUNDEF_VARNO (new_fundef) = FUNDEF_VARNO (fundef);
 
     SPMD_FUNDEF (arg_node) = new_fundef;
 
