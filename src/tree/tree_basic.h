@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.64  2000/06/30 14:10:29  mab
+ * removed INFO_APT_WITH_PARTS, INFO_APT_WITH_CODE, INFO_APT_WITH_PART
+ * added INFO_APT_WITH
+ *
  * Revision 1.63  2000/06/30 11:00:54  mab
  * removed INFO_APT_CODE_ID
  * added INFO_APT_WITH_CODE and INFO_APT_WITH_PART
@@ -2578,10 +2582,7 @@ extern node *MakeInfo ();
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
 #define INFO_APT_WITHOP_TYPE(n) (n->int_data)
-#define INFO_APT_WITH_PARTS(n) (n->counter)
-#define INFO_APT_WITH_CODE(n) (n->node[0])
-#define INFO_APT_WITH_PART(n) (n->node[1])
-
+#define INFO_APT_WITH(n) (n->node[0])
 /*--------------------------------------------------------------------------*/
 
 /***
