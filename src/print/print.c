@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.156  2004/07/21 16:56:44  ktr
+ * NWITHOP_MEM is now printed, too.
+ *
  * Revision 3.155  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -3907,11 +3910,19 @@ PrintNwithop (node *arg_node, info *arg_info)
             fprintf (outfile, " , ");
             Trav (NWITHOP_DEFAULT (arg_node), arg_info);
         }
+        if (NWITHOP_MEM (arg_node) != NULL) {
+            fprintf (outfile, " , ");
+            Trav (NWITHOP_MEM (arg_node), arg_info);
+        }
         break;
 
     case WO_modarray:
         fprintf (outfile, "modarray( ");
         Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        if (NWITHOP_MEM (arg_node) != NULL) {
+            fprintf (outfile, " , ");
+            Trav (NWITHOP_MEM (arg_node), arg_info);
+        }
         break;
 
     case WO_foldfun:
