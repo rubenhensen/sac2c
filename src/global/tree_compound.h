@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1996/02/21 10:56:08  cg
+ * Revision 1.38  1996/02/21 15:03:13  cg
+ * added new function CopyNodelist
+ *
+ * Revision 1.37  1996/02/21  10:56:08  cg
  * macro CMP_FUN_ID drastically simplified
  *
  * Revision 1.36  1996/02/11  20:19:01  sbs
@@ -496,6 +499,22 @@ extern nodelist *TidyUpNodelist (nodelist *list);
  */
 
 extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
+
+/*
+ *
+ *  functionname  : CopyNodelist
+ *  arguments     : 1) node list
+ *  description   : copies an entire node list
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeNodelist, CopyNodelist
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
+extern nodelist *CopyNodelist (nodelist *nl);
 
 /*--------------------------------------------------------------------------*/
 

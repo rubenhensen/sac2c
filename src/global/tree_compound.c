@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1996/02/21 10:56:08  cg
+ * Revision 1.26  1996/02/21 15:03:13  cg
+ * added new function CopyNodelist
+ *
+ * Revision 1.25  1996/02/21  10:56:08  cg
  * function CmpDomain now handles negative dimensions of arrays
  *
  * Revision 1.24  1996/01/07  16:55:09  cg
@@ -683,4 +686,26 @@ CountFunctionParams (node *fundef)
     }
 
     DBUG_RETURN (count);
+}
+
+/***
+ ***  CopyNodelist
+ ***/
+
+extern nodelist *
+CopyNodelist (nodelist *nl)
+{
+    nodelist *copy;
+
+    DBUG_ENTER ("CopyNodelist");
+
+    if (nl == NULL) {
+        copy = NULL;
+    } else {
+        copy = MakeNodelist (NODELIST_NODE (nl), NODELIST_STATUS (nl),
+                             CopyNodelist (NODELIST_NEXT (nl)));
+        NODELIST_ATTRIB (copy) = NODELIST_ATTRIB (nl);
+    }
+
+    DBUG_RETURN (copy);
 }
