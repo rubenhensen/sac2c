@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/05/10 11:04:21  bs
+ * NWITH_TSI renamed to NWITH_WLAA.
+ * all access macros INFO_TSI_xxx renamed to INFO_WLAA_xxx.
+ *
  * Revision 2.14  1999/05/06 15:39:57  sbs
  * access-macro NODE_FILE added!
  *
@@ -2290,7 +2294,21 @@ extern node *MakeInfo ();
 #define INFO_PRINT_NWITH2(n) (n->node[4])
 #define INFO_PRINT_ACCESS(n) (n->node[5])
 
+/* WL access analyze */
+#define INFO_WLAA_LASTLETIDS(n) (n->info.ids)
+#define INFO_WLAA_ACCESS(n) ((access_t *)(n->info2))
+#define INFO_WLAA_FEATURE(n) ((feature_t) (n->lineno))
+#define INFO_WLAA_WOTYPE(n) ((WithOpType) (n->varno))
+#define INFO_WLAA_BELOWAP(n) (n->flag)
+#define INFO_WLAA_WLLEVEL(n) (n->counter)
+#define INFO_WLAA_INDEXVAR(n) (n->node[0])
+#define INFO_WLAA_ACCESSVEC(n) ((shpseg *)(n->node[1]))
+#define INFO_WLAA_TMPACCESS(n) ((access_t *)(n->node[2]))
+#define INFO_WLAA_WLARRAY(n) (n->node[3])
+
 /* Tile Size Inference */
+#if 0
+/*  no longer used */
 #define INFO_TSI_LASTLETIDS(n) (n->info.ids)
 #define INFO_TSI_ACCESS(n) ((access_t *)(n->info2))
 #define INFO_TSI_FEATURE(n) ((feature_t) (n->lineno))
@@ -2301,7 +2319,7 @@ extern node *MakeInfo ();
 #define INFO_TSI_ACCESSVEC(n) ((shpseg *)(n->node[1]))
 #define INFO_TSI_TMPACCESS(n) ((access_t *)(n->node[2]))
 #define INFO_TSI_WLARRAY(n) (n->node[3])
-
+#endif
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -2441,7 +2459,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_WITHOP(n) (n->node[2])
 #define NWITH_PRAGMA(n) (n->node[3])
 #define NWITH_DEC_RC_IDS(n) ((ids *)(n->node[4]))
-#define NWITH_TSI(n) (n->node[5])
+#define NWITH_WLAA(n) (n->node[5])
 
 #define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
 #define NWITH_REFERENCED(n) (((wl_info *)(n->info2))->referenced)
