@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.68  2000/07/06 15:32:04  mab
+ * added INFO_APT_ASSIGNMENTS
+ *
  * Revision 1.67  2000/07/06 14:43:21  mab
  * added INFO_APT_FUNDEF
  *
@@ -2594,6 +2597,7 @@ extern node *MakeInfo ();
 #define INFO_APT_WITHOP_TYPE(n) (n->int_data)
 #define INFO_APT_WITH(n) (n->node[0])
 #define INFO_APT_FUNDEF(n) (m->node[1])
+#define INFO_APT_ASSIGNMENTS(n) (m->node[2])
 
 /*--------------------------------------------------------------------------*/
 
