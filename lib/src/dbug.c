@@ -1,5 +1,3 @@
-#define C370 /* some minor modifications for C370 W.Strobl 8/87 */
-#undef C370  /* h */
 /************************************************************************
  *                                                                     *
  *                     Copyright (c) 1984, Fred Fish                   *
@@ -49,9 +47,6 @@
 #ifndef DBUG_OFF
 
 #include <stdio.h>
-#ifdef C370
-#include <stdefs.h>
-#endif
 
 /*
  *     Manifest constants that should not require any changes.
@@ -153,12 +148,12 @@ IMPORT int access ();  /* Test file for access */
 LOCAL VOID perror ();        /* Fake system/library error print routine */
 #endif
 #endif
-#ifdef C370 /* C370 doesn't like redefiniton from static to "global" */
+
 LOCAL Indent ();
 LOCAL FreeList ();
 LOCAL DoPrefix ();
 LOCAL DelayArg ();
-#endif
+
 IMPORT int fprintf ();  /* Formatted print on file */
 IMPORT char *strcpy (); /* Copy strings around */
 IMPORT int strlen ();   /* Find length of string */
