@@ -1,4 +1,6 @@
 Makefile
+analysis.c
+analysis.h
 filemgr.c
 filemgr.h
 implicittypes.c
