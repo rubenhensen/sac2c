@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/09/04 13:55:53  sbs
+ * single LUT in Overload replaced by n LUTS....
+ *
  * Revision 3.21  2002/09/04 12:59:46  sbs
  * some further StrBufprintf changed into StrBufprint.
  *
@@ -1313,14 +1316,17 @@ AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
  ******************************************************************************/
 
 #ifndef DBUG_OFF
-static tvar *overload_fun1_alpha;
+static tvar **overload_fun1_alphas;
 #endif
-static LUT_t overload_lut;
+static int overload_num_luts = 0;
+static int overload_pos = 0;
+static LUT_t *overload_luts;
 
 ntype *
 TYMakeOverloadedFunType (ntype *fun1, ntype *fun2)
 {
     ntype *res;
+    int i;
 #ifndef DBUG_OFF
     char *tmp, *tmp2;
 #endif
@@ -1334,12 +1340,25 @@ TYMakeOverloadedFunType (ntype *fun1, ntype *fun2)
     DBUG_EXECUTE ("NTY", tmp = Free (tmp); tmp2 = Free (tmp2););
 
     /*
-     * instantiate rel. free vars 8-))
+     * iff this is the very first call, instantiate rel. free vars 8-))
+     *
+     * we need max num rets many LUTs here.
+     * Since we do not statically now, we start with 5 LUTs. If it turns out during
+     * overloading that these are not enough, we simply allocate further ones...
      */
+    if (overload_num_luts == 0) {
+        overload_num_luts = 5;
 #ifndef DBUG_OFF
-    overload_fun1_alpha = NULL;
+        overload_fun1_alphas = (tvar **)Malloc (overload_num_luts * sizeof (tvar *));
+        for (i = 0; i < overload_num_luts; i++) {
+            overload_fun1_alphas[i] = NULL;
+        }
 #endif
-    overload_lut = GenerateLUT ();
+        overload_luts = (LUT_t *)Malloc (overload_num_luts * sizeof (LUT_t));
+        for (i = 0; i < overload_num_luts; i++) {
+            overload_luts[i] = GenerateLUT ();
+        }
+    }
 
     if ((fun1 != NULL) && (NTYPE_CON (fun1) != TC_fun) && (fun2 != NULL)
         && (NTYPE_CON (fun2) != TC_fun)) {
@@ -1348,7 +1367,15 @@ TYMakeOverloadedFunType (ntype *fun1, ntype *fun2)
 
     res = MakeOverloadedFunType (fun1, fun2);
 
-    overload_lut = RemoveLUT (overload_lut);
+    /*
+     * reset the rel free vars for next usage!
+     */
+    for (i = 0; i < overload_num_luts; i++) {
+#ifndef DBUG_OFF
+        overload_fun1_alphas[i] = NULL;
+#endif
+        overload_luts[i] = RemoveContentLUT (overload_luts[i]);
+    }
 
     DBUG_EXECUTE ("NTY", tmp = TYType2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("overloaded into : %s", tmp));
@@ -1363,6 +1390,10 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     ntype *res;
     tvar *old_alpha;
     bool ok;
+    int i;
+    int new_num_luts;
+    tvar **new_alphas;
+    LUT_t *new_luts;
 
     DBUG_ENTER ("MakeOverloadedFunType");
 
@@ -1412,6 +1443,31 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             DBUG_ASSERT ((NTYPE_ARITY (fun1) == NTYPE_ARITY (fun2)),
                          "trying to overload function types with different number"
                          " of return types");
+            if (NTYPE_ARITY (fun1) > overload_num_luts) {
+                new_num_luts = overload_num_luts + NTYPE_ARITY (fun1);
+#ifndef DBUG_OFF
+                new_alphas = (tvar **)Malloc (new_num_luts * sizeof (tvar *));
+                for (i = 0; i < overload_num_luts; i++) {
+                    new_alphas[i] = overload_fun1_alphas[i];
+                }
+                for (; i < new_num_luts; i++) {
+                    new_alphas[i] = NULL;
+                }
+                overload_fun1_alphas = Free (overload_fun1_alphas);
+                overload_fun1_alphas = new_alphas;
+#endif
+                new_luts = (LUT_t *)Malloc (new_num_luts * sizeof (LUT_t));
+                for (i = 0; i < overload_num_luts; i++) {
+                    new_luts[i] = overload_luts[i];
+                }
+                for (; i < new_num_luts; i++) {
+                    new_luts[i] = GenerateLUT ();
+                }
+                overload_luts = Free (overload_luts);
+                overload_luts = new_luts;
+                overload_num_luts = new_num_luts;
+            }
+            overload_pos = 0;
             fun2 = MergeSons (fun1, fun2, 0, NTYPE_ARITY (fun1));
             break;
         case TC_alpha:
@@ -1419,10 +1475,10 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             /*
              * check whether fun1 is not yet overloaded!
              */
-            if (overload_fun1_alpha == NULL) {
-                overload_fun1_alpha = ALPHA_SSI (fun1);
+            if (overload_fun1_alphas[overload_pos] == NULL) {
+                overload_fun1_alphas[overload_pos] = ALPHA_SSI (fun1);
             } else {
-                DBUG_ASSERT ((overload_fun1_alpha == ALPHA_SSI (fun1)),
+                DBUG_ASSERT ((overload_fun1_alphas[overload_pos] == ALPHA_SSI (fun1)),
                              "TYMakeOverloadedFunType called with overloaded fun1!");
             }
 #endif
@@ -1432,7 +1488,8 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                 res = TYCopyType (fun1);
                 fun2 = TYFreeTypeConstructor (fun2);
             } else {
-                old_alpha = SearchInLUT_PP (overload_lut, ALPHA_SSI (fun2));
+                old_alpha
+                  = SearchInLUT_PP (overload_luts[overload_pos], ALPHA_SSI (fun2));
                 if (old_alpha != ALPHA_SSI (fun2)) { /* found! */
                     res = MakeNtype (TC_alpha, 0);
                     ALPHA_SSI (res) = old_alpha;
@@ -1443,10 +1500,12 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                     DBUG_ASSERT (ok, "SSINewRel did not work in TYMakeOverloadFunType");
                     ok = SSINewRel (ALPHA_SSI (fun2), ALPHA_SSI (res));
                     DBUG_ASSERT (ok, "SSINewRel did not work in TYMakeOverloadFunType");
-                    overload_lut
-                      = InsertIntoLUT_P (overload_lut, ALPHA_SSI (fun2), ALPHA_SSI (res));
+                    overload_luts[overload_pos]
+                      = InsertIntoLUT_P (overload_luts[overload_pos], ALPHA_SSI (fun2),
+                                         ALPHA_SSI (res));
                 }
             }
+            overload_pos++;
             break;
         default:
             DBUG_ASSERT ((0), "TYMakeOverloadFunType called with illegal funtype!");
