@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.163  1998/05/12 22:45:28  dkr
+ * added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
+ * removed SYNC_DEC_RC_IDS, SYNC_INOUT_IDS
+ *
  * Revision 1.162  1998/05/12 15:50:22  dkr
  * removed ???_VARINFO macros
  *
@@ -2331,7 +2335,6 @@ extern node *MakeInfo ();
 #define INFO_COMP_FUNDEF(n) (n->node[2])
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
-#define INFO_COMP_MT(n) (n->flag)
 
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
@@ -2436,9 +2439,6 @@ extern node *MakeSpmd (node *region);
  ***
  ***  temporary attributes:
  ***
- ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
- ***    ids*       DEC_RC_IDS            (spmdinit -> compile -> )
- ***
  ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
  ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
  ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
@@ -2455,9 +2455,6 @@ extern node *MakeSync (node *region, int first);
 
 #define SYNC_REGION(n) (n->node[0])
 #define SYNC_FIRST(n) (n->flag)
-
-#define SYNC_INOUT_IDS(n) ((ids *)(n->node[1]))
-#define SYNC_DEC_RC_IDS(n) ((ids *)(n->node[2]))
 
 #define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
 #define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
@@ -2708,7 +2705,12 @@ extern node *MakeNCode (node *block, node *expr);
  ***    node*      CODE          (N_Ncode)
  ***    node*      WITHOP        (N_Nwithop)
  ***
+ ***    int        DIMS
+ ***
  ***  temporary attributes:
+ ***
+ ***    int*       IDX_MIN            (wltransform -> compile )
+ ***    int*       IDX_MAX            (wltransform -> compile )
  ***
  ***    ids*       DEC_RC_IDS         (wltransform -> compile )
  ***
@@ -2719,12 +2721,16 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***/
 
-extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
+extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
 
 #define NWITH2_WITHID(n) (n->node[0])
 #define NWITH2_SEGS(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
+#define NWITH2_DIMS(n) (n->flag)
+
+#define NWITH2_IDX_MIN(n) ((int *)(n->mask[2]))
+#define NWITH2_IDX_MAX(n) ((int *)(n->mask[3]))
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[4]))
 
@@ -2751,9 +2757,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***    int      BLOCKS    (number of blocking levels
  ***                         --- without unrolling-blocking)
- ***    long*    SV        (step vector)           (Precompile ! )
- ***    long*    BV        (blocking vector)       (Precompile ! )
- ***    long*    UBV       (unrolling-b. vector)   (Precompile ! )
+ ***    long*    SV        (step vector)           (Precompile -> )
+ ***    long*    BV        (blocking vector)       (Precompile -> )
+ ***    long*    UBV       (unrolling-b. vector)   (Precompile -> )
  ***
  ***/
 
