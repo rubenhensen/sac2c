@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/02 10:24:54  dkr
+ * superfluous import of access_macros.h removed
+ *
  * Revision 3.2  2000/12/01 14:36:50  sbs
  * warnings eliminated.
  *
@@ -313,7 +316,6 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "internal_lib.h"
-#include "access_macros.h"
 #include "typecheck.h" /* to use some ugly old macros ... */
 
 #include "optimize.h"
