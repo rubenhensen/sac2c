@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.163  2003/04/20 20:25:37  dkr
+ * INFO_PREC... moved to precompile.c
+ *
  * Revision 3.162  2003/01/28 18:16:22  ktr
  * CompareTreeLUT added to compare_tree
  *
@@ -3001,16 +3004,6 @@ extern node *MakeInfo ();
 /* multithread - adjust_calls */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE! */
 #define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
-
-/* precompile */
-#define INFO_PREC_FUNDEF(n) (n->node[0])
-#define INFO_PREC1_OBJINITFUNDEF(n) (n->node[1])
-#define INFO_PREC1_MODUL(n) (n->node[2])
-#define INFO_PREC2_PRE_ASSIGNS(n) (n->node[1])
-#define INFO_PREC2_POST_ASSIGNS(n) (n->node[2])
-#define INFO_PREC3_LET(n) (n->node[1])
-#define INFO_PREC3_LASTASSIGN(n) (n->node[2])
-#define INFO_PREC3_CEXPR(n) (n->node[3])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
