@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2005/03/10 09:41:09  cg
+# Added compilation of phase.c and setup.c
+#
 # Revision 3.24  2005/01/07 16:49:00  cg
 # Added compilation of ctinfo.c
 #
@@ -80,7 +83,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 all: main.o Error.o usage.o internal_lib.o globals.o resource.o \
      build.o interrupt.o options.o NameTuplesUtils.o filemgr.o \
-     ctinfo.o
+     ctinfo.o phase.o setup.o
 
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
