@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/03/05 12:08:00  sbs
+ * avoided the creation of AKD of dimensionality 0.
+ *
  * Revision 1.6  2003/12/02 09:53:22  sbs
  * genarray Wls with non-negative entries will be rejected by the TC now!
  *
@@ -46,8 +49,12 @@ Idx2Outer (ntype *idx)
         res = TYMakeAKS (TYCopyType (scalar), COConstant2Shape (TYGetValue (idx)));
         break;
     case TC_aks:
-        res = TYMakeAKD (TYCopyType (scalar), SHGetExtent (TYGetShape (idx), 0),
-                         SHMakeShape (0));
+        if (SHGetExtent (TYGetShape (idx), 0) == 0) {
+            res = TYMakeAKS (TYCopyType (scalar), SHMakeShape (0));
+        } else {
+            res = TYMakeAKD (TYCopyType (scalar), SHGetExtent (TYGetShape (idx), 0),
+                             SHMakeShape (0));
+        }
         break;
     case TC_akd:
     case TC_audgz:
