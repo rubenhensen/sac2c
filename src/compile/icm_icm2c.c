@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/01 16:42:14  dkr
+ * GetNextIcm(): some spaces added in output
+ *
  * Revision 3.3  2002/06/02 21:38:14  dkr
  * support for TAGGED_ARRAYS added
  *
@@ -70,17 +73,17 @@ GetNextIcm (char **ret, node *exprs)
 
     GetNextVar (&v, &len, cnt, ICM_ARGS (expr));
     len += strlen (ICM_NAME (expr));
-    len += 4 + cnt;
+    len += 5 + 2 * cnt;
 
     (*ret) = (char *)Malloc (len * sizeof (char));
     (*ret)[0] = '\0';
     strcat ((*ret), ICM_NAME (expr));
-    strcat ((*ret), "(");
+    strcat ((*ret), "( ");
     if (cnt > 0) {
         strcat ((*ret), v[0]);
     }
     for (i = 1; i < cnt; i++) {
-        strcat ((*ret), ",");
+        strcat ((*ret), ", ");
         strcat ((*ret), v[i]);
         v[i] = Free (v[i]);
     }
