@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.60  1998/04/03 11:39:28  dkr
+# added dir concurrent to include path
+#
 # Revision 1.59  1998/03/24 14:41:44  dkr
 # make deps done
 #
@@ -193,7 +196,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects -I../Old2NewWith
+     -I../psi-opt -I../objects -I../concurrent -I../Old2NewWith
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
      internal_lib.o tree_basic.o tree_compound.o globals.o \
