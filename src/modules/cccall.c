@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/08/01 13:28:38  nmw
+ * compiling of PHM init function for c-libraries added
+ *
  * Revision 2.14  2000/07/24 14:52:43  nmw
  * compiling of object init flag c files added
  * minor bugs in shell scripts removed
@@ -750,6 +753,14 @@ InvokeCC ()
                         config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
                         tmp_dirname);
             NOTEDOT;
+
+            /* compile internal_runtime_init file */
+            SystemCall ("%s %s %s %s -o %s/internal_runtime_init.o"
+                        " -c %s/internal_runtime_init.c",
+                        config.cc, config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
+                        tmp_dirname);
+            NOTEDOT;
+
             /* compile global object initflag files */
 
             for (i = 1; i <= object_counter; i++) {
