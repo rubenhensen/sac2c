@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/03 15:19:31  jhs
+ * Fixed Bugs in MakeMt, MakeST.
+ *
  * Revision 1.3  2000/02/02 12:29:09  jhs
  * Added INFO_MUTH_FUNDEF.
  * Added N_mt and N_st.
@@ -1542,6 +1545,7 @@ MakeMT (node *region)
 
     DBUG_ENTER ("MakeMT");
 
+    tmp = CreateCleanNode (N_mt);
     MT_REGION (tmp) = region;
 
     DBUG_RETURN (tmp);
@@ -1556,6 +1560,7 @@ MakeST (node *region)
 
     DBUG_ENTER ("MakeST");
 
+    tmp = CreateCleanNode (N_st);
     ST_REGION (tmp) = region;
 
     DBUG_RETURN (tmp);
