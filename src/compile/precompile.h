@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/04/17 15:28:57  dkr
+ * InsertWLnodes is now external
+ *
  * Revision 1.10  1998/04/17 02:14:24  dkr
  * exported GridOffset()
  *
@@ -62,5 +65,6 @@ extern node *PRECnwith (node *arg_node, node *arg_info);
 extern node *PRECncode (node *arg_node, node *arg_info);
 
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
+extern node *InsertWLnodes (node *nodes, node *insert_nodes);
 
 #endif /* _sac_precompile_h */
