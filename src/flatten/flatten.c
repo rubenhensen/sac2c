@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/06/30 11:53:54  hw
+ * Revision 1.35  1995/07/13 15:16:33  hw
+ * changed FltnCon( if neutral element is an array it will not be
+ *                  extracted anymore)
+ *
+ * Revision 1.34  1995/06/30  11:53:54  hw
  * renamed MOD to MODARRAY
  *
  * Revision 1.33  1995/06/26  14:37:51  hw
@@ -1316,7 +1320,7 @@ FltnCon (node *arg_node, node *arg_info)
          * (generate new variable if arg_node->node[0]->node[0]->nodetype
          *  is N_ap, N_prf , N_with or N_array)
          */
-        arg_info->info.cint = AP;
+        arg_info->info.cint = NORMAL;
         exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
                                              * call FltnExprs
                                              */
