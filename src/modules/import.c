@@ -1,7 +1,15 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/08/08 09:57:28  cg
+ * Revision 1.16  1995/08/15 09:29:24  cg
+ * SIB information retrieved about:
+ * -inline function bodies
+ * -implicitly used objects
+ * -implicitly used functions and types in inline functions
+ * -implicitly imported modules/classes
+ * GenLinkerList extended with respect to implicitly imported modules
+ *
+ * Revision 1.15  1995/08/08  09:57:28  cg
  * SIB information about hidden type implementations are now retrieved.
  *
  * Revision 1.14  1995/07/31  07:10:12  cg
@@ -72,14 +80,25 @@
 
 #include "scnprs.h"
 #include "traverse.h"
-#include "typecheck.h"
+
+#undef TYPES /* These macros are defined in scnprs.h as well as   */
+#undef ID    /* in access_macros.h. The latter definition is used */
+#undef DIM   /* in this file.                                     */
+
+#include "access_macros.h"
 
 #include "filemgr.h"
 #include "import.h"
 
+typedef struct CHARLIST {
+    char *name;
+    struct CHARLIST *next;
+} charlist;
+
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
+static charlist *linker_tab = NULL;
 
 /* Some macros for comparing types, names, modules, etc. */
 
@@ -89,8 +108,15 @@ static mod *mod_tab = NULL;
     ((NULL == a->id_mod)                                                                 \
        ? ((!strcmp (a->id, b->id)) && (NULL == b->id_mod))                               \
        : ((NULL == b->id_mod)                                                            \
-            ? (!strcmp (a->id, b->id))                                                   \
+            ? 0                                                                          \
             : ((!strcmp (a->id, b->id)) && (!strcmp (a->id_mod, b->id_mod)))))
+
+#define CMP_TYPE_USER(a, b)                                                              \
+    ((NULL == a->name_mod)                                                               \
+       ? ((!strcmp (a->name, b->name)) && (NULL == b->name_mod))                         \
+       : ((NULL == b->name_mod)                                                          \
+            ? 0                                                                          \
+            : ((!strcmp (a->name, b->name)) && (!strcmp (a->name_mod, b->name_mod)))))
 
 #define CMP_TYPE_HIDDEN(a, b)                                                            \
     ((NULL == a->name)                                                                   \
@@ -107,10 +133,11 @@ static mod *mod_tab = NULL;
 
 #define CMP_TYPEDEF(a, b) CMP_TYPE_ID (a->info.types, b->info.types)
 
+#define CMP_OBJDEF(a, b) CMP_TYPE_ID (a->info.types, b->info.types)
+
 #define CMP_FUNDEF(a, b)                                                                 \
-    ((CMP_FUN_ID (a->info.types, b->info.types))                                         \
-       ? (CmpFunParams (a->node[2], b->node[2]))                                         \
-       : 0)
+    ((CMP_FUN_ID (a->info.types, b->info.types)) ? (CmpDomain (a->node[2], b->node[2]))  \
+                                                 : 0)
 
 /*
  *
@@ -157,7 +184,7 @@ FindModul (char *name)
 
     DBUG_ENTER ("FindModul");
 
-    DBUG_PRINT ("MODUL", ("searching for modul/class: %s", name));
+    DBUG_PRINT ("IMPORT", ("searching for modul/class: %s", name));
     tmp = mod_tab;
     while ((tmp != NULL) && (strcmp (tmp->name, name) != 0))
         tmp = tmp->next;
@@ -304,8 +331,9 @@ GenMod (char *name)
 
     if (yyin == NULL) {
         tmp->sib = NULL;
-        DBUG_PRINT ("Modul", ("Module %s has no SIB-file", name));
+        DBUG_PRINT ("IMPORT", ("Module %s has no SIB-file", name));
     } else {
+        DBUG_PRINT ("READSIB", ("...parsing %s.sib", name));
         linenum = 1;
         start_token = PARSE_SIB;
         yyparse ();
@@ -403,7 +431,7 @@ GenSyms (mod *mod)
             ptr = explist->node[i];
 
             while (ptr != NULL) {
-                DBUG_PRINT ("MODUL",
+                DBUG_PRINT ("IMPORT",
                             ("inserting symbol %s of kind %d", ptr->info.types->id, i));
 
                 new = (syms *)malloc (sizeof (syms));
@@ -459,7 +487,7 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
 
     DBUG_ENTER ("FindSymbolInModul");
 
-    DBUG_PRINT ("MODUL",
+    DBUG_PRINT ("IMPORT",
                 ("searching for symbol %s in module/class %s...", name, modname));
 
     cnt++;
@@ -478,7 +506,7 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
                               /* insert it in result!            */
             {
 
-                DBUG_PRINT ("MODUL",
+                DBUG_PRINT ("IMPORT",
                             ("symbol %s found in module/class %s...", name, modname));
 
                 new = (mods *)malloc (sizeof (mods));
@@ -655,7 +683,7 @@ ImportAll (mod *mod, node *modul)
 
     DBUG_ENTER ("ImportAll");
 
-    DBUG_PRINT ("MODUL", ("importing all from module/class %s", mod->name));
+    DBUG_PRINT ("IMPORT", ("importing all from module/class %s", mod->name));
 
     if (mod->allflag != 1) {
         explist = mod->moddec->node[0];
@@ -698,7 +726,7 @@ ImportAll (mod *mod, node *modul)
         if (mod->moddec->node[1] != NULL)
             DoImport (modul, mod->moddec->node[1], mod->name);
     } else {
-        DBUG_PRINT ("MODUL", ("import of modul/class %s skipped", mod->name));
+        DBUG_PRINT ("IMPORT", ("import of modul/class %s skipped", mod->name));
     }
 
     DBUG_VOID_RETURN;
@@ -735,7 +763,7 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
     int next, son;
 
     DBUG_ENTER ("ImportSymbol");
-    DBUG_PRINT ("MODUL",
+    DBUG_PRINT ("IMPORT",
                 ("importing symbol %s of kind %d (0=imp/1=exp/2=fun/3=obj) from modul %s",
                  name, symbtype, mod->name));
 
@@ -917,7 +945,7 @@ IMmodul (node *arg_node, node *arg_info)
         modptr = mod_tab;
 
         while (modptr != NULL) {
-            DBUG_PRINT ("MODUL", ("analyzing module/class %s", modptr->moddec->info.id));
+            DBUG_PRINT ("IMPORT", ("analyzing module/class %s", modptr->moddec->info.id));
             if (modptr->moddec->node[1] != NULL) {
                 FindOrAppend (modptr->moddec->node[1]);
             }
@@ -933,14 +961,74 @@ IMmodul (node *arg_node, node *arg_info)
             Trav (arg_node->node[1], NULL);
         }
 
-        /*
-            Trav(arg_node->node[2], arg_node);
-        */
+        if (arg_node->node[2] != NULL) {
+            Trav (arg_node->node[2], arg_node);
+        }
 
         NOTE (("\n"));
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CmpDomain
+ *  arguments     : 1) N_arg node of one function
+ *                  2) N_arg node of another function
+ *  description   : checks whether the functions have equal domain
+ *                  returns 1 if domain is equal, 0 else
+ *  global vars   : ----
+ *  internal funs : ----
+ *  external funs : ----
+ *  macros        : DBUG..., NULL, DIM, TYPES, CMP_TYPE_ID, SIMPLETYPE
+ *
+ *  remarks       : similar to function CmpFunParams of typechecker.
+ *                  some minor changes to fix appearing segmentation
+ *                  faults.
+ *
+ */
+
+int
+CmpDomain (node *arg1, node *arg2)
+{
+    int i, is_equal;
+
+    DBUG_ENTER ("CmpDomain");
+
+    while ((NULL != arg1) && (NULL != arg2)) {
+        if (arg1->SIMPLETYPE == arg2->SIMPLETYPE) {
+            if (arg1->SIMPLETYPE == T_user) {
+                if (!CMP_TYPE_USER (arg1->TYPES, arg2->TYPES)) {
+                    break;
+                }
+            }
+            if (arg1->DIM == arg2->DIM) {
+                for (i = 0; i < arg1->DIM; i++)
+                    if (arg1->SHP[i] != arg2->SHP[i])
+                        break;
+                if (i != arg1->DIM)
+                    break;
+                else {
+                    arg1 = arg1->node[0];
+                    arg2 = arg2->node[0];
+                }
+            } else
+                break;
+        } else
+            break;
+    }
+    if ((NULL == arg1) && (NULL == arg2)) {
+        is_equal = 1;
+
+        DBUG_PRINT ("READSIB", ("Domain compare positive !"));
+    } else {
+        is_equal = 0;
+
+        DBUG_PRINT ("READSIB", ("Domain compare negative !"));
+    }
+
+    DBUG_RETURN (is_equal);
 }
 
 /*
@@ -968,7 +1056,7 @@ FindSibEntry (node *orig)
 
     DBUG_ENTER ("FindSibEntry");
 
-    mod_name = orig->info.types->id_mod;
+    mod_name = orig->ID_MOD;
     if (mod_name != NULL) {
         mod = FindModul (mod_name);
         if (mod != NULL) {
@@ -989,50 +1077,321 @@ FindSibEntry (node *orig)
         }
     }
 
+    if (sib_entry == NULL) {
+        DBUG_PRINT ("READSIB", ("NO SIB-entry found for %s:%s", orig->ID_MOD, orig->ID));
+    } else {
+        DBUG_PRINT ("READSIB", ("SIB-entry found for %s:%s", orig->ID_MOD, orig->ID));
+    }
+
     DBUG_RETURN (sib_entry);
 }
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  functionname  : AddToLinkerTab
+ *  arguments     : 1) module name to be added
+ *  description   : adds a module name to the global linker_tab. This
+ *                  module is implicitly imported and must therefore be
+ *                  included in the link list for the C compiler
+ *  global vars   : linker_tab
+ *  internal funs : ---
+ *  external funs : strcmp, malloc
  *  macros        :
  *
  *  remarks       :
  *
  */
 
+void
+AddToLinkerTab (char *module)
+{
+    charlist *tmp = linker_tab;
+
+    DBUG_ENTER ("AddToLinkerTab");
+
+    while ((tmp != NULL) && strcmp (tmp->name, module) != 0) {
+        tmp = tmp->next;
+    }
+
+    if (tmp == NULL) {
+        tmp = (charlist *)malloc (sizeof (charlist));
+        tmp->next = linker_tab;
+        tmp->name = module;
+        linker_tab = tmp;
+
+        DBUG_PRINT ("READSIB",
+                    ("Implicitly imported module %s added to linker list.", tmp->name));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  functionname  : EnsureExistObjects
+ *  arguments     : 1) objdef node from sib, contains an object that is
+ *                     implicitly used by one of the sib-functions
+ *                  2) modul node of program
+ *  description   : ensures that the object is declared in the syntax tree.
+ *                  If the object is yet unknown, a copy of the objdef node
+ *                  is inserted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeNode
+ *  macros        : CMP_OBJDEF
+ *
+ *  remarks       : The objdef node must be copied since the original one
+ *                  is reused as argument information for the respective
+ *                  function definition.
+ *
+ */
+
+void
+EnsureExistObjects (node *object, node *modul)
+{
+    node *find_obj, *tmp;
+
+    DBUG_ENTER ("EnsureExistObjects");
+
+    while (object != NULL) {
+        find_obj = modul->node[3];
+        while ((find_obj != NULL) && (!CMP_OBJDEF (object, find_obj))) {
+            find_obj = find_obj->node[0];
+        }
+        if (find_obj == NULL) /* the object does not yet exist */
+        {
+            tmp = MakeNode (N_objdef);
+            tmp->TYPES = object->TYPES;
+            tmp->node[0] = modul->node[3];
+            tmp->nnode = (modul->node[3] == NULL) ? 0 : 1;
+
+            modul->node[3] = tmp;
+
+            if (FindModul (object->ID_MOD) == NULL) {
+                AddToLinkerTab (object->ID_MOD);
+            }
+
+            DBUG_PRINT ("READSIB", ("New object %s:%s inserted.", tmp->ID_MOD, tmp->ID));
+        }
+        object = object->node[0];
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : EnsureExistTypes
+ *  arguments     : 1) typedef node from sib, contains a type that is
+ *                     implicitly used by one of the sib-functions
+ *                  2) modul node of program
+ *  description   : ensures that the type is declared in the syntax tree.
+ *                  If the type is yet unknown, the typedef node
+ *                  is inserted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : CMP_TYPEDEF
+ *
+ *  remarks       :
+ *
+ */
+
+void
+EnsureExistTypes (node *type, node *modul)
+{
+    node *find_type, *next;
+
+    DBUG_ENTER ("EnsureExistTypes");
+
+    while (type != NULL) {
+        find_type = modul->node[1];
+        while ((find_type != NULL) && (!CMP_TYPEDEF (type, find_type))) {
+            find_type = find_type->node[0];
+        }
+
+        next = type->node[0];
+
+        if (find_type == NULL) /* the type does not yet exist */
+        {
+            type->node[0] = modul->node[1];
+            type->nnode = (modul->node[1] == NULL) ? 0 : 1;
+            modul->node[1] = type;
+
+            if (FindModul (type->ID_MOD) == NULL) {
+                AddToLinkerTab (type->ID_MOD);
+            }
+
+            DBUG_PRINT ("READSIB", ("New type %s:%s inserted.", type->ID_MOD, type->ID));
+
+        } else {
+            /*
+                  type->nnode=0;
+                  FreeTree(type);
+            */
+        }
+
+        type = next;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : EnsureExistFuns
+ *  arguments     : 1) fundef node from sib, contains a function that is
+ *                     implicitly used by one of the sib-functions
+ *                  2) modul node of program
+ *  description   : ensures that the function is declared in the syntax tree.
+ *                  If the function is yet unknown, the fundef node
+ *                  is inserted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : CMP_FUNDEF
+ *
+ *  remarks       :
+ *
+ */
+
+void
+EnsureExistFuns (node *fundef, node *modul)
+{
+    node *find_fun, *next;
+
+    DBUG_ENTER ("EnsureExistFuns");
+
+    while (fundef != NULL) {
+        find_fun = modul->node[2];
+        while ((find_fun != NULL) && (!CMP_FUNDEF (fundef, find_fun))) {
+            find_fun = find_fun->node[1];
+        }
+
+        next = fundef->node[1];
+
+        if (find_fun == NULL) /* the function does not yet exist */
+        {
+            fundef->node[1] = modul->node[2];
+            fundef->nnode = (modul->node[2] == NULL) ? 1 : 2;
+            modul->node[2] = fundef;
+
+            if (FindModul (fundef->ID_MOD) == NULL) {
+                AddToLinkerTab (fundef->ID_MOD);
+            }
+
+            DBUG_PRINT ("READSIB",
+                        ("New function %s:%s inserted.", fundef->ID_MOD, fundef->ID));
+
+        } else {
+            /*
+                  fundef->nnode=0;
+                  FreeTree(fundef);
+            */
+        }
+
+        fundef = next;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : MakeArgList
+ *  arguments     : 1) pointer to chain of objdef nodes
+ *  description   : makes an argument list from an objdef chain
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
+void
+MakeArgList (node *objdef)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeArgList");
+
+    tmp = objdef;
+    while (tmp != NULL) {
+        tmp->nodetype = N_arg;
+        tmp = tmp->node[0];
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : IMfundef
+ *  arguments     : 1) pointer to N_fundef node
+ *                  2) pointer to N_modul node of respective program
+ *  description   : retrieves information from SIB for respective function.
+ *                  Implicitly used types, objects, and other functions
+ *                  are imported if necessary. Inline information is
+ *                  stored as regular function body.
+ *  global vars   : ---
+ *  internal funs : FindSibEntry, MakeArgList, EnsureExistObjects,
+ *                  EnsureExistTypes, EnsureExistFuns
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
  *
  */
 
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+node *
+IMfundef (node *arg_node, node *arg_info)
+{
+    node *sib_entry;
+
+    DBUG_ENTER ("IMfundef");
+
+    if (arg_node->ID_MOD != NULL) {
+        sib_entry = FindSibEntry (arg_node);
+        if (sib_entry != NULL) /* SIB information available */
+        {
+            if (sib_entry->node[0] == NULL) /* only implicit object information */
+            {
+                MakeArgList (sib_entry->node[4]);
+                arg_node->node[4] = sib_entry->node[4];
+
+                DBUG_PRINT ("READSIB",
+                            ("Adding implicit object information to function %s:%s",
+                             arg_node->info.types->id_mod, arg_node->info.types->id));
+
+            } else /* function inlining information */
+            {
+                arg_node->node[0] = sib_entry->node[0];
+                arg_node->node[2] = sib_entry->node[2];
+                arg_node->node[4] = sib_entry->node[4];
+
+                arg_node->STATUS = ST_artificial;
+                arg_node->flag = 1; /* inline flag */
+
+                DBUG_PRINT ("READSIB", ("Adding inline information to function %s:%s",
+                                        arg_node->ID_MOD, arg_node->ID));
+
+                EnsureExistObjects (sib_entry->node[4], arg_info);
+                EnsureExistTypes (sib_entry->node[3], arg_info);
+                EnsureExistFuns (sib_entry->node[5], arg_info);
+
+                MakeArgList (arg_node->node[4]);
+            }
+        }
+    }
+
+    if (arg_node->node[1] != NULL) {
+        Trav (arg_node->node[1], arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /*
  *
@@ -1045,7 +1404,7 @@ FindSibEntry (node *orig)
  *                  second types-structure reusing the "next" entry.
  *  global vars   : ---
  *  internal funs : FindSibEntry
- *  external funs :
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -1064,14 +1423,14 @@ IMtypedef (node *arg_node, node *arg_info)
         if (sib_entry != NULL) {
             arg_node->info.types->next = sib_entry->info.types;
 
-            DBUG_PRINT ("MODUL",
+            DBUG_PRINT ("READSIB",
                         ("adding implementation of hidden type %s:%s",
                          MOD (arg_node->info.types->id_mod), arg_node->info.types->id));
         }
+    }
 
-        if (arg_node->node[0] != NULL) {
-            Trav (arg_node->node[0], NULL);
-        }
+    if (arg_node->node[0] != NULL) {
+        Trav (arg_node->node[0], NULL);
     }
 
     DBUG_RETURN (arg_node);
@@ -1079,12 +1438,12 @@ IMtypedef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
+ *  functionname  : GenLinkerList
+ *  arguments     : ---
+ *  description   : generates list of modules for C linker.
+ *  global vars   : mod_tab, linker_tab
  *  internal funs :
- *  external funs :
+ *  external funs : strcpy, strcat, FindFile
  *  macros        :
  *
  *  remarks       :
@@ -1095,11 +1454,13 @@ char *
 GenLinkerList ()
 {
     mod *modp = mod_tab;
+    charlist *linkerp = linker_tab;
     static char buffer[MAX_FILE_NAME];
     static char list[MAX_PATH_LEN];
     char *file;
 
     DBUG_ENTER ("GenLinkerList");
+
     while (modp) {
         strcpy (buffer, modp->name);
         strcat (buffer, ".o");
@@ -1111,6 +1472,21 @@ GenLinkerList ()
         } else
             ERROR1 (("Couldn't find file \"%s\"!\n", buffer));
         modp = modp->next;
+    }
+
+    /* Now add all implicitly imported modules to linker list. */
+
+    while (linkerp) {
+        strcpy (buffer, linkerp->name);
+        strcat (buffer, ".o");
+        file = FindFile (MODIMP_PATH, buffer);
+
+        if (file) {
+            strcat (list, " ");
+            strcat (list, file);
+        } else
+            ERROR1 (("Couldn't find file \"%s\"!\n", buffer));
+        linkerp = linkerp->next;
     }
 
     DBUG_RETURN (list);
