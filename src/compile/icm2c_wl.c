@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/07/06 16:41:38  dkr
+ * macro SAC_WL_DEST used
+ *
  * Revision 2.8  2000/07/06 13:11:58  dkr
  * minor changes in comments done
  *
@@ -167,7 +170,7 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims)
     indent++;
 
     INDENT;
-    fprintf (outfile, "int %s__destptr;\n", target);
+    fprintf (outfile, "int SAC_WL_DEST(%s);\n", target);
 
     for (i = 0; i < dims; i++) {
         INDENT;
@@ -326,11 +329,11 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
 
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = "
+                 "SAC_ND_WRITE_ARRAY( %s, SAC_WL_DEST(%s)) = "
                  "SAC_ND_READ_ARRAY( %s, SAC_i);\n",
                  target, target, expr);
         INDENT;
-        fprintf (outfile, "%s__destptr++;\n", target);
+        fprintf (outfile, "SAC_WL_DEST(%s)++;\n", target);
 
         indent--;
         INDENT;
@@ -349,13 +352,13 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
         for (i = 1; i < dims; i++) {
             fprintf (outfile, ", %s", idx_scalars[i]);
         }
-        fprintf (outfile, ", %s__destptr));\n", target);
+        fprintf (outfile, ", SAC_WL_DEST(%s)));\n", target);
 
         INDENT;
-        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = %s;\n", target, target,
-                 expr);
+        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_DEST(%s)) = %s;\n", target,
+                 target, expr);
         INDENT;
-        fprintf (outfile, "%s__destptr++;\n", target);
+        fprintf (outfile, "SAC_WL_DEST(%s)++;\n", target);
     }
 
     DBUG_VOID_RETURN;
@@ -401,20 +404,20 @@ ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec, int dims
         fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
-        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_KD_A_SHAPE( %s, %d)", target,
+        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", target,
                  dims);
         for (i = dims + 1; i < dims_target; i++) {
-            fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
+            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, i);
         }
         fprintf (outfile, "; SAC_i++) {\n");
         indent++;
     }
 
     INDENT;
-    fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = 0;\n", target, target);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_DEST(%s)) = 0;\n", target, target);
 
     INDENT;
-    fprintf (outfile, "%s__destptr++;\n", target);
+    fprintf (outfile, "SAC_WL_DEST(%s)++;\n", target);
 
     if (dims_target > dims) {
         indent--;
@@ -471,10 +474,10 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
         fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
-        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_KD_A_SHAPE( %s, %d)", target,
+        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", target,
                  dims);
         for (i = dims + 1; i < dims_target; i++) {
-            fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
+            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, i);
         }
         fprintf (outfile, "; SAC_i++) {\n");
         indent++;
@@ -482,12 +485,12 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
 
     INDENT;
     fprintf (outfile,
-             "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = "
-             "SAC_ND_READ_ARRAY( %s, %s__destptr);\n",
+             "SAC_ND_WRITE_ARRAY( %s, SAC_WL_DEST(%s)) = "
+             "SAC_ND_READ_ARRAY( %s, SAC_WL_DEST(%s));\n",
              target, target, source, target);
 
     INDENT;
-    fprintf (outfile, "%s__destptr++;\n", target);
+    fprintf (outfile, "SAC_WL_DEST(%s)++;\n", target);
 
     if (dims_target > dims) {
         indent--;
@@ -545,7 +548,7 @@ ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec, int dims,
  *
  *     WL_INIT_OFFSET( dims_target, target, idx_vec, dims_wl)
  *
- *   The __destptr of the WL-array is initialized, i.e. set to the index
+ *   The SAC_WL_DEST() of the WL-array is initialized, i.e. set to the index
  *   of the first WL element.
  *
  * remark:
@@ -565,7 +568,7 @@ PrintShapeFactor (int current_dim, int target_dim, char *target)
     DBUG_ENTER ("PrintShapeFactor");
 
     for (j = current_dim + 1; j < target_dim; j++) {
-        fprintf (outfile, " * SAC_ND_KD_A_SHAPE(%s, %d)", target, j);
+        fprintf (outfile, " * SAC_ND_A_SHAPE(%s, %d)", target, j);
     }
 
     DBUG_VOID_RETURN;
@@ -584,7 +587,7 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
 #undef WL_INIT_OFFSET
 
     INDENT;
-    fprintf (outfile, "%s__destptr = ", target);
+    fprintf (outfile, "SAC_WL_DEST(%s) = ", target);
     indent++;
 
     fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(0)");
@@ -649,10 +652,10 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target, char 
 #undef WL_ADJUST_OFFSET
 
     INDENT;
-    fprintf (outfile, "%s__destptr = ", target);
+    fprintf (outfile, "SAC_WL_DEST(%s) = ", target);
 
     for (i = dims - 1; i > 0; i--) {
-        fprintf (outfile, "( SAC_ND_KD_A_SHAPE( %s, %d) * ", target, i);
+        fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", target, i);
     }
     fprintf (outfile, "%s", idx_scalars[0]);
     for (i = 1; i < dims; i++) {
@@ -668,7 +671,7 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target, char 
     }
 
     for (; i < dims_target; i++) {
-        fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
+        fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, i);
     }
     fprintf (outfile, ";\n");
 
