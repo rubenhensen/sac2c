@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.5  2004/11/24 17:47:01  sah
+# added some files
+#
 # Revision 1.4  2004/11/24 16:46:06  sah
 # changed node representation
 #
@@ -41,7 +44,8 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../serialize/serialize_link.h ../serialize/serialize_link.c \
           ../types/types_trav.h ../types/types_nodetype.h \
           ../global/node_info.mac ../tree/traverse_tables.c \
-          ../tree/traverse_tables.h ../tree/sons.h
+          ../tree/traverse_tables.h ../tree/sons.h \
+          ../tree/traverse_helper.c
 
 all: $(TARGETS)
 
@@ -133,6 +137,10 @@ all: $(TARGETS)
 
 ../tree/traverse_tables.h: ast.xml ast2traverse_tables_h.xsl
 	$(XSLTENGINE) ast2traverse_tables_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../tree/traverse_helper.c: ast.xml ast2traverse_helper_c.xsl
+	$(XSLTENGINE) ast2traverse_helper_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
