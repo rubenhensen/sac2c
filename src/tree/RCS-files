@@ -41,3 +41,4 @@ serialize_helper.h
 serialize.c
 serialize.h
 serialize_stack.c
+serialize_stack.h
