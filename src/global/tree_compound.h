@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/03/23 18:59:20  srs
+ * added macro NWITH_TYPE()
+ *
  * Revision 1.60  1998/03/12 14:05:32  srs
  * new macro IDS_SHAPE
  *
@@ -1303,6 +1306,7 @@ extern node *GetCompoundNode (node *arg_node);
     (WO_modarray == NWITHOP_TYPE (n)                                                     \
        ? NWITHOP_ARRAY (n)                                                               \
        : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
+#define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
 
 /*--------------------------------------------------------------------------*/
 
