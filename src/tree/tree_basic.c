@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/07/16 09:13:21  cg
+ * Added function MakeOk for construction of N_ok nodes.
+ *
  * Revision 3.40  2001/07/16 08:23:11  cg
  * Old tree construction function MakeNode eliminated.
  *
