@@ -81,10 +81,11 @@ insert_component() {
    # $1: flag {f,d} indicating file / directory
    # $2: source-file
    # $3: destination-file/directory
+   # $4: flag {r,n} indicating whether to re-use / not re-use existing stuff
    #
                     if [ -f $2 ] 
                     then
-                      if [ -$1 $3 ] ; then
+                      if [ -$1 $3 -a $4 = "r" ] ; then
                         ask '"'$3'" exists! Overwrite?' "y"
                         if [ $ask_res != "y" ] ; then
                           warn '"'$2'" neglected - using "'$3'"!'
@@ -132,7 +133,7 @@ echo
 ask_for_dir "Intended location for the compiler executable?" $bin
 bin=$ask_res
 
-insert_component f sac2c $bin/sac2c
+insert_component f sac2c $bin/sac2c r
 
 #
 # make sure, that $bin is in $PATH!
@@ -165,7 +166,7 @@ then
 fi
 export SACBASE
 
-insert_component d runtime.tar $base/runtime
+insert_component d runtime.tar $base/runtime r
 if [ -f $SACBASE/runtime/runtime.tar ] ; then
   (cd $SACBASE/runtime; tar xvf runtime.tar; rm runtime.tar)
   chmod -R u+w $SACBASE/runtime
@@ -173,16 +174,16 @@ if [ -f $SACBASE/runtime/runtime.tar ] ; then
 else
   warn "runtime.tar NOT UNPACKED !!"
 fi
-insert_component f libsac.a $base/runtime/libsac.a
-insert_component f sac2crc $base/runtime/sac2crc
+insert_component f libsac.a $base/runtime/libsac.a r
+insert_component f sac2crc $base/runtime/sac2crc r
 
 echo
 ask 'How to call GNU-make?' $make
 make=$ask_res
 
-insert_component d stdlib.tar $base/stdlib
+insert_component d stdlib.tar $base/stdlib r
 if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
-  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar; rm stdlib.tar )
+  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar TARGET=untar; rm stdlib.tar )
   chmod -R u+w $SACBASE/stdlib
   mess "stdlib.tar UNPACKED !!"
 else
@@ -208,9 +209,9 @@ fi
 ask_for_dir "Intended location for the SAC - demo programs?" $demo
 demo=$ask_res
 
-insert_component d demo.tar $demo/
+insert_component d demo.tar $demo/ n
 if [ -f $demo/demo.tar ] ; then
-  (cd $demo; tar xvf demo.tar; $make untar TARFILENAME=demo.tar; rm demo.tar)
+  (cd $demo; tar xvf demo.tar; $make untar TARGET=untar TARFILENAME=demo.tar; rm demo.tar)
   chmod -R u+w $demo
   mess "demo.tar UNPACKED !!"
 else
