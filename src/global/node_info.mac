@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.76  1995/06/07 15:48:59  sbs
- * DummyFun2 used in N_fundef
+ * Revision 1.77  1995/06/08 09:54:18  asi
+ * added INLmodul
  *
+;; Revision 1.76  1995/06/07  15:48:59  sbs
+;; DummyFun2 used in N_fundef
+;;
 ;; Revision 1.75  1995/06/06  14:05:28  cg
 ;; N_isclass and N_imported added.
 ;; N_constdef and N_objdef will now be printed.
@@ -279,7 +282,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
-       OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, OPTmodul,
+       OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, INLmodul,
        OPTmodul, DummyFun, IdxModul, DummyFun, DummyFun, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
