@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/03/10 10:36:50  dkr
+ * Bug in FitWL fixed
+ * NormWL corrected: After normalization ublock/stride-nodes are fitted
+ * Some comments modified
+ *
  * Revision 2.11  2000/03/01 19:02:37  dkr
  * macros for WL...-nodes reorganized
  *
@@ -20,7 +25,6 @@
  * finally I have done it 8-)))
  * The "must-resign" problem is fixed now!
  * Therefore the cube calculation should work in general now!
- *
  * Moreover, some bugs have been fixed, e.g. in NormalizeStride_1() ...
  *
  * Revision 2.4  1999/11/30 10:07:35  dkr
@@ -210,10 +214,11 @@ Example:
 
      Let sv be the global step vector of a segment S --- i.e. sv is the lcm of
      all steps from cubes for which the intersection with S is non-empty. Then
-     for each dimension (d) bv0_d, bv1_d, ... and ubv_d must be multiples of
-     sv_d.
-     However, for the first components of bv0, bv1, ... and ubv is also the
-     value 1 allowed: in this case no blocking is performed for these
+     for each dimension (d) ubv_d must be multiples of sv_d.
+     (Later on during the compilation process [fitting phase] bv0_d, bv1_d, ...
+     will be modified in a way that they are multiples of sv_d, too.)
+     However, for the first components of bv0, bv1, ... and ubv also the
+     value 1 is allowed: in this case no blocking is performed for these
      dimensions.
 
      If bv = (1, ..., 1, ?, gt, ..., gt) is hold --- gt means that bv_d is
@@ -224,7 +229,7 @@ Example:
      -> set of segments (segment := a cube without a grid)
 
   In the example: We choose the complete shape as a segment and
-                  bv0 = (180,156), ubv = (1,6) --- note that sv = (9,3).
+                  bv0 = (180,158), ubv = (1,6) --- note that sv = (9,3).
 
 
 2b.) Adjust the cubes to the segments
@@ -311,71 +316,71 @@ For every segment the following steps must be performed:
     each cube a separate blocking-stride is needed:
 
     0000->0500, block[0] 180:      // This is the system of coordinates for ...
-        0000->1500, block[1] 156:  // ... the blocks of the first cube.
+        0000->1500, block[1] 158:  // ... the blocks of the first cube.
                op1                 // Here we must define what has to happen ...
                                    // ... inside the block.
     0000->0500, block[0] 180:
-        1500->4000, block[1] 156:
+        1500->4000, block[1] 158:
                op2
 
     0500->3000, block[0] 180:
-        0000->1500, block[1] 156:
+        0000->1500, block[1] 158:
                op3
 
     0500->3000, block[0] 180:
-        1500->4000, block[1] 156:
+        1500->4000, block[1] 158:
                op4
 
     3000->4000, block[0] 180:
-        0000->1000, block[1] 156:
+        0000->1000, block[1] 158:
                op5
 
     3000->4000, block[0] 180:
-        1000->4000, block[1] 156:
+        1000->4000, block[1] 158:
                op6
 
     At the leafs of this blocking-tree we now add the contents of the blocks:
 
     0000->0500, block[0] 180:
-        0000->1500, block[1] 156:
+        0000->1500, block[1] 158:
                0->180, step[0] 1
-                            0->1: 0->156, step[1] 1
+                            0->1: 0->158, step[1] 1
                                                0->1: e1
 
     0000->0500, block[0] 180:
-        1500->4000, block[1] 156:
+        1500->4000, block[1] 158:
                0->180, step[0] 9
-                            0->2: 0->156, step[1] 1
+                            0->2: 0->158, step[1] 1
                                                0->1: e2
-                            2->9: 0->156, step[1] 1
+                            2->9: 0->158, step[1] 1
                                                0->1: e1
 
     0500->3000, block[0] 180:
-        0000->1500, block[1] 156:
+        0000->1500, block[1] 158:
                0->180, step[0] 1
-                            0->1: 0->156, step[1] 1
+                            0->1: 0->158, step[1] 1
                                                0->1: e2
 
     0500->3000, block[0] 180:
-        1500->4000, block[1] 156:
+        1500->4000, block[1] 158:
                0->180, step[0] 9
-                            0->4: 0->156, step[1] 1
+                            0->4: 0->158, step[1] 1
                                                0->1: e1
-                            4->6: 0->156, step[1] 1
+                            4->6: 0->158, step[1] 1
                                                0->1: e2
-                            6->9: 0->156, step[1] 1
+                            6->9: 0->158, step[1] 1
                                                0->1: e1
 
     3000->4000, block[0] 180:
-        0000->1000, block[1] 156:
+        0000->1000, block[1] 158:
                0->180, step[0] 1
-                            0->1: 0->156, step[1] 1
+                            0->1: 0->158, step[1] 1
                                                0->1: e3
 
     3000->4000, block[0] 180:
-        1000->4000, block[1] 156:
+        1000->4000, block[1] 158:
                0->180, step[0] 1
-                            0->1: 0->156, step[1] 3
+                            0->1: 0->158, step[1] 3
                                                0->1: e3
                                                1->3: e4
 
@@ -389,40 +394,40 @@ For every segment the following steps must be performed:
   step[d]-branch directly. The blocking hierarchie for dimension (d+1) follows
   as usual.
 
-  In the example with bv = (1,156):
+  In the example with bv = (1,158):
 
     0000->0500, step[0] 1
-                     0->1:    0->1500, block[1] 156:
-                                             0->156, step[1] 1
+                     0->1:    0->1500, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e1
     0000->0500, step[0] 9
-                     0->2: 1500->4000, block[1] 156:
-                                             0->156, step[1] 1
+                     0->2: 1500->4000, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e2
-                     2->9: 1500->4000, block[1] 156:
-                                             0->156, step[1] 1
+                     2->9: 1500->4000, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e1
     0500->3000, step[0] 1
-                     0->1:    0->1500, block[1] 156:
-                                             0->156, step[1] 1
+                     0->1:    0->1500, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e2
     0500->3000, step[0] 9
-                     0->4: 1500->4000, block[1] 156:
-                                             0->156, step[1] 1
+                     0->4: 1500->4000, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e1
-                     4->6: 1500->4000, block[1] 156:
-                                             0->156, step[1] 1
+                     4->6: 1500->4000, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e2
-                     6->9: 1500->4000, block[1] 156:
-                                             0->156, step[1] 1
+                     6->9: 1500->4000, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e1
     3000->4000, step[0] 1
-                     0->1:    0->1000, block[1] 156:
-                                             0->156, step[1] 1
+                     0->1:    0->1000, block[1] 158:
+                                             0->158, step[1] 1
                                                           0->1: e3
     3000->4000, step[0] 1
-                     0->1: 1000->4000, block[1] 156:
-                                             0->156, step[1] 3
+                     0->1: 1000->4000, block[1] 158:
+                                             0->158, step[1] 3
                                                           0->1: e3
                                                           1->3: e4
 
@@ -436,43 +441,43 @@ For every segment the following steps must be performed:
   tree (-> context free). This is hold even for the final code generation phase.
 
   Using the original values (to get somewhat pathological results) we get
-  for the example with bv = (180,156):
+  for the example with bv = (180,158):
 
     000->050, block[0] 180:
-        000->150, block[1] 156:
+        000->150, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, step[1] 1
+                           0->1: 0->158, step[1] 1
                                               0->1: e1
     000->050, block[0] 180:
-        150->400, block[1] 156:
+        150->400, block[1] 158:
               0->180, step[0] 9
-                           0->2: 0->156, step[1] 1
+                           0->2: 0->158, step[1] 1
                                               0->1: e2
-                           2->9: 0->156, step[1] 1
+                           2->9: 0->158, step[1] 1
                                               0->1: e1
     050->300, block[0] 180:
-        000->150, block[1] 156:
+        000->150, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, step[1] 1
+                           0->1: 0->158, step[1] 1
                                               0->1: e2
     050->300, block[0] 180:
-        150->400, block[1] 156:
+        150->400, block[1] 158:
               0->180, step[0] 9
-                           0->4: 0->156, step[1] 1
+                           0->4: 0->158, step[1] 1
                                               0->1: e1
-                           4->6: 0->156, step[1] 1
+                           4->6: 0->158, step[1] 1
                                               0->1: e2
-                           6->9: 0->156, step[1] 1
+                           6->9: 0->158, step[1] 1
                                               0->1: e1
     300->400, block[0] 180:
-        000->100, block[1] 156:
+        000->100, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, step[1] 1
+                           0->1: 0->158, step[1] 1
                                               0->1: e3
     300->400, block[0] 180:
-        100->400, block[1] 156:
+        100->400, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, step[1] 3
+                           0->1: 0->158, step[1] 3
                                               0->1: e3
                                               1->3: e4
 
@@ -483,41 +488,41 @@ For every segment the following steps must be performed:
         However, the corrected blocking sizes are needed not until the
         fitting (see step 9.).
 
-  With bv = (1,156) --- because of ubv = (1,6) this is *not* equivalent to (1,1)
+  With bv = (1,158) --- because of ubv = (1,6) this is *not* equivalent to (1,1)
   --- we would get:
 
       0-> 50, step[0] 1
-                   0->1:   0->150, block[1] 156:
-                                         0->156, step[1] 1
+                   0->1:   0->150, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e1
       0-> 50, step[0] 9
-                   0->2: 150->400, block[1] 156:
-                                         0->156, step[1] 1
+                   0->2: 150->400, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e2
-                   2->9: 150->400, block[1] 156:
-                                         0->156, step[1] 1
+                   2->9: 150->400, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e1
      50->300, step[0] 1
-                   0->1:   0->150, block[1] 156:
-                                         0->156, step[1] 1
+                   0->1:   0->150, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e2
      50->300, step[0] 9
-                   0->4: 150->400, block[1] 156:
-                                         0->156, step[1] 1
+                   0->4: 150->400, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e1
-                   4->6: 150->400, block[1] 156:
-                                         0->156, step[1] 1
+                   4->6: 150->400, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e2
-                   6->9: 150->400, block[1] 156:
-                                         0->156, step[1] 1
+                   6->9: 150->400, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e1
     300->400, step[0] 1
-                   0->1:   0->100, block[1] 156:
-                                         0->156, step[1] 1
+                   0->1:   0->100, block[1] 158:
+                                         0->158, step[1] 1
                                                       0->1: e3
     300->400, step[0] 1
-                   0->1: 100->400, block[1] 156:
-                                         0->156, step[1] 3
+                   0->1: 100->400, block[1] 158:
+                                         0->158, step[1] 3
                                                       0->1: e3
                                                       1->3: e4
 
@@ -530,97 +535,97 @@ For every segment the following steps must be performed:
     This blocking differs from the conventional hierarchical blocking in
     the sense, that possibly a fitting is carried out (see step 8.)
 
-  In the example with bv = (180,156):
+  In the example with bv = (180,158):
 
     000->050, block[0] 180:
-        000->150, block[1] 156:
+        000->150, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
     000->050, block[0] 180:
-        150->400, block[1] 156:
+        150->400, block[1] 158:
               0->180, step[0] 9
-                           0->2: 0->156, ublock[1] 6:
+                           0->2: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e2
-                           2->9: 0->156, ublock[1] 6:
+                           2->9: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
     050->300, block[0] 180:
-        000->150, block[1] 156:
+        000->150, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e2
     050->300, block[0] 180:
-        150->400, block[1] 156:
+        150->400, block[1] 158:
               0->180, step[0] 9
-                           0->4: 0->156, ublock[1] 6:
+                           0->4: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
-                           4->6: 0->156, ublock[1] 6:
+                           4->6: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e2
-                           6->9: 0->156, ublock[1] 6:
+                           6->9: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
     300->400, block[0] 180:
-        000->100, block[1] 156:
+        000->100, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e3
     300->400, block[0] 180:
-        100->400, block[1] 156:
+        100->400, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 3
                                                            0->1: e3
                                                            1->3: e4
 
-  In the example with bv = (1,156):
+  In the example with bv = (1,158):
 
       0-> 50, step[0] 1
-                   0->1:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->1:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
       0-> 50, step[0] 9
-                   0->2: 150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->2: 150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                   2->9: 150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   2->9: 150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
      50->300, step[0] 1
-                   0->1:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->1:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
      50->300, step[0] 9
-                   0->4: 150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->4: 150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
-                   4->6: 150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   4->6: 150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                   6->9: 150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   6->9: 150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
     300->400, step[0] 1
-                   0->1:   0->100, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->1:   0->100, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e3
     300->400, step[0] 1
-                   0->1: 100->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->1: 100->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 3
                                                                    0->1: e3
                                                                    1->3: e4
@@ -632,103 +637,103 @@ For every segment the following steps must be performed:
     -> The tree forms in each dimension a partition of the relevant index-vector-set
        projection.
 
-  In the example with bv = (180,156):
+  In the example with bv = (180,158):
 
     000->050, block[0] 180:
-        000->150, block[1] 156:
+        000->150, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
-        150->400, block[1] 156:
+        150->400, block[1] 158:
               0->180, step[0] 9
-                           0->2: 0->156, ublock[1] 6:
+                           0->2: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e2
-                           2->9: 0->156, ublock[1] 6:
+                           2->9: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
     050->300, block[0] 180:
-        000->150, block[1] 156:
+        000->150, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e2
-        150->400, block[1] 156:
+        150->400, block[1] 158:
               0->180, step[0] 9
-                           0->4: 0->156, ublock[1] 6:
+                           0->4: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
-                           4->6: 0->156, ublock[1] 6:
+                           4->6: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e2
-                           6->9: 0->156, ublock[1] 6:
+                           6->9: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e1
     300->400, block[0] 180:
-        000->100, block[1] 156:
+        000->100, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 1
                                                            0->1: e3
-        100->400, block[1] 156:
+        100->400, block[1] 158:
               0->180, step[0] 1
-                           0->1: 0->156, ublock[1] 6:
+                           0->1: 0->158, ublock[1] 6:
                                                 0->6, step[1] 3
                                                            0->1: e3
                                                            1->3: e4
 
-  In the example with bv = (1,156):
+  In the example with bv = (1,158):
 
       0-> 50, step[0] 9
-                   0->2:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->2:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                   2->9:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   2->9:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
      50->300, step[0] 9
-                   0->4:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->4:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
-                   4->6:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   4->6:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                   6->9:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   6->9:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
     300->400, step[0] 1
-                   0->1:   0->100, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->1:   0->100, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e3
-                         100->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         100->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 3
                                                                    0->1: e3
                                                                    1->3: e4
@@ -740,81 +745,82 @@ For every segment the following steps must be performed:
     Projections with consecutive index ranges and identical operations (subtrees)
     are joined.
 
-  In the example with bv = (1,156):
+  In the example with bv = (1,158):
 
       0-> 50, step[0] 9
                ...
-                   2->9:   0->150, block[1] 156: ... tree_1 ...
+                   2->9:   0->150, block[1] 158: ... tree_1 ...
 
-                         150->400, block[1] 156: ... tree_1 ...
+                         150->400, block[1] 158: ... tree_1 ...
                         Fortunately we still ^ have the same values overhere!
 
     is transformed to
 
       0-> 50, step[0] 9
                ...
-                   2->9:   0->400, block[1] 156: ... tree_1 ...
+                   2->9:   0->400, block[1] 158: ... tree_1 ...
                         Now this value makes ^ sense again!
 
   Altogether:
 
       0-> 50, step[0] 9
-                   0->2:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->2:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                   2->9:   0->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   2->9:   0->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
      50->300, step[0] 9
-                   0->4:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->4:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
-                   4->6:   0->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   4->6:   0->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                   6->9:   0->150, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   6->9:   0->150, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e2
-                         150->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         150->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e1
     300->400, step[0] 1
-                   0->1:   0->100, block[1] 156:
-                                         0->156, ublock[1] 6:
+                   0->1:   0->100, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 1
                                                                    0->1: e3
-                         100->400, block[1] 156:
-                                         0->156, ublock[1] 6:
+                         100->400, block[1] 158:
+                                         0->158, ublock[1] 6:
                                                         0->6, step[1] 3
                                                                    0->1: e3
                                                                    1->3: e4
 
 
-8.) Projection Fitting (Removes incomplete periods at the tail)
-    ------------------
+8.) Projection Fitting (Removes incomplete periods at the tail and adjusts ...
+    ------------------                                   ... blocking factors)
     (^ after the optimization we have in general no cubes anymore ...)
 
-    The boundaries of the most outer node in each dimension is adjusted to
-    the number of unrolled elements (= max( ubv_d, step)).
+    In each subtree and each dimension the boundaries of the most outer node
+    as well as each blocking factor are adjusted to the number of unrolled
+    elements (= max( ubv_d, step)).
 
-  In the example with bv = (180,156):
+  In the example with bv = (180,158):
 
-    000->045, block[0] 180:
-        000->150, block[1] 156:
+    000->045, block[0] 180:      // boundaries: (050 - 000 = 50) % (step[0] = 9)  =  5
+        000->150, block[1] 156:  // blocking factor: 158 % (ublock[1] = 6)  =  2
               0->180, step[0] 1
                            0->1: 0->156, ublock[1] 6:
                                                 0->6, step[1] 1
@@ -931,7 +937,7 @@ For every segment the following steps must be performed:
                                                            0->1: e3
                                                            1->3: e4
 
-  In the example with bv = (1,156):
+  In the example with bv = (1,158):
 
       0-> 45, step[0] 9
                    0->2:   0->150, block[1] 156:
@@ -1060,7 +1066,7 @@ For every segment the following steps must be performed:
 9.) Adjust block sizes to real projection sizes
     -------------------------------------------
 
-  In the example bv = (180,156):
+  In the example bv = (180,158):
 
     000->045, block[0]  45:
         000->150, block[1] 150:
@@ -1180,7 +1186,7 @@ For every segment the following steps must be performed:
                                                            0->1: e3
                                                            1->3: e4
 
-  In the example with bv = (1,156):
+  In the example with bv = (1,158):
 
       0-> 45, step[0] 9
                    0->2:   0->150, block[1] 150:
@@ -1845,7 +1851,7 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
  *   int GetMaxUnroll( node *nodes, int dim)
  *
  * description:
- *   returns the maximally number elements that must be unrolled
+ *   returns the maximal number of elements that must be unrolled
  *     in dimension 'dim' of the WL-tree 'nodes'.
  *
  *   we must search for the first N_WLublock- or N_WLstride-node in each
@@ -2390,11 +2396,12 @@ CheckParams (node *seg)
         for (; d < WLSEGX_DIMS (seg); d++) {
             if ((WLSEGX_BV (seg, j))[d]
                 < MAX ((WLSEGX_SV (seg))[d], (WLSEGX_UBV (seg)[d]))) {
-                ABORT (line, ("Blocking step (%i) is smaller than stride step (%i),"
-                              " unrolling-blocking step (%i) respectively. "
-                              "Please check parameters of functions in wlcomp-pragma",
-                              (WLSEGX_BV (seg, j))[d], (WLSEGX_SV (seg))[d],
-                              (WLSEGX_UBV (seg))[d]));
+                ABORT (line,
+                       ("Blocking step (%i) is greater than 1 but smaller than"
+                        " stride step (%i), unrolling-blocking step (%i) respectively. "
+                        "Please check parameters of functions in wlcomp-pragma",
+                        (WLSEGX_BV (seg, j))[d], (WLSEGX_SV (seg))[d],
+                        (WLSEGX_UBV (seg))[d]));
             }
         }
     }
@@ -2425,10 +2432,10 @@ CheckParams (node *seg)
 
     for (; d < WLSEGX_DIMS (seg); d++) {
         if ((WLSEGX_UBV (seg))[d] % (WLSEGX_SV (seg))[d] != 0) {
-            ABORT (line,
-                   ("Stride step (%i) is not a divisor of unrolling-blocking step (%i). "
-                    "Please check parameters of functions in wlcomp-pragma",
-                    (WLSEGX_SV (seg))[d], (WLSEGX_UBV (seg))[d]));
+            ABORT (line, ("Unrolling-blocking step (%i) is not a multiple of"
+                          " stride step (%i). "
+                          "Please check parameters of functions in wlcomp-pragma",
+                          (WLSEGX_UBV (seg))[d], (WLSEGX_SV (seg))[d]));
         }
     }
 
@@ -2458,7 +2465,7 @@ CheckParams (node *seg)
 node *
 NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
 {
-    node *grids, *new_grids, *tmp, *tmp2;
+    node *grids, *new_grids, *grid, *grid2;
     int bound1, step, grid_b1, grid_b2, offset;
 
     DBUG_ENTER ("NewBoundsStride");
@@ -2486,38 +2493,38 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
 
                 offset = GridOffset (new_bound1, bound1, step, grid_b2);
 
-                /* extract current grid from chain -> single grid in 'tmp' */
-                tmp = grids;
+                /* extract current grid from chain -> single grid in 'grid' */
+                grid = grids;
                 grids = WLGRID_NEXT (grids);
-                WLGRID_NEXT (tmp) = NULL;
+                WLGRID_NEXT (grid) = NULL;
 
                 if (offset <= grid_b1) {
                     /*
                      * grid is still in one pice :)
                      */
 
-                    WLGRID_BOUND1 (tmp) = grid_b1 - offset;
-                    WLGRID_BOUND2 (tmp) = grid_b2 - offset;
+                    WLGRID_BOUND1 (grid) = grid_b1 - offset;
+                    WLGRID_BOUND2 (grid) = grid_b2 - offset;
 
                     /* insert changed grid into 'new_grids' */
-                    new_grids = InsertWLnodes (new_grids, tmp);
+                    new_grids = InsertWLnodes (new_grids, grid);
                 } else {
                     /*
                      * the grid is split into two parts :(
                      */
 
                     /* first part: recycle old grid */
-                    WLGRID_BOUND1 (tmp) = grid_b1 - offset + step;
-                    WLGRID_BOUND2 (tmp) = step;
+                    WLGRID_BOUND1 (grid) = grid_b1 - offset + step;
+                    WLGRID_BOUND2 (grid) = step;
                     /* second part: duplicate old grid first */
-                    tmp2 = DupNode (tmp);
-                    WLGRID_BOUND1 (tmp2) = 0;
-                    WLGRID_BOUND2 (tmp2) = grid_b2 - offset;
+                    grid2 = DupNode (grid);
+                    WLGRID_BOUND1 (grid2) = 0;
+                    WLGRID_BOUND2 (grid2) = grid_b2 - offset;
                     /* concate the two grids */
-                    WLGRID_NEXT (tmp2) = tmp;
+                    WLGRID_NEXT (grid2) = grid;
 
                     /* insert them into 'new_grids' */
-                    new_grids = InsertWLnodes (new_grids, tmp2);
+                    new_grids = InsertWLnodes (new_grids, grid2);
                 }
             } while (grids != NULL);
 
@@ -2696,7 +2703,7 @@ SplitWL (node *strides)
             DBUG_ASSERT ((NODE_TYPE (strides) == N_WLstriVar),
                          "stride with wrong node type found");
             /*
-             * nothing to do for non-constant strides
+             * splitting on non-constant strides is not performed yet
              */
         }
     }
@@ -2933,7 +2940,7 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
 
         case N_WLstriVar:
             /*
-             * on variable segments blocking is of no use
+             * on variable segments blocking is not performed yet
              */
             for (d = 0; d < dims; d++) {
                 bv[d] = 1; /* no blocking -> reset blocking vector */
@@ -3247,14 +3254,10 @@ MergeWL (node *nodes)
             break;
 
         case N_WLgridVar:
-            /*
-             * nothing to do for non-constant grids
-             */
-            break;
-
+            /* here is no break missing */
         case N_WLstriVar:
             /*
-             * nothing to do for non-constant strides
+             * merging for non-constant strides is not performed yet
              */
             break;
 
@@ -3537,7 +3540,7 @@ OptWL (node *nodes)
 
         } else {
             /*
-             * nothing to do for non-constant strides
+             * optimization for non-constant strides is not performed yet
              */
         }
     }
@@ -3553,6 +3556,54 @@ OptWL (node *nodes)
  ******************************************************************************/
 
 /******************************************************************************
+ ******************************************************************************
+ **
+ ** functions for FitWL()
+ **
+ **/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FitNode( node *wlnode, int unroll)
+ *
+ * description:
+ *   Checks whether the extent (difference of upper and lower bound) of
+ *   'wlnode' is a multiple of 'unroll'. If not, the incomplete periode at the
+ *   tail is split.
+ *   The address of the given pointer 'wlnode' is filled with the first part of
+ *   the splitted node, the return value is a pointer to the second part of the
+ *   splitted node.
+ *
+ ******************************************************************************/
+
+node *
+FitNode (node *wlnode, int unroll)
+{
+    int width, remain;
+    node *new_wlnode;
+
+    DBUG_ENTER ("FitNode");
+
+    width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
+    remain = width % unroll;
+    if ((remain > 0) && (width > remain)) {
+        /*
+         * incomplete periode found -> split
+         */
+        new_wlnode = DupNode (wlnode);
+        WLNODE_BOUND2 (new_wlnode) = WLNODE_BOUND2 (wlnode);
+        WLNODE_BOUND2 (wlnode) = WLNODE_BOUND1 (new_wlnode)
+          = WLNODE_BOUND2 (wlnode) - remain;
+        WLNODE_NEXT (new_wlnode) = WLNODE_NEXT (wlnode);
+        WLNODE_NEXT (wlnode) = new_wlnode;
+        wlnode = new_wlnode;
+    }
+
+    DBUG_RETURN (wlnode);
+}
+
+/******************************************************************************
  *
  * function:
  *   node *FitWL( node *nodes, int curr_dim, int dims)
@@ -3566,8 +3617,8 @@ OptWL (node *nodes)
 node *
 FitWL (node *nodes, int curr_dim, int dims)
 {
-    node *new_node, *grids, *tmp;
-    int unroll, remain, width;
+    node *node, *grids, *tmp;
+    int unroll, mod, old_bv, new_bv;
 
     DBUG_ENTER ("FitWL");
 
@@ -3579,42 +3630,91 @@ FitWL (node *nodes, int curr_dim, int dims)
                 /*
                  * traverse the whole chain
                  */
-                tmp = nodes;
-                while (tmp != NULL) {
+                node = nodes;
+                while (node != NULL) {
 
-                    switch (NODE_TYPE (tmp)) {
+                    switch (NODE_TYPE (node)) {
                     case N_WLblock:
-                        if (curr_dim < dims - 1) {
+                        if (WLBLOCK_NEXTDIM (node) != NULL) {
                             /*
                              * fit in next dimension;
-                             *   compute unrolling information
+                             * compute unrolling information
                              */
-                            WLBLOCK_NEXTDIM (tmp)
-                              = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
-                            unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), curr_dim);
+                            DBUG_ASSERT ((WLBLOCK_CONTENTS (node) == NULL),
+                                         "Sons CONTENTS and NEXTDIM of WLblock are used "
+                                         "simultaneous!");
+
+                            WLBLOCK_NEXTDIM (node)
+                              = FitWL (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
+
+                            unroll = GetMaxUnroll (WLBLOCK_NEXTDIM (node), curr_dim);
                         } else {
-                            unroll = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), curr_dim);
+                            /*
+                             * fit contents of block;
+                             * compute unrolling information
+                             */
+                            DBUG_ASSERT ((WLBLOCK_NEXTDIM (node) == NULL),
+                                         "Sons CONTENTS and NEXTDIM of WLblock are used "
+                                         "simultaneous!");
+
+                            WLBLOCK_CONTENTS (node)
+                              = FitWL (WLBLOCK_CONTENTS (node), curr_dim, dims);
+
+                            unroll = GetMaxUnroll (WLBLOCK_CONTENTS (node), curr_dim);
+                        }
+
+                        /*
+                         * adjust blocking factor
+                         * (blocking factor must be a multiple of 'unroll')
+                         */
+                        mod = WLBLOCK_STEP (node) % unroll;
+                        if ((WLBLOCK_STEP (node) > 1) && (mod != 0)) {
+                            old_bv = WLBLOCK_STEP (node);
+                            if (mod <= unroll / 2) {
+                                WLBLOCK_STEP (node) -= mod;
+                            } else {
+                                WLBLOCK_STEP (node) += (unroll - mod);
+                            }
+                            new_bv = WLBLOCK_STEP (node);
+                            WARN (line, ("Blocking factor adjusted: %i instead of %i",
+                                         new_bv, old_bv));
+
+                            DBUG_ASSERT ((new_bv % unroll == 0),
+                                         "adjustment of blocking factor wrong!");
+
+                            /*
+                             * find the related ublock/stride-node in the contents of the
+                             * block and adjust its upper bound, too
+                             */
+                            tmp = node;
+                            while (WLBLOCK_NEXTDIM (tmp) != NULL) {
+                                tmp = WLBLOCK_NEXTDIM (tmp);
+                            }
+                            tmp = WLBLOCK_CONTENTS (tmp);
+                            DBUG_ASSERT ((WLNODE_BOUND2 (tmp) == old_bv),
+                                         "upper bound of block contents is not the same "
+                                         "as the blocking step");
+                            WLNODE_BOUND2 (tmp) = new_bv;
                         }
                         break;
 
                     case N_WLublock:
-                        if (curr_dim < dims - 1) {
+                        if (WLBLOCK_NEXTDIM (node) != NULL) {
                             /*
                              * fit in next dimension;
-                             *   get unrolling information
                              */
-                            WLBLOCK_NEXTDIM (tmp)
-                              = FitWL (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
+                            WLBLOCK_NEXTDIM (node)
+                              = FitWL (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
                         }
-                        unroll = WLUBLOCK_STEP (tmp);
+
+                        unroll = WLUBLOCK_STEP (node);
                         break;
 
                     case N_WLstride:
-                        grids = WLSTRIDE_CONTENTS (tmp);
+                        grids = WLSTRIDE_CONTENTS (node);
                         if (curr_dim < dims - 1) {
                             /*
                              * fit for all grids in next dimension;
-                             *   get unrolling information
                              */
                             while (grids != NULL) {
                                 WLGRID_NEXTDIM (grids)
@@ -3622,44 +3722,40 @@ FitWL (node *nodes, int curr_dim, int dims)
                                 grids = WLGRID_NEXT (grids);
                             }
                         }
-                        unroll = WLSTRIDE_STEP (tmp);
+                        unroll = WLSTRIDE_STEP (node);
                         break;
 
                     default:
                         DBUG_ASSERT ((0), "wrong node type");
                     }
 
-                    /*
-                     * fit current dimension:
-                     *   split a uncompleted periode at the end of index range
-                     */
-                    width = WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp);
-                    remain = width % unroll;
-                    if ((remain > 0) && (width > remain)) {
+                    if (WLNODE_LEVEL (node) == 0) { /* outer most node? */
                         /*
-                         *  uncompleted periode found -> split
+                         * fit the outer most node of the current dimension:
+                         *   split a uncompleted periode at the end of index range
                          */
-                        new_node = DupNode (tmp);
-                        WLNODE_BOUND2 (new_node) = WLNODE_BOUND2 (tmp);
-                        WLNODE_BOUND2 (tmp) = WLNODE_BOUND1 (new_node)
-                          = WLNODE_BOUND2 (tmp) - remain;
-                        WLNODE_NEXT (new_node) = WLNODE_NEXT (tmp);
-                        WLNODE_NEXT (tmp) = new_node;
-                        tmp = new_node;
+                        node = FitNode (node, unroll);
                     }
 
-                    tmp = WLNODE_NEXT (tmp);
+                    node = WLNODE_NEXT (node);
                 }
             }
         } else {
             /*
-             * nothing to do for non-constant strides
+             * fitting for non-constant strides is not performed yet
              */
         }
     }
 
     DBUG_RETURN (nodes);
 }
+
+/**
+ **
+ ** functions for FitWL()
+ **
+ ******************************************************************************
+ ******************************************************************************/
 
 /******************************************************************************
  ******************************************************************************
@@ -3674,16 +3770,50 @@ FitWL (node *nodes, int curr_dim, int dims)
  *   node *NormalizeWLnodes( node *nodes, int *width)
  *
  * description:
- *   returns the normalized N_WL...-tree 'nodes'.
- *   'width' is an array with one component for each dimension;
- *     here we save the width of the index ranges
+ *   Returns the normalized N_WL...-tree 'nodes'.
+ *   'idx_max' is the supremum of the index vector set.
+ *   'width' is an array with one component for each dimension initially
+ *     containing the supremum of the index vector set. This array is modified
+ *     during calculation (here we save the width of the index ranges) but in
+ *     the end it contains the correct value again.
+ *
+ * remark:
+ *   During normalization another fitting might be needed. Example:
+ *   Before 'fitting phase':
+ *     (0 -> 23), ublock0[0] 4:
+ *       (0 -> 4), step1[0] 2
+ *         (0 -> 1): op_1
+ *         (1 -> 2): op_0
+ *   After 'fitting phase':
+ *     (0 -> 20), ublock0[0] 4:
+ *       ...
+ *     (20 -> 23), ublock0[0] 4:
+ *       (0 -> 4), step1[0] 2
+ *         (0 -> 1): op_1
+ *         (1 -> 2): op_0
+ *   After naive 'normalization' without fitting:
+ *     (0 -> 20), ublock0[0] 4:
+ *       ...
+ *     (20 -> 23), ublock0[0] 3:
+ *       (0 -> 3), step1[0] 2    // CAUTION: the stride extent (3) is ...
+ *         (0 -> 1): op_1        // ... not a multiple of the step (2) anymore!
+ *         (1 -> 2): op_0
+ *   Another fitting is needed:
+ *     (0 -> 20), ublock0[0] 4:
+ *       ...
+ *     (20 -> 23), ublock0[0] 3:
+ *       (0 -> 2), step1[0] 2
+ *         (0 -> 1): op_1
+ *         (1 -> 2): op_0
+ *       (2 -> 3), step1[0] 1
+ *         (0 -> 1): op_1
  *
  ******************************************************************************/
 
 node *
 NormalizeWLnodes (node *nodes, int *width)
 {
-    node *tmp;
+    node *node;
     int curr_width;
 
     DBUG_ENTER ("NormalizeWLnodes");
@@ -3695,54 +3825,63 @@ NormalizeWLnodes (node *nodes, int *width)
          */
         curr_width = width[WLNODE_DIM (nodes)];
 
-        tmp = nodes;
+        node = nodes;
         do {
-
             /*
              * adjust upper bound
              */
-            DBUG_ASSERT ((WLNODE_BOUND1 (tmp) < curr_width), "wrong bounds found");
-            WLNODE_BOUND2 (tmp) = MIN (WLNODE_BOUND2 (tmp), curr_width);
+            DBUG_ASSERT ((WLNODE_BOUND1 (node) < curr_width), "wrong bounds found");
+            WLNODE_BOUND2 (node) = MIN (WLNODE_BOUND2 (node), curr_width);
 
             /*
              * remove nodes whose index ranges lies outside the current block
              */
-            while ((WLNODE_NEXT (tmp) != NULL)
-                   && (WLNODE_BOUND1 (WLNODE_NEXT (tmp)) >= curr_width)) {
-                WLNODE_NEXT (tmp) = FreeNode (WLNODE_NEXT (tmp));
+            while ((WLNODE_NEXT (node) != NULL)
+                   && (WLNODE_BOUND1 (WLNODE_NEXT (node)) >= curr_width)) {
+                WLNODE_NEXT (node) = FreeNode (WLNODE_NEXT (node));
+            }
+
+            /*
+             * perform another fitting if the current node is a stride-node and
+             * the extent is not a multiple of the step.
+             */
+            if ((NODE_TYPE (node) == N_WLstride)
+                && ((WLNODE_BOUND2 (node) - WLNODE_BOUND1 (node)) % WLNODE_STEP (node)
+                    != 0)) {
+                node = FitNode (node, WLNODE_STEP (node));
             }
 
             /* take next node */
-            tmp = WLNODE_NEXT (tmp);
-        } while (tmp != NULL);
+            node = WLNODE_NEXT (node);
+        } while (node != NULL);
 
-        tmp = nodes;
+        node = nodes;
         do {
-
             /*
              * save width of current index range; adjust step
              */
-            width[WLNODE_DIM (tmp)] = WLNODE_BOUND2 (tmp) - WLNODE_BOUND1 (tmp);
-            WLNODE_STEP (tmp) = MIN (WLNODE_STEP (tmp), width[WLNODE_DIM (tmp)]);
+            width[WLNODE_DIM (node)] = WLNODE_BOUND2 (node) - WLNODE_BOUND1 (node);
+            WLNODE_STEP (node) = MIN (WLNODE_STEP (node), width[WLNODE_DIM (node)]);
 
             /*
              * normalize the type-specific sons
              */
-            switch (NODE_TYPE (tmp)) {
+            switch (NODE_TYPE (node)) {
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                WLBLOCK_NEXTDIM (tmp) = NormalizeWLnodes (WLBLOCK_NEXTDIM (tmp), width);
-                WLBLOCK_CONTENTS (tmp) = NormalizeWLnodes (WLBLOCK_CONTENTS (tmp), width);
+                WLBLOCK_NEXTDIM (node) = NormalizeWLnodes (WLBLOCK_NEXTDIM (node), width);
+                WLBLOCK_CONTENTS (node)
+                  = NormalizeWLnodes (WLBLOCK_CONTENTS (node), width);
                 break;
 
             case N_WLstride:
-                WLSTRIDE_CONTENTS (tmp)
-                  = NormalizeWLnodes (WLSTRIDE_CONTENTS (tmp), width);
+                WLSTRIDE_CONTENTS (node)
+                  = NormalizeWLnodes (WLSTRIDE_CONTENTS (node), width);
                 break;
 
             case N_WLgrid:
-                WLGRID_NEXTDIM (tmp) = NormalizeWLnodes (WLGRID_NEXTDIM (tmp), width);
+                WLGRID_NEXTDIM (node) = NormalizeWLnodes (WLGRID_NEXTDIM (node), width);
                 break;
 
             default:
@@ -3750,8 +3889,8 @@ NormalizeWLnodes (node *nodes, int *width)
             }
 
             /* take next node */
-            tmp = WLNODE_NEXT (tmp);
-        } while (tmp != NULL);
+            node = WLNODE_NEXT (node);
+        } while (node != NULL);
 
         /*
          * restore width of current dim
@@ -3769,7 +3908,7 @@ NormalizeWLnodes (node *nodes, int *width)
  *
  * description:
  *   returns the normalized N_WL...-tree 'nodes'.
- *   'idx_max' is the supremum of the index-vector.
+ *   'idx_max' is the supremum of the index-vector set.
  *
  ******************************************************************************/
 
@@ -3782,7 +3921,7 @@ NormWL (node *nodes, int *idx_max)
         nodes = NormalizeWLnodes (nodes, idx_max);
     } else {
         /*
-         * nothing to do for non-constant strides
+         * normalization for non-constant strides is not performed yet
          */
     }
 
@@ -5331,62 +5470,63 @@ ComputeCubes (node *strides)
 node *
 InferInnerStep (node *nodes, int curr_dim, int dims)
 {
-    node *grids, *tmp;
+    node *grids, *node;
 
     DBUG_ENTER ("InferInnerStep");
 
     if (curr_dim < dims) {
         /*
-         * traverse the whole chain
+         * traverse the whole chain of the current dimension
          */
-        tmp = nodes;
-        while (tmp != NULL) {
+        node = nodes;
+        while (node != NULL) {
 
-            switch (NODE_TYPE (tmp)) {
+            switch (NODE_TYPE (node)) {
             case N_WLblock:
-                if (WLBLOCK_NEXTDIM (tmp) != NULL) {
+                if (WLBLOCK_NEXTDIM (node) != NULL) {
                     /*
                      * inspect next dimension;
-                     *   compute unrolling information and store it in WLBLOCK_INNERSTEP;
+                     * compute unrolling information and store it in WLBLOCK_INNERSTEP
                      */
-                    DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp) == NULL),
+                    DBUG_ASSERT ((WLBLOCK_CONTENTS (node) == NULL),
                                  "next blocking *and* inner of block found");
-                    WLBLOCK_NEXTDIM (tmp)
-                      = InferInnerStep (WLBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
 
-                    WLBLOCK_INNERSTEP (tmp)
-                      = GetMaxUnroll (WLBLOCK_NEXTDIM (tmp), curr_dim);
+                    WLBLOCK_NEXTDIM (node)
+                      = InferInnerStep (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
+
+                    WLBLOCK_INNERSTEP (node)
+                      = GetMaxUnroll (WLBLOCK_NEXTDIM (node), curr_dim);
                 } else {
                     /*
                      * compute unrolling information and store it in WLBLOCK_INNERSTEP.
                      */
-                    DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp) != NULL),
+                    DBUG_ASSERT ((WLBLOCK_CONTENTS (node) != NULL),
                                  "inner of block not found");
 
-                    WLBLOCK_INNERSTEP (tmp)
-                      = GetMaxUnroll (WLBLOCK_CONTENTS (tmp), curr_dim);
+                    WLBLOCK_INNERSTEP (node)
+                      = GetMaxUnroll (WLBLOCK_CONTENTS (node), curr_dim);
                 }
                 break;
 
             case N_WLublock:
-                if (WLUBLOCK_NEXTDIM (tmp) != NULL) {
+                if (WLUBLOCK_NEXTDIM (node) != NULL) {
                     /*
                      * inspect next dimension
                      */
-                    DBUG_ASSERT ((WLUBLOCK_CONTENTS (tmp) == NULL),
+                    DBUG_ASSERT ((WLUBLOCK_CONTENTS (node) == NULL),
                                  "next ublocking *and* inner of ublock found");
-                    WLUBLOCK_NEXTDIM (tmp)
-                      = InferInnerStep (WLUBLOCK_NEXTDIM (tmp), curr_dim + 1, dims);
+                    WLUBLOCK_NEXTDIM (node)
+                      = InferInnerStep (WLUBLOCK_NEXTDIM (node), curr_dim + 1, dims);
                 }
 
                 /*
                  * compute unroll-information and store it in WLUBLOCK_INNERSTEP
                  */
-                WLUBLOCK_INNERSTEP (tmp) = WLUBLOCK_STEP (tmp);
+                WLUBLOCK_INNERSTEP (node) = WLUBLOCK_STEP (node);
                 break;
 
             case N_WLstride:
-                grids = WLSTRIDE_CONTENTS (tmp);
+                grids = WLSTRIDE_CONTENTS (node);
                 if (curr_dim < dims - 1) {
                     /*
                      * inspect all grids in next dimension;
@@ -5402,20 +5542,13 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
                 /*
                  * get unroll-information and store it in WL..._INNERSTEP
                  */
-                WLSTRIDE_INNERSTEP (tmp) = WLSTRIDE_STEP (tmp);
-                break;
-
-            case N_WLstriVar: /* non-constant stride */
-            case N_WLgridVar: /* non-constant grids */
-                /*
-                 * not yet implemented :-(
-                 */
+                WLSTRIDE_INNERSTEP (node) = WLSTRIDE_STEP (node);
                 break;
 
             default:
                 DBUG_ASSERT ((0), "wrong node type");
             }
-            tmp = WLNODE_NEXT (tmp);
+            node = WLNODE_NEXT (node);
         }
     }
 
@@ -5440,10 +5573,14 @@ IsHom (node *wlnode, int sv_d)
     DBUG_ENTER ("IsHom");
 
     width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
+
     DBUG_ASSERT ((WLNODE_INNERSTEP (wlnode) > 0), "illegal INNERSTEP found");
-    DBUG_ASSERT ((sv_d % WLNODE_INNERSTEP (wlnode) == 0),
-                 "INNERSTEP is not a divisor of SV");
-    DBUG_RETURN (((width % sv_d) == 0));
+#if 0
+  DBUG_ASSERT( (WLNODE_INNERSTEP( wlnode) % sv_d == 0),
+               "INNERSTEP is not a multiple of SV");
+#endif
+
+    DBUG_RETURN ((width % sv_d == 0));
 }
 
 /******************************************************************************
@@ -5486,12 +5623,6 @@ InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
                     } while ((grid != NULL) && (max_hom_dim > WLSTRIDE_DIM (wlnode)));
                     break;
 
-                case N_WLstriVar:
-                    /*
-                     * not yet implemented :(
-                     */
-                    break;
-
                 default:
                     DBUG_ASSERT ((0), "wrong node type found");
                 }
@@ -5526,15 +5657,10 @@ InferParams (node *seg)
 
     if (NODE_TYPE (seg) == N_WLseg) {
 
-#if 0
-    WLSEG_CONTENTS( seg) = InferInnerStep( WLSEG_CONTENTS( seg),
-                                           0,
-                                           WLSEG_DIMS( seg));
+        WLSEG_CONTENTS (seg) = InferInnerStep (WLSEG_CONTENTS (seg), 0, WLSEG_DIMS (seg));
 
-    WLSEG_MAXHOMDIM( seg) = InferMaxHomDim( WLSEG_CONTENTS( seg),
-                                            WLSEG_SV( seg),
-                                            WLSEG_DIMS( seg) - 1);
-#endif
+        WLSEG_MAXHOMDIM (seg)
+          = InferMaxHomDim (WLSEG_CONTENTS (seg), WLSEG_SV (seg), WLSEG_DIMS (seg) - 1);
     }
 
     DBUG_RETURN (seg);
