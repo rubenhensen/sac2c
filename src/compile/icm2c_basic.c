@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/07/12 14:34:51  dkr
+ * print_comment initialized with 1 now
+ *
  * Revision 1.4  2002/07/11 17:29:19  dkr
  * SizeId() added
  *
@@ -21,7 +24,7 @@
 #include "NameTuples.h"
 #include "icm2c_utils.h"
 
-int print_comment = 0; /* bool */
+int print_comment = 1; /* bool */
 
 #ifdef TAGGED_ARRAYS
 
