@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2001/04/03 15:28:03  dkr
+ * comment for N_WLseg modified
+ *
  * Revision 3.67  2001/04/02 11:16:58  nmw
  * INFO_xxx macros for MODUL, ASSIGN added for optimizations
  *
@@ -3563,10 +3566,10 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***    int        DIMS       [number of dims]
  ***
- ***    int*       IDX_MIN                             (wltransform -> compile )
- ***    int*       IDX_MAX                             (wltransform -> compile )
+ ***    int*       IDX_MIN    [minimal index vector]
+ ***    int*       IDX_MAX    [maximal index vector]
  ***
- ***    int*       UBV        [unrolling-bl. vector]
+ ***    int*       UBV        [unrolling-blocking vector]
  ***
  ***    int        BLOCKS     [number of blocking levels (0..3)
  ***                            --- without unrolling-blocking]
@@ -3583,6 +3586,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***    - BV[ 0 .. (BLOCKS-1) ]
  ***    - UBV, BV[.], SV, IDX_MIN, IDX_MAX are vectors of size DIMS.
+ ***    - SV is the least common multiple of all stride- and ublock-steps found
+ ***      in the segment.
  ***    - MAXHOMDIM is element of the set {-1, 0, 1, ..., DIMS-1}.
  ***      -1 is the default value (= no homogeneous dimensions).
  ***/
