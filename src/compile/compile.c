@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.173  1998/06/19 18:28:24  dkr
+ * added -noUIP
+ * fixed bug in COMPnWith2:
+ *   pointers 'wl_ids', 'wl_node', 'wl_seg' are now stacked (recursiv calls !!)
+ *
  * Revision 1.172  1998/06/19 09:10:05  sbs
  * added some DBUG_PRINTS
  *
@@ -9,9 +14,6 @@
  *
  * Revision 1.170  1998/06/18 13:45:44  cg
  * added compilation of schedulings
- *
- * Revision 1.169  1998/06/09 16:45:22  dkr
- * *** empty log message ***
  *
  * Revision 1.168  1998/06/08 14:17:59  dkr
  * CHECK_REUSE for new with-loop finished
@@ -6265,7 +6267,8 @@ COMPSync (node *arg_node, node *arg_info)
                  * end of with-loop code found?
                  *  -> start of epilog
                  */
-                if (strcmp (ICM_NAME (instr), "WL_END") == 0) {
+                if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
+                    || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
                     DBUG_ASSERT (((prolog == 0) && (epilog == 0)), "wrong ICM order");
                     epilog = 1;
                 } else {
@@ -6445,8 +6448,8 @@ node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
     node *fundef, *vardec, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
-      *rc_icms_wl_ids = NULL, *assigns = NULL;
-    char *icm_name;
+      *old_wl_ids, *old_wl_node, *rc_icms_wl_ids = NULL, *assigns = NULL;
+    char *icm_name1, *icm_name2;
 
     DBUG_ENTER ("COMPNwith2");
 
@@ -6454,14 +6457,17 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * we must store the with-loop ids *before* compiling the codes
      *  because INFO_COMP_LASTIDS is possibly updated afterwards !!!
      */
+    old_wl_ids = wl_ids; /* stack 'wl_ids' */
     wl_ids = INFO_COMP_LASTIDS (arg_info);
+    old_wl_node = wl_node; /* stack 'wl_node' */
     wl_node = arg_node;
 
     /*
-     * Insert ICMs for memory management (ND_CHECK_REUSE_ARRAY, ND_ALLOC_ARRAY),
-     *  if we have a genarray- or modarray-op.
-     * (If we have a fold, this is done automaticly when compiling the
-     *  init-assignment 'wl_ids = neutral' !!!)
+     * When update-in-place is active:
+     *   Insert ICMs for memory management (ND_CHECK_REUSE_ARRAY, ND_ALLOC_ARRAY),
+     *    if we have a genarray- or modarray-op.
+     *   (If we have a fold, this is done automaticly when compiling the
+     *    init-assignment 'wl_ids = neutral' !!!)
      *
      * If we have a fold-op, insert the vardecs of the dummy fold-fun
      *  into the vardec-chain of the current function.
@@ -6470,31 +6476,36 @@ COMPNwith2 (node *arg_node, node *arg_info)
      */
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
-        /*
-         * find all arrays, that possibly can be reused.
-         */
-        arg_node = GetReuseArrays (arg_node, INFO_COMP_FUNDEF (arg_info), wl_ids);
 
-        /*
-         * 'ND_CHECK_REUSE_ARRAY'
-         */
-        vardec = DFMGetMaskEntryDeclSet (NWITH2_REUSE (arg_node));
-        while (vardec != NULL) {
-            assigns
-              = MakeAssign (MakeIcm ("ND_CHECK_REUSE_ARRAY",
-                                     MakeExprs (MakeId (StringCopy (
-                                                          VARDEC_OR_ARG_NAME (vardec)),
-                                                        NULL, ST_regular),
-                                                MakeExprs (MakeId (StringCopy (
-                                                                     IDS_NAME (wl_ids)),
-                                                                   NULL, ST_regular),
-                                                           NULL)),
-                                     NULL),
-                            assigns);
+        if (opt_uip) {
+            /*
+             * find all arrays, that possibly can be reused.
+             */
+            arg_node = GetReuseArrays (arg_node, INFO_COMP_FUNDEF (arg_info), wl_ids);
 
-            vardec = DFMGetMaskEntryDeclSet (NULL);
+            /*
+             * 'ND_CHECK_REUSE_ARRAY'
+             */
+            vardec = DFMGetMaskEntryDeclSet (NWITH2_REUSE (arg_node));
+            while (vardec != NULL) {
+                assigns
+                  = MakeAssign (MakeIcm ("ND_CHECK_REUSE_ARRAY",
+                                         MakeExprs (MakeId (StringCopy (
+                                                              VARDEC_OR_ARG_NAME (
+                                                                vardec)),
+                                                            NULL, ST_regular),
+                                                    MakeExprs (MakeId (StringCopy (
+                                                                         IDS_NAME (
+                                                                           wl_ids)),
+                                                                       NULL, ST_regular),
+                                                               NULL)),
+                                         NULL),
+                                assigns);
+
+                vardec = DFMGetMaskEntryDeclSet (NULL);
+            }
+            NWITH2_REUSE (arg_node) = DFMRemoveMask (NWITH2_REUSE (arg_node));
         }
-        NWITH2_REUSE (arg_node) = DFMRemoveMask (NWITH2_REUSE (arg_node));
 
         /*
          * 'ND_ALLOC_ARRAY'
@@ -6534,32 +6545,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
      */
 
     icm_args = NULL;
-#if 00
-    num_args = 0;
-    withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
-    while (withid_ids != NULL) {
-        if (NWITH2_IDX_MIN (arg_node) != NULL) {
-            idx_min = NWITH2_IDX_MIN (arg_node)[num_args];
-        } else {
-            idx_min = 0;
-        }
-        if (NWITH2_IDX_MAX (arg_node) != NULL) {
-            idx_max = NWITH2_IDX_MAX (arg_node)[num_args];
-        } else {
-            idx_max = INT_MAX;
-        }
-
-        icm_args
-          = AppendExpr (icm_args,
-                        MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)),
-                                   MakeExprs (MakeNum (idx_min),
-                                              MakeExprs (MakeNum (idx_max), NULL))));
-        num_args++;
-        withid_ids = IDS_NEXT (withid_ids);
-    }
-    icm_args = MakeExprs (MakeNum (num_args), icm_args);
-#endif
-
     icm_args
       = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
                    icm_args);
@@ -6569,7 +6554,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
     case WO_genarray:
         /* here is no break missing! */
     case WO_modarray:
-        icm_name = "WL_NONFOLD_BEGIN";
+        icm_name1 = "WL_NONFOLD_BEGIN";
+        icm_name2 = "WL_NONFOLD_END";
         break;
 
     case WO_foldfun:
@@ -6631,7 +6617,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
          */
         assigns = AppendAssign (assigns, neutral);
 
-        icm_name = "WL_FOLD_BEGIN";
+        icm_name1 = "WL_FOLD_BEGIN";
+        icm_name2 = "WL_FOLD_END";
         break;
 
     default:
@@ -6639,7 +6626,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     }
 
     assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name, icm_args, NULL), NULL));
+      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name1, icm_args, NULL), NULL));
 
     /*
      * compile the with-segments
@@ -6650,7 +6637,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * insert 'WL_END'-ICM
      */
-    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", NULL, NULL), NULL));
+    assigns
+      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name2, icm_args, NULL), NULL));
 
     /*
      * insert RC-ICMs from 'wl_ids = neutral'
@@ -6672,6 +6660,12 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * with-loop representation is useless now!
      */
     arg_node = FreeTree (arg_node);
+
+    /*
+     * pop 'wl_ids', 'wl_node'.
+     */
+    wl_ids = old_wl_ids;
+    wl_node = old_wl_node;
 
     DBUG_RETURN (assigns);
 }
@@ -6731,10 +6725,15 @@ COMPNcode (node *arg_node, node *arg_info)
 node *
 COMPWLseg (node *arg_node, node *arg_info)
 {
-    node *assigns;
+    node *assigns, *old_wl_seg;
 
     DBUG_ENTER ("COMPWLseg");
 
+    /*
+     * stack old 'wl_seg'.
+     * store pointer to current segment in 'wl_seg'.
+     */
+    old_wl_seg = wl_seg;
     wl_seg = arg_node;
 
     /*
@@ -6764,6 +6763,11 @@ COMPWLseg (node *arg_node, node *arg_info)
          */
         assigns = AppendAssign (assigns, Trav (WLSEG_NEXT (arg_node), arg_info));
     }
+
+    /*
+     * pop 'wl_seg'.
+     */
+    wl_seg = old_wl_seg;
 
     DBUG_RETURN (assigns);
 }
