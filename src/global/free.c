@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/05/11 15:16:41  dkr
+ * changed FreeNwith, FreeNwith2:
+ *   free NWITH_RC_IDS
+ *
  * Revision 1.59  1998/05/07 10:16:15  dkr
  * changed FreeSpmd, FreeSync, FreeNwith, ...
  *
@@ -1712,6 +1716,8 @@ FreeNWith (node *arg_node, node *arg_info)
         NWITH_LOCAL (arg_node) = DFMRemoveMask (NWITH_LOCAL (arg_node));
     }
 
+    NWITH_RC_IDS (arg_node) = FreeAllIds (NWITH_RC_IDS (arg_node));
+
     FREE (arg_node);
 
     DBUG_RETURN (tmp);
@@ -1820,6 +1826,8 @@ FreeNCode (node *arg_node, node *arg_info)
     FREETRAV (NCODE_CBLOCK (arg_node));
     FREETRAV (NCODE_CEXPR (arg_node));
 
+    NCODE_RC_IDS (arg_node) = FreeAllIds (NCODE_RC_IDS (arg_node));
+
     FREE (arg_node);
 
     DBUG_RETURN (tmp);
@@ -1852,6 +1860,8 @@ FreeNwith2 (node *arg_node, node *arg_info)
     if (NWITH2_LOCAL (arg_node) != NULL) {
         NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
     }
+
+    NWITH2_RC_IDS (arg_node) = FreeAllIds (NWITH2_RC_IDS (arg_node));
 
     FREE (arg_node);
 
