@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.8  2004/07/03 17:12:57  sah
+# xml files are only precessed if in new ast mode
+#
 # Revision 1.7  2004/07/03 15:09:35  sah
 # added the new node representation into the source code.
 # the new ast can be enabled by make newast int the
@@ -42,11 +45,21 @@ endif
 
 
 YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
-XSL_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*_h.xsl)
-XML_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*.xml)
-XML_H_FILES    := $(patsubst ast2%_h.xsl, $(PROJECT_ROOT)/src/tree/%.h, \
-                    $(notdir                                          \
-                       $(XSL_FILES)))
+
+#
+# the xml processing is only done if new ast is used
+#
+ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
+  XSL_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*_h.xsl)
+  XML_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*.xml)
+  XML_H_FILES    := $(patsubst ast2%_h.xsl, $(PROJECT_ROOT)/src/tree/%.h, \
+                      $(notdir                                          \
+                         $(XSL_FILES)))
+else
+  XSL_FILES      :=
+  XML_FILES      :=
+  XML_H_FILES    :=
+endif
 #
 # $(YACC_H_FILES) might be included by any .c files.
 # Therefore, bison has to be run before any dependency
