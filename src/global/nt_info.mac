@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.3  2000/07/10 15:38:11  dkr
- * minor changes done
+ * Revision 1.4  2000/08/17 10:09:00  dkr
+ * some minor changes done
  *
  * Revision 1.2  2000/03/23 14:02:11  jhs
  * Brushing, same system as in node_info.mac now.
@@ -40,7 +40,8 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 #if (ATTRIB == 1)
 
   NTIF (C_aks, "AKS"),
-  NTIF (C_akd, "AKD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"), NTIF (C_lastc, "")
+  NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"),
+  NTIF (C_lastc, "")
 
 #elif (ATTRIB == 2)
 
