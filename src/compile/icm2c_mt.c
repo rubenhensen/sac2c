@@ -1,11 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/09/15 16:45:53  dkr
+ * Several modifications for TAGGED_ARRAYS done.
+ * This revision is incomplete yet.
+ *
  * Revision 3.28  2003/08/04 16:57:08  dkr
  * argument of MT_SPMD_FUN_DEC, MT_SPMD_FUN_RET renamed
- *
- * Revision 3.27  2002/08/01 12:47:44  dkr
- * no changes done
  *
  * Revision 3.26  2001/11/22 08:36:43  sbs
  * foldop initialized to NULL; just to please gcc 8-)
@@ -413,12 +414,12 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_START_SYNCBLOCK(int barrier_id, int narg, char **vararg)
+ *   void ICMCompileMT_START_SYNCBLOCK( int barrier_id, int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_START_SYNCBLOCK(int barrier_id, narg [, tag, type, param]*)
+ *   MT_START_SYNCBLOCK( barrier_id, narg [, tag, type, param]*)
  *
  *   This ICM implements the begin of a synchronisation block. Essentially,
  *   the reference counters of the arguments tagged in_rc are shadowed by
@@ -474,7 +475,7 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD( barrier_id, narg [, foldtype, accu_var, tmp_var, foldop]*)
+ *   MT_SYNC_FOLD( barrier_id, narg [, foldtype, accu_nt, tmp_nt, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops but no genarray/modarray
@@ -510,7 +511,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 #ifndef BEtest
     foldcodes = (node **)Malloc (narg * sizeof (node *));
     for (i = 0; i < narg; i++) {
-        foldop = vararg[(i * 4) + 3];
+        foldop = vararg[4 * i + 3];
         foldcodes[i] = SearchFoldImplementation (foldop);
     }
 #endif /* BEtest */
@@ -523,7 +524,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
         fprintf (outfile,
                  "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
                  " \"Pure thread fold result:\");\n",
-                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+                 vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
@@ -531,15 +532,20 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 
     for (i = 0; i < narg; i++) {
         INDENT;
-        if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_SET_BARRIER_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s)\n",
+                 i + 1, vararg[4 * i], vararg[4 * i + 1]);
+#else  /* TAGGED_ARRAYS */
+        if (0 != strcmp ("array_rc", vararg[4 * i])) {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n", i + 1,
-                     vararg[(i * 4)], vararg[(i * 4) + 1]);
+                     "SAC_MT_SET_BARRIER_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
         } else {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RC_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[(i * 4)], vararg[(i * 4) + 1]);
+                     "SAC_MT_SET_BARRIER_RC_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
         }
+#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -548,29 +554,34 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     for (i = 0; i < narg; i++) {
         INDENT;
         fprintf (outfile,
-                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Partial thread fold "
+                 "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s, \"Partial thread fold "
                  "result:\");\n",
-                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+                 vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1D( %d)\n", barrier_id);
 
     for (i = 0; i < narg; i++) {
-        if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
-            INDENT;
-            fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(SAC_MT_son_id, %i, %s);\n",
-                     vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
+        INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s, %s)\n",
+                 i + 1, vararg[4 * i], vararg[4 * i + 2]);
+#else  /* TAGGED_ARRAYS */
+        if (0 != strcmp ("array_rc", vararg[4 * i])) {
+            fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s);\n",
+                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
         } else {
+            fprintf (outfile,
+                     "%s = SAC_MT_GET_BARRIER_RC_RESULT_PTR( SAC_MT_son_id, %i, %s);\n",
+                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
             INDENT;
             fprintf (outfile,
-                     "%s = SAC_MT_GET_BARRIER_RC_RESULT_PTR(SAC_MT_son_id, %i, %s);\n",
-                     vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
-            INDENT;
-            fprintf (outfile,
-                     "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC(SAC_MT_son_id, %i, %s);\n",
-                     vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
+                     "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC( SAC_MT_son_id, %i, "
+                     "%s);\n",
+                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
         }
+#endif /* TAGGED_ARRAYS */
 #ifndef BEtest
         INDENT;
         fprintf (outfile, "{\n");
@@ -590,15 +601,20 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 
     for (i = 0; i < narg; i++) {
         INDENT;
-        if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_SET_BARRIER_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s)\n",
+                 i + 1, vararg[4 * i], vararg[4 * i + 1]);
+#else  /* TAGGED_ARRAYS */
+        if (0 != strcmp ("array_rc", vararg[4 * i])) {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n", i + 1,
-                     vararg[(i * 4)], vararg[(i * 4) + 1]);
+                     "SAC_MT_SET_BARRIER_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
         } else {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RC_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[(i * 4)], vararg[(i * 4) + 1]);
+                     "SAC_MT_SET_BARRIER_RC_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
         }
+#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -607,29 +623,34 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     for (i = 0; i < narg; i++) {
         INDENT;
         fprintf (outfile,
-                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Partial thread fold "
+                 "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s, \"Partial thread fold "
                  "result:\");\n",
-                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+                 vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2C( %d)\n", barrier_id);
 
     for (i = 0; i < narg; i++) {
-        if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
-            INDENT;
-            fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(SAC_MT_son_id, %i, %s);\n",
-                     vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
+        INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s, %s)\n",
+                 i + 1, vararg[4 * i], vararg[4 * i + 2]);
+#else  /* TAGGED_ARRAYS */
+        if (0 != strcmp ("array_rc", vararg[4 * i])) {
+            fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s);\n",
+                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
         } else {
+            fprintf (outfile,
+                     "%s = SAC_MT_GET_BARRIER_RC_RESULT_PTR( SAC_MT_son_id, %i, %s);\n",
+                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
             INDENT;
             fprintf (outfile,
-                     "%s = SAC_MT_GET_BARRIER_RC_RESULT_PTR(SAC_MT_son_id, %i, %s);\n",
-                     vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
-            INDENT;
-            fprintf (outfile,
-                     "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC(SAC_MT_son_id, %i, %s);\n",
-                     vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
+                     "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC( SAC_MT_son_id, %i, "
+                     "%s);\n",
+                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
         }
+#endif /* TAGGED_ARRAYS */
 
 #ifndef BEtest
         INDENT;
@@ -650,15 +671,21 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 
     for (i = 0; i < narg; i++) {
         INDENT;
-        if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_SET_BARRIER_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s)\n",
+                 i + 1, vararg[4 * i], vararg[4 * i + 1]);
+#else  /* TAGGED_ARRAYS */
+        if (0 != strcmp ("array_rc", vararg[4 * i])) {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n", i + 1,
-                     vararg[(i * 4)], vararg[(i * 4) + 1]);
+                     "SAC_MT_SET_BARRIER_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
         } else {
             fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RC_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[(i * 4)], vararg[(i * 4) + 1]);
+                     "SAC_MT_SET_BARRIER_DESC_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     "SAC_MT_SET_BARRIER_RC_RESULT( SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
         }
+#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -667,9 +694,9 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     for (i = 0; i < narg; i++) {
         INDENT;
         fprintf (outfile,
-                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Partial thread fold "
+                 "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s, \"Partial thread fold "
                  "result:\");\n",
-                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+                 vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
@@ -786,12 +813,12 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SYNC_NONFOLD( )
+ *   void ICMCompileMT_SYNC_NONFOLD( int barrier_id)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_NONFOLD( int barrier_id)
+ *   MT_SYNC_NONFOLD( barrier_id)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain exclusively modarray/genarray with-loops.
@@ -809,7 +836,7 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
 #undef MT_SYNC_NONFOLD
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_NONFOLD_1(%d)\n", barrier_id);
+    fprintf (outfile, "SAC_MT_SYNC_NONFOLD_1( %d)\n", barrier_id);
 
     indent--;
 
@@ -824,12 +851,12 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SYNC_FOLD_NONFOLD(int narg, char **vararg)
+ *   void ICMCompileMT_SYNC_FOLD_NONFOLD( int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD_NONFOLD( narg [, foldtype, accu_var, tmp_var, foldop]*)
+ *   MT_SYNC_FOLD_NONFOLD( narg [, foldtype, accu_nt, tmp_nt, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops as well as additional genarray/modarray
@@ -901,7 +928,7 @@ ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var
  * description:
  *   compiles the corresponding ICM:
  *
- *   MT_MASTER_SEND_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *   MT_MASTER_SEND_FOLDRESULTS( nfoldargs, [, foldtype, accu_nt]*)
  *
  *   As part of the value exchange between two SYNC-blocks it is responsible
  *   to send results of fold with-loops to the SPMD-frame ... BUT ...
@@ -939,7 +966,7 @@ ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs)
  * description:
  *   compiles the corresponding ICM:
  *
- *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_nt]*)
  *
  *   As part of the value exchange between two SYNC-blocks it is responsible
  *   to receive results of fold with-loops from the SPMD-frame ... BUT ...
@@ -964,8 +991,13 @@ ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs)
 
     for (i = 0, j = 1; i < 2 * nfoldargs; i += 2, j++) {
         INDENT;
-        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(0, %d, %s);\n", foldargs[i + 1],
-                 j, foldargs[i]);
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j, foldargs[i],
+                 foldargs[i + 1]);
+#else  /* TAGGED_ARRAYS */
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s);\n",
+                 foldargs[i + 1], j, foldargs[i]);
+#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;
@@ -1030,10 +1062,10 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
 
     DBUG_ENTER ("ICMCompileMT_MASTER_RECEIVE_SYNCARGS");
 
-#define MT_MASTER_SEND_SYNCARGS
+#define MT_MASTER_RECEIVE_SYNCARGS
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_MASTER_SEND_SYNCARGS
+#undef MT_MASTER_RECEIVE_SYNCARGS
 
     for (i = 0; i < nsyncargs; i++) {
         INDENT;
@@ -1054,7 +1086,7 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
  *   implements the compilation of the following ICM:
  *
  *   MT_CONTINUE( nfoldargs, nsyncargs
- *                [, foldtype, accu_var]*,
+ *                [, foldtype, accu_nt]*,
  *                [, ... ]*);
  *
  *   This ICM implements the continuation after a barrier synchronisation.
@@ -1106,8 +1138,13 @@ ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **synca
 
     for (i = 0, j = 1; i < 2 * nfoldargs; i += 2, j++) {
         INDENT;
-        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(0, %d, %s);\n", vararg[i + 1],
-                 j, vararg[i]);
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j, vararg[i],
+                 vararg[i + 1]);
+#else  /* TAGGED_ARRAYS */
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s);\n",
+                 vararg[i + 1], j, vararg[i]);
+#endif /* TAGGED_ARRAYS */
     }
 
     for (i = 0; i < nsyncargs; i++) {
@@ -1165,7 +1202,7 @@ ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg)
         if ((strcmp (vararg[i], "in") == 0) || (strcmp (vararg[i], "in_rc") == 0)
             || (strcmp (vararg[i], "out") == 0) || (strcmp (vararg[i], "out_rc") == 0)) {
             INDENT;
-            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n", vararg[i], name,
+            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
                      vararg[i + 2]);
         }
     }
