@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/03/14 14:12:42  asi
+ * Revision 1.30  1995/03/15 18:40:35  asi
+ * added refcnt to struct nchain
+ *
+ * Revision 1.29  1995/03/14  14:12:42  asi
  * added new entry to struct node (int bblock)
  *
  * Revision 1.28  1995/03/13  15:47:32  hw
@@ -128,6 +131,7 @@ typedef enum { C_gen, C_mod } contype;
 typedef char id;
 
 typedef struct NCHAIN {
+    int refcnt;
     struct NCHAIN *next;
     struct NODE *node;
 } nchain;
