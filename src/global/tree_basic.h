@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.151  1998/05/02 17:44:34  dkr
+ * added macros for N_with2, N_sync, N_spmd
+ *
  * Revision 1.150  1998/04/30 12:23:16  srs
  * changed comment
  *
@@ -1135,7 +1138,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                         ( -> analysis -> )
  ***                                         ( -> write-SIB -> )
  ***                                         ( -> obj-handling -> )
- ***    node*      ICM           (N_icm)     (compile -> )
+ ***    node*      ICM           (N_icm)     (compile -> print )
  ***    int        VARNO                     (optimize -> )
  ***    long*      MASK[x]                   (optimize -> )
  ***    int        INLREC                    (inl !!)
@@ -2331,19 +2334,29 @@ extern node *MakeInfo ();
  ***
  ***  sons:
  ***
- ***    node*      REGION      (0)  (N_block)
+ ***    node*      REGION      (N_block)
  ***
  ***  permanent attributes:
  ***
- ***    int        VARNO       (0)
- ***    long*      IN          (0)
- ***    long*      OUT         (0)
- ***    long*      INOUT       (0)
- ***    long*      LOCAL       (0)
+ ***    ---
  ***
  ***  temporary attributes:
  ***
- ***    ---
+ ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
+ ***
+ ***    int        VARNO                 (spmdinit -> spmd... -> compile -> )
+ ***    long*      IN                    (spmdinit -> spmd... -> compile -> )
+ ***    long*      OUT                   (spmdinit -> spmd... -> compile -> )
+ ***    long*      INOUT                 (spmdinit -> spmd... -> compile -> )
+ ***    long*      LOCAL                 (spmdinit -> spmd... -> )
+ ***
+ ***    char*      FUNNAME               (spmdlift -> compile -> )
+ ***    node*      ICM         (N_icm)   (compile -> print -> )
+ ***
+ ***  remarks:
+ ***
+ ***    INOUT_IDS contains all LET_IDS(...) of the inout-lets found in REGION.
+ ***    This is needed by 'compile' to find the right RCs.
  ***
  ***/
 
@@ -2351,11 +2364,16 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_REGION(n) (n->node[0])
 
+#define SPMD_INOUT_IDS(n) ((ids *)(n->node[1]))
+
 #define SPMD_VARNO(n) (n->varno)
 #define SPMD_IN(n) (n->mask[0])
 #define SPMD_OUT(n) (n->mask[1])
 #define SPMD_INOUT(n) (n->mask[2])
 #define SPMD_LOCAL(n) (n->mask[3])
+
+#define SPMD_FUNNAME(n) (n->info.id)
+#define SPMD_ICM(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2364,21 +2382,27 @@ extern node *MakeSpmd (node *region);
  ***
  ***  sons:
  ***
- ***    node*      REGION      (0)  (N_block)
+ ***    node*      REGION      (N_block)
  ***
  ***  permanent attributes:
  ***
- ***    int        FIRST       (0)     (is the sync-region the first one
- ***                                    of the current SPMD-region?)
- ***    int        VARNO       (0)
- ***    long*      IN          (0)
- ***    long*      OUT         (0)
- ***    long*      INOUT       (0)
- ***    long*      LOCAL       (0)
+ ***    int        FIRST            (is the sync-region the first one
+ ***                                 of the current SPMD-region?)
  ***
  ***  temporary attributes:
  ***
- ***    ---
+ ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
+ ***
+ ***    int        VARNO                 (spmdinit -> spmd... -> compile -> )
+ ***    long*      IN                    (spmdinit -> spmd... -> compile -> )
+ ***    long*      OUT                   (spmdinit -> spmd... -> compile -> )
+ ***    long*      INOUT                 (spmdinit -> spmd... -> compile -> )
+ ***    long*      LOCAL                 (spmdinit -> spmd... -> compile -> )
+ ***
+ ***  remarks:
+ ***
+ ***    INOUT_IDS contains all LET_IDS(...) of the inout-lets found in REGION.
+ ***    This is needed by 'compile' to find the right RCs.
  ***
  ***/
 
@@ -2386,6 +2410,8 @@ extern node *MakeSync (node *region, int first);
 
 #define SYNC_REGION(n) (n->node[0])
 #define SYNC_FIRST(n) (n->flag)
+
+#define SYNC_INOUT_IDS(n) ((ids *)(n->node[1]))
 
 #define SYNC_VARNO(n) (n->varno)
 #define SYNC_IN(n) (n->mask[0])
@@ -2619,12 +2645,14 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  sons:
  ***
- ***    node*    WITHID   (0)     (N_Nwithid)
- ***    node*    SEG      (0)     (N_WLseg)
- ***    node*    CODE     (0)     (N_Ncode)
- ***    node*    WITHOP   (0)     (N_Nwithop)
+ ***    node*    WITHID        (N_Nwithid)
+ ***    node*    SEG           (N_WLseg)
+ ***    node*    CODE          (N_Ncode)
+ ***    node*    WITHOP        (N_Nwithop)
  ***
  ***  temporary attributes:
+ ***
+ ***    ids*     LETIDS               (wltrans -> compile -> )
  ***
  ***    int      VARNO                (wltrans -> spmdregions -> )
  ***    long*    IN                   (wltrans -> spmdregions -> )
@@ -2641,6 +2669,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
 
+#define NWITH2_LETIDS(n) ((ids *)(n->node[4]))
+
 #define NWITH2_VARNO(n) (n->varno)
 #define NWITH2_IN(n) (n->mask[0])
 #define NWITH2_INOUT(n) (n->mask[1])
@@ -2654,12 +2684,12 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS  (0)     (N_WLblock, N_WLublock, N_WLstride)
- ***    node*    NEXT      (0)     (N_WLseg)
+ ***    node*    CONTENTS       (N_WLblock, N_WLublock, N_WLstride)
+ ***    node*    NEXT           (N_WLseg)
  ***
  ***  permanent attributes:
  ***
- ***    int      DIMS      (0)  (number of dims)
+ ***    int      DIMS      (number of dims)
  ***
  ***  temporary attributes:
  ***
@@ -2720,24 +2750,25 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM   (0)    (N_WLblock)
- ***    node*    CONTENTS  (0)    (N_WLublock, N_WLstride)
- ***    node*    NEXT      (0)    (N_WLblock)
+ ***    node*    NEXTDIM       (N_WLblock)
+ ***    node*    CONTENTS      (N_WLublock, N_WLstride)
+ ***    node*    NEXT          (N_WLblock)
  ***
  ***  permanent attributes:
  ***
- ***    int      LEVEL     (0)           (number of blocking-levels so far)
- ***    int      DIM       (0)
- ***    int      BOUND1    (0)
- ***    int      BOUND2    (0)
- ***    int      STEP      (0)
+ ***    int      LEVEL                (number of blocking-levels so far)
+ ***    int      DIM
+ ***    int      BOUND1
+ ***    int      BOUND2
+ ***    int      STEP
  ***
  ***  temporary attributes:
  ***
  ***    ---
  ***
  ***
- ***  remark:
+ ***  remarks:
+ ***
  ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
  ***
  ***/
@@ -2761,24 +2792,25 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM   (0)    (N_WLublock)
- ***    node*    CONTENTS  (0)    (N_WLstride)
- ***    node*    NEXT      (0)    (N_WLublock)
+ ***    node*    NEXTDIM       (N_WLublock)
+ ***    node*    CONTENTS      (N_WLstride)
+ ***    node*    NEXT          (N_WLublock)
  ***
  ***  permanent attributes:
  ***
- ***    int      LEVEL     (0)
- ***    int      DIM       (0)
- ***    int      BOUND1    (0)
- ***    int      BOUND2    (0)
- ***    int      STEP      (0)
+ ***    int      LEVEL
+ ***    int      DIM
+ ***    int      BOUND1
+ ***    int      BOUND2
+ ***    int      STEP
  ***
  ***  temporary attributes:
  ***
  ***    ---
  ***
  ***
- ***  remark:
+ ***  remarks:
+ ***
  ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
  ***
  ***/
@@ -2802,23 +2834,23 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS  (0)    (N_WLgrid)
- ***    node*    NEXT      (0)    (N_WLstride)
+ ***    node*    CONTENTS     (N_WLgrid)
+ ***    node*    NEXT         (N_WLstride)
  ***
  ***  permanent attributes:
  ***
- ***    int      LEVEL     (0)
- ***    int      DIM       (0)
- ***    int      BOUND1    (0)
- ***    int      BOUND2    (0)
- ***    int      STEP      (0)
- ***    int      UNROLLING (0)                     (unrolling wanted?)
+ ***    int      LEVEL
+ ***    int      DIM
+ ***    int      BOUND1
+ ***    int      BOUND2
+ ***    int      STEP
+ ***    int      UNROLLING                        (unrolling wanted?)
  ***
  ***  temporary attributes:
  ***
- ***    node*    PART      (0)    (Precompile ! )  (part this stride is ...
+ ***    node*    PART            (Precompile ! )  (part this stride is ...
  ***                                                ... generated from)
- ***    int      MODIFIED  (0)    (Precompile ! )
+ ***    int      MODIFIED        (Precompile ! )
  ***
  ***/
 
@@ -2844,24 +2876,25 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM   (0)    (N_WLblock, N_WLublock, N_WLstride)
- ***    node*    NEXT      (0)    (N_WLgrid)
+ ***    node*    NEXTDIM       (N_WLblock, N_WLublock, N_WLstride)
+ ***    node*    NEXT          (N_WLgrid)
  ***
  ***  permanent attributes:
  ***
- ***    node*    CODE      (0)    (N_Ncode)
- ***    int      LEVEL     (0)
- ***    int      DIM       (0)
- ***    int      BOUND1    (0)
- ***    int      BOUND2    (0)
- ***    int      UNROLLING (0)
+ ***    node*    CODE          (N_Ncode)
+ ***    int      LEVEL
+ ***    int      DIM
+ ***    int      BOUND1
+ ***    int      BOUND2
+ ***    int      UNROLLING
  ***
  ***  temporary attributes:
  ***
- ***    int      MODIFIED  (0)    (Precompile ! )
+ ***    int      MODIFIED           (Precompile ! )
  ***
  ***
- ***  remark:
+ ***  remarks:
+ ***
  ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
  ***
  ***/
@@ -2887,15 +2920,15 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS  (0)    (N_WLgridVar)
- ***    node*    NEXT      (0)    (N_WLstriVar)
+ ***    node*    CONTENTS      (N_WLgridVar)
+ ***    node*    NEXT          (N_WLstriVar)
  ***
  ***  permanent attributes:
  ***
- ***    int      DIM       (0)
- ***    node*    BOUND1    (0)    (N_num, N_id)
- ***    node*    BOUND2    (0)    (N_num, N_id)
- ***    node*    STEP      (0)    (N_num, N_id)
+ ***    int      DIM
+ ***    node*    BOUND1        (N_num, N_id)
+ ***    node*    BOUND2        (N_num, N_id)
+ ***    node*    STEP          (N_num, N_id)
  ***
  ***/
 
@@ -2916,18 +2949,19 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM   (0)    (N_WLstriVar)
- ***    node*    NEXT      (0)    (N_WLgridVar)
+ ***    node*    NEXTDIM       (N_WLstriVar)
+ ***    node*    NEXT          (N_WLgridVar)
  ***
  ***  permanent attributes:
  ***
- ***    node*    BOUND1    (0)    (N_num, N_id)
- ***    node*    BOUND2    (0)    (N_num, N_id)
- ***    node*    CODE      (0)    (N_Ncode)
- ***    int      DIM       (0)
+ ***    node*    BOUND1        (N_num, N_id)
+ ***    node*    BOUND2        (N_num, N_id)
+ ***    node*    CODE          (N_Ncode)
+ ***    int      DIM
  ***
  ***
- ***  remark:
+ ***  remarks:
+ ***
  ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
  ***
  ***/
