@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.24  2004/09/30 20:01:26  sah
+# added a switch to compile a subset of
+# the compiler only
+#
 # Revision 3.23  2003/09/17 12:34:25  sbs
 # type_statistics.o added
 #
@@ -71,11 +75,16 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
      -I../compile -I../c-interface -I../constants -I../flatten -I.
 
-all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
-     new_typecheck.o new_types.o user_types.o create_wrappers.o \
-     ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o ct_with.o type_errors.o \
-     specialize.o new2old.o create_wrapper_code.o type_statistics.o
+OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
+      create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
+      ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
+      type_statistics.o
 
+ifeq ($(NEWAST),no)
+  OBJS:= typecheck.o prim_fun.o typecheck_WL.o $(OBJS)
+endif
+
+all: $(OBJS)
 
 #
 # the *.[ch] objects are to fool makedepend which does not

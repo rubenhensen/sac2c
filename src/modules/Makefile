@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.15  2004/09/30 20:01:26  sah
+# added a switch to compile a subset of
+# the compiler only
+#
 # Revision 3.14  2004/09/27 13:19:41  sah
 # added symboltable
 #
@@ -69,11 +73,14 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
        -I../typecheck -I../compile -I../constants -I.
+OBJS := filemgr.o symboltable.o cccall.o
 
+ifeq ($(NEWAST),no)
+  OBJS := import.o readsib.o writesib.o implicittypes.o analysis.o \
+          checkdec.o $(OBJS)
+endif
 
-all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \
-     checkdec.o cccall.o symboltable.o
-
+all: $(OBJS)
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)

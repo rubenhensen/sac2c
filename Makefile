@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.108  2004/09/30 20:01:26  sah
+# added a switch to compile a subset of
+# the compiler only
+#
 # Revision 3.107  2004/09/28 16:31:14  ktr
 # cleaned up concurrent (removed everything not working / not working with emm)
 #
@@ -246,6 +250,8 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
         src/global/options.o src/global/NameTuples.o \
         src/global/NameTuplesUtils.o
+GLOBAL_OLD= 
+
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
@@ -253,16 +259,22 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
       src/tree/serialize.o src/tree/serialize_stack.o
+TREE_OLD=
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o
+SCANP_OLD=
+
 PRINT= src/print/print.o src/print/convert.o
+PRINT_OLD=
+
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/fun2lac.o src/flatten/insert_vardec.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/CheckAvis.o src/flatten/SSATransform.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
 	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o
+FLATTEN_OLD=
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
@@ -270,8 +282,9 @@ CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/cv2scalar.o src/constants/cv2str.o \
            src/constants/zipcv.o src/constants/basecv.o \
            src/constants/constants_serialize.o
-TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
-           src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
+CONSTANTS_OLD=
+
+TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
            src/typecheck/user_types.o src/typecheck/create_wrappers.o \
            src/typecheck/ssi.o src/typecheck/sig_deps.o src/typecheck/ct_prf.o \
@@ -279,6 +292,9 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/ct_with.o src/typecheck/type_errors.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
            src/typecheck/create_wrapper_code.o src/typecheck/type_statistics.o
+TYPECHECK_OLD= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
+               src/typecheck/typecheck_WL.o
+
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
 	  src/optimize/Inline.o \
@@ -287,11 +303,14 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
-          src/optimize/DistributiveLaw.o src/optimize/ElimSubDiv.o \
+          src/optimize/ElimSubDiv.o \
           src/optimize/UndoElimSubDiv.o src/optimize/SelectionPropagation.o \
           src/optimize/ConstVarPropagation.o
+OPTIMIZE_OLD=src/optimize/DistributiveLaw.o
 
 PROFILE= src/profile/annotate_fun_calls.o
+PROFILE_OLD=
+
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
         src/psi-opt/WithloopScalarization.o \
@@ -301,32 +320,41 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
 	src/psi-opt/WithloopFusion.o src/psi-opt/detectdependencies.o \
 	src/psi-opt/tagdependencies.o
-MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
-         src/modules/implicittypes.o src/modules/analysis.o \
-         src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o \
-         src/modules/symboltable.o
+PSIOPT_OLD=
+
+MODULES= src/modules/symboltable.o
+MODULES_OLD= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
+             src/modules/implicittypes.o src/modules/analysis.o \
+             src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
+
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
+OBJECTS_OLD=
+
 REFCOUNT= src/refcount/allocation.o \
           src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
-CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
-            src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
-            src/concurrent/sync_opt.o src/concurrent/schedule.o \
-            src/concurrent/spmd_trav.o \
-            src/concurrent/concurrent_lib.o src/concurrent/spmd_emm.o
-MULTITHREAD= src/multithread/multithread.o \
-             src/multithread/multithread_lib.o \
-             src/multithread/tag_executionmode.o \
-             src/multithread/propagate_executionmode.o \
-             src/multithread/create_cells.o \
-             src/multithread/create_dataflowgraph.o \
-             src/multithread/assignments_rearrange.o \
-             src/multithread/cell_growth.o \
-             src/multithread/create_withinwith.o \
-             src/multithread/replicate_functions.o \
-             src/multithread/consolidate_cells.o
+REFCOUNT_OLD=
 
+CONCURRENT=
+CONCURRENT_OLD= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
+                src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
+                src/concurrent/sync_opt.o src/concurrent/schedule.o \
+                src/concurrent/spmd_trav.o \
+                src/concurrent/concurrent_lib.o src/concurrent/spmd_emm.o
 
-COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
+MULTITHREAD=
+MULTITHREAD_OLD= src/multithread/multithread.o \
+                 src/multithread/multithread_lib.o \
+                 src/multithread/tag_executionmode.o \
+                 src/multithread/propagate_executionmode.o \
+                 src/multithread/create_cells.o \
+                 src/multithread/create_dataflowgraph.o \
+                 src/multithread/assignments_rearrange.o \
+                 src/multithread/cell_growth.o \
+                 src/multithread/create_withinwith.o \
+                 src/multithread/replicate_functions.o \
+                 src/multithread/consolidate_cells.o
+
+COMPILE= src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \
          src/compile/icm2c_utils.o src/compile/icm2c_std.o src/compile/icm2c_prf.o \
@@ -334,16 +362,24 @@ COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/ReuseWithArrays.o src/compile/PatchWith.o \
          src/compile/markmemvals.o
+COMPILE_OLD=src/compile/wltransform.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
             src/c-interface/print_interface_header.o \
             src/c-interface/print_interface_wrapper.o
+CINTERFACE_OLD=
 
-OBJ= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
+OBJ:= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
      $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
      $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE)
-
+ifeq ($(NEWAST),no)
+  OBJ:= $(GLOBAL_OLD) $(TREE_OLD) $(SCANP_OLD) $(PRINT_OLD) $(FLATTEN_OLD) \
+       $(TYPECHECK_OLD) $(OPTIMIZE_OLD) $(MODULES_OLD) $(OBJECTS_OLD) \
+       $(REFCOUNT_OLD) $(COMPILE_OLD) $(PSIOPT_OLD) $(CONCURRENT_OLD) \
+       $(MULTITHREAD_OLD) $(CINTERFACE_OLD) $(CONSTANTS_OLD) $(PROFILE_OLD) \
+       $(OBJ)
+endif
 
 #
 #  Rules section

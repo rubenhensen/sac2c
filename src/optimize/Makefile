@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.34  2004/09/30 20:01:26  sah
+# added a switch to compile a subset of
+# the compiler only
+#
 # Revision 3.33  2004/09/28 14:08:21  ktr
 # removed old refcount and generatemasks
 #
@@ -82,10 +86,16 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
        -I../compile -I../concurrent -I../tree -I../flatten -I../constants
 
-all: optimize.o Inline.o DeadFunctionRemoval.o \
-     SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
-     SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o \
-     UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o ConstVarPropagation.o
+OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
+        SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
+        SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
+        UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o \
+        ConstVarPropagation.o
+ifeq ($(NEWAST),no)
+  OBJS := DistributiveLaw.o $(OBJS)
+endif
+
+all: $(OBJS)
 
 
 %.o: %.c

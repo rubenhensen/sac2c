@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.17  2004/09/30 20:01:26  sah
+# added a switch to compile a subset of
+# the compiler only
+#
 # Revision 3.16  2004/09/28 16:33:12  ktr
 # cleaned up concurrent (removed everything not working / not working with emm)
 #
@@ -77,11 +81,15 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
        -I../flatten -I../print -I../compile -I../constants
 
+OBJS :=
 
-all: concurrent.o spmd_init.o spmd_lift.o sync_init.o \
-     sync_opt.o schedule.o spmd_trav.o concurrent_lib.o \
-     spmd_emm.o
+ifeq ($(NEWAST),no)
+OBJS := concurrent.o spmd_init.o spmd_lift.o sync_init.o \
+        sync_opt.o schedule.o spmd_trav.o concurrent_lib.o \
+        spmd_emm.o
+endif
 
+all: $(OBJS)
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
