@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/03/02 22:28:23  dkr
+ * added nodes for precompilation of new with-loop
+ *
  * Revision 1.33  1998/02/28 23:37:16  dkr
  * MakeCond() uses now MakeInfo instead of INIT_NODE(tmp->node[3])
  *
@@ -669,7 +672,7 @@ MakeCond (node *cond, node *Then, node *Else)
     COND_THEN (tmp) = Then;
     COND_ELSE (tmp) = Else;
 
-    tmp->node[3] = MakeInfo (); /* dkr: no access-macro for tmp->node[3] !?! */
+    COND_VARINFO (tmp) = MakeInfo ();
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -689,7 +692,7 @@ MakeDo (node *cond, node *body)
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
 
-    tmp->node[2] = MakeInfo (); /* dkr: no access-macro for tmp->node[2 !?! */
+    DO_VARINFO (tmp) = MakeInfo ();
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -709,7 +712,7 @@ MakeWhile (node *cond, node *body)
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
 
-    tmp->node[2] = MakeInfo (); /* dkr: no access-macro for tmp->node[2] !?! */
+    WHILE_VARINFO (tmp) = MakeInfo ();
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1329,5 +1332,75 @@ MakeNCode (node *block, node *expr)
     NCODE_CEXPR (tmp) = expr;
 
     DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNWith2 (node *withid, node *seg, node *code, node *withop)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeNWith2");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_Nwith2;
+    NWITH2_WITHID (tmp) = withid;
+    NWITH2_SEG (tmp) = seg;
+    NWITH2_CODE (tmp) = code;
+    NWITH2_WITHOP (tmp) = withop;
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLseg (node *seg, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLseg");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLseg;
+    WLSEG_INDEX (new_node) = seg;
+    WLSEG_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLindex");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLindex;
+    WLINDEX_BOUND1 (new_node) = bound1;
+    WLINDEX_BOUND2 (new_node) = bound2;
+    WLINDEX_STEP (new_node) = step;
+    WLINDEX_GRID (new_node) = grid;
+    WLINDEX_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLgrid (node *offset, node *width, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLgrid");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLgrid;
+    WLGRID_OFFSET (new_node) = offset;
+    WLGRID_WIDTH (new_node) = width;
+    WLGRID_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
 }
 /*--------------------------------------------------------------------------*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/03/02 22:28:29  dkr
+ * added nodes for precompilation of new with-loop
+ *
  * Revision 1.75  1998/02/23 13:12:08  srs
  * added comments and access macros for masks
  *
@@ -1233,8 +1236,8 @@ extern node *MakeReturn (node *exprs);
  ***
  ***  temporary attributes:
  ***
- ***    node*  THENVARS     (N_id)      (refcount -> compile -> )
- ***    node*  ELSEVARS     (N_id)      (refcount -> compile -> )
+ ***    node*  THENVARS     (N_exprs)   (refcount -> compile -> )
+ ***    node*  ELSEVARS     (N_exprs)   (refcount -> compile -> )
  ***    long*  MASK[x]                  (optimize -> )
  ***/
 
@@ -1243,8 +1246,9 @@ extern node *MakeCond (node *cond, node *Then, node *Else);
 #define COND_COND(n) (n->node[0])
 #define COND_THEN(n) (n->node[1])
 #define COND_ELSE(n) (n->node[2])
-#define COND_THENVARS(n) (n->node[3]->node[0])
-#define COND_ELSEVARS(n) (n->node[3]->node[1])
+#define COND_VARINFO(n) (n->node[3])
+#define COND_THENVARS(n) (COND_VARINFO (n)->node[0])
+#define COND_ELSEVARS(n) (COND_VARINFO (n)->node[1])
 #define COND_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1259,8 +1263,8 @@ extern node *MakeCond (node *cond, node *Then, node *Else);
  ***
  ***  temporary attributes:
  ***
- ***    node*  USEVARS    (N_id)      (refcount -> compile -> )
- ***    node*  DEFVARS    (N_id)      (refcount -> compile -> )
+ ***    node*  USEVARS    (N_exprs)   (refcount -> compile -> )
+ ***    node*  DEFVARS    (N_exprs)   (refcount -> compile -> )
  ***    long*  MASK[x]                (optimize -> )
  ***/
 
@@ -1268,8 +1272,9 @@ extern node *MakeDo (node *cond, node *body);
 
 #define DO_COND(n) (n->node[0])
 #define DO_BODY(n) (n->node[1])
-#define DO_USEVARS(n) (n->node[2]->node[0])
-#define DO_DEFVARS(n) (n->node[2]->node[1])
+#define DO_VARINFO(n) (n->node[2])
+#define DO_USEVARS(n) (DO_VARINFO (n)->node[0])
+#define DO_DEFVARS(n) (DO_VARINFO (n)->node[1])
 #define DO_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1284,8 +1289,8 @@ extern node *MakeDo (node *cond, node *body);
  ***
  ***  temporary attributes:
  ***
- ***    node*  USEVARS    (N_id)      (refcount -> compile -> )
- ***    node*  DEFVARS    (N_id)      (refcount -> compile -> )
+ ***    node*  USEVARS    (N_exprs)   (refcount -> compile -> )
+ ***    node*  DEFVARS    (N_exprs)   (refcount -> compile -> )
  ***    long*  MASK[x]                (optimize -> )
  ***/
 
@@ -1295,8 +1300,9 @@ extern node *While2Do (node *while_node);
 
 #define WHILE_COND(n) (n->node[0])
 #define WHILE_BODY(n) (n->node[1])
-#define WHILE_USEVARS(n) (n->node[2]->node[0])
-#define WHILE_DEFVARS(n) (n->node[2]->node[1])
+#define WHILE_VARINFO(n) (n->node[2])
+#define WHILE_USEVARS(n) (WHILE_VARINFO (n)->node[0])
+#define WHILE_DEFVARS(n) (WHILE_VARINFO (n)->node[1])
 #define WHILE_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -2191,5 +2197,107 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith2 :
+ ***
+ ***  sons:
+ ***
+ ***    node*    WITHID   (0)     (N_Nwithid)
+ ***    node*    SEG      (0)     (N_WLseg)
+ ***    node*    CODE     (0)     (N_Ncode)
+ ***    node*    WITHOP   (0)     (N_Nwithop)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ???
+ ***
+ ***/
+
+extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
+
+#define NWITH2_WITHID(n) (n->node[0])
+#define NWITH2_SEG(n) (n->node[1])
+#define NWITH2_CODE(n) (n->node[2])
+#define NWITH2_WITHOP(n) (n->node[3])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLseg :
+ ***
+ ***  sons:
+ ***
+ ***    node*    INDEX    (0)     (N_index)
+ ***    node*    NEXT     (0)     (N_seg)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ???
+ ***
+ ***/
+
+extern node *MakeWLseg (node *index, node *next);
+
+#define WLSEG_INDEX(n) (n->node[0])
+#define WLSEG_NEXT(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/*
+ *  N_WLindex :
+ *
+ *  sons:
+ *
+ *    node*    BOUND1   (0)     (N_num)
+ *    node*    BOUND2   (0)     (N_num)
+ *    node*    STEP     (0)     (N_num)
+ *    node*    GRID     (0)     (N_grid)
+ *    node*    NEXT     (0)     (N_index)
+ *
+ *  temporary attributes:
+ *
+ *    ???
+ *
+ */
+
+extern node *MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next);
+
+#define WLINDEX_BOUND1(n) (n->node[0])
+#define WLINDEX_BOUND2(n) (n->node[1])
+#define WLINDEX_STEP(n) (n->node[2])
+#define WLINDEX_GRID(n) (n->node[3])
+#define WLINDEX_NEXT(n) (n->node[4])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLgrid :
+ ***
+ ***  sons:
+ ***
+ ***    node*    OFFSET   (0)     (N_num)
+ ***    node*    WIDTH    (0)     (N_num)
+ ***    node*    NEXTDIM  (0)     (N_WLindex)
+ ***    node*    CODE     (0)     (N_Ncode)
+ ***    node*    NEXT     (0)     (N_grid)
+ ***
+ ***  remark:
+ ***    it is impossible (and makes no sense anyway) to use the nodes NEXTDIM and CODE
+ *simultaneous !!
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ???
+ ***
+ ***/
+
+extern node *MakeWLgrid (node *offset, node *width, node *next);
+
+#define WLGRID_OFFSET(n) (n->node[0])
+#define WLGRID_WIDTH(n) (n->node[1])
+#define WLGRID_NEXTDIM(n) (n->node[2])
+#define WLGRID_CODE(n) (n->node[2])
+#define WLGRID_NEXT(n) (n->node[3])
 
 #endif /* _sac_tree_basic_h */
