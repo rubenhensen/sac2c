@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/11/23 20:29:03  cg
+ * Added profile flags.
+ *
  * Revision 3.76  2004/11/23 19:43:26  cg
  * Added flags for triggering tracing, cache simulation and runtime checks.
  *
@@ -198,6 +201,22 @@
 #include "cv2cv.h"
 #include "cv2scalar.h"
 #include "cv2str.h"
+
+static int **
+BuildFunApLine (int maxfun, int maxfunap)
+{
+    int i, **aps;
+
+    DBUG_ENTER ("BuildFunApLine");
+
+    aps = (int **)ILIBmalloc (maxfun * sizeof (int *));
+
+    for (i = 0; i < maxfunap; i++) {
+        aps[i] = (int *)ILIBmalloc (maxfunap * sizeof (int));
+    }
+
+    DBUG_RETURN (aps);
+}
 
 static const char *compiler_phase_name_init[PH_final + 1] = {
 #define PH_SELtext(it_text) it_text
@@ -553,6 +572,25 @@ static cachesim_flags_t cachesim_all_init = {
 
 static cachesim_flags_t cachesim_none_init = {
 #define CSdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
+ * Initialize profile flags from flags.mac
+ */
+
+static profile_flags_t profile_init = {
+#define PROFILEdefault(default) default,
+#include "flags.mac"
+};
+
+static profile_flags_t profile_all_init = {
+#define PROFILEdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static profile_flags_t profile_none_init = {
+#define PROFILEdefault(default) FALSE,
 #include "flags.mac"
 };
 

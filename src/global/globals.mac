@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/23 20:29:03  cg
+ * Added profile flags.
+ *
  * Revision 1.9  2004/11/23 19:59:52  cg
  * Added some profiling support.
  *
@@ -363,13 +366,13 @@ GLOBAL (trace_flags_t, trace, trace_init)
 GLOBAL (trace_flags_t, trace_all, trace_all_init)
 GLOBAL (trace_flags_t, trace_none, trace_none_init)
 
-#if 0
-GLOBAL( unsigned int,  profileflag ,  PROFILE_NONE)
-#endif
-
 GLOBAL (runtimecheck_flags_t, runtimecheck, runtimecheck_init)
 GLOBAL (runtimecheck_flags_t, runtimecheck_all, runtimecheck_all_init)
 GLOBAL (runtimecheck_flags_t, runtimecheck_none, runtimecheck_none_init)
+
+GLOBAL (profile_flags_t, profile, profile_init)
+GLOBAL (profile_flags_t, profile_all, profile_all_init)
+GLOBAL (profile_flags_t, profile_none, profile_none_init)
 
 GLOBAL (cachesim_flags_t, cachesim, cachesim_init)
 GLOBAL (cachesim_flags_t, cachesim_all, cachesim_all_init)
@@ -386,7 +389,7 @@ GLOBAL (char *, cachesim_dir, (char *)ILIBmalloc (MAX_FILE_NAME))
 GLOBAL (int, profile_funcntr, 0)
 GLOBAL (char **, profile_funnme, (char **)ILIBmalloc (PF_MAXFUN * sizeof (char *)))
 GLOBAL (int *, profile_funapcntr, (int *)ILIBmalloc (PF_MAXFUN * sizeof (int)))
-
+GLOBAL (int **, profile_funapline, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP))
 GLOBAL (int, profile_funapmax, 1)
 
 /*

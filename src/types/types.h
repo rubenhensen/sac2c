@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 20:29:42  cg
+ * Added profile flags.
+ *
  * Revision 1.7  2004/11/23 20:00:49  cg
  * *** empty log message ***
  *
@@ -951,7 +954,6 @@ typedef struct ST_SYMBOL_T stsymbol_t;
 typedef struct OPTIMIZE_FLAGS_T {
 #define OPTabbr(abbr) unsigned int do##abbr : 1;
 #include "optimize.mac"
-#undef OPTabbr
 } optimize_flags_t;
 
 /*
@@ -962,6 +964,11 @@ typedef struct TRACE_FLAGS_T {
 #define TRACEflag(flag) unsigned int do##flag : 1;
 #include "flags.mac"
 } trace_flags_t;
+
+typedef struct PROFILE_FLAGS_T {
+#define PROFILEflag(flag) unsigned int do##flag : 1;
+#include "flags.mac"
+} profile_flags_t;
 
 typedef struct CACHESIM_FLAGS_T {
 #define CSflag(flag) unsigned int do##flag : 1;
