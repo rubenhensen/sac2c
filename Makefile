@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.141  2004/11/18 15:18:03  mwe
+# ChackAvis changed to ToNewTypes
+#
 # Revision 3.140  2004/11/17 19:50:56  sah
 # made src/modules/implicittypes.o invisible in
 # new ast mode
@@ -386,7 +389,7 @@ PRINT_OLD=
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/fun2lac.o src/flatten/insert_vardec.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
-         src/flatten/CheckAvis.o src/flatten/SSATransform.o \
+         src/flatten/ToNewTypes.o src/flatten/SSATransform.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
 	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o
 FLATTEN_OLD=
