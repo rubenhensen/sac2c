@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/28 08:53:04  ktr
+ * unneeded variable removed from EMRCicm.
+ *
  * Revision 1.7  2004/07/27 13:05:07  ktr
  * ICMs now use their first argument like primitive functions.
  *
@@ -1561,7 +1564,6 @@ node *
 EMRCicm (node *arg_node, info *arg_info)
 {
     char *name;
-    node *avis;
 
     DBUG_ENTER ("EMRCicm");
 
