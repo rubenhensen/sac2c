@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/06/05 12:34:03  dkr
+ * functions AIwith, AIwith2, AIcode added
+ *
  * Revision 1.6  2000/05/29 14:33:34  dkr
  * new traversal function AIwithid() added
  * new abstractions RenameIds(), RenameId() added
@@ -499,27 +502,6 @@ AIid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIwithid( node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-AIwithid (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("AIwithid");
-
-    NWITHID_VEC (arg_node) = RenameIds (NWITHID_VEC (arg_node));
-    NWITHID_IDS (arg_node) = RenameIds (NWITHID_IDS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *AIlet(node *arg_node, node *arg_info)
  *
  * description:
@@ -670,6 +652,103 @@ AIfundef (node *arg_node, node *arg_info)
     }
 
     INFO_AI_FUNDEF (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AIwith( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+AIwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AIwith");
+
+    NWITH_DEC_RC_IDS (arg_node) = RenameIds (NWITH_DEC_RC_IDS (arg_node));
+
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AIwith2( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+AIwith2 (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AIwith2");
+
+    NWITH2_DEC_RC_IDS (arg_node) = RenameIds (NWITH2_DEC_RC_IDS (arg_node));
+
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AIwithid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+AIwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AIwithid");
+
+    NWITHID_VEC (arg_node) = RenameIds (NWITHID_VEC (arg_node));
+    NWITHID_IDS (arg_node) = RenameIds (NWITHID_IDS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AIcode( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+AIcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AIcode");
+
+    NCODE_INC_RC_IDS (arg_node) = RenameIds (NCODE_INC_RC_IDS (arg_node));
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
