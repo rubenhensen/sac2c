@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/02/16 22:29:13  sah
+ * added/changed some funs
+ *
  * Revision 1.11  2005/02/08 11:13:27  sbs
  * some naming convention errors fixed.
  *
@@ -53,5 +56,6 @@ extern void *DSlookupFunction (const char *s, const char *t);
 extern void *STinit ();
 extern void STadd (char *s1, int l, char *s2, int i, void *table);
 extern void *STRSadd (char *s1, int i, void *p);
+extern void *DSfetchArgAvis (int i);
 
 #endif /* _SAC_SERIALIZE_H_ */
