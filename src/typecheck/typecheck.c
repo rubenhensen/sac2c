@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/05/07 10:10:19  jhs
+ * withloops on empty array will be rebuild to direct operations.
+ * This happens in TI_Nwith.
+ *
  * Revision 2.11  1999/05/03 18:48:48  sbs
  * fixed an error in TCN_genarray where TI was called without passing
  * arg_info. This caused a SEGFAULT whenever a udf-fun-ap was used
@@ -445,7 +449,9 @@ char *module_name = NULL; /* name of module to typecheck;
                            * is set in function Typecheck
                            */
 
-/*forward declaration */
+/*
+ *  forward declarations
+ */
 types *TI_prf (node *arg_node, node *arg_info);
 types *TI_ap (node *arg_node, node *arg_info);
 types *TI_array (node *arg_node, node *arg_info);
@@ -511,10 +517,7 @@ static int imported_fun; /* is used to check whether to look behind a "hidden"
  *   Type2Vec(types *type)
  *
  * description:
- *
- *
- *
- *
+ *   builds an N_array alike shape of types
  *
  ******************************************************************************/
 
@@ -525,16 +528,60 @@ Type2Vec (types *type)
     int i;
 
     DBUG_ENTER ("Type2Vec");
-
-    res = NULL;
-
     DBUG_ASSERT ((TYPES_DIM (type) > 0), "Type2Vec() called with type with dim <= 0");
 
+    res = NULL;
     for (i = TYPES_DIM (type) - 1; i >= 0; i--) {
         res = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), res);
     }
-
     res = MakeArray (res);
+
+    DBUG_RETURN (res);
+}
+
+static node *
+ArrayOfZeros (int count)
+{
+    node *res;
+    int i;
+
+    DBUG_ENTER ("ArrayZeros");
+
+    res = NULL;
+    for (i = count - 1; i >= 0; i--) {
+        res = MakeExprs (MakeNum (0), res);
+    }
+    res = MakeArray (res);
+
+    DBUG_RETURN (res);
+}
+
+static node *
+TypeToZeros (types *type)
+{
+    node *res;
+
+    DBUG_ENTER ("TypeToZeros");
+    DBUG_ASSERT ((TYPES_DIM (type) > 0), "TypeToZeros() called with type dim <= 0");
+
+    res = ArrayOfZeros (TYPES_DIM (type));
+
+    DBUG_RETURN (res);
+}
+
+static int
+TypeToCount (types *type)
+{
+    int i, res;
+
+    DBUG_ENTER ("TypeToCount");
+    DBUG_ASSERT ((TYPES_DIM (type) > 0), "TypeToCount() called with type dim <= 0");
+
+    res = 1;
+
+    for (i = 0; i < TYPES_DIM (type); i++) {
+        res = res * (TYPES_SHAPE (type, i));
+    }
 
     DBUG_RETURN (res);
 }
@@ -568,7 +615,6 @@ Type2Vec (types *type)
  *           _tmp_1 = psi( _tmp_2, A);
  *         }
  *         genarray( [M,M], _tmp_1);
- *
  *
  ******************************************************************************/
 
@@ -4863,14 +4909,14 @@ TClet (node *arg_node, node *arg_info)
 
                         wl_impl = BuildTakeWithLoop (PRF_ARG1 (LET_EXPR (arg_node)),
                                                      PRF_ARG2 (LET_EXPR (arg_node)));
-                        new_type = TI (wl_impl, arg_info);
-                        FreeAllTypes (new_type);
-
                         PRF_ARG1 (LET_EXPR (arg_node)) = NULL;
                         PRF_ARG2 (LET_EXPR (arg_node)) = NULL;
                         FreeTree (LET_EXPR (arg_node));
 
                         LET_EXPR (arg_node) = wl_impl;
+
+                        new_type = TI (wl_impl, arg_info);
+                        FreeAllTypes (new_type);
                     }
                 } else {
                     ERROR (NODE_LINE (arg_node),
@@ -5979,6 +6025,7 @@ TCcond (node *arg_node, node *arg_info)
 node *
 TCblock (node *arg_node, node *arg_info)
 {
+    node *old_last_assign, *old_current_assign, *old_next_assign;
 
     DBUG_ENTER ("TCblock");
 
@@ -5987,6 +6034,11 @@ TCblock (node *arg_node, node *arg_info)
     }
     ABORT_ON_ERROR;
 
+    /* store last, current and next assignment for reentrant calls. (jhs) */
+    old_last_assign = INFO_TC_LASSIGN (arg_info);
+    old_current_assign = INFO_TC_CURRENTASSIGN (arg_info);
+    old_next_assign = INFO_TC_NEXTASSIGN (arg_info);
+
     INFO_TC_LASSIGN (arg_info) = arg_node;
     /* For the traversal of the assignments I have to
      * ignore the return-value, since TI_ap in some cases
@@ -5994,7 +6046,11 @@ TCblock (node *arg_node, node *arg_info)
      * (compare TCassign!)
      */
     Trav (BLOCK_INSTR (arg_node), arg_info);
-    INFO_TC_LASSIGN (arg_info) = NULL;
+
+    /* restore last, current and next, see comment above */
+    INFO_TC_LASSIGN (arg_info) = old_last_assign;
+    INFO_TC_CURRENTASSIGN (arg_info) = old_current_assign;
+    INFO_TC_NEXTASSIGN (arg_info) = old_next_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -6066,20 +6122,25 @@ TCvardec (node *arg_node, node *arg_info)
 node *
 TCassign (node *arg_node, node *arg_info)
 {
-    node *old_current_assign;
+    node *old_last_assign, *old_current_assign, *old_next_assign;
 
     DBUG_ENTER ("TCassign");
-
     DBUG_ASSERT (N_assign == NODE_TYPE (arg_node), "wrong nodetype");
 
-    INFO_TC_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
-
-    old_current_assign = INFO_TC_CURRENTASSIGN (arg_info);
-    INFO_TC_CURRENTASSIGN (arg_info) = arg_node;
-    /*
-     * The current asssign back reference must be stacked here due to nested
-     * N_assign nodes in the presence of with-loop bodies.
+    /*  secure last, current and next assign, so this routine can be called reentrant
+     *  without deleting the context of calling functions. (jhs)
+     *
+     *  an older comment on this was:
+     *  The current asssign back reference must be stacked here due to nested
+     *  N_assign nodes in the presence of with-loop bodies.
      */
+    old_last_assign = INFO_TC_LASSIGN (arg_info);
+    old_current_assign = INFO_TC_CURRENTASSIGN (arg_info);
+    old_next_assign = INFO_TC_NEXTASSIGN (arg_info);
+
+    /* LASSIGN comes from calling function, may be NULL! */
+    INFO_TC_CURRENTASSIGN (arg_info) = arg_node;
+    INFO_TC_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -6095,9 +6156,10 @@ TCassign (node *arg_node, node *arg_info)
     } else
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-    INFO_TC_LASSIGN (arg_info) = NULL;
-    INFO_TC_NEXTASSIGN (arg_info) = NULL;
+    /* restore the xxxASSIGN of arg_info, see comment while storing */
+    INFO_TC_LASSIGN (arg_info) = old_last_assign;
     INFO_TC_CURRENTASSIGN (arg_info) = old_current_assign;
+    INFO_TC_NEXTASSIGN (arg_info) = old_next_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -6930,6 +6992,41 @@ TCobjdef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ *  function:
+ *    int is_bound_empty (node *arg_node, node *bound_node)
+ *
+ *  description:
+ *    checks whether a bound (specified by bound_node) of a withloop is an
+ *    empty array, constants TRUE or FALSE are returned.
+ *    arg_node is needed only for aborts.
+ *
+ ******************************************************************************/
+
+int
+is_bound_empty (node *arg_node, node *bound_node)
+{
+    if (NODE_TYPE (bound_node) == N_id) {
+        /* N_id node => elements are annotated */
+        if (ID_VECLEN (bound_node) == 0) {
+            return (TRUE);
+        } else {
+            return (FALSE);
+        }
+    } else if (NODE_TYPE (bound_node) == N_array) {
+        if (ARRAY_AELEMS (bound_node) == NULL) {
+            return (TRUE);
+        } else {
+            return (FALSE);
+        }
+    } else if (NODE_TYPE (bound_node) == N_cast) {
+        return (is_bound_empty (arg_node, CAST_EXPR (bound_node)));
+    } else {
+        ABORT (NODE_LINE (arg_node), ("Wrong type of bound node!"));
+    }
+}
+
+/******************************************************************************
+ *
  * function:
  *   types *TI_Nwith(node *arg_node, node *arg_info)
  *
@@ -6953,6 +7050,11 @@ TI_Nwith (node *arg_node, node *arg_info)
     node *tmpn, *withop, *new_fundef;
     ids *mem_lhs;
     int i;
+
+    node *generator, *lowerbound, *upperbound, *assignment;
+    int lowerbound_empty,
+      upperbound_empty; /* to be used as boolean, telling whether the bounds are empty
+                           arrays or not */
 
     DBUG_ENTER ("TI_Nwith");
 
@@ -6986,6 +7088,10 @@ TI_Nwith (node *arg_node, node *arg_info)
                    ("Neutral element of 'fold` not inferable"));
     }
 
+    /*  Among other things: last step of normalization to (lb <= iv < ub).
+     *  While for not . combined operators this was done in flatten the rest
+     *  is done now.
+     */
     generator_type = TI_Npart (NWITH_PART (arg_node), base_array_type, arg_info);
 
     /* In case of genarray() check whether generator and base array fit. */
@@ -6998,10 +7104,11 @@ TI_Nwith (node *arg_node, node *arg_info)
                 TYPES_DIM (base_array_type)));
     }
 
-    /* we now have the type of the generator and, in case of genarray or
-       modarray, the type of the base array, too.
-       The next step is to typecheck the body (CBLOCK) and the additional
-       expression (CEXPR). */
+    /*  we now have the type of the generator and, in case of genarray or
+     *  modarray, the type of the base array, too.
+     *  The next step is to typecheck the body (CBLOCK) and the additional
+     *  expression (CEXPR).
+     */
     tmpn = MakeNode (N_arg);
     if (arg_info->node[2])
         ARG_NEXT (tmpn) = arg_info->node[2];
@@ -7041,16 +7148,13 @@ TI_Nwith (node *arg_node, node *arg_info)
             FreeOneTypes (body_type);
         }
         break;
-
     case WO_modarray:
         ConsistencyCheckModarray (NODE_LINE (withop), base_array_type, generator_type,
                                   body_type);
         FreeOneTypes (body_type);
         break;
-
     case WO_foldprf:
         base_array_type = TI_Nfoldprf (withop, body_type, neutral_type, arg_info);
-
         /*
          * Now, we create a pseudo function for the fold-fun.
          * It is needed for the code-generation of the with-loop!!
@@ -7100,17 +7204,15 @@ TI_Nwith (node *arg_node, node *arg_info)
         FreeOneTypes (body_type);
         FreeOneTypes (neutral_type);
         break;
-
     case WO_foldfun:
         base_array_type = TI_Nfoldfun (withop, body_type, neutral_type, arg_info);
-
         /*
-         * Now, we create a pseudo function for the fold-fun iff this has
-         * not been done yet. ( i.e. if the module-name does not equal PSEUDO_MOD_FOLD!).
-         * The pseudo function is needed for the code-generation of the with-loop!!
-         * Although it could be regarded as a kind of flatten-step
-         * it has to be done here since type-declarations for functions
-         * are mendatory in SAC!!
+         *  Now, we create a pseudo function for the fold-fun iff this has
+         *  not been done yet. ( i.e. if the module-name does not equal PSEUDO_MOD_FOLD!).
+         *  The pseudo function is needed for the code-generation of the with-loop!!
+         *  Although it could be regarded as a kind of flatten-step
+         *  it has to be done here since type-declarations for functions
+         *  are mendatory in SAC!!
          */
         if (strcmp (NWITHOP_MOD (withop), PSEUDO_MOD_FOLD) != 0) {
             DBUG_ASSERT ((NODE_TYPE (NWITH_CEXPR (arg_node)) == N_id),
@@ -7133,9 +7235,9 @@ TI_Nwith (node *arg_node, node *arg_info)
                             PLEASE_CHECK, -2);
 
             /*
-             * prepand new_fundef to the olf fundefs pointed at by top_fundef!
-             * This makes sure that these dummy-funs will be compiled before
-             * any other function!
+             *  prepand new_fundef to the olf fundefs pointed at by top_fundef!
+             *  This makes sure that these dummy-funs will be compiled before
+             *  any other function!
              */
             FUNDEF_NEXT (new_fundef) = top_fundef;
             top_fundef = new_fundef;
@@ -7172,6 +7274,88 @@ TI_Nwith (node *arg_node, node *arg_info)
         /* SCALAR == TYPES_DIM() possible in case of fold. */
         ABORT (NODE_LINE (arg_node), ("No constant type for withloop inferable"));
 
+    /*  exchange withloops on empty array iv with their shortcut pendant. (jhs)
+     *
+     *  current assign has to be a let
+     */
+
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info))) == N_let),
+                 "current assign is not let!");
+
+    /* if last assign is NULL, code for this case has to be added */
+    DBUG_ASSERT ((INFO_TC_LASSIGN (arg_info) != NULL), "last assign is NULL");
+
+    generator = NPART_GEN (NWITH_PART (arg_node));
+    lowerbound = NGEN_BOUND1 (generator);
+    upperbound = NGEN_BOUND1 (generator);
+
+    lowerbound_empty = is_bound_empty (arg_node, lowerbound);
+    upperbound_empty = is_bound_empty (arg_node, upperbound);
+
+    if (lowerbound_empty && upperbound_empty) {
+
+        if ((NWITHOP_TYPE (withop) == WO_modarray)
+            || (NWITHOP_TYPE (withop) == WO_genarray)) {
+            if ((NGEN_OP1_ORIG (generator) == F_le)
+                && (NGEN_OP2_ORIG (generator) == F_le)) {
+                /*  replace "with ([] <= iv <= []) modarray (a, iv, b)" simply by "b"
+                 *          "with ([] <= iv <= []) genarray ([], b)"              "b" */
+
+                /*  insert block into assignments, if block is
+                 *  empty it will be replaced by CEXPR.          */
+                ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info))
+                  = BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node))));
+                /*  step to last assigment in chain and look forward,
+                 *  concat end of block with current assignment  */
+                assignment = INFO_TC_LASSIGN (arg_info);
+                while ((ASSIGN_NEXT (assignment) != NULL)
+                       && (NODE_TYPE (ASSIGN_NEXT (assignment)) != N_empty)) {
+                    assignment = ASSIGN_NEXT (assignment);
+                } /* while */
+                ASSIGN_NEXT (assignment) = INFO_TC_CURRENTASSIGN (arg_info);
+                /* place CEXPR instead of withloop */
+                LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
+                  = NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node)));
+
+                /* Cleanup the arg_node, that is no longer needed,
+                 * but keep replaces elements. */
+                BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node)))) = NULL;
+                NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node))) = NULL;
+                FreeTree (arg_node);
+                arg_node = NULL;
+            } else {
+                /*  replace "with ([] cmp1 iv cmp2 []) modarray (a, iv, b)" simply by
+                 * default "with ([] cmp1 iv cmp2 []) genarray ([], b)
+                 * default
+                 *
+                 *  whereby: (cmp1 in { "<", "<=" }) and (cmp2 in { "<", "<=" }) and
+                 * ((cmp1 = "<") or (cmp2 = "<")) default: in case of arrays : [0, ..., 0]
+                 * with shape of base_array_type or with as many elements in case of
+                 * scalars: 0 */
+
+                /* body can be ignored, because only default values are returned here */
+                if (TYPES_DIM (base_array_type) > SCALAR) {
+                    LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
+                      = ArrayOfZeros ((TypeToCount (base_array_type)));
+                } else if (TYPES_DIM (base_array_type) == SCALAR) {
+                    LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
+                      = MakeNum (0);
+                } else {
+                    ABORT (NODE_LINE (arg_node), ("Wrong dimension of type!"));
+                } /* if */
+
+                /* Cleanup the arg_node, no parts are reused here! */
+                FreeTree (arg_node);
+                arg_node = NULL;
+            } /* if (NGEN_OP1_ORIG(...) ...) else ... */
+
+            /* foldprf & foldfun missing here */
+
+        } else {
+            ABORT (NODE_LINE (arg_node),
+                   ("Wrong type of withloop applied to empty arrays!"));
+        } /* if (NWITHOP_TYPE(...) ...) else ... */
+    }     /* if (lowerbound_empty && upperbound_empty) ... */
     DBUG_RETURN (base_array_type);
 }
 
@@ -7210,6 +7394,8 @@ TI_Nwith (node *arg_node, node *arg_info)
  *   checks the generator of the new WL and returns the type of the lower
  *   bound.
  *   1) substitues bounds . with constant vectors
+ *      and also normalizes the operators combined with . to
+ *      <= (in case of first operator) and < (in case of second operator)
  *   2) checks if bounds/step/width have same type
  *   3) completes N_Nwithid (introduce vector AND array of scalars as index)
  *   4) checks type of index variables (vector and array of scalars)
@@ -7233,10 +7419,11 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
     DBUG_ENTER ("TI_Npart");
     gen = NPART_GEN (arg_node);
 
-    /* replace bounds . with a constant array. For the lower bound this is
-       always possible ([0,...,0]). For the upper bound we need not only
-       the dimension but the shape. This is made available by
-       default_bound_shape. */
+    /*  replace bounds . with a constant array. For the lower bound this is
+     *  always possible ([0,...,0]). For the upper bound we need not only
+     *  the dimension but the shape. This is made available by
+     *  default_bound_shape.
+     */
 
     if (!NGEN_BOUND1 (gen)) {
         /*
@@ -7245,14 +7432,21 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
          */
         if (!default_bound_type)
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
-        if (SCALAR < TYPES_DIM (default_bound_type)) { /* strong TC */
+        if (SCALAR <= TYPES_DIM (default_bound_type)) { /* strong TC */
             tmpn = NULL;
             add = F_lt == NGEN_OP1 (gen);
             if (add)
                 NGEN_OP1 (gen) = F_le;
             for (i = TYPES_DIM (default_bound_type) - 1; i >= 0; i--)
                 tmpn = MakeExprs (MakeNum (add), tmpn);
-            NGEN_BOUND1 (gen) = MakeArray (tmpn);
+            if (TYPES_DIM (default_bound_type) == SCALAR) {
+                NGEN_BOUND1 (gen)
+                  = MakeCast (MakeArray (tmpn),
+                              MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)), NULL,
+                                        NULL));
+            } else {
+                NGEN_BOUND1 (gen) = MakeArray (tmpn);
+            }
         }
     }
     if (!NGEN_BOUND2 (gen)) {
@@ -7262,7 +7456,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
          */
         if (!default_bound_type)
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
-        if (SCALAR < TYPES_DIM (default_bound_type)) { /* strong TC */
+        if (SCALAR <= TYPES_DIM (default_bound_type)) { /* strong TC */
             tmpn = NULL;
             add = F_le == NGEN_OP2 (gen);
             if (add)
@@ -7270,7 +7464,14 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
             for (i = TYPES_DIM (default_bound_type) - 1; i >= 0; i--)
                 tmpn = MakeExprs (MakeNum (TYPES_SHAPE (default_bound_type, i) + add - 1),
                                   tmpn);
-            NGEN_BOUND2 (gen) = MakeArray (tmpn);
+            if (TYPES_DIM (default_bound_type) == SCALAR) {
+                NGEN_BOUND2 (gen)
+                  = MakeCast (MakeArray (tmpn),
+                              MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)), NULL,
+                                        NULL));
+            } else {
+                NGEN_BOUND2 (gen) = MakeArray (tmpn);
+            }
         }
     }
 
@@ -7323,11 +7524,11 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
         FREE (TYPES_MOD (gen_type));
 
     /* The index variable has to be either an identifier or an array of
-       identifiers. If the  SAC-user only specifies one of it, the other
-       part is generated here so that all generators have both for later
-       use. (id (vector) and array of ids (scalars)).
-
-       Index scalars can only be created if we have a concrete_type */
+     * identifiers. If the  SAC-user only specifies one of it, the other
+     * part is generated here so that all generators have both for later
+     * use. (id (vector) and array of ids (scalars)).
+     *
+     * Index scalars can only be created if we have a concrete_type */
 
     withid = NPART_WITHID (arg_node);
     /*
@@ -7354,10 +7555,10 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
     }
 
     /* now we have to care about the ids.
-       Do they have the right type? ALL index vectors and scalars are always
-       given new names in flatten. So these names cannot be declared and
-       we do not have to check if they already have been typed.
-       First the index vector.*/
+     * Do they have the right type? ALL index vectors and scalars are always
+     * given new names in flatten. So these names cannot be declared and
+     * we do not have to check if they already have been typed.
+     * First the index vector.*/
     if (gen_type) {
         /* strong TC */
         AddIdToStack (NWITHID_VEC (withid), gen_type, arg_info, NODE_LINE (arg_node));
@@ -7370,7 +7571,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
     }
 
     /* ...and then we check the array of scalars (int). All Id are
-       introduced in flatten (or TC) like the index vector. */
+     * introduced in flatten (or TC) like the index vector. */
     _ids = NWITHID_IDS (withid);
     tmpt = MakeType (T_int, 0, NULL, NULL, NULL);
     i = 0;
@@ -7395,7 +7596,9 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
         gen_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
 
     if (SAC_PRG == kind_of_file && SCALAR >= TYPES_DIM (gen_type))
-        ABORT (NODE_LINE (arg_node), ("No constant type for generator inferable"));
+        ABORT (NODE_LINE (arg_node),
+               ("No constant type for generator inferable (TYPES_DIM is %i)",
+                TYPES_DIM (gen_type)));
 
     DBUG_RETURN (gen_type);
 }
@@ -7537,7 +7740,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
         }
     }
 
-    if ((kind_of_file == SAC_PRG) && (TYPES_DIM (ret_type) <= SCALAR))
+    if ((kind_of_file == SAC_PRG) && (TYPES_DIM (ret_type) < SCALAR))
         ABORT (NODE_LINE (arg_node), ("No constant type for genarray shape inferable"));
 
     DBUG_RETURN (ret_type);
