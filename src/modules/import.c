@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/11/16 14:02:41  cg
+ * sac2c now supports preprocessor directives in module/class
+ * declaration files.
+ *
  * Revision 3.9  2001/07/19 08:54:27  cg
  * Warnings eliminated.
  *
@@ -910,6 +914,7 @@ GenMod (char *name, int checkdec)
     mod *tmp;
     static char buffer[MAX_FILE_NAME];
     char *pathname, *abspathname;
+    char cccallstr[MAX_PATH_LEN];
 
     DBUG_ENTER ("GenMod");
 
@@ -928,10 +933,34 @@ GenMod (char *name, int checkdec)
     }
 
     pathname = FindFile (MODDEC_PATH, buffer);
-    yyin = fopen (pathname, "r");
+
+    if (pathname == NULL) {
+        SYSABORT (("Unable to open file \"%s\"", buffer));
+    }
+
+    strcpy (cccallstr, config.cpp_file);
+
+    strcat (cccallstr, " ");
+    strcat (cccallstr, config.opt_D);
+    strcat (cccallstr, "SAC_FOR_");
+    strcat (cccallstr, target_platform);
+
+    for (i = 0; i < num_cpp_vars; i++) {
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_D);
+        strcat (cccallstr, cppvars[i]);
+    }
+
+    strcat (cccallstr, " ");
+    strcat (cccallstr, pathname);
+
+    if (show_syscall)
+        NOTE (("yyin = popen( %s)", cccallstr));
+
+    yyin = popen (cccallstr, "r");
 
     if (yyin == NULL) {
-        SYSABORT (("Unable to open file \"%s\"", buffer));
+        SYSABORT (("Unable to start C preprocessor", buffer));
     } else {
         abspathname = AbsolutePathname (pathname);
 
@@ -1759,6 +1788,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
     char buffer[MAX_FILE_NAME];
     node *decl = NULL, *symbol;
     char *pathname, *abspathname, *old_filename;
+    char cccallstr[MAX_PATH_LEN];
 
     DBUG_ENTER ("ImportOwnDeclaration");
 
@@ -1773,11 +1803,35 @@ ImportOwnDeclaration (char *name, file_type modtype)
     strcat (buffer, ".dec");
 
     pathname = FindFile (MODDEC_PATH, buffer);
-    yyin = fopen (pathname, "r");
 
-    if (yyin == NULL) {
+    if (pathname == NULL) {
         mod_tab = Free (mod_tab);
     } else {
+        strcpy (cccallstr, config.cpp_file);
+
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_D);
+        strcat (cccallstr, "SAC_FOR_");
+        strcat (cccallstr, target_platform);
+
+        for (i = 0; i < num_cpp_vars; i++) {
+            strcat (cccallstr, " ");
+            strcat (cccallstr, config.opt_D);
+            strcat (cccallstr, cppvars[i]);
+        }
+
+        strcat (cccallstr, " ");
+        strcat (cccallstr, pathname);
+
+        if (show_syscall)
+            NOTE (("yyin = popen( %s)", cccallstr));
+
+        yyin = popen (cccallstr, "r");
+
+        if (yyin == NULL) {
+            SYSABORT (("Unable to start C preprocessor"));
+        }
+
         abspathname = AbsolutePathname (pathname);
 
         NOTE (("Loading own declaration !"));
