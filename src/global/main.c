@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/11/19 21:02:25  sah
+ * added ObjectAnalysus
+ *
  * Revision 3.74  2004/11/14 15:19:10  sah
  * changed the order of exports
  *
@@ -303,6 +306,7 @@
 #include "prepareinline.h"
 #include "dependencies.h"
 #include "resolvepragma.h"
+#include "objanalysis.h"
 #else
 #include "cccall.h"
 #endif /* NEW_AST */
@@ -605,6 +609,7 @@ main (int argc, char *argv[])
     }
 #else
     NOTE_COMPILER_PHASE;
+    ObjectAnalysis (syntax_tree);
     DoExport (syntax_tree);
     PrepareInline (syntax_tree);
     PHASE_DONE_EPILOG;
