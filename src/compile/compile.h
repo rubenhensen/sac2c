@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/11/09 21:19:07  dkr
+ * added some comments
+ *
  * Revision 2.1  1999/02/23 12:42:31  sacbase
  * new release made
  *
@@ -140,7 +143,9 @@ extern node *COMPWLgridVar (node *arg_node, node *arg_info);
 extern node *GetFoldCode (node *fundef);
 extern node *GetFoldVardecs (node *fundef);
 
-/* and now some macros for creation of N_icms */
+/*
+ * some macros for creation of N_icms
+ */
 
 #define MAKE_ICM_ARG(var, new_node) var = MakeExprs (new_node, NULL);
 
@@ -159,14 +164,15 @@ extern node *GetFoldVardecs (node *fundef);
 /*
  * The following macros use a variabel 'node *icm_arg', it has to be defined
  * before usage.
+ *
+ * PLEASE DO NOT USE THE FOLLOWING MACROS FOR NEW CODE!!!!!
+ * Use the functions MakeIcm? and MakeAssignIcm? instead!!
  */
 
 #define CREATE_1_ARY_ICM(assign, str, arg)                                               \
-    DBUG_PRINT ("COMP", ("Creating ICM \"%s\" ...", str));                               \
     assign = MakeAssign (MakeIcm (str, NULL, NULL), NULL);                               \
     MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), arg);                                \
-    icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));                                          \
-    DBUG_PRINT ("COMP", ("ICM \"%s\" created", str));
+    icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
 
 #define CREATE_2_ARY_ICM(assign, str, arg1, arg2)                                        \
     CREATE_1_ARY_ICM (assign, str, arg1);                                                \
@@ -214,7 +220,9 @@ extern node *GetFoldVardecs (node *fundef);
     ASSIGN_NEXT (first) = next;                                                          \
     first = next
 
-/* length of N_exprs-chain */
+/*
+ * length of N_exprs-chain
+ */
 #define COUNT_ELEMS(n, exprs)                                                            \
     {                                                                                    \
         node *tmp;                                                                       \
