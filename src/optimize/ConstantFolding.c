@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/03/13 16:59:05  asi
+ * Revision 1.10  1995/03/13 17:58:12  asi
+ * changover from 'info.id' to 'info.ids' of node N_id
+ *
+ * Revision 1.9  1995/03/13  16:59:05  asi
  * changed CFid
  *
  * Revision 1.8  1995/03/13  15:52:58  asi
@@ -347,11 +350,11 @@ CFid (node *arg_node, node *arg_info)
         case N_float:
         case N_bool:
             return_node = DupConst (value);
-            INC_VAR (arg_info->mask[1], arg_node->node[0]->varno);
+            INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         case N_array:
             return_node = DupArray (value);
-            INC_VAR (arg_info->mask[1], arg_node->node[0]->varno);
+            INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         case N_id:
         case N_prf:
@@ -997,7 +1000,7 @@ GotoExprNr (int n, node *arg_node)
 {
     int i;
 
-    DBUG_ENTER ("ArrayPrf");
+    DBUG_ENTER ("GotoExprNr");
 
     for (i = 0; i < n; i++)
         if (NULL != arg_node->node[1])
@@ -1190,7 +1193,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             returnnode->nnode = 1;
             returnnode->node[0] = MakeNode (N_exprs);
             expr[0] = returnnode->node[0];
-            shape = arg[0]->node[0]->info.types->shpseg;
+            shape = arg[0]->info.ids->node->info.types->shpseg;
             expr[0]->node[0] = MakeNode (N_num);
             expr[0]->nnode = 1;
             expr[0]->node[0]->info.cint = shape->shp[0];
@@ -1221,7 +1224,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             cf_expr++;
             break;
         case N_id:
-            arg_node->info.cint = arg[0]->node[0]->info.types->dim;
+            arg_node->info.cint = arg[0]->info.ids->node->info.types->dim;
             FreeTree (arg[0]);
             arg_node->nodetype = N_num;
             arg_node->nnode = 0;
@@ -1258,7 +1261,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             int vec_dim;
             int vec_shape[4];
 
-            if (NULL == TOS.varlist[arg[1]->node[0]->varno]) {
+            if (NULL == TOS.varlist[arg[1]->info.ids->node->varno]) {
                 returnnode = arg_node;
                 arg_info->nnode = 0;
                 break;
@@ -1274,8 +1277,8 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             for (i = 0; i < vec_dim; i++) {
                 if (vec_shape[i] >= 0) {
                     mult = 1;
-                    for (j = i + 1; j < arg[1]->node[0]->info.types->dim; j++)
-                        mult *= arg[1]->node[0]->info.types->shpseg->shp[j];
+                    for (j = i + 1; j < arg[1]->info.ids->node->info.types->dim; j++)
+                        mult *= arg[1]->info.ids->node->info.types->shpseg->shp[j];
                     start += vec_shape[i] * mult;
                 } else {
                     start = -1;
@@ -1284,14 +1287,14 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             }
 
             arg_length = 1;
-            for (i = 0; i < arg[1]->node[0]->info.types->dim; i++)
-                arg_length *= arg[1]->node[0]->info.types->shpseg->shp[i];
+            for (i = 0; i < arg[1]->info.ids->node->info.types->dim; i++)
+                arg_length *= arg[1]->info.ids->node->info.types->shpseg->shp[i];
 
             if ((start + length <= arg_length) && (start >= 0)) {
                 returnnode = MakeNode (N_array);
                 returnnode->nnode = 1;
                 returnnode->node[0]
-                  = GenArray (start, length, TOS.varlist[arg[1]->node[0]->varno]);
+                  = GenArray (start, length, TOS.varlist[arg[1]->info.ids->node->varno]);
                 FreeTree (arg_node);
                 cf_expr++;
             } else {
@@ -1362,7 +1365,7 @@ CFprf (node *arg_node, node *arg_info)
 
     for (i = 0; i < 3; i++)
         arg[i] = NULL;
-    if (arg_node->node[0] != NULL) {
+    if (NULL != arg_node->node[0]) {
         arg[0] = arg_node->node[0]->node[0];
         if (arg_node->node[0]->node[1] != NULL) {
             arg[1] = arg_node->node[0]->node[1]->node[0];
