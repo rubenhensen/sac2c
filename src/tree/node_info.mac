@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2003/12/10 15:59:35  sah
+ * added HDid to hd compiler phase
+ *
  * Revision 3.126  2003/11/12 14:32:02  sbs
  * HDpart inserted.
  *
@@ -906,9 +909,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEid, CMPTid, TravSons, SSACFid, SSALIRid, LIRMOVid, TravSons, TravSons,
        TravSons, SSAWLIid, SSAWLFid,
 
-       TravSons, COMP2Id, TravSons, INSVDid, CRTWRPid, TravSons, PREC4id, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       SPid, TravSons, TravSons, TravSons, 0),
+       TravSons, COMP2Id, TravSons, INSVDid, CRTWRPid, TravSons, PREC4id, TravSons, HDid,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, SPid,
+       TravSons, TravSons, TravSons, 0),
 
   NIF (N_moddec, "N_moddec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FreeModdec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
