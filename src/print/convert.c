@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/15 12:42:13  dkr
+ * print.h included
+ *
  * Revision 3.3  2001/03/15 11:59:16  dkr
  * ST_inout replaced by ST_reference
  *
@@ -58,6 +61,7 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "print.h"
 
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
