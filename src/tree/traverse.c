@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/09/17 12:55:27  sbs
+ * typo eliminated
+ *
  * Revision 3.44  2003/09/17 12:34:05  sbs
  * ts_tab added
  *
@@ -1562,7 +1565,7 @@ funtab *sp_tab = &sp_tab_rec;
  *  (117) ts_tab
  */
 static funtab ts_tab_rec = {{
-#define NIFsp(it_ts) it_ts
+#define NIFts(it_ts) it_ts
 #include "node_info.mac"
                             },
                             NULL,
