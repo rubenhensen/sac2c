@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/11/22 14:35:06  sbs
+ * types from sig_deps.h added.
+ *
  * Revision 3.42  2004/11/22 14:19:00  sbs
  * type_conversion_flag added
  *
@@ -803,5 +806,13 @@ typedef enum {
  * Functions for converting from old to new types and back
  */
 typedef enum { TY_symb, TY_user } type_conversion_flag;
+
+/*******************************************************************************
+ *
+ * moved from sig_deps.h
+ */
+
+typedef ntype *(*ct_funptr) (te_info *, ntype *);
+typedef struct SIG_DEP sig_dep;
 
 #endif /* _SAC_TYPES_H_ */
