@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/18 11:14:26  sbs
+ * break in default branch of switch added.
+ *
  * Revision 1.3  2003/09/18 08:57:10  sbs
  * missing colon after DBUG_VOID_RETURN added.
  *
@@ -30,10 +33,13 @@
  *   INFO_TS_AKS      number of AKS-vars found
  *   INFO_TS_AKD      number of AKD-vars found
  *   INFO_TS_AUD      number of AUD-vars found
+ *
+ *   INFO_TS_ANY      flag that indicates wether anything had to be reported
  */
 #define INFO_TS_AKS(n) (n->refcnt)
 #define INFO_TS_AKD(n) (n->flag)
 #define INFO_TS_AUD(n) (n->counter)
+#define INFO_TS_ANY(n) (n->varno)
 
 /** <!--********************************************************************-->
  *
@@ -98,19 +104,22 @@ PrintStatistics (node *fundef, node *info)
     switch (spec_mode) {
     case (SS_aks):
         if (INFO_TS_AKD (info) > 0) {
-            buf = StrBufprintf (buf, "    AKD variables left: %d\n", INFO_TS_AKD (info));
+            buf = StrBufprintf (buf, "    %d akd variables left\n", INFO_TS_AKD (info));
             flag = TRUE;
+            INFO_TS_ANY (info) = TRUE;
         }
         /* here no break is missing! */
     case (SS_akd):
         if (INFO_TS_AUD (info) > 0) {
-            buf = StrBufprintf (buf, "    AUD variables left: %d\n", INFO_TS_AUD (info));
+            buf = StrBufprintf (buf, "    %d aud variables left\n", INFO_TS_AUD (info));
             flag = TRUE;
+            INFO_TS_ANY (info) = TRUE;
         }
         break;
     case (SS_aud):
     default:
         /* print nothing */
+        break;
     }
     if (flag) {
         tmp = StrBuf2String (buf);
@@ -148,7 +157,16 @@ PrintTypeStatistics (node *arg_node)
     NOTE (("type statistics:"));
 
     arg_info = MakeInfo ();
+    INFO_TS_ANY (arg_info) = FALSE;
     arg_node = Trav (arg_node, arg_info);
+
+    if (INFO_TS_ANY (arg_info)) {
+        NOTE (("  ... for all other functions %s-info could be inferred.",
+               spec_mode_str[spec_mode]));
+    } else {
+        NOTE (
+          ("  for all functions %s-info could be inferred.", spec_mode_str[spec_mode]));
+    }
     arg_info = FreeNode (arg_info);
 
     act_tab = tmp_tab;
