@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/02/21 17:54:43  jhs
+ * New mini-phase BLKEX.
+ *
  * Revision 1.9  2000/02/11 16:21:01  jhs
  * Expanded traversals ...
  *
@@ -56,6 +59,7 @@
 #include "schedule_init.h"
 #include "repfuns_init.h"
 #include "blocks_init.h"
+#include "blocks_expand.h"
 
 /******************************************************************************
  *
@@ -200,13 +204,24 @@ MUTHfundef (node *arg_node, node *arg_info)
             goto cont;
         }
 
+        DBUG_PRINT ("MUTH", ("begin BlocksExpand"));
+        arg_node = BlocksExpand (arg_node, arg_info);
+        DBUG_PRINT ("MUTH", ("end BlocksExpand"));
+
+        if ((break_after == PH_spmdregions) && (strcmp ("blkex", break_specifier) == 0)) {
+            goto cont;
+        }
+
     cont:
     }
 
+    /*
+      #### MUTH_LUT einbauen zu Korrektur von Traversiervorgaengen ...
+    */
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("MUTH", ("trav into next"));
+        DBUG_PRINT ("MUTH", ("trav into next; leaving: %s", FUNDEF_NAME (arg_node)));
         /* FUNDEF_NEXT( arg_node) = */ Trav (FUNDEF_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("MUTH", ("trav from next"));
+        DBUG_PRINT ("MUTH", ("trav from next; reenter: %s", FUNDEF_NAME (arg_node)));
     }
 
     INFO_MUTH_FUNDEF (arg_info) = old_fundef;
