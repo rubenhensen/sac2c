@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/03/05 16:52:05  dkr
+ * comment for N_Ncode added
+ *
  * Revision 3.40  2001/03/05 16:19:04  nmw
  * INFO_SSACSE macros added
  *
@@ -3174,7 +3177,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***  remarks:
  ***
- ***    Even for N_Nwith-nodes with multiple codes all NCODE_CEXPR must have
+ ***    For *fold* with-loops with multiple codes all NCODE_CEXPR must have
  ***    identical names before phase 19 (pre-compilation) can be applied!!!
  ***
  ***    The CBLOCK 'plus' the CEXPR is the whole assignment block
