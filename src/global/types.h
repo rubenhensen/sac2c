@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1997/03/19 13:39:07  cg
+ * Revision 1.17  1997/05/14 08:16:43  sbs
+ * node->counter inserted.
+ *
+ * Revision 1.16  1997/03/19  13:39:07  cg
  * Added new data type 'deps'
  *
  * Revision 1.15  1996/01/26  15:29:22  cg
@@ -273,6 +276,7 @@ typedef struct NODE {
     int refcnt;                  /* reference count information */
     int flag;                    /* the flag is used for node-status */
                                  /* (loop invariant/not loop invariant,...) */
+    int counter;                 /* needed for the enumeration of fundefs!  */
     int varno;                   /* number of variables - 1 */
     long *mask[MAX_MASK];        /* special information about variables */
                                  /* mainly used for optimizations       */
