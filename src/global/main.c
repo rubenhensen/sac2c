@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.60  1995/09/01 11:54:49  sbs
+ * Revision 1.61  1995/10/05 16:02:24  cg
+ * new break option -bm to stop after resolving implicit types.
+ * resolving implicit types started.
+ *
+ * Revision 1.60  1995/09/01  11:54:49  sbs
  * cpp exchanged by gcc -E -x c!
  * unfortunately not possible to use gcc -E from stdin
  * to be fixed later!!
@@ -214,6 +218,8 @@
 #include "compile.h"
 #include "psi-opt.h"
 #include "sib.h"
+#include "implicittypes.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -250,7 +256,7 @@ MAIN
     int set_outfile = 0;
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakpsiopt = 0, breakref = 0, breaksib = 0;
+        breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -333,6 +339,9 @@ MAIN
             break;
         case 'b':
             breaksib = 1;
+            break;
+        case 'm':
+            breakimpltype = 1;
             break;
         default:
             ERROR1 (("unknown break parameter \"%s\"", *argv));
@@ -549,52 +558,58 @@ MAIN
 
     start_token = PARSE_PRG;
 
-    NOTE (("Parsing %s: ...", *argv));
+    NOTE (("Parsing %s: ...\n", *argv));
     yyparse ();
     NOTE (("\n"));
 
     if (!breakparse) {
-        NOTE (("Resolving Imports: ..."));
+        NOTE (("Resolving Imports: ...\n"));
         syntax_tree = Import (syntax_tree);
         NOTE (("\n"));
 
         if (!breakimport) {
-            NOTE (("Flattening: ..."));
+            NOTE (("Flattening: ...\n"));
             syntax_tree = Flatten (syntax_tree);
             NOTE (("\n"));
 
             if ((!breakflatten) && (0 == errors)) {
-                NOTE (("Typechecking: ..."));
+                NOTE (("Typechecking: ...\n\n"));
                 syntax_tree = Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                 NOTE (("\n"));
 
-                if ((!breaktype) && (0 == errors)) {
-                    if (write_sib) {
-                        NOTE (("Writing SIB: ..."));
-                        syntax_tree = WriteSib (syntax_tree);
-                        NOTE (("\n"));
-                    }
+                if ((!breaktype) && (errors == 0)) {
+                    NOTE (("Resolving implicit types: ...\n"));
+                    syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                    NOTE (("\n"));
 
-                    if ((!breaksib) && (errors == 0)) {
-                        NOTE (("Optimizing: ..."));
-                        syntax_tree = Optimize (syntax_tree);
-                        NOTE (("\n"));
+                    if ((!breakimpltype) && (0 == errors)) {
+                        if (write_sib) {
+                            NOTE (("Writing SIB: ...\n"));
+                            syntax_tree = WriteSib (syntax_tree);
+                            NOTE (("\n"));
+                        }
 
-                        if (!breakopt) {
-                            NOTE (("Psi-Optimizing: ..."));
-                            syntax_tree = PsiOpt (syntax_tree);
+                        if ((!breaksib) && (errors == 0)) {
+                            NOTE (("Optimizing: ...\n"));
+                            syntax_tree = Optimize (syntax_tree);
                             NOTE (("\n"));
 
-                            if (!breakpsiopt) {
-                                NOTE (("Refcounting: ...\n"));
-                                syntax_tree = Refcount (syntax_tree);
+                            if (!breakopt) {
+                                NOTE (("Psi-Optimizing: ...\n"));
+                                syntax_tree = PsiOpt (syntax_tree);
                                 NOTE (("\n"));
 
-                                if (!breakref) {
-                                    NOTE (("Compiling: ...\n"));
-                                    syntax_tree = Compile (syntax_tree);
+                                if (!breakpsiopt) {
+                                    NOTE (("Refcounting: ...\n"));
+                                    syntax_tree = Refcount (syntax_tree);
                                     NOTE (("\n"));
+
+                                    if (!breakref) {
+                                        NOTE (("Compiling: ...\n"));
+                                        syntax_tree = Compile (syntax_tree);
+                                        NOTE (("\n"));
+                                    }
                                 }
                             }
                         }
