@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/10/20 15:36:09  dkr
+ * macro GET_LENGTH replaced by function GetLength
+ *
  * Revision 2.14  2000/10/18 09:44:07  dkr
  * fixed a bug with user-defined types in DoUnrollGenarray
  *
@@ -681,7 +684,7 @@ CheckUnrollGenarray (node *wln, node *arg_info)
           && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
 
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
-    GET_LENGTH (length, type);
+    length = GetTypesLength (type);
 
     if (ok && (length > wlunrnum)) {
         ok = 0;
@@ -714,7 +717,7 @@ DoUnrollGenarray (node *wln, node *arg_info)
     node *letn, *args, *let_expr;
     void *arg[2];
     ids *arrayname;
-    int elements, i;
+    int elements;
     simpletype stype;
     types *type;
 
@@ -747,19 +750,7 @@ DoUnrollGenarray (node *wln, node *arg_info)
     args = DupTree (NWITH_SHAPE (wln));
 
     type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
-    elements = 1;
-    for (i = 0; i < TYPES_DIM (type); i++) {
-        elements *= TYPES_SHAPE (type, i);
-    }
-    if (TYPES_BASETYPE (type) == T_user) {
-        /*
-         * user-defined type -> get type implementation
-         */
-        type = TYPEDEF_TYPE (TYPES_TDEF (type));
-        for (i = 0; i < TYPES_DIM (type); i++) {
-            elements *= TYPES_SHAPE (type, i);
-        }
-    }
+    elements = GetTypesLength (type);
     stype = TYPES_BASETYPE (type);
 
 #if 0
