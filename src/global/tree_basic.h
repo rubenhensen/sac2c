@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/12/13 09:38:26  cg
+ * Revision 1.24  1995/12/13 13:32:46  asi
+ * added ASSIGN_STATUS, modified ICM_NAME
+ *
+ * Revision 1.23  1995/12/13  09:38:26  cg
  * modified macro RETURN_REFERENCE(n)
  *
  * Revision 1.22  1995/12/12  18:26:02  asi
@@ -153,9 +156,10 @@ The following compilation steps are used:
  - unique-check
  - rm-void-fun
  - optimize
-   - inlining
-   - arrayelimination
-   - deadcoderemoval
+   - inl  = function inlining
+   - ael  = array elimination
+   - dcr1 = search for redundant code
+   - dcr2 = dead code removal
  - psi-optimize
  - refcount
  - precompile
@@ -652,7 +656,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    int        VARNO                     (optimize -> )
  ***    long*      MASK[x]                   (optimize -> )
  ***    node*      EXTERN        (N_fundef)  (precompile -> compile -> )
- ***    int        INLREC                    (inlining !!)
+ ***    int        INLREC                    (inl !!)
  ***
  ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***/
@@ -800,7 +804,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         REFCNT                     (refcount -> compile -> )
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
- ***    int         FLAG                       (arrayelimination -> deadcoderemoval -> )
+ ***    int         FLAG                       (ael  -> dcr2 !! )
  ***/
 
 /*
@@ -840,6 +844,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                    (optimize -> )
+ ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
@@ -847,6 +852,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_INSTR(n) (n->node[0])
 #define ASSIGN_NEXT(n) (n->node[1])
 #define ASSIGN_MASK(n, x) (n->mask[x])
+#define ASSIGN_STATUS(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1417,7 +1423,7 @@ extern node *MakePre (nodetype incdec, char *id);
 
 extern node *MakeIcm (char *name, node *args, node *next);
 
-#define ICM_NAME(n) (n->info.id)
+#define ICM_NAME(n) (n->info.fun_name.id)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_NEXT(n) (n->node[1])
 
