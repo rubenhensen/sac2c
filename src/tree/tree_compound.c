@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/02/15 16:59:43  nmw
+ * access macro for SSAstack added
+ *
  * Revision 3.9  2001/02/02 09:20:56  dkr
  * no changes done
  *
@@ -1572,6 +1575,45 @@ AppendVardec (node *vardec_chain, node *vardec)
     }
 
     DBUG_RETURN (vardec_chain);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   extern node *MakeVardecFromArg( node *arg)
+ *
+ * description:
+ *   copies all attributes from an arg node to a new allocated vardec node.
+ *
+ * remark:
+ *   This function is used by ssa-transformation to rename a redefinition
+ *   of an fundef argument. The Next pointer is set to NULL.
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+MakeVardecFromArg (node *arg_node)
+{
+    node *new_vardec;
+
+    DBUG_ENTER ("MakeVardecFromArg");
+
+    new_vardec = MakeVardec (StringCopy (ARG_NAME (arg_node)),
+                             DupTypes (ARG_TYPE (arg_node)), NULL);
+    /* VARDEC_TYPE(new_vardec) = set by MakeVardec;
+       VARDEC_NAME(new_vardec) = set by MakeVardec; */
+    VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
+    VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
+    VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
+
+    /* delete wrong data in copied AVIS node */
+    AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
+    AVIS_SSAPHITARGET (VARDEC_AVIS (new_vardec)) = FALSE;
+    AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
+    AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
+
+    DBUG_RETURN (new_vardec);
 }
 
 /*--------------------------------------------------------------------------*/

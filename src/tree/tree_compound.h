@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/02/15 16:59:43  nmw
+ * access macro for SSAstack added
+ *
  * Revision 3.19  2001/02/13 15:17:39  nmw
  * compound macro VARDEC_OR_ARG_AVIS added
  *
@@ -768,6 +771,23 @@ extern node *AppendFundef (node *fundef_chain, node *fundef);
  ******************************************************************************/
 
 extern node *AppendVardec (node *vardec_chain, node *vardec);
+
+/******************************************************************************
+ *
+ * function:
+ *   extern node *MakeVardecFromArg( node *arg)
+ *
+ * description:
+ *   copies all attributes from an arg node to a new allocated vardec node.
+ *
+ * remark:
+ *   This function is used by ssa-transformation to rename a redefinition
+ *   of an fundef argument. The Next pointer is set to NULL.
+ *
+ *
+ ******************************************************************************/
+
+extern node *MakeVardecFromArg (node *arg_node);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1875,6 +1895,14 @@ extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2);
 extern bool NameOrVal_Le (char *name1, int val1, char *name2, int val2);
 extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
                           void *node_or_int2);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_avis :
+ ***/
+
+#define AVIS_SSASTACK_TOP(n) SSASTACK_AVIS (AVIS_SSASTACK (n))
 
 /*--------------------------------------------------------------------------*/
 
