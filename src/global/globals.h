@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/05/13 13:38:30  srs
+ * added opt_wlunr
+ *
  * Revision 1.26  1998/05/06 11:40:45  cg
  * added globals max_sync_fold and max_threads
  *
@@ -140,7 +143,8 @@ extern int opt_dfr;
 extern int opt_cf;
 extern int opt_lir;
 extern int opt_inl;
-extern int opt_unr;
+extern int opt_lunr;
+extern int opt_wlunr;
 extern int opt_uns;
 extern int opt_cse;
 extern int opt_wlt;
