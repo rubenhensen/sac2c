@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/22 13:43:54  sbs
+ * CreatePseudoFoldFun eliminated
+ *
  * Revision 3.14  2004/11/21 11:22:03  sah
  * removed some old ast infos
  *
@@ -93,111 +96,6 @@
 #include "DupTree.h"
 #include "print.h"
 #include "gen_pseudo_fun.h"
-
-/**
- **
- ** used for old typechecker:
- **
- **/
-
-#ifndef NEW_AST
-
-/******************************************************************************
- *
- * function:
- *   node *CreatePseudoFoldFun( types *elem_type,
- *                              char *fold_fun,
- *                              prf fold_prf,
- *                              char *res_var,
- *                              char *body_expr)
- *
- * description:
- *  - generates an N_fundef node of the following kind:
- *
- *      <elem_type> _FOLD: _type_<n>_<mod>__<fold_fun>( <elem_type> <res_var>,
- *                                                      <elem_type> <body_expr>)
- *      {
- *        tmp__<res_var> = <fold_fun>( <res_var>, <body_expr>)
- *        <res_var> = tmp__<res_var>;
- *        return( <res_var>);
- *      }
- *    NOTE, that all(!) arguments are NOT inserted in the new AST!
- *    Instead, copied versions are used only!
- *    Hence, the calling function has to take care of the memory allocated
- *    for the arguments!
- *    NOTE as well, that fold_prf is valid  iff  (fold_fun == NULL)
- *
- ******************************************************************************/
-
-node *
-CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_var,
-                     char *body_expr)
-{
-    char *pseudo_fold_fun, *buffer, *tmp_res_var;
-    node *new_fundef, *application, *args;
-
-    DBUG_ENTER ("CreatePseudoFoldFun");
-
-    args
-      = MakeExprs (MakeId (StringCopy (res_var), NULL, ST_regular),
-                   MakeExprs (MakeId (StringCopy (body_expr), NULL, ST_regular), NULL));
-
-    if (fold_fun != NULL) {
-        application = MakeAp (StringCopy (fold_fun), NULL, args);
-        pseudo_fold_fun = fold_fun;
-    } else {
-        DBUG_ASSERT (LEGAL_PRF (fold_prf), "fold_prf is out of range!");
-        application = MakePrf (fold_prf, args);
-        pseudo_fold_fun = prf_string[fold_prf];
-    }
-
-    /*
-     * Since the module name of the fold function is always '_FOLD', the
-     * actual module name must be encoded within the name in order to guarantee
-     * that no two fold functions from different modules may have the same
-     * internal name.
-     */
-    buffer = (char *)Malloc (strlen (pseudo_fold_fun) + strlen (module_name) + 3);
-    strcpy (buffer, module_name);
-    strcat (buffer, "__");
-    strcat (buffer, pseudo_fold_fun);
-    pseudo_fold_fun = TmpVarName (buffer);
-    buffer = Free (buffer);
-    tmp_res_var = TmpVarName (res_var);
-
-    new_fundef = MakeFundef (
-      pseudo_fold_fun, PSEUDO_MOD_FOLD, DupAllTypes (elem_type),
-      MakeArg (StringCopy (res_var), DupAllTypes (elem_type), ST_regular, ST_regular,
-               MakeArg (StringCopy (body_expr), DupAllTypes (elem_type), ST_regular,
-                        ST_regular, NULL)),
-      MakeBlock (MakeAssign (MakeLet (application,
-                                      MakeIds (tmp_res_var, NULL, ST_regular)),
-                             MakeAssign (MakeLet (MakeId (StringCopy (tmp_res_var), NULL,
-                                                          ST_regular),
-                                                  MakeIds (StringCopy (res_var), NULL,
-                                                           ST_regular)),
-                                         MakeAssign (MakeReturn (
-                                                       MakeExprs (MakeId (StringCopy (
-                                                                            res_var),
-                                                                          NULL,
-                                                                          ST_regular),
-                                                                  NULL)),
-                                                     NULL))),
-                 NULL),
-      NULL);
-    FUNDEF_STATUS (new_fundef) = ST_foldfun;
-    FUNDEF_INLINE (new_fundef) = TRUE;
-
-    DBUG_RETURN (new_fundef);
-}
-
-#endif /* NEW_AST */
-
-/**
- **
- ** used for new typechecker:
- **
- **/
 
 /******************************************************************************
  *
