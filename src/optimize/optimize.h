@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/01/18 17:43:14  asi
+ * Revision 1.12  1995/02/07 11:06:57  asi
+ * renamed the functions OPT1* -> OPT*, OPT2* -> DEAD*, OPT3* -> LIR*
+ * added CFprf
+ *
+ * Revision 1.11  1995/01/18  17:43:14  asi
  * Dead-Code-Removal now frees memory
  *
  * Revision 1.10  1995/01/17  11:05:16  asi
@@ -55,25 +59,25 @@
 extern node *Optimize (node *arg_node);
 extern char *PrintMask (long *mask);
 
-extern node *OPT1fundef (node *arg_node, node *arg_info);
-extern node *OPT1arg (node *arg_node, node *arg_info);
-extern node *OPT1vardec (node *arg_node, node *arg_info);
+extern node *OPTfundef (node *arg_node, node *arg_info);
+extern node *OPTarg (node *arg_node, node *arg_info);
+extern node *OPTvardec (node *arg_node, node *arg_info);
 extern node *OPTmodul (node *arg_node, node *arg_info);
-extern node *OPT1let (node *arg_node, node *arg_info);
-extern node *OPT1id (node *arg_node, node *arg_info);
-extern node *OPT1assign (node *arg_node, node *arg_info);
-extern node *OPT1pp (node *arg_node, node *arg_info);
-extern node *OPT1block (node *arg_node, node *arg_info);
-extern node *OPT1cond (node *arg_node, node *arg_info);
-extern node *OPT1loop (node *arg_node, node *arg_info);
+extern node *OPTlet (node *arg_node, node *arg_info);
+extern node *OPTid (node *arg_node, node *arg_info);
+extern node *OPTassign (node *arg_node, node *arg_info);
+extern node *OPTpp (node *arg_node, node *arg_info);
+extern node *OPTblock (node *arg_node, node *arg_info);
+extern node *OPTcond (node *arg_node, node *arg_info);
+extern node *OPTloop (node *arg_node, node *arg_info);
 
-extern node *OPT2fundef (node *arg_node, node *arg_info);
-extern node *OPT2assign (node *arg_node, node *arg_info);
-extern node *OPT2block (node *arg_node, node *arg_info);
-extern node *OPT2vardec (node *arg_node, node *arg_info);
-extern node *OPT2cond (node *arg_node, node *arg_info);
-extern node *OPT2loop (node *arg_node, node *arg_info);
+extern node *DEADfundef (node *arg_node, node *arg_info);
+extern node *DEADassign (node *arg_node, node *arg_info);
+extern node *DEADblock (node *arg_node, node *arg_info);
+extern node *DEADvardec (node *arg_node, node *arg_info);
+extern node *DEADcond (node *arg_node, node *arg_info);
+extern node *DEADloop (node *arg_node, node *arg_info);
 
-extern node *OPT3assign (node *arg_node, node *arg_info);
+extern node *CFprf (node *arg_node, node *arg_info);
 
 #endif /* _optimize_h */
