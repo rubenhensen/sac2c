@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 22:14:15  ktr
+ * some renaming done.
+ *
  * Revision 1.7  2004/11/23 17:35:36  ktr
  * COMPILES!!!
  *
@@ -40,8 +43,6 @@
  *
  *
  */
-#define NEW_INFO
-
 #include "datareuse.h"
 
 #include "globals.h"
@@ -107,7 +108,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMDRDataReuse( node *syntax_tree)
+ * @fn node *EMDRdoDataReuse( node *syntax_tree)
  *
  * @brief starting point of DataReuseOptimization
  *
@@ -117,9 +118,9 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMDRDataReuse (node *syntax_tree)
+EMDRdoDataReuse (node *syntax_tree)
 {
-    DBUG_ENTER ("EMDRDataReuse");
+    DBUG_ENTER ("EMDRdoDataReuse");
 
     DBUG_PRINT ("EMDR", ("Data reuse optimization..."));
 
