@@ -514,47 +514,47 @@
       </traversal>
       <traversal id="AE" name="Array Elimination" default="sons" include="ArrayElimination.h" >
         <travuser>
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Cond" />
-          <node name="Do" />
-          <node name="With" />
-          <node name="Prf" />
-          <node name="Ap" />
+          <!-- <node name="Fundef" /> -->
+          <!-- <node name="Assign" /> -->
+          <!-- <node name="Cond" /> -->
+          <!-- <node name="Do" /> -->
+          <!-- <node name="With" /> -->
+          <!-- <node name="Prf" /> -->
+          <!-- <node name="Ap" /> -->
         </travuser>
       </traversal>
       <traversal id="APC" name="Array Padding Collect" default="sons" include="pad_collect.h" >
         <travuser>
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Ap" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="Code" />
-          <node name="Id" />
-          <node name="Array" />
+          <!-- <node name="Fundef" /> -->
+          <!-- <node name="Let" /> -->
+          <!-- <node name="Prf" /> -->
+          <!-- <node name="Ap" /> -->
+          <!-- <node name="With" /> -->
+          <!-- <node name="Genarray" /> -->
+          <!-- <node name="Modarray" /> -->
+          <!-- <node name="Fold" /> -->
+          <!-- <node name="Code" /> -->
+          <!-- <node name="Id" /> -->
+          <!-- <node name="Array" /> -->
         </travuser>
       </traversal>
       <traversal id="APT" name="Array Padding Transform" default="sons" include="pad_transform.h" >
         <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Block" />
-          <node name="Let" />
-          <node name="Vardec" />
-          <node name="Assign" />
-          <node name="Array" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="Code" />
-          <node name="Id" />
-          <node name="Ap" />
-          <node name="Prf" />
+          <!-- <node name="Fundef" /> -->
+          <!-- <node name="Arg" /> -->
+          <!-- <node name="Block" /> -->
+          <!-- <node name="Let" /> -->
+          <!-- <node name="Vardec" /> -->
+          <!-- <node name="Assign" /> -->
+          <!-- <node name="Array" /> -->
+          <!-- <node name="With" /> -->
+          <!-- <node name="Genarray" /> -->
+          <!-- <node name="Modarray" /> -->
+          <!-- <node name="Fold" /> -->
+          <!-- <node name="Code" /> -->
+          <!-- <node name="Id" /> -->
+          <!-- <node name="Ap" /> -->
+          <!-- <node name="Prf" /> -->
         </travuser>
       </traversal>
       <traversal id="AL" name="AssociativeLaw" default="sons" include="AssociativeLaw.h" >
