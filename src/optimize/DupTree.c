@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.91  1998/05/21 10:16:14  dkr
+ * fixed a bug in DupNcode, DupNwith2:
+ *   now ..._DEC_RC_IDS is duplicated, too
+ *
  * Revision 1.90  1998/05/17 00:10:11  dkr
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  * fixed a bug with CODE_TEMPLATE:
@@ -1123,6 +1127,7 @@ DupNcode (node *arg_node, node *arg_info)
     NCODE_USED (new_node) = 0;
     NCODE_NO (new_node) = NCODE_NO (arg_node);
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
+    NCODE_DEC_RC_IDS (new_node) = DupIds (NCODE_DEC_RC_IDS (arg_node), arg_info);
 
     NCODE_COPY (arg_node) = new_node;
 
@@ -1188,14 +1193,19 @@ DupNwith2 (node *arg_node, node *arg_info)
     new_node = MakeNWith2 (id, segs, code, withop, NWITH2_DIMS (arg_node));
 
     if (NWITH2_IDX_MIN (arg_node) != NULL) {
-        DBUG_ASSERT ((NWITH2_IDX_MAX (arg_node) != NULL), "IDX_MAX not found");
         NWITH2_IDX_MIN (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
-        NWITH2_IDX_MAX (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
         for (d = 0; d < NWITH2_DIMS (new_node); d++) {
             (NWITH2_IDX_MIN (new_node))[d] = (NWITH2_IDX_MIN (arg_node))[d];
+        }
+    }
+    if (NWITH2_IDX_MAX (arg_node) != NULL) {
+        NWITH2_IDX_MAX (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < NWITH2_DIMS (new_node); d++) {
             (NWITH2_IDX_MAX (new_node))[d] = (NWITH2_IDX_MAX (arg_node))[d];
         }
     }
+
+    NWITH2_DEC_RC_IDS (new_node) = DupIds (NWITH2_DEC_RC_IDS (arg_node), arg_info);
 
     if (NWITH2_IN (arg_node) != NULL) {
         NWITH2_IN (new_node) = DFMGenMaskCopy (NWITH2_IN (arg_node));
