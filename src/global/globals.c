@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/10/18 17:15:47  ktr
+ * Switched WLS on by default.
+ *
  * Revision 3.22  2002/10/18 14:16:50  ktr
  * changed option -wlsx to -wls <level>
  *
@@ -404,8 +407,7 @@ bool patch_with = FALSE;
 unsigned int optimize
   = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
 #else /* PRODUCTION */
-unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
 
 #endif /* PRODUCTION */
 
