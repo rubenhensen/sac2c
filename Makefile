@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.85  1998/06/12 14:18:33  cg
+# added linking of concurrent/scheduling.o
+#
 # Revision 1.84  1998/06/07 18:38:33  dkr
 # added src/compile/ReuseWithArrays.o
 #
@@ -317,7 +320,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-CONCURRENT= src/concurrent/spmdregions.o
+CONCURRENT= src/concurrent/spmdregions.o src/concurrent/scheduling.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
