@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/04/24 18:03:29  dkr
+ * changed comments
+ *
  * Revision 1.8  1998/04/24 17:17:11  dkr
  * renamed Spmd...() to SPMD...()
  * fixed a bug in SPMDAssign
@@ -91,9 +94,8 @@ SPMDInitFundef (node *arg_node, node *arg_info)
  *   At the moment we simply generate a SPMD-region and sync-region for each
  *    first level with-loop.
 
- *   Then we store in SPMD_IN, SPMD_OUT, S the used/defined-masks
- *    (occurrences of vars which scope is not the whole SPMD region
- *    --- e.g. local vars of with-loops --- are already subtracted).
+ *   Then we store in SPMD_IN/OUT/INOUT/LOCAL, SYNC_INOUT the
+ *    in/out/inout/local-vars of the SPMD-, sync-region.
  *
  ******************************************************************************/
 
@@ -250,10 +252,10 @@ SPMDInitAssign (node *arg_node, node *arg_info)
  * description:
  *   In a first traversal we generate the initial SPMD- and sync-regions
  *   (Every with-loop-assignment is lifted into a SPMD- and sync-region):
- *     A = with ( ... )  ->  SPMD {
+ *     A = with ( ... )  ->  SPMD(...) {
  *                             do {
  *                               A = with ( ... )
- *                             }
+ *                             } sync(...)
  *                           }
  *   In a second traversal we optimize the SPMD- and sync-regions.
  *   (not yet implemented :(
