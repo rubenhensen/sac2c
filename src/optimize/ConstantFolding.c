@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/05/16 09:14:09  asi
+ * Revision 1.21  1995/06/09 09:19:01  asi
+ * *** empty log message ***
+ *
+ * Revision 1.20  1995/05/16  09:14:09  asi
  * usages of WARN1 adjust to changes in Error.h
  *
  * Revision 1.19  1995/05/05  09:06:17  asi
@@ -92,7 +95,7 @@
 
 extern char filename[]; /* is set temporary; will be set later on in main.c */
 
-#define CONST arg_info->nnode
+#define CONST arg_info->flag
 #define FALSE 0
 #define TRUE 1
 
@@ -1017,8 +1020,8 @@ node *
 GenArray (int start, int length, node *array)
 {
     int i;
-    node *expr;
-    node *returnexpr;
+    node *expr = NULL;
+    node *returnexpr = NULL;
 
     DBUG_ENTER ("GenArray");
 
