@@ -34,7 +34,6 @@ wl_bounds.c
 wl_bounds.h
 free_attribs.c
 free_info.h
-serialize_info.h
 serialize_stack.c
 serialize_stack.h
 deserialize.h
