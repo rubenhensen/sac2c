@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/10/28 14:04:15  sbs
+ * NTCPRF_cast added
+ *
  * Revision 1.6  2002/10/10 12:17:51  sbs
  * PRF_IF macro definition adjusted to changes made in prf_node_info.mac
  *
@@ -105,6 +108,32 @@ NTCPRF_array (te_info *info, ntype *elems)
     }
 
     TYFreeTypeConstructor (elem);
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_cast( te_info *info, ntype *elems)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_cast (te_info *info, ntype *elems)
+{
+    ntype *cast_t, *expr_t;
+    ntype *res;
+
+    DBUG_ENTER ("NTCPRF_cast");
+
+    cast_t = TYGetProductMember (elems, 0);
+    expr_t = TYGetProductMember (elems, 1);
+
+    TEAssureSameScalarType ("cast-type", cast_t, "expr-type", expr_t);
+    res = TEAssureSameShape ("cast-type", cast_t, "expr-type", expr_t);
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }

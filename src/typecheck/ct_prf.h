@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2002/10/28 14:04:15  sbs
+ * NTCPRF_cast added
+ *
  * Revision 1.3  2002/09/04 12:59:46  sbs
  * type checking of arrays changed; now sig deps will be created as well.
  *
@@ -23,6 +26,7 @@ extern ct_funptr NTCPRF_funtab[];
 
 extern ntype *NTCPRF_dummy (te_info *info, ntype *args);
 extern ntype *NTCPRF_array (te_info *info, ntype *elems);
+extern ntype *NTCPRF_cast (te_info *info, ntype *elems);
 extern ntype *NTCPRF_dim (te_info *info, ntype *args);
 extern ntype *NTCPRF_shape (te_info *info, ntype *args);
 extern ntype *NTCPRF_reshape (te_info *info, ntype *args);
