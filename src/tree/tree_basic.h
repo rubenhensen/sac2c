@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.99  2000/10/24 14:30:05  dkr
+ * MakeTypes1 added
+ * MakeType renamed to MakeTypes
+ *
  * Revision 1.98  2000/10/23 11:32:41  dkr
  * MakeId1 renamed to MakeId_Copy
  * MakeId2 removed
@@ -415,8 +419,10 @@ extern shpseg *MakeShpseg (nums *num);
  *  type.
  */
 
-extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name,
-                        char *mod);
+extern types *MakeTypes1 (simpletype btype);
+
+extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
+                         char *mod);
 
 #define TYPES_BASETYPE(t) (t->simpletype)
 #define TYPES_DIM(t) (t->dim)
