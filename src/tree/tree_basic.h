@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/03/02 16:11:06  dkr
+ * INFO_PREC_... macros modifed
+ *
  * Revision 3.35  2001/03/02 12:03:49  nmw
  * INFO_SSADCR_ASSIGN added (for restoring FUNDEF_EXT_ASSIGN)
  *
@@ -2526,10 +2529,10 @@ extern node *MakeInfo ();
 #define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
 
 /* precompile */
-#define INFO_PREC_MODUL(n) (n->node[0])
-#define INFO_PREC_FUNDEF(n) (n->node[1])
-#define INFO_PREC_OBJINITFUNDEF(n) (n->node[2])
-#define INFO_PREC_LASTASSIGN(n) (n->node[3])
+#define INFO_PREC1_FUNDEF(n) (n->node[1])
+#define INFO_PREC1_LET(n) (n->node[2])
+#define INFO_PREC1_LASTASSIGN(n) (n->node[3])
+#define INFO_PREC2_OBJINITFUNDEF(n) (n->node[4])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
@@ -3095,7 +3098,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  temporary attributes:
  ***
  ***    node*  EXPR            (scanparse, NULL afterwards)
- ***    node*  FUNDEF          (N_fundef)  (typecheck -> )
+ ***    node*  FUNDEF          (N_fundef)  (typecheck -> precompile -> compile )
  ***    long*  MASK                        (optimize -> )
  ***
  ***  remarks:
@@ -3179,8 +3182,8 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_CBLOCK(n) ((n)->node[0])
 #define NCODE_CEXPR(n) ((n)->node[1])
 #define NCODE_NEXT(n) ((n)->node[2])
-#define NCODE_INC_RC_IDS(n) ((ids *)((n)->node[3]))
-#define NCODE_USE(n) ((n)->node[4])
+#define NCODE_INC_RC_IDS(n) ((ids *)((n)->dfmask[0]))
+#define NCODE_USE(n) ((n)->node[3])
 #define NCODE_USED(n) ((n)->info.cint)
 #define NCODE_MASK(n, x) ((n)->mask[x])
 #define NCODE_NO(n) ((n)->refcnt)
