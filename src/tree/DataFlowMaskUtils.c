@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/03/24 00:51:29  dkr
+ * some DBUG_PRINT statements added
+ *
  * Revision 1.6  2000/03/23 16:16:22  dkr
  * DFM2ReturnTypes() modified: reference flag in rettypes->attrib is
  * unset
@@ -255,10 +258,19 @@ DFM2ReturnTypes (DFMmask_t mask)
     while (decl != NULL) {
         tmp = rettypes;
         rettypes = DuplicateTypes (VARDEC_OR_ARG_TYPE (decl), 1);
+        /*
+         * Unfortunately the 'attrib' value is part of the type structure.
+         * But an attrib value 'ST_reference' or 'ST_readonly_reference'
+         *  makes no sense for a return type.
+         */
         if ((rettypes->attrib == ST_reference)
             || (rettypes->attrib == ST_readonly_reference)) {
             rettypes->attrib = ST_unique;
         }
+
+        DBUG_PRINT ("DFMU",
+                    ("%-16s - attrib: %-16s, status: %-16s", TYPES_NAME (rettypes),
+                     mdb_statustype[rettypes->attrib], mdb_statustype[rettypes->status]));
 
         TYPES_NEXT (rettypes) = tmp;
         decl = DFMGetMaskEntryDeclSet (NULL);
@@ -306,7 +318,14 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
             vardecs = MakeVardec (StringCopy (ARG_NAME (decl)),
                                   DuplicateTypes (ARG_TYPE (decl), 1), vardecs);
             VARDEC_ATTRIB (vardecs) = ARG_ATTRIB (decl);
+            VARDEC_OBJDEF (vardecs) = ARG_OBJDEF (decl);
         }
+
+        DBUG_PRINT ("DFMU",
+                    ("%-16s - attrib: %-16s, status: %-16s", VARDEC_NAME (vardecs),
+                     mdb_statustype[VARDEC_ATTRIB (vardecs)],
+                     mdb_statustype[VARDEC_STATUS (vardecs)]));
+
         lut = InsertIntoLUT (lut, decl, vardecs);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -345,7 +364,13 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
             args = MakeArg (StringCopy (VARDEC_NAME (decl)),
                             DuplicateTypes (VARDEC_TYPE (decl), 1), VARDEC_STATUS (decl),
                             VARDEC_ATTRIB (decl), args);
+            ARG_OBJDEF (args) = VARDEC_OBJDEF (decl);
         }
+
+        DBUG_PRINT ("DFMU", ("%-16s - attrib: %-16s, status: %-16s", ARG_NAME (args),
+                             mdb_statustype[ARG_ATTRIB (args)],
+                             mdb_statustype[ARG_STATUS (args)]));
+
         lut = InsertIntoLUT (lut, decl, args);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -376,8 +401,18 @@ DFM2Exprs (DFMmask_t mask, LUT_t lut)
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         id = MakeId1 (VARDEC_OR_ARG_NAME (decl));
+        /*
+         * ID_VARDEC and ID_OBJDEF are mapped to the same node!
+         */
         ID_VARDEC (id) = SearchInLUT (lut, decl);
+        ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
+        ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
         exprs = MakeExprs (id, exprs);
+
+        DBUG_PRINT ("DFMU",
+                    ("%-16s - attrib: %-16s, status: %-16s", ID_NAME (id),
+                     mdb_statustype[ID_ATTRIB (id)], mdb_statustype[ID_STATUS (id)]));
+
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
@@ -401,20 +436,27 @@ DFM2Ids (DFMmask_t mask, LUT_t lut)
 {
     node *decl;
     ids *tmp;
-    ids *ids = NULL;
+    ids *_ids = NULL;
 
     DBUG_ENTER ("DFM2Ids");
 
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
-        tmp = ids;
-        ids = MakeIds1 (VARDEC_OR_ARG_NAME (decl));
-        IDS_VARDEC (ids) = SearchInLUT (lut, decl);
-        IDS_NEXT (ids) = tmp;
+        tmp = _ids;
+        _ids = MakeIds1 (VARDEC_OR_ARG_NAME (decl));
+        IDS_ATTRIB (_ids) = VARDEC_OR_ARG_ATTRIB (decl);
+        IDS_STATUS (_ids) = VARDEC_OR_ARG_STATUS (decl);
+        IDS_VARDEC (_ids) = SearchInLUT (lut, decl);
+        IDS_NEXT (_ids) = tmp;
+
+        DBUG_PRINT ("DFMU", ("%-16s - attrib: %-16s, status: %-16s", IDS_NAME (_ids),
+                             mdb_statustype[IDS_ATTRIB (_ids)],
+                             mdb_statustype[IDS_STATUS (_ids)]));
+
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    DBUG_RETURN (ids);
+    DBUG_RETURN (_ids);
 }
 
 /*
