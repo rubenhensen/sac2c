@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/09/01 17:07:27  jhs
+ * SYNC_SCHEDULING removed.
+ *
  * Revision 2.10  1999/08/25 16:08:15  bs
  * FreeNCodeWLAA modified.
  *
@@ -1676,10 +1679,6 @@ FreeSync (node *arg_node, node *arg_info)
     }
     if (SYNC_LOCAL (arg_node) != NULL) {
         SYNC_LOCAL (arg_node) = DFMRemoveMask (SYNC_LOCAL (arg_node));
-    }
-
-    if (SYNC_SCHEDULING (arg_node) != NULL) {
-        SYNC_SCHEDULING (arg_node) = SCHRemoveScheduling (SYNC_SCHEDULING (arg_node));
     }
 
     DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
