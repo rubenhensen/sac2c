@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/02/24 15:55:43  dkr
+ * RC functions for old with-loop removed
+ *
  * Revision 2.14  2000/02/23 17:49:22  cg
  * Type property functions IsUnique(<type>), IsBoxed(<type>)
  * moved from refcount.c to tree_compound.c.
@@ -243,6 +246,7 @@ LookupId (char *id, node *id_chain)
  *   is allocated.
  *
  ******************************************************************************/
+
 int *
 AllocDump (int *dump, int varno)
 {
@@ -265,6 +269,7 @@ AllocDump (int *dump, int varno)
  *   Counterpart to AllocDump. Frees all memory used by the dump.
  *
  ******************************************************************************/
+
 void
 FreeDump (int *dump)
 {
@@ -285,6 +290,7 @@ FreeDump (int *dump)
  *   Both real and naive refcounts are changed here!
  *
  ******************************************************************************/
+
 void
 InitRC (int n, node *arg_info)
 {
@@ -317,6 +323,7 @@ InitRC (int n, node *arg_info)
  *   varno tells how many variables will be needed in this dump.
  *
  ******************************************************************************/
+
 int *
 StoreRC (int which, int varno, node *arg_info)
 {
@@ -379,6 +386,7 @@ StoreRC (int which, int varno, node *arg_info)
  *   depends on the global vars "fundef_node" and "args_no" !!
  *
  ******************************************************************************/
+
 int *
 StoreAndInitRC (int which, int varno, int n, node *arg_info)
 {
@@ -450,6 +458,7 @@ StoreAndInitRC (int which, int varno, int n, node *arg_info)
  *     which == RC_NAIVE => naive refcounters
  *
  ******************************************************************************/
+
 void
 RestoreRC (int which, int *dump, node *arg_info)
 {
@@ -490,6 +499,7 @@ RestoreRC (int which, int *dump, node *arg_info)
  *   starts the refcount-traversal (sets act_tab).
  *
  ******************************************************************************/
+
 node *
 Refcount (node *arg_node)
 {
@@ -521,23 +531,17 @@ Refcount (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCarg
- *  arguments     : 1) argument node
- *                  2) info node unused
- *  description   : initializes ARG_REFCNT for refcounted (0) and not
- *                  refcounted parameters (-1)
- *                  This information is needed by compile.c to distinguish
- *                  between refcounted and not refcounted parameters.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG... , MUST_REFCOUNT
+ * function:
+ *   node *RCarg(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   Initializes ARG_REFCNT for refcounted (0) and not refcounted parameters (-1).
+ *   This information is needed by compile.c to distinguish between refcounted
+ *   and not refcounted parameters.
  *
- */
+ ******************************************************************************/
 
 node *
 RCarg (node *arg_node, node *arg_info)
@@ -805,29 +809,23 @@ RCassign (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCloop
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : refcounts while- and do-loops
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
+ * function:
+ *   node *RCloop(node *arg_node, node *arg_info)
  *
- *  remarks       : - v1: set of vars that are used before they will be defined
- *                        in the body of the loop
- *                  - v2: set of vars that are defined in the body of the loop
- *                        and are used in the rest of the program
- *                  ( array-vars are only considered )
-
-
+ * description:
+ *
+ * remarks:
+ *   - v1: set of vars that are used before they will be defined in the body
+ *         of the loop
+ *   - v2: set of vars that are defined in the body of the loop and are used
+ *         in the rest of the program (array-vars are only considered)
+ *
  * attention:
  *   Uses for N_do *and* N_while resp do- *and* while-loops!!!
-
-
- */
+ *
+ ******************************************************************************/
 
 node *
 RCloop (node *arg_node, node *arg_info)
@@ -928,7 +926,9 @@ RCloop (node *arg_node, node *arg_info)
             if (do_on_ids) {
 
                 /* first store used (usevars) and defined (defvars) variables  */
-                /*        if ((defined_mask[i] > 0) && (dumpcompare > 0)) {  */
+#if 0
+        if ((defined_mask[i] > 0) && (dumpcompare > 0)) {
+#endif
                 /*
                  *  store refcount of defined variables in defvars
                  */
@@ -1252,15 +1252,17 @@ RCloop (node *arg_node, node *arg_info)
     RestoreRC (RC_NAIVE, naive_ref_dump, arg_info);
     FREE (ref_dump);
     FREE (naive_ref_dump);
-    /*
-     if (NODE_TYPE( arg_node) == N_while) {
-       DBUG_PRINT( "RCi", ("N_while cond"));
-       WHILE_COND( arg_node) = Trav( WHILE_COND( arg_node), arg_info);
-     }
-   */
+#if 0
+  if (NODE_TYPE( arg_node) == N_while) {
+    DBUG_PRINT( "RCi", ("N_while cond"));
+    WHILE_COND( arg_node) = Trav( WHILE_COND( arg_node), arg_info);
+  }
+#endif
 
     /* traverse termination condition */
-    /* DO_orwhileCOND(arg_node) = Trav(DO_orwhileCOND(arg_node), arg_info); */
+#if 0
+  DO_OR_WHILE_COND(arg_node) = Trav(DO_OR_WHILE_COND(arg_node), arg_info);
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -1430,22 +1432,16 @@ RCid (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RClet
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : set the refcnts of the defined variables to the
- *                  actual refcnt-values of the respective variable
- *                  declarations and reset these values to 0.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
+ * function:
+ *   node *RClet(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   set the refcnts of the defined variables to the actual refcnt-values of
+ *   the respective variable declarations and reset these values to 0.
  *
- */
+ ******************************************************************************/
 
 node *
 RClet (node *arg_node, node *arg_info)
@@ -1501,6 +1497,7 @@ RClet (node *arg_node, node *arg_info)
  *    the actual branch.
  *
  ******************************************************************************/
+
 node *
 RCcond (node *arg_node, node *arg_info)
 {
@@ -1754,163 +1751,6 @@ RCprepost (node *arg_node, node *arg_info)
         PRE_REFCNT (arg_node) = -1; /* is not a refcount-object!! */
     }
     PRE_NAIVE_REFCNT (arg_node) = -1;
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *RCwith(node *arg_node, node *arg_info)
- *
- * description:
- *   performs reference counting for with-loop.
- *
- ******************************************************************************/
-
-node *
-RCwith (node *arg_node, node *arg_info)
-{
-    int *ref_dump, *with_dump, index_vec_varno, i, mod_array_varno;
-    node *vardec;
-    long *used_mask;
-    ids *new_ids;
-    int *naive_ref_dump;
-    int *naive_with_dump;
-
-    DBUG_ENTER ("RCwith");
-
-    /* store refcounts */
-    ref_dump = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 0, arg_info);
-    naive_ref_dump = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 0, arg_info);
-
-    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
-    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info);
-    index_vec_varno = VARDEC_VARNO (GEN_VARDEC (WITH_GEN (arg_node)));
-    if (N_modarray == WITH_OPERATOR (arg_node)->nodetype) {
-        DBUG_ASSERT (N_id == MODARRAY_ARRAY (WITH_OPERATOR (arg_node))->nodetype,
-                     "wrong nodetype != N_id");
-        mod_array_varno
-          = VARDEC_VARNO (ID_VARDEC (MODARRAY_ARRAY (WITH_OPERATOR (arg_node))));
-    } else
-        mod_array_varno = -1;
-
-    with_dump = StoreRC (RC_REAL, INFO_RC_VARNO (arg_info), arg_info);
-    naive_with_dump = StoreRC (RC_NAIVE, INFO_RC_VARNO (arg_info), arg_info);
-
-    /* mask of variables that are used in body */
-    used_mask = WITH_MASK (arg_node, 1);
-
-    /*
-     * store refcounts of variables that are used in body
-     * before they will be defined in a with_loop
-     * in WITH_USEVARS(arg_node).
-     */
-    for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
-        if (used_mask[i] > 0) {
-            vardec = FindVardec_Varno (i, fundef_node);
-            DBUG_ASSERT ((NULL != vardec), "variable not found");
-            /* #### */
-            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
-                /* onlynaive missing here #### */
-                if (0 < VARDEC_OR_ARG_REFCNT (vardec)) {
-                    /* store refcount of used variables in WITH_USEDVARS() */
-                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                       ST_regular);
-                    IDS_VARDEC (new_ids) = vardec;
-                    IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
-                    IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                    /* #### */
-                    IDS_NEXT (new_ids) = WITH_USEVARS (arg_node);
-                    WITH_USEVARS (arg_node) = new_ids;
-
-                    DBUG_PRINT ("RC",
-                                ("store used variables %s:%d::%d", IDS_NAME (new_ids),
-                                 IDS_REFCNT (new_ids), IDS_NAIVE_REFCNT (new_ids)));
-                }
-            }
-        }
-    }
-
-    /*
-     *  now increase refcount of variables that are used before they will be
-     *  defined in a with_loop.
-     */
-    for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
-        if ((with_dump[i] > 0) && (i != index_vec_varno) && (i != mod_array_varno)) {
-            vardec = FindVardec_Varno (i, fundef_node);
-            DBUG_ASSERT ((NULL != vardec), "var not found");
-            if (0 < VARDEC_OR_ARG_REFCNT (vardec)) {
-                /* only naive missing here #### */
-                ref_dump[i]++;
-                naive_ref_dump[i]++;
-                DBUG_PRINT ("RC", ("set refcount of %s to %d:",
-                                   VARDEC_OR_ARG_NAME (vardec), ref_dump[i]));
-                DBUG_PRINT ("RC", ("set naive refcount of %s to %d:",
-                                   VARDEC_OR_ARG_NAME (vardec), naive_ref_dump[i]));
-            }
-        }
-    }
-
-    if (-1 != mod_array_varno) {
-        /* now increase refcount of modified array */
-        vardec = FindVardec_Varno (mod_array_varno, fundef_node);
-        DBUG_ASSERT ((NULL != vardec), "var not found");
-        ref_dump[mod_array_varno]++;
-        naive_ref_dump[mod_array_varno]++;
-        DBUG_PRINT ("RC", ("set refcount of %s to %d::%d", VARDEC_OR_ARG_NAME (vardec),
-                           ref_dump[mod_array_varno], naive_ref_dump[mod_array_varno]));
-    }
-
-    RestoreRC (RC_REAL, ref_dump, arg_info);
-    RestoreRC (RC_NAIVE, naive_ref_dump, arg_info);
-    FreeDump (ref_dump);
-    FreeDump (naive_ref_dump);
-    FreeDump (with_dump);
-    FreeDump (naive_ref_dump);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : RCcon
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : traverses first body of with-loop and then gen- modarray
- *
- */
-
-node *
-RCcon (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCcon");
-    GENARRAY_BODY (arg_node) = Trav (GENARRAY_BODY (arg_node), arg_info);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : RCgen
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : traverses generator of with_loop
- *
- */
-
-node *
-RCgen (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCgen");
-
-    GEN_RIGHT (arg_node) = Trav (GEN_RIGHT (arg_node), arg_info);
-    GEN_LEFT (arg_node) = Trav (GEN_LEFT (arg_node), arg_info);
-    /* set refcount of index_vector */
-    if (!INFO_RC_ONLYNAIVE (arg_info)) {
-        IDS_REFCNT (GEN_IDS (arg_node)) = VARDEC_REFCNT (IDS_VARDEC (GEN_IDS (arg_node)));
-    }
-    IDS_NAIVE_REFCNT (GEN_IDS (arg_node))
-      = VARDEC_NAIVE_REFCNT (IDS_VARDEC (GEN_IDS (arg_node)));
-
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/02/24 15:55:28  dkr
+ * RC functions for old with-loop removed
+ *
  * Revision 2.3  2000/02/23 17:49:22  cg
  * Type property functions IsUnique(<type>), IsBoxed(<type>)
  * moved from refcount.c to tree_compound.c.
@@ -91,12 +94,6 @@ extern node *RCfundef (node *arg_node, node *arg_info);
 extern node *RCarg (node *arg_node, node *arg_info);
 extern node *RCprepost (node *arg_node, node *arg_info);
 extern node *RCicm (node *arg_node, node *arg_info);
-
-/* old with-loop */
-extern node *RCwith (node *arg_node, node *arg_info);
-extern node *RCcon (node *arg_node, node *arg_info);
-extern node *RCgen (node *arg_node, node *arg_info);
-extern node *RCwith (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *RCNwith (node *arg_node, node *arg_info);
