@@ -1,8 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.17  2002/06/07 14:42:16  dkr
+# header compressed
+#
 # Revision 3.16  2002/06/07 14:41:32  dkr
-# include of argtag_info.mac modified
+# dependencies for argtag_info.mac modified
 #
 # Revision 3.15  2002/06/06 19:56:03  dkr
 # target clean modified
@@ -21,32 +24,11 @@
 # ( .xxx.d mechanism)
 # global setup included via Makefile.Config
 #
-# Revision 3.10  2001/11/13 20:32:41  dkr
-# make deps done
-#
-# Revision 3.9  2001/07/18 13:08:15  cg
-# make deps done
-#
-# Revision 3.8  2001/04/26 21:09:41  dkr
-# make deps done
-#
-# Revision 3.7  2001/03/22 20:19:57  dkr
-# make deps done
-#
-# Revision 3.6  2001/03/09 11:53:38  sbs
-# make deps done
-#
 # Revision 3.5  2001/03/09 11:15:11  sbs
 # -I ../profile/ added
 #
 # Revision 3.4  2001/03/02 10:36:02  dkr
 # /home/dkr/sac/BASE/sac2c/src/global/RCS/Makefile,v used in touch-rules
-#
-# Revision 3.3  2001/01/17 10:13:00  dkr
-# make deps done
-#
-# Revision 3.2  2000/12/06 20:08:59  dkr
-# make deps done
 #
 # Revision 3.1  2000/11/20 17:59:26  sacbase
 # new release made
