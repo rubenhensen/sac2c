@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/02/20 08:22:18  mwe
+ * signature of MakeModul changed (new argument for FUNDECS)
+ * updated DupTree: now duplicates also FUNDECS
+ *
  * Revision 3.86  2004/02/06 14:26:21  mwe
  * PHIASSIGN removed
  *
@@ -887,7 +891,8 @@ DupModul (node *arg_node, node *arg_info)
     new_node
       = MakeModul (StringCopy (MODUL_NAME (arg_node)), MODUL_FILETYPE (arg_node),
                    DUPTRAV (MODUL_IMPORTS (arg_node)), DUPTRAV (MODUL_TYPES (arg_node)),
-                   DUPTRAV (MODUL_OBJS (arg_node)), DUPTRAV (MODUL_FUNS (arg_node)));
+                   DUPTRAV (MODUL_OBJS (arg_node)), DUPTRAV (MODUL_FUNS (arg_node)),
+                   DUPTRAV (MODUL_FUNDECS (arg_node)));
 
     MODUL_CLASSTYPE (new_node) = DupTypes_ (MODUL_CLASSTYPE (arg_node), arg_info);
 
@@ -3013,8 +3018,13 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         AP_FUNDEF (ASSIGN_RHS (assign)) = new_fundef;
 
         /* add new fundef to global chain of fundefs */
-        FUNDEF_NEXT (new_fundef) = MODUL_FUNS (module);
-        MODUL_FUNS (module) = new_fundef;
+        if (FUNDEF_BODY (new_fundef) != NULL) {
+            FUNDEF_NEXT (new_fundef) = MODUL_FUNS (module);
+            MODUL_FUNS (module) = new_fundef;
+        } else {
+            FUNDEF_NEXT (new_fundef) = MODUL_FUNDECS (module);
+            MODUL_FUNDECS (module) = new_fundef;
+        }
 
         DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
                      "Assignment not found in FUNDEF_EXT_ASSIGNS!");
