@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.143  1998/01/22 12:04:31  srs
+ * *** empty log message ***
+ *
  * Revision 1.142  1997/12/20 15:49:40  srs
  * enhanced PrintNodeTree and
  * changed some functions headers to new style
@@ -2164,7 +2167,7 @@ Print (node *arg_node)
 void
 PrintNodeTree (node *node)
 {
-    int i;
+    int i, j;
     ids *_ids;
 
     outfile = stdout;
@@ -2197,6 +2200,9 @@ PrintNodeTree (node *node)
             fprintf (outfile, "(%s %s)\n", mdb_type[VARDEC_TYPE (node)->simpletype],
                      VARDEC_NAME (node));
             break;
+        case N_fundef:
+            fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
+            break;
         default:
             fprintf (outfile, "\n");
         }
@@ -2204,8 +2210,13 @@ PrintNodeTree (node *node)
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
             if (node->node[i]) {
-                INDENT;
-                fprintf (outfile, "%i|", i);
+                for (j = 0; j < indent; j++)
+                    if (j % 4)
+                        fprintf (outfile, "  ");
+                    else
+                        fprintf (outfile, "| ");
+
+                fprintf (outfile, "%i-", i);
                 PrintNodeTree (node->node[i]);
             }
         indent--;
