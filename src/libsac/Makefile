@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.13  2000/07/05 12:52:17  nmw
+# sac_Arg.c and cinterface.c added
+#
 # Revision 1.12  2000/05/29 14:36:46  dkr
 # make deps done
 #
@@ -65,7 +68,7 @@ LIBS := -L.
 
 OBJS_LIBSAC := boundcheck.o message.o misc.o profile.o trace.o nophm.o \
                cachesim_access_advanced.o cachesim_access_simple.o   \
-               cachesim_basic.o ../../lib/main_args.o	
+               cachesim_basic.o ../../lib/main_args.o sac_arg.o cinterface.o	
 
 OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o  \
                   mt_trace.o nophm_mt.o
