@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/08/25 14:21:46  mwe
+ * AssociativeLaw.h added
+ *
  * Revision 3.23  2002/08/14 09:53:22  dkr
  * - DBUG_ASSERT for overflow in allocation counter corrected
  * - Malloc(0) returns NULL on all architectures now
@@ -695,6 +698,8 @@ TmpVar ()
         s = "hd";
     } else if (act_tab == cwc_tab) {
         s = "cwc";
+    } else if (act_tab == al_tab) {
+        s = "al";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "TmpVar(): unknown trav-tab found!");
