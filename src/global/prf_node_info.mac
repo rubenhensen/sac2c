@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/06/02 12:07:56  sbs
+ * added CFprf in comment...
+ *
  * Revision 1.18  1997/10/07 14:11:16  srs
  * new prfs F_min, F_max
  *
@@ -58,13 +61,22 @@
 **
 */
 
-/* NOTE: F_not should be the last "function enumerator" that has
-         only one no array argument.
-         F_neq should be the last "function enumerator" that hasn't
-         arrays as arguments.
-         F_take should be the first "function enumerator" that has at
-         least one array as argument.
-*/
+/*
+ * NOTE: At the t the time being, there are 3 categories of prf's:
+ *       - funs with exactly 1 scalar arg. The last fun of this
+ *         category HAS TO BE  "F_not"  !!
+ *           USED IN : ... ?
+ *
+ *       - funs which require more than one argument. All of the fun's
+ *         arguments should be scalars (not arrays). The last fun of
+ *         this category HAS TO BE  "F_neq"  !!
+ *           USED IN : CFprf, ... ?
+ *
+ *       - funs that require at least one non-scalar (array) argument.
+ *         The first fun of this category HAS TO BE  "F_take"  !!
+ *           USED IN : ... ?
+ *
+ */
 
 /*   Node_name         dbug-string[]  prf_string[]        prf_name_str[]*/
 
