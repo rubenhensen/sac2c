@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/12/01 16:32:23  ktr
+ * FUNCOND transformed
+ *
  * Revision 1.14  2004/11/25 12:50:11  khf
  * SacDevCamp: COMPILES!
  *
@@ -691,8 +694,8 @@ USSATfundef (node *arg_node, info *arg_info)
             if ((assign != NULL)
                 && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))) == N_funcond)) {
                 /* condition function without N_cond node found */
-                cond = TBmakeCond (DUPdoDupTree (EXPRS_EXPR (
-                                     FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (assign))))),
+                cond = TBmakeCond (DUPdoDupTree (
+                                     FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (assign)))),
                                    TBmakeBlock (TBmakeEmpty (), NULL),
                                    TBmakeBlock (TBmakeEmpty (), NULL));
                 assign = TBmakeAssign (cond, assign);
@@ -939,15 +942,14 @@ CondTransform (node *arg_node, info *arg_info)
 
         /* create let assign for else part with same left side as then part
            (right side from old funcond subtree) */
-        else_assign
-          = TCmakeAssignLet (IDS_AVIS (left_ids), EXPRS_EXPR (FUNCOND_ELSE (old_cond)));
+        else_assign = TCmakeAssignLet (IDS_AVIS (left_ids), FUNCOND_ELSE (old_cond));
 
         /* add correct id node from funcond subtree to assignment for then block */
-        LET_EXPR (ASSIGN_INSTR (then_assign)) = EXPRS_EXPR (FUNCOND_THEN (old_cond));
+        LET_EXPR (ASSIGN_INSTR (then_assign)) = FUNCOND_THEN (old_cond);
 
         /* delete unused prf subtree */
-        EXPRS_EXPR (FUNCOND_THEN (old_cond)) = NULL;
-        EXPRS_EXPR (FUNCOND_ELSE (old_cond)) = NULL;
+        FUNCOND_THEN (old_cond) = NULL;
+        FUNCOND_ELSE (old_cond) = NULL;
         FREEdoFreeTree (old_cond);
 
         /* append then_assignment to then block */
