@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/28 09:12:29  dkr
+ * bug in MALLOC_INIT_VECT fixed
+ *
  * Revision 3.5  2001/03/27 21:54:24  dkr
  * comment added
  *
@@ -147,8 +150,8 @@ extern void ComputeMallocAlignStep (void);
 
 /* caution: 'val' should occur in the macro implementation only once! */
 #define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
-    if (vect != NULL) {                                                                  \
-        (vect) = (type *)MALLOC (dims * sizeof (type));                                  \
+    if (vect == NULL) {                                                                  \
+        (vect) = (type *)MALLOC ((dims) * sizeof (type));                                \
     }                                                                                    \
     INIT_VECT (vect, dims, type, val)
 
@@ -156,7 +159,7 @@ extern void ComputeMallocAlignStep (void);
 #define INIT_VECT(vect, dims, type, val)                                                 \
     {                                                                                    \
         int d;                                                                           \
-        for (d = 0; d < dims; d++) {                                                     \
+        for (d = 0; d < (dims); d++) {                                                   \
             (vect)[d] = val;                                                             \
         }                                                                                \
     }
@@ -165,8 +168,8 @@ extern void ComputeMallocAlignStep (void);
     {                                                                                    \
         int d;                                                                           \
         if ((old_vect) != NULL) {                                                        \
-            (new_vect) = (type *)MALLOC (dims * sizeof (type));                          \
-            for (d = 0; d < dims; d++) {                                                 \
+            (new_vect) = (type *)MALLOC ((dims) * sizeof (type));                        \
+            for (d = 0; d < (dims); d++) {                                               \
                 (new_vect)[d] = (old_vect)[d];                                           \
             }                                                                            \
         }                                                                                \
@@ -175,9 +178,9 @@ extern void ComputeMallocAlignStep (void);
 #define PRINT_VECT(handle, vect, dims, format)                                           \
     {                                                                                    \
         int d;                                                                           \
-        if (vect != NULL) {                                                              \
+        if ((vect) != NULL) {                                                            \
             fprintf (handle, "[ ");                                                      \
-            for (d = 0; d < dims; d++) {                                                 \
+            for (d = 0; d < (dims); d++) {                                               \
                 fprintf (handle, format, (vect)[d]);                                     \
                 fprintf (handle, " ");                                                   \
             }                                                                            \
