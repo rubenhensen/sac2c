@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1997/12/10 14:24:02  sbs
+ * MAKE_BIN_PRF macro inserted !
+ *
  * Revision 1.52  1997/11/05 16:30:40  dkr
  * moved nnode[] from tree_compound.[ch] to traverse.[ch]
  *
@@ -1368,6 +1371,8 @@ extern node *Shape2Array (shapes *shp);
 #define PRF_ARG1(n) (EXPRS_EXPR (PRF_ARGS (n)))
 #define PRF_ARG2(n) (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (n))))
 #define PRF_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))))
+
+#define MAKE_BIN_PRF(f, arg1, arg2) MakePrf (f, MakeExprs (arg1, MakeExprs (arg2, NULL)))
 
 /*--------------------------------------------------------------------------*/
 
