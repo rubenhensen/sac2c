@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/07/24 09:08:05  asi
+ * Revision 1.13  1995/07/28 12:58:22  asi
+ * added function DupInfo
+ *
+ * Revision 1.12  1995/07/24  09:08:05  asi
  * macro DUP moved from DupTree.c to DupTree.h, macro TYPES renamed to INL_TYPES
  *
  * Revision 1.11  1995/07/04  11:39:58  hw
@@ -50,30 +53,34 @@
 #include "traverse.h"
 #include "typecheck.h"
 #include "internal_lib.h"
+#include "free.h"
 
 #include "DupTree.h"
 #include "optimize.h"
 #include "Inline.h"
 
 #define LEVEL arg_info->lineno
+
 node *
 DupTree (node *arg_node, node *arg_info)
 {
-    node *new_node;
+    node *new_node = NULL;
     funptr *tmp_tab;
 
     DBUG_ENTER ("DupTree");
 
-    tmp_tab = act_tab;
-    act_tab = dup_tab;
+    if (NULL != arg_node) {
+        tmp_tab = act_tab;
+        act_tab = dup_tab;
 
-    if (NULL == arg_info)
-        arg_info = MakeNode (N_info);
+        if (NULL == arg_info)
+            arg_info = MakeNode (N_info);
 
-    LEVEL = 0;
-    new_node = Trav (arg_node, arg_info);
+        LEVEL = 0;
+        new_node = Trav (arg_node, arg_info);
 
-    act_tab = tmp_tab;
+        act_tab = tmp_tab;
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -306,5 +313,21 @@ DupDec (node *arg_node, node *arg_info)
         new_node->nnode = 1;
     }
 
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupInfo (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupInfo");
+    if (UNS_NO == arg_node->flag) {
+        new_node = DupTree (UNS_NODES, arg_info);
+        FreeTree (arg_node);
+    } else {
+        new_node = MakeNode (N_info);
+        new_node->flag = arg_node->flag;
+    }
     DBUG_RETURN (new_node);
 }
