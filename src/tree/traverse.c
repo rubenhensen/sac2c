@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2004/10/25 13:43:14  sah
+ * wlt_tab now available for everyone again ;)
+ * /
+ *
  * Revision 3.101  2004/10/25 11:59:14  sah
  * added SEL traversal
  *
@@ -957,13 +961,8 @@ funtab *syncopt_tab = &syncopt_tab_rec;
  *  (42) wltrans_tab
  */
 static funtab wltrans_tab_rec = {{
-#ifdef NEW_AST
 #define NIFwltrans(it_wltrans) it_wltrans
 #include "node_info.mac"
-#else /* NEW_AST */
-#define NIFunused_39(it_unused39) it_unused39
-#include "node_info.mac"
-#endif /* NEW_AST */
                                  },
                                  NULL,
                                  NULL};
