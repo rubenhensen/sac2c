@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.15  2004/09/27 13:19:17  sah
+# added serialization file
+#
 # Revision 1.14  2003/09/09 12:58:16  sbs
 # -I../typecheck added
 #
@@ -66,7 +69,8 @@ INCS = -I../../inc -I../tree -I../global -I. -I../typecheck
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
-     cv2scalar.o cv2cv.o cv2str.o zipcv.o basecv.o
+     cv2scalar.o cv2cv.o cv2str.o zipcv.o basecv.o \
+     constants_serialize.o
 
 
 #
