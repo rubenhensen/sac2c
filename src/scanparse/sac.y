@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.113  1996/02/21 15:05:12  cg
+ * Revision 1.114  1996/04/02 13:48:02  cg
+ * scanparse converted to new strings:
+ * primitive type string replaced by call of function to_string with
+ * a char array as argument. to_string resides in module StringBase
+ *
+ * Revision 1.113  1996/02/21  15:05:12  cg
  * usage of function specifiers 'class' and 'inline' in SIBs corrected
  *
  * Revision 1.112  1996/02/21  09:17:42  cg
@@ -469,7 +474,7 @@ static file_type file_kind = F_prog;
 %token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS,
             MINUS, PRIVATEID
             RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,GENARRAY, MODARRAY
-%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR, TYPE_UNS, TYPE_SHORT,
+%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
 %token <cint> NUM
 %token <cfloat> FLOAT
@@ -850,6 +855,7 @@ fundec: varreturntypes id BRACKET_L fundec2
           }         
       | returntypes prf_name BRACKET_L fundec3
           { 
+/*
             if(!((F_moddec == file_kind) || (F_classdec == file_kind)))
              {
                 strcpy(yytext,"(");
@@ -857,12 +863,14 @@ fundec: varreturntypes id BRACKET_L fundec2
              }
             else
              {
+*/
                 $$=$4;
                 $$->nnode=1;
                 $$->info.types=$1;
                 $$->info.types->id=$2;              /* function name */
                 $$->info.types->id_mod=mod_name;    /* SAC module name */
-                $$->info.types->id_cmod=link_mod_name; /* external module name */
+                $$->info.types->id_cmod=link_mod_name; 
+                                              /* external module name */
                 $$->info.types->status=ST_imported;
                 
             DBUG_PRINT("GENTREE",
@@ -874,7 +882,9 @@ fundec: varreturntypes id BRACKET_L fundec2
                                       ?T_void:($$->node[2]->nodetype) ],
                         $$->node[2]));
 
+/*
              }
+*/
              
           }
         ;
@@ -2221,12 +2231,27 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                                  $$->info.cint ? "true" : "false"));
          }
       | STR
-         { $$=MakeNode(N_str);
-           $$->info.id=$1;
+        {
+          char *funname=(char*)Malloc(10);
+          char *funmod=(char*)Malloc(11);
+          node *len_exprs;
+          
+          strcpy(funname, "to_string");
+          strcpy(funmod, "StringBase");
+          
+          len_exprs=MakeExprs(MakeNum(strlen($1)+1), NULL);
+          
+/***********************************************/
+#ifndef NEWTREE
+          len_exprs->nnode=1;
+#endif
+/***********************************************/
 
-           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
-                                 mdb_nodetype[$$->nodetype],$$,
-                                 $$->info.id ));
+          $$=MakeAp(funname, NULL, MakeExprs(string2array($1), len_exprs));
+
+          DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
+                                mdb_nodetype[$$->nodetype],$$,
+                                $1));
         }
       ;
 
@@ -2671,11 +2696,6 @@ simpletype: TYPE_INT
                }
             | TYPE_DBL
                { $$=MakeTypes(T_double);
-                 DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
-                                     $$, mdb_type[$$->simpletype]));
-               }
-            | TYPE_STR
-               { $$=MakeTypes(T_str);
                  DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                      $$, mdb_type[$$->simpletype]));
                }
