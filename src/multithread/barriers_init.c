@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/07/11 15:39:53  jhs
+ * Added creation of MTSYNC_(FOLD|ALLOC).:w
+ *
  * Revision 1.4  2000/04/14 17:43:26  jhs
  * Comments ...
  *
@@ -119,6 +122,7 @@ BARINassign (node *arg_node, node *arg_info)
     node *alloc;  /* a new MTalloc */
     node *sync;   /* a new MTsync */
     char *name;   /* the name of a variable containing a fold result */
+    node *vardec; /* its vardec */
 
     DBUG_ENTER ("BARINassign");
 
@@ -146,6 +150,9 @@ BARINassign (node *arg_node, node *arg_info)
 
                     sync = MakeMTsync ();
                     MTSYNC_WAIT (sync) = DFMGenMaskCopy (LET_DEFMASK (instr));
+                    MTSYNC_FOLD (sync) = NULL;
+                    MTSYNC_ALLOC (sync)
+                      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
 
                     before = MakeAssign (alloc, arg_node);
                     behind
@@ -162,6 +169,7 @@ BARINassign (node *arg_node, node *arg_info)
 
                     /* there can be one variable on the left side only! */
                     name = StringCopy (DFMGetMaskEntryNameSet (LET_DEFMASK (instr)));
+                    vardec = DFMGetMaskEntryDeclSet (LET_DEFMASK (instr));
 
                     signal = MakeMTsignal ();
                     MTSIGNAL_IDSET (signal) = DFMGenMaskCopy (LET_DEFMASK (instr));
@@ -169,7 +177,9 @@ BARINassign (node *arg_node, node *arg_info)
                     sync = MakeMTsync ();
                     MTSYNC_WAIT (sync) = DFMGenMaskCopy (LET_DEFMASK (instr));
                     MTSYNC_FOLD (sync)
-                      = MakeDFMfoldmask (name, NWITH2_WITHOP (rhs), NULL);
+                      = MakeDFMfoldmask (vardec, NWITH2_WITHOP (rhs), NULL);
+                    MTSYNC_ALLOC (sync)
+                      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
 
                     behind
                       = MakeAssign (signal, MakeAssign (sync, ASSIGN_NEXT (arg_node)));
