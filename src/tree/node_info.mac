@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.163  2004/07/22 15:04:13  ktr
+ * Added WLSap.
+ *
  * Revision 3.162  2004/07/22 14:19:14  ktr
  * Added PRECdo and MMVdo
  *
@@ -1903,9 +1906,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, TravNone, SSALURap, SSAWLTap,
        SSAWLIap, TravSons,
 
-       SSAILIap, COMPAp, PREC2apORprf, TravSons, CRTWRPap, TravSons, PREC4ap, TravSons,
-       HDap, TravSons, CWCap, HMap, DLPrfOrAp, TravSons, TravSons, TravSons, SPap,
-       TravSons, CVPap, TravSons,
+       SSAILIap, COMPAp, PREC2apORprf, TravSons, CRTWRPap, WLSap, PREC4ap, TravSons, HDap,
+       TravSons, CWCap, HMap, DLPrfOrAp, TravSons, TravSons, TravSons, SPap, TravSons,
+       CVPap, TravSons,
 
        TravSons, TEMap, PEMap, EMALap, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
