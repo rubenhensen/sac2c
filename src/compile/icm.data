@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/05/15 09:19:29  cg
+ * added ICMs MT_SYNC_NONFOLD and MT_SYNC_ONEFOLD_NONFOLD
+ *
  * Revision 1.35  1998/05/14 21:36:35  dkr
  * changed some WL-ICMs
  *
@@ -587,6 +590,11 @@ ICM_DEF( MT_START_SYNCBLOCK, NO_TRACE)
 ICM_END( MT_START_SYNCBLOCK, (narg, vararg))
 #endif
 
+#if defined(MT_SYNC_NONFOLD) || defined(ICM_ALL)
+ICM_DEF( MT_SYNC_NONFOLD, NO_TRACE)
+ICM_END( MT_SYNC_NONFOLD, ())
+#endif
+
 #if defined(MT_SYNC_FOLD) || defined(ICM_ALL)
 ICM_DEF( MT_SYNC_FOLD, NO_TRACE)
   ICM_INT(narg)
@@ -601,6 +609,15 @@ ICM_DEF( MT_SYNC_ONEFOLD, NO_TRACE)
   ICM_STR(tmp_var)
   ICM_STR(foldop)
 ICM_END( MT_SYNC_ONEFOLD, (foldtype, accu_var, tmp_var, foldop))
+#endif
+
+#if defined(MT_SYNC_ONEFOLD_NONFOLD) || defined(ICM_ALL)
+ICM_DEF( MT_SYNC_ONEFOLD_NONFOLD, NO_TRACE)
+  ICM_STR(foldtype)
+  ICM_STR(accu_var)
+  ICM_STR(tmp_var)
+  ICM_STR(foldop)
+ICM_END( MT_SYNC_ONEFOLD_NONFOLD, (foldtype, accu_var, tmp_var, foldop))
 #endif
 
 #if defined(MT_SYNC_FOLD_NONFOLD) || defined(ICM_ALL)
