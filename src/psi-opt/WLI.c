@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.10  2000/05/25 14:58:45  dkr
+ * WLINcode(): NCODE_CEXPR is traversed now
+ *
  * Revision 2.9  1999/11/15 18:05:36  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -108,7 +111,7 @@ int wli_phase;
  *
  ******************************************************************************/
 
-prf
+static prf
 SimplifyFun (prf prf)
 {
     DBUG_ENTER ("SimplifyFun");
@@ -161,7 +164,7 @@ SimplifyFun (prf prf)
  *
  ******************************************************************************/
 
-node *
+static node *
 CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
 {
     node *substn = NULL, *thisn;
@@ -212,7 +215,7 @@ CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
  *
  ******************************************************************************/
 
-index_info *
+static index_info *
 Scalar2ArrayIndex (node *arrayn, node *wln)
 {
     index_info *iinfo, *tmpii;
@@ -286,7 +289,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
  *
  ******************************************************************************/
 
-int
+static int
 CreateIndexInfoId (node *idn, node *arg_info)
 {
     index_info *iinfo;
@@ -337,7 +340,7 @@ CreateIndexInfoId (node *idn, node *arg_info)
  *
  ******************************************************************************/
 
-void
+static void
 CreateIndexInfoSxS (node *prfn, node *arg_info)
 {
     int id_no = 0, index_var = 0;
@@ -420,7 +423,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
  *
  ******************************************************************************/
 
-void
+static void
 CreateIndexInfoA (node *prfn, node *arg_info)
 {
     int id_no = 0, elts, i, index, val;
@@ -1030,11 +1033,10 @@ WLINpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLINcode(node *arg_node, node *arg_info)
+ *   node *WLINcode( node *arg_node, node *arg_info)
  *
  * description:
  *   marks this N_Ncode node as processed and enters the code block.
- *
  *
  ******************************************************************************/
 
@@ -1043,11 +1045,15 @@ WLINcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLINcode");
 
-    DBUG_ASSERT (!NCODE_FLAG (arg_node), ("Body traversed a second time in WLI"));
-    NCODE_FLAG (arg_node) = 1; /* this body has been traversed and all
-                                  information has been gathered. */
+    DBUG_ASSERT ((!NCODE_FLAG (arg_node)), "Body traversed a second time in WLI");
+
+    /*
+     * this body has been traversed and all information has been gathered.
+     */
+    NCODE_FLAG (arg_node) = 1;
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
