@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2003/12/03 15:37:04  sah
+ * basic support for withloop default
+ * value, except set notation
+ *
  * Revision 1.30  2003/11/12 14:32:30  sbs
  * HDpart inserted.
  *
@@ -159,11 +163,15 @@
 
 /**
  * set this to use build in take/drop instead of withloops.
+ *
+ * NOTE: the withloop code was never tested and may contain bugs.
  */
 #define HD_USE_BUILTIN_TAKEDROP
 
 /**
  * set this to use build in concat instead of withloops.
+ *
+ * NOTE: the withloop code was never tested and may contain bugs.
  */
 #define HD_USE_BUILTIN_CONCAT
 
@@ -195,7 +203,7 @@ typedef struct DOTINFO {
  * Structures to store ids and shapes during shape-scan. Filled during
  * traversal in HD_sacn mode.
  */
-typedef enum TRAVSTATE { HD_sel, HD_scan } travstate;
+typedef enum TRAVSTATE { HD_sel, HD_scan, HD_default } travstate;
 typedef enum IDTYPE { ID_vector, ID_scalar } idtype;
 
 typedef struct SHPCHAIN {
@@ -219,6 +227,7 @@ typedef struct IDTABLE {
  * TRAVSTATE:   this field is used to determine the current traversalmode
  * (flag)       HD_sel in normal mode (eliminate dots)
  *              HD_scan in shape scanning mode
+ *              HD_default to build default values for withloops
  * IDTABLE:     used to reference the current idtable.
  * (info2)
  * ASSIGNS:     stores any assigns that have to be inserted prior to
@@ -561,6 +570,7 @@ BuildDrop (node *left, node *right, node *vector)
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+    NWITHOP_DEFAULT (NWITH_WITHOP (result)) = MakeNum (0);
 
     DBUG_RETURN (result);
 #endif
@@ -664,6 +674,7 @@ BuildConcat (node *a, node *b)
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+    NWITHOP_DEFAULT (NWITH_WITHOP (result)) = MakeNum (0);
 
     DBUG_RETURN (result);
 #endif
@@ -1080,6 +1091,49 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 }
 
 /**
+ * builds a default value for the selection.
+ * @param array AST node of the array
+ * @param info dotinfo structure of the array
+ */
+
+node *
+BuildSelectionDefault (node *array, dotinfo *info)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ("BuildSelectionDefault");
+
+    if (info->triplepos == 0) {
+        /* no tripledot, build default */
+
+        node *shape = MAKE_BIN_PRF (F_drop_SxV, MakeNum (info->selcnt),
+                                    MakePrf (F_shape, MakeExprs (DupTree (array), NULL)));
+
+        result
+          = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular),
+                                               NULL),
+                                  MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                  NULL, NULL),
+                                  NULL),
+                       MakeNCode (MAKE_EMPTY_BLOCK (),
+                                  MakeAp1 (StringCopy ("zero"), NULL, DupTree (array))),
+                       MakeNWithOp (WO_genarray, shape));
+
+        NCODE_USED (NWITH_CODE (result))++;
+        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+        NWITHOP_DEFAULT (NWITH_WITHOP (result))
+          = MakeAp1 (StringCopy ("zero"), NULL, DupTree (array));
+
+    } else {
+        /* default is just a scalar */
+
+        result = MakeAp1 (StringCopy ("zero"), NULL, DupTree (array));
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**
  * builds the withloop construct replacing the selection.
  *
  * @param shape shape vector of the withloop
@@ -1090,7 +1144,8 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
  * @return sac code of the withloop
  */
 node *
-BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
+BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
+               dotinfo *info)
 {
     node *result;
 
@@ -1106,6 +1161,9 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
+    /* build default value */
+    NWITHOP_DEFAULT (NWITH_WITHOP (result)) = BuildSelectionDefault (array, info);
 
     DBUG_RETURN (result);
 }
@@ -1319,7 +1377,7 @@ ScanId (node *id, node **array, node *arg_info)
 
 /**
  * builds runtime code that calculates the minimum of all shapes
- * found in vectors. This is only used if the selection vectors
+ * found in vectors. This is only used if the selection vector
  * was a single indentifier.
  *
  * @param vectors shapechain containing vectors to build the minimum of
@@ -1356,6 +1414,7 @@ BuildShapeVectorMin (shpchain *vectors)
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+    NWITHOP_DEFAULT (NWITH_WITHOP (result)) = MakeNum (0);
 
     FreeTree (index);
 
@@ -1869,7 +1928,7 @@ HDap (node *arg_node, node *arg_info)
 
             index = BuildIndex (ARRAY_AELEMS (AP_ARG1 (arg_node)), iv, block, info);
 
-            result = BuildWithLoop (shape, iv, AP_ARG2 (arg_node), index, block);
+            result = BuildWithLoop (shape, iv, AP_ARG2 (arg_node), index, block, info);
 
             FreeTree (arg_node);
             FreeNode (iv);
@@ -1887,6 +1946,21 @@ HDap (node *arg_node, node *arg_info)
         } else if (NODE_TYPE (AP_ARG1 (arg_node)) == N_id) {
             ScanId (AP_ARG1 (arg_node), &AP_ARG2 (arg_node), arg_info);
         }
+    }
+
+    /* if in HD_default mode, rebuild selection */
+
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
+        && (strcmp (AP_NAME (arg_node), "sel") == 0)
+        && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array))
+
+    {
+        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
+        node *tmp = BuildSelectionDefault (AP_ARG2 (arg_node), info);
+
+        FreeTree (result);
+
+        result = tmp;
     }
 
     /* Now we traverse our result in order to handle any */
@@ -1924,6 +1998,15 @@ HDprf (node *arg_node, node *arg_info)
         } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
             ScanId (PRF_ARG1 (arg_node), &PRF_ARG2 (arg_node), arg_info);
         }
+    }
+
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default) && (PRF_PRF (arg_node) == F_sel)) {
+        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (PRF_ARG1 (arg_node)));
+
+        node *tmp = BuildSelectionDefault (PRF_ARG2 (arg_node), info);
+
+        FreeTree (arg_node);
+        arg_node = tmp;
     }
 
     arg_node = TravSons (arg_node, arg_info);
@@ -2069,6 +2152,9 @@ HDsetwl (node *arg_node, node *arg_info)
                        MakeNWithOp (WO_genarray, shape));
     }
 
+    NCODE_USED (NWITH_CODE (result))++;
+    NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
     /* check whether we had some dots in order to create */
     /* code to handle the permutation                    */
 
@@ -2080,9 +2166,6 @@ HDsetwl (node *arg_node, node *arg_info)
         node *shapevector = BuildPermutatedVector (SETWL_IDS (arg_node), shape);
 
         /* put the intermediate result into the assigns chain */
-
-        NCODE_USED (NWITH_CODE (result))++;
-        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
 
         INFO_HD_ASSIGNS (arg_info)
           = AppendAssign (INFO_HD_ASSIGNS (arg_info),
@@ -2097,13 +2180,13 @@ HDsetwl (node *arg_node, node *arg_info)
                             MakeNCode (MAKE_EMPTY_BLOCK (),
                                        MAKE_BIN_PRF (F_sel, selvector, setid)),
                             MakeNWithOp (WO_genarray, shapevector));
+
+        NCODE_USED (NWITH_CODE (result))++;
+        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
     }
 
     FreeTree (arg_node);
     FreeTree (ids);
-
-    NCODE_USED (NWITH_CODE (result))++;
-    NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
 
     FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
 
