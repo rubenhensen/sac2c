@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.58  2002/08/13 10:24:23  sbs
+# handle_mops.o added.
+#
 # Revision 3.57  2002/08/09 13:09:38  dkr
 # typecheck/create_wrapper_code.o added
 #
@@ -95,7 +98,7 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
-         src/flatten/while2do.o src/flatten/insert_vardec.o
+         src/flatten/while2do.o src/flatten/insert_vardec.o src/flatten/handle_mops.o
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
            src/constants/constants_ari_ops.o  src/constants/cv2cv.o \
