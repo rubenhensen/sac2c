@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/10/22 17:27:04  cg
+ * Revision 1.28  1995/10/26 18:20:43  cg
+ * modified sequence of compiler phases considered
+ * (checkdec moved behind typechecker)
+ *
+ * Revision 1.27  1995/10/22  17:27:04  cg
  * added new break option -bd to stop after checking
  * module/class declaration.
  *
@@ -108,11 +112,11 @@ usage (char *prg_name)
 
     printf ("\nSTOP OPTIONS:\n");
     printf ("\t -bp \t\t\tstop after scan/parse\n");
-    printf ("\t -bd \t\t\tstop after checking module/class declaration\n");
     printf ("\t -bj \t\t\tstop after object init transformation\n");
     printf ("\t -bi \t\t\tstop after module imports\n");
     printf ("\t -bf \t\t\tstop after flatten\n");
     printf ("\t -bt \t\t\tstop after typecheck\n");
+    printf ("\t -bd \t\t\tstop after checking module/class declaration\n");
     printf ("\t -bm \t\t\tstop after resolving implicit types\n");
     printf ("\t -by \t\t\tstop after analysing functions\n");
     printf ("\t -bb \t\t\tstop after writing SIB-file\n");
