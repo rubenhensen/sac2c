@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.214  1998/06/07 18:39:07  dkr
+ * added entries for reuse_tab
+ *
  * Revision 1.213  1998/06/04 17:04:14  cg
  * *** empty log message ***
  *
@@ -659,7 +662,7 @@
  *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
  *                             wlt_tab       cse_tab       dfr_tab       tcwl_tab
  *                             spmdinit_tab  spmdopt_tab   spmdlift_tab  syncinit_tab
- *                             syncopt_tab   wltrans_tab   gsc_tab       *unused*
+ *                             syncopt_tab   wltrans_tab   gsc_tab       reuse_tab
  *                             o2nWith_tab
  *                             nnode
  */
@@ -696,7 +699,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        CFid, RCid, COMPId, TravSons, DupId, TravSons, UNRid, TravSons, IdxId, UNSid,
        WLIid, TravSons, PrintId, OBJid, TravSons, TravSons, ANAid, TravSons, TravSons,
        UNQid, TravSons, PRECid, TravSons, TravSons, TravSons, CSEid, TravSons, TCWLnull,
-       TravSons, TravSons, SPMDLiftId, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, SPMDLiftId, TravSons, TravSons, TravSons, TravSons, ReuseId,
        TravSons, 0),
 
   NIF (N_float, "N_float", TravSons, TravSons, PrintFloat, TravSons, TravSons, TravSons,
@@ -770,7 +773,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        AEfundef, WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef,
        WDECfundef, UNQfundef, RMVfundef, PRECfundef, ACTfundef, RSIBfundef, WLTfundef,
        CSEfundef, DFRfundef, TravSons, TravSons, TravSons, SPMDLiftFundef, TravSons,
-       TravSons, WLTRAFundef, GSCfundef, TravSons, TravSons, 3),
+       TravSons, WLTRAFundef, GSCfundef, ReuseFundef, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, OPTvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons, DupDec,
@@ -841,7 +844,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        IdxLet, UNSlet, WLIlet, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, UNQlet, TravSons, PREClet, TravSons, TravSons, WLTlet,
        TravSons, TravSons, TravSons, TravSons, TravSons, SPMDLiftLet, TravSons, TravSons,
-       WLTRALet, TravSons, TravSons, TravSons, 1),
+       WLTRALet, TravSons, ReuseLet, TravSons, 1),
 
   NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, TravSons, TravSons,
        TravSons, FreePrf, CFprf, RCprf, COMPPrf, TravSons, DupPrf, TravSons, TravSons,
@@ -1066,7 +1069,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, WLINwithop, TravSons,
        PrintNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, ReuseNwithop,
        TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
@@ -1086,7 +1089,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, PRECNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, SPMDLiftNwith2, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, 4),
+       ReuseNwith2, TravSons, 4),
 
   NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
        TravSons, FreeWLseg, TravSons, TravSons, COMPWLseg, TravSons, DupWLseg, TravSons,
