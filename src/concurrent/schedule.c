@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/08/07 15:28:27  dkr
+ * SCHEDwlsegVar added
+ *
  * Revision 1.2  1998/08/06 20:57:53  dkr
  * SCHEDwlseg, SCHEDwlsegvar must traverse NEXT-nodes
  *
@@ -219,29 +222,55 @@ SCHEDwlseg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#if 0
-node *SCHEDwlsegvar(node *arg_node, node *arg_info)
+/******************************************************************************
+ *
+ * function:
+ *   node *SCHEDwlsegVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *   sched_tab traversal function for N_WLsegVar nodes.
+ *
+ *   This function assures that each segment within an spmd-function has
+ *   a scheduling specification while all segments outside of spmd-functions
+ *   do not have scheduling specifications.
+ *
+ ******************************************************************************/
+
+node *
+SCHEDwlsegVar (node *arg_node, node *arg_info)
 {
-  DBUG_ENTER("SCHEDwlsegvar");
-  
-  if (WLSEGVAR_SCHEDULING(arg_node)==NULL) {
-    WLSEGVAR_SCHEDULING(arg_node) = InferSchedulingVarSegment(arg_node, arg_info);
-  }
-  else {
-    if (WLSEGVAR_SCHEDULING(arg_node)->class != SC_var_seg) {
-      ERROR(WLSEGVAR_SCHEDULING(arg_node)->line, 
-            ("Scheduling deiscipline '%s` not suitable for variable segments",
-             WLSEGVAR_SCHEDULING(arg_node)->discipline));
+    DBUG_ENTER ("SCHEDwlsegVar");
+
+    if (arg_info == NULL) {
+        /*
+         * Here, we are not within an spmd-function, so schedulings derived from wlcomp
+         * pragmas must be removed.
+         */
+        if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+            WLSEGVAR_SCHEDULING (arg_node)
+              = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
+        }
+    } else {
+        /*
+         * Here, we are within an spmd-function, so if no scheduling is already present,
+         * the inference strategy is used. Otherwise a scheduling derived froma wlcomp
+         * pragma is checked for suitability for constant segments.
+         */
+        if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
+            WLSEGVAR_SCHEDULING (arg_node)
+              = InferSchedulingVarSegment (arg_node, arg_info);
+        } else {
+            SCHCheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
+        }
     }
-  }
-  
-  if (WLSEGVAR_NEXT( arg_node) != NULL) {
-    WLSEGVAR_NEXT( arg_node) = Trav( WLSEGVAR_NEXT( arg_node), arg_info);
-  }
-  
-  DBUG_RETURN(arg_node);
+
+    if (WLSEGVAR_NEXT (arg_node) != NULL) {
+        WLSEGVAR_NEXT (arg_node) = Trav (WLSEGVAR_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
-#endif
 
 /******************************************************************************
  *
