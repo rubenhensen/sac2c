@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/06/20 15:55:08  asi
+ * Revision 1.31  1995/06/26 11:53:18  asi
+ * parameter for GenerateMasks changed
+ *
+ * Revision 1.30  1995/06/20  15:55:08  asi
  * added WARN macro
  *
  * Revision 1.29  1995/06/14  13:44:41  asi
@@ -184,7 +187,7 @@ extern long ReadMask (long *mask, long number);
 
 extern node *OptTrav (node *arg_node, node *arg_info, int node_no);
 
-extern node *GenerateMasks (node *arg_node);
+extern node *GenerateMasks (node *arg_node, node *arg_info);
 extern node *OPTfundef (node *arg_node, node *arg_info);
 extern node *OPTarg (node *arg_node, node *arg_info);
 extern node *OPTvardec (node *arg_node, node *arg_info);
