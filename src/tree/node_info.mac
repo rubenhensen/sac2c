@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2001/05/25 08:41:46  nmw
+ * SSALURlet removed
+ *
  * Revision 3.54  2001/05/23 15:48:55  nmw
  * useless SSACFvardec removed
  *
@@ -1611,7 +1614,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TCCPlet, SSAlet, CAVlet, USSAlet,
        SSADCRlet, SSACSElet, CMPTlet, TravSons, SSACFlet, SSALIRlet, LIRMOVlet, TravSons,
-       SSALURlet, SSAWLTlet, SSAWLIlet, SSAWLFlet,
+       TravSons, SSAWLTlet, SSAWLIlet, SSAWLFlet,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
