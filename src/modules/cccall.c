@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2003/02/11 16:36:38  dkr
+ * TAGGED_ARRAYS: CCFLAGS is patched in resource.c instead of cccall.c
+ * now
+ *
  * Revision 3.7  2003/02/11 14:28:51  dkr
  * CC call patched for TAGGED_ARRAYS
  *
@@ -739,9 +743,6 @@ InvokeCC ()
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
                 fprintf (shellscript,
                          "%s %s"
-#ifdef TAGGED_ARRAYS
-                         "-DTAGGED_ARRAYS"
-#endif
                          " %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
                          config.cc, config.ccflags, config.ldflags, config.ccdir,
                          tmp_dirname, opt_buffer, outfilename, cfilename, linklist,
