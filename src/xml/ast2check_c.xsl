@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.11  2005/02/16 14:33:36  jhb
+  divide the attributecode to exist and correct
+
   Revision 1.10  2005/02/14 14:09:42  jhb
   right = correct
 
@@ -175,7 +178,10 @@ static info *FreeInfo(info *info)
   <xsl:apply-templates select="./sons/son" mode="check">
   <xsl:sort select="@name"/>
   </xsl:apply-templates>
-  <xsl:apply-templates select="./attributes/attribute">
+  <xsl:apply-templates select="./attributes/attribute" mode="exist">
+    <xsl:sort select="@name"/>
+  </xsl:apply-templates>
+  <xsl:apply-templates select="./attributes/attribute" mode="correct">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
   <xsl:apply-templates select="./sons/son" mode="trav">
@@ -277,7 +283,7 @@ static info *FreeInfo(info *info)
 </xsl:template>
 
 
-<xsl:template match="attribute">
+<xsl:template match="attribute" mode="exist">
   <xsl:choose>
     <!-- literal attributes are ignored -->
     <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;literal&quot;]">
@@ -330,6 +336,19 @@ static info *FreeInfo(info *info)
           <xsl:value-of select="'}'"/>
         </xsl:if>
       </xsl:if>
+    </xsl:otherwise>
+  </xsl:choose>
+  <xsl:value-of select="$newline"/>
+ </xsl:template>
+
+
+<xsl:template match="attribute" mode="correct">
+  <xsl:choose>
+    <!-- literal attributes are ignored -->
+    <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;literal&quot;]">
+      <!-- do nothing -->
+    </xsl:when>
+    <xsl:otherwise>
       <xsl:value-of select="$newline"/>
       <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
         <xsl:value-of select="$newline"/>
@@ -391,7 +410,9 @@ static info *FreeInfo(info *info)
       </xsl:if>
     </xsl:otherwise>
   </xsl:choose>
+  <xsl:value-of select="$newline"/>
  </xsl:template>
+
 
 
  <xsl:template match="node" mode="enum">
