@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2003/06/13 09:26:15  ktr
+ * Fixed bugs about missing calls of SHCopyShape
+ *
  * Revision 1.43  2003/06/11 21:47:29  ktr
  * Added support for multidimensional arrays.
  *
@@ -347,7 +350,7 @@ SCOArray2StructConstant (node *expr)
     if (array != NULL) {
         /* alloc hidden vector */
         realshape = SHOldTypes2Shape (atype);
-        ashape = ARRAY_SHAPE (array);
+        ashape = SHCopyShape (ARRAY_SHAPE (array));
 
         /* ktr: before it was SHGetUnrLen(realshape); */
         elem_count = SHGetUnrLen (ashape);
@@ -365,7 +368,7 @@ SCOArray2StructConstant (node *expr)
                 tmp = EXPRS_NEXT (tmp);
             }
         }
-        DBUG_ASSERT ((tmp == NULL), "array contains too much elements");
+        DBUG_ASSERT ((tmp == NULL), "array contains too many elements");
 
         /* create struct_constant */
         struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
@@ -479,7 +482,7 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
         }
 
         /* build array node */
-        expr = MakeArray (aelems, COGetShape (SCO_HIDDENCO (struc_co)));
+        expr = MakeArray (aelems, SHCopyShape (COGetShape (SCO_HIDDENCO (struc_co))));
 
         ARRAY_TYPE (expr)
           = MakeTypes (SCO_BASETYPE (struc_co), SHGetDim (SCO_SHAPE (struc_co)),
@@ -757,10 +760,10 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
 {
     struct_constant *struc_co;
     node *result;
-    constant *old_hidden_co;
-    int arrdim;
+    /* constant *old_hidden_co; */
+    int arraydim;
     constant *tmpidx, *tmp;
-    shape *tmpshp, *tmpshp2, *tmpshp3;
+    shape *tmpshp, *idxshp, *tmpshp2;
 
     DBUG_ENTER ("SSACFStructOpWrapper");
 
@@ -770,14 +773,15 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
     /* given expressession could be converted to struct_constant */
     if (struc_co != NULL) {
         /* save internal hidden input constant */
-        old_hidden_co = SCO_HIDDENCO (struc_co);
+        /*    old_hidden_co = SCO_HIDDENCO(struc_co); */
 
-        arrdim = SHGetDim (SCO_SHAPE (struc_co)) - COGetDim (SCO_HIDDENCO (struc_co));
+        arraydim = COGetDim (SCO_HIDDENCO (struc_co));
+
         /* perform struc-op on hidden constant */
         switch (op) {
         case F_sel:
-            if (arrdim < SHGetUnrLen (COGetShape (idx))) {
-                tmp = COMakeConstantFromInt (arrdim);
+            if (arraydim < SHGetUnrLen (COGetShape (idx))) {
+                tmp = COMakeConstantFromInt (arraydim);
                 tmpidx = COTake (tmp, idx);
                 SCO_HIDDENCO (struc_co) = COSel (tmpidx, SCO_HIDDENCO (struc_co));
                 tmpidx = COFreeConstant (tmpidx);
@@ -796,23 +800,33 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
             break;
 
         case F_reshape:
-            tmpshp = SHDropFromShape (arrdim, SCO_SHAPE (struc_co));
-            tmpshp2 = COConstant2Shape (idx);
-            if (SHGetUnrLen (COGetShape (idx)) >= SHGetDim (tmpshp))
-                tmpshp3 = SHTakeFromShape (-1 * SHGetDim (tmpshp), tmpshp3);
+            tmpshp = SHDropFromShape (arraydim, SCO_SHAPE (struc_co));
+            idxshp = COConstant2Shape (idx);
 
-            if (SHCompareShapes (tmpshp, tmpshp3)) {
+            tmpshp2 = SHTakeFromShape (-1 * SHGetDim (tmpshp), idxshp);
+
+            /* Perform folding iff idx defines the correct shape for
+               the elements in the array */
+            if (SHCompareShapes (tmpshp, tmpshp2)) {
+                tmp = COMakeConstantFromInt (-1 * SHGetDim (tmpshp));
+                idx = CODrop (tmp, idx);
+                tmp = COFreeConstant (tmp);
                 SCO_HIDDENCO (struc_co) = COReshape (idx, SCO_HIDDENCO (struc_co));
+
+                tmpshp2 = SHFreeShape (tmpshp2);
+                tmpshp2 = COConstant2Shape (idx);
+                SCO_SHAPE (struc_co) = SHAppendShapes (tmpshp2, tmpshp);
+
                 result = SCODupStructConstant2Expr (struc_co);
             } else
                 result = NULL;
             tmpshp = SHFreeShape (tmpshp);
+            idxshp = SHFreeShape (idxshp);
             tmpshp2 = SHFreeShape (tmpshp2);
-            tmpshp3 = SHFreeShape (tmpshp3);
             break;
 
         case F_take:
-            if (SHGetUnrLen (COGetShape (idx)) >= arrdim) {
+            if (SHGetUnrLen (COGetShape (idx)) >= arraydim) {
                 SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
                 result = SCODupStructConstant2Expr (struc_co);
             } else
@@ -820,7 +834,7 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
             break;
 
         case F_drop:
-            if (SHGetUnrLen (COGetShape (idx)) >= arrdim) {
+            if (SHGetUnrLen (COGetShape (idx)) >= arraydim) {
                 SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
                 result = SCODupStructConstant2Expr (struc_co);
             } else
@@ -837,7 +851,7 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
         struc_co = SCOFreeStructConstant (struc_co);
 
         /* free internal input constant */
-        old_hidden_co = COFreeConstant (old_hidden_co);
+        /*old_hidden_co = COFreeConstant(old_hidden_co);*/
     } else {
         result = NULL;
     }
