@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/07/19 16:19:57  cg
+ * Added new inquiery functions IsImported, IsExternal, IsFromModule
+ * and IsFromClass to avoid clumsy direct checks for import status
+ * of types, objects, and functions.
+ *
  * Revision 3.43  2001/07/19 11:48:18  cg
  * AppendAssign now accepts N_empty nodes as
  * assign chain.
@@ -1480,6 +1485,149 @@ NodeListFind (nodelist *nl, node *node)
 /*--------------------------------------------------------------------------*/
 /*  macros and functions for node structures                                */
 /*--------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  general :
+ ***/
+
+/*****************************************************************************
+ *
+ * function:
+ *   bool IsImported( node* symbol)
+ *   bool IsExternal( node* symbol)
+ *   bool IsFromModule( node* symbol)
+ *   bool IsFromClass( node* symbol)
+ *
+ * description:
+ *
+ *   These test functions are applicable to any kind of symbol,
+ *   more precisely to N_typedef, N_objdef, and N_fundef nodes.
+ *
+ *****************************************************************************/
+
+bool
+IsImported (node *symbol)
+{
+    bool res;
+
+    DBUG_ENTER ("IsImported");
+
+    DBUG_ASSERT ((symbol != NULL), ("Function IsImported applied to NULL."));
+
+    switch (NODE_TYPE (symbol)) {
+    case N_typedef:
+        res = ((TYPEDEF_STATUS (symbol) == ST_imported_mod)
+               || (TYPEDEF_STATUS (symbol) == ST_imported_class)
+               || (TYPEDEF_STATUS (symbol) == ST_imported_extmod)
+               || (TYPEDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    case N_objdef:
+        res = ((OBJDEF_STATUS (symbol) == ST_imported_mod)
+               || (OBJDEF_STATUS (symbol) == ST_imported_class)
+               || (OBJDEF_STATUS (symbol) == ST_imported_extmod)
+               || (OBJDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    case N_fundef:
+        res = ((FUNDEF_STATUS (symbol) == ST_imported_mod)
+               || (FUNDEF_STATUS (symbol) == ST_imported_class)
+               || (FUNDEF_STATUS (symbol) == ST_imported_extmod)
+               || (FUNDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    default:
+        DBUG_ASSERT (0, ("Function IsImported applied to wrong node type."));
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+IsExternal (node *symbol)
+{
+    bool res;
+
+    DBUG_ENTER ("IsExternal");
+
+    DBUG_ASSERT ((symbol != NULL), ("Function IsExternal applied to NULL."));
+
+    switch (NODE_TYPE (symbol)) {
+    case N_typedef:
+        res = ((TYPEDEF_STATUS (symbol) == ST_imported_extmod)
+               || (TYPEDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    case N_objdef:
+        res = ((OBJDEF_STATUS (symbol) == ST_imported_extmod)
+               || (OBJDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    case N_fundef:
+        res = ((FUNDEF_STATUS (symbol) == ST_imported_extmod)
+               || (FUNDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    default:
+        DBUG_ASSERT (0, ("Function IsExternal applied to wrong node type."));
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+IsFromModule (node *symbol)
+{
+    bool res;
+
+    DBUG_ENTER ("IsFromModule");
+
+    DBUG_ASSERT ((symbol != NULL), ("Function IsFromModule applied to NULL."));
+
+    switch (NODE_TYPE (symbol)) {
+    case N_typedef:
+        res = ((TYPEDEF_STATUS (symbol) == ST_imported_extmod)
+               || (TYPEDEF_STATUS (symbol) == ST_imported_mod));
+        break;
+    case N_objdef:
+        res = ((OBJDEF_STATUS (symbol) == ST_imported_extmod)
+               || (OBJDEF_STATUS (symbol) == ST_imported_mod));
+        break;
+    case N_fundef:
+        res = ((FUNDEF_STATUS (symbol) == ST_imported_extmod)
+               || (FUNDEF_STATUS (symbol) == ST_imported_mod));
+        break;
+    default:
+        DBUG_ASSERT (0, ("Function IsFromModule applied to wrong node type."));
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+IsFromClass (node *symbol)
+{
+    bool res;
+
+    DBUG_ENTER ("IsFromClass");
+
+    DBUG_ASSERT ((symbol != NULL), ("Function IsFromClass applied to NULL."));
+
+    switch (NODE_TYPE (symbol)) {
+    case N_typedef:
+        res = ((TYPEDEF_STATUS (symbol) == ST_imported_class)
+               || (TYPEDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    case N_objdef:
+        res = ((OBJDEF_STATUS (symbol) == ST_imported_class)
+               || (OBJDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    case N_fundef:
+        res = ((FUNDEF_STATUS (symbol) == ST_imported_class)
+               || (FUNDEF_STATUS (symbol) == ST_imported_extclass));
+        break;
+    default:
+        DBUG_ASSERT (0, ("Function IsFromClass applied to wrong node type."));
+    }
+
+    DBUG_RETURN (res);
+}
 
 /*--------------------------------------------------------------------------*/
 

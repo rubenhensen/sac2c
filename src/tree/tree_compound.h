@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/07/19 16:19:57  cg
+ * Added new inquiery functions IsImported, IsExternal, IsFromModule
+ * and IsFromClass to avoid clumsy direct checks for import status
+ * of types, objects, and functions.
+ *
  * Revision 3.46  2001/07/18 12:57:45  cg
  * Function ExprsConcat renamed to AppendExprs.
  *
@@ -449,6 +454,26 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
         BLOCK_INSTR (n) = (rhs);                                                         \
     }
 
+/*****************************************************************************
+ *
+ * function:
+ *   bool IsImported( node* symbol)
+ *   bool IsExternal( node* symbol)
+ *   bool IsFromModule( node* symbol)
+ *   bool IsFromClass( node* symbol)
+ *
+ * description:
+ *
+ *   These test functions are applicable to any kind of symbol,
+ *   more precisely to N_typedef, N_objdef, and N_fundef nodes.
+ *
+ *****************************************************************************/
+
+extern bool IsImported (node *symbol);
+extern bool IsExternal (node *symbol);
+extern bool IsFromModule (node *symbol);
+extern bool IsFromClass (node *symbol);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -583,6 +608,17 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 
 extern node *SearchTypedef (char *name, char *mod, node *implementations);
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *AppendTypedef( node *tdef_chain, node *tdef)
+ *
+ * description:
+ *
+ *   This function concatenates two chains of N_typedef nodes.
+ *
+ *****************************************************************************/
+
 extern node *AppendTypedef (node *tdef_chain, node *tdef);
 
 /*--------------------------------------------------------------------------*/
@@ -670,6 +706,17 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
  */
 
 extern void ObjList2ArgList (node *objdef);
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *AppendObjdef( node *objdef_chain, node *objdef)
+ *
+ * description:
+ *
+ *   This function concatenates two chains of N_objdef nodes.
+ *
+ *****************************************************************************/
 
 extern node *AppendObjdef (node *objdef_chain, node *objdef);
 
@@ -808,6 +855,17 @@ extern int CountFunctionParams (node *fundef);
 
 extern node *SearchFundef (node *fun, node *allfuns);
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *AppendFundef( node *fundef_chain, node *fundef)
+ *
+ * description:
+ *
+ *   This function concatenates two chains of N_fundef nodes.
+ *
+ *****************************************************************************/
+
 extern node *AppendFundef (node *fundef_chain, node *fundef);
 
 /*--------------------------------------------------------------------------*/
@@ -851,10 +909,6 @@ extern node *AppendFundef (node *fundef_chain, node *fundef);
  *
  * description:
  *   Appends 'vardec' to 'vardec_chain' and returns the new chain.
- *
- * remark:
- *   In order to use this function in Compile() it can handle mixed chains
- *   containing N_vardec- *and* N_assign-nodes!
  *
  ******************************************************************************/
 
@@ -1067,6 +1121,18 @@ extern node *SearchDecl (char *name, node *decl_node);
 #define ASSIGN_LHS(n) LET_IDS (ASSIGN_INSTR (n))
 #define ASSIGN_RHS(n) LET_EXPR (ASSIGN_INSTR (n))
 
+/*****************************************************************************
+ *
+ * function:
+ *   AppendAssign( node *assign_chain, node *assign)
+ *
+ * description:
+ *
+ *   This function concatenates two chains of N_assign nodes.
+ *   However, the first one may simply be a single N_empty node.
+ *
+ *****************************************************************************/
+
 extern node *AppendAssign (node *assign_chain, node *assign);
 
 /******************************************************************************
@@ -1144,7 +1210,7 @@ extern node *GetCompoundNode (node *arg_node);
  *   node *AppendAssignIcm( node *assign, char *name, node *args)
  *
  * description:
- *   Appends an new ICM with name and args given as an assign to the given
+ *   Appends a new ICM with name and args given as an assign to the given
  *   chain of assignments assign.
  *
  ******************************************************************************/
