@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.18  1995/08/11 17:27:32  hw
+ * Revision 1.19  1995/08/15 14:42:25  hw
+ * changed typecheck of "modarray" (shapes will be compared)
+ *
+ * Revision 1.18  1995/08/11  17:27:32  hw
  * function Modarray inserted
  *
  * Revision 1.17  1995/07/13  15:29:48  hw
@@ -914,6 +917,7 @@ Modarray (types *array, types *vec, types *value, int line)
 {
     types *b_array, *b_vec, *b_value;
     types *ret_type = NULL;
+    int types_ok = 1;
 
     DBUG_ENTER ("Modarray");
 
@@ -929,15 +933,33 @@ Modarray (types *array, types *vec, types *value, int line)
         ERROR2 (3, ("%s, %d: 2.argument of function 'modarray' has incompatible "
                     "type ( int[x] != %s)",
                     filename, line, Type2String (vec, 0)));
-    } else if (b_array->dim != b_vec->shpseg->shp[0] + b_value->dim) {
-        ERROR2 (3, ("%s, %d: arguments of function 'modarray' have wrong "
-                    "types ( %s, %s, %s)",
-                    filename, line, Type2String (array, 0), Type2String (vec, 0),
-                    Type2String (value, 0)));
     } else {
-        FREE (b_vec);
-        FREE (b_value);
-        ret_type = b_array;
+
+        if (b_array->dim == b_vec->shpseg->shp[0] + b_value->dim) {
+            int i, j;
+
+            for (i = b_vec->shpseg->shp[0], j = 0; i < b_array->dim; i++, j++) {
+                DBUG_ASSERT (j < b_value->dim, " out of shape range");
+
+                if (b_array->shpseg->shp[i] != b_value->shpseg->shp[j]) {
+                    types_ok = 0;
+                    break;
+                }
+            }
+
+        } else
+            types_ok = 0;
+
+        if (0 == types_ok) {
+            ERROR2 (3, ("%s, %d: arguments of function 'modarray' have wrong "
+                        "types ( %s, %s, %s)",
+                        filename, line, Type2String (array, 0), Type2String (vec, 0),
+                        Type2String (value, 0)));
+        } else {
+            FREE (b_vec);
+            FREE (b_value);
+            ret_type = b_array;
+        }
     }
 
     DBUG_ASSERT (ret_type != NULL, " wrong return value");
