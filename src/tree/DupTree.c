@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/03/22 08:18:56  nmw
+ * *** empty log message ***
+ *
  * Revision 3.22  2001/03/21 18:17:00  dkr
  * functions Dup..._Type added
  * function DupTreeInfo removed
@@ -2023,7 +2026,6 @@ DupAvis (node *arg_node, node *arg_info)
     AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
     AVIS_SSAASSIGN (new_node)
       = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
-    /* ##nmw## */
     AVIS_SSAASSIGN2 (new_node)
       = SearchInLUT (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
     if (AVIS_SSACONST (arg_node) != NULL) {
