@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/03/17 11:54:31  dkr
+ * added fun lcm()
+ *
  * Revision 1.27  1998/03/03 13:50:21  srs
  * removed 'tmp' infix from name generation in TmpVar()
  *
@@ -237,6 +240,36 @@ itoa (long number)
         number = number % ((int)pow (10, (length - 1)));
     }
     DBUG_RETURN (str);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int lcm(int x, int y)
+ *
+ * description:
+ *   returns the lowest-common-multiple of x, y.
+ *
+ ******************************************************************************/
+
+int
+lcm (int x, int y)
+{
+    int u, v;
+
+    DBUG_ENTER ("lcm");
+
+    u = x;
+    v = y;
+    while (u != v) {
+        if (u < v) {
+            u += x;
+        } else {
+            v += y;
+        }
+    }
+
+    DBUG_RETURN (u);
 }
 
 /*

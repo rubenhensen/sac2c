@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/03/17 11:54:43  dkr
+ * added fun lcm()
+ *
  * Revision 1.14  1998/03/13 13:13:47  dkr
  * removed a bug in macros CHECK_DBUG_START, CHECK_DBUG_STOP
  *
@@ -55,6 +58,7 @@
 
 extern void *Malloc (int size);
 extern char *StringCopy (char *source);
+extern int lcm (int x, int y);
 extern char *itoa (long number);
 extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
