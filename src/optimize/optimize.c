@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/03/26 15:42:31  sbs
+ * *** empty log message ***
+ *
  * Revision 3.45  2003/03/26 15:22:36  sbs
  * doxygen again.
  *
@@ -297,12 +300,6 @@
  *
  */
 
-/**
- *
- * @name Global variables to keep track of optimization's success:
- *
- * @{
- */
 int dead_expr;
 int dead_var;
 int dead_fun;
@@ -324,7 +321,6 @@ int ap_padded;
 int ap_unsupported;
 int al_expr;
 int dl_expr;
-/* @} */
 
 /**
  *
