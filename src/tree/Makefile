@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2001/03/09 11:53:45  sbs
+# make deps done
+#
 # Revision 3.15  2001/03/09 11:48:23  sbs
 # -I../profile added.
 #
@@ -270,7 +273,8 @@ traverse.o: ../c-interface/print_interface_wrapper.h
 traverse.o: ../c-interface/map_cwrapper.h
 traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
 traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h
-traverse.o: ../optimize/SSACSE.h compare_tree.h traverse.h
+traverse.o: ../optimize/SSACSE.h compare_tree.h
+traverse.o: ../profile/annotate_fun_calls.h traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.6  2001/03/09 11:53:38  sbs
+# make deps done
+#
 # Revision 3.5  2001/03/09 11:15:11  sbs
 # -I ../profile/ added
 #
@@ -141,7 +144,8 @@ main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
 main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
 main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
 main.o: ../compile/wltransform.h ../concurrent/concurrent.h
-main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
+main.o: ../compile/precompile.h ../compile/compile.h
+main.o: ../profile/annotate_fun_calls.h ../modules/cccall.h
 main.o: ../compile/PatchWith.h interrupt.h options.h
 main.o: ../multithread/multithread.h
 options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/03/09 11:53:40  sbs
+# make deps done
+#
 # Revision 3.8  2001/03/05 16:03:23  nmw
 # SSACSE added
 #
@@ -174,7 +177,7 @@ SSACSE.o: /usr/include/stdio_impl.h ../tree/tree.h ../global/types.h
 SSACSE.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 SSACSE.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 SSACSE.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
-SSACSE.o: ../global/my_debug.h SSACSE.h
+SSACSE.o: ../global/my_debug.h SSACSE.h ../tree/compare_tree.h optimize.h
 SSADeadCodeRemoval.o: ../../inc/dbug.h /usr/include/stdio.h
 SSADeadCodeRemoval.o: /usr/include/sys/feature_tests.h
 SSADeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -251,12 +254,12 @@ optimize.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
 optimize.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 optimize.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
 optimize.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-optimize.o: ../tree/traverse.h ../print/print.h ../print/convert.h
-optimize.o: ../tree/CheckAvis.h ../tree/SSATransform.h
-optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h optimize.h
+optimize.o: ../tree/traverse.h ../print/print.h ../print/convert.h optimize.h
 optimize.o: generatemasks.h freemasks.h ConstantFolding.h DeadCodeRemoval.h
 optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
 optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
-optimize.o: ../psi-opt/pad.h SSADeadCodeRemoval.h
+optimize.o: ../psi-opt/pad.h ../tree/CheckAvis.h ../tree/SSATransform.h
+optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h
+optimize.o: SSADeadCodeRemoval.h SSACSE.h
