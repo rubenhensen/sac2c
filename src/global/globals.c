@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/12/10 12:38:02  cg
+ * Loop invariant removal is disabled by default for production
+ * versions of sac2c.
+ *
  * Revision 1.25  1998/12/07 17:29:55  cg
  * added variables version_id and target_platform to keep track
  * of this information used in usage.c and gen_startup_code.c
@@ -269,15 +273,26 @@ int opt_dcr = 1;
 int opt_cf = 1;
 /* enable/disable constant folding */
 
+#ifdef PRODUCTION
+int opt_lir = 0;
+/*
+ * Unfortunately, at the time being, loop invariant removal is rather
+ * unstable. So, we disable this optimization in production versions
+ * of sac2c.
+ */
+#else  /* PRODUCTION */
 int opt_lir = 1;
+#endif /* PRODUCTION */
 /* enable/disable loop invariant removal */
 
 int opt_inl = 1;
 /* enable/disable function inlining */
 
 int opt_lunr = 1;
+/* enable/disable loop unrolling */
+
 int opt_wlunr = 1;
-/* enable/disable loop unrolling/ WL unrolling */
+/* enable/disable with-loop unrolling */
 
 int opt_uns = 1;
 /* enable/disable loop unswitching */
