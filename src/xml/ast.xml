@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.30  2004/11/23 22:49:52  sah
+  removed ids attribute
+
   Revision 1.29  2004/11/23 22:22:08  skt
   flag IsSpmdfun added
 
@@ -116,7 +119,6 @@
     <type name="Prf" ctype="prf" init="0" copy="literal" />
     <type name="Mask" ctype="long*" size="7" init="NULL"
     copy="function" />
-    <type name="Ids" ctype="ids*" init="NULL" copy="function" />
     <type name="StatusType" ctype="statustype" init="ST_undef"
     copy="literal" />
     <type name="NodeList" ctype="nodelist*" init="NULL"
