@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1997/11/05 09:40:49  dkr
+ * usage of NIF-macro has changed
+ *
  * Revision 1.19  1997/10/29 17:16:02  dkr
  * with defined NEWTREE the component node.nnode does not longer exist
  *
@@ -250,7 +253,7 @@ typedef struct FUN_NAME {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar)                      \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
     n
 
 typedef enum {
