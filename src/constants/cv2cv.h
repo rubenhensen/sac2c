@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/04/30 12:30:20  nmw
+ * COCv2CvHidden() added
+ *
  * Revision 1.2  2001/04/04 09:59:47  nmw
  *  missing convert functions for basetype char added
  *
@@ -38,6 +41,8 @@ extern void COCv2CvDouble (void *src, int off, int len, void *res, int res_off);
 extern void COCv2CvLongDouble (void *src, int off, int len, void *res, int res_off);
 
 extern void COCv2CvChar (void *src, int off, int len, void *res, int res_off);
+
+extern void COCv2CvHidden (void *src, int off, int len, void *res, int res_off);
 
 extern void COCv2CvDummy (void *src, int off, int len, void *res, int res_off);
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/04/30 12:30:20  nmw
+ * COCv2CvHidden() added
+ *
  * Revision 1.2  2001/04/04 09:59:47  nmw
  *  missing convert functions for basetype char added
  *
@@ -73,6 +76,8 @@ COCv2CvTEMPLATE (unsigned short, UShort) COCv2CvTEMPLATE (unsigned int, UInt)
         COCv2CvTEMPLATE (long double, LongDouble)
 
           COCv2CvTEMPLATE (char, Char)
+
+            COCv2CvTEMPLATE (void *, Hidden)
 
   /*
    * Finally, we provide a dummy function which should never be called!
