@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2001/05/08 13:19:02  nmw
+ * signature of IsZero.. changed, support for division by zero added
+ *
  * Revision 1.11  2001/05/07 09:02:07  nmw
  * psi-modarray optimization implemented
  *
@@ -161,10 +164,6 @@ static node *SSACFEq (node *expr1, node *expr2);
 static node *SSACFSub (node *expr1, node *expr2);
 static node *SSACFModarray (node *a, constant *idx, node *elem);
 static node *SSACFPsi (node *idx_expr, node *array_expr);
-/* missing:
-static node *SSACFCat      ( constant *dim, node *a, node *b);
-static node *SSACFRotate   ( constant *dim, constant *num, node *a);
-*/
 
 /* functions for internal use only */
 /******************************************************************************
@@ -176,9 +175,7 @@ static node *SSACFRotate   ( constant *dim, constant *num, node *a);
  * description:
  *   to propagate constant expressions from the calling context into a special
  *   function, this functions does a parallel traversal of the function args
- *   (stored in arg_chain) and the calling parameters (stored param_chain).
- *
- *
+ *   (stored in arg_chain) and the calling parameters (stored param_chain)
  *
  ******************************************************************************/
 static node *
@@ -501,6 +498,8 @@ SSACFArray2StructConstant (node *expr)
     DBUG_ASSERT (((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_id)),
                  "SSACFArray2StructConstant supports only N_array and N_id nodes");
 
+    atype = NULL;
+
     if (NODE_TYPE (expr) == N_array) {
         /* explicit array as N_array node */
         array = expr;
@@ -715,49 +714,49 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 
     switch (op) {
     case F_add:
-        if (COIsZero (co)) { /* x+0 -> x  or 0+x -> x */
+        if (COIsZero (co, TRUE)) { /* x+0 -> x  or 0+x -> x */
             result = DupTree (expr);
         }
         break;
 
     case F_sub:
-        if (swap && COIsZero (co)) { /* x-0 -> x */
+        if (swap && COIsZero (co, TRUE)) { /* x-0 -> x */
             result = DupTree (expr);
         }
         break;
 
     case F_mul:
-        if (COIsZero (co)) { /* x*0 -> 0 or 0*x -> 0 */
+        if (COIsZero (co, TRUE)) { /* x*0 -> 0 or 0*x -> 0 */
             target_shp = SSACFGetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create ZeroConstant of same type and shape as expression */
                 tmp_co = COMakeZero (COGetType (co), target_shp);
             }
-        } else if (COIsOne (co)) { /* x*1 -> x or 1*x -> x */
+        } else if (COIsOne (co, TRUE)) { /* x*1 -> x or 1*x -> x */
             result = DupTree (expr);
         }
         break;
 
     case F_div:
-        if (COIsZero (co)) {
-            if (swap) { /* x/0 -> err */
-                WARN (expr->lineno, ("Division by zero expected"));
-            } else { /* 0/x -> 0 */
-                target_shp = SSACFGetShapeOfExpr (expr);
-                if (target_shp != NULL) {
-                    /* Create ZeroConstant of same type and shape as expression */
-                    tmp_co = COMakeZero (COGetType (co), target_shp);
-                }
-            }
-        } else if (swap && COIsOne (co)) { /* x/1 -> x */
+        if (swap && COIsZero (co, FALSE)) {
+            /* any 0 in divisor, x/0 -> err */
+            ABORT (expr->lineno, ("Division by zero expected"));
+        } else if (swap && COIsOne (co, TRUE)) { /* x/1 -> x */
             result = DupTree (expr);
+        } else if ((!swap) && COIsZero (co, TRUE)) { /* 0/x -> 0 */
+            target_shp = SSACFGetShapeOfExpr (expr);
+            if (target_shp != NULL) {
+                /* Create ZeroConstant of same type and shape as expression */
+                tmp_co = COMakeZero (COGetType (co), target_shp);
+                WARN (expr->lineno, ("expression 0/x replaced by 0"));
+            }
         }
         break;
 
     case F_and:
-        if (COIsTrue (co)) { /* x&&true -> x or true&&x -> x */
+        if (COIsTrue (co, TRUE)) { /* x&&true -> x or true&&x -> x */
             result = DupTree (expr);
-        } else if (COIsFalse (co)) { /* x&&false->false or false&&x->false */
+        } else if (COIsFalse (co, TRUE)) { /* x&&false->false or false&&x->false */
             target_shp = SSACFGetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create False constant of same shape as expression */
@@ -767,9 +766,9 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
         break;
 
     case F_or:
-        if (COIsFalse (co)) { /* x||false->x or false||x -> x */
+        if (COIsFalse (co, TRUE)) { /* x||false->x or false||x -> x */
             result = DupTree (expr);
-        } else if (COIsFalse (co)) { /* x||true->true or true&&x->true */
+        } else if (COIsFalse (co, TRUE)) { /* x||true->true or true&&x->true */
             target_shp = SSACFGetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create True constant of same shape as expression */
@@ -915,6 +914,8 @@ SSACFSub (node *expr1, node *expr2)
 
     DBUG_ENTER ("SSACFSub");
 
+    result = NULL;
+
     if (CompareTree (expr1, expr2) == CMPT_EQ) {
         target_shp = SSACFGetShapeOfExpr (expr1);
         if (target_shp != NULL) {
@@ -923,8 +924,6 @@ SSACFSub (node *expr1, node *expr2)
             result = COConstant2AST (tmp_co);
             tmp_co = COFreeConstant (tmp_co);
         }
-    } else {
-        result = NULL; /* no concrete answer for compare operation possible */
     }
 
     DBUG_RETURN (result);
@@ -991,12 +990,19 @@ SSACFModarray (node *a, constant *idx, node *elem)
  *   static node *SSACFPsi(node *idx_expr, node *array_expr)
  *
  * description:
- *   tries a special psi-modarray optimization for the following case:
+ *   tries a special psi-modarray optimization for the following cases:
  *
- *   b = modarray(a, iv, value)
- *   x = psi(iv, b)    ->   x = value;
+ *   1. iv is an unknown expression:
+ *      b = modarray(a, iv, value)
+ *      x = psi(iv, b)    ->   x = value;
  *
- *   maybe this allows to eliminate b at all.
+ *   2. iv is an expression with known constant value:
+ *      b = modarray(a, [5], val5);
+ *      c = modarray(b, [3], val3);
+ *      d = modarray(c, [2], val2);
+ *      x = psi([5], d)   ->  x = val5;
+ *
+ *   maybe this allows to eliminate some arrays at all.
  *
  ******************************************************************************/
 static node *
@@ -1004,6 +1010,7 @@ SSACFPsi (node *idx_expr, node *array_expr)
 {
     node *result;
     node *prf_mod;
+    node *mod_arr_expr;
     node *mod_idx_expr;
     node *mod_elem_expr;
 
@@ -1022,6 +1029,8 @@ SSACFPsi (node *idx_expr, node *array_expr)
         prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
         /* get parameter of modarray */
         DBUG_ASSERT ((PRF_ARGS (prf_mod) != NULL), "missing 1. arg for modarray");
+        mod_arr_expr = EXPRS_EXPR (PRF_ARGS (prf_mod));
+
         DBUG_ASSERT ((EXPRS_NEXT (PRF_ARGS (prf_mod)) != NULL),
                      "missing 2. arg for modarray");
         mod_idx_expr = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_mod)));
@@ -1030,11 +1039,23 @@ SSACFPsi (node *idx_expr, node *array_expr)
                      "missing 3. arg for modarray");
         mod_elem_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))));
 
-        if (CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ) {
+        if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ) || (FALSE)) {
             /* idx vectors in psi and modarray are equal - replace psi with element */
             result = DupTree (mod_elem_expr);
 
             DBUG_PRINT ("SSACFOPT", ("psi-modarray optimization done"));
+        } else {
+            /* index vector does not match, but if both are constant, we can try
+             * to look up futher in a modarray chain to find a matching one.
+             * to avoid wrong decisions we need constant vectors in both idx
+             * expressions
+             */
+            if (COIsConstant (idx_expr) && COIsConstant (mod_idx_expr)) {
+                result = SSACFPsi (idx_expr, mod_arr_expr);
+            } else {
+                /* no further analysis posiible */
+                result = NULL;
+            }
         }
     }
 
@@ -1801,7 +1822,11 @@ SSACFprf (node *arg_node, node *arg_info)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = CODiv (arg_co[0], arg_co[1]);
+                if (COIsZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
+                    ABORT (arg_node->lineno, ("Division by zero expected"));
+                } else {
+                    new_co = CODiv (arg_co[0], arg_co[1]);
+                }
             }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
@@ -1925,12 +1950,11 @@ SSACFprf (node *arg_node, node *arg_info)
                 /* for some non constant expression and constant index vector */
                 new_node = SSACFStructOpWrapper (F_psi, arg_co[0], arg_expr[1]);
             }
-        else if
-            TWO_ARG (arg_expr)
-            {
-                /* for some expressions concerning psi-modarray combinations */
-                new_node = SSACFPsi (arg_expr[0], arg_expr[1]);
-            }
+
+        if ((new_co == NULL) && (new_node == NULL) && (TWO_ARG (arg_expr))) {
+            /* for some expressions concerning psi-modarray combinations */
+            new_node = SSACFPsi (arg_expr[0], arg_expr[1]);
+        }
         break;
 
     case F_take:
