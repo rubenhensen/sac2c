@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.219  1998/05/14 15:09:25  dkr
+ * changed PrintWLgrid
+ *
  * Revision 1.218  1998/05/12 19:12:10  srs
  * saving/restoring act_tab in Print() now.
  *
@@ -2573,6 +2576,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintNwith2");
 
+    INFO_PRINT_NWITH2 (arg_info) = arg_node;
     indent++;
 
     fprintf (outfile, "new_with2 (");
@@ -2779,7 +2783,21 @@ PrintWLgrid (node *arg_node, node *arg_info)
         if (WLGRID_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
         } else {
-            fprintf (outfile, "noop\n");
+            switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
+            case WO_genarray:
+                fprintf (outfile, "init\n");
+                break;
+            case WO_foldfun:
+                /* here is no break missing! */
+            case WO_foldprf:
+                fprintf (outfile, "noop\n");
+                break;
+            case WO_modarray:
+                DBUG_ASSERT ((0), "no code found");
+                break;
+            default:
+                DBUG_ASSERT ((0), "wrong with-loop type found");
+            }
         }
     }
     indent--;
