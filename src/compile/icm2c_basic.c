@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/07/24 14:34:29  dkr
+ * WriteScalar() added
+ *
  * Revision 1.7  2002/07/24 08:20:29  dkr
  * VectToOffset2: DBUG_ASSERT corrected
  *
@@ -33,6 +36,35 @@
 int print_comment = 1; /* bool */
 
 #ifdef TAGGED_ARRAYS
+
+/******************************************************************************
+ *
+ * Function:
+ *   void WriteScalar( char *scl)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+WriteScalar (char *scl)
+{
+    DBUG_ENTER ("WriteScalar");
+
+    if (scl[0] == '(') {
+        /* 'scl' is a tagged id */
+        data_class_t dc = ICUGetDataClass (scl);
+
+        DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
+        fprintf (outfile, "SAC_ND_WRITE( %s, 0)", scl);
+    } else {
+        /* 'scl' is a scalar constant */
+        fprintf (outfile, "%s", scl);
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /******************************************************************************
  *
@@ -230,7 +262,7 @@ SizeId (void *nt)
 /******************************************************************************
  *
  * Function:
- *   void VectToOffset2( char *offset,
+ *   void VectToOffset2( char *off_any,
  *                       void *v_any, int v_size,
  *                       void (*v_size_fun)( void *),
  *                       void (*v_read_fun)( void *, char *, int),
@@ -244,7 +276,7 @@ SizeId (void *nt)
  ******************************************************************************/
 
 void
-VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *),
+VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void *),
                void (*v_read_fun) (void *, char *, int), void *a_any, int a_dim,
                void (*a_dim_fun) (void *), void (*a_shape_fun) (void *, char *, int))
 {
@@ -336,14 +368,16 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
             }
 
             INDENT;
-            fprintf (outfile, "%s = SAC__start * SAC__rest;\n", offset);
+            WriteScalar (off_any);
+            fprintf (outfile, " = SAC__start * SAC__rest;\n");
             indent--;
             INDENT;
             fprintf (outfile, "}\n");
         } else {
             DBUG_ASSERT (((v_size >= 0) && (a_dim >= 0)), "illegal dimension found!");
             INDENT;
-            fprintf (outfile, "%s = ", offset);
+            WriteScalar (off_any);
+            fprintf (outfile, " = ");
             for (i = v_size - 1; i > 0; i--) {
                 fprintf (outfile, "( ");
                 a_shape_fun (a_any, NULL, i);
@@ -363,7 +397,8 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
         }
     } else {
         INDENT;
-        fprintf (outfile, "%s = 0;\n", offset);
+        WriteScalar (off_any);
+        fprintf (outfile, " = 0;\n");
     }
 
     DBUG_VOID_RETURN;
@@ -372,7 +407,7 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
 /******************************************************************************
  *
  * Function:
- *   void VectToOffset( char *offset,
+ *   void VectToOffset( char *off_any,
  *                      void *v_any, int v_size,
  *                      void (*v_size_fun)( void *),
  *                      void (*v_read_fun)( void *, char *, int),
@@ -384,12 +419,12 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
  ******************************************************************************/
 
 void
-VectToOffset (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *),
+VectToOffset (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void *),
               void (*v_read_fun) (void *, char *, int), void *a_nt, int a_dim)
 {
     DBUG_ENTER ("VectToOffset");
 
-    VectToOffset2 (offset, v_any, v_size, v_size_fun, v_read_fun, a_nt, a_dim, DimId,
+    VectToOffset2 (off_any, v_any, v_size, v_size_fun, v_read_fun, a_nt, a_dim, DimId,
                    ShapeId);
 
     DBUG_VOID_RETURN;
