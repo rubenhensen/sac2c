@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2001/04/25 01:21:24  dkr
+ * - bug in DoPrintDFMaskAST() fixed
+ * - PrintAST: FUNDEF_INT_ASSIGN, FUNDEF_EXT_ASSIGNS added
+ *
  * Revision 3.51  2001/04/24 16:56:18  dkr
  * - function DoPrintDFMaskAST() added.
  * - PrintAST: base of each DFM added
@@ -3867,8 +3871,10 @@ DoPrintDFMaskAST (DFMmask_t mask)
     DBUG_ENTER ("DoPrintDFMaskAST");
 
     PRINT_POINTER_BRACKETS (outfile, mask);
-    fprintf (outfile, "/");
-    PRINT_POINTER_BRACKETS (outfile, DFMGetMaskBase (mask));
+    if (mask != NULL) {
+        fprintf (outfile, "/");
+        PRINT_POINTER_BRACKETS (outfile, DFMGetMaskBase (mask));
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -4056,6 +4062,37 @@ DoPrintIdsAST (ids *vars, bool print_status)
 /******************************************************************************
  *
  * function:
+ *   void DoPrintNodelistAST( nodelist *nl)
+ *
+ * description:
+ *   Prints a Nodelist.
+ *   This function is called from 'DoPrintAST' only.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintNodelistAST (nodelist *nl)
+{
+    DBUG_ENTER ("DoPrintNodelistAST");
+
+    fprintf (outfile, "{ ");
+    while (nl != NULL) {
+        PRINT_POINTER_BRACKETS (outfile, NODELIST_NODE (nl));
+
+        fprintf (outfile, " ");
+        nl = NODELIST_NEXT (nl);
+        if (nl != NULL) {
+            fprintf (outfile, ", ");
+        }
+    }
+    fprintf (outfile, "}");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void DoPrintAttrAST( int num, node *arg_node)
  *
  * description:
@@ -4204,6 +4241,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, ", ");
             fprintf (outfile, "mask base: ");
             PRINT_POINTER_BRACKETS (outfile, FUNDEF_DFM_BASE (arg_node));
+
+            if (FUNDEF_IS_LACFUN (arg_node)) {
+                fprintf (outfile, ", ");
+                fprintf (outfile, "int assign: ");
+                PRINT_POINTER_BRACKETS (outfile, FUNDEF_INT_ASSIGN (arg_node));
+
+                fprintf (outfile, ", ");
+                fprintf (outfile, "ext assigns: ");
+                DoPrintNodelistAST (FUNDEF_EXT_ASSIGNS (arg_node));
+            }
 
             fprintf (outfile, ")");
 
