@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.24  2000/01/24 11:54:32  jhs
+# Moved scheduling.[ch] from concurrent to tree.
+#
 # Revision 2.23  2000/01/21 17:02:01  dkr
 # make deps done
 #
@@ -164,7 +167,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/options.o
 TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/DataFlowMask.o \
-      src/tree/DataFlowMaskUtils.o
+      src/tree/DataFlowMaskUtils.o src/tree/scheduling.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
@@ -192,7 +195,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-CONCURRENT= src/concurrent/concurrent.o src/concurrent/scheduling.o  \
+CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o     \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o    \
             src/concurrent/sync_opt.o src/concurrent/schedule.o      \
