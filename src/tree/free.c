@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/04/26 11:54:54  nmw
+ * FUNDEF_USED refcounting for ICMs, too
+ *
  * Revision 3.21  2001/04/26 01:48:03  dkr
  * - reference counting for functions (FUNDEF_USED) works correctly now
  * - FreeFundef never removes the fundef node but create a zombie now
@@ -664,7 +667,7 @@ RemoveAllZombies (node *arg_node)
         break;
 
     case N_fundef:
-        if (MODUL_FUNS (arg_node) != NULL) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = RemoveAllZombies (FUNDEF_NEXT (arg_node));
         }
         ret_node = FreeZombie (arg_node);
@@ -1303,7 +1306,7 @@ FreeAp (node *arg_node, node *arg_info)
             DBUG_PRINT ("FREE",
                         ("decrementing used counter to %d", FUNDEF_USED (fundef)));
 
-            if (FUNDEF_IS_LACFUN (fundef)) {
+            if ((FUNDEF_IS_LACFUN (fundef)) && (compiler_phase < PH_compile)) {
                 /* remove assignment from external assignment list */
                 DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
                              "INFO_FREE_ASSIGN is needed when removing an"
@@ -1574,6 +1577,7 @@ node *
 FreeIcm (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    node *fundef;
 
     DBUG_ENTER ("FreeIcm");
 
@@ -1586,6 +1590,24 @@ FreeIcm (node *arg_node, node *arg_info)
      */
 
     FREETRAV (ICM_ARGS (arg_node));
+
+    fundef = ICM_FUNDEF (arg_node);
+
+    if ((fundef != NULL) && (FUNDEF_USED (fundef) != USED_INACTIVE)) {
+        (FUNDEF_USED (fundef))--;
+
+        DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0");
+
+        DBUG_PRINT ("FREE", ("decrementing used counter to %d", FUNDEF_USED (fundef)));
+
+        if (FUNDEF_USED (fundef) == 0) {
+            /*
+             * referenced fundef no longer used
+             *  -> transform it into a zombie
+             */
+            fundef = FreeNode (fundef);
+        }
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
 
