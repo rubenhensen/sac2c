@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.82  1995/08/15 13:53:10  hw
+ * Revision 1.83  1995/08/21 13:24:25  cg
+ * now external funs, objects and types can be imported implicitly
+ *
+ * Revision 1.82  1995/08/15  13:53:10  hw
  * primitive function genarray and modarray inserted
  *
  * Revision 1.81  1995/08/15  11:58:55  cg
@@ -326,6 +329,7 @@ static file_type file_kind = F_prog;
          nums            *nums;
          prf             prf;
          statustype      statustype;
+         charlist        *charlist;
        }
 
 %token PARSE_PRG, PARSE_DEC, PARSE_SIB
@@ -346,6 +350,7 @@ static file_type file_kind = F_prog;
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
 
+%type <charlist> siblinklist
 %type <prf> foldop
 %type <nodetype> modclass
 %type <cint> evextern
@@ -2195,7 +2200,15 @@ sib2: sibfuns sib3
         }
     ;
 
-sib3: 
+sib3: EXTERN siblinklist SEMIC
+         {
+           $$=MakeNode(N_sib);
+           $$->node[2]=(node*)$2;
+
+           DBUG_PRINT("GENSIB",("%s"P_FORMAT,
+                               mdb_nodetype[$$->nodetype],$$));
+         }
+    |
          {
            $$=MakeNode(N_sib);
 
@@ -2389,7 +2402,36 @@ sibimpltypes: sibimpltype sibimpltypes
                 }
             ;
 
-sibimpltype: ID COLON ID LET sibimpltypedef
+sibimpltype:  ID LET sibimpltypedef
+               {
+                 $$=MakeNode(N_typedef);
+                 $$->info.types=$3;
+                 $$->info.types->id=$1;
+                 $$->info.types->id_mod=NULL;
+
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        MOD($$->info.types->id_mod), $$->info.types->id,
+                        $$->info.types->attrib));
+
+               }
+           | CLASSIMP ID LET sibimpltypedef
+               {
+                 $$=MakeNode(N_typedef);
+                 $$->info.types=$4;
+                 $$->info.types->id=$2;
+                 $$->info.types->id_mod=NULL;
+                 $$->info.types->attrib=ST_unique;
+                 
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        MOD($$->info.types->id_mod), $$->info.types->id,
+                        $$->info.types->attrib));
+
+               }
+           | ID COLON ID LET sibimpltypedef
                {
                  $$=MakeNode(N_typedef);
                  $$->info.types=$5;
@@ -2399,7 +2441,7 @@ sibimpltype: ID COLON ID LET sibimpltypedef
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
                         mdb_nodetype[ $$->nodetype ], $$, 
-                        $$->info.types->id_mod, $$->info.types->id,
+                        MOD($$->info.types->id_mod), $$->info.types->id,
                         $$->info.types->attrib));
 
                }
@@ -2414,7 +2456,7 @@ sibimpltype: ID COLON ID LET sibimpltypedef
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
                         mdb_nodetype[ $$->nodetype ], $$, 
-                        $$->info.types->id_mod, $$->info.types->id,
+                        MOD($$->info.types->id_mod), $$->info.types->id,
                         $$->info.types->attrib));
 
                }
@@ -2444,7 +2486,22 @@ sibimplfuns: sibimplfun sibimplfuns
             ;
 
 
-sibimplfun: varreturntypes ID COLON ID evactfun BRACKET_L sibimplfun2
+sibimplfun: varreturntypes ID evactfun BRACKET_L sibimplfun2
+               {
+                 $$=$5;
+                 $$->info.types=$1;
+                 $$->info.types->id=$2;
+                 $$->info.types->id_mod=NULL;
+                 $$->node[5]=(node*)$3;
+
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT", implicit usage, Id: %s:%s {%s}",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        MOD($$->info.types->id_mod), $$->info.types->id,
+                        (char*)$$->node[5]));
+               }
+ 
+          | varreturntypes ID COLON ID evactfun BRACKET_L sibimplfun2
                {
                  $$=$7;
                  $$->info.types=$1;
@@ -2455,7 +2512,7 @@ sibimplfun: varreturntypes ID COLON ID evactfun BRACKET_L sibimplfun2
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s {%s}",
                         mdb_nodetype[ $$->nodetype ], $$, 
-                        $$->info.types->id_mod, $$->info.types->id,
+                        MOD($$->info.types->id_mod), $$->info.types->id,
                         (char*)$$->node[5]));
                }
           ;
@@ -2504,7 +2561,21 @@ sibimplfunobjs: sibimplfunobj COMMA sibimplfunobjs
                   }
               ;
 
-sibimplfunobj: type sibobjattrib ID COLON ID
+sibimplfunobj: type sibobjattrib ID
+                 {
+                   $$=MakeNode(N_arg);
+                   $$->info.types=$1;
+                   $$->info.types->id=$3;
+                   $$->info.types->id_mod=NULL;
+                   $$->info.types->status=ST_artificial;
+                   $$->info.types->attrib=$2;
+
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT", impl obj of impl used fun, Id: %s:%s",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        MOD($$->info.types->id_mod), $$->info.types->id));
+                 }
+             | type sibobjattrib ID COLON ID
                  {
                    $$=MakeNode(N_arg);
                    $$->info.types=$1;
@@ -2516,7 +2587,7 @@ sibimplfunobj: type sibobjattrib ID COLON ID
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", impl obj of impl used fun, Id: %s:%s",
                         mdb_nodetype[ $$->nodetype ], $$, 
-                        $$->info.types->id_mod, $$->info.types->id));
+                        MOD($$->info.types->id_mod), $$->info.types->id));
                  }
              ;
 
@@ -2532,7 +2603,24 @@ sibimplobjects: sibimplobject sibimplobjects
                   }
               ;
 
-sibimplobject: type sibobjattrib ID COLON ID SEMIC
+sibimplobject: type sibobjattrib ID SEMIC
+                 {
+                   $$=MakeNode(N_objdef);
+                   $$->info.types=$1;
+                   $$->info.types->id=$3;
+                   $$->info.types->id_mod=NULL;
+                   $$->info.types->status=ST_artificial;
+                   $$->info.types->attrib=$2;
+
+              DBUG_PRINT("GENSIB",
+                         ("%s: "P_FORMAT", implicit usage, Id: %s:%s, Attrib: %d, Status: %d  ",
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          MOD($$->info.types->id_mod),$$->info.types->id,
+                          $$->info.types->attrib,
+                          $$->info.types->status));
+                 }
+
+             | type sibobjattrib ID COLON ID SEMIC
                  {
                    $$=MakeNode(N_objdef);
                    $$->info.types=$1;
@@ -2544,7 +2632,7 @@ sibimplobject: type sibobjattrib ID COLON ID SEMIC
               DBUG_PRINT("GENSIB",
                          ("%s: "P_FORMAT", implicit usage, Id: %s:%s, Attrib: %d, Status: %d  ",
                           mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->id_mod,$$->info.types->id,
+                          MOD($$->info.types->id_mod),$$->info.types->id,
                           $$->info.types->attrib,
                           $$->info.types->status));
                  }
@@ -2568,7 +2656,22 @@ sibfunbody: exprblock
               {
                 $$=NULL;
               }
-                
+          ;
+      
+siblinklist: ID
+               {
+                 $$=(charlist*)malloc(sizeof(charlist));
+                 $$->name=$1;
+                 $$->next=NULL;
+               }
+           |
+             ID COMMA siblinklist
+               {
+                 $$=(charlist*)malloc(sizeof(charlist));
+                 $$->name=$1;
+                 $$->next=$3;
+               }
+              
 
 %%
 
