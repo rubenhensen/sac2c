@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/02 11:41:45  dkr
+ * include of wltransform.h replaced by wl_bounds.h
+ *
  * Revision 3.19  2001/03/29 14:15:04  dkr
  * functions SCHMakeCompatibleSyncblockScheduling,
  * CompileSyncblockSchedulingArgs, removed
@@ -145,6 +148,7 @@
 #include "traverse.h"
 #include "Error.h"
 #include "precompile.h" /* for RenameLocalIdentifier() */
+#include "wl_bounds.h"
 #include "dbug.h"
 
 /******************************************************************************

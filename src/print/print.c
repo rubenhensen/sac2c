@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/04/02 11:41:53  dkr
+ * include of wltransform.h replaced by wl_bounds.h
+ *
  * Revision 3.37  2001/03/29 14:46:29  dkr
  * NWITH2_SCHEDULING removed
  *
@@ -125,9 +128,6 @@
  *
  * [ eliminated ]
  *
- * Revision 1.6  1994/11/10  15:34:26  sbs
- * RCS-header inserted
- *
  */
 
 /*
@@ -168,7 +168,7 @@
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "NameTuples.h"
-#include "wltransform.h"
+#include "wl_bounds.h"
 
 #define WARN_INDENT
 
