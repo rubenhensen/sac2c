@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2001/04/19 16:34:38  nmw
+ * with-loop independend removal implemented
+ *
  * Revision 1.10  2001/04/19 11:46:23  nmw
  * bugs in move down expressions fixed
  *
@@ -86,6 +89,12 @@ static node *CheckMoveDownFlag (node *instr, node *arg_info);
 static node *CreateNewResult (node *avis, node *arg_info);
 static LUT_t InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings);
 static node *AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef);
+static nodelist *InsListPushFrame (nodelist *il);
+static nodelist *InsListPopFrame (nodelist *il);
+static nodelist *InsListAppendAssigns (nodelist *il, node *assign, int depth);
+static nodelist *InsListSetAssigns (nodelist *il, node *assign, int depth);
+static node *InsListGetAssigns (nodelist *il, int depth);
+static nodelist *InsListGetFrame (nodelist *il, int depth);
 
 /******************************************************************************
  *
@@ -391,6 +400,157 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
     DBUG_RETURN (ext_fundef);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   nodelist *InsListPushFrame(nodelist *il)
+ *
+ * description:
+ *   Creates a new frame in the InsertList il. This datastructure is used like
+ *   a stack (push/pop) when entering a new contained with-loop and leaving
+ *   it. but it also allows direct access to lower frames via their depth
+ *   number to add moved assignments. So this data structure is based on a
+ *   chained list nodelist.
+ *
+ *****************************************************************************/
+static nodelist *
+InsListPushFrame (nodelist *il)
+{
+    DBUG_ENTER ("InsListPushFrame");
+
+    if (il == NULL) {
+        /* new insert list, create level 0 */
+        il = MakeNodelistNode (NULL, NULL);
+        NODELIST_INT (il) = 0;
+    } else {
+        /* insert new frame in front of list, increment level */
+        il = MakeNodelistNode (NULL, il);
+        NODELIST_INT (il) = NODELIST_INT (NODELIST_NEXT (il)) + 1;
+    }
+
+    DBUG_RETURN (il);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   nodelist *InsListPopFrame(nodelist *il)
+ *
+ * description:
+ *   removed the latest frame from the InserList il
+ *
+ *****************************************************************************/
+static nodelist *
+InsListPopFrame (nodelist *il)
+{
+    DBUG_ENTER ("InsListPopFrame");
+
+    DBUG_ASSERT ((il != NULL), "tried to pop of empty insert list");
+
+    il = FreeNodelistNode (il);
+
+    DBUG_RETURN (il);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   nodelist *InsListAppendAssigns(nodelist *il, node* assign, int depth)
+ *
+ * description:
+ *   appends given assignment(s) to the chain in frame depth.
+ *
+ *****************************************************************************/
+static nodelist *
+InsListAppendAssigns (nodelist *il, node *assign, int depth)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("InsListAppendAssigns");
+
+    tmp = InsListGetFrame (il, depth);
+
+    NODELIST_NODE (tmp) = AppendAssign (assign, NODELIST_NODE (tmp));
+
+    DBUG_RETURN (il);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   nodelist *InsListAppendAssigns(nodelist *il, node* assign, int depth)
+ *
+ * description:
+ *   set the given assignment in in frame depth.
+ *
+ *****************************************************************************/
+static nodelist *
+InsListSetAssigns (nodelist *il, node *assign, int depth)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("InsListSetAssigns");
+
+    tmp = InsListGetFrame (il, depth);
+
+    NODELIST_NODE (tmp) = assign;
+
+    DBUG_RETURN (il);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *InsListGetAssigns(nodelist *il, int depth)
+ *
+ * description:
+ *   returns the assigns chain for given depth.
+ *
+ *****************************************************************************/
+static node *
+InsListGetAssigns (nodelist *il, int depth)
+{
+    DBUG_ENTER ("InsListGetAssigns");
+
+    DBUG_RETURN (NODELIST_NODE (InsListGetFrame (il, depth)));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   nodelist *InsListGetFrame(nodelist *il, int depth)
+ *
+ * description:
+ *   gets the insert list frame for "depth".
+ *   this function is for internal use only
+ *
+ *****************************************************************************/
+static nodelist *
+InsListGetFrame (nodelist *il, int depth)
+{
+    int pos;
+    nodelist *tmp;
+
+    DBUG_ENTER ("InsListGetFrame");
+
+    DBUG_ASSERT ((il != NULL), "try to access empty insert list");
+
+    DBUG_ASSERT (((depth >= 0) && (depth <= NODELIST_INT (il))),
+                 "parameter depth out of range of given insert list");
+
+    /* search for nodelist element of given depth */
+    tmp = il;
+    for (pos = NODELIST_INT (il); pos > depth; pos--) {
+        DBUG_ASSERT ((tmp != NULL), "unexpected end of insert list");
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    DBUG_ASSERT ((NODELIST_INT (tmp) == depth),
+                 "select wrong frame - maybe corrupted insert list");
+
+    DBUG_RETURN (tmp);
+}
+
 /* traversal functions */
 /******************************************************************************
  *
@@ -474,6 +634,9 @@ SSALIRfundef (node *arg_node, node *arg_info)
     /* top level (not [directly] contained in any withloop) */
     INFO_SSALIR_WITHDEPTH (arg_info) = 0;
 
+    /* init InsertList for with-loop independed removal */
+    INFO_SSALIR_INSLIST (arg_info) = InsListPushFrame (NULL);
+
     /* traverse function body */
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -483,6 +646,9 @@ SSALIRfundef (node *arg_node, node *arg_info)
     act_tab = lirmov_tab;
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     act_tab = ssalir_tab;
+
+    /* clean up insert list */
+    INFO_SSALIR_INSLIST (arg_info) = InsListPopFrame (INFO_SSALIR_INSLIST (arg_info));
 
     /* clean up LUT */
     if (INFO_SSALIR_MOVELUT (arg_info) != NULL) {
@@ -647,6 +813,11 @@ SSALIRblock (node *arg_node, node *arg_info)
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
+    /* in case of an empty block, insert at least the empty node */
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        BLOCK_INSTR (arg_node) = MakeEmpty ();
+    }
+
     /* restore block mode */
     INFO_SSALIR_TOPBLOCK (arg_info) = old_flag;
 
@@ -659,7 +830,9 @@ SSALIRblock (node *arg_node, node *arg_info)
  *   node* SSALIRassign(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse assign instructions in top-down order to infere LI-assignments.
+ *   traverse assign instructions in top-down order to infere LI-assignments,
+ *   mark move up expressions and do the WLIR movement on the bottomo up
+ *   return traversal.
  *
  ******************************************************************************/
 node *
@@ -668,6 +841,8 @@ SSALIRassign (node *arg_node, node *arg_info)
     bool remove_assign;
     node *pre_assign;
     node *tmp;
+    int old_maxdepth;
+    int wlir_move_up;
 
     DBUG_ENTER ("SSALIRassign");
 
@@ -678,9 +853,22 @@ SSALIRassign (node *arg_node, node *arg_info)
     INFO_SSALIR_ASSIGN (arg_info) = arg_node;
     INFO_SSALIR_PREASSIGN (arg_info) = NULL;
     INFO_SSALIR_POSTASSIGN (arg_info) = NULL;
+    old_maxdepth = INFO_SSALIR_MAXDEPTH (arg_info);
+    INFO_SSALIR_MAXDEPTH (arg_info) = 0;
 
     /* start traversl in instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    /*
+     * check for with loop independend expressions:
+     * if all used identifiers are defined on a outer level, we can move
+     * up the whole assignment to this level.
+     */
+    if (INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info)) {
+        wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
+    } else {
+        wlir_move_up = -1;
+    }
 
     /* analyse and store results of instruction traversal */
     INFO_SSALIR_ASSIGN (arg_info) = NULL;
@@ -717,6 +905,20 @@ SSALIRassign (node *arg_node, node *arg_info)
         FreeNode (tmp);
     }
 
+    /* move up assignment in case of WLIR */
+    if (wlir_move_up >= 0) {
+        tmp = arg_node;
+        arg_node = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (tmp) = NULL;
+
+        /* append to InsertList on movement target level */
+        INFO_SSALIR_INSLIST (arg_info)
+          = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info), tmp, wlir_move_up);
+
+        /* increment statistic counter */
+        wlir_expr++;
+    }
+
     /*
      * insert pre-assign code
      * remark: the pre-assigned code will not be traversed during this cycle
@@ -724,6 +926,9 @@ SSALIRassign (node *arg_node, node *arg_info)
     if (pre_assign != NULL) {
         arg_node = AppendAssign (pre_assign, arg_node);
     }
+
+    /* restore old maxdepth counter */
+    INFO_SSALIR_MAXDEPTH (arg_info) = old_maxdepth;
 
     DBUG_RETURN (arg_node);
 }
@@ -735,6 +940,10 @@ SSALIRassign (node *arg_node, node *arg_info)
  *
  * description:
  *   traverse let expression and result identifiers
+ *   checks, if the dependend used identifier are loop invariant and marks the
+ *   expression for move_up (only in topblock). expressions in with loops
+ *   that only depends on local identifiers are marked as local, too.
+ *   all other expressions are marked as normal, which means nothing special.
  *
  ******************************************************************************/
 node *
@@ -785,6 +994,19 @@ SSALIRlet (node *arg_node, node *arg_info)
         /* in all other cases */
         INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
         LET_LIRFLAG (arg_node) = LIRMOVE_NONE;
+    }
+
+    /* detect withloop independend expression, will be moved up */
+    if (INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info)) {
+        /* new target definition depth */
+        INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_MAXDEPTH (arg_info);
+        DBUG_PRINT ("SSALIR",
+                    ("moving assignment from depth %d to depth %d",
+                     INFO_SSALIR_WITHDEPTH (arg_info), INFO_SSALIR_MAXDEPTH (arg_info)));
+
+    } else {
+        /* current depth */
+        INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info);
     }
 
     /* traverse ids to mark them as loop-invariant/local or normal */
@@ -845,6 +1067,15 @@ SSALIRid (node *arg_node, node *arg_info)
                         ("loop invariant or local id %s",
                          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
         }
+
+        /*
+         * calc the maximum definition depth of all identifiers in the
+         * current assignment
+         */
+        if (INFO_SSALIR_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
+            INFO_SSALIR_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
+        }
+
         break;
 
     case SSALIR_INRETURN:
@@ -1058,7 +1289,8 @@ SSALIRreturn (node *arg_node, node *arg_info)
  *   node* SSALIRNwith(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses with-loop, increments withdepth counter during traversal
+ *   traverses with-loop, increments withdepth counter during traversal,
+ *   adds a new frame to the InsertList stack for later code movement.
  *
  ******************************************************************************/
 node *
@@ -1066,8 +1298,16 @@ SSALIRNwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSALIRNwith");
 
+    /* clear current InsertListFrame */
+    INFO_SSALIR_INSLIST (arg_info)
+      = InsListSetAssigns (INFO_SSALIR_INSLIST (arg_info), NULL,
+                           INFO_SSALIR_WITHDEPTH (arg_info));
+
     /* increment withdepth counter */
     INFO_SSALIR_WITHDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info) + 1;
+
+    /* create new InsertListFrame */
+    INFO_SSALIR_INSLIST (arg_info) = InsListPushFrame (INFO_SSALIR_INSLIST (arg_info));
 
     /* traverse partition */
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
@@ -1078,8 +1318,21 @@ SSALIRNwith (node *arg_node, node *arg_info)
     /* traverse withop */
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
+    /* remove top InsertListFrame */
+    INFO_SSALIR_INSLIST (arg_info) = InsListPopFrame (INFO_SSALIR_INSLIST (arg_info));
+
     /* decrement withdepth counter */
     INFO_SSALIR_WITHDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info) - 1;
+
+    /* move the assigns into PREASSIGN */
+    INFO_SSALIR_PREASSIGN (arg_info)
+      = AppendAssign (INFO_SSALIR_PREASSIGN (arg_info),
+                      InsListGetAssigns (INFO_SSALIR_INSLIST (arg_info),
+                                         INFO_SSALIR_WITHDEPTH (arg_info)));
+    /* clear this frame */
+    INFO_SSALIR_INSLIST (arg_info)
+      = InsListSetAssigns (INFO_SSALIR_INSLIST (arg_info), NULL,
+                           INFO_SSALIR_WITHDEPTH (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1100,8 +1353,11 @@ SSALIRNwithid (node *arg_node, node *arg_info)
 
     /* traverse all local definitions to mark their depth in withloops */
     INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
+    INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info);
+
     NWITHID_IDS (arg_node) = SSALIRleftids (NWITHID_IDS (arg_node), arg_info);
     NWITHID_VEC (arg_node) = SSALIRleftids (NWITHID_VEC (arg_node), arg_info);
+
     INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
 
     DBUG_RETURN (arg_node);
@@ -1149,7 +1405,10 @@ SSALIRexprs (node *arg_node, node *arg_info)
  *   static ids *SSALIRleftids (ids *arg_ids, node *arg_info)
  *
  * description:
- *   set current withloop depth as definition depth
+ *   set current withloop depth as ids definition depth
+ *   set current movement flag as ids LIRMOV flag
+ *
+ *   also updates the AVIS_SSAASSIGN(2) attributes
  *
  *****************************************************************************/
 static ids *
@@ -1158,8 +1417,9 @@ SSALIRleftids (ids *arg_ids, node *arg_info)
     DBUG_ENTER ("SSALIRleftids");
 
     /* set current withloop depth as definition depth */
-    AVIS_DEFDEPTH (IDS_AVIS (arg_ids)) = INFO_SSALIR_WITHDEPTH (arg_info);
+    AVIS_DEFDEPTH (IDS_AVIS (arg_ids)) = INFO_SSALIR_SETDEPTH (arg_info);
 
+    /* propagte the currect FLAG to the ids */
     switch (INFO_SSALIR_FLAG (arg_info)) {
     case SSALIR_MOVEUP:
         DBUG_PRINT ("SSALIR", ("mark: moving up vardec %s",
