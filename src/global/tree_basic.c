@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/12/21 10:07:33  cg
+ * Revision 1.12  1995/12/29 10:29:45  cg
+ * modified MakeNodelist and MakeSib, added MakeInfo
+ *
+ * Revision 1.11  1995/12/21  10:07:33  cg
  * now MakePragma has no argument at all, new macros PRAGMA_LINKSIGNNUMS etc.
  * for temporary storage of pragma as list of nums instead of array.
  *
@@ -219,9 +222,23 @@ MakeNodelist (node *node, statustype status, nodelist *next)
 
     ALLOCATE (tmp, nodelist);
     NODELIST_NODE (tmp) = node;
-    NODELIST_ATTRIB (tmp) = ST_unresolved;
     NODELIST_STATUS (tmp) = status;
     NODELIST_NEXT (tmp) = next;
+
+    switch (NODE_TYPE (node)) {
+    case N_fundef:
+        NODELIST_ATTRIB (tmp) = ST_unresolved;
+        break;
+    case N_objdef:
+        NODELIST_ATTRIB (tmp) = ST_reference;
+        break;
+    case N_typedef:
+        NODELIST_ATTRIB (tmp) = ST_regular;
+        break;
+    default:
+        DBUG_ASSERT (0, ("Wrong node type in MakeNodelist (%s)",
+                         mdb_nodetype[NODE_TYPE (node)]));
+    }
 
     DBUG_RETURN (tmp);
 }
@@ -297,18 +314,20 @@ MakeClassdec (char *name, char *prefix, node *imports, node *exports)
 }
 
 node *
-MakeSib (node *types, node *funs, strings *linklist)
+MakeSib (char *name, int linkstyle, node *types, node *objs, node *funs)
 {
     node *tmp;
     DBUG_ENTER ("MakeSib");
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_sib;
-    NODE_NNODE (tmp) = 2;
+    NODE_NNODE (tmp) = 3;
 
     SIB_TYPES (tmp) = types;
     SIB_FUNS (tmp) = funs;
-    SIB_LINKLIST (tmp) = linklist;
+    SIB_OBJS (tmp) = objs;
+    SIB_NAME (tmp) = name;
+    SIB_LINKSTYLE (tmp) = linkstyle;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1093,6 +1112,23 @@ MakePragma ()
     NODE_NNODE (tmp) = 0;
 
     PRAGMA_NUMPARAMS (tmp) = 0;
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
+                             NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+MakeInfo ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeInfo");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_info;
+    NODE_NNODE (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
                              NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
