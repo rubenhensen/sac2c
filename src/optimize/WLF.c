@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.15  1998/08/20 12:18:20  srs
+ * added comments
+ * fixed bug in WLFid()
+ *
  * Revision 1.14  1998/08/06 18:34:51  srs
  * bug fix:
  * index vector variable and index scalar variables are now renamed if
@@ -1005,8 +1009,8 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
  **transformations)
  *
  * description:
- *
- *
+ *   only used if permutations of index scalar variables are enabled.
+ *   This is a transformation to reduce the number of components of the ig.
  *
  ******************************************************************************/
 
@@ -1456,7 +1460,7 @@ node *
 WLFid (node *arg_node, node *arg_info)
 {
     node *substn, *coden, *vectorn, *argsn, *letn, *subst_wl_partn, *subst_header;
-    node *old_arg_info_assign, *arrayn, *tmpn;
+    node *old_arg_info_assign, *arrayn;
     ids *subst_wl_ids, *_ids;
     int count, varno;
     char *new_name;
@@ -1552,7 +1556,7 @@ WLFid (node *arg_node, node *arg_info)
                         IDS_VARDEC (_ids) = ren->vardec;
                     } else
                         /* keep original name */
-                        _ids = DupTree (subst_wl_ids, NULL);
+                        _ids = DupOneIds (subst_wl_ids, NULL);
 
                     letn = MakeLet (MakePrf (F_psi, argsn), _ids);
                     subst_header = MakeAssign (letn, subst_header);
@@ -1575,7 +1579,7 @@ WLFid (node *arg_node, node *arg_info)
                     IDS_VARDEC (_ids) = ren->vardec;
                 } else
                     /* keep original name */
-                    _ids = DupTree (subst_wl_ids, NULL);
+                    _ids = DupOneIds (subst_wl_ids, NULL);
 
                 letn = MakeLet (DupTree (vectorn, NULL), _ids);
                 subst_header = MakeAssign (letn, subst_header);
@@ -1590,15 +1594,16 @@ WLFid (node *arg_node, node *arg_info)
             wlf_mode = wlfm_replace;
 
             /* merge subst_header and substn */
-            tmpn = subst_header;
-            while (ASSIGN_NEXT (tmpn))
-                tmpn = ASSIGN_NEXT (tmpn);
-            ASSIGN_NEXT (tmpn) = substn;
-
             /* we dont' need the old _SUBST info anymore so we return the
                new subst assign chain here. WLFassign uses this information to
                melt both chains. */
-            INFO_WLI_SUBST (arg_info) = subst_header;
+            if (subst_header) {
+                INFO_WLI_SUBST (arg_info) = subst_header;
+                while (ASSIGN_NEXT (subst_header))
+                    subst_header = ASSIGN_NEXT (subst_header);
+                ASSIGN_NEXT (subst_header) = substn;
+            } else
+                INFO_WLI_SUBST (arg_info) = substn;
         }
         break;
 
