@@ -2,10 +2,11 @@
 
 /*
  *
- * Revision 1.44  1997/10/01 12:32:02  dkr
- * added % and %=
+ * $Log$
+ * Revision 1.46  1997/10/03 17:57:27  dkr
+ * added prf abs()
  *
- * Revision 1.42  1997/09/11 11:55:21  dkr
+ * Revision 1.44  1997/10/01 12:32:02  dkr
  * added % and %=
  *
  * Revision 1.41  1997/08/04 19:09:30  dkr
