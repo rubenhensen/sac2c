@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/04/06 14:51:51  asi
+ * Revision 1.16  1995/04/20 15:40:48  asi
+ * mask handling in psi, dim and shape function added
+ * bug fixed in psi: result isn't array, if vector and array dimension are equal
+ *
+ * Revision 1.15  1995/04/06  14:51:51  asi
  * constant folding in return-expessions disabled
  *
  * Revision 1.14  1995/04/06  11:35:20  asi
@@ -72,6 +76,10 @@
 #include "ConstantFolding.h"
 
 extern char filename[]; /* is set temporary; will be set later on in main.c */
+
+#define CONST arg_info->nnode
+#define FALSE 0
+#define TRUE 1
 
 typedef struct STELM {
     int vl_len;
@@ -306,7 +314,7 @@ DupConst (node *arg_node)
         new_node->info.ids->node = arg_node->info.ids->node;
         break;
     default:
-        DBUG_ASSERT ((0), "Unknown constant type for primitive function");
+        DBUG_ASSERT ((FALSE), "Unknown constant type for primitive function");
         break;
     }
     DBUG_RETURN (new_node);
@@ -392,12 +400,12 @@ CFid (node *arg_node, node *arg_info)
             DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         default:
-            arg_info->nnode = 0;
+            CONST = FALSE;
             return_node = arg_node;
             break;
         }
     } else {
-        arg_info->nnode = 0;
+        CONST = FALSE;
         return_node = arg_node;
     }
     DBUG_RETURN (return_node);
@@ -440,7 +448,7 @@ CFcast (node *arg_node, node *arg_info)
         returnnode = arg_node;
         break;
     default:
-        DBUG_ASSERT ((0), "Unknown nodetype for CFcast");
+        DBUG_ASSERT ((FALSE), "Unknown nodetype for CFcast");
         break;
     }
 
@@ -553,13 +561,13 @@ CFlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFlet");
 
-    arg_info->nnode = 1;
+    CONST = 1;
     arg_info->info.types = GetType (arg_node->info.ids->node->info.types);
 
     arg_node = OptTrav (arg_node, arg_info, 0); /* Trav expression */
 
     arg_info->info.types = NULL;
-    if (arg_info->nnode == 1)
+    if (CONST)
         VAR (arg_node->info.ids->node->varno) = arg_node->node[0];
     else
         VAR (arg_node->info.ids->node->varno) = NULL;
@@ -772,7 +780,7 @@ CFwith (node *arg_node, node *arg_info)
     arg_node = OptTrav (arg_node, arg_info, 2); /* Trav with-body */
 
     PopVL ();
-    arg_info->nnode = 0;
+    CONST = FALSE;
     DBUG_RETURN (arg_node);
 }
 
@@ -807,7 +815,7 @@ GetReturnType (int res_int, node **arg, node *arg_info)
             arg[0]->nodetype = N_bool;
             break;
         default:
-            DBUG_ASSERT ((0), "Unknown constant type for primitive function");
+            DBUG_ASSERT ((FALSE), "Unknown constant type for primitive function");
             break;
         }
     DBUG_RETURN (arg[0]);
@@ -847,7 +855,7 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
     }
 
     DBUG_ENTER ("SkalarPrf");
-    if (arg_info->nnode == 1) {
+    if (CONST) {
         cf_expr++;
         switch (arg_node->info.prf) {
         case F_not:
@@ -1006,6 +1014,39 @@ ArraySize (node *array)
     DBUG_RETURN (size);
 }
 
+/*
+ *
+ *  functionname  : FetchNum
+ *  arguments     : 1) position in array
+ *                  2) ptr to the array
+ *                  R) ptr to fetchted element
+ *  description   :
+ *  global vars   :
+ *  internal funs : DupConst
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+FetchNum (int start, node *array)
+{
+    int i;
+    node *returnexpr;
+
+    DBUG_ENTER ("FetchNum");
+
+    array = array->node[0];
+
+    for (i = 0; i < start; i++)
+        array = array->node[1];
+
+    returnexpr = DupConst (array->node[0]);
+
+    DBUG_RETURN (returnexpr);
+}
+
 node *
 GenArray (int start, int length, node *array)
 {
@@ -1085,7 +1126,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
     case F_div_AxA:
     case F_div_AxS:
     case F_div_SxA:
-        if (!arg_info->nnode) {
+        if (!CONST) {
             returnnode = arg_node;
             break;
         }
@@ -1157,6 +1198,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 expr[0]->node[0] = MakeNode (N_num);
                 expr[0]->node[0]->info.cint = shape->shp[i];
             }
+            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             cf_expr++;
             break;
         default:
@@ -1182,6 +1224,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg_node->nnode = 0;
             arg_node->node[0] = NULL;
             returnnode = arg_node;
+            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             cf_expr++;
             break;
         default:
@@ -1202,7 +1245,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 FreeTree (arg_node);
                 cf_expr++;
             } else {
-                arg_info->nnode = 0;
+                CONST = FALSE;
                 WARN1 (("WARNING %s, %d: illegal vector for primitive function psi\n",
                         filename, arg_info->lineno));
                 returnnode = arg_node;
@@ -1211,21 +1254,26 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
         case N_id: {
             int length, start, mult, i, j, arg_length;
             int vec_dim;
-            int vec_shape[4];
+            int vec_shape[SHP_SEG_SIZE];
 
+            /* if no constant value for second argument is available or */
+            /* first argument isn't constant, don't calculate psi       */
             if ((NULL == TOS.varlist[arg[1]->info.ids->node->varno])
                 || (N_id == arg[0]->nodetype)) {
                 returnnode = arg_node;
-                arg_info->nnode = 0;
+                CONST = FALSE;
                 break;
             }
 
+            /* Calculate dimension and shape vector of first argument */
             vec_dim = GetShapeVector (arg[0], vec_shape);
 
+            /* Calculate length of result array */
             length = 1;
             for (i = 0; i < arg_info->info.types->dim; i++)
                 length *= arg_info->info.types->shpseg->shp[i];
 
+            /* Calculate startposition of result array in argument array */
             start = 0;
             for (i = 0; i < vec_dim; i++) {
                 if (vec_shape[i] >= 0) {
@@ -1244,21 +1292,26 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 arg_length *= arg[1]->info.ids->node->info.types->shpseg->shp[i];
 
             if ((start + length <= arg_length) && (start >= 0)) {
-                returnnode = MakeNode (N_array);
-                returnnode->nnode = 1;
-                returnnode->node[0]
-                  = GenArray (start, length, TOS.varlist[arg[1]->info.ids->node->varno]);
+                DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
+                if (vec_dim == arg[1]->info.ids->node->info.types->dim) {
+                    returnnode
+                      = FetchNum (start, TOS.varlist[arg[1]->info.ids->node->varno]);
+                } else {
+                    returnnode = MakeNode (N_array);
+                    returnnode->nnode = 1;
+                    returnnode->node[0]
+                      = GenArray (start, length,
+                                  TOS.varlist[arg[1]->info.ids->node->varno]);
+                }
                 FreeTree (arg_node);
                 cf_expr++;
             } else {
-                arg_info->nnode = 0;
+                CONST = FALSE;
                 WARN1 (("WARNING %s, %d: illegal vector for primitive function psi\n",
                         filename, arg_info->lineno));
                 returnnode = arg_node;
             }
-
-            break;
-        }
+        } break;
         default:
             returnnode = arg_node;
             break;
