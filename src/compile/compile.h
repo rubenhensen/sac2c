@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 2.7  2000/05/25 23:04:20  dkr
+ * Prototype for GetAdjustedFoldCode() added
+ * GetFoldCode() renamed into GetUnadjustedFoldCode()
+ *
  * Revision 2.6  2000/04/20 11:36:13  jhs
  * Added COMPMT(signal|alloc|sync)
  *
@@ -10,110 +13,10 @@
  * Revision 2.4  2000/03/21 15:46:43  dkr
  * ICM_INDENT explcitly set to 0 if nodes are reused as icm-nodes
  *
- * Revision 2.3  2000/02/11 16:28:31  dkr
- * COMPWith removed
- * Some superfluous and outdated macros removed
- *
- * Revision 2.2  1999/11/09 21:19:07  dkr
- * added some comments
- *
- * Revision 2.1  1999/02/23 12:42:31  sacbase
- * new release made
- *
- * Revision 1.33  1998/08/07 14:39:22  dkr
- * COMPWLsegVar added
- *
- * Revision 1.32  1998/06/10 14:24:22  sbs
- * GetFoldCode and GetFoldVardecs declared extern!
- *
- * Revision 1.31  1998/04/26 21:49:40  dkr
- * COMPSPMD renamed to COMPSpmd
- *
- * Revision 1.30  1998/04/24 17:14:40  dkr
- * renamed Comp...() to COMP...()
- *
- * Revision 1.29  1998/04/23 17:33:02  dkr
- * added CompSync
- *
- * Revision 1.28  1998/04/21 13:31:28  dkr
- * added funs CompWL...
- *
- * Revision 1.27  1998/04/19 17:48:00  dkr
- * uses now access macros
- *
- * Revision 1.26  1998/04/17 17:26:57  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.25  1998/04/14 21:44:56  dkr
- * added CompModul
- *
- * Revision 1.24  1998/04/07 14:50:15  dkr
- * added CompNcode
- *
- * Revision 1.23  1998/04/02 18:46:56  dkr
- * added CompConc
- *
- * Revision 1.22  1998/03/02 22:25:57  dkr
- * macros for new with-loop moved to tree_basic
- *
- * Revision 1.20  1998/02/16 01:08:01  dkr
- * bugs fixed
- *
- * Revision 1.19  1998/02/15 04:06:28  dkr
- * added some macros for N_index-nodes (experimental !!)
- *
- * Revision 1.18  1998/02/11 16:31:05  dkr
- * removed NEWTREE, access-macros used
- *
- * Revision 1.16  1997/11/25 10:33:19  dkr
- * prototype CompNWith added
- *
- * Revision 1.15  1997/11/02 13:58:03  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.14  1997/10/31 11:04:11  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.13  1996/01/26 15:34:11  cg
- * added macro TRI_ICM_REUSE
- *
- * Revision 1.12  1996/01/21  14:00:29  cg
- * added APPEND_ICM_ARG, new DBUG_PRINTs in CREATE_1_ARY_ICM
- *
- * Revision 1.11  1995/12/18  16:20:52  cg
- * added declaration of node *CompObjdef(node *arg_node, node *arg_info);
- *
- * Revision 1.10  1995/06/28  09:30:22  hw
- * moved some macros form compile.h to typecheck.h
- *
- * Revision 1.9  1995/06/26  14:06:24  hw
- * added new macros (moved from compile.c )
- *
- * Revision 1.8  1995/06/08  17:48:57  hw
- * CompTypedef inserted
- *
- * Revision 1.7  1995/05/22  10:08:01  hw
- * added function "CompCast"
- *
- * Revision 1.6  1995/05/08  15:45:13  hw
- * added CompBlock
- *
- * Revision 1.5  1995/04/24  18:07:54  hw
- * - renamed CompWhile to CompLoop
- *
- * Revision 1.4  1995/04/24  14:18:20  hw
- * CompWhile & CompCond inserted
- *
- * Revision 1.3  1995/04/03  16:34:48  hw
- * CompFundef inserted
- *
- * Revision 1.2  1995/03/31  15:47:37  hw
- * CompId, CompArg, CompWith, CompArray, CompAp, CompReturn inserted
+ * [ eliminated ]
  *
  * Revision 1.1  1995/03/29  12:38:10  hw
  * Initial revision
- *
- *
  */
 
 #ifndef _sac_compile_h
@@ -157,7 +60,8 @@ extern node *COMPMTsignal (node *arg_node, node *arg_info);
 extern node *COMPMTalloc (node *arg_node, node *arg_info);
 extern node *COMPMTsync (node *arg_node, node *arg_info);
 
-extern node *GetFoldCode (node *fundef);
+extern node *GetUnadjustedFoldCode (node *fundef);
+extern node *GetAdjustedFoldCode (node *fundef, ids *acc, char *funname, node *cexpr);
 extern node *GetFoldVardecs (node *fundef);
 
 /*
