@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/29 13:57:15  dkr
+ * no '... might be used uninitialized' warnings anymore
+ *
  * Revision 3.2  2000/11/27 21:07:35  cg
  * Added generation of new ICM ND_ALLOC_ARRAY_PLACE.
  *
@@ -497,6 +500,7 @@ GenericFun (int which, types *type)
                 break;
             default:
                 DBUG_ASSERT ((0), "Unknown kind if generic function requested");
+                break;
             }
         }
     }
@@ -781,21 +785,12 @@ Ids2AllocArrayICMs (ids *ids_chain, node *next)
 static node *
 Ids2AllocArrayICMs_reuse (ids *ids_chain, node *next, node *pragma)
 {
+    node *alloc_icm;
     node *assign;
     node *last_assign = NULL;
     node *assigns = NULL;
-    char *id;
-    int offset, size;
-    node *alloc_icm;
 
     DBUG_ENTER ("Ids2AllocArrayICMs_reuse");
-
-    if (pragma != NULL) {
-        id = ID_NAME (EXPRS_EXPR (AP_ARGS (PRAGMA_APL (pragma))));
-        offset = NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (PRAGMA_APL (pragma)))));
-        size = NUM_VAL (
-          EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (PRAGMA_APL (pragma))))));
-    }
 
     while (ids_chain != NULL) {
         if (IDS_REFCNT (ids_chain) >= 0) {
@@ -807,8 +802,9 @@ Ids2AllocArrayICMs_reuse (ids *ids_chain, node *next, node *pragma)
                 alloc_icm = MakeIcm6 ("ND_ALLOC_ARRAY_PLACE",
                                       MakeBasetypeNode (IDS_TYPE (ids_chain)),
                                       DupIds_Id (ids_chain), MakeNum (0),
-                                      MakeId (StringCopy (id), NULL, ST_regular),
-                                      MakeNum (offset), MakeNum (size));
+                                      DupNode (AP_ARG1 (PRAGMA_APL (pragma))),
+                                      DupNode (AP_ARG2 (PRAGMA_APL (pragma))),
+                                      DupNode (AP_ARG3 (PRAGMA_APL (pragma))));
             }
 
             assign
@@ -2959,6 +2955,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 
     exprs = RETURN_EXPRS (arg_node);
     args = NULL;
+    last_arg = NULL;
     cnt_params = 0;
 
     while (exprs != NULL) {
@@ -3013,7 +3010,9 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
 
     exprs = RETURN_EXPRS (arg_node);
     args = NULL;
+    last_arg = NULL;
     cnt_params = 0;
+
 #if 1
     while (exprs != NULL) {
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
@@ -3163,13 +3162,14 @@ COMPAp (node *arg_node, node *arg_info)
 {
     node *icm_node, *last_node, *ret_node, *merge_node;
     node **icm_tab;
-    node *last_entry, *ret_entry;
+    node *last_entry = NULL;
+    node *ret_entry = NULL;
     ids *let_ids;
     types *fundef_types;
     node *fundef_args, *args, *arg;
     char *tag;
     bool ids_for_dots;
-    int tab_size, cnt_param, arg_idx, i;
+    int tab_size, cnt_param, i;
 
     DBUG_ENTER ("COMPAp");
 
@@ -3205,6 +3205,7 @@ COMPAp (node *arg_node, node *arg_info)
         /* assure that no one of the array-arguments occurs on LHS */
         {
             node *args, *arg_id;
+            int arg_idx;
             args = AP_ARGS (arg_node);
 #if 1
             arg_idx = 0; /*
@@ -4757,6 +4758,7 @@ COMPId (node *arg_node, node *arg_info)
         break;
 
     default:
+        ret_node = NULL;
         DBUG_ASSERT (0, "unknown type of class conversion function found");
         break;
     }
@@ -4877,9 +4879,9 @@ COMPLoop (node *arg_node, node *arg_info)
 {
     node *ret_node, *first_node, *icm_node, *last_node;
     node *cond, *body;
-    char *label_str;
     ids *usevar, *defvar;
     bool found;
+    char *label_str = NULL;
 
     DBUG_ENTER ("COMPLoop");
 
@@ -5330,6 +5332,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
         icm_name1 = "WL_FOLD_BEGIN";
         icm_name2 = "WL_FOLD_END";
         profile_name = "fold";
+        break;
+
+    default:
+        icm_name1 = icm_name2 = profile_name = NULL;
+        DBUG_ASSERT ((0), "illegal withop type found");
         break;
     }
 
@@ -5992,7 +5999,9 @@ COMPWLgrid (node *arg_node, node *arg_info)
                 break;
 
             default:
-                DBUG_ASSERT ((0), "wrong withop type found");
+                icm_name = NULL;
+                DBUG_ASSERT ((0), "illegal withop type found");
+                break;
             }
 
         } else {
@@ -6025,7 +6034,9 @@ COMPWLgrid (node *arg_node, node *arg_info)
                     break;
 
                 default:
-                    DBUG_ASSERT ((0), "wrong withop type found");
+                    icm_name = NULL;
+                    DBUG_ASSERT ((0), "illegal withop type found");
+                    break;
                 }
             } else {
                 /* dummy code inserted by array padding */
@@ -6373,7 +6384,9 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                 break;
 
             default:
-                DBUG_ASSERT ((0), "wrong withop type found");
+                icm_name = NULL;
+                DBUG_ASSERT ((0), "illegal withop type found");
+                break;
             }
 
         } else {
@@ -6404,7 +6417,9 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                 break;
 
             default:
-                DBUG_ASSERT ((0), "wrong withop type found");
+                icm_name = NULL;
+                DBUG_ASSERT ((0), "illegal withop type found");
+                break;
             }
         }
 
@@ -7308,12 +7323,11 @@ COMPSt (node *arg_node, node *arg_info)
         code = MakeIcm0 ("CODE");
 
         allocate = MakeAllocs (ST_ALLOC (arg_node));
-        /*
-            allocate  = MakeIcm2( "MT2_ALLOCATE",
-                                  MakeNum( DFMTestMask( ST_ALLOC( arg_node))),
-                                  BuildParamsByDFM( ST_ALLOC( arg_node), "alloc", NULL,
-           NULL));
-        */
+#if 0
+    allocate  = MakeIcm2( "MT2_ALLOCATE",
+                          MakeNum( DFMTestMask( ST_ALLOC( arg_node))),
+                          BuildParamsByDFM( ST_ALLOC( arg_node), "alloc", NULL, NULL));
+#endif
         broadcast
           = MakeIcm4 ("MT2_MASTER_BROADCAST", MakeId_Copy ("SYNC"),
                       MakeNum (MT_IDENTIFIER (arg_node)), MakeNum (DFMTestMask (bset)),
@@ -7331,6 +7345,7 @@ COMPSt (node *arg_node, node *arg_info)
 
         result = MakeAssigns3 (barrier, suspend, receive);
     } else {
+        result = NULL;
         DBUG_ASSERT (0, "can not handle such a function");
     }
 
@@ -7421,6 +7436,7 @@ COMPMTalloc (node *arg_node, node *arg_info)
         broadcast_icm = "MT2_WORKER_BROADCAST";
         receive_icm = "MT2_WORKER_RECEIVE";
     } else {
+        broadcast_icm = receive_icm = NULL;
         DBUG_PRINT ("JHS", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
         DBUG_ASSERT (0, "can not handle such a function");
     }
@@ -7492,6 +7508,7 @@ COMPMTsync (node *arg_node, node *arg_info)
         broadcast_icm = "MT2_WORKER_BROADCAST";
         receive_icm = "MT2_WORKER_RECEIVE";
     } else {
+        broadcast_icm = receive_icm = NULL;
         DBUG_PRINT ("JHS", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
         DBUG_ASSERT (0, "can not handle such a function");
     }
