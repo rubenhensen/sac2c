@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1999/02/19 17:15:26  dkr
+ * use_efence added
+ *
  * Revision 1.42  1999/02/15 13:34:09  sbs
  * added -noDLAW opt_dlaw;
  *
@@ -295,6 +298,8 @@ extern int PFfunapmax;
 
 extern int check_boundary;
 extern int check_malloc;
+
+extern int use_efence;
 
 extern int libstat;
 extern int linkstyle;
