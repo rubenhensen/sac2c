@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/06/24 14:24:30  rob
+ * Try to resolve RCS problem with missing modules.
+ *
  * Revision 1.2  1999/06/24 14:18:20  rob
  * Add this to standard set of sac2c files.
  *
