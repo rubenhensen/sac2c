@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/10/26 16:14:56  sah
+  now node attributes are properly processed
+
   Revision 1.2  2004/10/26 09:37:22  sah
   first working implementation
 
@@ -130,6 +133,8 @@ version="1.0">
   <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;]" />
   <!-- trav sons -->
   <xsl:apply-templates select="sons" />
+  <!-- trav node attributes -->
+  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Node&quot;]" mode="trav-node-attribs" />
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
@@ -203,6 +208,32 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="son" >
+  <!-- check for NULL pointer son -->
+  <xsl:value-of select="'if ( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' != NULL) {'" />
+  <xsl:value-of select="'Trav( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', arg_info); }'" />
+</xsl:template>
+
+<xsl:template match="attributes/attribute" mode="trav-node-attribs" >
   <!-- check for NULL pointer son -->
   <xsl:value-of select="'if ( '" />
   <xsl:call-template name="node-access">
