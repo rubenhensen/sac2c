@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/06 01:37:16  dkr
+ * some superfluous '\n' removed
+ *
  * Revision 3.2  2001/01/24 15:48:28  dkr
  * bug in ND_FUN_RET fixed
  *
@@ -191,7 +194,7 @@ FindArg (char *str)
     INDENT;                                                                              \
     fprintf (outfile, "int SAC_idest = ");                                               \
     dest;                                                                                \
-    fprintf (outfile, ";\n\n")
+    fprintf (outfile, ";\n")
 
 #define InitVecs(from, to, vn, v_i_str)                                                  \
     {                                                                                    \
@@ -466,8 +469,9 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
 #undef ND_FUN_AP
 
     INDENT;
-    if (0 != strcmp (retname, ""))
+    if (0 != strcmp (retname, "")) {
         fprintf (outfile, "%s = ", retname);
+    }
     if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( __argc, __argv);", name);
     } else {
@@ -499,6 +503,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
 #endif /* TAGGED_ARRAYS */
         fprintf (outfile, ");");
     }
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -554,8 +559,9 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info)
         }
     }
     if (0 != strcmp (retname, "")) {
-        fprintf (outfile, "return(%s);", retname);
+        fprintf (outfile, "return( %s);", retname);
     }
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -757,7 +763,6 @@ ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
     }
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -802,7 +807,6 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
             INDENT;
             fprintf (outfile, "extern int const SAC_ND_A_SHAPE( %s, %d);\n", name, i);
         }
-        fprintf (outfile, "\n");
     } else {
         INDENT;
         fprintf (outfile, "%s *%s;\n", type, name);
@@ -820,7 +824,6 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
             INDENT;
             fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
         }
-        fprintf (outfile, "\n");
     }
 
     DBUG_VOID_RETURN;
@@ -863,7 +866,6 @@ ICMCompileND_KD_DECL_EXTERN_ARRAY (char *type, char *name, int dim)
         INDENT;
         fprintf (outfile, "extern int SAC_ND_A_SHAPE(%s, %d);\n", name, i);
     }
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -906,7 +908,6 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
     }
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -943,7 +944,6 @@ ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
     }
-    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -974,7 +974,7 @@ ICMCompileND_KD_PSI_CxA_S (char *a, char *res, int dim, char **vi)
     INDENT;
     fprintf (outfile, "%s = SAC_ND_READ_ARRAY(%s, ", res, a);
     VectToOffset (dim, AccessConst (vi, i), dim, a);
-    fprintf (outfile, ");\n\n");
+    fprintf (outfile, ");\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1005,7 +1005,7 @@ ICMCompileND_KD_PSI_VxA_S (char *a, char *res, int dim, char *v)
     INDENT;
     fprintf (outfile, "%s = SAC_ND_READ_ARRAY(%s, ", res, a);
     VectToOffset (dim, AccessVect (v, i), dim, a);
-    fprintf (outfile, ");\n\n");
+    fprintf (outfile, ");\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1036,7 +1036,7 @@ ICMCompileND_KD_PSI_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
 
     INDENT;
     CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res);
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1067,7 +1067,7 @@ ICMCompileND_KD_PSI_VxA_A (int dima, char *a, char *res, int dimv, char *v)
 
     INDENT;
     CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res);
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1103,7 +1103,7 @@ ICMCompileND_KD_TAKE_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
              AccessConst (vi, i); fprintf (outfile, ")"), /* offsets */
                                   res);
 
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1139,7 +1139,7 @@ ICMCompileND_KD_DROP_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
              AccessConst (vi, i), /* offsets */
              res);
 
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1194,7 +1194,7 @@ ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int catdim)
                                                   " SAC_ND_READ_ARRAY(%s, SAC_isrc1);\n",
                                                   res, ar[1]);
                        indent--; INDENT;));
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1265,7 +1265,7 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
                                                   " SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",
                                                   res, a);
                        indent--;));
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1323,7 +1323,7 @@ ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (char *res_type, int dimres, char *r
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1377,7 +1377,7 @@ ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *res, char *ol
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1434,7 +1434,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (char *res_type, int dimres, char *r
     VectToOffset (dim, AccessVect (v, i), dimres, res);
     fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1487,7 +1487,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res, char *ol
     VectToOffset (dim, AccessVect (v, i), dimres, res);
     fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1558,7 +1558,7 @@ ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res, char *ol
              res, old);
     indent -= 2;
     INDENT;
-    fprintf (outfile, "}\n\n");
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1657,7 +1657,7 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres, char *r
     fprintf (outfile, "}\n");
     indent--;
     INDENT;
-    fprintf (outfile, "}\n\n");
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1729,7 +1729,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res, char *ol
              res, old);
     indent -= 2;
     INDENT;
-    fprintf (outfile, "}\n\n");
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1828,7 +1828,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
     fprintf (outfile, "}\n");
     indent--;
     INDENT;
-    fprintf (outfile, "}\n\n");
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
