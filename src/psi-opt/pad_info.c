@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/21 14:40:50  mab
+ * added PIlinearizeAccessVector, PIgetArrayType*, PIgetPatternShape
+ *
  * Revision 1.7  2000/07/19 12:42:55  mab
  * added data structures for storing access patterns and unsupported shapes
  * added functions for accessing new data structures
@@ -38,8 +41,8 @@
 #include "pad_info.h"
 
 /* access macros for array_type_t */
-#define AT_DIM(p) p->dim
 #define AT_TYPE(p) p->type
+#define AT_DIM(p) p->dim
 #define AT_SHAPE(p) p->shape
 #define AT_GROUPS(p) p->groups
 #define AT_NEXT(p) p->next
@@ -54,14 +57,14 @@
 #define PT_NEXT(p) p->next
 
 /* access macros for unsupported_shapes_t */
-#define US_DIM(p) p->dim
 #define US_TYPE(p) p->type
+#define US_DIM(p) p->dim
 #define US_SHAPE(p) p->shape
 #define US_NEXT(p) p->next
 
 /* access_macros for pad_info_t */
-#define PI_DIM(p) p->dim
 #define PI_TYPE(p) p->type
+#define PI_DIM(p) p->dim
 #define PI_OLD_SHAPE(p) p->old_shape
 #define PI_NEW_SHAPE(p) p->new_shape
 #define PI_FUNDEF_PAD(p) p->fundef_pad
@@ -94,38 +97,6 @@ static unsupported_shape_t *unsupported_shape;
 /*****************************************************************************
  *
  * function:
- *   static int EqualShapes(int dim, shpseg* shape2, shpseg* shape1)
- *
- * description:
- *   compares two shapes, result is TRUE, if shapes are equal
- *
- *****************************************************************************/
-
-static int
-EqualShapes (int dim, shpseg *shape2, shpseg *shape1)
-{
-
-    int equalShapes;
-    int i;
-
-    DBUG_ENTER ("EqualShapes");
-
-    equalShapes = TRUE;
-
-    i = 0;
-    while (i < dim && equalShapes) {
-        if (SHPSEG_SHAPE (shape1, i) != SHPSEG_SHAPE (shape2, i)) {
-            equalShapes = FALSE;
-        }
-        i++;
-    }
-
-    DBUG_RETURN (equalShapes);
-}
-
-/*****************************************************************************
- *
- * function:
  *   static pad_info_t *GetNewTableEntry(types *old_type)
  *
  * description:
@@ -148,7 +119,7 @@ GetNewTableEntry (types *old_type)
     while (tmp != NULL) {
         if ((PI_TYPE (tmp) == TYPES_BASETYPE (old_type))
             && (PI_DIM (tmp) == TYPES_DIM (old_type))
-            && EqualShapes (PI_DIM (tmp), PI_OLD_SHAPE (tmp), TYPES_SHPSEG (old_type))) {
+            && EqualShpseg (PI_DIM (tmp), PI_OLD_SHAPE (tmp), TYPES_SHPSEG (old_type))) {
 
             matching_entry = tmp;
             tmp = NULL;
@@ -185,7 +156,7 @@ GetOldTableEntry (types *new_type)
     while (tmp != NULL) {
         if ((PI_TYPE (tmp) == TYPES_BASETYPE (new_type))
             && (PI_DIM (tmp) == TYPES_DIM (new_type))
-            && EqualShapes (PI_DIM (tmp), PI_NEW_SHAPE (tmp), TYPES_SHPSEG (new_type))) {
+            && EqualShpseg (PI_DIM (tmp), PI_NEW_SHAPE (tmp), TYPES_SHPSEG (new_type))) {
 
             matching_entry = tmp;
             tmp = NULL;
@@ -200,7 +171,7 @@ GetOldTableEntry (types *new_type)
 /*****************************************************************************
  *
  * function:
- *   static array_type_t* GetArrayTypeEntry(int dim, int type, shpseg* shape)
+ *   static array_type_t* GetArrayTypeEntry(simpletype type, int dim, shpseg* shape)
  *
  * description:
  *   get entry from access_pattern with specified type and class
@@ -209,7 +180,7 @@ GetOldTableEntry (types *new_type)
  *****************************************************************************/
 
 static array_type_t *
-GetArrayTypeEntry (int dim, int type, shpseg *shape)
+GetArrayTypeEntry (int type, int dim, shpseg *shape)
 {
 
     array_type_t *array_type_ptr;
@@ -222,7 +193,7 @@ GetArrayTypeEntry (int dim, int type, shpseg *shape)
 
     while ((array_type_ptr != NULL) && (!matched)) {
         if ((dim == AT_DIM (array_type_ptr)) && (type == AT_TYPE (array_type_ptr))
-            && (EqualShapes (dim, shape, AT_SHAPE (array_type_ptr)))) {
+            && (EqualShpseg (dim, shape, AT_SHAPE (array_type_ptr)))) {
             matched = TRUE;
         } else {
             array_type_ptr = AT_NEXT (array_type_ptr);
@@ -239,7 +210,7 @@ GetArrayTypeEntry (int dim, int type, shpseg *shape)
 /*****************************************************************************
  *
  * function:
- *   static unsupported_shape_t* GetUnsupportedShapeEntry(int dim, simpletype type,
+ *   static unsupported_shape_t* GetUnsupportedShapeEntry(simpletype type, int dim,
  *shpseg* shape)
  *
  * description:
@@ -249,7 +220,7 @@ GetArrayTypeEntry (int dim, int type, shpseg *shape)
  *****************************************************************************/
 
 static unsupported_shape_t *
-GetUnsupportedShapeEntry (int dim, simpletype type, shpseg *shape)
+GetUnsupportedShapeEntry (simpletype type, int dim, shpseg *shape)
 {
 
     unsupported_shape_t *unsupported_shape_ptr;
@@ -263,7 +234,7 @@ GetUnsupportedShapeEntry (int dim, simpletype type, shpseg *shape)
     while ((unsupported_shape_ptr != NULL) && (!matched)) {
         if ((dim == US_DIM (unsupported_shape_ptr))
             && (type == US_TYPE (unsupported_shape_ptr))
-            && (EqualShapes (dim, shape, US_SHAPE (unsupported_shape_ptr)))) {
+            && (EqualShpseg (dim, shape, US_SHAPE (unsupported_shape_ptr)))) {
             matched = TRUE;
         } else {
             unsupported_shape_ptr = US_NEXT (unsupported_shape);
@@ -435,7 +406,7 @@ RemoveUnsupportedShapes ()
             /* compare types */
             if ((AT_DIM (at_ptr) == US_DIM (us_ptr))
                 && (AT_TYPE (at_ptr) == US_TYPE (us_ptr))
-                && EqualShapes (AT_DIM (at_ptr), AT_SHAPE (at_ptr), US_SHAPE (us_ptr))) {
+                && EqualShpseg (AT_DIM (at_ptr), AT_SHAPE (at_ptr), US_SHAPE (us_ptr))) {
                 /* remove matching entry in array_type */
                 if (at_prv_ptr == NULL) {
                     /* remove first element of array_type */
@@ -463,6 +434,7 @@ RemoveUnsupportedShapes ()
  *
  * description:
  *   remove conflict groups containing only one access pattern
+ *   attention: RemoveDuplicateAccesses has to be applied first!
  *
  *****************************************************************************/
 
@@ -527,10 +499,152 @@ RemoveSingleAccessPatterns ()
 /*****************************************************************************
  *
  * function:
+ *   static void SortAccesses()
+ *
+ * description:
+ *   sort accesses within each conflict group in lexicographical order
+ *   uses PIlinearizeAccessVector to determine order
+ *
+ *****************************************************************************/
+
+static void
+SortAccesses ()
+{
+
+    array_type_t *at_ptr;
+    conflict_group_t *cg_ptr;
+    pattern_t *pt_ptr;
+    pattern_t *pt_next_ptr;
+    pattern_t *pt_tmp_list;
+    pattern_t *pt_tmp_ptr;
+    pattern_t *pt_tmp_prv_ptr;
+    bool matched;
+
+    DBUG_ENTER ("SortAccesses");
+
+    /* for every array type... */
+    at_ptr = array_type;
+    while (at_ptr != NULL) {
+
+        /* for all conflict groups... */
+        cg_ptr = AT_GROUPS (at_ptr);
+        while (cg_ptr != NULL) {
+
+            /* sort sort all accesses... */
+
+            pt_tmp_ptr = NULL;
+            pt_ptr = CG_PATTERNS (cg_ptr);
+            while (pt_ptr != NULL) {
+
+                pt_next_ptr = PT_NEXT (pt_ptr);
+
+                /* into temporary list */
+                pt_tmp_ptr = pt_tmp_list;
+                pt_tmp_prv_ptr = NULL;
+                matched = FALSE;
+                while (!matched) {
+
+                    /* ascending order */
+                    if ((pt_tmp_ptr == NULL)
+                        || (PIlinearizeAccessVector (AT_DIM (at_ptr), AT_SHAPE (at_ptr),
+                                                     PT_PATTERN (pt_ptr))
+                            <= PIlinearizeAccessVector (AT_DIM (at_ptr),
+                                                        AT_SHAPE (at_ptr),
+                                                        PT_PATTERN (pt_tmp_ptr)))) {
+                        if (pt_tmp_prv_ptr == NULL) {
+                            /* insert first element of list */
+                            PT_NEXT (pt_ptr) = pt_tmp_list;
+                            pt_tmp_list = pt_ptr;
+                        } else {
+                            /* insert other element */
+                            PT_NEXT (pt_ptr) = pt_tmp_ptr;
+                            PT_NEXT (pt_tmp_prv_ptr) = pt_ptr;
+                        }
+                        matched = TRUE;
+                    } else {
+                        pt_tmp_prv_ptr = pt_tmp_ptr;
+                        pt_tmp_ptr = PT_NEXT (pt_tmp_ptr);
+                    }
+                }
+
+                pt_ptr = pt_next_ptr;
+            }
+            CG_PATTERNS (cg_ptr) = pt_tmp_ptr;
+
+            cg_ptr = CG_NEXT (cg_ptr);
+        }
+
+        at_ptr = AT_NEXT (at_ptr);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   static void RemoveDuplicateAccesses()
+ *
+ * description:
+ *   remove duplicate accesses within one conflict group
+ *   attention: SortAccesses has to be applied first!
+ *
+ *****************************************************************************/
+
+static void
+RemoveDuplicateAccesses ()
+{
+
+    array_type_t *at_ptr;
+    conflict_group_t *cg_ptr;
+    pattern_t *pt_ptr;
+
+    DBUG_ENTER ("RemoveDuplicateAccesses");
+
+    /* for every array type... */
+    at_ptr = array_type;
+    while (at_ptr != NULL) {
+
+        /* for all conflict groups... */
+        cg_ptr = AT_GROUPS (at_ptr);
+        while (cg_ptr != NULL) {
+
+            /* check for duplicate accesses */
+
+            pt_ptr = CG_PATTERNS (cg_ptr);
+            while (pt_ptr != NULL) {
+
+                if (PT_NEXT (pt_ptr) != NULL) {
+                    if (EqualShpseg (AT_DIM (at_ptr), PT_PATTERN (pt_ptr),
+                                     PT_PATTERN (PT_NEXT (pt_ptr)))) {
+                        /* remove duplicate */
+                        PT_NEXT (pt_ptr) = RemovePatternElement (PT_NEXT (pt_ptr));
+
+                    } else {
+                        pt_ptr = PT_NEXT (pt_ptr);
+                    }
+                } else {
+                    pt_ptr = PT_NEXT (pt_ptr);
+                }
+            }
+
+            cg_ptr = CG_NEXT (cg_ptr);
+        }
+
+        at_ptr = AT_NEXT (at_ptr);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*****************************************************************************
+ *
+ * function:
  *   static void RemoveIdenticalConflictGroups()
  *
  * description:
  *   remove duplicate conflict groups (groups with identical access patterns)
+ *   attention: SortAccesses has to be applied first!
  *
  *****************************************************************************/
 
@@ -545,7 +659,6 @@ RemoveIdenticalConflictGroups ()
     pattern_t *pt_ptr;
     pattern_t *pt_check_ptr;
     bool identical;
-    bool match;
 
     DBUG_ENTER ("RemoveIdenticalConflictGroups");
 
@@ -563,25 +676,25 @@ RemoveIdenticalConflictGroups ()
             while (cg_check_ptr != NULL) {
 
                 /* check, if all patterns are matching */
-                identical = TRUE;
-                pt_ptr = CG_PATTERNS (cg_ptr);
-                while ((pt_ptr != NULL) && identical) {
 
-                    match = FALSE;
-                    pt_check_ptr = CG_PATTERNS (cg_check_ptr);
-                    while ((pt_check_ptr != NULL) && !match) {
-                        if (EqualShapes (AT_DIM (at_ptr), PT_PATTERN (pt_ptr),
-                                         PT_PATTERN (pt_check_ptr))) {
-                            match = TRUE;
-                        } else {
-                            pt_check_ptr = PT_NEXT (pt_check_ptr);
-                        }
+                pt_ptr = CG_PATTERNS (cg_ptr);
+                pt_check_ptr = CG_PATTERNS (cg_check_ptr);
+                identical = TRUE;
+
+                while (identical && (pt_ptr != NULL) && (pt_check_ptr != NULL)) {
+
+                    if (EqualShpseg (AT_DIM (at_ptr), PT_PATTERN (pt_ptr),
+                                     PT_PATTERN (pt_check_ptr))) {
+                        pt_ptr = PT_NEXT (pt_ptr);
+                        pt_check_ptr = PT_NEXT (pt_check_ptr);
+                    } else {
+                        identical = FALSE;
                     }
 
-                    if (!match) {
+                    if (((pt_ptr == NULL) && (pt_check_ptr != NULL))
+                        || ((pt_ptr != NULL) && (pt_check_ptr == NULL))) {
+                        /* unequal length of pattern list */
                         identical = FALSE;
-                    } else {
-                        pt_ptr = PT_NEXT (pt_ptr);
                     }
                 }
 
@@ -823,8 +936,8 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
 /*****************************************************************************
  *
  * function:
- *   void PIaddAccessPattern(int dim, int type, shpseg* shape, shpseg* group, pattern_t*
- *patterns)
+ *   void PIaddAccessPattern(simpletype type, int dim, shpseg* shape, shpseg* group,
+ *pattern_t* patterns)
  *
  * description:
  *   add a new entry to access_pattern
@@ -834,7 +947,8 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
  *****************************************************************************/
 
 void
-PIaddAccessPattern (int dim, int type, shpseg *shape, shpseg *group, pattern_t *patterns)
+PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
+                    pattern_t *patterns)
 {
 
     array_type_t *at_ptr;
@@ -847,7 +961,7 @@ PIaddAccessPattern (int dim, int type, shpseg *shape, shpseg *group, pattern_t *
     DBUG_ASSERT ((patterns != NULL), " unexpected empty access pattern!");
 
     /* check existence of array type */
-    at_ptr = GetArrayTypeEntry (dim, type, shape);
+    at_ptr = GetArrayTypeEntry (type, dim, shape);
 
     /* add new type */
     if (at_ptr == NULL) {
@@ -877,7 +991,7 @@ PIaddAccessPattern (int dim, int type, shpseg *shape, shpseg *group, pattern_t *
 /*****************************************************************************
  *
  * function:
- *   void PIPrintAccessPatterns()
+ *   void PIprintAccessPatterns()
  *
  * description:
  *   print complete contents of structure array_type to outfile
@@ -886,14 +1000,14 @@ PIaddAccessPattern (int dim, int type, shpseg *shape, shpseg *group, pattern_t *
  *****************************************************************************/
 
 void
-PIPrintAccessPatterns ()
+PIprintAccessPatterns ()
 {
 
     array_type_t *at_ptr;
     conflict_group_t *cg_ptr;
     pattern_t *pt_ptr;
 
-    DBUG_ENTER ("PIPrintAccessPatterns");
+    DBUG_ENTER ("PIprintAccessPatterns");
 
     at_ptr = array_type;
     while (at_ptr != NULL) {
@@ -961,7 +1075,7 @@ PIaddUnsupportedShape (types *array_type)
 /*****************************************************************************
  *
  * function:
- *   void PIPrintUnsupportedShapes()
+ *   void PIprintUnsupportedShapes()
  *
  * description:
  *   print complete contents of structure unsupported_shape to outfile
@@ -969,12 +1083,12 @@ PIaddUnsupportedShape (types *array_type)
  *****************************************************************************/
 
 void
-PIPrintUnsupportedShapes ()
+PIprintUnsupportedShapes ()
 {
 
     unsupported_shape_t *us_ptr;
 
-    DBUG_ENTER ("PIPrintUnsupportedTypes");
+    DBUG_ENTER ("PIprintUnsupportedTypes");
 
     us_ptr = unsupported_shape;
 
@@ -984,6 +1098,37 @@ PIPrintUnsupportedShapes ()
     }
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int PIlinearizeAccessVector (int dim, shpseg* shape, shpseg* vect)
+ *
+ * description
+ *
+ *   calculate linearized for vect according to an array specified
+ *   by dim and shape
+ *
+ ******************************************************************************/
+
+int
+PIlinearizeAccessVector (int dim, shpseg *shape, shpseg *vect)
+{
+
+    int offset;
+    int i;
+
+    DBUG_ENTER ("PIlinearizeAccessVector");
+
+    /* Horner scheme */
+    offset = SHPSEG_SHAPE (vect, 0);
+    for (i = 1; i < dim; i++) {
+        offset *= SHPSEG_SHAPE (shape, i);
+        offset += SHPSEG_SHAPE (vect, i);
+    }
+
+    DBUG_RETURN (offset);
 }
 
 /*****************************************************************************
@@ -1007,6 +1152,10 @@ PItidyAccessPattern ()
 
     RemoveUnsupportedShapes ();
 
+    SortAccesses ();
+
+    RemoveDuplicateAccesses ();
+
     RemoveSingleAccessPatterns ();
 
     RemoveIdenticalConflictGroups ();
@@ -1022,7 +1171,91 @@ PItidyAccessPattern ()
 /*****************************************************************************
  *
  * function:
- *   void PIGetFirstArrayType()
+ *   int PIgetArrayTypeDim(array_type_t* at_ptr)
+ *
+ * description:
+ *   return dim of specified array type
+ *
+ *****************************************************************************/
+
+int
+PIgetArrayTypeDim (array_type_t *at_ptr)
+{
+
+    DBUG_ENTER ("PIgetArrayTypeDim");
+
+    DBUG_ASSERT ((at_ptr != NULL), " unexpected NULL pointer!");
+
+    DBUG_RETURN (AT_DIM (at_ptr));
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   shpseg* PIgetArrayTypeShape(array_type_t* at_ptr)
+ *
+ * description:
+ *   return shape of specified array type
+ *
+ *****************************************************************************/
+
+shpseg *
+PIgetArrayTypeShape (array_type_t *at_ptr)
+{
+
+    DBUG_ENTER ("PIgetArrayTypeShape");
+
+    DBUG_ASSERT ((at_ptr != NULL), " unexpected NULL pointer!");
+
+    DBUG_RETURN (AT_SHAPE (at_ptr));
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   simepltype PIgetArrayTypeBasetype(array_type_t* at_ptr)
+ *
+ * description:
+ *   return basetype of specified array type
+ *
+ *****************************************************************************/
+
+simpletype
+PIgetArrayTypeBasetype (array_type_t *at_ptr)
+{
+
+    DBUG_ENTER ("PIgetArrayTypeBasetype");
+
+    DBUG_ASSERT ((at_ptr != NULL), " unexpected NULL pointer!");
+
+    DBUG_RETURN (AT_TYPE (at_ptr));
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   shpseg* PIgetPatternShape(pattern_t* pt_ptr)
+ *
+ * description:
+ *   return shape of specified pattern
+ *
+ *****************************************************************************/
+
+shpseg *
+PIgetPatternShape (pattern_t *pt_ptr)
+{
+
+    DBUG_ENTER ("PIgetPatternShape");
+
+    DBUG_ASSERT ((pt_ptr != NULL), " unexpected NULL pointer!");
+
+    DBUG_RETURN (PT_PATTERN (pt_ptr));
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   void PIgetFirstArrayType()
  *
  * description:
  *   return first array type
@@ -1030,10 +1263,10 @@ PItidyAccessPattern ()
  *****************************************************************************/
 
 array_type_t *
-PIGetFirstArrayType ()
+PIgetFirstArrayType ()
 {
 
-    DBUG_ENTER ("PIGetFirstArrayType");
+    DBUG_ENTER ("PIgetFirstArrayType");
 
     DBUG_RETURN (array_type);
 }
@@ -1041,7 +1274,7 @@ PIGetFirstArrayType ()
 /*****************************************************************************
  *
  * function:
- *   void PIGetNextArrayType(array_type_t* at_ptr)
+ *   void PIgetNextArrayType(array_type_t* at_ptr)
  *
  * description:
  *   return array type following the specified array type
@@ -1049,12 +1282,12 @@ PIGetFirstArrayType ()
  *****************************************************************************/
 
 array_type_t *
-PIGetNextArrayType (array_type_t *at_ptr)
+PIgetNextArrayType (array_type_t *at_ptr)
 {
 
     array_type_t *at_next_ptr;
 
-    DBUG_ENTER ("PIGetNextArrayType");
+    DBUG_ENTER ("PIgetNextArrayType");
 
     if (at_ptr == NULL) {
         at_next_ptr = NULL;
@@ -1068,7 +1301,7 @@ PIGetNextArrayType (array_type_t *at_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIGetFirstConflictGroup(array_type_t* at_ptr)
+ *   void PIgetFirstConflictGroup(array_type_t* at_ptr)
  *
  * description:
  *   return array types first conflict group
@@ -1076,12 +1309,12 @@ PIGetNextArrayType (array_type_t *at_ptr)
  *****************************************************************************/
 
 conflict_group_t *
-PIGetFirstConflictGroup (array_type_t *at_ptr)
+PIgetFirstConflictGroup (array_type_t *at_ptr)
 {
 
     conflict_group_t *cg_ptr;
 
-    DBUG_ENTER ("PIGetFirstConflictGroup");
+    DBUG_ENTER ("PIgetFirstConflictGroup");
 
     if (at_ptr == NULL) {
         cg_ptr = NULL;
@@ -1095,7 +1328,7 @@ PIGetFirstConflictGroup (array_type_t *at_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIGetNextConflictGroup(conflict_group_t* cg_ptr)
+ *   void PIgetNextConflictGroup(conflict_group_t* cg_ptr)
  *
  * description:
  *   return conflict group following the specified conflict group
@@ -1103,12 +1336,12 @@ PIGetFirstConflictGroup (array_type_t *at_ptr)
  *****************************************************************************/
 
 conflict_group_t *
-PIGetNextConflictGroup (conflict_group_t *cg_ptr)
+PIgetNextConflictGroup (conflict_group_t *cg_ptr)
 {
 
     conflict_group_t *cg_next_ptr;
 
-    DBUG_ENTER ("PIGetNextConflictGroup");
+    DBUG_ENTER ("PIgetNextConflictGroup");
 
     if (cg_ptr == NULL) {
         cg_next_ptr = NULL;
@@ -1122,7 +1355,7 @@ PIGetNextConflictGroup (conflict_group_t *cg_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIGetFirstPattern(conflict_group_t* cg_ptr)
+ *   void PIgetFirstPattern(conflict_group_t* cg_ptr)
  *
  * description:
  *   return conflict groups first acces pattern
@@ -1130,12 +1363,12 @@ PIGetNextConflictGroup (conflict_group_t *cg_ptr)
  *****************************************************************************/
 
 pattern_t *
-PIGetFirstPattern (conflict_group_t *cg_ptr)
+PIgetFirstPattern (conflict_group_t *cg_ptr)
 {
 
     pattern_t *pt_ptr;
 
-    DBUG_ENTER ("PIGetFirstPattern");
+    DBUG_ENTER ("PIgetFirstPattern");
 
     if (cg_ptr == NULL) {
         pt_ptr = NULL;
@@ -1149,7 +1382,7 @@ PIGetFirstPattern (conflict_group_t *cg_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIGetNextPattern(pattern_t* pt_ptr)
+ *   void PIgetNextPattern(pattern_t* pt_ptr)
  *
  * description:
  *   return access pattern following the specified pattern
@@ -1157,12 +1390,12 @@ PIGetFirstPattern (conflict_group_t *cg_ptr)
  *****************************************************************************/
 
 pattern_t *
-PIGetNextPattern (pattern_t *pt_ptr)
+PIgetNextPattern (pattern_t *pt_ptr)
 {
 
     pattern_t *pt_next_ptr;
 
-    DBUG_ENTER ("PIGetNextPattern");
+    DBUG_ENTER ("PIgetNextPattern");
 
     if (pt_ptr == NULL) {
         pt_next_ptr = NULL;
@@ -1176,16 +1409,17 @@ PIGetNextPattern (pattern_t *pt_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIaddInferredShape(types* old_type, shpseg* new_shape)
+ *   void PIaddInferredShape(simpletype type, int dim, shpseg* old_shape, shpseg*
+ *new_shape)
  *
  * description:
  *   add a new entry to the data structure for a newly inferred type
- *   attention: types and shpseg are set free within pad_info.c !!!
+ *   attention: shpsegs are set free within pad_info.c !!!
  *
  *****************************************************************************/
 
 void
-PIaddInferredShape (types *old_type, shpseg *new_shape)
+PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_shape)
 {
 
     pad_info_t *tmp;
@@ -1193,9 +1427,9 @@ PIaddInferredShape (types *old_type, shpseg *new_shape)
     DBUG_ENTER ("PIaddInferredShape");
 
     tmp = (pad_info_t *)MALLOC (sizeof (pad_info_t));
-    PI_DIM (tmp) = TYPES_DIM (old_type);
-    PI_TYPE (tmp) = TYPES_BASETYPE (old_type);
-    PI_OLD_SHAPE (tmp) = TYPES_SHPSEG (old_type);
+    PI_DIM (tmp) = dim;
+    PI_TYPE (tmp) = type;
+    PI_OLD_SHAPE (tmp) = old_shape;
     PI_NEW_SHAPE (tmp) = new_shape;
     PI_FUNDEF_PAD (tmp) = NULL;
     PI_FUNDEF_UNPAD (tmp) = NULL;

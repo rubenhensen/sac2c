@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/21 14:40:50  mab
+ * added PIlinearizeAccessVector, PIgetArrayType*, PIgetPatternShape
+ *
  * Revision 1.6  2000/07/19 12:42:55  mab
  * added data structures for storing access patterns and unsupported shapes
  * added functions for accessing new data structures
@@ -55,8 +58,8 @@ typedef struct CONFLICT_GROUP_T {
 
 /* strcture for grouping conflict groups by array types */
 typedef struct ARRAY_TYPE_T {
-    int dim;
     simpletype type;
+    int dim;
     shpseg *shape;
     conflict_group_t *groups;
     struct ARRAY_TYPE_T *next;
@@ -64,16 +67,16 @@ typedef struct ARRAY_TYPE_T {
 
 /* structure containing shapes of unsupported operations */
 typedef struct UNSUPPORTED_SHAPE_T {
-    int dim;
     simpletype type;
+    int dim;
     shpseg *shape;
     struct UNSUPPORTED_SHAPE_T *next;
 } unsupported_shape_t;
 
 /* structure containing old and infered array shape */
 typedef struct PAD_INFO_T {
-    int dim;
     simpletype type;
+    int dim;
     shpseg *old_shape;
     shpseg *new_shape;
     node *fundef_pad;
@@ -85,21 +88,27 @@ extern void PIinit ();
 
 /* used in pad_collect.c */
 extern pattern_t *PIconcatPatterns (pattern_t *pattern, shpseg *shape);
-extern void PIaddAccessPattern (int dim, int type, shpseg *shape, shpseg *group,
+extern void PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
                                 pattern_t *patterns);
-extern void PIPrintAccessPatterns ();
+extern void PIprintAccessPatterns ();
 extern void PIaddUnsupportedShape (types *array_type);
-extern void PIPrintUnsupportedShapes ();
+extern void PIprintUnsupportedShapes ();
 extern void PItidyAccessPattern ();
 
 /* used in pad_infer.c */
-extern array_type_t *PIGetFirstArrayType ();
-extern array_type_t *PIGetNextArrayType (array_type_t *at_ptr);
-extern conflict_group_t *PIGetFirstConflictGroup (array_type_t *at_ptr);
-extern conflict_group_t *PIGetNextConflictGroup (conflict_group_t *cg_ptr);
-extern pattern_t *PIGetFirstPattern (conflict_group_t *cg_ptr);
-extern pattern_t *PIGetNextPattern (pattern_t *pt_ptr);
-extern void PIaddInferredShape (types *old_type, shpseg *new_shape);
+extern int PIlinearizeAccessVector (int dim, shpseg *shape, shpseg *vect);
+extern int PIgetArrayTypeDim (array_type_t *at_ptr);
+extern shpseg *PIgetArrayTypeShape (array_type_t *at_ptr);
+extern simpletype PIgetArrayTypeBasetype (array_type_t *at_ptr);
+extern shpseg *PIgetPatternShape (pattern_t *pt_ptr);
+extern array_type_t *PIgetFirstArrayType ();
+extern array_type_t *PIgetNextArrayType (array_type_t *at_ptr);
+extern conflict_group_t *PIgetFirstConflictGroup (array_type_t *at_ptr);
+extern conflict_group_t *PIgetNextConflictGroup (conflict_group_t *cg_ptr);
+extern pattern_t *PIgetFirstPattern (conflict_group_t *cg_ptr);
+extern pattern_t *PIgetNextPattern (pattern_t *pt_ptr);
+extern void PIaddInferredShape (simpletype type, int dim, shpseg *old_shape,
+                                shpseg *new_shape);
 
 /* used in pad_transform.c */
 extern void PIPrintPadInfo ();
