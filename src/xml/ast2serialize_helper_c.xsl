@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/25 22:32:51  sah
+  adapted
+
   Revision 1.2  2004/11/23 22:24:47  sah
   removed .h files
 
@@ -69,6 +72,8 @@ version="1.0">
   <xsl:text>
 
 #include "types.h"
+#include "internal_lib.h"
+#include "tree_basic.h"
 #include "serialize.h"
 #include "stdarg.h"
 
@@ -86,7 +91,6 @@ version="1.0">
   <xsl:value-of select="'this->nodetype=node_type;'" />
   <xsl:value-of select="'this->lineno=lineno;'" />
   <xsl:value-of select="'this->src_file=sfile;'" />
-  <xsl:value-of select="'for (cnt=0; cnt &lt; MAX_SONS; cnt++) { this->node[cnt] = NULL; } '" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
@@ -108,9 +112,22 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="node" mode="gen-alloc-fun">
-  <xsl:value-of select="'this->attribs.N_'" />
-  <xsl:value-of select="@name" />
+  <xsl:value-of select="'this->attribs.'" />
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name" />
+  </xsl:call-template>
   <xsl:value-of select="' = ILIBmalloc(sizeof(struct ATTRIBS_N_'"/>
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'));'" />
+  <xsl:value-of select="'this->sons.'" />
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name" />
+  </xsl:call-template>
+  <xsl:value-of select="' = ILIBmalloc(sizeof(struct SONS_N_'"/>
   <xsl:call-template name="uppercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
