@@ -28,3 +28,4 @@ tools
 tools/src/cache_analysis
 tools/src/clock_skew_detection
 tools/src/echo
+config
