@@ -47,6 +47,10 @@
 #ifndef DBUG_OFF
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+
+#include "dbug.h"
 
 /*
  *     Manifest constants that should not require any changes.
@@ -121,44 +125,18 @@ typedef int BOOLEAN;
  *     be accessed via the macro package facilities.
  */
 
-#ifndef C370
 EXPORT FILE *_db_fp_ = stderr; /* Output stream, default stderr */
 /* this impossible with C370, because the expression "stderr"
    calls a function, i.e. isn't constant. We have to check for the
    value NULL before use, instead */
-#else
-EXPORT FILE *_db_fp_ = NULL; /* Output stream, default NULL */
-#endif
 EXPORT char *_db_process_ = "dbug"; /* Pointer to process name; argv[0] */
 EXPORT BOOLEAN _db_on_ = FALSE;     /* TRUE if debugging currently on */
 EXPORT int _db_dummy_;
 
-/*
- *     Externally supplied functions.
- */
-
-#ifdef unix            /* Only needed for unix */
-IMPORT VOID perror (); /* Print system/library error */
-IMPORT int chown ();   /* Change owner of a file */
-IMPORT int getgid ();  /* Get real group id */
-IMPORT int getuid ();  /* Get real user id */
-IMPORT int access ();  /* Test file for access */
-#else
-#ifndef C370
-LOCAL VOID perror ();        /* Fake system/library error print routine */
-#endif
-#endif
-
-LOCAL Indent ();
-LOCAL FreeList ();
-LOCAL DoPrefix ();
-LOCAL DelayArg ();
-
-IMPORT int fprintf ();  /* Formatted print on file */
-IMPORT char *strcpy (); /* Copy strings around */
-IMPORT int strlen ();   /* Find length of string */
-IMPORT char *malloc (); /* Allocate memory */
-IMPORT int atoi ();     /* Convert ascii to integer */
+LOCAL void Indent ();
+LOCAL void FreeList ();
+LOCAL void DoPrefix ();
+LOCAL int DelayArg ();
 
 #ifndef fflush        /* This is sometimes a macro */
 IMPORT int fflush (); /* Flush output for stream */
@@ -206,22 +184,24 @@ LOCAL char *func = "?func";      /* Name of current user function */
 LOCAL char *file = "?file";      /* Name of current user file */
 LOCAL BOOLEAN init_done = FALSE; /* Set to TRUE when initialization done */
 
-/* #ifdef unix || AMIGA (Mod. W.Strobl) */
 LOCAL int jmplevel;  /* Remember nesting level at setjmp () */
 LOCAL char *jmpfunc; /* Remember current function for setjmp */
 LOCAL char *jmpfile; /* Remember current file for setjmp */
-/* #endif */
 
 LOCAL struct link *ListParse (); /* Parse a debug command string */
 LOCAL char *StrDup ();           /* Make a fresh copy of a string */
 LOCAL VOID OpenFile ();          /* Open debug output stream */
 LOCAL VOID CloseFile ();         /* Close debug output stream */
 LOCAL VOID PushState ();         /* Push current debug state */
-LOCAL VOID ChangeOwner ();       /* Change file owner and group */
-LOCAL BOOLEAN DoTrace ();        /* Test for TRACING enabled */
-LOCAL BOOLEAN Writable ();       /* Test to see if file is writable */
-LOCAL char *DbugMalloc ();       /* Allocate memory for runtime support */
-LOCAL char *BaseName ();         /* Remove leading pathname components */
+
+#if 0
+LOCAL VOID ChangeOwner ();     /* Change file owner and group */
+#endif
+
+LOCAL BOOLEAN DoTrace ();  /* Test for TRACING enabled */
+LOCAL BOOLEAN Writable (); /* Test to see if file is writable */
+LOCAL char *DbugMalloc (); /* Allocate memory for runtime support */
+LOCAL char *BaseName ();   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */
 LOCAL char *strtok ();  /* Break string into tokens */
@@ -284,14 +264,8 @@ IMPORT int processid;
  *     Translate some calls among different systems.
  */
 
-#ifdef unix
 #define Delay sleep
 IMPORT unsigned sleep (); /* Pause for given number of seconds */
-#endif
-
-#ifdef AMIGA
-IMPORT int Delay (); /* Pause for given number of ticks */
-#endif
 
 /*
  *  FUNCTION
@@ -1056,7 +1030,7 @@ BOOLEAN _db_keyword_ (keyword) char *keyword;
  *
  */
 
-LOCAL Indent (indent) int indent;
+LOCAL void Indent (indent) int indent;
 {
     REGISTER int count;
     AUTO char buffer[PRINTBUF];
@@ -1091,7 +1065,7 @@ LOCAL Indent (indent) int indent;
  *
  */
 
-LOCAL FreeList (linkp) struct link *linkp;
+LOCAL void FreeList (linkp) struct link *linkp;
 {
     REGISTER struct link *old;
 
@@ -1152,7 +1126,7 @@ LOCAL char *StrDup (string) char *string;
  *
  */
 
-LOCAL DoPrefix (_line_) int _line_;
+LOCAL void DoPrefix (_line_) int _line_;
 {
     lineno++;
     if (stack->flags & NUMBER_ON) {
@@ -1458,6 +1432,7 @@ char c;
     return (scan);
 }
 
+#if 0
 /*
  *  FUNCTION
  *
@@ -1480,18 +1455,20 @@ char c;
  *     harmless).
  *
  */
-
-LOCAL VOID ChangeOwner (pathname) char *pathname;
+ 
+LOCAL VOID ChangeOwner (pathname)
+char *pathname;
 {
 #ifdef unix
     if (chown (pathname, getuid (), getgid ()) == -1) {
-        (VOID) fprintf (stderr, ERR_CHOWN, _db_process_, pathname);
-        perror ("");
-        (VOID) fflush (stderr);
-        (VOID) Delay (stack->delay);
+       (VOID) fprintf (stderr, ERR_CHOWN, _db_process_, pathname);
+       perror ("");
+       (VOID) fflush (stderr);
+       (VOID) Delay (stack -> delay);
     }
 #endif
 }
+#endif
 
 /*
  *  FUNCTION
@@ -1590,55 +1567,6 @@ LOCAL int DelayArg (value) int value;
     return (delayarg);
 }
 
-/*
- *     A dummy delay stub for systems that do not support delays.
- *     With a little work, this can be turned into a timing loop.
- */
-
-#ifndef unix
-#ifndef AMIGA
-Delay ()
-{
-}
-#endif
-#endif
-
-#ifndef C370 /* C370 has it */
-/*
- *  FUNCTION
- *
- *     perror    perror simulation for systems that don't have it
- *
- *  SYNOPSIS
- *
- *     LOCAL VOID perror (s)
- *     char *s;
- *
- *  DESCRIPTION
- *
- *     Perror produces a message on the standard error stream which
- *     provides more information about the library or system error
- *     just encountered.  The argument string s is printed, followed
- *     by a ':', a blank, and then a message and a newline.
- *
- *     An undocumented feature of the unix perror is that if the string
- *     's' is a null string (NOT a NULL pointer!), then the ':' and
- *     blank are not printed.
- *
- *     This version just complains about an "unknown system error".
- *
- */
-
-#ifndef unix
-LOCAL VOID perror (s) char *s;
-{
-    if (s && *s != EOS) {
-        (VOID) fprintf (stderr, "%s: ", s);
-    }
-    (VOID) fprintf (stderr, "<unknown system error>\n");
-}
-#endif
-#endif /* !unix */
 void postmortem (s) char *s;
 {
     fprintf (stderr, "\n\nPostMortem: %s\n", s);

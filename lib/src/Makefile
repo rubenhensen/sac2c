@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/07/05 13:50:04  sbs
+# made -ansi compileable...
+#
 # Revision 2.5  1999/07/05 12:34:48  sbs
 # debugging enabled with -g!
 #
@@ -34,19 +37,20 @@
 #
 
 CC        := gcc
+CCFLAGS  := -ansi -Wall
 MYFLAGS   := -g
 # MYFLAGS   := 
 
 
-INCS=
+INCS= -I../../inc
 
 all: ../dbug.o ../main_args.o 
 
 ../dbug.o: dbug.c
-	$(CC) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
+	$(CC) $(CCFLAGS) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
 
 ../main_args.o: main_args.c
-	$(CC) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
+	$(CC) $(CCFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -59,6 +63,10 @@ clean:
 dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+dbug.o: /usr/include/stdlib.h /usr/include/malloc.h /usr/include/sys/types.h
+dbug.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+dbug.o: ../../inc/dbug.h
 main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+main_args.o: /usr/include/string.h
