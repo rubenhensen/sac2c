@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/04/28 11:45:23  hw
+ * Revision 1.13  1995/05/30 06:45:33  hw
+ * - FltnMod deleted
+ * - FltnCon inserted
+ *
+ * Revision 1.12  1995/04/28  11:45:23  hw
  *  - added FltnMod
  *
  * Revision 1.11  1995/04/21  12:36:20  hw
@@ -54,9 +58,9 @@ extern node *FltnFundef (node *arg_node, node *arg_info);
 extern node *FltnGen (node *arg_node, node *arg_info);
 extern node *FltnAp (node *arg_node, node *arg_info);
 extern node *FltnReturn (node *arg_node, node *arg_info);
-
 extern node *FltnId (node *arg_node, node *arg_info);
 extern node *FltnLet (node *arg_node, node *arg_info);
 extern node *FltnArgs (node *arg_node, node *arg_info);
-extern node *FltnMod (node *arg_node, node *arg_info);
+extern node *FltnCon (node *arg_node, node *arg_info);
+
 #endif /* _flatten_h  */
