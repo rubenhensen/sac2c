@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/12 08:42:26  sbs
+ * eliminated external decl of FltnPreTypeCheck
+ *
  * Revision 2.2  1999/03/19 09:41:48  bs
  * PreTypecheck mutated to the global function FltnPreTypecheck
  *
@@ -89,6 +92,5 @@ extern node *FltnNpart (node *arg_node, node *arg_info);
 extern node *FltnNgenerator (node *arg_node, node *arg_info);
 extern node *FltnNwithop (node *arg_node, node *arg_info);
 extern node *FltnNcode (node *arg_node, node *arg_info);
-extern simpletype FltnPreTypecheck (nodetype type1, simpletype type2, int index);
 
 #endif /* _flatten_h  */
