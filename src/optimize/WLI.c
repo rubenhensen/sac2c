@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.11  1999/01/20 09:09:19  srs
+ * NWITH_REFERENCES_FOLDED is initializes in WLINwith.
+ *
  * Revision 1.10  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -900,6 +903,7 @@ WLINwith (node *arg_node, node *arg_info)
     /* Attribut FOLDABLE has been set in WLT. The others are initialized here. */
     NWITH_REFERENCED (arg_node) = 0;
     NWITH_REFERENCED_FOLD (arg_node) = 0;
+    NWITH_REFERENCES_FOLDED (arg_node) = 0;
     NWITH_COMPLEX (arg_node) = 0;
     NWITH_NO_CHANCE (arg_node) = 0;
 
