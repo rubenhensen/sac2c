@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/02/12 16:57:02  dkr
+ * added support for new with-loop
+ *
  * Revision 1.13  1997/11/04 13:32:29  dkr
  * with defined NEWTREE node.nnode is not in use anymore
  *
@@ -94,5 +97,9 @@ extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
+extern node *DupNwithop (node *arg_node, node *arg_info);
+extern node *DupNpart (node *arg_node, node *arg_info);
+extern node *DupNwithid (node *arg_node, node *arg_info);
+extern node *DupNgen (node *arg_node, node *arg_info);
 
 #endif /* _DupTree_h */

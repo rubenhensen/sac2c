@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/02/12 16:56:49  dkr
+ * added support for new with-loop
+ *
  * Revision 1.26  1997/11/10 23:19:12  dkr
  * removed a bug with NEWTREE
  *
@@ -88,12 +91,12 @@
 #include <string.h>
 
 #include "tree.h"
+#include "traverse.h"
+#include "free.h"
 #include "dbug.h"
 #include "my_debug.h"
-#include "traverse.h"
 #include "typecheck.h"
 #include "internal_lib.h"
-#include "free.h"
 
 #include "DupTree.h"
 #include "optimize.h"
@@ -533,6 +536,127 @@ DupPragma (node *arg_node, node *arg_info)
             PRAGMA_REFCOUNTING (new_node)[i] = PRAGMA_REFCOUNTING (arg_node)[i];
         }
     }
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupNwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   duplicates a N_Nwithop-node
+ *
+ *
+ ******************************************************************************/
+
+node *
+DupNwithop (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNwithop");
+    new_node = MakeNWithOp (NWITHOP_TYPE (arg_node));
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        NWITHOP_SHAPE (new_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        break;
+    case WO_modarray:
+        NWITHOP_ARRAY (new_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        break;
+    case WO_foldfun:
+        NWITHOP_NEUTRAL (new_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        NWITHOP_FUN (new_node) = StringCopy (NWITHOP_FUN (arg_node));
+        NWITHOP_MOD (new_node) = StringCopy (NWITHOP_MOD (arg_node));
+        NWITHOP_FUNDEF (new_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
+        break;
+    case WO_foldprf:
+        NWITHOP_NEUTRAL (new_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        NWITHOP_PRF (new_node) = NWITHOP_PRF (arg_node);
+        break;
+    default:
+        DBUG_ASSERT (0, "Unknown N_Nwithop-type found");
+    }
+    if (NWITHOP_EXPR (arg_node) != NULL)
+        NWITHOP_EXPR (new_node) = Trav (NWITHOP_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupNpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   duplicates a N_Npart-node
+ *
+ *
+ ******************************************************************************/
+
+node *
+DupNpart (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNpart");
+
+    new_node = MakeNPart (Trav (NPART_WITHID (arg_node), arg_info),
+                          Trav (NPART_GEN (arg_node), arg_info));
+    if (NPART_NEXT (arg_node) != NULL)
+        NPART_NEXT (new_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    NPART_CODE (new_node) = NPART_CODE (arg_node);
+    NCODE_USED (NPART_CODE (new_node))++;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupNwithid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   duplicates a N_Nwithid-node
+ *
+ *
+ ******************************************************************************/
+
+node *
+DupNwithid (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNwithid");
+    new_node = MakeNWithid (DupIds (NWITHID_VEC (arg_node), arg_info),
+                            DupIds (NWITHID_IDS (arg_node), arg_info));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupNgen(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   duplicates a N_Ngenerator-node
+ *
+ *
+ ******************************************************************************/
+
+node *
+DupNgen (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNgen");
+    new_node
+      = MakeNGenerator (Trav (NGEN_BOUND1 (arg_node), arg_info),
+                        Trav (NGEN_BOUND2 (arg_node), arg_info), NGEN_OP1 (arg_node),
+                        NGEN_OP2 (arg_node), Trav (NGEN_STEP (arg_node), arg_info),
+                        Trav (NGEN_WIDTH (arg_node), arg_info));
 
     DBUG_RETURN (new_node);
 }
