@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/24 14:53:41  nmw
+ * macros changed for refcounter check
+ *
  * Revision 1.6  2000/07/20 11:35:46  nmw
  * added macro for runtimecheck of initialized module
  *
@@ -25,11 +28,15 @@
 #ifndef _sac_interface_makrodefs_h
 #define _sac_interface_makrodefs_h
 
-/* check for refcount >=1 */
-#define SAC_IW_CHECK_RC(a)                                                               \
-    if (SAC_ARG_LRC (a) <= 0) {                                                          \
+/* check for refcount >=1 , decrement refcounter */
+#define SAC_IW_CHECKDEC_RC(a)                                                            \
+    SAC_ARG_LRC (a) = SAC_ARG_LRC (a) - 1;                                               \
+    if (SAC_ARG_LRC (a) < 0) {                                                           \
         SAC_RuntimeError ("Referencecounter reaches 0, no data available!\n");           \
     }
+
+/* restore old refcounter */
+#define SAC_IW_INC_RC(a) SAC_ARG_LRC (a) = SAC_ARG_LRC (a) + 1;
 
 /* argument is simple type */
 #define SAC_ARGCALL_SIMPLE(var, type) (*((type *)(SAC_ARG_ELEMS (var))))
