@@ -1,0 +1,195 @@
+#!/bin/sh
+
+pwd=`pwd`
+SACBASE=${SACBASE:-$pwd}
+#
+# First, the default paths are set:
+#
+bin="$HOME/bin"
+demo="$HOME/sac/demo"
+doc="$SACBASE/doc"
+base="$SACBASE"
+
+make=gmake
+
+
+add_search_path () {
+                    PATH=$1\:$PATH
+                    export PATH
+                   }
+
+err () {
+       echo "error: " $1 
+       echo
+       }
+
+mess () {
+        echo
+        echo ">>>>> " $1 
+        echo
+        }
+
+warn () {
+        echo "warning: " $1 
+        echo
+        }
+
+error () {
+         err "$1"
+         exit 1
+         }
+
+ask () {
+         ask_res=""
+         echo $1 "[$2]"
+         read tmp
+         if [ $tmp"x" != "x" ] ; then
+           ask_res=$tmp
+         else
+           ask_res=$2
+         fi
+       }
+
+ask_for_dir () {
+                 ask_res=""
+                 until [ $ask_res"x" != "x" ]
+                 do
+                   ask "$1" "$2"
+                   if [ -f $ask_res ] ; then
+                     err "$ask_res exists and is a file!"
+                     ask_res=""
+                   elif [ ! -d $ask_res ] ; then
+                       mem_dir=$ask_res
+                       ask 'Create directory "'$ask_res'"?' "y"
+                       if [ $ask_res != "y" ] ; then
+                         ask_res=""
+                       else
+                         ask_res=$mem_dir
+                         mkdir -p $ask_res
+                       fi
+                   fi
+                 done
+                 mem_dir=`pwd`
+                 cd $ask_res
+                 ask_res=`pwd`
+                 cd $mem_dir
+                 }
+
+insert_component() {
+   #
+   # $1: flag {f,d} indicating file / directory
+   # $2: source-file
+   # $3: destination-file/directory
+   #
+                    if [ -f $2 ] 
+                    then
+                      if [ -$1 $3 ] ; then
+                        ask '"'$3'" exists! Overwrite?' "y"
+                        if [ $ask_res != "y" ] ; then
+                          warn '"'$2'" neglected - using "'$3'"!'
+                          warn '"'$2'" NOT INSTALLED AGAIN !!'
+                        else
+                          mv $2 $3
+                          mess '"'$2'" INSTALLED !!'
+                        fi
+                      else
+                        if [ $1 = "d" ] ; then
+                          mkdir -p $3
+                        fi
+                        mv $2 $3
+                        mess '"'$2'" INSTALLED !!'
+                      fi
+                    else
+                      if [ -$1 $3 ] ; then
+                        warn '"'$2'" not found - using "'$3'"!'
+                        warn '"'$2'" NOT INSTALLED AGAIN !!'
+                      else
+                        error '"'$2'" not found!'
+                      fi
+                    fi
+                   }
+
+######################################################################
+# sac2c
+######################################################################
+
+ask_for_dir "Intended location for the compiler executable?" $bin
+bin=$ask_res
+
+insert_component f sac2c $bin/sac2c
+
+#
+# make sure, that $bin is in $PATH!
+#
+add_search_path $bin
+
+
+######################################################################
+# doc.tar
+######################################################################
+
+# ask_for_dir "Intended location for the documentation?" $doc
+# doc=$ask_res
+
+# mv doc.tar $doc/doc.tar
+# (cd $doc; tar xvf doc.tar; rm doc.tar)
+
+
+######################################################################
+# demo.tar
+######################################################################
+
+# ask_for_dir "Intended location for the SAC - demo programs?" $demo
+# demo=$ask_res
+
+# mv demo.tar $demo.demo.tar
+# (cd $demo; tar xvf demo.tar; rm demo.tar)
+
+
+######################################################################
+# runtime.tar + stdlib.tar
+######################################################################
+
+ask_for_dir 'Intended location for $SACBASE, i.e., runtime / lib-files?' $base
+base=$ask_res
+
+if [ $SACBASE != $base ] 
+then
+  SACBASE=$base
+  export SACBASE
+fi
+
+insert_component d runtime.tar $base/runtime
+if [ -f $SACBASE/runtime/runtime.tar ] ; then
+  (cd $SACBASE/runtime; tar xvf runtime.tar; rm runtime.tar)
+  mess "runtime.tar UNPACKED !!"
+else
+  warn "runtime.tar NOT UNPACKED !!"
+fi
+
+insert_component d stdlib.tar $base/stdlib
+if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
+  echo
+  ask 'How to call GNU-make?' $make
+  make=$ask_res
+
+  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar )
+  mess "stdlib.tar UNPACKED !!"
+  mess "COMPILING stdlib !!"
+  (cd $SACBASE/stdlib; $make )
+else
+  warn "stdlib.tar NOT UNPACKED !!"
+fi
+
+
+######################################################################
+
+
+echo
+echo 'Make sure that "'$bin'" is part of your PATH!'
+echo 'Make sure that $SACBASE is set to "'$SACBASE'" BEFORE calling sac2c!'
+echo
+echo 'Enjoy sac2c !!'
+echo
+echo 'When encountering any problems please send email to'
+echo '          sacbase@informatik.uni-kiel.de'
