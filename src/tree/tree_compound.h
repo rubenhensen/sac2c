@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2004/11/23 16:15:02  khf
+ * IDS_TYPE, IDS_VARDEC added
+ *
  * Revision 3.115  2004/11/23 15:53:20  ktr
  * Corrected WITHOP_NEXT
  *
@@ -145,7 +148,8 @@ extern bool TCisNonUniqueHidden (types *type);
 
 #define IDS_NAME(n) AVIS_NAME (IDS_AVIS (n))
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
-#define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))
+#define IDS_VARDEC(n) AVIS_DECL (IDS_AVIS (n))
+#define IDS_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
 #define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n)))
@@ -153,7 +157,6 @@ extern bool TCisNonUniqueHidden (types *type);
 #define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
 #define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
-#define IDS_VARDEC(n) AVIS_VARDEC (IDS_AVIS (n))
 
 extern node *TCappendIds (node *chain, node *item);
 extern int CountIds (node *ids_arg);
