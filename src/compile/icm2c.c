@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/04/11 15:06:35  sbs
+ * Revision 1.11  1995/04/11 16:08:48  sbs
+ * some minor bugs fixed
+ *
+ * Revision 1.10  1995/04/11  15:06:35  sbs
  * arg->tyarg in ND_FUN_DEC
  *
  * Revision 1.9  1995/04/11  15:03:13  sbs
@@ -272,8 +275,7 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
     FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]), 2);
     fprintf (outfile, "%s( ", name);
     ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]),
-                 i += 2;
-                 , fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
+                 i += 2, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
                  fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]),
                  fprintf (outfile, " ND_KS_ARG_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]),
                  ",");
@@ -306,9 +308,8 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 INDENT;
 FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), 1);
 fprintf (outfile, "%s( ", name);
-ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]),
-             fprintf (outfile, " %s&", arg[i++]), i++;
-             , fprintf (outfile, " %s&", arg[i++]),
+ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]), i++,
+             fprintf (outfile, " &%s", arg[i++]), fprintf (outfile, " &%s", arg[i++]),
              fprintf (outfile, " ND_KS_RET_ARRAY(%s)", arg[i++]), ",");
 fprintf (outfile, ");\n");
 
@@ -337,10 +338,10 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 
 INDENT;
-ScanArglist (arg, 2 * narg, i++;, i++;
-             , fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
+ScanArglist (arg, 2 * narg, i++, i++,
+             fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
              INDENT, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]);
-             INDENT, i += 1;, "");
+             INDENT, i += 1, "");
 FirstOut (arg, 2 * narg, fprintf (outfile, "return(%s);\n", arg[i]), 1);
 
 #undef ND_FUN_RET
