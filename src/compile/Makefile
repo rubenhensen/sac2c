@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.40  1998/03/24 15:31:19  cg
+# libsac.a and profile.o removed as targets
+#
 # Revision 1.39  1998/03/24 15:19:00  cg
 # make deps done
 #
@@ -131,7 +134,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o profile.o Old2NewWith.o gen_startup_code.o
+all: compile.o icm2c.o precompile.o Old2NewWith.o gen_startup_code.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
