@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/24 00:55:27  sah
+ * *** empty log message ***
+ *
+ * Revision 1.1  2004/11/24 00:54:56  sah
+ * Initial revision
+ *
  * Revision 1.11  2004/11/23 21:50:57  cg
  * Added genlib_flags_t
  *
@@ -870,8 +876,8 @@ typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
  * moved from stringset.h
  */
 
-typedef enum { SS_saclib, SS_extlib, SS_objfile } sstype_t;
-typedef void *(*SSfoldfun_p) (const char *elem, sstype_t kind, void *rest);
+typedef enum { STRS_saclib, STRS_extlib, STRS_objfile } strstype_t;
+typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
 
 /*
  * moved from filemgr.h
