@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/09/05 20:37:03  dkr
+ * CreateInlineName() modified: PrefixForTmpVar() used
+ *
  * Revision 3.26  2002/09/05 19:56:19  dkr
  * INLfundef(): comment about LaC limitation updated
  *
@@ -156,8 +159,6 @@
  */
 #define INL_COUNT 1
 
-#define INLINE_PREFIX "__inl"
-
 static int inline_nr = 0;
 
 /******************************************************************************
@@ -167,22 +168,24 @@ static int inline_nr = 0;
  *
  * Description:
  *   Renames the given variable:
- *     a  ->  _inl100_a     if (inline_nr == 100) and (INLINE_PREFIX == "_inl")
+ *     a  ->  _inl100_a     iff (inline_nr == 100)
  *
  ******************************************************************************/
 
 static char *
 CreateInlineName (char *old_name, node *arg_info)
 {
+    char *prefix;
     char *new_name;
 
     DBUG_ENTER ("CreateInlineName");
 
+    prefix = PrefixForTmpVar ();
     new_name = (char *)Malloc (sizeof (char)
-                               * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
-                                  NumberOfDigits (inline_nr) + 1)); /* '\0' */
+                               * (strlen (old_name) + strlen (prefix) + 1 + /* _ */
+                                  NumberOfDigits (inline_nr) + 1));         /* '\0' */
 
-    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
+    sprintf (new_name, "_%s%d_%s", prefix, inline_nr, old_name);
 
     DBUG_RETURN (new_name);
 }
@@ -822,7 +825,7 @@ INLassign (node *arg_node, node *arg_info)
  *   which has <let_node> as its body!
  *
  *   parameter 'type' is a bit field:
- *     INL_COUNT: increment 'inline_nr'
+ *     INL_COUNT: increment 'inl_fun'
  *
  *   Example for inlining:
  *
