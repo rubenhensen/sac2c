@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2002/02/12 15:45:02  dkr
+ * DoPrintAST(): N_avis added
+ *
  * Revision 3.71  2001/12/12 12:45:51  dkr
  * some minor changes in PrintId() done
  *
@@ -4067,7 +4070,7 @@ static void DoPrintAST (node *arg_node, bool skip_next, bool print_attr);
  *
  * function:
  *   void DoPrintSonAST( int num, node *arg_node,
- *                       bool skip_node, bool print_attr)
+ *                       bool next_node, bool print_attr)
  *
  * description:
  *   Prints a son containing a hole sub-tree.
@@ -4076,7 +4079,7 @@ static void DoPrintAST (node *arg_node, bool skip_next, bool print_attr);
  ******************************************************************************/
 
 static void
-DoPrintSonAST (int num, node *arg_node, bool skip_node, bool print_attr)
+DoPrintSonAST (int num, node *arg_node, bool next_node, bool print_attr)
 {
     DBUG_ENTER ("DoPrintSonAST");
 
@@ -4088,7 +4091,7 @@ DoPrintSonAST (int num, node *arg_node, bool skip_node, bool print_attr)
         fprintf (outfile, "+=");
     }
 
-    if (skip_node) {
+    if (next_node) {
         fprintf (outfile, "(NEXT)\n");
     } else {
         /* inner node -> do not skip NEXT-nodes */
@@ -4101,7 +4104,7 @@ DoPrintSonAST (int num, node *arg_node, bool skip_node, bool print_attr)
 /******************************************************************************
  *
  * function:
- *   void DoPrintAST( node *arg_node, bool skip_next)
+ *   void DoPrintAST( node *arg_node, bool skip_next, bool print_attr)
  *
  * description:
  *   This function prints the syntax tree without any interpretation.
@@ -4113,13 +4116,13 @@ DoPrintSonAST (int num, node *arg_node, bool skip_node, bool print_attr)
 static void
 DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 {
-    node *skip;
+    node *next_node;
     bool new_line;
     int i;
 
     DBUG_ENTER ("DoPrintAST");
 
-    skip = NULL;
+    next_node = NULL;
 
     outfile = stdout;
 
@@ -4145,7 +4148,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = TYPEDEF_NEXT (arg_node);
+            next_node = TYPEDEF_NEXT (arg_node);
             break;
 
         case N_objdef:
@@ -4161,7 +4164,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = OBJDEF_NEXT (arg_node);
+            next_node = OBJDEF_NEXT (arg_node);
             break;
 
         case N_fundef:
@@ -4194,7 +4197,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = FUNDEF_NEXT (arg_node);
+            next_node = FUNDEF_NEXT (arg_node);
             break;
 
         case N_pragma:
@@ -4205,6 +4208,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
                 indent--;
                 fprintf (outfile, "/* end of pragma */");
             }
+            break;
+
+        case N_avis:
             break;
 
         case N_arg:
@@ -4225,11 +4231,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = ARG_NEXT (arg_node);
-            break;
-
-        case N_exprs:
-            skip = EXPRS_NEXT (arg_node);
+            next_node = ARG_NEXT (arg_node);
             break;
 
         case N_vardec:
@@ -4250,15 +4252,19 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = VARDEC_NEXT (arg_node);
+            next_node = VARDEC_NEXT (arg_node);
+            break;
+
+        case N_exprs:
+            next_node = EXPRS_NEXT (arg_node);
             break;
 
         case N_vinfo:
-            skip = VINFO_NEXT (arg_node);
+            next_node = VINFO_NEXT (arg_node);
             break;
 
         case N_assign:
-            skip = ASSIGN_NEXT (arg_node);
+            next_node = ASSIGN_NEXT (arg_node);
             break;
 
         case N_cond:
@@ -4452,7 +4458,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = NPART_NEXT (arg_node);
+            next_node = NPART_NEXT (arg_node);
             break;
 
         case N_Ncode:
@@ -4465,7 +4471,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = NCODE_NEXT (arg_node);
+            next_node = NCODE_NEXT (arg_node);
             break;
 
         case N_Nwith2:
@@ -4525,7 +4531,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLSEG_NEXT (arg_node);
+            next_node = WLSEG_NEXT (arg_node);
             break;
 
         case N_WLsegVar:
@@ -4544,7 +4550,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLSEGVAR_NEXT (arg_node);
+            next_node = WLSEGVAR_NEXT (arg_node);
             break;
 
         case N_WLblock:
@@ -4559,7 +4565,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLBLOCK_NEXT (arg_node);
+            next_node = WLBLOCK_NEXT (arg_node);
             break;
 
         case N_WLublock:
@@ -4574,7 +4580,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLUBLOCK_NEXT (arg_node);
+            next_node = WLUBLOCK_NEXT (arg_node);
             break;
 
         case N_WLstride:
@@ -4589,7 +4595,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLSTRIDE_NEXT (arg_node);
+            next_node = WLSTRIDE_NEXT (arg_node);
             break;
 
         case N_WLstrideVar:
@@ -4613,7 +4619,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLSTRIDEVAR_NEXT (arg_node);
+            next_node = WLSTRIDEVAR_NEXT (arg_node);
             break;
 
         case N_WLgrid:
@@ -4636,7 +4642,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
                 fprintf (outfile, ": ..");
             }
 
-            skip = WLGRID_NEXT (arg_node);
+            next_node = WLGRID_NEXT (arg_node);
             break;
 
         case N_WLgridVar:
@@ -4657,7 +4663,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             fprintf (outfile, ")");
 
-            skip = WLGRIDVAR_NEXT (arg_node);
+            next_node = WLGRIDVAR_NEXT (arg_node);
             break;
 
         default:
@@ -4672,7 +4678,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
             DoPrintSonAST (i, arg_node->node[i],
                            ((arg_node->node[i] != NULL) && skip_next
-                            && (arg_node->node[i] == skip)),
+                            && (arg_node->node[i] == next_node)),
                            TRUE);
         }
         if (print_attr) {
@@ -4683,8 +4689,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             }
         }
         indent--;
-    } else
+    } else {
         fprintf (outfile, "NULL\n");
+    }
 
     DBUG_VOID_RETURN;
 }
