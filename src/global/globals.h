@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/09/28 16:32:19  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.47  2004/08/10 16:13:42  ktr
  * reuse inference in EMM can now be activated using -reuse.
  *
@@ -309,19 +312,8 @@ extern unsigned int optimize;
 #define OPT_UIP 0x00008000  /* update-in-place analysis                    */
 #define OPT_TSI 0x00010000  /* with-loop tile size inference               */
 #define OPT_TSP 0x00020000  /* with-loop tile size pragmas                 */
-/* OPT_MTO reused for OPT_WLPG
- * Because of missing space in this bitmap OPT_MTO is overloaded with
- * OPT_WLPG.
- * To prevent errors OPT_MTO is deactivated now (in concurrent.c)            */
-#define OPT_MTO 0x00040000  /* multi-thread optimization                   */
 #define OPT_WLPG 0x00040000 /* with-loop partition generation              */
-/* OPT_SBE reused for OPT_CVP
- * Because of missing space in this bitmap OPT_SBE is overloaded with OPT_CVP
- * To prevent errors (executing sbe-phase) the call of the procedure
- * triggered by OPT_SBE is now deactivated (in concurrent.c)                 */
-#define OPT_SBE 0x00080000  /* synchronisation barrier elimination         */
 #define OPT_CVP 0x00080000  /* Constant and Value Propagation              */
-#define OPT_MTI 0x00100000  /* ??                                          */
 #define OPT_PHM 0x00200000  /* private heap management                     */
 #define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
 #define OPT_DAO 0x00800000  /* descriptor allocation opt. (for PHM)        */

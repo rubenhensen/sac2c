@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/09/28 16:32:19  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.74  2004/09/28 14:07:30  ktr
  * removed old refcount and generatemasks
  *
@@ -629,15 +632,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("tsp", optimize |= OPT_TSP);
         ARG_CHOICE ("TSP", optimize |= OPT_TSP);
 
-        ARG_CHOICE ("mto", optimize |= OPT_MTO);
-        ARG_CHOICE ("MTO", optimize |= OPT_MTO);
-
-        ARG_CHOICE ("mti", optimize |= OPT_MTI);
-        ARG_CHOICE ("MTI", optimize |= OPT_MTI);
-
-        ARG_CHOICE ("sbe", optimize |= OPT_SBE);
-        ARG_CHOICE ("SBE", optimize |= OPT_SBE);
-
         ARG_CHOICE ("phm", optimize |= OPT_PHM);
         ARG_CHOICE ("PHM", optimize |= OPT_PHM);
 
@@ -901,15 +895,6 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("tsp", optimize &= ~OPT_TSP);
         ARG_CHOICE ("TSP", optimize &= ~OPT_TSP);
-
-        ARG_CHOICE ("mto", optimize &= ~OPT_MTO);
-        ARG_CHOICE ("MTO", optimize &= ~OPT_MTO);
-
-        ARG_CHOICE ("mti", optimize &= ~OPT_MTI);
-        ARG_CHOICE ("MTI", optimize &= ~OPT_MTI);
-
-        ARG_CHOICE ("sbe", optimize &= ~OPT_SBE);
-        ARG_CHOICE ("SBE", optimize &= ~OPT_SBE);
 
         ARG_CHOICE ("phm", optimize &= ~OPT_PHM);
         ARG_CHOICE ("PHM", optimize &= ~OPT_PHM);

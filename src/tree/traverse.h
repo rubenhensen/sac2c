@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/09/28 16:34:05  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.63  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -344,7 +347,7 @@ extern funtab *dfr_tab;
 extern funtab *tcwl_tab;
 extern funtab *wltrans_tab;
 extern funtab *spmdinit_tab;
-extern funtab *spmdopt_tab;
+extern funtab *unused_tab42;
 extern funtab *spmdlift_tab;
 extern funtab *syncinit_tab;
 extern funtab *syncopt_tab;
@@ -355,14 +358,14 @@ extern funtab *sched_tab;
 extern funtab *conc_tab;
 extern funtab *opt_tab;
 extern funtab *wlaa_tab;
-extern funtab *spmdrmtrav_tab;
-extern funtab *spmdrotrav_tab;
-extern funtab *spmdcons_tab;
+extern funtab *unused_tab43;
+extern funtab *unused_tab44;
+extern funtab *unused_tab45;
 extern funtab *tsi_tab;
-extern funtab *spmdlc_tab;
+extern funtab *unused_tab46;
 extern funtab *spmddn_tab;
 extern funtab *spmdpm_tab;
-extern funtab *spmdco_tab;
+extern funtab *unused_tab47;
 extern funtab *ntc_tab;
 extern funtab *muth_tab;
 extern funtab *crwiw_tab;

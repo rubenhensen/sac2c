@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/09/28 16:32:19  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.53  2004/09/28 14:07:30  ktr
  * removed old refcount and generatemasks
  *
@@ -1104,8 +1107,6 @@ PrefixForTmpVar (void)
         s = "pw";
     } else if (act_tab == spmdinit_tab) {
         s = "spmdi";
-    } else if (act_tab == spmdopt_tab) {
-        s = "spmdo";
     } else if (act_tab == spmdlift_tab) {
         s = "spmdl";
     } else if (act_tab == syncinit_tab) {

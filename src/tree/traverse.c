@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/09/28 16:34:05  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.82  2004/09/28 14:31:29  skt
  * skipped superflous mt-header files
  *
@@ -313,12 +316,10 @@
 #include "scheduling.h"
 #include "concurrent.h"
 #include "spmd_init.h"
-#include "spmd_opt.h"
 #include "spmd_lift.h"
 #include "sync_init.h"
 #include "sync_opt.h"
 #include "spmd_trav.h"
-#include "spmd_cons.h"
 #include "schedule.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
@@ -813,15 +814,15 @@ static funtab spmdinit_tab_rec = {{
 funtab *spmdinit_tab = &spmdinit_tab_rec;
 
 /*
- *  (38) spmdopt_tab
+ *  (38) unused_tab42
  */
-static funtab spmdopt_tab_rec = {{
-#define NIFspmdopt(it_spmdopt) it_spmdopt
+static funtab unused_tab42_rec = {{
+#define NIFunused_42(it_unused_42) it_unused_42
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *spmdopt_tab = &spmdopt_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab42 = &unused_tab42_rec;
 
 /*
  *  (39) spmdlift_tab
@@ -956,37 +957,37 @@ static funtab mmv_tab_rec = {{
 funtab *mmv_tab = &mmv_tab_rec;
 
 /*
- *  (51) spmdrmtrav_tab
+ *  (51) unused_tab43
  */
-static funtab spmdrmtrav_tab_rec = {{
-#define NIFspmdrm(it_spmdrm) it_spmdrm
-#include "node_info.mac"
-                                    },
-                                    NULL,
-                                    NULL};
-funtab *spmdrmtrav_tab = &spmdrmtrav_tab_rec;
-
-/*
- *  (52) spmdrotrav_tab
- */
-static funtab spmdrotrav_tab_rec = {{
-#define NIFspmdro(it_spmdro) it_spmdro
-#include "node_info.mac"
-                                    },
-                                    NULL,
-                                    NULL};
-funtab *spmdrotrav_tab = &spmdrotrav_tab_rec;
-
-/*
- *  (53) spmdcons_tab
- */
-static funtab spmdcons_tab_rec = {{
-#define NIFspmdcons(it_spmdcons) it_spmdcons
+static funtab unused_tab43_rec = {{
+#define NIFunused_43(it_unused_43) it_unused_43
 #include "node_info.mac"
                                   },
                                   NULL,
                                   NULL};
-funtab *spmdcons_tab = &spmdcons_tab_rec;
+funtab *unused_tab43 = &unused_tab43_rec;
+
+/*
+ *  (52) unused_tab44
+ */
+static funtab unused_tab44_rec = {{
+#define NIFunused_44(it_unused_44) it_unused_44
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab44 = &unused_tab44_rec;
+
+/*
+ *  (53) unused_tab45
+ */
+static funtab unused_tab45_rec = {{
+#define NIFunused_45(it_unused_45) it_unused_45
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab45 = &unused_tab45_rec;
 
 /*
  *  (54) tsi_tab
@@ -1000,15 +1001,15 @@ static funtab tsi_tab_rec = {{
 funtab *tsi_tab = &tsi_tab_rec;
 
 /*
- *  (55) spmdlc_tab
+ *  (55) unused_tab46
  */
-static funtab spmdlc_tab_rec = {{
-#define NIFspmdlc(it_spmdlc) it_spmdlc
+static funtab unused_tab46_rec = {{
+#define NIFunused_46(it_unused_46) it_unused_46
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *spmdlc_tab = &spmdlc_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab46 = &unused_tab46_rec;
 
 /*
  *  (56) spmddn_tab
@@ -1033,15 +1034,15 @@ static funtab spmdpm_tab_rec = {{
 funtab *spmdpm_tab = &spmdpm_tab_rec;
 
 /*
- *  (58) spmdco_tab
+ *  (58) unused_tab47
  */
-static funtab spmdco_tab_rec = {{
-#define NIFspmdco(it_spmdco) it_spmdco
+static funtab unused_tab47_rec = {{
+#define NIFunused_47(it_unused_47) it_unused_47
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *spmdco_tab = &spmdco_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab47 = &unused_tab47_rec;
 #endif /* NEW_AST */
 /*
  *  (59) ntc_tab

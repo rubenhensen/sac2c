@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2004/09/28 16:33:12  ktr
+# cleaned up concurrent (removed everything not working / not working with emm)
+#
 # Revision 3.15  2004/09/18 16:03:29  ktr
 # added spmd_emm.o
 #
@@ -75,8 +78,8 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refco
        -I../flatten -I../print -I../compile -I../constants
 
 
-all: concurrent.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
-     sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o \
+all: concurrent.o spmd_init.o spmd_lift.o sync_init.o \
+     sync_opt.o schedule.o spmd_trav.o concurrent_lib.o \
      spmd_emm.o
 
 

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.107  2004/09/28 16:31:14  ktr
+# cleaned up concurrent (removed everything not working / not working with emm)
+#
 # Revision 3.106  2004/09/28 14:11:51  ktr
 # removed old refcount and generatemasks
 #
@@ -305,17 +308,21 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 REFCOUNT= src/refcount/allocation.o \
           src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
-CONCURRENT= src/concurrent/concurrent.o \
-            src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \
+CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
             src/concurrent/sync_opt.o src/concurrent/schedule.o \
-            src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o \
+            src/concurrent/spmd_trav.o \
             src/concurrent/concurrent_lib.o src/concurrent/spmd_emm.o
-MULTITHREAD= src/multithread/multithread.o src/multithread/multithread_lib.o \
-             src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
-             src/multithread/create_cells.o src/multithread/create_dataflowgraph.o \
-             src/multithread/assignments_rearrange.o src/multithread/cell_growth.o \
-             src/multithread/create_withinwith.o src/multithread/replicate_functions.o \
+MULTITHREAD= src/multithread/multithread.o \
+             src/multithread/multithread_lib.o \
+             src/multithread/tag_executionmode.o \
+             src/multithread/propagate_executionmode.o \
+             src/multithread/create_cells.o \
+             src/multithread/create_dataflowgraph.o \
+             src/multithread/assignments_rearrange.o \
+             src/multithread/cell_growth.o \
+             src/multithread/create_withinwith.o \
+             src/multithread/replicate_functions.o \
              src/multithread/consolidate_cells.o
 
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/09/28 16:33:12  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.2  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -40,51 +43,10 @@
 
 #include "DataFlowMask.h"
 
-extern int *CreateCM (int varno);
-extern int *DestroyCM (int *mask);
-
-extern int *CountOccurences (node *block, DFMmask_t which, node *fundef);
-extern node *SPMDCOassign (node *arg_node, node *arg_info);
-
-extern int LetWithFunction (node *let);
-extern node *SPMDLCap (node *arg_node, node *arg_info);
-
 extern node *DeleteNested (node *arg_node);
 extern node *SPMDDNspmd (node *arg_node, node *arg_info);
 
 extern void ProduceMasks (node *arg_node, node *spmd, node *fundef);
 extern node *SPMDPMassign (node *arg_node, node *arg_info);
-
-/******************************************************************************
- ******************************************************************************
- **
- ** section:
- **   SPMDRO - SPMD - Traversal to Reduce Occurences
- **
- ******************************************************************************
- ******************************************************************************/
-
-extern void ReduceOccurences (node *block, int *counters, DFMmask_t mask);
-
-extern node *SPMDROblock (node *arg_node, node *arg_info);
-extern node *SPMDROlet (node *arg_node, node *arg_info);
-extern node *SPMDROassign (node *arg_node, node *arg_info);
-
-/******************************************************************************
- ******************************************************************************
- **
- ** section:
- **   SPMDRM - SPMD - Traversal to Reduce Masks
- **
- ******************************************************************************
- ******************************************************************************/
-
-extern DFMmask_t ReduceMasks (node *block, DFMmask_t first_out);
-
-extern node *SPMDRMblock (node *arg_node, node *arg_info);
-extern node *SPMDRMcond (node *arg_node, node *arg_info);
-extern node *SPMDRMid (node *arg_node, node *arg_info);
-extern node *SPMDRMlet (node *arg_node, node *arg_info);
-extern node *SPMDRMassign (node *arg_node, node *arg_info);
 
 #endif /* _spmd_trav_h */

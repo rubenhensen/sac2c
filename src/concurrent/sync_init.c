@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/09/28 16:33:12  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.5  2004/09/28 14:09:59  ktr
  * removed old refcount and generatemasks
  *
@@ -100,7 +103,6 @@ SYNCIassign (node *arg_node, node *arg_info)
     node *with, *sync_let, *sync;
     ids *with_ids;
     DFMmask_base_t maskbase;
-    int i;
 
     DBUG_ENTER ("SYNCIassign");
 
@@ -156,14 +158,8 @@ SYNCIassign (node *arg_node, node *arg_info)
          * add vars from LHS of with-loop assignment
          */
         if ((NWITH2_TYPE (with) == WO_genarray) || (NWITH2_TYPE (with) == WO_modarray)) {
-            if (!emm) {
-                DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL, LET_VARDEC (sync_let));
-            } else {
-                DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL,
-                                    ID_VARDEC (NWITH2_MEM (with)));
-                DFMSetMaskEntryClear (SYNC_IN (sync), NULL,
-                                      ID_VARDEC (NWITH2_MEM (with)));
-            }
+            DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL, ID_VARDEC (NWITH2_MEM (with)));
+            DFMSetMaskEntryClear (SYNC_IN (sync), NULL, ID_VARDEC (NWITH2_MEM (with)));
         } else {
             DFMSetMaskEntrySet (SYNC_OUT (sync), NULL, LET_VARDEC (sync_let));
         }

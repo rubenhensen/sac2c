@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/09/28 16:32:19  ktr
+ * cleaned up concurrent (removed everything not working / not working with emm)
+ *
  * Revision 3.64  2004/09/27 10:13:09  ktr
  * Reactivated WLS
  *
@@ -544,34 +547,18 @@ bool patch_with = FALSE;
  */
 
 /**
- * as long as OPT_SBE is shared with OPT_CVP and OPT_MTO is shared
- * with OPT_WLPG OPT_SBE and OPT_MTO should be not used here
- * to allow to work with OPT_CVP and OPT_WLPG
- *
  * We need to convert this mechanism to a mac-file based one with
  * enumeration type or bit-field as soon as possible!!
  */
 #ifdef PRODUCTION
-unsigned int optimize = OPT_ALL
-                        /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
-                                           /* See comment above !! */
-                        /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
-                                           /* See comment above !! */
-                        & (~OPT_MTI)       /* MT2-based optimization, does not work. */
-                        & (~OPT_APL)       /* Only rudimentary implementation exists. */
-                        & (~OPT_TSI)       /* Bugs to be fixed. */
-                        & (~OPT_WLFS);     /* Not yet full operational */
+unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
+                        & (~OPT_TSI)         /* Bugs to be fixed. */
+                        & (~OPT_WLFS);       /* Not yet full operational */
 
 #else /* PRODUCTION */
-unsigned int optimize = OPT_ALL
-                        /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
-                                           /* See comment above !! */
-                        /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
-                                           /* See comment above !! */
-                        & (~OPT_MTI)       /* MT2-based optimization, does not work. */
-                        & (~OPT_APL)       /* Only rudimentary implementation exists. */
-                        & (~OPT_TSI)       /* Bugs to be fixed. */
-                        & (~OPT_WLFS);     /* Not yet full operational */
+unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
+                        & (~OPT_TSI)         /* Bugs to be fixed. */
+                        & (~OPT_WLFS);       /* Not yet full operational */
 
 #endif /* PRODUCTION */
 
