@@ -36,3 +36,4 @@ annotatenamespace.h
 usesymbols.c
 usesymbols.h
 stringset.c
+stringset.h
