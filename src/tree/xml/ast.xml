@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.52  2004/11/23 10:07:32  sah
+  Sac DevCamp 04
+
   Revision 1.51  2004/11/22 21:06:31  sah
   fixed typoe
 
@@ -194,7 +197,7 @@
     copy="function" />
     <type name="FileType" ctype="file_type" init="F_unknown"
     copy="literal" />
-    <type name="LUT" ctype="LUT_t*" init="NULL" copy="function" persist="no" />
+    <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />
     <type name="Prf" ctype="prf" init="0" copy="literal" />
     <type name="Mask" ctype="long*" size="7" init="NULL"
     copy="function" />

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/11/23 10:07:32  sah
+  Sac DevCamp 04
+
   Revision 1.4  2004/11/02 16:06:27  sah
   traversal stops at Typedef and Objde3f Next now
 
@@ -134,14 +137,18 @@ version="1.0">
   <xsl:value-of select="'{'"/>
   <!-- DBUG_ENTER statement -->
   <xsl:value-of select="'DBUG_ENTER( &quot;SBT'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
   <!-- DBUG PRINT -->
   <xsl:value-of select="'DBUG_PRINT( &quot;SBT&quot;, (&quot;Stacking '" />
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' node&quot;));'" />
   <!-- push this node onto the stack -->
-  <xsl:value-of select="'SerStackPush( arg_node, INFO_SER_STACK( arg_info));'" />
+  <xsl:value-of select="'SSpush( arg_node, INFO_SER_STACK( arg_info));'" />
   <!-- handle sons -->
   <xsl:apply-templates select="sons" />
   <!-- handle attributes -->

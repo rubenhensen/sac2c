@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.12  2004/11/23 10:07:32  sah
+# Sac DevCamp 04
+#
 # Revision 1.11  2004/11/22 17:16:56  sah
 # changes.
 # DK 04
@@ -57,7 +60,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
           ../free_node.h ../free_attribs.h \
-          ../check_node.h ../check_node.c \
           ../serialize_node.h ../serialize_node.c \
           ../serialize_attribs.h ../serialize_helper.c \
           ../serialize_buildstack.c ../serialize_buildstack.h \
@@ -97,14 +99,6 @@ all: $(TARGETS)
 
 ../free_attribs.h: ast.xml ast2free_attribs_h.xsl
 	$(XSLTENGINE) ast2free_attribs_h.xsl ast.xml \
-	| $(CODE_BEAUTIFIER) >$@
-
-../check_node.h: ast.xml ast2check_node_h.xsl
-	$(XSLTENGINE) ast2check_node_h.xsl ast.xml \
-	| $(CODE_BEAUTIFIER) >$@
-
-../check_node.c: ast.xml ast2check_node_c.xsl
-	$(XSLTENGINE) ast2check_node_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 ../serialize_node.h: ast.xml ast2serialize_node_h.xsl

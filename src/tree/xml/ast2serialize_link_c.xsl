@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/23 10:07:32  sah
+  Sac DevCamp 04
+
   Revision 1.6  2004/11/02 16:06:27  sah
   traversal stops at Typedef and Objde3f Next now
 
@@ -99,18 +102,11 @@ version="1.0">
 #include "internal_lib.h"
 #include "dbug.h"
 
-#define AST_NO_COMPAT
-#include "node_compat.h"
-
   </xsl:text>
   <!-- functions -->
   <xsl:apply-templates select="//syntaxtree/node">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
-  <xsl:text>
-#undef AST_NO_COMPAT
-#include "node_compat.h"
-  </xsl:text>
   <!-- end of doxygen group -->
   <xsl:call-template name="travfun-group-end"/>
 </xsl:template>
@@ -138,7 +134,11 @@ version="1.0">
   <xsl:value-of select="'{'"/>
   <!-- DBUG_ENTER statement -->
   <xsl:value-of select="'DBUG_ENTER( &quot;SET'"/>
-  <xsl:value-of select="@name" />
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'&quot;);'" />
   <!-- serialize link attributes -->
   <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;DownLink&quot;]" />
@@ -191,7 +191,7 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="' != NULL) {'" />
   <!-- and only those, where the target is on the stack -->
-  <xsl:value-of select="'if (SerStackFindPos( '" />
+  <xsl:value-of select="'if (SSfindPos( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'arg_node'" />
@@ -207,9 +207,9 @@ version="1.0">
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;/* fix link for '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' attribute */\n&quot;);'" />
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;SHLPFixLink( stack, %d, '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;SHLPfixLink( stack, %d, '" />
   <xsl:value-of select="position()" />
-  <xsl:value-of select="', %d);\n&quot;, SerStackFindPos( arg_node, INFO_SER_STACK( arg_info)) , SerStackFindPos( '" />
+  <xsl:value-of select="', %d);\n&quot;, SSfindPos( arg_node, INFO_SER_STACK( arg_info)) , SSfindPos( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'arg_node'" />

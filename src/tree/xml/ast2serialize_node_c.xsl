@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.11  2004/11/23 10:07:32  sah
+  Sac DevCamp 04
+
   Revision 1.10  2004/11/02 16:06:27  sah
   traversal stops at Typedef and Objde3f Next now
 
@@ -162,7 +165,7 @@ version="1.0">
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' node&quot;));'" />
   <!-- print start of block -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPMakeNode( %d, %d, \&quot;%s\&quot; &quot;, '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPmakeNode( %d, %d, \&quot;%s\&quot; &quot;, '" />
   <!-- generate nodetype argument -->
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
@@ -256,9 +259,9 @@ version="1.0">
   <!-- make it print a , -->
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, &quot;);'" />
   <!-- call serialization function for attribute -->
-  <xsl:value-of select="'Serialize'" />
+  <xsl:value-of select="'SATserialize'" />
   <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@name" />
-  <xsl:value-of select="'Attrib( arg_info, '" />
+  <xsl:value-of select="'( arg_info, '" />
   <!-- if it is an array, we need to pass the selector as well -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'cnt, '" />
@@ -338,25 +341,15 @@ version="1.0">
   <xsl:value-of select="', arg_info); }'" />
 </xsl:template>
 
-<xsl:template match="flags[flag]" mode="gen-values">
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, %ld, %ld&quot;, '" />
+<xsl:template match="flags/flag" mode="gen-values">
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, %d&quot;, '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
-      <xsl:value-of select="../@name"/>
+      <xsl:value-of select="../../@name"/>
     </xsl:with-param>
     <xsl:with-param name="field">
-      <xsl:value-of select="'FLAGS'"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="', '" />
-  <xsl:call-template name="node-access">
-    <xsl:with-param name="node">arg_node</xsl:with-param>
-    <xsl:with-param name="nodetype">
-      <xsl:value-of select="../@name"/>
-    </xsl:with-param>
-    <xsl:with-param name="field">
-      <xsl:value-of select="'DBUG_FLAGS'"/>
+      <xsl:value-of select="@name"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="');'" />

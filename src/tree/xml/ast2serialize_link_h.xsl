@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 10:07:32  sah
+  Sac DevCamp 04
+
   Revision 1.1  2004/10/25 09:44:55  sah
   Initial revision
 
@@ -29,8 +32,8 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
-#ifndef _SAC_SERIALIZE_LINK_H
-#define _SAC_SERIALIZE_LINK_H
+#ifndef _SAC_SERIALIZE_LINK_H_
+#define _SAC_SERIALIZE_LINK_H_
 
 #include "types.h"
 
@@ -39,7 +42,7 @@ version="1.0">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
   <xsl:text>
-#endif /* _SAC_SERIALIZE_LINK_H */
+#endif /* _SAC_SERIALIZE_LINK_H_ */
   </xsl:text>
 </xsl:template>
 
