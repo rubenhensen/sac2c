@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/11/12 14:36:41  sbs
+ * handling for mgWLs added.
+ *
  * Revision 3.24  2003/11/12 08:33:46  sbs
  * With-loop default expression flattened out in case of -sbs
  *
@@ -601,6 +604,58 @@ Abstract (node *arg_node, node *arg_info)
                  ASSIGN_NEXT (INFO_FLTN_LASTASSIGN (arg_info))));
 
     res = MakeId (StringCopy (tmp), NULL, ST_regular);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *ExtractFirstGen( node *wloop)
+ *
+ *   @brief  splits the given multi generator WL into a single WL
+ *           and a mgWL with one generator less.
+ *
+ *           While the split-off WL is perfectly fine, the reminiscents
+ *           of the mgWL lack the withop part!!!
+ *   @param  wloop
+ *   @return the splitt-off WL
+ *
+ ******************************************************************************/
+
+static node *
+ExtractFirstGen (node *wloop)
+{
+    node *part, *code, *withop, *res;
+
+    DBUG_ENTER ("ExtractFirstGen");
+
+    DBUG_ASSERT ((NODE_TYPE (wloop) == N_Nwith),
+                 "ExtractFirstGen applied to non With-Loop!");
+    DBUG_ASSERT ((NPART_NEXT (NWITH_PART (wloop)) != NULL),
+                 "ExtractFirstGen applied to With-Loop with one Part only!");
+    DBUG_ASSERT ((NCODE_NEXT (NWITH_CODE (wloop)) != NULL),
+                 "ExtractFirstGen applied to With-Loop with one Code only!");
+    /**
+     * pull out the first part!
+     */
+    part = NWITH_PART (wloop);
+    NWITH_PART (wloop) = NPART_NEXT (part);
+    NPART_NEXT (part) = NULL;
+
+    /**
+     * pull out the first code!
+     */
+    code = NWITH_CODE (wloop);
+    NWITH_CODE (wloop) = NCODE_NEXT (code);
+    NCODE_NEXT (code) = NULL;
+
+    /**
+     * steal the withop!
+     */
+    withop = NWITH_WITHOP (wloop);
+    NWITH_WITHOP (wloop) = NULL;
+
+    res = MakeNWith (part, code, withop);
 
     DBUG_RETURN (res);
 }
@@ -1737,8 +1792,34 @@ node *
 FltnNwith (node *arg_node, node *arg_info)
 {
     local_stack *tmp_tos;
+    node *nwl, *nwl2, *tmp_id;
 
     DBUG_ENTER ("FltnNWith");
+
+    while ((NPART_NEXT (NWITH_PART (arg_node)) != NULL)
+           && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
+        /**
+         * Splitt-off the first generator:
+         */
+        nwl = ExtractFirstGen (arg_node);
+        /**
+         * Abstract it out:
+         */
+        tmp_id = Abstract (nwl, arg_info);
+        /**
+         * and flatten it:
+         */
+        nwl2 = Trav (nwl, arg_info);
+
+        /* Finally, we correct the remaining WL: */
+        if ((NWITHOP_TYPE (NWITH_WITHOP (nwl)) == WO_foldfun)
+            || (NWITHOP_TYPE (NWITH_WITHOP (nwl)) == WO_foldfun)) {
+            NWITH_WITHOP (arg_node)
+              = MakeNWithOp (NWITHOP_TYPE (NWITH_WITHOP (nwl)), tmp_id);
+        } else {
+            NWITH_WITHOP (arg_node) = MakeNWithOp (WO_modarray, tmp_id);
+        }
+    }
 
     with_level++;
     tmp_tos = tos; /* store tos */
