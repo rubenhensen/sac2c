@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/23 23:03:44  dkr
+ * second traversal table for LAC2FUN added
+ *
  * Revision 1.7  2000/02/21 17:55:39  jhs
  * Added blkex_tab.
  * Added LOST OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
@@ -122,7 +125,6 @@ extern funtab *spmddn_tab;
 extern funtab *spmdpm_tab;
 extern funtab *spmdco_tab;
 extern funtab *ntc_tab;
-extern funtab *lac2fun_tab;
 extern funtab *muth_tab;
 extern funtab *schin_tab;
 extern funtab *blkin_tab;
@@ -131,6 +133,8 @@ extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
 extern funtab *blkex_tab;
 extern funtab *mtfin_tab;
+extern funtab *l2f_infer_tab;
+extern funtab *l2f_lift_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/02/23 23:03:26  dkr
+ * second traversal table for LAC2FUN added
+ *
  * Revision 1.9  2000/02/22 11:57:24  jhs
  * Adapted NODE_TEXT.
  * /
@@ -857,15 +860,8 @@ static funtab ntc_tab_rec = {{
 funtab *ntc_tab = &ntc_tab_rec;
 
 /*
- *  (60) lac2fun_tab
+ *  (60) unused_tab1
  */
-static funtab lac2fun_tab_rec = {{
-#define NIFlac2fun(it_lac2fun) it_lac2fun
-#include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *lac2fun_tab = &lac2fun_tab_rec;
 
 /*
  *  (61) muth_tab
@@ -954,6 +950,28 @@ static funtab mtfin_tab_rec = {{
                                NULL,
                                NULL};
 funtab *mtfin_tab = &mtfin_tab_rec;
+
+/*
+ *  (69) l2f_infer_tab
+ */
+static funtab l2f_infer_tab_rec = {{
+#define NIFl2f_infer(it_l2f_infer) it_l2f_infer
+#include "node_info.mac"
+                                   },
+                                   NULL,
+                                   NULL};
+funtab *l2f_infer_tab = &l2f_infer_tab_rec;
+
+/*
+ *  (70) l2f_lift_tab
+ */
+static funtab l2f_lift_tab_rec = {{
+#define NIFl2f_lift(it_l2f_lift) it_l2f_lift
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *l2f_lift_tab = &l2f_lift_tab_rec;
 
 /*
  *  nnode
