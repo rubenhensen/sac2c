@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/05/02 17:46:27  dkr
+ * added new attributes to N_spmd, N_sync
+ *
  * Revision 1.15  1998/04/30 13:56:47  dkr
  * fixed a bug in SPMDLift...
  *
@@ -134,8 +137,10 @@ SPMDInitAssign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = spmd;
 
         /*
-         * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
+         * get INOUT_IDS, IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
+
+        SPMD_INOUT_IDS (spmd) = DupIds (LET_IDS (spmd_let), NULL);
 
         SPMD_VARNO (spmd) = NWITH2_VARNO (with);
         SPMD_IN (spmd) = DupMask (NWITH2_IN (with), NWITH2_VARNO (with));
@@ -349,6 +354,8 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
                              body, NULL);
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
 
+    SPMD_FUNNAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
+
     /*
      * append return expressions to body of SPMD-function
      */
@@ -517,8 +524,10 @@ SYNCInitAssign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = sync;
 
         /*
-         * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
+         * get INOUT_IDS, IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
+
+        SYNC_INOUT_IDS (sync) = DupIds (LET_IDS (sync_let), NULL);
 
         SYNC_VARNO (sync) = NWITH2_VARNO (with);
         SYNC_IN (sync) = DupMask (NWITH2_IN (with), NWITH2_VARNO (with));
