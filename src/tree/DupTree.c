@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2002/10/16 11:42:10  sbs
+ * OBJDEF_AVIS handling inserted.
+ *
  * Revision 3.75  2002/09/09 11:51:23  dkr
  * DupFundef(): FUNDEF_IMPL added
  *
@@ -930,6 +933,16 @@ DupObjdef (node *arg_node, node *arg_info)
 
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    if (OBJDEF_AVIS (arg_node) != NULL) {
+        /* we have to duplicate the containing avis node */
+        OBJDEF_AVIS (new_node) = FreeNode (OBJDEF_AVIS (new_node));
+        OBJDEF_AVIS (new_node) = DUPTRAV (OBJDEF_AVIS (arg_node));
+        /* correct backreference */
+        AVIS_VARDECORARG (OBJDEF_AVIS (new_node)) = new_node;
+    } else {
+        /* noop, the created empty avis node is ok */
+    }
 
     DBUG_RETURN (new_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2002/10/16 11:42:10  sbs
+ * OBJDEF_AVIS handling inserted.
+ *
  * Revision 3.45  2002/10/11 16:26:23  dkr
  * FreeNwith, FreeNwith2 modified
  *
@@ -982,6 +985,7 @@ FreeObjdef (node *arg_node, node *arg_info)
 #endif
     OBJDEF_VARNAME (arg_node) = Free (OBJDEF_VARNAME (arg_node));
     OBJDEF_TYPE (arg_node) = FreeOneTypes (OBJDEF_TYPE (arg_node));
+    OBJDEF_AVIS (arg_node) = FREETRAV (OBJDEF_AVIS (arg_node));
 
     ret_node = FREECONT (OBJDEF_NEXT (arg_node));
 
