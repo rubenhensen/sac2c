@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/10/23 12:46:15  dkr
+ * FindParen(): In the 2nd DBUG_ASSERT 'NULL' is replaced by '\0'.
+ *
  * Revision 1.5  2000/09/13 15:05:09  dkr
  * C_last? renamed into C_unknown?
  *
@@ -41,10 +44,11 @@
 /******************************************************************************
  *
  * function:
- *   int FindParen(char *nt,int n)
+ *   int FindParen( char *nt, int n)
+ *
  * description:
- *  Returns the offset of the nTH left parenthesis within nt.
- *  It makes NO checks for right parentheses nor for quotes, etc.
+ *   Returns the offset of the nTH left parenthesis within nt.
+ *   It makes NO checks for right parentheses nor for quotes, etc.
  *
  ******************************************************************************/
 
@@ -56,14 +60,17 @@ FindParen (char *nt, int n)
     DBUG_ENTER ("FindParen");
 
     DBUG_ASSERT ((NULL != nt), "FindParen was called with NULL nt");
+
     for (i = 0; '\0' != nt[i]; i++) {
         if ('(' == nt[i]) {
             n--;
-            if (0 == n)
+            if (0 == n) {
                 break;
+            }
         }
     }
-    DBUG_ASSERT ((NULL != nt[i]), "FindParen did not find the paren");
+
+    DBUG_ASSERT (('\0' != nt[i]), "FindParen did not find the paren");
 
     DBUG_RETURN (i);
 }
