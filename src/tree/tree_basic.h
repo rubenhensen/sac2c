@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.160  2002/10/22 13:03:00  sbs
+ * usage of DBUG_ASSERT in expression position replaed by DBUG_ASSERT_EXPR
+ *
  * Revision 3.159  2002/10/20 13:23:59  ktr
  * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n) to N_assign
  * node which is increased on every indentation performed by WLS.
@@ -352,8 +355,10 @@ file can be found in tree_basic.c
 
 #define GET_FLAG(s, n, flag)                                                             \
     ((s##_DBUG_FLAGS (n) & flag) ? s##_FLAGS (n) & flag                                  \
-                                 : DBUG_ASSERT (0, "trying to inspect flag " #flag       \
-                                                   " of " #s " that is not yet set!"))
+                                 : DBUG_ASSERT_EXPR (0,                                  \
+                                                     "trying to inspect flag " #flag     \
+                                                     " of " #s " that is not yet set!",  \
+                                                     0))
 
 #define FLAG2STRING(s, n, flag)                                                          \
     ((s##_DBUG_FLAGS (n) & flag) ? ((s##_FLAGS (n) & flag) ? #flag : "! " #flag) : "-")
