@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/11/03 16:27:19  dkr
+ * new macro RT_FREE
+ *
  * Revision 1.14  1997/10/28 12:35:56  srs
  * renamed macro MALLOC to RT_MALLOC (runtime malloc)
  *
@@ -155,6 +158,8 @@ extern void *__SAC__Runtime_malloc (int size);
 #else
 #define RT_MALLOC(size) malloc (size)
 #endif
+
+#define RT_FREE(pointer) free (pointer)
 
 /*
  * PROFILING-MACROS:
