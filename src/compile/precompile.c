@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/04/03 14:12:36  dkr
+ * - some comments added
+ * - LiftArg() corrected
+ *
  * Revision 3.33  2002/03/07 20:29:21  dkr
  * ICM_END_OF_STATEMENT removed
  *
@@ -89,18 +93,21 @@
  *
  * It carries out two separate tree traversals.
  *
- * Things done during second traversal:
+ * Things done during first traversal:
  *   - Artificial arguments and return values are removed.
  *   - All names and identifiers are renamed in order to avoid name clashes.
+ * REMARK (dkr): It would be much more convenient to perform the renaming
+ *               during the *last* traversal. But for now I have no time to
+ *               reorganize it this way :-(
  *
- * Things done during third traversal:
+ * Things done during second traversal:
  *   - Function signatures are transformed into the final form:
  *     At most a single return value, remapping because of a linksign pragma,
  *     parameter tags (in, in_rc, out, out_rc, inout_rc, upd, upd_bx).
  *     The reorganized layout is stored in FUNDEF_ARGTAB and AP_ARGTAB
  *     respectively. Note, that the node information of the AST is left as is.
  *
- * Things done during first traversal:
+ * Things done during third traversal:
  *   - Arguments of function applications are abstracted if needed:
  *       a = fun( a)   =>   tmp_a = a; a = fun( tmp_a)
  *     This can only be done *after* type-checking, because types are needed
@@ -719,7 +726,8 @@ PREC1typedef (node *arg_node, node *arg_info)
         Free (TYPEDEF_NAME (arg_node));
         TYPEDEF_NAME (arg_node) = tmp;
         /*
-         * Why are imported C renamed unlike imported C functions or global objects?
+         * Why are imported C types renamed unlike imported C functions or
+         * global objects?
          *
          * Imported C types do not have a real counterpart in the C module/class
          * implementation. So, there must be no coincidence at link time.
@@ -1580,7 +1588,7 @@ PREC1WLsegx (node *arg_node, node *arg_info)
  *   argtab_t *CompressArgtab( argtab_t *argtab)
  *
  * Description:
- *
+ *   Empty entries in 'argtab' are moved to the end of the table.
  *
  ******************************************************************************/
 
@@ -1651,7 +1659,7 @@ PREC2modul (node *arg_node, node *arg_info)
  *                        bool *dots, node *ret)
  *
  * Description:
- *
+ *   Inserts an out-argument into the argtab.
  *
  ******************************************************************************/
 
@@ -1772,7 +1780,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
  *                       bool *dots)
  *
  * Description:
- *
+ *   Inserts an in-argument into the argtab.
  *
  ******************************************************************************/
 
@@ -1880,7 +1888,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
  *   node *PREC2fundef( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   Builds FUNDEF_ARGTAB.
  *
  ******************************************************************************/
 
@@ -1956,7 +1964,8 @@ PREC2fundef (node *arg_node, node *arg_info)
  *   node *PREC2assign( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   Inserts the assignments found in INFO_PREC2_PRE/POST_ASSIGNS(arg_info)
+ *   into the AST.
  *
  ******************************************************************************/
 
@@ -1990,7 +1999,8 @@ PREC2assign (node *arg_node, node *arg_info)
  *   node *MakeMergeAssigns( argtab_t *argtab, node *arg_info)
  *
  * Description:
- *
+ *   Builds merging assignments for inout-arguments if needed and stores them
+ *   in 'arg_info'.
  *
  ******************************************************************************/
 
@@ -2089,7 +2099,8 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
  *   node *PREC2let( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   Builds AP_ARGTAB and generates merging assignments for inout-arguments
+ *   if needed.
  *
  ******************************************************************************/
 
@@ -2122,6 +2133,7 @@ PREC2let (node *arg_node, node *arg_info)
         DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
 
         dots_off = 0;
+        idx = ap_argtab->size; /* to avoid a CC warning */
         while (ap_ids != NULL) {
             DBUG_ASSERT ((rettypes != NULL), "application is inconsistant");
 
@@ -2142,6 +2154,7 @@ PREC2let (node *arg_node, node *arg_info)
         }
 
         dots_off = 0;
+        idx = ap_argtab->size; /* to avoid a CC warning */
         while (ap_exprs != NULL) {
             DBUG_ASSERT ((args != NULL), "application is inconsistant");
 
@@ -2164,6 +2177,9 @@ PREC2let (node *arg_node, node *arg_info)
         ABORT_ON_ERROR;
         AP_ARGTAB (ap) = CompressArgtab (ap_argtab);
 
+        /*
+         * builds merging assignments if needed and stores them in 'arg_info'
+         */
         arg_info = MakeMergeAssigns (ap_argtab, arg_info);
     } else {
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
@@ -2184,7 +2200,11 @@ PREC2let (node *arg_node, node *arg_info)
  *   char *ToggleTmpName( char *name)
  *
  * Description:
- *
+ *   Ugly hack (dkr):
+ *   Identifiers have already been renamed during the first traversal. So, the
+ *   renaming has to be done by hand here...
+ *   It would be much better to do the renaming at the last traversal, but for
+ *   now I have no time to reorganize this stuff :-(
  *
  ******************************************************************************/
 
@@ -2423,22 +2443,23 @@ PREC3assign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   char *LiftArg( ids *let_ids, node *arg, char *new_name, node *arg_info)
+ *   node *LiftArg( ids *let_ids, node *arg, node *new_id, node *arg_info)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static char *
-LiftArg (ids *let_ids, node *arg, char *new_name, node *arg_info)
+static node *
+LiftArg (ids *let_ids, node *arg, node *new_id, node *arg_info)
 {
-    node *new_vardec;
-    ids *new_ids;
-
     DBUG_ENTER ("LiftArg");
 
-    if (new_name == NULL) {
+    if (new_id == NULL) {
+        char *new_name;
+        node *new_vardec;
+        ids *new_ids;
+
         /*
          * first occur of the var of the LHS
          */
@@ -2465,7 +2486,7 @@ LiftArg (ids *let_ids, node *arg, char *new_name, node *arg_info)
           = MakeAssign (MakeLet (EXPRS_EXPR (arg), new_ids),
                         INFO_PREC3_LASTASSIGN (arg_info));
 
-        EXPRS_EXPR (arg) = MakeId_Copy (new_name);
+        new_id = EXPRS_EXPR (arg) = MakeId_Copy (new_name);
         ID_VARDEC (EXPRS_EXPR (arg)) = new_vardec;
 
         if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
@@ -2480,11 +2501,11 @@ LiftArg (ids *let_ids, node *arg, char *new_name, node *arg_info)
     } else {
         /*
          * temporary var already generated
-         * -> just replace the current arg by 'new_name'
+         * -> just replace the current arg by 'new_id'
          */
         EXPRS_EXPR (arg) = FreeTree (EXPRS_EXPR (arg));
-        EXPRS_EXPR (arg) = MakeId_Copy (new_name);
-        ID_VARDEC (EXPRS_EXPR (arg)) = new_vardec;
+        EXPRS_EXPR (arg) = MakeId_Copy (ID_NAME (new_id));
+        ID_VARDEC (EXPRS_EXPR (arg)) = ID_VARDEC (new_id);
 
         if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
             ID_REFCNT (EXPRS_EXPR (arg)) = 1;
@@ -2495,7 +2516,7 @@ LiftArg (ids *let_ids, node *arg, char *new_name, node *arg_info)
         }
     }
 
-    DBUG_RETURN (new_name);
+    DBUG_RETURN (new_id);
 }
 
 /******************************************************************************
@@ -2527,7 +2548,7 @@ PREC3let (node *arg_node, node *arg_info)
     node *let_expr;
     node *arg, *arg_id;
     ids *let_ids;
-    char *new_name;
+    node *new_id;
     int arg_idx;
 
     DBUG_ENTER ("PREC3let");
@@ -2545,14 +2566,14 @@ PREC3let (node *arg_node, node *arg_info)
         while (let_ids != NULL) {
             arg = PRF_ARGS (let_expr);
             arg_idx = 0;
-            new_name = NULL;
+            new_id = NULL;
             while (arg != NULL) {
                 arg_id = EXPRS_EXPR (arg);
                 if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id))) &&
                     /* 2nd argument of F_reshape need not to be flattened! */
                     ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1))
                     && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
-                    new_name = LiftArg (let_ids, arg, new_name, arg_info);
+                    new_id = LiftArg (let_ids, arg, new_id, arg_info);
                 }
 
                 arg = EXPRS_NEXT (arg);
@@ -2576,7 +2597,7 @@ PREC3let (node *arg_node, node *arg_info)
             if (let_ids != NULL) {
                 DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
-                new_name = NULL;
+                new_id = NULL;
                 for (arg_idx = 1; arg_idx < argtab->size; arg_idx++) {
                     arg = argtab->ptr_in[arg_idx];
                     if ((ids_idx != arg_idx) && (arg != NULL)) {
@@ -2592,7 +2613,7 @@ PREC3let (node *arg_node, node *arg_info)
                                          "illegal tag found!");
 
                             if (argtab->tag[arg_idx] == ATG_in) {
-                                new_name = LiftArg (let_ids, arg, new_name, arg_info);
+                                new_id = LiftArg (let_ids, arg, new_id, arg_info);
                             }
                         }
                     }
