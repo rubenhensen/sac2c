@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/07/15 18:40:39  dkr
+ * Get...ClassFromTypes(): DBUG_ASSERT added
+ *
  * Revision 1.5  2002/07/12 21:37:58  dkr
  * fixed a bug in GetDataClassFromTypes()
  *
@@ -48,6 +51,7 @@ GetDataClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
+        DBUG_ASSERT ((0), "illegal data class found!");
         z = C_unknownd;
     } else if (IsHidden (type)) {
         z = C_hid;
@@ -92,6 +96,7 @@ GetUnqClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
+        DBUG_ASSERT ((0), "illegal data class found!");
         z = C_unknownu;
     } else if (IsUnique (type)) {
         z = C_unq;
