@@ -110,7 +110,7 @@ PrintBlock (node *arg_node, node *arg_info)
     fprintf (outfile, "{ \n");
     for (i = arg_node->nnode - 1; 0 <= i; i--)
         Trav (arg_node->node[i], arg_info);
-    fprintf (outfile, "} \n");
+    fprintf (outfile, "\n} \n");
 
     DBUG_RETURN (arg_node);
 }
