@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.39  2000/06/07 11:43:24  nmw
+ * commandline switch genlib added with options sac and c
+ * default forced if not specified: sac library
+ *
  * Revision 2.38  2000/05/29 17:22:14  dkr
  * 'show_refcnt' set (to 1) in phase PH_refcnt only
  *
@@ -378,6 +382,13 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("g", cc_debug = 1);
 
+    ARGS_OPTION ("genlib", {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("sac", generatelibrary |= GENERATELIBRARY_SAC);
+        ARG_CHOICE ("c", generatelibrary |= GENERATELIBRARY_C);
+        ARG_CHOICE_END ();
+    });
+
     ARGS_FLAG ("help", usage (); exit (0));
     ARGS_FLAG ("h", usage (); exit (0));
 
@@ -738,6 +749,12 @@ CheckOptionConsistency ()
     if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {
         SYSWARN (("Diagnostic heap management is only available in "
                   "conjunction with private heap management"));
+    }
+
+    /* commandline switch for library generation not used, set it to default
+       and generate a standard SAC Library */
+    if (generatelibrary == GENERATELIBRARY_NOTHING) {
+        generatelibrary = GENERATELIBRARY_SAC;
     }
 
     /*
