@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/11/21 09:08:19  dkr
+ * comment for ICMCompileND_FUN_RET() modified
+ *
  * Revision 3.6  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -530,10 +533,11 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
  *
  *   where TAG is element in { out, out_rc, inout, inout_rc}.
  *
- *   ATTENTION (!!!) this function gets an extra parameter "arg_info"
- *   in case of a usage from within PrintND_FUN_RET this argument contains
- *     a pointer to the fundef-node from which it was originally created;
- *   in case of a usage from BEtest this argument will be NULL !!
+ * remark:
+ *   IMPORTANT: This function gets an extra parameter "arg_info".
+ *   In case of a usage from within PrintND_FUN_RET() this argument contains
+ *     a pointer to the fundef-node from which it was originally created, but
+ *   in case of a usage from BEtest.c this argument will be NULL!!
  *
  ******************************************************************************/
 
