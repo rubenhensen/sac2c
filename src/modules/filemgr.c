@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/18 11:21:46  cg
+ * added function CheckExistFile().
+ *
  * Revision 2.1  1999/02/23 12:42:04  sacbase
  * new release made
  *
@@ -74,6 +77,7 @@
 #include "dbug.h"
 #include "internal_lib.h"
 #include "Error.h"
+#include "free.h"
 
 #include "filemgr.h"
 #include "resource.h"
@@ -129,6 +133,54 @@ FindFile (pathkind p, char *name)
     }
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int CheckExistFile(char *dir, char *name)
+ *
+ * description:
+ *
+ *   This function checks whether a given file exists in a given directory.
+ *   If the given directory is NULL then the current directory is taken.
+ *   More precisely, it is checked whether or not the file may be opened
+ *   for reading which in most cases is what we want to know.
+ *
+ ******************************************************************************/
+
+int
+CheckExistFile (char *dir, char *name)
+{
+    char *tmp;
+    FILE *file;
+    int res;
+
+    DBUG_ENTER ("CheckExistFile");
+
+    DBUG_ASSERT ((name != NULL), "Function CheckExistFile called with name NULL");
+
+    if (dir == NULL) {
+        dir = "";
+    }
+
+    tmp = (char *)Malloc ((strlen (dir) + strlen (name) + 3) * sizeof (char));
+
+    strcpy (tmp, dir);
+    strcat (tmp, "/");
+    strcat (tmp, name);
+
+    file = fopen (tmp, "r");
+    FREE (tmp);
+
+    if (file == NULL) {
+        res = 0;
+    } else {
+        res = 1;
+        fclose (file);
+    }
+
+    DBUG_RETURN (res);
 }
 
 /*

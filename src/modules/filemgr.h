@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/18 11:21:46  cg
+ * added function CheckExistFile().
+ *
  * Revision 2.1  1999/02/23 12:42:06  sacbase
  * new release made
  *
@@ -61,5 +64,6 @@ extern void AppendPath (pathkind p, char *path);
 extern void RearrangePaths ();
 extern char *AbsolutePathname (char *path);
 extern FILE *WriteOpen (char *format, ...);
+extern int CheckExistFile (char *dir, char *name);
 
 #endif /* _filemgr_h */
