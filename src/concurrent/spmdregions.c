@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/05/12 12:21:43  dkr
+ * added SPMDLiftNwithid, SPMDLiftLet, SPMDLiftIds
+ *
  * Revision 1.18  1998/05/07 10:15:31  dkr
  * uses DFMasks now
  *
@@ -176,6 +179,31 @@ SPMDInitAssign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *GetVardec( char *name, node *fundef)
+ *
+ * description:
+ *   returns a pointer to the vardec of var with name 'name'
+ *
+ ******************************************************************************/
+
+node *
+GetVardec (char *name, node *fundef)
+{
+    node *tmp, *vardec = NULL;
+
+    DBUG_ENTER ("GetVardec");
+
+    FOREACH_VARDEC_AND_ARG (fundef, tmp,
+                            if (strcmp (VARDEC_OR_ARG_NAME (tmp), name) == 0) {
+                                vardec = tmp;
+                            }) /* FOREACH_VARDEC_AND_ARG */
+
+    DBUG_RETURN (vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SPMDLiftFundef(node *arg_node, node *arg_info)
  *
  * description:
@@ -241,13 +269,11 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * generate body of SPMD-function
      */
-
     body = DupTree (SPMD_REGION (arg_node), NULL);
 
     /*
      * insert vardecs of SPMD_OUT/LOCAL-vars into body
      */
-
     vardec = FUNDEF_VARDEC (fundef);
     while (vardec != NULL) {
         if (DFMTestMaskEntry (SPMD_OUT (arg_node), VARDEC_NAME (vardec))
@@ -268,7 +294,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * build formal parameters (SPMD_IN/INOUT).
      */
-
     fargs = NULL;
     FOREACH_VARDEC_AND_ARG (fundef, vardec,
                             if (DFMTestMaskEntry (SPMD_IN (arg_node),
@@ -303,7 +328,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * build return types, return exprs (use SPMD_OUT).
      */
-
     rettypes = NULL;
     retexprs = NULL;
     FOREACH_VARDEC_AND_ARG (fundef, vardec,
@@ -370,23 +394,12 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * append return expressions to body of SPMD-function
      */
-
     FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
-
-    tmp = BLOCK_INSTR (body);
-    if (tmp != NULL) {
-        while (ASSIGN_NEXT (tmp) != NULL) {
-            tmp = ASSIGN_NEXT (tmp);
-        }
-        ASSIGN_NEXT (tmp) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
-    } else {
-        BLOCK_INSTR (body) = MakeAssign (FUNDEF_RETURN (new_fundef), NULL);
-    }
+    AppendAssign (BLOCK_INSTR (body), MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
 
     /*
      * traverse body of new fundef-node to correct the vardec-pointers of all id's.
      */
-
     INFO_SPMD_FUNDEF (arg_info) = new_fundef;
     body = Trav (body, arg_info);
     INFO_SPMD_FUNDEF (arg_info) = fundef;
@@ -394,16 +407,12 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * insert SPMD-function into fundef-chain of modul
      */
-
-#if 0
-  if (FUNDEF_NEXT( fundef) != NULL) {
-    FUNDEF_NEXT( new_fundef) = FUNDEF_NEXT( fundef);
-    FUNDEF_NEXT( fundef) = new_fundef;
-  }
-  else {
-    FUNDEF_NEXT( fundef) = new_fundef;
-  }
-#endif
+    if (FUNDEF_NEXT (fundef) != NULL) {
+        FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
+        FUNDEF_NEXT (fundef) = new_fundef;
+    } else {
+        FUNDEF_NEXT (fundef) = new_fundef;
+    }
 
     /*
      * build fundef for this spmd region
@@ -446,7 +455,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
 node *
 SPMDLiftId (node *arg_node, node *arg_info)
 {
-    node *fundef, *vardec, *tmp;
+    node *fundef;
 
     DBUG_ENTER ("SPMDLiftId");
 
@@ -459,35 +468,91 @@ SPMDLiftId (node *arg_node, node *arg_info)
          *   -> correct the pointer to the vardec (ID_VARDEC)
          */
 
-        vardec = NULL;
+        ID_VARDEC (arg_node) = GetVardec (ID_NAME (arg_node), fundef);
+        DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "vardec not found");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SPMDLiftLet( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Corrects the vardec-pointers of 'LET_IDS( arg_node)' in SPMD-funs
+ *    and traverses the let-expr.
+ *
+ ******************************************************************************/
+
+node *
+SPMDLiftLet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SPMDLiftLet");
+
+    LET_IDS (arg_node) = SPMDLiftIds (LET_IDS (arg_node), arg_info);
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SPMDLiftNwithid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Corrects the vardec-pointers of the with-ids in SPMD-funs.
+ *
+ ******************************************************************************/
+
+node *
+SPMDLiftNwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SPMDLiftNwithid");
+
+    NWITHID_IDS (arg_node) = SPMDLiftIds (NWITHID_IDS (arg_node), arg_info);
+    NWITHID_VEC (arg_node) = SPMDLiftIds (NWITHID_VEC (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *SPMDLiftIds( ids *arg_node, node *arg_info)
+ *
+ * description:
+ *   Corrects the vardec-pointers of ids.
+ *
+ * remarks:
+ *   INFO_SPMD_FUNDEF( arg_info) points to the current fundef-node.
+ *
+ ******************************************************************************/
+
+ids *
+SPMDLiftIds (ids *arg_node, node *arg_info)
+{
+    node *fundef;
+
+    DBUG_ENTER ("SPMDLiftIds");
+
+    fundef = INFO_SPMD_FUNDEF (arg_info);
+
+    if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
 
         /*
-         * search for vardec in arg-list
+         * we are inside a body of a SPMD-fun
+         *   -> correct the pointers to the vardec
          */
 
-        tmp = FUNDEF_ARGS (fundef);
-        while ((tmp != NULL) && (vardec == NULL)) {
-            if (strcmp (ARG_NAME (tmp), ID_NAME (arg_node)) == 0) {
-                vardec = tmp;
-            }
-            tmp = ARG_NEXT (tmp);
+        IDS_VARDEC (arg_node) = GetVardec (IDS_NAME (arg_node), fundef);
+        DBUG_ASSERT ((IDS_VARDEC (arg_node) != NULL), "vardec not found");
+
+        if (IDS_NEXT (arg_node) != NULL) {
+            IDS_NEXT (arg_node) = SPMDLiftIds (IDS_NEXT (arg_node), arg_info);
         }
-
-        /*
-         * search for vardec in vardec-chain
-         */
-
-        tmp = FUNDEF_VARDEC (fundef);
-        while ((tmp != NULL) && (vardec == NULL)) {
-            if (strcmp (VARDEC_NAME (tmp), ID_NAME (arg_node)) == 0) {
-                vardec = tmp;
-            }
-            tmp = VARDEC_NEXT (tmp);
-        }
-
-        DBUG_ASSERT ((vardec != NULL), "vardec not found");
-
-        ID_VARDEC (arg_node) = vardec;
     }
 
     DBUG_RETURN (arg_node);

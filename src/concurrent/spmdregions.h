@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/12 12:21:58  dkr
+ * added SPMDLiftNwithid, SPMDLiftLet, SPMDLiftIds
+ *
  * Revision 1.6  1998/04/29 20:15:40  dkr
  * *** empty log message ***
  *
@@ -38,6 +41,9 @@ extern node *SPMDInitAssign (node *arg_node, node *arg_info);
 extern node *SPMDLiftFundef (node *arg_node, node *arg_info);
 extern node *SPMDLiftSpmd (node *arg_node, node *arg_info);
 extern node *SPMDLiftId (node *arg_node, node *arg_info);
+extern node *SPMDLiftLet (node *arg_node, node *arg_info);
+extern node *SPMDLiftNwithid (node *arg_node, node *arg_info);
+extern ids *SPMDLiftIds (ids *arg_node, node *arg_info);
 
 /* build sync-regions */
 extern node *SYNCInitAssign (node *arg_node, node *arg_info);
