@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/03/15 15:32:23  dkr
+ * comment for N_arg modified
+ *
  * Revision 3.49  2001/03/15 13:57:26  dkr
  * definition of INFO_PREC2_OBJINITFUNDEF modified
  *
@@ -1054,7 +1057,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    int         REFCNT                       (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                 (refcount -> concurrent -> )
  ***    bool        PADDED                       (ap -> )
- ***    char*       TYPESTRING (O)               (precompile -> )
+ ***    char*       TYPESTRING (O)               (precompile !!)
  ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling -> precompile !!)
  ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
