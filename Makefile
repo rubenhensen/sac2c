@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.67  1998/03/22 18:02:26  srs
+# added WLT.o, WLI.o, WLF.o
+#
 # Revision 1.66  1998/03/04 00:08:53  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -259,7 +262,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o \
           src/optimize/Unswitch.o src/optimize/CSE.o \
-	  src/optimize/WithloopFolding.o
+	  src/optimize/WithloopFolding.o src/optimize/WLT.o \
+	  src/optimize/WLI.o src/optimize/WLF.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
