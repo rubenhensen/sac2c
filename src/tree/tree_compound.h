@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2004/10/14 13:18:04  sbs
+ * eliminated VINFO_DIM VINFO_SHPSEG VINFO_SELEMS
+ *
  * Revision 3.100  2004/10/14 12:43:19  sbs
  * Type2Shape added.
  *
@@ -1859,14 +1862,6 @@ extern void *Array2Vec (simpletype t, node *aelems, int *length);
 /***
  ***  N_vinfo :
  ***/
-
-/*
- *  compound access macros
- */
-
-#define VINFO_DIM(n) SHAPES_DIM (VINFO_TYPE (n))
-#define VINFO_SHPSEG(n) SHAPES_SHPSEG (VINFO_TYPE (n))
-#define VINFO_SELEMS(n) SHAPES_SELEMS (VINFO_TYPE (n))
 
 extern node *MakeVinfoDollar (node *next);
 
