@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1998/04/02 18:47:31  dkr
+ * added PRECconc
+ *
  * Revision 1.42  1998/04/01 23:57:14  dkr
  * removed a few bugs
  *
@@ -1119,6 +1122,28 @@ PRECid (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRECconc(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRECconc (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PRECconc");
+
+    CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * precompilaton of new with-loop
@@ -1923,6 +1948,8 @@ SetSegs (node *cubes, int dims)
 
     DBUG_ENTER ("SetSegs");
 
+    DBUG_ASSERT ((NODE_TYPE (cubes) == N_WLstride), "wrong node type found");
+
     /* ??? */
 
 #if 1
@@ -2150,6 +2177,8 @@ SplitWL (node *strides)
     int fixpoint;
 
     DBUG_ENTER ("SplitWL");
+
+    DBUG_ASSERT ((NODE_TYPE (strides) == N_WLstride), "wrong node type found");
 
     /*
      * the outline of each stride is intersected with all the other ones.
@@ -3320,6 +3349,8 @@ ComputeCubes (node *strides)
     int fixpoint;
 
     DBUG_ENTER ("ComputeCubes");
+
+    DBUG_ASSERT ((NODE_TYPE (strides) == N_WLstride), "wrong node type found");
 
     /*
      * create disjunct outlines

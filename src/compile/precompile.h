@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/04/02 18:47:08  dkr
+ * added PRECconc
+ *
  * Revision 1.8  1998/03/03 22:57:38  dkr
  * added PRECncode()
  *
@@ -51,6 +54,7 @@ extern node *PRECreturn (node *arg_node, node *arg_info);
 extern node *PRECid (node *arg_node, node *arg_info);
 extern node *PRECvardec (node *arg_node, node *arg_info);
 extern node *PRECtypedef (node *arg_node, node *arg_info);
+extern node *PRECconc (node *arg_node, node *arg_info);
 extern node *PRECnwith (node *arg_node, node *arg_info);
 extern node *PRECncode (node *arg_node, node *arg_info);
 
