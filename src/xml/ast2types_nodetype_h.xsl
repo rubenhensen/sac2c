@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/24 17:47:01  sah
+  update
+
   Revision 1.1  2004/11/23 11:32:29  sah
   Initial revision
 
@@ -33,6 +36,9 @@
 #define _SAC_TYPES_NODETYPE_H_
 
     </xsl:text>
+    <xsl:value-of select="'#define MAX_NODES '" />
+    <xsl:value-of select="count(/definition/syntaxtree/node)" />
+    <xsl:call-template name="newline" />
     <xsl:apply-templates select="/definition/syntaxtree" />
     <xsl:text>
 #endif /* _SAC_TYPES_NODETYPE_H_ */
@@ -40,7 +46,7 @@
   </xsl:template>
 
   <xsl:template match="syntaxtree" >
-    <xsl:value-of select="'typedef enum { N_undefined'" />
+    <xsl:value-of select="'typedef enum { N_undefined = 0'" />
     <xsl:apply-templates select="node" />
     <xsl:value-of select="'} nodetype; '" />
   </xsl:template>
@@ -52,6 +58,8 @@
         <xsl:value-of select="@name" />
       </xsl:with-param>
     </xsl:call-template>
+    <xsl:value-of select="' = '" />
+    <xsl:value-of select="position()" />
   </xsl:template>
 
 </xsl:stylesheet>

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.54  2004/11/24 17:47:01  sah
+  update
+
   Revision 1.53  2004/11/24 17:29:33  ktr
   added some header files.
 
@@ -424,7 +427,7 @@
       </traversal>
     </phase>
     <phase id="sacopt" name="Running SAC optimizations">
-       <traversal id="AL" name="AssociativeLaw" defaults="sons" include="AssociativeLaw.h" >
+       <traversal id="AL" name="AssociativeLaw" default="sons" include="AssociativeLaw.h" >
 	<travuser>
 	  <node name="Block" />
 	  <node name="Assign" />
@@ -449,7 +452,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="CVP" name="Constant Variable Propagation" defaults="sons" include="ConstVarPropagation.h" >
+      <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Block" />
@@ -476,7 +479,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="DDEPEND" name="Detect Dependencies" defaults="sons" include="detectdependencies.h" >
+      <traversal id="DDEPEND" name="Detect Dependencies" default="sons" include="detectdependencies.h" >
 	<travuser>
 	  <node name="Assign" />
 	  <node name="Prf" />
@@ -491,7 +494,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="DL" name="DistributiveLaw" defaults="sons" include="DistributiveLaw.h" >
+      <traversal id="DL" name="DistributiveLaw" default="sons" include="DistributiveLaw.h" >
 	<travuser>
 	  <node name="Block" />
 	  <node name="Assign" />
@@ -506,7 +509,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="ESD" name="ElimSubDiv" defaults="sons" include="ElimSubDiv.h" >
+      <traversal id="ESD" name="ElimSubDiv" default="sons" include="ElimSubDiv.h" >
 	<travuser>
 	  <node name="Block" />
 	  <node name="Assign" />
@@ -533,7 +536,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="RDEPEND" name="Resolve Dependencies" defaults="sons" include="resolvedependencies.h" >
+      <traversal id="RDEPEND" name="Resolve Dependencies" default="sons" include="resolvedependencies.h" >
 	<travuser>
 	  <node name="Assign" />
 	  <node name="Prf" />
@@ -545,7 +548,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="TDEPEND" name="Tag Dependencies" defaults="sons" include="tagdependencies.h" >
+      <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
 	<travuser>
 	  <node name="Assign" />
 	  <node name="Id" />
@@ -558,7 +561,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="UESD" name="UndoElimSubDiv" defaults="sons" include="UndoElimSubDiv.h" >
+      <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
         <travuser>
 	  <node name="Block" />
           <node name="Let" />
@@ -572,7 +575,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="WLFS" name="With-Loop-Fusion" defaults="sons" include="WithloopFusion.h" >
+      <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Block" />
@@ -593,7 +596,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="WLS" name="With-Loop Scalarization" defaults="sons" include="wls.h">
+      <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
         <travuser>
           <node name="Ap" />
           <node name="Assign" />
@@ -601,7 +604,7 @@
           <node name="With" />
         </travuser>
       </traversal>
-      <traversal id="WLSC" name="With-Loop Scalarization Check traversal" defaults="sons" include="wls.h">
+      <traversal id="WLSC" name="With-Loop Scalarization Check traversal" default="sons" include="wls.h">
         <travuser>
           <node name="Block" />
           <node name="Code" />
@@ -614,7 +617,7 @@
           <node name="Fold" />
         </travuser>
       </traversal>
-      <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" defaults="sons" include="wls.h">
+      <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" default="sons" include="wls.h">
         <travuser>
           <node name="Code" />
           <node name="Id" />
@@ -624,7 +627,7 @@
           <node name="Withid" />
         </travuser>
       </traversal>
-      <traversal id="WLSB" name="With-Loop Scalarization Build traversal" defaults="sons" include="wls.h">
+      <traversal id="WLSB" name="With-Loop Scalarization Build traversal" default="sons" include="wls.h">
         <travuser>
           <node name="Code" />
           <node name="Generator" />
