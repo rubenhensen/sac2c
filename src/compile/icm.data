@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/08/05 16:12:09  ktr
+ * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
+ * WL_ASSIGN without incrementing the WL_OFFSET.
+ *
  * Revision 3.72  2004/08/02 16:17:49  ktr
  * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
  * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
@@ -733,6 +737,13 @@ ICM_DEF( WL_SUBALLOC, TRACE_NONE)
 ICM_END( WL_SUBALLOC, (sub_NT, to_NT))
 #endif
 
+#if defined(WL_INC_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_INC_OFFSET, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( val_NT)
+ICM_END( WL_INC_OFFSET, (to_NT, val_NT))
+#endif
+
 #if defined(WL_EMM_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_EMM_ASSIGN, TRACE_NONE)
   ICM_NT( val_NT)
@@ -741,11 +752,9 @@ ICM_DEF( WL_EMM_ASSIGN, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxs_scl_NT)
   ICM_ID( copyfun)
-  ICM_ID( freefun)
 ICM_END( WL_EMM_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim,
-                         idx_vec_NT, dims, idxs_scl_NT, copyfun, freefun))
+                         idx_vec_NT, dims, copyfun ))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/08/05 16:12:09  ktr
+ * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
+ * WL_ASSIGN without incrementing the WL_OFFSET.
+ *
  * Revision 3.20  2004/08/02 16:17:49  ktr
  * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
  * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
@@ -87,9 +91,10 @@ extern void ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int di
 
 extern void ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT);
 
-extern void ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_dim,
-                                     char *idx_vec_NT, int dims, char **idxa_scl_NT,
-                                     char *copyfun, char *freefun);
+extern void ICMCompileWL_INC_OFFSET (char *to_NT, char *val_NT);
+
+extern void ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
+                                     char *idx_vec_NT, int dims, char *copyfun);
 
 extern void ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_dim,
                                  char *idx_vec_NT, int dims, char **idxa_scl_NT,

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/08/05 16:12:09  ktr
+ * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
+ * WL_ASSIGN without incrementing the WL_OFFSET.
+ *
  * Revision 3.37  2004/08/02 16:17:49  ktr
  * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
  * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
@@ -533,26 +537,53 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileWL_INC_OFFSET( char *to_NT, char *val_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_INC_OFFSET( to_NT, val_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_INC_OFFSET (char *to_NT, char *val_NT)
+{
+    DBUG_ENTER ("ICMCompileWL_INC_OFFSET");
+
+#define WL_INC_OFFSET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_INC_OFFSET
+
+    INDENT;
+    fprintf (outfile, "SAC_WL_OFFSET( %s) += SAC_ND_A_SIZE( %s);\n", to_NT, val_NT);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileWL_EMM_ASSIGN( char *val_NT, int val_sdim,
  *                                 char *to_NT, int to_sdim
- *                                 char *idx_vec_NT,
- *                                 int dims, char **idxs_scl_NT,
- *                                 char *copyfun, char *freefun)
+ *                                 char *idx_vec_NT, int dims,
+ *                                 char *copyfun)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
  *   WL_EMM_ASSIGN( val_NT, val_sdim, to_NT, to_sdim,
- *                  idx_vec_NT, dims, [ idxs_scl_NT ]* , copyfun, freefun )
+ *                  idx_vec_NT, dims, copyfun )
  *
  ******************************************************************************/
 
 void
 ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
-                         char *idx_vec_NT, int dims, char **idxs_scl_NT, char *copyfun,
-                         char *freefun)
+                         char *idx_vec_NT, int dims, char *copyfun)
 {
-    shape_class_t val_sc = ICUGetShapeClass (val_NT);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+    int val_dim = DIM_NO_OFFSET (val_sdim);
 
     DBUG_ENTER ("ICMCompileWL_EMM_ASSIGN");
 
@@ -561,15 +592,29 @@ ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 #include "icm_trace.c"
 #undef WL_EMM_ASSIGN
 
-    if (val_sc == C_scl) {
-        ICMCompileWL_ASSIGN (val_NT, val_sdim, to_NT, to_sdim, idx_vec_NT, dims,
-                             idxs_scl_NT, copyfun);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == (SAC_ND_A_DIM( %s) - %d)",
+                              val_NT, to_NT, dims);
+                     , fprintf (outfile, "WL expression with illegal dimension found!"););
+
+    ASSURE_TYPE_ASS (fprintf (outfile,
+                              "SAC_ND_A_SIZE( %s) == SAC_WL_SHAPE_FACTOR( %s, %d)",
+                              val_NT, to_NT, dims - 1);
+                     , fprintf (outfile, "WL expression with illegal size found!"););
+
+    if ((val_dim == 0) || (to_dim == dims)) {
         INDENT;
-        fprintf (outfile, "SAC_ND_DEC_RC_FREE( %s, 1, %s)\n", val_NT, freefun);
+        fprintf (outfile,
+                 "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
+                 " %s, 0, %s);\n",
+                 to_NT, to_NT, val_NT, copyfun);
     } else {
-        INDENT;
-        fprintf (outfile, "SAC_WL_OFFSET( %s) += SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT,
-                 to_NT, dims - 1);
+        FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
+                             , fprintf (outfile, "SAC_ND_A_SIZE( %s)", val_NT);, INDENT;
+                             fprintf (outfile,
+                                      "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s) + "
+                                      "SAC_i,"
+                                      " %s, SAC_i, %s);\n",
+                                      to_NT, to_NT, val_NT, copyfun););
     }
 
     DBUG_VOID_RETURN;
