@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.29  1999/08/30 16:33:06  cg
+ * Bug fixed in handling of foldfuns:
+ * Their local vardecs are no longer compiled! This will be done
+ * automatically after they have been added to the local vardecs
+ * of the regular function a foldfun belongs to.
+ *
  * Revision 2.28  1999/08/30 16:07:19  jhs
  * Handling of non-with-loop-code in sync-blocks added.
  *
@@ -2893,9 +2899,14 @@ COMPBlock (node *arg_node, node *arg_info)
     /*
      * we must compile the vardecs last, because we need the uncompiled vardecs
      *  during traversal of the block.
+     *
+     * Vardecs are not compiled for "foldfuns" because these vardecs are later
+     * on inserted into the vardec chains of the function each foldfun belongs
+     * to, i.e., they are compiled when this function is compiled.
      */
     if ((BLOCK_VARDEC (arg_node) != NULL)
-        && (NODE_TYPE (BLOCK_VARDEC (arg_node)) == N_vardec)) {
+        && (NODE_TYPE (BLOCK_VARDEC (arg_node)) == N_vardec)
+        && (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) != ST_foldfun)) {
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
