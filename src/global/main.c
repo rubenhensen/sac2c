@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/10/21 17:53:30  sah
+ * added ResolveAll.
+ *
  * Revision 3.66  2004/10/21 17:20:01  ktr
  * Added a nasty hack to traverse MODUL_TYPES with the new typechecker even
  * when the old typechecker is used.
@@ -271,6 +274,7 @@
 #include "cccall.h"
 #ifdef NEW_AST
 #include "libstat.h"
+#include "resolveall.h"
 #endif /* NEW_AST */
 #include "PatchWith.h"
 #include "resource.h"
@@ -429,12 +433,14 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-#ifndef NEW_AST
-
     PHASE_PROLOG;
     if (MODUL_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
+#ifndef NEW_AST
         syntax_tree = Import (syntax_tree); /* imp_tab */
+#else
+        ResolveAll (syntax_tree);
+#endif /* NEW_AST */
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
@@ -442,6 +448,8 @@ main (int argc, char *argv[])
     if (break_after == PH_import)
         goto BREAK;
     compiler_phase++;
+
+#ifndef NEW_AST
 
     if (makedeps) {
         /*
@@ -485,7 +493,7 @@ main (int argc, char *argv[])
     compiler_phase++;
 
 #else
-    compiler_phase += 2;
+    compiler_phase += 1;
 #endif /* NEW_AST */
 
     PHASE_PROLOG;
