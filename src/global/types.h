@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/06/18 13:40:07  cg
+ * macro NIF used in node_info.mac enlarged,
+ * new traversal function tables added.
+ *
  * Revision 1.40  1998/05/28 23:53:44  dkr
  * added ST_foldfun
  *
@@ -289,7 +293,8 @@ typedef enum { CT_normal, CT_ap, CT_return, CT_wl } contextflag;
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
+            t47, t48, nn)                                                                \
     n
 
 typedef enum {
