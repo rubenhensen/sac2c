@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2005/01/11 14:06:14  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.112  2004/11/24 19:41:24  sah
  * COMPILES!
  *
@@ -19,18 +22,8 @@
 
 #include "tree_basic.h"
 #include "internal_lib.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
-
-/*--------------------------------------------------------------------------*/
-/* local macros for heap allocation                                         */
-/*--------------------------------------------------------------------------*/
-
-#define ALLOCATE(type) (type *)ILIBmalloc (sizeof (type))
-
-/*--------------------------------------------------------------------------*/
-/* local functions for node initialization                                  */
-/*--------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for non-node structures                                  */
@@ -48,7 +41,7 @@ TBmakeShpseg (node *numsp)
 
     DBUG_ENTER ("TBmakeShpseg");
 
-    tmp = ALLOCATE (shpseg);
+    tmp = (shpseg *)ILIBmalloc (sizeof (shpseg));
 
 #ifndef DBUG_OFF
     /*
@@ -68,7 +61,7 @@ TBmakeShpseg (node *numsp)
     i = 0;
     while (numsp != NULL) {
         if (i >= SHP_SEG_SIZE) {
-            SYSABORT (("Maximum number of dimensions exceeded"));
+            CTIabort ("Maximum number of dimensions exceeded");
         }
 
         DBUG_ASSERT ((NODE_TYPE (numsp) == N_nums), "found a non numsp node as argument");
@@ -109,7 +102,7 @@ TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
 
     DBUG_ENTER ("TBmakeTypes");
 
-    tmp = ALLOCATE (types);
+    tmp = (types *)ILIBmalloc (sizeof (types));
 
     TYPES_BASETYPE (tmp) = btype;
     TYPES_NAME (tmp) = name;
@@ -134,7 +127,7 @@ TBmakeNodelist (node *node, statustype status, nodelist *next)
 
     DBUG_ENTER ("TBmakeNodelist");
 
-    tmp = ALLOCATE (nodelist);
+    tmp = (nodelist *)ILIBmalloc (sizeof (nodelist));
     NODELIST_NODE (tmp) = node;
     NODELIST_STATUS (tmp) = status;
     NODELIST_NEXT (tmp) = next;
@@ -165,7 +158,7 @@ TBmakeNodelistNode (node *node, nodelist *next)
 
     DBUG_ENTER ("TBmakeNodelistNode");
 
-    tmp = ALLOCATE (nodelist);
+    tmp = (nodelist *)ILIBmalloc (sizeof (nodelist));
     NODELIST_NODE (tmp) = node;
     NODELIST_NEXT (tmp) = next;
 
@@ -182,7 +175,7 @@ TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 
     DBUG_ENTER ("TBmakeAccess");
 
-    tmp = ALLOCATE (access_t);
+    tmp = (access_t *)ILIBmalloc (sizeof (access_t));
 
     ACCESS_ARRAY (tmp) = array;
     ACCESS_IV (tmp) = iv;
@@ -204,7 +197,7 @@ TBmakeArgtab (int size)
 
     DBUG_ENTER ("TBmakeArgtab");
 
-    argtab = ALLOCATE (argtab_t);
+    argtab = (argtab_t *)ILIBmalloc (sizeof (argtab_t));
 
     argtab->size = size;
     argtab->ptr_in = ILIBmalloc (argtab->size * sizeof (node *));

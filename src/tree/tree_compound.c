@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.130  2005/01/11 14:06:14  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.129  2004/12/19 23:16:37  ktr
  * removed TCcountFunctionParams
  *
@@ -109,12 +112,13 @@
 #include "free.h"
 #include "new_types.h"
 #include "new_typecheck.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"
 #include "globals.h"
 #include "NameTuplesUtils.h"
 #include "type_utils.h"
+#include "internal_lib.h"
 
 /*****************************************************************************/
 /**
@@ -494,8 +498,8 @@ TCgetTypesLine (types *type, int line)
 
         if (line > 0) {
             if (tdef == NULL) {
-                ABORT (line, ("type '%s' is unknown",
-                              ERRmodName (TYPES_MOD (type), TYPES_NAME (type))));
+                CTIabortLine (line, "Type '%s:%s' is unknown", TYPES_MOD (type),
+                              TYPES_NAME (type));
             }
         } else {
             DBUG_ASSERT ((tdef != NULL), "typedef not found!");
@@ -1075,7 +1079,7 @@ TClookupIds (const char *name, node *ids_chain)
 {
     DBUG_ENTER ("TClookupIds");
 
-    while ((ids_chain != NULL) && (0 != strcmp (name, IDS_NAME (ids_chain)))) {
+    while ((ids_chain != NULL) && (!ILIBstringCompare (name, IDS_NAME (ids_chain)))) {
         ids_chain = IDS_NEXT (ids_chain);
     }
 

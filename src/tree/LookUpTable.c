@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2005/01/11 14:06:14  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.27  2004/11/25 20:10:51  ktr
  * COMPILES!
  *
@@ -204,7 +207,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 /*
  * size of a collision table fragment
@@ -437,10 +440,10 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
                                sdev_mean););
 
         if ((diff_size > LUT_SIZE) && (sdev_mean > 0.8)) {
-            SYSWARN (("LUT: unballanced lut (%s) detected", note));
-            CONT_WARN (("(range = %i..%i,"
-                        " mean = %1.1f, sdev = %1.1f, sdev/mean^2 = %1.2f)",
-                        min_size, max_size, mean_size, sdev_size, sdev_mean));
+            CTIwarn ("LUT: unbalanced lut (%s) detected:\n"
+                     "(range = %i..%i,\n"
+                     " mean = %1.1f, sdev = %1.1f, sdev/mean^2 = %1.2f)",
+                     note, min_size, max_size, mean_size, sdev_size, sdev_mean);
         }
     } else {
         diff_size = 0;
