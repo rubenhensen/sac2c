@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/10/14 22:36:57  sbs
+ * DBUG_assert in SHCopySHape split over two lines for easier debugging.
+ *
  * Revision 1.15  2004/10/14 11:47:49  sbs
  * SHShape2Exprs added
  *
