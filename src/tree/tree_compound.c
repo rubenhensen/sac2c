@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2002/10/10 00:43:23  dkr
+ * bug in CompareTypesImplementation() fixed
+ *
  * Revision 3.72  2002/09/25 11:34:34  sbs
  * CompareTypesImplementation now allways initializes res !!!
  *
@@ -851,9 +854,9 @@ CompareTypesImplementation (types *t1, types *t2)
             res = (shpdim2 == SCALAR) ? 2 : 1;
         } else if (shpdim2 == UNKNOWN_SHAPE) {
             res = (shpdim1 == SCALAR) ? 2 : -1;
-        } else if (KNOWN_DIMENSION (shpdim1)) {
+        } else if (shpdim1 < KNOWN_DIM_OFFSET) {
             res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : 1;
-        } else if (KNOWN_DIMENSION (shpdim2)) {
+        } else if (shpdim2 < KNOWN_DIM_OFFSET) {
             res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : -1;
         } else {
             DBUG_ASSERT ((0), "illegal shape constellation found!");
