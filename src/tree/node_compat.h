@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/10/12 13:21:41  sah
+ * added special handling of WLseg WLsegVar MakeNWith2
+ *
  * Revision 1.7  2004/10/05 16:16:52  sah
  * added MakeCSEinfo
  *
@@ -64,10 +67,15 @@
 #define MakeNPart(withid, gen, code) MakeNPart (code, withid, gen)
 #define MakeCast(a, b) MakeCast (b, a)
 #define MakeMop(a, b, c) MakeMop (b, c, a)
-#define MakeNWith2(a, b, c, d, e) MakeNWith2 (e, a, b, d, c)
 #define MakeSSAstack(a, b) MakeSSAstack (b, a)
 #define MakeNWith(a, b, c) MakeNWith (b, a, c)
 #define MakeCSEinfo(a, b, c) MakeCSEinfo (b, c, a)
+#define MakeNWith2(withid, seg, code, withop, dims)                                      \
+    MakeNWith2 (dims, withid, seg, code, withop)
+#define MakeWLgrid(level, dim, b1, b2, unr, nextd, next, code)                           \
+    MakeWLgrid (level, dim, b1, b2, unr, code, nextd, next)
+#define MakeWLgridVar(level, dim, b1, b2, nextd, next, code)                             \
+    MakeWLgridVar (level, dim, b1, b2, code, nextd, next)
 
 #define NWITHOP_ARRAY(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
 #define NWITHOP_SHAPE(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
@@ -103,12 +111,14 @@
 #undef MakeFlatArray
 #undef MakeCast
 #undef MakeMop
-#undef MakeNWith2
 #undef MakeSSAstack
 #undef MakeNGenerator
 #undef MakeNPart
 #undef MakeNWith
 #undef MakeCSEinfo
+#undef MakeNWith2
+#undef MakeWLgrid
+#undef MakeWLgridVar
 
 #undef NGEN_BOUND1
 #undef NGEN_BOUND2
