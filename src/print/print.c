@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.145  1998/02/11 17:15:06  srs
+ * changed NPART_IDX to NPART_WITHID
+ * removed NEW_TREE
+ *
  * Revision 1.144  1998/01/30 17:49:15  srs
  * modified printing of new WL generator
  *
@@ -643,11 +647,7 @@ PrintAssign (node *arg_node, node *arg_info)
     if (N_icm == ASSIGN_INSTR (arg_node)->nodetype) {
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
         fprintf (outfile, "\n");
-#ifndef NEWTREE
-        if (2 == arg_node->nnode)
-#else
         if (ASSIGN_NEXT (arg_node))
-#endif
             Trav (arg_node->node[1], arg_info);
     } else {
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
@@ -659,11 +659,7 @@ PrintAssign (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
         }
 
-#ifndef NEWTREE
-        if (2 == arg_node->nnode)
-#else
         if (ASSIGN_NEXT (arg_node))
-#endif
             Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
@@ -918,11 +914,7 @@ PrintImplist (node *arg_node, node *arg_info)
         fprintf (outfile, "\n}\n");
     }
 
-#ifndef NEWTREE
-    if (1 == arg_node->nnode)
-#else
-    if (arg_node->node[0] != NULL)
-#endif
+    if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info); /* print further imports */
 
     DBUG_RETURN (arg_node);
@@ -945,11 +937,7 @@ PrintTypedef (node *arg_node, node *arg_info)
         fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
     }
 
-#ifndef NEWTREE
-    if (1 == arg_node->nnode)
-#else
-    if (arg_node->node[0] != NULL)
-#endif
+    if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
 
     DBUG_RETURN (arg_node);
@@ -1337,12 +1325,7 @@ PrintExprs (node *arg_node, node *arg_info)
 
     Trav (arg_node->node[0], arg_info);
 
-#ifndef NEWTREE
-    if (2 == arg_node->nnode)
-#else
-    if (arg_node->node[1] != NULL)
-#endif
-    {
+    if (arg_node->node[1]) {
         fprintf (outfile, ", ");
         Trav (arg_node->node[1], arg_info);
     }
@@ -1368,12 +1351,7 @@ PrintArg (node *arg_node, node *arg_info)
         Trav (ARG_COLCHN (arg_node), arg_info);
     }
 
-#ifndef NEWTREE
-    if (1 == arg_node->nnode)
-#else
-    if (arg_node->node[0] != NULL)
-#endif
-    {
+    if (arg_node->node[0]) {
         fprintf (outfile, ", ");
         Trav (arg_node->node[0], arg_info);
     }
@@ -1394,11 +1372,7 @@ PrintVardec (node *arg_node, node *arg_info)
     if (VARDEC_COLCHN (arg_node) && show_idx)
         Trav (VARDEC_COLCHN (arg_node), arg_info);
     fprintf (outfile, ";\n");
-#ifndef NEWTREE
-    if (1 == arg_node->nnode)
-#else
-    if (arg_node->node[0] != NULL)
-#endif
+    if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
     else
         fprintf (outfile, "\n");
@@ -2061,7 +2035,7 @@ PrintNPart (node *arg_node, node *arg_info)
     /* print generator */
     if (!arg_info->node[2])
         INDENT; /* each gen in a new line. */
-    PrintNGenerator (NPART_GEN (arg_node), NPART_IDX (arg_node), arg_info);
+    PrintNGenerator (NPART_GEN (arg_node), NPART_WITHID (arg_node), arg_info);
 
     /* print the code section; first the body */
     code = NPART_CODE (arg_node);
