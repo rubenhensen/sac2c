@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/21 17:47:51  dkr
+ * forassign: AppendAssign() used instead of Append()
+ *
  * Revision 3.10  2001/03/21 13:57:58  dkr
  * parsing of wlcomp-pragmas re-roganized in order to avoid shift/reduce
  * conflicts without defacing the syntax
@@ -1448,30 +1451,31 @@ assign: letassign SEMIC { $$ = $1; }
       ;
 
 letassign: ids LET { $<cint>$ = linenum; } expr 
-           { $$ = MakeLet( $4, $1);
-             NODE_LINE( $$) = $<cint>3;
-           }
+             { $$ = MakeLet( $4, $1);
+               NODE_LINE( $$) = $<cint>3;
+             }
          | id SQBR_L expr SQBR_R LET { $<cint>$ = linenum; } expr
-           { $$ = MakeLet( MakePrf( F_modarray,
-                             MakeExprs( MakeId( $1, NULL, ST_regular) ,
-                               MakeExprs( $3,
-                                 MakeExprs( $7,
-                                   NULL)))),
-                           MakeIds( StringCopy( $1), NULL, ST_regular));
-             NODE_LINE( $$) = $<cint>6;
-           }
+             { $$ = MakeLet( MakePrf( F_modarray,
+                               MakeExprs( MakeId( $1, NULL, ST_regular) ,
+                                 MakeExprs( $3,
+                                   MakeExprs( $7,
+                                     NULL)))),
+                             MakeIds( StringCopy( $1), NULL, ST_regular));
+               NODE_LINE( $$) = $<cint>6;
+             }
          | id SQBR_L expr COMMA exprs SQBR_R LET { $<cint>$ = linenum; } expr
-           { $$ = MakeLet( MakePrf( F_modarray,
-                             MakeExprs( MakeId( $1, NULL, ST_regular) ,
-                                        MakeExprs( MakeArray( MakeExprs( $3, $5)),
-                                                   MakeExprs( $9,
-                                                              NULL)))),
-                         MakeIds( StringCopy( $1), NULL, ST_regular));
-             NODE_LINE( $$) = $<cint>8;
-           }
+             { $$ = MakeLet( MakePrf( F_modarray,
+                               MakeExprs( MakeId( $1, NULL, ST_regular) ,
+                                          MakeExprs( MakeArray( MakeExprs( $3,
+                                                                           $5)),
+                                                     MakeExprs( $9,
+                                                                NULL)))),
+                           MakeIds( StringCopy( $1), NULL, ST_regular));
+               NODE_LINE( $$) = $<cint>8;
+             }
          | expr_ap
-           { $$ = MakeLet( $1, NULL);
-           }
+             { $$ = MakeLet( $1, NULL);
+             }
 
 /* left for later BRUSHING BEGIN */
          | id INC { $$ = MAKE_INCDEC_LET( $1, F_add); }
@@ -1489,9 +1493,9 @@ letassign: ids LET { $<cint>$ = linenum; } expr
 
 selassign: IF { $<cint>$ = linenum; } BRACKET_L exprNOar BRACKET_R assignblock 
            optelse
-           { $$ = MakeCond( $4, $6, $7);
-             NODE_LINE( $$) = $<cint>2;
-           }
+             { $$ = MakeCond( $4, $6, $7);
+               NODE_LINE( $$) = $<cint>2;
+             }
          ;
 
 optelse: ELSE assignblock        { $$ = $2;                 }
@@ -1500,27 +1504,29 @@ optelse: ELSE assignblock        { $$ = $2;                 }
 
 forassign: DO { $<cint>$ = linenum; } assignblock
            WHILE BRACKET_L exprNOar BRACKET_R SEMIC
-           { $$ = MakeDo( $6, $3);
-             NODE_LINE( $$) = $<cint>2;
-           }
-         | WHILE { $<cint>$ = linenum; } BRACKET_L exprNOar BRACKET_R assignblock 
-           { $$ = MakeWhile( $4, $6);
-             NODE_LINE( $$) = $<cint>2;
-           }
-         | FOR { $<cint>$ = linenum; } BRACKET_L assign exprNOar SEMIC 
-           letassign BRACKET_R assignblock
-           { /*
-              * for( x=e1; e2; y=e3) AssBlock
-              * is transformed into
-              * x=e1;
-              * while( e2) { AssBlock; y=e3; }
-              */
-             $$ = MakeAssign( $4,
-                              MakeAssign( MakeWhile( $5,
-                                                     AppendAssign( $9, $7)),
-                                          NULL));
-             NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
-           } 
+             { $$ = MakeDo( $6, $3);
+               NODE_LINE( $$) = $<cint>2;
+             }
+         | WHILE { $<cint>$ = linenum; } BRACKET_L exprNOar BRACKET_R
+           assignblock
+             { $$ = MakeWhile( $4, $6);
+               NODE_LINE( $$) = $<cint>2;
+             }
+         | FOR { $<cint>$ = linenum; }
+           BRACKET_L assign exprNOar SEMIC letassign BRACKET_R assignblock
+             { /*
+                * for( x=e1; e2; y=e3) AssBlock
+                * is transformed into
+                * x=e1;
+                * while( e2) { AssBlock; y=e3; }
+                */
+               BLOCK_INSTR( $9) = AppendAssign( BLOCK_INSTR( $9),
+                                                MakeAssign( $7, NULL));
+               $$ = MakeAssign( $4,
+                                MakeAssign( MakeWhile( $5, $9),
+                                            NULL));
+               NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
+             }
          ;
 
 
