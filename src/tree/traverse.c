@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/10/10 09:58:05  ktr
+ * added emrco_tab
+ *
  * Revision 3.86  2004/10/07 12:37:00  ktr
  * Replaced the old With-Loop Scalarization with a new implementation.
  *
@@ -311,6 +314,7 @@
 #include "uniquecheck.h"
 #include "alloc.h"
 #include "refcounting.h"
+#include "rcopt.h"
 #include "reuse.h"
 #include "wltransform.h"
 #include "precompile.h"
@@ -505,15 +509,15 @@ static funtab spmdemm_tab_rec = {{
 funtab *spmdemm_tab = &spmdemm_tab_rec;
 #endif /* NEW_AST */
 /*
- *  (10) unused_tab41
+ *  (10) emacf_tab
  */
-static funtab unused_tab41_rec = {{
-#define NIFunused_41(it_unused_41) it_unused_41
+static funtab emacf_tab_rec = {{
+#define NIFemacf(it_emacf) it_emacf
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab41 = &unused_tab41_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *emacf_tab = &emacf_tab_rec;
 
 /*
  *  (11) emrefcnt_tab
@@ -1845,15 +1849,15 @@ static funtab wlsw_tab_rec = {{
 funtab *wlsw_tab = &wlsw_tab_rec;
 
 /*
- *  (130) unused_tab10
+ *  (130) emrco_tab
  */
-static funtab unused_tab10_rec = {{
-#define NIFunused_10(it_unused_10) it_unused_10
+static funtab emrco_tab_rec = {{
+#define NIFemrco(it_emrco) it_emrco
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab10 = &unused_tab10_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *emrco_tab = &emrco_tab_rec;
 
 /*
  *  (131) unused_tab11

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/10/10 09:58:05  ktr
+ * added emrco_tab
+ *
  * Revision 3.65  2004/10/07 12:37:00  ktr
  * Replaced the old With-Loop Scalarization with a new implementation.
  *
@@ -320,7 +323,7 @@ extern funtab *spmdemm_tab;
 extern funtab *crece_tab;
 extern funtab *cdfg_tab;
 extern funtab *free_tab;
-extern funtab *unused_tab41;
+extern funtab *emacf_tab;
 extern funtab *emrefcnt_tab;
 extern funtab *emri_tab;
 extern funtab *cegro_tab;
@@ -438,7 +441,7 @@ extern funtab *tdepend_tab;
 extern funtab *wlsc_tab;
 extern funtab *wlsb_tab;
 extern funtab *wlsw_tab;
-extern funtab *unused_tab10;
+extern funtab *emrco_tab;
 extern funtab *unused_tab11;
 extern funtab *unused_tab12;
 extern funtab *unused_tab13;
