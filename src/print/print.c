@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.92  2000/07/28 20:07:13  dkr
+ * PrintIcm:
+ * For expanded C-ICMs the indentation via ICM_INDENT_... is undone in
+ * order to prevent superfluous indentation!
+ *
  * Revision 2.91  2000/07/28 17:17:10  cg
  * Compilation of N_vardec nodes modified: ICM now is temporary
  * attribute of N_vardec node which is no longer removed during
@@ -1902,10 +1907,16 @@ PrintIcm (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
     if (compiler_phase == PH_genccode) {
+        /*
+         * For expanded C-ICMs we have to undo the indentation via ICM_INDENT_...
+         * in order to prevent superfluous indentation!
+         */
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
+        indent -= ICM_INDENT_BEFORE (arg_node);                                          \
         Print##prf (ICM_ARGS (arg_node), arg_info);                                      \
+        indent -= ICM_INDENT_AFTER (arg_node);                                           \
         compiled_icm = 1;                                                                \
     } else
 #define ICM_STR(name)
