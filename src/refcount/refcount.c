@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/11/18 17:19:06  dkr
+ * bug fixed: NWITHOP_DEFAULT may be NULL
+ *
  * Revision 3.27  2003/11/18 16:59:09  dkr
  * NWITHOP_DEFAULT added
  *
@@ -2207,7 +2210,8 @@ RCNwithop (node *arg_node, node *arg_info)
             }
             ID_NAIVE_REFCNT (NWITHOP_SHAPE (arg_node)) = -1;
         }
-        if (NODE_TYPE (NWITHOP_DEFAULT (arg_node)) == N_id) {
+        if ((NWITHOP_DEFAULT (arg_node) != NULL)
+            && (NODE_TYPE (NWITHOP_DEFAULT (arg_node)) == N_id)) {
             if (!INFO_RC_ONLYNAIVE (arg_info)) {
                 ID_REFCNT (NWITHOP_DEFAULT (arg_node)) = -1;
             }

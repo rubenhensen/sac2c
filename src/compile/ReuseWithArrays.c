@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/11/18 17:16:59  dkr
+ * bug fixed: NWITHOP_DEFAULT may be NULL
+ *
  * Revision 3.5  2003/11/18 17:02:15  dkr
  * NWITHOP_DEFAULT added
  *
@@ -276,7 +279,9 @@ ReuseNwithop (node *arg_node, node *arg_info)
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
         NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
         break;
     case WO_modarray:
         /*
