@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/03 09:39:19  jhs
+ * commented out DBUG_ASSERT in GNMNwith to allow empty generator sets
+ * for index-vars ( iv = []).
+ *
  * Revision 2.4  1999/04/19 12:55:03  jhs
  * TRUE and FALSE from internal_lib.h used from now on.
  *
@@ -2339,7 +2343,7 @@ GNMNwith (node *arg_node, node *arg_info)
         part = OptTrav (part, arg_info, 0);
 
         /* add the ids from N_Nwithid to DEFs */
-        DBUG_ASSERT (NPART_IDS (part), "NWITHID_IDS == NULL");
+        /*    DBUG_ASSERT(NPART_IDS(part), "NWITHID_IDS == NULL");  */
         DBUG_ASSERT (NPART_VEC (part), "NWITHID_VEC == NULL");
 
         INC_VAR (part->mask[0], IDS_VARNO (NPART_VEC (part)));
