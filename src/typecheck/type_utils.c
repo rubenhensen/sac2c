@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/12/09 00:36:57  sbs
+ * handling of alphas in replaceAUD changed
+ * ,
+ *
  * Revision 1.7  2004/12/07 14:36:16  sbs
  * added TUtypeSignature2String
  *
@@ -215,17 +219,25 @@ TUrettypes2AUD (node *rets)
 {
     node *tmp = rets;
     ntype *scalar;
+    tvar *tv;
 
     DBUG_ENTER ("TUrettypes2AUD");
 
     while (tmp != NULL) {
         if (TYisAlpha (RET_TYPE (tmp))) {
-            scalar = TYcopyType (TYgetScalar (SSIgetMax (TYgetAlpha (RET_TYPE (tmp)))));
+            tv = TYgetAlpha (RET_TYPE (tmp));
+            if (SSIgetMax (tv) != NULL) {
+                scalar = TYcopyType (TYgetScalar (SSIgetMax (tv)));
+            } else if (SSIgetMin (tv) != NULL) {
+                scalar = TYcopyType (TYgetScalar (SSIgetMin (tv)));
+            } else {
+                scalar = TYmakeSimpleType (T_unknown);
+            }
         } else {
             scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
         }
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+        RET_TYPE (tmp) = TYmakeAUD (scalar);
         tmp = RET_NEXT (tmp);
     }
 
@@ -275,12 +287,20 @@ TUrettypes2alphaAUD (node *rets)
 {
     node *tmp = rets;
     ntype *scalar;
+    tvar *tv;
 
     DBUG_ENTER ("TUrettypes2alphaAUD");
 
     while (tmp != NULL) {
         if (TYisAlpha (RET_TYPE (tmp))) {
-            scalar = TYcopyType (TYgetScalar (SSIgetMax (TYgetAlpha (RET_TYPE (tmp)))));
+            tv = TYgetAlpha (RET_TYPE (tmp));
+            if (SSIgetMax (tv) != NULL) {
+                scalar = TYcopyType (TYgetScalar (SSIgetMax (tv)));
+            } else if (SSIgetMin (tv) != NULL) {
+                scalar = TYcopyType (TYgetScalar (SSIgetMin (tv)));
+            } else {
+                scalar = TYmakeSimpleType (T_unknown);
+            }
         } else {
             scalar = TYcopyType (TYgetScalar (RET_TYPE (tmp)));
         }
