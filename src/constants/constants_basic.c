@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2001/05/03 16:53:43  nmw
+ * COIsZero/COIsOne compares ALL elements
+ *
  * Revision 1.7  2001/05/02 08:01:24  nmw
  * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
  *
@@ -742,6 +745,7 @@ COIsZero (constant *a)
     bool result;
     constant *zero;
     constant *eq;
+    int i;
 
     DBUG_ENTER ("COIsZero");
     DBUG_ASSERT ((a != NULL), "COIsZero called with NULL pointer");
@@ -751,9 +755,12 @@ COIsZero (constant *a)
 
     /* check for correct constant */
     if (zero != NULL) {
-        /* compare constants */
+        /* compare constants (all elements must be equal) */
         eq = COEq (a, zero);
-        result = *((bool *)(CONSTANT_ELEMS (eq)));
+        result = TRUE;
+        for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+            result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+        }
         eq = COFreeConstant (eq);
     } else {
         result = FALSE;
@@ -768,6 +775,7 @@ COIsOne (constant *a)
     bool result;
     constant *one;
     constant *eq;
+    int i;
 
     DBUG_ENTER ("COIsOne");
     DBUG_ASSERT ((a != NULL), "COIsOne called with NULL pointer");
@@ -779,7 +787,10 @@ COIsOne (constant *a)
     if (one != NULL) {
         /* compare constants */
         eq = COEq (a, one);
-        result = *((bool *)(CONSTANT_ELEMS (eq)));
+        result = TRUE;
+        for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+            result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+        }
         eq = COFreeConstant (eq);
     } else {
         result = FALSE;
