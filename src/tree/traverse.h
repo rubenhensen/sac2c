@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/07/14 15:31:30  ktr
+ * compiler phase emalloc added.
+ *
  * Revision 3.44  2004/07/06 17:54:52  skt
  * support for propagate_executionmode (pem_tab) added
  *
@@ -256,7 +259,7 @@ extern funtab *wlf_tab;
 extern funtab *free_tab;
 extern funtab *cf_tab;
 extern funtab *refcnt_tab;
-extern funtab *ssarefcnt_tab;
+extern funtab *emrefcnt_tab;
 extern funtab *lir_tab;
 extern funtab *lir_mov_tab;
 extern funtab *dup_tab;
@@ -367,7 +370,7 @@ extern funtab *wlfs_tab;
 extern funtab *asmra_tab;
 extern funtab *tem_tab;
 extern funtab *pem_tab;
-extern funtab *unused_tab4;
+extern funtab *emalloc_tab;
 extern funtab *unused_tab5;
 extern funtab *unused_tab6;
 extern funtab *unused_tab7;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/07/14 15:31:30  ktr
+ * compiler phase emalloc added.
+ *
  * Revision 3.55  2004/07/06 17:54:52  skt
  * support for propagate_executionmode (pem_tab) added
  *
@@ -220,7 +223,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "refcount.h"
-#include "SSARefCount.h"
+#include "alloc.h"
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
@@ -423,15 +426,15 @@ static funtab refcnt_tab_rec = {{
 funtab *refcnt_tab = &refcnt_tab_rec;
 
 /*
- *  (11) ssarefcnt_tab
+ *  (11) emrefcnt_tab
  */
-static funtab ssarefcnt_tab_rec = {{
-#define NIFssarefcnt(it_ssarefcnt) it_ssarefcnt
+static funtab emrefcnt_tab_rec = {{
+#define NIFemrefcnt(it_emrefcnt) it_emrefcnt
 #include "node_info.mac"
-                                   },
-                                   NULL,
-                                   NULL};
-funtab *ssarefcnt_tab = &ssarefcnt_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *emrefcnt_tab = &emrefcnt_tab_rec;
 
 /*
  *  (12) lir_tab
@@ -1666,15 +1669,15 @@ static funtab pem_tab_rec = {{
 funtab *pem_tab = &pem_tab_rec;
 
 /*
- *  (124) unused_tab4
+ *  (124) emalloc_tab
  */
-static funtab unused_tab4_rec = {{
-#define NIFunused_4(it_unused_4) it_unused_4
+static funtab emalloc_tab_rec = {{
+#define NIFemalloc(it_emalloc) it_emalloc
 #include "node_info.mac"
                                  },
                                  NULL,
                                  NULL};
-funtab *unused_tab4 = &unused_tab4_rec;
+funtab *emalloc_tab = &emalloc_tab_rec;
 
 /*
  *  (125) unused_tab5
