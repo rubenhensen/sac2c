@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.84  1999/02/06 12:53:01  srs
+ * added MakeNodelistNode()
+ *
  * Revision 1.83  1999/01/15 15:18:55  cg
  * added function MakeAccess().
  *
@@ -492,6 +495,21 @@ MakeNodelist (node *node, statustype status, nodelist *next)
     default:
         DBUG_ASSERT (0, ("Wrong node type in MakeNodelist"));
     }
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+nodelist *
+MakeNodelistNode (node *node, nodelist *next)
+{
+    nodelist *tmp;
+    DBUG_ENTER ("MakeNodelistNode");
+
+    ALLOCATE (tmp, nodelist);
+    NODELIST_NODE (tmp) = node;
+    NODELIST_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
 }
