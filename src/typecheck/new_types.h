@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2002/03/12 15:14:15  sbs
+ * AUDGZ types added functions for handling function types added
+ * type comparison as well as Type2String implemented.
+ *
  * Revision 3.1  2000/11/20 18:00:10  sacbase
  * new release made
  *
@@ -56,6 +60,7 @@ typedef void ntype;
 #include "free.h"
 
 #include "shape.h"
+#include "ssi.h"
 
 /*
  * Scalar Types: Simple / User / Symbol
@@ -68,10 +73,11 @@ extern char *TYGetName (ntype *symb);
 extern char *TYGetMod (ntype *symb);
 
 /*
- * Array Types: AKS / AKD / AUD
+ * Array Types: AKS / AKD / AUDGZ / AUD
  */
 extern ntype *TYMakeAKS (ntype *scalar, shape *shp);
 extern ntype *TYMakeAKD (ntype *scalar, int dots, shape *shp);
+extern ntype *TYMakeAUDGZ (ntype *scalar);
 extern ntype *TYMakeAUD (ntype *scalar);
 
 extern int TYGetDim (ntype *array);
@@ -83,15 +89,11 @@ extern ntype *TYGetScalar (ntype *array);
  */
 extern ntype *TYMakeUnionType (ntype *t1, ntype *t2);
 
-#if 0
-/* NOT YET IMPLEMENTED! */
 /*
- * Types for handling functions: Fun / Prod
+ * Types for handling functions: Fun
  */
-extern ntype *  TYMakeFunType( ntype *arg, ntype *res);
-extern ntype *  TYMakeProdType( ntype *res);
-extern void     TYExtendProdType( ntype *prod, ntype *res);
-#endif
+extern ntype *TYMakeFunType (ntype *arg, ntype *res, node *fun_info);
+extern ntype *TYMakeOverloadedFunType (ntype *fun1, ntype *fun2);
 
 /*
  * Some predicates for inspecting types:
@@ -102,6 +104,7 @@ extern bool TYIsSymb (ntype *);
 extern bool TYIsScalar (ntype *);
 extern bool TYIsAKS (ntype *);
 extern bool TYIsAKD (ntype *);
+extern bool TYIsAUDGZ (ntype *);
 extern bool TYIsAUD (ntype *);
 extern bool TYIsUnion (ntype *);
 extern bool TYIsProd (ntype *);
@@ -113,17 +116,15 @@ extern bool TYIsAKSSymb (ntype *);
  * Type-Comparison
  */
 typedef enum {
-    TY_eq,    /* types are identical */
-    TY_lt,    /* first type is subtype of second one */
-    TY_gt,    /* first type is supertype of second one */
-    TY_undec, /* although both types are compatible, i.e., they have a common
-               * instance, they are neither CT_lt, CT_eq, nor CT_gt. This may
-               * only happen for product or function types!!
-               */
-    TY_unrel  /* types are unrelated */
+    TY_eq,   /* types are identical */
+    TY_lt,   /* first type is subtype of second one */
+    TY_gt,   /* first type is supertype of second one */
+    TY_unrel /* types are unrelated */
 } CT_res;
 
 extern CT_res TYCmpTypes (ntype *t1, ntype *t2);
+extern bool TYLeTypes (ntype *t1, ntype *t2);
+extern bool TYEqTypes (ntype *t1, ntype *t2);
 
 /*
  * General Type handling functions
@@ -132,7 +133,7 @@ extern void TYFreeTypeConstructor (ntype *type);
 extern void TYFreeType (ntype *type);
 
 extern ntype *TYCopyType (ntype *type);
-extern char *TYType2String (ntype *new);
+extern char *TYType2String (ntype *new, bool multiline, int offset);
 extern char *TYType2DebugString (ntype *new);
 extern ntype *TYNestTypes (ntype *outer, ntype *inner);
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/03/12 15:14:15  sbs
+ * AUDGZ types added functions for handling function types added
+ * type comparison as well as Type2String implemented.
+ *
  * Revision 3.5  2001/05/17 11:34:07  sbs
  * return value of Free now used ...
  *
@@ -121,6 +125,10 @@ typedef union {
     usertype a_user;
     shape *a_aks;
     attr_akd a_akd;
+    struct NTYPE *a_ibase;
+    int a_idim;
+    shape *a_ishape;
+    node *a_ires;
 } typeattr;
 
 /*
@@ -178,21 +186,49 @@ typedef struct NTYPE {
 #define AKD_SHP(n) (n->typeattr.a_akd.shp)
 #define AKD_DOTS(n) (n->typeattr.a_akd.dots)
 
+#define IBASE_BASE(n) (n->typeattr.a_ibase)
+#define IDIM_DIM(n) (n->typeattr.a_idim)
+#define ISHAPE_SHAPE(n) (n->typeattr.a_ishape)
+#define IRES_FUNINFO(n) (n->typeattr.a_ires)
+
 /*
  * Macros for accessing the sons...
  */
 #define AKS_BASE(n) (n->sons[0])
 #define AKD_BASE(n) (n->sons[0])
+#define AUDGZ_BASE(n) (n->sons[0])
 #define AUD_BASE(n) (n->sons[0])
 #define UNION_MEMBER(n, i) (n->sons[i])
 
+#define FUN_IBASE(n, i) (n->sons[i])
+
+#define IBASE_GEN(n) (n->sons[0])
+#define IBASE_SCAL(n) (n->sons[1])
+#define IBASE_IARR(n) (n->sons[2])
+
+#define IARR_GEN(n) (n->sons[0])
+#define IARR_IDIM(n, i) (n->sons[i + 1])
+
+#define IDIM_GEN(n) (n->sons[0])
+#define IDIM_ISHAPE(n, i) (n->sons[i + 1])
+
+#define ISHAPE_GEN(n) (n->sons[0])
+
+#define IRES_TYPE(n) (n->sons[0])
+
 /*
  * For dbug-output purposes we keep an array of strings for the individual
- * type constructors:
+ * type constructors and an array of flags indicating whether the number of
+ * sons is fixed or not:
  */
 
 static char *dbug_str[] = {
 #define TCIDbugString(a) a
+#include "type_constructor_info.mac"
+};
+
+static int variable_arity[] = {
+#define TCIVariableArity(a) a
 #include "type_constructor_info.mac"
 };
 
@@ -215,6 +251,7 @@ ntype *
 MakeNtype (typeconstr con, int arity)
 {
     ntype *res;
+    int i;
 
     DBUG_ENTER ("MakeNtype");
 
@@ -223,11 +260,45 @@ MakeNtype (typeconstr con, int arity)
     NTYPE_ARITY (res) = arity;
     if (NTYPE_ARITY (res) > 0) {
         NTYPE_SONS (res) = (ntype **)Malloc (sizeof (ntype *) * NTYPE_ARITY (res));
+        for (i = 0; i < arity; i++) {
+            NTYPE_SON (res, i) = NULL;
+        }
     } else {
         NTYPE_SONS (res) = NULL;
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype * MakeNewSon( ntype *father, ntype *son)
+ *
+ * description:
+ *    internal function for increasing an ntype's arity.
+ *
+ ******************************************************************************/
+
+ntype *
+MakeNewSon (ntype *father, ntype *son)
+{
+    ntype **new_sons;
+    int i, arity;
+
+    DBUG_ENTER ("MakeNewSon");
+
+    arity = NTYPE_ARITY (father);
+    NTYPE_ARITY (father) = arity + 1;
+    new_sons = (ntype **)Malloc (sizeof (ntype *) * NTYPE_ARITY (father));
+    for (i = 0; i < arity; i++) {
+        new_sons[i] = NTYPE_SON (father, i);
+    }
+    new_sons[i] = son;
+    Free (NTYPE_SONS (father));
+    NTYPE_SONS (father) = new_sons;
+
+    DBUG_RETURN (father);
 }
 
 /***
@@ -485,20 +556,168 @@ TYMakeUnionType (ntype *t1, ntype *t2)
 /******************************************************************************
  *
  * function:
- *    ntype * TYMakeFunType( ntype *arg, ntype *res)
- *    ntype * TYMakeProdType( ntype *res)
- *    void    TYInsertIntoProdType( ntype *prod, ntype *res)
+ *   ntype *  TYMakeFunType( ntype *arg, ntype *res, node *fun_info)
  *
  * description:
- *  functions for creating function and product types.
+ *  function for creating function types. It implicitly creates the intersection
+ *  type that contains all up-projections!
  *
  ******************************************************************************/
 
-#if 0
-ntype *  TYMakeFunType( ntype *arg, ntype *res)
-ntype *  TYMakeProdType( ntype *res)
-void     TYInsertIntoProdType( ntype *prod, ntype *res)
-#endif
+ntype *
+TYMakeFunType (ntype *arg, ntype *res_type, node *fun_info)
+{
+    ntype *fun = NULL;
+    ntype *base = NULL;
+    ntype *arr = NULL;
+    ntype *dim = NULL;
+    ntype *shape = NULL;
+    ntype *res = NULL;
+
+    DBUG_ENTER ("TYMakeFunType");
+
+    res = MakeNtype (TC_ires, 1);
+    IRES_FUNINFO (res) = fun_info;
+    IRES_TYPE (res) = res_type;
+
+    base = MakeNtype (TC_ibase, 3);
+
+    switch (NTYPE_CON (arg)) {
+    case TC_aks:
+        if (TYGetDim (arg) == 0) {
+            IBASE_SCAL (base) = res;
+            IBASE_GEN (base) = TYCopyType (res);
+        } else {
+            shape = MakeNtype (TC_ishape, 1);
+            ISHAPE_SHAPE (shape) = SHCopyShape (AKS_SHP (arg));
+            ISHAPE_GEN (shape) = res;
+
+            dim = MakeNtype (TC_idim, 2);
+            IDIM_DIM (dim) = TYGetDim (arg);
+            IDIM_ISHAPE (dim, 0) = shape;
+            IDIM_GEN (dim) = TYCopyType (res);
+
+            arr = MakeNtype (TC_iarr, 2);
+            IARR_IDIM (arr, 0) = dim;
+            IARR_GEN (arr) = TYCopyType (res);
+
+            IBASE_GEN (base) = TYCopyType (res);
+        }
+        break;
+
+    case TC_akd:
+        if (TYGetDim (arg) == 0) {
+            IBASE_SCAL (base) = res;
+            IBASE_GEN (base) = TYCopyType (res);
+        } else {
+            dim = MakeNtype (TC_idim, 1);
+            IDIM_DIM (dim) = TYGetDim (arg);
+            IDIM_GEN (dim) = res;
+
+            arr = MakeNtype (TC_iarr, 2);
+            IARR_IDIM (arr, 0) = dim;
+            IARR_GEN (arr) = TYCopyType (res);
+
+            IBASE_GEN (base) = TYCopyType (res);
+        }
+        break;
+
+    case TC_audgz:
+        arr = MakeNtype (TC_iarr, 1);
+        IARR_GEN (arr) = res;
+        IBASE_GEN (base) = TYCopyType (res);
+        break;
+
+    case TC_aud:
+        IBASE_GEN (base) = res;
+        break;
+
+    default:
+        DBUG_ASSERT (0, "argument type not yet supported");
+    }
+
+    IBASE_BASE (base) = TYGetScalar (arg);
+    IBASE_IARR (base) = arr;
+
+    fun = MakeNtype (TC_fun, 1);
+    FUN_IBASE (fun, 0) = base;
+
+    DBUG_RETURN (fun);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ntype *  TYMakeOverloadedFunType( ntype *fun1, ntype *fun2)
+ *
+ * description:
+ *  function for merging two function types. It inserts fun1 into fun2.
+ *  Therefore, it most likely performs better, if fun1 contains less instances.
+ *
+ ******************************************************************************/
+
+#define FIND_AND_MERGE(start, num1, num2, compare)                                       \
+    for (i = start; i < (num1); i++) {                                                   \
+        found = FALSE;                                                                   \
+        j = start;                                                                       \
+        while ((j < (num2)) && !found) {                                                 \
+            found = compare;                                                             \
+            j++;                                                                         \
+        }                                                                                \
+        if (found) {                                                                     \
+            NTYPE_SON (fun2, j)                                                          \
+              = TYMakeOverloadedFunType (NTYPE_SON (fun1, i), NTYPE_SON (fun2, j - 1));  \
+        } else {                                                                         \
+            fun2 = MakeNewSon (fun2, NTYPE_SON (fun1, i));                               \
+        }                                                                                \
+    }                                                                                    \
+    TYFreeTypeConstructor (fun1)
+
+ntype *
+TYMakeOverloadedFunType (ntype *fun1, ntype *fun2)
+{
+    ntype *res;
+    int i = 0, j = 0;
+    bool found;
+
+    DBUG_ENTER ("TYMakeOverloadedFunType");
+    if (fun1 == NULL) {
+        res = fun2;
+    } else if (fun2 == NULL) {
+        res = fun1;
+    } else {
+        DBUG_ASSERT ((NTYPE_CON (fun1) == NTYPE_CON (fun2)),
+                     "TYOverloadFunType called with incompatible types!");
+        res = fun2;
+        switch (NTYPE_CON (fun1)) {
+        case TC_fun:
+            FIND_AND_MERGE (0, NTYPE_ARITY (fun1), NTYPE_ARITY (fun2),
+                            TYEqTypes (IBASE_BASE (FUN_IBASE (fun1, i)),
+                                       IBASE_BASE (FUN_IBASE (fun2, j))));
+            break;
+        case TC_ibase:
+            break;
+        case TC_iarr:
+            FIND_AND_MERGE (1, NTYPE_ARITY (fun1) - 1, NTYPE_ARITY (fun2) - 1,
+                            (IDIM_DIM (IARR_IDIM (fun1, i))
+                             == IDIM_DIM (IARR_IDIM (fun2, j))));
+            break;
+        case TC_idim:
+            FIND_AND_MERGE (1, NTYPE_ARITY (fun1) - 1, NTYPE_ARITY (fun2) - 1,
+                            SHCompareShapes (ISHAPE_SHAPE (IDIM_ISHAPE (fun1, i)),
+                                             ISHAPE_SHAPE (IDIM_ISHAPE (fun2, j))));
+            break;
+        case TC_ishape:
+            break;
+        case TC_ires:
+            break;
+        default:
+            DBUG_ASSERT ((0), "TYOverloadFunType called with illegal funtype!");
+        }
+    }
+
+    DBUG_RETURN (res);
+}
 
 /***
  *** Functions inspecting types / matching on specific types:
@@ -620,17 +839,173 @@ TYIsAKSSymb (ntype *type)
  *
  * function:
  *    CT_res TYCmpTypes( ntype * t1, ntype * t2)
+ *    bool     TYLeTypes( ntype * t1, ntype * t2)
+ *    bool     TYEqTypes( ntype * t1, ntype * t2)
  *
  * description:
- *    NOT YET IMPLEMENTED!
+ *
  *
  ******************************************************************************/
 
 CT_res
 TYCmpTypes (ntype *t1, ntype *t2)
 {
+    CT_res res = TY_unrel;
+
     DBUG_ENTER ("TYCmpTypes");
-    DBUG_RETURN (TY_unrel);
+
+    switch (NTYPE_CON (t1)) {
+    case TC_simple:
+        if ((NTYPE_CON (t2) == TC_simple) && (SIMPLE_TYPE (t1) == SIMPLE_TYPE (t2))) {
+            res = TY_eq;
+        }
+        break;
+    case TC_symbol:
+        if ((NTYPE_CON (t2) == TC_symbol)
+            && (strcmp (SYMBOL_MOD (t1), SYMBOL_MOD (t2)) == 0)
+            && (strcmp (SYMBOL_NAME (t1), SYMBOL_NAME (t2)) == 0)) {
+            res = TY_eq;
+        }
+        break;
+    case TC_user:
+        if ((NTYPE_CON (t2) == TC_user) && (USER_TYPE (t1) == USER_TYPE (t2))) {
+            res = TY_eq;
+        }
+        break;
+    case TC_aks:
+        switch (NTYPE_CON (t2)) {
+        case TC_aks:
+            if ((TYCmpTypes (AKS_BASE (t1), AKS_BASE (t2)) == TY_eq)
+                && (SHCompareShapes (AKS_SHP (t1), AKS_SHP (t2)))) {
+                res = TY_eq;
+            }
+            break;
+        case TC_akd:
+            if ((TYCmpTypes (AKS_BASE (t1), AKD_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) == TYGetDim (t2))) {
+                res = TY_lt;
+            }
+            break;
+        case TC_audgz:
+            if ((TYCmpTypes (AKS_BASE (t1), AUDGZ_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) > 0)) {
+                res = TY_lt;
+            }
+            break;
+        case TC_aud:
+            if (TYCmpTypes (AKS_BASE (t1), AUD_BASE (t2)) == TY_eq) {
+                res = TY_lt;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case TC_akd:
+        switch (NTYPE_CON (t2)) {
+        case TC_aks:
+            if ((TYCmpTypes (AKD_BASE (t1), AKS_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) == TYGetDim (t2))) {
+                res = TY_gt;
+            }
+            break;
+        case TC_akd:
+            if ((TYCmpTypes (AKD_BASE (t1), AKD_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) == TYGetDim (t2))) {
+                res = TY_eq;
+            }
+            break;
+        case TC_audgz:
+            if ((TYCmpTypes (AKD_BASE (t1), AUDGZ_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) > 0)) {
+                res = TY_lt;
+            }
+            break;
+        case TC_aud:
+            if (TYCmpTypes (AKD_BASE (t1), AUD_BASE (t2)) == TY_eq) {
+                res = TY_lt;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case TC_audgz:
+        switch (NTYPE_CON (t2)) {
+        case TC_aks:
+            if ((TYCmpTypes (AUDGZ_BASE (t1), AKS_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) > 0)) {
+                res = TY_gt;
+            }
+            break;
+        case TC_akd:
+            if ((TYCmpTypes (AUDGZ_BASE (t1), AKD_BASE (t2)) == TY_eq)
+                && (TYGetDim (t1) > 0)) {
+                res = TY_gt;
+            }
+            break;
+        case TC_audgz:
+            if ((TYCmpTypes (AUDGZ_BASE (t1), AUDGZ_BASE (t2)) == TY_eq)) {
+                res = TY_eq;
+            }
+            break;
+        case TC_aud:
+            if (TYCmpTypes (AUDGZ_BASE (t1), AUD_BASE (t2)) == TY_eq) {
+                res = TY_lt;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case TC_aud:
+        switch (NTYPE_CON (t2)) {
+        case TC_aks:
+            if (TYCmpTypes (AUD_BASE (t1), AKS_BASE (t2)) == TY_eq) {
+                res = TY_gt;
+            }
+            break;
+        case TC_akd:
+            if (TYCmpTypes (AUD_BASE (t1), AKD_BASE (t2)) == TY_eq) {
+                res = TY_gt;
+            }
+            break;
+        case TC_audgz:
+            if (TYCmpTypes (AUD_BASE (t1), AUDGZ_BASE (t2)) == TY_eq) {
+                res = TY_gt;
+            }
+            break;
+        case TC_aud:
+            if (TYCmpTypes (AUD_BASE (t1), AUD_BASE (t2)) == TY_eq) {
+                res = TY_eq;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        DBUG_ASSERT ((0), "Type comparison for non-array types not yet implemented!");
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+TYEqTypes (ntype *t1, ntype *t2)
+{
+    DBUG_ENTER ("TYCmpTypes");
+    DBUG_RETURN (TYCmpTypes (t1, t2) == TY_eq);
+}
+
+bool
+TYLeTypes (ntype *t1, ntype *t2)
+{
+    CT_res cmp;
+
+    DBUG_ENTER ("TYLeTypes");
+    cmp = TYCmpTypes (t1, t2);
+    DBUG_RETURN ((cmp == TY_eq) || (cmp == TY_lt));
 }
 
 /***
@@ -666,10 +1041,19 @@ TYFreeTypeConstructor (ntype *type)
     case TC_akd:
         SHFreeShape (AKD_SHP (type));
         break;
+    case TC_ibase:
+        TYFreeType (IBASE_BASE (type));
+        break;
+    case TC_ishape:
+        SHFreeShape (ISHAPE_SHAPE (type));
+        break;
+    case TC_fun:
+    case TC_iarr:
+    case TC_idim:
+    case TC_ires:
     case TC_aud:
     case TC_union:
     case TC_prod:
-    case TC_fun:
     case TC_simple:
     case TC_user:
         break;
@@ -715,42 +1099,58 @@ TYCopyType (ntype *type)
 
     DBUG_ENTER ("TYCopyType");
 
-    /*
-     * First, we copy the type node itself!
-     */
-    n = NTYPE_ARITY (type);
-    res = MakeNtype (NTYPE_CON (type), n);
+    if (type == NULL) {
+        res = NULL;
+    } else {
+        /*
+         * First, we copy the type node itself!
+         */
+        n = NTYPE_ARITY (type);
+        res = MakeNtype (NTYPE_CON (type), n);
 
-    /*
-     * Then we copy the attributes:
-     */
-    switch (NTYPE_CON (type)) {
-    case TC_simple:
-        SIMPLE_TYPE (res) = SIMPLE_TYPE (type);
-        break;
-    case TC_symbol:
-        SYMBOL_MOD (res) = StringCopy (SYMBOL_MOD (type));
-        SYMBOL_NAME (res) = StringCopy (SYMBOL_NAME (type));
-        break;
-    case TC_user:
-        USER_TYPE (res) = USER_TYPE (type);
-        break;
-    case TC_aks:
-        AKS_SHP (res) = SHCopyShape (AKS_SHP (type));
-        break;
-    case TC_akd:
-        AKD_SHP (res) = SHCopyShape (AKD_SHP (type));
-        AKD_DOTS (res) = AKD_DOTS (type);
-        break;
-    default:
-        break;
-    }
+        /*
+         * Then we copy the attributes:
+         */
+        switch (NTYPE_CON (type)) {
+        case TC_simple:
+            SIMPLE_TYPE (res) = SIMPLE_TYPE (type);
+            break;
+        case TC_symbol:
+            SYMBOL_MOD (res) = StringCopy (SYMBOL_MOD (type));
+            SYMBOL_NAME (res) = StringCopy (SYMBOL_NAME (type));
+            break;
+        case TC_user:
+            USER_TYPE (res) = USER_TYPE (type);
+            break;
+        case TC_aks:
+            AKS_SHP (res) = SHCopyShape (AKS_SHP (type));
+            break;
+        case TC_akd:
+            AKD_SHP (res) = SHCopyShape (AKD_SHP (type));
+            AKD_DOTS (res) = AKD_DOTS (type);
+            break;
+        case TC_ibase:
+            IBASE_BASE (res) = TYCopyType (IBASE_BASE (type));
+            break;
+        case TC_idim:
+            IDIM_DIM (res) = IDIM_DIM (type);
+            break;
+        case TC_ishape:
+            ISHAPE_SHAPE (res) = SHCopyShape (ISHAPE_SHAPE (type));
+            break;
+        case TC_ires:
+            IRES_FUNINFO (res) = IRES_FUNINFO (type);
+            break;
+        default:
+            break;
+        }
 
-    /*
-     * Now, we recursively copy all son nodes:
-     */
-    for (i = 0; i < n; i++) {
-        NTYPE_SON (res, i) = TYCopyType (NTYPE_SON (type, i));
+        /*
+         * Now, we recursively copy all son nodes:
+         */
+        for (i = 0; i < n; i++) {
+            NTYPE_SON (res, i) = TYCopyType (NTYPE_SON (type, i));
+        }
     }
 
     DBUG_RETURN (res);
@@ -759,18 +1159,226 @@ TYCopyType (ntype *type)
 /******************************************************************************
  *
  * function:
- *    char * TYType2String( ntype *type)
+ *    char * TYType2String( ntype *type, bool multiline, int offset)
  *
  * description:
- *    NOT YET IMPLEMENTED!
+ *   iff "multiline" is TRUE, strings for function types contain new line
+ *   symbols. Each new line is followed by "offset" preceeding blanks.
+ *
  *
  ******************************************************************************/
 
 char *
-TYType2String (ntype *type)
+TYType2String (ntype *type, bool multiline, int offset)
 {
+    char buf[4096];
+    char *tmp = &buf[0];
+    char *tmp_str, *tmp_str2;
+    shape *empty_shape;
+    ntype *iarr, *idim, *ishape;
+    int i, j, n, m;
+    int rhs_offset;
+
     DBUG_ENTER ("TYType2String");
-    DBUG_RETURN ("not yet done");
+    if (type == NULL) {
+        tmp += sprintf (tmp, "--");
+    } else {
+
+        switch (NTYPE_CON (type)) {
+        case TC_aks:
+            tmp_str = TYType2String (AKS_BASE (type), multiline, offset);
+            tmp += sprintf (tmp, "%s", tmp_str);
+            tmp_str = Free (tmp_str);
+            if (TYGetDim (type) > 0) {
+                tmp_str = SHShape2String (0, AKS_SHP (type));
+                tmp += sprintf (tmp, "%s", tmp_str);
+                tmp_str = Free (tmp_str);
+            }
+            break;
+        case TC_akd:
+            tmp_str = TYType2String (AKS_BASE (type), multiline, offset);
+            tmp += sprintf (tmp, "%s", tmp_str);
+            tmp_str = Free (tmp_str);
+            tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
+            tmp += sprintf (tmp, "%s", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_audgz:
+            tmp_str = TYType2String (AKS_BASE (type), multiline, offset);
+            tmp += sprintf (tmp, "%s[+]", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_aud:
+            tmp_str = TYType2String (AKS_BASE (type), multiline, offset);
+            tmp += sprintf (tmp, "%s[*]", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_simple:
+            tmp += sprintf (tmp, "%s", mdb_type[SIMPLE_TYPE (type)]);
+            break;
+        case TC_symbol:
+            if (SYMBOL_MOD (type) == NULL) {
+                tmp += sprintf (tmp, "%s", SYMBOL_NAME (type));
+            } else {
+                tmp += sprintf (tmp, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
+            }
+            break;
+        case TC_user:
+            tmp += sprintf (tmp, "%d", USER_TYPE (type));
+            break;
+        case TC_fun:
+            tmp += sprintf (tmp, "{ ");
+            offset += 2;
+            n = NTYPE_ARITY (type);
+            for (i = 0; i < n; i++) {
+                tmp_str = TYType2String (NTYPE_SON (type, i), multiline, offset);
+                if (i == 0) {
+                    tmp += sprintf (tmp, "%s", tmp_str);
+                } else {
+                    if (multiline) {
+                        tmp += sprintf (tmp, ",\n%*s%s", offset, "", tmp_str);
+                    } else {
+                        tmp += sprintf (tmp, ", %s", tmp_str);
+                    }
+                }
+                tmp_str = Free (tmp_str);
+            }
+            tmp += sprintf (tmp, "}");
+            break;
+        case TC_ibase:
+            DBUG_ASSERT (IBASE_GEN (type), "fun type without generic instance!");
+
+            /*
+             * print LHS [*]
+             */
+            tmp_str = TYType2String (IBASE_BASE (type), multiline, offset);
+            tmp += sprintf (tmp, "%s[*]", tmp_str);
+
+            /*
+             * print RHS [*]
+             */
+            rhs_offset = offset + (tmp - (&buf[0]));
+            tmp_str2 = TYType2String (IBASE_GEN (type), multiline, rhs_offset);
+            tmp += sprintf (tmp, "%s", tmp_str2);
+            tmp_str2 = Free (tmp_str2);
+
+            if (IBASE_IARR (type)) {
+                iarr = IBASE_IARR (type);
+                if (IARR_GEN (iarr)) {
+                    /*
+                     * print LHS [+]
+                     */
+                    if (multiline) {
+                        tmp += sprintf (tmp, ",\n%*s%s[+]", offset, "", tmp_str);
+                    } else {
+                        tmp += sprintf (tmp, ", %s[+]", tmp_str);
+                    }
+                    /*
+                     * print RHS [+]
+                     */
+                    tmp_str2 = TYType2String (IARR_GEN (iarr), multiline, rhs_offset);
+                    tmp += sprintf (tmp, "%s", tmp_str2);
+                    tmp_str2 = Free (tmp_str2);
+                }
+                if (IBASE_SCAL (type)) {
+                    /*
+                     * print LHS []
+                     */
+                    if (multiline) {
+                        tmp += sprintf (tmp, ",\n%*s%s", offset, "", tmp_str);
+                    } else {
+                        tmp += sprintf (tmp, ", %s", tmp_str);
+                    }
+                    /*
+                     * print RHS []
+                     */
+                    tmp_str2 = TYType2String (IBASE_GEN (type), multiline, rhs_offset);
+                    tmp += sprintf (tmp, "%s", tmp_str2);
+                    tmp_str2 = Free (tmp_str2);
+                }
+                n = NTYPE_ARITY (iarr) - 1;
+                for (i = 0; i < n; i++) {
+                    idim = IARR_IDIM (iarr, i);
+                    if (IDIM_GEN (idim)) {
+                        /*
+                         * print LHS [...]
+                         */
+                        empty_shape = SHMakeShape (0);
+                        tmp_str2 = SHShape2String (IDIM_DIM (idim), empty_shape);
+                        empty_shape = SHFreeShape (empty_shape);
+                        if (multiline) {
+                            tmp += sprintf (tmp, ",\n%*s%s%s", offset, "", tmp_str,
+                                            tmp_str2);
+                        } else {
+                            tmp += sprintf (tmp, ", %s%s", tmp_str, tmp_str2);
+                        }
+                        tmp_str2 = Free (tmp_str2);
+
+                        /*
+                         * print RHS [...]
+                         */
+                        tmp_str2 = TYType2String (IDIM_GEN (idim), multiline, rhs_offset);
+                        tmp += sprintf (tmp, "%s", tmp_str2);
+                        tmp_str2 = Free (tmp_str2);
+                    }
+                    m = NTYPE_ARITY (idim) - 1;
+                    for (j = 0; j < m; j++) {
+                        ishape = IDIM_ISHAPE (idim, j);
+                        if (ISHAPE_GEN (ishape)) {
+                            /*
+                             * print LHS [ xxx ]
+                             */
+                            tmp_str2 = SHShape2String (0, ISHAPE_SHAPE (ishape));
+                            if (multiline) {
+                                tmp += sprintf (tmp, ",\n%*s%s%s", offset, "", tmp_str,
+                                                tmp_str2);
+                            } else {
+                                tmp += sprintf (tmp, ", %s%s", tmp_str, tmp_str2);
+                            }
+                            tmp_str2 = Free (tmp_str2);
+
+                            /*
+                             * print RHS [ xxx ]
+                             */
+                            tmp_str2 = TYType2String (ISHAPE_GEN (ishape), multiline,
+                                                      rhs_offset);
+                            tmp += sprintf (tmp, "%s", tmp_str2);
+                            tmp_str2 = Free (tmp_str2);
+                        }
+                    }
+                }
+            } else {
+                if (IBASE_SCAL (type)) {
+                    /*
+                     * print LHS []
+                     */
+                    if (multiline) {
+                        tmp += sprintf (tmp, ",\n%*s%s", offset, "", tmp_str);
+                    } else {
+                        tmp += sprintf (tmp, ", %s", tmp_str);
+                    }
+                    /*
+                     * print RHS []
+                     */
+                    tmp_str2 = TYType2String (IBASE_GEN (type), multiline, rhs_offset);
+                    tmp += sprintf (tmp, "%s", tmp_str2);
+                    tmp_str2 = Free (tmp_str2);
+                }
+            }
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_ires:
+            offset += 4;
+            tmp_str = TYType2String (IRES_TYPE (type), multiline, offset);
+            tmp += sprintf (tmp, " -> %s", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        default:
+            break;
+        }
+    }
+
+    DBUG_RETURN (StringCopy (buf));
 }
 
 /******************************************************************************
@@ -787,56 +1395,79 @@ TYType2String (ntype *type)
 char *
 TYType2DebugString (ntype *type)
 {
-    char buf[256];
+    char buf[4096];
     char *tmp = &buf[0];
     char *tmp_str;
     int i, n;
 
     DBUG_ENTER ("TYType2DebugString");
 
-    tmp += sprintf (tmp, "%s{ ", dbug_str[NTYPE_CON (type)]);
+    if (type == NULL) {
+        tmp += sprintf (tmp, "--");
+    } else {
+        tmp += sprintf (tmp, "%s{ ", dbug_str[NTYPE_CON (type)]);
 
-    switch (NTYPE_CON (type)) {
-    case TC_aks:
-        tmp_str = SHShape2String (0, AKS_SHP (type));
-        tmp += sprintf (tmp, "%s,", tmp_str);
-        tmp_str = Free (tmp_str);
-        break;
-    case TC_akd:
-        tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
-        tmp += sprintf (tmp, "%s,", tmp_str);
-        tmp_str = Free (tmp_str);
-        break;
-    case TC_aud:
-        break;
-    case TC_simple:
-        tmp += sprintf (tmp, "%s", mdb_type[SIMPLE_TYPE (type)]);
-        break;
-    case TC_symbol:
-        if (SYMBOL_MOD (type) == NULL) {
-            tmp += sprintf (tmp, "%s", SYMBOL_NAME (type));
-        } else {
-            tmp += sprintf (tmp, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
+        switch (NTYPE_CON (type)) {
+        case TC_aks:
+            tmp_str = SHShape2String (0, AKS_SHP (type));
+            tmp += sprintf (tmp, "%s, ", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_akd:
+            tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
+            tmp += sprintf (tmp, "%s, ", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_aud:
+            break;
+        case TC_simple:
+            tmp += sprintf (tmp, "%s", mdb_type[SIMPLE_TYPE (type)]);
+            break;
+        case TC_symbol:
+            if (SYMBOL_MOD (type) == NULL) {
+                tmp += sprintf (tmp, "%s", SYMBOL_NAME (type));
+            } else {
+                tmp += sprintf (tmp, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
+            }
+            break;
+        case TC_user:
+            tmp += sprintf (tmp, "%d", USER_TYPE (type));
+            break;
+        case TC_ibase:
+            tmp_str = TYType2DebugString (IBASE_BASE (type));
+            tmp += sprintf (tmp, "%s,", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        case TC_idim:
+            tmp += sprintf (tmp, "%d,", IDIM_DIM (type));
+            break;
+        case TC_ishape:
+            tmp_str = SHShape2String (0, ISHAPE_SHAPE (type));
+            tmp += sprintf (tmp, "%s,", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
+        default:
+            break;
         }
-        break;
-    case TC_user:
-        tmp += sprintf (tmp, "%d", USER_TYPE (type));
-        break;
-    default:
-        break;
-    }
 
-    n = NTYPE_ARITY (type);
-    for (i = 0; i < n; i++) {
-        tmp_str = TYType2DebugString (NTYPE_SON (type, i));
-        if (i == 0) {
-            tmp += sprintf (tmp, " %s", tmp_str);
-        } else {
-            tmp += sprintf (tmp, ", %s", tmp_str);
+        if (variable_arity[NTYPE_CON (type)]) {
+            tmp += sprintf (tmp, " <");
         }
-        tmp_str = Free (tmp_str);
+        n = NTYPE_ARITY (type);
+        for (i = 0; i < n; i++) {
+            tmp_str = TYType2DebugString (NTYPE_SON (type, i));
+            if (i == 0) {
+                tmp += sprintf (tmp, " %s", tmp_str);
+            } else {
+                tmp += sprintf (tmp, ", %s", tmp_str);
+            }
+            tmp_str = Free (tmp_str);
+        }
+        if (variable_arity[NTYPE_CON (type)]) {
+            tmp += sprintf (tmp, ">");
+        }
+        tmp += sprintf (tmp, "}");
     }
-    tmp += sprintf (tmp, "}");
 
     DBUG_RETURN (StringCopy (buf));
 }
