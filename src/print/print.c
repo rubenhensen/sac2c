@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.117  1996/03/21 18:01:08  cg
+ * Revision 1.118  1996/04/02 19:35:46  cg
+ * non-printable characters are printed correctly using octal numbers
+ *
+ * Revision 1.117  1996/03/21  18:01:08  cg
  * improved function PrintChar
  *
  * Revision 1.116  1996/02/21  18:02:09  cg
@@ -930,7 +933,7 @@ PrintChar (node *arg_node, node *arg_info)
         && (arg_node->info.cchar != '\'')) {
         fprintf (outfile, "'%c'", arg_node->info.cchar);
     } else {
-        fprintf (outfile, "'\\%d'", arg_node->info.cchar);
+        fprintf (outfile, "'\\%o'", arg_node->info.cchar);
     }
 
     DBUG_RETURN (arg_node);
