@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2002/06/28 13:23:53  dkr
+ * now, NOOP is no c-icm but a h-icm
+ *
  * Revision 3.93  2002/06/28 12:53:25  sbs
  * PrintNtype and PrintDebugNtype included.
  * For the time being disabled, though 8-)
@@ -2565,10 +2568,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_VAR
 #undef ICM_VARINT
 #undef ICM_END
-        if (strcmp (ICM_NAME (arg_node), "NOOP") == 0) {
-            fprintf (outfile, "/* noop */");
-            compiled_icm = TRUE;
-        }
+        ;
     }
 
     if (!compiled_icm) {
