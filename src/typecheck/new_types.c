@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/09/05 11:56:48  dkr
+ * fixed a bug in BuildCondAssign()
+ *
  * Revision 3.23  2002/09/04 16:19:53  dkr
  * - IsTypeError() added
  * - BuildCondAssign(): optimization added
@@ -4369,7 +4372,8 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
              * for user defined types we should use the appropriate N_ap
              * implementation here if it is available!!
              */
-            prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), NULL)); /* !!! */
+            prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), /* !!! */
+                                            NULL));
             flt_prf1
               = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
                             new_vardecs);
@@ -4391,7 +4395,7 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
         case F_shape: {
             node *prf1, *prf2, *prf3, *prf4;
             node *flt_prf1, *flt_prf2, *flt_prf3, *flt_prf4;
-            node *aexprs;
+            node *aexprs, *last_ass;
             int dim;
 
             DBUG_ASSERT ((NODE_TYPE (expr) == N_array), "illegal expression found!");
@@ -4400,14 +4404,16 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
              * for user defined types we should use the appropriate N_ap
              * implementation here if it is available!!
              */
-            prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), NULL)); /* !!! */
+            prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), /* !!! */
+                                            NULL));
             flt_prf1 = BuildTmpId (TYMakeAUDGZ (TYMakeSimpleType (T_int)), new_vardecs);
 
-            flt_prf4 = MakeBool (TRUE);
+            assigns = MakeAssign (MakeLet (prf1, DupId_Ids (flt_prf1)), NULL);
+            last_ass = assigns;
 
-            assigns = NULL;
             aexprs = ARRAY_AELEMS (expr);
             dim = 0;
+            flt_prf4 = MakeBool (TRUE);
             while (aexprs != NULL) {
                 prf2 = MakePrf (F_sel,
                                 MakeExprs (MakeArray (MakeExprs (MakeNum (dim), NULL)),
@@ -4427,21 +4433,21 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
                   = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_bool), SHCreateShape (0)),
                                 new_vardecs);
 
-                assigns
+                ASSIGN_NEXT (last_ass)
                   = MakeAssign (MakeLet (prf2, DupId_Ids (flt_prf2)),
                                 MakeAssign (MakeLet (prf3, DupId_Ids (flt_prf3)),
                                             MakeAssign (MakeLet (prf4,
                                                                  DupId_Ids (flt_prf4)),
-                                                        assigns)));
+                                                        NULL)));
+                last_ass = ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (last_ass)));
 
                 aexprs = EXPRS_NEXT (aexprs);
                 dim++;
             }
-            assigns
-              = AppendAssign (MakeAssign (MakeLet (prf1, DupId_Ids (flt_prf1)), assigns),
-                              MakeAssign (MakeCond (flt_prf4, MakeBlock (then_ass, NULL),
-                                                    MakeBlock (else_ass, NULL)),
-                                          NULL));
+            ASSIGN_NEXT (last_ass)
+              = MakeAssign (MakeCond (flt_prf4, MakeBlock (then_ass, NULL),
+                                      MakeBlock (else_ass, NULL)),
+                            NULL);
 
             flt_prf1 = FreeNode (flt_prf1);
             ARRAY_AELEMS (expr) = NULL;
