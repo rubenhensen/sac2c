@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/04/05 15:52:38  asi
+ * Revision 1.37  1995/04/05 16:18:41  sbs
+ * gcc invocation debugged
+ *
+ * Revision 1.36  1995/04/05  15:52:38  asi
  * loop invariant removal added
  *
  * Revision 1.35  1995/04/05  15:31:24  sbs
@@ -168,6 +171,7 @@ MAIN
     }
     ARG 'b' : PARM
     {
+        Ccodeonly = 1;
         switch (**argv) {
         case 'p':
             breakparse = 1;
@@ -257,7 +261,7 @@ MAIN
         else
             outfile = stdout;
     else {
-        if (set_outfile) {
+        if (!set_outfile) {
             strcpy (outfilename, "a.out");
             strcpy (cfilename, "a.out.c");
         }
@@ -300,9 +304,10 @@ MAIN
     /*  FreeTree(syntax_tree);  */
 
     if (!Ccodeonly) {
+        fclose (outfile);
         sprintf (cccallstr, "gcc -O2 -Wall -I $RCSROOT/src/compile/ -o %s %s %s",
                  outfilename, cfilename, GenLinkerList ());
-        DBUG_PRINT ("MAIN", ("invoking gcc: %s", cccallstr));
+        NOTE (("%s\n", cccallstr));
         system (cccallstr);
     }
 
