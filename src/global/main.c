@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/11/28 18:13:40  ktr
+ * changed call to EMRdoRefCountPhase
+ *
  * Revision 3.86  2004/11/28 12:56:44  ktr
  * Zombie phase PH_readsib added in order to have familiar phase numbering.
  *
@@ -661,7 +664,7 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = EMRdoRefcounting (syntax_tree);
+    syntax_tree = EMRdoRefCountPhase (syntax_tree);
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
