@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/06/23 15:44:47  skt
+ * TEMreturn, TEMap & TEMarray added
+ *
  * Revision 1.2  2004/06/23 09:42:34  skt
  * TEMprf, TEMexprs & some helper functions added
  *
@@ -27,12 +30,11 @@
  *                         added / args 2..n of fill())
  *   int        EXECMODE  (the current execution mode)
  *   int        WITHDEEP  (the current with-loop-deepness)
- *   int        FILLDEEP  (the current deepness of primitive function fill)
  */
 #define INFO_TEM_ORIGLHS(n) (n->node[0])
 #define INFO_TEM_EXECMODE(n) (n->refcnt)
 #define INFO_TEM_WITHDEEP(n) (n->flag)
-#define INFO_TEM_FILLDEEP(n) (n->counter)
+#define TEM_DEBUG 0
 
 extern node *TagExecutionmode (node *arg_node, node *arg_info);
 
@@ -43,6 +45,12 @@ extern node *TEMwith2 (node *arg_node, node *arg_info);
 extern node *TEMprf (node *arg_node, node *arg_info);
 
 extern node *TEMexprs (node *arg_node, node *arg_info);
+
+extern node *TEMreturn (node *arg_node, node *arg_info);
+
+extern node *TEMap (node *arg_node, node *arg_info);
+
+extern node *TEMarray (node *arg_node, node *arg_info);
 
 int IsMTAllowed (node *withloop);
 
