@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/10/15 01:09:39  dkrHH
+ * MT_DECL_LOCAL_DESC, MT_INIT_DESC modified
+ *
  * Revision 1.6  2003/10/14 08:51:01  cg
  * comment corrected
  *
@@ -369,63 +372,72 @@ typedef union {
 
 /******************************************************************************
  *
- * MT_DECL_LOCAL_DESC( var_NT)
- * MT_INIT_DESC( var_NT, new_desc)
+ * MT_DECL_LOCAL_DESC( var_NT, dim)
+ * MT_INIT_DESC( var_NT, dim)
  *
  */
 
-#define SAC_MT_DECL_LOCAL_DESC(var_NT)                                                   \
-    CAT11 (SAC_MT_DECL_LOCAL_DESC__, NT_SHP (var_NT) (var_NT))
+#define SAC_MT_DECL_LOCAL_DESC(var_NT, dim)                                              \
+    CAT11 (SAC_MT_DECL_LOCAL_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
 
-#define SAC_MT_INIT_DESC(var_NT) CAT11 (SAC_MT_INIT_DESC__, NT_SHP (var_NT) (var_NT))
+#define SAC_MT_INIT_DESC(var_NT, dim)                                                    \
+    CAT11 (SAC_MT_INIT_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
 /*
  * SCL
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__SCL(var_NT)                                              \
-    CAT12 (SAC_MT_DECL_LOCAL_DESC__SCL_, NT_HID (var_NT) (var_NT))
-#define SAC_MT_DECL_LOCAL_DESC__SCL_NHD(var_NT) SAC_NOTHING ()
-#define SAC_MT_DECL_LOCAL_DESC__SCL_HID(var_NT)                                          \
-    CAT13 (SAC_MT_DECL_LOCAL_DESC__SCL_HID_, NT_UNQ (var_NT) (var_NT))
-#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_NUQ(var_NT) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT)
-#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_UNQ(var_NT)                                      \
-    SAC_MT_DECL_LOCAL_DESC__SCL_NHD (var_NT)
+#define SAC_MT_DECL_LOCAL_DESC__SCL(var_NT, dim)                                         \
+    CAT12 (SAC_MT_DECL_LOCAL_DESC__SCL_, NT_HID (var_NT) BuildArgs2 (var_NT, dim))
+#define SAC_MT_DECL_LOCAL_DESC__SCL_NHD(var_NT, dim) SAC_NOTHING ()
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID(var_NT, dim)                                     \
+    CAT13 (SAC_MT_DECL_LOCAL_DESC__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (var_NT, dim))
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_NUQ(var_NT, dim)                                 \
+    SAC_MT_DECL_LOCAL_DESC__AKS (var_NT, dim)
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_UNQ(var_NT, dim)                                 \
+    SAC_MT_DECL_LOCAL_DESC__SCL_NHD (var_NT, dim)
 
-#define SAC_MT_INIT_DESC__SCL(var_NT)                                                    \
-    CAT12 (SAC_MT_INIT_DESC__SCL_, NT_HID (var_NT) (var_NT))
-#define SAC_MT_INIT_DESC__SCL_NHD(var_NT) SAC_NOOP ()
-#define SAC_MT_INIT_DESC__SCL_HID(var_NT)                                                \
-    CAT13 (SAC_MT_INIT_DESC__SCL_HID_, NT_UNQ (var_NT) (var_NT))
-#define SAC_MT_INIT_DESC__SCL_HID_NUQ(var_NT) SAC_MT_INIT_DESC__AKS (var_NT)
-#define SAC_MT_INIT_DESC__SCL_HID_UNQ(var_NT) SAC_MT_INIT_DESC__SCL_NHD (var_NT)
+#define SAC_MT_INIT_DESC__SCL(var_NT, dim)                                               \
+    CAT12 (SAC_MT_INIT_DESC__SCL_, NT_HID (var_NT) BuildArgs2 (var_NT, dim))
+#define SAC_MT_INIT_DESC__SCL_NHD(var_NT, dim) SAC_NOOP ()
+#define SAC_MT_INIT_DESC__SCL_HID(var_NT, dim)                                           \
+    CAT13 (SAC_MT_INIT_DESC__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (var_NT, dim))
+#define SAC_MT_INIT_DESC__SCL_HID_NUQ(var_NT, dim) SAC_MT_INIT_DESC__AKS (var_NT, dim)
+#define SAC_MT_INIT_DESC__SCL_HID_UNQ(var_NT, dim) SAC_MT_INIT_DESC__SCL_NHD (var_NT, dim)
 
 /*
  * AKS
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__AKS(var_NT)                                              \
-    /* SAC_ND_DESC_TYPE( var_NT) */ int CAT0 (SAC_local_, SAC_ND_A_DESC (var_NT))[10];
+#define SAC_MT_DECL_LOCAL_DESC__AKS(var_NT, dim)                                         \
+    int CAT0 (local_, SAC_ND_A_DESC (var_NT))[SIZE_OF_DESC (dim)];                       \
+    SAC_array_descriptor_t SAC_ND_A_DESC (var_NT) = CAT0 (local_, SAC_ND_A_DESC (var_NT));
 
-#define SAC_MT_INIT_DESC__AKS(var_NT)                                                    \
+#define SAC_MT_INIT_DESC__AKS(var_NT, dim)                                               \
     {                                                                                    \
-        SAC_ND_A_DESC (var_NT) = CAT0 (SAC_local_, SAC_ND_A_DESC (var_NT));              \
+        SAC_ND_A_RC (var_NT) = 2;                                                        \
     }
 
 /*
  * AKD
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__AKD(var_NT) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT)
+#define SAC_MT_DECL_LOCAL_DESC__AKD(var_NT, dim) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT, dim)
 
-#define SAC_MT_INIT_DESC__AKD(var_NT) SAC_MT_INIT_DESC__AKS (var_NT)
+#define SAC_MT_INIT_DESC__AKD(var_NT, dim)                                               \
+    {                                                                                    \
+        SAC_ND_A_RC (var_NT) = 2;                                                        \
+        SAC_ND_A_DESC_SIZE (var_NT) = SAC_ND_A_SIZE (var_NT);                            \
+        /* must be C-ICM in order to copy the shape components! */                       \
+    }
 
 /*
  * AUD
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__AUD(var_NT) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT)
+#define SAC_MT_DECL_LOCAL_DESC__AUD(var_NT, dim)                                         \
+    SAC_NOTHING () /* not implemented yet!!! */
 
-#define SAC_MT_INIT_DESC__AUD(var_NT) SAC_MT_INIT_DESC__AKS (var_NT)
+#define SAC_MT_INIT_DESC__AUD(var_NT, dim) SAC_MT_INIT_DESC__AKS (var_NT, dim)
 
 /******************************************************************************
  *
@@ -625,9 +637,9 @@ typedef union {
 #define SAC_MT_DETERMINE_THREAD_ID()                                                     \
     const unsigned int SAC_MT_mythread                                                   \
       = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
-#else
+#else /* 0 */
 #define SAC_MT_DETERMINE_THREAD_ID()
-#endif
+#endif /* 0 */
 
 #define SAC_MT_SPMD_SPECIAL_FRAME(spmdname)                                              \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname
@@ -1398,20 +1410,6 @@ typedef union {
             SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, maxloadthread));             \
         }                                                                                \
     }
-
-#if 0
-/* These macros are probably no longer used. */
-
-#if SAC_DO_THREADS_STATIC
-
-#define SAC_MT_SCHEDULER_Block_DIM0_PREDICATE(iterations_rest) iterations_rest
-
-#else
-
-#define SAC_MT_SCHEDULER_Block_DIM0_PREDICATE(iterations_rest) 1
-
-#endif
-#endif /* 0 */
 
 /*
  *  Declarations of global variables and functions defined in libsac/mt.c
