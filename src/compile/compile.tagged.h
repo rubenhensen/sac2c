@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/04/03 14:42:56  dkr
+ * COMP2Arg removed
+ *
  * Revision 1.3  2001/12/13 11:49:08  dkr
  * some more functions removed
  *
@@ -32,7 +35,6 @@ extern node *COMP2Array (node *arg_node, node *arg_info);
 extern node *COMP2Id (node *arg_node, node *arg_info);
 extern node *COMP2Ap (node *arg_node, node *arg_info);
 extern node *COMP2Return (node *arg_node, node *arg_info);
-extern node *COMP2Arg (node *arg_node, node *arg_info);
 extern node *COMP2Fundef (node *arg_node, node *arg_info);
 extern node *COMP2Loop (node *arg_node, node *arg_info);
 extern node *COMP2Cond (node *arg_node, node *arg_info);
