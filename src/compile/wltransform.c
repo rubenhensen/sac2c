@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/02 17:47:00  dkr
+ * added new attributes to N_Nwith2
+ *
  * Revision 1.3  1998/04/29 20:09:25  dkr
  * added a comment
  *
@@ -2674,7 +2677,8 @@ WLTRAFundef (node *arg_node, node *arg_info)
  *   node *WLTRAAssign( node *arg_node, node *arg_info)
  *
  * description:
- *   infers NWITH2_IN/INOUT/OUT/LOCAL if the assignment contains a with-loop.
+ *   sets NWITH2_LETIDS, NWITH2_IN/INOUT/OUT/LOCAL if the assignment contains
+ *    a with-loop.
  *
  * remarks:
  *   'INFO_WL_FUNDEF( arg_info)' points to the current fundef-node.
@@ -2761,12 +2765,15 @@ WLTRAAssign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
         /*
-         * save IN/INOUT/OUT/LOCAL in transformed with-loop node
+         * save LETIDS, IN/INOUT/OUT/LOCAL in transformed with-loop node
          */
 
         with = LET_EXPR (ASSIGN_INSTR (arg_node));
         DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2),
                      "new with-loop representation not found");
+
+        NWITH2_LETIDS (with) = DupIds (let_ids, NULL);
+
         NWITH2_VARNO (with) = varno;
         NWITH2_IN (with) = in;
         NWITH2_INOUT (with) = inout;
