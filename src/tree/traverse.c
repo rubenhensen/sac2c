@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/06/07 14:08:28  dkr
+ * DBUG-string 'TRAVjhs' renamed into 'TRAV'
+ *
  * Revision 1.20  2000/05/31 14:38:22  mab
  * renamed tables for array padding
  *
@@ -1179,7 +1182,7 @@ Trav (node *arg_node, node *arg_info)
     }
 
     if (NODE_TYPE (arg_node) >= N_ok) {
-        DBUG_PRINT ("TRAVjhs",
+        DBUG_PRINT ("TRAV",
                     ("N_ok is %i, this is %i", (int)(N_ok), (int)NODE_TYPE (arg_node)));
         DBUG_ASSERT (0, "Trav: illegal node type !");
     }
