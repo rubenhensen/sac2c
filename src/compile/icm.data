@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/05/04 11:42:34  sbs
- * trf inserted in ICM-macros
+ * Revision 1.14  1995/05/24 13:58:31  sbs
+ * ND_KS_DECL_ARRAY_ARG inserted
  *
+# Revision 1.13  1995/05/04  11:42:34  sbs
+# trf inserted in ICM-macros
+#
 # Revision 1.12  1995/04/27  12:57:05  sbs
 # WITH-LOOP ICM s inserted.
 #
@@ -83,6 +86,14 @@ ICM_DEF( ND_KS_DECL_ARRAY, NO_TRACE)
   ICM_INT(dim)
   ICM_VAR( dim, s)
 ICM_END( ND_KS_DECL_ARRAY )
+#endif
+
+#if defined(ND_KS_DECL_ARRAY_ARG) || defined(ICM_ALL)
+ICM_DEF( ND_KS_DECL_ARRAY_ARG, NO_TRACE)
+  ICM_STR(name)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END( ND_KS_DECL_ARRAY_ARG )
 #endif
 
 #if defined(ND_KD_SET_SHAPE) || defined(ICM_ALL)

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/05/04 11:43:51  sbs
+ * Revision 1.20  1995/05/24 13:58:31  sbs
+ * ND_KS_DECL_ARRAY_ARG inserted
+ *
+ * Revision 1.19  1995/05/04  11:43:51  sbs
  * icm_trace.c inserted
  *
  * Revision 1.18  1995/05/02  07:11:31  sbs
@@ -389,7 +392,7 @@ MAIN
     int catdim = 2;
     int rotdim = 1;
 
-    int trace_flag = 0xffff;
+    int traceflag = 0xffff;
 
     OPT OTHER
     {
@@ -589,6 +592,48 @@ fprintf (outfile, "%s", s[0]);
 fprintf (outfile, "\n");
 
 #undef ND_KS_DECL_ARRAY
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KS_DECL_ARRAY_ARG( name, dim, s0,..., sn)   : declares an array given as arg
+ *
+ * char *name;
+ * int dim;
+ * char **s;
+ */
+
+#define ND_KS_DECL_ARRAY_ARG
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+INDENT;
+fprintf (outfile, "int __%s_sz=", name);
+fprintf (outfile, "%s", s[0]);
+{
+    int i;
+    for (i = 1; i < dim; i++)
+        fprintf (outfile, "*%s", s[i]);
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "int __%s_d=%d;\n", name, dim);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+    }
+}
+fprintf (outfile, "\n");
+
+#undef ND_KS_DECL_ARRAY_ARG
 
 #ifndef TEST_BACKEND
 DBUG_VOID_RETURN;

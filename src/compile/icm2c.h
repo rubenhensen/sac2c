@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/05/19 13:41:41  hw
+ * Revision 1.17  1995/05/24 13:58:31  sbs
+ * ND_KS_DECL_ARRAY_ARG inserted
+ *
+ * Revision 1.16  1995/05/19  13:41:41  hw
  * added macro COMP_NOT_DO_LABEL for compilation with a c-compiler
  *  if -DCOMP_NOT_DO_LABEL will be given as argumnet to a c-compiler
  *   ND_LABEL and ND_GOTO will be expanded to nothing
@@ -141,39 +144,125 @@
     if (ND_A_RC (old) == 1)                                                              \
     ND_REUSE (old, new) else
 
+/*----------------------------------------------------------------------------*/
+#if (defined(TRACE_MEM) || defined(TRACE_REF))
+#define PRINT_TRACE_BUFFER fprintf (stderr, "%-40s -> ", __trace_buffer)
+#define PRINT_TRACE_INDENT fprintf (stderr, "%-40s    ", " ")
+
+#endif TRACE_MEM || TRACE_REF
+/*----------------------------------------------------------------------------*/
 #ifdef TRACE_REF
-#define PRINTREF(name)                                                                   \
-    fprintf (stderr, "refcnt of %s (%p): %d\n", #name, ND_A_FIELD (name), ND_A_RC (name))
+#define PRINTREF(name) fprintf (stderr, "refcnt of %s: %d\n", #name, ND_A_RC (name))
+
+#define ND_SET_RC(name, num)                                                             \
+    sprintf (__trace_buffer, "ND_SET_RC(%s, %d)", #name, num);                           \
+    PRINT_TRACE_BUFFER;                                                                  \
+    ND_A_RC (name) = num;                                                                \
+    PRINTREF (name);
+#define ND_INC_RC(name, num)                                                             \
+    sprintf (__trace_buffer, "ND_INC_RC(%s, %d)", #name, num);                           \
+    PRINT_TRACE_BUFFER;                                                                  \
+    ND_A_RC (name) += num;                                                               \
+    PRINTREF (name);
+#define ND_DEC_RC(name, num)                                                             \
+    sprintf (__trace_buffer, "ND_DEC_RC(%s, %d)", #name, num);                           \
+    PRINT_TRACE_BUFFER;                                                                  \
+    ND_A_RC (name) -= num;                                                               \
+    PRINTREF (name);
+
+#else /* TRACE_REF */
+
+#define ND_SET_RC(name, num) ND_A_RC (name) = num;
+#define ND_INC_RC(name, num) ND_A_RC (name) += num;
+#define ND_DEC_RC(name, num) ND_A_RC (name) -= num;
+#endif /* TRACE_REF */
+
+/*----------------------------------------------------------------------------*/
+#ifdef TRACE_MEM
+#define PRINTMEM(name)                                                                   \
+    fprintf (stderr, "adr: %p, size: %d elements\n", ND_A_FIELD (name),                  \
+             ND_A_SIZE (name));                                                          \
+    PRINT_TRACE_INDENT;                                                                  \
+    fprintf (stderr, "total # of elements: %d\n", __trace_mem_cnt)
+#endif /* TRACE_MEM */
+
+/*----------------------------------------------------------------------------*/
+#if (defined(TRACE_MEM) && !defined(TRACE_REF))
 
 #define ND_ALLOC_ARRAY(type, name, rc)                                                   \
     {                                                                                    \
-        fprintf (stderr, "ND_ALLOC_ARRAY(%s, %s, %d)\t-> ", #type, #name, rc);           \
+        sprintf (__trace_buffer, "ND_ALLOC_ARRAY(%s, %s, %d)", #type, #name, rc);        \
+        PRINT_TRACE_BUFFER;                                                              \
+        ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));           \
+        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
+        ND_A_RC (name) = rc;                                                             \
+        __trace_mem_cnt += ND_A_SIZE (name);                                             \
+        PRINTMEM (name);                                                                 \
+    }
+#define ND_DEC_RC_FREE(name, num)                                                        \
+    if ((ND_A_RC (name) -= num) == 0) {                                                  \
+        sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                  \
+        PRINT_TRACE_BUFFER;                                                              \
+        free (ND_A_FIELD (name));                                                        \
+        __trace_mem_cnt -= ND_A_SIZE (name);                                             \
+        PRINTMEM (name);                                                                 \
+    }
+
+#endif /* TRACE_MEM && !TRACE_REF */
+
+/*----------------------------------------------------------------------------*/
+#if (defined(TRACE_MEM) && defined(TRACE_REF))
+
+#define ND_ALLOC_ARRAY(type, name, rc)                                                   \
+    {                                                                                    \
+        sprintf (__trace_buffer, "ND_ALLOC_ARRAY(%s, %s, %d)", #type, #name, rc);        \
+        PRINT_TRACE_BUFFER;                                                              \
+        ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));           \
+        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
+        ND_A_RC (name) = rc;                                                             \
+        PRINTREF (name);                                                                 \
+        PRINT_TRACE_INDENT;                                                              \
+        PRINTMEM (name);                                                                 \
+    }
+
+#define ND_DEC_RC_FREE(name, num)                                                        \
+    sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                      \
+    PRINT_TRACE_BUFFER;                                                                  \
+    if ((ND_A_RC (name) -= num) == 0) {                                                  \
+        fprintf (stderr, "freeing %s\n", #name);                                         \
+        PRINT_TRACE_INDENT;                                                              \
+        PRINTMEM (name);                                                                 \
+        free (ND_A_FIELD (name));                                                        \
+    } else                                                                               \
+        PRINTREF (name);
+
+#endif /* TRACE_MEM && TRACE_REF */
+
+/*----------------------------------------------------------------------------*/
+#if (!defined(TRACE_MEM) && defined(TRACE_REF))
+
+#define ND_ALLOC_ARRAY(type, name, rc)                                                   \
+    {                                                                                    \
+        sprintf (__trace_buffer, "ND_ALLOC_ARRAY(%s, %s, %d)", #type, #name, rc);        \
+        PRINT_TRACE_BUFFER;                                                              \
         ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));           \
         ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
         ND_A_RC (name) = rc;                                                             \
         PRINTREF (name);                                                                 \
     }
 
-#define ND_SET_RC(name, num)                                                             \
-    fprintf (stderr, "ND_SET_RC(%s, %d)\t\t\t-> ", #name, num);                          \
-    ND_A_RC (name) = num;                                                                \
-    PRINTREF (name);
-#define ND_INC_RC(name, num)                                                             \
-    fprintf (stderr, "ND_INC_RC(%s, %d)\t\t\t-> ", #name, num);                          \
-    ND_A_RC (name) += num;                                                               \
-    PRINTREF (name);
-#define ND_DEC_RC(name, num)                                                             \
-    fprintf (stderr, "ND_DEC_RC(%s, %d)\t\t\t-> ", #name, num);                          \
-    ND_A_RC (name) -= num;                                                               \
-    PRINTREF (name);
 #define ND_DEC_RC_FREE(name, num)                                                        \
-    fprintf (stderr, "ND_DEC_RC_FREE(%s, %d)\t\t-> ", #name, num);                       \
+    sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                      \
+    PRINT_TRACE_BUFFER;                                                                  \
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        fprintf (stderr, "freeing %s (%p)\n", #name, ND_A_FIELD (name));                 \
+        fprintf (stderr, "freeing %s\n", #name);                                         \
         free (ND_A_FIELD (name));                                                        \
     } else                                                                               \
         PRINTREF (name);
-#else /* TRACE_REF */
+
+#endif /* !TRACE_MEM && TRACE_REF */
+/*----------------------------------------------------------------------------*/
+#if (!defined(TRACE_MEM) && !defined(TRACE_REF))
 
 #define ND_ALLOC_ARRAY(type, name, rc)                                                   \
     {                                                                                    \
@@ -181,14 +270,12 @@
         ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
         ND_A_RC (name) = rc;                                                             \
     }
-
-#define ND_SET_RC(name, num) ND_A_RC (name) = num;
-#define ND_INC_RC(name, num) ND_A_RC (name) += num;
-#define ND_DEC_RC(name, num) ND_A_RC (name) -= num;
 #define ND_DEC_RC_FREE(name, num)                                                        \
     if ((ND_A_RC (name) -= num) == 0)                                                    \
         free (ND_A_FIELD (name));
-#endif /* TRACE_REF */
+
+#endif /* !TRACE_MEM && !TRACE_REF */
+/*----------------------------------------------------------------------------*/
 
 #define ND_SET_SIZE(name, num) ND_A_SIZE (name) = num;
 
@@ -231,13 +318,13 @@
             ND_A_FIELD (res)[__i] = s op ND_A_FIELD (a2)[__i];                           \
     };
 
-#ifndef COMP_NOT_DO_LABEL
 #define ND_GOTO(label) goto label;
 #define ND_LABEL(label)                                                                  \
     label:
-#else
-#define ND_GOTO(label)
-#define ND_LABEL(label)
-#endif
+
+#define true 1
+#define false 0
+
+typedef int bool;
 
 #endif /* _sac_icm2c_h */
