@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2002/01/18 11:48:35  sbs
+# rsh and rcp substituted by ssh and scp.
+#
 # Revision 3.4  2001/11/14 16:59:18  sbs
 # make deps eliminated.
 #
@@ -150,6 +153,8 @@ ALPHA_MAKE  =  gmake
 #  Internal settings
 #
 
+RSH           :=  ssh -oProtocol=1
+RCP           :=  scp -oProtocol=1
 DATE          :=  $(shell date +%d_%b_%y)
 BINDISTRIBS   :=  $(addprefix $(BINTARGETDIR)/SAC-$(VERSION)-, \
                   $(addsuffix -$(DATE).tar.gz,$(SYSTEMS))) 
@@ -231,7 +236,7 @@ sac2c.for.SOLARIS_SPARC-%:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC-$* on host $(SOLARIS_HOST-$*)"
 	@echo "**************************************************************"
-	rsh $(SOLARIS_HOST-$*)            \
+	$(RSH) $(SOLARIS_HOST-$*)            \
 	    'setenv PATH $(PATH);'        \
             'cd $(SAC2CDIR)/distrib/src;' \
 	    '$(MAKE) sac2c.for.SOLARIS_SPARC'
@@ -269,24 +274,24 @@ sac2c.for.LINUX_X86:
             exit 1;                                           \
           fi
 	( cd $(SAC2CDIR); $(MAKE) tar )
-	rsh -l $(LX86_USER) $(LX86_HOST) \
+	$(RSH) -l $(LX86_USER) $(LX86_HOST) \
 	    'rm -rf $(LX86_DIR); mkdir -p $(LX86_DIR)'
-	rcp $(SAC2CDIR)/src.tar.gz $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)
-	rsh -l $(LX86_USER) $(LX86_HOST)      \
+	$(RCP) $(SAC2CDIR)/src.tar.gz $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)
+	$(RSH) -l $(LX86_USER) $(LX86_HOST)      \
 	    'cd $(LX86_DIR);'                 \
 	    'gunzip -f src.tar.gz;'           \
 	    'tar xvf src.tar;'                \
 	    'chmod -R u+w *;'                 \
 	    'touch src/*/*;'                  \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c sac2c.for.LINUX_X86
-	rsh -l $(LX86_USER) $(LX86_HOST)  \
+	$(RCP) $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c sac2c.for.LINUX_X86
+	$(RSH) -l $(LX86_USER) $(LX86_HOST)  \
 	    'cd $(LX86_DIR)/src/runtime;' \
 	    'tar cvfh libsac.tar libsac*.a'
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.tar \
+	$(RCP) $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.tar \
 	    libsac.tar.for.LINUX_X86
 	@ if [ $${?} -eq 0 ]; then                                 \
-	    rsh -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR)'; \
+	    $(RSH) -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR)'; \
 	  else                                                     \
 	    echo "Compilation of sac2c for LINUX_X86 failed!";     \
 	    echo "Unable to create LINUX_X86 distribution !";      \
@@ -304,10 +309,10 @@ sac2c.for.OSF_ALPHA:
             exit 1;                                           \
           fi
 	( cd $(SAC2CDIR); $(MAKE) tar )
-	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
+	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST) \
 	    'rm -rf $(ALPHA_DIR); mkdir -p $(ALPHA_DIR)' 
-	rcp $(SAC2CDIR)/src.tar.gz $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)
-	rsh -l $(ALPHA_USER) $(ALPHA_HOST)                               \
+	$(RCP) $(SAC2CDIR)/src.tar.gz $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)
+	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST)                               \
 	    'export PATH=$$HOME/bin:$$PATH:/usr/local/bin:/usr/bin/X11;' \
 	    'cd $(ALPHA_DIR);'                                           \
 	    'gunzip -f src.tar.gz;'                                      \
@@ -315,14 +320,14 @@ sac2c.for.OSF_ALPHA:
 	    'chmod -R u+w *;'                                            \
 	    'touch src/*/*;'                                             \
 	    '$(ALPHA_MAKE) distrib_product OS=OSF_ALPHA'
-	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c sac2c.for.OSF_ALPHA
-	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
+	$(RCP) $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c sac2c.for.OSF_ALPHA
+	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST) \
 	    'cd $(ALPHA_DIR)/src/runtime;' \
 	    'tar cvfh libsac.tar libsac*.a'
-	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/src/runtime/libsac.tar \
+	$(RCP) $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/src/runtime/libsac.tar \
 	    libsac.tar.for.OSF_ALPHA
 	@ if [ $${?} -eq 0 ]; then                                    \
-	    rsh -l $(ALPHA_USER) $(ALPHA_HOST) 'rm -rf $(ALPHA_DIR)'; \
+	    $(RSH) -l $(ALPHA_USER) $(ALPHA_HOST) 'rm -rf $(ALPHA_DIR)'; \
 	  else                                                        \
 	    echo "Compilation of sac2c for OSF_ALPHA failed!";        \
 	    echo "Unable to create OSF_ALPHA distribution !";         \
