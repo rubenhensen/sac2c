@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2003/12/23 10:52:56  khf
+ * NCODE_CEXPR added because NCODE_CEXPR in tree_basic.h changed to NCODE_CEXPRS.
+ *
  * Revision 3.78  2003/11/11 14:25:11  dkr
  * NWITH_DEFAULT, NWITH2_DEFAULT added
  *
@@ -2088,6 +2091,7 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
  ***/
 
 #define NCODE_CBLOCK_INSTR(n) (BLOCK_INSTR (NCODE_CBLOCK (n)))
+#define NCODE_CEXPR(n) EXPRS_EXPR (NCODE_CEXPRS (n))
 
 #define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
 #define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
