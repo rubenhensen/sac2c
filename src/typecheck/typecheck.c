@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/05/25 14:33:41  sbs
+ * ARRAY_TYPE adjusted when casting empty arrays.
+ * required for SSA optimizations.
+ *
  * Revision 3.26  2001/05/17 11:34:07  sbs
  * return value of Free now used ...
  *
@@ -258,6 +262,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "typecheck.h"
+#include "LoopInvariantRemoval.h" /* needed for NodeBehindCast only! */
 #include "Error.h"
 #include "convert.h"
 #include "import.h"
@@ -6192,7 +6197,7 @@ TI_array (node *arg_node, node *arg_info)
         db_str = Free (db_str);
 #endif
         /* store type of array in arg_node->info.types */
-        arg_node->info.types = DupTypes (return_type);
+        ARRAY_TYPE (arg_node) = DupTypes (return_type);
     } else {
         ABORT (NODE_LINE (arg_node), ("Type of array not inferable"));
     }
@@ -6678,6 +6683,20 @@ TI_cast (node *arg_node, node *arg_info)
     }
     /* check whether errors occure before */
     ABORT_ON_ERROR;
+
+    {
+        node *sbs_tmp;
+
+        sbs_tmp = NodeBehindCast (arg_node);
+        if ((NODE_TYPE (sbs_tmp) == N_array) && (ARRAY_BASETYPE (sbs_tmp) == T_nothing)) {
+            /*
+             * This is a cast of an empty array. So we have to update
+             * ARRAY_TYPE( sbs_tmp) with a duplicate of type!
+             */
+            FreeOneTypes (ARRAY_TYPE (sbs_tmp));
+            ARRAY_TYPE (sbs_tmp) = DupTypes (ret_type);
+        }
+    }
 
     /* check whether there are to many casts */
     if ((NULL != type->next) && (NULL == tmp))
