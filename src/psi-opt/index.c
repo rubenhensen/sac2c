@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/10/08 16:37:14  dkr
+ * dead code in IdxNcode() deactivated
+ *
  * Revision 3.32  2002/10/08 14:32:40  dkr
  * DIM_NO_OFFSET macro used
  *
@@ -1836,7 +1839,7 @@ IdxPrf (node *arg_node, node *arg_info)
     case F_sel:
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
-        DBUG_ASSERT (((NOTE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
+        DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
                      "wrong arg in F_sel application");
 
         type1 = ID_OR_ARRAY_TYPE (arg1);
@@ -2315,8 +2318,8 @@ IdxNpart (node *arg_node, node *arg_info)
 node *
 IdxNcode (node *arg_node, node *arg_info)
 {
-    node *with, *idx_decl, *vinfo, *withop_arr, *col_vinfo, *new_assign, *let_node,
-      *current_assign, *new_id, *array_id;
+    node *with, *idx_decl, *vinfo, *col_vinfo, *new_assign, *let_node, *current_assign,
+      *new_id, *array_id;
     ids *idxs;
     types *arr_type;
 
@@ -2359,25 +2362,35 @@ IdxNcode (node *arg_node, node *arg_info)
                 arr_type = LET_TYPE (let_node);
                 DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
 
-                switch (NWITH_TYPE (with)) {
-                case WO_modarray:
-                    withop_arr = NWITHOP_ARRAY (NWITH_WITHOP (with));
-                    break;
+#if 0
+        /*
+         * dkr: this is dead code, isn't it????
+         */
+        switch (NWITH_TYPE( with)) {
+          case WO_modarray:
+            withop_arr = NWITHOP_ARRAY( NWITH_WITHOP( with));
+            break;
 
-                case WO_genarray:
-                    withop_arr = NWITHOP_SHAPE (NWITH_WITHOP (with));
-                    DBUG_ASSERT ((NODE_TYPE (withop_arr) == N_array),
-                                 "shape of genarray is not N_array");
-                    break;
+          case WO_genarray:
+            withop_arr = NWITHOP_SHAPE( NWITH_WITHOP( with));
+            /*
+             * dkr: NWITHOP_SHAPE could be a N_id node as well!
+             * Moreover, if the new type system is used, you never will find
+             * a N_array here...!!
+             */
+            DBUG_ASSERT( (NODE_TYPE( withop_arr) == N_array),
+                         "shape of genarray is not N_array");
+            break;
 
-                case WO_foldprf:
-                    /* here is no break missing! */
-                case WO_foldfun:
-                    break;
+          case WO_foldprf:
+            /* here is no break missing! */
+          case WO_foldfun:
+            break;
 
-                default:
-                    DBUG_ASSERT ((0), "wrong with-loop type");
-                }
+          default:
+            DBUG_ASSERT( (0), "wrong with-loop type");
+        }
+#endif
 
                 if (((NWITH_TYPE (with) == WO_modarray)
                      || (NWITH_TYPE (with) == WO_genarray))
@@ -2398,15 +2411,6 @@ IdxNcode (node *arg_node, node *arg_info)
                     ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
                     array_id = MakeId_Copy (LET_NAME (let_node));
 
-#if 0
-          /* 
-           * The backref of the array-id is set wrongly to the actual
-           * integer index-variable. This is done on purpose for
-           * fooling the refcount-inference system.
-           * The "correct" backref would be LET_VARDEC( let_node)!
-           */
-          ID_VARDEC( array_id) = VINFO_VARDEC( col_vinfo);
-#else
                     /*
                      * The backref to declaration of the array-id must set correctly
                      * because following compilation steps (e.g. AdjustIdentifiers())
@@ -2414,7 +2418,6 @@ IdxNcode (node *arg_node, node *arg_info)
                      * Therefore RC itself must be patch in order to ignore this icm!
                      */
                     ID_VARDEC (array_id) = LET_VARDEC (let_node);
-#endif
 
 #ifdef TAGGED_ARRAYS
                     new_id = AddNtTag (new_id);
