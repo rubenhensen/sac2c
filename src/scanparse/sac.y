@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1994/11/29 10:56:38  hw
+ * Revision 1.21  1994/12/07 17:37:15  sbs
+ * err1 fixed: multiple vardecs
+ *
+ * Revision 1.20  1994/11/29  10:56:38  hw
  * added assignment to ids->node in rule "ids"
  *
  * Revision 1.19  1994/11/28  13:26:02  hw
@@ -349,9 +352,12 @@ retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign COLON BRACE_R
                 ;
 
 vardecs:   vardec vardecs     
-            { $1->node[0]=$2;  /* na"chster N_vardec Knoten */
-              $$=$1;
+            { $$=$1;
               $$->nnode=1;
+              while($1->node[0]!=NULL)
+                $1=$1->node[0];
+              $1->node[0]=$2;  /* na"chster N_vardec Knoten */
+              $1->nnode=1;
             }
          | vardec {$$=$1;}
          ;
