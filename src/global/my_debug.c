@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/04/23 18:57:34  dkr
+ * changed usage of NIF
+ *
  * Revision 1.21  1998/04/02 16:06:40  dkr
  * changed signature of NIF
  *
@@ -75,14 +78,14 @@
 ** global array used for DBUG purposes only
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
     s
 
 char *mdb_nodetype[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 #define PRF_IF(n, s, x, y) s
@@ -90,7 +93,6 @@ char *mdb_nodetype[] = {
 char *mdb_prf[] = {
 #include "prf_node_info.mac"
 };
-
 #undef PRF_IF
 
 #define TYP_IF(n, s, p, f, sz) s
@@ -98,7 +100,6 @@ char *mdb_prf[] = {
 char *mdb_type[] = {
 #include "type_info.mac"
 };
-
 #undef TYP_IF
 
 /* #endif  DBUG_OFF */
