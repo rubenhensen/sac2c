@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/04 14:35:11  bs
+ * NCODE_WLAA_xxx macros added.
+ *
  * Revision 2.6  1999/07/28 13:16:17  bs
  * No more DupNode's.
  * WLAAcond modified.
@@ -583,9 +586,10 @@ WLAAncode (node *arg_node, node *arg_info)
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     }
 
-    NCODE_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
-    NCODE_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
-    NCODE_ACCESSNO (arg_node) = INFO_WLAA_COUNT (arg_info);
+    NCODE_WLAA_INFO (arg_node) = MakeInfo ();
+    NCODE_WLAA_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
+    NCODE_WLAA_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
+    NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
     FreeInfo (arg_info, NULL);
     arg_info = old_arg_info;
 
