@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/10/10 14:28:17  dkr
+ * comment added
+ *
  * Revision 2.10  2000/10/10 12:45:28  dkr
  * no changes done
  *
@@ -564,7 +567,7 @@ UNRlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("UNRlet");
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-    arg_node->node[0]->flag = LEVEL;
+    LET_EXPR (arg_node)->flag = LEVEL; /* Aaaarggggghhhh $&%*@ ... :-(( */
 
     DBUG_RETURN (arg_node);
 }
