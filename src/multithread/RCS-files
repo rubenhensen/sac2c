@@ -26,3 +26,4 @@ repfuns_init.h
 schedule_init.c
 schedule_init.h
 assignments_rearrange.c
+assignments_rearrange.h
