@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/07/02 09:27:59  dkr
+ * DupExprs_NT() moved from compile.tagged.c to DupTree.c
+ *
  * Revision 3.64  2002/07/02 09:20:29  dkr
  * DupNode_NT() added
  *
@@ -2766,6 +2769,37 @@ DupNode_NT (node *arg_node)
     }
 
     DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DupExprs_NT( node *exprs)
+ *
+ * Description:
+ *   Duplicates a N_exprs chain and transforms all N_id nodes found into
+ *   tagged N_id nodes.
+ *
+ ******************************************************************************/
+
+node *
+DupExprs_NT (node *exprs)
+{
+    node *expr;
+    node *new_exprs = NULL;
+
+    DBUG_ENTER ("DupExprs");
+
+    if (exprs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
+
+        expr = EXPRS_EXPR (exprs);
+        DBUG_ASSERT ((expr != NULL), "N_exprs node contains no data!");
+
+        new_exprs = MakeExprs (DupNode_NT (expr), DupExprs_NT (EXPRS_NEXT (exprs)));
+    }
+
+    DBUG_RETURN (new_exprs);
 }
 
 /******************************************************************************
