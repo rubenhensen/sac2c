@@ -35,7 +35,6 @@ type_errors.c
 type_errors.h
 type_statistics.c
 type_statistics.h
-typecheck.h
 typecheck_WL.c
 typecheck_WL.h
 user_types.c
