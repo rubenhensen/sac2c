@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/11/27 01:18:05  ktr
+ * Fixed some things.
+ *
  * Revision 1.29  2004/11/27 00:17:33  jhb
  * functionsname fixed with the header names
  *
@@ -181,7 +184,7 @@ COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length)
 
     DBUG_ENTER ("COINTpickNElemsFromCV");
 
-    res = AllocCV (type, length);
+    res = COINTallocCV (type, length);
     global.cv2cv[type](elems, offset, length, res, 0);
 
     DBUG_RETURN (res);
@@ -516,8 +519,8 @@ COcopyConstant (constant *a)
     DBUG_ENTER ("COcopyConstant");
 
     res = COINTmakeConstant (CONSTANT_TYPE (a), SHcopyShape (CONSTANT_SHAPE (a)),
-                             PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), 0,
-                                               CONSTANT_VLEN (a)),
+                             COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
+                                                    0, CONSTANT_VLEN (a)),
                              CONSTANT_VLEN (a));
     DBUG_RETURN (res);
 }
@@ -539,10 +542,10 @@ COcopyScalar2OneElementVector (constant *a)
 
     DBUG_ENTER ("COcopyScalar2OneElementVector");
 
-    res
-      = COINTmakeConstant (CONSTANT_TYPE (a), SHcreateShape (1, 1),
-                           PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), 0, 1),
-                           1);
+    res = COINTmakeConstant (CONSTANT_TYPE (a), SHcreateShape (1, 1),
+                             COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
+                                                    0, 1),
+                             1);
     DBUG_RETURN (res);
 }
 
