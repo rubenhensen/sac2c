@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/02/09 16:07:51  srs
+ * changed N_Nwithid and introduced new
+ * macros for N_info
+ *
  * Revision 1.66  1998/02/05 16:25:16  srs
  * added REFCNT to N_pre and N_post.
  * added FUNDEF to  N_Nwithop.
@@ -1912,6 +1916,12 @@ extern node *MakePragma ();
  ***    int        CNTPARAM
  ***    node**     ICMTAB        (O)
  ***    types**    TYPETAB       (O)
+ ***
+ ***  when used in compile.c :
+ ***    int        IS_WL
+ ***    node*      NEXT
+ ***    node*      WL
+ ***
  ***/
 
 /*
@@ -1942,6 +1952,11 @@ extern node *MakeInfo ();
 #define INFO_CNTPARAM(n) (n->lineno)
 #define INFO_ICMTAB(n) ((node **)n->node[2])
 #define INFO_TYPETAB(n) ((types **)n->info.types)
+
+/* WLF */
+#define INFO_IS_WL(n) (n->counter)
+#define INFO_NEXT(n) (n->node[0])
+#define INFO_WL(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2000,22 +2015,11 @@ extern node *MakeNPart (node *withid, node *generator);
  ***
  ***  permanent attributes:
  ***
-
-old:
- ***    WithIdType   TYPE
-
  ***    ids*         VEC
  ***    ids*         IDS
  ***/
 
-/* old: */
-extern node *MakeNWithid (WithIdType type, ids *_ids);
-
-/* new:
-   extern node *MakeNWithid(ids* vec, ids* scalars); */
-
-/* old: */
-#define NWITHID_TYPE(n) (n->info.withid)
+extern node *MakeNWithid (ids *vec, ids *scalars);
 
 #define NWITHID_VEC(n) (n->info.ids)
 #define NWITHID_IDS(n) ((ids *)n->info2)
