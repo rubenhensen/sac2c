@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/12/21 15:04:06  cg
+ * Revision 1.25  1995/12/29 10:37:26  cg
+ * added new token SIBLIMIT="<###>"
+ *
+ * Revision 1.24  1995/12/21  15:04:06  cg
  * added new primitive type char
  *
  * Revision 1.23  1995/12/04  16:17:21  hw
@@ -186,6 +189,7 @@ int start_token;
 "*="				{FILTER( MULON );}
 "/="				{FILTER( DIVON );}
 
+"<###>"                         {FILTER( SIBLIMIT );}
 
 "reshape"			{FILTER7( RESHAPE, prf_name_str[F_reshape] );}
 "shape"				{FILTER7( SHAPE,prf_name_str[F_shape] );}
