@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.138  1998/04/26 21:53:53  dkr
+ * fixed a bug in COMPSpmd
+ *
  * Revision 1.137  1998/04/25 14:57:39  dkr
  * traversal of vardec is now started by COMPBlock instead of COMPFundef
  *
@@ -742,6 +745,67 @@ static int label_nr = 0;
 /******************************************************************************
  *
  * function:
+ *   node *AppendAssign( node *assigns, node *assign)
+ *
+ * description:
+ *   appends 'assign' to the N_assign-chain 'assings' and returns the new
+ *    chain.
+ *
+ ******************************************************************************/
+
+node *
+AppendAssign (node *assigns, node *assign)
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendAssign");
+
+    if (assigns != NULL) {
+        tmp = assigns;
+        while (ASSIGN_NEXT (tmp) != NULL) {
+            tmp = ASSIGN_NEXT (tmp);
+        }
+        ASSIGN_NEXT (tmp) = assign;
+    } else {
+        assigns = assign;
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendExpr( node *exprs, node *expr)
+ *
+ * description:
+ *   appends 'expr' to the N_exprs-chain 'assings' and returns the new chain.
+ *
+ ******************************************************************************/
+
+node *
+AppendExpr (node *exprs, node *expr)
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendExpr");
+
+    if (exprs != NULL) {
+        tmp = exprs;
+        while (EXPRS_NEXT (tmp) != NULL) {
+            tmp = EXPRS_NEXT (tmp);
+        }
+        EXPRS_NEXT (tmp) = expr;
+    } else {
+        exprs = expr;
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   ids *GetIndexIds(ids *index_ids, int dim)
  *
  * description:
@@ -769,29 +833,51 @@ GetIndexIds (ids *index_ids, int dim)
 /******************************************************************************
  *
  * function:
- *   node *AppendAssign( node *assigns, node *assign)
+ *   node *GetMemoryManagementICMs( ids *mm_ids, char *icm_name)
  *
  * description:
- *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *    chain.
+ *
  *
  ******************************************************************************/
 
 node *
-AppendAssign (node *assigns, node *assign)
+GetMemoryManagementICMs (ids *mm_ids, char *icm_name)
 {
-    node *tmp;
+    node *assigns = NULL;
+    node *assign, *last_assign;
+    simpletype s_type;
 
-    DBUG_ENTER ("AppendAssign");
+    DBUG_ENTER ("GetMemoryManagementICMs");
 
-    if (assigns != NULL) {
-        tmp = assigns;
-        while (ASSIGN_NEXT (tmp) != NULL) {
-            tmp = ASSIGN_NEXT (tmp);
+    while (mm_ids != NULL) {
+        if (IDS_REFCNT (mm_ids) >= 0) {
+#if BUG
+            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
+#else
+            s_type = T_int;
+#endif
+            assign
+              = MakeAssign (MakeIcm (icm_name,
+                                     MakeExprs (MakeId (StringCopy (type_string[s_type]),
+                                                        NULL, ST_regular),
+                                                MakeExprs (MakeId2 (
+                                                             DupOneIds (mm_ids, NULL)),
+                                                           MakeExprs (MakeNum (
+                                                                        IDS_REFCNT (
+                                                                          mm_ids)),
+                                                                      NULL))),
+                                     NULL),
+                            NULL);
+
+            if (assigns == NULL) {
+                assigns = assign;
+            } else {
+                ASSIGN_NEXT (last_assign) = assign;
+            }
+            last_assign = assign;
+
+            mm_ids = IDS_NEXT (mm_ids);
         }
-        ASSIGN_NEXT (tmp) = assign;
-    } else {
-        assigns = assign;
     }
 
     DBUG_RETURN (assigns);
@@ -1346,7 +1432,7 @@ CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
  *
  * description:
  *   creates a fundef ICM.
- *     status == ST_spmdfun: MT_FUN_DEC
+ *     status == ST_spmdfun: MT_SPMD_FUN_DEC
  *     otherwise:            ND_FUN_DEC
  *
  ******************************************************************************/
@@ -1363,7 +1449,7 @@ CreateFundefIcm (char *name, statustype status, node **icm_tab, int tab_size)
     DBUG_PRINT ("COMP", ("Creating ICM \"ND_FUN_DEC\""));
 
     if (status == ST_spmdfun) {
-        icm = MakeIcm ("MT_FUN_DEC", NULL, NULL);
+        icm = MakeIcm ("MT_SPMD_FUN_DEC", NULL, NULL);
     } else {
         icm = MakeIcm ("ND_FUN_DEC", NULL, NULL);
     }
@@ -2219,12 +2305,16 @@ Compile (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *COMPModul(node *arg_node, node *arg_info)
+ *   node *COMPModul( node *arg_node, node *arg_info)
  *
  * description:
  *   compiles an N_modul node:
  *     - traverses sons.
  *     - append SPMD-funs at fundef chain.
+ *
+ * remarks:
+ *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
+ *     in the N_sync- or the N_with2- code!!
  *
  ******************************************************************************/
 
@@ -5066,7 +5156,7 @@ COMPReturn (node *arg_node, node *arg_info)
             ICM_NAME (arg_node) = "NOOP";
         } else {
             if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) == ST_spmdfun) {
-                ICM_NAME (arg_node) = "MT_FUN_RET";
+                ICM_NAME (arg_node) = "MT_SPMD_FUN_RET";
             } else {
                 ICM_NAME (arg_node) = "ND_FUN_RET";
             }
@@ -5515,7 +5605,7 @@ COMPTypedef (node *arg_node, node *arg_info)
     if (0 != TYPEDEF_DIM (arg_node)) {
         /*
          * Here, a new type is defined as a composite type
-         * ( for the time being an array type!)
+         * (for the time being an array type!)
          * Therefore, we have to translate the typedef-node
          * into an ICM-node "ND_TYPEDEF_ARRAY" ....
          */
@@ -5834,19 +5924,23 @@ COMPWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *COMPSPMD( node *arg_node, node *arg_info)
+ *   node *COMPSpmd( node *arg_node, node *arg_info)
  *
  * description:
  *   compiles a N_spmd node.
  *
+ * remarks:
+ *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
+ *     in the N_sync- or the N_with2- code!!
+ *
  ******************************************************************************/
 
 node *
-COMPSPMD (node *arg_node, node *arg_info)
+COMPSpmd (node *arg_node, node *arg_info)
 {
     node *seq_region, *new_fundef, *assigns, *icm_args;
 
-    DBUG_ENTER ("COMPSPMD");
+    DBUG_ENTER ("COMPSpmd");
 
     /*
      * Compile contents of SPMD-region for sequential execution
@@ -5888,34 +5982,17 @@ COMPSPMD (node *arg_node, node *arg_info)
 
     /*
      * insert memory managment for first N_sync region !!!
+     *  (a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT')
      */
 
-#if 0
-  /*
-   * insert a ND_ALLOC_ARRAY for every RC-object in LET_IDS( SPMD_AP_LET( arg_node))
-   */
-
-  simpletype s_type;
-  ids *let_ids;
-  let_ids = LET_IDS( SPMD_AP_LET( arg_node));
-  do {
-    if ( IDS_REFCNT( let_ids) > 0) {
-      GET_BASIC_SIMPLETYPE( s_type, VARDEC_TYPE( IDS_VARDEC( let_ids)));
-      icm = MakeIcm( "ND_ALLOC_ARRAY",
-                     MakeExprs( MakeId( StringCopy( type_string[ s_type]),
-                                        NULL,
-                                        ST_regular),
-                                MakeExprs( MakeId2( DupOneIds( let_ids, NULL)),
-                                           MakeExprs( MakeNum( IDS_REFCNT( let_ids)),
-                                                      NULL))),
-                     NULL);
-      INSERT_INSTR( last_assign, icm)
-    }
-
-    let_ids = IDS_NEXT( let_ids);
-  }
-  while (let_ids != NULL);
-#endif
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (SPMD_REGION (arg_node))))
+                  == N_sync),
+                 "first sync-region not found");
+    assigns
+      = AppendAssign (assigns,
+                      GetMemoryManagementICMs (SYNC_INOUT (ASSIGN_INSTR (
+                                                 BLOCK_INSTR (SPMD_REGION (arg_node)))),
+                                               "ND_ALLOC_ARRAY"));
 
 #if 0
   /*
@@ -5956,7 +6033,7 @@ COMPSPMD (node *arg_node, node *arg_info)
      * insert sequentiell SPMD-region code
      */
 
-    assigns = AppendAssign (assigns, seq_region);
+    assigns = AppendAssign (assigns, MakeAssign (seq_region, NULL));
 
     /*
      * MT_ENDIF_SEQUENTIAL
@@ -5986,42 +6063,127 @@ COMPSPMD (node *arg_node, node *arg_info)
  *   node *COMPSync( node *arg_node, node *arg_info)
  *
  * description:
+ *   compiles a N_sync node.
  *
+ * remarks:
+ *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
+ *     in the N_sync- or the N_with2- code!!
  *
  ******************************************************************************/
 
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *region;
+    node *assigns = NULL;
+    node *icm_args, *icm_args1, *icm_args2;
+    ids *sync_ids;
+    char *icm_name;
+    simpletype s_type;
+    int num_folds;
 
     DBUG_ENTER ("COMPSync");
 
     /*
      * compile contents of sync-region
      */
+
+    INFO_COMP_MT (arg_info) = 0;
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
     /*
-     * extract contents of sync-region-block
+     * build the arguments for the ICMs
      */
-    region = BLOCK_INSTR (SYNC_REGION (arg_node));
+
+    icm_args1 = icm_args2 = NULL;
+    num_folds = 0;
+    sync_ids = SYNC_OUT (arg_node);
+    while (sync_ids != NULL) {
+        GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (sync_ids));
+        icm_args = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
+                              MakeExprs (MakeId2 (DupOneIds (sync_ids, NULL)), NULL));
+
+        icm_args1 = AppendExpr (icm_args1, icm_args);
+        icm_args2
+          = AppendExpr (icm_args2,
+                        MakeExprs (DupTree (icm_args, NULL),
+                                   MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
+                                                      ST_regular),
+                                              MakeExprs (MakeId (StringCopy ("?fold_op?"),
+                                                                 NULL, ST_regular),
+                                                         NULL))));
+
+        num_folds++;
+        sync_ids = IDS_NEXT (sync_ids);
+    }
+
+    /*
+     * is this sync-region *not* the first one of the current SPMD-region?
+     *  -> insert the memory-managment (malloc).
+     *  -> insert ICM (MT_CONTINUE),
+     */
+
+    if (SYNC_FIRST (arg_node) == 0) {
+
+        /*
+         * insert a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT'
+         */
+        assigns = AppendAssign (assigns, GetMemoryManagementICMs (SYNC_INOUT (arg_node),
+                                                                  "ND_ALLOC_ARRAY"));
+
+        assigns
+          = AppendAssign (assigns,
+                          MakeAssign (MakeIcm ("MT_CONTINUE",
+                                               MakeExprs (MakeNum (num_folds), icm_args1),
+                                               NULL),
+                                      NULL));
+
+    } else {
+
+        if (icm_args1 != NULL) {
+            icm_args1 = FreeTree (icm_args1);
+        }
+    }
+
+    /*
+     * insert contents of sync-region-block
+     */
+
+    assigns = AppendAssign (assigns, BLOCK_INSTR (SYNC_REGION (arg_node)));
     BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
 
-    switch (INFO_COMP_MT (arg_info)) {
+    /*
+     * insert ICM (MT_SYNC_...)
+     */
 
-    case 0:
-
-        break;
-
-    case 1:
-
-        break;
-
-    default:
-
-        DBUG_ASSERT ((0), "wrong value for INFO_COMP_MT");
+    if (SYNC_INOUT (arg_node) == NULL) {
+        DBUG_ASSERT ((SYNC_OUT (arg_node) != NULL), "no target found");
+        if (IDS_NEXT (SYNC_OUT (arg_node)) == NULL) {
+            icm_name = "MT_SYNC_ONEFOLD";
+        } else {
+            icm_name = "MT_SYNC_FOLD";
+        }
+    } else {
+        if (SYNC_OUT (arg_node) == NULL) {
+            icm_name = "MT_SYNC_NONFOLD";
+        } else {
+            if (IDS_NEXT (SYNC_OUT (arg_node)) == NULL) {
+                icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
+            } else {
+                icm_name = "MT_SYNC_FOLD_NONFOLD";
+            }
+        }
     }
+
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm (icm_name,
+                                           MakeExprs (MakeNum (num_folds), icm_args2),
+                                           NULL),
+                                  NULL));
+
+    /*
+     * insert the memory-managment (free),
+     */
 
     /*
      * remove remain of N_sync node
@@ -6029,7 +6191,7 @@ COMPSync (node *arg_node, node *arg_info)
 
     arg_node = FreeTree (arg_node);
 
-    DBUG_RETURN (region);
+    DBUG_RETURN (assigns);
 }
 
 /******************************************************************************
@@ -6078,6 +6240,9 @@ node *wl_withid = NULL;
  *   - 'wl_withid' points always to the N_withid-node.
  *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
  *                                                             ^
+ *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
+ *     in the N_sync- or the N_with2- code!!
+ *
  ******************************************************************************/
 
 node *
@@ -6086,6 +6251,21 @@ COMPNwith2 (node *arg_node, node *arg_info)
     node *assigns;
 
     DBUG_ENTER ("COMPNwith2");
+
+    switch (INFO_COMP_MT (arg_info)) {
+
+    case 0:
+
+        break;
+
+    case 1:
+
+        break;
+
+    default:
+
+        DBUG_ASSERT ((0), "wrong value for INFO_COMP_MT");
+    }
 
     /*
      * we must store the with-loop ids *before* compiling the codes
