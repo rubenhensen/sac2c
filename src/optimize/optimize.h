@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/07/19 18:48:37  asi
+ * Revision 1.34  1995/07/24 11:48:52  asi
+ * added array elimination
+ *
+ * Revision 1.33  1995/07/19  18:48:37  asi
  * added external decleration of max_optcycles
  *
  * Revision 1.32  1995/07/07  14:58:38  asi
@@ -129,10 +132,13 @@ extern int opt_lir;
 extern int opt_inl;
 extern int opt_unr;
 extern int opt_uns;
+extern int opt_ae;
 extern int optvar;
 extern int inlnum;
 extern int unrnum;
 extern int max_optcycles;
+extern int minarray;
+extern char filename[]; /* is set temporary; will be set later on in main.c */
 /* main.c end */
 
 extern int dead_expr;
@@ -144,6 +150,7 @@ extern int inl_fun;
 extern int unr_expr;
 extern int uns_expr;
 extern int optvar_counter;
+extern int elim_arrays;
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
