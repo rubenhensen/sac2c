@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/29 16:18:22  nmw
+ * function SAC_CI_SACArg2string() added
+ *
  * Revision 3.1  2000/11/20 18:02:10  sacbase
  * new release made
  *
@@ -68,5 +71,7 @@ extern void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, ch
 
 extern void SAC_CI_InitSACArgDirectory ();
 extern void SAC_CI_FreeSACArgDirectory ();
+
+extern char *SAC_CI_SACArg2string (SAC_arg sa, char *buffer);
 
 #endif

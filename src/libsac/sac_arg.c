@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/29 16:21:03  nmw
+ * function SAC_CI_SACArg2string() added
+ *
  * Revision 3.1  2000/11/20 18:02:47  sacbase
  * new release made
  *
@@ -34,11 +37,19 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "sac.h"
 
-/* datatype for SAC_arg inUseDirectory */
 #define SAC_ARG_MAX_VARS_IN_DIR 100
+#define CHAR_BUFFER_SIZE 128
 
+/* Typenames used for output */
+#define TYP_IFpr_str(str) str
+char *basetype_string[] = {
+#include "type_info.mac"
+};
+
+/* datatype for SAC_arg inUseDirectory */
 typedef struct SAC_ARG_DIR_S {
     SAC_arg vars[SAC_ARG_MAX_VARS_IN_DIR];
     int act_slot;
@@ -353,4 +364,53 @@ SAC_CI_FreeSACArgDirectory ()
         in_use_directory = in_use_directory->next;
         SAC_FREE (act_dir);
     } while (in_use_directory != NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char*  SAC_CI_SACArg2string(SAC_arg sa, char* buffer)
+ *
+ * description:
+ *   creates a string representation for the SAC_arg type like 'int[1,2,3]'
+ *   and places it in buffer. if buffer is NULL a new buffer is allocated.
+ *
+ *****************************************************************************/
+
+char *
+SAC_CI_SACArg2string (SAC_arg sa, char *buffer)
+{
+    char *internal_buffer;
+    char tempstr[CHAR_BUFFER_SIZE];
+    int dim;
+
+    if (buffer == NULL) {
+        /* alloc new buffer */
+        internal_buffer = (char *)SAC_MALLOC (CHAR_BUFFER_SIZE * sizeof (char));
+    } else {
+        /* use given buffer */
+        internal_buffer = buffer;
+    }
+    internal_buffer[0] = '\0';
+
+    if (sa != NULL) {
+        /* fill buffer with type info */
+
+        strcat (internal_buffer, basetype_string[SAC_ARG_TYPE (sa)]);
+        if (SAC_ARG_DIM (sa) > 0) {
+            strcat (internal_buffer, "[");
+            for (dim = 0; dim < SAC_ARG_DIM (sa); dim++) {
+                sprintf (tempstr, "%d", (SAC_ARG_SHPVEC (sa))[dim]);
+                strcat (internal_buffer, tempstr);
+                if (dim < (SAC_ARG_DIM (sa) - 1)) {
+                    strcat (internal_buffer, ",");
+                }
+            }
+            strcat (internal_buffer, "]");
+        }
+
+    } else {
+        strcat (internal_buffer, "<na>");
+    }
+    return (internal_buffer);
 }
