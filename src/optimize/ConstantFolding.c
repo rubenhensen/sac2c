@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.45  2000/11/01 18:56:39  dkr
+ * fixed a bug in DupPartialArray:
+ * DupNode() used instead of DupArray() !!!!
+ *
  * Revision 2.44  2000/10/31 23:25:40  dkr
  * signature of Types2Shpseg modified
  *
@@ -1352,7 +1356,7 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (array)]));
 
     if (length > 0) {
-        new_node = DupArray (array, arg_info);
+        new_node = DupNode (array);
         expr0 = ARRAY_AELEMS (new_node);
         /*
          * Goto start position and erase the elements which were not wanted.
