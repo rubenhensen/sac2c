@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1999/01/19 10:46:06  sbs
+ * ret=NULL; inserted in default-case of ItemName
+ *
  * Revision 1.26  1998/06/05 15:23:25  cg
  * functions ModName() and ItemName() now use an internal static buffer
  * in order to avoid memory leaks.
@@ -304,6 +307,7 @@ ItemName (node *item)
         break;
     default:
         DBUG_ASSERT (0, "Wrong item in call of function 'ItemName`");
+        ret = NULL;
     }
 
     DBUG_RETURN (ret);
