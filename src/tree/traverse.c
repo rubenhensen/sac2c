@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/02/08 16:50:57  mwe
+ * remove copy and paste mistake
+ *
  * Revision 3.39  2003/02/08 15:56:07  mwe
  * support for DistributiveLaw added
  *
@@ -1487,7 +1490,7 @@ funtab *hm_tab = &hm_tab_rec;
  *  (112) dl_tab
  */
 static funtab dl_tab_rec = {{
-#define NIFal(it_dl) it_dl
+#define NIFdl(it_dl) it_dl
 #include "node_info.mac"
                             },
                             NULL,
