@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/06/26 16:23:39  asi
+ * Revision 1.29  1995/07/04 16:32:58  asi
+ * IsConst defined global
+ * CFwhile enhanced - consider cast-nodes
+ *
+ * Revision 1.28  1995/06/26  16:23:39  asi
  * some macros moved from .c file to .h file
  *
  * Revision 1.27  1995/06/26  15:39:16  asi
@@ -109,6 +113,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "typecheck.h"
+#include "internal_lib.h"
 
 #include "optimize.h"
 #include "DupTree.h"
@@ -117,9 +122,9 @@
 
 extern char filename[]; /* is set temporary; will be set later on in main.c */
 
+#define MAXARG 3
 #define FALSE 0
 #define TRUE 1
-#define MAXARG 3
 
 /*
  *  This macros secects the right element out of the union info
@@ -449,6 +454,8 @@ CFap (node *arg_node, node *arg_info)
 node *
 CFcast (node *arg_node, node *arg_info)
 {
+    node *cast;
+
     DBUG_ENTER ("CFcast");
 
     arg_node = OptTrav (arg_node, arg_info, 0);
@@ -457,6 +464,11 @@ CFcast (node *arg_node, node *arg_info)
     case N_num:
     case N_float:
     case N_bool:
+        cast = arg_node;
+        arg_node = arg_node->node[0];
+        cast->nnode = 0;
+        FreeTree (cast);
+        break;
     case N_array:
         arg_node = arg_node->node[0];
         break;
@@ -578,6 +590,7 @@ node *
 CFlet (node *arg_node, node *arg_info)
 {
     node *arg2;
+    ids *ids_node;
 
     DBUG_ENTER ("CFlet");
 
@@ -587,15 +600,19 @@ CFlet (node *arg_node, node *arg_info)
 
     arg_info->info.types = NULL;
 
-    if ((arg_node->node[0]->info.prf == F_reshape)
-        && (arg_node->node[0]->nodetype == N_prf)) {
+    if ((N_prf == arg_node->node[0]->nodetype)
+        && (F_reshape == arg_node->node[0]->info.prf)) {
         arg2 = arg_node->node[0]->node[0]->node[1]->node[0];
         if (N_id == arg2->nodetype)
             VAR (arg_node->info.ids->node->varno) = VAR (arg2->info.ids->node->varno);
         else
             VAR (arg_node->info.ids->node->varno) = arg2;
     } else {
-        VAR (arg_node->info.ids->node->varno) = arg_node->node[0];
+        ids_node = arg_node->info.ids;
+        while (NULL != ids_node) {
+            VAR (ids_node->node->varno) = arg_node->node[0];
+            ids_node = ids_node->next;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -621,15 +638,15 @@ node *
 CFwhile (node *arg_node, node *arg_info)
 {
     int i;
-    node *node_behind, *cond_value;
+    node *cond_value;
 
     DBUG_ENTER ("CFwhile");
 
-    node_behind = NodeBehindCast (arg_node->node[0]);
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav while-condition */
 
-    switch (node_behind->nodetype) {
+    switch (arg_node->node[0]->nodetype) {
     case N_bool:
-        if (!node_behind->info.cint) {
+        if (!arg_node->node[0]->info.cint) {
             MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
             MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
             FreeTree (arg_node);
@@ -639,7 +656,7 @@ CFwhile (node *arg_node, node *arg_info)
         }
         break;
     case N_id:
-        cond_value = VAR (node_behind->info.ids->node->varno);
+        cond_value = VAR (arg_node->node[0]->info.ids->node->varno);
         if (1 == IsConst (cond_value)) {
             if (cond_value->info.cint) {
                 DBUG_PRINT ("CF", ("while-loop changed to do-loop %d", arg_info->lineno));
