@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/09/24 20:20:08  sah
+  now the new types are not
+  freed for fundefs as well
+
   Revision 1.3  2004/08/29 18:10:05  sah
   general improvements
 
@@ -126,8 +130,8 @@ version="1.0">
 
      Fundef nodes are never freed. Instead, they are zombiealised, thus
      their status is set to zombie and all attributes and sons are
-     freed, except for NAME, MOD, LINKMOD and TYPES. Furthermore, the
-     node structure itself is not freed.
+     freed, except for NAME, MOD, LINKMOD, TYPE and TYPES. Furthermore,
+     the node structure itself is not freed.
      
 -->
 <xsl:template match="node[@name = &quot;Fundef&quot;]">
@@ -165,7 +169,7 @@ version="1.0">
   <!-- free all sons -->
   <xsl:apply-templates select="sons/son"/>
   <!-- free all attributes, except NAME, MOD, LINKMOD and TYPES --> 
-  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;]"/>
+  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;]"/>
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
