@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2004/03/02 17:26:32  mwe
+ * constant propagation deactivated
+ *
  * Revision 1.33  2004/02/06 14:19:33  mwe
  * remove usage of PHIASSIGN and ASSIGN2
  * implement usage of primitive phi function instead
@@ -1156,52 +1159,66 @@ SSACSElet (node *arg_node, node *arg_info)
         /* remove assignment */
         INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
 
-    } else if ((nt_expr == N_id)
+/*
+ * Maybe (and hopefully) the following excluded code is obsolete
+ * because of the new constant and variable propagation phase CVP.
+ * If that's the case the excluded code could be removed completly.
+ * Otherwise it should be included again.
+ */
+
+/* start exclution */
+#if 0
+
+  } else if ((nt_expr == N_id)
 #ifndef CREATE_UNIQUE_BY_HEAP
-               && (!ForbiddenSubstitution (LET_IDS (arg_node)))
+             && (! ForbiddenSubstitution( LET_IDS( arg_node)))
 #endif
-    ) {
-        types *type1
-          = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
-        types *type2
-          = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (LET_EXPR (arg_node))));
-        char *stype1 = Type2String (type1, 0, TRUE);
-        char *stype2 = Type2String (type2, 0, TRUE);
+             ) {
+    types *type1 = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG(
+                                               IDS_AVIS( LET_IDS( arg_node))));
+    types *type2 = VARDEC_OR_ARG_TYPE( AVIS_VARDECORARG(
+                                               ID_AVIS( LET_EXPR( arg_node))));
+    char *stype1 = Type2String( type1, 0, TRUE);
+    char *stype2 = Type2String( type2, 0, TRUE);
 
-        /* only substitute ids of equal or more generic types */
-        cmp = CompareTypesImplementation (type1, type2);
-        if ((cmp == 0) || (cmp == 1)) {
-            /*
-             *  Since we want to substitute ids with more generic types, we have to
-             *  tolerate (some) type errors:
-             *
-             *    int[3] a;
-             *    int[+] b;
-             *    int[2] c;
-             *
-             *    a = [1,2,3];
-             *    b = a;                  # copy assignment
-             *    if (shape( b) == [2]) {
-             *      c = b;                # don't complain about a type error here,
-             *    }                       # once 'b' have been replaced by 'a'!
-             *    else {
-             *      ...
-             *    }
-             */
+    /* only substitute ids of equal or more generic types */
+    cmp = CompareTypesImplementation( type1, type2);
+    if ((cmp == 0) || (cmp == 1)) {
+      /*
+       *  Since we want to substitute ids with more generic types, we have to
+       *  tolerate (some) type errors:
+       *
+       *    int[3] a;
+       *    int[+] b;
+       *    int[2] c;
+       *
+       *    a = [1,2,3];
+       *    b = a;                  # copy assignment
+       *    if (shape( b) == [2]) {
+       *      c = b;                # don't complain about a type error here,
+       *    }                       # once 'b' have been replaced by 'a'!
+       *    else {
+       *      ...
+       *    }
+       */
 
-            /* set subst attributes for results */
-            LET_IDS (arg_node)
-              = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
+      /* set subst attributes for results */
+      LET_IDS( arg_node) = SetSubstAttributes( LET_IDS (arg_node),
+                                               ID_IDS( LET_EXPR( arg_node)));
 
-            DBUG_PRINT ("SSACSE",
-                        ("copy assignment eliminated in line %d:  %s:%s = %s:%s",
-                         NODE_LINE (arg_node), IDS_NAME (LET_IDS (arg_node)), stype1,
-                         ID_NAME (LET_EXPR (arg_node)), stype2));
-            cse_expr++;
-
-            /* remove copy assignment */
-            INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
-        } else if (cmp == -1) {
+      DBUG_PRINT( "SSACSE",
+                  ("copy assignment eliminated in line %d:  %s:%s = %s:%s",
+                   NODE_LINE( arg_node),
+                   IDS_NAME( LET_IDS( arg_node)),
+                   stype1,
+                   ID_NAME( LET_EXPR( arg_node)),
+                   stype2));
+      cse_expr++;
+    
+      /* remove copy assignment */
+      INFO_SSACSE_REMASSIGN(arg_info) = TRUE;
+    }
+    else if (cmp == -1) {
 #if 0
       /*
        *  We have an assignment of this form:
@@ -1251,19 +1268,25 @@ SSACSElet (node *arg_node, node *arg_info)
                    ID_NAME( LET_EXPR( arg_node)),
                    stype2));
 #endif
-        } else {
-            DBUG_PRINT ("SSACSE",
-                        ("incompatible copy assignment in line %d:  %s:%s = %s:%s",
-                         NODE_LINE (arg_node), IDS_NAME (LET_IDS (arg_node)), stype1,
-                         ID_NAME (LET_EXPR (arg_node)), stype2));
-            /*
-             * Do *not* produce an error here, since this may be dead code!
-             * (See comment for the function SSACSEPropagateSubst2Args() as well!)
-             */
-        }
-        stype1 = Free (stype1);
-        stype2 = Free (stype2);
+    }
+    else {
+      DBUG_PRINT( "SSACSE",
+                  ("incompatible copy assignment in line %d:  %s:%s = %s:%s",
+                   NODE_LINE( arg_node),
+                   IDS_NAME( LET_IDS( arg_node)),
+                   stype1,
+                   ID_NAME( LET_EXPR( arg_node)),
+                   stype2));
+      /*
+       * Do *not* produce an error here, since this may be dead code!
+       * (See comment for the function SSACSEPropagateSubst2Args() as well!)
+       */
+    }
+    stype1 = Free( stype1);
+    stype2 = Free( stype2);
 
+/* end exclution */
+#endif
     } else if ((nt_expr == N_ap)
                && (FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
 
