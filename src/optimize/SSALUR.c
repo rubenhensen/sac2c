@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.17  2004/11/26 20:07:41  mwe
  * SacDevCamp: Compiles!
  *
@@ -96,8 +99,8 @@
 #include "constants.h"
 #include "math.h"
 #include "ssa.h"
+#include "ctinfo.h"
 #include "SSAWLUnroll.h"
-#include "Error.h"
 
 /*
  * INFO structure and macros
@@ -1127,7 +1130,7 @@ LURfundef (node *arg_node, info *arg_info)
                         ("no unrolling of %s: should be %d (but set to maxlur %d)",
                          FUNDEF_NAME (arg_node), unrolling, global.unrnum));
             if (unrolling <= 32) {
-                NOTE (("LUR: -maxlur %d would unroll loop", unrolling));
+                CTInote ("LUR: -maxlur %d would unroll loop", unrolling);
             }
         }
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.16  2004/12/08 18:00:42  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -74,7 +77,7 @@
 #include "node_basic.h"
 #include "globals.h"
 #include "free.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
@@ -554,7 +557,7 @@ WLUcheckUnrollModarray (node *wln)
              * Most with-loops can easily be unrolled.
              * So, we only want to see a warning for small ones.
              */
-            NOTE (("WLUR: -maxwlur %d would unroll fold with-loop", elts));
+            CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elts);
         }
     }
 
@@ -640,7 +643,7 @@ WLUcheckUnrollGenarray (node *wln, info *arg_info)
     if (ok && (length > global.wlunrnum)) {
         ok = 0;
         if (length <= 32) {
-            NOTE (("WLUR: -maxwlur %d would unroll genarray with-loop", length));
+            CTInote ("WLUR: -maxwlur %d would unroll genarray with-loop", length);
             /*
              * Most with-loops can easily be unrolled.
              * So, we only want to see a warning for small ones.
@@ -746,7 +749,7 @@ WLUcheckUnrollFold (node *wln)
     if (ok && (elts > global.wlunrnum)) {
         ok = 0;
         if (elts <= 32) {
-            NOTE (("WLUR: -maxwlur %d would unroll fold with-loop", elts));
+            CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elts);
             /*
              * Most with-loops can easily be unrolled.
              * So, we only want to see a warning for small ones.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.26  2004/11/26 21:32:42  khf
  * correcte DCRid
  *
@@ -115,7 +118,6 @@
 #include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
-#include "Error.h"
 #include "dbug.h"
 #include "globals.h"
 #include "traverse.h"

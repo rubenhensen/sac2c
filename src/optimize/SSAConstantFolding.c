@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.79  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.78  2004/12/08 18:00:42  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -264,7 +267,7 @@
 #include "DupTree.h"
 #include "constants.h"
 #include "shape.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "optimize.h"
 #include "SSATransform.h"
 #include "Inline.h"
@@ -1474,7 +1477,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
     case F_div_SxS:
         if (swap && COisZero (co, FALSE)) {
             /* any 0 in divisor, x/0 -> err */
-            ABORT (NODE_LINE (expr), ("Division by zero expected"));
+            CTIabortLine (NODE_LINE (expr), "Division by zero expected");
         } else if (swap && COisOne (co, TRUE)) { /* x/1 -> x */
             result = DUPdoDupTree (expr);
         } else if ((!swap) && COisZero (co, TRUE)) { /* 0/x -> 0 */
@@ -1482,7 +1485,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
             if (target_shp != NULL) {
                 /* Create ZeroConstant of same type and shape as expression */
                 tmp_co = COmakeZero (COgetType (co), target_shp);
-                WARN (NODE_LINE (expr), ("expression 0/x replaced by 0"));
+                CTIwarnLine (NODE_LINE (expr), "Expression 0/x replaced by 0");
             }
         }
         break;
@@ -2333,8 +2336,8 @@ CFcond (node *arg_node, info *arg_info)
          */
         if ((BOOL_VAL (COND_COND (arg_node)) == TRUE)
             && (FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)))) {
-            WARN (NODE_LINE (arg_node),
-                  ("infinite loop detected, program may not terminate"));
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Infinite loop detected, program may not terminate");
 
             /* ex special function cannot be inlined and is now a regular one */
             FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
@@ -3226,7 +3229,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 if (COisZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
-                    ABORT (NODE_LINE (arg_expr[1]), ("Division by zero expected"));
+                    CTIabortLine (NODE_LINE (arg_expr[1]), "Division by zero expected");
                 } else {
                     new_co = COdiv (arg_co[0], arg_co[1]);
                 }
@@ -3243,7 +3246,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 if (COisZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
-                    ABORT (NODE_LINE (arg_expr[1]), ("Division by zero expected"));
+                    CTIabortLine (NODE_LINE (arg_expr[1]), "Division by zero expected");
                 } else {
                     new_co = COmod (arg_co[0], arg_co[1]);
                 }

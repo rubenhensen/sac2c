@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.73  2004/12/09 13:08:54  mwe
  * type_upgrade now running before constant folding
  *
@@ -336,7 +339,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "globals.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "node_basic.h"
 #include "traverse.h"
@@ -549,90 +552,111 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     DBUG_ENTER ("PrintStatistics");
 
     diff = inl_fun - off_inl_fun;
-    if ((global.optimize.doinl) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d function(s) inlined", diff));
+    if ((global.optimize.doinl) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d function(s) inlined", diff);
+    }
 
     diff = elim_arrays - off_elim_arrays;
-    if ((global.optimize.doae) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d array(s) eliminated", diff));
+    if ((global.optimize.doae) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d array(s) eliminated", diff);
+    }
 
     diff = cf_expr - off_cf_expr;
-    if ((global.optimize.docf) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d primfun application(s) eliminated by constant folding", diff));
+    if ((global.optimize.docf) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d primfun application(s) eliminated by constant folding", diff);
+    }
 
     diff = cvp_expr - off_cvp_expr;
-    if ((global.optimize.docvp) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d values propagated", diff));
+    if ((global.optimize.docvp) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d values propagated", diff);
+    }
 
     diff = sp_expr - off_sp_expr;
-    if ((global.optimize.dosp) && ((ALL == flag) || (diff > 0)))
-        NOTE (
-          ("  %d primitive map operation(s) eliminated by selection propagation", diff));
+    if ((global.optimize.dosp) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d primitive map operation(s) eliminated by selection propagation",
+                 diff);
+    }
 
     diff = (dead_expr - off_dead_expr) + (dead_var - off_dead_var);
-    if ((global.optimize.dodcr) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d dead assignment(s) and %d unused variable declaration(s) removed",
-               dead_expr - off_dead_expr, dead_var - off_dead_var));
+    if ((global.optimize.dodcr) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d dead assignment(s) and %d unused variable declaration(s) removed",
+                 dead_expr - off_dead_expr, dead_var - off_dead_var);
+    }
 
     diff = dead_fun - off_dead_fun;
-    if ((global.optimize.dodfr) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d dead functions(s) removed", diff));
+    if ((global.optimize.dodfr) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d dead functions(s) removed", diff);
+    }
 
     diff = cse_expr - off_cse_expr;
-    if ((global.optimize.docse) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d common subexpression(s) eliminated", diff));
+    if ((global.optimize.docse) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d common subexpression(s) eliminated", diff);
+    }
 
     diff = wlf_expr - off_wlf_expr;
-    if ((global.optimize.dowlf) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d with-loop(s) folded", diff));
+    if ((global.optimize.dowlf) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d with-loop(s) folded", diff);
+    }
 
     diff = wls_expr - off_wls_expr;
-    if ((global.optimize.dowls) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d with-loop(s) scalarized", diff));
+    if ((global.optimize.dowls) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d with-loop(s) scalarized", diff);
+    }
 
     diff = lir_expr - off_lir_expr;
-    if ((global.optimize.dolir) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d loop invariant expression(s) moved", diff));
+    if ((global.optimize.dolir) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d loop invariant expression(s) moved", diff);
+    }
 
     diff = wlir_expr - off_wlir_expr;
-    if ((global.optimize.dolir) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d with-loop invariant expression(s) moved", diff));
+    if ((global.optimize.dolir) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d with-loop invariant expression(s) moved", diff);
+    }
 
     diff = uns_expr - off_uns_expr;
-    if ((global.optimize.dolus) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d loop(s) unswitched", diff));
+    if ((global.optimize.dolus) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d loop(s) unswitched", diff);
+    }
 
     diff = lunr_expr - off_lunr_expr;
-    if ((global.optimize.dolur) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d loop(s) unrolled", diff));
+    if ((global.optimize.dolur) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d loop(s) unrolled", diff);
+    }
 
     diff = wlunr_expr - off_wlunr_expr;
-    if ((global.optimize.dowlur) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d with-loop(s) unrolled", diff));
+    if ((global.optimize.dowlur) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d with-loop(s) unrolled", diff);
+    }
 
     diff = ap_padded - off_ap_padded;
-    if ((global.optimize.doap) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d array type(s) padded", diff));
+    if ((global.optimize.doap) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d array type(s) padded", diff);
+    }
 
     diff = ap_unsupported - off_ap_unsupported;
-    if ((global.optimize.doap) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d array type(s) unsupported for padding", diff));
+    if ((global.optimize.doap) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d array type(s) unsupported for padding", diff);
+    }
 
     diff = al_expr - off_al_expr;
-    if ((global.optimize.doal) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d associative law optimization(s)", diff));
+    if ((global.optimize.doal) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d associative law optimization(s)", diff);
+    }
 
     diff = dl_expr - off_dl_expr;
-    if ((global.optimize.dodl) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d distributive law optimization(s)", diff));
+    if ((global.optimize.dodl) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d distributive law optimization(s)", diff);
+    }
 
     diff = wlfs_expr - off_wlfs_expr;
-    if ((global.optimize.dowlfs) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d with-loop(s) fused", diff));
+    if ((global.optimize.dowlfs) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d with-loop(s) fused", diff);
+    }
 
     diff = tup_expr - off_tup_expr;
-    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d type(s) upgraded", diff));
+    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d type(s) upgraded", diff);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -770,8 +794,6 @@ OPTmodule (node *arg_node, info *arg_info)
      *   convert back with fun2lac
      */
 
-    NOTE (("using ssa-form based optimizations."));
-
     arg_node = SSAdoSsa (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
        during the call of DoSSA */
@@ -805,7 +827,6 @@ OPTmodule (node *arg_node, info *arg_info)
         goto DONE;
     }
 
-    NOTE (("undo ssa-form"));
     arg_node = SSAundoSsa (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
        during the call of UndoSSA */
@@ -863,8 +884,7 @@ OPTmodule (node *arg_node, info *arg_info)
         goto DONE;
     }
 
-    NOTE ((""));
-    NOTE (("overall optimization statistics:"));
+    CTInote ("\nOverall optimization statistics:");
     PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                      ALL);
 
@@ -1029,8 +1049,8 @@ OPTfundef (node *arg_node, info *arg_info)
             arg = ARG_NEXT (arg);
         }
 
-        NOTE (("optimizing function"));
-        NOTE ((" %s( %s): ...", FUNDEF_NAME (arg_node), argtype_buffer));
+        CTInote ("Optimizing function:\n  %s( %s): ...", FUNDEF_NAME (arg_node),
+                 argtype_buffer);
 
         /*
          * optimization for SSA-form
@@ -1386,7 +1406,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
                 || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
                 || (wlir_expr != old_wlir_expr))) {
-            SYSWARN (("maximal number of optimization cycles reached"));
+            CTIwarn ("Maximal number of optimization cycles reached");
         }
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,

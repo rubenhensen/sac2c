@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.15  2004/11/26 03:16:20  sah
  * COMPILES!
  *
@@ -12,8 +15,6 @@
  *
  */
 
-#define NEW_INFO
-
 #include "DeadFunctionRemoval.h"
 #include "tree_basic.h"
 #include "internal_lib.h"
@@ -21,7 +22,6 @@
 #include "dbug.h"
 #include "globals.h"
 #include "traverse.h"
-#include "Error.h"
 
 #include "optimize.h"
 /*
@@ -188,10 +188,9 @@ DFRfundef (node *arg_node, info *arg_info)
 
         /* a warning for using DFR with SSA */
         if ((FUNDEF_ISDOFUN (arg_node)) || (FUNDEF_ISCONDFUN (arg_node))) {
-            if (FUNDEF_USED (arg_node) > 1) {
-                SYSWARN (("Lac-functions, which are used more than once aren't "
-                          "handled correctly by DeadFunctionRemoval"));
-            }
+            DBUG_ASSERT (FUNDEF_USED (arg_node) == 1,
+                         "Lac-functions, which are used more than once, aren't "
+                         "handled correctly by DeadFunctionRemoval");
         }
 
         /*

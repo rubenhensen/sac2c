@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2005/01/11 12:58:15  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.40  2004/12/07 20:33:23  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -183,7 +186,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
