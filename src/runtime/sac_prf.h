@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2003/09/15 13:00:04  dkr
+ * SAC_MIN, SAC_MAX used
+ *
  * Revision 3.10  2003/03/09 21:27:09  dkr
  * SAC_ND_PRF_DIM__DATA modified
  *
@@ -76,8 +79,8 @@
  ******************************************************************************/
 
 #define SAC_ND_BINOP(op, arg1, arg2) ((arg1)op (arg2))
-#define SAC_ND_MIN(arg1, arg2) (((arg1) < (arg2)) ? (arg1) : (arg2))
-#define SAC_ND_MAX(arg1, arg2) (((arg1) > (arg2)) ? (arg1) : (arg2))
+#define SAC_ND_MIN(arg1, arg2) SAC_MIN (arg1, arg2)
+#define SAC_ND_MAX(arg1, arg2) SAC_MAX (arg1, arg2)
 #define SAC_ND_UNIOP(op, arg) (op (arg))
 #define SAC_ND_ABS(arg) (((arg) < 0) ? (-(arg)) : (arg))
 
