@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/12/28 10:31:55  cg
+ * Revision 1.9  1995/12/28 14:24:12  cg
+ * bug in StringCopy fixed, StringCopy extremely simplified.
+ *
+ * Revision 1.8  1995/12/28  10:31:55  cg
  * malloc_verify is used in Malloc with Fred Fish Tag MEMVERIFY
  *
  * Revision 1.7  1995/12/15  13:40:59  cg
@@ -31,6 +34,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include "Error.h"
 #include "dbug.h"
@@ -47,9 +51,10 @@
  *  external funs : malloc, Error
  *  macros        : DBUG...,NULL
  *
- *  remarks       : exit if no there is not enough memory
+ *  remarks       : exit if there is not enough memory
  *
  */
+
 void *
 Malloc (int size)
 {
@@ -63,9 +68,9 @@ Malloc (int size)
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
 
-    DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););
-
     DBUG_PRINT ("MEM", ("new memory: " P_FORMAT, tmp));
+
+    DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););
 
     DBUG_RETURN (tmp);
 }
@@ -74,33 +79,33 @@ Malloc (int size)
  *
  *  functionname  : StringCopy
  *  arguments     : 1) source string
- *  description   : allociates memory and returns a pointer to the copy of 1)
- *  global vars   :
+ *  description   : allocates memory and returns a pointer to the copy of 1)
+ *  global vars   : ---
  *  internal funs : Malloc
- *  external funs : sizeof
+ *  external funs : strlen, strcpy
  *  macros        : DBUG..., NULL
  *
  *  remarks       :
  *
  */
+
 char *
 StringCopy (char *source)
 {
-    char *str;
-    int length, i;
+    char *ret;
 
     DBUG_ENTER ("StringCopy");
 
     if (NULL != source) {
-        for (length = 0; source[length] != '\0'; length++)
-            ;
-        length++;
-        str = (char *)Malloc (sizeof (char) * length);
-        for (i = 0; i <= length; i++)
-            str[i] = source[i];
-    } else
-        str = NULL;
-    DBUG_RETURN (str);
+        DBUG_PRINT ("STRINGCOPY", ("copying string \"%s\"", source));
+
+        ret = (char *)Malloc (sizeof (char) * (strlen (source) + 2));
+        strcpy (ret, source);
+    } else {
+        ret = NULL;
+    }
+
+    DBUG_RETURN (ret);
 }
 
 /*
