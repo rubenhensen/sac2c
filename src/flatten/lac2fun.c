@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/02/24 01:27:55  dkr
+ * lac2fun completed now 8-))
+ *
  * Revision 1.10  2000/02/24 00:27:55  dkr
  * lac2fun works now correct for conditionals and while-loops 8-))
  *
@@ -70,6 +73,8 @@
         INFO_LAC2FUN_ISFIX (arg_info) = 0;                                               \
     }                                                                                    \
     UPDATE (old, new);
+
+#define INFO_DFMBASE(arg_info) FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info))
 
 /******************************************************************************
  *
@@ -280,17 +285,14 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     if (*in != NULL) {
         INFO_LAC2FUN_IN (arg_info) = DFMGenMaskCopy (*in);
     } else {
-        INFO_LAC2FUN_IN (arg_info)
-          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info)));
+        INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
     }
     if (*out != NULL) {
         INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskCopy (*out);
     } else {
-        INFO_LAC2FUN_OUT (arg_info)
-          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info)));
+        INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
     }
-    INFO_LAC2FUN_LOCAL (arg_info)
-      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info)));
+    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
 
     /*
      * traverse then/else-block and loop-block respectively
@@ -306,12 +308,9 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         /*
          * setup in-, out-, local-masks for else-block
          */
-        INFO_LAC2FUN_IN (arg_info)
-          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info)));
-        INFO_LAC2FUN_OUT (arg_info)
-          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info)));
-        INFO_LAC2FUN_LOCAL (arg_info)
-          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info)));
+        INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+        INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+        INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
 
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
@@ -788,7 +787,7 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
 {
     lut_t *lut;
     DFMmask_t tmp_mask;
-    node *ret, *args, *vardecs, *fundef, *assigns, *new_body, *let, *tmp;
+    node *args, *vardecs, *ret, *fundef, *assigns, *new_body, *let, *tmp;
 
     DBUG_ENTER ("MakeDummyFundef");
 
@@ -838,6 +837,24 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
         break;
 
     case ST_dofun:
+        assigns = DupTreeLUT (BLOCK_INSTR (WHILE_BODY (instr)), NULL, lut);
+
+        /*
+         * append conditional with call of loop-dummy-function to assignments.
+         */
+        tmp = assigns;
+        if (tmp != NULL) {
+            while (ASSIGN_NEXT (tmp) != NULL) {
+                tmp = ASSIGN_NEXT (tmp);
+            }
+            let = DupTreeLUT (funcall_let, NULL, lut);
+            AP_FUNDEF (LET_EXPR (let)) = fundef;
+            ASSIGN_NEXT (tmp)
+              = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), NULL, lut),
+                                      MakeBlock (MakeAssign (let, NULL), NULL),
+                                      MakeBlock (MakeEmpty (), NULL)),
+                            ret);
+        }
         break;
 
     default:
@@ -1071,11 +1088,9 @@ L2F_LIFTwhile (node *arg_node, node *arg_info)
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
-#if 1
     arg_node = DoLifting ("While", ST_whilefun, WHILE_IN_MASK (arg_node),
                           WHILE_OUT_MASK (arg_node), WHILE_LOCAL_MASK (arg_node),
                           arg_node, arg_info);
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -1097,11 +1112,8 @@ L2F_LIFTdo (node *arg_node, node *arg_info)
 
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
 
-#if 0
-  arg_node = DoLifting( "Do", ST_dofun,
-                        DO_IN_MASK( arg_node), DO_OUT_MASK( arg_node),
-                        DO_LOCAL_MASK( arg_node), arg_node, arg_info);
-#endif
+    arg_node = DoLifting ("Do", ST_dofun, DO_IN_MASK (arg_node), DO_OUT_MASK (arg_node),
+                          DO_LOCAL_MASK (arg_node), arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
