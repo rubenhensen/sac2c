@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.34  1994/12/20 17:43:40  hw
+ * Revision 1.35  1994/12/21 11:45:16  hw
+ * added DBUG_PRINT in simpletype
+ * changed N_typedef : now the name of the defined type is put in info.types->id
+ *
+ * Revision 1.34  1994/12/20  17:43:40  hw
  * deleted function MakeNode (now in tree.c)
  * deleted nodes N_addon, etc. they are converted to N_let
  *
@@ -326,11 +330,12 @@ exptypes: exptype exptypes {$$=$1;
 exptype: ID LET type SEMIC
            { $$=MakeNode(N_typedef);
             $$->info.types=$3;
-            $$->info.types->name=$1;
+            $$->info.types->id=$1;
 
             DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->name));
+                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        $$->info.types, $$->info.types->id));
           }
          ;
 
@@ -407,11 +412,12 @@ typedefs: typedef typedefs {$$=$1;
 typedef: TYPEDEF type ID SEMIC 
           { $$=MakeNode(N_typedef);
             $$->info.types=$2;
-            $$->info.types->name=$3;
+            $$->info.types->id=$3;
 
             DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->name));
+                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        $$->info.types, $$->info.types->id));
           }
 
 fundefs: fundef fundefs { $1->node[1]=$2;
@@ -1208,8 +1214,7 @@ complextype:  simpletype SQBR_L nums SQBR_R
             | simpletype  SQBR_L SQBR_R  
                { $$=$1;
                  $$->dim=-1;
-                 $$->id=NULL;     /* not used in this case */
-               }
+              }
              ;
 
 simpletype: TYPE_INT 
@@ -1219,7 +1224,9 @@ simpletype: TYPE_INT
                $$->id=NULL;     /* not used in this case */
                $$->next=NULL;
                $$->name=NULL;
-             }
+               DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
+                                     $$, mdb_type[$$->simpletype]));
+            }
             | TYPE_FLOAT 
                { $$=GEN_NODE(types); 
                  $$->simpletype=T_float; 
@@ -1227,6 +1234,8 @@ simpletype: TYPE_INT
                  $$->next=NULL;
                  $$->id=NULL;     /* not used in this case */
                  $$->name=NULL;
+                 DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
+                                     $$, mdb_type[$$->simpletype]));
                }
             | TYPE_BOOL 
                { $$=GEN_NODE(types);
@@ -1235,6 +1244,8 @@ simpletype: TYPE_INT
                  $$->next=NULL;
                  $$->id=NULL;     /* not used in this case */
                  $$->name=NULL;
+                 DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
+                                     $$, mdb_type[$$->simpletype]));
                }
             | ID
                { $$=GEN_NODE(types);
@@ -1243,6 +1254,8 @@ simpletype: TYPE_INT
                  $$->id=NULL;   /* not used in this case */
                  $$->name=$1;
                  $$->next=NULL;
+                 DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s (%s)",
+                                     $$, mdb_type[$$->simpletype], $$->name));
                }
             ;
 
