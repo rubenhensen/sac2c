@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/04/10 11:19:36  sbs
+ * Revision 1.11  1995/05/04 11:40:51  sbs
+ * trace option added
+ *
+ * Revision 1.10  1995/04/10  11:19:36  sbs
  * options I,L,O & g included
  *
  * Revision 1.9  1995/04/05  15:52:05  sbs
@@ -62,6 +65,14 @@ usage (char *prg_name)
     printf ("\t -noOPT \t\tno optimizations\n");
     printf ("\t -noCF  \t\tno constant folding\n");
     printf ("\t -noDCR \t\tno dead code removal\n");
+
+    printf ("\n");
+    printf ("\t -t [arupw] \t\ttrace array-opts\n");
+    printf ("\t\t\t\ta trace all(same as rupw)\n");
+    printf ("\t\t\t\tr refcount ops\n");
+    printf ("\t\t\t\tu user defined function calls\n");
+    printf ("\t\t\t\tp primitive function calls\n");
+    printf ("\t\t\t\tw with loop execution\n");
 
     printf ("\noptions handed to the C-compiler:\n");
     printf ("\t -g \t\t\tinclude debug information\n");

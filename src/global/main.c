@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/04/10 11:19:36  sbs
+ * Revision 1.40  1995/05/04 11:40:51  sbs
+ * trace option added
+ *
+ * Revision 1.39  1995/04/10  11:19:36  sbs
  * options I,L,O & g included
  *
  * Revision 1.38  1995/04/05  17:36:39  sbs
@@ -142,6 +145,7 @@
 #include "import.h"
 #include "refcount.h"
 #include "scnprs.h"
+#include "trace.h"
 #include "compile.h"
 #include <stdlib.h>
 #include <string.h>
@@ -154,6 +158,7 @@ int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1;
 int optimize = 1;
 int show_refcnt = 0;
 int show_icm = 0;
+int traceflag = 0;
 
 MAIN
 {
@@ -194,7 +199,7 @@ MAIN
             strcat (ccflagsstr, "-O2 ");
             break;
         default:
-            ERROR1 (("unknown optimize parameter \"%s\"\n", *argv));
+            ERROR1 (("unknown optimize parameter \"%s\"", *argv));
         }
     }
     NEXTOPT
@@ -230,7 +235,33 @@ MAIN
             show_icm = 1;
             break;
         default:
-            ERROR1 (("unknown break parameter \"%s\"\n", *argv));
+            ERROR1 (("unknown break parameter \"%s\"", *argv));
+        }
+    }
+    NEXTOPT
+    ARG 't' : PARM
+    {
+        while (**argv) {
+            switch (**argv) {
+            case 'a':
+                traceflag = TRACE_ALL;
+                break;
+            case 'r':
+                traceflag = traceflag | TRACE_REF;
+                break;
+            case 'u':
+                traceflag = traceflag | TRACE_UDF;
+                break;
+            case 'p':
+                traceflag = traceflag | TRACE_PRF;
+                break;
+            case 'w':
+                traceflag = traceflag | TRACE_WST;
+                break;
+            default:
+                ERROR1 (("unknown trace flag \"%c\"", **argv));
+            }
+            ++*argv;
         }
     }
     NEXTOPT
