@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/12/06 11:56:12  sah
+  added macro FLAGSTRUCTURE
+
   Revision 1.3  2004/12/01 18:48:13  sah
   added some extra () in flags macros
 
@@ -84,6 +87,32 @@ version="1.0">
 </xsl:template>
 
 <!-- generate macros for flags -->
+<xsl:template match="flags[flag]" mode="accessor-macros" >
+  <xsl:value-of select="'#define '"/>
+  <!-- generate left side of macro -->
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">n</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="'FlagStructure'" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <!-- generate right side of macro -->
+  <xsl:value-of select="'((n)->attribs.'"/> 
+  <xsl:call-template name="name-to-nodeenum">
+    <xsl:with-param name="name">
+      <xsl:value-of select="../@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'->flags'"/>
+  <xsl:value-of select="')'" />
+  <xsl:call-template name="newline"/>
+  <!-- generate macros for each flag -->
+  <xsl:apply-templates select="flag" mode="accessor-macros" />
+</xsl:template>
+  
 <xsl:template match="flag" mode="accessor-macros">
   <xsl:value-of select="'#define '"/>
   <!-- generate left side of macro -->
