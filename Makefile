@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.67  2003/03/20 14:07:38  sbs
+# auto-configure-mechanism created; check_os adjusted.
+#
 # Revision 3.66  2003/03/09 17:13:09  ktr
 # blir.o added to COMPILE
 #
@@ -228,17 +231,12 @@ tools/bin/cse:
 
 
 check_os:
-	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" \
-               -a "$(OS)" != "OSF_ALPHA" -a "$(OS)" != "OSX_MAC" ]; \
-	  then $(ECHO) "*** Unknown OS! Please specify:"; \
-               $(ECHO) "SOLARIS_SPARC (default)"; \
-               $(ECHO) "LINUX_X86"; \
-               $(ECHO) "OSF_ALPHA"; \
-               $(ECHO) "OSX_MAC"; \
+	@ if [ "$(OS)" = "" -o "$(ARCH)" = "" ]; \
+	  then $(ECHO) "*** Unknown OS or unknown ARCH! Please specify!"; \
 	       exit 1; \
 	  fi
 	@ $(ECHO)
-	@ $(ECHO) "Building for $(OS).";
+	@ $(ECHO) "Building for $(OS) on $(ARCH).";
 	@ $(ECHO)
 
 dummy:
@@ -364,6 +362,9 @@ distrib:
 
 tags: 
 	ctags src/*/*.[ch] >/dev/null
+
+$(PROJECT_ROOT)/Makefile.Config: $(PROJECT_ROOT)/Makefile.Config.in
+	(cd $(PROJECT_ROOT); ./configure)
 
 
 LINUX_HOST = bunasera
