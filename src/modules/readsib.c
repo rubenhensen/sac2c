@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1999/01/18 10:06:02  cg
+ * The chain of function definitions is now re-organized after the
+ * evaluation of SIBs in order to ensure that any fold operation
+ * appears before its application.
+ *
  * Revision 1.21  1998/08/27 13:56:56  sbs
  * Changed the search for system libraries:
  * 1) prefix "lib" is no longer mandatory (but still possible)
@@ -91,6 +96,37 @@
  *
  */
 
+/*****************************************************************************
+ *
+ * file:   readsib.c
+ *
+ * prefix: RSIB
+ *
+ * description:
+ *
+ *   This compiler module of sac2c checks the existence of library implementations
+ *   for all imported modules and classes. For SAC libraries the SAC information
+ *   block is evaluated.
+ *
+ * remark: usage of arg_info
+ *
+ *   The arg_info parameter of the traversal mechanism is used by an N_info
+ *   node. The N_info node carries two entries:
+ *
+ *    node *     FOLDFUNS       (O)  (N_fundef)
+ *    node *     MODUL          (O)  (N_modul)
+ *
+ *   MODUL is a back reference to the root of the syntax tree.
+ *   FOLDFUNS is used to hold the list of special fold functions. After all SIBs
+ *   have been evaluated in a top-down traversal of the function definition chain,
+ *   all fold functions are extracted from this chain and accumulated as a separate
+ *   chain in the FOLDFUNS entry. Afterwards, these are added at the head of the
+ *   original function chain. This is done to ensure that each fold function's
+ *   definition appears before its application which is required by the code
+ *   generation phase for a blind inlining of the compiled fold operation.
+ *
+ *****************************************************************************/
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -107,6 +143,7 @@
 #include "filemgr.h"
 #include "cccall.h" /* for function AddToLinklist */
 #include "resource.h"
+#include "gen_pseudo_fun.h" /* for macro PSEUDO_MOD_FOLD */
 
 /*
  *  global variables :
@@ -673,7 +710,7 @@ AddFunToModul (node *fun, node *modul)
  *                  4) attrib of global object
  *                     (effect->ST_reference, touch->ST_readonly_reference)
  *  description   : checks if the global objects mentioned in touch or
- *                  effect pragmas alreaddy exist in the current context.
+ *                  effect pragmas already exist in the current context.
  *                  If not, the correct N_objdef node is extracted from
  *                  the SIB and inserted into the syntax tree.
  *                  A node list of needed objects for this particular
@@ -887,7 +924,7 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
  *
  *  functionname  : RSIBfundef
  *  arguments     : 1) pointer to N_fundef node
- *                  2) pointer to N_modul node of respective program
+ *                  2) pointer to N_info node
  *  description   : retrieves information from SIB for respective function.
  *                  Implicitly used types, objects, and other functions
  *                  are imported if necessary. Inline information is
@@ -910,7 +947,7 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
 node *
 RSIBfundef (node *arg_node, node *arg_info)
 {
-    node *sib_entry, *sib = NULL, *pragma;
+    node *sib_entry, *sib = NULL, *pragma, *foldfun;
     int count_params;
 
     DBUG_ENTER ("RSIBfundef");
@@ -972,16 +1009,17 @@ RSIBfundef (node *arg_node, node *arg_info)
                                         ItemName (arg_node)));
 
                 FUNDEF_NEEDOBJS (arg_node)
-                  = EnsureExistObjects (PRAGMA_TOUCH (pragma), arg_info, sib,
-                                        ST_readonly_reference);
+                  = EnsureExistObjects (PRAGMA_TOUCH (pragma), INFO_RSIB_MODUL (arg_info),
+                                        sib, ST_readonly_reference);
                 PRAGMA_TOUCH (pragma) = NULL;
 
                 DBUG_PRINT ("READSIB", ("Resolving effected objects of function %s",
                                         ItemName (arg_node)));
 
                 FUNDEF_NEEDOBJS (arg_node)
-                  = ConcatNodelist (EnsureExistObjects (PRAGMA_EFFECT (pragma), arg_info,
-                                                        sib, ST_reference),
+                  = ConcatNodelist (EnsureExistObjects (PRAGMA_EFFECT (pragma),
+                                                        INFO_RSIB_MODUL (arg_info), sib,
+                                                        ST_reference),
                                     FUNDEF_NEEDOBJS (arg_node));
                 PRAGMA_EFFECT (pragma) = NULL;
 
@@ -990,7 +1028,8 @@ RSIBfundef (node *arg_node, node *arg_info)
 
                 if (PRAGMA_NEEDTYPES (pragma) != NULL) {
                     FUNDEF_NEEDTYPES (arg_node)
-                      = EnsureExistTypes (PRAGMA_NEEDTYPES (pragma), arg_info, sib);
+                      = EnsureExistTypes (PRAGMA_NEEDTYPES (pragma),
+                                          INFO_RSIB_MODUL (arg_info), sib);
                     PRAGMA_NEEDTYPES (pragma) = NULL;
                 }
 
@@ -999,7 +1038,8 @@ RSIBfundef (node *arg_node, node *arg_info)
 
                 if (PRAGMA_NEEDFUNS (pragma) != NULL) {
                     FUNDEF_NEEDFUNS (arg_node)
-                      = EnsureExistFuns (PRAGMA_NEEDFUNS (pragma), arg_info, sib);
+                      = EnsureExistFuns (PRAGMA_NEEDFUNS (pragma),
+                                         INFO_RSIB_MODUL (arg_info), sib);
                     PRAGMA_NEEDFUNS (pragma) = NULL;
                 }
             }
@@ -1010,13 +1050,25 @@ RSIBfundef (node *arg_node, node *arg_info)
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
+    /*
+     * Any fold function is extracted and these are accumulated in FOLDFUNS
+     */
+    if ((FUNDEF_MOD (arg_node) != NULL)
+        && (0 == strcmp (FUNDEF_MOD (arg_node), PSEUDO_MOD_FOLD))) {
+        foldfun = arg_node;
+        arg_node = FUNDEF_NEXT (arg_node);
+        FUNDEF_NEXT (foldfun) = INFO_RSIB_FOLDFUNS (arg_info);
+        INFO_RSIB_FOLDFUNS (arg_info) = foldfun;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
  *  functionname  : RSIBobjdef
- *  arguments     :
+ *  arguments     : 1) pointer to N_fundef node
+ *                  2) pointer to N_info node
  *  description   :
  *  global vars   :
  *  internal funs :
@@ -1048,8 +1100,9 @@ RSIBobjdef (node *arg_node, node *arg_info)
         sib_entry = FindSibEntry (arg_node, sib);
 
         if ((sib_entry != NULL) && (OBJDEF_PRAGMA (sib_entry) != NULL)) {
-            OBJDEF_NEEDOBJS (arg_node) = EnsureExistObjects (OBJDEF_EFFECT (sib_entry),
-                                                             arg_info, sib, ST_reference);
+            OBJDEF_NEEDOBJS (arg_node)
+              = EnsureExistObjects (OBJDEF_EFFECT (sib_entry), INFO_RSIB_MODUL (arg_info),
+                                    sib, ST_reference);
         }
     }
 
@@ -1064,7 +1117,7 @@ RSIBobjdef (node *arg_node, node *arg_info)
  *
  *  functionname  : RSIBtypedef
  *  arguments     : 1) pointer to N_typedef node
- *                  2) arg_info unused
+ *                  2) arg_info
  *  description   : retrieves information from sib about implementation
  *                  of a hidden SAC-types
  *  global vars   : ---
@@ -1107,7 +1160,7 @@ RSIBtypedef (node *arg_node, node *arg_info)
  *
  *  functionname  : RSIBmodul
  *  arguments     : 1) N_modul node of current program
- *                  2) arg_info unused
+ *                  2) arg_info
  *  description   : starts traversals of the functions, objects and types
  *  global vars   : ---
  *  internal funs : ---
@@ -1121,14 +1174,35 @@ RSIBtypedef (node *arg_node, node *arg_info)
 node *
 RSIBmodul (node *arg_node, node *arg_info)
 {
+    node *foldfun;
+
     DBUG_ENTER ("RSIBmodul");
 
     /*
      *  searching SIB-information about functions
      */
 
+    arg_info = MakeInfo ();
+
+    INFO_RSIB_MODUL (arg_info) = arg_node;
+    INFO_RSIB_FOLDFUNS (arg_info) = NULL;
+
     if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_node);
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    foldfun = INFO_RSIB_FOLDFUNS (arg_info);
+
+    if (foldfun != NULL) {
+        /*
+         * The fold functions are re-inserted at the head of the function's chain.
+         */
+        while (FUNDEF_NEXT (foldfun) != NULL) {
+            foldfun = FUNDEF_NEXT (foldfun);
+        }
+        FUNDEF_NEXT (foldfun) = MODUL_FUNS (arg_node);
+        MODUL_FUNS (arg_node) = INFO_RSIB_FOLDFUNS (arg_info);
+        INFO_RSIB_FOLDFUNS (arg_info) = NULL;
     }
 
     /*
@@ -1145,8 +1219,10 @@ RSIBmodul (node *arg_node, node *arg_info)
      */
 
     if (MODUL_OBJS (arg_node) != NULL) {
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
     }
+
+    FreeNode (arg_info);
 
     DBUG_RETURN (arg_node);
 }
