@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/07/04 10:11:49  ben
+ * code beautiefied
+ *
  * Revision 3.31  2001/06/27 14:37:00  ben
  *  last routines for tasksel-pragma implemented
  *
@@ -1146,8 +1149,9 @@ SCHCompileSchedulingInit (int seg_id, char *wl_name, sched_t *sched, node *arg_n
 
 /******************************************************************************
  *
- *     In tasksel_t is the argvector composed first of the dimensions
+ *     In tasksel_t is the arg-vector composed first of the dimensions
  *     for the arrangement of tasks followed by optional other arguments.
+ *     Where num_args is the dims+number of optional arguments
  *
  ******************************************************************************/
 
@@ -1317,7 +1321,7 @@ SCHRemoveTasksel (tasksel_t *tasksel)
  *
  * description:
  *   This function may be used to copy a data object
- *   of the abstract data type for the representation of schedulings.
+ *   of the abstract data type for the representation of taskselectors.
  *
  ******************************************************************************/
 
@@ -1417,8 +1421,8 @@ SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
 /******************************************************************************
  *
  * function:
- *   node *CompileSchedulingWithTaskselArgs( int seg_id, sched_t *sched, tasksel_t
- **tasksel, node *args)
+ *   node *CompileSchedulingWithTaskselArgs( int seg_id, sched_t *sched,
+ *                                           tasksel_t *tasksel, node *args)
  *
  * description:
  *   This function converts the arguments of an abstract scheduling and
@@ -1444,6 +1448,7 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
         if (tasksel != NULL) {
             for (i = tasksel->dims; i < tasksel->num_args; i++)
                 args = MakeExprs (MakeNum (tasksel->arg[i]), args);
+
             args = MakeExprs (MakeNum (tasksel->num_args - tasksel->dims), args);
             args = MakeExprs (MakeNum (tasksel->dims), args);
             args = MakeExprs (MakeId (StringCopy (tasksel->discipline), NULL, ST_regular),
@@ -1633,8 +1638,9 @@ CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sch
 /******************************************************************************
  *
  * function:
- *   node *CompileSchedulingWithTasksel( int seg_id, char *wl_name, sched_t
- **sched,tasksel_t *tasksel, node *arg_node, char *suffix)
+ *   node *CompileSchedulingWithTasksel( int seg_id, char *wl_name,
+ *                                       sched_t *sched,tasksel_t *tasksel,
+ *                                       node *arg_node, char *suffix)
  *
  * description:
  *   This function compiles abstract scheduling specifications to ICMs
@@ -1688,20 +1694,24 @@ CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
 /******************************************************************************
  *
  * function:
- *   node *SCHCompileSchedulingWithTaskselBegin( int seg_id, char *wl_name, sched_t
- **sched, tasksel_t *tasksel, node *arg_node)
+ *   node *SCHCompileSchedulingWithTaskselBegin( int seg_id, char *wl_name,
+ *                                      sched_t *sched, tasksel_t *tasksel,
+ *                                      node *arg_node)
  *
- *   node *SCHCompileSchedulingWithTaskselEnd( int seg_id, char *wl_name, sched_t *sched,
- *tasksel_t *tasksel, node *arg_node)
+ *   node *SCHCompileSchedulingWithTaskselEnd( int seg_id, char *wl_name,
+ *                                   sched_t *sched,  tasksel_t *tasksel,
+ *                                   node *arg_node)
  *
- *   node *SCHCompileSchedulingWithTaskselInit( int seg_id, char *wl_name, sched_t *sched,
- *tasksel_t *tasksel, node *arg_node)
+ *   node *SCHCompileSchedulingWithTaskselInit( int seg_id, char *wl_name,
+ *                                    sched_t *sched,  tasksel_t *tasksel,
+ *                                    node *arg_node)
  *
  * description:
  *
- *   These functions initiate the compilation of abstract scheduling and taskselector
- *   specifications into ICMs, where each scheduling is associated with three
- *   ICMs. Whereas the former two enclose the with-loop code to be scheduled,
+ *   These functions initiate the compilation of abstract scheduling and
+ *   taskselector specifications into ICMs, where each scheduling is
+ *   associated with three ICMs.
+ *   Whereas the former two enclose the with-loop code to be scheduled,
  *   the latter one initializes potentially needed internal data structures
  *   of the scheduling facility.
  *
