@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/23 19:42:09  cg
+ * Converted boolean entries from int to bool.
+ *
  * Revision 3.13  2004/10/28 17:16:33  sah
  * moved some phases for newast
  *
@@ -76,65 +79,65 @@
     PH_SELelement (it_element) PH_SELtext (it_text) PH_SELlac2fun (it_lac2fun)           \
       PH_SELfun2lac (it_fun2lac)
 
-PH_SEL (PH_initial, "", 0, 0),
+PH_SEL (PH_initial, "", FALSE, FALSE),
 
-  PH_SEL (PH_setup, "Setting up sac2c compiler environment", 0, 0),
+  PH_SEL (PH_setup, "Setting up sac2c compiler environment", FALSE, FALSE),
 
-  PH_SEL (PH_scanparse, "Loading SAC program", 0, 0),
+  PH_SEL (PH_scanparse, "Loading SAC program", FALSE, FALSE),
 
-  PH_SEL (PH_import, "Resolving imports from modules and classes", 0, 0),
+  PH_SEL (PH_import, "Resolving imports from modules and classes", FALSE, FALSE),
 
-  PH_SEL (PH_readsib, "Checking required libraries", 0, 0),
+  PH_SEL (PH_readsib, "Checking required libraries", FALSE, FALSE),
 
-  PH_SEL (PH_objinit, "Generating generic types and functions", 0, 0),
+  PH_SEL (PH_objinit, "Generating generic types and functions", FALSE, FALSE),
 
-  PH_SEL (PH_flatten, "Simplifying source code", 0, 0),
+  PH_SEL (PH_flatten, "Simplifying source code", FALSE, FALSE),
 
-  PH_SEL (PH_typecheck, "Running type inference system", 0, 0),
+  PH_SEL (PH_typecheck, "Running type inference system", FALSE, FALSE),
 
 #ifndef NEW_AST
-  PH_SEL (PH_checkdec, "Checking module/class declaration file", 0, 0),
+  PH_SEL (PH_checkdec, "Checking module/class declaration file", FALSE, FALSE),
 #else
-  PH_SEL (PH_checkdec, "Processing exports", 0, 0),
+  PH_SEL (PH_checkdec, "Processing exports", FALSE, FALSE),
 #endif /* NEW_AST */
 
-  PH_SEL (PH_impltype, "Resolving implicit types", 0, 0),
+  PH_SEL (PH_impltype, "Resolving implicit types", FALSE, FALSE),
 
-  PH_SEL (PH_analysis, "Analysing functions and global objects", 0, 0),
+  PH_SEL (PH_analysis, "Analysing functions and global objects", FALSE, FALSE),
 
-  PH_SEL (PH_writesib, "Generating SAC-Information-Block", 0, 0),
+  PH_SEL (PH_writesib, "Generating SAC-Information-Block", FALSE, FALSE),
 
-  PH_SEL (PH_objects, "Resolving global objects and reference parameters", 0, 0),
+  PH_SEL (PH_objects, "Resolving global objects and reference parameters", FALSE, FALSE),
 
-  PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", 0, 0),
+  PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", FALSE, FALSE),
 
-  PH_SEL (PH_wlenhance, "Enhancement of with-loops", 0, 0),
+  PH_SEL (PH_wlenhance, "Enhancement of with-loops", FALSE, FALSE),
 
-  PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
+  PH_SEL (PH_sacopt, "Running SAC optimizations", FALSE, FALSE),
 
-  PH_SEL (PH_wltrans, "Transforming with-loop representation", 0, 0),
+  PH_SEL (PH_wltrans, "Transforming with-loop representation", FALSE, FALSE),
 
-  PH_SEL (PH_alloc, "Introducing explicit allocation instructions", 0, 0),
+  PH_SEL (PH_alloc, "Introducing explicit allocation instructions", FALSE, FALSE),
 
-  PH_SEL (PH_multithread, "Generating annotations for MT", 0, 0),
+  PH_SEL (PH_multithread, "Generating annotations for MT", FALSE, FALSE),
 
-  PH_SEL (PH_refcnt, "Running explicit reference count inference system", 0, 0),
+  PH_SEL (PH_refcnt, "Running explicit reference count inference system", FALSE, FALSE),
 
-  PH_SEL (PH_multithread_finish, "Finishing MT annotations", 0, 0),
+  PH_SEL (PH_multithread_finish, "Finishing MT annotations", FALSE, FALSE),
 
-  PH_SEL (PH_precompile, "Preparing C code generation", 0, 0),
+  PH_SEL (PH_precompile, "Preparing C code generation", FALSE, FALSE),
 
-  PH_SEL (PH_compile, "Generating C code", 0, 0),
+  PH_SEL (PH_compile, "Generating C code", FALSE, FALSE),
 
-  PH_SEL (PH_genccode, "Creating C file", 0, 0),
+  PH_SEL (PH_genccode, "Creating C file", FALSE, FALSE),
 
-  PH_SEL (PH_invokecc, "Invoking C compiler", 0, 0),
+  PH_SEL (PH_invokecc, "Invoking C compiler", FALSE, FALSE),
 
-  PH_SEL (PH_createlib, "Creating library", 0, 0),
+  PH_SEL (PH_createlib, "Creating library", FALSE, FALSE),
 
-  PH_SEL (PH_writedeps, "Writing dependencies to stdout", 0, 0),
+  PH_SEL (PH_writedeps, "Writing dependencies to stdout", FALSE, FALSE),
 
-  PH_SEL (PH_final, "Unknown compiler phase", 0, 0)
+  PH_SEL (PH_final, "Unknown compiler phase", FALSE, FALSE)
 
 #undef PH_SEL
 
