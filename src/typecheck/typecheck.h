@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.11  1995/03/28 12:14:22  hw
+ * Revision 1.12  1995/04/20 10:23:43  asi
+ * added DuplicateTypes
+ *
+ * Revision 1.11  1995/03/28  12:14:22  hw
  * removed StringCopy
  *
  * Revision 1.10  1995/03/17  15:53:51  hw
@@ -48,5 +51,6 @@ extern node *TCwhile (node *arg_node, node *arg_info);
 extern node *TCunaryOp (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
+extern types *DuplicateTypes (types *source);
 
 #endif /* _typecheck_h */
