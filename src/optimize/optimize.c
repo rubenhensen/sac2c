@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/05/20 16:29:56  ktr
+ * Moved WLS before WLUR.
+ *
  * Revision 3.50  2003/05/19 06:39:01  ktr
  * removed the condition mentioned before for the same results were produced
  * as with -wls_aggressive
@@ -1082,6 +1085,15 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
+            if ((optimize & OPT_WLS) && (use_ssaform)) {
+                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "wls"))) {
+                goto INFO;
+            }
+
             if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
                 if (use_ssaform) {
                     arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
@@ -1143,15 +1155,6 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lir"))) {
-                goto INFO;
-            }
-
-            if ((optimize & OPT_WLS) && (use_ssaform)) {
-                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
-            }
-
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wls"))) {
                 goto INFO;
             }
 
