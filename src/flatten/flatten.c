@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/11/26 13:04:14  ktr
+ * Comment of FLATprf enhanced.
+ *
  * Revision 3.33  2004/11/25 14:09:55  khf
  * changed AP_NAME to AP_SPNAME
  *
@@ -1288,16 +1291,15 @@ FLATap (node *arg_node, info *arg_info)
  *  node *FLATprf(node *arg_node, info *arg_info)
  *
  * description:
- *  - If the application has some arguments, set the context-flag of arg_info
- *    either to CT_ap or to CT_normal, traverse the arguments, and finally
- *    restore the old context-flag.
- *  - The context-flag is set to CT_normal iff we want arrays NOT to be
- *    abstracted out!!! This is needed only for the typechecker when he wants
- *    to infer the exact shapes for applications of functions such as TAKE,
- *    etc.
+ *  - If the prf has some arguments, set the context-flag of arg_info
+ *    CT_ap, traverse the arguments, and finally restore the old context-flag.
  *
- ******************************************************************************/
-
+ *  - It is important that all arguments are abstracted out as e.g.
+ *    dim(0) cannot be evaluted by the implementation of the dim-prf.
+ *
+ *  - ConstVarPropagation can de-flatten arguments when appropriate.
+ *
+ *****************************************************************************/
 node *
 FLATprf (node *arg_node, info *arg_info)
 {
