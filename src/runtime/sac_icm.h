@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1999/06/24 14:31:32  rob
+ * Fix Bernecky's lack of understanding of RCS vs RCS-files.
+ *
  * Revision 1.4  1999/06/24 14:26:37  rob
  * Try to resolve RCS missing module problem.
  *
