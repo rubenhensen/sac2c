@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/22 13:23:51  sah
+ * working implementation for fundefs
+ *
  * Revision 1.2  2004/10/22 09:02:16  sah
  * added ANSSymbol
  *
@@ -28,5 +31,7 @@ extern node *ANSAp (node *arg_node, info *arg_info);
 extern node *ANSArg (node *arg_node, info *arg_info);
 extern node *ANSVardec (node *arg_node, info *arg_info);
 extern node *ANSModul (node *arg_node, info *arg_info);
+
+extern void DoAnnotateNamespace (node *module);
 
 #endif /* _ANNOTATENAMESPACES_H */
