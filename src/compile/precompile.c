@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/10/09 19:16:20  dkr
+ * PREC1fundef() added
+ *
  * Revision 2.25  2000/09/20 18:19:44  dkr
  * ID_MAKEUNIQUE renamed into ID_CLSCONV
  *
@@ -204,7 +207,7 @@ ObjInitFunctionName ()
  *
  ******************************************************************************/
 
-node *
+static node *
 AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
 {
     node *accvar, *funap, *fold_let;
@@ -244,35 +247,77 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *PREC1fundef( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Traverses the function body and the next function.
+ *
+ ******************************************************************************/
+
+node *
+PREC1fundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC1fundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        /*
+         * The result of Trav() is NOT assigned to FUNDEF_NEXT, because this
+         * pointer might be modified by PREC1let() ...
+         */
+        Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *PREC1let( node *arg_node, node *arg_info)
  *
  * description:
- *   removes all artificial identifiers on the left hand side of a let.
+ *   Creates new, unique and adjusted pseudo fold-funs.
  *
  ******************************************************************************/
 
 node *
 PREC1let (node *arg_node, node *arg_info)
 {
-    node *wl_node;
+    node *wl_node, *new_foldfun;
     ids *wl_ids;
 
     DBUG_ENTER ("PREC1let");
 
-    /*
-     * Adjust definition of the pseudo fold-fun.
-     *
-     * Note: It is sufficient to take the CEXPR of the first code-node, because
-     *       in a fold with-loop all CEXPR-ids have the same name!
-     */
     wl_ids = LET_IDS (arg_node);
     wl_node = LET_EXPR (arg_node);
+
     if ((NODE_TYPE (wl_node) == N_Nwith2)
         && ((NWITH2_TYPE (wl_node) == WO_foldfun)
             || (NWITH2_TYPE (wl_node) == WO_foldprf))) {
-        NWITH2_FUNDEF (wl_node) = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids,
-                                                    NCODE_CEXPR (NWITH2_CODE (wl_node)));
+        /*
+         * We have to make the formal parameters of each pseudo fold-fun identical
+         * to the corresponding application in order to allow for simple code
+         * inlining during compilation. But after inlining a single fold-fun might
+         * be called multiple times within the code.
+         * Therefore we have to create new unique fold-funs first!
+         */
+        new_foldfun = DupNode (NWITH2_FUNDEF (wl_node));
+        new_foldfun = AdjustFoldFundef (new_foldfun, wl_ids,
+                                        /*
+                                         * It is sufficient to take the CEXPR of the first
+                                         * code-node, because in a fold with-loop all
+                                         * CEXPR-ids have the same name!
+                                         */
+                                        NWITH2_CEXPR (wl_node));
+
+        FUNDEF_NEXT (new_foldfun) = FUNDEF_NEXT (NWITH2_FUNDEF (wl_node));
+        FUNDEF_NEXT (NWITH2_FUNDEF (wl_node)) = new_foldfun;
+        NWITH2_FUNDEF (wl_node) = new_foldfun;
     }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
