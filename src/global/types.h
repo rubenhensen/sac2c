@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/03/16 14:30:02  dkr
+ * phase_info.mac used
+ *
  * Revision 2.27  2000/03/02 14:08:39  jhs
  * Added statustype_info.mac for statustype and mdb_statustype.
  *
@@ -311,45 +314,9 @@ typedef enum {
 
 typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
 
-/*
- * type for representing compiler phases.
- * NOTE, that the sequence in this type definition is important because
- *  - the compiler phase is simply incremented in main.c
- *  - the compiler phase is used as an index into an array of phase
- *    descriptions defined in Error.c
- *
- * PH_initial and PH_final are required to be the first and last phase,
- * respectively.
- */
-
+#define PH_SELelement(it_element) it_element
 typedef enum {
-    PH_initial = 0,
-    PH_setup,
-    PH_scanparse,
-    PH_import,
-    PH_readsib,
-    PH_objinit,
-    PH_flatten,
-    PH_typecheck,
-    PH_checkdec,
-    PH_impltype,
-    PH_analysis,
-    PH_writesib,
-    PH_objects,
-    PH_uniquecheck,
-    PH_rmvoidfun,
-    PH_sacopt,
-    PH_psiopt,
-    PH_refcnt,
-    PH_wltrans,
-    PH_spmdregions,
-    PH_precompile,
-    PH_compile,
-    PH_genccode,
-    PH_invokecc,
-    PH_createlib,
-    PH_writedeps,
-    PH_final
+#include "phase_info.mac"
 } compiler_phase_t;
 
 /* use mdb_statustype get get reponding char* to print etc. */
@@ -387,11 +354,9 @@ typedef enum {
 } nodetype; /* Type of nodes of syntax tree */
 
 #define PRF_IF(n, s, x, y) n
-
 typedef enum {
 #include "prf_node_info.mac"
 } prf;
-
 #undef PRF_IF
 
 /*
