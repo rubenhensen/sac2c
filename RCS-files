@@ -5,3 +5,4 @@ RCS-directories
 sac2cdoxy
 configure.ac
 Makefile.Config.in
+configure
