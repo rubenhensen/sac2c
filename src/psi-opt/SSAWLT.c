@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2003/09/25 18:37:16  dkr
+ * some code brushing done
+ *
  * Revision 1.24  2003/04/14 14:53:41  sbs
  * initialization of genshape adjusted to its type, i.e., to int 8-)
  *
@@ -475,7 +478,8 @@ CreateFullPartition (node *wln, node *arg_info)
         varname = TmpVar ();
         _ids = MakeIds (varname, NULL, ST_regular);
         IDS_VARDEC (_ids)
-          = SSACreateVardec (varname, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+          = SSACreateVardec (varname, type,
+                             &(FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info))));
         /* varname is duplicated here (own mem) */
         idn = MakeId (StringCopy (varname), NULL, ST_regular);
         ID_VARDEC (idn) = IDS_VARDEC (_ids);
@@ -1073,19 +1077,20 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
         for (i = 1; i <= 4; i++) {
             switch (i) {
             case 1:
-                bound = &NGEN_BOUND1 (arg_node);
+                bound = &(NGEN_BOUND1 (arg_node));
                 break;
             case 2:
-                bound = &NGEN_BOUND2 (arg_node);
+                bound = &(NGEN_BOUND2 (arg_node));
                 break;
             case 3:
-                bound = &NGEN_STEP (arg_node);
+                bound = &(NGEN_STEP (arg_node));
                 break;
             case 4:
-                bound = &NGEN_WIDTH (arg_node);
+                bound = &(NGEN_WIDTH (arg_node));
                 break;
             default: /* just to please the compiler 8-) */
                 bound = NULL;
+                DBUG_ASSERT ((0), "How is this supposed to happen?");
                 break;
             }
 
@@ -1246,7 +1251,8 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                         type = ID_TYPE (NWITH_CEXPR (INFO_WLI_WL (arg_info)));
                         IDS_VARDEC (_ids)
                           = SSACreateVardec (varname, type,
-                                             &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+                                             &(FUNDEF_VARDEC (
+                                               INFO_WLI_FUNDEF (arg_info))));
                         IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
 
                         tmpn
