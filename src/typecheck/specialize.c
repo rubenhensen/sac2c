@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/23 21:56:54  sbs
+ * SacDevCamp04 done
+ *
  * Revision 1.13  2004/10/28 16:11:21  sah
  * added support for used functions
  * and deserialisation
@@ -46,14 +49,18 @@
  *
  */
 
-#include "dbug.h"
 #include "specialize.h"
+#include "dbug.h"
+#include "internal_lib.h"
+#include "free.h"
 #include "ct_fun.h"
 #include "create_wrappers.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "DupTree.h"
-#ifdef NEW_AST
 #include "deserialize.h"
-#endif
+#include "new_types.h"
+#include "ssi.h"
 
 /**
  *
@@ -93,7 +100,7 @@ static node *specialized_fundefs = NULL;
  *
  * function:
  *    ntype * SpecializationOracle( node *wrapper, node *fundef, ntype *args,
- *                                  DFT_res * dft)
+ *                                  dft_res * dft)
  *
  * description:
  *    The oracle recieves an argument type, a function that could be specialized
@@ -103,7 +110,7 @@ static node *specialized_fundefs = NULL;
  *    approximation can be done only. In that case the best possible approximation
  *    is returned. As a consequence, returning the arg types of the fundef
  *    will prevent from any specialization!
- *    NB: The spec_mode flag is not handled appropriately right now. Due to
+ *    NB: The global.spec_mode flag is not handled appropriately right now. Due to
  *    the lack of an implementation for the static analysis, we cannot decide
  *    how far we should specialize in order to achieve a certain level of
  *    shape information. Nevertheless, a rude approximation is realized:
@@ -113,7 +120,7 @@ static node *specialized_fundefs = NULL;
  ******************************************************************************/
 
 static ntype *
-SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
+SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
 {
     ntype *type, *res;
     node *arg;
@@ -122,27 +129,27 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
     DBUG_ENTER ("SpecializationOracle");
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
-        || FUNDEF_IS_EXTERNAL (fundef) || (FUNDEF_SPECS (fundef) >= max_overload)
-        || (spec_mode == SS_aud)) {
+        || FUNDEF_ISEXTERN (fundef) || (FUNDEF_SPECS (fundef) >= global.max_overload)
+        || (global.spec_mode == SS_aud)) {
 
         arg = FUNDEF_ARGS (fundef);
-        res = TYMakeEmptyProductType (CountArgs (arg));
+        res = TYmakeEmptyProductType (TCcountArgs (arg));
         i = 0;
         while (arg != NULL) {
             type = AVIS_TYPE (ARG_AVIS (arg));
             if (type == NULL) {
                 /* not yet converted ! */
-                type = TYOldType2Type (ARG_TYPE (arg));
+                type = TYoldType2Type (ARG_TYPE (arg));
             } else {
-                type = TYCopyType (type);
+                type = TYcopyType (type);
             }
-            res = TYSetProductMember (res, i, type);
+            res = TYsetProductMember (res, i, type);
             arg = ARG_NEXT (arg);
             i++;
         }
 
-    } else if (TYIsProdContainingAKV (args)) {
-        res = TYEliminateAKV (args);
+    } else if (TYisProdContainingAKV (args)) {
+        res = TYeliminateAKV (args);
     } else {
         res = NULL;
     }
@@ -160,7 +167,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
  *    type variables with identical Min and Max!
  *    This function replaces the old type siganture (in the N_arg nodes)
  *    by the MINIMUM of the old type and the given argument types (arg_ts),
- *    and updates the function type ( FUNDEF_TYPE( fundef) ) as well.
+ *    and updates the function type ( FUNDEF_WRAPPERTYPE( fundef) ) as well.
  *    Such a minimum MUST exist as we want to specialize the function!!
  *    It returns the modified N_fundef node.
  *
@@ -174,29 +181,29 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
     int i = 0;
 
     DBUG_ENTER ("UpdateFixSignature");
-    DBUG_ASSERT ((CountArgs (FUNDEF_ARGS (fundef)) == TYGetProductSize (arg_ts)),
+    DBUG_ASSERT ((TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts)),
                  "UpdateFixSignature called with incompatible no of arguments!");
-    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (arg_ts)),
+    DBUG_ASSERT ((TYisProdOfArrayOrFixedAlpha (arg_ts)),
                  "UpdateFixSignature called with non-fixed args!");
 
     args = FUNDEF_ARGS (fundef);
     while (args) {
-        type = TYGetProductMember (arg_ts, i);
-        old_type = TYOldType2Type (ARG_TYPE (args));
+        type = TYgetProductMember (arg_ts, i);
+        old_type = TYoldType2Type (ARG_TYPE (args));
         if (old_type == NULL) {
-            new_type = TYCopyType (type);
+            new_type = TYcopyType (type);
         } else {
-            if (TYLeTypes (type, old_type)) {
-                new_type = TYCopyType (type);
-                TYFreeType (old_type);
+            if (TYleTypes (type, old_type)) {
+                new_type = TYcopyType (type);
+                TYfreeType (old_type);
             } else {
-                DBUG_ASSERT (TYLeTypes (old_type, type),
+                DBUG_ASSERT (TYleTypes (old_type, type),
                              "UpdateFixSignature called with incompatible args");
                 new_type = old_type;
             }
         }
-        ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
-        ARG_TYPE (args) = TYType2OldType (new_type);
+        ARG_TYPE (args) = FREEfreeOneTypes (ARG_TYPE (args));
+        ARG_TYPE (args) = TYtype2OldType (new_type);
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
 
         args = ARG_NEXT (args);
@@ -228,34 +235,34 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
     bool ok;
 
     DBUG_ENTER ("UpdateVarSignature");
-    DBUG_ASSERT ((CountArgs (FUNDEF_ARGS (fundef)) == TYGetProductSize (arg_ts)),
+    DBUG_ASSERT ((TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts)),
                  "UpdateVarSignature called with incompatible no of arguments!");
-    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (arg_ts)),
+    DBUG_ASSERT ((TYisProdOfArrayOrFixedAlpha (arg_ts)),
                  "UpdateVarSignature called with non-fixed args!");
 
     args = FUNDEF_ARGS (fundef);
     while (args) {
-        type = TYGetProductMember (arg_ts, i);
+        type = TYgetProductMember (arg_ts, i);
         new_type = AVIS_TYPE (ARG_AVIS (args));
-        if ((new_type == NULL) || (!TYIsAlpha (new_type))) {
+        if ((new_type == NULL) || (!TYisAlpha (new_type))) {
             if (new_type != NULL) {
-                new_type = TYFreeType (new_type);
+                new_type = TYfreeType (new_type);
             }
-            new_type = TYMakeAlphaType (NULL);
-            old_type = TYOldType2Type (ARG_TYPE (args));
+            new_type = TYmakeAlphaType (NULL);
+            old_type = TYoldType2Type (ARG_TYPE (args));
             if (old_type != NULL) {
-                ok = SSINewTypeRel (old_type, new_type);
+                ok = SSInewTypeRel (old_type, new_type);
             }
-            ok = SSINewTypeRel (type, new_type);
+            ok = SSInewTypeRel (type, new_type);
         } else {
-            DBUG_ASSERT (TYIsAlpha (new_type), "UpdateVarSignature called with "
+            DBUG_ASSERT (TYisAlpha (new_type), "UpdateVarSignature called with "
                                                "non-var argument type");
-            ok = SSINewTypeRel (type, new_type);
+            ok = SSInewTypeRel (type, new_type);
             DBUG_ASSERT (ok, "UpdateVarSignature called with incompatible args");
         }
 
-        ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
-        ARG_TYPE (args) = TYType2OldType (SSIGetMin (TYGetAlpha (new_type)));
+        ARG_TYPE (args) = FREEfreeOneTypes (ARG_TYPE (args));
+        ARG_TYPE (args) = TYtype2OldType (SSIgetMin (TYgetAlpha (new_type)));
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
 
         args = ARG_NEXT (args);
@@ -278,38 +285,34 @@ static node *
 DoSpecialize (node *wrapper, node *fundef, ntype *args)
 {
     node *res;
-    int i, n;
+    node *res_ret, *fundef_ret;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
 
     DBUG_ENTER ("DoSpecialize");
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, FALSE, 0););
+    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, FALSE, 0););
     DBUG_PRINT ("NTC", ("specializing %s for %s", FUNDEF_NAME (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
 
-#ifdef NEW_AST
     /*
      * in case of a function of a module, the body is missing, so
      * fetch it
      */
     if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
-        fundef = AddFunctionBodyToHead (fundef);
+        fundef = DSdoDeserialize (fundef);
     }
-#endif
 
     /* copy the fundef to be specialized */
-    res = DupNode (fundef);
+    res = DUPdoDupNode (fundef);
 
-#ifdef NEW_AST
     /* reset the SYMBOLNAME attribute, as the function is _not_
      * the one referenced by the SYMBOLNAME anymore
      */
     if (FUNDEF_SYMBOLNAME (res) != NULL) {
-        FUNDEF_SYMBOLNAME (res) = Free (FUNDEF_SYMBOLNAME (res));
+        FUNDEF_SYMBOLNAME (res) = ILIBfree (FUNDEF_SYMBOLNAME (res));
     }
-#endif
 
     /* insert the new fundef into the specialiazed chain */
     FUNDEF_NEXT (res) = specialized_fundefs;
@@ -318,31 +321,30 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /* do actually specialize the copy !! */
     UpdateFixSignature (res, args);
 
-    /* create the return type */
-    FUNDEF_RET_TYPE (res) = CreateFunRettype (FUNDEF_TYPES (res));
+    /* convert the return type(s) into AUDs */
+    FUNDEF_RETS (res) = CRWRPgeneralizeFunRettype (FUNDEF_RETS (res));
 
     /*
      * Finally, we make the result type variable(s) (a) subtype(s) of the
      * original one(s)!
      */
-    n = TYGetProductSize (FUNDEF_RET_TYPE (res));
-    for (i = 0; i < n; i++) {
-        SSINewTypeRel (TYGetProductMember (FUNDEF_RET_TYPE (res), i),
-                       TYGetProductMember (FUNDEF_RET_TYPE (fundef), i));
+    res_ret = FUNDEF_RETS (res);
+    fundef_ret = FUNDEF_RETS (fundef);
+    while (res_ret != NULL) {
+        SSInewTypeRel (RET_TYPE (res_ret), RET_TYPE (fundef_ret));
+        res_ret = RET_NEXT (res_ret);
+        fundef_ret = RET_NEXT (fundef_ret);
     }
 
-#ifdef NEW_AST
     /*
-     * This does not work yet, as TYMakeOverloadedFunType
+     * This does not work yet, as TYmakeOverloadedFunType
      * expcets alphas as return type. So we have to exit here
      */
     DBUG_ASSERT (0, "Specialisation is not yet supported in newast mode");
 
-#endif
-
     /* insert the new type signature into the wrapper */
-    FUNDEF_TYPE (wrapper)
-      = TYMakeOverloadedFunType (CreateFuntype (res), FUNDEF_TYPE (wrapper));
+    FUNDEF_WRAPPERTYPE (wrapper)
+      = TYmakeOverloadedFunType (CRWRPcreateFuntype (res), FUNDEF_WRAPPERTYPE (wrapper));
 
     FUNDEF_SPECS (fundef)++;
 
@@ -359,7 +361,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 /******************************************************************************
  *
  * function:
- *    DFT_res *SPECHandleDownProjections( DFT_res *dft,
+ *    dft_res *SPECHandleDownProjections( dft_res *dft,
  *                                          node *wrapper,
  *                                            ntype *args)
  *
@@ -367,8 +369,8 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
  *
  ******************************************************************************/
 
-DFT_res *
-SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
+dft_res *
+SPECHandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
 {
     node *new_fundef;
     ntype *new_args;
@@ -386,7 +388,7 @@ SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
         } else {
             args = new_args;
         }
-        dft = NTCFUNDispatchFunType (wrapper, args);
+        dft = NTCCTdispatchFunType (wrapper, args);
     }
 
     while (dft->num_deriveable_partials > 0) {
@@ -398,7 +400,7 @@ SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
         } else {
             args = new_args;
         }
-        dft = NTCFUNDispatchFunType (wrapper, args);
+        dft = NTCCTdispatchFunType (wrapper, args);
     }
 
     /*
@@ -426,7 +428,7 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
     node *fun, *module;
 
     DBUG_ENTER ("SPECHandleLacFun");
-    DBUG_ASSERT (FUNDEF_IS_LACFUN (fundef), "SPECHandleLacFun called with non LaC fun!");
+    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "SPECHandleLacFun called with non LaC fun!");
 
     if (FUNDEF_USED (fundef) > 1) {
         /*
@@ -434,11 +436,11 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
          * Unfortunately, the "specialization" of LAC functions is postponed
          * until actualy found for type checking, i.e., until here:
          */
-        module = MakeModul ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
-        module = CheckAndDupSpecialFundef (module, fundef, assign);
-        fun = MODUL_FUNS (module);
-        MODUL_FUNS (module) = NULL;
-        module = FreeNode (module);
+        module = TBmakeModule ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
+        module = DUPcheckAndDupSpecialFundef (module, fundef, assign);
+        fun = MODULE_FUNS (module);
+        MODULE_FUNS (module) = NULL;
+        module = FREEdoFreeNode (module);
 
         FUNDEF_TCSTAT (fun) = 0; /* NTC_not_checked; */
 
@@ -459,13 +461,13 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
      * types minima of these, i.e., we make the overall types potentially
      * less precise. This is done by "UpdateVarSignature".
      */
-    if (FUNDEF_STATUS (fun) == ST_condfun) {
+    if (FUNDEF_ISCONDFUN (fun)) {
         UpdateFixSignature (fun, args);
     } else {
         UpdateVarSignature (fun, args);
     }
 
-    FUNDEF_RET_TYPE (fun) = CreateFunRettype (FUNDEF_TYPES (fun));
+    FUNDEF_RETS (fun) = CRWRPgeneralizeFunRettype (FUNDEF_RETS (fun));
 
     DBUG_RETURN (fun);
 }
