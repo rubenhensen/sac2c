@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1996/01/05 12:23:42  cg
+ * Revision 1.18  1996/01/07 16:51:59  cg
+ * renamed some compiler phases
+ *
+ * Revision 1.17  1996/01/05  12:23:42  cg
  * added function CleanUp(), added some compiler phases
  *
  * Revision 1.16  1996/01/02  15:43:47  cg
@@ -98,7 +101,7 @@ char *compiler_phase_name[] = {"",
                                "Evaluating command line parameters",
                                "Loading SAC program",
                                "Resolving imports from modules and classes",
-                               "Checking module/class implementations",
+                               "Checking required SAC libraries",
                                "Resolving global object initializations",
                                "Simplifying source code",
                                "Running type inference system",
@@ -114,9 +117,9 @@ char *compiler_phase_name[] = {"",
                                "Running reference count inference system",
                                "Preparing C-code generation",
                                "Generating C-code",
-                               "Generating link list",
+                               "Checking required external module/class implementations",
                                "Creating C file",
-                               "Invoking C-compiler",
+                               "Invoking C compiler",
                                "Creating SAC library",
                                "Unknown compiler phase"};
 
@@ -358,7 +361,6 @@ CleanUp ()
     DBUG_ENTER ("CleanUp");
 
     if (cleanup) {
-        RemoveDirectory (tmp_dirname);
         RemoveDirectory (store_dirname);
         RemoveDirectory (build_dirname);
     }
