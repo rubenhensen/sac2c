@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/17 16:49:30  sbs
+ * NEVER call FreeTree on arg_info unless you really know what you are doing!
+ *
  * Revision 3.7  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -162,7 +165,7 @@ Unswitch (node *arg_node, node *arg_info)
 
     arg_node = Trav (arg_node, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    Free (arg_info);
     act_tab = tmp_tab;
 
     DBUG_PRINT ("OPT", ("                        result: %d", uns_expr - mem_uns_expr));
