@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/07/13 16:48:44  hw
+ * Revision 1.26  1995/09/06 16:14:11  hw
+ * added macro ND_IDX_PSI_A
+ * renamed macro ND_IDX_PSI to ND_IDX_PSI_S
+ *
+ * Revision 1.25  1995/07/13  16:48:44  hw
  * N_icm ND_KS_DEC_IMPORT_IN_ARRAY &  ND_KS_DEC_IMPORT_OUT_ARRAY added
  * ( used in icm2c.c for compilation of declarations of imported
  *   functions)
@@ -360,7 +364,14 @@
  * Macros used for primitive function idx_psi:
  * ===========================================
  */
-#define ND_IDX_PSI(s, a, res) res = ND_A_FIELD (a)[s];
+#define ND_IDX_PSI_S(s, a, res) res = ND_A_FIELD (a)[s];
+#define ND_IDX_PSI_A(s, a, res)                                                          \
+    {                                                                                    \
+        int __i;                                                                         \
+        for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[s++];                                 \
+    };
+
 #define ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
 
 /*
