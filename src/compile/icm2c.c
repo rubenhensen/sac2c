@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/03/08 17:13:08  sbs
+ * Revision 1.3  1995/03/10 17:24:37  sbs
+ * New macros develloped; psi, take & drop integrated
+ *
+ * Revision 1.2  1995/03/08  17:13:08  sbs
  * first version with test embedded
  *
  * Revision 1.1  1995/03/07  18:21:02  sbs
@@ -13,42 +16,6 @@
 #include "stdio.h"
 #include "print.h"
 #include "dbug.h"
-
-#define GetNextId(res, ex)                                                               \
-    {                                                                                    \
-        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
-        DBUG_ASSERT ((ex->node[1]->nodetype == N_id), "wrong icm-arg: N_id expected");   \
-        res = ex->node[1]->info.id;                                                      \
-        exprsp = ex->node[0];                                                            \
-    }
-
-#define GetNextInt(res, ex)                                                              \
-    {                                                                                    \
-        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
-        DBUG_ASSERT ((ex->node[1]->nodetype == N_num), "wrong icm-arg: N_num expected"); \
-        res = ex->node[1]->info.cint;                                                    \
-        exprsp = ex->node[0];                                                            \
-    }
-
-#define GetNextFloat(res, ex)                                                            \
-    {                                                                                    \
-        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
-        DBUG_ASSERT ((ex->node[1]->nodetype == N_float),                                 \
-                     "wrong icm-arg: N_float expected");                                 \
-        res = ex->node[1]->info.cfloat;                                                  \
-        exprsp = ex->node[0];                                                            \
-    }
-
-#define GetShape(dim, v, ex)                                                             \
-    {                                                                                    \
-        int i;                                                                           \
-        v = (char **)malloc (size (char *) * dim);                                       \
-        for (i = 0; i < dim; i++)                                                        \
-            GetNextId (v[i], ex);                                                        \
-    }
-
-#define BEGIN_COMMENT fprintf (outfile, "/*\n *")
-#define END_COMMENT fprintf (outfile, " */\n")
 
 #define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i])", v, i)
 
@@ -67,23 +34,85 @@
         }                                                                                \
     }
 
-#define CopyBlock(a, offset, res)                                                        \
+#define NewBlock(init, body)                                                             \
     fprintf (outfile, "{\n");                                                            \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "int __isrc=");                                                    \
-    offset;                                                                              \
-    fprintf (outfile, ";\n");                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "int __idest=0;\n\n");                                             \
-    INDENT;                                                                              \
-    fprintf (outfile, "while( __idest<ND_A_SIZE(%s))\n", res);                           \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "ND_A_FIELD(%s)[__idest++]=ND_A_FIELD(%s)[__isrc++];\n", res, a);  \
-    indent -= 2;                                                                         \
+    init;                                                                                \
+    body;                                                                                \
+    indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}")
+
+#define InitPtr(src, dest)                                                               \
+    fprintf (outfile, "int __isrc=");                                                    \
+    src;                                                                                 \
+    fprintf (outfile, ";\n");                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "int __idest=");                                                   \
+    dest;                                                                                \
+    fprintf (outfile, ";\n\n")
+
+#define InitVecs(dim, vn, v_i_str)                                                       \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 1; i < dim; i++) {                                                      \
+            INDENT;                                                                      \
+            fprintf (outfile, "int %s%d=", vn, i);                                       \
+            v_i_str;                                                                     \
+            fprintf (outfile, ";\n");                                                    \
+        }                                                                                \
+    }
+
+#define InitIMaxs(dim, v_i_str) InitVecs (dim, "__imax", v_i_str)
+
+#define InitSrcOffs(dim, v_i_str) InitVecs (dim, "__srcoff", v_i_str)
+
+#define FillRes(res, body)                                                               \
+    INDENT;                                                                              \
+    fprintf (outfile, "do {\n");                                                         \
+    indent++;                                                                            \
+    body;                                                                                \
+    indent--;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n");                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "while( __idest<ND_A_SIZE(%s))\n", res)
+
+#define AccessSeg(dim, body)                                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 1; i < dim; i++) {                                                      \
+            INDENT;                                                                      \
+            fprintf (outfile, "for( __i%d=0; __i%d<__imax%d; __i%d++) {\n", i, i, i, i); \
+            indent++;                                                                    \
+        }                                                                                \
+        body;                                                                            \
+        for (i = dim - 1; i > 0; i--) {                                                  \
+            indent--;                                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "}\n");                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "__isrc += __srcoff%d;\n", i);                             \
+        }                                                                                \
+    }
+
+#define CopyBlock(a, offset, res)                                                        \
+    NewBlock (InitPtr (VectToOffset (dim, AccessVect (v, i), a),                         \
+                       fprintf (outfile, "0")),                                          \
+              FillRes (res, INDENT;                                                      \
+                       fprintf (outfile,                                                 \
+                                "ND_A_FIELD(%s)[__idest++]=ND_A_FIELD(%s)[__isrc++];\n", \
+                                res, a);))
+
+#define TakeSeg(a, dim, offset, off_i_str, sz_i_str, res)                                \
+    NewBlock (InitPtr (offset, fprintf (outfile, "0")); InitIMaxs (dim, sz_i_str);       \
+              InitSrcOffs (dim, off_i_str),                                              \
+              FillRes (res,                                                              \
+                       AccessSeg (dim, INDENT; fprintf (outfile,                         \
+                                                        "ND_A_FIELD(%s)[__idest++]=ND_"  \
+                                                        "A_FIELD(%s)[__isrc++];\n",      \
+                                                        res, a);)))
 
 #ifdef TEST_BACKEND
 
@@ -117,6 +146,8 @@ main ()
      * char **s;
      */
 
+#define ND_KS_DECL_ARRAY
+
 #ifndef TEST_BACKEND
     int i;
 
@@ -126,14 +157,7 @@ main ()
     GetShape (dim, s, exprs);
 #endif /* no TEST_BACKEND */
 
-    BEGIN_COMMENT;
-    fprintf (outfile, " ND_KS_DECL_ARRAY(%s, %s, %d", type, name, dim);
-    for (i = 0; i < dim; i++) {
-        fprintf (outfile, ", ");
-        AccessConst (s, i);
-    }
-    fprintf (outfile, ")\n");
-    END_COMMENT;
+#include "icm_comment.c"
 
     INDENT;
     fprintf (outfile, "%s *%s;\n", type, name);
@@ -153,6 +177,8 @@ main ()
     }
     fprintf (outfile, "\n");
 
+#undef ND_KS_DECL_ARRAY
+
     /*
      * ND_KD_SET_SHAPE( name, dim, s0,..., sn)        : sets all shape components of an
      * array
@@ -162,6 +188,8 @@ main ()
      * char **s;
      */
 
+#define ND_KD_SET_SHAPE
+
 #ifndef TEST_BACKEND
     int i;
 
@@ -170,14 +198,7 @@ main ()
     GetShape (dim, s, exprs);
 #endif /* no TEST_BACKEND */
 
-    BEGIN_COMMENT;
-    fprintf (outfile, " ND_KD_SET_SHAPE( %s, %d", name, dim);
-    for (i = 0; i < dim; i++) {
-        fprintf (outfile, ", ");
-        AccessConst (s, i);
-    }
-    fprintf (outfile, ")\n");
-    END_COMMENT;
+#include "icm_comment.c"
 
     for (i = 0; i < dim; i++) {
         INDENT;
@@ -189,6 +210,8 @@ main ()
     free (s);
 #endif /* no TEST_BACKEND */
 
+#undef ND_KD_SET_SHAPE
+
     /*
      * ND_KD_PSI_CxA_S( a, res, dim, v0,..., vn): selects a single element of the array
      *
@@ -198,103 +221,163 @@ main ()
      * char **vi;
      */
 
+#define ND_KD_PSI_CxA_S
+
 #ifndef TEST_BACKEND
-    fprintf (outfile, "\n--> ND_KD_PSI_CxA_S( %s, %s, %d, %s, %s, %s)\n", a, res, dim,
-             vi[0], vi[1], vi[2]);
-#else  /* TEST_BACKEND */
-GetNextId (type, exprs);
-GetNextId (a, exprs);
-GetNextId (res, exprs);
-GetNextInt (dim, exprs);
-GetShape (dim, vi, exprs);
-#endif /* TEST_BACKEND */
+    GetNextId (type, exprs);
+    GetNextId (a, exprs);
+    GetNextId (res, exprs);
+    GetNextInt (dim, exprs);
+    GetShape (dim, vi, exprs);
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
 
     INDENT;
     fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
     VectToOffset (dim, AccessConst (vi, i), a);
-    fprintf (outfile, "];\n");
+    fprintf (outfile, "];\n\n");
 
 #ifndef TEST_BACKEND
     free (v);
 #endif /* no TEST_BACKEND */
 
+#undef ND_KD_PSI_CxA_S
+
     /*
-     * ND_KD_PSI_VxA_S( type, a, res, dim, v ) : selects a single element of the array
+     * ND_KD_PSI_VxA_S( a, res, dim, v ) : selects a single element of the array
      *
-     * char *type, *a, *res, *v;
+     * char *a, *res, *v;
      * int dim;
      */
 
-#ifdef TEST_BACKEND
-    fprintf (outfile, "\n--> ND_KD_PSI_VxA_S( %s, %s, %s, %d, %s)\n", type, a, res, dim,
-             v);
-#else  /* TEST_BACKEND */
-GetNextId (type, exprs);
-GetNextId (a, exprs);
-GetNextId (res, exprs);
-GetNextInt (dim, exprs);
-GetNextId (v, exprs);
-#endif /* TEST_BACKEND */
+#define ND_KD_PSI_VxA_S
+
+#ifndef TEST_BACKEND
+    GetNextId (type, exprs);
+    GetNextId (a, exprs);
+    GetNextId (res, exprs);
+    GetNextInt (dim, exprs);
+    GetNextId (v, exprs);
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
 
     INDENT;
     fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
     VectToOffset (dim, AccessVect (v, i), a);
-    fprintf (outfile, "];\n");
+    fprintf (outfile, "];\n\n");
 
 #ifndef TEST_BACKEND
     free (v);
 #endif /* no TEST_BACKEND */
 
+#undef ND_KD_PSI_VxA_S
+
     /*
-     * ND_KD_PSI_CxA_A( type, a, res, dim, v0,..., vn): selects a sub-array
+     * ND_KD_PSI_CxA_A( a, res, dim, v0,..., vn): selects a sub-array
      *
-     * char *type, *a, *res;
+     * char *a, *res;
      * int dim;
      * char **vi;
      */
 
-#ifdef TEST_BACKEND
-    fprintf (outfile, "\n--> ND_KD_PSI_CxA_A( %s, %s, %s, %d, %s, %s, %s)\n", type, a,
-             res, dim, vi[0], vi[1], vi[2]);
-#else  /* TEST_BACKEND */
-GetNextId (type, exprs);
-GetNextId (a, exprs);
-GetNextId (res, exprs);
-GetNextInt (dim, exprs);
-GetShape (dim, vi, exprs);
-#endif /* TEST_BACKEND */
+#define ND_KD_PSI_CxA_A
+
+#ifndef TEST_BACKEND
+    GetNextId (type, exprs);
+    GetNextId (a, exprs);
+    GetNextId (res, exprs);
+    GetNextInt (dim, exprs);
+    GetShape (dim, vi, exprs);
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
 
     INDENT;
     CopyBlock (a, VectToOffset (dim, AccessConst (vi, i), a), res);
+    fprintf (outfile, "\n\n");
 
 #ifndef TEST_BACKEND
     free (v);
 #endif /* no TEST_BACKEND */
 
+#undef ND_KD_PSI_CxA_A
+
     /*
-     * ND_KD_PSI_VxA_A( type, a, res, dim, v )       : selects a sub-array
+     * ND_KD_PSI_VxA_A( a, res, dim, v )       : selects a sub-array
      *
-     * char *type, *a, *res, *v;
+     * char *a, *res, *v;
      * int dim;
      */
 
-#ifdef TEST_BACKEND
-    fprintf (outfile, "\n--> ND_KD_PSI_VxA_A( %s, %s, %s, %d, %s)\n", type, a, res, dim,
-             v);
-#else  /* TEST_BACKEND */
-GetNextId (type, exprs);
-GetNextId (a, exprs);
-GetNextId (res, exprs);
-GetNextInt (dim, exprs);
-GetNextId (v, exprs);
-#endif /* TEST_BACKEND */
+#define ND_KD_PSI_VxA_A
+
+#ifndef TEST_BACKEND
+    GetNextId (type, exprs);
+    GetNextId (a, exprs);
+    GetNextId (res, exprs);
+    GetNextInt (dim, exprs);
+    GetNextId (v, exprs);
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
 
     INDENT;
     CopyBlock (a, VectToOffset (dim, AccessVect (v, i), a), res);
+    fprintf (outfile, "\n\n");
 
 #ifndef TEST_BACKEND
     free (v);
 #endif /* no TEST_BACKEND */
+
+#undef ND_KD_PSI_VxA_A
+
+    /*
+     * ND_KD_TAKE_CxA_A( a, res, dim, v0,..., vn):
+     */
+
+#define ND_KD_TAKE_CxA_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+    INDENT;
+    TakeSeg (a, dim, fprintf (outfile, "0"), /* offset */
+             fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
+             AccessConst (vi, i), /* offsets */
+             AccessConst (vi, i), /* sizes */
+             res);
+
+    fprintf (outfile, "\n\n");
+
+#undef ND_KD_TAKE_CxA_A
+
+    /*
+     * ND_KD_DROP_CxA_A( a, res, dim, v0,..., vn):
+     */
+
+#define ND_KD_DROP_CxA_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+    INDENT;
+    TakeSeg (a, dim, VectToOffset (dim, AccessConst (vi, i), a), /* offset */
+             AccessConst (vi, i),                                /* offsets */
+             fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
+             AccessConst (vi, i), /* sizes */
+             res);
+
+    fprintf (outfile, "\n\n");
+
+#undef ND_KD_DROP_CxA_A
 
 #ifdef TEST_BACKEND
     return (0);
