@@ -21,3 +21,4 @@ WLPartitionGeneration.c
 WLPartitionGeneration.h
 ExplicitAccumulate.c
 ExplicitAccumulate.h
+WLEnhancement.c
