@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.213  1999/02/11 08:31:22  bs
+ * INFO_FLTN_INTARRAY and INFO_FLTN_ARRAYLENGTH inserted
+ *
  * Revision 1.212  1999/02/11 08:21:21  bs
  * added access macros for the storage of constant integer arrays as
  * arrays of integer ( int []).
@@ -2083,6 +2086,8 @@ extern node *MakeInfo ();
 #define INFO_FLTN_LASTASSIGN(n) (n->node[0])
 #define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
 #define INFO_FLTN_FINALASSIGN(n) (n->node[2])
+#define INFO_FLTN_ARRAYLENGTH(n) (n->varno)
+#define INFO_FLTN_INTARRAY(n) ((int *)(n->node[3]))
 
 /* readsib */
 #define INFO_RSIB_FOLDFUNS(n) (n->node[0])
