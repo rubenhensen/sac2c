@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/03 20:59:12  dkr
+ * warning messages modified
+ *
  * Revision 3.6  2001/04/02 17:10:42  dkr
  * comment in WLTNgenerator() added
  *
@@ -1104,13 +1107,14 @@ WLTNgenerator (node *arg_node, node *arg_info)
             }
 
             if (warning) {
-                WARN (NODE_LINE (arg_node), ("Withloop generator out of range"));
+                WARN (NODE_LINE (arg_node), ("With-loop generator out of range"));
             }
 
             /* the one and only N_Npart is empty. Transform WL. */
             if (empty) {
                 WARN (NODE_LINE (arg_node),
-                      ("Withloop generator specifies empty index set"));
+                      ("With-loop generator specifies empty index set"));
+
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                     /* change generator: full scope.  */
                     dim = TYPES_DIM (IDS_TYPE (let_ids));
