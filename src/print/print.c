@@ -1,8 +1,9 @@
 /*
  *
  * $Log$
- * Revision 1.256  1999/02/09 17:26:13  dkr
- * *** empty log message ***
+ * Revision 1.257  1999/02/09 17:27:57  dkr
+ * fixed a bug in PrintModul:
+ *   no printf-comands on closed files ... :^)
  *
  * Revision 1.255  1999/02/04 17:23:37  srs
  * added check if arg_info is not NULL.
