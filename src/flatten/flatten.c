@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/26 17:09:48  dkr
+ * cast are flattened now
+ *
  * Revision 3.3  2001/04/24 09:15:40  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -61,7 +64,8 @@
  * Annotation to AnnotateIdWithConstVec.
  *
  * Revision 2.17  1999/05/14 09:25:13  jhs
- * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ * Dbugged constvec annotations and their housekeeping in various compilation
+ * stages.
  *
  * Revision 2.16  1999/05/12 15:30:16  jhs
  * Annotate... added; const-annotation dbugged.
@@ -96,7 +100,8 @@
  * vectors were stored additionally.
  *
  * Revision 2.6  1999/03/09 10:44:07  bs
- * DbugPrintArray removed. This debugging-information will be printed from print.c .
+ * DbugPrintArray removed.
+ * This debugging-information will be printed from print.c .
  *
  * Revision 2.5  1999/03/05 17:35:13  bs
  * Another bug fixed in DbugPrintArray.
@@ -115,9 +120,6 @@
  * new release made
  *
  * ... [eliminated] ...
- *
- * Revision 1.2  1994/11/10  15:39:42  sbs
- * RCS-header inserted
  *
  */
 
@@ -481,7 +483,7 @@ CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
 /******************************************************************************
  *
  * function:
- *  node *Abstract(node *arg_node, *arg_info)
+ *  node *Abstract( node *arg_node, *arg_info)
  *
  * description:
  *   - gets an expression <expr> to be abstracted out as argument
@@ -1191,23 +1193,13 @@ node *
 FltnExprs (node *arg_node, node *arg_info)
 {
     int info_fltn_array_index, abstract;
-    node *expr, *expr2, *casts_expr;
+    node *expr, *expr2;
 
     DBUG_ENTER ("FltnExprs");
 
     info_fltn_array_index = INFO_FLTN_VECLEN (arg_info);
 
-    /*  an expression can be hidden behind some cast, for programmer's convenience
-     *  we hold both: the expression with the casts (casts_expr) and the real one
-     *  behind the casts without the casts (expr).
-     *  So there will be no traversal on the N_cast nodes.
-     *
-     *  if there is no cast => (casts_expr == expr)
-     */
-    casts_expr = EXPRS_EXPR (arg_node);
-    expr = casts_expr;
-    while (NODE_TYPE (expr) == N_cast)
-        expr = CAST_EXPR (expr);
+    expr = EXPRS_EXPR (arg_node);
 
     /*
      * compute whether to abstract <expr> or not , depending on the
@@ -1219,19 +1211,21 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
                     || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
                     || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith));
+                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_ap:
         abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith));
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_normal:
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith));
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_array:
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith));
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         INFO_FLTN_VECTYPE (arg_info)
           = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
@@ -1257,7 +1251,7 @@ FltnExprs (node *arg_node, node *arg_info)
          *  if there are type casts we need to abstract them too.
          *  if we leave them, empty arrays will be left uncasted and thus untyped.
          */
-        EXPRS_EXPR (arg_node) = Abstract (casts_expr, arg_info);
+        EXPRS_EXPR (arg_node) = Abstract (expr, arg_info);
         expr2 = Trav (expr, arg_info);
         AnnotateIdWithConstVec (expr, EXPRS_EXPR (arg_node));
     } else {
@@ -1375,7 +1369,8 @@ FltnCond (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnCond");
 
     pred = COND_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
+    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)
+        || (NODE_TYPE (pred) == N_cast)) {
         COND_COND (arg_node) = Abstract (pred, arg_info);
     }
 
@@ -1502,7 +1497,8 @@ FltnWhile (node *arg_node, node *arg_info)
      */
 
     pred = WHILE_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
+    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)
+        || (NODE_TYPE (pred) == N_cast)) {
         /*
          * abstract the condition out and insert it before the while-loop:
          */
@@ -1581,7 +1577,8 @@ FltnDo (node *arg_node, node *arg_info)
     final_assign = INFO_FLTN_FINALASSIGN (arg_info);
 
     pred = DO_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
+    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)
+        || (NODE_TYPE (pred) == N_cast)) {
         /*
          * abstract the condition out and insert it at the end of the do-loop:
          */
@@ -1678,7 +1675,8 @@ FltnNwithop (node *arg_node, node *arg_info)
     case WO_modarray:
         expr = NWITHOP_ARRAY (arg_node);
         if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-            || (NODE_TYPE (expr) == N_array)) {
+            || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_Nwith)
+            || (NODE_TYPE (expr) == N_cast)) {
             NWITHOP_ARRAY (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
             AnnotateIdWithConstVec (expr, NWITHOP_ARRAY (arg_node));
@@ -1699,7 +1697,8 @@ FltnNwithop (node *arg_node, node *arg_info)
         expr = NWITHOP_NEUTRAL (arg_node);
         if ((expr != NULL)
             && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_Nwith))) {
+                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_Nwith)
+                || (NODE_TYPE (expr) == N_cast))) {
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
             AnnotateIdWithConstVec (expr, NWITHOP_NEUTRAL (arg_node));
@@ -1851,14 +1850,6 @@ FltnNgenerator (node *arg_node, node *arg_info)
         act_son_expr = *act_son;
 
         if (act_son_expr != NULL) {
-#if 0
-    /* flatten everything but Ids and constant arrays */
-      if( (N_id != NODE_TYPE(act_son_expr)) && 
-          !IsConstArray( act_son_expr) ) {
-        *act_son = Abstract( act_son_expr, arg_info);
-      }
-      act_son_expr2 = Trav( act_son_expr, arg_info);
-#else
             if (N_id != NODE_TYPE (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
                 act_son_expr2 = Trav (act_son_expr, arg_info);
@@ -1866,7 +1857,6 @@ FltnNgenerator (node *arg_node, node *arg_info)
             } else {
                 act_son_expr2 = Trav (act_son_expr, arg_info);
             }
-#endif
 
             DBUG_ASSERT ((act_son_expr == act_son_expr2),
                          "return-node differs from arg_node while flattening an expr!");
