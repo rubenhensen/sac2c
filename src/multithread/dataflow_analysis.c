@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/07/11 15:42:10  jhs
+ * Added creation of ST_ALLOC and ST_SYNC.
+ *
  * Revision 1.8  2000/07/04 14:39:57  jhs
  * Fixed bug, while generating MT_ALLOC.
  *
  * Revision 1.7  2000/06/21 13:32:23  jhs
- * Added creation af MT_ALLOCmask.
+ * Added creation of MT_ALLOC-mask.
  *
  * Revision 1.6  2000/06/08 12:16:03  jhs
  * Fixed some problems caused by non-flatend code of IVE.
@@ -655,6 +658,10 @@ DFAxt_up (node *arg_node, node *arg_info)
                                                       INFO_DFA_NEEDBLOCK (arg_info));
 
         ST_NEEDLATER_MT (arg_node) = DFMGenMaskCopy (INFO_DFA_NEEDCHAIN (arg_info));
+        ST_ALLOC (arg_node)
+          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
+        ST_SYNC (arg_node)
+          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     } else {
         DBUG_ASSERT (0, ("wrong node type"));
     }
