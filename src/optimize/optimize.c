@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/05/30 15:54:13  nmw
+ * comment on cf3 added
+ *
  * Revision 3.31  2001/05/30 14:02:14  nmw
  * SSAInfereLoopInvariant added, CF after LUR added
  *
@@ -747,8 +750,11 @@ DONE:
  *    overall effect; so changes made here should be done very CAREFULLY!
  *    The actual course of action is:
  *
- *    at the end of the loop the ssa-form is restored (if used) to correct
- *    code inserted by optimaizations not aware of the ssa form.
+ *    the additional constant folding traversal after the unrolling seems to
+ *    be an advantage, because we can fold constant and structual array
+ *    expressions before they are moved out of the loop (LIR) and cannot be
+ *    folded anymore (for now SSACF does not support intra functional
+ *    structural folding operations).
  *
  *        AE
  *        DCR
@@ -762,7 +768,7 @@ DONE:
  *        DCR        |
  *        LUNR/WLUNR |
  *        (CF)       |   (applied only if Unrolling succeeded!)
- *        UNS        |
+ *        UNS        |   (not available in ssa form)
  *        LIR        |
  *         |--------/
  *         |<-------\
@@ -1003,8 +1009,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (optimize & OPT_CF) {
                     if (use_ssaform) {
                         arg_node
-                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (
-                                                            arg_info)); /* ssacf_tab */
+                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
                     } else {
                         arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                         arg_node = GenerateMasks (arg_node, NULL);
@@ -1052,7 +1057,7 @@ OPTfundef (node *arg_node, node *arg_info)
             if ((wlunr_expr != old_wlunr_expr) || (lunr_expr != old_lunr_expr)) {
                 /*
                  * this may speed up the optimization phase a lot if a lot of code
-                 * has been inserted by WLF.
+                 * has been inserted by Unrolling..
                  */
                 if (optimize & OPT_CF) {
                     if (use_ssaform) {
