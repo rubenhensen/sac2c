@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/20 12:59:12  ben
+ * Static scheduling added
+ *
  * Revision 3.10  2001/03/14 16:25:24  dkr
  * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
  *
@@ -704,4 +707,18 @@ ICM_DEF( MT_SCHEDULER_BlockVar_END, TRACE_NONE)
   ICM_INT(dim)
   ICM_VAR((4*dim), vararg)
 ICM_END( MT_SCHEDULER_BlockVar_END, (dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_Static_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Static_BEGIN, TRACE_NONE)
+  ICM_INT(dim)
+  ICM_VAR((4*dim), vararg)
+ICM_END( MT_SCHEDULER_Static_BEGIN, (dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_Static_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Static_END, TRACE_NONE)
+  ICM_INT(dim)
+  ICM_VAR((4*dim), vararg)
+ICM_END( MT_SCHEDULER_Static_END, (dim, vararg))
 #endif
