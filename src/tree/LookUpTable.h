@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/08/15 11:45:58  dkr
+ * - functions ApplyToEach_?() renamed into MapLUT_?()
+ * - functions FoldLUT_?() added
+ *
  * Revision 3.8  2002/08/13 13:21:49  dkr
  * - !!!! string support modified !!!!
  *   Now, only the compare-data is a string, the associated-data is always
@@ -81,6 +85,16 @@
  *  SearchInLUT_SS()  searches for a string (string compare) and expects
  *                    to find a string.
  *
+ *  You can map a function 'fun' to all associated data present in the LUT
+ *  by means of  MapLUT( lut, fun). Let  ass_t  be the type of the associated
+ *  data in the LUT, then 'fun' should have the signature  ass_t -> ass_t  .
+ *  Moreover, the associated data can be folded by using the function
+ *  FoldLUT( lut, init, fun)  , where 'init' is the initial value for the
+ *  fold operation. Let again  ass_t  be the type of the associated data in
+ *  the LUT and let  init_t  be the type of 'init'. Then 'fun' should have
+ *  the signature  ( init_t , ass_t ) -> init_t  and the return value of
+ *  FoldLUT()  has the type  init_t  .
+ *
  *  *** CAUTION ***
  *  - InsertIntoLUT_S()  copies the compare-string ('old') before inserting
  *    it into the LUT. But the associated data is never copied!!
@@ -124,7 +138,9 @@ extern LUT_t InsertIntoLUT_S (LUT_t lut, char *old_item, void *new_item);
 extern LUT_t UpdateLUT_P (LUT_t lut, void *old_item, void *new_item, void **found_item);
 extern LUT_t UpdateLUT_S (LUT_t lut, char *old_item, void *new_item, void **found_item);
 
-extern LUT_t ApplyToEach_S (LUT_t lut, void *(*fun) (void *));
-extern LUT_t ApplyToEach_P (LUT_t lut, void *(*fun) (void *));
+extern LUT_t MapLUT_S (LUT_t lut, void *(*fun) (void *));
+extern LUT_t MapLUT_P (LUT_t lut, void *(*fun) (void *));
+extern void *FoldLUT_S (LUT_t lut, void *init, void *(*fun) (void *, void *));
+extern void *FoldLUT_P (LUT_t lut, void *init, void *(*fun) (void *, void *));
 
 #endif /* _sac_LookUpTable_h_ */
