@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.8  2000/07/06 08:15:38  dkr
+ * include for TAGGED_ARRAYS changed
+ *
  * Revision 2.7  2000/07/05 12:51:41  nmw
  * sac_arg.h added
  *
@@ -38,8 +40,6 @@
  *
  * Revision 1.1  1998/03/19 16:36:57  cg
  * Initial revision
- *
- *
  */
 
 /*****************************************************************************
@@ -65,7 +65,6 @@
 #include "sac_bool.h"
 
 #ifdef TAGGED_ARRAYS
-#include "sac_icm.h"
 #include "sac_std.tagged.h"
 #else /* TAGGED_ARRAYS */
 #include "sac_std.h"
