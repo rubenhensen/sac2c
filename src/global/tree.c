@@ -1,15 +1,19 @@
 /*
  *
  * $Log$
- * Revision 1.1  1994/12/20 15:42:10  sbs
+ * Revision 1.2  1994/12/20 17:42:51  hw
+ * added includes stdlib.h & dbug.h
+ *
+ * Revision 1.1  1994/12/20  15:42:10  sbs
  * Initial revision
  *
  *
  */
 
-#include <stdio.h>
+#include <stdlib.h>
 
 #include "tree.h"
+#include "dbug.h"
 #include "my_debug.h"
 #include "scnprs.h"
 
