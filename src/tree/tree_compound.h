@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/12/12 14:33:14  dkr
+ * function CombineExprs() added
+ *
  * Revision 3.49  2001/12/11 15:58:21  dkr
  * GetDim() renamed into GetShapeDim()
  * GetDim() added
@@ -1271,6 +1274,19 @@ extern node *AppendAssignIcm (node *assign, char *name, node *args);
  ******************************************************************************/
 
 extern node *AppendExprs (node *exprs1, node *exprs2);
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CombineExprs( node *first, node *second)
+ *
+ * description:
+ *   'first' and 'second' are N_exprs chains or expression nodes (N_id, N_num,
+ *   ...) that will be conactenated to a single N_exprs chain.
+ *
+ ******************************************************************************/
+
+extern node *CombineExprs (node *first, node *second);
 
 /******************************************************************************
  *
