@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.158  2004/07/16 12:06:40  ktr
+ * EMAL now traverses into N_ap and N_funcond, too.
+ *
  * Revision 3.157  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -1131,7 +1134,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, SPid,
        TravSons, CVPid, WLFSid,
 
-       ASMRAid, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
+       ASMRAid, TravSons, TravSons, EMALid, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
@@ -2315,7 +2318,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, HDwithop, NT2OTwithop, CWCwithop, HMNwithop, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, WLFSNwithop,
 
-       TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, EMALwithop, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -2375,7 +2378,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       ASMRAwith2, TEMwith2, TravNone, EMALwith, TravSons, TravSons, TravSons, TravSons,
+       ASMRAwith2, TEMwith2, TravNone, EMALwith2, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
@@ -2912,7 +2915,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPfuncond, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 

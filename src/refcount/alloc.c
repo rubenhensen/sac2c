@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/07/16 12:07:14  ktr
+ * EMAL now traverses into N_ap and N_funcond, too.
+ *
  * Revision 1.2  2004/07/15 13:39:23  ktr
  * renamed EMALAllocateFill into EMAllocateFill
  *
@@ -59,6 +62,9 @@ typedef struct ALLOCLIST_STRUCT {
 #define INFO_EMAL_FUNDEF(n) (n->node[3])
 #define INFO_EMAL_WITHOPS(n) (n->node[4])
 #define INFO_EMAL_INDEXVECTOR(n) (n->node[5])
+#define INFO_EMAL_MUSTFILL(n) (n->flag)
+
+#define NWITHOP_MEMAVIS(n) (n->node[3])
 
 /**
  *
@@ -269,6 +275,11 @@ EMALarray (node *arg_node, node *arg_info)
         als->shape = SHShape2Array (ARRAY_SHAPE (arg_node));
     }
 
+    /*
+     * Signal EMALlet to wrap this RHS in a fill-operation
+     */
+    INFO_EMAL_MUSTFILL (arg_info) = TRUE;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -468,7 +479,9 @@ EMALcode (node *arg_node, node *arg_info)
         withops = NWITHOP_NEXT (withops);
         cexprs = EXPRS_NEXT (cexprs);
     }
-    AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), assign);
+
+    BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+      = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), assign);
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
@@ -500,6 +513,33 @@ EMALconst (node *arg_node, node *arg_info)
 
     als->dim = MakeNum (0);
     als->shape = CreateZeroVector (0, T_int);
+
+    /*
+     * Signal EMALlet to wrap this RHS in a fill operation
+     */
+    INFO_EMAL_MUSTFILL (arg_info) = TRUE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALfuncond
+ *
+ *  @brief removes all elements from ALLOCLIST.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node (unmodified) and modified ALLOCLIST
+ *
+ ***************************************************************************/
+node *
+EMALfuncond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("EMALfuncond");
+
+    INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -582,6 +622,28 @@ EMALicm (node *arg_node, node *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn EMALid
+ *
+ *  @brief removes all elements from ALLOCLIST.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node (unmodified) and modified ALLOCLIST
+ *
+ ***************************************************************************/
+node *
+EMALid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("EMALid");
+
+    INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn EMALlet
  *
  *  @brief
@@ -617,27 +679,9 @@ EMALlet (node *arg_node, node *arg_info)
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
         /*
-         * Wrap N_array, N_const and N_prf nodes in F_fill prf
+         * Wrap RHS in Fill-operation if necessary
          */
-        switch (NODE_TYPE (LET_EXPR (arg_node))) {
-
-        case N_funcond:
-        case N_id:
-            /*
-             * Copy assigment a=b:
-             * No allocation iff LHS ids is not a suballoc
-             */
-            INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
-            break;
-
-        case N_prf:
-        case N_array:
-        case N_num:
-        case N_char:
-        case N_bool:
-        case N_str:
-        case N_float:
-        case N_double:
+        if (INFO_EMAL_MUSTFILL (arg_info)) {
             ids = LET_IDS (arg_node);
 
             LET_EXPR (arg_node)
@@ -658,11 +702,11 @@ EMALlet (node *arg_node, node *arg_info)
                 IDS_STATUS (ids) = ST_artificial;
                 ids = IDS_NEXT (ids);
             }
-            break;
 
-        default:
+            INFO_EMAL_MUSTFILL (arg_info) = FALSE;
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -827,6 +871,7 @@ EMALprf (node *arg_node, node *arg_info)
     case F_inc_rc:
     case F_dec_rc:
     case F_free:
+    case F_copy:
         DBUG_ASSERT ((0), "invalid prf found!");
         break;
 
@@ -853,6 +898,11 @@ EMALprf (node *arg_node, node *arg_info)
         break;
     }
 
+    /*
+     * Signal EMALlet to wrap this prf in a fill-operation
+     */
+    INFO_EMAL_MUSTFILL (arg_info) = TRUE;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -872,8 +922,6 @@ node *
 EMALwith (node *arg_node, node *arg_info)
 {
     ids *i;
-    alloclist_struct *als, *tmp;
-    node *withop;
 
     DBUG_ENTER ("EMALwith");
 
@@ -887,27 +935,14 @@ EMALwith (node *arg_node, node *arg_info)
      * genarray/modarray - withops
      * Furthermore, a code template for the index vector is needed
      */
-    if (NODE_TYPE (arg_node) == N_Nwith) {
-        INFO_EMAL_WITHOPS (arg_info) = NWITH2_WITHOP (arg_node);
-        INFO_EMAL_INDEXVECTOR (arg_info)
-          = MakeIdFromIds (DupOneIds (NWITH_VEC (arg_node)));
-    } else {
-        INFO_EMAL_WITHOPS (arg_info) = NWITH2_WITHOP (arg_node);
-        INFO_EMAL_INDEXVECTOR (arg_info)
-          = MakeIdFromIds (DupOneIds (NWITH2_VEC (arg_node)));
-    }
+    INFO_EMAL_WITHOPS (arg_info) = NWITH2_WITHOP (arg_node);
+    INFO_EMAL_INDEXVECTOR (arg_info) = MakeIdFromIds (DupOneIds (NWITH_VEC (arg_node)));
 
     /*
      * Traverse codes
      */
-    if (NODE_TYPE (arg_node) == N_Nwith) {
-        if (NWITH_CODE (arg_node) != NULL) {
-            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-        }
-    } else {
-        if (NWITH2_CODE (arg_node) != NULL) {
-            NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-        }
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
 
     /*
@@ -916,121 +951,25 @@ EMALwith (node *arg_node, node *arg_info)
     INFO_EMAL_INDEXVECTOR (arg_info) = FreeTree (INFO_EMAL_INDEXVECTOR (arg_info));
 
     /*
-     * Rebuild ALLOCLIST using suballoc-fields and WITHOPS
-     * als will contain the ALLOCLIST elements remaining in ALLOCLIST
+     * Rebuild ALLOCLIST by traversing WITHOPS
      */
-    als = NULL;
-    withop = INFO_EMAL_WITHOPS (arg_info);
-    while (withop != NULL) {
-        DBUG_ASSERT (INFO_EMAL_ALLOCLIST (arg_info) != NULL,
-                     "ALLOCLIST must contain an entry for each WITHOP!");
-
-        switch (NWITHOP_TYPE (withop)) {
-        case WO_foldprf:
-        case WO_foldfun:
-            /*
-             * fold-wl:
-             * fold wls allocate memory on their own
-             */
-            tmp = INFO_EMAL_ALLOCLIST (arg_info);
-            INFO_EMAL_ALLOCLIST (arg_info) = tmp->next;
-
-            tmp->next = NULL;
-            tmp = FreeALS (tmp);
-            break;
-
-        case WO_genarray:
-            /*
-             * genarray-wl:
-             * Allocation must remain in ALLOCLIST
-             */
-            tmp = INFO_EMAL_ALLOCLIST (arg_info);
-            INFO_EMAL_ALLOCLIST (arg_info) = tmp->next;
-            tmp->next = als;
-            als = tmp;
-
-            /*
-             * If shape information has not yet been gathered it must be
-             * inferred using the default element
-             */
-            if (als->dim == NULL) {
-                DBUG_ASSERT (NWITHOP_DEFAULT (withop) != NULL,
-                             "Default element required!");
-                als->dim
-                  = MakePrf2 (F_add_SxS,
-                              MakePrf2 (F_sel, MakeNum (0),
-                                        MakePrf (F_shape,
-                                                 DupNode (NWITHOP_SHAPE (withop)))),
-                              MakePrf (F_dim, DupNode (NWITHOP_DEFAULT (withop))));
-            }
-
-            if (als->shape == NULL) {
-                DBUG_ASSERT (NWITHOP_DEFAULT (withop) != NULL,
-                             "Default element required!");
-                als->shape
-                  = MakePrf (F_shape,
-                             MakePrf2 (F_genarray, DupNode (NWITHOP_SHAPE (withop)),
-                                       DupNode (NWITHOP_DEFAULT (withop))));
-            }
-            break;
-        case WO_modarray:
-            /*
-             * modarray-wl:
-             * Allocation must remain in ALLOCLIST
-             */
-            tmp = INFO_EMAL_ALLOCLIST (arg_info);
-            INFO_EMAL_ALLOCLIST (arg_info) = tmp->next;
-            tmp->next = als;
-            als = tmp;
-
-            als->dim = MakePrf (F_dim, DupNode (NWITHOP_ARRAY (withop)));
-            als->shape = MakePrf (F_shape, DupNode (NWITHOP_ARRAY (withop)));
-            break;
-
-        case WO_unknown:
-            DBUG_ASSERT ((0), "Unknown Withloop-Type found");
-        }
-        withop = NWITHOP_NEXT (withop);
-    }
-
-    /*
-     * Append new ALLOCLIST als to old alloclist
-     */
-    if (INFO_EMAL_ALLOCLIST (arg_info) == NULL) {
-        INFO_EMAL_ALLOCLIST (arg_info) = als;
-    } else {
-        tmp = INFO_EMAL_ALLOCLIST (arg_info);
-        while (tmp->next != NULL) {
-            tmp = tmp->next;
-        }
-        tmp->next = als;
+    if (NWITH_WITHOP (arg_node) != NULL) {
+        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
     }
 
     /*
      * Allocate memory for the index vector
      */
-    if (NODE_TYPE (arg_node) == N_Nwith) {
-        if (NWITH_VEC (arg_node) != NULL) {
-            INFO_EMAL_ALLOCLIST (arg_info)
-              = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH_VEC (arg_node)),
-                         MakeNum (1),
-                         MakePrf (F_shape, DupNode (NWITH_BOUND1 (arg_node))));
-        }
-        i = NWITH_IDS (arg_node);
-    } else {
-        if (NWITH2_VEC (arg_node) != NULL) {
-            INFO_EMAL_ALLOCLIST (arg_info)
-              = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH2_VEC (arg_node)),
-                         MakeNum (1),
-                         SHShape2Array (TYGetShape (AVIS_TYPE (
-                           IDS_AVIS (NWITHID_VEC (NWITH2_WITHID (arg_node)))))));
-        }
-        i = NWITH2_IDS (arg_node);
+    if (NWITH_VEC (arg_node) != NULL) {
+        INFO_EMAL_ALLOCLIST (arg_info)
+          = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH_VEC (arg_node)),
+                     MakeNum (1), MakePrf (F_shape, DupNode (NWITH_BOUND1 (arg_node))));
     }
 
     /*
      * Allocate memory for the index variables
      */
+    i = NWITH_IDS (arg_node);
     while (i != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (i), MakeNum (0),
@@ -1042,6 +981,182 @@ EMALwith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--******************************************************************-->
+ *
+ * @fn EMALwith2
+ *
+ *  @brief
+ *
+ *  @param arg_node with-loop2
+ *  @param arg_info
+ *
+ *  @return with-loop2
+ *
+ ***************************************************************************/
+node *
+EMALwith2 (node *arg_node, node *arg_info)
+{
+    ids *i;
+
+    DBUG_ENTER ("EMALwith2");
+
+    /*
+     * ALLOCLIST is needed to traverse NCODEs and will be rescued there
+     */
+
+    /*
+     * In order to build a proper suballoc/fill combinations in each Code-Block
+     * it is necessary to know which result variables refer to
+     * genarray/modarray - withops
+     * Furthermore, a code template for the index vector is needed
+     */
+    INFO_EMAL_WITHOPS (arg_info) = NWITH2_WITHOP (arg_node);
+    INFO_EMAL_INDEXVECTOR (arg_info) = MakeIdFromIds (DupOneIds (NWITH2_VEC (arg_node)));
+
+    /*
+     * Traverse codes
+     */
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
+    /*
+     * Free INDEXVECTOR code template
+     */
+    INFO_EMAL_INDEXVECTOR (arg_info) = FreeTree (INFO_EMAL_INDEXVECTOR (arg_info));
+
+    /*
+     * Rebuild ALLOCLIST by traversing WITHOPS
+     */
+    if (NWITH2_WITHOP (arg_node) != NULL) {
+        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    }
+
+    if (NWITH2_VEC (arg_node) != NULL) {
+        INFO_EMAL_ALLOCLIST (arg_info)
+          = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH2_VEC (arg_node)),
+                     MakeNum (1),
+                     SHShape2Array (TYGetShape (
+                       AVIS_TYPE (IDS_AVIS (NWITHID_VEC (NWITH2_WITHID (arg_node)))))));
+    }
+
+    /*
+     * Allocate memory for the index variables
+     */
+    i = NWITH2_IDS (arg_node);
+    while (i != NULL) {
+        INFO_EMAL_ALLOCLIST (arg_info)
+          = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (i), MakeNum (0),
+                     CreateZeroVector (0, T_int));
+
+        i = IDS_NEXT (i);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALwithop
+ *
+ *  @brief
+ *
+ *  @param arg_node with-loop
+ *  @param arg_info
+ *
+ *  @return with-loop
+ *
+ ***************************************************************************/
+node *
+EMALwithop (node *arg_node, node *arg_info)
+{
+    alloclist_struct *als;
+
+    DBUG_ENTER ("EMALwithop");
+
+    DBUG_ASSERT (INFO_EMAL_ALLOCLIST (arg_info) != NULL,
+                 "ALLOCLIST must contain an entry for each WITHOP!");
+
+    als = INFO_EMAL_ALLOCLIST (arg_info);
+    INFO_EMAL_ALLOCLIST (arg_info) = als->next;
+    als->next = NULL;
+
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    }
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_foldprf:
+    case WO_foldfun:
+        /*
+         * fold-wl:
+         * fold wls allocate memory on their own
+         */
+        als = FreeALS (als);
+        break;
+
+    case WO_genarray:
+        /*
+         * If shape information has not yet been gathered it must be
+         * inferred using the default element
+         */
+        if (als->dim == NULL) {
+            DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
+            als->dim = MakePrf2 (F_add_SxS,
+                                 MakePrf2 (F_sel, MakeNum (0),
+                                           MakePrf (F_shape,
+                                                    DupNode (NWITHOP_SHAPE (arg_node)))),
+                                 MakePrf (F_dim, DupNode (NWITHOP_DEFAULT (arg_node))));
+        }
+
+        if (als->shape == NULL) {
+            DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
+            als->shape
+              = MakePrf (F_shape,
+                         MakePrf2 (F_genarray, DupNode (NWITHOP_SHAPE (arg_node)),
+                                   DupNode (NWITHOP_DEFAULT (arg_node))));
+        }
+
+        /*
+         * Annotate which memory is to be used
+         */
+        NWITHOP_MEMAVIS (arg_node) = als->avis;
+
+        /*
+         * genarray-wl:
+         * Allocation must remain in ALLOCLIST
+         */
+        als->next = INFO_EMAL_ALLOCLIST (arg_info);
+        INFO_EMAL_ALLOCLIST (arg_info) = als;
+        break;
+
+    case WO_modarray:
+        /*
+         * modarray-wl:
+         * dim, shape are the same as in the modified array
+         */
+        als->dim = MakePrf (F_dim, DupNode (NWITHOP_ARRAY (arg_node)));
+        als->shape = MakePrf (F_shape, DupNode (NWITHOP_ARRAY (arg_node)));
+
+        /*
+         * Annotate which memory is to be used
+         */
+        NWITHOP_MEMAVIS (arg_node) = als->avis;
+
+        /*
+         * modarray-wl:
+         * Allocation must remain in ALLOCLIST
+         */
+        als->next = INFO_EMAL_ALLOCLIST (arg_info);
+        INFO_EMAL_ALLOCLIST (arg_info) = als;
+        break;
+
+    case WO_unknown:
+        DBUG_ASSERT ((0), "Unknown Withloop-Type found");
+    }
+
+    DBUG_RETURN (arg_node);
+}
 /**
  * @}
  */
@@ -1065,6 +1180,7 @@ EMAllocateFill (node *syntax_tree)
     DBUG_ENTER ("EMALAllocateFill");
 
     info = MakeInfo ();
+    INFO_EMAL_MUSTFILL (info) = FALSE;
 
     act_tab = emalloc_tab;
     syntax_tree = Trav (syntax_tree, info);
