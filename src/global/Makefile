@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1994/12/09 10:43:42  sbs
+# Revision 1.7  1994/12/11 17:30:14  sbs
+# -I, -L + environment vars inserted
+#
+# Revision 1.6  1994/12/09  10:43:42  sbs
 # optimize inserted
 #
 # Revision 1.5  1994/12/05  13:00:58  hw
@@ -21,7 +24,8 @@
 MAKE=make
 CC=gcc -ansi -g 
 
-INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck -I../optimize
+INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
+     -I../optimize -I../modules
 
 all: main.o Error.o traverse.o usage.o my_debug.o
 
@@ -52,7 +56,7 @@ Error.o: Error.h /usr/include/stdio.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h tree.h
 main.o: node_info.mac prf_node_info.mac Error.h usage.h ../flatten/flatten.h
 main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../scanparse/scnprs.h /usr/include/stdlib.h
+main.o: ../modules/filemgr.h ../scanparse/scnprs.h /usr/include/stdlib.h
 main.o: /usr/include/sys/stdtypes.h /usr/include/string.h
 my_debug.o: tree.h node_info.mac prf_node_info.mac ../print/convert.h
 traverse.o: /usr/include/stdio.h /usr/include/stdlib.h

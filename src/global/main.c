@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/12/09 10:13:19  sbs
+ * Revision 1.9  1994/12/11 17:29:31  sbs
+ * -I, -L + environment vars inserted
+ *
+ * Revision 1.8  1994/12/09  10:13:19  sbs
  * optimize inserted
  *
  * Revision 1.7  1994/12/08  17:55:18  hw
@@ -42,6 +45,7 @@
 #include "print.h"
 #include "typecheck.h"
 #include "optimize.h"
+#include "filemgr.h"
 
 #include "scnprs.h"
 #include <stdlib.h>
@@ -56,10 +60,8 @@ MAIN
     int set_outfile = 0;
     int breakparse = 0, breakflatten = 0, breaktype = 0;
     char prgname[256];
-    char filename[256];
-    char outfilename[128] = "out.txt";
-    char *paths, *path;
-    char message[80];
+    char outfilename[256] = "out.txt";
+    char message[256];
 
     strcpy (prgname, argv[0]);
 
@@ -96,25 +98,22 @@ MAIN
     }
     ENDOPT
 
-    if (1 <= argc) {
-        yyin = fopen (*argv, "r");
+    /* First, we set our search paths for the source program, modul declarations,
+     * and modul implementations...
+     */
+
+    if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
+        Error ("MAX_PATH_LEN too low!/n", 1);
+    if (AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH") == 0)
+        Error ("MAX_PATH_LEN too low!/n", 1);
+    if (AppendEnvVar (PATH, "SAC_PATH") == 0)
+        Error ("MAX_PATH_LEN too low!/n", 1);
+
+    if (argc == 1) {
+        yyin = FindFile (PATH, *argv);
         if (yyin == NULL) {
-            paths = getenv ("SAC_LIBRARY_PATH");
-            if (paths == NULL)
-                Error ("Couldn't open Infile !\n", 1);
-            path = strtok (paths, ":");
-            while ((yyin == NULL) && (path != NULL)) {
-                strcpy (filename, path);
-                strcat (filename, "/");
-                strcat (filename, *argv);
-                DBUG_PRINT ("MAIN", ("trying file %s\n", filename));
-                yyin = fopen (filename, "r");
-                if (yyin == NULL) {
-                    path = strtok (NULL, ":");
-                    if (path == NULL)
-                        Error ("Couldn't open Infile !\n", 1);
-                }
-            }
+            sprintf (message, "Couldn't open file \"%s\"!\n", *argv);
+            Error (message, 1);
         }
     }
 
