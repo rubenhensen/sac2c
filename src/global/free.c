@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/12 08:47:38  sbs
+ * FreeArray and FreeId adjusted to new constvec access macros.
+ *
  * Revision 2.5  1999/04/13 14:06:41  cg
  * FreeBlock() now removes pragma cachesim.
  *
@@ -1238,11 +1241,6 @@ FreeExprs (node *arg_node, node *arg_info)
 node *
 FreeArray (node *arg_node, node *arg_info)
 {
-    int *iarray;
-    float *farray;
-    double *darray;
-    char *carray;
-
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeArray");
@@ -1255,19 +1253,10 @@ FreeArray (node *arg_node, node *arg_info)
         FreeOneTypes (ARRAY_TYPE (arg_node));
     }
 
+    if (ARRAY_ISCONST (arg_node) && ARRAY_VECLEN (arg_node) > 0)
+        FREE (ARRAY_CONSTVEC (arg_node));
+
     DBUG_PRINT ("FREE", ("Removing N_array node ..."));
-
-    iarray = ARRAY_INTVEC (arg_node);
-    FREE (iarray);
-
-    farray = ARRAY_FLOATVEC (arg_node);
-    FREE (farray);
-
-    darray = ARRAY_DOUBLEVEC (arg_node);
-    FREE (darray);
-
-    carray = ARRAY_STRING (arg_node);
-    FREE (carray);
 
     FREE (arg_node);
 
@@ -1301,8 +1290,6 @@ FreeVinfo (node *arg_node, node *arg_info)
 node *
 FreeId (node *arg_node, node *arg_info)
 {
-    int *carray;
-
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeId");
@@ -1313,8 +1300,8 @@ FreeId (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing N_id node ..."));
 
-    carray = ID_INTVEC (arg_node);
-    FREE (carray);
+    if (ID_ISCONST (arg_node) && (ID_VECLEN (arg_node) > 0))
+        FREE (ID_CONSTVEC (arg_node));
 
     FREE (arg_node);
 
