@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.16  2004/11/26 14:15:06  sbs
+# INCS eliminated
+#
 # Revision 1.15  2004/09/27 13:19:17  sah
 # added serialization file
 #
@@ -64,8 +67,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-INCS = -I../../inc -I../tree -I../global -I. -I../typecheck
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
