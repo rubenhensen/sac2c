@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/12/20 08:15:10  cg
+ * Revision 1.28  1995/12/21 10:07:33  cg
+ * now MakePragma has no argument at all, new macros PRAGMA_LINKSIGNNUMS etc.
+ * for temporary storage of pragma as list of nums instead of array.
+ *
+ * Revision 1.27  1995/12/20  08:15:10  cg
  * renamed macro WITH_BODY to WITH_OPERTATOR
  * new macros for new N_char node
  * changed macros for N_pragma node with respect to using arrays for pragmas linksign,
@@ -1481,6 +1485,12 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***    node*  NEEDFUNS     (O)
  ***    int    NUMPARAMS    (O)
  ***
+ ***  temporary attributes:
+ ***
+ ***    nums*  LINKSIGNNUMS     (O)   (scanparse -> import !!)
+ ***    nums*  REFCOUNTINGNUMS  (O)   (scanparse -> import !!)
+ ***    nums*  READONLYNUMS     (O)   (scanparse -> import !!)
+ ***
  ***/
 
 /*
@@ -1493,14 +1503,22 @@ extern node *MakeIcm (char *name, node *args, node *next);
  *  NUMPARAMS is not a pragma but gives the number of parameters of the
  *  function (return values + arguments). This is the size of the arrays
  *  which store the LINKSIGN, REFCOUNTING, and READONLY pragmas.
+ *
+ *  The temporary attributes serve only for parsing the respective
+ *  pragmas. Immediately after parsing, the pragmas are checked and
+ *  converted into the array representation. So, all usage of these
+ *  pragmas must rely on the respective permanent attributes.
  */
 
-extern node *MakePragma (int numparams);
+extern node *MakePragma ();
 
 #define PRAGMA_LINKNAME(n) (n->info.id)
 #define PRAGMA_LINKSIGN(n) ((int *)n->mask[0])
+#define PRAGMA_LINKSIGNNUMS(n) ((nums *)n->mask[0])
 #define PRAGMA_REFCOUNTING(n) ((int *)n->mask[1])
+#define PRAGMA_REFCOUNTINGNUMS(n) ((nums *)n->mask[1])
 #define PRAGMA_READONLY(n) ((int *)n->mask[2])
+#define PRAGMA_READONLYNUMS(n) ((nums *)n->mask[2])
 #define PRAGMA_EFFECT(n) ((ids *)n->mask[3])
 #define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
 #define PRAGMA_COPYFUN(n) ((char *)n->mask[5])

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/12/20 08:16:22  cg
+ * Revision 1.11  1995/12/21 10:07:33  cg
+ * now MakePragma has no argument at all, new macros PRAGMA_LINKSIGNNUMS etc.
+ * for temporary storage of pragma as list of nums instead of array.
+ *
+ * Revision 1.10  1995/12/20  08:16:22  cg
  * added MakeChar, modified MakePragma.
  *
  * Revision 1.9  1995/12/01  17:09:20  cg
@@ -1078,10 +1082,9 @@ MakeIcm (char *name, node *args, node *next)
 }
 
 node *
-MakePragma (int size)
+MakePragma ()
 {
     node *tmp;
-    int i;
 
     DBUG_ENTER ("MakePragma");
     INIT_NODE (tmp);
@@ -1089,29 +1092,7 @@ MakePragma (int size)
     NODE_TYPE (tmp) = N_pragma;
     NODE_NNODE (tmp) = 0;
 
-#if 0
-  if (size>0)
-  {
-    PRAGMA_LINKSIGN(tmp)=(int[])Malloc(size*sizeof(int));
-    PRAGMA_REFCOUNTING(tmp)=(int[])Malloc(size*sizeof(int));
-    PRAGMA_READONLY(tmp)=(int[])Malloc(size*sizeof(int));
-
-    for (i=0;i<size;i++)
-    {
-      PRAGMA_LINKSIGN(tmp)[i]=0;
-      PRAGMA_REFCOUNTING(tmp)[i]=0;
-      PRAGMA_READONLY(tmp)[i]=0;
-    }
-  }
-  else
-  {
-    PRAGMA_LINKSIGN(tmp)=NULL;
-    PRAGMA_REFCOUNTING(tmp)=NULL;
-    PRAGMA_READONLY(tmp)=NULL;
-  }
-#endif
-
-    PRAGMA_NUMPARAMS (tmp) = size;
+    PRAGMA_NUMPARAMS (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
                              NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
