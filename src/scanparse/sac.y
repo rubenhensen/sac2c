@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1994/12/14 12:42:08  hw
+ * Revision 1.27  1994/12/14 13:57:26  sbs
+ * bug in expressionblock2 fixed (superflouus SEMIC BRACE_R)
+ *
+ * Revision 1.26  1994/12/14  12:42:08  hw
  * error fixed in rule 'fundef2'
  *
  * Revision 1.25  1994/12/14  10:09:04  sbs
@@ -377,7 +380,6 @@ exprblock: BRACE_L exprblock2 {$$=$2;}
 	;
 
 exprblock2:vardecs exprblock3
-           SEMIC BRACE_R 
             { 
                $$=MakeNode(N_block);
                $$->node[0]=$2;  /* assignments */
@@ -404,7 +406,7 @@ exprblock2:vardecs exprblock3
            ;
 
 exprblock3: assigns retassign SEMIC BRACE_R
-              {if (NULL != $2) {
+              {if (NULL != $1) {
                  /* append retassign node($2) to assigns nodes */
                  $$=Append($1,$2);
                }
