@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/15 14:43:59  dkr
+ * bug in WL_ASSIGN__COPY fixed
+ *
  * Revision 3.15  2002/07/12 23:10:50  dkr
  * bug in WL_ASSIGN__INIT fixed
  *
@@ -422,7 +425,7 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN__COPY( char *source,
+ *   void ICMCompileWL_ASSIGN__COPY( char *from_nt,
  *                                   int to_dim, char *to_nt,
  *                                   char *idx_vec_nt,
  *                                   int dims, char **idxa_scl)
@@ -430,13 +433,13 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN__COPY( source,
+ *   WL_ASSIGN__COPY( from_nt,
  *                    to_dim, to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN__COPY (char *source, int to_dim, char *to_nt, char *idx_vec_nt,
+ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt, char *idx_vec_nt,
                            int dims, char **idxa_scl)
 {
     DBUG_ENTER ("ICMCompileWL_ASSIGN__COPY");
@@ -468,12 +471,12 @@ ICMCompileWL_ASSIGN__COPY (char *source, int to_dim, char *to_nt, char *idx_vec_
     fprintf (outfile,
              "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
              "SAC_ND_READ( %s, SAC_WL_OFFSET( %s));\n",
-             to_nt, to_nt, source, to_nt);
+             to_nt, to_nt, from_nt, to_nt);
 #else
     fprintf (outfile,
              "SAC_ND_WRITE_ARRAY( %s, SAC_WL_OFFSET( %s)) = "
              "SAC_ND_READ_ARRAY( %s, SAC_WL_OFFSET( %s));\n",
-             to_nt, to_nt, source, to_nt);
+             to_nt, to_nt, from_nt, to_nt);
 #endif
 
     INDENT;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/07/15 14:43:55  dkr
+ * bug in WL_ASSIGN__COPY fixed
+ *
  * Revision 3.8  2002/07/12 18:53:39  dkr
  * some modifications for TAGGED_ARRAYS done
  *
@@ -40,7 +43,7 @@ extern void ICMCompileWL_ASSIGN (int val_dim, char *val_nt, int to_dim, char *to
 extern void ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt,
                                        int dims, char **idxa_scl);
 
-extern void ICMCompileWL_ASSIGN__COPY (char *source, int to_dim, char *to_nt,
+extern void ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt,
                                        char *idx_vec_nt, int dims, char **idxa_scl);
 
 extern void ICMCompileWL_FOLD__OFFSET (int to_dim, char *to_nt, char *idx_vec_nt,
