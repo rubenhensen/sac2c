@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/05/07 15:19:36  jhs
+ * Fixed Bugs in BuildDropWithLoop and is_empty_array.
+ *
  * Revision 2.12  1999/05/07 10:10:19  jhs
  * withloops on empty array will be rebuild to direct operations.
  * This happens in TI_Nwith.
@@ -921,7 +924,6 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
                     aelem = EXPRS_NEXT (aelem);
                 }
             }
-            new_array = MakeArray (aelem);
 
             tmp_var = MakeLet (new_array, MakeIds (new_drop_vec, NULL, ST_regular));
             ID_NAME (drop_vec) = StringCopy (new_drop_vec);
@@ -7007,7 +7009,7 @@ is_bound_empty (node *arg_node, node *bound_node)
 {
     if (NODE_TYPE (bound_node) == N_id) {
         /* N_id node => elements are annotated */
-        if (ID_VECLEN (bound_node) == 0) {
+        if (ID_CONSTARRAY (bound_node)) {
             return (TRUE);
         } else {
             return (FALSE);
@@ -7274,88 +7276,105 @@ TI_Nwith (node *arg_node, node *arg_info)
         /* SCALAR == TYPES_DIM() possible in case of fold. */
         ABORT (NODE_LINE (arg_node), ("No constant type for withloop inferable"));
 
-    /*  exchange withloops on empty array iv with their shortcut pendant. (jhs)
-     *
-     *  current assign has to be a let
-     */
+    if (SAC_PRG == kind_of_file) {
+        /*  exchange withloops on empty array iv with their shortcut pendant. (jhs)
+         *
+         *  current assign has to be a let
+         */
 
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info))) == N_let),
-                 "current assign is not let!");
+        DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
+                      == N_let),
+                     "current assign is not let!");
 
-    /* if last assign is NULL, code for this case has to be added */
-    DBUG_ASSERT ((INFO_TC_LASSIGN (arg_info) != NULL), "last assign is NULL");
+        /* if last assign is NULL, code for this case has to be added */
+        DBUG_ASSERT ((INFO_TC_LASSIGN (arg_info) != NULL), "last assign is NULL");
 
-    generator = NPART_GEN (NWITH_PART (arg_node));
-    lowerbound = NGEN_BOUND1 (generator);
-    upperbound = NGEN_BOUND1 (generator);
+        generator = NPART_GEN (NWITH_PART (arg_node));
+        lowerbound = NGEN_BOUND1 (generator);
+        upperbound = NGEN_BOUND1 (generator);
 
-    lowerbound_empty = is_bound_empty (arg_node, lowerbound);
-    upperbound_empty = is_bound_empty (arg_node, upperbound);
+        lowerbound_empty = is_bound_empty (arg_node, lowerbound);
+        upperbound_empty = is_bound_empty (arg_node, upperbound);
 
-    if (lowerbound_empty && upperbound_empty) {
+        if (lowerbound_empty && upperbound_empty) {
 
-        if ((NWITHOP_TYPE (withop) == WO_modarray)
-            || (NWITHOP_TYPE (withop) == WO_genarray)) {
-            if ((NGEN_OP1_ORIG (generator) == F_le)
-                && (NGEN_OP2_ORIG (generator) == F_le)) {
-                /*  replace "with ([] <= iv <= []) modarray (a, iv, b)" simply by "b"
-                 *          "with ([] <= iv <= []) genarray ([], b)"              "b" */
+            if ((NWITHOP_TYPE(withop) == WO_modarray) || 
+          (NWITHOP_TYPE(withop) == WO_genarray)/* ||
+          (NWITHOP_TYPE(withop) == WO_Nfoldprf)*/) {
+                if ((NGEN_OP1_ORIG (generator) == F_le)
+                    && (NGEN_OP2_ORIG (generator) == F_le)) {
+                    /*  replace
+                     *    "with ([] <= iv <= []) modarray (a, iv, b)"
+                     *  or
+                     *    "with ([] <= iv <= []) genarray ([], b)"
+                     *  simply by:
+                     *    "b"
+                     */
 
-                /*  insert block into assignments, if block is
-                 *  empty it will be replaced by CEXPR.          */
-                ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info))
-                  = BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node))));
-                /*  step to last assigment in chain and look forward,
-                 *  concat end of block with current assignment  */
-                assignment = INFO_TC_LASSIGN (arg_info);
-                while ((ASSIGN_NEXT (assignment) != NULL)
-                       && (NODE_TYPE (ASSIGN_NEXT (assignment)) != N_empty)) {
-                    assignment = ASSIGN_NEXT (assignment);
-                } /* while */
-                ASSIGN_NEXT (assignment) = INFO_TC_CURRENTASSIGN (arg_info);
-                /* place CEXPR instead of withloop */
-                LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
-                  = NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node)));
-
-                /* Cleanup the arg_node, that is no longer needed,
-                 * but keep replaces elements. */
-                BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node)))) = NULL;
-                NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node))) = NULL;
-                FreeTree (arg_node);
-                arg_node = NULL;
-            } else {
-                /*  replace "with ([] cmp1 iv cmp2 []) modarray (a, iv, b)" simply by
-                 * default "with ([] cmp1 iv cmp2 []) genarray ([], b)
-                 * default
-                 *
-                 *  whereby: (cmp1 in { "<", "<=" }) and (cmp2 in { "<", "<=" }) and
-                 * ((cmp1 = "<") or (cmp2 = "<")) default: in case of arrays : [0, ..., 0]
-                 * with shape of base_array_type or with as many elements in case of
-                 * scalars: 0 */
-
-                /* body can be ignored, because only default values are returned here */
-                if (TYPES_DIM (base_array_type) > SCALAR) {
+                    /*  insert block into assignments, if block is
+                     *  empty it will be replaced by CEXPR.          */
+                    ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info))
+                      = BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node))));
+                    /*  step to last assigment in chain and look forward,
+                     *  concat end of block with current assignment  */
+                    assignment = INFO_TC_LASSIGN (arg_info);
+                    while ((ASSIGN_NEXT (assignment) != NULL)
+                           && (NODE_TYPE (ASSIGN_NEXT (assignment)) != N_empty)) {
+                        assignment = ASSIGN_NEXT (assignment);
+                    } /* while */
+                    ASSIGN_NEXT (assignment) = INFO_TC_CURRENTASSIGN (arg_info);
+                    /* place CEXPR instead of withloop */
                     LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
-                      = ArrayOfZeros ((TypeToCount (base_array_type)));
-                } else if (TYPES_DIM (base_array_type) == SCALAR) {
-                    LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
-                      = MakeNum (0);
+                      = NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node)));
+
+                    /* Cleanup the arg_node, that is no longer needed,
+                     * but keep replaces elements. */
+                    BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node))))
+                      = NULL;
+                    NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node))) = NULL;
+                    FreeTree (arg_node);
+                    arg_node = NULL;
                 } else {
-                    ABORT (NODE_LINE (arg_node), ("Wrong dimension of type!"));
-                } /* if */
+                    /*  replace
+                     *    "with ([] cmp1 iv cmp2 []) modarray (a, iv, b)"
+                     *  or
+                     *    "with ([] cmp1 iv cmp2 []) genarray ([], b)"
+                     *  simply by default
+                     *
+                     *  whereby: (cmp1 in { "<", "<=" }) and
+                     *           (cmp2 in { "<", "<=" }) and
+                     *           ((cmp1 = "<") or (cmp2 = "<"))
+                     *  default: in case of arrays : [0, ..., 0]
+                     *             with shape of base_array_type respectively with
+                     *             as many elements as described by the shape.
+                     *           in case of scalars: 0 */
 
-                /* Cleanup the arg_node, no parts are reused here! */
-                FreeTree (arg_node);
-                arg_node = NULL;
-            } /* if (NGEN_OP1_ORIG(...) ...) else ... */
+                    /*  body can be ignored,
+                     *  because only default values are returned here */
+                    if (TYPES_DIM (base_array_type) > SCALAR) {
+                        LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
+                          = ArrayOfZeros ((TypeToCount (base_array_type)));
+                    } else if (TYPES_DIM (base_array_type) == SCALAR) {
+                        LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
+                          = MakeNum (0);
+                    } else {
+                        ABORT (NODE_LINE (arg_node), ("Wrong dimension of type!"));
+                    } /* if */
 
-            /* foldprf & foldfun missing here */
+                    /* Cleanup the arg_node, no parts are reused here!
+                     * So we can cleanup the whole arg_node. */
+                    FreeTree (arg_node);
+                    arg_node = NULL;
+                } /* if (NGEN_OP1_ORIG(...) ...) else ... */
 
-        } else {
-            ABORT (NODE_LINE (arg_node),
-                   ("Wrong type of withloop applied to empty arrays!"));
-        } /* if (NWITHOP_TYPE(...) ...) else ... */
-    }     /* if (lowerbound_empty && upperbound_empty) ... */
+                /* foldprf & foldfun missing here */
+
+            } else {
+                ABORT (NODE_LINE (arg_node),
+                       ("Wrong type of withloop applied to empty indexvectors"));
+            } /* if (NWITHOP_TYPE(...) ...) else ... */
+        }     /* if (lowerbound_empty && upperbound_empty) ... */
+    }
     DBUG_RETURN (base_array_type);
 }
 
