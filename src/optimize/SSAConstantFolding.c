@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2001/05/15 15:52:05  nmw
+ * access to PrfFolding for external modules implemented SSACFFoldPrfExpr
+ *
  * Revision 1.15  2001/05/15 07:59:07  nmw
  * warning eliminated
  *
@@ -1674,18 +1677,13 @@ SSACFarray (node *arg_node, node *arg_info)
  *   evaluates primitive function with constant paramters and substitutes
  *   the function application with its value.
  *
- *
  ******************************************************************************/
 node *
 SSACFprf (node *arg_node, node *arg_info)
 {
     node *new_node;
-    constant *new_co;
-    constant *arg_co_mem[PRF_MAX_ARGS];
     node *arg_expr_mem[PRF_MAX_ARGS];
-    constant **arg_co = &arg_co_mem[0];
     node **arg_expr = &arg_expr_mem[0];
-    int i;
 
     DBUG_ENTER ("SSACFprf");
 
@@ -1698,16 +1696,188 @@ SSACFprf (node *arg_node, node *arg_info)
     }
     INFO_SSACF_INSCONST (arg_info) = FALSE;
 
+    arg_expr = SSACFGetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
+
+    new_node = SSACFFoldPrfExpr (PRF_PRF (arg_node), arg_expr);
+
+    if (new_node != NULL) {
+        /* free this primitive function and substitute it with new node */
+        FreeTree (arg_node);
+        arg_node = new_node;
+
+        /* increment constant folding counter */
+        cf_expr++;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFids(node *arg_ids, node *arg_info)
+ *
+ * description:
+ *   traverse ids chain and return exprs chain (stored in INFO_SSACF_RESULT)
+ *   and look for constant results.
+ *   each constant identifier will be set in an separate assignment (added to
+ *   INFO_SSACF_POSTASSIGN) and substituted in the function application with
+ *   a new dummy identifier that can be removed by constant folding later.
+ *
+ ******************************************************************************/
+static ids *
+SSACFids (ids *arg_ids, node *arg_info)
+{
+    constant *new_co;
+    node *assign_let;
+    node *new_vardec;
+
+    DBUG_ENTER ("SSACFids");
+
+    DBUG_ASSERT ((INFO_SSACF_RESULTS (arg_info) != NULL),
+                 "different ids and result chains");
+
+    new_co = COAST2Constant (EXPRS_EXPR (INFO_SSACF_RESULTS (arg_info)));
+
+    if (new_co != NULL) {
+        DBUG_PRINT ("SSACF",
+                    ("identifier %s marked as constant",
+                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+
+        AVIS_SSACONST (IDS_AVIS (arg_ids)) = new_co;
+
+        /* create one let assign for constant definition */
+        assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
+                                      AVIS_VARDECORARG (IDS_AVIS (arg_ids)))),
+                                    AVIS_VARDECORARG (IDS_AVIS (arg_ids)),
+                                    COConstant2AST (new_co));
+
+        /* append new copy assignment to then-part block */
+        INFO_SSACF_POSTASSIGN (arg_info)
+          = AppendAssign (INFO_SSACF_POSTASSIGN (arg_info), assign_let);
+        /* store definition assignment */
+        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = assign_let;
+
+        DBUG_PRINT ("SSACF",
+                    ("create constant assignment for %s",
+                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+
+        /* create new dummy identifier */
+        new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
+        BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info))
+          = AppendVardec (BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info)), new_vardec);
+
+        /* rename this identifier */
+        IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
+        IDS_VARDEC (arg_ids) = new_vardec;
+#ifndef NO_ID_NAME
+        /* for compatiblity only
+         * there is no real need for name string in ids structure because
+         * you can get it from vardec without redundancy.
+         */
+        FREE (IDS_NAME (arg_ids));
+        IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
+#endif
+    }
+
+    if (IDS_NEXT (arg_ids) != NULL) {
+        INFO_SSACF_RESULTS (arg_info) = EXPRS_NEXT (INFO_SSACF_RESULTS (arg_info));
+        IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
+    }
+
+    DBUG_RETURN (arg_ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *TravIDS(ids *arg_ids, node *arg_info)
+ *
+ * description:
+ *   similar implementation of trav mechanism as used for nodes
+ *   here used for ids.
+ *
+ ******************************************************************************/
+static ids *
+TravIDS (ids *arg_ids, node *arg_info)
+{
+    DBUG_ENTER ("TravIDS");
+
+    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
+    arg_ids = SSACFids (arg_ids, arg_info);
+
+    DBUG_RETURN (arg_ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* SSACFNgen(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses parameter of generator to substitute constant arrays
+ *   with their array representation to allow constant folding on known
+ *   shape information.
+ *
+ ******************************************************************************/
+node *
+SSACFNgen (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SSACFNgen");
+
+    INFO_SSACF_INSCONST (arg_info) = SUBST_SCALAR_AND_ARRAY;
+    DBUG_PRINT ("SSACF", ("substitute constant generator parameters"));
+
+    if (NGEN_BOUND1 (arg_node) != NULL) {
+        NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
+    }
+    if (NGEN_BOUND2 (arg_node) != NULL) {
+        NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
+    }
+    if (NGEN_STEP (arg_node) != NULL) {
+        NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
+    }
+    if (NGEN_WIDTH (arg_node) != NULL) {
+        NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
+    }
+    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFFoldPrfExpr(prf op, node **arg_expr)
+ *
+ * description:
+ *   tries to compute the primitive function for the given args.
+ *   args must be a (static) node* array with len PRF_MAX_ARGS.
+ *
+ * returns:
+ *   a computed result node or NULL if no computing is possible.
+ *
+ ******************************************************************************/
+node *
+SSACFFoldPrfExpr (prf op, node **arg_expr)
+{
+    node *new_node;
+    constant *new_co;
+    constant *arg_co_mem[PRF_MAX_ARGS];
+    constant **arg_co = &arg_co_mem[0];
+    int i;
+
+    DBUG_ENTER ("SSACFFoldPrfExpr");
+
     /* init local variables */
     new_node = NULL;
     new_co = NULL;
 
-    /* fill static arrays with data */
-    arg_expr = SSACFGetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
+    /* fill static arrays with converted constants */
     arg_co = SSACFArgs2Const (arg_co, arg_expr, PRF_MAX_ARGS);
 
     /* do constant folding on primitive functions */
-    switch (PRF_PRF (arg_node)) {
+    switch (op) {
         /* one-argument functions */
     case F_toi:
     case F_toi_A:
@@ -1860,7 +2030,7 @@ SSACFprf (node *arg_node, node *arg_info)
             TWO_CONST_ARG (arg_co)
             {
                 if (COIsZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
-                    ABORT (arg_node->lineno, ("Division by zero expected"));
+                    SYSABORT (("Division by zero expected"));
                 } else {
                     new_co = CODiv (arg_co[0], arg_co[1]);
                 }
@@ -2047,7 +2217,7 @@ SSACFprf (node *arg_node, node *arg_info)
 
     default:
         DBUG_PRINT ("SSACF", ("no implementation in SSAConstantFolding for  prf %s",
-                              prf_string[PRF_PRF (arg_node)]));
+                              prf_string[op]));
     }
 
     /* free used constant data */
@@ -2059,7 +2229,7 @@ SSACFprf (node *arg_node, node *arg_info)
 
     /*
      * if we got a new computed expression instead of the primitive function
-     * we substitute the fun_ap with the new expression
+     * we create a new expression with the result
      */
     if ((new_co != NULL) || (new_node != NULL)) {
         if (new_co != NULL) {
@@ -2069,149 +2239,9 @@ SSACFprf (node *arg_node, node *arg_info)
         } else {
             /* some constant expression of non full constant args have been computed */
         }
-
-        /* free this primitive function */
-        FreeTree (arg_node);
-        arg_node = new_node;
-
-        /* increment constant folding counter */
-        cf_expr++;
     }
 
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSACFids(node *arg_ids, node *arg_info)
- *
- * description:
- *   traverse ids chain and return exprs chain (stored in INFO_SSACF_RESULT)
- *   and look for constant results.
- *   each constant identifier will be set in an separate assignment (added to
- *   INFO_SSACF_POSTASSIGN) and substituted in the function application with
- *   a new dummy identifier that can be removed by constant folding later.
- *
- ******************************************************************************/
-static ids *
-SSACFids (ids *arg_ids, node *arg_info)
-{
-    constant *new_co;
-    node *assign_let;
-    node *new_vardec;
-
-    DBUG_ENTER ("SSACFids");
-
-    DBUG_ASSERT ((INFO_SSACF_RESULTS (arg_info) != NULL),
-                 "different ids and result chains");
-
-    new_co = COAST2Constant (EXPRS_EXPR (INFO_SSACF_RESULTS (arg_info)));
-
-    if (new_co != NULL) {
-        DBUG_PRINT ("SSACF",
-                    ("identifier %s marked as constant",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
-
-        AVIS_SSACONST (IDS_AVIS (arg_ids)) = new_co;
-
-        /* create one let assign for constant definition */
-        assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
-                                      AVIS_VARDECORARG (IDS_AVIS (arg_ids)))),
-                                    AVIS_VARDECORARG (IDS_AVIS (arg_ids)),
-                                    COConstant2AST (new_co));
-
-        /* append new copy assignment to then-part block */
-        INFO_SSACF_POSTASSIGN (arg_info)
-          = AppendAssign (INFO_SSACF_POSTASSIGN (arg_info), assign_let);
-        /* store definition assignment */
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = assign_let;
-
-        DBUG_PRINT ("SSACF",
-                    ("create constant assignment for %s",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
-
-        /* create new dummy identifier */
-        new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
-        BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info))
-          = AppendVardec (BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info)), new_vardec);
-
-        /* rename this identifier */
-        IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
-        IDS_VARDEC (arg_ids) = new_vardec;
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        FREE (IDS_NAME (arg_ids));
-        IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
-#endif
-    }
-
-    if (IDS_NEXT (arg_ids) != NULL) {
-        INFO_SSACF_RESULTS (arg_info) = EXPRS_NEXT (INFO_SSACF_RESULTS (arg_info));
-        IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
- *
- * description:
- *   similar implementation of trav mechanism as used for nodes
- *   here used for ids.
- *
- ******************************************************************************/
-static ids *
-TravIDS (ids *arg_ids, node *arg_info)
-{
-    DBUG_ENTER ("TravIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = SSACFids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* SSACFNgen(node *arg_node, node *arg_info)
- *
- * description:
- *   traverses parameter of generator to substitute constant arrays
- *   with their array representation to allow constant folding on known
- *   shape information.
- *
- ******************************************************************************/
-node *
-SSACFNgen (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSACFNgen");
-
-    INFO_SSACF_INSCONST (arg_info) = SUBST_SCALAR_AND_ARRAY;
-    DBUG_PRINT ("SSACF", ("substitute constant generator parameters"));
-
-    if (NGEN_BOUND1 (arg_node) != NULL) {
-        NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
-    }
-    if (NGEN_BOUND2 (arg_node) != NULL) {
-        NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
-    }
-    if (NGEN_STEP (arg_node) != NULL) {
-        NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
-    }
-    if (NGEN_WIDTH (arg_node) != NULL) {
-        NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
-    }
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (new_node);
 }
 
 /******************************************************************************

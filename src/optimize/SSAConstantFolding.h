@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/05/15 15:52:05  nmw
+ * access to PrfFolding for external modules implemented SSACFFoldPrfExpr
+ *
  * Revision 1.3  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -43,4 +46,6 @@ extern node *SSACFid (node *arg_node, node *arg_info);
 extern node *SSACFarray (node *arg_node, node *arg_info);
 extern node *SSACFprf (node *arg_node, node *arg_info);
 extern node *SSACFNgen (node *arg_node, node *arg_info);
+
+extern node *SSACFFoldPrfExpr (prf op, node **arg_expr);
 #endif /* SAC_SSACONSTANTFOLDING_H */
