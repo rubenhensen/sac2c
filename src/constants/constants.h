@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2003/04/11 17:55:41  sbs
+ * COConstant2Shape added.
+ *
  * Revision 1.15  2003/04/09 15:37:35  sbs
  * CONeg added.
  *
@@ -127,6 +130,7 @@ extern constant *COCopyConstant (constant *a);
 extern constant *COCopyScalar2OneElementVector (constant *a);
 extern char *COConstantData2String (int max_char, constant *a);
 extern char *COConstant2String (constant *a);
+extern shape *COConstant2Shape (constant *a);
 extern void COPrintConstant (FILE *file, constant *a);
 extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);

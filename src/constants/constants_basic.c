@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2003/04/11 17:55:41  sbs
+ * COConstant2Shape added.
+ *
  * Revision 1.17  2003/04/07 14:26:20  sbs
  * COMakeConstantFromShape, COCopyScalar2OneElementVector, COConstantData2String, and
  * COConstant2String added.
@@ -608,6 +611,44 @@ COConstant2String (constant *a)
     StrBufFlush (buf);
 
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn shape * COConstant2Shape( constant *a)
+ *
+ *   @brief converts the given constant into a shape vector.
+ *
+ *          It is implicitly assumed, that a has been checked to be an
+ *          int vector!
+ *
+ *   @param a        constant to be converted
+ *   @return         a freshly allocated shape.
+ *
+ ******************************************************************************/
+
+shape *
+COConstant2Shape (constant *a)
+{
+    int dim, i;
+    shape *shp;
+    int *dv;
+
+    DBUG_ENTER ("COConstant2Shape");
+
+    DBUG_ASSERT (CONSTANT_TYPE (a) == T_int,
+                 "COConstant2Shape applied to non int array!");
+    DBUG_ASSERT (SHGetDim (CONSTANT_SHAPE (a)) == 1,
+                 "COConstant2Shape applied to non vector!");
+
+    dim = CONSTANT_VLEN (a);
+    shp = SHMakeShape (dim);
+    dv = (int *)CONSTANT_ELEMS (a);
+    for (i = 0; i < dim; i++) {
+        shp = SHSetExtent (shp, i, dv[i]);
+    }
+
+    DBUG_RETURN (shp);
 }
 
 /******************************************************************************
