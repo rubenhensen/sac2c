@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.11  2001/01/24 23:39:42  dkr
+ * PrintWLseg and PrintWLsegVar replaced by PrintWLsegx
+ * PrintWLblock and PrintWLublock replaced by PrintWLxblock
+ *
  * Revision 3.10  2001/01/19 11:56:35  dkr
  * PREC2WLsegVar, PREC2WLseg replaced by PREC2WLsegx
  *
@@ -1679,7 +1683,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
-  NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
+  NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLsegx, TravSons, TravSons, TravSons,
        TravSons, FreeWLseg, TravSons, TravSons, COMPWLseg, TravSons, DupWLseg, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1698,7 +1702,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLblock, "N_WLblock", TravSons, TravSons, PrintWLblock, TravSons, TravSons,
+  NIF (N_WLblock, "N_WLblock", TravSons, TravSons, PrintWLxblock, TravSons, TravSons,
        TravSons, TravSons, FreeWLblock, TravSons, TravSons, COMPWLblock, TravSons,
        DupWLblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1717,7 +1721,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLublock, TravSons, TravSons,
+  NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLxblock, TravSons, TravSons,
        TravSons, TravSons, FreeWLublock, TravSons, TravSons, COMPWLublock, TravSons,
        DupWLublock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1774,7 +1778,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLsegVar, "N_WLsegVar", TravSons, TravSons, PrintWLsegVar, TravSons, TravSons,
+  NIF (N_WLsegVar, "N_WLsegVar", TravSons, TravSons, PrintWLsegx, TravSons, TravSons,
        TravSons, TravSons, FreeWLsegVar, TravSons, TravSons, COMPWLsegVar, TravSons,
        DupWLsegVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/01/24 23:40:07  dkr
+ * PrintWLseg and PrintWLsegVar replaced by PrintWLsegx
+ * PrintWLblock and PrintWLublock replaced by PrintWLxblock
+ *
  * Revision 3.10  2001/01/17 17:38:37  dkr
  * printing of dummy code changed (AP, naive compilation)
  *
@@ -3220,14 +3224,14 @@ PrintNwith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLsegx(node *arg_node, node *arg_info)
+ *   node *PrintWLsegx( node *arg_node, node *arg_info)
  *
  * description:
  *   prints N_WLseg- and N_WLsegVar-nodes.
  *
  ******************************************************************************/
 
-static node *
+node *
 PrintWLsegx (node *arg_node, node *arg_info)
 {
     node *seg;
@@ -3264,129 +3268,33 @@ PrintWLsegx (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLseg(node *arg_node, node *arg_info)
+ *   void PrintWLbound( int val)
  *
  * description:
- *   prints N_WLseg-nodes.
+ *   prints a parameter of N_WLstride- or N_WLgrid-nodes.
  *
  ******************************************************************************/
 
-node *
-PrintWLseg (node *arg_node, node *arg_info)
+static void
+PrintWLbound (int val)
 {
-    DBUG_ENTER ("PrintWLseg");
+    DBUG_ENTER ("PrintWLbound");
 
-    arg_node = PrintWLsegx (arg_node, arg_info);
+    if (val == IDX_OTHER) {
+        fprintf (outfile, "?");
+    } else if (val == IDX_SHAPE) {
+        fprintf (outfile, ".");
+    } else {
+        fprintf (outfile, "%d", val);
+    }
 
-    DBUG_RETURN (arg_node);
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
  *
  * function:
- *   node *PrintWLsegVar(node *arg_node, node *arg_info)
- *
- * description:
- *   prints N_WLsegVar-nodes.
- *
- ******************************************************************************/
-
-node *
-PrintWLsegVar (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintWLsegVar");
-
-    arg_node = PrintWLsegx (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PrintWLblock(node *arg_node, node *arg_info)
- *
- * description:
- *   prints N_WLblock-nodes
- *
- ******************************************************************************/
-
-node *
-PrintWLblock (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintWLblock");
-
-    INDENT;
-    fprintf (outfile, "(%d -> %d), block%d[%d] %d: ", WLBLOCK_BOUND1 (arg_node),
-             WLBLOCK_BOUND2 (arg_node), WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
-             WLBLOCK_STEP (arg_node));
-
-    if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
-        fprintf (outfile, "\n");
-        indent++;
-        Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
-        indent--;
-    }
-
-    if (WLBLOCK_CONTENTS (arg_node) != NULL) {
-        fprintf (outfile, "\n");
-        indent++;
-        Trav (WLBLOCK_CONTENTS (arg_node), arg_info);
-        indent--;
-    }
-
-    if (WLBLOCK_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLBLOCK_NEXT (arg_node), arg_info), );
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PrintWLublock(node *arg_node, node *arg_info)
- *
- * description:
- *   prints N_WLublock-nodes
- *
- ******************************************************************************/
-
-node *
-PrintWLublock (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintWLublock");
-
-    INDENT;
-    fprintf (outfile, "(%d -> %d), ublock%d[%d] %d: ", WLUBLOCK_BOUND1 (arg_node),
-             WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_LEVEL (arg_node),
-             WLUBLOCK_DIM (arg_node), WLUBLOCK_STEP (arg_node));
-
-    if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
-        fprintf (outfile, "\n");
-        indent++;
-        Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
-        indent--;
-    }
-
-    if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
-        fprintf (outfile, "\n");
-        indent++;
-        Trav (WLUBLOCK_CONTENTS (arg_node), arg_info);
-        indent--;
-    }
-
-    if (WLUBLOCK_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLUBLOCK_NEXT (arg_node), arg_info), );
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   void PrintWLvar(node *arg_node, node *arg_info)
+ *   void PrintWLboundVar( node *arg_node, int dim)
  *
  * description:
  *   prints a son of N_WLstrideVar- and N_WLgridVar-nodes.
@@ -3394,20 +3302,13 @@ PrintWLublock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static void
-PrintWLvar (node *arg_node, int dim)
+PrintWLboundVar (node *arg_node, int dim)
 {
-    int val;
-
-    DBUG_ENTER ("PrintWLvar");
+    DBUG_ENTER ("PrintWLboundVar");
 
     switch (NODE_TYPE (arg_node)) {
     case N_num:
-        val = NUM_VAL (arg_node);
-        if (val == IDX_SHAPE) {
-            fprintf (outfile, ".");
-        } else {
-            fprintf (outfile, "%d", val);
-        }
+        PrintWLbound (NUM_VAL (arg_node));
         break;
 
     case N_id:
@@ -3424,7 +3325,55 @@ PrintWLvar (node *arg_node, int dim)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLstride(node *arg_node, node *arg_info)
+ *   node *PrintWLxblock( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLblock- and N_WLublock-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLxblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLxblock");
+
+    INDENT;
+    fprintf (outfile, "(");
+    PrintWLbound (WLXBLOCK_BOUND1 (arg_node));
+    fprintf (outfile, " -> ");
+    PrintWLbound (WLXBLOCK_BOUND2 (arg_node));
+    fprintf (outfile, "), ");
+    if (NODE_TYPE (arg_node) == N_WLublock) {
+        fprintf (outfile, "u");
+    }
+    fprintf (outfile, "block%d[%d] %d: ", WLXBLOCK_LEVEL (arg_node),
+             WLXBLOCK_DIM (arg_node), WLXBLOCK_STEP (arg_node));
+
+    if (WLXBLOCK_NEXTDIM (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        indent++;
+        Trav (WLXBLOCK_NEXTDIM (arg_node), arg_info);
+        indent--;
+    }
+
+    if (WLXBLOCK_CONTENTS (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        indent++;
+        Trav (WLXBLOCK_CONTENTS (arg_node), arg_info);
+        indent--;
+    }
+
+    if (WLXBLOCK_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (WLXBLOCK_NEXT (arg_node), arg_info), );
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLstride( node *arg_node, node *arg_info)
  *
  * description:
  *   prints N_WLstride-nodes
@@ -3441,8 +3390,11 @@ PrintWLstride (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLstride");
 
     INDENT;
-    fprintf (outfile, "(%d -> %d), step%d[%d] %d\n", WLSTRIDE_BOUND1 (arg_node),
-             WLSTRIDE_BOUND2 (arg_node), WLSTRIDE_LEVEL (arg_node),
+    fprintf (outfile, "(");
+    PrintWLbound (WLSTRIDE_BOUND1 (arg_node));
+    fprintf (outfile, " -> ");
+    PrintWLbound (WLSTRIDE_BOUND2 (arg_node));
+    fprintf (outfile, "), step%d[%d] %d\n", WLSTRIDE_LEVEL (arg_node),
              WLSTRIDE_DIM (arg_node), WLSTRIDE_STEP (arg_node));
 
     indent++;
@@ -3477,12 +3429,12 @@ PrintWLstrideVar (node *arg_node, node *arg_info)
 
     INDENT;
     fprintf (outfile, "(");
-    PrintWLvar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+    PrintWLboundVar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
     fprintf (outfile, " => ");
-    PrintWLvar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+    PrintWLboundVar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
     fprintf (outfile, "), step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
              WLSTRIDEVAR_DIM (arg_node));
-    PrintWLvar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
+    PrintWLboundVar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
     fprintf (outfile, "\n");
 
     indent++;
@@ -3610,9 +3562,9 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 
     INDENT;
     fprintf (outfile, "(");
-    PrintWLvar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
+    PrintWLboundVar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
     fprintf (outfile, " => ");
-    PrintWLvar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
+    PrintWLboundVar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
     fprintf (outfile, "): ");
 
     indent++;
@@ -4372,12 +4324,12 @@ DoPrintAST (node *arg_node, bool skip_next)
 
         case N_WLstrideVar:
             fprintf (outfile, "(");
-            PrintWLvar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            PrintWLboundVar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, "->");
-            PrintWLvar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            PrintWLboundVar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, ", step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
                      WLSTRIDEVAR_DIM (arg_node));
-            PrintWLvar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            PrintWLboundVar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, ")\n");
 
             skip = WLSTRIDEVAR_NEXT (arg_node);
@@ -4385,9 +4337,9 @@ DoPrintAST (node *arg_node, bool skip_next)
 
         case N_WLgridVar:
             fprintf (outfile, "(");
-            PrintWLvar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
+            PrintWLboundVar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
             fprintf (outfile, "->");
-            PrintWLvar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
+            PrintWLboundVar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
             fprintf (outfile, " [%d])\n", WLGRIDVAR_DIM (arg_node));
 
             skip = WLGRIDVAR_NEXT (arg_node);
