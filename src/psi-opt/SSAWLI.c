@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2001/05/17 13:29:29  cg
+ * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
+ * converted to functions.
+ *
  * Revision 1.4  2001/05/16 19:52:47  nmw
  * reverted Free() to FREE() due to segfaults when used with linux :-(
  *
@@ -584,12 +588,12 @@ SSAWLIassign (node *arg_node, node *arg_info)
 
     INFO_WLI_ASSIGN (arg_info) = arg_node;
 
-    if (SSAINDEX (arg_node)) {
+    if (SSAINDEX (arg_node) != NULL) {
         /* this is important. Only index transformations
            with a non-null SSAINDEX are valid. See SSAWLIlet. Before WLI, this
            pointer may be non null (somwhere wrong initialisation -> better
            use MakeAssign()!!! ) */
-        FREE_INDEX_INFO (SSAINDEX (arg_node));
+        SSAINDEX (arg_node) = FreeIndexInfo (SSAINDEX (arg_node));
     }
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -788,7 +792,8 @@ SSAWLIlet (node *arg_node, node *arg_info)
                     tmpn
                       = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
                     if (!tmpn) {
-                        FREE_INDEX_INFO (SSAINDEX (INFO_WLI_ASSIGN (arg_info)));
+                        SSAINDEX (INFO_WLI_ASSIGN (arg_info))
+                          = FreeIndexInfo (SSAINDEX (INFO_WLI_ASSIGN (arg_info)));
                     }
                 }
                 break;

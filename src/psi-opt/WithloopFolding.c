@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/17 13:29:29  cg
+ * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
+ * converted to functions.
+ *
  * Revision 3.6  2001/04/30 12:21:56  nmw
  * integrate traversal of special fundefs in both WithloopFolding traversals
  *
@@ -870,6 +874,35 @@ InternGen2Tree (node *wln, intern_gen *ig)
 /******************************************************************************
  *
  * function:
+ *   void FreeInternGen(intern_gen *fr)
+ *
+ * description:
+ *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
+ *
+ ******************************************************************************/
+
+intern_gen *
+FreeInternGen (intern_gen *tmp)
+{
+    DBUG_ENTER ("FreeInternGen");
+
+    DBUG_PRINT ("FREE", ("Removing intern gen (WLF)"));
+
+    DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
+
+    Free (tmp->l);
+    Free (tmp->u);
+    Free (tmp->step);
+    Free (tmp->width);
+
+    Free (tmp);
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void FreeInternGenChain(intern_gen *ig)
  *
  * description:
@@ -887,7 +920,7 @@ FreeInternGenChain (intern_gen *ig)
     while (ig) {
         tmpig = ig;
         ig = ig->next;
-        FREE_INTERN_GEN (tmpig);
+        FreeInternGen (tmpig);
     }
 
     DBUG_RETURN (ig);

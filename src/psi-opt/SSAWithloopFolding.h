@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.4  2001/05/17 13:29:29  cg
+ * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
+ * converted to functions.
+ *
  * Revision 1.3  2001/05/16 13:43:08  nmw
  * unused old code removed, comments corrected
  * MALLOC/FREE changed to Malloc/Free
@@ -44,6 +48,7 @@ extern int SSANormalizeInternGen (intern_gen *ig);
 extern intern_gen *SSACreateInternGen (int shape, int stepwidth);
 extern intern_gen *SSAAppendInternGen (intern_gen *, int, node *, int);
 extern intern_gen *SSACopyInternGen (intern_gen *source);
+extern intern_gen *SSAFreeInternGen (intern_gen *tmp);
 extern intern_gen *SSAFreeInternGenChain (intern_gen *ig);
 /*  extern void        DbugInternGen      (intern_gen *ig);
     is implemented in WithloopFolding.c ! (old code) */
@@ -58,18 +63,7 @@ extern intern_gen *SSAFreeInternGenChain (intern_gen *ig);
    index scalar are allowed to be valid transformations, e.g. [i,i,j] */
 /* #define TRANSF_TRUE_PERMUTATIONS */
 
-/* index_info related macros. See FREE_INDEX_INFO in free.h */
+/* index_info related macros. */
 #define SSAINDEX(n) ((index_info *)ASSIGN_INDEX (n))
-
-/* intern_gen related macros*/
-#define SSAFREE_INTERN_GEN(tmp)                                                          \
-    {                                                                                    \
-        FREE (tmp->l);                                                                   \
-        FREE (tmp->u);                                                                   \
-        FREE (tmp->step);                                                                \
-        FREE (tmp->width);                                                               \
-        FREE (tmp);                                                                      \
-        tmp = NULL;                                                                      \
-    }
 
 #endif

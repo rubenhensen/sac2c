@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2001/05/17 13:29:29  cg
+ * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
+ * converted to functions.
+ *
  * Revision 1.4  2001/05/16 19:52:47  nmw
  * reverted Free() to FREE() due to segfaults when used with linux :-(
  *
@@ -587,6 +591,36 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
  *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
  *
  ******************************************************************************/
+
+intern_gen *
+SSAFreeInternGen (intern_gen *tmp)
+{
+    DBUG_ENTER ("SSAFreeInternGen");
+
+    DBUG_PRINT ("FREE", ("Removing intern gen (WLF)"));
+
+    DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
+
+    Free (tmp->l);
+    Free (tmp->u);
+    Free (tmp->step);
+    Free (tmp->width);
+
+    Free (tmp);
+
+    DBUG_RETURN (NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SSAFreeInternGenChain(intern_gen *ig)
+ *
+ * description:
+ *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
+ *
+ ******************************************************************************/
+
 intern_gen *
 SSAFreeInternGenChain (intern_gen *ig)
 {
@@ -597,7 +631,7 @@ SSAFreeInternGenChain (intern_gen *ig)
     while (ig) {
         tmpig = ig;
         ig = ig->next;
-        SSAFREE_INTERN_GEN (tmpig);
+        SSAFreeInternGen (tmpig);
     }
 
     DBUG_RETURN (ig);

@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 3.2  2001/05/17 13:29:29  cg
+ * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
+ * converted to functions.
+ *
  * Revision 3.1  2000/11/20 18:01:45  sacbase
  * new release made
  *
@@ -89,6 +93,7 @@ extern intern_gen *CreateInternGen (int shape, int stepwidth);
 extern intern_gen *AppendInternGen (intern_gen *, int, node *, int);
 extern intern_gen *CopyInternGen (intern_gen *source);
 extern intern_gen *MoveInternGen (intern_gen *source, intern_gen **dest);
+extern intern_gen *FreeInternGen (intern_gen *tmp);
 extern intern_gen *FreeInternGenChain (intern_gen *ig);
 
 /******************************************************************************
@@ -105,18 +110,7 @@ extern intern_gen *FreeInternGenChain (intern_gen *ig);
 #define DEF_MASK 0
 #define USE_MASK 1
 
-/* index_info related macros. See FREE_INDEX_INFO in free.h */
+/* index_info related macros. */
 #define INDEX(n) ((index_info *)ASSIGN_INDEX (n))
-
-/* intern_gen related macros*/
-#define FREE_INTERN_GEN(tmp)                                                             \
-    {                                                                                    \
-        FREE (tmp->l);                                                                   \
-        FREE (tmp->u);                                                                   \
-        FREE (tmp->step);                                                                \
-        FREE (tmp->width);                                                               \
-        FREE (tmp);                                                                      \
-        tmp = NULL;                                                                      \
-    }
 
 #endif

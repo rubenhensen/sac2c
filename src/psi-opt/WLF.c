@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/17 13:29:29  cg
+ * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
+ * converted to functions.
+ *
  * Revision 3.8  2001/04/30 12:18:21  nmw
  * integrate traversal of special fundefs in WLT traversal
  *
@@ -613,7 +617,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
                     ig->width[dim] = cut;
                     /* if u - l is smaller than width, the newig is empty */
                     if (newig->u[dim] <= newig->l[dim]) {
-                        FREE_INTERN_GEN (newig);
+
                     } else {
                         buf = (constval - newig->u[dim] + 1 + newig->step[dim]
                                - newig->width[dim]);
@@ -1211,10 +1215,10 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
     }
 
     if (new_gen_step) {
-        FREE_INTERN_GEN (new_gen_step);
+        new_gen_step = FreeInternGen (new_gen_step);
     }
     if (new_gen_nostep) {
-        FREE_INTERN_GEN (new_gen_nostep);
+        new_gen_nostep = FreeInternGen (new_gen_nostep);
     }
 
     DBUG_RETURN (intersect_intern_gen);
@@ -1403,7 +1407,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     DBUG_PRINT ("WLF", ("  ...starting transformations..."));
     transf2 = DuplicateIndexInfo (transformations);
     error = TransformationRangeCheck (transf2, substwln, target_ig);
-    FREE_INDEX_INFO (transf2);
+    transf2 = FreeIndexInfo (transf2);
     if (error) {
         ABORT (NODE_LINE (idn),
                ("array access to %s out of range in dimension %i", ID_NAME (idn), error));
