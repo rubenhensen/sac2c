@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.132  1998/06/19 16:35:09  dkr
+ * added -noUIP
+ *
  * Revision 1.131  1998/06/19 12:51:31  srs
  * compute_malloc_align_step() => ComputeMallocAlignStep()
  *
@@ -888,6 +891,8 @@ MAIN
             opt_wlf = 0;
         else if (OptCmp (*argv, "oRCO"))
             opt_rco = 0;
+        else if (OptCmp (*argv, "oUIP"))
+            opt_uip = 0;
         else
             SYSWARN (("Unknown compiler option '-n%s`", *argv));
     }
