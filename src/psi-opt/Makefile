@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2004/11/24 15:00:20  ktr
+# removed INCS
+#
 # Revision 3.24  2004/10/20 08:10:29  khf
 # added resolvedependencies.o
 #
@@ -76,12 +79,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-
-INCS = -I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
-       -I../print -I../optimize -I../constants -I../flatten
-
-
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
      wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
