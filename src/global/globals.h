@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/10/04 11:58:34  sbs
+ * secret option "sbs" added!
+ *
  * Revision 2.18  1999/10/04 09:24:53  sbs
  * linenum moved from scanparse to globals!
  *
@@ -18,6 +21,9 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.19  1999/10/04 11:58:34  sbs
+ * secret option "sbs" added!
+ *
  * Revision 2.18  1999/10/04 09:24:53  sbs
  * linenum moved from scanparse to globals!
  *
@@ -126,6 +132,8 @@
 #define PF_MAXFUN 100
 #define PF_MAXFUNAP 100
 #define PF_MAXFUNNAMELEN 100
+
+extern int sbs;
 
 extern char version_id[];
 extern char target_platform[];

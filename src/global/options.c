@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  1999/10/04 11:58:34  sbs
+ * secret option "sbs" added!
+ *
  * Revision 2.20  1999/08/05 13:33:59  jhs
  * Added OPT_MTI.
  *
@@ -471,6 +474,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('w', profileflag |= PROFILE_WITH);
         ARG_FLAGMASK_END ();
     });
+
+    ARGS_FLAG ("sbs", sbs = 1);
 
     ARGS_OPTION ("target", target_name = ARG);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/10/04 11:58:34  sbs
+ * secret option "sbs" added!
+ *
  * Revision 2.17  1999/10/04 09:24:53  sbs
  * linenum moved from scanparse to globals!
  *
@@ -366,6 +369,11 @@ int minarray = 4;
 int max_overload = 10;
 int max_optcycles = 4;
 int initial_heapsize = 2;
+
+/*
+ * special hidden options!
+ */
+int sbs = 0;
 
 /*
  * Display options
