@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/03/31 15:12:02  bs
+ * CFid modified. Now we are using a new access macro MRD_GETCFID
+ *
  * Revision 2.8  1999/03/31 12:19:14  srs
  * fixed bug in ArrayPrf(), F_mordarray
  *
@@ -616,7 +619,13 @@ CFid (node *arg_node, node *arg_info)
     inside_wl *iw;
 
     DBUG_ENTER ("CFid");
-    mrd = MRD_GETSUBST (ID_VARNO (arg_node), INFO_CF_VARNO (arg_info));
+
+    /*
+     * This is old stuff:
+     *
+     * mrd = MRD_GETSUBST( ID_VARNO(arg_node), INFO_CF_VARNO( arg_info));
+     */
+    mrd = MRD_GETCFID (ID_VARNO (arg_node), INFO_CF_VARNO (arg_info));
 
     /*
      * check if this is an Id introduced by flatten (for WLs). This
@@ -705,8 +714,14 @@ CFid (node *arg_node, node *arg_info)
             arg_node = DupTree (mrd, NULL);
             cf_expr++;
             break;
-        case N_prf:
         case N_array:
+            if ((ARRAY_VECTYPE (mrd) == T_int) && (ID_INTVEC (arg_node) == NULL)) {
+                ID_VECLEN (arg_node) = ARRAY_VECLEN (mrd);
+                ID_INTVEC (arg_node)
+                  = CopyIntVector (ARRAY_VECLEN (mrd), ARRAY_INTVEC (mrd));
+            }
+            break;
+        case N_prf:
         case N_ap:
         case N_with:
         case N_Nwith:
@@ -815,8 +830,8 @@ CFwhile (node *arg_node, node *arg_info)
      * is the condition a variable, which can be infered to false?
      */
     if (N_id == NODE_TYPE (WHILE_COND (arg_node))) {
-        MRD_GETLAST (last_value, ID_VARNO (WHILE_COND (arg_node)),
-                     INFO_CF_VARNO (arg_info));
+        last_value
+          = MRD_GETLAST (ID_VARNO (WHILE_COND (arg_node)), INFO_CF_VARNO (arg_info));
         if (last_value && (N_bool == NODE_TYPE (last_value))) {
             if (!BOOL_VAL (last_value))
                 trav_body = FALSE;
@@ -1797,7 +1812,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         old_arg[1] = arg[1];
 
         if (N_id == NODE_TYPE (arg[0])) {
-            MRD_GETDATA (value, arg[0]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
+            value = MRD_GETDATA (arg[0]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
             if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
                 arg[0] = DupTree (value, NULL);
@@ -1816,7 +1831,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         }
 
         if (N_id == NODE_TYPE (arg[1])) {
-            MRD_GETDATA (value, arg[1]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
+            value = MRD_GETDATA (arg[1]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
             if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
                 arg[1] = DupTree (value, NULL);
@@ -2040,7 +2055,7 @@ ArrayPrf (node *arg_node, node *arg_info)
          */
         /*
          *      if (N_id == NODE_TYPE(arg[1])) {
-         *        MRD_GETDATA(value, arg[1]->info.ids->node->varno,
+         *        value = MRD_GETDATA(arg[1]->info.ids->node->varno,
          * INFO_CF_VARNO(arg_info));
          *      }
          *      else {
@@ -2127,7 +2142,7 @@ ArrayPrf (node *arg_node, node *arg_info)
          * Substitute shape-vector
          */
         if (N_id == NODE_TYPE (arg[0])) {
-            MRD_GETDATA (shape, ID_VARNO (arg[0]), INFO_CF_VARNO (arg_info));
+            shape = MRD_GETDATA (ID_VARNO (arg[0]), INFO_CF_VARNO (arg_info));
         } else
             shape = arg[0];
 
@@ -2146,7 +2161,7 @@ ArrayPrf (node *arg_node, node *arg_info)
          *  cannot be folded !
          */
         if (N_id == NODE_TYPE (arg[1])) {
-            MRD_GETDATA (tmpn, ID_VARNO (arg[1]), INFO_CF_VARNO (arg_info));
+            tmpn = MRD_GETDATA (ID_VARNO (arg[1]), INFO_CF_VARNO (arg_info));
             if (IsConst (tmpn))
                 arg[1] = tmpn;
         }
@@ -2206,8 +2221,8 @@ ArrayPrf (node *arg_node, node *arg_info)
                     /* check index of prf modarray */
                     modindex = PRF_ARG2 (array);
                     if (N_id == NODE_TYPE (modindex))
-                        MRD_GETDATA (modindex, ID_VARNO (modindex),
-                                     INFO_CF_VARNO (arg_info));
+                        modindex
+                          = MRD_GETDATA (ID_VARNO (modindex), INFO_CF_VARNO (arg_info));
                     if (IsConstantArray (modindex, N_num)
                         && CompareNumArrayType (shape, modindex)) {
                         if (CompareNumArrayElts (shape, modindex))
@@ -2304,9 +2319,9 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         /* search for mrd index vector and val */
         if (N_id == NODE_TYPE (vectorn))
-            MRD_GETDATA (vectorn, ID_VARNO (vectorn), INFO_CF_VARNO (arg_info));
+            vectorn = MRD_GETDATA (ID_VARNO (vectorn), INFO_CF_VARNO (arg_info));
         if (N_id == NODE_TYPE (valn))
-            MRD_GETDATA (valn, ID_VARNO (valn), INFO_CF_VARNO (arg_info));
+            valn = MRD_GETDATA (ID_VARNO (valn), INFO_CF_VARNO (arg_info));
 
         if (base_array && vectorn && valn && N_array == NODE_TYPE (base_array)
             && IsConstantArray (vectorn, N_num) &&
