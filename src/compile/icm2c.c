@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/05/03 13:09:17  dkr
+ * added icm2c_wl.h
+ *
  * Revision 1.54  1998/04/25 16:25:20  sbs
  *  new icm2c / BEtest mechanism implemented!
  *
@@ -11,7 +14,6 @@
 #include "dbug.h"
 #include "globals.h"
 #include "convert.h"
-#include "icm2c_std.h"
 #include "my_debug.h"
 
 /*
