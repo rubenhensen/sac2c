@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 11:50:02  dkr
+ * function declarations for Make...RcIcm() added
+ *
  * Revision 3.1  2000/11/20 18:01:10  sacbase
  * new release made
  *
@@ -54,6 +57,12 @@
 #ifndef _sac_compile_h
 #define _sac_compile_h
 
+#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) >= 0)
+
+extern node *MakeAdjustRcIcm (char *name, types *type, int rc, int num);
+extern node *MakeIncRcIcm (char *name, types *type, int rc, int num);
+extern node *MakeDecRcIcm (char *name, types *type, int rc, int num);
+
 extern node *Compile (node *arg_node);
 
 extern node *COMPModul (node *arg_node, node *arg_info);
@@ -91,15 +100,8 @@ extern node *COMPMTsignal (node *arg_node, node *arg_info);
 extern node *COMPMTalloc (node *arg_node, node *arg_info);
 extern node *COMPMTsync (node *arg_node, node *arg_info);
 
+extern char *GenericFun (int which, types *type);
 extern node *GetFoldCode (node *fundef);
 extern node *GetFoldVardecs (node *fundef);
-
-#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) >= 0)
-
-#define FUN_DOES_REFCOUNT(fundef, i)                                                     \
-    ((FUNDEF_STATUS (fundef) != ST_Cfun)                                                 \
-     || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)       \
-         && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                              \
-         && FUNDEF_REFCOUNTING (fundef)[i]))
 
 #endif /* _sac_compile_h */
