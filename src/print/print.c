@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.213  1998/05/07 08:07:24  cg
+ * Macro ICMs are prefixed with SAC_ now.
+ *
  * Revision 1.212  1998/05/05 11:16:32  srs
  * modified MASK output of PrintWith
  *
@@ -1978,7 +1981,9 @@ node *
 PrintIcm (node *arg_node, node *arg_info)
 {
     int compiled_icm = 0;
+
     DBUG_ENTER ("PrintIcm");
+
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
     INDENT
@@ -2012,7 +2017,7 @@ PrintIcm (node *arg_node, node *arg_info)
             INDENT;
         }
 
-        fprintf (outfile, "%s(", ICM_NAME (arg_node));
+        fprintf (outfile, "SAC_%s(", ICM_NAME (arg_node));
         if (NULL != ICM_ARGS (arg_node)) {
             Trav (ICM_ARGS (arg_node), arg_info);
         }
