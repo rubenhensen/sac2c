@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/03/13 16:03:20  ktr
+ * Withloop-Scalarization added to optimization-cycle
+ *
  * Revision 3.34  2001/07/13 13:23:41  cg
  * Unused function GenOptVar eliminated.
  *
@@ -292,6 +295,7 @@
 #include "ArrayElimination.h"
 #include "CSE.h"
 #include "WithloopFolding.h"
+#include "WithloopScalarization.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "index.h"
@@ -331,6 +335,7 @@ int optvar_counter;
 int cse_expr;
 int wlf_expr;
 int wlt_expr;
+int wls_expr;
 int old_wlf_expr, old_wlt_expr;
 int ap_padded;
 int ap_unsupported;
@@ -372,6 +377,7 @@ ResetCounters ()
     elim_arrays = 0;
     wlf_expr = 0;
     wlt_expr = 0;
+    wls_expr = 0;
     cse_expr = 0;
     ap_padded = 0;
     ap_unsupported = 0;
@@ -389,6 +395,7 @@ ResetCounters ()
  *                       int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
  *                       int off_cse_expr, int off_ap_padded,
  *                       int off_ap_unsupported,
+ *                       int off_wls_expr,
  *                       int flag)
  *
  * description:
@@ -405,7 +412,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_lir_expr, int off_wlir_expr, int off_cf_expr, int off_lunr_expr,
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
-                 int off_ap_unsupported, int flag)
+                 int off_ap_unsupported, int off_wls_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -438,6 +445,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = wlf_expr - off_wlf_expr;
     if ((optimize & OPT_WLF) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) folded", diff));
+
+    diff = wls_expr - off_wls_expr;
+    if ((optimize & OPT_WLS) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d with-loop(s) scalarized", diff));
 
     diff = lir_expr - off_lir_expr;
     if ((optimize & OPT_LIR) && ((ALL == flag) || (diff > 0)))
@@ -706,7 +717,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * index vector elimination
@@ -756,6 +767,7 @@ DONE:
  *        (CF)       |   (applied only if Unrolling succeeded!)
  *        UNS        |   (not available in ssa form)
  *        LIR        |
+ *        WLS        |
  *         |--------/
  *         |<-------\
  * loop2: CF         |
@@ -782,6 +794,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_wlf_expr = wlf_expr;
     int mem_wlt_expr = wlt_expr;
     int mem_cse_expr = cse_expr;
+    int mem_wls_expr = wls_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -793,6 +806,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_uns_expr = uns_expr;
     int old_lir_expr = lir_expr;
     int old_wlir_expr = wlir_expr;
+    int old_wls_expr = wls_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -887,7 +901,7 @@ OPTfundef (node *arg_node, node *arg_info)
 
         /*
          * Now, we enter the first loop. It consists of:
-         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, and LIR.
+         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, LIR and WLS.
          */
         do {
             loop1++;
@@ -905,6 +919,7 @@ OPTfundef (node *arg_node, node *arg_info)
             old_uns_expr = uns_expr;
             old_lir_expr = lir_expr;
             old_wlir_expr = wlir_expr;
+            old_wls_expr = wls_expr;
 
             if (optimize & OPT_CSE) {
                 if (use_ssaform) {
@@ -1085,12 +1100,22 @@ OPTfundef (node *arg_node, node *arg_info)
                 && (0 == strcmp (break_specifier, "lir"))) {
                 goto INFO;
             }
+
+            if ((optimize & OPT_WLS) && (use_ssaform)) {
+                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "wls"))) {
+                goto INFO;
+            }
+
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
                   || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                   || (dead_fun + dead_var + dead_expr != old_dcr_expr)
                   || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
                   || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
-                  || (wlir_expr != old_wlir_expr))
+                  || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1175,7 +1200,7 @@ OPTfundef (node *arg_node, node *arg_info)
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
-                         mem_wlt_expr, mem_cse_expr, 0, 0, NON_ZERO_ONLY);
+                         mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, NON_ZERO_ONLY);
 
         if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
