@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.47  2000/08/02 11:14:25  nmw
+ * WARNING for MT with genlib c added
+ *
  * Revision 2.46  2000/08/01 13:43:58  nmw
  * default disabling of PHM in case of c libraries removed
  *
@@ -781,6 +784,11 @@ CheckOptionConsistency ()
        and generate a standard SAC Library */
     if (generatelibrary == GENERATELIBRARY_NOTHING) {
         generatelibrary = GENERATELIBRARY_SAC;
+    }
+    if ((generatelibrary & GENERATELIBRARY_C)
+        && ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW))) {
+        SYSWARN (("Multithreading is not (yet) available when compiling for "
+                  "a c-library."));
     }
 
     /*
