@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.13  2003/04/07 14:23:27  sbs
+ * COMakeConstantFromShape, COCopyScalar2OneElementVector, COConstantData2String, and
+ * COConstant2String added.
+ * COCat implemented as a binary operation (on the outermost axis!).
+ *
  * Revision 1.12  2002/10/07 23:45:03  dkr
  * signature of COGetDataVec() corrected
  *
@@ -78,6 +83,7 @@
 #include "types.h"
 
 typedef struct CONSTANT constant;
+typedef constant *(*binCF) (constant *, constant *);
 
 /***
  ***
@@ -89,6 +95,7 @@ typedef struct CONSTANT constant;
  * Functions for creating constants:
  */
 extern constant *COMakeConstant (simpletype type, shape *shp, void *elems);
+extern constant *COMakeConstantFromShape (shape *shp);
 extern constant *COMakeConstantFromInt (int val);
 extern constant *COMakeConstantFromArray (node *a);
 
@@ -109,6 +116,9 @@ extern void *COGetDataVec (constant *a);
  * Functions for handling / converting constants:
  */
 extern constant *COCopyConstant (constant *a);
+extern constant *COCopyScalar2OneElementVector (constant *a);
+extern char *COConstantData2String (int max_char, constant *a);
+extern char *COConstant2String (constant *a);
 extern void COPrintConstant (FILE *file, constant *a);
 extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);
@@ -135,8 +145,8 @@ extern constant *CODrop (constant *idx, constant *a);
 extern constant *CODim (constant *a);
 extern constant *COShape (constant *a);
 extern constant *COModarray (constant *a, constant *idx, constant *elem);
+extern constant *COCat (constant *a, constant *b);
 /* missing: not yet implemented
-extern constant *  COCat     ( constant *dim, constant *a, constant *b);
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
 
