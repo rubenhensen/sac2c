@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.50  2000/10/27 13:23:13  cg
+ * Added new command line options -aplimit and -apdiaglimit.
+ *
  * Revision 2.49  2000/08/16 09:04:09  dkr
  * minor corrections of error messages done
  *
@@ -223,6 +226,12 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_BEGIN (argc, argv);
 
+    ARGS_FLAG ("apdiag", apdiag = TRUE);
+
+    ARGS_OPTION ("aplimit", { ARG_RANGE (padding_overhead_limit, 0, 100); });
+
+    ARGS_OPTION ("apdiaglimit", ARG_NUM (apdiag_limit));
+
     ARGS_OPTION ("b", {
         char *break_arg = StringCopy (ARG);
 
@@ -442,8 +451,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
-
-    ARGS_FLAG ("apdiag", apdiag = TRUE);
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/10/27 13:23:13  cg
+ * Added new command line options -aplimit and -apdiaglimit.
+ *
  * Revision 2.35  2000/10/24 10:03:04  dkr
  * simpletype_size renamed into basetype_size
  *
@@ -440,10 +443,22 @@ unsigned int generatelibrary = GENERATELIBRARY_NOTHING;
    init: nothing, but changed to default standard SAC library
    if commandline switch is not used */
 
+int padding_overhead_limit = 10;
+/*
+ * Limit for additional resource allocation due to array padding in percentage.
+ * Can be modified via -aplimit option.
+ */
+
 bool apdiag = FALSE;
 /* Diagnostics of array padding may be written into a file.
    Per default no information is written. Use -apdiag to enable
    output to "modulename.ap". */
+
+int apdiag_limit = 20000;
+/*
+ * Limit for size of diagnostic output given in approximate number of lines.
+ * This avoids the creation of extremely huge diagnostic output files.
+ */
 
 /*
  *  Definitions of some global variables necessary for the

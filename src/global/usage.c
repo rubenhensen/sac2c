@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.40  2000/10/27 13:23:13  cg
+ * Added new command line options -aplimit and -apdiaglimit.
+ *
  * Revision 2.39  2000/08/04 13:26:10  mab
  * added description for flag -apdiag
  *
@@ -411,9 +414,20 @@ usage ()
             "\t\t\t\tdefault: -inituheap %d\n\n",
             initial_unified_heapsize);
 
+    printf ("\t -aplimit <limit> \tset the array padding resource allocation\n"
+            "\t\t\t\t  overhead limit to <limit> %%.\n"
+            "\t\t\t\tdefault: -aplimit %d\n\n",
+            padding_overhead_limit);
+
     printf ("\t -apdiag          \tprint additional information for array padding\n"
             "\t\t\t\t  to file 'outfile.ap', where 'outfile' is the\n"
-            "\t\t\t\t  name specified with option -o.\n");
+            "\t\t\t\t  name specified with option -o.\n\n");
+
+    printf ("\t -apdiaglimit <n> \tlimits the amount of information written to\n"
+            "\t\t\t\t  the diagnostic output file created by the -apdiag\n"
+            "\t\t\t\t  option to approximately <n> lines.\n"
+            "\t\t\t\tdefault: -apdiaglimit %d\n\n",
+            apdiag_limit);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 

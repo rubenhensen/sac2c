@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.38  2000/10/27 13:23:13  cg
+ * Added new command line options -aplimit and -apdiaglimit.
+ *
  * Revision 2.37  2000/10/24 10:02:51  dkr
  * simpletype_size renamed into basetype_size
  *
@@ -258,6 +261,8 @@ extern unsigned int generatelibrary;
 #define GENERATELIBRARY_C 0x0002       /* generate C library and headerfile from module */
 
 extern bool apdiag;
+extern int padding_overhead_limit;
+extern int apdiag_limit;
 
 extern int PFfuncntr;
 extern char *PFfunnme[PF_MAXFUN];
