@@ -1,6 +1,11 @@
+
 /*
  *
  * $Log$
+ * Revision 1.10  2004/08/05 16:11:24  ktr
+ * Scalar with-loops are now treated as they always were. By using the
+ * F_wl_assign abstraction we can now explicitly refcount this case.
+ *
  * Revision 1.9  2004/08/04 12:04:58  ktr
  * substituted eacc by emm
  *
@@ -496,6 +501,43 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVprfWLAssign
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MMVprfWLAssign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVprfWLAssign");
+
+    /*
+     * a' = wl_assign( a, A, iv);
+     *
+     * 1. rename RHS
+     * => a' = wl_assign( a, A)
+     */
+    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+
+    /*
+     * 2. insert pair ( a', a) into LUT
+     */
+    InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                     ID_NAME (PRF_ARG1 (arg_node))),
+
+      InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                       ID_VARDEC (PRF_ARG1 (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVprf
  *
  *  @brief Adds the current LHS and the MEM-variable into LUT if this
@@ -525,6 +567,10 @@ MMVprf (node *arg_node, info *arg_info)
 
     case F_suballoc:
         arg_node = MMVprfSuballoc (arg_node, arg_info);
+        break;
+
+    case F_wl_assign:
+        arg_node = MMVprfWLAssign (arg_node, arg_info);
         break;
 
     default:

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2004/08/05 16:11:24  ktr
+ * Scalar with-loops are now treated as they always were. By using the
+ * F_wl_assign abstraction we can now explicitly refcount this case.
+ *
  * Revision 3.123  2004/08/05 11:39:33  ktr
  * index vector is maintained throughout the with-loop iff NWITHID_VECNEEDED
  * is set.
@@ -4136,15 +4140,48 @@ COMPPrfSuballoc (node *arg_node, info *arg_info)
     let_ids = INFO_COMP_LASTIDS (arg_info);
     sc = GetShapeClassFromTypes (IDS_TYPE (let_ids));
 
-    if (sc == C_scl) {
-        ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, MakeNum (0),
-                                 MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
-                                           MakeNum (0)),
-                                 NULL, NULL);
-    } else {
-        ret_node = MakeAssignIcm2 ("WL_SUBALLOC", DupIds_Id_NT (let_ids),
-                                   DupId_NT (PRF_ARG1 (arg_node)), NULL);
-    }
+    DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
+
+    ret_node = MakeAssignIcm2 ("WL_SUBALLOC", DupIds_Id_NT (let_ids),
+                               DupId_NT (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPPrfWLAssign( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_wl_assign
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfWLAssign (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfWLAssign");
+
+    ret_node
+      = MakeAssignIcm5 ("WL_EMM_ASSIGN",
+                        MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
+                                      ID_TYPE (PRF_ARG1 (arg_node)), FALSE, TRUE, FALSE,
+                                      NULL),
+                        MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
+                                      ID_TYPE (PRF_ARG2 (arg_node)), FALSE, TRUE, FALSE,
+                                      NULL),
+                        MakeTypeArgs (ID_NAME (PRF_ARG3 (arg_node)),
+                                      ID_TYPE (PRF_ARG3 (arg_node)), FALSE, FALSE, FALSE,
+                                      NULL),
+                        MakeExprs (MakeSizeArg (PRF_ARG3 (arg_node), TRUE), NULL),
+                        MakeId_Copy (GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
+                        NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -5325,6 +5362,10 @@ COMPPrf (node *arg_node, info *arg_info)
 
         case F_suballoc:
             ret_node = COMPPrfSuballoc (arg_node, arg_info);
+            break;
+
+        case F_wl_assign:
+            ret_node = COMPPrfWLAssign (arg_node, arg_info);
             break;
 
         case F_copy:
@@ -7350,18 +7391,9 @@ COMPWLgridx (node *arg_node, info *arg_info)
                         code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
                                                      ID_REFCNT (cexpr), 1, NULL);
                     } else {
-                        icm_name = "WL_EMM_ASSIGN";
-                        icm_args
-                          = AppendExprs (MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr),
-                                                       FALSE, TRUE, FALSE,
-                                                       MakeIcmArgs_WL_OP2 (arg_node)),
-                                         MakeExprs (MakeId_Copy (
-                                                      GenericFun (0, ID_TYPE (cexpr))),
-                                                    MakeExprs (MakeId_Copy (
-                                                                 GenericFun (1,
-                                                                             ID_TYPE (
-                                                                               cexpr))),
-                                                               NULL)));
+                        icm_name = "WL_INC_OFFSET";
+                        icm_args = MakeExprs (DupIds_Id_NT (wlids),
+                                              MakeExprs (DupId_NT (cexpr), NULL));
                         code_rc_icms = NULL;
                     }
                     break;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/08/05 16:09:50  ktr
+ * Scalar with-loops are now treated as they always were. By using the
+ * F_wl_assign abstraction we can now explicitly refcount this case.
+ *
  * Revision 1.11  2004/08/05 11:38:53  ktr
  * Support for NWITHID_VECNEEDED added.
  *
@@ -2001,6 +2005,17 @@ EMRCprf (node *arg_node, info *arg_info)
          */
         break;
 
+    case F_wl_assign:
+        /*
+         * wl_assign( a, A, iv);
+         *
+         * - a must be refcounted like prf use
+         * - A  must not be counted as it is already counted by WITHOP traversal
+         * - iv must not be counted as it is already counted by WITHID traversal
+         */
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        break;
     default:
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (PRF_ARGS (arg_node) != NULL) {

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/08/05 16:08:00  ktr
+ * Scalar with-loops are now treated as they always were. By using the
+ * F_wl_assign abstraction we can now explicitly refcount this case.
+ *
  * Revision 1.16  2004/08/02 16:14:47  ktr
  * Memory allocation for with-loops is correct now.
  *
@@ -95,6 +99,13 @@
 
 /** <!--******************************************************************-->
  *
+ *  Enumeration of the different traversal modes for WITHOPs
+ *
+ ***************************************************************************/
+typedef enum { ea_memname, ea_shape } ea_withopmode;
+
+/** <!--******************************************************************-->
+ *
  *  Structure used for ALLOCLIST.
  *
  ***************************************************************************/
@@ -114,6 +125,7 @@ struct INFO {
     node *withops;
     node *indexvector;
     bool mustfill;
+    ea_withopmode withopmode;
 };
 
 /**
@@ -124,6 +136,7 @@ struct INFO {
 #define INFO_EMAL_WITHOPS(n) (n->withops)
 #define INFO_EMAL_INDEXVECTOR(n) (n->indexvector)
 #define INFO_EMAL_MUSTFILL(n) (n->mustfill)
+#define INFO_EMAL_WITHOPMODE(n) (n->withopmode)
 
 /**
  * INFO functions
@@ -676,7 +689,9 @@ EMALcode (node *arg_node, info *arg_info)
         }
 
         /*
-         * Insert suballoc/fill combinations for genarray-modarray operators
+         * Insert wl_assign prf for scalar with-loop results
+         *
+         * Insert suballoc/fill combinations for nonscalar with-loop results
          *
          * Ex:
          *   ...
@@ -685,96 +700,151 @@ EMALcode (node *arg_node, info *arg_info)
         if ((NWITHOP_TYPE (withops) == WO_genarray)
             || (NWITHOP_TYPE (withops) == WO_modarray)) {
 
-            /*
-             * Create a new memory variable
-             * Ex: a_mem
-             */
-            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-              = MakeVardec (TmpVarName ("mem"),
-                            DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
-                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            if (TYGetDim (AVIS_TYPE (cexavis)) == 0) {
+                /*
+                 * Create a new value variable
+                 * Ex: a_val
+                 */
+                FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+                  = MakeVardec (TmpVarName ("val"),
+                                DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
+                                FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
 
-            memavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-            AVIS_TYPE (memavis) = TYCopyType (AVIS_TYPE (cexavis));
+                valavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+                AVIS_TYPE (valavis) = TYCopyType (AVIS_TYPE (cexavis));
 
-            /*
-             * Create a new value variable
-             * Ex: a_val
-             */
-            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-              = MakeVardec (TmpVarName ("val"),
-                            DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
-                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+                /*
+                 * Create wl-assign operation
+                 *
+                 * Ex:
+                 *   ...
+                 *   a_val = wl_assign( a, A, iv);
+                 * }: a;
+                 */
+                lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))),
+                               NULL, ST_regular);
+                IDS_AVIS (lhs) = valavis;
+                IDS_VARDEC (lhs) = AVIS_VARDECORARG (valavis);
 
-            valavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-            AVIS_TYPE (valavis) = TYCopyType (AVIS_TYPE (cexavis));
+                arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cexavis))),
+                                NULL, ST_regular);
+                IDS_AVIS (arg1) = cexavis;
+                IDS_VARDEC (arg1) = AVIS_VARDECORARG (cexavis);
 
-            /*
-             * Create fill operation
-             *
-             * Ex:
-             *   ...
-             *   a_val = fill( copy( a), a_mem);
-             * }: a;
-             */
-            lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))), NULL,
-                           ST_regular);
-            IDS_AVIS (lhs) = valavis;
-            IDS_VARDEC (lhs) = AVIS_VARDECORARG (valavis);
+                arg2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
+                                NULL, ST_regular);
+                IDS_AVIS (arg2) = als->avis;
+                IDS_VARDEC (arg2) = AVIS_VARDECORARG (als->avis);
 
-            arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cexavis))), NULL,
-                            ST_regular);
-            IDS_AVIS (arg1) = cexavis;
-            IDS_VARDEC (arg1) = AVIS_VARDECORARG (cexavis);
+                assign = MakeAssign (MakeLet (MakePrf3 (F_wl_assign, MakeIdFromIds (arg1),
+                                                        MakeIdFromIds (arg2),
+                                                        DupTree (INFO_EMAL_INDEXVECTOR (
+                                                          arg_info))),
+                                              lhs),
+                                     assign);
+                AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
 
-            arg2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))), NULL,
-                            ST_regular);
-            IDS_AVIS (arg2) = memavis;
-            IDS_VARDEC (arg2) = AVIS_VARDECORARG (memavis);
+                /*
+                 * Substitute cexpr
+                 *
+                 * Ex:
+                 *   ...
+                 *   a_val = wl_assign( a, A, iv);
+                 * }: a_val;
+                 */
+                EXPRS_EXPR (cexprs) = FreeTree (EXPRS_EXPR (cexprs));
+                EXPRS_EXPR (cexprs) = MakeIdFromIds (DupOneIds (lhs));
+            } else {
+                /*
+                 * Create a new memory variable
+                 * Ex: a_mem
+                 */
+                FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+                  = MakeVardec (TmpVarName ("mem"),
+                                DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
+                                FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
 
-            assign
-              = MakeAssign (MakeLet (MakePrf2 (F_fill,
-                                               MakePrf1 (F_copy, MakeIdFromIds (arg1)),
-                                               MakeIdFromIds (arg2)),
-                                     lhs),
-                            assign);
-            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
+                memavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+                AVIS_TYPE (memavis) = TYCopyType (AVIS_TYPE (cexavis));
 
-            /*
-             * Substitute cexpr
-             *
-             * Ex:
-             *   ...
-             *   a_val = fill( copy( a), a_mem);
-             * }: a_val;
-             */
-            EXPRS_EXPR (cexprs) = FreeTree (EXPRS_EXPR (cexprs));
-            EXPRS_EXPR (cexprs) = MakeIdFromIds (DupOneIds (lhs));
+                /*
+                 * Create a new value variable
+                 * Ex: a_val
+                 */
+                FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+                  = MakeVardec (TmpVarName ("val"),
+                                DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
+                                FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
 
-            /*
-             * Create suballoc assignment
-             *
-             * Ex:
-             *   ...
-             *   a_mem = suballoc( A, iv);
-             *   a_val = fill( copy( a), a_mem);
-             * }: a_val;
-             */
-            lhs = DupOneIds (arg2);
+                valavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+                AVIS_TYPE (valavis) = TYCopyType (AVIS_TYPE (cexavis));
 
-            arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))), NULL,
-                            ST_regular);
-            IDS_AVIS (arg1) = als->avis;
-            IDS_VARDEC (arg1) = AVIS_VARDECORARG (als->avis);
+                /*
+                 * Create fill operation
+                 *
+                 * Ex:
+                 *   ...
+                 *   a_val = fill( copy( a), a_mem);
+                 * }: a;
+                 */
+                lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))),
+                               NULL, ST_regular);
+                IDS_AVIS (lhs) = valavis;
+                IDS_VARDEC (lhs) = AVIS_VARDECORARG (valavis);
 
-            assign = MakeAssign (MakeLet (MakePrf2 (F_suballoc, MakeIdFromIds (arg1),
-                                                    DupTree (
-                                                      INFO_EMAL_INDEXVECTOR (arg_info))),
-                                          lhs),
-                                 assign);
-            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
+                arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cexavis))),
+                                NULL, ST_regular);
+                IDS_AVIS (arg1) = cexavis;
+                IDS_VARDEC (arg1) = AVIS_VARDECORARG (cexavis);
+
+                arg2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))),
+                                NULL, ST_regular);
+                IDS_AVIS (arg2) = memavis;
+                IDS_VARDEC (arg2) = AVIS_VARDECORARG (memavis);
+
+                assign = MakeAssign (MakeLet (MakePrf2 (F_fill,
+                                                        MakePrf1 (F_copy,
+                                                                  MakeIdFromIds (arg1)),
+                                                        MakeIdFromIds (arg2)),
+                                              lhs),
+                                     assign);
+                AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
+
+                /*
+                 * Substitute cexpr
+                 *
+                 * Ex:
+                 *   ...
+                 *   a_val = fill( copy( a), a_mem);
+                 * }: a_val;
+                 */
+                EXPRS_EXPR (cexprs) = FreeTree (EXPRS_EXPR (cexprs));
+                EXPRS_EXPR (cexprs) = MakeIdFromIds (DupOneIds (lhs));
+
+                /*
+                 * Create suballoc assignment
+                 *
+                 * Ex:
+                 *   ...
+                 *   a_mem = suballoc( A, iv);
+                 *   a_val = fill( copy( a), a_mem);
+                 * }: a_val;
+                 */
+                lhs = DupOneIds (arg2);
+
+                arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
+                                NULL, ST_regular);
+                IDS_AVIS (arg1) = als->avis;
+                IDS_VARDEC (arg1) = AVIS_VARDECORARG (als->avis);
+
+                assign = MakeAssign (MakeLet (MakePrf2 (F_suballoc, MakeIdFromIds (arg1),
+                                                        DupTree (INFO_EMAL_INDEXVECTOR (
+                                                          arg_info))),
+                                              lhs),
+                                     assign);
+                AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
+            }
         }
-
         als = als->next;
         withops = NWITHOP_NEXT (withops);
         cexprs = EXPRS_NEXT (cexprs);
@@ -1189,6 +1259,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_alloc:
     case F_suballoc:
     case F_fill:
+    case F_wl_assign:
     case F_alloc_or_reuse:
     case F_inc_rc:
     case F_dec_rc:
@@ -1248,6 +1319,12 @@ EMALwith (node *arg_node, info *arg_info)
      */
 
     /*
+     * Annoate destination memory by traversing WITHOPS
+     */
+    INFO_EMAL_WITHOPMODE (arg_info) = ea_memname;
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    /*
      * In order to build a proper suballoc/fill combinations in each Code-Block
      * it is necessary to know which result variables refer to
      * genarray/modarray - withops
@@ -1271,9 +1348,8 @@ EMALwith (node *arg_node, info *arg_info)
     /*
      * Rebuild ALLOCLIST by traversing WITHOPS
      */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-    }
+    INFO_EMAL_WITHOPMODE (arg_info) = ea_memname;
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     /*
      * Allocate memory for the index vector
@@ -1319,8 +1395,10 @@ EMALwith2 (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMALwith2");
 
     /*
-     * ALLOCLIST is needed to traverse NCODEs and will be rescued there
+     * Annoate destination memory by traversing WITHOPS
      */
+    INFO_EMAL_WITHOPMODE (arg_info) = ea_memname;
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /*
      * In order to build a proper suballoc/fill combinations in each Code-Block
@@ -1346,9 +1424,8 @@ EMALwith2 (node *arg_node, info *arg_info)
     /*
      * Rebuild ALLOCLIST by traversing WITHOPS
      */
-    if (NWITH2_WITHOP (arg_node) != NULL) {
-        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-    }
+    INFO_EMAL_WITHOPMODE (arg_info) = ea_shape;
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /*
      * Allocate memory for the index vector
@@ -1407,103 +1484,101 @@ EMALwithop (node *arg_node, info *arg_info)
         NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
     }
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_foldprf:
-    case WO_foldfun:
-        /*
-         * fold-wl:
-         * fold wls allocate memory on their own
-         */
-        als = FreeALS (als);
-        break;
+    if (INFO_EMAL_WITHOPMODE (arg_info) == ea_memname) {
+        switch (NWITHOP_TYPE (arg_node)) {
+        case WO_modarray:
+        case WO_genarray:
+            /*
+             * Create new identifier for new memory
+             */
+            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+              = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
+                            DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
+                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
 
-    case WO_genarray:
-        /*
-         * If shape information has not yet been gathered it must be
-         * inferred using the default element
-         */
-        if (als->dim == NULL) {
-            DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
-            als->dim = MakePrf2 (F_add_SxS, MakeSizeArg (NWITHOP_SHAPE (arg_node)),
-                                 MakeDimArg (NWITHOP_DEFAULT (arg_node)));
+            wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
+            als->avis = wlavis;
+
+            /*
+             * Annotate which memory is to be used
+             */
+            NWITHOP_MEM (arg_node)
+              = MakeId (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))), NULL,
+                        ST_regular);
+            ID_AVIS (NWITHOP_MEM (arg_node)) = als->avis;
+            ID_VARDEC (NWITHOP_MEM (arg_node)) = AVIS_VARDECORARG (als->avis);
+            break;
+
+        case WO_foldfun:
+        case WO_foldprf:
+            break;
+        case WO_unknown:
+            DBUG_ASSERT ((0), "Unknown Withloop-Type found");
         }
-
-        if (als->shape == NULL) {
-            DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
-            als->shape
-              = MakePrf1 (F_shape,
-                          MakePrf2 (F_genarray, DupNode (NWITHOP_SHAPE (arg_node)),
-                                    DupNode (NWITHOP_DEFAULT (arg_node))));
-        }
-
-        /*
-         * Create new identifier for new memory
-         */
-        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-          = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
-                        DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
-                        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-
-        wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-        AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
-        als->avis = wlavis;
-
-        /*
-         * Annotate which memory is to be used
-         */
-        NWITHOP_MEM (arg_node)
-          = MakeId (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))), NULL,
-                    ST_regular);
-        ID_AVIS (NWITHOP_MEM (arg_node)) = als->avis;
-        ID_VARDEC (NWITHOP_MEM (arg_node)) = AVIS_VARDECORARG (als->avis);
-
-        /*
-         * genarray-wl:
-         * Allocation must remain in ALLOCLIST
-         */
         als->next = INFO_EMAL_ALLOCLIST (arg_info);
         INFO_EMAL_ALLOCLIST (arg_info) = als;
-        break;
+    } else {
+        DBUG_ASSERT (INFO_EMAL_WITHOPMODE (arg_info) == ea_shape,
+                     "Unknown Withop traversal mode");
+        switch (NWITHOP_TYPE (arg_node)) {
+        case WO_foldprf:
+        case WO_foldfun:
+            /*
+             * fold-wl:
+             * fold wls allocate memory on their own
+             */
+            als = FreeALS (als);
+            break;
 
-    case WO_modarray:
-        /*
-         * modarray-wl:
-         * dim, shape are the same as in the modified array
-         */
-        als->dim = MakePrf1 (F_dim, DupNode (NWITHOP_ARRAY (arg_node)));
-        als->shape = MakePrf1 (F_shape, DupNode (NWITHOP_ARRAY (arg_node)));
+        case WO_genarray:
+            /*
+             * If shape information has not yet been gathered it must be
+             * inferred using the default element
+             */
+            if (als->dim == NULL) {
+                DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL,
+                             "Default element required!");
+                als->dim = MakePrf2 (F_add_SxS, MakeSizeArg (NWITHOP_SHAPE (arg_node)),
+                                     MakeDimArg (NWITHOP_DEFAULT (arg_node)));
+            }
 
-        /*
-         * Create new identifier for new memory
-         */
-        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-          = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
-                        DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
-                        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            if (als->shape == NULL) {
+                DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL,
+                             "Default element required!");
+                als->shape
+                  = MakePrf1 (F_shape,
+                              MakePrf2 (F_genarray, DupNode (NWITHOP_SHAPE (arg_node)),
+                                        DupNode (NWITHOP_DEFAULT (arg_node))));
+            }
 
-        wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-        AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
-        als->avis = wlavis;
+            /*
+             * genarray-wl:
+             * Allocation must remain in ALLOCLIST
+             */
+            als->next = INFO_EMAL_ALLOCLIST (arg_info);
+            INFO_EMAL_ALLOCLIST (arg_info) = als;
+            break;
 
-        /*
-         * Annotate which memory is to be used
-         */
-        NWITHOP_MEM (arg_node)
-          = MakeId (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (als->avis))), NULL,
-                    ST_regular);
-        ID_AVIS (NWITHOP_MEM (arg_node)) = als->avis;
-        ID_VARDEC (NWITHOP_MEM (arg_node)) = AVIS_VARDECORARG (als->avis);
+        case WO_modarray:
+            /*
+             * modarray-wl:
+             * dim, shape are the same as in the modified array
+             */
+            als->dim = MakePrf1 (F_dim, DupNode (NWITHOP_ARRAY (arg_node)));
+            als->shape = MakePrf1 (F_shape, DupNode (NWITHOP_ARRAY (arg_node)));
 
-        /*
-         * modarray-wl:
-         * Allocation must remain in ALLOCLIST
-         */
-        als->next = INFO_EMAL_ALLOCLIST (arg_info);
-        INFO_EMAL_ALLOCLIST (arg_info) = als;
-        break;
+            /*
+             * modarray-wl:
+             * Allocation must remain in ALLOCLIST
+             */
+            als->next = INFO_EMAL_ALLOCLIST (arg_info);
+            INFO_EMAL_ALLOCLIST (arg_info) = als;
+            break;
 
-    case WO_unknown:
-        DBUG_ASSERT ((0), "Unknown Withloop-Type found");
+        case WO_unknown:
+            DBUG_ASSERT ((0), "Unknown Withloop-Type found");
+        }
     }
 
     DBUG_RETURN (arg_node);
