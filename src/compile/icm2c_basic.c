@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/07/11 17:29:19  dkr
+ * SizeId() added
+ *
  * Revision 1.3  2002/07/11 13:37:19  dkr
  * functions renamed
  *
@@ -198,13 +201,7 @@ ShapeId (void *nt, char *idx_str, int idx)
 /******************************************************************************
  *
  * Function:
- *   void VectToOffset2( char *offset,
- *                       void *v_any, int dimv,
- *                       void (*v_acc_dim)( void *),
- *                       void (*v_acc_shp)( void *, char *, int),
- *                       void *a_any, int dima,
- *                       void (*a_acc_dim)( void *),
- *                       void (*a_acc_shp)( void *, char *, int))
+ *   void SizeId( void *nt, char *idx_str, int idx)
  *
  * Description:
  *
@@ -212,17 +209,43 @@ ShapeId (void *nt, char *idx_str, int idx)
  ******************************************************************************/
 
 void
-VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
-               void (*v_acc_shp) (void *, char *, int), void *a_any, int dima,
-               void (*a_acc_dim) (void *), void (*a_acc_shp) (void *, char *, int))
+SizeId (void *nt)
+{
+    DBUG_ENTER ("SizeId");
+
+    fprintf (outfile, "SAC_ND_A_SIZE( %s)", (char *)nt);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void VectToOffset2( char *offset,
+ *                       void *v_any, int v_size,
+ *                       void (*v_size_fun)( void *),
+ *                       void (*v_read_fun)( void *, char *, int),
+ *                       void *a_any, int a_dim,
+ *                       void (*a_dim_fun)( void *),
+ *                       void (*a_shape_fun)( void *, char *, int))
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *),
+               void (*v_read_fun) (void *, char *, int), void *a_any, int a_dim,
+               void (*a_dim_fun) (void *), void (*a_shape_fun) (void *, char *, int))
 {
     int i;
 
     DBUG_ENTER ("VectToOffset2");
 
-    if (dimv != 0) {
-        if ((dimv < 0) || (dima < 0)) {
-            DBUG_ASSERT (((v_acc_dim != NULL) && (a_acc_dim != NULL)),
+    if (v_size != 0) {
+        if ((v_size < 0) || (a_dim < 0)) {
+            DBUG_ASSERT (((v_size != NULL) && (a_dim != NULL)),
                          "AUD array without access functions found!");
             INDENT;
             fprintf (outfile, "{\n");
@@ -239,14 +262,14 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
              */
             INDENT;
             fprintf (outfile, "for (SAC__i = ");
-            v_acc_dim (v_any);
+            v_size_fun (v_any);
             fprintf (outfile, "; SAC__i < ");
-            a_acc_dim (a_any);
+            a_dim_fun (a_any);
             fprintf (outfile, "; SAC__i++) {\n");
             indent++;
             INDENT;
             fprintf (outfile, "SAC__rest *= ");
-            a_acc_shp (a_any, "SAC__i", -1);
+            a_shape_fun (a_any, "SAC__i", -1);
             fprintf (outfile, ";\n");
             indent--;
             INDENT;
@@ -255,12 +278,12 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
             /*
              * compute SAC__start
              */
-            if (dimv < 0) {
+            if (v_size < 0) {
                 INDENT;
                 fprintf (outfile, "SAC__start = 0;\n");
                 INDENT;
                 fprintf (outfile, "for (SAC__i = 0; SAC__i < ");
-                v_acc_dim (v_any);
+                v_size_fun (v_any);
                 fprintf (outfile, "; SAC__i++) {\n");
                 indent++;
                 INDENT;
@@ -269,19 +292,19 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
                 fprintf (outfile, "int SAC__j;\n");
                 INDENT;
                 fprintf (outfile, "for (SAC__j = ");
-                v_acc_dim (v_any);
+                v_size_fun (v_any);
                 fprintf (outfile, " - 1; SAC__j > SAC__i;  SAC__j--) {\n");
                 indent++;
                 INDENT;
                 fprintf (outfile, "SAC__tmp *= ");
-                a_acc_shp (a_any, "SAC__i", -1);
+                a_shape_fun (a_any, "SAC__i", -1);
                 fprintf (outfile, ";\n");
                 indent--;
                 INDENT;
                 fprintf (outfile, "}\n");
                 INDENT;
                 fprintf (outfile, "SAC__start += SAC__tmp * ");
-                v_acc_shp (v_any, "SAC__i", -1);
+                v_read_fun (v_any, "SAC__i", -1);
                 fprintf (outfile, ";\n");
                 indent--;
                 INDENT;
@@ -289,15 +312,15 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
             } else {
                 INDENT;
                 fprintf (outfile, "SAC__start =");
-                for (i = dimv - 1; i > 0; i--) {
+                for (i = v_size - 1; i > 0; i--) {
                     fprintf (outfile, " ( ");
-                    a_acc_shp (a_any, NULL, i);
+                    a_shape_fun (a_any, NULL, i);
                     fprintf (outfile, " *");
                 }
-                v_acc_shp (v_any, NULL, i);
-                for (i = 1; i < dimv; i++) {
+                v_read_fun (v_any, NULL, i);
+                for (i = 1; i < v_size; i++) {
                     fprintf (outfile, " + ");
-                    v_acc_shp (v_any, NULL, i);
+                    v_read_fun (v_any, NULL, i);
                     fprintf (outfile, " )");
                 }
                 fprintf (outfile, ";\n");
@@ -309,23 +332,23 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
             INDENT;
             fprintf (outfile, "}\n");
         } else {
-            DBUG_ASSERT (((dimv >= 0) && (dima >= 0)), "illegal dimension found!");
+            DBUG_ASSERT (((v_size >= 0) && (a_dim >= 0)), "illegal dimension found!");
             INDENT;
             fprintf (outfile, "%s = ", offset);
-            for (i = dimv - 1; i > 0; i--) {
+            for (i = v_size - 1; i > 0; i--) {
                 fprintf (outfile, "( ");
-                a_acc_shp (a_any, NULL, i);
+                a_shape_fun (a_any, NULL, i);
                 fprintf (outfile, "* ");
             }
-            v_acc_shp (v_any, NULL, i);
-            for (i = 1; i < dimv; i++) {
+            v_read_fun (v_any, NULL, i);
+            for (i = 1; i < v_size; i++) {
                 fprintf (outfile, "+");
-                v_acc_shp (v_any, NULL, i);
+                v_read_fun (v_any, NULL, i);
                 fprintf (outfile, ") ");
             }
-            for (i = dimv; i < dima; i++) {
+            for (i = v_size; i < a_dim; i++) {
                 fprintf (outfile, "*");
-                a_acc_shp (a_any, NULL, i);
+                a_shape_fun (a_any, NULL, i);
                 fprintf (outfile, " ");
             }
             fprintf (outfile, ";\n");
@@ -342,10 +365,10 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
  *
  * Function:
  *   void VectToOffset( char *offset,
- *                      void *v, int dimv,
- *                      void (*v_acc_dim)( void *),
- *                      void (*v_acc_shp)( void *, char *, int),
- *                      void *a, int dima)
+ *                      void *v_any, int v_size,
+ *                      void (*v_size_fun)( void *),
+ *                      void (*v_read_fun)( void *, char *, int),
+ *                      void *a_nt, int a_dim)
  *
  * Description:
  *
@@ -353,12 +376,13 @@ VectToOffset2 (char *offset, void *v_any, int dimv, void (*v_acc_dim) (void *),
  ******************************************************************************/
 
 void
-VectToOffset (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
-              void (*v_acc_shp) (void *, char *, int), void *a, int dima)
+VectToOffset (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *),
+              void (*v_read_fun) (void *, char *, int), void *a_nt, int a_dim)
 {
     DBUG_ENTER ("VectToOffset");
 
-    VectToOffset2 (offset, v, dimv, v_acc_dim, v_acc_shp, a, dima, DimId, ShapeId);
+    VectToOffset2 (offset, v_any, v_size, v_size_fun, v_read_fun, a_nt, a_dim, DimId,
+                   ShapeId);
 
     DBUG_VOID_RETURN;
 }
