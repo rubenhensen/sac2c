@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/06/02 09:54:53  sbs
+ * Revision 1.15  1995/06/09 15:28:46  hw
+ *  new option '-fcheck_boundary'  inserted
+ *
+ * Revision 1.14  1995/06/02  09:54:53  sbs
  * -bs, -nopsiopt, and -noidex_vect_elimination inserted
  *
  * Revision 1.13  1995/05/26  14:26:02  asi
@@ -91,6 +94,9 @@ usage (char *prg_name)
     printf ("\t\t\t\tu user defined function calls\n");
     printf ("\t\t\t\tp primitive function calls\n");
     printf ("\t\t\t\tw with loop execution\n");
+
+    printf ("\nCOMPILER OPTIONS:\n");
+    printf ("\t -fcheck_boundary\tcheck boundary of arrays while access\n");
 
     printf ("\nC-COMPILER OPTIONS:\n");
     printf ("\t  (these options handed to the C-compiler)\n");
