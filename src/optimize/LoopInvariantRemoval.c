@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/06/23 13:22:52  hw
+ * Revision 1.12  1995/06/26 14:36:40  asi
+ * bug fixed in CheckDown - variables used in an expression, that will be moved up
+ * set to loop invariant for move below loop algorithm
+ *
+ * Revision 1.11  1995/06/23  13:22:52  hw
  * added argument to call of 'DuplicateTypes'
  *
  * Revision 1.10  1995/06/21  09:15:41  asi
@@ -1116,7 +1120,7 @@ CheckDown (node *arg_node, node *arg_info)
     /*
      * if no movements are possible, set the LINVAR-mask.
      */
-    if (NONE == MOVE) {
+    if ((NONE == MOVE) || (MOVE_UP == MOVE)) {
         for (i = 0; i < VARNO; i++) {
             if ((0 < used_vars[i]) && (TRUE == LINVAR[i])) {
                 LINVAR[i] = FALSE;
