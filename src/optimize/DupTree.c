@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/04/11 15:19:28  srs
+ * N_Nwith nodes are now processed by DupNwith() instead of DupChain()
+ *
  * Revision 1.55  1998/04/09 21:21:34  dkr
  * renamed macros:
  *   INLINE -> DUP_INLINE
@@ -196,8 +199,7 @@
 
 #define DUPTRAV(node)                                                                    \
     (node != NULL)                                                                       \
-      ? Trav (node,                                                                      \
-              (arg_info != NULL) ? arg_info : node) /* dkr: copy whole subtree !!! */    \
+      ? Trav (node, arg_info ? arg_info : node) /* dkr: copy whole subtree !!! */        \
       : node
 
 #define DUPCONT(node)                                                                    \
@@ -374,7 +376,7 @@ DupId (node *arg_node, node *arg_info)
 
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.ids
-      = ((arg_node->info.ids == NULL) ? NULL : DupIds (arg_node->info.ids, arg_info));
+      = (!arg_node->info.ids ? NULL : DupIds (arg_node->info.ids, arg_info));
     DUP (arg_node, new_node);
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
@@ -715,6 +717,37 @@ DupConc (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupConc");
 
     new_node = MakeConc (DUPTRAV (CONC_REGION (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupNwith (node *arg_node, node *arg_info)
+{
+    node *new_node, *partn, *coden, *withopn;
+
+    DBUG_ENTER ("DupNwith");
+
+    LEVEL++;
+    partn = Trav (NWITH_PART (arg_node), arg_info);
+    coden = Trav (NWITH_CODE (arg_node), arg_info);
+    withopn = Trav (NWITH_WITHOP (arg_node), arg_info);
+    LEVEL--;
+
+    new_node = MakeNWith (partn, coden, withopn);
+
+    /* copy attributes */
+    DUP (arg_node, new_node);
+    NWITH_PARTS (new_node) = NWITH_PARTS (arg_node);
+    NWITH_REFERENCED_FOLD (new_node) = NWITH_REFERENCED_FOLD (arg_node);
+    NWITH_REFERENCED (new_node) = NWITH_REFERENCED (arg_node);
+    NWITH_COMPLEX (new_node) = NWITH_COMPLEX (arg_node);
+    NWITH_FOLDABLE (new_node) = NWITH_FOLDABLE (arg_node);
+    NWITH_NO_CHANCE (new_node) = NWITH_NO_CHANCE (arg_node);
+
+    NWITH_PRAGMA (new_node) = DUPTRAV (NWITH_PRAGMA (arg_node));
 
     DBUG_RETURN (new_node);
 }
