@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.77  1995/12/01 20:23:56  cg
+ * Revision 1.78  1995/12/21 16:09:20  cg
+ * added option -flink_module and global var link_module
+ *
+ * Revision 1.77  1995/12/01  20:23:56  cg
  * changed compilation sequence: objinit.c now after import.c
  *
  * Revision 1.76  1995/12/01  17:05:47  cg
@@ -315,6 +318,7 @@ int show_icm = 0;
 int traceflag = 0;
 
 int check_boundary = 0;
+int link_module = 0;
 int breakae = 0;
 
 MAIN
@@ -325,7 +329,7 @@ MAIN
         breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
         breakanalysis = 0, breakcheckdec = 0, breakobjects = 0, breakuniquecheck = 0,
         breakrmvoidfun = 0, breakprecompile = 0;
-    int write_sib = 1;
+
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
     char cfilename[MAX_FILE_NAME];
@@ -555,10 +559,6 @@ MAIN
             opt_ae = 0;
         if (!strncmp (*argv, "oAE", 3))
             opt_ae = 0;
-
-        /* temporary command line option to get around problems with writing SIBs */
-        if (!strncmp (*argv, "oSIB", 4))
-            write_sib = 0;
     }
     NEXTOPT
     ARG 'm' : PARM
@@ -614,6 +614,10 @@ MAIN
             check_boundary = 1;
         if (!strncmp (*argv, "CB", 2))
             check_boundary = 1;
+        if (!strncmp (*argv, "link_module", 11))
+            link_module = 1;
+        if (!strncmp (*argv, "LM", 2))
+            link_module = 1;
     }
     NEXTOPT
     OTHER
