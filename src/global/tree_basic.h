@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.177  1998/05/21 10:14:42  dkr
+ * changed some comments
+ *
  * Revision 1.176  1998/05/17 00:08:15  dkr
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  *
@@ -2506,11 +2509,6 @@ extern node *MakeSpmd (node *region);
  ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
  ***    DFMmask_t  LOCAL                 (spmdinit -> spmd... -> compile -> )
  ***
- ***  remarks:
- ***
- ***    INOUT_IDS contains all LET_IDS(...) of the inout-lets found in REGION.
- ***    This is needed by 'compile' to find the right RCs.
- ***
  ***/
 
 extern node *MakeSync (node *region, int first);
@@ -2727,20 +2725,19 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    ids*   DEC_RC_IDS              (refcount -> compile )
  ***
  ***  remarks:
- ***   1)
- ***   The CBLOCK 'plus' the CEXPR is the whole assignment block
- ***   to calculate each element of the WL. The CEXPR is the pseudo
- ***   return statement of the block.
- ***   In the flatten phase every node unequal N_id is flattened from
- ***   the CEXPR into the CBLOCK. After that we do not have to inspect the
- ***   CEXPR for every reason because we know that the *last let assignment*
- ***   in CBLOCK holds the return statement (CEXPR).
  ***
- ***   2)
- ***   The USED component is a reference counter for the NPART_CODE pointer.
- ***   MakeNPart increments it if the code parameter is != NULL,
- ***   FreeNPart decrements it if NPART_CODE is != NULL.
- ***   DupNpart  increments it (implicitly in MakeNPart, see condition above).
+ ***    The CBLOCK 'plus' the CEXPR is the whole assignment block
+ ***    to calculate each element of the WL. The CEXPR is the pseudo
+ ***    return statement of the block.
+ ***    In the flatten phase every node unequal N_id is flattened from
+ ***    the CEXPR into the CBLOCK. After that we do not have to inspect the
+ ***    CEXPR for every reason because we know that the *last let assignment*
+ ***    in CBLOCK holds the return statement (CEXPR).
+ ***
+ ***    The USED component is a reference counter for the NPART_CODE pointer.
+ ***    MakeNPart increments it if the code parameter is != NULL,
+ ***    FreeNPart decrements it if NPART_CODE is != NULL.
+ ***    DupNpart  increments it (implicitly in MakeNPart, see condition above).
  ***
  ***/
 
