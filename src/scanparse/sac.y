@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/06/03 08:43:42  cg
+ * The command line option -noTSP / -doTSP is now implemented by
+ * patching or completely removing the related wlcomp pragmas right
+ * during parsing.
+ *
  * Revision 2.11  1999/05/10 13:28:23  sbs
  * adjusted for bison usage...
  *
@@ -1359,13 +1364,19 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
 
 
 wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
-                      { if (store_wlcomp_pragma_global != NULL) {
+                      {
+                        if (store_wlcomp_pragma_global != NULL) {
                           /* remove old global pragma */
                           store_wlcomp_pragma_global
                             = FreeTree(store_wlcomp_pragma_global);
                         }
-                        store_wlcomp_pragma_global = MakePragma();
-                        PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global) = $3;
+                        if ($3 != NULL) {
+                          store_wlcomp_pragma_global = MakePragma();
+                          PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global) = $3;
+                        }
+                        else {
+                          store_wlcomp_pragma_global = NULL;
+                        }
                       }
                     | /* empty */
                       {
@@ -1373,8 +1384,14 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
                     ;
 
 wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
-                     { $$ = MakePragma();
-                       PRAGMA_WLCOMP_APS($$) = $3;
+                     {
+                       if ($3 != NULL) {
+                         $$ = MakePragma();
+                         PRAGMA_WLCOMP_APS($$) = $3;
+                       }
+                       else {
+                         $$ = NULL;
+                       }
                      }
                    | /* empty */
                      { if (store_wlcomp_pragma_global != NULL) {
@@ -1388,19 +1405,29 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                    ;
 
 wlcomp_expr: DEFAULT
-             { $$ = NULL;
+             {
+               $$ = NULL;
              }
            | id BRACKET_L wlcomp_args wlcomp_expr BRACKET_R
-             { node *tmp = $4;
+             {
+               node *tmp = $4;
 
-               $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
-               /* append $$ to $4 */
-               if (tmp != NULL) {
-                 while (EXPRS_NEXT(tmp) != NULL) {
-                   tmp = EXPRS_NEXT(tmp);
-                 }
-                 EXPRS_NEXT(tmp) = $$;
+               if ((!(optimize & OPT_TSP))
+                   && ((0==strcmp( $1, "BvL0"))
+                       || (0==strcmp( $1, "BvL1"))
+                       || (0==strcmp( $1, "BvL2")))) {
                  $$ = $4;
+               }
+               else {
+                 $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
+                 /* append $$ to $4 */
+                 if (tmp != NULL) {
+                   while (EXPRS_NEXT(tmp) != NULL) {
+                     tmp = EXPRS_NEXT(tmp);
+                   }
+                   EXPRS_NEXT(tmp) = $$;
+                   $$ = $4;
+                 }
                }
              }
            ;
