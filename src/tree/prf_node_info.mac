@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/02/15 10:43:09  mwe
+ * esd_neg and esd_rec added
+ *
  * Revision 3.34  2004/11/25 17:56:53  cg
  * functions renamed.
  *
@@ -224,4 +227,7 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi),
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
           NTCCTprf_dummy, NULL),
 
-  PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCCTprf_dummy, NULL)
+  PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCCTprf_dummy, NULL),
+
+  PRF_IF (F_esd_neg, "F_esd_neg", "_esd_neg_", "esd_neg", FALSE, 1, NTCCTprf_dummy, NULL),
+  PRF_IF (F_esd_rec, "F_uesd_rec", "_esd_rec_", "esd_rec", FALSE, 1, NTCCTprf_dummy, NULL)
