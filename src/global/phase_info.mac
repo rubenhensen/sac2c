@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/26 17:09:22  dkr
+ * PH_rmvoidfun removed
+ *
  * Revision 3.3  2001/01/25 10:17:50  dkr
  * PH_spmdregions renamed into PH_multithread
  *
@@ -73,8 +76,6 @@ PH_SEL (PH_initial, "", 0, 0),
   PH_SEL (PH_objects, "Resolving global objects and reference parameters", 0, 0),
 
   PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", 0, 0),
-
-  PH_SEL (PH_rmvoidfun, "Generating purely functional code", 0, 0),
 
   PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
 
