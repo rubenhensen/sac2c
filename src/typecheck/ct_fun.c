@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/09 14:56:11  sbs
+ * extended type error reporting added
+ *
  * Revision 1.3  2002/09/06 15:16:40  sbs
  * FUNDEF_RETURN now set properly?!
  *
@@ -170,12 +173,17 @@ NTCFUN_udf (te_info *info, ntype *args)
     ntype *res;
     node *fundef, *assign;
     DFT_res *dft_res;
+    te_info *old_info_chn;
 
     DBUG_ENTER ("NTCFUN_udf");
     DBUG_ASSERT ((TYIsProdOfArray (args)), "NTCFUN_udf called with non-fixed args!");
 
     fundef = TEGetWrapper (info);
     assign = TEGetAssign (info);
+
+    old_info_chn = act_info_chn;
+    act_info_chn = info;
+    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn set to %p", info));
 
     if (FUNDEF_IS_LACFUN (fundef)) {
         /*
@@ -215,10 +223,12 @@ NTCFUN_udf (te_info *info, ntype *args)
                 /*
                  * no match at all!
                  */
-                ABORT (linenum,
+                ERROR (linenum,
                        ("No matching definition found for the application of \"%s\" "
                         " to arguments %s",
                         FUNDEF_NAME (fundef), TYType2String (args, FALSE, 0)));
+                act_info_chn = TEGetParent (act_info_chn);
+                TEExtendedAbort ();
             }
 
             TriggerTypeChecking (dft_res);
@@ -229,6 +239,9 @@ NTCFUN_udf (te_info *info, ntype *args)
             TYFreeDFT_res (dft_res);
         }
     }
+
+    act_info_chn = old_info_chn;
+    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn reset to %p", act_info_chn));
 
     DBUG_RETURN (res);
 }

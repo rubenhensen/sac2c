@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2003/09/09 14:56:11  sbs
+ * extended type error reporting added
+ *
  * Revision 1.8  2003/04/11 17:59:01  sbs
  * TEAssureProdValMatchesProdShape added.
  *
@@ -59,12 +62,14 @@ extern void TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype 
 extern ntype *TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
 extern te_info *TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper,
-                            node *assign, void *cffun);
+                            node *assign, void *cffun, te_info *parent);
+extern void TEExtendedAbort ();
 extern int TEGetLine (te_info *info);
 extern char *TEGetKindStr (te_info *info);
 extern char *TEGetNameStr (te_info *info);
 extern node *TEGetWrapper (te_info *info);
 extern node *TEGetAssign (te_info *info);
 extern void *TEGetCFFun (te_info *info);
+extern te_info *TEGetParent (te_info *info);
 
 #endif /* _type_errors_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2003/09/09 14:56:11  sbs
+ * extended type error reporting added
+ *
  * Revision 1.17  2003/05/27 09:33:02  sbs
  * error in NTCPRF_modarrayS eliminated.
  *
@@ -250,7 +253,7 @@ NTCPRF_cast (te_info *info, ntype *elems)
             d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
             s_shp = SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp), shp);
             if (!SHCompareShapes (d_shp, s_shp)) {
-                ABORT (linenum, ("cast type %s does not match expression type %s "
+                ERROR (linenum, ("cast type %s does not match expression type %s "
                                  "as \"%s\" is defined as %s",
                                  TYType2String (cast_t, FALSE, 0),
                                  TYType2String (expr_t, FALSE, 0),
@@ -258,13 +261,14 @@ NTCPRF_cast (te_info *info, ntype *elems)
                                  TYType2String (UTGetBaseType (
                                                   TYGetUserType (TYGetScalar (cast_t))),
                                                 FALSE, 0)));
+                TEExtendedAbort ();
             }
         }
         if (TYIsArray (expr_t) && TYIsUser (TYGetScalar (expr_t))) {
             d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (expr_t))));
             s_shp = SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp), shp);
             if (!SHCompareShapes (d_shp, s_shp)) {
-                ABORT (linenum, ("cast type %s does not match expression type %s "
+                ERROR (linenum, ("cast type %s does not match expression type %s "
                                  "as \"%s\" is defined as %s",
                                  TYType2String (cast_t, FALSE, 0),
                                  TYType2String (expr_t, FALSE, 0),
@@ -272,6 +276,7 @@ NTCPRF_cast (te_info *info, ntype *elems)
                                  TYType2String (UTGetBaseType (
                                                   TYGetUserType (TYGetScalar (expr_t))),
                                                 FALSE, 0)));
+                TEExtendedAbort ();
             }
         }
     } else {
@@ -286,7 +291,7 @@ NTCPRF_cast (te_info *info, ntype *elems)
                   : !SHCompareShapes (SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp),
                                                        shp),
                                       d_shp)) {
-                ABORT (linenum,
+                ERROR (linenum,
                        ("cast type %s does not match expression type %s "
                         "as \"%s\" is defined as %s whereas \"%s\" is defined as %s",
                         TYType2String (cast_t, FALSE, 0),
@@ -299,6 +304,7 @@ NTCPRF_cast (te_info *info, ntype *elems)
                         TYType2String (UTGetBaseType (
                                          TYGetUserType (TYGetScalar (expr_t))),
                                        FALSE, 0)));
+                TEExtendedAbort ();
             }
         }
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/09/09 14:56:11  sbs
+ * extended type error reporting added
+ *
  * Revision 3.32  2003/06/23 13:44:40  sbs
  * type checking for fold wl extended to fix point iteration
  * fixes bug no 18!
@@ -792,6 +795,12 @@ NTCfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("NTCfundef");
 
     if ((FUNDEF_TCSTAT (arg_node) == NTC_not_checked) && !FUNDEF_IS_LACFUN (arg_node)) {
+        /**
+         * we are checking a new function; therefore, the actual
+         * info chain (kept for extended error messages only) is reset:
+         */
+        act_info_chn = NULL;
+        DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn reset to NULL"));
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
     }
 
@@ -1130,7 +1139,7 @@ NTCap (node *arg_node, node *arg_info)
 {
     ntype *args, *res;
     node *wrapper;
-    te_info *info;
+    te_info *old_info_chn;
 
     DBUG_ENTER ("NTCap");
 
@@ -1154,9 +1163,13 @@ NTCap (node *arg_node, node *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     wrapper = AP_FUNDEF (arg_node);
-    info = TEMakeInfo (linenum, "udf", FUNDEF_NAME (wrapper), wrapper,
-                       INFO_NTC_LAST_ASSIGN (arg_info), NULL);
-    res = NTCCTComputeType (NTCFUN_udf, info, args);
+    old_info_chn = act_info_chn;
+    act_info_chn = TEMakeInfo (linenum, "udf", FUNDEF_NAME (wrapper), wrapper,
+                               INFO_NTC_LAST_ASSIGN (arg_info), NULL, act_info_chn);
+    res = NTCCTComputeType (NTCFUN_udf, act_info_chn, args);
+
+    act_info_chn = old_info_chn;
+    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn set back to %p", old_info_chn));
 
     TYFreeType (args);
     INFO_NTC_TYPE (arg_info) = res;
@@ -1202,7 +1215,8 @@ NTCprf (node *arg_node, node *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     prf = PRF_PRF (arg_node);
-    info = TEMakeInfo (linenum, "prf", prf_string[prf], NULL, NULL, NTCPRF_cffuntab[prf]);
+    info = TEMakeInfo (linenum, "prf", prf_string[prf], NULL, NULL, NTCPRF_cffuntab[prf],
+                       NULL);
     res = NTCCTComputeType (NTCPRF_funtab[prf], info, args);
 
     TYFreeType (args);
@@ -1291,7 +1305,7 @@ NTCarray (node *arg_node, node *arg_info)
     num_elems = TYGetProductSize (elems);
     if (num_elems > 0) {
 
-        info = TEMakeInfo (linenum, "prf", "array-constructor", NULL, NULL, NULL);
+        info = TEMakeInfo (linenum, "prf", "array-constructor", NULL, NULL, NULL, NULL);
         type = NTCCTComputeType (NTCPRF_array, info, elems);
 
         TYFreeType (elems);
@@ -1416,7 +1430,7 @@ NTCcast (node *arg_node, node *arg_info)
     }
     cast_t = TYOldType2Type (CAST_TYPE (arg_node));
 
-    info = TEMakeInfo (linenum, "prf", "type-cast", NULL, NULL, NULL);
+    info = TEMakeInfo (linenum, "prf", "type-cast", NULL, NULL, NULL, NULL);
     type = NTCCTComputeType (NTCPRF_cast, info, TYMakeProductType (2, cast_t, expr_t));
 
     INFO_NTC_TYPE (arg_info) = TYGetProductMember (type, 0);
@@ -1596,7 +1610,7 @@ NTCNgenerator (node *arg_node, node *arg_info)
         gen = TYMakeProductType (3, lb, idx, ub);
     }
 
-    info = TEMakeInfo (linenum, "wl", "generator", NULL, NULL, NULL);
+    info = TEMakeInfo (linenum, "wl", "generator", NULL, NULL, NULL, NULL);
     res = NTCCTComputeType (NTCWL_idx, info, gen);
     TYFreeType (gen);
 
@@ -1704,7 +1718,7 @@ NTCNwithop (node *arg_node, node *arg_info)
         INFO_NTC_TYPE (arg_info) = NULL;
 
         args = TYMakeProductType (3, gen, shp, body);
-        info = TEMakeInfo (linenum, "with", "genarray", NULL, NULL, NULL);
+        info = TEMakeInfo (linenum, "with", "genarray", NULL, NULL, NULL, NULL);
         res = NTCCTComputeType (NTCWL_gen, info, args);
 
         break;
@@ -1718,7 +1732,7 @@ NTCNwithop (node *arg_node, node *arg_info)
         INFO_NTC_TYPE (arg_info) = NULL;
 
         args = TYMakeProductType (3, gen, shp, body);
-        info = TEMakeInfo (linenum, "with", "modarray", NULL, NULL, NULL);
+        info = TEMakeInfo (linenum, "with", "modarray", NULL, NULL, NULL, NULL);
         res = NTCCTComputeType (NTCWL_mod, info, args);
 
         break;
@@ -1738,7 +1752,7 @@ NTCNwithop (node *arg_node, node *arg_info)
          * Then, we compute the type of the elements to be folded:
          */
         args = TYMakeProductType (2, shp, body);
-        info = TEMakeInfo (linenum, "with", "fold", NULL, NULL, NULL);
+        info = TEMakeInfo (linenum, "with", "fold", NULL, NULL, NULL, NULL);
         res = NTCCTComputeType (NTCWL_fold, info, args);
         elems = TYGetProductMember (res, 0);
         res = TYFreeTypeConstructor (res);
@@ -1760,7 +1774,7 @@ NTCNwithop (node *arg_node, node *arg_info)
         args = TYMakeProductType (2, acc, elems);
         wrapper = NWITHOP_FUNDEF (arg_node);
         info = TEMakeInfo (linenum, "fold fun", FUNDEF_NAME (wrapper), wrapper,
-                           INFO_NTC_LAST_ASSIGN (arg_info), NULL);
+                           INFO_NTC_LAST_ASSIGN (arg_info), NULL, NULL);
         res = NTCCTComputeType (NTCFUN_udf, info, args);
 
         ok = SSINewTypeRel (TYGetProductMember (res, 0), acc);
