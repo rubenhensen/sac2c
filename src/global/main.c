@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.81  1996/01/05 12:27:29  cg
+ * Revision 1.82  1996/01/16 16:43:14  cg
+ * added/modified debug options -dnocleanup, -dcheck_malloc
+ * and -dcheck_boundary
+ *
+ * Revision 1.81  1996/01/05  12:27:29  cg
  * C-compiler call is now an ordinary compilation phase.
  * Module/class implementations are compiled to SAC libraries.
  * The filename handling (-o option) is moved to scnprs.c
@@ -353,9 +357,8 @@ int show_refcnt = 0;
 int show_idx = 0;
 int show_icm = 0;
 int traceflag = 0;
-
+int check_malloc = 0;
 int breakae = 0;
-
 int check_boundary = 0;
 int cleanup = 1;
 
@@ -596,10 +599,8 @@ MAIN
             opt_ae = 0;
         else if (!strncmp (*argv, "oAE", 3))
             opt_ae = 0;
-        else if (!strncmp (*argv, "ocleanup", 8))
-            cleanup = 0;
         else
-            SYSWARN (("Unknown compiler option '%s`", *argv));
+            SYSWARN (("Unknown compiler option '-n%s`", *argv));
     }
     NEXTOPT
     ARG 'm' : PARM
@@ -654,12 +655,22 @@ MAIN
          */
     }
     NEXTOPT
-    ARG 'f' : PARM
+    ARG 'd' : PARM
     {
         if (!strncmp (*argv, "check_boundary", 13))
             check_boundary = 1;
-        if (!strncmp (*argv, "CB", 2))
+        else if (!strncmp (*argv, "CB", 2))
             check_boundary = 1;
+        else if (!strncmp (*argv, "check_malloc", 12))
+            check_malloc = 1;
+        else if (!strncmp (*argv, "CM", 2))
+            check_malloc = 1;
+        else if (!strncmp (*argv, "nocleanup", 9))
+            cleanup = 0;
+        else if (!strncmp (*argv, "NC", 2))
+            cleanup = 0;
+        else
+            SYSWARN (("Unknown debug option '-d%s`", *argv));
     }
     NEXTOPT
     OTHER

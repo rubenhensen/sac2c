@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.37  1996/01/05 12:30:23  cg
+ * Revision 1.38  1996/01/16 16:44:04  cg
+ * added/modified debug options -dnocleanup, -dcheck_malloc
+ * and -dcheck_boundary
+ *
+ * Revision 1.37  1996/01/05  12:30:23  cg
  * new command line option -noclean and -o may specify target
  * directory for compiling module/class implementations
  *
@@ -128,8 +132,17 @@ usage (char *prg_name)
 {
     DBUG_ENTER ("usage");
 
-    printf ("\n%s: usage: %s [options] [filename]\n\n", prg_name, prg_name);
-    printf ("options: -h\t\t\tthis helptext\n");
+    printf ("\n\nNAME:\n\n");
+
+    printf ("\t%s\n", prgname);
+
+    printf ("\n\nSYNOPSIS:\n\n");
+
+    printf ("\t%s [options] [filename]\n", prg_name);
+
+    printf ("\n\nOVERALL OPTIONS:\n\n");
+
+    printf ("\t -h\t\t\tthis helptext\n");
     printf ("\t -#string\t\toptions (string) for DBUG information\n");
     printf ("\t -I path\t\tspecify additional declaration path\n");
     printf ("\t -L path\t\tspecify additional library path\n");
@@ -144,7 +157,8 @@ usage (char *prg_name)
     printf ("\t\t\t\t\t2: basic compile time information\n");
     printf ("\t\t\t\t\t3: full compile time information (default)\n");
 
-    printf ("\nSTOP OPTIONS:\n");
+    printf ("\n\nSTOP OPTIONS:\n\n");
+
     printf ("\t -bp \t\t\tstop after scan/parse\n");
     printf ("\t -bi \t\t\tstop after module imports\n");
     printf ("\t -bj \t\t\tstop after object init transformation\n");
@@ -161,9 +175,10 @@ usage (char *prg_name)
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
     printf ("\t -bl \t\t\tstop after preparing code generation\n");
-    printf ("\t -bc \t\t\tstop unresolved ICM code\n");
+    printf ("\t -bc \t\t\tstop after generating ICM code\n");
 
-    printf ("\nOPTIMIZATION OPTIONS:\n");
+    printf ("\n\nOPTIMIZATION OPTIONS:\n\n");
+
     printf ("\t -noopt \t\t\t\t  no optimizations\n");
     printf ("\n\t -nosacopt \t\t\t\t  no sac optimizations\n");
     printf ("\t -noconstant_folding or -noCF \t\t  no constant folding \n");
@@ -195,28 +210,33 @@ usage (char *prg_name)
             "\t\t\t\tDefault: -maxoverload %d\n",
             max_overload);
 
-    printf ("\nTRACE OPTIONS:\n");
-    printf ("\t -t [arupw] \t\ttrace array-opts\n");
-    printf ("\t\t\t\ta trace all(same as rupw)\n");
-    printf ("\t\t\t\tm memory ops\n");
-    printf ("\t\t\t\tr refcount ops\n");
-    printf ("\t\t\t\tu user defined function calls\n");
-    printf ("\t\t\t\tp primitive function calls\n");
-    printf ("\t\t\t\tw with loop execution\n");
+    printf ("\n\nDEBUG OPTIONS:\n\n");
 
-    printf ("\nCOMPILER OPTIONS:\n");
-    printf ("\t -fcheck_boundary\tcheck boundary of arrays upon access\n");
-    printf ("\t -nocleanup\t\tdon't remove temporary files and directories\n");
+    printf ("\t -t [arupwm] \t\ttrace program execution\n");
+    printf ("\t\t\t\ta: trace all (same as rupwm)\n");
+    printf ("\t\t\t\tm: trace memory operations\n");
+    printf ("\t\t\t\tr: trace refcount operations\n");
+    printf ("\t\t\t\tu: trace user defined function calls\n");
+    printf ("\t\t\t\tp: trace primitive function calls\n");
+    printf ("\t\t\t\tw: trace with loop execution\n");
 
-    printf ("\nC-COMPILER OPTIONS:\n");
-    printf ("\t  (these options handed to the C-compiler)\n");
+    printf ("\t -dcheck_boundary\tcheck boundary of arrays upon access\n");
+    printf ("\t -dnocleanup\t\tdon't remove temporary files and directories\n");
+    printf ("\t -dcheck_malloc\t\tcheck success of memory allocations\n");
+
+    printf ("\n\nC-COMPILER OPTIONS:\t(handed to the C-compiler)\n\n");
+
+    /*   printf("\t  (These options are handed to the C-compiler)\n");*/
     printf ("\t -g \t\t\tinclude debug information\n");
     printf ("\t -O[123] \t\tC-compiler level of optimization\n");
 
-    printf ("\nENVIROMENT VARIABLES:\n");
+    printf ("\n\nENVIRONMENT VARIABLES:\n\n");
+
     printf ("\t SAC_PATH\t\tsearch paths for program source\n");
     printf ("\t SAC_DEC_PATH\t\tsearch paths for declarations\n");
     printf ("\t SAC_LIBRARY_PATH\tsearch paths for libraries\n");
+
+    printf ("\n");
 
     DBUG_VOID_RETURN;
 }
