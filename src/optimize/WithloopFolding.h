@@ -1,6 +1,9 @@
-/* 	$Id$	 */
-/*
+/* 	$Id$
+ *
  * $Log$
+ * Revision 1.4  1998/02/06 14:33:29  srs
+ * RCS-Test
+ *
  * Revision 1.3  1998/02/06 14:32:49  srs
  * *** empty log message ***
  *
