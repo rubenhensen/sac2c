@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.7  1998/04/08 20:23:36  srs
+ * adjusted parameters of Tree2InternGen,
+ * intern_gen chain is now set free in CreateFullPartition.
+ *
  * Revision 1.6  1998/04/08 07:46:05  srs
  * fixed bug in CreateFullPartition
  *
@@ -299,7 +303,7 @@ CreateFullPartition (node *wln, node *arg_info)
         NWITH_CODE (wln) = coden;
 
         /* now, create the new parts */
-        ig = Tree2InternGen (wln);
+        ig = Tree2InternGen (wln, NULL);
         ig_parts = 1;
         /* create surrounding cuboids */
         ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
@@ -307,10 +311,10 @@ CreateFullPartition (node *wln, node *arg_info)
         if (ig->step)
             ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig, coden);
 
-        InternGen2Tree (wln, ig);
-        NWITH_PARTS (wln) = ig_parts;
+        wln = InternGen2Tree (wln, ig);
 
         /* free the above made arrays */
+        ig = FreeInternGenChain (ig);
         FREE (array_null);
         if (WO_genarray == NWITH_TYPE (wln))
             FREE (array_shape); /* no mem allocated in case of modarray. */
@@ -711,7 +715,7 @@ WLTNwith (node *arg_node, node *arg_info)
 
     INFO_WLI_ASSIGN (arg_info) = old_assignn;
 
-    /* generate full partition (genarray, modarray) or let NWITH_PARTS be 1. */
+    /* generate full partition (genarray, modarray). */
     if (NWITH_FOLDABLE (arg_node)
         && (WO_genarray == NWITH_TYPE (arg_node) || WO_modarray == NWITH_TYPE (arg_node)))
         arg_node = CreateFullPartition (arg_node, arg_info);
