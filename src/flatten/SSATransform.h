@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/11/25 15:15:00  sbs
+ * SSATdoTransformAllowGos renamed into SSATdoTransformAllowGOs
+ *
  * Revision 1.10  2004/11/25 13:53:47  mwe
  * SSATids added
  *
@@ -85,7 +88,7 @@
  *
  *****************************************************************************/
 extern node *SSATdoTransform (node *ast);
-extern node *SSATdoTransformAllowGos (node *ast);
+extern node *SSATdoTransformAllowGOs (node *ast);
 extern node *SSATdoTransformExplicitAllocs (node *ast);
 extern node *SSATdoTransformOneFunction (node *fundef);
 extern node *SSATdoTransformOneFundef (node *fundef);
