@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ *
  * Revision 1.7  2004/11/24 19:40:47  skt
  * SACDevCampDK 2k4
  *
@@ -45,6 +48,7 @@
  *****************************************************************************/
 
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "DupTree.h"
 #include "traverse.h"
 #include "create_withinwith.h"
@@ -246,14 +250,22 @@ CRWIWap (node *arg_node, info *arg_info)
         /* let's duplicate it */
         else {
             /* LaC-functions are handled seperatly */
-            if (!FUNDEF_ISDOFUN (my_fundef) && !FUNDEF_ISCONDFUN (my_fundef)) {
+            if (!FUNDEF_ISLACFUN (my_fundef)) {
                 tmp = DUPdoDupNode (my_fundef);
+
+                /*
+                 * insert copied fundef into fundef chain
+                 */
                 FUNDEF_NEXT (tmp) = FUNDEF_NEXT (my_fundef);
                 FUNDEF_NEXT (my_fundef) = tmp;
+
+                /*
+                 * immediately insert indirectly copied special fundefs into
+                 * fundef chain
+                 */
+                FUNDEF_NEXT (tmp)
+                  = TCappendFundef (DUPgetCopiedSpecialFundefs (), FUNDEF_NEXT (tmp));
             } else {
-                INFO_CRWIW_MODULE (arg_info)
-                  = DUPcheckAndDupSpecialFundef (INFO_CRWIW_MODULE (arg_info), my_fundef,
-                                                 INFO_CRWIW_ACTASSIGN (arg_info));
                 tmp
                   = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (INFO_CRWIW_ACTASSIGN (arg_info))));
             }

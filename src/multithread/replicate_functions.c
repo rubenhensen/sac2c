@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ *
  * Revision 1.6  2004/11/24 19:40:47  skt
  * SACDevCampDK 2k4
  *
@@ -42,6 +45,7 @@
  *****************************************************************************/
 
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "DupTree.h"
 #include "traverse.h"
 #include "replicate_functions.h"
@@ -53,18 +57,15 @@
  */
 struct INFO {
     node *actassign;
-    node *module;
     mtexecmode_t execmode;
 };
 
 /*
  * INFO macros
  *    node    REPFUN_ACTASSIGN
- *    node    REPFUN_MODUL
  *    node    REPFUN_EXECMODE
  */
 #define INFO_REPFUN_ACTASSIGN(n) (n->actassign)
-#define INFO_REPFUN_MODULE(n) (n->module)
 #define INFO_REPFUN_EXECMODE(n) (n->execmode)
 
 /*
@@ -80,7 +81,6 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_REPFUN_ACTASSIGN (result) = NULL;
-    INFO_REPFUN_MODULE (result) = NULL;
     INFO_REPFUN_EXECMODE (result) = MUTH_ANY;
 
     DBUG_RETURN (result);
@@ -111,6 +111,7 @@ REPFUNdoReplicateFunctions (node *arg_node)
 {
     info *arg_info;
     trav_t traversaltable;
+
     DBUG_ENTER ("REPFUNdoReplicateFunctions");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "REPFUNdoReplicateFunctions expects a N_module as arg_node");
@@ -119,18 +120,36 @@ REPFUNdoReplicateFunctions (node *arg_node)
 
     TRAVpush (TR_repfun);
 
-    INFO_REPFUN_MODULE (arg_info) = arg_node;
-
-    DBUG_PRINT ("REPFUN", ("trav into modul-funs"));
-    TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("REPFUN", ("trav from modul-funs"));
-
-    arg_node = INFO_REPFUN_MODULE (arg_info);
+    DBUG_PRINT ("REPFUN", ("trav into module"));
+    arg_node = TRAVdo (arg_node, arg_info);
+    DBUG_PRINT ("REPFUN", ("trav from module"));
 
     traversaltable = TRAVpop ();
     DBUG_ASSERT ((traversaltable == TR_repfun), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *REPFUNmodule(node *arg_node, info *arg_info)
+ *
+ *   @brief  Inits the traversal for this phase
+ *
+ *   @param arg_node a N_module
+ *   @return the N_module with replicated, correct assigned functions
+ *
+ *****************************************************************************/
+node *
+REPFUNmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("REPFUNmodule");
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -158,6 +177,10 @@ REPFUNfundef (node *arg_node, info *arg_info)
         if (FUNDEF_EXECMODE (arg_node) != MUTH_ANY) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
+    }
+
+    if (FUNDEF_NEXT (arg_node) == NULL) {
+        FUNDEF_NEXT (arg_node) = DUPgetCopiedSpecialFundefs ();
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -331,7 +354,6 @@ REPFUNassign (node *arg_node, info *arg_info)
 node *
 REPFUNap (node *arg_node, info *arg_info)
 {
-    bool build_replications;
     node *my_fundef; /* shortcut to avoid AP_FUNDEF(arg_node) x-times */
     node *tmp_1, *tmp_2;
     DBUG_ENTER ("REPFUNap");
@@ -345,19 +367,12 @@ REPFUNap (node *arg_node, info *arg_info)
           = INFO_REPFUN_EXECMODE (arg_info);
         my_fundef = AP_FUNDEF (arg_node);
 
-        /* some initialization */
-        build_replications = TRUE;
-
         /* EX/ST/MT-companions available => do not replicate function */
-        if (FUNDEF_COMPANION (my_fundef) != NULL) {
-            if (FUNDEF_EXECMODE (my_fundef) != MUTH_ANY) {
-                build_replications = FALSE;
-            }
-        }
 
-        if (build_replications == TRUE) {
+        if ((FUNDEF_COMPANION (my_fundef) == NULL)
+            || (FUNDEF_EXECMODE (my_fundef) == MUTH_ANY)) {
             /* LaC-functions are handled seperatly */
-            if (!FUNDEF_ISDOFUN (my_fundef) && !FUNDEF_ISCONDFUN (my_fundef)) {
+            if (!FUNDEF_ISLACFUN (my_fundef)) {
                 tmp_1 = DUPdoDupNode (my_fundef);
                 tmp_2 = DUPdoDupNode (my_fundef);
 
@@ -405,13 +420,21 @@ REPFUNap (node *arg_node, info *arg_info)
                     AP_FUNDEF (arg_node) = my_fundef;
                 }
             } else {
-                INFO_REPFUN_MODULE (arg_info)
-                  = DUPcheckAndDupSpecialFundef (INFO_REPFUN_MODULE (arg_info), my_fundef,
-                                                 INFO_REPFUN_ACTASSIGN (arg_info));
+#if 0
+        /*
+         * This way copies of special functions are made, but as they are
+         * inserted in the beginning of the fundef chain, they will never
+         * be traversed. 
+         * Does that make sense?
+         */
+        INFO_REPFUN_MODULE(arg_info) 
+          = DUPcheckAndDupSpecialFundef(INFO_REPFUN_MODULE(arg_info),
+                                        my_fundef,
+                                        INFO_REPFUN_ACTASSIGN(arg_info));
+#endif
             }
-        }
-        /* => build_replications == FALSE) */
-        else {
+        } else {
+            /* do not build replications) */
             /* search for the fundef with correct executionmode */
             if (INFO_REPFUN_EXECMODE (arg_info) != MUTH_ANY) {
                 while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
