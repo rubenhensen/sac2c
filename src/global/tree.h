@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1995/06/23 12:18:43  hw
+ * Revision 1.44  1995/06/26 14:07:56  hw
+ * added new macros (moved from compile.c )
+ *
+ * Revision 1.43  1995/06/23  12:18:43  hw
  * enlarged macro TYP_IF
  *
  * Revision 1.42  1995/06/06  14:06:28  cg
@@ -280,6 +283,18 @@ typedef struct NODE {
  */
 
 #define GEN_NODE(type) (type *)malloc (sizeof (type))
+
+#define MAKENODE_NUM(no, nr)                                                             \
+    no = MakeNode (N_num);                                                               \
+    no->info.cint = nr
+
+#define MAKENODE_ID(no, str)                                                             \
+    no = MakeNode (N_id);                                                                \
+    no->IDS = MakeIds (str)
+
+#define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
+    no = MakeNode (N_id);                                                                \
+    no->IDS = Ids
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
