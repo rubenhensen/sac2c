@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/07/22 15:09:09  ktr
+ * updated call to WithloopScalarization
+ *
  * Revision 3.64  2004/07/19 14:24:52  sah
  * removed useless second argument
  * to ArrayElimination
@@ -1145,7 +1148,7 @@ OPTfundef (node *arg_node, info *arg_info)
             }
 
             if (optimize & OPT_WLS) {
-                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
+                arg_node = WithloopScalarization (arg_node);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
