@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1996/01/02 07:57:37  cg
+ * Revision 1.3  1996/01/02 16:01:35  cg
+ * first really running revision
+ *
+ * Revision 1.2  1996/01/02  07:57:37  cg
  * first working revision
  *
  * Revision 1.1  1995/12/29  17:19:26  cg
@@ -120,13 +123,21 @@ MakeArchive (char *name)
     sprintf (systemcall, "mkdir __tmp_sac");
     MAKESYSCALL;
 
-    sprintf (systemcall, "mkdir __tmp_store");
+    sprintf (systemcall, "mkdir __tmp_store_o");
     MAKESYSCALL;
 
     sprintf (systemcall, "mv %s.o __tmp_sac", name);
     MAKESYSCALL;
 
-    sprintf (systemcall, "mv *.o __tmp_store");
+    sprintf (systemcall, "touch __tmp_store.o");
+    MAKESYSCALL;
+
+    /*
+     *  The last system call assures that at least one .o file exists in
+     *  the current directory, otherwise 'mv *.o ...' causes error messages.
+     */
+
+    sprintf (systemcall, "mv *.o __tmp_store_o");
     MAKESYSCALL;
 
     tmp = afilelist;
@@ -135,14 +146,14 @@ MakeArchive (char *name)
         sprintf (systemcall, "ar x %s", STRINGS_STRING (tmp));
         MAKESYSCALL;
 
+        sprintf (systemcall, "mv *.o __tmp_sac");
+        MAKESYSCALL;
+
+        sprintf (systemcall, "rm -f __.SYMDEF");
+        MAKESYSCALL;
+
         tmp = FreeOneStrings (tmp);
     }
-
-    sprintf (systemcall, "mv *.o __tmp_sac");
-    MAKESYSCALL;
-
-    sprintf (systemcall, "rm -f __.SYMDEF");
-    MAKESYSCALL;
 
     tmp = ofilelist;
 
@@ -159,16 +170,19 @@ MakeArchive (char *name)
     sprintf (systemcall, "ranlib %s.a", name);
     MAKESYSCALL;
 
-    sprintf (systemcall, "mv  __tmp_store/*.o .");
+    sprintf (systemcall, "mv  __tmp_store_o/*.o .");
     MAKESYSCALL;
 
-    sprintf (systemcall, "rm __sac_tmp/*.o");
+    sprintf (systemcall, "rm __tmp_store.o");
     MAKESYSCALL;
 
-    sprintf (systemcall, "rmdir __sac_tmp");
+    sprintf (systemcall, "rm __tmp_sac/*.o");
     MAKESYSCALL;
 
-    sprintf (systemcall, "rmdir __sac_store");
+    sprintf (systemcall, "rmdir __tmp_sac");
+    MAKESYSCALL;
+
+    sprintf (systemcall, "rmdir __tmp_store_o");
     MAKESYSCALL;
 
     NEWLINE (2);
@@ -346,24 +360,18 @@ AddToLinklist (char *mod)
 
     DBUG_ENTER ("AddToLinklist");
 
-    if (0 != strcmp (mod, MODUL_NAME (syntax_tree))) {
-        /*
-         *  The global variable syntax_tree is used here by purpose because
-         *  it is the easiest way to access the current module name anywhere
-         *  in the syntax tree.
-         */
+    tmp = linklist;
 
-        tmp = linklist;
+    while ((tmp != NULL) && (strcmp (STRINGS_STRING (tmp), mod) != 0)) {
+        tmp = STRINGS_NEXT (tmp);
+    }
 
-        while ((tmp != NULL) && (strcmp (STRINGS_STRING (tmp), mod) != 0)) {
-            tmp = STRINGS_NEXT (tmp);
-        }
+    if (tmp == NULL) {
+        linklist = MakeStrings (mod, linklist);
 
-        if (tmp == NULL) {
-            linklist = MakeStrings (mod, linklist);
-
-            DBUG_PRINT ("LINK", ("Added %s to linklist", mod));
-        }
+        DBUG_PRINT ("LINK", ("Added %s to linklist", mod));
+    } else {
+        DBUG_PRINT ("LINK", ("module %s already in linklist", mod));
     }
 
     DBUG_VOID_RETURN;
@@ -388,12 +396,10 @@ LINKfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LINKfundef");
 
+    DBUG_PRINT ("LINK", ("Checking function %s", ItemName (arg_node)));
+
     if (FUNDEF_LINKMOD (arg_node) != NULL) {
         AddToLinklist (FUNDEF_LINKMOD (arg_node));
-    } else {
-        if (FUNDEF_MOD (arg_node) != NULL) {
-            AddToLinklist (FUNDEF_MOD (arg_node));
-        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -422,12 +428,10 @@ LINKobjdef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LINKobjdef");
 
+    DBUG_PRINT ("LINK", ("Checking object %s", ItemName (arg_node)));
+
     if (OBJDEF_LINKMOD (arg_node) != NULL) {
         AddToLinklist (OBJDEF_LINKMOD (arg_node));
-    } else {
-        if (OBJDEF_MOD (arg_node) != NULL) {
-            AddToLinklist (OBJDEF_MOD (arg_node));
-        }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
