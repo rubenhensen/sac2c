@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/02/20 15:51:02  nmw
+ * debug output added
+ *
  * Revision 1.3  2001/02/15 16:56:36  nmw
  * some DBUG_ASSERTS added
  *
@@ -252,6 +255,9 @@ CAVids (ids *arg_ids, node *arg_info)
         DBUG_PRINT ("CAV", ("backreference from ids %s to N_avis corrected.",
                             IDS_VARDEC_NAME (arg_ids)));
         IDS_AVIS (arg_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
+    } else {
+        DBUG_PRINT ("CAV", ("backreference from ids %s to N_avis ok.",
+                            IDS_VARDEC_NAME (arg_ids)));
     }
 
     DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "AVIS reference still unset.");
