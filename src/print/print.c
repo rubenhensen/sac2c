@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.144  2003/11/12 08:47:08  sbs
+ * optional default expression is now printed as well
+ *
  * Revision 3.143  2003/11/04 17:26:38  cg
  * Fixed a bug in printing/scanning of individual escape characters.
  * Escape characters are stored in OCTAL representation !!
@@ -3777,6 +3780,10 @@ PrintNwithop (node *arg_node, node *arg_info)
     case WO_genarray:
         fprintf (outfile, "genarray( ");
         Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            fprintf (outfile, ", ");
+            Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
         break;
 
     case WO_modarray:
