@@ -19,7 +19,6 @@ compare_tree.c
 compare_tree.h
 free.c
 free.h
-node_info.mac
 prf.h
 prf_node_info.mac
 scheduling.c
