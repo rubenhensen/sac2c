@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.58  2004/07/23 13:59:13  ktr
+ * AP arguments are no longer replaced by constants as this is now done
+ * by ConstVarPropagation.
+ *
  * Revision 1.57  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -2114,18 +2118,10 @@ SSACFap (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-    /* substitute scalar constants in arguments (if no special function) */
-    if (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node))) {
-        INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
-    } else {
-        INFO_SSACF_INSCONST (arg_info)
-          = SUBST_SCALAR && SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
-    }
-
-    /* traverse arg chain */
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
-    }
+    /*
+     * Do not subsitute constants in arguments as this is now handled
+     * by ConstVarPropagation
+     */
     INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
 
     /* traverse special fundef without recursion */
