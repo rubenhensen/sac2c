@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.18  2004/11/23 17:13:46  khf
+  made numparams from N_pragma permanent, added Last in N_sync
+  and corrected flag IsFoldable
+
   Revision 1.17  2004/11/23 16:47:25  skt
   corrected the traversal id of explicit copy
 
@@ -1954,6 +1958,12 @@
             <all />
           </phases>
         </attribute>
+        <attribute name="NumParams" default="0" mandatory="no">
+          <type name="Integer" />
+          <phases>
+            <all/>
+          </phases>
+        </attribute>
         <attribute name="InitFun" mandatory="no">
           <type name="String" />
           <phases>
@@ -1972,13 +1982,7 @@
             <range from="import" to="readsib" />
           </phases>
         </attribute>
-        <attribute name="NumParams" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <range from="import" to="readsib" />
-          </phases>
-        </attribute>
-      </attributes>
+       </attributes>
       <flags></flags>
     </node>
     <node name="CSEinfo">
@@ -2417,11 +2421,11 @@
         </attribute>
       </attributes>
       <flags>
-        <flag name="First">
+         <flag name="First">
           <description>Flag whether the sync-region is the first
           one of the current SMPD-region</description>
-        </flag>
-        <flag>
+         </flag>
+         <flag name="Last">
           <description>Flag whether the sync-region is the last one
           of the current SMPD-region</description>
         </flag>
@@ -2546,7 +2550,7 @@
         </attribute>
       </attributes>
       <flags>
-        <flag name="IsFolable" />
+        <flag name="IsFoldable" />
 	<flag name="IsDependent" />
       </flags>
     </node>
