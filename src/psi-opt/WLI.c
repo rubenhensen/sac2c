@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.9  1999/11/15 18:05:36  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.8  1999/11/11 20:04:33  dkr
  * signature and name of function IsConstantArray changed
  *
@@ -433,9 +436,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
 
     data1 = data2 = NULL;
     if (N_id == NODE_TYPE (PRF_ARG1 (prfn)))
-        data1 = MRD_GETDATA (ID_VARNO (PRF_ARG1 (prfn)), INFO_VARNO);
+        data1 = MRD_GETDATA (ID_VARNO (PRF_ARG1 (prfn)), INFO_VARNO (arg_info));
     if (N_id == NODE_TYPE (PRF_ARG2 (prfn)))
-        data2 = MRD_GETDATA (ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO);
+        data2 = MRD_GETDATA (ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO (arg_info));
 
     /* Which argument is the constant (so which will be the Id)? */
     if (N_num == NODE_TYPE (PRF_ARG1 (prfn)) || IsConstArray (PRF_ARG1 (prfn))) {
@@ -918,7 +921,7 @@ WLINwith (node *arg_node, node *arg_info)
     tmpn = MakeInfo ();
     tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
     tmpn->mask[1] = INFO_USE; /* to be identical. */
-    tmpn->varno = INFO_VARNO;
+    tmpn->varno = INFO_VARNO (arg_info);
     INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
     INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
     INFO_WLI_NEXT (tmpn) = arg_info;
@@ -959,7 +962,7 @@ WLINwith (node *arg_node, node *arg_info)
     arg_info = INFO_WLI_NEXT (arg_info);
     INFO_DEF = tmpn->mask[0];
     INFO_USE = tmpn->mask[1];
-    INFO_VARNO = tmpn->varno;
+    INFO_VARNO (arg_info) = tmpn->varno;
     FREE (tmpn);
 
     DBUG_RETURN (arg_node);

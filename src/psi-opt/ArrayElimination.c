@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/11/15 18:06:13  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.6  1999/11/11 20:05:11  dkr
  * signature and name of function IsConstantArray changed
  *
@@ -321,7 +324,7 @@ AEprf (node *arg_node, node *arg_info)
     if (F_psi == PRF_PRF (arg_node)) {
         tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
         if (N_id == NODE_TYPE (tmpn))
-            tmpn = MRD_GETDATA (ID_VARNO (tmpn), INFO_VARNO);
+            tmpn = MRD_GETDATA (ID_VARNO (tmpn), INFO_VARNO (arg_info));
 
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));

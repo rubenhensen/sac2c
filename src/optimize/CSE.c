@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/11/15 18:07:53  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.4  1999/09/02 07:00:22  sbs
  * extended CSE for abstracting arrays also.
  * Since I did not yet have time to check that properly - per default -
@@ -337,7 +340,7 @@ node *
 CSEid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CSEid");
-    ID_DEF (arg_node) = MRD_GETCSE (ID_VARNO (arg_node), INFO_VARNO);
+    ID_DEF (arg_node) = MRD_GETCSE (ID_VARNO (arg_node), INFO_VARNO (arg_info));
     DBUG_RETURN (arg_node);
 }
 
@@ -351,7 +354,7 @@ Equal (node *arg1, node *arg2, node *arg_info)
 
     if (N_id == NODE_TYPE (arg1)) {
         varno1 = ID_VARNO (arg1);
-        ID_DEF (arg1) = arg1 = MRD_GETCSE (ID_VARNO (arg1), INFO_VARNO);
+        ID_DEF (arg1) = arg1 = MRD_GETCSE (ID_VARNO (arg1), INFO_VARNO (arg_info));
     }
 
     if (N_id == NODE_TYPE (arg2)) {
@@ -569,7 +572,7 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     case N_array:
 #endif
     case N_prf:
-        if (CheckScope (MRD_LIST, equal_node, INFO_VARNO, TRUE)) {
+        if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
             ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
             id_node = MakeId2 (ids_node);
             ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
@@ -579,7 +582,7 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
             new_node = NULL;
         break;
     case N_ap:
-        if (CheckScope (MRD_LIST, equal_node, INFO_VARNO, TRUE)) {
+        if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
             ids *ids1, *ids2;
 
             ids1 = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
@@ -624,7 +627,7 @@ CSEassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("CSE",
                     ("Searching common subexpression for line %d", NODE_LINE (arg_node)));
 
-        while ((i < INFO_VARNO) && (NULL == equal_node)) {
+        while ((i < INFO_VARNO (arg_info)) && (NULL == equal_node)) {
             stack_node = MRD (i);
             equal_node = FindCS (arg_node, stack_node, arg_info);
             i++;
@@ -638,8 +641,8 @@ CSEassign (node *arg_node, node *arg_info)
                 DBUG_PRINT ("CSE", (">Common subexpression eliminated in line %d",
                                     NODE_LINE (arg_node)));
                 cse_expr++;
-                MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO);
-                MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
+                MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO (arg_info));
+                MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO (arg_info));
                 new_node = GenerateMasks (new_node, arg_info);
                 AppendNodeChain (1, new_node, ASSIGN_NEXT (arg_node));
                 ASSIGN_NEXT (arg_node) = NULL;

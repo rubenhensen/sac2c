@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.8  1999/11/15 18:05:31  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.7  1999/07/15 20:38:11  sbs
  * ARRAY_ISCONST set where MakeArray is called.
  *
@@ -1435,7 +1438,7 @@ WLFfundef (node *arg_node, node *arg_info)
 
     /* copy number of vardec explicitely in this phase because the OPTTrav()
        mechanism is not used. */
-    INFO_VARNO = FUNDEF_VARNO (arg_node);
+    INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
     wlf_mode = wlfm_search_WL;
     if (FUNDEF_BODY (arg_node))
@@ -1890,7 +1893,7 @@ WLFNwith (node *arg_node, node *arg_info)
         tmpn = MakeInfo ();
         tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
         tmpn->mask[1] = INFO_USE; /* to be identical. */
-        tmpn->varno = INFO_VARNO;
+        tmpn->varno = INFO_VARNO (arg_info);
         INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
         INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
         INFO_WLI_NEXT (tmpn) = arg_info;

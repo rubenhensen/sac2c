@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.12  1999/11/15 18:05:41  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.11  1999/11/11 20:05:05  dkr
  * signature and name of function IsConstantArray changed
  *
@@ -477,7 +480,7 @@ CheckOptimizePsi (node **psi, node *arg_info)
     indexn = PRF_ARG1 ((*psi));
 
     if (N_id == NODE_TYPE (indexn)) {
-        datan = MRD_GETDATA (ID_VARNO (indexn), INFO_VARNO);
+        datan = MRD_GETDATA (ID_VARNO (indexn), INFO_VARNO (arg_info));
     } else
         datan = indexn;
 
@@ -813,7 +816,7 @@ WLTNwith (node *arg_node, node *arg_info)
     tmpn = MakeInfo ();
     tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
     tmpn->mask[1] = INFO_USE; /* to be identical. */
-    tmpn->varno = INFO_VARNO;
+    tmpn->varno = INFO_VARNO (arg_info);
     INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
     INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
     INFO_WLI_NEXT (tmpn) = arg_info;
@@ -889,7 +892,7 @@ WLTNwith (node *arg_node, node *arg_info)
     arg_info = INFO_WLI_NEXT (arg_info);
     INFO_DEF = tmpn->mask[0];
     INFO_USE = tmpn->mask[1];
-    INFO_VARNO = tmpn->varno;
+    INFO_VARNO (arg_info) = tmpn->varno;
     FREE (tmpn);
 
     DBUG_RETURN (arg_node);
@@ -981,7 +984,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
             }
 
             if (*bound && (NODE_TYPE ((*bound)) == N_id)) {
-                tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO);
+                tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO (arg_info));
                 if (IsConstArray (tmpn)) {
                     /* this bound references a constant array, which may be substituted.
                      */
@@ -1094,8 +1097,8 @@ WLTNgenerator (node *arg_node, node *arg_info)
                                             T_int);
                         /* replace N_empty with new assignment "_ids = [0,..,0]" */
                         assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
-                        ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
-                        ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
+                        ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
+                        ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO (arg_info));
                         BLOCK_INSTR (blockn) = assignn;
 
                         /* replace CEXPR */
@@ -1121,8 +1124,8 @@ WLTNgenerator (node *arg_node, node *arg_info)
                                                             INFO_WLI_WL (arg_info))),
                                                           0),
                                          T_int);
-                        ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
-                        ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
+                        ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
+                        ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO (arg_info));
                     }
                 } else {
                     if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info)))

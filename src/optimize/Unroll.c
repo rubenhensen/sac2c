@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/11/15 18:05:12  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.4  1999/05/12 14:35:16  cg
  * Optimizations are now triggered by bit field optimize instead
  * of single individual int variables.
@@ -190,7 +193,7 @@ UNRid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNRid");
     arg_node->flag = LEVEL;
-    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO);
+    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO (arg_info));
     DBUG_RETURN (arg_node);
 }
 
@@ -530,23 +533,27 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
         lunr_expr++;
         switch (loop_info->loop_num) {
         case 0:
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
+                       INFO_VARNO (arg_info));
+            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
+                       INFO_VARNO (arg_info));
+            MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
             FreeTree (arg_node);
             arg_node = MakeNode (N_empty);
             break;
         case 1:
-            MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+            MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
             unroll = arg_node->node[1]->node[0];
             arg_node->node[1]->node[0] = NULL;
             FreeTree (arg_node);
             arg_node = unroll;
             break;
         default:
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
+                       INFO_VARNO (arg_info));
+            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
+                       INFO_VARNO (arg_info));
+            MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
 
             for (i = 0; i < loop_info->loop_num; i++) {
                 tmp = DupTree (arg_node->node[1]->node[0], NULL);
@@ -591,7 +598,8 @@ UNRdo (node *arg_node, node *arg_info)
         cond_node = DO_COND (arg_node);
 
         if (N_id == NODE_TYPE (cond_node))
-            ID_DEF (cond_node) = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO);
+            ID_DEF (cond_node)
+              = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO (arg_info));
 
         loop_info = (linfo *)Malloc (sizeof (linfo));
         loop_info->loop_num = UNDEF;
@@ -766,8 +774,8 @@ UNRNwith (node *arg_node, node *arg_info)
             if (CheckUnrollModarray (arg_node)) {
                 wlunr_expr++;
                 /* remove old mask information */
-                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), VARNO);
-                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), VARNO);
+                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), INFO_VARNO (arg_info));
+                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), INFO_VARNO (arg_info));
                 /* unroll and generate new masks */
                 tmpn = DoUnrollModarray (arg_node,
                                          arg_info); /* returns list of assignments */
@@ -781,8 +789,8 @@ UNRNwith (node *arg_node, node *arg_info)
             if (CheckUnrollGenarray (arg_node, arg_info)) {
                 wlunr_expr++;
                 /* remove old mask information */
-                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), VARNO);
-                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), VARNO);
+                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), INFO_VARNO (arg_info));
+                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), INFO_VARNO (arg_info));
                 /* unroll and generate new masks */
                 tmpn = DoUnrollGenarray (arg_node,
                                          arg_info); /* returns list of assignments */
@@ -796,8 +804,8 @@ UNRNwith (node *arg_node, node *arg_info)
             if (CheckUnrollFold (arg_node)) {
                 wlunr_expr++;
                 /* remove old mask information */
-                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), VARNO);
-                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), VARNO);
+                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), INFO_VARNO (arg_info));
+                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), INFO_VARNO (arg_info));
                 /* unroll and generate new masks */
                 tmpn
                   = DoUnrollFold (arg_node, arg_info); /* returns list of assignments */

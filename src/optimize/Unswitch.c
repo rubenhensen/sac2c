@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/11/15 18:05:19  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ *
  * Revision 2.3  1999/04/19 12:51:57  jhs
  * TRUE and FALSE from internal_lib.h used from now on.
  *
@@ -190,7 +193,7 @@ UNSid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSid");
     arg_node->flag = LEVEL;
-    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO);
+    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO (arg_info));
     DBUG_RETURN (arg_node);
 }
 
@@ -579,8 +582,8 @@ GenLetNode (linfo *loop_info, node *arg_info)
 
     DBUG_ENTER ("GenLetNode");
     assign_node = MakeNode (N_assign);
-    assign_node->mask[0] = GenMask (VARNO);
-    assign_node->mask[1] = GenMask (VARNO);
+    assign_node->mask[0] = GenMask (INFO_VARNO (arg_info));
+    assign_node->mask[1] = GenMask (INFO_VARNO (arg_info));
     INC_VAR (assign_node->mask[0], loop_info->decl_node->varno);
     INC_VAR (arg_info->mask[0], loop_info->decl_node->varno);
 
@@ -637,8 +640,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         uns_expr++;
         /* subtract all variables used and defined in loop from modification masks */
-        MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-        MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+        MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
 
         /* isulate loop */
 #ifndef NEWTREE
@@ -669,8 +672,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         uns_expr++;
         /* subtract all variables used and defined in loop from modification masks */
-        MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-        MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+        MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
 
         /* isulate loop */
 #ifndef NEWTREE
@@ -748,8 +751,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         uns_expr++;
         /* subtract all variables used and defined in loop from modification masks */
-        MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-        MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+        MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
 
         /* isolate loop */
         arg_node1 = arg_node->node[1];
@@ -908,7 +911,7 @@ UNSdo (node *arg_node, node *arg_info)
 
     cond_node = DO_COND (arg_node);
     if (N_id == NODE_TYPE (cond_node))
-        ID_DEF (cond_node) = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO);
+        ID_DEF (cond_node) = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO (arg_info));
 
     loop_info = (linfo *)Malloc (sizeof (linfo));
     loop_info->loop_num = UNDEF;
