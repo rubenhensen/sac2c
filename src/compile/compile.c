@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.42  2000/02/11 21:17:28  dkr
+ * fixed a bug in MakeAllocArrayICMs()
+ *
  * Revision 2.41  2000/02/11 19:21:06  dkr
  * code brushed.
  * fixed a bug: correction of refcounts in conditionals works correctly
@@ -389,19 +392,21 @@ MakeAdjustRcICM (ids *varname, int num)
 {
     node *result;
 
+    DBUG_ENTER ("MakeAdjustRcICM");
+
     if (num > 0) {
         result = MakeAssignIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (varname, NULL)),
                                  MakeNum (num));
     } else {
         if (num == 0) {
             result = NULL;
-        } else /* num < -1 */ {
+        } else { /* num < -1 */
             result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
                                      MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
         }
     }
 
-    return (result);
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -627,8 +632,8 @@ MakeAllocArrayICMs (ids *mm_ids, node *next)
 {
     simpletype s_type;
     node *assign;
-    node *assigns = NULL;
     node *last_assign = NULL;
+    node *assigns = NULL;
 
     DBUG_ENTER ("MakeAllocArrayICMs");
 
@@ -677,8 +682,8 @@ MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
 {
     simpletype s_type;
     node *assign;
-    node *assigns = NULL;
     node *last_assign = NULL;
+    node *assigns = NULL;
 
     DBUG_ENTER ("MakeAllocArrayICMs_reuse");
 
@@ -697,7 +702,7 @@ MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
             } else {
                 ASSIGN_NEXT (last_assign) = assign;
             }
-            last_assign = assign;
+            last_assign = ASSIGN_NEXT (assign);
         }
         mm_ids = IDS_NEXT (mm_ids);
     }
@@ -724,8 +729,8 @@ node *
 MakeIncRcICMs (ids *mm_ids, node *next)
 {
     node *assign;
-    node *assigns = NULL;
     node *last_assign = NULL;
+    node *assigns = NULL;
 
     DBUG_ENTER ("MakeIncRcICMs");
 
@@ -770,8 +775,8 @@ node *
 MakeDecRcICMs (ids *mm_ids, node *next)
 {
     node *assign;
-    node *assigns = NULL;
     node *last_assign = NULL;
+    node *assigns = NULL;
 
     DBUG_ENTER ("MakeDecRcICMs");
 
@@ -3368,7 +3373,7 @@ COMPPrf (node *arg_node, node *arg_info)
             arg1 = PRF_ARG1 (arg_node);
             arg2 = PRF_ARG2 (arg_node);
 
-            DBUG_ASSERT ((N_id == NODE_TYPE (arg2)),
+            DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
                          "N_id as 2nd arg of F_reshape expected!");
             if (0 == strcmp (ID_NAME (arg2), IDS_NAME (INFO_COMP_LASTIDS (arg_info)))) {
                 /*
@@ -3390,7 +3395,8 @@ COMPPrf (node *arg_node, node *arg_info)
             break;
         }
         case F_psi: {
-            /* store arguments and result (res contains refcount and pointer to
+            /*
+             * store arguments and result (res contains refcount and pointer to
              * vardec ( don't free INFO_COMP_LASTIDS(arg_info) !!! )
              */
             node *line, *arg1_length;
