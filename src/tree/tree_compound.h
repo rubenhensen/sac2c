@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/06/23 13:04:31  mab
+ * renamed *_VNAME to *_VARDEC_NAME, *_VNEXT to *_VARDEC_NEXT
+ *
  * Revision 1.19  2000/06/21 15:00:49  mab
  * added macros *_PADDED for ARG and VARDEC
  * added INFO_APT_EXPRESSION_PADDED
@@ -231,8 +234,8 @@ extern int IsUnique (types *type);
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
 #define IDS_SHAPE(n, x)                                                                  \
     SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))), x)
-#define IDS_VNAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
-#define IDS_VNEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
+#define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
+#define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
 
 /*
@@ -963,10 +966,6 @@ extern node *AppendVardecs (node *vardecs, node *append);
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
 #define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
-#define VARDEC_OR_ARG_VNAME(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
-#define VARDEC_OR_ARG_VNEXT(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
 #define VARDEC_OR_ARG_PADDED(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
 
@@ -1446,8 +1445,8 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_TYPE(n) VARDEC_OR_ARG_TYPE (ID_VARDEC (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
 #define ID_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n))), x)
-#define ID_VNAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
-#define ID_VNEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
+#define ID_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
+#define ID_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
 
 /*--------------------------------------------------------------------------*/
