@@ -1,195 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/11/25 13:34:29  skt
+ * big compiler brush during SACDevCampDK 2k4
+ *
  * Revision 3.65  2004/10/28 16:58:43  khf
  * support for max_newgens and no_fold_fusion added
- *
- * Revision 3.64  2004/10/23 12:00:31  ktr
- * Added switches for static reuse / static free.
- *
- * Revision 3.63  2004/09/28 14:07:30  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.62  2004/08/12 12:09:29  ktr
- * replaced flag reuse with flag noreuse.
- *
- * Revision 3.61  2004/08/11 11:41:46  khf
- * break specifier for phase wlenhance and optimization wlpg inserted
- *
- * Revision 3.60  2004/08/10 16:13:42  ktr
- * reuse inference in EMM can now be activated using -reuse.
- *
- * Revision 3.59  2004/08/04 12:04:20  ktr
- * substituted eacc by emm
- *
- * Revision 3.58  2004/07/23 15:53:50  ktr
- * - removed OPT_BLIR
- * - removed -ktr
- * - added -emm -do/noeacc
- *
- * Revision 3.57  2004/04/21 16:38:56  ktr
- * Added SSA-based refcounting
- *
- * Revision 3.56  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.55  2004/02/25 08:22:32  cg
- * Elimination of while-loops by conversion into do-loops with
- * leading conditional integrated into flatten.
- * Separate compiler phase while2do eliminated.
- *
- * Revision 3.54  2004/02/05 10:37:14  cg
- * Re-factorized handling of different modes in multithreaded code
- * generation:
- * - Added enumeration type for representation of modes
- * - Renamed mode identifiers to more descriptive names.
- *
- * Revision 3.53  2003/12/10 16:07:14  skt
- * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
- *
- * Revision 3.52  2003/10/19 22:02:31  dkrHH
- * description of -intrinsic for new backend corrected
- *
- * Revision 3.51  2003/09/17 18:12:29  dkr
- * RCAO renamed into DAO for new backend
- *
- * Revision 3.50  2003/09/16 16:10:11  sbs
- * type inference options separated
- * specmode option added.
- *
- * Revision 3.49  2003/08/16 08:38:03  ktr
- * SelectionPropagation added. Must currently be activated with -dosp.
- *
- * Revision 3.48  2003/08/05 11:36:19  ktr
- * Support for maxwls added.
- *
- * Revision 3.47  2003/07/28 15:35:06  cg
- * Added short version identification option (-V).
- * Full version information is now available with -VV
- * (verbose version).
- *
- * Revision 3.46  2003/06/16 15:11:40  sbs
- * corrected the sequence of break specifyers on b14 grgrgrgrgr!
- *
- * Revision 3.45  2003/04/14 14:39:45  sbs
- * cast of the result of strlen into int eliminated; constantant
- * casted into size_t instead.
- *
- * Revision 3.44  2003/04/14 13:51:05  sbs
- * return value of strlen casted to int now.
- *
- * Revision 3.43  2003/03/24 16:36:52  sbs
- * cppI added
- *
- * Revision 3.42  2003/03/13 17:18:30  dkr
- * -minarrayrep activated for new backend only
- *
- * Revision 3.41  2003/03/13 15:49:19  dkr
- * -minarrayrep added
- *
- * Revision 3.40  2003/03/12 23:32:57  dkr
- * some break specifiers for -b15 removed
- *
- * Revision 3.39  2003/03/12 19:04:18  dkr
- * error corrected
- *
- * Revision 3.38  2003/03/12 17:30:02  dkr
- * some new break specifiers for -b15 added
- *
- * Revision 3.37  2003/03/09 19:16:06  dkr
- * -tracea added
- *
- * Revision 3.36  2003/02/19 12:48:44  sbs
- * printing TAGGED_ARRAYS info on sac2c -V now!
- *
- * Revision 3.35  2002/11/14 13:33:12  dkr
- * minor changes done
- *
- * Revision 3.34  2002/11/08 13:29:45  cg
- * Added infos concerning Fred Fish DBUG package options.
- * Beautified entire layout of usage screen.
- * Modified contact information to new domain sac-home.org.
- * Added Stephan Herhut as new developer to sac2c.
- *
- * Revision 3.33  2002/10/30 14:19:42  dkr
- * -enforceIEEE for with-loops implemented now
- *
- * Revision 3.32  2002/10/25 16:01:55  mwe
- * option enforce_ieee added
- * rename DLAW to DL
- *
- * Revision 3.31  2002/10/24 13:12:32  ktr
- * level of WLS aggressiveness now controlled by flag -wls_aggressive
- *
- * Revision 3.30  2002/10/19 13:16:25  dkr
- * some \n added
- *
- * Revision 3.29  2002/10/18 14:16:50  ktr
- * changed option -wlsx to -wls <level>
- *
- * Revision 3.28  2002/10/17 17:53:08  ktr
- * added option -wlsx for aggressive WLS
- *
- * Revision 3.27  2002/09/05 12:05:08  dkr
- * -b7:n2o added
- *
- * Revision 3.26  2002/09/03 22:27:21  dkr
- * CONT_BREAK_SPEC added
- *
- * Revision 3.25  2002/08/13 10:51:44  sbs
- * break specifiers for flatten and typecheck (new type checker)
- * added.
- *
- * Revision 3.24  2002/07/15 19:05:07  dkr
- * -intrinsic flag modified for new backend
- *
- * Revision 3.23  2002/07/10 16:33:38  dkr
- * -b2:yacc added
- *
- * Revision 3.22  2002/07/03 15:28:18  dkr
- * -checkt added (for new backend)
- *
- * Revision 3.21  2002/06/24 14:35:34  dkr
- * -intrinsic flag removed for new backend
- *
- * Revision 3.20  2002/06/07 17:04:03  mwe
- * help information for AssociativeLaw added.
- *
- * Revision 3.19  2002/04/09 16:38:30  dkr
- * break specifier for -b18 added
- *
- * Revision 3.18  2002/03/13 16:03:20  ktr
- * Help information for Withloop-Scalarization added
- *
- * Revision 3.17  2002/01/18 11:39:02  sbs
- * updated the copyright notice.
- *
- * Revision 3.16  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.15  2001/05/30 15:50:25  nmw
- * break specifier for cf3 added
- *
- * Revision 3.14  2001/05/25 09:21:56  nmw
- * ssa form related break specifier in optimizations added
- *
- * Revision 3.12  2001/05/07 14:21:24  dkr
- * all output lines contain <= 80 characters now
- *
- * Revision 3.11  2001/04/26 17:10:55  dkr
- * PRINT_BREAK_SPEC added
- *
- * Revision 3.10  2001/04/24 09:39:35  dkr
- * CHECK_NULL renamed into STR_OR_EMPTY
- *
- * Revision 3.9  2001/03/28 14:50:02  dkr
- * CHECK_NULL used
- *
- * Revision 3.8  2001/02/09 14:40:09  nmw
- * ssa switch documentation added
- *
- * Revision 3.7  2001/02/05 15:55:42  dkr
- * break specifier for -b16 updated
  *
  * [...]
  *
@@ -221,7 +37,7 @@
     }
 
 void
-Usage ()
+USGprintUsage ()
 {
     int ph;
     char *env;
@@ -316,7 +132,7 @@ Usage ()
             "                      2: basic compile time information,\n"
             "                      3: full compile time information.\n"
             "                    (default: %d)\n",
-            verbose_level);
+            global.verbose_level);
 
     printf ("\n\nBREAK OPTIONS:\n\n"
 
@@ -329,7 +145,8 @@ Usage ()
             "    -doPAB          Activates printing after break.\n\n");
 
     for (ph = 1; ph <= PH_genccode; ph++) {
-        printf ("    -b %2i           Stop after: %s.\n", ph, compiler_phase_name[ph]);
+        printf ("    -b %2i           Stop after: %s.\n", ph,
+                global.compiler_phase_name[ph]);
     }
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
@@ -466,17 +283,16 @@ Usage ()
     printf ("    with \"-mt -mtmode 3\" (UNDER CONSTRUCTION!!!)\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "init", "Stop after internal initialization.");
-    PRINT_BREAK_SPEC (PH_multithread, "schin", "Stop after schedulings initialized.");
-    PRINT_BREAK_SPEC (PH_multithread, "rfin", "Stop after replicated functions built.");
-    PRINT_BREAK_SPEC (PH_multithread, "blkin", "Stop after ST- and MT-blocks built.");
-    PRINT_BREAK_SPEC (PH_multithread, "blkpp", "Stop after blocks propagated.");
-    PRINT_BREAK_SPEC (PH_multithread, "blkex", "Stop after blocks expanded.");
-    PRINT_BREAK_SPEC (PH_multithread, "mtfin", "Stop after multithread functions built.");
-    PRINT_BREAK_SPEC (PH_multithread, "blkco", "Stop after blocks consolidated.");
-    PRINT_BREAK_SPEC (PH_multithread, "dfa", "Stop after dataflow-analysis.");
-    PRINT_BREAK_SPEC (PH_multithread, "barin", "Stop after barriers initialized.");
-    PRINT_BREAK_SPEC (PH_multithread, "blkli", "Stop after blocks lifted.");
-    PRINT_BREAK_SPEC (PH_multithread, "adjca", "Stop after adjusted calls.");
+    PRINT_BREAK_SPEC (PH_multithread, "tem", "Stop after tagging the executionmode.");
+    PRINT_BREAK_SPEC (PH_multithread, "crwiw",
+                      "Stop after create replications within with-loops.");
+    PRINT_BREAK_SPEC (PH_multithread, "pem", "Stop after propagating the executionmode.");
+    PRINT_BREAK_SPEC (PH_multithread, "cdfg", "Stop after creating the dataflowgraph.");
+    PRINT_BREAK_SPEC (PH_multithread, "asmra", "Stop after assignments rearranging.");
+    PRINT_BREAK_SPEC (PH_multithread, "crece", "Stop after creating the cells.");
+    PRINT_BREAK_SPEC (PH_multithread, "cegro", "Stop after cell growing.");
+    PRINT_BREAK_SPEC (PH_multithread, "repfun", "Stop after replicating functions.");
+    PRINT_BREAK_SPEC (PH_multithread, "concel", "Stop after consolidating the cells.");
 
     printf ("\n");
 
@@ -490,12 +306,12 @@ Usage ()
             "                         akd: try to infer all ranks statically,\n"
             "                         aud: do not specialize at all.\n"
             "                         (default: %s)\n\n",
-            spec_mode_str[spec_mode]);
+            global.spec_mode_str[global.spec_mode]);
 
     printf ("    -maxspec <n>       Individual functions will be specialized at most <n> "
             "times.\n"
             "                         (default: %d)\n",
-            max_overload);
+            global.max_overload);
 
     printf (
       "\n\nOPTIMIZATION OPTIONS:\n\n"
@@ -566,53 +382,53 @@ Usage ()
       "\n"
       "    -maxoptcyc <n>  Repeat optimization cycle <n> times.\n"
       "                      (default: %d)\n\n",
-      max_optcycles);
+      global.max_optcycles);
 
     printf ("    -maxoptvar <n>  Reserve <n> variables for optimization.\n"
             "                      (default: %d)\n\n",
-            optvar);
+            global.optvar);
 
     printf ("    -maxinl <n>     Inline recursive functions at most <n> times.\n"
             "                      (default: %d)\n\n",
-            inlnum);
+            global.inlnum);
 
     printf ("    -maxlur <n>     Unroll loops having at most <n> iterations.\n"
             "                      (default: %d)\n\n",
-            unrnum);
+            global.unrnum);
 
     printf (
       "    -maxwlur <n>    Unroll with-loops with at most <n> elements generator set\n"
       "                    size.\n"
       "                      (default: %d)\n\n",
-      wlunrnum);
+      global.wlunrnum);
 
     printf ("    -maxae <n>      Try to eliminate arrays with at most <n> elements.\n"
             "                      (default: %d)\n\n",
-            minarray);
+            global.minarray);
 
     printf (
       "    -initmheap <n>  At program startup initially request <n> KB of heap memory\n"
       "                    for master thread.\n"
       "                      (default: %d)\n\n",
-      initial_master_heapsize);
+      global.initial_master_heapsize);
 
     printf (
       "    -initwheap <n>  At program startup initially request <n> KB of heap memory\n"
       "                    for each worker thread.\n"
       "                      (default: %d)\n\n",
-      initial_worker_heapsize);
+      global.initial_worker_heapsize);
 
     printf (
       "    -inituheap <n>  At program startup initially request <n> KB of heap memory\n"
       "                    for usage by all threads.\n"
       "                      (default: %d)\n\n",
-      initial_unified_heapsize);
+      global.initial_unified_heapsize);
 
     printf (
       "    -aplimit <n>    Set the array padding resource allocation overhead limit\n"
       "                    to <n> %%.\n"
       "                      (default: %d)\n\n",
-      padding_overhead_limit);
+      global.padding_overhead_limit);
 
     printf (
       "    -apdiag         Print additional information for array padding to file\n"
@@ -624,7 +440,7 @@ Usage ()
       "                    output file created via the -apdiag option to approximately\n"
       "                    <n> lines.\n"
       "                      (default: %d)\n\n",
-      apdiag_limit);
+      global.apdiag_limit);
 
     printf ("    -wls_aggressive Set WLS optimization level to aggressive.\n"
             "                    WARNING:\n"
@@ -638,14 +454,14 @@ Usage ()
             "                    aggressive behaviour will be used even if "
             "-wls_aggressive is\n"
             "                    not given. (default: %d)\n\n",
-            maxwls);
+            global.maxwls);
 
     printf ("    -nofoldfusion   Eliminate fusion of with-loops with fold operator.\n\n"
             "    -maxnewgens <n> Set the maximum number of new created generators while\n"
             "                    intersection of generatorsets from two with-loops in\n"
             "                    with-loop fusion to <n>.\n"
             "                      (default: %d)\n",
-            max_newgens);
+            global.max_newgens);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
@@ -706,8 +522,8 @@ Usage ()
             "                      (default: %d)\n"
             "                    Option applies to \"-mtn\" style parallelization "
             "only.\n",
-            (int)MT_startstop, max_threads, max_sync_fold, min_parallel_size,
-            max_replication_size);
+            (int)MT_startstop, global.max_threads, global.max_sync_fold,
+            global.min_parallel_size, global.max_replication_size);
 
     printf ("\n\nBACKEND OPTIONS:\n\n"
 
@@ -925,7 +741,8 @@ Usage ()
             "        v: write validate\n"
             "        a: write around\n",
             STR_OR_EMPTY (env),
-            ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "", version_id);
+            ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "",
+            global.version_id);
 
     printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
@@ -946,32 +763,22 @@ Usage ()
             "                      s: Use intrinsic sel.\n"
             "                      o: Use intrinsic type conversion.\n");
 
-    printf ("\n\nLIBRARY OPTIONS:\n\n"
+    printf (
+      "\n\nLIBRARY OPTIONS:\n\n"
 
-            "    -genlib <lang>  Specify library format when compiling SAC module/class\n"
-            "                    implementations.\n"
-            "                    Supported values for <lang> are:\n"
-            "                      sac: Generate SAC library file (default).\n"
-            "                        c: Generate C object and header files.\n"
-            "\n"
-            "                    NOTE:\n"
-            "                    Be careful to use same options for privat heap "
-            "management\n"
-            "                    (PHM) and profiling for compilation of all "
-            "modules/classes\n"
-            "                    you are going to link together to a single executable.\n"
-            "\n"
-            "                    NOTE:\n"
-            "                    Multithreading is not yet available for C libraries.\n"
-
-            "\n"
-            "    -l <style>      Specify the link style for generating SAC library "
-            "files.\n"
-            "                    Supported values for <style> are:\n"
-            "                      1: Compile to one large object file.\n"
-            "                      2: Compile to archive of object files.\n"
-            "                    (default: %d)\n",
-            linkstyle);
+      "    -genlib <lang>  Specify library format when compiling SAC module/class\n"
+      "                    implementations.\n"
+      "                    Supported values for <lang> are:\n"
+      "                      sac: Generate SAC library file (default).\n"
+      "                        c: Generate C object and header files.\n"
+      "\n"
+      "                    NOTE:\n"
+      "                    Be careful to use same options for privat heap management\n"
+      "                    (PHM) and profiling for compilation of all modules/classes\n"
+      "                    you are going to link together to a single executable.\n"
+      "\n"
+      "                    NOTE:\n"
+      "                    Multithreading is not yet available for C libraries.\n");
 
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
@@ -994,7 +801,7 @@ Usage ()
             "                    are determined via the sac2crc configuration file.\n"
             "                    For details concerning sac2crc files see below under\n"
             "                    \"customization\".\n",
-            cc_optimize);
+            global.cc_optimize);
 
     printf ("\n\nCUSTOMIZATION:\n\n"
 
@@ -1071,12 +878,13 @@ Usage ()
 }
 
 void
-Version ()
+USGprintVersion ()
 {
-    DBUG_ENTER ("Version");
+    DBUG_ENTER ("USGprintVersion");
 
-    printf ("sac2c %s %s  (%s %s)\n", (version_id[0] == '\0') ? "???" : version_id,
-            (target_platform[0] == '\0') ? "???" : target_platform,
+    printf ("sac2c %s %s  (%s %s)\n",
+            (global.version_id[0] == '\0') ? "???" : global.version_id,
+            (global.target_platform[0] == '\0') ? "???" : global.target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user);
 
@@ -1084,9 +892,9 @@ Version ()
 }
 
 void
-VersionVerbose ()
+USGprintVersionVerbose ()
 {
-    DBUG_ENTER ("VerboseVersion");
+    DBUG_ENTER ("USGprintVerboseVersion");
 
     printf ("\n          SAC - Single Assignment C\n"
             "    ---------------------------------------------\n\n"
@@ -1103,14 +911,14 @@ VersionVerbose ()
             "\n"
 
             "\n",
-            (version_id[0] == '\0') ? "???" : version_id,
-            (target_platform[0] == '\0') ? "???" : target_platform,
+            (global.version_id[0] == '\0') ? "???" : global.version_id,
+            (global.target_platform[0] == '\0') ? "???" : global.target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host,
             (build_os[0] == '\0') ? "???" : build_os);
 
-    printf ("(c) Copyright 1994 - 2002 by\n\n"
+    printf ("(c) Copyright 1994 - 2004 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
             "  Institut fuer Informatik und Praktische Mathematik\n"
@@ -1122,16 +930,16 @@ VersionVerbose ()
 }
 
 void
-Copyright ()
+USGprintCopyright ()
 {
-    DBUG_ENTER ("copyright");
+    DBUG_ENTER ("USGprintCopyright");
 
     printf ("\n          SAC - Single Assignment C\n"
             "    ---------------------------------------------\n\n"
 
             "    SAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
 
-            "(c) Copyright 1994 - 2000 by\n\n"
+            "(c) Copyright 1994 - 2004 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
             "  Institut fuer Informatik und Praktische Mathematik\n"
