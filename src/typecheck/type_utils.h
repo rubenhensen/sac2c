@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/26 22:58:51  sbs
+ * some new utils added
+ * \.
+ *
  * Revision 1.4  2004/11/26 21:15:43  cg
  * Added TUisBoxed()
  *
@@ -30,7 +34,9 @@ extern node *TUrettypes2AUD (node *rets);
 extern node *TUargtypes2AUD (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
 extern bool TUisUniqueUserType (ntype *type);
+extern bool TUisArrayOfUser (ntype *type);
 extern bool TUisHidden (ntype *type);
 extern bool TUisBoxed (ntype *type);
+extern ntype *TUcomputeImplementationType (ntype *ty);
 
 #endif /* _SAC_TYPE_UTILS_H_*/

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/26 22:58:51  sbs
+ * some new utils added
+ * \.
+ *
  * Revision 1.3  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -260,7 +264,7 @@ TUisUniqueUserType (ntype *ty)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("IsUniqueNT");
+    DBUG_ENTER ("TUisUniqueUserType");
 
     if (TYisUser (ty)) {
         node *tdef = UTgetTdef (TYgetUserType (ty));
@@ -271,5 +275,106 @@ TUisUniqueUserType (ntype *ty)
         }
     }
 
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUisHidden( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisHidden (ntype *ty)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("TUisHidden");
+
+    if (TYisUser (TYgetScalar (ty))) {
+        res = (TYgetSimpleType (UTgetBaseType (TYgetUserType (TYgetScalar (ty))))
+               == T_hidden);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUisArrayOfUser( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisArrayOfUser (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ("TUisArrayOfUser");
+
+    res = (TYisUser (TYgetScalar (type)));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUisBoxed( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisBoxed (ntype *type)
+{
+    bool res = FALSE;
+    ntype *impl;
+
+    DBUG_ENTER ("TUisBoxed");
+
+    if (TUisHidden (type)) {
+        impl = TUcomputeImplementationType (type);
+        DBUG_ASSERT (!TYisAUD (impl),
+                     "TUisBoxed called with type of unknown dimensionality");
+        res = (TYisAUDGZ (impl) ? TRUE : TYgetDim (type) > 0);
+        impl = TYfreeType (impl);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *TUcomputeImplementationType( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+ntype *
+TUcomputeImplementationType (ntype *ty)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TUgetImplementationType");
+
+    if (TUisArrayOfUser (ty)) {
+        res = TYnestTypes (ty, UTgetBaseType (TYgetUserType (TYgetScalar (ty))));
+    } else {
+        res = TYcopyType (ty);
+    }
     DBUG_RETURN (res);
 }
