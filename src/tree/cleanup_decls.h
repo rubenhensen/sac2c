@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/22 20:51:06  ktr
+ * SacDevCamp 04
+ *
  * Revision 1.3  2004/08/01 16:11:32  sah
  * switch to new INFO structure
  * PHASE I
@@ -19,10 +22,17 @@
  *
  */
 
-#ifndef _sac_cleanup_decls_h
-#define _sac_cleanup_decls_h
+#ifndef _SAC_CLEANUP_DECLS_H_
+#define _SAC_CLEANUP_DECLS_H_
 
-extern node *CleanupDecls (node *syntaxtree);
+/******************************************************************************
+ *
+ * Clean up Decls traversal ( cudecls_tab)
+ *
+ * Prefix: CUD
+ *
+ *****************************************************************************/
+extern node *CUDdoCleanupDecls (node *syntaxtree);
 
 extern node *CUDfundef (node *arg_node, info *arg_info);
 extern node *CUDblock (node *arg_node, info *arg_info);
@@ -31,4 +41,4 @@ extern node *CUDlet (node *arg_node, info *arg_info);
 extern node *CUDid (node *arg_node, info *arg_info);
 extern node *CUDwithid (node *arg_node, info *arg_info);
 
-#endif /* _sac_cleanup_decls_h */
+#endif /* _SAC_CLEANUP_DECLS_H_ */
