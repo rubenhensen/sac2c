@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.51  1998/02/25 09:06:27  cg
+# added file globals.c for compilation
+#
 # Revision 1.50  1998/02/06 18:09:47  dkr
 # make deps done
 #
@@ -169,7 +172,7 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../psi-opt -I../objects -I../Old2NewWith
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
-     internal_lib.o tree_basic.o tree_compound.o types.h
+     internal_lib.o tree_basic.o tree_compound.o globals.o types.h
 
 #
 # the types.h object is to fool makedepend which does not
@@ -190,7 +193,7 @@ traverse.o: traverse.c
 
 usage.o: usage.c usage.h 
 	$(CC) $(CCFLAGS) $(CFLAGS) -o usage.o -c usage.c $(INCS)
-	
+
 my_debug.o: my_debug.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o my_debug.o -c my_debug.c $(INCS)
 
@@ -208,6 +211,9 @@ free.o: free.c
 
 internal_lib.o: internal_lib.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o internal_lib.o -c internal_lib.c  $(INCS)
+
+globals.o: globals.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o globals.o -c globals.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
