@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/02/24 16:53:28  dkr
+ * fixed a bug in InferMasks:
+ * in case of do-loops the condition must be traversed *before* the body
+ *
  * Revision 1.12  2000/02/24 15:06:07  dkr
  * some comments and dbug-output added
  *
@@ -333,11 +337,11 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     }
     INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
 
-    /*
-     * traverse then/else-block and loop-block respectively
-     */
     switch (type) {
     case N_cond:
+        /*
+         * traverse then-block
+         */
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
 
         in_then = INFO_LAC2FUN_IN (arg_info);
@@ -356,32 +360,10 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         in_else = INFO_LAC2FUN_IN (arg_info);
         out_else = INFO_LAC2FUN_OUT (arg_info);
         local_else = INFO_LAC2FUN_LOCAL (arg_info);
-        break;
 
-    case N_while:
-        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-        break;
-
-    case N_do:
-        DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Only conditionals or loops are transformed into functions!");
-        break;
-    }
-
-    /*
-     * restore old needed-mask
-     */
-    INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
-    INFO_LAC2FUN_NEEDED (arg_info) = old_needed;
-
-    /*
-     * calculate new in-, out-, local-masks and traverse condition
-     */
-    switch (type) {
-    case N_cond:
+        /*
+         * calculate new in-, out-, local-masks and traverse condition
+         */
         /* in = in_then u in_else u (out_then \ out_else) u (out_else \ out_then) */
         INFO_LAC2FUN_IN (arg_info) = DFMGenMaskMinus (out_then, out_else);
         tmp = DFMGenMaskMinus (out_else, out_then);
@@ -401,6 +383,14 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         break;
 
     case N_while:
+        /*
+         * traverse body
+         */
+        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+
+        /*
+         * calculate new in-, out-, local-masks and traverse condition
+         */
         /*
          * a = 1;
          * b = 1;
@@ -431,12 +421,20 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         break;
 
     case N_do:
-        /* there is no need to adjust the in-, out-, local-masks ... */
-
         /*
          * traverse condition
          */
         DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+
+        /*
+         * traverse body
+         */
+        DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+
+        /*
+         * calculate new in-, out-, local-masks and traverse condition
+         */
+        /* there is no need to adjust the in-, out-, local-masks ... */
         break;
 
     default:
@@ -470,6 +468,12 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
                   DFMPrintMask (outfile, "%s ", *out);
                   fprintf (stderr, "\n    local-vars: ");
                   DFMPrintMask (outfile, "%s ", *local); fprintf (stderr, "\n\n"););
+
+    /*
+     * restore old needed-mask
+     */
+    INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
+    INFO_LAC2FUN_NEEDED (arg_info) = old_needed;
 
     /*
      * restore old in-, out-, local-masks
