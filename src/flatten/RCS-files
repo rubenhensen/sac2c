@@ -13,3 +13,4 @@ while2do.c
 while2do.h
 SSATransform.h
 SSATransform.c
+UndoSSATransform.c
