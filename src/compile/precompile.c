@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/07/22 14:13:50  ktr
+ * - DO_SKIP is traversed by new traversal function PRECdo
+ * - Third traversal now lifts constant args from funp
+ * funaps correctly (inserts alloc assignment).
+ *
  * Revision 3.78  2004/07/21 16:53:43  ktr
  * added markmemval traversal
  *
@@ -333,6 +338,31 @@ FreeInfo (info *info)
       && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
        ? (FUNDEF_LINKSIGN (fundef))[idx]                                                 \
        : ((dots) ? (idx) : ((idx) + 1)))
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRECdo
+ *
+ * Description:
+ *   A special traversal function for do-loops is necessary as the do-loop's
+ *   SKIPBLOCK could be placed in node[2] where it belongs
+ *
+ *****************************************************************************/
+node *
+PRECdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRECdo");
+
+    DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+
+    if (DO_SKIP (arg_node) != NULL) {
+        DO_SKIP (arg_node) = Trav (DO_SKIP (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
@@ -3187,6 +3217,9 @@ PREC4do (node *arg_node, info *arg_info)
 
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+    if (DO_SKIP (arg_node) != NULL) {
+        DO_SKIP (arg_node) = Trav (DO_SKIP (arg_node), arg_info);
+    }
 
     DO_USEVARS (arg_node) = RenameIds (DO_USEVARS (arg_node));
     DO_DEFVARS (arg_node) = RenameIds (DO_DEFVARS (arg_node));

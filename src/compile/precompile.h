@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/07/22 14:13:50  ktr
+ * - DO_SKIP is traversed by new traversal function PRECdo
+ * - Third traversal now lifts constant args from funp
+ * funaps correctly (inserts alloc assignment).
+ *
  * Revision 3.18  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -93,6 +98,8 @@
 #define _sac_precompile_h
 
 extern node *Precompile (node *syntax_tree);
+
+extern node *PRECdo (node *arg_node, info *arg_info);
 
 extern node *PREC1modul (node *arg_node, info *arg_info);
 extern node *PREC1objdef (node *arg_node, info *arg_info);
