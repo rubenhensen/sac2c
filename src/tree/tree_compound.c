@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/04/04 09:58:30  nmw
+ * AdjustAvisData added
+ *
  * Revision 3.28  2001/04/02 11:45:00  dkr
  * functions NodeOrInt...(), NameOrVal...() moved to wl_bounds.[ch]
  *
@@ -1671,6 +1674,72 @@ MakeVardecFromArg (node *arg_node)
     AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
 
     DBUG_RETURN (new_vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AdjustAvisData( node *new_vardec, node *fundef)
+ *
+ * returns:
+ *   adjusted avis node
+ *
+ * description:
+ *   when a vardec is duplicated via DupTree all dependend infomation in the
+ *   corresponding avis node is duplicated, too. when this vardec is used in
+ *   the same fundef as the original one everything is good, but if the
+ *   duplicated vardec should be used in a different fundef the fundef related
+ *   attributes have to be adjusted by this function:
+ *     AVIS_SSACOUNT = (new fresh ssacnt node)
+ *     AVIS_SSALPINV = FALSE
+ *     AVIS_SSAPHITARGET = FALSE
+ *     AVIS_SSADEFINED = FALSE
+ *     AVIS_SSATHEN = FALSE
+ *     AVIS_SSAELSE = FALSE
+ *     AVIS_NEEDCOUNT = 0
+ *     AVIS_SUBST = NULL
+ *     AVIS_SUBSTUSSA = NULL
+ *
+ * remark:
+ *   when creating a new ssacounter node this node is stored in the toplevel
+ *   block of the given fundef (sideeffekt!!!)
+ *
+ ******************************************************************************/
+
+node *
+AdjustAvisData (node *new_vardec, node *fundef)
+{
+    node *avis_node;
+    char *base_id;
+
+    DBUG_ENTER ("AdjustAvisData");
+
+    DBUG_ASSERT ((fundef != NULL), "missing fundef");
+    DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "missing body in fundef");
+
+    avis_node = VARDEC_AVIS (new_vardec);
+
+    /* if there is an existing base_id - use it, else take the vardec name */
+    if (AVIS_SSACOUNT (new_vardec) != NULL) {
+        base_id = SSACNT_BASEID (AVIS_SSACOUNT (new_vardec));
+    } else {
+        base_id = VARDEC_NAME (new_vardec);
+    }
+
+    BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
+      = MakeSSAcnt (BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)), 0, StringCopy (base_id));
+
+    AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
+    AVIS_SSALPINV (avis_node) = FALSE;
+    AVIS_SSAPHITARGET (avis_node) = FALSE;
+    AVIS_SSADEFINED (avis_node) = FALSE;
+    AVIS_SSATHEN (avis_node) = FALSE;
+    AVIS_SSAELSE (avis_node) = FALSE;
+    AVIS_NEEDCOUNT (avis_node) = 0;
+    AVIS_SUBST (avis_node) = NULL;
+    AVIS_SUBSTUSSA (avis_node) = NULL;
+
+    DBUG_RETURN (avis_node);
 }
 
 /*--------------------------------------------------------------------------*/
