@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/04/02 11:17:31  nmw
+ * bug fixed in NodeListDelete when removing last element in list
+ *
  * Revision 3.26  2001/03/29 09:17:01  nmw
  * tabs2spaces done
  *
@@ -1278,9 +1281,12 @@ NodeListDelete (nodelist *nl, node *node, int free_attrib)
         if (NODELIST_NODE (tmpnl) == node) {
             if (free_attrib && NODELIST_ATTRIB2 (tmpnl))
                 FREE (NODELIST_ATTRIB2 (tmpnl));
-            prevnl = FreeNodelistNode (tmpnl);
-        } else
+
+            NODELIST_NEXT (prevnl) = FreeNodelistNode (tmpnl);
+        } else {
             prevnl = tmpnl;
+        }
+
         tmpnl = NODELIST_NEXT (prevnl);
     }
 
