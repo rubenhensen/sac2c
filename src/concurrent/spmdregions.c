@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/05/21 13:32:17  dkr
+ * for lifted spmd-funs FUNDEF_DFM_BASE is created now
+ * added SPMDLiftNwith2 (to correct the DFMs)
+ *
  * Revision 1.26  1998/05/19 08:54:21  cg
  * new functions for retrieving variables from masks provided by
  * DataFlowMask.c utilized.
@@ -243,6 +247,8 @@ GetVardec (char *name, node *fundef)
 node *
 SPMDLiftFundef (node *arg_node, node *arg_info)
 {
+    funptr *old_tab;
+
     DBUG_ENTER ("SPMDLiftFundef");
 
     /*
@@ -258,6 +264,27 @@ SPMDLiftFundef (node *arg_node, node *arg_info)
     }
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    /****************************************************************************
+     * build and optimize sync-regions in SMPD-fun
+     */
+
+    if (FUNDEF_STATUS (arg_node) = ST_spmdfun) {
+
+        old_tab = act_tab;
+
+        /*
+         * set flag: next N_sync node is the first one in SPMD-region
+         */
+        INFO_SPMD_FIRST (arg_info) = 1;
+        act_tab = syncinit_tab; /* first traversal */
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        act_tab = syncopt_tab; /* second traversal */
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        act_tab = old_tab;
     }
 
     DBUG_RETURN (arg_node);
@@ -286,12 +313,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     node *fargs, *new_farg;
     node *retexprs, *new_retexpr;
     types *rettypes, *new_rettype;
-    funptr *old_tab;
-#if 00
-    node *last_farg;
-    node *last_retexpr;
-    types *last_rettype;
-#endif
 
     DBUG_ENTER (" SPMDLiftSpmd");
 
@@ -423,15 +444,13 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
         fargs = new_farg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-
-#endif /* 0 */
+#endif                         /* 0 */
 
     /*
      * build return types, return exprs (use SPMD_OUT).
      */
     rettypes = NULL;
     retexprs = NULL;
-
 #if 00
     FOREACH_VARDEC_AND_ARG (fundef, vardec,
                             if (DFMTestMaskEntry (SPMD_OUT (arg_node),
@@ -539,11 +558,17 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     AppendAssign (BLOCK_INSTR (body), MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
 
     /*
+     * generate DFMaskBase for the new fundef
+     */
+    FUNDEF_DFM_BASE (new_fundef)
+      = DFMGenMaskBase (FUNDEF_ARGS (new_fundef), FUNDEF_VARDEC (new_fundef));
+
+    /*
      * insert SPMD-function into fundef-chain of modul
      *
      * CAUTION: we must insert the SPMD-fundef *behind* the current fundef,
      *          because it must be traversed to correct the vardec-pointers of
-     *          all id's!!
+     *          all id's and to generate new DFMasks!!
      */
     if (FUNDEF_NEXT (fundef) != NULL) {
         FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
@@ -555,24 +580,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * build fundef for this spmd region
      ****************************************************************************/
-
-    /*
-     * build and optimize sync-regions in SMPD-fun
-     */
-
-    old_tab = act_tab;
-
-    /*
-     * set flag: next N_sync node is the first one in SPMD-region
-     */
-    INFO_SPMD_FIRST (arg_info) = 1;
-    act_tab = syncinit_tab; /* first traversal */
-    FUNDEF_BODY (new_fundef) = Trav (FUNDEF_BODY (new_fundef), arg_info);
-
-    act_tab = syncopt_tab; /* second traversal */
-    FUNDEF_BODY (new_fundef) = Trav (FUNDEF_BODY (new_fundef), arg_info);
-
-    act_tab = old_tab;
 
     DBUG_RETURN (arg_node);
 }
@@ -652,6 +659,70 @@ SPMDLiftNwithid (node *arg_node, node *arg_info)
 
     NWITHID_IDS (arg_node) = SPMDLiftIds (NWITHID_IDS (arg_node), arg_info);
     NWITHID_VEC (arg_node) = SPMDLiftIds (NWITHID_VEC (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SPMDLiftNwith2( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Generates new DFMasks in NWITH2_IN/INOUT/OUT/LOCAL.
+ *
+ ******************************************************************************/
+
+node *
+SPMDLiftNwith2 (node *arg_node, node *arg_info)
+{
+    node *vardec;
+    DFMmask_t in, inout, out, local;
+
+    DBUG_ENTER ("SPMDLiftNwith2");
+
+    /*
+     * traverse sons
+     */
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+
+    /*
+     * gnerate new DFMasks
+     */
+
+    in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
+    inout = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
+    out = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
+    local = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
+
+    FOREACH_VARDEC_AND_ARG (INFO_SPMD_FUNDEF (arg_info), vardec, {
+        if (DFMTestMaskEntry (NWITH2_IN (arg_node), VARDEC_OR_ARG_NAME (vardec), NULL)) {
+            DFMSetMaskEntrySet (in, VARDEC_OR_ARG_NAME (vardec), NULL);
+        }
+        if (DFMTestMaskEntry (NWITH2_INOUT (arg_node), VARDEC_OR_ARG_NAME (vardec),
+                              NULL)) {
+            DFMSetMaskEntrySet (inout, VARDEC_OR_ARG_NAME (vardec), NULL);
+        }
+        if (DFMTestMaskEntry (NWITH2_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec), NULL)) {
+            DFMSetMaskEntrySet (out, VARDEC_OR_ARG_NAME (vardec), NULL);
+        }
+        if (DFMTestMaskEntry (NWITH2_LOCAL (arg_node), VARDEC_OR_ARG_NAME (vardec),
+                              NULL)) {
+            DFMSetMaskEntrySet (local, VARDEC_OR_ARG_NAME (vardec), NULL);
+        }
+    }) /* FOREACH_VARDEC_OR_ARG */
+
+    NWITH2_IN (arg_node) = DFMRemoveMask (NWITH2_IN (arg_node));
+    NWITH2_IN (arg_node) = in;
+    NWITH2_INOUT (arg_node) = DFMRemoveMask (NWITH2_INOUT (arg_node));
+    NWITH2_INOUT (arg_node) = inout;
+    NWITH2_OUT (arg_node) = DFMRemoveMask (NWITH2_OUT (arg_node));
+    NWITH2_OUT (arg_node) = out;
+    NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
+    NWITH2_LOCAL (arg_node) = local;
 
     DBUG_RETURN (arg_node);
 }
