@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.101  2000/08/24 16:57:40  dkr
+ * INFO_PRINT_ACCESS no longer needed
+ *
  * Revision 2.100  2000/08/24 15:57:19  dkr
  * effect of DBUG-string PRINT_RC modified
  *
@@ -2838,8 +2841,6 @@ PrintNwith (node *arg_node, node *arg_info)
                            NWITH_REFERENCED_FOLD (arg_node),
                            NWITH_REFERENCES_FOLDED (arg_node), NWITH_FOLDABLE (arg_node),
                            NWITH_NO_CHANCE (arg_node)););
-
-    INFO_PRINT_ACCESS (arg_info) = NWITH_WLAA (arg_node);
 
     if (NWITH_PRAGMA (arg_node) != NULL) {
         Trav (NWITH_PRAGMA (arg_node), arg_info);
