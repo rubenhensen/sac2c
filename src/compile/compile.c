@@ -1,13 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.165  1998/06/06 18:31:27  dkr
+ * fixed some minor bugs
+ * COMPSync() finished
+ *
  * Revision 1.164  1998/06/04 17:00:54  cg
  * information about refcounted variables in the context of loops,
  * conditionals and the old with-loop are now stored in ids-chains
  * instead of N_exprs lists.
- *
- * Revision 1.163  1998/06/04 09:02:49  dkr
- * minor bugs fixed
  *
  * Revision 1.162  1998/06/03 14:51:37  cg
  * ICMs MT_SPMD_FUN_DEC and MT_SPMD_FUN_RET are now generated correctly.
@@ -15,9 +16,6 @@
  * Revision 1.161  1998/05/24 00:44:53  dkr
  * fixed some minor bugs
  * added an ICM for blocking
- *
- * Revision 1.160  1998/05/21 13:31:58  dkr
- * fixed some minor bugs
  *
  * Revision 1.159  1998/05/19 15:40:57  dkr
  * support for fold added
@@ -34,9 +32,6 @@
  * changed COMPIdxModarray:
  *   second arg of idx_modarray() possibly an N_prf added by IVE
  *   this case is now compiled correctly
- *
- * Revision 1.155  1998/05/17 00:52:36  dkr
- * fixed a bug in COMPVardec
  *
  * Revision 1.154  1998/05/17 00:11:51  dkr
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
@@ -78,26 +73,11 @@
  * Revision 1.144  1998/05/07 10:15:44  dkr
  * changed compiling of new with-loop
  *
- * Revision 1.143  1998/05/04 16:21:51  dkr
- * fixed a bug: args for WL_BEGIN are now in correct order :)
- *
  * Revision 1.142  1998/05/04 15:36:37  dkr
  * changed usage of WL_ASSIGN
  *
- * Revision 1.141  1998/05/03 14:02:40  dkr
- * changed COMPWL...
- *
- * Revision 1.139  1998/04/29 19:55:12  dkr
- * changed COMPSpmd, COMPSync
- *
- * Revision 1.138  1998/04/26 21:53:53  dkr
- * fixed a bug in COMPSpmd
- *
  * Revision 1.137  1998/04/25 14:57:39  dkr
  * traversal of vardec is now started by COMPBlock instead of COMPFundef
- *
- * Revision 1.136  1998/04/25 13:20:13  dkr
- * extended COMPSPMD
  *
  * Revision 1.134  1998/04/24 01:15:33  dkr
  * added CompSync
@@ -105,14 +85,8 @@
  * Revision 1.133  1998/04/21 13:31:57  dkr
  * added funs CompWL...
  *
- * Revision 1.132  1998/04/21 12:28:28  dkr
- * fixed a bug in CompSPMD
- *
  * Revision 1.131  1998/04/20 14:07:25  sbs
  * revised CompTypedef !!
- *
- * Revision 1.130  1998/04/20 12:46:50  dkr
- * fixed a bug in CompSPMD
  *
  * Revision 1.129  1998/04/20 02:39:47  dkr
  * fixed a bug with shared icm-args
@@ -127,10 +101,6 @@
  *
  * Revision 1.125  1998/04/14 22:48:10  dkr
  * some renamed access macros
- *
- * Revision 1.124  1998/04/14 21:44:24  dkr
- * fixed a bug with COND_VARINFO, DO_VARINFO, ...
- * changed CompConc
  *
  * Revision 1.122  1998/04/07 14:50:03  dkr
  * added CompNcode
@@ -148,9 +118,6 @@
  *
  * Revision 1.116  1998/03/02 22:25:30  dkr
  * code for new with-loop moved to precompile
- *
- * Revision 1.113  1998/02/16 01:11:52  dkr
- * bugs fixed
  *
  * Revision 1.110  1998/02/15 04:08:38  dkr
  * partitioning of index-projections added (experimental !!)
@@ -175,33 +142,11 @@
  *   - previous N_let replaced by ND_ALLOC_ARRAY (reuse)
  *   - old_arg_node now correctly set (-> FREE(old_arg_node) !!)
  *
- * Revision 1.103  1997/11/11 00:43:13  dkr
- * removed a bug with NEWTREE in CompTypedef
- *
- * Revision 1.102  1997/11/10 16:09:47  dkr
- * removed a bug with DBUG_ASSERT in GOTO_LAST_BUT_LEAST_N_EXPRS
- * (with defined NEWTREE)
- *
- * Revision 1.101  1997/11/07 14:48:25  dkr
- * removed a bug with nnode-elimiation
- *
  * Revision 1.100  1997/11/05 09:39:34  dkr
  * CompCond() now uses the new array nnode[]
  *
- * Revision 1.99  1997/11/03 16:22:14  dkr
- * removed a bug with the nnode-elimination
- *
  * Revision 1.98  1997/11/02 13:57:57  dkr
  * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.97  1997/11/02 13:01:23  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.96  1997/10/29 14:11:15  srs
- * removed HAVE_MALLOC_O
- *
- * Revision 1.95  1997/10/13 21:01:38  dkr
- * removed a bug in CompWithReturn() with nnode.
  *
  * Revision 1.94  1997/10/12 19:29:37  dkr
  * In RenameReturn(): changed the 3rd-argument of MakeId, MakeIds from NULL to 0;
@@ -230,9 +175,6 @@
  * Revision 1.88  1997/04/24  14:57:25  sbs
  * HAVE_MALLOC_O included
  *
- * Revision 1.87  1996/09/11  06:27:38  cg
- * Some very dirty bugs fixed.
- *
  * Revision 1.86  1996/08/29  17:45:27  sbs
  * res_stype in CmpPrf was not initialised at all!!
  *
@@ -244,7 +186,7 @@
  * variable number of return values.
  *
  * Revision 1.83  1996/05/29  16:47:48  sbs
- * -Inserted tree-macros in Compile, CompBlock, CompAssign
+ * Inserted tree-macros in Compile, CompBlock, CompAssign
  *
  * expanded macros CHECK_REUSE__ALLOC_ARRAY_ND and DEC_OR_FREE_RC_ND
  * for the cases when refcnt == -1. This should only happen iff opt_rco == 1
@@ -342,9 +284,9 @@
  * changed test for SAC-function "main" in function Compile
  *
  * Revision 1.59  1995/07/19  12:19:16  hw
- * changed RenameFunName( the name of a userdefined "external" primitive
+ * changed RenameFunName (the name of a userdefined "external" primitive
  *  function will be set to the one specified in the module or
- *  class declartion ( it is stored in node[5] of N_fundef))
+ *  class declartion (it is stored in node[5] of N_fundef))
  *
  * Revision 1.58  1995/07/14  12:05:37  hw
  * - changed macro CHECK_REUSE__ALLOC_ARRAY_ND (reuse only if old and new array
@@ -356,7 +298,7 @@
  * - moved compilation of a with-loop-N_return to new function
  *   CompWithReturn
  * - changed CompFundec & CompArg to compile function declarations
- *   without formal paramter names( only imported functions)
+ *   without formal paramter names (only imported functions)
  *
  * Revision 1.56  1995/07/04  09:24:06  hw
  * compilation of primitive functions itod, ftod, dtoi & dtof inserted
@@ -382,18 +324,18 @@
  * Revision 1.50  1995/06/23  13:13:53  hw
  * - functions will be renamed now, so overloading of userdefined
  *   functions can be done.
- *   ( new function RenameFunName inserted)
+ *   (new function RenameFunName inserted)
  * -  added argument to call of 'DuplicateTypes'
  *
  * Revision 1.49  1995/06/16  15:29:11  hw
- * bug fixed in CompVardec( rmoveing of vardec-nodes)
+ * bug fixed in CompVardec (removing of vardec-nodes)
  *
  * Revision 1.48  1995/06/14  15:32:25  hw
- * changed Compile( "extern"-declaration for each not imported function inserted)
+ * changed Compile ("extern"-declaration for each not imported function inserted)
  *
  * Revision 1.47  1995/06/14  14:24:48  hw
- * bug fixed in CompPrf ( new variable declaration will be inserted
- *  now in all cases )
+ * bug fixed in CompPrf (new variable declaration will be inserted
+ *  now in all cases)
  *
  * Revision 1.46  1995/06/14  12:41:55  hw
  * - N_cast nodes in argument position of primitive functions
@@ -410,7 +352,7 @@
  * - cast in a return_statement will be deleted
  *
  * Revision 1.44  1995/06/12  09:19:17  hw
- * bug fixed in CompVardec ( arg_node->nnode is set correctly)
+ * bug fixed in CompVardec (arg_node->nnode is set correctly)
  *
  * Revision 1.43  1995/06/09  17:35:53  hw
  * -bug fixed in CompLoop (look whether next there is a assignment ater loop)
@@ -426,8 +368,8 @@
  * N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
  *
  * Revision 1.39  1995/06/06  15:54:30  hw
- * changed CompVardec ( a declaration of an array with unknown shape
- *   will be removed )
+ * changed CompVardec (a declaration of an array with unknown shape
+ *   will be removed)
  *
  * Revision 1.38  1995/06/06  11:39:02  hw
  * changed CompPrf (F_take/F_drop) (first argument can be a scalar too, now)
@@ -437,14 +379,14 @@
  * - compilation of N_foldfun inserted
  *
  * Revision 1.36  1995/05/24  15:28:37  hw
- * bug fixed in creation of N_icm ND_END_MODARRAY_S\A ( last arg is
+ * bug fixed in creation of N_icm ND_END_MODARRAY_S\A (last arg is
  *  a N_exprs node now ;-)) )
  *
  * Revision 1.35  1995/05/24  13:45:24  hw
  * - changed args of N_icm FUN_DEC ( back to rev 1.33 )
- *   and added N_icm ND_KS_DECL_ARRAY_ARG instead ( this N_icm will be put
+ *   and added N_icm ND_KS_DECL_ARRAY_ARG instead (this N_icm will be put
  *    at beginning of the block of a function)
- *    ( changes are done in CompArg only)
+ *    (changes are done in CompArg only)
  * - added compilation of "fold_prf", but it does not work correctly :-((
  *   there has to be done some work on it
  *
@@ -454,15 +396,15 @@
  *
  * Revision 1.33  1995/05/22  10:10:46  hw
  * - added function "CompCast" to delete N_cast nodes
- *  - remove N_cast nodes while compilation in functions ( CompReturn,
- *    CompPrf, CompAp )
+ *  - remove N_cast nodes while compilation in functions (CompReturn,
+ *    CompPrf, CompAp)
  *
  * Revision 1.32  1995/05/19  13:33:30  hw
- * - bug fixed in CompPrf ( added ND_DEC_... while compilation of F_psi (case:
+ * - bug fixed in CompPrf (added ND_DEC_... while compilation of F_psi (case:
  *     ND_KD_PSI_VxA_S))
  * - bug fixed in CompAp (refcounts of arrays which are returned from a function
  *     will be set and inserted correctly)
- * - changed CompReturn ( if return contains to a with_loop, following refcounts
+ * - changed CompReturn (if return contains to a with_loop, following refcounts
  *    will be decremented: -index_vector, left and right border,
  *                           array of modarray-part, all used arrays
  * - bug fixed in CompLoop ( - create only ND_DEC_RC_FREE macros
@@ -491,7 +433,7 @@
  * Revision 1.26  1995/05/03  13:20:52  hw
  * - deleted ND_KD_ROT_SxSxA_A
  * - bug fixed in compilation of primitive function 'rotate'
- *   ( added N_icm ND_ALLOC_ARRAY for result of 'rotate' )
+ *   (added N_icm ND_ALLOC_ARRAY for result of 'rotate')
  * - refcounts of results of userdefined functions will be increased
  *
  * Revision 1.25  1995/05/02  10:11:52  hw
@@ -859,13 +801,6 @@ int basetype_size[] = {
     }
 
 static int label_nr = 0;
-
-/*
- * Here we collect the vardecs of dummy fold-funs to insert them into
- *  the syntaxtree after traversal.
- * (This is a global var, because there no free node left in 'arg_info' ...)
- */
-static node *fold_vardecs = NULL;
 
 /******************************************************************************
  *
@@ -2045,14 +1980,15 @@ InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *ty
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RenameVar
- *  arguments     : 1) name of variable
- *  description   : puts '__' in front of 1)
- *  remarks       :
+ * function:
+ *   char *RenameVar( char *string, int i)
  *
- */
+ * description:
+ *   puts '__tmp' behind 'string'.
+ *
+ ******************************************************************************/
 
 char *
 RenameVar (char *string, int i)
@@ -2294,9 +2230,7 @@ COMPModul (node *arg_node, node *arg_info)
  *   node *COMPFundef(node *arg_node, node *arg_info)
  *
  * description:
- *   While traversing the body, in 'fold_vardecs' all vardecs of dummy
- *    fold-funs are collected.
- *   We must insert these vardecs into the vardec-chain.
+ *   compiles a N_fundef node.
  *
  * remarks:
  *   - sets INFO_COMP_VARDECS(arg_info) to variable declaration.
@@ -2322,11 +2256,15 @@ COMPFundef (node *arg_node, node *arg_info)
         INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
-        /*
-         * insert 'fold_vardecs'
-         */
-        FUNDEF_VARDEC (arg_node) = AppendVardecs (FUNDEF_VARDEC (arg_node), fold_vardecs);
-        fold_vardecs = NULL;
+#if 0
+    /*
+     * we must update the base mask (vardecs are compiled now!!)
+     */
+    FUNDEF_DFM_BASE( arg_node) = DFMUpdateMaskBaseAfterCompiling(
+                                                  FUNDEF_DFM_BASE( arg_node),
+                                                  FUNDEF_ARGS( arg_node),
+                                                  FUNDEF_VARDEC( arg_node));
+#endif
     }
 
     /*
@@ -2531,7 +2469,8 @@ COMPBlock (node *arg_node, node *arg_info)
      * we must compile the vardecs last, because we need the uncompiled vardecs
      *  while traversal of the block.
      */
-    if (BLOCK_VARDEC (arg_node) != NULL) {
+    if ((BLOCK_VARDEC (arg_node) != NULL)
+        && (NODE_TYPE (BLOCK_VARDEC (arg_node)) == N_vardec)) {
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
@@ -2661,18 +2600,24 @@ COMPLet (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPVardec
- *  arguments     : 1) N_vardec node
- *                  2) NULL
- *  description   : transforms N_vardec to N_icm node if it is the declaration
- *                  of an array
- *  remarks       : if it is a declaration of an array, a N_assign
- *                  node will be inserted to get the new N_icm node into the
- *                  chain of N_vardecs
+ * function:
+ *   node *COMPVardec(node *arg_node, node *arg_info)
  *
- */
+ * description:
+ *   transforms N_vardec to N_icm node if it is the declaration of an array
+ *
+ * remarks:
+ *   If it is a declaration of an array, a N_assign node will be inserted to
+ *   get the new N_icm node into the chain of N_vardecs.
+ *
+ *   Before traversing the next vardec node, we must test, whether this node
+ *   is compiled already or not (NODE_TYPE != N_vardec).
+ *   'COMPNwith2()' possibly have inserted compiled vardecs of the dummy
+ *   fold-fun!!!!
+ *
+ ******************************************************************************/
 
 node *
 COMPVardec (node *arg_node, node *arg_info)
@@ -2719,8 +2664,9 @@ COMPVardec (node *arg_node, node *arg_info)
         FREE_VARDEC (arg_node);
         arg_node = assign; /* set arg_node, because this node will be returned */
 
-        if (NULL != VARDEC_TYPEDEF (arg_node)) {
-            VARDEC_TYPEDEF (arg_node) = Trav (VARDEC_TYPEDEF (arg_node), NULL);
+        if ((NULL != ASSIGN_NEXT (arg_node))
+            && (NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_vardec)) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), NULL);
             /* dkr: Trav(...) with (arg_info == NULL) !?!? */
         }
     } else if (TYPES_DIM (full_type) == UNKNOWN_SHAPE) {
@@ -2748,8 +2694,9 @@ COMPVardec (node *arg_node, node *arg_info)
         FREE_VARDEC (arg_node);
         arg_node = assign; /* set arg_node, because this node will be returned */
 
-        if (NULL != VARDEC_TYPEDEF (arg_node)) {
-            VARDEC_TYPEDEF (arg_node) = Trav (VARDEC_TYPEDEF (arg_node), NULL);
+        if ((NULL != ASSIGN_NEXT (arg_node))
+            && (NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_vardec)) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), NULL);
             /* dkr: Trav(...) with (arg_info == NULL) !?!? */
         }
     } else if (TYPES_DIM (full_type) < KNOWN_DIM_OFFSET) {
@@ -2779,8 +2726,9 @@ COMPVardec (node *arg_node, node *arg_info)
         FREE_VARDEC (arg_node);
         arg_node = assign; /* set arg_node, because this node will be returned */
 
-        if (NULL != VARDEC_TYPEDEF (arg_node)) {
-            VARDEC_TYPEDEF (arg_node) = Trav (VARDEC_TYPEDEF (arg_node), NULL);
+        if ((NULL != ASSIGN_NEXT (arg_node))
+            && (NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_vardec)) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), NULL);
             /* dkr: Trav(...) with (arg_info == NULL) !?!? */
         }
     } else {
@@ -2788,7 +2736,8 @@ COMPVardec (node *arg_node, node *arg_info)
             CREATE_2_ARY_ICM (assign, "ND_DECL_RC", MAKE_IDNODE ("void*"),
                               MAKE_IDNODE (StringCopy (VARDEC_NAME (arg_node))));
 
-            if (VARDEC_NEXT (arg_node) != NULL) {
+            if ((VARDEC_NEXT (arg_node) != NULL)
+                && (NODE_TYPE (VARDEC_NEXT (arg_node))) == N_vardec) {
                 ASSIGN_NEXT (assign) = Trav (VARDEC_NEXT (arg_node), NULL);
                 /* dkr: Trav(...) with (arg_info == NULL) !?!? */
             }
@@ -2799,7 +2748,8 @@ COMPVardec (node *arg_node, node *arg_info)
                 /* current vardec-node has unknown shape and will be removed */
                 node *tmp;
                 tmp = arg_node;
-                if (VARDEC_NEXT (arg_node) != NULL) {
+                if ((VARDEC_NEXT (arg_node) != NULL)
+                    && (NODE_TYPE (VARDEC_NEXT (arg_node))) == N_vardec) {
                     arg_node = Trav (VARDEC_NEXT (arg_node), NULL);
                     /* dkr: Trav(...) with (arg_info == NULL) !?!? */
                 } else {
@@ -2808,7 +2758,8 @@ COMPVardec (node *arg_node, node *arg_info)
                 FREE_VARDEC (tmp);
             } else {
                 /* traverse next N_vardec node if any */
-                if (VARDEC_NEXT (arg_node) != NULL) {
+                if ((VARDEC_NEXT (arg_node) != NULL)
+                    && (NODE_TYPE (VARDEC_NEXT (arg_node))) == N_vardec) {
                     VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), NULL);
                     /* dkr: Trav(...) with (arg_info == NULL) !?!? */
                 }
@@ -5969,29 +5920,6 @@ COMPSpmd (node *arg_node, node *arg_info)
      */
     icm_args = NULL;
     num_args = 0;
-#if 00
-    FOREACH_VARDEC_AND_ARG (
-      fundef, vardec,
-      if (DFMTestMaskEntry (SPMD_IN (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
-          if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-              tag = "in_rc";
-          } else {
-              tag = "in";
-          }
-          icm_args
-            = AppendExpr (icm_args,
-                          MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                                     MakeExprs (MakeId (MakeTypeString (
-                                                          VARDEC_OR_ARG_TYPE (vardec)),
-                                                        NULL, ST_regular),
-                                                MakeExprs (MakeId (StringCopy (
-                                                                     VARDEC_OR_ARG_NAME (
-                                                                       vardec)),
-                                                                   NULL, ST_regular),
-                                                           NULL))));
-          num_args++;
-      }) /* FOREACH_VARDEC_AND_ARG */
-#else    /* 0 */
     vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
     while (vardec != NULL) {
         if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
@@ -6014,8 +5942,6 @@ COMPSpmd (node *arg_node, node *arg_info)
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-
-#endif /* 0 */
 
     /*
      * inout-params
@@ -6044,29 +5970,6 @@ COMPSpmd (node *arg_node, node *arg_info)
     /*
      * out-params
      */
-#if 00
-    FOREACH_VARDEC_AND_ARG (
-      fundef, vardec,
-      if (DFMTestMaskEntry (SPMD_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
-          if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-              tag = "out_rc";
-          } else {
-              tag = "out";
-          }
-          icm_args
-            = AppendExpr (icm_args,
-                          MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                                     MakeExprs (MakeId (MakeTypeString (
-                                                          VARDEC_OR_ARG_TYPE (vardec)),
-                                                        NULL, ST_regular),
-                                                MakeExprs (MakeId (StringCopy (
-                                                                     VARDEC_OR_ARG_NAME (
-                                                                       vardec)),
-                                                                   NULL, ST_regular),
-                                                           NULL))));
-          num_args++;
-      }) /* FOREACH_VARDEC_AND_ARG */
-#else
     vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
         if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
@@ -6089,15 +5992,12 @@ COMPSpmd (node *arg_node, node *arg_info)
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-#endif /* 0 */
 
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
     icm_args = MakeExprs (MakeId (StringCopy (SPMD_FUNNAME (arg_node)), NULL, ST_regular),
                           icm_args);
 
-#if 01
     SPMD_ICM (arg_node) = MakeIcm ("MT_SPMD_BLOCK", icm_args, NULL);
-#endif
 
     /*
      * build ICM for SPMD-region
@@ -6119,8 +6019,9 @@ COMPSpmd (node *arg_node, node *arg_info)
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args1, *icm_args2, *vardec, *instr, *assign, *last_assign,
+    node *icm_args, *icm_args1, *icm_args2, *with, *tmp, *instr, *assign, *last_assign,
       *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
+    ids *with_ids;
     types *type;
     simpletype s_type;
     char *icm_name, *var_name, *fold_type;
@@ -6129,90 +6030,72 @@ COMPSync (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPSync");
 
     /*
-     * build the arguments for the ICMs
+     * build arguments of ICMs (use 'SYNC_WITH_PTRS')
      */
-    icm_args1 = NULL;
-    icm_args2 = NULL;
     num_folds = 0;
+    icm_args1 = icm_args2 = NULL;
+    while (SYNC_WITH_PTRS (arg_node) != NULL) {
+        with_ids = LET_IDS (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
+        with = LET_EXPR (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
+        num_folds++;
 
-#if 00
-    FOREACH_VARDEC_AND_ARG (
-      INFO_COMP_FUNDEF (arg_info), vardec,
-      if (DFMTestMaskEntry (SYNC_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec), NULL)) {
-          GET_BASIC_SIMPLETYPE (s_type, VARDEC_OR_ARG_TYPE (vardec));
-          icm_args
-            = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
-                         MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                            NULL, ST_regular),
-                                    NULL));
+        if ((NWITH2_TYPE (with) == WO_foldprf) || (NWITH2_TYPE (with) == WO_foldfun)) {
 
-          /*
-           * build args for MT_CONTINUE
-           */
-          icm_args1 = AppendExpr (icm_args1, icm_args);
+            /*
+             * create fold_type-tag
+             */
+            type = IDS_TYPE (with_ids);
+            if (TYPES_DIM (type) > 0) {
+                fold_type = StringCopy ("array");
+            } else {
+                GET_BASIC_SIMPLETYPE (s_type, type);
+                fold_type = StringCopy (type_string[s_type]);
+            }
 
-          /*
-           * build args for MT_SYNC_...
-           */
-          icm_args2
-            = AppendExpr (icm_args2,
-                          AppendExpr (DupTree (icm_args, NULL),
-                                      MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
-                                                         ST_regular),
-                                                 MakeExprs (MakeId (StringCopy (
-                                                                      "?fold_op?"),
-                                                                    NULL, ST_regular),
-                                                            NULL))));
+            /*
+             * <fold_type>, <accu_var>
+             */
+            icm_args = MakeExprs (MakeId (fold_type, NULL, ST_regular),
+                                  MakeExprs (MakeId (StringCopy (IDS_NAME (with_ids)),
+                                                     NULL, ST_regular),
+                                             NULL));
 
-          num_folds++;
-      }) /* FOREACH_VARDEC_AND_ARG */
-#else
-    vardec = DFMGetMaskEntryDeclSet (SYNC_OUT (arg_node));
-    while (vardec != NULL) {
+            icm_args1 = AppendExpr (icm_args1, icm_args);
+            icm_args2 = AppendExpr (icm_args2, DupTree (icm_args, NULL));
 
-        /*
-         * create fold_type-tag
-         */
-        type = VARDEC_OR_ARG_TYPE (vardec);
-        GET_BASIC_SIMPLETYPE (s_type, type);
-        if (TYPES_DIM (type) > 0) {
-            fold_type = StringCopy ("array");
-        } else {
-            fold_type = StringCopy (type_string[s_type]);
+            /*
+             * <tmp_var>, <fold_op>
+             */
+            DBUG_ASSERT ((NWITHOP_FUNDEF (NWITH2_WITHOP (with)) != NULL),
+                         "no fundef found");
+            icm_args2
+              = AppendExpr (icm_args2,
+                            MakeExprs (MakeId (StringCopy ("tmp_var"), NULL, ST_regular),
+                                       MakeExprs (MakeId (StringCopy (
+                                                            FUNDEF_NAME (NWITHOP_FUNDEF (
+                                                              NWITH2_WITHOP (with)))),
+                                                          NULL, ST_regular),
+                                                  NULL)));
         }
 
         /*
-         * create first two ICM-args
+         * free the SYNC_WITH_PTRS
+         * CAUTION: We must free the N_exprs-nodes only!
+         *          The contents of EXPRS_EXPR is shared!
          */
-        icm_args = MakeExprs (MakeId (fold_type, NULL, ST_regular),
-                              MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                 NULL, ST_regular),
-                                         NULL));
-
-        /*
-         * build args for MT_CONTINUE
-         */
-        icm_args1 = AppendExpr (icm_args1, icm_args);
-
-        /*
-         * build args for MT_SYNC_...
-         */
-        icm_args2
-          = AppendExpr (icm_args2,
-                        AppendExpr (DupTree (icm_args, NULL),
-                                    MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
-                                                       ST_regular),
-                                               MakeExprs (MakeId (StringCopy (
-                                                                    "?fold_op?"),
-                                                                  NULL, ST_regular),
-                                                          NULL))));
-
-        num_folds++;
-
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        tmp = EXPRS_NEXT (SYNC_WITH_PTRS (arg_node));
+        FREE (SYNC_WITH_PTRS (arg_node));
+        SYNC_WITH_PTRS (arg_node) = tmp;
     }
-#endif
+
+    /*
+     * finish arguments of ICM 'MT_CONTINUE'
+     */
     icm_args1 = MakeExprs (MakeNum (num_folds), icm_args1);
+
+    /*
+     * finish arguments of ICM 'MT_SYNC_...'
+     */
     if (num_folds > 1) {
         icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
     }
@@ -6370,11 +6253,8 @@ node *wl_seg = NULL;
  *
  * description:
  *   Compilation of a N_with2 node.
- *   If this is a fold-with-loop, we store the vardecs of the dummy fold-fun
- *    in 'fold_vardecs'.
- *   These vardecs are inserted into the syntaxtree by 'COMPBlock' later.
- *   We can not insert them directly, because these vardecs are already
- *    compiled, but the vardecs of the current block not!
+ *   If this is a fold-with-loop, we append the vardecs of the dummy fold-fun
+ *    to the vardec-chain of the current function.
  *
  * remarks:
  *   - 'wl_ids' points always to LET_IDS of the current with-loop.
@@ -6385,7 +6265,8 @@ node *wl_seg = NULL;
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
-    node *icm_args, *neutral, *info, *dummy_assign, *assigns = NULL;
+    node *fundef, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
+      *rc_icms_wl_ids = NULL, *assigns = NULL;
     ids *withid_ids;
     char *icm_name;
     int num_args, idx_min, idx_max;
@@ -6400,24 +6281,35 @@ COMPNwith2 (node *arg_node, node *arg_info)
     wl_node = arg_node;
 
     /*
-     * insert ICMs for memory management (ND_ALLOC_ARRAY), if we have a
+     * Insert ICMs for memory management (ND_ALLOC_ARRAY), if we have a
      *  genarray- or modarray-op.
-     * (if we have a fold, this is done automaticly when compiling the
+     * (If we have a fold, this is done automaticly when compiling the
      *  init-assignment 'wl_ids = neutral' !!!)
      *
-     * insert the vardecs of the dummy fold-fun into 'fold_vardecs',
-     *  if we have a fold-op.
+     * If we have a fold-op, insert the vardecs of the dummy fold-fun
+     *  into the vardec-chain of the current function.
+     * Afterwards an update of the DFM-base is done.
+     * (This must be done here, because 'COMPSync()' needs the corrected masks)
      */
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
         assigns = MakeAllocArrayICMs (wl_ids);
     } else {
+        fundef = INFO_COMP_FUNDEF (arg_info);
+
         /*
          * insert vardecs of dummy fold-fun
          */
-        fold_vardecs
-          = AppendVardecs (fold_vardecs,
+        FUNDEF_VARDEC (fundef)
+          = AppendVardecs (FUNDEF_VARDEC (fundef),
                            GetFoldVardecs (NWITHOP_FUNDEF (NWITH2_WITHOP (arg_node))));
+
+        /*
+         * update DFM-base
+         */
+        FUNDEF_DFM_BASE (fundef)
+          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                               FUNDEF_VARDEC (fundef));
     }
 
     /*
@@ -6495,14 +6387,40 @@ COMPNwith2 (node *arg_node, node *arg_info)
         FREE (info);
         dummy_assign = FreeNode (FreeNode (dummy_assign));
         /*
-         * insert the compiled assignments
+         * concate compiled assignments
          */
         if (neutral != NULL) {
-            assigns = AppendAssign (assigns, MakeAssign (neutral, NULL));
+            neutral = MakeAssign (neutral, NULL);
         }
-        if (dummy_assign != NULL) {
-            assigns = AppendAssign (assigns, dummy_assign);
+        neutral = AppendAssign (neutral, dummy_assign);
+
+        /*
+         * All RC-ICMs on 'wl_ids' must be moved *behind* the WL-code!!
+         * Therefore we collect them in 'rc_icms_wl_ids' to insert them later.
+         */
+        tmp = neutral;
+        while (ASSIGN_NEXT (tmp) != NULL) {
+            if ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) == N_icm)
+                && ((strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))), "ND_DEC_RC")
+                     == 0)
+                    || (strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))), "ND_INC_RC")
+                        == 0)
+                    || (strcmp (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))),
+                                "ND_DEC_RC_FREE_ARRAY")
+                        == 0))) {
+                new = ASSIGN_NEXT (tmp);
+                ASSIGN_NEXT (tmp) = ASSIGN_NEXT (ASSIGN_NEXT (tmp));
+                ASSIGN_NEXT (new) = NULL;
+                rc_icms_wl_ids = AppendAssign (rc_icms_wl_ids, new);
+            } else {
+                tmp = ASSIGN_NEXT (tmp);
+            }
         }
+
+        /*
+         * insert compiled assignments
+         */
+        assigns = AppendAssign (assigns, neutral);
 
         icm_name = "WL_FOLD_BEGIN";
         break;
@@ -6524,6 +6442,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * insert 'WL_END'-ICM
      */
     assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", NULL, NULL), NULL));
+
+    /*
+     * insert RC-ICMs from 'wl_ids = neutral'
+     */
+    assigns = AppendAssign (assigns, rc_icms_wl_ids);
 
     /*
      * insert ICMs for memory management ('DEC_RC_FREE').
@@ -6904,7 +6827,8 @@ COMPWLstride (node *arg_node, node *arg_info)
 node *
 COMPWLgrid (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *cexpr, *fold_code, *new_assigns, *assigns = NULL;
+    node *icm_args, *icm_args2, *cexpr, *fold_code, *new_assigns, *assigns = NULL,
+                                                                  *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
     long *bv;
@@ -7022,6 +6946,17 @@ COMPWLgrid (node *arg_node, node *arg_info)
                 icm_args2 = MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
                                        MakeExprs (DupNode (cexpr), icm_args2));
                 icm_name = "WL_ASSIGN";
+                /*
+                 * we must decrement the RC of 'cexpr' (consumed argument)
+                 */
+                if (ID_REFCNT (cexpr) >= 0) {
+                    dec_rc_cexpr
+                      = MakeAssign (MakeIcm ("ND_DEC_RC_FREE_ARRAY",
+                                             MakeExprs (DupNode (cexpr),
+                                                        MakeExprs (MakeNum (1), NULL)),
+                                             NULL),
+                                    NULL);
+                }
                 break;
 
             case WO_foldfun:
@@ -7100,8 +7035,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
         if (icm_name != NULL) {
             assigns
-              = AppendAssign (assigns,
-                              MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
+              = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name, icm_args2, NULL),
+                                                   dec_rc_cexpr));
         }
     }
 
@@ -7251,7 +7186,7 @@ COMPWLstriVar (node *arg_node, node *arg_info)
 node *
 COMPWLgridVar (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *cexpr, *fold_code, *assigns = NULL;
+    node *icm_args, *icm_args2, *cexpr, *fold_code, *assigns = NULL, *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name;
     int num_args;
@@ -7318,6 +7253,17 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                 icm_args2 = MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
                                        MakeExprs (DupNode (cexpr), icm_args2));
                 icm_name = "WL_ASSIGN";
+                /*
+                 * we must decrement the RC of 'cexpr' (consumed argument)
+                 */
+                if (ID_REFCNT (cexpr) >= 0) {
+                    dec_rc_cexpr
+                      = MakeAssign (MakeIcm ("ND_DEC_RC_FREE_ARRAY",
+                                             MakeExprs (DupNode (cexpr),
+                                                        MakeExprs (MakeNum (1), NULL)),
+                                             NULL),
+                                    NULL);
+                }
                 break;
 
             case WO_foldfun:
@@ -7398,8 +7344,8 @@ COMPWLgridVar (node *arg_node, node *arg_info)
 
         if (icm_name != NULL) {
             assigns
-              = AppendAssign (assigns,
-                              MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
+              = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name, icm_args2, NULL),
+                                                   dec_rc_cexpr));
         }
     }
 
