@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/21 21:33:36  ktr
+ * Ismop 2004
+ *
  * Revision 3.5  2002/07/31 15:34:43  dkr
  * new hidden tag added
  *
@@ -27,7 +30,7 @@
  *
  */
 
-#include "NameTuples.h"
+#include "types.h"
 
 /*
  * These character arrays are the macro-name-parts used to select
