@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.122  1998/05/05 11:52:14  dkr
+ * message of compiler phase Old2NewWith is now only displayed
+ *   if this phase is activated.
+ *
  * Revision 1.121  1998/04/29 17:10:04  dkr
  * changed phase order
  *
@@ -1213,10 +1217,10 @@ MAIN
         goto BREAK;
     compiler_phase++;
 
-    NOTE2 (("   \n"
-            "** Convert old with-loops into new ones ...\n"
-            "   Generate multiple parts in new with-loops ...\n"));
     if (Make_Old2NewWith) {
+        NOTE2 (("   \n"
+                "** Convert old with-loops into new ones ...\n"
+                "   Generate multiple parts in new with-loops ...\n"));
         syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
     }
 
