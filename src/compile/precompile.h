@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/04/29 17:20:09  dkr
+ * with-loop transformation moved to wltransform.[ch]
+ *
  * Revision 1.15  1998/04/26 21:49:52  dkr
  * PRECSPMD renamed to PRECSpmd
  *
@@ -72,12 +75,5 @@ extern node *PRECReturn (node *arg_node, node *arg_info);
 extern node *PRECId (node *arg_node, node *arg_info);
 extern node *PRECVardec (node *arg_node, node *arg_info);
 extern node *PRECTypedef (node *arg_node, node *arg_info);
-extern node *PRECSpmd (node *arg_node, node *arg_info);
-extern node *PRECSync (node *arg_node, node *arg_info);
-extern node *PRECNwith (node *arg_node, node *arg_info);
-extern node *PRECNcode (node *arg_node, node *arg_info);
-
-extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
-extern node *InsertWLnodes (node *nodes, node *insert_nodes);
 
 #endif /* _sac_precompile_h */
