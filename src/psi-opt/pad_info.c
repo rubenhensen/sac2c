@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2003/04/14 15:13:02  sbs
+ * first arg of GetArrayTypeEntry has to be simpletype rather than int
+ *
  * Revision 3.3  2002/02/20 14:58:20  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -207,7 +210,7 @@ GetOldTableEntry (types *new_type)
  *****************************************************************************/
 
 static array_type_t *
-GetArrayTypeEntry (int type, int dim, shpseg *shape)
+GetArrayTypeEntry (simpletype type, int dim, shpseg *shape)
 {
 
     array_type_t *array_type_ptr;
