@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2002/09/11 23:14:30  dkr
+ * PREC4ap adde
+ *
  * Revision 3.103  2002/09/06 12:15:52  sah
  * N_setwl modified.
  *
@@ -1626,7 +1629,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, TravSons, SSALURap, SSAWLTap,
        SSAWLIap, TravSons,
 
-       SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, TravSons, TravSons, HDap,
+       SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, PREC4ap, TravSons, HDap,
        TravSons, CWCap, HMap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 1),
 
