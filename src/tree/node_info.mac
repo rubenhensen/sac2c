@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2000/04/18 14:01:36  jhs
+ * Added COMPSt and COMPMt
+ *
  * Revision 1.31  2000/04/10 15:46:05  jhs
  * Added BARINmt and BARINassign to traversal.
  *
@@ -852,8 +855,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
-       FreeMT, TravSons, TravSons, TravSons, TravSons, DupMt, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
+       FreeMT, TravSons, TravSons, COMPMt, TravSons, DupMt, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -870,8 +873,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        1),
 
   NIF (N_st, "N_st", TravSons, TravSons, PrintST, TravSons, TravSons, TravSons, TravSons,
-       FreeST, TravSons, TravSons, TravSons, TravSons, DupSt, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
+       FreeST, TravSons, TravSons, COMPSt, TravSons, DupSt, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
