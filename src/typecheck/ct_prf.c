@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/01/10 17:27:06  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 1.25  2004/11/26 23:48:22  sbs
  * some renamings fixed
  *
@@ -93,7 +96,8 @@
 #include "user_types.h"
 #include "shape.h"
 #include "constants.h"
-#include "Error.h"
+#include "ctinfo.h"
+#include "globals.h"
 
 static constant *
 ApplyCF (te_info *info, ntype *args)
@@ -267,14 +271,15 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
             s_shp = SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp), shp);
             if (!SHcompareShapes (d_shp, s_shp)) {
-                ERROR (global.linenum, ("cast type %s does not match expression type %s "
-                                        "as \"%s\" is defined as %s",
-                                        TYtype2String (cast_t, FALSE, 0),
-                                        TYtype2String (expr_t, FALSE, 0),
-                                        UTgetName (TYgetUserType (TYgetScalar (cast_t))),
-                                        TYtype2String (UTgetBaseType (TYgetUserType (
-                                                         TYgetScalar (cast_t))),
-                                                       FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "Cast type %s does not match expression type %s "
+                              "as \"%s\" is defined as %s",
+                              TYtype2String (cast_t, FALSE, 0),
+                              TYtype2String (expr_t, FALSE, 0),
+                              UTgetName (TYgetUserType (TYgetScalar (cast_t))),
+                              TYtype2String (UTgetBaseType (
+                                               TYgetUserType (TYgetScalar (cast_t))),
+                                             FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -282,14 +287,15 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (expr_t))));
             s_shp = SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp), shp);
             if (!SHcompareShapes (d_shp, s_shp)) {
-                ERROR (global.linenum, ("cast type %s does not match expression type %s "
-                                        "as \"%s\" is defined as %s",
-                                        TYtype2String (cast_t, FALSE, 0),
-                                        TYtype2String (expr_t, FALSE, 0),
-                                        UTgetName (TYgetUserType (TYgetScalar (expr_t))),
-                                        TYtype2String (UTgetBaseType (TYgetUserType (
-                                                         TYgetScalar (expr_t))),
-                                                       FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "Cast type %s does not match expression type %s "
+                              "as \"%s\" is defined as %s",
+                              TYtype2String (cast_t, FALSE, 0),
+                              TYtype2String (expr_t, FALSE, 0),
+                              UTgetName (TYgetUserType (TYgetScalar (expr_t))),
+                              TYtype2String (UTgetBaseType (
+                                               TYgetUserType (TYgetScalar (expr_t))),
+                                             FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -305,19 +311,20 @@ NTCCTprf_cast (te_info *info, ntype *elems)
                   : !SHcompareShapes (SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp),
                                                        shp),
                                       d_shp)) {
-                ERROR (global.linenum,
-                       ("cast type %s does not match expression type %s "
-                        "as \"%s\" is defined as %s whereas \"%s\" is defined as %s",
-                        TYtype2String (cast_t, FALSE, 0),
-                        TYtype2String (expr_t, FALSE, 0),
-                        UTgetName (TYgetUserType (TYgetScalar (cast_t))),
-                        TYtype2String (UTgetBaseType (
-                                         TYgetUserType (TYgetScalar (cast_t))),
-                                       FALSE, 0),
-                        UTgetName (TYgetUserType (TYgetScalar (expr_t))),
-                        TYtype2String (UTgetBaseType (
-                                         TYgetUserType (TYgetScalar (expr_t))),
-                                       FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "Cast type %s does not match expression type %s "
+                              "as \"%s\" is defined as %s whereas \"%s\" is defined as "
+                              "%s",
+                              TYtype2String (cast_t, FALSE, 0),
+                              TYtype2String (expr_t, FALSE, 0),
+                              UTgetName (TYgetUserType (TYgetScalar (cast_t))),
+                              TYtype2String (UTgetBaseType (
+                                               TYgetUserType (TYgetScalar (cast_t))),
+                                             FALSE, 0),
+                              UTgetName (TYgetUserType (TYgetScalar (expr_t))),
+                              TYtype2String (UTgetBaseType (
+                                               TYgetUserType (TYgetScalar (expr_t))),
+                                             FALSE, 0));
                 TEextendedAbort ();
             }
         }

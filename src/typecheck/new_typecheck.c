@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2005/01/10 17:27:06  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 3.68  2004/12/19 15:48:27  sbs
  * calls to TNTdoToNewTypes eliminated
  *
@@ -152,7 +155,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -470,10 +473,10 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     spec_n = TYgetProductSize (spec_type);
 
     if ((spec_n > inf_n) || ((spec_n < inf_n) && !FUNDEF_HASDOTRETS (fundef))) {
-        ABORT (NODE_LINE (fundef),
-               ("number of return expressions in function \"%s\" does not match"
-                " the number of return types specified",
-                FUNDEF_NAME (fundef)));
+        CTIabortLine (NODE_LINE (fundef),
+                      "Number of return expressions in function \"%s\" does not match"
+                      " the number of return types specified",
+                      FUNDEF_NAME (fundef));
     }
 
     for (i = 0; i < TYgetProductSize (spec_type); i++) {
@@ -483,9 +486,10 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         ok = SSInewTypeRel (itype, stype);
 
         if (!ok) {
-            ABORT (NODE_LINE (fundef),
-                   ("component #%d of inferred return type (%s) is not within %s", i,
-                    TYtype2String (itype, FALSE, 0), TYtype2String (stype, FALSE, 0)));
+            CTIabortLine (NODE_LINE (fundef),
+                          "Component #%d of inferred return type (%s) is not within %s",
+                          i, TYtype2String (itype, FALSE, 0),
+                          TYtype2String (stype, FALSE, 0));
         }
         /**
          * Now, we check whether we could infer at least one approximation for each
@@ -519,10 +523,10 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
          */
         if ((global.act_info_chn == NULL) && TYisAlpha (stype)
             && (SSIgetMin (TYgetAlpha (stype)) == NULL)) {
-            ABORT (NODE_LINE (fundef),
-                   ("component #%d of inferred return type (%s) has no lower bound;"
-                    " an application of \"%s\" will not terminate",
-                    i, TYtype2String (stype, FALSE, 0), FUNDEF_NAME (fundef)));
+            CTIabortLine (NODE_LINE (fundef),
+                          "Component #%d of inferred return type (%s) has no lower bound;"
+                          " an application of \"%s\" will not terminate",
+                          i, TYtype2String (stype, FALSE, 0), FUNDEF_NAME (fundef));
         }
     }
     TYfreeType (inf_type);
@@ -572,7 +576,8 @@ NTCmodule (node *arg_node, info *arg_info)
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
     DBUG_EXECUTE ("UDT", UTprintRepository (stderr););
-    ABORT_ON_ERROR;
+
+    CTIabortOnError ();
 
     /*
      * Then we insert the topmost objdef into the arg_info node
@@ -774,9 +779,10 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
     if (base == NULL) {
         base = UTgetTypedef (udt);
         if (!(TYisScalar (base) || TYisAKS (base))) {
-            ERROR (global.linenum, ("typedef of %s:%s is illegal; should be either"
-                                    " scalar type or array type of fixed shape",
-                                    UTgetMod (udt), UTgetName (udt)));
+            CTIerrorLine (global.linenum,
+                          "Typedef of %s:%s is illegal; should be either"
+                          " scalar type or array type of fixed shape",
+                          UTgetMod (udt), UTgetName (udt));
         } else {
             /*
              * Here, we know that we are either dealing with
@@ -788,10 +794,10 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
                 base_elem = (TYisSymb (base) ? base : TYgetScalar (base));
                 inner_udt = UTfindUserType (TYgetName (base_elem), TYgetMod (base_elem));
                 if (inner_udt == UT_NOT_DEFINED) {
-                    ERROR (global.linenum,
-                           ("typedef of %s:%s is illegal; type %s:%s unknown",
-                            UTgetMod (udt), UTgetName (udt), TYgetMod (base_elem),
-                            TYgetName (base_elem)));
+                    CTIerrorLine (global.linenum,
+                                  "Typedef of %s:%s is illegal; type %s:%s unknown",
+                                  UTgetMod (udt), UTgetName (udt), TYgetMod (base_elem),
+                                  TYgetName (base_elem));
                 } else {
                     /*
                      * First, we replace the defining symbol type by the appropriate
@@ -822,8 +828,8 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
                      * CheckUdtAndSetBaseType!
                      */
                     if (visited[inner_udt] == 1) {
-                        ERROR (global.linenum, ("type %s:%s recursively defined",
-                                                UTgetMod (udt), UTgetName (udt)));
+                        CTIerrorLine (global.linenum, "Type %s:%s recursively defined",
+                                      UTgetMod (udt), UTgetName (udt));
                     } else {
                         visited[udt] = 1;
                         inner_base = NTCcheckUdtAndSetBaseType (inner_udt, visited);
@@ -888,9 +894,10 @@ NTCtypedef (node *arg_node, info *arg_info)
     if (TYPEDEF_ISLOCAL (arg_node)) {
         udt = UTfindUserType (name, mod);
         if (udt != UT_NOT_DEFINED) {
-            ERROR (global.linenum, ("type %s:%s multiply defined;"
-                                    " previous definition in line %d",
-                                    mod, name, UTgetLine (udt)));
+            CTIerrorLine (global.linenum,
+                          "Type %s:%s multiply defined;"
+                          " previous definition in line %d",
+                          mod, name, UTgetLine (udt));
         }
 
         DBUG_EXECUTE ("UDT", tmp_str = TYtype2String (nt, FALSE, 0););
@@ -989,8 +996,9 @@ NTCarg (node *arg_node, info *arg_info)
 
         AVIS_ISUNIQUE (ARG_AVIS (arg_node)) = TRUE;
         if (!TYisAKS (type) || (TYisAKS (type) && TYgetDim (type) != 0)) {
-            ERROR (NODE_LINE (arg_node), ("unique type \"%s\" used in non-scalar form",
-                                          TYtype2String (TYgetScalar (type), FALSE, 0)));
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "Unique type \"%s\" used in non-scalar form",
+                          TYtype2String (TYgetScalar (type), FALSE, 0));
         }
     }
 
@@ -1207,7 +1215,7 @@ NTCfuncond (node *arg_node, info *arg_info)
     ok = ok && SSInewTypeRel (rhs2_type, res);
 
     if (!ok) {
-        ABORT (global.linenum, ("nasty type error"));
+        CTIabortLine (global.linenum, "Nasty type error");
     }
 
     INFO_NTC_TYPE (arg_info) = res;
@@ -1265,9 +1273,9 @@ NTClet (node *arg_node, info *arg_info)
                          "fun ap yields more return values  than lhs vars available!");
         } else {
             if (TCcountIds (lhs) != 1) {
-                ABORT (global.linenum, ("%s yields 1 instead of %d return values",
-                                        global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
-                                        TCcountIds (lhs)));
+                CTIabortLine (global.linenum, "%s yields 1 instead of %d return values",
+                              global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
+                              TCcountIds (lhs));
             }
         }
         i = 0;
@@ -1284,11 +1292,11 @@ NTClet (node *arg_node, info *arg_info)
                                  "non-alpha type for LHS found!");
                     ok = SSInewTypeRel (inferred_type, existing_type);
                     if (!ok) {
-                        ABORT (
-                          NODE_LINE (arg_node),
-                          ("component #%d of inferred RHS type (%s) does not match %s", i,
-                           TYtype2String (inferred_type, FALSE, 0),
-                           TYtype2String (existing_type, FALSE, 0)));
+                        CTIabortLine (NODE_LINE (arg_node),
+                                      "Component #%d of inferred RHS type (%s) does not "
+                                      "match %s",
+                                      i, TYtype2String (inferred_type, FALSE, 0),
+                                      TYtype2String (existing_type, FALSE, 0));
                     }
                 }
 
@@ -1298,10 +1306,11 @@ NTClet (node *arg_node, info *arg_info)
                 DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
             } else {
                 if (existing_type == NULL) {
-                    ABORT (global.linenum,
-                           ("cannot infer type of \"%s\" as it corresponds to \"...\" "
-                            "return type -- missing type declaration",
-                            IDS_NAME (lhs)));
+                    CTIabortLine (global.linenum,
+                                  "Cannot infer type of \"%s\" as it corresponds to "
+                                  "\"...\" "
+                                  "return type -- missing type declaration",
+                                  IDS_NAME (lhs));
                 } else {
                     /**
                      * ' commented out the following warning as it was issued to often
@@ -1309,9 +1318,9 @@ NTClet (node *arg_node, info *arg_info)
                      * StdIO; left it here as I do not know whether a warning in principle
                      * would be the better way to go for anyways....
                      *
-                    WARN( global.linenum, ("cannot infer type of \"%s\" as it corresponds
-                    to \"...\" " "return type -- relying on type declaration", IDS_NAME(
-                    lhs)));
+                    CTIwarnLine( global.linenum,
+                                 "Cannot infer type of \"%s\" as it corresponds to \"...\"
+                    " "return type -- relying on type declaration", IDS_NAME( lhs));
                      */
                     DBUG_ASSERT (TYisAlpha (existing_type),
                                  "non-alpha type for LHS found!");
@@ -1340,9 +1349,10 @@ NTClet (node *arg_node, info *arg_info)
             DBUG_ASSERT (TYisAlpha (existing_type), "non-alpha type for LHS found!");
             ok = SSInewTypeRel (inferred_type, existing_type);
             if (!ok) {
-                ABORT (NODE_LINE (arg_node), ("inferred RHS type (%s) does not match %s",
-                                              TYtype2String (inferred_type, FALSE, 0),
-                                              TYtype2String (existing_type, FALSE, 0)));
+                CTIabortLine (NODE_LINE (arg_node),
+                              "Inferred RHS type (%s) does not match %s",
+                              TYtype2String (inferred_type, FALSE, 0),
+                              TYtype2String (existing_type, FALSE, 0));
             }
         }
 
@@ -1626,9 +1636,10 @@ NTCid (node *arg_node, info *arg_info)
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
     if (type == NULL) {
-        ABORT (NODE_LINE (arg_node), ("Cannot infer type for %s as it may be"
-                                      " used without a previous definition",
-                                      ID_NAME (arg_node)));
+        CTIabortLine (NODE_LINE (arg_node),
+                      "Cannot infer type for %s as it may be"
+                      " used without a previous definition",
+                      ID_NAME (arg_node));
     } else {
         INFO_NTC_TYPE (arg_info) = TYcopyType (type);
     }
@@ -1720,9 +1731,9 @@ NTCcast (node *arg_node, info *arg_info)
          * Therefore, only a single return type is legal. This one is to be extracted!
          */
         if (TYgetProductSize (expr_t) != 1) {
-            ABORT (global.linenum,
-                   ("cast used for a function application with %d return values",
-                    TYgetProductSize (expr_t)));
+            CTIabortLine (global.linenum,
+                          "Cast used for a function application with %d return values",
+                          TYgetProductSize (expr_t));
         } else {
             expr_t = TYgetProductMember (expr_t, 0);
         }
@@ -2128,8 +2139,8 @@ NTCfold (node *arg_node, info *arg_info)
          * First, we check the neutral expression:
          */
         if (FOLD_NEUTRAL (arg_node) == NULL) {
-            ABORT (global.linenum,
-                   ("missing neutral element for user-defined fold function"));
+            CTIabortLine (global.linenum,
+                          "Missing neutral element for user-defined fold function");
         }
         FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
         shp = INFO_NTC_TYPE (arg_info);
@@ -2167,7 +2178,7 @@ NTCfold (node *arg_node, info *arg_info)
 
         ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
         if (!ok) {
-            ABORT (global.linenum, ("illegal fold function in fold with loop"));
+            CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
         }
     }
 

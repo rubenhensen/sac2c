@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2005/01/10 17:27:06  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 1.17  2004/11/24 18:14:46  sbs
  * compiles
  *
@@ -60,7 +63,7 @@
 
 #include "type_errors.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "internal_lib.h"
 #include "shape.h"
 #include "constants.h"
@@ -278,23 +281,25 @@ TEextendedAbort ()
     DBUG_ENTER ("TEextendedAbort");
     DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn is %p", global.act_info_chn));
     if (global.act_info_chn != NULL) {
-        CONT_ERROR ((""));
-        CONT_ERROR (("TYPE ERROR TRACE:"));
+        CTIerrorContinued ("\nTYPE ERROR TRACE:");
         while (global.act_info_chn != NULL) {
             assign = TI_ASSIGN (global.act_info_chn);
             if (!FUNDEF_ISLACFUN (TI_FUNDEF (global.act_info_chn))) {
                 args = NTCnewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
-                CONT_ERROR (
-                  ("-- %s(?): %d: %s:%s%s", global.filename,
-                   TI_LINE (global.act_info_chn),
-                   ((TI_MOD (global.act_info_chn) != NULL) ? TI_MOD (global.act_info_chn)
-                                                           : "--"),
-                   TI_NAME (global.act_info_chn), TYtype2String (args, FALSE, 0)));
+                CTIerrorContinued ("-- %s(?): %d: %s:%s%s", global.filename,
+                                   TI_LINE (global.act_info_chn),
+                                   ((TI_MOD (global.act_info_chn) != NULL)
+                                      ? TI_MOD (global.act_info_chn)
+                                      : "--"),
+                                   TI_NAME (global.act_info_chn),
+                                   TYtype2String (args, FALSE, 0));
             }
             global.act_info_chn = TI_CHN (global.act_info_chn);
         }
     }
-    ABORT_ON_ERROR;
+
+    CTIabortOnError ();
+
     DBUG_VOID_RETURN;
 }
 
@@ -397,8 +402,8 @@ TEassureScalar (char *obj, ntype *type)
     DBUG_ENTER ("TEassureScalar");
 
     if (!MatchScalar (type)) {
-        ERROR (global.linenum, ("%s should be a scalar; type found: %s", obj,
-                                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum, "%s should be a scalar; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
 
@@ -421,8 +426,8 @@ TEassureVect (char *obj, ntype *type)
     DBUG_ENTER ("TEassureVect");
 
     if (!MatchVect (type)) {
-        ERROR (global.linenum, ("%s should be a vector; type found: %s", obj,
-                                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum, "%s should be a vector; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
 
@@ -445,8 +450,8 @@ TEassureIntS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureIntS");
 
     if (!MatchScalar (type) || !MatchIntA (type)) {
-        ERROR (global.linenum, ("%s should be of type int; type found: %s", obj,
-                                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum, "%s should be of type int; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -468,8 +473,8 @@ TEassureBoolS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureBoolS");
 
     if (!MatchScalar (type) || !MatchBoolA (type)) {
-        ERROR (global.linenum, ("%s should be of type bool; type found: %s", obj,
-                                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum, "%s should be of type bool; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -491,8 +496,9 @@ TEassureBoolA (char *obj, ntype *type)
     DBUG_ENTER ("TEassureBoolA");
 
     if (!MatchBoolA (type)) {
-        ERROR (global.linenum, ("element type of %s should be boolean; type found: %s",
-                                obj, TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "Element type of %s should be boolean; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -514,9 +520,9 @@ TEassureNumS (char *obj, ntype *type)
     DBUG_ENTER ("TEassureNumS");
 
     if (!MatchScalar (type) || !MatchNumA (type)) {
-        ERROR (global.linenum,
-               ("%s should be of type int / float / double; type found: %s", obj,
-                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "%s should be of type int / float / double; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -538,8 +544,9 @@ TEassureNumA (char *obj, ntype *type)
     DBUG_ENTER ("TEassureNumA");
 
     if (!MatchNumA (type)) {
-        ERROR (global.linenum, ("element type of %s should be numeric; type found: %s",
-                                obj, TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "Element type of %s should be numeric; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -561,8 +568,8 @@ TEassureSimpleType (char *obj, ntype *type)
     DBUG_ENTER ("TEassureSimpleType");
 
     if (!TYisSimple (TYgetScalar (type))) {
-        ERROR (global.linenum, ("%s should be a built-in type; type found: %s", obj,
-                                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum, "%s should be a built-in type; type found: %s", obj,
+                      TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -584,8 +591,8 @@ TEassureIntVect (char *obj, ntype *type)
     DBUG_ENTER ("AssureIntVect");
 
     if (!MatchIntA (type) || !MatchVect (type)) {
-        ERROR (global.linenum, ("%s should be an integer vector; type found: %s", obj,
-                                TYtype2String (type, FALSE, 0)));
+        CTIerrorLine (global.linenum, "%s should be an integer vector; type found: %s",
+                      obj, TYtype2String (type, FALSE, 0));
         TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
@@ -615,9 +622,9 @@ TEassureNonNegativeValues (char *obj, ntype *type)
 
         for (i = 0; i < dim; i++) {
             if (dv[i] < 0) {
-                ERROR (global.linenum,
-                       ("%s should not contain negative values; type found: %s", obj,
-                        TYtype2String (type, FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "%s should not contain negative values; type found: %s",
+                              obj, TYtype2String (type, FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -645,10 +652,11 @@ TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
         && ((TYgetConstr (type2) == TC_akv) || (TYgetConstr (type2) == TC_aks)
             || (TYgetConstr (type2) == TC_akd))
         && (SHgetExtent (TYgetShape (type1), 0) != TYgetDim (type2))) {
-        ERROR (global.linenum, ("shape of %s should match dimensionality of %s;"
-                                " types found: %s  and  %s",
-                                obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                TYtype2String (type2, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "Shape of %s should match dimensionality of %s;"
+                      " types found: %s  and  %s",
+                      obj1, obj2, TYtype2String (type1, FALSE, 0),
+                      TYtype2String (type2, FALSE, 0));
         TEextendedAbort ();
     }
 
@@ -681,10 +689,11 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
             if ((dv[i] < 0) || (dv[i] >= SHgetExtent (TYgetShape (type2), i))) {
-                ERROR (global.linenum, ("%s should be legal index into %s;"
-                                        " types found: %s  and  %s",
-                                        obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                        TYtype2String (type2, FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "%s should be legal index into %s;"
+                              " types found: %s  and  %s",
+                              obj1, obj2, TYtype2String (type1, FALSE, 0),
+                              TYtype2String (type2, FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -719,10 +728,11 @@ TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
             if (abs (dv[i]) > SHgetExtent (TYgetShape (type2), i)) {
-                ERROR (global.linenum, ("%s should not exceed the shape of %s;"
-                                        " types found: %s  and  %s",
-                                        obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                        TYtype2String (type2, FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "%s should not exceed the shape of %s;"
+                              " types found: %s  and  %s",
+                              obj1, obj2, TYtype2String (type1, FALSE, 0),
+                              TYtype2String (type2, FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -759,10 +769,11 @@ TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
             prod *= dv[i];
         }
         if (prod != SHgetUnrLen (TYgetShape (type2))) {
-            ERROR (global.linenum, ("%s should be legal shape for the data vector of %s;"
-                                    " types found: %s  and  %s",
-                                    obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                    TYtype2String (type2, FALSE, 0)));
+            CTIerrorLine (global.linenum,
+                          "%s should be legal shape for the data vector of %s;"
+                          " types found: %s  and  %s",
+                          obj1, obj2, TYtype2String (type1, FALSE, 0),
+                          TYtype2String (type2, FALSE, 0));
             TEextendedAbort ();
         }
     }
@@ -789,10 +800,11 @@ TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
     DBUG_ENTER ("TEassureSameSimpleType");
 
     if (TYgetSimpleType (TYgetScalar (type1)) != TYgetSimpleType (TYgetScalar (type2))) {
-        ERROR (global.linenum, ("element types of %s and %s should be identical;"
-                                " types found: %s  and  %s",
-                                obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                TYtype2String (type2, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "Element types of %s and %s should be identical;"
+                      " types found: %s  and  %s",
+                      obj1, obj2, TYtype2String (type1, FALSE, 0),
+                      TYtype2String (type2, FALSE, 0));
         TEextendedAbort ();
     }
 
@@ -815,10 +827,11 @@ TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
     DBUG_ENTER ("TEassureSameScalarType");
 
     if (!TYeqTypes (TYgetScalar (type1), TYgetScalar (type2))) {
-        ERROR (global.linenum, ("element types of %s and %s should be identical;"
-                                " types found: %s  and  %s",
-                                obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                TYtype2String (type2, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "Element types of %s and %s should be identical;"
+                      " types found: %s  and  %s",
+                      obj1, obj2, TYtype2String (type1, FALSE, 0),
+                      TYtype2String (type2, FALSE, 0));
         TEextendedAbort ();
     }
 
@@ -949,10 +962,11 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
     }
 
     if (res == NULL) {
-        ERROR (global.linenum, ("%s and %s should have identical shapes;"
-                                " types found: %s  and  %s",
-                                obj1, obj2, TYtype2String (type1, FALSE, 0),
-                                TYtype2String (type2, FALSE, 0)));
+        CTIerrorLine (global.linenum,
+                      "%s and %s should have identical shapes;"
+                      " types found: %s  and  %s",
+                      obj1, obj2, TYtype2String (type1, FALSE, 0),
+                      TYtype2String (type2, FALSE, 0));
         TEextendedAbort ();
     }
 

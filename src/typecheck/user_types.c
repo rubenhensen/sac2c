@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2005/01/10 17:27:06  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 3.7  2004/11/27 02:12:28  sah
  * ...
  *
@@ -186,8 +189,9 @@ UTfindUserType (const char *name, const char *mod)
             res2--;
         }
         if (res2 >= 0) {
-            ERROR (global.linenum,
-                   ("user defined type \"%s\" can not uniquely be determined", name));
+            CTIerrorLine (global.linenum,
+                          "User defined type \"%s\" can not uniquely be determined",
+                          name);
         }
     } else {
         while ((res >= 0)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/01/10 17:27:06  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 1.7  2004/12/07 14:27:13  sbs
  * minor correction in DBUG output
  *
@@ -27,7 +30,7 @@
 
 #include "ct_fun.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "internal_lib.h"
 #include "globals.h"
 #include "tree_basic.h"
@@ -242,11 +245,12 @@ NTCCTudf (te_info *info, ntype *args)
                 /*
                  * no match at all!
                  */
-                ERROR (global.linenum,
-                       ("No matching definition found for the application of \"%s:%s\" "
-                        " to arguments %s",
-                        FUNDEF_MOD (fundef), FUNDEF_NAME (fundef),
-                        TYtype2String (args, FALSE, 0)));
+                CTIerrorLine (global.linenum,
+                              "No matching definition found for the application of "
+                              "\"%s:%s\" "
+                              " to arguments %s",
+                              FUNDEF_MOD (fundef), FUNDEF_NAME (fundef),
+                              TYtype2String (args, FALSE, 0));
                 global.act_info_chn = TEgetParent (global.act_info_chn);
                 TEextendedAbort ();
             }
