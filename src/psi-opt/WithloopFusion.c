@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/10/20 08:10:29  khf
+ * added resolving of special dependencies,
+ * intersection with fold-WLs who have a full partition
+ * and some DBUG_PRINTs
+ * some code brushing done
+ *
  * Revision 1.14  2004/10/07 15:50:07  khf
  * added NCODE_INC_USED macro
  *
@@ -69,9 +75,11 @@
 #include "constants.h"
 #include "ssa.h"
 #include "optimize.h"
+#include "print.h"
 #include "WithloopFusion.h"
 #include "detectdependencies.h"
 #include "tagdependencies.h"
+#include "resolvedependencies.h"
 
 /**
  * INFO structure
@@ -80,18 +88,18 @@ struct INFO {
     node *wl;
     node *fundef;
     node *assign;
-    node *let;
+    ids *lhs_wl;
     int wlaction;
     int genproperty;
-    int wotype;
-    bool wo_contains_fold;
-    bool no_step_width;
+    int wl_wotype;
+    bool wl_lb_is_zero;
     bool wldependent;
     int wl_array_type;
     constant *wl_shape;
     node *fusionable_wl;
     nodelist *references_fusionable;
-    bool fwo_contains_fold;
+    int fwl_wotype;
+    bool fwl_lb_is_zero;
     int fwl_array_type;
     constant *fwl_shape;
     node *assigns2shift;
@@ -131,19 +139,19 @@ typedef struct GRIDINFO {
 #define INFO_WLFS_WL(n) (n->wl)
 #define INFO_WLFS_FUNDEF(n) (n->fundef)
 #define INFO_WLFS_ASSIGN(n) (n->assign)
-#define INFO_WLFS_LET(n) (n->let)
+#define INFO_WLFS_LHS_WL(n) (n->lhs_wl)
 #define INFO_WLFS_WLACTION(n) (n->wlaction)
 #define INFO_WLFS_GENPROPERTY(n) (n->genproperty)
-#define INFO_WLFS_WOTYPE(n) (n->wotype)
-#define INFO_WLFS_WO_CONTAINS_FOLD(n) (n->wo_contains_fold)
-#define INFO_WLFS_NO_STEP_WIDTH(n) (n->no_step_width)
+#define INFO_WLFS_WL_WOTYPE(n) (n->wl_wotype)
 #define INFO_WLFS_WLDEPENDENT(n) (n->wldependent)
+#define INFO_WLFS_WL_LB_IS_ZERO(n) (n->wl_lb_is_zero)
 #define INFO_WLFS_WL_ARRAY_TYPE(n) (n->wl_array_type)
 #define INFO_WLFS_WL_SHAPE(n) (n->wl_shape)
 
 #define INFO_WLFS_FUSIONABLE_WL(n) (n->fusionable_wl)
 #define INFO_WLFS_REFERENCES_FUSIONABLE(n) (n->references_fusionable)
-#define INFO_WLFS_FWO_CONTAINS_FOLD(n) (n->fwo_contains_fold)
+#define INFO_WLFS_FWL_WOTYPE(n) (n->fwl_wotype)
+#define INFO_WLFS_FWL_LB_IS_ZERO(n) (n->fwl_lb_is_zero)
 #define INFO_WLFS_FWL_ARRAY_TYPE(n) (n->fwl_array_type)
 #define INFO_WLFS_FWL_SHAPE(n) (n->fwl_shape)
 #define INFO_WLFS_ASSIGNS2SHIFT(n) (n->assigns2shift)
@@ -184,7 +192,24 @@ typedef struct GRIDINFO {
 #define GRIDINFO_NPARTS_1(n) (n->nparts_1)
 #define GRIDINFO_NPARTS_2(n) (n->nparts_2)
 
-#define MAX_NEWGENS 50
+#define MAX_NEWGENS 100
+
+#define CONTAINS_FOLD(wotype) ((wotype == WOT_fold) || (wotype == WOT_gen_mod_fold))
+
+/*
+ * these macro is used in 'WLFSNgenerator' and 'FindFittingPart'
+ */
+
+#define RESULT_GEN_PROP(gen_prob, gen_prob_ret)                                          \
+    if (gen_prob == GEN_equal) {                                                         \
+        gen_prob = gen_prob_ret;                                                         \
+    } else if (gen_prob_ret == GEN_variable) {                                           \
+        gen_prob = gen_prob_ret;                                                         \
+    } else if (gen_prob == GEN_constant && gen_prob_ret == GEN_equal_var) {              \
+        gen_prob = GEN_variable;                                                         \
+    } else if (gen_prob == GEN_equal_var && gen_prob_ret == GEN_constant) {              \
+        gen_prob = GEN_variable;                                                         \
+    }
 
 typedef enum { WOT_gen_mod, WOT_fold, WOT_gen_mod_fold, WOT_unknown } wo_type_t;
 
@@ -199,6 +224,8 @@ typedef enum {
 } gen_property_t;
 
 typedef enum { ARRAY_aks, ARRAY_akd, ARRAY_unknown } array_types_t;
+
+bool no_fold_fusion = FALSE;
 
 /**
  * INFO functions
@@ -215,23 +242,84 @@ MakeInfo ()
     INFO_WLFS_WL (result) = NULL;
     INFO_WLFS_FUNDEF (result) = NULL;
     INFO_WLFS_ASSIGN (result) = NULL;
-    INFO_WLFS_LET (result) = NULL;
+    INFO_WLFS_LHS_WL (result) = NULL;
     INFO_WLFS_WLACTION (result) = WL_nothing;
     INFO_WLFS_GENPROPERTY (result) = GEN_equal;
-    INFO_WLFS_WOTYPE (result) = WOT_unknown;
-    INFO_WLFS_WO_CONTAINS_FOLD (result) = FALSE;
-    INFO_WLFS_NO_STEP_WIDTH (result) = TRUE;
+    INFO_WLFS_WL_WOTYPE (result) = WOT_unknown;
+    INFO_WLFS_WL_LB_IS_ZERO (result) = FALSE;
     INFO_WLFS_WLDEPENDENT (result) = FALSE;
     INFO_WLFS_WL_ARRAY_TYPE (result) = ARRAY_unknown;
     INFO_WLFS_WL_SHAPE (result) = NULL;
     INFO_WLFS_FUSIONABLE_WL (result) = NULL;
     INFO_WLFS_REFERENCES_FUSIONABLE (result) = NULL;
-    INFO_WLFS_FWO_CONTAINS_FOLD (result) = FALSE;
+    INFO_WLFS_FWL_WOTYPE (result) = WOT_unknown;
+    INFO_WLFS_FWL_LB_IS_ZERO (result) = FALSE;
     INFO_WLFS_FWL_ARRAY_TYPE (result) = ARRAY_unknown;
     INFO_WLFS_FWL_SHAPE (result) = NULL;
     INFO_WLFS_ASSIGNS2SHIFT (result) = NULL;
 
     DBUG_RETURN (result);
+}
+
+static info *
+InitInfo (info *arg_info)
+{
+    DBUG_ENTER ("InitInfo");
+
+    INFO_WLFS_WL_LB_IS_ZERO (arg_info) = FALSE;
+    INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_unknown;
+    if (INFO_WLFS_WL_SHAPE (arg_info) != NULL) {
+        INFO_WLFS_WL_SHAPE (arg_info) = COFreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
+    }
+    INFO_WLFS_WL_WOTYPE (arg_info) = WOT_unknown;
+    INFO_WLFS_GENPROPERTY (arg_info) = GEN_equal;
+
+    DBUG_RETURN (arg_info);
+}
+
+static info *
+UpdateInfo (info *arg_info, info *stacked_info)
+{
+    DBUG_ENTER ("UpdateINFO");
+
+    INFO_WLFS_FUNDEF (arg_info) = INFO_WLFS_FUNDEF (stacked_info);
+
+    INFO_WLFS_FUSIONABLE_WL (arg_info) = INFO_WLFS_ASSIGN (stacked_info);
+    INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
+      = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                        INFO_WLFS_ASSIGN (stacked_info), NULL);
+
+    switch (INFO_WLFS_FWL_WOTYPE (arg_info)) {
+    case WOT_unknown:
+        INFO_WLFS_FWL_WOTYPE (arg_info) = INFO_WLFS_WL_WOTYPE (stacked_info);
+        break;
+
+    case WOT_gen_mod:
+        if (CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (stacked_info)))
+            INFO_WLFS_FWL_WOTYPE (arg_info) = WOT_gen_mod_fold;
+        break;
+
+    case WOT_fold:
+        if ((INFO_WLFS_WL_WOTYPE (stacked_info) == WOT_gen_mod)
+            || (INFO_WLFS_WL_WOTYPE (stacked_info) == WOT_gen_mod_fold))
+            INFO_WLFS_FWL_WOTYPE (arg_info) = WOT_gen_mod_fold;
+        break;
+
+    case WOT_gen_mod_fold:
+        /* here is nothing to do */
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal WOTYPE found!");
+        break;
+    }
+
+    INFO_WLFS_FWL_LB_IS_ZERO (arg_info) = INFO_WLFS_WL_LB_IS_ZERO (stacked_info);
+    INFO_WLFS_FWL_ARRAY_TYPE (arg_info) = INFO_WLFS_WL_ARRAY_TYPE (stacked_info);
+    INFO_WLFS_FWL_SHAPE (arg_info) = INFO_WLFS_WL_SHAPE (stacked_info);
+    INFO_WLFS_WL_SHAPE (stacked_info) = NULL;
+
+    DBUG_RETURN (arg_info);
 }
 
 static info *
@@ -408,21 +496,6 @@ FreeGridInfo (gridinfo *gridinfo)
     DBUG_RETURN (gridinfo);
 }
 
-/*
- * these macro is used in 'WLFSNgenerator' and 'FindFittingPart'
- */
-
-#define RESULT_GEN_PROP(gen_prob, gen_prob_ret)                                          \
-    if (gen_prob == GEN_equal) {                                                         \
-        gen_prob = gen_prob_ret;                                                         \
-    } else if (gen_prob_ret == GEN_variable) {                                           \
-        gen_prob = gen_prob_ret;                                                         \
-    } else if (gen_prob == GEN_constant && gen_prob_ret == GEN_equal_var) {              \
-        gen_prob = GEN_variable;                                                         \
-    } else if (gen_prob == GEN_equal_var && gen_prob_ret == GEN_constant) {              \
-        gen_prob = GEN_variable;                                                         \
-    }
-
 /** <!--********************************************************************-->
  *
  * @fn bool CheckDependency( node *checkid, nodelist *nl);
@@ -454,6 +527,37 @@ CheckDependency (node *checkid, nodelist *nl)
     }
 
     DBUG_RETURN (is_dependent);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn nodelist *PrintNodelist( nodelist *nl)
+ *
+ *   @brief
+ *
+ *   @param
+ *   @return
+ ******************************************************************************/
+static nodelist *
+PrintNodelist (nodelist *nl)
+{
+    nodelist *nl_tmp;
+
+    DBUG_ENTER ("PrintNodelist");
+
+    nl_tmp = nl;
+
+    DBUG_PRINT ("WLFS", ("nodelist contains: "));
+
+    while (nl_tmp != NULL) {
+        if (ASSIGN_LHS (NODELIST_NODE (nl_tmp)) != NULL) {
+            DBUG_PRINT ("WLFS", ("%s  ", IDS_NAME (ASSIGN_LHS (NODELIST_NODE (nl_tmp)))));
+        }
+
+        nl_tmp = NODELIST_NEXT (nl_tmp);
+    }
+
+    DBUG_RETURN (nl);
 }
 
 /** <!--********************************************************************-->
@@ -704,7 +808,7 @@ FindFittingPart (node *pattern, node *parts)
 /** <!--********************************************************************-->
  *
  * @fn node *FuseNCodes( node *extendable_part, node *fitting_part,
- *                       node *fusionable_wl, bool both_contain_fold,
+ *                       node *fusionable_assign, bool both_contain_fold,
  *                       node *fundef)
  *
  *   @brief inserts the whole assignment block of 'fitting_part' in
@@ -712,21 +816,23 @@ FindFittingPart (node *pattern, node *parts)
  *
  *   @param  node *extendable_part : N_Npart
  *           node *fitting_part    : N_Npart
- *           node *fusionable_wl   : N_Nwith current WL will be fused with
+ *           node *fusionable_wl   : N_assign of WL current WL will be fused with
  *           node *fundef          : N_fundef
  *   @return node                  : modified extendable_part
  ******************************************************************************/
 static node *
-FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_wl,
+FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
             bool both_contain_fold, node *fundef)
 {
-    node *fusionable_ncode, *fitting_nncode, *fitting_assigns, *extendable_assigns,
-      *fitting_exprs;
+    node *fusionable_wl, *fusionable_ncode, *fitting_nncode, *fitting_assigns,
+      *extendable_block, *fitting_exprs;
     LUT_t lut;
     ids *oldvec, *newvec, *oldids, *newids;
+    bool resolveable_dependencies;
 
     DBUG_ENTER ("FuseNCodes");
 
+    fusionable_wl = ASSIGN_RHS (fusionable_assign);
     /*
      * If the N_Ncode of 'extendable_part' is referenced several
      * it has to be deepcopied before extend.
@@ -783,6 +889,8 @@ FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_wl,
 
     fitting_nncode = DupNodeLUTSSA (NPART_CODE (fitting_part), lut, fundef);
 
+    resolveable_dependencies = NCODE_RESOLVEABLE_DEPEND (NPART_CODE (fitting_part));
+
     fitting_assigns = BLOCK_INSTR (NCODE_CBLOCK (fitting_nncode));
     BLOCK_INSTR (NCODE_CBLOCK (fitting_nncode)) = MakeEmpty ();
 
@@ -803,19 +911,31 @@ FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_wl,
      * extent N_block of extentable_part's N_Ncode by instructions
      * of N_block of fitting_part
      */
-    extendable_assigns = BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (extendable_part)));
+    extendable_block = NCODE_CBLOCK (NPART_CODE (extendable_part));
 
     if (NODE_TYPE (fitting_assigns) != N_empty) {
 
-        if ((NODE_TYPE (extendable_assigns) != N_empty) && both_contain_fold) {
+        if ((NODE_TYPE (BLOCK_INSTR (extendable_block)) != N_empty)
+            && both_contain_fold) {
             /*
-             *   If both withloops contain fold operators fuse both
-             *   accu functions if containing together
+             *  If both withloops contain fold operators fuse both
+             *  accu functions if containing together
              */
-            fitting_assigns = FuseAccu (extendable_assigns, fitting_assigns);
+            fitting_assigns = FuseAccu (BLOCK_INSTR (extendable_block), fitting_assigns);
         }
 
-        extendable_assigns = AppendAssign (extendable_assigns, fitting_assigns);
+        if ((NODE_TYPE (fitting_assigns) != N_empty) && resolveable_dependencies) {
+            /*
+             *  Ncode of current WL contains resolveable dependencies -> resolve them
+             */
+            fitting_assigns
+              = ResolveDependencies (fitting_assigns,
+                                     NCODE_CEXPRS (NPART_CODE (extendable_part)),
+                                     NPART_WITHID (extendable_part), fusionable_assign);
+        }
+
+        BLOCK_INSTR (extendable_block)
+          = AppendAssign (BLOCK_INSTR (extendable_block), fitting_assigns);
     }
 
     /*
@@ -868,16 +988,14 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
      *    of 'wl' if both N_Ngenerators are equal.
      */
 
-    if (INFO_WLFS_FWO_CONTAINS_FOLD (arg_info) && INFO_WLFS_WO_CONTAINS_FOLD (arg_info))
-        both_contain_fold = TRUE;
-    else
-        both_contain_fold = FALSE;
+    both_contain_fold = ((CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))
+                         && (CONTAINS_FOLD (INFO_WLFS_FWL_WOTYPE (arg_info))));
 
     parts = NWITH_PART (fusionable_wl);
     while (parts != NULL) {
         fitting_part = FindFittingPart (NPART_GEN (parts), NWITH_PART (wl));
         DBUG_ASSERT ((fitting_part != NULL), "no fitting N_Npart is available!");
-        parts = FuseNCodes (parts, fitting_part, fusionable_wl, both_contain_fold,
+        parts = FuseNCodes (parts, fitting_part, fusionable_assign, both_contain_fold,
                             INFO_WLFS_FUNDEF (arg_info));
         parts = NPART_NEXT (parts);
     }
@@ -968,7 +1086,7 @@ Match (int position, gridinfo *arg_gridinfo)
  *
  * @fn gridinfo *IntersectGrids( gridinfo *arg_gridinfo)
  *
- *   @brief intersect two grids
+ *   @brief intersect two grids recursivly
  *
  *   @param  gridinfo *arg:gridinfo : gridinfo structure
  *   @return gridinfo *             : modified gridinfo structure
@@ -1302,8 +1420,9 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                          * Max. numbers of new generators is exceeded.
                          * Remove all new generators.
                          */
-                        DBUG_PRINT ("WLFS", ("number of new generators is exceeded -> "
-                                             "roll back"));
+                        WARN (linenum, ("WLFS: number of new generators exceeds "
+                                        "MAX_NEWGENS -> roll back"));
+
                         nparts_1 = FreeTree (nparts_1);
                         nparts_2 = FreeTree (nparts_2);
                         goto DONE;
@@ -1342,8 +1461,9 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                  * Max. numbers of new generators is exceeded.
                  * Remove all new generators.
                  */
-                DBUG_PRINT ("WLFS",
-                            ("number of new generators is exceeded -> roll back"));
+                WARN (linenum, ("WLFS: number of new generators exceeds MAX_NEWGENS -> "
+                                "roll back"));
+
                 nparts_1 = FreeTree (nparts_1);
                 nparts_2 = FreeTree (nparts_2);
                 new_array_lb = FreeNode (new_array_lb);
@@ -1443,13 +1563,20 @@ AskFusionOracle (info *arg_info)
     wl = INFO_WLFS_WL (arg_info);
     fwl = ASSIGN_RHS (INFO_WLFS_FUSIONABLE_WL (arg_info));
 
-    /* is the current WL independent from the fusionable WL? */
+    /* is the current WL independent from the fusionable WL ? */
     if (!INFO_WLFS_WLDEPENDENT (arg_info)) {
 
+        /*
+         * If the generators of both withloops are at least constant
+         * we can create new indentically generators for them by intersecting
+         * their bounds, steps and width.
+         * Additionly we need to know especially by fold operators if the
+         * lower bound of at least one generator is the zero vector.
+         * Only then a full partition is garantied.
+         */
         if (INFO_WLFS_GENPROPERTY (arg_info) == GEN_constant
-            && !INFO_WLFS_WO_CONTAINS_FOLD (arg_info)
-            && !INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)) {
-            /* INFO_WLFS_NO_STEP_WIDTH( arg_info)){ */
+            && INFO_WLFS_WL_LB_IS_ZERO (arg_info)
+            && INFO_WLFS_FWL_LB_IS_ZERO (arg_info)) {
 
             /* is the size of both wl iteration spaces equal? */
             if (CheckIterationSpace (arg_info)) {
@@ -1468,14 +1595,17 @@ AskFusionOracle (info *arg_info)
         if ((INFO_WLFS_GENPROPERTY (arg_info) == GEN_equal
              || INFO_WLFS_GENPROPERTY (arg_info) == GEN_equal_var)
             && NWITH_PARTS (wl) == NWITH_PARTS (fwl)) {
+            DBUG_PRINT ("WLFS", ("both With-Loops can be fused together"));
             answer = TRUE;
-        }
+        } else
+            DBUG_PRINT ("WLFS", ("both With-Loops can't be fused together"));
 
     } else {
         /*
          * The current genarray-withloop depends on the fusionable. Append it to
          * INFO_WLFS_REFERENCES_FUSIONABLE( arg_info)
          */
+        DBUG_PRINT ("WLFS", ("With-Loop depends on fusionable With-Loop"));
         INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
           = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
                             INFO_WLFS_ASSIGN (arg_info), NULL);
@@ -1500,11 +1630,16 @@ WLFSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLFSfundef");
 
+    DBUG_PRINT ("WLFS", ("Fusioning With-Loops in function %s", FUNDEF_NAME (arg_node)));
+
     INFO_WLFS_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
     }
+
+    DBUG_PRINT ("WLFS",
+                ("Fusioning With-Loops in function %s complete", FUNDEF_NAME (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -1524,13 +1659,8 @@ node *
 WLFSassign (node *arg_node, info *arg_info)
 {
     node *assignn;
-    node *fusionable_wl_tmp = NULL;
-    nodelist *references_fusionable_tmp = NULL;
     node *assigns2shift = NULL;
-    bool is_stacked = FALSE;
-    bool fwo_contains_fold = FALSE;
-    int fwl_array_type = ARRAY_unknown;
-    constant *fwl_shape = NULL;
+    info *stacked_info = NULL;
 
     DBUG_ENTER ("WLFSassign");
 
@@ -1555,42 +1685,30 @@ WLFSassign (node *arg_node, info *arg_info)
                  */
                 arg_node = FreeNode (arg_node);
 
-                INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
-                  = (INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
-                     || INFO_WLFS_WO_CONTAINS_FOLD (arg_info));
-
                 /*
                  * Now we have to traverse back to the other withloop
                  * to finish the tranformation
                  */
                 INFO_WLFS_WLACTION (arg_info) = WL_travback;
+                DBUG_PRINT ("WLFS", (" starting travback"));
                 DBUG_RETURN (arg_node);
             } else if (INFO_WLFS_WLACTION (arg_info) == WL_2fuse) {
+
+                /* mark assign as already visited */
+                ASSIGN_VISITED_WITH (arg_node) = INFO_WLFS_FUSIONABLE_WL (arg_info);
 
                 /*
                  * The current WL is not fusionable with the one
                  * stored in INFO_WLFS_FUSIONABLE_WL( arg_info).
                  * We stack the current information and set
-                 * INFO_WLFS_FUSIONABLE_WL( arg_info) on this WL for the further
+                 * INFO_WLFS_FUSIONABLE_WL( arg_info) onto this WL for the further
                  * traversal.
                  */
-                fusionable_wl_tmp = INFO_WLFS_FUSIONABLE_WL (arg_info);
-                references_fusionable_tmp = INFO_WLFS_REFERENCES_FUSIONABLE (arg_info);
-                fwo_contains_fold = INFO_WLFS_FWO_CONTAINS_FOLD (arg_info);
-                fwl_array_type = INFO_WLFS_FWL_ARRAY_TYPE (arg_info);
-                fwl_shape = INFO_WLFS_FWL_SHAPE (arg_info);
-                is_stacked = TRUE;
-
-                INFO_WLFS_FUSIONABLE_WL (arg_info) = arg_node;
-                INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-                  = NodeListAppend (NULL, arg_node, NULL);
-                INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
-                  = INFO_WLFS_WO_CONTAINS_FOLD (arg_info);
-                INFO_WLFS_FWL_ARRAY_TYPE (arg_info) = INFO_WLFS_WL_ARRAY_TYPE (arg_info);
-                INFO_WLFS_FWL_SHAPE (arg_info) = INFO_WLFS_WL_SHAPE (arg_info);
-                INFO_WLFS_WL_SHAPE (arg_info) = NULL;
-
+                DBUG_PRINT ("WLFS", ("current WL is now fusionable WL"));
                 INFO_WLFS_WLACTION (arg_info) = WL_nothing;
+                stacked_info = arg_info;
+                arg_info = MakeInfo ();
+                arg_info = UpdateInfo (arg_info, stacked_info);
             }
         }
     }
@@ -1615,6 +1733,8 @@ WLFSassign (node *arg_node, info *arg_info)
              * Accordingly we carry on with the search of a next withloop to fuse.
              */
 
+            DBUG_PRINT ("WLFS", ("travback ..."));
+
             if (ASSIGN_TAG (ASSIGN_NEXT (arg_node))
                 == INFO_WLFS_FUSIONABLE_WL (arg_info)) {
                 /*
@@ -1622,6 +1742,9 @@ WLFSassign (node *arg_node, info *arg_info)
                  * because in this mode INFO_WLFS_FUSIONABLE_WL( arg_info)
                  * can't be NULL
                  */
+
+                DBUG_PRINT ("WLFS", ("collect assign:"));
+                DBUG_EXECUTE ("WLFS", PrintNode (ASSIGN_NEXT (arg_node)););
 
                 assignn = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (ASSIGN_NEXT (arg_node));
@@ -1645,6 +1768,8 @@ WLFSassign (node *arg_node, info *arg_info)
                     INFO_WLFS_ASSIGNS2SHIFT (arg_info) = NULL;
                 }
 
+                DBUG_PRINT ("WLFS", ("fusion is finished, starting search for new WL"));
+
                 if (ASSIGN_NEXT (arg_node) != NULL) {
                     ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
                 }
@@ -1653,32 +1778,25 @@ WLFSassign (node *arg_node, info *arg_info)
                 ASSIGN_VISITED_WITH (arg_node) = INFO_WLFS_FUSIONABLE_WL (arg_info);
                 break;
             }
-        } else if (is_stacked) {
+        } else if (stacked_info != NULL) {
             /*
              * Backtraversal mode
              * If we reach a withloop, where we stack a fusionable withloop
              * we had to pop it and to traverse with it down again.
              */
 
-            /* Pop and clean */
-            INFO_WLFS_FUSIONABLE_WL (arg_info) = fusionable_wl_tmp;
-            if (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info) != NULL) {
-                INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-                  = NodeListFree (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info), TRUE);
-            }
-            INFO_WLFS_REFERENCES_FUSIONABLE (arg_info) = references_fusionable_tmp;
-            INFO_WLFS_FWO_CONTAINS_FOLD (arg_info) = fwo_contains_fold;
-            INFO_WLFS_FWL_ARRAY_TYPE (arg_info) = fwl_array_type;
-            if (INFO_WLFS_FWL_SHAPE (arg_info) != NULL) {
-                INFO_WLFS_FWL_SHAPE (arg_info)
-                  = COFreeConstant (INFO_WLFS_FWL_SHAPE (arg_info));
-            }
-            INFO_WLFS_FWL_SHAPE (arg_info) = fwl_shape;
-            is_stacked = FALSE;
+            arg_info = FreeInfo (arg_info);
+            arg_info = stacked_info;
+            stacked_info = NULL;
+
+            DBUG_PRINT ("WLFS", ("pop stacked fusionable WL"));
 
             if (assigns2shift != NULL) {
 
                 arg_node = AppendAssign (assigns2shift, arg_node);
+
+                DBUG_PRINT ("WLFS", ("shifted depended assigns in front of WL"));
+
                 assigns2shift = NULL;
             }
 
@@ -1687,10 +1805,13 @@ WLFSassign (node *arg_node, info *arg_info)
             }
         } else {
             /* cleaning up */
+
+            DBUG_PRINT ("WLFS", ("cleaning up"));
             ASSIGN_VISITED_WITH (arg_node) = NULL;
             ASSIGN_TAG (arg_node) = NULL;
 
             if (assigns2shift != NULL) {
+                DBUG_PRINT ("WLFS", ("shifted depended assigns in front of WL"));
                 arg_node = AppendAssign (assigns2shift, arg_node);
                 assigns2shift = NULL;
             }
@@ -1725,6 +1846,8 @@ WLFSap (node *arg_node, info *arg_info)
          */
         if (AP_FUNDEF (arg_node) != INFO_WLFS_FUNDEF (arg_info)) {
 
+            DBUG_PRINT ("WLFS", ("traverse special function"));
+
             /* stack arg_info */
             tmp = arg_info;
             arg_info = MakeInfo ();
@@ -1733,6 +1856,8 @@ WLFSap (node *arg_node, info *arg_info)
 
             arg_info = FreeInfo (arg_info);
             arg_info = tmp;
+
+            DBUG_PRINT ("WLFS", ("traverse special function complete"));
         }
     }
 
@@ -1772,9 +1897,16 @@ WLFSid (node *arg_node, info *arg_info)
         is_dependent
           = CheckDependency (arg_node, INFO_WLFS_REFERENCES_FUSIONABLE (arg_info));
         if (is_dependent) {
+            DBUG_EXECUTE ("WLFS", PrintNode (INFO_WLFS_ASSIGN (arg_info)););
+            DBUG_PRINT ("WLFS", ("%s references the fusionable With-Loop, note assign",
+                                 ID_NAME (arg_node)));
+
             INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
               = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
                                 INFO_WLFS_ASSIGN (arg_info), NULL);
+
+            DBUG_EXECUTE ("WLFS",
+                          PrintNodelist (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)););
         }
     }
 
@@ -1815,12 +1947,22 @@ WLFSNwith (node *arg_node, info *arg_info)
     info_tmp = arg_info;
     arg_info = MakeInfo ();
 
+    DBUG_PRINT ("WLFS", ("trav NCODE of WL"));
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
+    DBUG_PRINT ("WLFS", ("trav NCODE of WL finished"));
 
     arg_info = FreeInfo (arg_info);
     arg_info = info_tmp;
+
+    /* initialise some pointers */
+    arg_info = InitInfo (arg_info);
+
+    /*
+     * try to fuse the current With-Loop
+     */
+    DBUG_EXECUTE ("WLFS", PrintNode (arg_node););
 
     /*
      * The second traversal into the N_CODEs ought to detect possible
@@ -1829,14 +1971,11 @@ WLFSNwith (node *arg_node, info *arg_info)
      */
     if (INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL) {
 
-        NWITH_REFERENCES_FUSIONABLE (arg_node)
-          = INFO_WLFS_REFERENCES_FUSIONABLE (arg_info);
-
-        arg_node = DetectDependencies (arg_node);
+        arg_node = DetectDependencies (arg_node, INFO_WLFS_FUSIONABLE_WL (arg_info),
+                                       INFO_WLFS_REFERENCES_FUSIONABLE (arg_info));
 
         INFO_WLFS_WLDEPENDENT (arg_info) = NWITH_DEPENDENT (arg_node);
         NWITH_DEPENDENT (arg_node) = FALSE;
-        NWITH_REFERENCES_FUSIONABLE (arg_node) = NULL;
     } else
         INFO_WLFS_WLDEPENDENT (arg_info) = FALSE;
 
@@ -1853,36 +1992,29 @@ WLFSNwith (node *arg_node, info *arg_info)
         INFO_WLFS_WL (arg_info) = arg_node; /* store the current node for later */
 
         /*
-         * Now, we traverse the WITHOP sons for checking types
+         * Now, we traverse the WITHOP sons for checking types and shape
          */
-        INFO_WLFS_WO_CONTAINS_FOLD (arg_info) = FALSE;
-        INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_unknown;
-        if (INFO_WLFS_WL_SHAPE (arg_info) != NULL) {
-            INFO_WLFS_WL_SHAPE (arg_info)
-              = COFreeConstant (INFO_WLFS_WL_SHAPE (arg_info));
-        }
-        INFO_WLFS_WOTYPE (arg_info) = WOT_unknown;
-
+        INFO_WLFS_LHS_WL (arg_info) = ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info));
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
         /*
          * traverse the N_PARTs.
-         * one value is computed during this traversal:
+         * three values are computed during this traversal:
          *
-         *  INFO_WLFS_GENPROPERTY(arg_info) !!
+         *  INFO_WLFS_GENPROPERTY(arg_info)
+         *
+         *  and if the array type (and poss. shape) of the index vector
+         *  is not yet known
+         *  INFO_WLFS_WL_ARRAY_TYPE(arg_info)
+         *  INFO_WLFS_WL_SHAPE( arg_info)
          */
-        INFO_WLFS_GENPROPERTY (arg_info) = GEN_equal;
-        INFO_WLFS_NO_STEP_WIDTH (arg_info) = TRUE;
-
         DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
                      "NWITH_PARTS is >= 1 although no PART is available!");
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
-        if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
-            INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
-        }
-
-        if (INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL) {
+        /* is there a WL we can fuse with and is fusion with fold WLs permitted? */
+        if ((INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL)
+            && !(no_fold_fusion && CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))) {
 
             wl_action = WL_2fuse;
             fwl = INFO_WLFS_FUSIONABLE_WL (arg_info);
@@ -1893,31 +2025,27 @@ WLFSNwith (node *arg_node, info *arg_info)
                  * Later the tagged assignments !between! the two fused withloops
                  * had to be shifted in front of the result withloop.
                  */
-                NWITH_FUSIONABLE_WL (arg_node) = fwl;
-
-                arg_node = TagDependencies (arg_node);
-
-                NWITH_FUSIONABLE_WL (arg_node) = NULL;
+                arg_node = TagDependencies (arg_node, fwl);
 
                 /* fuse both withloops together */
+                DBUG_PRINT ("WLFS", ("starting fusion of both With-Loops"));
                 arg_node = FuseWithloops (arg_node, arg_info, fwl);
+                DBUG_PRINT ("WLFS", ("fused With-Loops:"));
+                DBUG_EXECUTE ("WLFS", PrintNode (fwl););
                 wl_action = WL_fused;
             }
         } else {
-            /*
-             * this WL is the first fusionable WL
-             */
-            INFO_WLFS_FUSIONABLE_WL (arg_info) = INFO_WLFS_ASSIGN (arg_info);
-            INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                                INFO_WLFS_ASSIGN (arg_info), NULL);
-            INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
-              = INFO_WLFS_WO_CONTAINS_FOLD (arg_info);
-            INFO_WLFS_FWL_ARRAY_TYPE (arg_info) = INFO_WLFS_WL_ARRAY_TYPE (arg_info);
-            INFO_WLFS_FWL_SHAPE (arg_info) = INFO_WLFS_WL_SHAPE (arg_info);
-            INFO_WLFS_WL_SHAPE (arg_info) = NULL;
+            if (!(no_fold_fusion && CONTAINS_FOLD (INFO_WLFS_WL_WOTYPE (arg_info)))) {
+                /*
+                 * this WL is the first fusionable WL
+                 */
+                DBUG_PRINT ("WLFS", ("With-Loop is the first fusionable With-Loop"));
+                arg_info = UpdateInfo (arg_info, arg_info);
+            }
         }
     } else { /* #Parts <= 0 || -2 <= dim <= 0 */
+        DBUG_PRINT ("WLFS", ("With-Loop is AUD or has empty iteration space"));
+
         if ((INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL)
             && (INFO_WLFS_WLDEPENDENT (arg_info))) {
             /*
@@ -1939,7 +2067,9 @@ WLFSNwith (node *arg_node, info *arg_info)
  *
  * @fn node *WLFSNwithop( node *arg_node, info *arg_info)
  *
- *   @brief checks the type of withloop operator.
+ *   @brief checks the type of withloop operator, tries to determine
+ *          the shape of the index vektor and the type of array
+ *          (AKS, AKD, AUD).
  *
  *   @param  node *arg_node:  N_Nwithop
  *           info *arg_info:  N_info
@@ -1962,25 +2092,29 @@ WLFSNwithop (node *arg_node, info *arg_info)
         if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
             const_expr = COAST2Constant (NWITHOP_SHAPE (arg_node));
             if (const_expr != NULL) {
+                /*
+                 * since all shapes of fused WL had to be be identical so far,
+                 * it is sufficient to take first inferred shape
+                 */
                 INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
                 INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
             } else
                 INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_akd;
         }
 
-        if (INFO_WLFS_WOTYPE (arg_info) == WOT_unknown)
+        if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown)
             current_type = WOT_gen_mod;
-        else if (INFO_WLFS_WOTYPE (arg_info) == WOT_fold)
+        else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_fold)
             current_type = WOT_gen_mod_fold;
         else
-            current_type = INFO_WLFS_WOTYPE (arg_info);
+            current_type = INFO_WLFS_WL_WOTYPE (arg_info);
 
         break;
 
     case WO_modarray:
         if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
 
-            type = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info))));
+            type = AVIS_TYPE (IDS_AVIS (INFO_WLFS_LHS_WL (arg_info)));
             if (TYIsAKS (type)) {
                 shp = TYGetShape (type);
 
@@ -1998,35 +2132,38 @@ WLFSNwithop (node *arg_node, info *arg_info)
                 } else
                     const_expr = COMakeConstantFromShape (shp);
 
+                /*
+                 * since all shapes of fused WL had to be be identical so far,
+                 * it is sufficient to take first inferred shape
+                 */
                 INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
                 INFO_WLFS_WL_SHAPE (arg_info) = const_expr;
             } else {
                 /*
                  * nothing for now
-                 * we try to get more information by upper bound of generators later
+                 * we try to get more information later by upper bounds of generators
                  */
             }
         }
 
-        if (INFO_WLFS_WOTYPE (arg_info) == WOT_unknown)
+        if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown)
             current_type = WOT_gen_mod;
-        else if (INFO_WLFS_WOTYPE (arg_info) == WOT_fold)
+        else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_fold)
             current_type = WOT_gen_mod_fold;
         else
-            current_type = INFO_WLFS_WOTYPE (arg_info);
+            current_type = INFO_WLFS_WL_WOTYPE (arg_info);
 
         break;
 
     case WO_foldfun:
         /* here is no break missing */
     case WO_foldprf:
-        if (INFO_WLFS_WOTYPE (arg_info) == WOT_unknown) {
+        if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_unknown)
             current_type = WOT_fold;
-            INFO_WLFS_WO_CONTAINS_FOLD (arg_info) = TRUE;
-        } else if (INFO_WLFS_WOTYPE (arg_info) == WOT_gen_mod)
+        else if (INFO_WLFS_WL_WOTYPE (arg_info) == WOT_gen_mod)
             current_type = WOT_gen_mod_fold;
         else
-            current_type = INFO_WLFS_WOTYPE (arg_info);
+            current_type = INFO_WLFS_WL_WOTYPE (arg_info);
         break;
 
     default:
@@ -2034,7 +2171,9 @@ WLFSNwithop (node *arg_node, info *arg_info)
         break;
     }
 
-    INFO_WLFS_WOTYPE (arg_info) = current_type;
+    INFO_WLFS_WL_WOTYPE (arg_info) = current_type;
+
+    INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
 
     if (NWITHOP_NEXT (arg_node) != NULL) {
         NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
@@ -2065,6 +2204,12 @@ WLFSNpart (node *arg_node, info *arg_info)
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
     }
 
+    if ((INFO_WLFS_WL_SHAPE (arg_info) != NULL)
+        && (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown)) {
+        /* the shape of the index vector has been detemined  -> AKS array*/
+        INFO_WLFS_WL_ARRAY_TYPE (arg_info) = ARRAY_aks;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2075,7 +2220,7 @@ WLFSNpart (node *arg_node, info *arg_info)
  *   @brief  bounds, step and width vectors are compared with bounds, step
  *           and width of all generators of the withloop out of
  *           INFO_WLFS_WL2FUSION( arg_info).
-
+ *
  *           Via INFO_WLFS_GENPROPERTY( arg_info) the status of the generator
  *           is returned. Possible values are :
  *           GEN_equal    : this generator is equal to one generator of the
@@ -2086,6 +2231,16 @@ WLFSNpart (node *arg_node, info *arg_info)
  *           GEN_variable : this generator is not equal to any generator of the
  *                          comparative withloop and at least one bound, step
  *                          or width is variable
+ *           GEN_diffdim  : generators have different dimensions
+ *
+ *           If the type of array of the index vector (and also the shape)
+ *           is not yet known
+ *            (stored in INFO_WLFS_WL_ARRAY_TYPE and INFO_WLFS_WL_SHAPE),
+ *           we have to detemine it by maximum upper bound over every generator
+ *
+ *           Additionly we need to know especially by fold operators if the
+ *           lower bound of at least one generator is the zero vector.
+ *           Only then a full Partition is garantied.
  *
  *   @param  node *arg_node:  N_Ngenerator
  *           info *arg_info:  N_info
@@ -2097,7 +2252,7 @@ WLFSNgenerator (node *arg_node, info *arg_info)
 {
     node *parts, *gen;
     gen_property_t gen_prob, gen_prob_ret;
-    constant *const_expr, *max_shape, *tmpc;
+    constant *const_expr, *max_shape, *tmpc, *const_lb;
 
     DBUG_ENTER ("WLFSNgenerator");
 
@@ -2113,8 +2268,6 @@ WLFSNgenerator (node *arg_node, info *arg_info)
                 gen_prob_ret = CompGenSon (NGEN_BOUND2 (arg_node), NGEN_BOUND2 (gen));
                 RESULT_GEN_PROP (gen_prob, gen_prob_ret);
                 gen_prob_ret = CompGenSon (NGEN_STEP (arg_node), NGEN_STEP (gen));
-                if (NGEN_STEP (arg_node) || NGEN_STEP (gen))
-                    INFO_WLFS_NO_STEP_WIDTH (arg_info) = FALSE;
                 RESULT_GEN_PROP (gen_prob, gen_prob_ret);
                 gen_prob_ret = CompGenSon (NGEN_WIDTH (arg_node), NGEN_WIDTH (gen));
                 RESULT_GEN_PROP (gen_prob, gen_prob_ret);
@@ -2127,8 +2280,16 @@ WLFSNgenerator (node *arg_node, info *arg_info)
         }
     }
 
+    if (!INFO_WLFS_WL_LB_IS_ZERO (arg_info)) {
+        const_lb = COMakeConstantFromArray (NGEN_BOUND1 (arg_node));
+        if ((const_lb != NULL) && COIsZero (const_lb, TRUE)) {
+            INFO_WLFS_WL_LB_IS_ZERO (arg_info) = TRUE;
+            const_lb = COFreeConstant (const_lb);
+        }
+    }
+
     if (INFO_WLFS_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown) {
-        const_expr = COAST2Constant (NGEN_BOUND1 (arg_node));
+        const_expr = COAST2Constant (NGEN_BOUND2 (arg_node));
         if (const_expr != NULL) {
             max_shape = INFO_WLFS_WL_SHAPE (arg_info);
             if (max_shape != NULL) {
@@ -2174,7 +2335,7 @@ WithloopFusion (node *arg_node)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "WithloopFusion not started with fundef node");
 
-    DBUG_PRINT ("WLFS", ("starting WithloopFusion"));
+    DBUG_PRINT ("WLFS", ("Starting to fusion With-Loops ..."));
 
     arg_info = MakeInfo ();
 
@@ -2185,6 +2346,8 @@ WithloopFusion (node *arg_node)
 
     arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
+
+    DBUG_PRINT ("WLFS", ("Fusioning of With-Loops complete."));
 
     DBUG_RETURN (arg_node);
 }
