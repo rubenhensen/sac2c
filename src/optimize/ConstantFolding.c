@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1996/05/02 14:03:44  asi
+ * Revision 1.45  1996/05/31 13:51:24  asi
+ * bug fixed in CFid
+ *
+ * Revision 1.44  1996/05/02  14:03:44  asi
  * bug fixed in CFassign
  *
  * Revision 1.43  1996/04/26  14:26:00  asi
@@ -447,10 +450,10 @@ CFid (node *arg_node, node *arg_info)
     if (NULL != mrd) {
         switch (NODE_TYPE (mrd)) {
         case N_id:
-            DEC_VAR (INFO_USE, ID_VARNO (arg_node));
+            DEC_VAR (ASSIGN_USEMASK (INFO_ASSIGN), ID_VARNO (arg_node));
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
-            INC_VAR (INFO_USE, ID_VARNO (arg_node));
+            INC_VAR (ASSIGN_USEMASK (INFO_ASSIGN), ID_VARNO (arg_node));
             break;
         case N_num:
         case N_float:
