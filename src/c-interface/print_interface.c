@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2000/07/13 14:52:39  nmw
+ * handling for global objects and startup code generation added
+ *
  * Revision 1.8  2000/07/12 15:52:35  nmw
  * add comment which libraries to link with
  *
@@ -24,6 +27,38 @@
  * Revision 1.1  2000/07/05 11:39:33  nmw
  * Initial revision
  *
+ *
+ * The c-interface allows you to generate a c-library from your SAC-module.
+ * at this time, only functions with a fixed shape and a c-compatible datatype
+ * can be exported.
+ * When you compile your SAC-module with sac2c and the option '-genlib c'
+ * you get an headerfile (myMod.h) with comments to all exported functions
+ * (the shapes they accept and return) and list of library files to link with.
+ * The libary is named libmyMod.a.
+ *
+ * Involved compiler parts for this c-interface:
+ * map_cwrapper.[ch]: traversing the AST, looking for overloaded SAC-functions
+ *                    and building up a set of wrapper functions, witch simulate
+ *                    this overloading.
+ *
+ * print_interface.[ch]: generating the c-code for the module headerfile and
+ *                    the wrapper functions (calles cwrapper.c). The generated
+ *                    code uses macros, defined in runtime/sac_cwrapper.h
+ *
+ * libsac/sac_arg.c, runtime/sac_arg.h: implements the abstract datatype used
+ *                    be the c-interface functions and the wrapper functions
+ *                    these functions are included in the sac-runtime-system
+ *
+ * libsac/cinterface.c, runtime/sac_cinterface.c: implements the interface
+ *                    functions used by the c-programmer for converting c-datatypes
+ *                    to sac-datatypes and vice versa
+ *
+ * modules/cccall.c:  compiles and generates the c-library.
+ *
+ * known limitations:
+ *   no support for global objects at all and no user defined types at
+ *   the interface level (but you might use them internally)
+ *
  */
 
 #include <stdio.h>
@@ -42,6 +77,7 @@
 #include "globals.h"
 #include "free.h"
 #include "resource.h"
+#include "gen_startup_code.h"
 
 /* interface identifier */
 #define SACARGTYPE "SAC_arg"
@@ -74,6 +110,10 @@ static node *PIWfundefSwitch (node *arg_node, node *arg_info);
 static node *PIWfundefCall (node *arg_node, node *arg_info);
 static node *PIWfundefRefcounting (node *arg_node, node *arg_info);
 static strings *PrintDepEntry (deps *depends, statustype stat, strings *done);
+static void PIHModuleInitFunction (char *modname);
+static void PIHModuleFreeFunction (char *modname);
+static void PIWModuleInitFunction (char *modname);
+static void PIWModuleFreeFunction (char *modname);
 
 /******************************************************************************
  *
@@ -118,7 +158,12 @@ PIHmodul (node *arg_node, node *arg_info)
     done = PrintDepEntry (dependencies, ST_system, NULL);
     fprintf (outfile, " *\n */\n\n");
 
-    fprintf (outfile, "#include \"sac_cinterface.h\"\n\n");
+    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
+
+    /* init and free functions for global objects */
+    PIHModuleInitFunction (MODUL_NAME (arg_node));
+    PIHModuleFreeFunction (MODUL_NAME (arg_node));
+    fprintf (outfile, "\n\n");
 
     if (MODUL_CWRAPPER (arg_node) != NULL) {
         /* traverse list of wrappers */
@@ -376,16 +421,18 @@ PIWmodul (node *arg_node, node *arg_info)
              " the c-library lib%s.a */\n\n",
              modulename);
 
-    fprintf (outfile, "#include <stdio.h>\n");
     /* declarations for external SAC functions */
-    fprintf (outfile, "#include \"header.h\"\n");
-    fprintf (outfile, "#include \"sac.h\"\n");
-    fprintf (outfile, "#include \"sac_cwrapper.h\"\n");
-    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
-    fprintf (outfile, "\n");
+    fprintf (outfile, "#include \"header.h\"\n"
+                      "#include \"sac.h\"\n"
+                      "#include \"sac_cwrapper.h\"\n"
+                      "#include \"sac_cinterface.h\"\n"
+                      "\n");
 
     /* general preload for codefile */
-    fprintf (outfile, "/* <insert some useful things here...> */\n");
+    fprintf (outfile, "/* startup functions and global code */\n");
+    GSCPrintFileHeader (arg_node);
+    PIWModuleInitFunction (MODUL_NAME (arg_node));
+    PIWModuleFreeFunction (MODUL_NAME (arg_node));
 
     if (MODUL_CWRAPPER (arg_node) != NULL) {
         /* traverse list of wrappers */
@@ -442,7 +489,7 @@ PIWcwrapper (node *arg_node, node *arg_info)
 
     /* no speacialized function found matching the args -> error */
     fprintf (outfile,
-             "fprintf(stderr, \"ERROR - no matching specialized function!\\n\");\n");
+             "SAC_RuntimeError(\"ERROR - no matching specialized function!\\n\");\n");
     fprintf (outfile, "return(1); /* error - no matching specialized function */\n");
     fprintf (outfile, "\n}\n\n");
 
@@ -880,15 +927,14 @@ TravTW (types *arg_type, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   types *TravTW(types *arg_type, node *arg_info)
+ *   strings *PrintDepEntry(deps *depends, statustype stat, strings *done)
  *
  * description:
- *   similar implementation of trav mechanism as used for nodes
- *   here used dor PIW
+ *   prints the dependencies to library files in the header comment.
  *
  ******************************************************************************/
 
-strings *
+static strings *
 PrintDepEntry (deps *depends, statustype stat, strings *done)
 {
     strings *tmp_done;
@@ -906,38 +952,57 @@ PrintDepEntry (deps *depends, statustype stat, strings *done)
                    && (0 != strcmp (DEPS_NAME (tmp), STRINGS_STRING (tmp_done)))) {
                 tmp_done = STRINGS_NEXT (tmp_done);
             }
-
             if (tmp_done == NULL) {
                 done = MakeStrings (DEPS_NAME (tmp), done);
-
                 fprintf (outfile, " * %s\n", DEPS_LIBNAME (tmp));
             }
         }
-
         tmp = DEPS_NEXT (tmp);
     }
 
     tmp = depends;
-
     while (tmp != NULL) {
         if (DEPS_SUB (tmp) != NULL) {
             done = PrintDepEntry (DEPS_SUB (tmp), stat, done);
         }
-
         tmp = DEPS_NEXT (tmp);
     }
 
     DBUG_RETURN (done);
 }
 
-/*
+static void
+PIHModuleInitFunction (char *modname)
+{
+    DBUG_ENTER ("PIHModuleInitFunction");
+    fprintf (outfile, "extern void SAC_Init%s();\n", modname);
+    DBUG_VOID_RETURN;
+}
 
-sac2c -genlib c TestModule.sac
+static void
+PIHModuleFreeFunction (char *modname)
+{
+    DBUG_ENTER ("PIHModuleExitFunction");
+    fprintf (outfile, "extern void SAC_Free%s();\n", modname);
+    DBUG_VOID_RETURN;
+}
 
-gcc -DSAC_FOR_LINUX_X86 -I ./Interface/ -I ~/sac/sac2c/src/runtime/ -Wall -c -o
-Interface/SAC_sacinterface.o Interface/SAC_interface.c
+static void
+PIWModuleInitFunction (char *modname)
+{
+    DBUG_ENTER ("PIWModuleInitFunction");
+    fprintf (outfile, "void SAC_Init%s()\n{\n", modname);
+    GSCPrintMainBegin ();
+    fprintf (outfile, "\n}\n\n\n");
+    DBUG_VOID_RETURN;
+}
 
-gcc -DSAC_FOR_LINUX_X86 -I ./Interface/ -I ~/sac/sac2c/src/runtime/ -Wall -c -o
-Interface/SAC_arg.o Interface/SAC_arg.c
-
-*/
+static void
+PIWModuleFreeFunction (char *modname)
+{
+    DBUG_ENTER ("PIWModuleExitFunction");
+    fprintf (outfile, "void SAC_Free%s()\n{\n", modname);
+    GSCPrintMainEnd ();
+    fprintf (outfile, "\n}\n\n\n");
+    DBUG_VOID_RETURN;
+}
