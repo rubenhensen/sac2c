@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1997/11/02 13:31:37  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.45  1997/05/14 08:17:59  sbs
  * error with_0001.sac solved:
  * a = with.... now PUSHES a on stack!
@@ -245,9 +248,14 @@ DuplicateNode (node *source_node)
 
     DBUG_ENTER ("DuplicateNode");
 
+#ifndef NEWTREE
     DBUG_PRINT ("DUPLICATE",
                 ("%s" P_FORMAT " number of nodes: %d",
                  mdb_nodetype[source_node->nodetype], source_node, source_node->nnode));
+#else
+    DBUG_PRINT ("DUPLICATE",
+                ("%s" P_FORMAT, mdb_nodetype[source_node->nodetype], source_node));
+#endif
 
     if (N_id == source_node->nodetype) {
         dest_node = MakeId (StringCopy (ID_NAME (source_node)), ID_MOD (source_node),
@@ -269,9 +277,17 @@ DuplicateNode (node *source_node)
         }
     } else {
         dest_node = MakeNode (source_node->nodetype);
+#ifndef NEWTREE
         for (i = 0; i < source_node->nnode; i++)
             dest_node->node[i] = DuplicateNode (source_node->node[i]);
         dest_node->nnode = i;
+#else
+        for (i = 0; i < MAXSONS; i++)
+            if (source_node->node[i] != NULL)
+                dest_node->node[i] = DuplicateNode (source_node->node[i]);
+            else
+                dest_node->node[i] = NULL;
+#endif
         dest_node->info = source_node->info;
     }
     NODE_LINE (dest_node) = NODE_LINE (source_node);
@@ -381,13 +397,20 @@ AppendIdentity (node *last_assign, char *old_name, char *new_name)
     name = (char *)Malloc (sizeof (char) * (strlen (old_name) + 1));
     name = strcpy (name, old_name);
     let_node->node[0]->IDS = MakeIds (name, NULL, ST_regular);
+#ifndef NEWTREE
     let_node->nnode = 1;
+#endif
     assign_node->node[0] = let_node;
     if (NULL != last_assign) {
         assign_node->node[1] = last_assign;
+#ifndef NEWTREE
         assign_node->nnode = 2;
-    } else
+#endif
+    }
+#ifndef NEWTREE
+    else
         assign_node->nnode = 1;
+#endif
 
     DBUG_RETURN (assign_node);
 }
@@ -460,7 +483,9 @@ Flatten (node *arg_node)
     act_tab = flat_tab;
     info_node = MakeNode (N_info);
     info_node->info.cint = NORMAL;
+#ifndef NEWTREE
     info_node->nnode = 1;
+#endif
     info_node->node[0] = NULL;
     with_level = 0;
     arg_node = Trav (arg_node, info_node);
@@ -499,7 +524,11 @@ FltnAssign (node *arg_node, node *arg_info)
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     return_node = arg_info->node[0];
     DBUG_PRINT ("FLATTEN", ("node %08x inserted before %08x", return_node, arg_node));
+#ifndef NEWTREE
     if (arg_node->nnode == 2) /* there are more assigns that follow */
+#else
+    if (arg_node->node[1] != NULL)
+#endif
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     DBUG_RETURN (return_node);
 }
@@ -571,16 +600,20 @@ FltnExprs (node *arg_node, node *arg_info)
 
         let_node = MakeNode (N_let);
         let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
+#ifndef NEWTREE
         let_node->nnode = 1;
+#endif
         let_node->node[0] = tmp_node1;
 
         assign_node = MakeNode (N_assign);
         assign_node->node[0] = let_node;
         assign_node->node[1] = arg_info->node[0]; /* a new node is put in front! */
+#ifndef NEWTREE
         if (NULL == assign_node->node[1])
             assign_node->nnode = 1;
         else
             assign_node->nnode = 2;
+#endif
 
         arg_info->node[0] = assign_node;
 
@@ -611,8 +644,12 @@ FltnExprs (node *arg_node, node *arg_info)
     } else if (N_id == tmp_arg->nodetype)
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
-    /* Last, but not least remaining exprs have to be done */
+        /* Last, but not least remaining exprs have to be done */
+#ifndef NEWTREE
     if (arg_node->nnode == 2)
+#else
+    if (arg_node->node[1] != NULL)
+#endif
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -643,7 +680,9 @@ FltnCond (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnCond");
 
     info_node = MakeNode (N_info);
+#ifndef NEWTREE
     info_node->nnode = 1;
+#endif
     old_tag = arg_info->info.cint; /* store tag (used in FltnExprs) */
     arg_info->info.cint = COND;
 
@@ -651,7 +690,9 @@ FltnCond (node *arg_node, node *arg_info)
      */
     tmp_exprs = MakeNode (N_exprs);
     tmp_exprs->node[0] = arg_node->node[0];
+#ifndef NEWTREE
     tmp_exprs->nnode = 1;
+#endif
 
     tmp_exprs = Trav (tmp_exprs, arg_info);
     arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
@@ -659,7 +700,13 @@ FltnCond (node *arg_node, node *arg_info)
                                              */
     arg_info->info.cint = old_tag;          /* restore tag */
 
-    for (i = 1; i < arg_node->nnode; i++) {
+#ifndef NEWTREE
+    for (i = 1; i < arg_node->nnode; i++)
+#else
+    for (i = 1; i < MAXSONS; i++)
+        if (arg_node->node[i] != NULL)
+#endif
+    {
         info_node->node[0] = NULL;
         info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
                                                  * put infront of a with_loop
@@ -699,7 +746,9 @@ FltnWhile (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnWhile");
 
     info_node = MakeNode (N_info);
+#ifndef NEWTREE
     info_node->nnode = 1;
+#endif
     info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
                                              * put infront of a with_loop
                                              */
@@ -720,7 +769,9 @@ FltnWhile (node *arg_node, node *arg_info)
      */
     tmp_exprs = MakeNode (N_exprs);
     tmp_exprs->node[0] = arg_node->node[0];
+#ifndef NEWTREE
     tmp_exprs->nnode = 1;
+#endif
 
     old_tag = arg_info->info.cint;
     arg_info->info.cint = LOOP; /* set tag for FltnExprs */
@@ -752,7 +803,12 @@ FltnWhile (node *arg_node, node *arg_info)
          *  the chain behind  arg_node->node[1]
          */
         info_node = info_node->node[0];
-        while (1 != info_node->nnode) {
+#ifndef NEWTREE
+        while (1 != info_node->nnode)
+#else
+        while (info_node->node[1] != NULL)
+#endif
+        {
             DBUG_ASSERT ((N_assign == info_node->nodetype),
                          "wrong nodetype: != N_assign");
             info_node = info_node->node[1];
@@ -782,9 +838,13 @@ FltnWhile (node *arg_node, node *arg_info)
                          "wrong nodetype: not N_assign");
 
             last_assign->node[1] = MakeNode (N_assign);
+#ifndef NEWTREE
             last_assign->nnode = 2;
+#endif
             last_assign->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
+#ifndef NEWTREE
             last_assign->node[1]->nnode = 1;
+#endif
             last_assign = last_assign->node[1];
             dest_node = dest_node->node[1];
         }
@@ -863,7 +923,9 @@ FltnDo (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnDo");
 
     info_node = MakeNode (N_info);
+#ifndef NEWTREE
     info_node->nnode = 1;
+#endif
     info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
                                              * put infront of a with_loop
                                              */
@@ -882,7 +944,12 @@ FltnDo (node *arg_node, node *arg_info)
     info_node = info_node->node[0];
     if (NULL != info_node) {
         /* looking for last N_assign node in the body of the do-loop */
-        while (1 != info_node->nnode) {
+#ifndef NEWTREE
+        while (1 != info_node->nnode)
+#else
+        while (info_node->node[1] != NULL)
+#endif
+        {
             DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype:"
                                                             "!= N_assign");
             info_node = info_node->node[1];
@@ -910,7 +977,9 @@ FltnDo (node *arg_node, node *arg_info)
      */
     tmp_exprs = MakeNode (N_exprs);
     tmp_exprs->node[0] = arg_node->node[0];
+#ifndef NEWTREE
     tmp_exprs->nnode = 1;
+#endif
 
     /* travers termination condition */
     old_tag = info_node->info.cint;
@@ -937,7 +1006,9 @@ FltnDo (node *arg_node, node *arg_info)
                          mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
                          mdb_nodetype[info_node->node[0]->node[0]->nodetype],
                          info_node->node[0]->node[0]));
+#ifndef NEWTREE
             last_assign->nnode = 2;
+#endif
         } else
             arg_node->node[1]->node[0] = info_node->node[0];
 
@@ -1037,11 +1108,15 @@ FltnGen (node *arg_node, node *arg_info)
     char *old_name;
 
     DBUG_ENTER ("FltnGen");
+#ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
+#else
+    for (i = 0; i < MAXSONS; i++)
+        if (arg_node->node[i] != NULL)
+#endif
         if ((arg_node->node[i]->nodetype == N_ap)
             || (arg_node->node[i]->nodetype == N_prf)
             || (arg_node->node[i]->nodetype == N_array)) {
-
             /* This argument is a function application and thus has to be abstracted
              ** out. Therefore a new N_assign, a new N_let, and a new temporary
              ** variable are generated and inserted.
@@ -1059,15 +1134,19 @@ FltnGen (node *arg_node, node *arg_info)
             assign_node->node[0] = let_node;
             assign_node->node[1] = arg_info->node[0];
             /* a new node is put in front! */
+#ifndef NEWTREE
             if (NULL == assign_node->node[1])
                 assign_node->nnode = 1;
             else
                 assign_node->nnode = 2;
+#endif
 
             arg_info->node[0] = assign_node;
 
             /* Now, we have to flatten the child "tmp_node1" recursively! */
+#ifndef NEWTREE
             let_node->nnode = 1;
+#endif
             let_node->node[0] = Trav (tmp_node1, arg_info);
         } else
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
@@ -1319,10 +1398,12 @@ FltnLet (node *arg_node, node *arg_info)
             FREE (new_assign->node[1]->node[1]);
             /* a new node is put in front! */
             new_assign->node[1] = arg_info->node[0];
+#ifndef NEWTREE
             if (NULL != new_assign->node[1]->node[1])
                 new_assign->nnode = 2;
             else
                 new_assign->nnode = 1;
+#endif
             arg_info->node[0] = new_assign;
             tos = tmp_tos;
         } else
@@ -1390,7 +1471,9 @@ FltnCon (node *arg_node, node *arg_info)
             || (N_array == arg_node->node[0]->nodetype)) {
             int old_tag = arg_info->info.cint;
             node *exprs = MakeExprs (MODARRAY_ARRAY (arg_node), NULL);
+#ifndef NEWTREE
             exprs->nnode = 1;
+#endif
             arg_info->info.cint = MODARRAY;
             exprs = Trav (exprs, arg_info);
             arg_info->info.cint = old_tag;
@@ -1414,7 +1497,9 @@ FltnCon (node *arg_node, node *arg_info)
         exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
                                              * call FltnExprs
                                              */
+#ifndef NEWTREE
         exprs->nnode = 1;
+#endif
         exprs = Trav (exprs, arg_info); /* call FltnExprs */
         arg_node->node[1] = exprs->node[0];
         FREE (exprs);
@@ -1439,15 +1524,24 @@ FltnCon (node *arg_node, node *arg_info)
     if (NULL != info_node->node[1]) {
         node *tmp = info_node->node[1];
 
+#ifndef NEWTREE
         while (1 < tmp->nnode)
+#else
+        while (tmp->node[1] != NULL)
+#endif
             tmp = tmp->node[1];
+
         if ((N_foldprf == arg_node->nodetype) || (N_foldfun == arg_node->nodetype)) {
             tmp->node[1] = arg_node->node[0]->node[0];
+#ifndef NEWTREE
             tmp->nnode = 2;
+#endif
             arg_node->node[0]->node[0] = info_node->node[1];
         } else {
             tmp->node[1] = arg_node->node[1]->node[0];
+#ifndef NEWTREE
             tmp->nnode = 2;
+#endif
             arg_node->node[1]->node[0] = info_node->node[1];
         }
     }
