@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.155  1998/05/06 15:12:16  srs
+ * changed INFO_DUP_CONT macro
+ * (node[1] instead of node[0] because of conflicts with INFO_INL_ macros).
+ *
  * Revision 1.154  1998/05/06 14:27:41  dkr
  * added macros for DataFlowMasks
  *
@@ -2266,11 +2270,13 @@ extern node *MakePragma ();
 extern node *MakeInfo ();
 
 /* DupTree */
-#define INFO_DUPCONT(n) (n->node[0])
+/* ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
+   to avoid overlapping addresses. */
+#define INFO_DUP_CONT(n) (n->node[1])
 
 /* TC */
-#define INFO_NEXTASSIGN(n) (n->node[1])
-#define INFO_LASSIGN(n) (n->node[3])
+#define INFO_TC_NEXTASSIGN(n) (n->node[1])
+#define INFO_TC_LASSIGN(n) (n->node[3])
 
 /* writesib */
 #define INFO_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
@@ -2303,6 +2309,8 @@ extern node *MakeInfo ();
 #define INFO_MASK(n, x) (n->mask[x])
 
 /* inline */
+/* ATTENTION: Usage of DUP and INL macros on arg_info are mixed. Be careful
+   to avoid overlapping addresses. */
 #define INFO_INL_FIRST_FUNC(n) (n->node[0])
 #define INFO_INL_TYPES(n) (n->node[2])
 
