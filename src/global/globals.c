@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/09/30 20:14:17  sah
+ * renamed newast version to 1.00-alpha
+ *
  * Revision 3.65  2004/09/28 16:32:19  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -379,7 +382,7 @@ bool khf = FALSE;
 
 /* version identifier of sac2c */
 #ifdef NEW_AST
-char version_id[] = "v0.91-ssa-newast";
+char version_id[] = "v1.00-alpha";
 #else
 char version_id[] = "v0.91-ssa";
 #endif
