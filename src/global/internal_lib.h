@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/03/17 20:43:26  dkr
+ * fixed a bug in CHECK_DBUG_STOP
+ *
  * Revision 2.13  2000/03/17 11:12:51  dkr
  * definition of macro PHASE_EPILOG modified:
  * ABORT_ON_ERROR embedded, lac<->fun rearranged
@@ -149,7 +152,9 @@ extern void ComputeMallocAlignStep (void);
 
 #define MALLOC(size) Malloc (size)
 
-#define PHASE_PROLOG CHECK_DBUG_START
+#define PHASE_PROLOG                                                                     \
+    CHECK_DBUG_START;                                                                    \
+    /* empty */
 
 #define PHASE_EPILOG                                                                     \
     ABORT_ON_ERROR;                                                                      \
@@ -157,11 +162,11 @@ extern void ComputeMallocAlignStep (void);
         syntax_tree = Fun2Lac (syntax_tree);                                             \
         ABORT_ON_ERROR;                                                                  \
     }                                                                                    \
-    CHECK_DBUG_STOP;                                                                     \
     if (do_lac2fun[compiler_phase + 1]) {                                                \
         syntax_tree = Lac2Fun (syntax_tree);                                             \
         ABORT_ON_ERROR;                                                                  \
-    }
+    }                                                                                    \
+    CHECK_DBUG_STOP;
 
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
@@ -174,14 +179,14 @@ extern void ComputeMallocAlignStep (void);
     }
 #define CHECK_DBUG_STOP                                                                  \
     {                                                                                    \
-        if ((my_dbug) && (my_dbug_active) && (compiler_phase <= my_dbug_to)) {           \
+        if ((my_dbug) && (my_dbug_active) && (compiler_phase >= my_dbug_to)) {           \
             DBUG_POP ();                                                                 \
             my_dbug_active = 0;                                                          \
         }                                                                                \
     }
 #else /* DBUG_OFF */
-#define CHECK_DBUG_START
-#define CHECK_DBUG_STOP
+#define CHECK_DBUG_START(compiler_phase)
+#define CHECK_DBUG_STOP(compiler_phase)
 #endif /* DBUG_OFF */
 
 #endif /* _internal_lib_h */
