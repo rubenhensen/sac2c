@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.51  2004/11/24 17:11:03  mwe
+  ToOldTypes added
+
   Revision 1.50  2004/11/24 16:31:21  sbs
   TR_nt2ot added
 
@@ -261,6 +264,17 @@
 	  <node name="Ap" />
 	  <node name="Cast" />
 	  <node name="Typedef" />
+	  <node name="Array" />
+	</user>
+      </traversal>
+      <traversal id="TOT" name="ToOldTypes Traversal" default="sons" include="ToOldTypes.h" >
+	<user>
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Vardec" />
+	  <node name="Arg" />
+	  <node name="Fundef" />
 	  <node name="Array" />
 	</user>
       </traversal>
