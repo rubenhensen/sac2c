@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/02/21 18:18:18  dkr
+ * access macros used for TYPES structure (finished :-)
+ *
  * Revision 3.35  2002/02/21 17:46:09  dkr
  * access macros used for TYPES structure (not finished yet)
  *
@@ -330,7 +333,7 @@
     {                                                                                    \
         if (tos < stack_limit) {                                                         \
             DBUG_PRINT ("TYPE", (" push : %s" F_PTR " shpseg:" F_PTR, name, tos,         \
-                                 new_node->SHP));                                        \
+                                 VARDEC_OR_ARG_SHPSEG (new_node)->shp));                 \
             tos->id = name;                                                              \
             tos->node = new_node;                                                        \
             tos++;                                                                       \
@@ -1650,7 +1653,7 @@ LookupVar (char *id)
 
     if (is_defined) {
 #ifndef DBUG_OFF
-        db_str = Type2String (tmp->node->info.types, 0, TRUE);
+        db_str = Type2String (VARDEC_OR_ARG_TYPE (tmp->node), 0, TRUE);
         DBUG_PRINT ("TYPE", ("found: %s %s", db_str, id));
         db_str = Free (db_str);
 #endif
@@ -2067,7 +2070,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
                 } else
                     arg_node->FUN_MOD_NAME = StringCopy (FUNDEF_MOD (fun_p->node));
 #endif
-                return_type = DupAllTypes (FUNDEF_TYPE (fun_p->node));
+                return_type = DupAllTypes (FUNDEF_TYPES (fun_p->node));
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
@@ -2115,7 +2118,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #ifndef DO_NOT_SET_FUN_MOD_NAME
                 arg_node->FUN_MOD_NAME = FUNDEF_MOD (fun_p->node);
 #endif
-                return_type = DupAllTypes (fun_p->node->info.types);
+                return_type = DupAllTypes (FUNDEF_TYPES (fun_p->node));
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
@@ -2258,8 +2261,8 @@ CheckIds (ids *arg_ids, node *vardec, int line)
  *
  *  remarks       : - ret_value contains the number of paramters that are
  *                    arrays with unknown shape.
- *                  - formal paramters of  external functions
- *                    (NULL==info.types->id_mod) will not be checked
+ *                  - formal parameters of external functions
+ *                    (FUNDEF_MOD == NULL) will not be checked
  *                    (only result_type)
  */
 
@@ -2875,12 +2878,12 @@ InitTypeTab (node *modul_node)
         mods *mods[2];
 
         last_node = modul_node;
-        tmp = modul_node->node[1];
+        tmp = MODUL_TYPES (modul_node);
 
         while (i < type_tab_size) {
-            name = tmp->info.types->name;
+            name = TYPES_NAME (TYPEDEF_TYPE (tmp));
             /* name of type current type is based on*/
-            mod_name = tmp->info.types->name_mod;
+            mod_name = TYPES_MOD (TYPEDEF_TYPE (tmp));
             /* dito, but name of module */
             if (NULL != mod_name) {
                 /* now look for the module where the type is defined */
@@ -4583,18 +4586,18 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
              * sbs: calling CompatibleTypes with 0 as 3rd arg makes int, float,
              * and double incompatible!!
              */
-            switch (CompatibleTypes (vardec_p->info.types, type, 0, line)) {
+            switch (CompatibleTypes (VARDEC_TYPE (vardec_p), type, 0, line)) {
             case CMP_equal: /* 1*/
                 break;
             case CMP_incompatible: /* 0 */ {
                 ABORT (line, ("Incompatible types in declaration (%s) "
                               "and  usage (%s) of variable '%s`",
-                              Type2String (vardec_p->info.types, 0, TRUE),
+                              Type2String (VARDEC_TYPE (vardec_p), 0, TRUE),
                               Type2String (type, 0, TRUE), ids->id));
                 break;
             }
             case CMP_one_unknown_shape: /* 2 */ {
-                UpdateType (vardec_p->info.types, type, line);
+                UpdateType (VARDEC_TYPE (vardec_p), type, line);
                 break;
             }
             case CMP_both_unknown_shape: {
@@ -4603,12 +4606,12 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
                         str = Type2String (type, 0, TRUE);
                         WARN (line, ("Types in declaration (%s) and usage "
                                      "(%s) of variable '%s` have unknown shape",
-                                     Type2String (vardec_p->info.types, 0, TRUE), str,
+                                     Type2String (VARDEC_TYPE (vardec_p), 0, TRUE), str,
                                      ids->id));
                         str = Free (str);
                     } else {
                         /* update int[] => int[.,...,.] ! */
-                        UpdateType (vardec_p->info.types, type, line);
+                        UpdateType (VARDEC_TYPE (vardec_p), type, line);
                     }
                 }
                 break;
@@ -4946,7 +4949,7 @@ TypeInference (node *arg_node, node *arg_info)
             stack_p = LookupVar (ID_NAME (arg_node));
 
             if (stack_p) {
-                return_type = DupAllTypes (stack_p->node->info.types);
+                return_type = DupAllTypes (VARDEC_OR_ARG_TYPE (stack_p->node));
                 ID_VARDEC (arg_node) = stack_p->node;
 
                 DBUG_PRINT ("REF", ("added reference" F_PTR " for %s to %s",
@@ -5424,13 +5427,13 @@ TClet (node *arg_node, node *arg_info)
                  * sbs: switched the prim_fun_flag from -1 to 0 since we
                  * otherwise get an error in UpdateType for the following example:
                  */
-                switch (CompatibleTypes (elem->node->info.types, type, 0,
+                switch (CompatibleTypes (VARDEC_OR_ARG_TYPE (elem->node), type, 0,
                                          NODE_LINE (arg_node))) {
                 case CMP_incompatible: /* 0 */
                     ABORT (NODE_LINE (arg_node),
                            ("Incompatible types in declaration (%s) "
                             "and usage (%s) of variable '%s`",
-                            Type2String (elem->node->info.types, 0, TRUE),
+                            Type2String (VARDEC_OR_ARG_TYPE (elem->node), 0, TRUE),
                             Type2String (type, 0, TRUE), ids->id));
                     break;
                 case CMP_one_unknown_shape: /* 2*/
@@ -5449,7 +5452,8 @@ TClet (node *arg_node, node *arg_info)
                     break;
                 case CMP_both_unknown_shape: /* neu 8.12. */
                     if (kind_of_file != SAC_MOD) {
-                        char *str1 = Type2String (elem->node->info.types, 0, TRUE);
+                        char *str1
+                          = Type2String (VARDEC_OR_ARG_TYPE (elem->node), 0, TRUE);
                         char *str2 = Type2String (type, 0, TRUE);
                         WARN (NODE_LINE (arg_node),
                               ("Types in declaration (%s) and usage "
@@ -6228,7 +6232,7 @@ TI_array (node *arg_node, node *arg_info)
         DBUG_PRINT ("TYPE", ("type of array: %s", db_str));
         db_str = Free (db_str);
 #endif
-        /* store type of array in arg_node->info.types */
+        /* store type of array in ARRAY_TYPE(arg_node) */
         ARRAY_TYPE (arg_node) = DupAllTypes (return_type);
     } else {
         ABORT (NODE_LINE (arg_node), ("Type of array not inferable"));
