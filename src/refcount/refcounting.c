@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/09/30 19:53:49  sah
+ * made rc_counter visible
+ *
  * Revision 1.15  2004/08/13 09:21:43  ktr
  * Members of INFO structure are now properly initialized.
  *
@@ -158,11 +161,11 @@ typedef struct RC_LIST_STRUCT {
  *  Structure used for the enviroments of a variable.
  *
  ***************************************************************************/
-typedef struct RC_COUNTER {
+struct RC_COUNTER {
     int depth;
     int count;
     struct RC_COUNTER *next;
-} rc_counter;
+};
 
 /**
  * Oracle to tell which parameters of a external function must be

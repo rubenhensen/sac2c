@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/09/30 19:53:49  sah
+ * made rc_counter visible
+ *
  * Revision 3.32  2004/08/26 17:03:54  skt
  * value MUTH_MULTI_SPECIALIZED added to mtexecmode_t
  *
@@ -639,5 +642,11 @@ typedef struct {
     void **ptr_out; /* 'types*' or 'ids*' */
     argtag_t *tag;
 } argtab_t;
+
+/*
+ * used in emm
+ */
+
+typedef struct RC_COUNTER rc_counter;
 
 #endif /* _sac_types_h */
