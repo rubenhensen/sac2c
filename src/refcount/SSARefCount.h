@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/06/03 15:22:53  ktr
+ * New version featuring:
+ * - alloc_or_reuse
+ * - fill
+ * - explicit index vector allocation
+ *
  * Revision 1.6  2004/05/06 17:50:43  ktr
  * Added SSARCicm
  *
@@ -25,12 +31,7 @@ extern node *SSARCarg (node *arg_node, node *arg_info);
 extern node *SSARCblock (node *arg_node, node *arg_info);
 extern node *SSARCvardec (node *arg_node, node *arg_info);
 extern node *SSARCap (node *arg_node, node *arg_info);
-extern node *SSARCnum (node *arg_node, node *arg_info);
-extern node *SSARCchar (node *arg_node, node *arg_info);
-extern node *SSARCbool (node *arg_node, node *arg_info);
-extern node *SSARCfloat (node *arg_node, node *arg_info);
-extern node *SSARCdouble (node *arg_node, node *arg_info);
-extern node *SSARCstr (node *arg_node, node *arg_info);
+extern node *SSARCconst (node *arg_node, node *arg_info);
 extern node *SSARCarray (node *arg_node, node *arg_info);
 extern node *SSARCfuncond (node *arg_node, node *arg_info);
 extern node *SSARCcond (node *arg_node, node *arg_info);
