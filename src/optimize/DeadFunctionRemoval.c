@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/19 10:17:34  sah
+ * objinitfuns are never removed
+ *
  * Revision 3.13  2004/10/26 09:31:35  sah
  * uses new PROVIDED/EXPORTED flags in newast mode now
  *
@@ -258,7 +261,8 @@ DFRfundef (node *arg_node, info *arg_info)
         if ((FUNDEF_STATUS (arg_node) == ST_exported)
             || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
 #else
-        if (GET_FLAG (FUNDEF, arg_node, IS_PROVIDED)) {
+        if ((GET_FLAG (FUNDEF, arg_node, IS_PROVIDED))
+            || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
 #endif
             FUNDEF_EXPORT (arg_node) = TRUE;
 
