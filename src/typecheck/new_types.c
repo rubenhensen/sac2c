@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/04 12:16:38  dkr
+ * data type DFT_state invented
+ *
  * Revision 3.18  2002/09/03 18:53:58  dkr
  * - interface for dispatching functions added
  * - creating wrapper function code is complete now
@@ -156,6 +159,15 @@ typedef struct ATTR_IRES {
     node **fundefs;
     int *poss;
 } attr_ires;
+
+typedef struct dft_state {
+    int max_funs;
+    int cnt_funs;
+    node **fundefs;
+    bool *legal;
+    int *ups;
+    int *downs;
+} DFT_state;
 
 /*
  * In order to have a uniform type for ALL type constructors, we define
@@ -1501,238 +1513,211 @@ TYFreeDFT_res (DFT_res *res)
 /******************************************************************************
  *
  * Function:
- *   void AllocDispatchData( int max_funs,
- *                           node ***fundefs,
- *                           bool **legal, int **ups, int **downs)
+ *   DFT_state *AllocDFT_state( int max_funs)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void AllocDispatchData (int max_funs,                         /* in */
-                               node ***fundefs,                      /* out */
-                               bool **legal, int **ups, int **downs) /* out */
+static DFT_state *
+AllocDFT_state (int max_funs)
 {
-    DBUG_ENTER ("AllocDispatchData");
+    DFT_state *state;
 
-    *fundefs = (node **)Malloc (max_funs * sizeof (node *));
-    *legal = (bool *)Malloc (max_funs * sizeof (bool));
-    *ups = (int *)Malloc (max_funs * sizeof (int));
-    *downs = (int *)Malloc (max_funs * sizeof (int));
+    DBUG_ENTER ("AllocDFT_state");
 
-    DBUG_VOID_RETURN;
+    state = (DFT_state *)Malloc (sizeof (DFT_state));
+
+    state->max_funs = max_funs;
+    state->cnt_funs = 0;
+    state->fundefs = (node **)Malloc (max_funs * sizeof (node *));
+    state->legal = (bool *)Malloc (max_funs * sizeof (bool));
+    state->ups = (int *)Malloc (max_funs * sizeof (int));
+    state->downs = (int *)Malloc (max_funs * sizeof (int));
+
+    DBUG_RETURN (state);
 }
 
 /******************************************************************************
  *
  * Function:
- *   void FreeDispatchData( int max_funs,
- *                          node ***fundefs,
- *                          bool **legal, int **ups, int **downs)
+ *   DFT_state *FreeDFT_state( DFT_state *state)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void FreeDispatchData (int max_funs,                         /* in */
-                              node ***fundefs,                      /* inout */
-                              bool **legal, int **ups, int **downs) /* inout */
+static DFT_state *
+FreeDFT_state (DFT_state *state)
 {
-    DBUG_ENTER ("FreeDispatchData");
+    DBUG_ENTER ("FreeDFT_state");
 
-    *fundefs = Free (*fundefs);
-    *legal = Free (*legal);
-    *ups = Free (*ups);
-    *downs = Free (*downs);
+    state->fundefs = Free (state->fundefs);
+    state->legal = Free (state->legal);
+    state->ups = Free (state->ups);
+    state->downs = Free (state->downs);
 
-    DBUG_VOID_RETURN;
+    state = Free (state);
+
+    DBUG_RETURN (state);
 }
 
 /******************************************************************************
  *
  * Function:
- *   void CopyDispatchData( int max_funs,
- *                          node ***new_fundefs,
- *                          bool **new_legal, int **new_ups, int **new_downs,
- *                          node **fundefs,
- *                          bool *legal, int *ups, int *downs)
+ *   DFT_state *CopyDFT_state( DFT_state *state)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void CopyDispatchData (int max_funs,                                     /* in */
-                              node ***new_fundefs,                              /* out */
-                              bool **new_legal, int **new_ups, int **new_downs, /* out */
-                              node **fundefs,                                   /* in */
-                              bool *legal, int *ups, int *downs)                /* in */
+static DFT_state *
+CopyDFT_state (DFT_state *state)
 {
-    int j;
+    DFT_state *new_state;
+    int i;
 
-    DBUG_ENTER ("CopyDispatchData");
+    DBUG_ENTER ("CopyDFT_state");
 
-    AllocDispatchData (max_funs, new_fundefs, new_legal, new_ups, new_downs);
+    new_state = AllocDFT_state (state->max_funs);
 
-    for (j = 0; j < max_funs; j++) {
-        (*new_fundefs)[j] = fundefs[j];
-        (*new_legal)[j] = legal[j];
-        (*new_ups)[j] = ups[j];
-        (*new_downs)[j] = downs[j];
+    new_state->cnt_funs = state->cnt_funs;
+    for (i = 0; i < new_state->max_funs; i++) {
+        new_state->fundefs[i] = state->fundefs[i];
+        new_state->legal[i] = state->legal[i];
+        new_state->ups[i] = state->ups[i];
+        new_state->downs[i] = state->downs[i];
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (new_state);
 }
 
 /******************************************************************************
  *
  * Function:
- *   void InitDispatchData( int max_funs,
- *                          node **fundefs,
- *                          bool *legal, int *ups, int *downs,
- *                          int *cnt_funs,
- *                          ntype *ires, int lower)
+ *   DFT_state *InsertFirstArgDFT_state( DFT_state *state,
+ *                                       ntype *ires, int lower)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void InitDispatchData (int max_funs,                      /* in */
-                              node **fundefs,                    /* update */
-                              bool *legal, int *ups, int *downs, /* update */
-                              int *cnt_funs,                     /* out */
-                              ntype *ires, int lower)            /* in */
+static DFT_state *
+InsertFirstArgDFT_state (DFT_state *state, ntype *ires, int lower)
 {
-    int j, k;
+    int cnt, i;
 
-    DBUG_ENTER ("InitDispatchData");
+    DBUG_ENTER ("InsertFirstArgDFT_state");
 
-    k = 0;
-    for (j = 0; j < max_funs; j++) {
-        fundefs[j] = IRES_FUNDEF (ires, j);
-        if ((IRES_POS (ires, j) <= 0) || (lower == 0)) {
-            legal[j] = TRUE;
-            if (IRES_POS (ires, j) > 0) {
-                ups[j] = IRES_POS (ires, j);
-                downs[j] = 0;
+    cnt = 0;
+    for (i = 0; i < state->max_funs; i++) {
+        state->fundefs[i] = IRES_FUNDEF (ires, i);
+        if ((IRES_POS (ires, i) <= 0) || (lower == 0)) {
+            cnt++;
+            state->legal[i] = TRUE;
+            if (IRES_POS (ires, i) > 0) {
+                state->ups[i] = IRES_POS (ires, i);
+                state->downs[i] = 0;
             } else {
-                ups[j] = 0;
-                downs[j] = IRES_POS (ires, j) - lower;
+                state->ups[i] = 0;
+                state->downs[i] = IRES_POS (ires, i) - lower;
             }
         } else {
-            legal[j] = FALSE;
+            state->legal[i] = FALSE;
         }
-        k++;
     }
 
-    *cnt_funs = k;
+    state->cnt_funs = cnt;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (state);
 }
 
 /******************************************************************************
  *
  * Function:
- *   void UpdateDispatchData( int max_funs,
- *                            node **fundefs,
- *                            bool *legal, int *ups, int *downs,
- *                            int *cnt_funs,
- *                            ntype *ires, int lower)
+ *   DFT_state *InsertNextArgDFT_state( DFT_state *state,
+ *                                      ntype *ires, int lower)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void UpdateDispatchData (int max_funs,                      /* in */
-                                node **fundefs,                    /* update */
-                                bool *legal, int *ups, int *downs, /* update */
-                                int *cnt_funs,                     /* out */
-                                ntype *ires, int lower)            /* in */
+static DFT_state *
+InsertNextArgDFT_state (DFT_state *state, ntype *ires, int lower)
 {
-    int j, k;
+    int cnt, i, j;
 
-    DBUG_ENTER ("UpdateDispatchData");
+    DBUG_ENTER ("InsertNextArgDFT_state");
 
-    k = 0;
-    for (j = 0; j < max_funs; j++) {
-        if ((k < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, k) == fundefs[j])) {
-            if (IRES_POS (ires, k) > 0) {
+    cnt = 0;
+    j = 0;
+    for (i = 0; i < state->max_funs; i++) {
+        if ((j < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, j) == state->fundefs[i])) {
+            if (IRES_POS (ires, j) > 0) {
                 if (lower > 0) {
-                    legal[j] = FALSE;
+                    state->legal[i] = FALSE;
                 } else {
-                    ups[j] += IRES_POS (ires, k);
+                    state->ups[i] += IRES_POS (ires, j);
+                    cnt++;
                 }
             } else {
-                downs[j] += IRES_POS (ires, k) - lower;
+                state->downs[i] += IRES_POS (ires, j) - lower;
+                cnt++;
             }
-            k++;
+            j++;
         } else {
-            fundefs[j] = NULL;
+            state->fundefs[i] = NULL;
         }
     }
 
-    *cnt_funs = k;
+    state->cnt_funs = cnt;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (state);
 }
 
 /******************************************************************************
  *
  * Function:
- *   void FinalizeDispatchData( int max_funs,
- *                              node **fundefs,
- *                              bool *legal, int *ups, int *downs,
- *                              int *cnt_funs)
+ *   DFT_state *FinalizeDFT_state( DFT_state *state)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static void FinalizeDispatchData (int max_funs,                      /* in */
-                                  node **fundefs,                    /* update */
-                                  bool *legal, int *ups, int *downs, /* update */
-                                  int *cnt_funs)                     /* in */
+static DFT_state *
+FinalizeDFT_state (DFT_state *state)
 {
-    int i, k;
+    int i;
 
-    DBUG_ENTER ("FinalizeDispatchData");
+    DBUG_ENTER ("FinalizeDFT_state");
 
     /*
      * all those that are lower than up-projections were marked as illegal
      * before; now, we set the according fundefs to NULL.
      * In contrast to (errorneous) considerations made before, these cannot(!)
-     * be set to NULL earlier since that would not guarantee the j / k mechanism
-     * to work properly anymore.
+     * be set to NULL earlier since that would not guarantee the i / j mechanism
+     * in InsertNextArgDFT_state() to work properly anymore.
      */
 
-    k = *cnt_funs;
-
-    for (i = 0; i < max_funs; i++) {
-        if (!legal[i]) {
-            if (fundefs[i] != NULL) {
-                fundefs[i] = NULL;
-                k--;
-            }
+    for (i = 0; i < state->max_funs; i++) {
+        if (!state->legal[i]) {
+            state->fundefs[i] = NULL;
         }
     }
 
-    *cnt_funs = k;
-
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (state);
 }
 
 /******************************************************************************
  *
  * Function:
- *   DFT_res * DispatchData2DFT_res( int max_funs,
- *                                   node **fundefs,
- *                                   int *ups, int *downs,
- *                                   int cnt_funs)
+ *   DFT_res *DFT_state2DFT_res( DFT_state *state)
  *
  * Description:
  *
@@ -1772,10 +1757,8 @@ EliminateDeriveablePartial (node **dp_list, int *dp2ud, int length, int pos)
     DBUG_VOID_RETURN;
 }
 
-static DFT_res *DispatchData2DFT_res (int max_funs,         /* in */
-                                      node **fundefs,       /* in */
-                                      int *ups, int *downs, /* in */
-                                      int cnt_funs)         /* in */
+static DFT_res *
+DFT_state2DFT_res (DFT_state *state)
 {
     DFT_res *res;
     int max_deriveable;
@@ -1785,11 +1768,11 @@ static DFT_res *DispatchData2DFT_res (int max_funs,         /* in */
     int *dp2ud;
     int *p2ud;
 
-    DBUG_ENTER ("DispatchData2DFT_res");
+    DBUG_ENTER ("DFT_state2DFT_res");
 
-    res = TYMakeDFT_res (NULL, cnt_funs);
-    dp2ud = (int *)Malloc (cnt_funs * sizeof (int));
-    p2ud = (int *)Malloc (cnt_funs * sizeof (int));
+    res = TYMakeDFT_res (NULL, state->cnt_funs);
+    dp2ud = (int *)Malloc (state->cnt_funs * sizeof (int));
+    p2ud = (int *)Malloc (state->cnt_funs * sizeof (int));
 
     /*
      * First, we analyze the accumulated ups and downs:
@@ -1819,11 +1802,11 @@ static DFT_res *DispatchData2DFT_res (int max_funs,         /* in */
      */
     /* Due to a bug in limits.h (!!), we have to use INT_MAX here!! */
     max_deriveable = 1 - INT_MAX;
-    for (i = 0; i < max_funs; i++) {
-        if (fundefs[i] != NULL) {
-            if (ups[i] == 0) {
-                if (downs[i] == 0) {
-                    res->def = fundefs[i];
+    for (i = 0; i < state->max_funs; i++) {
+        if (state->fundefs[i] != NULL) {
+            if (state->ups[i] == 0) {
+                if (state->downs[i] == 0) {
+                    res->def = state->fundefs[i];
                     /* no down projections in case of an exact definition! */
                     max_deriveable = 0;
                     res->deriveable = NULL;
@@ -1831,20 +1814,20 @@ static DFT_res *DispatchData2DFT_res (int max_funs,         /* in */
                     exact_found = TRUE;
                     res->num_deriveable_partials = 0;
                 } else {
-                    if (downs[i] > max_deriveable) {
-                        res->deriveable = fundefs[i];
-                        max_deriveable = downs[i];
+                    if (state->downs[i] > max_deriveable) {
+                        res->deriveable = state->fundefs[i];
+                        max_deriveable = state->downs[i];
                     }
                 }
             } else {
-                if (downs[i] == 0) {
-                    res->partials[res->num_partials] = fundefs[i];
+                if (state->downs[i] == 0) {
+                    res->partials[res->num_partials] = state->fundefs[i];
                     p2ud[res->num_partials] = i;
                     res->num_partials++;
                 } else {
                     if (!exact_found) {
                         res->deriveable_partials[res->num_deriveable_partials]
-                          = fundefs[i];
+                          = state->fundefs[i];
                         dp2ud[res->num_deriveable_partials] = i;
                         res->num_deriveable_partials++;
                     } /* else ignore it */
@@ -1885,18 +1868,21 @@ static DFT_res *DispatchData2DFT_res (int max_funs,         /* in */
 
     for (i = 0; i < res->num_deriveable_partials; i++) {
         for (j = i + 1; j < res->num_deriveable_partials; j++) {
-            if (ups[dp2ud[i]] == ups[dp2ud[j]]) {
-                if (downs[dp2ud[i]] > downs[dp2ud[j]]) {
+            if (state->ups[dp2ud[i]] == state->ups[dp2ud[j]]) {
+                if (state->downs[dp2ud[i]] > state->downs[dp2ud[j]]) {
                     dom = i;
                     irr = j;
                 } else {
                     dom = j;
                     irr = i;
                 }
-                DBUG_PRINT ("NTDIS", ("  %p might shadow %p here", fundefs[dp2ud[dom]],
-                                      fundefs[dp2ud[irr]]));
-                if (AllArgTypesLe (fundefs[dp2ud[dom]], fundefs[dp2ud[irr]])) {
-                    DBUG_PRINT ("NTDIS", ("  eliminating %p", fundefs[dp2ud[irr]]));
+                DBUG_PRINT ("NTDIS",
+                            ("  %p might shadow %p here", state->fundefs[dp2ud[dom]],
+                             state->fundefs[dp2ud[irr]]));
+                if (AllArgTypesLe (state->fundefs[dp2ud[dom]],
+                                   state->fundefs[dp2ud[irr]])) {
+                    DBUG_PRINT ("NTDIS",
+                                ("  eliminating %p", state->fundefs[dp2ud[irr]]));
                     EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
                                                 res->num_deriveable_partials, irr);
                     res->num_deriveable_partials--;
@@ -1912,13 +1898,16 @@ static DFT_res *DispatchData2DFT_res (int max_funs,         /* in */
     }
     for (i = 0; i < res->num_deriveable_partials; i++) {
         for (j = 0; j < res->num_partials; j++) {
-            if (ups[dp2ud[i]] == ups[p2ud[j]]) {
+            if (state->ups[dp2ud[i]] == state->ups[p2ud[j]]) {
                 dom = j;
                 irr = i;
-                DBUG_PRINT ("NTDIS", ("  %p might shadow %p here", fundefs[p2ud[dom]],
-                                      fundefs[dp2ud[irr]]));
-                if (AllArgTypesLe (fundefs[p2ud[dom]], fundefs[dp2ud[irr]])) {
-                    DBUG_PRINT ("NTDIS", ("  eliminating %p", fundefs[dp2ud[irr]]));
+                DBUG_PRINT ("NTDIS",
+                            ("  %p might shadow %p here", state->fundefs[p2ud[dom]],
+                             state->fundefs[dp2ud[irr]]));
+                if (AllArgTypesLe (state->fundefs[p2ud[dom]],
+                                   state->fundefs[dp2ud[irr]])) {
+                    DBUG_PRINT ("NTDIS",
+                                ("  eliminating %p", state->fundefs[dp2ud[irr]]));
                     EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
                                                 res->num_deriveable_partials, irr);
                     res->num_deriveable_partials--;
@@ -2077,15 +2066,15 @@ DebugPrintDispatchInfo (char *dbug_str, ntype *ires)
 }
 
 static void
-DebugPrintUpsAndDowns (int max_funs, node **fundefs, int *ups, int *downs)
+DebugPrintDFT_state (DFT_state *state)
 {
     int i;
 
-    DBUG_ENTER ("DebugPrintUpsAndDowns");
+    DBUG_ENTER ("DebugPrintDFT_state");
 
-    for (i = 0; i < max_funs; i++) {
-        DBUG_PRINT ("NTDIS",
-                    ("  fundef %8p: ups %2d | downs %2d", fundefs[i], ups[i], downs[i]));
+    for (i = 0; i < state->max_funs; i++) {
+        DBUG_PRINT ("NTDIS", ("  fundef %8p: ups %2d | downs %2d", state->fundefs[i],
+                              state->ups[i], state->downs[i]));
     }
 
     DBUG_VOID_RETURN;
@@ -2098,15 +2087,10 @@ TYDispatchFunType (ntype *fun, ntype *args)
 {
     int lower;
     int i, n;
-    int k = 0;
-    int max_funs = 0;
     ntype *arg, *ires;
     node *fundef;
     DFT_res *res;
-    int *ups = NULL;
-    bool *legal = NULL;
-    int *downs = NULL;
-    node **fundefs = NULL;
+    DFT_state *state;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -2145,41 +2129,34 @@ TYDispatchFunType (ntype *fun, ntype *args)
              * Now, we accumulate the ups and downs:
              */
             if (i == 0) {
-                max_funs = IRES_NUMFUNS (ires);
-                AllocDispatchData (max_funs, &fundefs, &legal, &ups, &downs);
-                InitDispatchData (max_funs, fundefs, legal, ups, downs, &k, ires, lower);
+                state = AllocDFT_state (IRES_NUMFUNS (ires));
+                state = InsertFirstArgDFT_state (state, ires, lower);
             } else {
-                UpdateDispatchData (max_funs, fundefs, legal, ups, downs, &k, ires,
-                                    lower);
+                state = InsertNextArgDFT_state (state, ires, lower);
             }
 
             DBUG_PRINT ("NTDIS", ("accumulated ups and downs:"));
-            DBUG_EXECUTE ("NTDIS",
-                          DebugPrintUpsAndDowns (max_funs, fundefs, ups, downs););
+            DBUG_EXECUTE ("NTDIS", DebugPrintDFT_state (state););
 
             fun = IRES_TYPE (ires);
         }
 
-        FinalizeDispatchData (max_funs, fundefs, legal, ups, downs, &k);
+        state = FinalizeDFT_state (state);
 
         DBUG_PRINT ("NTDIS", ("final ups and downs:"));
-        DBUG_EXECUTE ("NTDIS", DebugPrintUpsAndDowns (max_funs, fundefs, ups, downs););
+        DBUG_EXECUTE ("NTDIS", DebugPrintDFT_state (state););
 
         /*
          * Finally, we export our findings via a DFT_res structure.
-         *   in order to avoid multiple allocations we allocate
-         *   space for a maximum of "k" fundefs. This is ok as
-         *   k denotes the number of fundefs found at the last ires
-         *   node!
          * However, in case of 0 args (n==0), no dispatch has to be made
          * (since no overloading is allowed) so we return NULL!!
          */
 
-        res = DispatchData2DFT_res (max_funs, fundefs, ups, downs, k);
+        res = DFT_state2DFT_res (state);
 
         res->type = fun; /* insert the result type */
 
-        FreeDispatchData (max_funs, &fundefs, &legal, &ups, &downs);
+        state = FreeDFT_state (state);
     }
 
     DBUG_RETURN (res);
@@ -4421,9 +4398,8 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 }
 
 static node *
-CreateWrapperCode (ntype *type, int max_funs, node **fundefs, bool *legal, int *ups,
-                   int *downs, int lower, node *arg, node *args, node *vardecs,
-                   node **new_vardecs)
+CreateWrapperCode (ntype *type, DFT_state *state, int lower, node *arg, node *args,
+                   node *vardecs, node **new_vardecs)
 {
     node *assigns;
     int i;
@@ -4435,42 +4411,40 @@ CreateWrapperCode (ntype *type, int max_funs, node **fundefs, bool *legal, int *
     switch (TYGetConstr (type)) {
     case TC_fun:
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multipe FUN_IBASE found!");
-        assigns = CreateWrapperCode (FUN_IBASE (type, 0), max_funs, fundefs, legal, ups,
-                                     downs, lower, arg, args, vardecs, new_vardecs);
+        assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, arg, args,
+                                     vardecs, new_vardecs);
         break;
 
     case TC_ibase:
         if (IBASE_IARR (type) != NULL) {
-            assigns = CreateWrapperCode (IBASE_IARR (type), max_funs, fundefs, legal, ups,
-                                         downs, lower, arg, args, vardecs, new_vardecs);
+            assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, arg, args,
+                                         vardecs, new_vardecs);
         } else {
             DBUG_ASSERT ((IBASE_GEN (type) != NULL),
                          "neither IBASE_IARR nor IBASE_GEN found!");
-            assigns = CreateWrapperCode (IBASE_GEN (type), max_funs, fundefs, legal, ups,
-                                         downs, 3, arg, args, vardecs, new_vardecs);
+            assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, arg, args, vardecs,
+                                         new_vardecs);
         }
 
         if (IBASE_SCAL (type) != NULL) {
             assigns
               = BuildCondAssign (F_dim, arg, MakeNum (0),
-                                 CreateWrapperCode (IBASE_SCAL (type), max_funs, fundefs,
-                                                    legal, ups, downs, 0, arg, args,
-                                                    vardecs, new_vardecs),
+                                 CreateWrapperCode (IBASE_SCAL (type), state, 0, arg,
+                                                    args, vardecs, new_vardecs),
                                  assigns, new_vardecs);
         }
         break;
 
     case TC_iarr:
         DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
-        assigns = CreateWrapperCode (IARR_GEN (type), max_funs, fundefs, legal, ups,
-                                     downs, 2, arg, args, vardecs, new_vardecs);
+        assigns = CreateWrapperCode (IARR_GEN (type), state, 2, arg, args, vardecs,
+                                     new_vardecs);
 
         for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
             if (IARR_IDIM (type, i) != NULL) {
                 assigns
                   = BuildCondAssign (F_dim, arg, MakeNum (IDIM_DIM (IARR_IDIM (type, i))),
-                                     CreateWrapperCode (IARR_IDIM (type, i), max_funs,
-                                                        fundefs, legal, ups, downs, lower,
+                                     CreateWrapperCode (IARR_IDIM (type, i), state, lower,
                                                         arg, args, vardecs, new_vardecs),
                                      assigns, new_vardecs);
             }
@@ -4479,17 +4453,17 @@ CreateWrapperCode (ntype *type, int max_funs, node **fundefs, bool *legal, int *
 
     case TC_idim:
         DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
-        assigns = CreateWrapperCode (IDIM_GEN (type), max_funs, fundefs, legal, ups,
-                                     downs, 1, arg, args, vardecs, new_vardecs);
+        assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, arg, args, vardecs,
+                                     new_vardecs);
 
         for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
             if (IDIM_ISHAPE (type, i) != NULL) {
                 assigns
                   = BuildCondAssign (F_shape, arg,
                                      SHShape2Array (ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
-                                     CreateWrapperCode (IDIM_ISHAPE (type, i), max_funs,
-                                                        fundefs, legal, ups, downs, lower,
-                                                        arg, args, vardecs, new_vardecs),
+                                     CreateWrapperCode (IDIM_ISHAPE (type, i), state,
+                                                        lower, arg, args, vardecs,
+                                                        new_vardecs),
                                      assigns, new_vardecs);
             }
         }
@@ -4497,32 +4471,27 @@ CreateWrapperCode (ntype *type, int max_funs, node **fundefs, bool *legal, int *
 
     case TC_ishape:
         DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
-        assigns = CreateWrapperCode (ISHAPE_GEN (type), max_funs, fundefs, legal, ups,
-                                     downs, 0, arg, args, vardecs, new_vardecs);
+        assigns = CreateWrapperCode (ISHAPE_GEN (type), state, 0, arg, args, vardecs,
+                                     new_vardecs);
         break;
 
-    case TC_ires: {
-        DFT_res *res;
-        node *fundef;
-        int cnt_funs;
-
-        if (fundefs == NULL) {
-            max_funs = IRES_NUMFUNS (type);
-            AllocDispatchData (max_funs, &fundefs, &legal, &ups, &downs);
-            InitDispatchData (max_funs, fundefs, legal, ups, downs, &cnt_funs, type,
-                              lower);
+    case TC_ires:
+        if (state == NULL) {
+            state = AllocDFT_state (IRES_NUMFUNS (type));
+            state = InsertFirstArgDFT_state (state, type, lower);
         } else {
-            CopyDispatchData (max_funs, &fundefs, &legal, &ups, &downs, fundefs, legal,
-                              ups, downs);
-            UpdateDispatchData (max_funs, fundefs, legal, ups, downs, &cnt_funs, type,
-                                lower);
+            state = CopyDFT_state (state); /* VERY ugly indeed ... */
+            state = InsertNextArgDFT_state (state, type, lower);
         }
 
-        if (cnt_funs <= 0) {
+        if (state->cnt_funs <= 0) {
             assigns = BuildApAssign (NULL, args, vardecs, new_vardecs);
         } else if (TYIsProd (IRES_TYPE (type))) {
-            FinalizeDispatchData (max_funs, fundefs, legal, ups, downs, &cnt_funs);
-            res = DispatchData2DFT_res (max_funs, fundefs, ups, downs, cnt_funs);
+            DFT_res *res;
+            node *fundef;
+
+            state = FinalizeDFT_state (state);
+            res = DFT_state2DFT_res (state);
             DBUG_ASSERT (((res->num_partials == 0)
                           && (res->num_deriveable_partials == 0)),
                          "partials found!");
@@ -4537,13 +4506,12 @@ CreateWrapperCode (ntype *type, int max_funs, node **fundefs, bool *legal, int *
 
             res = TYFreeDFT_res (res);
         } else {
-            assigns
-              = CreateWrapperCode (IRES_TYPE (type), max_funs, fundefs, legal, ups, downs,
-                                   lower, ARG_NEXT (arg), args, vardecs, new_vardecs);
+            assigns = CreateWrapperCode (IRES_TYPE (type), state, lower, ARG_NEXT (arg),
+                                         args, vardecs, new_vardecs);
         }
 
-        FreeDispatchData (max_funs, &fundefs, &legal, &ups, &downs);
-    } break;
+        state = FreeDFT_state (state);
+        break;
 
     default:
         DBUG_ASSERT ((0), "illegal ntype constructor found!");
@@ -4573,9 +4541,8 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
             assigns = BuildApAssign (FUNDEF_RETURN (fundef), FUNDEF_ARGS (fundef),
                                      vardecs, new_vardecs);
         } else {
-            assigns = CreateWrapperCode (type, 0, NULL, NULL, NULL, NULL, 0,
-                                         FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
-                                         vardecs, new_vardecs);
+            assigns = CreateWrapperCode (type, NULL, 0, FUNDEF_ARGS (fundef),
+                                         FUNDEF_ARGS (fundef), vardecs, new_vardecs);
         }
     }
 
