@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/08/01 16:11:32  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.5  2001/04/23 13:39:41  dkr
  * CUDfundef(): now, after clean-up DFMUpdateMaskBase() is called
  *
@@ -35,6 +39,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -62,6 +68,48 @@
  ******************************************************************************/
 
 /*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    DFMmask_t ref;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_CUD_FUNDEF(n) (n->fundef)
+#define INFO_CUD_REF(n) (n->ref)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CUD_FUNDEF (result) = NULL;
+    INFO_CUD_REF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
+/*
  * compound macro
  */
 #define INFO_DFMBASE(arg_info) FUNDEF_DFM_BASE (INFO_CUD_FUNDEF (arg_info))
@@ -69,7 +117,7 @@
 /******************************************************************************
  *
  * Function:
- *   ids *CUDids( ids *id, node *arg_info)
+ *   ids *CUDids( ids *id, info *arg_info)
  *
  * Description:
  *   Unsets the corresponding DFMmask entry of the id.
@@ -77,7 +125,7 @@
  ******************************************************************************/
 
 static ids *
-CUDids (ids *id, node *arg_info)
+CUDids (ids *id, info *arg_info)
 {
     node *decl;
     ids *tmp;
@@ -111,7 +159,7 @@ CUDids (ids *id, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CUDfundef( node *arg_node, node *arg_info)
+ *   node *CUDfundef( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -119,7 +167,7 @@ CUDids (ids *id, node *arg_info)
  ******************************************************************************/
 
 node *
-CUDfundef (node *arg_node, node *arg_info)
+CUDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDfundef");
 
@@ -159,7 +207,7 @@ CUDfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CUDblock( node *arg_node, node *arg_info)
+ *   node *CUDblock( node *arg_node, info *arg_info)
  *
  * Description:
  *   Eliminates all superfluous vardecs of the block:
@@ -173,7 +221,7 @@ CUDfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CUDblock (node *arg_node, node *arg_info)
+CUDblock (node *arg_node, info *arg_info)
 {
     node *vardec;
     DFMmask_t mask;
@@ -225,7 +273,7 @@ CUDblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CUDvardec( node *arg_node, node *arg_info)
+ *   node *CUDvardec( node *arg_node, info *arg_info)
  *
  * Description:
  *   First traversal of the vardecs: set the found vardec in the DFMmask.
@@ -233,7 +281,7 @@ CUDblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CUDvardec (node *arg_node, node *arg_info)
+CUDvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDvardec");
 
@@ -249,7 +297,7 @@ CUDvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CUDlet( node *arg_node, node *arg_info)
+ *   node *CUDlet( node *arg_node, info *arg_info)
  *
  * Description:
  *   ---
@@ -257,7 +305,7 @@ CUDvardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CUDlet (node *arg_node, node *arg_info)
+CUDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDlet");
 
@@ -270,7 +318,7 @@ CUDlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CUDid( node *arg_node, node *arg_info)
+ *   node *CUDid( node *arg_node, info *arg_info)
  *
  * Description:
  *   ---
@@ -278,7 +326,7 @@ CUDlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CUDid (node *arg_node, node *arg_info)
+CUDid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDid");
 
@@ -290,7 +338,7 @@ CUDid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CUDwithid( node *arg_node, node *arg_info)
+ *   node *CUDwithid( node *arg_node, info *arg_info)
  *
  * Description:
  *   ---
@@ -298,7 +346,7 @@ CUDid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CUDwithid (node *arg_node, node *arg_info)
+CUDwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUDwithid");
 
@@ -321,21 +369,21 @@ CUDwithid (node *arg_node, node *arg_info)
 node *
 CleanupDecls (node *syntax_tree)
 {
-    node *info_node;
+    info *info;
     funtab *old_tab;
 
     DBUG_ENTER ("CleanupDecls");
 
-    info_node = MakeInfo ();
+    info = MakeInfo ();
 
     old_tab = act_tab;
 
     act_tab = cudecls_tab;
-    syntax_tree = Trav (syntax_tree, info_node);
+    syntax_tree = Trav (syntax_tree, info);
 
     act_tab = old_tab;
 
-    info_node = FreeNode (info_node);
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
