@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/01/17 19:45:25  cg
+ * Default value for top arena initialization set to 0.
+ * See comment in file why.
+ *
  * Revision 2.20  2000/01/17 16:25:58  cg
  * Added new global variable to control initial heap sizes separately
  * for master's arena of arenas, workers' arena of arenas and the
@@ -105,13 +109,17 @@
 char version_id[] = "v0.9";
 /* version identifier of sac2c */
 
-#if defined(SOLARIS_SPARC)
+#if defined(SAC_FOR_SOLARIS_SPARC)
 
 char target_platform[] = "SOLARIS_SPARC";
 
-#elif defined(LINUX_X86)
+#elif defined(SAC_FOR_LINUX_X86)
 
 char target_platform[] = "LINUX_X86";
+
+#elif defined(SAC_FOR_OSF_ALPHA)
+
+char target_platform[] = "OSF_ALPHA";
 
 #else
 /*
@@ -272,7 +280,24 @@ int max_optcycles = 4;
 
 int initial_master_heapsize = 1024;
 int initial_worker_heapsize = 64;
-int initial_unified_heapsize = 1024;
+int initial_unified_heapsize = 0;
+/*
+ * Why is the default initial top arena size 0?
+ *
+ * Unfortunately, it turned out that pthread_key_create() allocates
+ * some amount of memory, actually one page, without using malloc()
+ * but by direct manipulation of the process' break value via sbrk().
+ * Since in multi-threaded execution malloc() is always called upon
+ * program startup, early intitialization of the heap manager's internal
+ * data structures is enforced.
+ * Subsequent manipulation of the break value, however, leads to memory
+ * fragmentation as the initial top arena cannot be extended smoothly
+ * due to the missing page on top of the initially requested heap memory.
+ *
+ * As long as there is no elegant solution to this problem, there should
+ * be no initialization of the top arena, except when an upper boundary
+ * for the total memory consumption is known and used for initialization.
+ */
 
 /*
  * special hidden options!
