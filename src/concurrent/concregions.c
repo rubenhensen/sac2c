@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/04/09 21:33:33  dkr
+ * fixed a bug in ConcAssign
+ *
  * Revision 1.4  1998/04/09 14:01:37  dkr
  * new funs ConcFundef, ConcNcode, ConcNpart, ...
  *
@@ -144,62 +147,74 @@ ConcFundef (node *arg_node, node *arg_info)
  * description:
  *   At the moment we simply generate one concurrent region for each
  *    first level with-loop.
- *   Then we infer the arguments for the lifted concregion-function.
+ *   Then we build the fundec, funap and local vardecs for the lifted
+ *    concregion-function and save them in CONC_FUNDEC, CONC_AP_LET and
+ *    CONC_VARDEC.
  *
  ******************************************************************************/
 
 node *
 ConcAssign (node *arg_node, node *arg_info)
 {
-    node *fundefs, *old_vardec;
+    node *conclet, *fundefs, *old_vardec;
     node *args, *arg, *last_arg;
     node *fargs, *farg, *last_farg;
     ids *lets, *let, *last_let;
     node *localvars, *localvar, *last_localvar;
     node *retexprs, *retexpr, *last_retexpr;
     types *rettypes, *rettype, *last_rettype;
-
     node *ret, *fundec, *ap, *conc;
     char *name;
     int varno, i;
 
     DBUG_ENTER ("ConcAssign");
 
-    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)) {
+    conclet = ASSIGN_INSTR (arg_node);
+
+    if ((NODE_TYPE (conclet) == N_let) && (NODE_TYPE (LET_EXPR (conclet)) == N_Nwith)) {
+
         /*
          * current assignment contains a with-loop
          *  -> create a concurrent region containing the current assignment only
+         *      and insert it into the syntaxtree.
          */
+        conc = MakeConc (MakeBlock (MakeAssign (conclet, NULL), NULL));
+        ASSIGN_INSTR (arg_node) = conc;
 
+        /*
+         * we will often need the following values
+         */
         fundefs = INFO_CONC_FUNDEF (arg_info);
         varno = FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info));
 
         /*
-         * traverse the let node to generate INFO_CONC_LOCALUSED,
+         * generate masks (for CONC_USEDVARS, CONC_DEFVARS, ...)
+         *
+         * we must start at the fundef node, to get the right value for VARNO
+         *  in GenerateMasks().
+         */
+        INFO_CONC_FUNDEF (arg_info) = GenerateMasks (INFO_CONC_FUNDEF (arg_info), NULL);
+
+        /*
+         * traverse the 'conclet' node to generate INFO_CONC_LOCALUSED,
          *  INFO_CONC_LOCALDEF
          */
         INFO_CONC_LOCALUSED (arg_info)
           = ReGenMask (INFO_CONC_LOCALUSED (arg_info), varno);
         INFO_CONC_LOCALDEF (arg_info) = ReGenMask (INFO_CONC_LOCALDEF (arg_info), varno);
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-
-        conc = MakeConc (MakeBlock (MakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL));
-        ASSIGN_INSTR (arg_node) = conc;
+        conclet = Trav (conclet, arg_info);
 
         /*
-         * generate masks (for CONC_USEDVARS, CONC_DEFVARS)
-         *
-         * we need not generate the masks for the whole syntaxtree because
-         *  until the last global call of 'GenerateMasks' in the refcount phase
-         *  there are no temporary vars inserted.
+         * subtract the local vars from CONC_...VARS
+         *  because these vars will not become args or returns of the
+         *  lifted concregion-fun.
          */
-        conc = GenerateMasks (conc, NULL);
         MinusMask (CONC_USEDVARS (conc), INFO_CONC_LOCALUSED (arg_info), varno);
         MinusMask (CONC_DEFVARS (conc), INFO_CONC_LOCALDEF (arg_info), varno);
 
         /*
-         * generate CONC_FUNDEC, CONC_VARDEC, CONC_AP_LET for this concurrent region
+         * generate CONC_FUNDEC, CONC_VARDEC, CONC_AP_LET
+         *  for this concurrent region
          */
         name = ConcFunName (FUNDEF_NAME (INFO_CONC_FUNDEF (arg_info)));
 
@@ -422,6 +437,9 @@ ConcNcode (node *arg_node, node *arg_info)
     DBUG_ENTER ("ConcNcode");
 
     PlusMask (INFO_CONC_LOCALUSED (arg_info), NPART_MASK (arg_node, 1),
+              FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info)));
+
+    PlusMask (INFO_CONC_LOCALDEF (arg_info), NPART_MASK (arg_node, 0),
               FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info)));
 
     if (NCODE_CBLOCK (arg_node) != NULL) {
