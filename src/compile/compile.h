@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/09 13:33:40  dkr
+ * COMPIcm added
+ *
  * Revision 3.4  2001/02/02 09:46:15  dkr
  * COMPWLstride and COMPWLstrideVar replaced by COMPWLstridex, ...
  *
@@ -90,13 +93,14 @@ extern node *COMPTypedef (node *arg_node, node *arg_info);
 extern node *COMPObjdef (node *arg_node, node *arg_info);
 extern node *COMPSpmd (node *arg_node, node *arg_info);
 extern node *COMPSync (node *arg_node, node *arg_info);
-extern node *COMPNcode (node *arg_node, node *arg_info);
+extern node *COMPIcm (node *arg_node, node *arg_info);
 
 extern node *COMPNwith2 (node *arg_node, node *arg_info);
 extern node *COMPWLsegx (node *arg_node, node *arg_info);
 extern node *COMPWLxblock (node *arg_node, node *arg_info);
 extern node *COMPWLstridex (node *arg_node, node *arg_info);
 extern node *COMPWLgridx (node *arg_node, node *arg_info);
+extern node *COMPNcode (node *arg_node, node *arg_info);
 
 extern node *COMPMt (node *arg_node, node *arg_info);
 extern node *COMPSt (node *arg_node, node *arg_info);

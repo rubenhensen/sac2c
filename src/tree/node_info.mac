@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/02/09 13:33:31  dkr
+ * COMPIcm added
+ *
  * Revision 3.13  2001/02/02 09:42:54  dkr
  * COMPWLgrid, COMPWLgridVar replaced by COMPWLgridx.
  * COMPWLstride, COMPWLstrideVar replaced by COMPWLstridex.
@@ -1440,7 +1443,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, GNMicm, TravSons, TravSons,
-       FreeIcm, TravSons, RCicm, NoTrav, TravSons, DupIcm, TravSons, TravSons, TravSons,
+       FreeIcm, TravSons, RCicm, COMPIcm, TravSons, DupIcm, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
