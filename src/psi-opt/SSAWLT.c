@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2004/08/25 16:04:57  khf
+ * In ComputeGeneratorProperties only check for emptiness for
+ * generator with non empty bounds
+ *
  * Revision 1.32  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -895,7 +899,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 {
     node *lbe, *ube, *steps, *width;
     gen_prop_t res = GPT_unknown;
-    bool const_bounds;
+    bool const_bounds, non_empty_bounds;
     constant *lbc, *ubc, *shpc, *tmpc, *tmp;
     shape *sh;
 
@@ -922,11 +926,15 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
      *  result....)
      */
     if (const_bounds) {
-        tmpc = COGe (lbc, ubc);
-        if (COIsTrue (tmpc, TRUE)) {
-            res = GPT_empty;
+        non_empty_bounds = (SHGetUnrLen (COGetShape (lbc)) > 0);
+
+        if (non_empty_bounds) {
+            tmpc = COGe (lbc, ubc);
+            if (COIsTrue (tmpc, TRUE)) {
+                res = GPT_empty;
+            }
+            tmpc = COFreeConstant (tmpc);
         }
-        tmpc = COFreeConstant (tmpc);
     }
 
     if (res == GPT_unknown) {
