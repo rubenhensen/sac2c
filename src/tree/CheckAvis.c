@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/05/17 11:18:10  dkr
+ * FREE(info) replaced by FreeTree(info)
+ *
  * Revision 1.8  2001/04/24 16:08:12  nmw
  * CheckAvisSingleFundef renamed to CheckAvisOneFunction
  * CheckAvisOneFundef added
@@ -298,8 +301,8 @@ CAVap (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("CAV", ("traversal of special fundef %s finished\n",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        FREE (new_arg_info);
 
+        new_arg_info = FreeTree (new_arg_info);
     } else {
         DBUG_PRINT ("CAV", ("do not traverse in normal fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -397,7 +400,7 @@ CheckAvis (node *syntax_tree)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -409,7 +412,7 @@ CheckAvis (node *syntax_tree)
  *
  * description:
  *   same as CheckAvis, but traverses only the given function including their
- *   (implicit inlined special functions).
+ *   (implicit inlined) special functions.
  *
  ******************************************************************************/
 node *
@@ -436,11 +439,12 @@ CheckAvisOneFunction (node *fundef)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);
 }
+
 /******************************************************************************
  *
  * function:
@@ -474,7 +478,7 @@ CheckAvisOneFundef (node *fundef)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (fundef);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/05/17 11:15:47  dkr
+ * FREE(info) replaced by FreeTree(info)
+ *
  * Revision 1.8  2001/04/30 12:24:58  nmw
  * comments corrected
  *
@@ -643,7 +646,7 @@ CompareTree (node *tree1, node *tree2)
         result = INFO_CMPT_EQFLAG (arg_info);
 
         act_tab = old_tab;
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (result);
