@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/23 16:09:31  sbs
+ * newassign in 1558 initialized by NULL to avoid compiler warning in
+ * product version: "`newassign' might be used uninitialized in this function".
+ * Pragmatically this is useless, since the "potentially offending" usage
+ * can happen only if it has been set in the preceeding conditional block
+ * which is not detected by the compiler....
+ * (BTW line 1588 is the var-dec part of IdxLet 8-)
+ *
  * Revision 3.1  2000/11/20 18:01:46  sacbase
  * new release made
  *
@@ -1499,7 +1507,7 @@ node *
 IdxLet (node *arg_node, node *arg_info)
 {
     ids *vars;
-    node *vardec, *vinfo, *act_let, *newassign;
+    node *vardec, *vinfo, *act_let, *newassign = NULL;
     node *current_assign, *next_assign, *chain, *rest_chain;
 
     DBUG_ENTER ("IdxLet");
@@ -1621,6 +1629,8 @@ IdxLet (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((vinfo != NULL),
                              " non $-terminated N_vinfo chain encountered!");
                 if (VINFO_FLAG (vinfo) != DOLLAR) {
+                    /* newassign definitly has been set in the preceeding conditional
+                     * block!! */
                     INFO_IVE_CURRENTASSIGN (arg_info) = newassign;
                     act_let = ASSIGN_INSTR (newassign);
                 }
