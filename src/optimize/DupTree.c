@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/04/23 15:02:10  srs
+ * fixed bug in DupNWithid
+ *
  * Revision 1.67  1998/04/23 14:08:52  srs
  * changed setting of ID_WL in DupId()
  *
@@ -935,11 +938,13 @@ node *
 DupNwithid (node *arg_node, node *arg_info)
 {
     node *new_node;
+    ids *vec, *_ids;
 
     DBUG_ENTER ("DupNwithid");
 
-    new_node = MakeNWithid (DupIds (NWITHID_VEC (arg_node), arg_info),
-                            DupIds (NWITHID_IDS (arg_node), arg_info));
+    vec = NWITHID_VEC (arg_node) ? DupIds (NWITHID_VEC (arg_node), arg_info) : NULL;
+    _ids = NWITHID_IDS (arg_node) ? DupIds (NWITHID_IDS (arg_node), arg_info) : NULL;
+    new_node = MakeNWithid (vec, _ids);
 
     DBUG_RETURN (new_node);
 }
