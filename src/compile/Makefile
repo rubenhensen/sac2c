@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.49  1998/04/20 02:43:46  dkr
+# make deps done
+#
 # Revision 1.48  1998/04/20 01:09:31  dkr
 # make deps done
 #
@@ -205,13 +208,14 @@ Old2NewWith.o: ../typecheck/typecheck.h ../global/free.h ../../inc/dbug.h
 Old2NewWith.o: ../global/my_debug.h /usr/include/malloc.h
 Old2NewWith.o: ../optimize/DupTree.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
-compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-compile.o: /usr/include/sys/va_list.h ../global/globals.h ../print/print.h
-compile.o: ../global/tree.h ../global/internal_lib.h ../../inc/dbug.h
-compile.o: ../global/my_debug.h ../global/traverse.h compile.h
-compile.o: ../print/convert.h ../optimize/DupTree.h ../refcount/refcount.h
-compile.o: ../typecheck/typecheck.h ../global/free.h /usr/include/malloc.h
+compile.o: /usr/include/string.h ../global/tree.h ../global/types.h
+compile.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+compile.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+compile.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+compile.o: compile.h ../print/convert.h ../optimize/DupTree.h
+compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ../global/free.h
+compile.o: /usr/include/malloc.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/va_list.h ../../inc/dbug.h
 gen_startup_code.o: ../global/globals.h ../global/types.h
@@ -227,19 +231,21 @@ icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
 icm_trace.o: icm.data
-precompile.o: ../global/types.h ../global/tree_basic.h
+precompile.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 precompile.o: /usr/include/sys/va_list.h /usr/include/string.h
-precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
-precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-precompile.o: ../global/internal_lib.h ../print/convert.h
+precompile.o: /usr/include/stdlib.h ../global/globals.h
+precompile.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+precompile.o: ../global/my_debug.h /usr/include/malloc.h ../print/convert.h
 precompile.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
 precompile.o: ../typecheck/typecheck.h ../refcount/refcount.h
 precompile.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
-wlpragma_funs.o: ../global/types.h ../global/tree_basic.h ../global/free.h
-wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
-wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+wlpragma_funs.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+wlpragma_funs.o: ../global/tree_compound.h ../global/Error.h
+wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/string.h
+wlpragma_funs.o: /usr/include/stdlib.h ../global/globals.h
+wlpragma_funs.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 wlpragma_funs.o: ../global/my_debug.h /usr/include/malloc.h
-wlpragma_funs.o: ../global/internal_lib.h ../optimize/DupTree.h precompile.h
-wlpragma_funs.o: wlpragma_funs.h
+wlpragma_funs.o: ../optimize/DupTree.h precompile.h wlpragma_funs.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.26  1998/04/20 02:43:37  dkr
+# make deps done
+#
 # Revision 1.25  1998/03/24 14:41:45  dkr
 # make deps done
 #
@@ -102,9 +105,9 @@ convert.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
 convert.o: convert.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
-print.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
-print.o: ../global/tree_compound.h ../global/Error.h ../global/globals.h
-print.o: print.h ../global/tree.h ../global/internal_lib.h
+print.o: /usr/include/string.h ../global/tree.h ../global/types.h
+print.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+print.o: ../global/globals.h ../global/internal_lib.h print.h
 print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
 print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
