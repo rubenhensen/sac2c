@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/29 09:46:11  dkr
+ * InlineSingleApplication: DBUG_ASSERTs added
+ *
  * Revision 3.9  2001/03/29 01:37:40  dkr
  * naive inlining added
  *
@@ -737,6 +740,11 @@ InlineSingleApplication (node *let, node *fundef, int type)
     funtab *mem_tab;
 
     DBUG_ENTER ("InlineSingleApplication");
+
+    DBUG_ASSERT ((NODE_TYPE (let) == N_let),
+                 "InlineSingleApplication() needs a N_let node!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "InlineSingleApplication() needs a N_fundef node!");
 
     mem_tab = act_tab;
     act_tab = inline_tab;
