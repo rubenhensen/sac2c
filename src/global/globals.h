@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/14 09:20:40  cg
+ * Settings for cache simulation improved.
+ *
  * Revision 2.2  1999/03/31 11:30:27  cg
  * added global variable cachesim.
  *
@@ -284,10 +287,11 @@ extern int profileflag;
 
 extern int cachesim;
 
-#define NO_CACHESIM 0
-#define CACHESIM_FILE 1
-#define CACHESIM_SIMPLE 2
-#define CACHESIM_ADVANCED 3
+#define NO_CACHESIM 0x0000
+#define CACHESIM_SIMPLE 0x0001
+#define CACHESIM_ADVANCED 0x0002
+#define CACHESIM_FILE 0x0004
+#define CACHESIM_PRAGMA 0x0008
 /*
  * Allowed values of cachesim
  */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/14 09:20:40  cg
+ * Settings for cache simulation improved.
+ *
  * Revision 2.2  1999/04/06 13:36:09  cg
  * added startup code for cache simulation
  *
@@ -216,6 +219,11 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_WL) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",
              (traceflag & TRACE_MT) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n", cachesim ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
+             (cachesim & CACHESIM_ADVANCED) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM_PRAGMA %d\n",
+             (cachesim & CACHESIM_PRAGMA) ? 1 : 0);
 
     fprintf (outfile, "\n#ifndef SAC_DO_MULTITHREAD\n");
     fprintf (outfile, "#define SAC_DO_MULTITHREAD     %d\n", (num_threads == 1) ? 0 : 1);
@@ -369,23 +377,6 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#endif\n\n");
 
     fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", max_sync_fold);
-
-    switch (cachesim) {
-    case NO_CACHESIM:
-        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_NONE\n\n");
-        break;
-    case CACHESIM_FILE:
-        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_FILE\n\n");
-        break;
-    case CACHESIM_SIMPLE:
-        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_SIMPLE\n\n");
-        break;
-    case CACHESIM_ADVANCED:
-        fprintf (outfile, "#define SAC_SET_CACHESIM          SAC_CS_ADVANCED\n\n");
-        break;
-    default:
-        DBUG_ASSERT (0, "Illegal value for global variable cachesim");
-    }
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n", config.cache1_line);
@@ -694,7 +685,7 @@ GSCPrintMainEnd ()
      * outfile is already indented by 2
      */
     fprintf (outfile, "\n  SAC_PF_PRINT();\n");
-    fprintf (outfile, "  SAC_CS_PRINT();\n\n");
+    fprintf (outfile, "  SAC_CS_FINALIZE();\n\n");
 
     DBUG_VOID_RETURN;
 }

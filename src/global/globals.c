@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/14 09:20:40  cg
+ * Settings for cache simulation improved.
+ *
  * Revision 2.2  1999/03/31 11:30:27  cg
  * added global variable cachesim.
  *
