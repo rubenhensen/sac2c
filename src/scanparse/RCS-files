@@ -1,4 +1,5 @@
 Makefile
 sac.l
 sac.y
+scnprs.c
 scnprs.h
