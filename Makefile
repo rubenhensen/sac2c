@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.70  1998/04/03 11:39:01  dkr
+# added concregions.o in dir concurrent
+#
 # Revision 1.69  1998/04/02 16:07:16  dkr
 # added concregs.o
 #
@@ -72,12 +75,6 @@
 #
 # Revision 1.48  1997/04/25  14:27:10  sbs
 # fuer cg: libm.a deleted
-#
-# Revision 1.47  1997/04/25  12:25:01  sbs
-# *** empty log message ***
-#
-# Revision 1.46  1997/04/25  09:38:38  sbs
-# *** empty log message ***
 #
 # Revision 1.45  1997/04/24  16:09:53  sbs
 # /usr/lib/debug/malloc.o commented out
@@ -158,9 +155,6 @@
 #
 # Revision 1.20  1995/04/03  10:11:30  sbs
 # src/compile/icm2c.o inserted
-#
-# Revision 1.19  1995/03/29  12:10:37  hw
-# *** empty log message ***
 #
 # Revision 1.18  1995/03/29  11:49:43  hw
 # compile inserted
@@ -279,8 +273,9 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-COMPILE= src/compile/concregs.o src/compile/compile.o src/compile/icm2c.o \
-         src/compile/precompile.o src/compile/gen_startup_code.o \
+CONCURRENT= src/concurrent/concregions.o
+COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
+         src/compile/gen_startup_code.o \
          src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
