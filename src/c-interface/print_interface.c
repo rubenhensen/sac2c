@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2000/08/02 09:19:06  nmw
+ * order of init function calls for interface and module changed
+ *
  * Revision 1.17  2000/08/01 13:25:24  nmw
  * startup-code generation modified to handle PHM in c-library
  *
@@ -140,8 +143,7 @@ static node *PIWfundefRefcounting (node *arg_node, node *arg_info);
 static strings *PrintDepEntry (deps *depends, statustype stat, strings *done);
 static void PIWModuleInitFlag (char *modname);
 static void PIWModuleInitFunction (char *modname);
-static void PIWModuleFreeFunction (char *modname);
-static void PrintInternalRuntimeInit (node *arg_node);
+static void PrintSACRuntimeInitExit (node *arg_node);
 
 /******************************************************************************
  *
@@ -212,8 +214,8 @@ PIHmodul (node *arg_node, node *arg_info)
         MODUL_CWRAPPER (arg_node) = Trav (MODUL_CWRAPPER (arg_node), arg_info);
     }
 
-    fprintf (outfile,
-             "\n/* generated headerfile, please do not modify function prototypes */\n");
+    fprintf (outfile, "\n/* generated headerfile, please do not modify"
+                      " function prototypes */\n");
     fclose (outfile);
 
     outfile = old_outfile; /* restore old filehandle */
@@ -467,7 +469,7 @@ PIWmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PIWmodul");
 
-    PrintInternalRuntimeInit (arg_node);
+    PrintSACRuntimeInitExit (arg_node);
 
     old_outfile = outfile; /* save, might be in use */
 
@@ -483,19 +485,13 @@ PIWmodul (node *arg_node, node *arg_info)
     fprintf (outfile, "/* startup functions and global code */\n");
 
     /* declarations for external SAC functions  */
-    fprintf (outfile,
-             "#include \"header.h\"\n"
-             "#include \"sac.h\"\n"
-             "#include \"sac_cwrapper.h\"\n"
-             "#include \"sac_cinterface.h\"\n"
-             "#include \"sac_free_interface_handler.h\"\n\n"
-             "static void SAC_Free%s();"
-             "\n",
-             MODUL_NAME (arg_node));
+    fprintf (outfile, "#include \"header.h\"\n"
+                      "#include \"sac.h\"\n"
+                      "#include \"sac_cwrapper.h\"\n"
+                      "#include \"sac_cinterface.h\"\n\n");
 
     PIWModuleInitFlag (MODUL_NAME (arg_node));
     PIWModuleInitFunction (MODUL_NAME (arg_node));
-    PIWModuleFreeFunction (MODUL_NAME (arg_node));
 
     if (MODUL_CWRAPPER (arg_node) != NULL) {
         /* traverse list of wrappers */
@@ -1180,30 +1176,9 @@ PIWModuleInitFunction (char *modname)
     DBUG_ENTER ("PIWModuleInitFunction");
     fprintf (outfile,
              "static void SAC_Init%s()\n"
-             "{\n"
-             "  SAC_FIH_AddFreeFunction( &SAC_Free%s );\n",
-             modname, modname);
+             "{\n",
+             modname);
     GSCPrintMainBegin ();
-    fprintf (outfile, "\n}\n\n\n");
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *    void PIWModuleFreeFunction(char *modname)
- *
- * description:
- *   prints code in cwrapper.c for SAC_Free<mod>()
- *
- ******************************************************************************/
-
-static void
-PIWModuleFreeFunction (char *modname)
-{
-    DBUG_ENTER ("PIWModuleExitFunction");
-    fprintf (outfile, "static void SAC_Free%s()\n{\n", modname);
-    /* unfortunately there is nothing to free for a module, jet*/
     fprintf (outfile, "\n}\n\n\n");
     DBUG_VOID_RETURN;
 }
@@ -1220,7 +1195,7 @@ PIWModuleFreeFunction (char *modname)
  *
  ******************************************************************************/
 static void
-PrintInternalRuntimeInit (node *arg_node)
+PrintSACRuntimeInitExit (node *arg_node)
 {
     FILE *old_outfile;
 
@@ -1230,23 +1205,31 @@ PrintInternalRuntimeInit (node *arg_node)
 
     /* open internal_runtime_init.c in tmpdir for writing*/
     outfile = WriteOpen ("%s/internal_runtime_init.c", tmp_dirname);
-    fprintf (outfile, "/* Interface SAC <-> C \n");
-    fprintf (outfile, " * this code initializes the internal data structures\n"
-                      " * of the SAC runtime system */\n\n");
+    fprintf (outfile, "/* Interface SAC <-> C \n"
+                      " * this code initializes the internal data structures\n"
+                      " * of the SAC runtime system and calls the CInterface\n"
+                      " * init function\n"
+                      " */\n\n"
+                      "extern void SAC_InitCInterface();"
+                      "extern void SAC_ExitCInterface();");
 
     /* general preload for codefile */
     fprintf (outfile, "/* startup functions and global code */\n\n");
     GSCPrintInternalInitFileHeader (arg_node);
-    fprintf (outfile, "void SAC_InternalRuntimeInit(int __argc, char **__argv)\n"
+    fprintf (outfile, "void SAC_InitRuntimeSystem()\n"
                       "{\n"
+                      "  int __argc=0;\n"
+                      "  char **__argv=NULL;\n"
                       "  SAC_MT_SETUP_INITIAL();\n"
                       "  SAC_PF_SETUP();\n"
                       "  SAC_HM_SETUP();\n"
                       "  SAC_MT_SETUP();\n"
                       "  SAC_CS_SETUP();\n"
+                      "  SAC_InitCInterface();\n"
                       "}\n\n");
-    fprintf (outfile, "void SAC_InternalRuntimeExit()\n"
-                      "{\n");
+    fprintf (outfile, "void SAC_FreeRuntimeSystem()\n"
+                      "{\n"
+                      "SAC_ExitCInterface();");
     GSCPrintMainEnd ();
     fprintf (outfile, "\n}\n\n");
 

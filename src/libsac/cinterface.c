@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2000/08/02 09:19:44  nmw
+ * order of init function calls for interface and module changed
+ *
  * Revision 1.11  2000/08/01 13:26:11  nmw
  * calling for internal init function for HM
  *
@@ -46,9 +49,14 @@
 #include "sac.h"
 #include "sac_cinterface.h"
 
-/* declarion of global internal init/exit function, exported by all modules */
-extern void SAC_InternalRuntimeInit (int __argc, char **__argv);
-extern void SAC_InternalRuntimeExit ();
+/* SAC_InitRuntimeSystem() and SAC_FreeRuntimeSystem() are not part
+ * of the CInterface. These functions are implemented in each c-library
+ * generated from a sac module, with runtime inits according to the
+ * specified sac2c compiler switches concerning PIH and MT.
+ * The functions call the init functions this cinterface.
+ * This way of calling is necessary do avoid a circle in linking
+ * dependencies
+ */
 
 /* Typenames used internally */
 typedef enum {
@@ -62,29 +70,28 @@ static bool SAC_CI_runtime_system_active = 0;
 #define CHECK_FOR_ACTIVE_RUNTIMESYSTEM()                                                 \
     if (!SAC_CI_runtime_system_active) {                                                 \
         SAC_InitRuntimeSystem ();                                                        \
+        SAC_InitCInterface ();                                                           \
     }
 
 /******************************************************************************
  *
  * function:
- *   void SAC_InitRuntimeSystem()
+ *   void SAC_InitCInterface()
  *
  * description:
- *   do some init procedures for the SAC runtime system
+ *   do some init procedures for the SAC runtime system (called be the
+ *   SAC_InitRuntimeSystem Prozedure)
  *
  ******************************************************************************/
 
 void
-SAC_InitRuntimeSystem ()
+SAC_InitCInterface ()
 {
     if (!SAC_CI_runtime_system_active) {
-        /* init internal data structures of heap management and multthreading */
-        SAC_InternalRuntimeInit (0, NULL);
-
         /* init directory of used SAC_args */
         SAC_CI_InitSACArgDirectory ();
 
-        printf ("SAC-runtimesystem ready...\n");
+        printf ("SAC-Runtime-System ready...\n");
 
         SAC_CI_runtime_system_active = true;
     }
@@ -101,13 +108,11 @@ SAC_InitRuntimeSystem ()
  ******************************************************************************/
 
 void
-SAC_FreeRuntimeSystem ()
+SAC_ExitCInterface ()
 {
     if (SAC_CI_runtime_system_active) {
         /* free all used SAC_args */
         SAC_CI_FreeSACArgDirectory ();
-        SAC_FIH_FreeAllModules ();
-        SAC_InternalRuntimeExit ();
         printf ("SAC-Runtime-System cleaned up!\n");
     }
 }
