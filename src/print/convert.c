@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/10/27 13:24:04  cg
+ * Added new functions Basetype2String() and Shpseg2String().
+ *
  * Revision 2.9  2000/08/17 10:08:19  dkr
  * comments for Type2String modified
  *
@@ -353,4 +356,82 @@ Type2String (types *type, int flag)
     } while (NULL != type);
 
     DBUG_RETURN (tmp_string);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *Shpseg2String(int dim, shpseg *shape)
+ *
+ * description:
+ *
+ *   This function converts a given shpseg integer vector data structure into
+ *   an allocated string. The first parameter provides the actually used length
+ *   of the vector.
+ *
+ ******************************************************************************/
+
+char *
+Shpseg2String (int dim, shpseg *shape)
+{
+    char *buffer;
+    char num_buffer[20];
+    int i;
+
+    DBUG_ENTER ("Shpseg2String");
+
+    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in SetVect()!");
+
+    /*
+     * Instead of accurately computing the buffer space to be allocated,
+     * we make a generous estimation.
+     */
+    buffer = (char *)Malloc (dim * 20);
+
+    buffer[0] = '[';
+    buffer[1] = '\0';
+
+    for (i = 0; i < dim - 1; i++) {
+        sprintf (num_buffer, "%d", SHPSEG_SHAPE (shape, i));
+        strcat (buffer, num_buffer);
+        strcat (buffer, ", ");
+    }
+
+    if (dim > 0) {
+        sprintf (num_buffer, "%d", SHPSEG_SHAPE (shape, dim - 1));
+        strcat (buffer, num_buffer);
+    }
+    strcat (buffer, "]");
+
+    DBUG_RETURN (buffer);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *Basetype2String(simpletype type)
+ *
+ * description:
+ *
+ *   This function yields a pointer to a static memory area that contains
+ *   the name of basic data type as a string.
+ *
+ *
+ ******************************************************************************/
+
+char *
+Basetype2String (simpletype type)
+{
+    char *res;
+
+#define TYP_IFpr_str(str) str
+    static char *ctype_string[] = {
+#include "type_info.mac"
+    };
+
+    DBUG_ENTER ("Basetype2String");
+
+    res = ctype_string[type];
+
+    DBUG_RETURN (res);
 }

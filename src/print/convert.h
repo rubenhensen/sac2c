@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/10/27 13:24:04  cg
+ * Added new functions Basetype2String() and Shpseg2String().
+ *
  * Revision 2.1  1999/02/23 12:40:22  sacbase
  * new release made
  *
@@ -47,5 +50,7 @@ extern char *type_string[];
 extern char *Type2String (types *, int);
 extern char *Double2String (double);
 extern char *Float2String (float);
+extern char *Basetype2String (simpletype type);
+extern char *Shpseg2String (int dim, shpseg *shape);
 
 #endif /* _convert_h */
