@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/01/28 13:50:16  jhs
+ * blocks_init added.
+ *
  * Revision 1.5  2000/01/26 17:25:24  dkr
  * type of traverse-function-table changed.
  *
@@ -41,7 +44,8 @@
 #include "free.h"
 #include "Error.h"
 
-#include "schedule_init.c"
+#include "schedule_init.h"
+#include "blocks_init.h"
 
 /******************************************************************************
  *
@@ -113,10 +117,36 @@ MUTHmodul (node *arg_node, node *arg_info)
  *
  *   This function traverses the function definitions and controls the
  *   entire ... step process of exploiting concurrency:
- *     - ...
+ *     - PHASE 1 - Scheduling-Inference (schedule_init.[ch])
+ *       Decides which with-loops will be executed multithreaded an
+ *       which not:
+ *       > At each with-loop *to be* executed multithreaded a scheduling is
+ *         annotated, schedulings annotated by pragmas are also considered,
+ *         if annotated scheduling is not suitable error messages occur
+ *       > At each with-loop *not to be* executed multithreaded no scheduling
+ *         is annotated, warnings will be displayed if schedulings
+ *         are annotatated at such with-loops by pragmas
+ *     - PHASE 2 - Creation of REPfunctions
+ *          #### to be done  ...
+ *     - PHASE 3 - Creation of MT- and ST-Blocks
+ *       ####
+ *       > Creates a MT-Block around each assigment to be executed
+ *         multithreaded, these are only the with-loops with schedulings
+ *         annotated in Phase 1.
+ *       > Creates a ST Block around each assigment to be executed
+ *         singlethreaded, because it is not allowed to execute it
+ *         multithreaded
+ *         - usage of class-function ####
+ *         - application of (primitive) function with unknown body, returning
+ *           an array result > threshold ####
+ *         - assignments of an array-constant > threshold ####
+ *         - ???? application of a known function, with st-block before mt-block,
+ *                including loopi- and condi-functions resp. loops an conditionals
+ *           ####
+ *       > Traverses also with-loops without scheduling ####
  *     - ...
  *        .
- *        .
+ *        .     #### to be done
  *        .
  *     - ...
  *
@@ -132,8 +162,11 @@ MUTHfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
 
-        /* ST_spmdfun filtern ??? */
         arg_node = ScheduleInit (arg_node, arg_info);
+
+        /*  arg_node = BuildRefuns( arg_node, arg_info); */
+
+        arg_node = BlocksInit (arg_node, arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
