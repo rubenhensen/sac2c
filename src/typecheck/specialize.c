@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/04/07 14:30:31  sbs
+ * specialization oracle now does not at all specialize for AKVs!
+ *
  * Revision 1.6  2003/04/01 16:37:37  sbs
  * some doxygen added.
  *
@@ -103,6 +106,8 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
             i++;
         }
 
+    } else if (TYIsProdContainingAKV (args)) {
+        res = TYEliminateAKV (args);
     } else {
         res = NULL;
     }
