@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.6  2000/10/26 17:33:47  dkr
+ * CreateZeroVector moved to tree_compound.[ch]
+ *
  * Revision 2.5  2000/08/01 13:14:46  dkr
  * signature of WithloopFolding() and WithLoopFoldingWLT() changed:
  *   arg_info removed, loop added
@@ -51,8 +54,8 @@
  * [...]
  */
 
-#ifndef _WithloopFolding_h
-#define _WithloopFolding_h
+#ifndef _WithloopFolding_h_
+#define _WithloopFolding_h_
 
 /******************************************************************************
  *
@@ -67,7 +70,6 @@ extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
 extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
-extern node *CreateZeroVector (int dim, simpletype type);
 
 /* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);
