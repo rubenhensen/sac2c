@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2003/04/14 13:40:24  sbs
+ * return value of strlen casted to int for comparison!
+ *
  * Revision 3.83  2003/04/09 13:53:02  sbs
  * _neg_ added.
  *
@@ -2698,7 +2701,7 @@ int yyerror( char *errname)
                    (((verbose_level > 1) ? 2 : 0) +
                     strlen( filename) +
                     NumberOfDigits( linenum) + 9);
-  if (strlen( linebuf_ptr) > size_of_output) {
+  if ((int)strlen( linebuf_ptr) > size_of_output) {
     if (charpos >= size_of_output - 15) {
       offset = charpos - size_of_output + 15;
       strncpy( linebuf_ptr + offset, "... ", 4);
