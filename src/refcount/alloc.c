@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/07/27 17:21:12  ktr
+ * minor changes
+ *
  * Revision 1.12  2004/07/26 18:45:53  ktr
  * - corrected some misused MakePrf instructions.
  * - changed representation of ND_CREATE__ARRAY__SHAPE
@@ -279,14 +282,22 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     DBUG_ASSERT (als->dim != NULL, "alloc requires a dim expression!");
     DBUG_ASSERT (als->shape != NULL, "alloc requires a shape expression!");
 
-#ifdef USEAKS
-    if (TYIsAKS (AVIS_TYPE (als->avis))) {
+    /*
+     * Annotate exact dim/shape information if available
+     */
+    if ((TYIsAKD (AVIS_TYPE (als->avis))) || (TYIsAKS (AVIS_TYPE (als->avis)))
+        || (TYIsAKV (AVIS_TYPE (als->avis)))) {
         als->dim = FreeTree (als->dim);
         als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
+    }
+
+#ifdef USEAKS
+    if ((TYIsAKS (AVIS_TYPE (als->avis))) || (TYIsAKV (AVIS_TYPE (als->avis)))) {
         als->shape = FreeTree (als->shape);
         als->shape = SHShape2Array (TYGetShape (AVIS_TYPE (als->avis)));
     }
 #endif
+
     alloc = MakePrf2 (F_alloc, als->dim, als->shape);
 
     als->dim = NULL;
@@ -344,7 +355,10 @@ EMALap (node *arg_node, info *arg_info)
  *
  *  Ex. [[ a, b], [ c, d]]
  *  dim = 2 + dim(a)
- *  shape = [2,2]++shape(a)
+ *  shape = shape( [[ a, b], [ c, d]])
+ *
+ *  shape calculation is extremely nasty here as for some reason
+ *  CREATE_ARRAY_SHAPE requires the entire array.
  *
  *  @param arg_node an N_array node
  *  @param arg_info containing ALLOCLIST for this assignment
@@ -364,23 +378,32 @@ EMALarray (node *arg_node, info *arg_info)
     if (ARRAY_AELEMS (arg_node) != NULL) {
         /*
          * [ a, ... ]
-         * alloc( outer_dim + dim(a), shape( genarray( outer_shape, a)))
+         * alloc( outer_dim + dim(a), shape( [a, ...]))
          */
-        als->dim
-          = MakePrf2 (F_add_SxS, MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
-                      MakePrf1 (F_dim, DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
+        if (NODE_TYPE (ARRAY_AELEMS (arg_node)) == N_id) {
+            als->dim
+              = MakePrf2 (F_add_SxS, MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
+                          MakePrf1 (F_dim,
+                                    DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
+        } else {
+            als->dim = MakeNum (SHGetDim (ARRAY_SHAPE (arg_node)));
+        }
 
-        als->shape
-          = MakePrf2 (F_cat_VxV, SHShape2Array (ARRAY_SHAPE (arg_node)),
-                      MakePrf1 (F_shape, DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
+        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
     } else {
         /*
          * []: empty array
-         * alloc_or_reuse( 1, outer_dim, outer_shape)
+         * alloc_or_reuse( 1, outer_dim, shape( []))
+         *
+         * The dimension of the right-hand-side is unknown
+         *   -> A has to be a AKD array!
          */
-        als->dim = MakeNum (SHGetDim (ARRAY_SHAPE (arg_node)));
+        DBUG_ASSERT (TYGetDim (AVIS_TYPE (als->avis)) >= 0,
+                     "assignment  A = [];  found, where A has unknown shape!");
 
-        als->shape = SHShape2Array (ARRAY_SHAPE (arg_node));
+        als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
+
+        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
     }
 
     /*
@@ -929,7 +952,7 @@ EMALprf (node *arg_node, info *arg_info)
         als->dim = MakePrf2 (F_sel, MakeNum (0),
                              MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node))));
 
-        als->shape = DupNode (PRF_ARG1 (arg_node));
+        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
         break;
 
     case F_drop_SxV:
