@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/02/14 10:11:10  hw
+ * Revision 1.13  1995/02/14 12:00:42  sbs
+ * fold inserted
+ *
+ * Revision 1.12  1995/02/14  10:11:10  hw
  * NOT inserted
  *
  * Revision 1.11  1995/01/06  19:05:51  sbs
@@ -131,6 +134,7 @@ int start_token;
 "with" 				{FILTER( WITH );}
 "genarray"			{FILTER( GENARRAY );}
 "modarray"			{FILTER( MODARRAY );}
+"fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
 [mM]odul[dD]ec			{FILTER( MODDEC );}

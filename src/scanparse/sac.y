@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.48  1995/02/14 10:11:33  hw
+ * Revision 1.49  1995/02/14 12:00:42  sbs
+ * fold inserted
+ *
+ * Revision 1.48  1995/02/14  10:11:33  hw
  * primitive function "not" inserted
  *
  * Revision 1.47  1995/02/13  16:41:21  sbs
@@ -189,6 +192,7 @@ static char *mod_name;
          int             cint;
          float           cfloat;
          nums            *nums;
+	 prf             prf;
        }
 
 %token PARSE_PRG, PARSE_DEC
@@ -197,7 +201,7 @@ static char *mod_name;
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
-       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
+       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS, OWN,
        ARRAY,SC, TRUE, FALSE, EXTERN
 %token <id> ID, STR
@@ -205,6 +209,7 @@ static char *mod_name;
 %token <cint> NUM
 %token <cfloat> FLOAT
 
+%type <prf> foldop
 %type <nodetype> modclass
 %type <cint> evextern
 %type <ids> ids,
@@ -1215,9 +1220,10 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L expr BRACKET_R
              $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
-                        ("%s " P_FORMAT ": ID: %s, %s " P_FORMAT,
-                         mdb_nodetype[$$->nodetype], $$,$$->info.id,
-                         mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
+                        ("%s " P_FORMAT ": %s " P_FORMAT", %s "P_FORMAT,
+                         mdb_nodetype[$$->nodetype], $$,
+                         mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
+			 mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
            }
          | MODARRAY {$$=MakeNode(N_modarray);} BRACKET_L expr BRACKET_R 
            retassignblock
@@ -1227,11 +1233,41 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L expr BRACKET_R
              $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
-                        ("%s " P_FORMAT ": ID: %s, %s " P_FORMAT,
-                         mdb_nodetype[$$->nodetype], $$,$$->info.id,
-                         mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
+                        ("%s " P_FORMAT ": %s " P_FORMAT", %s "P_FORMAT,
+                         mdb_nodetype[$$->nodetype], $$,
+                         mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
+			 mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
            }
+	 | FOLD BRACKET_L foldop BRACKET_R {$$=MakeNode(N_foldprf);}
+	   retassignblock
+	   { $$=$<node>5;
+	     $$->info.prf=$3;
+             $$->node[0]=$6;          /* Rumpf */
+	     $$->nnode=1;
+
+             DBUG_PRINT("GENTREE",
+                        ("%s " P_FORMAT ": %s , %s "P_FORMAT,
+                         mdb_nodetype[$$->nodetype], $$,
+                         mdb_prf[$$->info.prf], 
+			 mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
+           }
+	 | FOLD BRACKET_L ID BRACKET_R {$$=MakeNode(N_foldfun);}
+	   retassignblock
+	   { $$=$<node>5;
+	     $$->info.id=$3;
+             $$->node[0]=$6;          /* Rumpf */
+	     $$->nnode=1;
+
+             DBUG_PRINT("GENTREE",
+                        ("%s " P_FORMAT ": %s , %s "P_FORMAT,
+                         mdb_nodetype[$$->nodetype], $$,
+                         mdb_prf[$$->info.prf], 
+			 mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
+           }
+
          ;
+
+foldop: PLUS {$$=F_add; };
 
 monop: DIM
          { 
