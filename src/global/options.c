@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/10/24 13:12:32  ktr
+ * level of WLS aggressiveness now controlled by flag -wls_aggressive
+ *
  * Revision 3.29  2002/10/18 14:16:50  ktr
  * changed option -wlsx to -wls <level>
  *
@@ -791,7 +794,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("ssa", use_ssaform = TRUE);
 
-    ARGS_OPTION ("wls", ARG_RANGE (wls_aggressive, 0, 2));
+    ARGS_FLAG ("wls_aggressive", wls_aggressive = TRUE);
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);

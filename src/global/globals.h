@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/10/24 13:12:32  ktr
+ * level of WLS aggressiveness now controlled by flag -wls_aggressive
+ *
  * Revision 3.19  2002/10/18 15:31:52  dkr
  * EXTERN_MOD_NAME added
  *
@@ -233,7 +236,7 @@ extern bool use_ssaform;
 extern bool valid_ssaform;
 
 /* level of WLS aggressiveness */
-extern int wls_aggressive;
+extern bool wls_aggressive;
 
 extern int optvar;
 extern int inlnum;

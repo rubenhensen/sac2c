@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/10/24 13:13:35  ktr
+ * level of WLS aggressiveness now controlled by flag -wls_aggressive
+ *
  * Revision 3.38  2002/10/18 14:15:53  ktr
  * use of WLS now depends on wls_aggressive > 0
  *
@@ -1121,7 +1124,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
-            if ((optimize & OPT_WLS) && (wls_aggressive > 0) && (use_ssaform)) {
+            if ((optimize & OPT_WLS) && (use_ssaform)) {
                 arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
             }
 

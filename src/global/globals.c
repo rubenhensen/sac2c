@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/10/24 13:12:32  ktr
+ * level of WLS aggressiveness now controlled by flag -wls_aggressive
+ *
  * Revision 3.23  2002/10/18 17:15:47  ktr
  * Switched WLS on by default.
  *
@@ -420,7 +423,7 @@ bool valid_ssaform = FALSE;
 /*
  * per default do not use aggressive WLS
  */
-int wls_aggressive = 1;
+bool wls_aggressive = FALSE;
 
 /*
  * Command line options for specifying particular side conditions

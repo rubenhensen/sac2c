@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/10/24 13:12:32  ktr
+ * level of WLS aggressiveness now controlled by flag -wls_aggressive
+ *
  * Revision 3.30  2002/10/19 13:16:25  dkr
  * some \n added
  *
@@ -439,12 +442,8 @@ usage ()
             "\t\t\t\tdefault: -apdiaglimit %d\n\n",
             apdiag_limit);
 
-    printf ("\t -wls <level> \t\tset WLS optimization level\n"
-            "\t\t\t\t0: no optimization (same as -noWLS)\n"
-            "\t\t\t\t1: conservative WLS optimization scheme\n"
-            "\t\t\t\t   (default)\n"
-            "\t\t\t\t2: aggressive WLS optimization scheme\n"
-            "\t\t\t\t   (experimental)\n\n");
+    printf ("\t -wls_aggressive \tset WLS optimization level to aggressive\n"
+            "\t\t\t\t  WARNING: might cause multiple code execution\n\n");
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
