@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.20  2005/02/03 18:28:22  mwe
+ * new counter and compiler flags added
+ *
  * Revision 1.19  2005/02/02 18:10:57  mwe
  * reverse typeupgrade added
  *
@@ -507,7 +510,7 @@ TryStaticDispatch (node *fundef, node *args, info *arg_info)
     char *funname;
     DBUG_ENTER ("TryStaticDispatch");
 
-    if ((FUNDEF_ISWRAPPERFUN (fundef)) && (NULL != args)) {
+    if ((FUNDEF_ISWRAPPERFUN (fundef)) && (NULL != args) && (global.optimize.dofdp)) {
 
         /*
          * current fundef belongs to wrapper function
@@ -716,7 +719,7 @@ SpecializationOracle (node *fundef, node *args)
     ntype *new_type;
     DBUG_ENTER ("SpecializationOracle");
 
-    if (IsSpecializeable (fundef, args)) {
+    if ((IsSpecializeable (fundef, args)) && (global.optimize.dofsp)) {
 
         /*
          * duplicate function
@@ -777,7 +780,7 @@ SpecializationOracle (node *fundef, node *args)
         if (FUNDEF_ISWRAPPERFUN (fundef)) {
             tup_wdp_expr++;
         } else {
-            tup_fdp_expr++;
+            tup_fsp_expr++;
         }
 
         if (akv_in_signature) {
@@ -924,7 +927,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                     DBUG_PRINT ("TUP",
                                 ("loop-function %s specialized:", FUNDEF_NAME (fun)));
 
-                    tup_fdp_expr++;
+                    tup_fsp_expr++;
 
                 } else {
                     /*
@@ -944,7 +947,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                     FUNDEF_ARGS (fundef)
                       = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
                 }
-                tup_fdp_expr++;
+                tup_fsp_expr++;
 
                 DBUG_PRINT ("TUP", ("cond-function %s specialized:", FUNDEF_NAME (fun)));
             }
@@ -1210,12 +1213,15 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
         }
     }
 
+    if (result != NULL) {
+        tup_fdp_expr++;
+    }
     /*
      * Static dispatch was not successful or no wrapper functions could be found
      * try to find a more special function in FUNGROUP_FUNLIST
      */
 
-    if (NULL != FUNDEF_FUNGROUP (fundef)) {
+    if ((NULL != FUNDEF_FUNGROUP (fundef)) && (global.optimize.dofsp)) {
         funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
 
         if (NULL == result) {
@@ -1235,7 +1241,7 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
             if (FUNDEF_ISWRAPPERFUN (fundef)) {
                 tup_wdp_expr++;
             } else {
-                tup_fdp_expr++;
+                tup_fsp_expr++;
             }
             if (ContainsAkvArgs (FUNDEF_ARGS (result))) {
                 (FUNGROUP_AKVCOUNTER (FUNDEF_FUNGROUP (result)))++;
@@ -1386,6 +1392,7 @@ TUPreturn (node *arg_node, info *arg_info)
 {
 
     node *ret, *exprs;
+    ntype *best;
     DBUG_ENTER ("TUPreturn");
 
     if (NULL != RETURN_EXPRS (arg_node)) {
@@ -1398,8 +1405,9 @@ TUPreturn (node *arg_node, info *arg_info)
 
         while (ret != NULL) {
 
-            switch (
-              TYcmpTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs))), RET_TYPE (ret))) {
+            best = GetBestPossibleType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs))));
+
+            switch (TYcmpTypes (best, RET_TYPE (ret))) {
 
             case TY_eq: /* same types, nothing changed */
                 break;
@@ -1416,13 +1424,13 @@ TUPreturn (node *arg_node, info *arg_info)
 
             case TY_lt: /* new type is more special: update */
                 RET_TYPE (ret) = TYfreeType (RET_TYPE (ret));
-                RET_TYPE (ret) = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs))));
+                RET_TYPE (ret) = TYcopyType (best);
                 break;
 
             default: /* no other cases exist */
                 DBUG_ASSERT ((FALSE), "New element in enumeration added?");
             }
-
+            best = TYfreeType (best);
             ret = RET_NEXT (ret);
             exprs = EXPRS_NEXT (exprs);
         }
@@ -1471,7 +1479,7 @@ TUPlet (node *arg_node, info *arg_info)
          */
 
         if ((INFO_TUP_TYPE (arg_info) != NULL)
-            && (NODE_TYPE (LET_EXPR (arg_node)) == N_id)) {
+            && (NODE_TYPE (LET_EXPR (arg_node)) == N_id) && (global.optimize.dortup)) {
 
             /*
              * rhs is a single identifier
@@ -1540,9 +1548,11 @@ TUPwith (node *arg_node, info *arg_info)
      * get result type of withloop
      */
 
-    if (NULL != WITH_WITHOP (arg_node)) {
+    if (global.optimize.dotup) {
+        if (NULL != WITH_WITHOP (arg_node)) {
 
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+            WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1562,28 +1572,30 @@ TUPpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPpart");
 
-    /*
-     * partition of with loop
-     * traverse in generator, update types
-     * traverse in next partition
-     */
-    /*
-     * First, we check whether we can extract some shape info from the
-     * generator variable, i.e, we check whether we do have scalar indices:
-     */
+    if ((global.optimize.dotup) || (global.optimize.dortup)) {
+        /*
+         * partition of with loop
+         * traverse in generator, update types
+         * traverse in next partition
+         */
+        /*
+         * First, we check whether we can extract some shape info from the
+         * generator variable, i.e, we check whether we do have scalar indices:
+         */
 
-    INFO_TUP_WITHIDVEC (arg_info) = WITHID_VEC (PART_WITHID (arg_node));
+        INFO_TUP_WITHIDVEC (arg_info) = WITHID_VEC (PART_WITHID (arg_node));
 
-    INFO_TUP_WITHID (arg_info) = PART_WITHID (arg_node);
+        INFO_TUP_WITHID (arg_info) = PART_WITHID (arg_node);
 
-    if (PART_GENERATOR (arg_node) != NULL) {
+        if (PART_GENERATOR (arg_node) != NULL) {
 
-        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-    }
+            PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+        }
 
-    if (PART_NEXT (arg_node) != NULL) {
+        if (PART_NEXT (arg_node) != NULL) {
 
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1643,7 +1655,8 @@ TUPgenerator (node *arg_node, info *arg_info)
      * value is no argument of a special function (funcond, dofun)
      */
 
-    if (IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node)) == FALSE) {
+    if ((IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node)) == FALSE)
+        && (global.optimize.dortup)) {
         if (TYisAKV (lb)) {
             GENERATOR_BOUND1 (arg_node)
               = AssignTypeToExpr (GENERATOR_BOUND1 (arg_node), lb);
@@ -1653,7 +1666,8 @@ TUPgenerator (node *arg_node, info *arg_info)
         }
     }
 
-    if (IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node)) == FALSE) {
+    if ((IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node)) == FALSE)
+        && (global.optimize.dortup)) {
         if (TYisAKV (ub)) {
             GENERATOR_BOUND2 (arg_node)
               = AssignTypeToExpr (GENERATOR_BOUND2 (arg_node), ub);
@@ -1665,7 +1679,8 @@ TUPgenerator (node *arg_node, info *arg_info)
 
     if (NULL != GENERATOR_STEP (arg_node)) {
 
-        if (IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node)) == FALSE) {
+        if ((IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node)) == FALSE)
+            && (global.optimize.dortup)) {
             if (TYisAKV (st)) {
                 GENERATOR_STEP (arg_node)
                   = AssignTypeToExpr (GENERATOR_STEP (arg_node), st);
@@ -1678,7 +1693,8 @@ TUPgenerator (node *arg_node, info *arg_info)
     }
 
     if (NULL != GENERATOR_WIDTH (arg_node)) {
-        if (IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node)) == FALSE) {
+        if ((IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node)) == FALSE)
+            && (global.optimize.dortup)) {
 
             if (TYisAKV (wi)) {
                 GENERATOR_WIDTH (arg_node)
@@ -1935,7 +1951,7 @@ TUPids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPids");
 
-    if (INFO_TUP_TYPE (arg_info) != NULL) {
+    if ((INFO_TUP_TYPE (arg_info) != NULL) && (global.optimize.dotup)) {
 
         oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
 
@@ -2112,7 +2128,9 @@ TUPexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TUPexprs");
 
-    INFO_TUP_TYPE (arg_info) = NTCnewTypeCheck_Expr (arg_node);
+    if (global.optimize.dotup) {
+        INFO_TUP_TYPE (arg_info) = NTCnewTypeCheck_Expr (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2133,17 +2151,20 @@ TUPid (node *arg_node, info *arg_info)
     ntype *type;
     DBUG_ENTER ("TUPid");
 
-    type = AVIS_TYPE (ID_AVIS (arg_node));
+    if (global.optimize.dotup) {
 
-    DBUG_ASSERT ((type != NULL), "Missing type information");
+        type = AVIS_TYPE (ID_AVIS (arg_node));
 
-    if (!(TYisProd (type))) {
-        DBUG_ASSERT ((TYisArray (type)), "non array node!");
+        DBUG_ASSERT ((type != NULL), "Missing type information");
 
-        INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, TYcopyType (type));
-    } else {
+        if (!(TYisProd (type))) {
+            DBUG_ASSERT ((TYisArray (type)), "non array node!");
 
-        INFO_TUP_TYPE (arg_info) = TYcopyType (type);
+            INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, TYcopyType (type));
+        } else {
+
+            INFO_TUP_TYPE (arg_info) = TYcopyType (type);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -2167,45 +2188,48 @@ TUParray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUParray");
 
-    if (NULL != ARRAY_AELEMS (arg_node)) {
+    if (global.optimize.dotup) {
 
-        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
-    } else {
+        if (NULL != ARRAY_AELEMS (arg_node)) {
 
-        DBUG_ASSERT ((FALSE), "array without elements");
-        INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
-    }
+            ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
+        } else {
 
-    DBUG_ASSERT (TYisProd (INFO_TUP_TYPE (arg_info)),
-                 "NTCexprs did not create a product type");
+            DBUG_ASSERT ((FALSE), "array without elements");
+            INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
+        }
 
-    elems = INFO_TUP_TYPE (arg_info);
-    INFO_TUP_TYPE (arg_info) = NULL;
+        DBUG_ASSERT (TYisProd (INFO_TUP_TYPE (arg_info)),
+                     "NTCexprs did not create a product type");
 
-    /*
-     * Now, we built the resulting (AKS-)type type from the product type found:
-     */
-    num_elems = TYgetProductSize (elems);
-    if (num_elems > 0) {
+        elems = INFO_TUP_TYPE (arg_info);
+        INFO_TUP_TYPE (arg_info) = NULL;
 
-        info = TEmakeInfo (global.linenum, "prf", "", "array-constructor", NULL, NULL,
-                           NULL, NULL);
-        type = NTCCTprf_array (info, elems);
-
-    } else {
-        /**
-         * we are dealing with an empty array here!
-         * To get started, we assume all empty arrays to be of type int[0].
-         * If an other type is desired, it has to be casted to that type
-         * (which - at the time being - is not yet supported 8-)
+        /*
+         * Now, we built the resulting (AKS-)type type from the product type found:
          */
-        type
-          = TYmakeProductType (1, TYmakeAKV (TYmakeSimpleType (T_int),
-                                             COmakeConstant (T_int, SHcreateShape (1, 0),
-                                                             NULL)));
-    }
+        num_elems = TYgetProductSize (elems);
+        if (num_elems > 0) {
 
-    INFO_TUP_TYPE (arg_info) = type;
+            info = TEmakeInfo (global.linenum, "prf", "", "array-constructor", NULL, NULL,
+                               NULL, NULL);
+            type = NTCCTprf_array (info, elems);
+
+        } else {
+            /**
+             * we are dealing with an empty array here!
+             * To get started, we assume all empty arrays to be of type int[0].
+             * If an other type is desired, it has to be casted to that type
+             * (which - at the time being - is not yet supported 8-)
+             */
+            type = TYmakeProductType (1, TYmakeAKV (TYmakeSimpleType (T_int),
+                                                    COmakeConstant (T_int,
+                                                                    SHcreateShape (1, 0),
+                                                                    NULL)));
+        }
+
+        INFO_TUP_TYPE (arg_info) = type;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2228,7 +2252,7 @@ TUPprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPprf");
 
-    if (IsSupportedPrf (arg_node, arg_info)) {
+    if ((IsSupportedPrf (arg_node, arg_info)) && (global.optimize.dotup)) {
         prf = PRF_PRF (arg_node);
 
         /*
@@ -2281,17 +2305,20 @@ TUPfuncond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPfuncond");
 
-    then_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_THEN (arg_node))));
-    else_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_ELSE (arg_node))));
+    if (global.optimize.dotup) {
 
-    tmp = TYlubOfTypes (then_type, else_type);
+        then_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_THEN (arg_node))));
+        else_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_ELSE (arg_node))));
 
-    if (tmp == NULL) {
-        CTIerrorLine (NODE_LINE (arg_node),
-                      "No common super type for result of conditional could be infered!");
+        tmp = TYlubOfTypes (then_type, else_type);
+
+        if (tmp == NULL) {
+            CTIerrorLine (NODE_LINE (arg_node), "No common super type for result of "
+                                                "conditional could be infered!");
+        }
+
+        INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
     }
-
-    INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
 
     DBUG_RETURN (arg_node);
 }
@@ -2336,14 +2363,17 @@ TUPcond (node *arg_node, info *arg_info)
         constant *cv;                                                                    \
         DBUG_ENTER ("TUP" #name);                                                        \
                                                                                          \
-        cv = COaST2Constant (arg_node);                                                  \
-        if (cv == NULL) {                                                                \
-            INFO_TUP_TYPE (arg_info)                                                     \
-              = TYmakeAKS (TYmakeSimpleType (base), SHcreateShape (0));                  \
-        } else {                                                                         \
-            INFO_TUP_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);          \
+        if (global.optimize.dotup) {                                                     \
+                                                                                         \
+            cv = COaST2Constant (arg_node);                                              \
+            if (cv == NULL) {                                                            \
+                INFO_TUP_TYPE (arg_info)                                                 \
+                  = TYmakeAKS (TYmakeSimpleType (base), SHcreateShape (0));              \
+            } else {                                                                     \
+                INFO_TUP_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);      \
+            }                                                                            \
+            INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, INFO_TUP_TYPE (arg_info));  \
         }                                                                                \
-        INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, INFO_TUP_TYPE (arg_info));      \
         DBUG_RETURN (arg_node);                                                          \
     }
 
