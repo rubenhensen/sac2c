@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.59  1997/11/24 15:54:56  dkr
+# target "clean" now erase sac2c.efence, too
+#
 # Revision 1.58  1997/11/24 15:43:39  srs
 # NEWTREE is now defined by default.
 # removed duplicate __EXTENSIONS__
@@ -312,6 +315,7 @@ clean:
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	$(RM) sac2c
+	$(RM) sac2c.efence
 
 tags: 
 	ctags src/*/*.[ch] >/dev/null
