@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.179  1998/07/16 20:41:40  dkr
+ * fixed a bug in COMPsync
+ *
  * Revision 1.178  1998/07/03 10:18:15  cg
  * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
@@ -576,7 +579,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h> /* MAX_INT */
 
 #include "tree.h"
 #include "tree_basic.h"
@@ -589,6 +591,8 @@
 #include "Error.h"
 #include "traverse.h"
 #include "DataFlowMask.h"
+#include "optimize.h"
+#include "Inline.h"
 #include "compile.h"
 #include "convert.h"
 #include "DupTree.h"
@@ -6329,8 +6333,8 @@ COMPSync (node *arg_node, node *arg_info)
         instr = ASSIGN_INSTR (assign);
         DBUG_ASSERT ((instr != NULL), "no instr found");
 
+        var_name = NULL;
         if (NODE_TYPE (instr) == N_icm) {
-            var_name = NULL;
 
             /*
              * begin of with-loop code found?
@@ -6894,7 +6898,9 @@ COMPWLseg (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
+ *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_Nwith2-node.
+ *   - 'wl_seg' points to the current with-loop segment.
  *
  ******************************************************************************/
 
@@ -6990,7 +6996,9 @@ COMPWLblock (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
+ *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_Nwith2-node.
+ *   - 'wl_seg' points to the current with-loop segment.
  *
  ******************************************************************************/
 
@@ -7086,7 +7094,9 @@ COMPWLublock (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
+ *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_Nwith2-node.
+ *   - 'wl_seg' points to the current with-loop segment.
  *
  ******************************************************************************/
 
@@ -7210,8 +7220,8 @@ COMPWLstride (node *arg_node, node *arg_info)
 node *
 COMPWLgrid (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *cexpr, *fold_code, *new_assigns, *assigns = NULL,
-                                                                  *dec_rc_cexpr = NULL;
+    node *icm_args, *icm_args2, *cexpr, *new_assigns, *accvar, *fun, *funap, *fold_code,
+      *assigns = NULL, *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
     long *bv;
@@ -7352,10 +7362,50 @@ COMPWLgrid (node *arg_node, node *arg_info)
                  */
                 icm_args2 = FreeTree (icm_args2);
 
-                /*
+                /******************************************************************
                  * get code of the dummy fold-fun
                  */
+
+#if 1
                 fold_code = GetFoldCode (NWITHOP_FUNDEF (NWITH2_WITHOP (wl_node)));
+#else
+                /*
+                 * first, we create a function application of the form:
+                 *    <acc> = <fun>( <acc>, <cexpr>);
+                 * where
+                 *    <acc> is the accumulator variable
+                 *          & can be found via 'wl_ids'
+                 *    <fun> is the name of the (artificially introduced) folding-fun
+                 *          & can be found via 'NWITH2_WITHOP( wl_node)'
+                 *    <cexpr> is the expression in the operation part
+                 *            & can be found via 'NCODE_CEXPR( WLGRID_CODE( arg_node))'
+                 */
+
+                fun = NWITH2_WITHOP (wl_node);
+                accvar = MakeId (StringCopy (IDS_NAME (wl_ids)),
+                                 StringCopy (IDS_MOD (wl_ids)), ST_regular);
+                ID_VARDEC (accvar) = IDS_VARDEC (wl_ids);
+
+                funap
+                  = MakeAp (StringCopy (NWITHOP_FUN (fun)),
+                            StringCopy (NWITHOP_MOD (fun)),
+                            MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
+                AP_FUNDEF (funap) = NWITHOP_FUNDEF (fun);
+
+                fold_code = MakeAssign (MakeLet (funap, DupOneIds (wl_ids, NULL)), NULL);
+
+                /*
+                 * Inlining of the fold-pseudo-fun.
+                 */
+                inl_fun--; /* Do not count this inlining! */
+                fold_code = InlineSingleApplication (ASSIGN_INSTR (fold_code),
+                                                     INFO_COMP_FUNDEF (arg_info));
+#endif
+
+                /*
+                 * get code of the dummy fold-fun
+                 ******************************************************************/
+
                 /*
                  * insert code of the dummy fold-fun
                  */
