@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2004/11/17 19:49:22  sah
+ * made implicittypes.c invisible in new ast mode
+ *
  * Revision 3.109  2004/11/14 13:44:42  ktr
  * added emrb_tab (reuse branching)
  *
@@ -769,7 +772,7 @@ static funtab obj_tab_rec = {{
                              NULL,
                              NULL};
 funtab *obj_tab = &obj_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (23) impltype_tab
  */
@@ -780,7 +783,7 @@ static funtab impltype_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *impltype_tab = &impltype_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (24) objinit_tab
  */
