@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/03/17 14:21:58  cg
+ * file src/compile/trace.h removed.
+ * definition of symbolic values of global variable traceflag moved to globals.h
+ *
  * Revision 1.20  1998/03/13 13:15:57  dkr
  * removed a bug with flag _DBUG:
  *   new var 'my?dbug'
@@ -132,6 +136,18 @@ extern int show_idx;
 extern int show_icm;
 
 extern int traceflag;
+
+#define NO_TRACE 0x0000
+#define TRACE_UDF 0x0001
+#define TRACE_PRF 0x0002
+#define TRACE_WST 0x0004
+#define TRACE_REF 0x0008
+#define TRACE_MEM 0x0010
+#define TRACE_ALL 0xffff
+/*
+ * Allowed values of traceflag
+ */
+
 extern int profileflag;
 extern int check_boundary;
 extern int check_malloc;

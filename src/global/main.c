@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.114  1998/03/17 14:21:58  cg
+ * file src/compile/trace.h removed.
+ * definition of symbolic values of global variable traceflag moved to globals.h
+ *
  * Revision 1.113  1998/03/13 13:13:28  dkr
  * removed a bug with flag _DBUG
  *
@@ -394,7 +398,6 @@
 #include "import.h"
 #include "refcount.h"
 #include "scnprs.h"
-#include "trace.h"
 #include "profile.h"
 #include "compile.h"
 #include "psi-opt.h"

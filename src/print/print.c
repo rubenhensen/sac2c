@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.157  1998/03/17 14:21:58  cg
+ * file src/compile/trace.h removed.
+ * definition of symbolic values of global variable traceflag moved to globals.h
+ *
  * Revision 1.156  1998/03/17 12:19:01  cg
  * PrintId() no longer prints strings. This is now exclusively done by
  * PrintStr().
@@ -537,7 +541,6 @@
 #include "Error.h"
 #include "convert.h"
 #include "optimize.h"
-#include "trace.h"
 #include "profile.h"
 #include "filemgr.h"
 #include "globals.h"

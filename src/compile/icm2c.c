@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/03/17 14:21:58  cg
+ * file src/compile/trace.h removed.
+ * definition of symbolic values of global variable traceflag moved to globals.h
+ *
  * Revision 1.50  1997/11/25 10:34:27  dkr
  * added a \n in with-loop-output
  *
@@ -182,7 +186,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "main.h"
-#include "trace.h"
 #include "convert.h"
 #include "globals.h"
 #include "icm2c.h"
