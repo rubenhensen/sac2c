@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/07/15 15:01:58  dkr
+ * WARNing about modified blocking size is a NOTE now
+ *
  * Revision 3.55  2002/06/13 11:51:15  dkr
  * no changes done
  *
@@ -4265,7 +4268,7 @@ AdjustBlockSize (int old_bv, int unroll, bool warn)
     }
 
     if (warn && (old_bv != new_bv)) {
-        WARN (line, ("Block size adjusted: %i instead of %i", new_bv, old_bv));
+        NOTE (line, ("Block size adjusted: %i instead of %i", new_bv, old_bv));
     }
 
     DBUG_RETURN (new_bv);
