@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:58:08  dkr
+ * inference parts are moved into a new module infer_dfms.[ch]
+ *
  * Revision 3.1  2000/11/20 17:59:23  sacbase
  * new release made
  *
@@ -32,23 +35,9 @@
 
 extern node *Lac2Fun (node *syntaxtree);
 
-extern node *L2F_INFERfundef (node *arg_node, node *arg_info);
-extern node *L2F_INFERarg (node *arg_node, node *arg_info);
-extern node *L2F_INFERassign (node *arg_node, node *arg_info);
-extern node *L2F_INFERlet (node *arg_node, node *arg_info);
-extern node *L2F_INFERap (node *arg_node, node *arg_info);
-extern node *L2F_INFERid (node *arg_node, node *arg_info);
-extern node *L2F_INFERwithid (node *arg_node, node *arg_info);
-extern node *L2F_INFERcode (node *arg_node, node *arg_info);
-extern node *L2F_INFERwith (node *arg_node, node *arg_info);
-extern node *L2F_INFERwith2 (node *arg_node, node *arg_info);
-extern node *L2F_INFERcond (node *arg_node, node *arg_info);
-extern node *L2F_INFERwhile (node *arg_node, node *arg_info);
-extern node *L2F_INFERdo (node *arg_node, node *arg_info);
-
-extern node *L2F_LIFTfundef (node *arg_node, node *arg_info);
-extern node *L2F_LIFTcond (node *arg_node, node *arg_info);
-extern node *L2F_LIFTwhile (node *arg_node, node *arg_info);
-extern node *L2F_LIFTdo (node *arg_node, node *arg_info);
+extern node *L2Ffundef (node *arg_node, node *arg_info);
+extern node *L2Fcond (node *arg_node, node *arg_info);
+extern node *L2Fwhile (node *arg_node, node *arg_info);
+extern node *L2Fdo (node *arg_node, node *arg_info);
 
 #endif /* _sac_lac2fun_h */
