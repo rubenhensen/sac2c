@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/05/29 12:30:41  dkr
+ * comment for TYStaticDispatchWrapper() added
+ *
  * Revision 3.46  2003/04/08 08:14:57  sbs
  * nasty error in CmpTypes eliminated
  *
@@ -4739,7 +4742,9 @@ TYSplitWrapperType (ntype *type, bool *finished)
  *   node *TYStaticDispatchWrapper( node *fundef)
  *
  * Description:
- *
+ *   If the given wrapper function can be dispatched statically (i.e. only a
+ *   single instance is applicable to [*]-arguments) the appropriate pointer
+ *   to the function instance is returned. Otherwise the function returns NULL.
  *
  ******************************************************************************/
 
