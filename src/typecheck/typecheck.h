@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.12  1995/04/20 10:23:43  asi
+ * Revision 1.13  1995/06/23 12:38:43  hw
+ * added parameter to function 'DuplicateTypes'
+ *
+ * Revision 1.12  1995/04/20  10:23:43  asi
  * added DuplicateTypes
  *
  * Revision 1.11  1995/03/28  12:14:22  hw
@@ -51,6 +54,6 @@ extern node *TCwhile (node *arg_node, node *arg_info);
 extern node *TCunaryOp (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
-extern types *DuplicateTypes (types *source);
+extern types *DuplicateTypes (types *source, int share);
 
 #endif /* _typecheck_h */
