@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/10/22 13:22:59  sah
+ * added DoAnnotateNamespace
+ *
  * Revision 3.67  2004/10/21 17:53:30  sah
  * added ResolveAll.
  *
@@ -275,6 +278,7 @@
 #ifdef NEW_AST
 #include "libstat.h"
 #include "resolveall.h"
+#include "annotatenamespace.h"
 #endif /* NEW_AST */
 #include "PatchWith.h"
 #include "resource.h"
@@ -440,6 +444,9 @@ main (int argc, char *argv[])
         syntax_tree = Import (syntax_tree); /* imp_tab */
 #else
         ResolveAll (syntax_tree);
+        DoAnnotateNamespace (syntax_tree);
+
+        ABORT_ON_ERROR;
 #endif /* NEW_AST */
         PHASE_DONE_EPILOG;
     }
