@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/25 13:38:07  dkr
+ * function FindVardec renamed to FindVardec_Varno and moved to
+ * tree_compound.c
+ *
  * Revision 2.11  1999/11/09 21:16:13  dkr
  * In RCNwith(): call of Trav() with NWITH_PART restored.
  *
@@ -318,52 +322,6 @@ IsNonUniqueHidden (types *type)
     }
 
     DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FindVardec(int varno, node *fundef)
- *
- * description:
- *   returns the vardec of var number 'varno'
- *   Search runs through arguments and vardecs of the function, so erery
- *   variable valid in the function has to be found here.
- *
- ******************************************************************************/
-
-node *
-FindVardec (int varno, node *fundef)
-{
-    node *tmp, *result = NULL;
-
-    DBUG_ENTER ("FindVardec");
-
-    if (result == NULL) {
-        tmp = FUNDEF_ARGS (fundef);
-        while (tmp != NULL) {
-            if (ARG_VARNO (tmp) == varno) {
-                result = tmp;
-                break;
-            } else {
-                tmp = ARG_NEXT (tmp);
-            }
-        }
-    }
-
-    if (result == NULL) {
-        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
-        while (tmp != NULL) {
-            if (VARDEC_VARNO (tmp) == varno) {
-                result = tmp;
-                break;
-            } else {
-                tmp = VARDEC_NEXT (tmp);
-            }
-        }
-    }
-
-    DBUG_RETURN (result);
 }
 
 /*
@@ -957,7 +915,7 @@ RCassign (node *arg_node, node *arg_info)
         for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
             if ((ASSIGN_MASK (arg_node, 0))[i] > 0) {
                 DFMSetMaskEntrySet (NWITH_LOCAL (with), NULL,
-                                    FindVardec (i, fundef_node));
+                                    FindVardec_Varno (i, fundef_node));
             }
         }
         DFMSetMaskMinus (NWITH_LOCAL (with), ids_mask);
@@ -972,7 +930,8 @@ RCassign (node *arg_node, node *arg_info)
         NWITH_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
             if ((ASSIGN_MASK (arg_node, 1))[i] > 0) {
-                DFMSetMaskEntrySet (NWITH_IN (with), NULL, FindVardec (i, fundef_node));
+                DFMSetMaskEntrySet (NWITH_IN (with), NULL,
+                                    FindVardec_Varno (i, fundef_node));
             }
         }
         DFMSetMaskMinus (NWITH_IN (with), NWITH_LOCAL (with));
@@ -1077,7 +1036,7 @@ RCloop (node *arg_node, node *arg_info)
     /* first compute sets defvars and usevars */
     for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-            vardec = FindVardec (i, fundef_node);
+            vardec = FindVardec_Varno (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "variable not found");
 
             DBUG_PRINT ("RCi", ("i=%i; defined[i]=%i; used[i]=%i", i, defined_mask[i],
@@ -1335,7 +1294,7 @@ RCloop (node *arg_node, node *arg_info)
     /* compute new refcounts because of 'virtual function application' */
     for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-            vardec = FindVardec (i, fundef_node);
+            vardec = FindVardec_Varno (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "variable not found");
 
             /*
@@ -1754,7 +1713,7 @@ RCcond (node *arg_node, node *arg_info)
     for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
         if ((then_dump[i] != else_dump[i])
             || (naive_then_dump[i] != naive_else_dump[i])) {
-            vardec = FindVardec (i, fundef_node);
+            vardec = FindVardec_Varno (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), " var not found");
 
             if (then_dump[i] != else_dump[i]) {
@@ -1996,7 +1955,7 @@ RCwith (node *arg_node, node *arg_info)
      */
     for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
         if (used_mask[i] > 0) {
-            vardec = FindVardec (i, fundef_node);
+            vardec = FindVardec_Varno (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "variable not found");
             /* #### */
             if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
@@ -2026,7 +1985,7 @@ RCwith (node *arg_node, node *arg_info)
      */
     for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
         if ((with_dump[i] > 0) && (i != index_vec_varno) && (i != mod_array_varno)) {
-            vardec = FindVardec (i, fundef_node);
+            vardec = FindVardec_Varno (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "var not found");
             if (0 < VARDEC_OR_ARG_REFCNT (vardec)) {
                 /* only naive missing here #### */
@@ -2042,7 +2001,7 @@ RCwith (node *arg_node, node *arg_info)
 
     if (-1 != mod_array_varno) {
         /* now increase refcount of modified array */
-        vardec = FindVardec (mod_array_varno, fundef_node);
+        vardec = FindVardec_Varno (mod_array_varno, fundef_node);
         DBUG_ASSERT ((NULL != vardec), "var not found");
         ref_dump[mod_array_varno]++;
         naive_ref_dump[mod_array_varno]++;
