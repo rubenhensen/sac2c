@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2003/03/25 17:18:20  sah
+ * CheckSystemLibrary now uses config.cc to
+ * get the current c compiler.
+ *
  * Revision 3.3  2003/03/25 14:40:41  sah
  * added CheckSystemLibrary
  *
@@ -174,8 +178,9 @@ CheckSystemLibrary (char *name)
     /* the library.                                         */
 
     SystemCall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c", tmp_dirname);
-    result = SystemCall2 ("gcc -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c", name,
-                          tmp_dirname, tmp_dirname);
+    result = SystemCall2 ("%s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
+                          config.cc, config.ccflags, config.ldflags, name, tmp_dirname,
+                          tmp_dirname);
 
     /* reverse result, because a result of 0 means true here. */
 
