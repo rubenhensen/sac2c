@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/04/06 18:50:10  dkr
+ * CountArgs() and CountTypes() added
+ *
  * Revision 3.30  2001/04/05 12:29:51  nmw
  * debug messages added, big error with wrong macro corrected in AdjustAvisData
  *
@@ -172,7 +175,7 @@
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Shpseg :
+ ***  SHPSEG :
  ***/
 
 /******************************************************************************
@@ -364,8 +367,33 @@ Shpseg2Array (shpseg *shape, int dim)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Types :
+ ***  TYPES :
  ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   int CountTypes( types *type)
+ *
+ * description:
+ *   Counts the number of types.
+ *
+ ******************************************************************************/
+
+int
+CountTypes (types *type)
+{
+    int count = 0;
+
+    DBUG_ENTER ("CountTypes");
+
+    while (type != NULL) {
+        count++;
+        type = TYPES_NEXT (type);
+    }
+
+    DBUG_RETURN (count);
+}
 
 /******************************************************************************
  *
@@ -821,7 +849,7 @@ IsNonUniqueHidden (types *type)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Ids :
+ ***  IDS :
  ***/
 
 ids *
@@ -851,7 +879,7 @@ LookupIds (char *name, ids *ids_chain)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Nums :
+ ***  NUMS :
  ***/
 
 int
@@ -1088,7 +1116,7 @@ AnnotateIdWithConstVec (node *expr, node *id)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Nodelist :
+ ***  NODELIST :
  ***/
 
 void
@@ -1527,23 +1555,12 @@ FindVardec_Varno (int varno, node *fundef)
 int
 CountFunctionParams (node *fundef)
 {
-    int count = 0;
-    types *tmp;
-    node *tmp2;
+    int count;
 
     DBUG_ENTER ("CountFunctionParams");
 
-    tmp = FUNDEF_TYPES (fundef);
-    while (tmp != NULL) {
-        count++;
-        tmp = TYPES_NEXT (tmp);
-    }
-
-    tmp2 = FUNDEF_ARGS (fundef);
-    while (tmp2 != NULL) {
-        count++;
-        tmp2 = ARG_NEXT (tmp2);
-    }
+    count = CountTypes (FUNDEF_TYPES (fundef));
+    count += CountArgs (FUNDEF_ARGS (fundef));
 
     DBUG_RETURN (count);
 }
@@ -1689,9 +1706,6 @@ MakeVardecFromArg (node *arg_node)
  * function:
  *   node *AdjustAvisData( node *new_vardec, node *fundef)
  *
- * returns:
- *   adjusted avis node
- *
  * description:
  *   when a vardec is duplicated via DupTree all dependend infomation in the
  *   corresponding avis node is duplicated, too. when this vardec is used in
@@ -1758,6 +1772,33 @@ AdjustAvisData (node *new_vardec, node *fundef)
 /***
  ***  N_arg :
  ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   int CountArgs( node *args)
+ *
+ * description:
+ *   Counts the number of N_arg nodes.
+ *
+ ******************************************************************************/
+
+int
+CountArgs (node *args)
+{
+    int count = 0;
+
+    DBUG_ENTER ("CountArgs");
+
+    DBUG_ASSERT (((args == NULL) || (NODE_TYPE (args) == N_arg)), "no N_arg node found!");
+
+    while (args != NULL) {
+        count++;
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_RETURN (count);
+}
 
 /******************************************************************************
  *
