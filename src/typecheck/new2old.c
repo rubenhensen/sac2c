@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/10/29 19:06:28  dkr
+ * bug in NT2OTwithid() fixed: TYFixAndEliminateAlpha() used now
+ *
  * Revision 1.11  2002/10/28 14:54:55  sbs
  * NT2OTcast added.
  *
@@ -412,24 +415,32 @@ NT2OTwithid (node *arg_node, node *arg_info)
     DBUG_ENTER ("NT2OTwithid");
 
     vec_type = AVIS_TYPE (IDS_AVIS (NWITHID_VEC (arg_node)));
+    vec_type = TYFixAndEliminateAlpha (vec_type);
 
-    if ((NWITHID_IDS (arg_node) == NULL) && TYIsAKS (vec_type)) {
-        num_vars = SHGetExtent (TYGetShape (vec_type), 0);
-        new_ids = NULL;
-        new_vardecs = INFO_NT2OT_VARDECS (arg_info);
-        for (i = 0; i < num_vars; i++) {
-            tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
-            new_vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)),
-                                      MakeTypes1 (T_unknown), new_vardecs);
-            AVIS_TYPE (VARDEC_AVIS (new_vardecs))
-              = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
-            IDS_VARDEC (tmp_ids) = new_vardecs;
-            IDS_AVIS (tmp_ids) = VARDEC_AVIS (new_vardecs);
-            IDS_NEXT (tmp_ids) = new_ids;
-            new_ids = tmp_ids;
+    if (NWITHID_IDS (arg_node) == NULL) {
+        if (TYIsAKS (vec_type)) {
+            DBUG_PRINT ("NT2OT",
+                        ("NWITHID_IDS for %s built", IDS_NAME (NWITHID_VEC (arg_node))));
+            num_vars = SHGetExtent (TYGetShape (vec_type), 0);
+            new_ids = NULL;
+            new_vardecs = INFO_NT2OT_VARDECS (arg_info);
+            for (i = 0; i < num_vars; i++) {
+                tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
+                new_vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)),
+                                          MakeTypes1 (T_unknown), new_vardecs);
+                AVIS_TYPE (VARDEC_AVIS (new_vardecs))
+                  = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
+                IDS_VARDEC (tmp_ids) = new_vardecs;
+                IDS_AVIS (tmp_ids) = VARDEC_AVIS (new_vardecs);
+                IDS_NEXT (tmp_ids) = new_ids;
+                new_ids = tmp_ids;
+            }
+            NWITHID_IDS (arg_node) = new_ids;
+            INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
+        } else {
+            DBUG_PRINT ("NT2OT", ("no NWITHID_IDS for %s built",
+                                  IDS_NAME (NWITHID_VEC (arg_node))));
         }
-        NWITHID_IDS (arg_node) = new_ids;
-        INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
     }
 
     DBUG_RETURN (arg_node);
