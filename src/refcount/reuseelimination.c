@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/18 17:04:58  ktr
+ * Added some DBUG_PRINTs
+ *
  * Revision 1.4  2004/11/07 14:25:24  ktr
  * ongoing implementation.
  *
@@ -234,6 +237,9 @@ EMREfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         DFMmask_base_t maskbase;
 
+        DBUG_PRINT ("EMRE", ("Performing Reuse elimination in function %s...",
+                             FUNDEF_NAME (arg_node)));
+
         maskbase = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
         INFO_RE_MASK (arg_info) = DFMGenMaskClear (maskbase);
@@ -245,6 +251,9 @@ EMREfundef (node *arg_node, info *arg_info)
         INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
 
         maskbase = DFMRemoveMaskBase (maskbase);
+
+        DBUG_PRINT ("EMRE", ("Reuse elimination in function %s complete.",
+                             FUNDEF_NAME (arg_node)));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
