@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2001/05/22 14:56:21  nmw
+ * duplicated Free() in COMPCast() and COMPLet removed
+ *
  * Revision 3.58  2001/05/22 10:03:21  dkr
  * fixed a bug in COMPPrf:
  * ICMs for RC are build *before* the arguments are traversed!!
@@ -5496,7 +5499,9 @@ COMPCast (node *arg_node, node *arg_info)
     tmp = arg_node;
     arg_node = Trav (CAST_EXPR (arg_node), arg_info);
     CAST_EXPR (tmp) = NULL;
-    tmp = FreeTree (tmp);
+
+    /* do not free tmp here - LET will remove it again !
+       tmp = FreeTree( tmp); */
 
     DBUG_RETURN (arg_node);
 }
