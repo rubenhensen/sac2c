@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.12  1999/06/28 14:44:36  cg
+ * ID_ISCONST is now used instead of ID_VECLEN in order to determine
+ * whether an identifier represents a constant vector or not.
+ *
  * Revision 2.11  1999/06/17 14:29:22  sbs
  * patched the typechecker in order to accept programs which only require
  * the dimensionality rather than the exact shape of all arrays to be
@@ -924,7 +928,7 @@ Reshp (node *vec, types *array, types *shp_vec)
         /*
          * if flattened :
          */
-        if ((N_id == NODE_TYPE (vec)) && (ID_VECLEN (vec) > SCALAR)) {
+        if ((N_id == NODE_TYPE (vec)) && ID_ISCONST (vec)) {
             /*
              * count number of elements of the new array
              */
@@ -2295,7 +2299,7 @@ Genarray_S (node *v_node, types *vec, types *scalar)
             ret_type = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
                                  StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
         } else {
-            if ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR)) {
+            if ((NODE_TYPE (v_node) == N_id) && ID_ISCONST (v_node)) {
                 /*
                  * create shpseg of resulting type
                  */
@@ -2353,7 +2357,7 @@ Genarray_A (node *v_node, types *vec, types *array)
     DBUG_ENTER ("Genarray_A");
     if (kind_of_file == SAC_PRG) {
         if ((NODE_TYPE (v_node) == N_array)
-            || ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR))) {
+            || ((NODE_TYPE (v_node) == N_id) && ID_ISCONST (v_node))) {
             ret_type = Genarray_S (v_node, vec, array);
             dim = TYPES_DIM (ret_type);
             for (i = 0; i < TYPES_DIM (array); i++) {
@@ -2367,10 +2371,10 @@ Genarray_A (node *v_node, types *vec, types *array)
         }
     } else if (kind_of_file == SAC_MOD) {
         /*
-         *  we are checking a funktion in a module
+         *  we are checking a function in a module
          */
         if ((NODE_TYPE (v_node) == N_array)
-            || ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR))) {
+            || ((NODE_TYPE (v_node) == N_id) && ID_ISCONST (v_node))) {
             if (TYPES_DIM (array) == UNKNOWN_SHAPE) {
                 ret_type
                   = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
