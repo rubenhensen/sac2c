@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2003/03/13 07:22:02  ktr
+ * Fixed bug #7 WLS does illegal transformation on non-scalar fold-WLs.
+ *
  * Revision 1.29  2003/03/09 13:47:42  ktr
  * removed an unnecessary printf-line.
  *
@@ -663,7 +666,10 @@ probePart (node *arg_node, node *arg_info)
     DBUG_ENTER ("probePart");
 
     /* Inner CEXPR must be a nonscalar */
-    if (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) == 0) {
+    /* Outer Withloop must not be a fold Withloop */
+    if ((VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) == 0)
+        || ((NWITHOP_TYPE (INFO_WLS_WITHOP (arg_info)) != WO_modarray)
+            && (NWITHOP_TYPE (INFO_WLS_WITHOP (arg_info)) != WO_genarray))) {
         INFO_WLS_POSSIBLE (arg_info) = FALSE;
     } else {
         /* special case: array is to be filled with the index vector */
