@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/11/26 20:57:34  khf
+ * corrected function names fron CF
+ *
  * Revision 1.25  2004/11/25 23:28:04  khf
  * ccorrected error message :)
  *
@@ -1562,17 +1565,17 @@ PropagateArrayConstants (node **expr)
             const_expr = COfreeConstant (const_expr);
 
         } else {
-            sco_expr = SCOexpr2StructConstant ((*expr));
+            sco_expr = CFscoExpr2StructConstant ((*expr));
             if (sco_expr != NULL) {
                 gshape = GV_struct_constant;
                 /*
                  * as the sco_expr may share some subexpressions with (*expr),
                  * we have to duplicate these BEFORE deleting (*expr)!!!
                  */
-                tmp = SCOdupStructConstant2Expr (sco_expr);
+                tmp = CFscoDupStructConstant2Expr (sco_expr);
                 (*expr) = FREEdoFreeTree (*expr);
                 (*expr) = tmp;
-                sco_expr = SCOfreeStructConstant (sco_expr);
+                sco_expr = CFscoFreeStructConstant (sco_expr);
 
             } else if (TYisAKS (ID_NTYPE ((*expr)))) {
                 gshape = GV_known_shape;
