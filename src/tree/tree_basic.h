@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2001/03/22 13:28:07  dkr
+ * minor changes done
+ *
  * Revision 3.56  2001/03/21 17:49:33  dkr
  * macros INFO_INL_... modified
  *
@@ -379,13 +382,13 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  ***
  ***  temporary attributes:
  ***
- ***    int         REFCNT                          (refcount -> )
- ***    int         NAIVE_REFCNT                    (refcount -> )
+ ***    node*       AVIS         (N_avis)           (ssaform -> )
  ***    node*       VARDEC       (N_vardec/N_arg)   (typecheck -> )
  ***    node*       DEF                             (psi-optimize -> )
  ***    node*       USE                             (psi-optimize -> )
  ***    statustype  STATUS                          (obj-handling -> compile !!)
- ***    node*       AVIS         (N_avis)           (ssaform -> )
+ ***    int         REFCNT                          (refcount -> )
+ ***    int         NAIVE_REFCNT                    (refcount -> )
  ***/
 
 /*
@@ -408,15 +411,15 @@ extern ids *MakeIds_Copy (char *name);
 
 #define IDS_NAME(i) (i->id)
 #define IDS_MOD(i) (i->mod)
-#define IDS_REFCNT(i) (i->refcnt)
-#define IDS_NAIVE_REFCNT(i) (i->naive_refcnt)
 #define IDS_NEXT(i) (i->next)
-#define IDS_VARDEC(i) (i->node)
 #define IDS_AVIS(i) (i->avis)
+#define IDS_VARDEC(i) (i->node)
 #define IDS_DEF(i) (i->def)
 #define IDS_USE(i) (i->use)
 #define IDS_STATUS(i) (i->status)
 #define IDS_ATTRIB(i) (i->attrib)
+#define IDS_REFCNT(i) (i->refcnt)
+#define IDS_NAIVE_REFCNT(i) (i->naive_refcnt)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1109,6 +1112,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_NAME(n) (n->info.types->id)
 #define ARG_STATUS(n) (n->info.types->status)
 #define ARG_ATTRIB(n) (n->info.types->attrib)
+#define ARG_AVIS(n) ((node *)(n->dfmask[0]))
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
 #define ARG_NAIVE_REFCNT(n) (n->int_data)
@@ -1119,7 +1123,6 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ACTCHN(n) (n->node[3])
 #define ARG_COLCHN(n) (n->node[4])
 #define ARG_FUNDEF(n) (n->node[5])
-#define ARG_AVIS(n) ((node *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1223,6 +1226,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_NAME(n) (n->info.types->id)
 #define VARDEC_STATUS(n) (n->info.types->status)
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
+#define VARDEC_AVIS(n) ((node *)(n->dfmask[0]))
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
 #define VARDEC_NAIVE_REFCNT(n) (n->int_data)
@@ -1233,7 +1237,6 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_OBJDEF(n) (n->node[4])
 #define VARDEC_ICM(n) (n->node[5])
-#define VARDEC_AVIS(n) ((node *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1640,6 +1643,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***
  ***  temporary attributes:
  ***
+ ***    node*       AVIS      (N_avis)          (ssafrm -> )
  ***    node*       VARDEC    (N_vardec/N_arg)  (typecheck -> )
  ***    node*       OBJDEF    (N_objdef)        (typecheck -> )
  ***                                            ( -> analysis -> )
@@ -1654,7 +1658,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    simpletype  VECTYPE     (O)             (flatten -> )
  ***    int         ISCONST     (O)             (flatten -> )
  ***    int         NUM         (O)
- ***    node*       AVIS        (O)             (ssafrm -> )
  ***
  ***  remarks:
  ***
@@ -1713,15 +1716,16 @@ extern node *MakeId_Copy (char *str);
 extern node *MakeId_Num (int val);
 
 #define ID_IDS(n) (n->info.ids)
-#define ID_NAME(n) (n->info.ids->id)
-#define ID_DEF(n) (n->info.ids->def)
-#define ID_VARDEC(n) (n->info.ids->node)
-#define ID_OBJDEF(n) (n->info.ids->node)
-#define ID_MOD(n) (n->info.ids->mod)
-#define ID_ATTRIB(n) (n->info.ids->attrib)
-#define ID_STATUS(n) (n->info.ids->status)
-#define ID_REFCNT(n) (n->info.ids->refcnt)
-#define ID_NAIVE_REFCNT(n) (n->info.ids->naive_refcnt)
+#define ID_NAME(n) (IDS_NAME (ID_IDS (n)))
+#define ID_AVIS(n) (IDS_AVIS (ID_IDS (n)))
+#define ID_VARDEC(n) (IDS_VARDEC (ID_IDS (n)))
+#define ID_OBJDEF(n) (ID_IDS (n)->node)
+#define ID_MOD(n) (IDS_MOD (ID_IDS (n)))
+#define ID_ATTRIB(n) (IDS_ATTRIB (ID_IDS (n)))
+#define ID_STATUS(n) (IDS_STATUS (ID_IDS (n)))
+#define ID_DEF(n) (IDS_DEF (ID_IDS (n)))
+#define ID_REFCNT(n) (IDS_REFCNT (ID_IDS (n)))
+#define ID_NAIVE_REFCNT(n) (IDS_NAIVE_REFCNT (ID_IDS (n)))
 #define ID_CLSCONV(n) ((clsconv_t) (n->flag))
 #define ID_WL(n) (n->node[0])
 
@@ -1730,7 +1734,6 @@ extern node *MakeId_Num (int val);
 #define ID_CONSTVEC(n) (n->info2)
 #define ID_ISCONST(n) (n->varno)
 #define ID_NUM(n) (n->refcnt)
-#define ID_AVIS(n) (n->info.ids->avis)
 
 /*--------------------------------------------------------------------------*/
 
