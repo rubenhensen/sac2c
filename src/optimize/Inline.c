@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/02/06 11:21:11  srs
+ * optimize.h was included twice
+ *
  * Revision 1.14  1997/04/30 11:50:55  cg
  * links to global object definitions now stored in artificial variable
  * declarations when functions using global objects are inlined.
@@ -70,7 +73,6 @@
 #include "LoopInvariantRemoval.h"
 #include "DupTree.h"
 #include "Inline.h"
-#include "optimize.h"
 
 #define FIRST_FUNC arg_info->node[0]
 
