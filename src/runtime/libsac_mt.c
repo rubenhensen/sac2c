@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/12/10 12:39:05  cg
+ * Bug fixed in definition of _MIT_POSIX_THREADS.
+ *
  * Revision 1.10  1998/12/07 10:00:11  cg
  * added #define _MIT_POSIX_THREADS to please Linux
  *
@@ -52,7 +55,7 @@
 #define _POSIX_C_SOURCE 199506L
 
 #ifdef LINUX_X86
-#define _MIT_POSIX_THREADS
+#define _MIT_POSIX_THREADS 1
 #endif /* LINUX_X86 */
 
 #include <pthread.h>
