@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/01/29 18:32:18  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.17  2001/01/24 23:34:01  dkr
  * signature of MakeWLgrid() and MakeWLgridVar() modified
  * signature of MakeWLseg() and MakeWLsegVar() modified
@@ -3284,10 +3287,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
 #define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
 #define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
-#define WLSEGX_BLOCKS(n) ((n)->flag)
-#define WLSEGX_SV(n) ((int *)((n)->mask[0]))
-#define WLSEGX_BV(n, level) ((int *)((n)->mask[level + 2]))
-#define WLSEGX_UBV(n) ((int *)((n)->mask[1]))
 #define WLSEGX_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
 
 /*
@@ -3372,10 +3371,10 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
 #define WLSEG_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
 
-#define WLSEG_BLOCKS(n) (WLSEGX_BLOCKS (n))
-#define WLSEG_SV(n) (WLSEGX_SV (n))
-#define WLSEG_BV(n, level) (WLSEGX_BV (n, level))
-#define WLSEG_UBV(n) (WLSEGX_UBV (n))
+#define WLSEG_BLOCKS(n) ((n)->flag)
+#define WLSEG_SV(n) ((int *)((n)->mask[0]))
+#define WLSEG_BV(n, level) ((int *)((n)->mask[level + 2]))
+#define WLSEG_UBV(n) ((int *)((n)->mask[1]))
 
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 #define WLSEG_MAXHOMDIM(n) ((n)->varno)
@@ -3400,19 +3399,11 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***    int*       IDX_MIN                             (wltransform -> compile )
  ***    int*       IDX_MAX                             (wltransform -> compile )
  ***
- ***    int        BLOCKS      [number of blocking levels
- ***                             --- without unrolling-blocking]
- ***    int*       SV          [step vector]           (wltransform -> )
- ***    int*       BV[]        [blocking vectors]      (wltransform -> compile )
- ***    int*       UBV         [unrolling-b. vector]   (wltransform -> compile )
- ***
  ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
  ***
  ***  remarks:
  ***
- ***    - BV[ 0 .. (BLOCKS-1) ]
- ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV, HOMSV are vectors of
- ***      size DIMS.
+ ***    - IDX_MIN, IDX_MAX are vectors of size DIMS.
  ***/
 
 extern node *MakeWLsegVar (int dims, node *contents, node *next);
@@ -3423,11 +3414,6 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 
 #define WLSEGVAR_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
 #define WLSEGVAR_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
-
-#define WLSEGVAR_BLOCKS(n) (WLSEGX_BLOCKS (n))
-#define WLSEGVAR_SV(n) (WLSEGX_SV (n))
-#define WLSEGVAR_BV(n, level) (WLSEGX_BV (n, level))
-#define WLSEGVAR_UBV(n) (WLSEGX_UBV (n))
 
 #define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 

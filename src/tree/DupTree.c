@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/29 18:32:34  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.6  2001/01/24 23:35:13  dkr
  * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
  * modified
@@ -1770,7 +1773,6 @@ node *
 DupWLsegVar (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DupWLsegVar");
 
@@ -1782,18 +1784,6 @@ DupWLsegVar (node *arg_node, node *arg_info)
              WLSEGVAR_DIMS (new_node), int);
     DUPVECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
              WLSEGVAR_DIMS (new_node), int);
-
-    WLSEGVAR_BLOCKS (new_node) = WLSEGVAR_BLOCKS (arg_node);
-
-    for (i = 0; i < WLSEGVAR_BLOCKS (new_node); i++) {
-        DUPVECT (WLSEGVAR_BV (new_node, i), WLSEGVAR_BV (arg_node, i),
-                 WLSEGVAR_DIMS (new_node), int);
-    }
-
-    DUPVECT (WLSEGVAR_UBV (new_node), WLSEGVAR_UBV (arg_node), WLSEGVAR_DIMS (new_node),
-             int);
-    DUPVECT (WLSEGVAR_SV (new_node), WLSEGVAR_SV (arg_node), WLSEGVAR_DIMS (new_node),
-             int);
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (new_node)

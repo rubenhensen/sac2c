@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/01/29 18:34:51  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.20  2001/01/25 14:35:47  dkr
  * InferSchedulingParams() renamed into InferSegsSchedulingParams().
  * InferSegParams() renamed into InferSegsParams().
@@ -2226,9 +2229,6 @@ GetCurrentComponent_Int (node *aelems)
     if (aelems != NULL) {
         switch (NODE_TYPE (aelems)) {
         case N_id:
-            /*
-             * dummy value < 0
-             */
             comp = IDX_OTHER;
             break;
 
@@ -2776,105 +2776,98 @@ CheckParams (node *seg)
 
     DBUG_ENTER (" CheckParams");
 
-    /*
-     * Note: For N_WLsegVar nodes (WLSEGX_SV == 0) is hold (see InferSegsParams())
-     */
-#if 0
-  for (d = 0; d < WLSEGX_DIMS( seg); d++) {
-    DBUG_ASSERT( ((WLSEGX_SV( seg))[d] >= 1), "illegal WLSEGX_SV value found!");
-  }
-#endif
-
-    /* check whether (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
-    for (d = 0; d < WLSEGX_DIMS (seg); d++) {
-        j = WLSEGX_BLOCKS (seg) - 1;
-        if ((WLSEGX_BV (seg, j))[d] < 1) {
-            ABORT (line, ("Blocking step (%i) is smaller than 1."
-                          " Please check parameters of functions in wlcomp-pragma",
-                          (WLSEGX_BV (seg, j))[d]));
+    if (NODE_TYPE (seg) == N_WLseg) {
+        for (d = 0; d < WLSEG_DIMS (seg); d++) {
+            DBUG_ASSERT (((WLSEG_SV (seg))[d] >= 1), "illegal WLSEG_SV value found!");
         }
-        last = (WLSEGX_BV (seg, j))[d];
-        for (; j >= 0; j--) {
-            if ((WLSEGX_BV (seg, j))[d] < last) {
-                ABORT (line, ("Inner Blocking step (%i) is smaller than outer one (%i)."
+
+        /* check whether (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
+        for (d = 0; d < WLSEG_DIMS (seg); d++) {
+            j = WLSEG_BLOCKS (seg) - 1;
+            if ((WLSEG_BV (seg, j))[d] < 1) {
+                ABORT (line, ("Blocking step (%i) is smaller than 1."
                               " Please check parameters of functions in wlcomp-pragma",
-                              (WLSEGX_BV (seg, j))[d], last));
+                              (WLSEG_BV (seg, j))[d]));
             }
-            last = (WLSEGX_BV (seg, j))[d];
+            last = (WLSEG_BV (seg, j))[d];
+            for (; j >= 0; j--) {
+                if ((WLSEG_BV (seg, j))[d] < last) {
+                    ABORT (line,
+                           ("Inner Blocking step (%i) is smaller than outer one (%i)."
+                            " Please check parameters of functions in wlcomp-pragma",
+                            (WLSEG_BV (seg, j))[d], last));
+                }
+                last = (WLSEG_BV (seg, j))[d];
+            }
+
+            if ((WLSEG_UBV (seg))[d] < 1) {
+                ABORT (line, ("Unrolling-blocking step (%i) is smaller than 1."
+                              " Please check parameters of functions in wlcomp-pragma",
+                              (WLSEG_UBV (seg))[d]));
+            }
         }
 
-        if ((WLSEGX_UBV (seg))[d] < 1) {
-            ABORT (line, ("Unrolling-blocking step (%i) is smaller than 1."
-                          " Please check parameters of functions in wlcomp-pragma",
-                          (WLSEGX_UBV (seg))[d]));
-        }
-    }
+        /*
+         * check bv:
+         *
+         * checks for all bv (bv0, bv1, bv2, ...):
+         *  exists k: (forall (d < k): bv_d = 1) and
+         *            (forall (d >= k): bv_d >= max(sv_j, ubv_j))
+         */
+        first_block = 0;
+        for (j = 0; j < WLSEG_BLOCKS (seg); j++) {
+            /* goto first dim with (bv_d > 1) */
+            d = 0;
+            while ((d < WLSEG_DIMS (seg)) && ((WLSEG_BV (seg, j))[d] == 1)) {
+                d++;
+            }
 
-    /*
-     * check bv:
-     *
-     * checks for all bv (bv0, bv1, bv2, ...):
-     *  exists k: (forall (d < k): bv_d = 1) and
-     *            (forall (d >= k): bv_d >= max(sv_j, ubv_j))
-     */
-    first_block = 0;
-    for (j = 0; j < WLSEGX_BLOCKS (seg); j++) {
-        /* goto first dim with (bv_d > 1) */
+            if (d < WLSEG_DIMS (seg)) {
+                first_block = d;
+            }
+            for (; d < WLSEG_DIMS (seg); d++) {
+                if ((WLSEG_BV (seg, j))[d]
+                    < MAX ((WLSEG_SV (seg))[d], (WLSEG_UBV (seg)[d]))) {
+                    ABORT (line, ("Blocking step (%i) is greater than 1 but smaller than"
+                                  " stride step (%i) or unrolling-blocking step (%i)"
+                                  " respectively. "
+                                  "Please check parameters of functions in wlcomp-pragma",
+                                  (WLSEG_BV (seg, j))[d], (WLSEG_SV (seg))[d],
+                                  (WLSEG_UBV (seg))[d]));
+                }
+            }
+        }
+
+        /*
+         * check ubv:
+         *
+         * checks for ubv:
+         *  - exists k: (forall (d < k): ubv_d = 1) and
+         *              (forall (d >= k): sv_d | ubv_d)
+         *  - ubv <= bv, for most inner bv with (bv != 1)
+         *    (we must prevent e.g. bv = (1,40), ubv = (2,2), sv = (2,2),
+         *     but this is allowed: bv = (1,1),  ubv = (2,2), sv = (2,2))
+         */
+
+        /* goto first dim with (ubv_d > 1) */
         d = 0;
-        while ((d < WLSEGX_DIMS (seg)) && ((WLSEGX_BV (seg, j))[d] == 1)) {
+        while ((d < WLSEG_DIMS (seg)) && ((WLSEG_UBV (seg))[d] == 1)) {
             d++;
         }
 
-        if (d < WLSEGX_DIMS (seg)) {
-            first_block = d;
+        if (first_block > d) {
+            ABORT (line, ("Unrolling-blocking step (%i) is greater than"
+                          " most inner blocking step (%i). "
+                          "Please check parameters of functions in wlcomp-pragma",
+                          (WLSEG_UBV (seg))[d], (WLSEG_BV (seg, j))[first_block]));
         }
-        for (; d < WLSEGX_DIMS (seg); d++) {
-            if ((WLSEGX_BV (seg, j))[d]
-                < MAX ((WLSEGX_SV (seg))[d], (WLSEGX_UBV (seg)[d]))) {
-                ABORT (line, ("Blocking step (%i) is greater than 1 but smaller than"
-                              " stride step (%i) or unrolling-blocking step (%i)"
-                              " respectively. "
-                              "Please check parameters of functions in wlcomp-pragma",
-                              (WLSEGX_BV (seg, j))[d], (WLSEGX_SV (seg))[d],
-                              (WLSEGX_UBV (seg))[d]));
-            }
-        }
-    }
 
-    /*
-     * check ubv:
-     *
-     * checks for ubv:
-     *  - exists k: (forall (d < k): ubv_d = 1) and
-     *              (forall (d >= k): sv_d | ubv_d)
-     *  - ubv <= bv, for most inner bv with (bv != 1)
-     *    (we must prevent e.g. bv = (1,40), ubv = (2,2), sv = (2,2),
-     *     but this is allowed: bv = (1,1),  ubv = (2,2), sv = (2,2))
-     */
-
-    /* goto first dim with (ubv_d > 1) */
-    d = 0;
-    while ((d < WLSEGX_DIMS (seg)) && ((WLSEGX_UBV (seg))[d] == 1)) {
-        d++;
-    }
-
-    if (first_block > d) {
-        ABORT (line, ("Unrolling-blocking step (%i) is greater than"
-                      " most inner blocking step (%i). "
-                      "Please check parameters of functions in wlcomp-pragma",
-                      (WLSEGX_UBV (seg))[d], (WLSEGX_BV (seg, j))[first_block]));
-    }
-
-    for (; d < WLSEGX_DIMS (seg); d++) {
-        /*
-         * Note: For N_WLsegVar nodes (WLSEGX_SV == 0) is hold (see InferSegsParams())
-         */
-        if ((WLSEGX_SV (seg))[d] >= 1) {
-            if ((WLSEGX_UBV (seg))[d] % (WLSEGX_SV (seg))[d] != 0) {
+        for (; d < WLSEG_DIMS (seg); d++) {
+            if ((WLSEG_UBV (seg))[d] % (WLSEG_SV (seg))[d] != 0) {
                 ABORT (line, ("Unrolling-blocking step (%i) is not a multiple of"
                               " stride step (%i). "
                               "Please check parameters of functions in wlcomp-pragma",
-                              (WLSEGX_UBV (seg))[d], (WLSEGX_SV (seg))[d]));
+                              (WLSEG_UBV (seg))[d], (WLSEG_SV (seg))[d]));
             }
         }
     }
@@ -3997,24 +3990,41 @@ AdjustBlockingFactor (int old_bv, int unroll, bool warn)
 static node *
 FitNode (node *wlnode, int unroll)
 {
-    int width, remain;
+    int bnd1, bnd2, width, remain;
     node *new_wlnode;
 
     DBUG_ENTER ("FitNode");
 
-    width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
-    remain = width % unroll;
-    if ((remain > 0) && (width > remain)) {
-        /*
-         * incomplete periode found -> split
-         */
-        new_wlnode = DupNode (wlnode);
-        WLNODE_BOUND2 (new_wlnode) = WLNODE_BOUND2 (wlnode);
-        WLNODE_BOUND2 (wlnode) = WLNODE_BOUND1 (new_wlnode)
-          = WLNODE_BOUND2 (wlnode) - remain;
-        WLNODE_NEXT (new_wlnode) = WLNODE_NEXT (wlnode);
-        WLNODE_NEXT (wlnode) = new_wlnode;
-        wlnode = new_wlnode;
+    DBUG_ASSERT ((wlnode != NULL), "no node found!");
+
+    if (unroll > 0) {
+        NodeOrInt_GetNameOrVal (NULL, &bnd1, NODE_TYPE (wlnode),
+                                WLNODE_GET_ADDR (wlnode, BOUND1));
+
+        NodeOrInt_GetNameOrVal (NULL, &bnd2, NODE_TYPE (wlnode),
+                                WLNODE_GET_ADDR (wlnode, BOUND2));
+
+        if ((bnd1 >= 0) && (bnd2 >= 0)) {
+            width = bnd2 - bnd1;
+            remain = width % unroll;
+            if ((remain > 0) && (width > remain)) {
+                /*
+                 * incomplete periode found -> split
+                 */
+                new_wlnode = DupNode (wlnode);
+
+                DBUG_ASSERT (((NODE_TYPE (wlnode) != N_WLstrideVar)
+                              && (NODE_TYPE (wlnode) != N_WLgridVar)),
+                             "illegal node found!");
+
+                WLNODE_BOUND2 (wlnode) = WLNODE_BOUND1 (new_wlnode)
+                  = WLNODE_BOUND2 (wlnode) - remain;
+
+                WLNODE_NEXT (new_wlnode) = WLNODE_NEXT (wlnode);
+                WLNODE_NEXT (wlnode) = new_wlnode;
+                wlnode = new_wlnode;
+            }
+        }
     }
 
     DBUG_RETURN (wlnode);
@@ -4023,7 +4033,7 @@ FitNode (node *wlnode, int unroll)
 /******************************************************************************
  *
  * Function:
- *   node *FitWL( node *nodes)
+ *   node *FitWL( node *wlnode)
  *
  * Description:
  *   Returns the fitted N_WL...-tree 'nodes'.
@@ -4031,132 +4041,126 @@ FitNode (node *wlnode, int unroll)
  ******************************************************************************/
 
 static node *
-FitWL (node *nodes)
+FitWL (node *wlnode)
 {
-    node *node, *grids;
+    node *grids;
     int unroll;
 
     DBUG_ENTER ("FitWL");
 
-    if (nodes != NULL) {
-        /*
-         * traverse the whole chain
-         */
-        node = nodes;
-        while (node != NULL) {
-            switch (NODE_TYPE (node)) {
-            case N_WLblock:
-                if (WLBLOCK_NEXTDIM (node) != NULL) {
-                    /*
-                     * fit in next dimension; compute unrolling information
-                     */
-                    DBUG_ASSERT ((WLBLOCK_CONTENTS (node) == NULL),
-                                 "Sons CONTENTS and NEXTDIM of WLblock are used "
-                                 "simultaneous!");
-
-                    WLBLOCK_NEXTDIM (node) = FitWL (WLBLOCK_NEXTDIM (node));
-
-                    unroll = GetLcmUnroll (WLBLOCK_NEXTDIM (node), WLBLOCK_DIM (node));
-                } else {
-                    /*
-                     * fit contents of block; compute unrolling information
-                     */
-                    DBUG_ASSERT ((WLBLOCK_NEXTDIM (node) == NULL),
-                                 "Sons CONTENTS and NEXTDIM of WLblock are used "
-                                 "simultaneous!");
-
-                    WLBLOCK_CONTENTS (node) = FitWL (WLBLOCK_CONTENTS (node));
-
-                    unroll = GetLcmUnroll (WLBLOCK_CONTENTS (node), WLBLOCK_DIM (node));
-                }
-
+    if (wlnode != NULL) {
+        switch (NODE_TYPE (wlnode)) {
+        case N_WLblock:
+            if (WLBLOCK_NEXTDIM (wlnode) != NULL) {
                 /*
-                 * adjust blocking factor (blocking factor must be a multiple of 'unroll')
+                 * fit in next dimension; compute unrolling information
                  */
-                WLBLOCK_STEP (node)
-                  = AdjustBlockingFactor (WLBLOCK_STEP (node), unroll, TRUE);
-                /*
-                 * the upper bound of the related ublock/stride-nodes in the contents
-                 * of the block is corrected later on. (just a few lines ahead ...)
-                 */
-                break;
+                DBUG_ASSERT ((WLBLOCK_CONTENTS (wlnode) == NULL),
+                             "Sons CONTENTS and NEXTDIM of WLblock are used "
+                             "simultaneous!");
 
-            case N_WLublock:
-                if (WLUBLOCK_NEXTDIM (node) != NULL) {
-                    /*
-                     * fit in next dimension
-                     */
-                    DBUG_ASSERT ((WLUBLOCK_CONTENTS (node) == NULL),
-                                 "Sons CONTENTS and NEXTDIM of WLublock are used "
-                                 "simultaneous!");
+                WLBLOCK_NEXTDIM (wlnode) = FitWL (WLBLOCK_NEXTDIM (wlnode));
 
-                    WLUBLOCK_NEXTDIM (node) = FitWL (WLUBLOCK_NEXTDIM (node));
-                } else {
-                    /*
-                     * fit contents of block
-                     */
-                    DBUG_ASSERT ((WLUBLOCK_NEXTDIM (node) == NULL),
-                                 "Sons CONTENTS and NEXTDIM of WLublock are used "
-                                 "simultaneous!");
-
-                    WLUBLOCK_CONTENTS (node) = FitWL (WLUBLOCK_CONTENTS (node));
-                }
-
-                unroll = WLUBLOCK_STEP (node);
-                break;
-
-            case N_WLstride:
-                grids = WLSTRIDE_CONTENTS (node);
-
-                /*
-                 * fit for all grids in next dimension;
-                 */
-                while (grids != NULL) {
-                    WLGRID_NEXTDIM (grids) = FitWL (WLGRID_NEXTDIM (grids));
-                    /* set FITTED flag of the grid */
-                    WLGRID_FITTED (grids) = TRUE;
-                    grids = WLGRID_NEXT (grids);
-                }
-
-                unroll = WLSTRIDE_STEP (node);
-                break;
-
-            default:
-                unroll = 0;
-                DBUG_ASSERT ((0), "wrong node type");
-                break;
-            }
-
-            if (WLNODE_LEVEL (node) == 0) { /* outer most node? */
-                /*
-                 * Fit the outer most node of the current dimension:
-                 *   Split a uncompleted periode at the end of index range
-                 */
-                node = FitNode (node, unroll);
+                unroll = GetLcmUnroll (WLBLOCK_NEXTDIM (wlnode), WLBLOCK_DIM (wlnode));
             } else {
-                if (NODE_TYPE (node) != N_WLblock) {
-                    /*
-                     * We have a inner ublock- or stride-node.
-                     * Therefore we are inside of a block or unrolling-block.
-                     * That means, the lower bound must be equal to 0 and the
-                     * upper bound should be a multiple of the step.
-                     * If the latter is not hold, this node correspondes
-                     * with a block-node whose blocking factor had been
-                     * adjusted -> we must fathom this adjustment here!
-                     */
-                    DBUG_ASSERT ((WLNODE_BOUND1 (node) == 0),
-                                 "lower bound of inner node is != 0");
-                    WLNODE_BOUND2 (node)
-                      = AdjustBlockingFactor (WLNODE_BOUND2 (node), WLNODE_STEP (node),
-                                              FALSE);
-                }
+                /*
+                 * fit contents of block; compute unrolling information
+                 */
+                DBUG_ASSERT ((WLBLOCK_NEXTDIM (wlnode) == NULL), "Sons CONTENTS and "
+                                                                 "NEXTDIM of WLblock are "
+                                                                 "used simultaneous!");
+
+                WLBLOCK_CONTENTS (wlnode) = FitWL (WLBLOCK_CONTENTS (wlnode));
+
+                unroll = GetLcmUnroll (WLBLOCK_CONTENTS (wlnode), WLBLOCK_DIM (wlnode));
             }
 
-            node = WLNODE_NEXT (node);
+            /*
+             * adjust blocking factor (blocking factor must be a multiple of 'unroll')
+             */
+            WLBLOCK_STEP (wlnode)
+              = AdjustBlockingFactor (WLBLOCK_STEP (wlnode), unroll, TRUE);
+            /*
+             * the upper bound of the related ublock/stride-nodes in the contents
+             * of the block is corrected later on. (just a few lines ahead ...)
+             */
+            break;
+
+        case N_WLublock:
+            if (WLUBLOCK_NEXTDIM (wlnode) != NULL) {
+                /*
+                 * fit in next dimension
+                 */
+                DBUG_ASSERT ((WLUBLOCK_CONTENTS (wlnode) == NULL),
+                             "Sons CONTENTS and NEXTDIM of WLublock are used "
+                             "simultaneous!");
+
+                WLUBLOCK_NEXTDIM (wlnode) = FitWL (WLUBLOCK_NEXTDIM (wlnode));
+            } else {
+                /*
+                 * fit contents of block
+                 */
+                DBUG_ASSERT ((WLUBLOCK_NEXTDIM (wlnode) == NULL),
+                             "Sons CONTENTS and NEXTDIM of WLublock are used "
+                             "simultaneous!");
+
+                WLUBLOCK_CONTENTS (wlnode) = FitWL (WLUBLOCK_CONTENTS (wlnode));
+            }
+
+            unroll = WLUBLOCK_STEP (wlnode);
+            break;
+
+        case N_WLstride:
+            /* here is no break missing! */
+        case N_WLstrideVar:
+            grids = WLSTRIDEX_CONTENTS (wlnode);
+
+            /*
+             * fit for all grids in next dimension;
+             */
+            while (grids != NULL) {
+                WLGRIDX_NEXTDIM (grids) = FitWL (WLGRIDX_NEXTDIM (grids));
+                grids = WLGRIDX_NEXT (grids);
+            }
+
+            NodeOrInt_GetNameOrVal (NULL, &unroll, NODE_TYPE (wlnode),
+                                    WLSTRIDEX_GET_ADDR (wlnode, STEP));
+            break;
+
+        default:
+            unroll = 0;
+            DBUG_ASSERT ((0), "wrong node type");
+            break;
         }
+
+        if (WLNODE_LEVEL (wlnode) == 0) { /* outer most node? */
+            /*
+             * Fit the outer most node of the current dimension:
+             *   Split a uncompleted periode at the end of index range
+             */
+            wlnode = FitNode (wlnode, unroll);
+        } else {
+            if (NODE_TYPE (wlnode) != N_WLblock) {
+                /*
+                 * We have a inner ublock- or stride-node, therefore we are inside of a
+                 * block or unrolling-block. That means, the lower bound must be equal
+                 * to 0 and the upper bound should be a multiple of the step.
+                 * If the latter is not hold, this node correspondes with a block-node
+                 * whose blocking factor had been adjusted
+                 *   -> we must fathom this adjustment here!
+                 */
+                DBUG_ASSERT ((WLNODE_BOUND1 (wlnode) == 0),
+                             "lower bound of inner node is != 0");
+                WLNODE_BOUND2 (wlnode)
+                  = AdjustBlockingFactor (WLNODE_BOUND2 (wlnode), WLNODE_STEP (wlnode),
+                                          FALSE);
+            }
+        }
+
+        WLNODE_NEXT (wlnode) = FitWL (WLNODE_NEXT (wlnode));
     }
 
-    DBUG_RETURN (nodes);
+    DBUG_RETURN (wlnode);
 }
 
 /**
@@ -4635,10 +4639,10 @@ GenerateCompleteDomainVar (node *stride, int dims, types *type)
          * CAUTION: the grid can be a N_WLgrid *or* N_WLgridVar node!!
          */
 
-        pnode1 = WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2);
+        pnode1 = WLGRIDX_GET_ADDR (grid, BOUND2);
         NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid), pnode1);
 
-        pnode2 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, STEP);
+        pnode2 = WLSTRIDEX_GET_ADDR (stride, STEP);
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
         /*
@@ -4667,10 +4671,10 @@ GenerateCompleteDomainVar (node *stride, int dims, types *type)
         WLGRIDX_NEXTDIM (grid)
           = GenerateCompleteDomainVar (WLGRIDX_NEXTDIM (grid), dims, type);
 
-        pnode1 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, BOUND1);
+        pnode1 = WLSTRIDEX_GET_ADDR (stride, BOUND1);
         NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (stride), pnode1);
 
-        pnode2 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, BOUND2);
+        pnode2 = WLSTRIDEX_GET_ADDR (stride, BOUND2);
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
         /*
@@ -5753,9 +5757,7 @@ GenerateCompleteGrids (node *stride)
             }
         } else {
             DBUG_ASSERT ((NodeOrInt_IntEq (NODE_TYPE (grid),
-                                           WL_GET_ADDRESS (grid, N_WLgrid, WLGRID,
-                                                           BOUND1),
-                                           0)),
+                                           WLGRIDX_GET_ADDR (grid, BOUND1), 0)),
                          "lower bound of first grid != 0");
         }
 
@@ -5765,10 +5767,10 @@ GenerateCompleteGrids (node *stride)
         while (WLGRIDX_NEXT (grid) != NULL) {
             grid_next = WLGRIDX_NEXT (grid);
 
-            pnode1 = WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2);
+            pnode1 = WLGRIDX_GET_ADDR (grid, BOUND2);
             NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid), pnode1);
 
-            pnode2 = WL_GET_ADDRESS (grid_next, N_WLgrid, WLGRID, BOUND1);
+            pnode2 = WLGRIDX_GET_ADDR (grid_next, BOUND1);
             NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (grid_next), pnode2);
 
             if (!NameOrVal_Eq (name1, val1, name2, val2)) {
@@ -5796,10 +5798,10 @@ GenerateCompleteGrids (node *stride)
         /*
          * fill the gap after the last grid of the current dim
          */
-        pnode1 = WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2);
+        pnode1 = WLGRIDX_GET_ADDR (grid, BOUND2);
         NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid), pnode1);
 
-        pnode2 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, STEP);
+        pnode2 = WLSTRIDEX_GET_ADDR (stride, STEP);
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
         if (!NameOrVal_Eq (name1, val1, name2, val2)) {
@@ -5831,9 +5833,53 @@ GenerateCompleteGrids (node *stride)
 }
 
 /******************************************************************************
+ *
+ * Function:
+ *   node* InferSegsParams_Pre( node *segs)
+ *
+ * Description:
+ *   Infers the temporary attribute SV of all the given segments.
+ *
+ ******************************************************************************/
+
+static node *
+InferSegsParams_Pre (node *segs)
+{
+    int d;
+
+    DBUG_ENTER ("InferSegsParams_Pre");
+
+    if (segs != NULL) {
+        DBUG_ASSERT (((NODE_TYPE (segs) == N_WLseg) || (NODE_TYPE (segs) == N_WLsegVar)),
+                     "no segment found!");
+
+        /**********************
+         *  SV                *
+         **********************/
+
+        if (NODE_TYPE (segs) == N_WLseg) {
+            WLSEG_SV (segs) = (int *)MALLOC (WLSEG_DIMS (segs) * sizeof (int));
+            for (d = 0; d < WLSEGX_DIMS (segs); d++) {
+                (WLSEG_SV (segs))[d] = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
+            }
+        }
+
+        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParams_Pre: ");
+                      if (NODE_TYPE (segs) == N_WLseg) {
+                          fprintf (stderr, ", WLSEG_SV = ");
+                          PRINT_VECT (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs), "%i");
+                      } fprintf (stderr, "\n"););
+
+        WLSEGX_NEXT (segs) = InferSegsParams_Pre (WLSEGX_NEXT (segs));
+    }
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
  ******************************************************************************
  **
- **  functions for InferSegsParams()
+ **  functions for InferSegsParams_Post()
  **
  **/
 
@@ -5864,11 +5910,9 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
 
             d = WLSTRIDEX_DIM (wlnode);
             NodeOrInt_GetNameOrVal (NULL, &min, NODE_TYPE (wlnode),
-                                    WL_GET_ADDRESS (wlnode, N_WLstride, WLSTRIDE,
-                                                    BOUND1));
+                                    WLSTRIDEX_GET_ADDR (wlnode, BOUND1));
             NodeOrInt_GetNameOrVal (NULL, &max, NODE_TYPE (wlnode),
-                                    WL_GET_ADDRESS (wlnode, N_WLstride, WLSTRIDE,
-                                                    BOUND2));
+                                    WLSTRIDEX_GET_ADDR (wlnode, BOUND2));
             break;
 
         case N_WLblock:
@@ -5900,14 +5944,11 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
         }
 
         if (d >= 0) {
-            if ((idx_min[d] == IDX_SHAPE) || (min == 0)
-                || ((idx_min[d] > 0) && (min > 0) && (min < idx_min[d]))
+            if (NameOrVal_Le (NULL, min, NULL, idx_min[d])
                 || ((idx_min[d] != 0) && (min == IDX_OTHER))) {
                 idx_min[d] = min;
             }
-
-            if ((idx_max[d] == 0) || (max == IDX_SHAPE)
-                || ((idx_max[d] > 0) && (max > 0) && (max > idx_max[d]))
+            if (NameOrVal_Le (NULL, idx_max[d], NULL, max)
                 || ((idx_max[d] != IDX_SHAPE) && (max == IDX_OTHER))) {
                 idx_max[d] = max;
             }
@@ -5916,83 +5957,6 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
 
     DBUG_VOID_RETURN;
 }
-
-/******************************************************************************
- *
- * Function:
- *   node* InferSegsParams( node *segs)
- *
- * Description:
- *   Infers the temporary attributes SV, IDX_MIN, IDX_MAX of all the given
- *   segments.
- *
- ******************************************************************************/
-
-static node *
-InferSegsParams (node *segs)
-{
-    int d;
-
-    DBUG_ENTER ("InferSegsParams");
-
-    if (segs != NULL) {
-        DBUG_ASSERT (((NODE_TYPE (segs) == N_WLseg) || (NODE_TYPE (segs) == N_WLsegVar)),
-                     "no segment found!");
-
-        WLSEGX_SV (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
-        WLSEGX_IDX_MIN (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
-        WLSEGX_IDX_MAX (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
-
-        for (d = 0; d < WLSEGX_DIMS (segs); d++) {
-            if (NODE_TYPE (segs) == N_WLseg) {
-                (WLSEG_SV (segs))[d] = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
-            } else {
-                (WLSEGVAR_SV (segs))[d] = 0;
-            }
-
-            /*
-             *** caution!! type dependent!! ***
-             */
-            (WLSEGX_IDX_MIN (segs))[d] = INT_MAX;
-            (WLSEGX_IDX_MAX (segs))[d] = 0;
-        }
-
-        /*
-         * compute the infimum and supremum of the index-vector.
-         */
-        ComputeIndexMinMax (WLSEGX_IDX_MIN (segs), WLSEGX_IDX_MAX (segs),
-                            WLSEGX_CONTENTS (segs));
-
-        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParams: ");
-                      fprintf (stderr, "WLSEGX_SV = ");
-                      PRINT_VECT (stderr, WLSEGX_SV (segs), WLSEGX_DIMS (segs), "%i");
-                      fprintf (stderr, ", WLSEGX_IDX_MIN = ");
-                      PRINT_VECT (stderr, WLSEGX_IDX_MIN (segs), WLSEGX_DIMS (segs),
-                                  "%i");
-                      fprintf (stderr, ", WLSEGX_IDX_MAX = ");
-                      PRINT_VECT (stderr, WLSEGX_IDX_MAX (segs), WLSEGX_DIMS (segs),
-                                  "%i");
-                      fprintf (stderr, "\n"););
-
-        WLSEGX_NEXT (segs) = InferSegsParams (WLSEGX_NEXT (segs));
-    }
-
-    DBUG_RETURN (segs);
-}
-
-/**
- **
- **  functions for InferSegsParams()
- **
- ******************************************************************************
- ******************************************************************************/
-
-/******************************************************************************
- ******************************************************************************
- **
- **  functions for InferSegsSchedulingParams()
- **
- **/
 
 /******************************************************************************
  *
@@ -6054,21 +6018,50 @@ IsHomSV (node *nodes, int dim, int sv)
 /******************************************************************************
  *
  * Function:
- *   node *InferSegsSchedulingParams( node *segs)
+ *   node* InferSegsParams_Post( node *segs)
  *
  * Description:
- *   Infers WLSEG_HOMSV and WLSEG_MAXHOMDIM for the given segments 'segs'.
+ *   Infers the temporary attributes IDX_MIN, IDX_MAX and HOMSV, MAXHOMDIM
+ *   of all the given segments.
  *
  ******************************************************************************/
 
 static node *
-InferSegsSchedulingParams (node *segs)
+InferSegsParams_Post (node *segs)
 {
     int new_sv, d;
 
-    DBUG_ENTER ("InferSegsSchedulingParams");
+    DBUG_ENTER ("InferSegsParams_Post");
 
     if (segs != NULL) {
+        DBUG_ASSERT (((NODE_TYPE (segs) == N_WLseg) || (NODE_TYPE (segs) == N_WLsegVar)),
+                     "no segment found!");
+
+        /**********************
+         *  IDX_MIN, IDX_MAX  *
+         **********************/
+
+        WLSEGX_IDX_MIN (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
+        WLSEGX_IDX_MAX (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
+
+        for (d = 0; d < WLSEGX_DIMS (segs); d++) {
+            /*
+             *** caution!! type dependent!! ***
+             */
+            (WLSEGX_IDX_MIN (segs))[d] = INT_MAX;
+            (WLSEGX_IDX_MAX (segs))[d] = 0;
+        }
+
+        /*
+         * compute the infimum and supremum of the index-vector.
+         */
+        ComputeIndexMinMax (WLSEGX_IDX_MIN (segs), WLSEGX_IDX_MAX (segs),
+                            WLSEGX_CONTENTS (segs));
+
+        /**********************
+         *  HOMSV, MAXHOMDIM  *
+         **********************/
+
         if (NODE_TYPE (segs) == N_WLseg) {
             WLSEG_HOMSV (segs) = (int *)MALLOC (WLSEG_DIMS (segs) * sizeof (int));
 
@@ -6078,7 +6071,6 @@ InferSegsSchedulingParams (node *segs)
                  * (especially the fitting) probabily have modified the layout!
                  */
                 new_sv = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
-
                 /*
                  * Stores the recalculated SV entries in WLSEG_HOMSV until an
                  * inhomogeneous dimension is found.
@@ -6091,22 +6083,33 @@ InferSegsSchedulingParams (node *segs)
             }
 
             WLSEG_MAXHOMDIM (segs) = (d - 1);
+
             /*
              * WLSEG_HOMSV is set to 0 for the dimensions beyond WLSEG_MAXHOMDIM.
              */
             for (; d < WLSEG_DIMS (segs); d++) {
                 (WLSEG_HOMSV (segs))[d] = 0;
             }
-
-            DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsSchedulingParams: ");
-                          fprintf (stderr, "WLSEG_HOMSV = ");
-                          PRINT_VECT (stderr, WLSEG_HOMSV (segs), WLSEG_DIMS (segs),
-                                      "%i");
-                          fprintf (stderr, ", WLSEG_MAXHOMDIM = %i\n",
-                                   WLSEG_MAXHOMDIM (segs)););
         }
 
-        WLSEGX_NEXT (segs) = InferSegsSchedulingParams (WLSEGX_NEXT (segs));
+        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParams_Post: ");
+                      fprintf (stderr, "WLSEGX_IDX_MIN = ");
+                      PRINT_VECT (stderr, WLSEGX_IDX_MIN (segs), WLSEGX_DIMS (segs),
+                                  "%i");
+                      fprintf (stderr, ", WLSEGX_IDX_MAX = ");
+                      PRINT_VECT (stderr, WLSEGX_IDX_MAX (segs), WLSEGX_DIMS (segs),
+                                  "%i");
+                      if (NODE_TYPE (segs) == N_WLseg) {
+                          fprintf (stderr, ", WLSEG_SV = ");
+                          PRINT_VECT (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs), "%i");
+                          fprintf (stderr, ", WLSEG_HOMSV = ");
+                          PRINT_VECT (stderr, WLSEG_HOMSV (segs), WLSEG_DIMS (segs),
+                                      "%i");
+                          fprintf (stderr, ", WLSEG_MAXHOMDIM = %i",
+                                   WLSEG_MAXHOMDIM (segs));
+                      } fprintf (stderr, "\n"););
+
+        WLSEGX_NEXT (segs) = InferSegsParams_Post (WLSEGX_NEXT (segs));
     }
 
     DBUG_RETURN (segs);
@@ -6114,7 +6117,7 @@ InferSegsSchedulingParams (node *segs)
 
 /**
  **
- **  functions for InferSegsSchedulingParams()
+ **  functions for InferSegsParams_Post()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -6122,33 +6125,71 @@ InferSegsSchedulingParams (node *segs)
 /******************************************************************************
  *
  * Function:
- *   int* ResetBV( int *bv, int dims, bool warn, char *warn_message)
+ *   node *InferFitted( node *wlnode)
  *
  * Description:
- *
+ *   Traverses the whole tree 'wlnode' and sets the FITTED flag of all grids
+ *   correctly.
  *
  ******************************************************************************/
 
-int *
-ResetBV (int *bv, int dims, bool warn, char *warn_message)
+static node *
+InferFitted (node *wlnode)
 {
-    int d;
-    bool modified = FALSE;
+    node *grids;
+    int bnd1, bnd2, step, width, remain, g_bnd1, g_bnd2;
 
-    DBUG_ENTER ("ResetBV");
+    DBUG_ENTER ("InferFitted");
 
-    for (d = 0; d < dims; d++) {
-        if (bv[d] != 1) {
-            bv[d] = 1;
-            modified = TRUE;
+    if (wlnode != NULL) {
+        switch (NODE_TYPE (wlnode)) {
+        case N_WLblock:
+            /* here is no break missing */
+        case N_WLublock:
+            WLXBLOCK_NEXTDIM (wlnode) = InferFitted (WLXBLOCK_NEXTDIM (wlnode));
+            WLXBLOCK_CONTENTS (wlnode) = InferFitted (WLXBLOCK_CONTENTS (wlnode));
+            WLXBLOCK_NEXT (wlnode) = InferFitted (WLXBLOCK_NEXT (wlnode));
+            break;
+
+        case N_WLstrideVar:
+            /* here is no break missing */
+        case N_WLstride:
+            NodeOrInt_GetNameOrVal (NULL, &bnd1, NODE_TYPE (wlnode),
+                                    WLSTRIDEX_GET_ADDR (wlnode, BOUND1));
+            NodeOrInt_GetNameOrVal (NULL, &bnd2, NODE_TYPE (wlnode),
+                                    WLSTRIDEX_GET_ADDR (wlnode, BOUND2));
+            NodeOrInt_GetNameOrVal (NULL, &step, NODE_TYPE (wlnode),
+                                    WLSTRIDEX_GET_ADDR (wlnode, STEP));
+            width = bnd2 - bnd1;
+            remain = width % step;
+
+            grids = WLSTRIDEX_CONTENTS (wlnode);
+            while (grids != NULL) {
+                NodeOrInt_GetNameOrVal (NULL, &g_bnd1, NODE_TYPE (grids),
+                                        WLGRIDX_GET_ADDR (grids, BOUND1));
+                NodeOrInt_GetNameOrVal (NULL, &g_bnd2, NODE_TYPE (grids),
+                                        WLGRIDX_GET_ADDR (grids, BOUND2));
+
+                if ((g_bnd2 == 1)
+                    || ((bnd1 >= 0) && (bnd2 >= 0)
+                        && ((remain == 0) || (g_bnd2 <= remain)))) {
+                    WLGRIDX_FITTED (grids) = TRUE;
+                }
+
+                WLGRIDX_NEXTDIM (grids) = InferFitted (WLGRIDX_NEXTDIM (grids));
+                grids = WLGRIDX_NEXT (grids);
+            }
+
+            WLSTRIDEX_NEXT (wlnode) = InferFitted (WLSTRIDEX_NEXT (wlnode));
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "wrong node type found!");
+            break;
         }
     }
 
-    if (warn && modified) {
-        WARN (line, (warn_message));
-    }
-
-    DBUG_RETURN (bv);
+    DBUG_RETURN (wlnode);
 }
 
 /******************************************************************************
@@ -6396,12 +6437,15 @@ WLTRAwith (node *arg_node, node *arg_info)
                      *  -> skip other transformations
                      */
                     segs = Cubes (NULL, NULL, cubes, wl_dims, line);
-                    /* compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV */
-                    segs = InferSegsParams (segs);
+                    segs = InferSegsParams_Pre (segs);
+                    WLSEGX_CONTENTS (segs) = InferFitted (WLSEGX_CONTENTS (segs));
                 } else {
                     segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
-                    /* compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV */
-                    segs = InferSegsParams (segs);
+
+                    /*
+                     * compute SEG_SV
+                     */
+                    segs = InferSegsParams_Pre (segs);
 
                     seg = segs;
                     while (seg != NULL) {
@@ -6423,26 +6467,15 @@ WLTRAwith (node *arg_node, node *arg_info)
                             if (NODE_TYPE (seg) == N_WLseg) {
                                 DBUG_EXECUTE ("WLtrans",
                                               NOTE (("step 4: hierarchical blocking\n")));
-                                for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
+                                for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
                                     DBUG_EXECUTE (
                                       "WLtrans",
                                       NOTE (
                                         ("step 4.%d: hierarchical blocking (level %d)\n",
                                          b + 1, b)));
-                                    WLSEGX_CONTENTS (seg)
-                                      = BlockWL (WLSEGX_CONTENTS (seg), wl_dims,
-                                                 WLSEGX_BV (seg, b), FALSE);
-                                }
-                            } else {
-                                /*
-                                 * on variable segments no blocking can be done!
-                                 *   -> reset bv
-                                 */
-                                for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
-                                    WLSEGX_BV (seg, b)
-                                      = ResetBV (WLSEGX_BV (seg, b), wl_dims, (b == 0),
-                                                 "Blocking on variable segments not "
-                                                 "supported");
+                                    WLSEG_CONTENTS (seg)
+                                      = BlockWL (WLSEG_CONTENTS (seg), wl_dims,
+                                                 WLSEG_BV (seg, b), FALSE);
                                 }
                             }
                         }
@@ -6452,18 +6485,9 @@ WLTRAwith (node *arg_node, node *arg_info)
                             if (NODE_TYPE (seg) == N_WLseg) {
                                 DBUG_EXECUTE ("WLtrans",
                                               NOTE (("step 5: unrolling-blocking\n")));
-                                WLSEGX_CONTENTS (seg)
-                                  = BlockWL (WLSEGX_CONTENTS (seg), wl_dims,
-                                             WLSEGX_UBV (seg), TRUE);
-                            } else {
-                                /*
-                                 * on variable segments no unrollong-blocking can be done!
-                                 *   -> reset ubv
-                                 */
-                                WLSEGX_UBV (seg)
-                                  = ResetBV (WLSEGX_UBV (seg), wl_dims, TRUE,
-                                             "Unrolling-blocking on variable segments "
-                                             "not supported");
+                                WLSEG_CONTENTS (seg)
+                                  = BlockWL (WLSEG_CONTENTS (seg), wl_dims,
+                                             WLSEG_UBV (seg), TRUE);
                             }
                         }
 
@@ -6502,6 +6526,9 @@ WLTRAwith (node *arg_node, node *arg_info)
                             }
                         }
 
+                        /* compute WLGRIDX_FITTED */
+                        WLSEGX_CONTENTS (seg) = InferFitted (WLSEGX_CONTENTS (seg));
+
                         seg = WLSEG_NEXT (seg);
                     }
                 }
@@ -6515,11 +6542,10 @@ WLTRAwith (node *arg_node, node *arg_info)
             }
         }
 
-        /* compute SEGX_IDX_MIN, SEGX_IDX_MAX, SEGX_IDX_SV */
-        segs = InferSegsParams (segs);
-
-        /* compute SEG_HOMSV, SEG_MAXHOMDIM */
-        segs = InferSegsSchedulingParams (segs);
+        /*
+         * compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_HOMSV, SEG_MAXHOMDIM
+         */
+        segs = InferSegsParams_Post (segs);
 
         NWITH2_SEGS (new_node) = segs;
     }

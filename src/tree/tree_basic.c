@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.9  2001/01/29 18:33:00  dkr
- * *** empty log message ***
+ * Revision 3.10  2001/01/29 18:33:25  dkr
+ * some superfluous attributes of N_WLsegVar removed
  *
  * Revision 3.8  2001/01/24 23:33:46  dkr
  * MakeId_Num() added

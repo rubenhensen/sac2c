@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/01/29 18:34:03  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.12  2001/01/29 16:07:21  dkr
  * PrintWLstrideVar and PrintWLstride replaced by PrintWLstridex
  * PrintWLgridVar and PrintWLgrid replaced by PrintWLgridx
@@ -4236,19 +4239,7 @@ DoPrintAST (node *arg_node, bool skip_next)
             break;
 
         case N_WLsegVar:
-            fprintf (outfile, "(sv: ");
-            PRINT_VECT (outfile, WLSEGVAR_SV (arg_node), WLSEGVAR_DIMS (arg_node), "%i");
-
-            for (i = 0; i < WLSEGVAR_BLOCKS (arg_node); i++) {
-                fprintf (outfile, ", bv%i: ", i);
-                PRINT_VECT (outfile, WLSEGVAR_BV (arg_node, i), WLSEGVAR_DIMS (arg_node),
-                            "%i");
-            }
-
-            fprintf (outfile, ", ubv: ");
-            PRINT_VECT (outfile, WLSEGVAR_UBV (arg_node), WLSEGVAR_DIMS (arg_node), "%i");
-
-            fprintf (outfile, ")\n");
+            fprintf (outfile, "\n");
 
             skip = WLSEGVAR_NEXT (arg_node);
             break;

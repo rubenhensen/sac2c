@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/01/29 18:33:45  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.10  2001/01/25 12:06:13  dkr
  * ExtractAplPragmaAp() modified.
  * bug in ExtractNaiveCompPragmaAp() fixed.
@@ -661,23 +664,25 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * set ubv
          */
-        if (WLSEGX_UBV (seg) == NULL) {
-            WLSEGX_UBV (seg) = (int *)MALLOC (sizeof (int) * dims);
-        }
-        for (d = 0; d < dims; d++) {
-            (WLSEGX_UBV (seg))[d] = 1;
-        }
-
-        /*
-         * set bv[]
-         */
-        WLSEGX_BLOCKS (seg) = 3; /* three blocking levels */
-        for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
-            if (WLSEGX_BV (seg, b) == NULL) {
-                WLSEGX_BV (seg, b) = (int *)MALLOC (sizeof (int) * dims);
+        if (NODE_TYPE (seg) == N_WLseg) {
+            if (WLSEG_UBV (seg) == NULL) {
+                WLSEG_UBV (seg) = (int *)MALLOC (sizeof (int) * dims);
             }
             for (d = 0; d < dims; d++) {
-                (WLSEGX_BV (seg, b))[d] = 1;
+                (WLSEG_UBV (seg))[d] = 1;
+            }
+
+            /*
+             * set bv[]
+             */
+            WLSEG_BLOCKS (seg) = 3; /* three blocking levels */
+            for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
+                if (WLSEG_BV (seg, b) == NULL) {
+                    WLSEG_BV (seg, b) = (int *)MALLOC (sizeof (int) * dims);
+                }
+                for (d = 0; d < dims; d++) {
+                    (WLSEG_BV (seg, b))[d] = 1;
+                }
             }
         }
 
@@ -725,36 +730,31 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
     level = NUM_VAL (EXPRS_EXPR (parms));
     parms = EXPRS_NEXT (parms);
 
-    if ((parms != NULL) && (seg != NULL) && (level <= WLSEGX_BLOCKS (seg))) {
-
-        while ((seg != NULL) && (EXPRS_NEXT (parms) != NULL)) {
-            if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
-                ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                              "Bv(): Blocking-vector is not an array"));
-            }
-
-            if (level < WLSEGX_BLOCKS (seg)) {
-                WLSEGX_BV (seg, level)
-                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_BV (seg, level), dims, line);
-            } else {
-                WLSEGX_UBV (seg)
-                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_UBV (seg), dims, line);
-            }
-
-            seg = WLSEGX_NEXT (seg);
-            parms = EXPRS_NEXT (parms);
-        }
-
+    if ((parms != NULL) && (seg != NULL)) {
         while (seg != NULL) {
-            if (level < WLSEGX_BLOCKS (seg)) {
-                WLSEGX_BV (seg, level)
-                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_BV (seg, level), dims, line);
+            if (NODE_TYPE (seg) == N_WLseg) {
+                if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
+                    ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                                  "Bv(): Blocking-vector is not an array"));
+                }
+
+                if (level >= 0) {
+                    DBUG_ASSERT ((level < WLSEG_BLOCKS (seg)),
+                                 "illegal blocking level found!");
+                    WLSEG_BV (seg, level)
+                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims, line);
+                } else {
+                    WLSEG_UBV (seg)
+                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims, line);
+                }
             } else {
-                WLSEGX_UBV (seg)
-                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_UBV (seg), dims, line);
+                WARN (line, ("Blocking on variable segments not supported"));
             }
 
-            seg = WLSEGX_NEXT (seg);
+            seg = WLSEG_NEXT (seg);
+            if (EXPRS_NEXT (parms) != NULL) {
+                parms = EXPRS_NEXT (parms);
+            }
         }
     }
 
@@ -843,7 +843,7 @@ Ubv (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("Ubv");
 
     if (segs != NULL) {
-        parms = MakeExprs (MakeNum (WLSEGX_BLOCKS (segs)), parms);
+        parms = MakeExprs (MakeNum (-1), parms);
         segs = Bv (segs, parms, cubes, dims, line);
         parms = FreeNode (parms);
     }

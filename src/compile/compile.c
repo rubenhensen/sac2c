@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/01/29 18:34:58  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.14  2001/01/24 23:46:37  dkr
  * WLGRIDX_FITTED used
  * ICMs SAC_WL_GRIDVAR_... renamed into SAC_WL_GRID_FIT_...
@@ -1833,25 +1836,29 @@ GetDim_WL_SET_OFFSET (int dim, node *wl, node *seg)
     if (NWITH2_OFFSET_NEEDED (wl)) {
         dims = WLSEGX_DIMS (seg);
 
-        /*
-         * infer first blocking dimension
-         */
-        d = 0;
-        while ((d < dims) && ((WLSEGX_BV (seg, 0))[d] == 1)) {
-            d++;
-        }
-        first_block_dim = d;
+        if (NODE_TYPE (seg) == N_WLseg) {
+            /*
+             * infer first blocking dimension
+             */
+            d = 0;
+            while ((d < dims) && ((WLSEG_BV (seg, 0))[d] == 1)) {
+                d++;
+            }
+            first_block_dim = d;
 
-        /*
-         * infer first unrolling-blocking dimension
-         */
-        d = 0;
-        while ((d < dims) && ((WLSEGX_UBV (seg))[d] == 1)) {
-            d++;
-        }
-        first_ublock_dim = d;
+            /*
+             * infer first unrolling-blocking dimension
+             */
+            d = 0;
+            while ((d < dims) && ((WLSEG_UBV (seg))[d] == 1)) {
+                d++;
+            }
+            first_ublock_dim = d;
 
-        first_block_dim = MIN (first_block_dim, first_ublock_dim);
+            first_block_dim = MIN (first_block_dim, first_ublock_dim);
+        } else {
+            first_block_dim = dims;
+        }
 
         /*
          * infer the last dimension for which the segment's domain is not
@@ -5583,12 +5590,14 @@ COMPWLxblock (node *arg_node, node *arg_info)
 
     if ((WLXBLOCK_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
         && (SCHAdjustmentRequired (dim, wl_seg))) {
+        DBUG_ASSERT ((NODE_TYPE (wl_seg) == N_WLseg),
+                     "Var. segment with blocking information found!");
         assigns = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
                                         MakeNum (WLSEGX_DIMS (wl_seg)),
                                         MakeNum (WLXBLOCK_BOUND1 (arg_node)),
                                         MakeNum (WLXBLOCK_BOUND2 (arg_node)),
-                                        MakeNum (MAX (WLSEGX_SV (wl_seg)[dim],
-                                                      WLSEGX_UBV (wl_seg)[dim])),
+                                        MakeNum (MAX (WLSEG_SV (wl_seg)[dim],
+                                                      WLSEG_UBV (wl_seg)[dim])),
                                         DupIds_Id (wl_ids),
                                         MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                               assigns);
@@ -5710,21 +5719,16 @@ COMPWLstridex (node *arg_node, node *arg_info)
         DupIds_Id (ids_vector),
         MakeExprs (DupIds_Id (ids_scalar),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                   WL_GET_ADDRESS (arg_node, N_WLstride,
-                                                                   WLSTRIDE, BOUND1),
+                                                   WLSTRIDEX_GET_ADDR (arg_node, BOUND1),
                                                    dim, IDS_NAME (wl_ids), FALSE),
                               MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                              WL_GET_ADDRESS (arg_node,
-                                                                              N_WLstride,
-                                                                              WLSTRIDE,
-                                                                              BOUND2),
+                                                              WLSTRIDEX_GET_ADDR (arg_node,
+                                                                                  BOUND2),
                                                               dim, IDS_NAME (wl_ids),
                                                               FALSE),
                                          MakeExprs (NodeOrInt_MakeIndex (
                                                       NODE_TYPE (arg_node),
-                                                      WL_GET_ADDRESS (arg_node,
-                                                                      N_WLstride,
-                                                                      WLSTRIDE, STEP),
+                                                      WLSTRIDEX_GET_ADDR (arg_node, STEP),
                                                       dim, IDS_NAME (wl_ids), FALSE),
                                                     NULL))))));
 
@@ -5789,21 +5793,21 @@ COMPWLstridex (node *arg_node, node *arg_info)
 
     if ((WLSTRIDEX_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
         && (SCHAdjustmentRequired (dim, wl_seg))) {
+        DBUG_ASSERT ((NODE_TYPE (wl_seg) == N_WLseg),
+                     "Var. segment with blocking information found!");
         assigns
           = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
                                   MakeNum (WLSEGX_DIMS (wl_seg)),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                       WL_GET_ADDRESS (arg_node,
-                                                                       N_WLstride,
-                                                                       WLSTRIDE, BOUND1),
+                                                       WLSTRIDEX_GET_ADDR (arg_node,
+                                                                           BOUND1),
                                                        dim, IDS_NAME (wl_ids), FALSE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                       WL_GET_ADDRESS (arg_node,
-                                                                       N_WLstride,
-                                                                       WLSTRIDE, BOUND2),
+                                                       WLSTRIDEX_GET_ADDR (arg_node,
+                                                                           BOUND2),
                                                        dim, IDS_NAME (wl_ids), FALSE),
-                                  MakeNum (MAX (WLSEGX_SV (wl_seg)[dim],
-                                                WLSEGX_UBV (wl_seg)[dim])),
+                                  MakeNum (MAX (WLSEG_SV (wl_seg)[dim],
+                                                WLSEG_UBV (wl_seg)[dim])),
                                   DupIds_Id (wl_ids),
                                   MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                         assigns);
@@ -6086,14 +6090,11 @@ COMPWLgridx (node *arg_node, node *arg_info)
         DupIds_Id (ids_vector),
         MakeExprs (DupIds_Id (ids_scalar),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                   WL_GET_ADDRESS (arg_node, N_WLgrid,
-                                                                   WLGRID, BOUND1),
+                                                   WLGRIDX_GET_ADDR (arg_node, BOUND1),
                                                    dim, IDS_NAME (wl_ids), FALSE),
                               MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                              WL_GET_ADDRESS (arg_node,
-                                                                              N_WLgrid,
-                                                                              WLGRID,
-                                                                              BOUND2),
+                                                              WLGRIDX_GET_ADDR (arg_node,
+                                                                                BOUND2),
                                                               dim, IDS_NAME (wl_ids),
                                                               FALSE),
                                          NULL)))));
@@ -6127,9 +6128,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
     } else if ((NODE_TYPE (arg_node) == N_WLgrid)
                && ((WLGRID_UNROLLING (arg_node))
                    || ((WLGRID_BOUND2 (arg_node) - WLGRID_BOUND1 (arg_node) == 1)
-                       && (WLGRID_FITTED (arg_node)))
-                   || ((WLGRID_BOUND1 (arg_node) == 0)
-                       && (WLGRID_BOUND2 (arg_node) == 1)))) {
+                       && (WLGRID_FITTED (arg_node))))) {
         /*
          * unrolling  or  (width == 1) and fitted already  or  0->1-grid
          */

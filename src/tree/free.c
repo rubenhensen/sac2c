@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/29 18:32:28  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ *
  * Revision 3.4  2001/01/09 17:26:18  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -1847,7 +1850,6 @@ FreeWLgrid (node *arg_node, node *arg_info)
 node *
 FreeWLsegVar (node *arg_node, node *arg_info)
 {
-    int b;
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLsegVar");
@@ -1859,12 +1861,6 @@ FreeWLsegVar (node *arg_node, node *arg_info)
 
     FREE (WLSEGVAR_IDX_MIN (arg_node));
     FREE (WLSEGVAR_IDX_MAX (arg_node));
-
-    for (b = 0; b < WLSEGVAR_BLOCKS (arg_node); b++) {
-        FREE (WLSEGVAR_BV (arg_node, b));
-    }
-    FREE (WLSEGVAR_UBV (arg_node));
-    FREE (WLSEGVAR_SV (arg_node));
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (arg_node)
