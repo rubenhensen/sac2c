@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/05/12 15:43:37  srs
+ * added MRD support to enable substitution of
+ *   i = [0];
+ *   a = psi(i, A);
+ *
  * Revision 1.8  1998/03/25 17:53:11  srs
  * added comment to a location of a possible bug
  *
@@ -49,7 +54,6 @@
 #include "LoopInvariantRemoval.h"
 #include "ArrayElimination.h"
 
-#define AE_TYPES arg_info->node[1]
 #define TRUE 1
 #define FALSE 0
 
@@ -87,44 +91,6 @@ ArrayElimination (node *arg_node, node *info_node)
 
 /*
  *
- *  functionname  : AEfundef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *
-AEfundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("AEfundef");
-    if ((NULL != arg_node->node[0]) && (0 == arg_node->flag)) {
-        DBUG_PRINT ("AE", ("*** Trav function %s", arg_node->info.types->id));
-
-        AE_TYPES = NULL;
-        arg_node->node[0]->node[0] = Trav (arg_node->node[0]->node[0], arg_info);
-
-        arg_node->node[0]->node[1]
-          = AppendNodeChain (0, AE_TYPES, arg_node->node[0]->node[1]);
-        AE_TYPES = NULL;
-
-        if (NULL != arg_node->node[1])
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-
-        arg_node->refcnt = 0;
-    } else {
-        if (NULL != arg_node->node[1])
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
  *  functionname  : CorrectArraySize
  *  arguments     :
  *  description   :
@@ -145,7 +111,7 @@ CorrectArraySize (ids *ids_node)
 
     DBUG_ENTER ("CorrectArraySize");
 
-    type = ids_node->node->info.types;
+    type = IDS_TYPE (ids_node);
     GET_LENGTH (length, type);
     GET_DIM (dim, type);
 
@@ -184,7 +150,7 @@ GetNumber (node *vector)
         tmp = itoa (expr_node->node[0]->info.cint);
         strcat (number, tmp);
         expr_node = expr_node->node[1];
-    } while (NULL != expr_node);
+    } while (expr_node);
     DBUG_RETURN (number);
 }
 
@@ -234,6 +200,7 @@ node *
 GenPsi (ids *ids_node, node *arg_info)
 {
     node *new_nodes = NULL, *expr, *new_let, *new_assign, *new_vardec;
+    node *exprn;
     int length, i;
     types *type;
     node *arg[2];
@@ -242,23 +209,20 @@ GenPsi (ids *ids_node, node *arg_info)
     type = ids_node->node->info.types;
     GET_LENGTH (length, type);
     for (i = 0; i < length; i++) {
-        arg[0] = MakeNode (N_array);
-        expr = MakeNode (N_exprs);
-#ifndef NEWTREE
-        arg[0]->nnode = 1;
-#endif
-        arg[0]->node[0] = expr;
-#ifndef NEWTREE
-        expr->nnode = 1;
-#endif
-        MAKENODE_NUM (expr->node[0], i);
-        arg[1] = MakeNode (N_id);
-        arg[1]->info.ids = DupIds (ids_node, arg_info);
+        exprn = MakeExpr (MakeNum (i), NULL);
+        arg[0] = MakeArray (exprn);
+
+        /*     arg[1] = MakeNode(N_id); */
+        /*     arg[1]->info.ids = DupIds(ids_node , arg_info); */
+        arg[1] = MakeId (IDS_NAME (ids_node), IDS_MOD (ids_node), ST_regular);
+
         new_let = MakeNode (N_let);
         new_let->info.ids = GenIds (arg);
         DBUG_PRINT ("AE", ("Generating new value for %s", new_let->info.ids->id));
-        new_let->info.ids->node = SearchDecl (new_let->info.ids->id, AE_TYPES);
-        if (NULL == new_let->info.ids->node) {
+        IDS_VARDEC (LET_IDS (new_let))
+          = SearchDecl (new_let->info.ids->id, INFO_AE_TYPES (arg_info));
+
+        if (!IDS_VARDEC (LET_IDS (new_let))) {
             DBUG_PRINT ("AE", ("Generating new vardec for %s", new_let->info.ids->id));
             new_vardec = MakeNode (N_vardec);
             /* srs: something is wrong here and we lose memory.
@@ -270,87 +234,21 @@ GenPsi (ids *ids_node, node *arg_info)
             new_vardec->info.types->dim = 0;
             FREE (new_vardec->info.types->id);
             new_vardec->info.types->id = StringCopy (new_let->info.ids->id);
-            AE_TYPES = AppendNodeChain (0, new_vardec, AE_TYPES);
+            INFO_AE_TYPES (arg_info)
+              = AppendNodeChain (0, new_vardec, INFO_AE_TYPES (arg_info));
             new_let->info.ids->node = new_vardec;
         }
-#ifndef NEWTREE
-        new_let->nnode = 1;
-#endif
         new_let->node[0] = MakeNode (N_prf);
         new_let->node[0]->info.prf = F_psi;
-#ifndef NEWTREE
-        new_let->node[0]->nnode = 1;
-#endif
         new_let->node[0]->node[0] = MakeNode (N_exprs);
         new_let->node[0]->node[0]->node[0] = arg[0];
-#ifndef NEWTREE
-        new_let->node[0]->node[0]->nnode = 2;
-#endif
         new_let->node[0]->node[0]->node[1] = MakeNode (N_exprs);
         new_let->node[0]->node[0]->node[1]->node[0] = arg[1];
-#ifndef NEWTREE
-        new_let->node[0]->node[0]->node[1]->nnode = 1;
-#endif
         new_assign = MakeNode (N_assign);
-#ifndef NEWTREE
-        new_assign->nnode = 1;
-#endif
         new_assign->node[0] = new_let;
         new_nodes = AppendNodeChain (1, new_nodes, new_assign);
     }
     DBUG_RETURN (new_nodes);
-}
-
-/*
- *
- *  functionname  : AEassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *
-AEassign (node *arg_node, node *arg_info)
-{
-    node *new_nodes = NULL;
-    ids *ids_node;
-
-    DBUG_ENTER ("AEassign");
-    if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
-        ids_node = LET_IDS (ASSIGN_INSTR (arg_node));
-        if (NULL == IDS_NEXT (ids_node)) {
-            if (TRUE == CorrectArraySize (ids_node)) {
-                VARDEC_FLAG (IDS_VARDEC (ids_node)) = TRUE;
-                new_nodes = AppendNodeChain (1, new_nodes, GenPsi (ids_node, arg_info));
-            } else {
-                VARDEC_FLAG (IDS_VARDEC (ids_node)) = FALSE;
-            }
-        }
-    }
-
-    if (NULL == new_nodes) {
-        /* Trav if-then-else and loops */
-        if (NULL != ASSIGN_INSTR (arg_node))
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        /* Trav next assign */
-        if (NULL != ASSIGN_NEXT (arg_node))
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    } else {
-        if (NULL != ASSIGN_NEXT (arg_node))
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        new_nodes = AppendNodeChain (1, new_nodes, ASSIGN_NEXT (arg_node));
-#ifndef NEWTREE
-        arg_node->nnode = 2;
-#endif
-        ASSIGN_NEXT (arg_node) = new_nodes;
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /*
@@ -369,27 +267,242 @@ AEassign (node *arg_node, node *arg_info)
 node *
 AEprf (node *arg_node, node *arg_info)
 {
-    node *arg[2], *new_node;
+    node *arg[2], *new_node, *tmpn;
 
     DBUG_ENTER ("AEprf");
-    if (F_psi == arg_node->info.prf) {
-        arg[0] = NodeBehindCast (arg_node->node[0]->node[0]);
-        arg[1] = NodeBehindCast (arg_node->node[0]->node[1]->node[0]);
-        if ((N_id == arg[1]->nodetype) && (N_array == arg[0]->nodetype)) {
-            if (TRUE == CorrectArraySize (arg[1]->info.ids)) {
+
+    if (F_psi == PRF_PRF (arg_node)) {
+        tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
+        if (N_id == NODE_TYPE (tmpn))
+            MRD_GETDATA (tmpn, INFO_VARNO, ID_VARNO (tmpn));
+
+        arg[0] = tmpn;
+        arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
+
+        if (N_id == NODE_TYPE (arg[1]) && N_array == NODE_TYPE (arg[0]))
+            if (CorrectArraySize (ID_IDS (arg[1]))) {
                 DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
                                    arg[1]->info.ids->id));
                 new_node = MakeNode (N_id);
-                new_node->info.ids = GenIds (arg);
-                new_node->info.ids->node = SearchDecl (new_node->info.ids->id, AE_TYPES);
-                if (NULL != new_node->info.ids->node) {
+                ID_IDS (new_node) = GenIds (arg);
+                ID_VARDEC (new_node)
+                  = SearchDecl (ID_NAME (new_node), INFO_AE_TYPES (arg_info));
+                if (ID_VARDEC (new_node)) {
                     FreeTree (arg_node);
                     arg_node = new_node;
-                } else {
+                } else
                     FreeTree (new_node);
-                }
             }
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEfundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+AEfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AEfundef");
+
+    if (FUNDEF_BODY (arg_node) && 0 == FUNDEF_INLINE (arg_node)) {
+        DBUG_PRINT ("AE", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
+
+        INFO_AE_TYPES (arg_info) = NULL;
+        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+        FUNDEF_VARDEC (arg_node)
+          = AppendNodeChain (0, INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
+        INFO_AE_TYPES (arg_info) = NULL;
+
+        if (FUNDEF_NEXT (arg_node))
+            FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
+        /* srs: I don't know what this is for. It is not used here in this file
+           and it's no initialisatzion for ref counting :((( */
+        arg_node->refcnt = 0;
+    } else if (FUNDEF_NEXT (arg_node))
+        FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEassign(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+AEassign (node *arg_node, node *arg_info)
+{
+    node *new_nodes = NULL;
+    ids *ids_node;
+
+    DBUG_ENTER ("AEassign");
+    /* create new assignments if array is smaler than threshold */
+    if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+        ids_node = LET_IDS (ASSIGN_INSTR (arg_node));
+        if (!IDS_NEXT (ids_node)) {
+            if (CorrectArraySize (ids_node)) {
+                VARDEC_FLAG (IDS_VARDEC (ids_node)) = TRUE;
+                new_nodes = GenPsi (ids_node, arg_info);
+            } else
+                VARDEC_FLAG (IDS_VARDEC (ids_node)) = FALSE;
         }
     }
+
+    /* traverse into compound nodes. */
+    if (ASSIGN_INSTR (arg_node))
+        ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
+    if (ASSIGN_NEXT (arg_node))
+        ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+
+    if (new_nodes)
+        ASSIGN_NEXT (arg_node) = AppendNodeChain (1, new_nodes, ASSIGN_NEXT (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEcond(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+AEcond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AEcond");
+
+    COND_COND (arg_node) = OPTTrav (COND_COND (arg_node), arg_info, arg_node);
+    COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
+    COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEdo(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+AEdo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AEdo");
+
+    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
+    DO_COND (arg_node) = OPTTrav (DO_COND (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEwhile(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+AEwhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AEwhile");
+
+    WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
+    WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AEwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+AEwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AEwith");
+
+    WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    default:
+        DBUG_ASSERT (0, "Operator not implemented for with_node");
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AENwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+AENwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AENwith");
+
+    /* The Phase AE is not in the optimization loop and though
+       WLT has not been done. Only one N_Npart and one N_Ncode exist. */
+    NWITH_PART (arg_node) = OPTTrav (NWITH_PART (arg_node), arg_info, arg_node);
+    NWITH_CODE (arg_node) = OPTTrav (NWITH_CODE (arg_node), arg_info, arg_node);
+    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+
     DBUG_RETURN (arg_node);
 }
