@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/03/26 14:23:34  sbs
+ * doxygen again
+ *
  * Revision 3.46  2003/03/26 14:08:32  sbs
  * some further modifications
  *
@@ -197,7 +200,7 @@
 
 /**
  *
- * @defgroup IVE
+ * @defgroup ive IVE
  * @ingroup Optimizations
  *
  * The "index vector elimination" (IVE for short) tries to eliminate index vectors
@@ -219,6 +222,7 @@
  *
  * @{
  */
+
 /**
  *
  * @file index.c
