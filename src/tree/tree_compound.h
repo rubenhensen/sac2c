@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.40  2000/10/23 17:59:49  dkr
+ * macros ICM_EXPRS? added
+ *
  * Revision 1.39  2000/10/23 16:38:43  dkr
  * ICM_ARG5, ICM_ARG6 added
  *
@@ -1471,15 +1474,21 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *  compound access macros
  */
 
-#define ICM_ARG1(n) EXPRS_EXPR (ICM_ARGS (n))
-#define ICM_ARG2(n) EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (n)))
-#define ICM_ARG3(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
-#define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
-#define ICM_ARG5(n)                                                                      \
-    EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
-#define ICM_ARG6(n)                                                                      \
-    EXPRS_EXPR (                                                                         \
-      EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))))
+#define ICM_EXPRS1(n) ICM_ARGS(n))
+#define ICM_EXPRS2(n) EXPRS_NEXT(ICM_ARGS(n)))
+#define ICM_EXPRS3(n) EXPRS_NEXT(EXPRS_NEXT(ICM_ARGS(n))))
+#define ICM_EXPRS4(n) EXPRS_NEXT(EXPRS_NEXT(EXPRS_NEXT(ICM_ARGS(n)))))
+#define ICM_EXPRS5(n) EXPRS_NEXT(EXPRS_NEXT(EXPRS_NEXT(EXPRS_NEXT( \
+                      ICM_ARGS(n))))))
+#define ICM_EXPRS6(n) EXPRS_NEXT(EXPRS_NEXT(EXPRS_NEXT(EXPRS_NEXT( \
+                      EXPRS_NEXT(ICM_ARGS(n)))))))
+
+#define ICM_ARG1(n) EXPRS_EXPR (ICM_EXPRS1 (n))
+#define ICM_ARG2(n) EXPRS_EXPR (ICM_EXPRS2 (n))
+#define ICM_ARG3(n) EXPRS_EXPR (ICM_EXPRS3 (n))
+#define ICM_ARG4(n) EXPRS_EXPR (ICM_EXPRS4 (n))
+#define ICM_ARG5(n) EXPRS_EXPR (ICM_EXPRS5 (n))
+#define ICM_ARG6(n) EXPRS_EXPR (ICM_EXPRS6 (n))
 
 /******************************************************************************
  *
