@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2002/09/03 18:49:58  dkr
+ * some cosmetical changes done
+ *
  * Revision 1.24  2002/09/03 11:56:54  dkr
  * - CompareTypesImplementation() modified.
  * - SSACSElet(): support for dynamic shapes added
@@ -300,7 +303,7 @@ FindCSE (node *cselist, node *let)
     while ((csetmp != NULL) && (match == NULL)) {
         if ((CSEINFO_LET (csetmp) != NULL)
             && (CompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp))) == CMPT_EQ)
-            && (CmpIdsTypes (LET_IDS (let), LET_IDS (CSEINFO_LET (csetmp))) == TRUE)) {
+            && CmpIdsTypes (LET_IDS (let), LET_IDS (CSEINFO_LET (csetmp)))) {
             match = CSEINFO_LET (csetmp);
         }
         csetmp = CSEINFO_NEXT (csetmp);
@@ -385,6 +388,7 @@ SetSubstAttributes (ids *subst, ids *with)
 }
 
 #ifndef CREATE_UNIQUE_BY_HEAP
+
 /******************************************************************************
  *
  * function:
@@ -402,14 +406,16 @@ ForbiddenSubstitution (ids *chain)
     bool res;
 
     DBUG_ENTER ("ForbiddenSubstitution");
+
     res = FALSE;
-    while ((chain != NULL) && (res == FALSE)) {
+    while ((chain != NULL) && (!res)) {
         res |= (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (chain))) == ST_unique);
         chain = IDS_NEXT (chain);
     }
 
     DBUG_RETURN (res);
 }
+
 #endif
 
 /******************************************************************************
@@ -486,7 +492,7 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 
             search_fun_arg = fun_args;
             search_ap_arg = ap_args;
-            while ((search_fun_arg != act_fun_arg) && (found_match == FALSE)) {
+            while ((search_fun_arg != act_fun_arg) && (!found_match)) {
                 /* compare identifiers via their avis pointers */
                 DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_ap_arg)) == N_id),
                              "non N_id node as arg in special function application");
@@ -575,8 +581,7 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
         avis1 = GetResultArgAvis (EXPRS_EXPR (return_exprs), THENPART);
         avis2 = GetResultArgAvis (EXPRS_EXPR (return_exprs), ELSEPART);
 
-        if (((FUNDEF_IS_LOOPFUN (fundef)) && (avis2 != NULL)
-             && (AVIS_SSALPINV (avis2) == TRUE))
+        if (((FUNDEF_IS_LOOPFUN (fundef)) && (avis2 != NULL) && (AVIS_SSALPINV (avis2)))
             || ((FUNDEF_IS_CONDFUN (fundef)) && (avis1 == avis2) && (avis2 != NULL))) {
             /*
              * we get an arg that is result of this fundef,
@@ -637,7 +642,7 @@ SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain)
         search_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
         found_match = FALSE;
 
-        while ((search_result != act_result) && (found_match == FALSE)) {
+        while ((search_result != act_result) && (!found_match)) {
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_exprs)) == N_id),
                          "non id node in return of special fundef (act)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_exprs)) == N_id),
@@ -1015,7 +1020,7 @@ SSACSEreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSElet(node *arg_node, node *arg_info)
+ *   node *SSACSElet( node *arg_node, node *arg_info)
  *
  * description:
  *   first do a variable substitution on the right side expression (but
@@ -1036,6 +1041,7 @@ node *
 SSACSElet (node *arg_node, node *arg_info)
 {
     node *match;
+    nodetype nt_expr;
     int cmp;
 
     DBUG_ENTER ("SSACSElet");
@@ -1053,6 +1059,8 @@ SSACSElet (node *arg_node, node *arg_info)
 
     match = FindCSE (INFO_SSACSE_CSE (arg_info), arg_node);
 
+    nt_expr = NODE_TYPE (LET_EXPR (arg_node));
+
     /*
      * found matching common subexpression or copy assignment
      * if let is NO phicopytarget
@@ -1062,7 +1070,7 @@ SSACSElet (node *arg_node, node *arg_info)
     if ((match != NULL)
         && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
 #ifndef CREATE_UNIQUE_BY_HEAP
-        && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)
+        && (!ForbiddenSubstitution (LET_IDS (arg_node)))
 #endif
     ) {
         /* set subst attributes for results */
@@ -1075,10 +1083,10 @@ SSACSElet (node *arg_node, node *arg_info)
         /* remove assignment */
         INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
 
-    } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
+    } else if ((nt_expr == N_id)
                && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
 #ifndef CREATE_UNIQUE_BY_HEAP
-               && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)
+               && (!ForbiddenSubstitution (LET_IDS (arg_node)))
 #endif
     ) {
 
@@ -1094,15 +1102,16 @@ SSACSElet (node *arg_node, node *arg_info)
             LET_IDS (arg_node)
               = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
 
-            DBUG_PRINT ("SSACSE",
-                        ("copy assignment eliminated in line %d", NODE_LINE (arg_node)));
+            DBUG_PRINT ("SSACSE", ("copy assignment  %s = %s  eliminated in line %d",
+                                   IDS_NAME (LET_IDS (arg_node)),
+                                   ID_NAME (LET_EXPR (arg_node)), NODE_LINE (arg_node)));
             cse_expr++;
 
             /* remove copy assignment */
             INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
         }
 
-    } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
+    } else if ((nt_expr == N_ap)
                && (FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
 
         /*
@@ -1307,12 +1316,11 @@ SSACSENcode (node *arg_node, node *arg_info)
  *   ids *SSACSEids( ids *arg_ids, node *arg_info)
  *
  * description:
- *   traverses chain of ids to do variable substitution as
- *   annotated in AVIS_SUBST attribute.
- *   but do not substitute loop invariant args in a recursive funap (when
- *   INFO_SSACSE_RECFUNAP() == TRUE),
+ *   Traverses chain of ids to do variable substitution as annotated in
+ *   AVIS_SUBST attribute, but does not substitute loop invariant args in a
+ *   recursive funap (iff INFO_SSACSE_RECFUNAP() is TRUE),
  *
- *   if we have some nodelist stored in INFO_SSACSE_RESULTARG annotate the
+ *   If we have some nodelist stored in INFO_SSACSE_RESULTARG annotate the
  *   stored subst avis information after processing, so further uses will be
  *   renamed according to this information.
  *
@@ -1326,8 +1334,8 @@ SSACSEids (ids *arg_ids, node *arg_info)
 
     /* check for necessary substitution */
     if ((AVIS_SUBST (IDS_AVIS (arg_ids)) != NULL)
-        && (!((INFO_SSACSE_RECFUNAP (arg_info) == TRUE)
-              && (AVIS_SSALPINV (IDS_AVIS (arg_ids)) == TRUE)))) {
+        && (!((INFO_SSACSE_RECFUNAP (arg_info))
+              && (AVIS_SSALPINV (IDS_AVIS (arg_ids)))))) {
         DBUG_PRINT ("SSACSE", ("substitution: %s -> %s",
                                VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                                VARDEC_OR_ARG_NAME (
