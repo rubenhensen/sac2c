@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/10/09 02:12:48  dkr
+ * code for ID/ARRAY_CONSTVEC removed
+ *
  * Revision 1.13  2002/09/09 17:56:33  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -1288,14 +1291,11 @@ Modarray2Genarray (node *wln, node *substwln)
     dimensions = IDS_SHAPE (NWITH_VEC (wln), 0);
 
     eltn = NULL;
-    for (i = dimensions - 1; i >= 0; i--)
+    for (i = dimensions - 1; i >= 0; i--) {
         eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
+    }
 
     shape = MakeArray (eltn);
-    ARRAY_ISCONST (shape) = TRUE;
-    ARRAY_VECTYPE (shape) = T_int;
-    ARRAY_VECLEN (shape) = dimensions;
-    ((int *)ARRAY_CONSTVEC (shape)) = Array2IntVec (eltn, NULL);
 
     shpseg = MakeShpseg (
       MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
@@ -1402,11 +1402,6 @@ SSAWLFassign (node *arg_node, node *arg_info)
                       = MakeTypes (T_int, 1,
                                    SHShape2OldShpseg (SHCreateShape (1, TYPES_DIM (idt))),
                                    NULL, NULL);
-                    ARRAY_ISCONST (tmpn) = TRUE;
-                    ARRAY_VECTYPE (tmpn) = T_int;
-                    ARRAY_VECLEN (tmpn) = TYPES_DIM (idt);
-                    ((int *)ARRAY_CONSTVEC (tmpn))
-                      = Array2IntVec (ARRAY_AELEMS (tmpn), NULL);
                     tmpn = MakePrf (F_genarray, /* prf N_genarray */
                                     MakeExprs (tmpn, MakeExprs (CreateZeroScalar (
                                                                   TYPES_BASETYPE (idt)),
@@ -1562,11 +1557,6 @@ SSAWLFid (node *arg_node, node *arg_info)
                      (and DC-removing) some new variables. */
 
                 arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
-                ARRAY_ISCONST (arrayn) = TRUE;
-                ARRAY_VECTYPE (arrayn) = T_int;
-                ARRAY_VECLEN (arrayn) = 1;
-                ((int *)ARRAY_CONSTVEC (arrayn))
-                  = Array2IntVec (ARRAY_AELEMS (arrayn), NULL);
                 shpseg = MakeShpseg (
                   MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
                 ARRAY_TYPE (arrayn) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
