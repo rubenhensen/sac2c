@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/02/05 15:33:15  dkr
+ * adjusted refcnt in N_pre and N_post
+ *
  * Revision 1.27  1998/01/28 19:42:18  dkr
  * added dummy-implementations of RC-funs for new with-loop
  *
@@ -624,6 +627,25 @@ RCNcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCNcode");
 
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *RCprepost(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCprepost (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCprepost");
+    PRE_REFCNT (arg_node) = -1; /* is not a refcount-object !! */
     DBUG_RETURN (arg_node);
 }
 

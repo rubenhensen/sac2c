@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/02/05 15:34:04  dkr
+ * adjusted refcnt in N_pre and N_post
+ *
  * Revision 1.12  1998/01/28 19:41:52  dkr
  * added declarations of RC-funs for new with-loop
  *
@@ -55,6 +58,7 @@ extern node *RClet (node *arg_node, node *arg_info);
 extern node *RCcond (node *arg_node, node *arg_info);
 extern node *RCfundef (node *arg_node, node *arg_info);
 extern node *RCarg (node *arg_node, node *arg_info);
+extern node *RCprepost (node *arg_node, node *arg_info);
 
 /* old with-loop */
 extern node *RCwith (node *arg_node, node *arg_info);
