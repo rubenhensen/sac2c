@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/07 14:21:26  nmw
+ * FUNDEF_INT_ASSIGN is only set to NULL if the assignment is freed
+ *
  * Revision 3.23  2001/04/27 17:33:58  nmw
  * refcounting for special fundef (non recursive) AP icms added
  *
@@ -534,6 +537,7 @@ FreeNode (node *free_node)
 
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = free_node;
+    INFO_FREE_ASSIGN (arg_info) = NULL;
 
     free_node = Trav (free_node, arg_info);
 
@@ -571,6 +575,7 @@ FreeTree (node *free_node)
 
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = NULL;
+    INFO_FREE_ASSIGN (arg_info) = NULL;
 
     Trav (free_node, arg_info);
 
@@ -1300,7 +1305,15 @@ FreeAp (node *arg_node, node *arg_info)
             /* caution: INT_ASSIGN may be NULL already!!! */
             (FUNDEF_INT_ASSIGN (fundef) != NULL)
             && (arg_node == ASSIGN_RHS (FUNDEF_INT_ASSIGN (fundef)))) {
-            /* FUNDEF_INT_ASSIGN( fundef) = NULL;  */
+
+            /*
+             * only clear attribute, if this assignment is removed completly
+             * and not substuituted by an icm node. here it is checked if a
+             * hole assignment is freed.
+             */
+            if (INFO_FREE_ASSIGN (arg_info) != NULL) {
+                FUNDEF_INT_ASSIGN (fundef) = NULL;
+            }
             /* noop */
         } else if (FUNDEF_USED (fundef) != USED_INACTIVE) {
             (FUNDEF_USED (fundef))--;
