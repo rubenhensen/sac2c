@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.141  1998/04/22 17:02:11  dkr
+ * added INFO_COMP_WITHID
+ *
  * Revision 1.140  1998/04/22 13:04:12  dkr
  * added INFO_COMP_ENDASSIGN
  *
@@ -2249,7 +2252,9 @@ extern node *MakeInfo ();
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_SPMDFUNS(n) (n->node[5])
-#define INFO_COMP_ENDASSIGN(n) (n->node[1])
+
+#define INFO_COMP_ENDASSIGN(n) (n->node[0])
+#define INFO_COMP_WITHID(n) (n->node[1])
 
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
@@ -2611,7 +2616,8 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  *                                        DBUG_ASSERT(...) :
  *                                        (NODE_TYPE(n) == N_WLblock) ?
  *                                         WLBLOCK_NEXTDIM(n) :
- *                                         ...)
+ *                                         (NODE_TYPE(n) == N_WLublock) ?
+ *                                          WLUBLOCK_NEXTDIM(n) : ...)
  *          but unfortunately this is not a modifiable l-value in ANSI-C :(
  *          so it would be impossible to use them on the left side of an
  *          assignment.
