@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/02/06 01:52:44  dkr
+# make deps done
+#
 # Revision 3.4  2001/02/02 10:39:04  dkr
 # make deps done
 #
@@ -138,17 +141,16 @@ WLF.o: /usr/include/stdlib.h /usr/include/limits.h ../tree/tree.h
 WLF.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 WLF.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 WLF.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
-WLF.o: ../global/my_debug.h ../print/print.h ../tree/DupTree.h
-WLF.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
-WLF.o: ../optimize/generatemasks.h ../optimize/ConstantFolding.h
-WLF.o: WithloopFolding.h WLF.h
+WLF.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
+WLF.o: ../tree/traverse.h ../optimize/optimize.h ../optimize/generatemasks.h
+WLF.o: ../optimize/ConstantFolding.h WithloopFolding.h WLF.h
 WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLI.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLI.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 WLI.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
 WLI.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 WLI.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLI.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../print/print.h
+WLI.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 WLI.o: ../tree/traverse.h ../optimize/optimize.h ../optimize/generatemasks.h
 WLI.o: ../optimize/ConstantFolding.h WithloopFolding.h WLI.h
 WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -157,10 +159,9 @@ WLT.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 WLT.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
 WLT.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 WLT.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-WLT.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../print/print.h
-WLT.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/traverse.h
-WLT.o: ../optimize/optimize.h ../optimize/generatemasks.h WithloopFolding.h
-WLT.o: WLT.h
+WLT.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+WLT.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
+WLT.o: ../optimize/generatemasks.h WithloopFolding.h WLT.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WithloopFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -249,5 +250,4 @@ wl_access_analyze.o: ../global/types.h ../tree/tree_basic.h
 wl_access_analyze.o: ../tree/tree_compound.h ../global/Error.h
 wl_access_analyze.o: /usr/include/string.h ../global/globals.h
 wl_access_analyze.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
-wl_access_analyze.o: ../global/internal_lib.h ../print/print.h ../tree/tree.h
-wl_access_analyze.o: wl_access_analyze.h
+wl_access_analyze.o: ../global/internal_lib.h wl_access_analyze.h
