@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.60  1999/12/13 16:50:57  dkr
+ * definition of COND_NAIVE_ELSE changed in order to satisfy CC
+ *
  * Revision 2.59  1999/12/01 15:21:20  dkr
  * comment for IDS_VARDEC added
  *
@@ -1427,7 +1430,7 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 #define COND_ELSE(n) (n->node[2])
 #define COND_THENVARS(n) ((ids *)n->node[3])
 #define COND_ELSEVARS(n) ((ids *)n->node[4])
-#define COND_NAIVE_THENVARS(n) ((ids *)n->flag)
+#define COND_NAIVE_THENVARS(n) ((ids *)n->info2)
 #define COND_NAIVE_ELSEVARS(n) ((ids *)n->node[5])
 #define COND_MASK(n, x) (n->mask[x])
 
