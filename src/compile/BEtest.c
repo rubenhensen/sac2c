@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/25 10:40:09  jhb
+ * compile, only some globals changed
+ *
  * Revision 3.7  2003/09/20 14:18:35  dkr
  * icm2c_prf.h added
  *
@@ -101,9 +104,9 @@ main (int argc, char *argv[])
     /*
      * preset some globals used for the compilation of ICM's
      */
-    outfile = stdout;
-    print_objdef_for_header_file = 0;
-    indent = 0;
+    global.outfile = stdout;
+    global.print_objdef_for_header_file = 0;
+    global.indent = 0;
 
     printf ("#include \"../runtime/sac.h\"\n");
     scanf_res = scanf ("%s", buffer);
@@ -118,7 +121,7 @@ main (int argc, char *argv[])
 #include "icm_betest.c"
 #undef ICM_ALL
         if (0 == strcmp (buffer, "clear-indent")) {
-            indent = 0;
+            global.indent = 0;
         } else {
             printf ("icm %s not defined!\n", buffer);
 
