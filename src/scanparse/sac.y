@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.155  1998/03/25 15:01:38  srs
+ * added incrementation of usage of N_Ncode node in rule expr_main.NWITH...
+ *
  * Revision 1.154  1998/03/24 10:55:59  srs
  * changed parameters of MakeNPart in rule Ngenerator
  *
@@ -1989,6 +1992,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
               * conflict in that rule!
               */
              $$=MakeNWith( $4, MakeNCode( $6, NWITHOP_EXPR($7)), $7);
+             NCODE_USED(NWITH_CODE($$))++;
              NODE_LINE($$)= $<cint>2;
 
              /*
