@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/29 13:13:29  dkr
+ * macros AP_ARG? added
+ *
  * Revision 3.1  2000/11/20 18:03:37  sacbase
  * new release made
  *
@@ -1456,6 +1459,14 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  ***  watch combined macros for N_ap and N_prf
  ***  (search for "N_ap :" or "N_prf :").
  ***/
+
+/*
+ *  compound access macros
+ */
+
+#define AP_ARG1(n) (EXPRS_EXPR (AP_ARGS (n)))
+#define AP_ARG2(n) (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (n))))
+#define AP_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (n)))))
 
 /*--------------------------------------------------------------------------*/
 
