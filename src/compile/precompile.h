@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.7  2000/07/14 14:46:05  nmw
+ * PRECObjInitFunctionName added
+ *
  * Revision 2.6  2000/07/11 09:02:39  dkr
  * minor changes done
  *
@@ -103,6 +106,7 @@ extern node *PREC2WLseg (node *arg_node, node *arg_info);
 extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
 
 extern node *AdjustFoldFundef (node *fundef, ids *acc, node *cexpr);
+extern char *PRECObjInitFunctionName ();
 
 #ifdef TAGGED_ARRAYS
 extern uniqueness_class_t GetUniFromTypes (types *typ);
