@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/06/03 14:52:44  cg
+ * ICMs MT_SPMD_FUN_DEC and MT_SPMD_FUN_RET now longer generate preprocessor
+ * conditional #if SAC_DO_MULTITHREAD
+ *
  * Revision 1.6  1998/05/19 10:06:23  cg
  * minor bugs fixed
  *
@@ -133,8 +137,6 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_DEC
 
-    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
-
     fprintf (outfile, "#undef SAC_MT_CURRENT_FUN()\n");
     fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", from);
 
@@ -225,8 +227,6 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
     fprintf (outfile, "}\n");
 
     fprintf (outfile, "\n");
-
-    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -358,8 +358,8 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
-             barrier_id);
+    fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype, accu_var,
+             tmp_var, barrier_id);
 
 #ifdef BEtest
     INDENT;
@@ -369,8 +369,8 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
-             barrier_id);
+    fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype, accu_var,
+             tmp_var, barrier_id);
 
 #ifdef BEtest
     INDENT;
@@ -380,8 +380,8 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
-             barrier_id);
+    fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype, accu_var,
+             tmp_var, barrier_id);
 
     indent--;
 
@@ -427,7 +427,7 @@ ICMCompileMT_SYNC_NONFOLD ()
 #undef MT_SYNC_NONFOLD
 
     INDENT;
-    fprintf (outfile, "MT_SYNC_NONFOLD_1(%d)\n", barrier_id);
+    fprintf (outfile, "SAC_MT_SYNC_NONFOLD_1(%d)\n", barrier_id);
 
     indent--;
 
@@ -649,10 +649,11 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
                      vararg[i + 2], vararg[i] + 8);
 
             INDENT;
-            fprintf (outfile, "SAC_MT_SPMD_ARG_inout_rc(%s, %s);\n", name, vararg[i + 2]);
+            fprintf (outfile, "SAC_MT_SPMD_SETARG_inout_rc(%s, %s);\n", name,
+                     vararg[i + 2]);
         } else {
             INDENT;
-            fprintf (outfile, "SAC_MT_SPMD_ARG_%s(%s, %s);\n", vararg[i], name,
+            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n", vararg[i], name,
                      vararg[i + 2]);
         }
     }
