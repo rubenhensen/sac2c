@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/27 02:48:08  sah
+ * fix
+ *
  * Revision 1.3  2004/11/26 21:18:50  sah
  * pour Bodo *<8-)
  *
@@ -315,17 +318,17 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
 }
 
 node *
-SERaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
+DSaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
 {
     node *result = NULL;
     module_t *mod;
     sttable_t *table;
     stentryiterator_t *it;
 
-    DBUG_ENTER ("SERaddSymbolByName");
+    DBUG_ENTER ("DSaddSymbolByName");
 
     DBUG_ASSERT ((DSstate != NULL),
-                 "AddSymbolByName called without calling InitDeserialize.");
+                 "DSaddSymbolByName called without calling InitDeserialize.");
 
     mod = MODMloadModule (module);
 
@@ -347,13 +350,13 @@ SERaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
 }
 
 node *
-SERaddSymbolById (const char *symbid, const char *module)
+DSaddSymbolById (const char *symbid, const char *module)
 {
     module_t *mod;
     serfun_p fun;
     node *entryp;
 
-    DBUG_ENTER ("SERaddSymbolById");
+    DBUG_ENTER ("DSaddSymbolById");
 
     mod = MODMloadModule (module);
 
@@ -384,7 +387,7 @@ DSloadUserType (const char *name, const char *mod)
 
     DBUG_ENTER ("DSloadUserType");
 
-    tdef = SERaddSymbolByName (name, SET_typedef, mod);
+    tdef = DSaddSymbolByName (name, SET_typedef, mod);
 
     DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
 
