@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.190  2004/08/16 16:53:42  skt
+ * CRECE functions changed
+ *
  * Revision 3.189  2004/08/13 18:02:34  skt
  * several mtmode 3 traversals removed
  *
@@ -1436,7 +1439,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, GNMfundef,
-       CRECEfundef, TravSons, FreeFundef, TravSons, RCfundef, EMRCfundef, RIfundef,
+       TravSons, TravSons, FreeFundef, TravSons, RCfundef, EMRCfundef, RIfundef,
        DupFundef, INLfundef, TravSons, TravSons, IdxFundef, TravSons, TravSons, AEfundef,
 
        WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef, WDECfundef,
@@ -1520,7 +1523,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, TravSons,
+  NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, CRECEblock,
        CDFGblock, FreeBlock, TravSons, RCblock, EMRCblock, TravSons, DupBlock, TravSons,
        TravSons, TravSons, IdxBlock, TravSons, TravSons, TravSons,
 
@@ -1604,7 +1607,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_ex, "N_ex", TravSons, TravSons, PrintEX, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_ex, "N_ex", TravSons, TravSons, PrintEX, TravSons, TravSons, TravNone, TravSons,
        FreeEX, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1632,7 +1635,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravNone, TravSons,
        FreeMT, TravSons, TravSons, TravSons, TravSons, DupMt, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1660,7 +1663,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_st, "N_st", TravSons, TravSons, PrintST, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_st, "N_st", TravSons, TravSons, PrintST, TravSons, TravSons, TravNone, TravSons,
        FreeST, TravSons, TravSons, TravSons, TravSons, DupSt, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1830,7 +1833,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
-       TravSons, TravNone, FreeReturn, TravSons, TravSons, EMRCreturn, TravSons,
+       TravNone, TravNone, FreeReturn, TravSons, TravSons, EMRCreturn, TravSons,
        DupReturn, TravSons, TravSons, TravSons, IdxReturn, TravSons, TravSons, TravSons,
 
        PrintReturn, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1942,7 +1945,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, GNMlet, TravSons, TravSons,
+  NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, GNMlet, TravNone, TravSons,
        FreeLet, TravSons, RClet, EMRClet, RIlet, DupLet, TravSons, TravSons, TravSons,
        IdxLet, TravSons, TravSons, TravSons,
 
@@ -2483,7 +2486,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_nwith2, "N_nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
-       TravSons, TravSons, FreeNWith2, TravSons, RCNwith, EMRCNwith2, RIwith2, DupNwith2,
+       TravNone, TravSons, FreeNWith2, TravSons, RCNwith, EMRCNwith2, RIwith2, DupNwith2,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
