@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/06/27 14:37:00  ben
+ *  last routines for tasksel-pragma implemented
+ *
  * Revision 3.30  2001/06/20 12:28:33  ben
  *  most first versions for SchedulingWithTasksel functions implemented
  * two functions are not yet ready for use
@@ -295,12 +298,12 @@ static struct {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
   {"Block", SC_const_seg, 1, 0, 0, ""},
   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"Static", SC_var_seg, 1, 0, 1, "n"},
-  {"Self", SC_var_seg, 1, 0, 2, "n,i"},
-  {"Affinity", SC_var_seg, 1, 0, 1, "n"},
+  {"Static", SC_var_seg, 1, 0, 0, ""},
+  {"Self", SC_var_seg, 1, 0, 1, "i"},
+  {"Affinity", SC_var_seg, 1, 0, 0, ""},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
   {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_withloop, 0, 0, 0, ""},
+  {"WL_Static", SC_withloop, 0, 0, 0, ""},
   {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
@@ -1436,12 +1439,17 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
 
     DBUG_ENTER ("CompileSchedulingWithTaskselArgs");
 
-    if (tasksel != NULL) {
-        for (i = tasksel->dims; i < tasksel->num_args; i++)
-            args = MakeExprs (MakeNum (tasksel->arg[i]), args);
-    }
-
     if (sched != NULL) {
+
+        if (tasksel != NULL) {
+            for (i = tasksel->dims; i < tasksel->num_args; i++)
+                args = MakeExprs (MakeNum (tasksel->arg[i]), args);
+            args = MakeExprs (MakeNum (tasksel->num_args - tasksel->dims), args);
+            args = MakeExprs (MakeNum (tasksel->dims), args);
+            args = MakeExprs (MakeId (StringCopy (tasksel->discipline), NULL, ST_regular),
+                              args);
+        }
+
         for (i = 0; i < sched->num_args; i++) {
             switch (sched->args[i].arg_type) {
             case AT_num:
@@ -1486,13 +1494,13 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
  *
  ******************************************************************************/
 
-/* NEEDS MODIFICATIONS */
 static node *
 CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sched,
                                           tasksel_t *tasksel)
 {
     node *index, *args;
     int d;
+    int pos;
 
     DBUG_ENTER ("CompileConstSegSchedulingWithTaskselArgs");
 
@@ -1501,6 +1509,24 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
     args = NULL;
 
     if (sched != NULL) {
+
+        if (tasksel != NULL) {
+            /* creating a int vararg-vektor, where for each taskselector dimension
+               1 is set, and for all other 0*/
+
+            pos = tasksel->dims - 1;
+            for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+                if (tasksel->arg[pos] == d) {
+                    if (pos > 0) {
+                        pos--;
+                    }
+                    args = MakeExprs (MakeNum (1), args);
+                } else {
+                    args = MakeExprs (MakeNum (0), args);
+                }
+            }
+        }
+
         for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
             if (SCHAdjustmentRequired (d, wlseg)) {
                 args = MakeExprs (MakeNum (1), args);
@@ -1522,6 +1548,7 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
                                      WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
                                      TRUE, TRUE);
+
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = MakeExprs (index, args);
     }
@@ -1545,13 +1572,13 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
  *
  ******************************************************************************/
 
-/* NEEDS MODIFICATIONS */
 static node *
 CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sched,
                                         tasksel_t *tasksel)
 {
     node *index, *args;
     int d;
+    int pos;
 
     DBUG_ENTER ("CompileVarSegSchedulingWithTaskselArgs");
 
@@ -1560,6 +1587,23 @@ CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sch
     args = NULL;
 
     if (sched != NULL) {
+
+        if (tasksel != NULL) {
+            /* creating a int vararg-vektor, where for each taskselector dimension
+                1 is set, and for all other 0*/
+            pos = tasksel->dims - 1;
+            for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+                if (tasksel->arg[pos] == d) {
+                    if (pos > 0) {
+                        pos--;
+                    }
+                    args = MakeExprs (MakeNum (1), args);
+                } else {
+                    args = MakeExprs (MakeNum (0), args);
+                }
+            }
+        }
+
         for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
             args = MakeExprs (MakeNum (1), args);
         }
@@ -1635,7 +1679,8 @@ CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
-    icm = MakeIcm (name, CompileSchedulingArgs (seg_id, sched, general_args));
+    icm = MakeIcm (name, CompileSchedulingWithTaskselArgs (seg_id, sched, tasksel,
+                                                           general_args));
 
     DBUG_RETURN (icm);
 }
