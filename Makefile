@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.36  2000/03/30 15:09:05  jhs
+# Added adjust_calls.o
+#
 # Revision 2.35  2000/03/29 16:12:23  jhs
 # AdAdded /src/mu[tab]/blocks_lift.o
 #
@@ -242,7 +245,8 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/mtfuns_init.o src/multithread/blocks_cons.o \
              src/multithread/blocks_propagate.o \
              src/multithread/dataflow_analysis.o \
-             src/multithread/barriers_init.o src/multithread/blocks_lift.o
+             src/multithread/barriers_init.o src/multithread/blocks_lift.o \
+             src/multithread/adjust_calls.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
