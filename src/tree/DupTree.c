@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/03/04 17:36:11  mwe
+ * DupCondfun removed
+ *
  * Revision 3.88  2004/03/04 13:23:04  mwe
  * DupCondfun added
  *
@@ -1654,21 +1657,21 @@ DupPrf (node *arg_node, node *arg_info)
 
 /******************************************************************************/
 
-node *
-DupCondfun (node *arg_node, node *arg_info)
-{
-    node *new_node;
+/*node *DupCondfun( node *arg_node, node *arg_info)
+ {
+  node *new_node;
 
-    DBUG_ENTER ("DupCondfun");
+  DBUG_ENTER( "DupCondfun");
 
-    new_node
-      = MakeCondfun (DUPTRAV (CONDFUN_IF (arg_node)), DUPTRAV (CONDFUN_THEN (arg_node)),
-                     DUPTRAV (CONDFUN_ELSE (arg_node)));
+  new_node = MakeCondfun( DUPTRAV( CONDFUN_IF( arg_node)),
+                          DUPTRAV( CONDFUN_THEN( arg_node)),
+                          DUPTRAV( CONDFUN_ELSE( arg_node)));
 
-    CopyCommonNodeData (new_node, arg_node);
+  CopyCommonNodeData( new_node, arg_node);
 
-    DBUG_RETURN (new_node);
-}
+
+  DBUG_RETURN( new_node);
+}*/
 
 /******************************************************************************/
 
