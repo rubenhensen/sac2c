@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2003/04/10 13:27:22  dkr
+ * GetWlShape() streamlined and corrected
+ *
  * Revision 3.74  2003/03/13 19:11:54  dkr
  * GetShapeDim() used instead of GetShapeClassFromTypes()
  *
@@ -2430,7 +2433,9 @@ CheckWithids (node *part)
  *   shpseg *GetWlShape( node *wl, int dims, types *wl_type)
  *
  * Description:
- *
+ *   Returns the shape of the with-loop operator.
+ *   'dims' represents the dimension of the operator (= number of iv components)
+ *   and is always >=0.
  *
  ******************************************************************************/
 
@@ -2438,7 +2443,10 @@ shpseg *
 GetWlShape (node *wl, int dims, types *wl_type)
 {
     node *shp_node;
-    int check_dims, i;
+    int check_dims;
+#ifndef DBUG_OFF
+    int arr_len;
+#endif
     shpseg *shape = NULL;
 
     DBUG_ENTER ("GetWlShape");
@@ -2447,21 +2455,13 @@ GetWlShape (node *wl, int dims, types *wl_type)
     case WO_genarray:
         shp_node = NWITH_SHAPE (wl);
         if (NODE_TYPE (shp_node) == N_array) {
-            shape = MakeShpseg (NULL);
-            shp_node = ARRAY_AELEMS (shp_node);
-            for (i = 0; i < dims; i++) {
-                DBUG_ASSERT ((shp_node != NULL),
-                             "genarray with-loop:"
-                             " size of index vector > dimension of WL shape");
-                DBUG_ASSERT (((shp_node != NULL)
-                              && (NODE_TYPE (EXPRS_EXPR (shp_node)) == N_num)),
-                             "illegal shape found!");
-                SHPSEG_SHAPE (shape, i) = NUM_VAL (EXPRS_EXPR (shp_node));
-                shp_node = EXPRS_NEXT (shp_node);
-            }
-            DBUG_ASSERT ((shp_node == NULL),
+#ifndef DBUG_OFF
+            arr_len = CountExprs (ARRAY_AELEMS (shp_node));
+            DBUG_ASSERT ((dims == arr_len),
                          "genarray with-loop:"
-                         " size of index vector < dimension of WL shape");
+                         " size of index vector != dimension of WL shape");
+#endif
+            shape = (IsConstArray (shp_node)) ? Array2Shpseg (shp_node, NULL) : NULL;
         } else {
             DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
                          "NWITH_SHAPE is neither N_array nor N_id");
@@ -2481,7 +2481,7 @@ GetWlShape (node *wl, int dims, types *wl_type)
 
     case WO_modarray:
         shape = Type2Shpseg (wl_type, &check_dims);
-        DBUG_ASSERT ((check_dims >= dims),
+        DBUG_ASSERT ((dims <= DIM_NO_OFFSET (check_dims)),
                      "modarray with-loop:"
                      " size of index vector > dimension of target array");
         break;
