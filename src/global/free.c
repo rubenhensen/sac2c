@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/26 15:16:55  asi
+ * Revision 1.7  1995/03/17 15:54:56  hw
+ * changed function FreeInfoType
+ *
+ * Revision 1.6  1995/01/26  15:16:55  asi
  * *** empty log message ***
  *
  * Revision 1.5  1995/01/18  17:28:37  asi
@@ -194,7 +197,9 @@ FreeInfoType (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FreeInfoType");
     for (i = 0; i < arg_node->nnode; i++)
-        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+        if (NULL != arg_node->node[i]) {
+            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+        }
     FreeMask (arg_node);
     FreeTypes (arg_node->info.types);
     free (arg_node);
