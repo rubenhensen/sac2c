@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2002/04/08 19:57:34  dkr
+ * minor changes done
+ *
  * Revision 1.24  2001/12/14 16:37:54  dkr
  * bug in SSACFExpr2StructConstant() fixed
  *
@@ -227,7 +230,6 @@ static node *RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart);
  *
  * they have to be implemented seperatly as long as there is no constant type
  * that can handle all these cases internally
- *
  */
 
 static constant *SSACFDim (node *expr);
@@ -248,7 +250,10 @@ static node *SSACFSub (node *expr1, node *expr2);
 static node *SSACFModarray (node *a, constant *idx, node *elem);
 static node *SSACFSel (node *idx_expr, node *array_expr);
 
-/* functions for internal use only */
+/*
+ * functions for internal use only
+ */
+
 /******************************************************************************
  *
  * function:
@@ -261,6 +266,7 @@ static node *SSACFSel (node *idx_expr, node *array_expr);
  *   (stored in arg_chain) and the calling parameters (stored param_chain)
  *
  *****************************************************************************/
+
 static node *
 SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
 {
@@ -296,6 +302,7 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
  *   to correct them when dubbing an assignment chain only.
  *
  *****************************************************************************/
+
 static ids *
 SSACFSetSSAASSIGN (ids *chain, node *assign)
 {
@@ -333,6 +340,7 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
  *   or NULL if there are no more args.
  *
  *****************************************************************************/
+
 static node **
 SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
 {
@@ -366,6 +374,7 @@ SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
  *   constants (co_array).
  *
  *****************************************************************************/
+
 static constant **
 SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
 {
@@ -394,6 +403,7 @@ SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
  *   constant for later usage or NULL if the dimension is not known.
  *
  *****************************************************************************/
+
 static constant *
 SSACFDim (node *expr)
 {
@@ -427,6 +437,7 @@ SSACFDim (node *expr)
  *   for userdefined types the result is the shape in simpletype elements.
  *
  *****************************************************************************/
+
 static constant *
 SSACFShape (node *expr)
 {
@@ -469,6 +480,7 @@ SSACFShape (node *expr)
  *   the resulting elements are copied in a new result array.
  *
  *****************************************************************************/
+
 static node *
 SSACFStructOpWrapper (prf op, constant *idx, node *expr)
 {
@@ -542,6 +554,7 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
  *     have dupped the structural constant into a array!
  *
  *****************************************************************************/
+
 static struc_constant *
 SSACFExpr2StructConstant (node *expr)
 {
@@ -581,6 +594,7 @@ SSACFExpr2StructConstant (node *expr)
  *   all array elements must be scalars!
  *
  *****************************************************************************/
+
 static struc_constant *
 SSACFArray2StructConstant (node *expr)
 {
@@ -671,6 +685,7 @@ SSACFArray2StructConstant (node *expr)
  *   converts an scalar node to a structual constant (e.g. N_num, ... or N_id)
  *
  ******************************************************************************/
+
 static struc_constant *
 SSACFScalar2StructConstant (node *expr)
 {
@@ -723,6 +738,7 @@ SSACFScalar2StructConstant (node *expr)
  *   the target array is build up from the elements of the original array.
  *
  *****************************************************************************/
+
 static node *
 SSACFDupStructConstant2Expr (struc_constant *struc_co)
 {
@@ -768,6 +784,7 @@ SSACFDupStructConstant2Expr (struc_constant *struc_co)
  *   frees the struc_constant data structure and the internal constant element.
  *
  *****************************************************************************/
+
 static struc_constant *
 SCOFreeStructConstant (struc_constant *struc_co)
 {
@@ -796,6 +813,7 @@ SCOFreeStructConstant (struc_constant *struc_co)
  * constant arg and one other expression.
  *
  *****************************************************************************/
+
 static node *
 SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 {
@@ -918,6 +936,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
  *   identifier or an array node. returns NULL if no shape can be computed.
  *
  *****************************************************************************/
+
 static shape *
 SSACFGetShapeOfExpr (node *expr)
 {
@@ -956,6 +975,7 @@ SSACFGetShapeOfExpr (node *expr)
  *   identifier or an array node. returns NULL if no type can be computed.
  *
  *****************************************************************************/
+
 static simpletype
 SSACFGetBasetypeOfExpr (node *expr)
 {
@@ -991,6 +1011,7 @@ SSACFGetBasetypeOfExpr (node *expr)
  *   implements the F_eq primitive function for two expressions via a cmptree.
  *
  *****************************************************************************/
+
 static node *
 SSACFEq (node *expr1, node *expr2)
 {
@@ -1016,6 +1037,7 @@ SSACFEq (node *expr1, node *expr2)
  *   implements special optimization for x - x -> 0
  *
  *****************************************************************************/
+
 static node *
 SSACFSub (node *expr1, node *expr2)
 {
@@ -1052,6 +1074,7 @@ SSACFSub (node *expr1, node *expr2)
  *   signature.
  *
  ******************************************************************************/
+
 static node *
 SSACFModarray (node *a, constant *idx, node *elem)
 {
@@ -1118,6 +1141,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
  *   maybe this allows to eliminate some arrays at all.
  *
  *****************************************************************************/
+
 static node *
 SSACFSel (node *idx_expr, node *array_expr)
 {
@@ -1208,6 +1232,7 @@ SSACFSel (node *idx_expr, node *array_expr)
  *   or elsepart (== FALSE)
  *
  *****************************************************************************/
+
 static node *
 RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart)
 {
@@ -1237,7 +1262,10 @@ RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart)
     DBUG_RETURN (vardecs);
 }
 
-/* traversal functions for SSACF traversal*/
+/*
+ * traversal functions for SSACF traversal
+ */
+
 /******************************************************************************
  *
  * function:
@@ -1249,6 +1277,7 @@ RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart)
  *   propagated constants from loop dependend arguments.
  *
  *****************************************************************************/
+
 node *
 SSACFfundef (node *arg_node, node *arg_info)
 {
@@ -1281,6 +1310,7 @@ SSACFfundef (node *arg_node, node *arg_info)
  *   traverses instructions only
  *
  *****************************************************************************/
+
 node *
 SSACFblock (node *arg_node, node *arg_info)
 {
@@ -1308,6 +1338,7 @@ SSACFblock (node *arg_node, node *arg_info)
  *   SSACFarg is only called for  special loop fundefs
  *
  *****************************************************************************/
+
 node *
 SSACFarg (node *arg_node, node *arg_info)
 {
@@ -1339,6 +1370,7 @@ SSACFarg (node *arg_node, node *arg_info)
  *   from constant, inlined conditionals)
  *
  *****************************************************************************/
+
 node *
 SSACFassign (node *arg_node, node *arg_info)
 {
@@ -1370,18 +1402,19 @@ SSACFassign (node *arg_node, node *arg_info)
       = AppendAssign (INFO_SSACF_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
     INFO_SSACF_POSTASSIGN (arg_info) = NULL;
 
-    if (ASSIGN_NEXT (arg_node)) {
+    if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     if (remove_assignment) {
         /* skip this assignment and free it */
         DBUG_PRINT ("SSACF", ("remove dead assignment"));
+
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
-
-        ASSIGN_NEXT (tmp) = NULL;
-        FreeNode (tmp);
+#if 1
+        tmp = FreeNode (tmp);
+#endif
     }
 
     DBUG_RETURN (arg_node);
@@ -1399,6 +1432,7 @@ SSACFassign (node *arg_node, node *arg_info)
  *   traverses conditional and optional then-part, else-part
  *
  *****************************************************************************/
+
 node *
 SSACFcond (node *arg_node, node *arg_info)
 {
@@ -1518,6 +1552,7 @@ SSACFcond (node *arg_node, node *arg_info)
  *   do NOT substitute identifiers in return statement with their value!
  *
  *****************************************************************************/
+
 node *
 SSACFreturn (node *arg_node, node *arg_info)
 {
@@ -1544,10 +1579,12 @@ SSACFreturn (node *arg_node, node *arg_info)
  *   this function can be inlined here, because it is no longer a special one.
  *
  *****************************************************************************/
+
 node *
 SSACFlet (node *arg_node, node *arg_info)
 {
     constant *new_co;
+
     DBUG_ENTER ("SSACFlet");
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
@@ -1656,6 +1693,7 @@ SSACFlet (node *arg_node, node *arg_info)
  *   propagate constants and traverse in special function
  *
  *****************************************************************************/
+
 node *
 SSACFap (node *arg_node, node *arg_info)
 {
@@ -1744,6 +1782,7 @@ SSACFap (node *arg_node, node *arg_info)
  *      EXPRS chain of N_array AELEMS
  *
  *****************************************************************************/
+
 node *
 SSACFid (node *arg_node, node *arg_info)
 {
@@ -1782,6 +1821,7 @@ SSACFid (node *arg_node, node *arg_info)
  *   traverses array elements to propagate constant identifiers
  *
  ******************************************************************************/
+
 node *
 SSACFarray (node *arg_node, node *arg_info)
 {
@@ -1807,6 +1847,7 @@ SSACFarray (node *arg_node, node *arg_info)
  *   the function application by its value.
  *
  *****************************************************************************/
+
 node *
 SSACFprf (node *arg_node, node *arg_info)
 {
@@ -1833,7 +1874,7 @@ SSACFprf (node *arg_node, node *arg_info)
 
     if (new_node != NULL) {
         /* free this primitive function and substitute it with new node */
-        FreeTree (arg_node);
+        arg_node = FreeTree (arg_node);
         arg_node = new_node;
 
         /* increment constant folding counter */
@@ -1856,6 +1897,7 @@ SSACFprf (node *arg_node, node *arg_info)
  *   a new dummy identifier that can be removed by constant folding later.
  *
  *****************************************************************************/
+
 static ids *
 SSACFids (ids *arg_ids, node *arg_info)
 {
@@ -1932,6 +1974,7 @@ SSACFids (ids *arg_ids, node *arg_info)
  *   here used for ids.
  *
  *****************************************************************************/
+
 static ids *
 TravIDS (ids *arg_ids, node *arg_info)
 {
@@ -1954,6 +1997,7 @@ TravIDS (ids *arg_ids, node *arg_info)
  *   shape information.
  *
  *****************************************************************************/
+
 node *
 SSACFNgen (node *arg_node, node *arg_info)
 {
@@ -1992,6 +2036,7 @@ SSACFNgen (node *arg_node, node *arg_info)
  *   a computed result node or NULL if no computing is possible.
  *
  *****************************************************************************/
+
 node *
 SSACFFoldPrfExpr (prf op, node **arg_expr)
 {
@@ -2387,8 +2432,8 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
  *   starts the DeadCodeRemoval for the given fundef. This fundef must not be
  *   a special fundef (these will be traversed in their order of application).
  *
- *
  ******************************************************************************/
+
 node *
 SSAConstantFolding (node *fundef, node *modul)
 {
