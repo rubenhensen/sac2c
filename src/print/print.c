@@ -248,7 +248,7 @@ PrintFloat (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintFloat");
 
-    fprintf (outfile, "%d", arg_node->info.cfloat);
+    fprintf (outfile, "%f", arg_node->info.cfloat);
 
     DBUG_RETURN (arg_node);
 }
@@ -269,7 +269,7 @@ PrintReturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintReturn");
 
-    fprintf (outfile, "\nreturn( ");
+    fprintf (outfile, "return( ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " );\n");
 
@@ -324,6 +324,10 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintVardec");
 
     fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
+    if (1 == arg_node->nnode)
+        Trav (arg_node->node[0], arg_info);
+    else
+        fprintf (outfile, "\n");
 
     DBUG_RETURN (arg_node);
 }
