@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/11/23 11:06:12  ktr
+ * new traversal system
+ *
  * Revision 3.86  2004/11/22 21:29:55  ktr
  * Big Switch Header! SacDevCamp 04
  *
@@ -360,10 +363,14 @@
 
 #include "types.h"
 
-extern node *Trav (node *arg_node, info *arg_info);
-extern node *TravSons (node *arg_node, info *arg_info);
-extern node *TravNone (node *arg_node, info *arg_info);
-extern node *TravError (node *arg_node, info *arg_info);
+extern node *TRAVdo (node *arg_node, info *arg_info);
+extern void TRAVpush (trav_t traversal);
+extern trav_t TRAVpop ();
+
+#if 0
+extern node *TravSons( node *arg_node, info *arg_info);
+extern node *TravNone( node *arg_node, info *arg_info);
+extern node *TravError( node *arg_node, info *arg_info);
 
 extern funtab *act_tab;
 
@@ -509,5 +516,6 @@ extern funtab *unused_tab20;
 extern funtab *rsa_tab;
 
 extern int nnode[];
+#endif
 
 #endif /* _SAC_TRAVERSE_H_ */
