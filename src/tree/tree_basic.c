@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2003/12/23 10:43:58  khf
+ * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
+ * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
+ * MakeNCodeExprs for expr from type N_exprs added.
+ *
  * Revision 3.77  2003/11/18 16:47:35  dkr
  * code for MakeNWithOp() brushed
  *
@@ -1936,10 +1941,34 @@ MakeNCode (node *block, node *expr)
 
     DBUG_ENTER ("MakeNCODE");
 
+    DBUG_ASSERT ((NODE_TYPE (expr) != N_exprs), "MakeNCode called with N_exprs");
+
     tmp = CreateCleanNode (N_Ncode);
 
     NCODE_CBLOCK (tmp) = block;
-    NCODE_CEXPR (tmp) = expr;
+    NCODE_CEXPRS (tmp) = MakeExprs (expr, NULL);
+    NCODE_USED (tmp) = 0;
+    NCODE_WLAA_INFO (tmp) = NULL;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNCodeExprs (node *block, node *exprs)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeNCodeExprs");
+
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs),
+                 "MakeNCodeExprs not called with N_exprs");
+
+    tmp = CreateCleanNode (N_Ncode);
+
+    NCODE_CBLOCK (tmp) = block;
+    NCODE_CEXPRS (tmp) = exprs;
     NCODE_USED (tmp) = 0;
     NCODE_WLAA_INFO (tmp) = NULL;
 

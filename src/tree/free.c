@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/12/23 10:43:58  khf
+ * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
+ * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
+ * MakeNCodeExprs for expr from type N_exprs added.
+ *
  * Revision 3.51  2003/11/18 16:36:40  dkr
  * code for FreeNWithOp() brushed
  *
@@ -2051,6 +2056,8 @@ FreeNWithOp (node *arg_node, node *arg_info)
         break;
     }
 
+    NWITHOP_NEXT (arg_node) = FREETRAV (NWITHOP_NEXT (arg_node));
+
     arg_node = Free (arg_node);
 
     DBUG_RETURN (arg_node);
@@ -2067,7 +2074,7 @@ FreeNCode (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_Ncode node ..."));
 
     NCODE_CBLOCK (arg_node) = FREETRAV (NCODE_CBLOCK (arg_node));
-    NCODE_CEXPR (arg_node) = FREETRAV (NCODE_CEXPR (arg_node));
+    NCODE_CEXPRS (arg_node) = FREETRAV (NCODE_CEXPRS (arg_node));
 
     NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2003/12/23 10:43:58  khf
+ * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
+ * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
+ * MakeNCodeExprs for expr from type N_exprs added.
+ *
  * Revision 3.84  2003/11/18 16:46:06  dkr
  * DupNwithop(): NWITHOP_DEFAULT added
  *
@@ -1856,6 +1861,8 @@ DupNwithop (node *arg_node, node *arg_info)
         break;
     }
 
+    NWITHOP_NEXT (new_node) = DUPCONT (NWITHOP_NEXT (arg_node));
+
 #if 0
   NWITHOP_MASK( new_node, ?) = ???;
 #endif
@@ -1899,8 +1906,8 @@ DupNcode (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupNcode");
 
-    new_node
-      = MakeNCode (DUPTRAV (NCODE_CBLOCK (arg_node)), DUPTRAV (NCODE_CEXPR (arg_node)));
+    new_node = MakeNCodeExprs (DUPTRAV (NCODE_CBLOCK (arg_node)),
+                               DUPTRAV (NCODE_CEXPRS (arg_node)));
 
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);

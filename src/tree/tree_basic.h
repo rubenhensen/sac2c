@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.176  2003/12/23 10:43:58  khf
+ * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
+ * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
+ * MakeNCodeExprs for expr from type N_exprs added.
+ *
  * Revision 3.175  2003/11/18 16:51:44  dkr
  * definition of NWITHOP_TYPE modified to please sun-CC
  *
@@ -3736,6 +3741,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    node*  DEFAULT   ("N_expr": N_array, N_id)  (iff TYPE == WO_genarray)
  ***    node*  ARRAY     ("N_expr": N_array, N_id)  (iff TYPE == WO_modarray)
  ***    node*  NEUTRAL   ("N_expr")                 (otherwise)
+ ***    node*  NEXT      (N_Nwithop)
  ***
  ***  permanent attributes:
  ***
@@ -3766,8 +3772,9 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 #define NWITHOP_DEFAULT(n) ((n)->node[1])
 #define NWITHOP_ARRAY(n) ((n)->node[0])
 #define NWITHOP_NEUTRAL(n) ((n)->node[0])
-#define NWITHOP_EXPR(n) ((n)->node[2])
-#define NWITHOP_FUNDEF(n) ((n)->node[3])
+#define NWITHOP_NEXT(n) ((n)->node[2])
+#define NWITHOP_EXPR(n) ((n)->node[3])
+#define NWITHOP_FUNDEF(n) ((n)->node[4])
 #define NWITHOP_MASK(n, x) ((n)->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -3778,7 +3785,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***  sons:
  ***
  ***    node*      CBLOCK    (O) (N_block)
- ***    node*      CEXPR         ("N_expr")
+ ***    node*      CEXPRS        (N_exprs)
  ***    node*      NEXT      (O) (N_Ncode)
  ***
  ***  permanent attributes:
@@ -3831,8 +3838,11 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 
 extern node *MakeNCode (node *block, node *expr);
 
+/* only if expr is from type N_exprs */
+extern node *MakeNCodeExprs (node *block, node *exprs);
+
 #define NCODE_CBLOCK(n) ((n)->node[0])
-#define NCODE_CEXPR(n) ((n)->node[1])
+#define NCODE_CEXPRS(n) ((n)->node[1])
 #define NCODE_NEXT(n) ((n)->node[2])
 #define NCODE_INC_RC_IDS(n) ((ids *)((n)->dfmask[0]))
 #define NCODE_USE(n) ((n)->node[3])
