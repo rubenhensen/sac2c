@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/05 15:39:56  dkr
+ * PREC1code added
+ *
  * Revision 3.8  2001/03/02 16:10:11  dkr
  * generation of individual pseudo fold-funs done in PREC1withop now
  *
@@ -164,6 +167,8 @@
  *     abstractions.
  *   - For each with-loop a unique and adjusted dummy fold-function is
  *     generated.
+ *   - It is checked whether NCODE_CEXPR is identical for all N_Ncode nodes
+ *     of a single with-loop.
  * Things done during second traversal:
  *   - Artificial arguments and return values are removed.
  *   - All names and identifiers are renamed in order to avoid name clashes.
@@ -653,6 +658,8 @@ PREC1with2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREC1with2");
 
+    INFO_PREC1_CEXPR (arg_info) = NULL;
+
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
@@ -727,6 +734,52 @@ PREC1withop (node *arg_node, node *arg_info)
         FUNDEF_NEXT (NWITHOP_FUNDEF (arg_node)) = new_foldfun;
 
         NWITHOP_FUNDEF (arg_node) = new_foldfun;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC1code( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   New, unique and adjusted pseudo fold-funs are created.
+ *
+ ******************************************************************************/
+
+node *
+PREC1code (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC1code");
+
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (NCODE_CEXPR (arg_node) != NULL) {
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    }
+
+    if (INFO_PREC1_CEXPR (arg_info) != NULL) {
+        DBUG_ASSERT (((NODE_TYPE (INFO_PREC1_CEXPR (arg_info)) == N_id)
+                      && (NODE_TYPE (NCODE_CEXPR (arg_node)) == N_id)),
+                     "NCODE_CEXPR must be a N_id node!");
+
+#if 0
+    DBUG_ASSERT( (! strcmp( ID_NAME( INFO_PREC1_CEXPR( arg_info)),
+                            ID_NAME( NCODE_CEXPR( arg_node)))),
+                 "Not all NCODE_CEXPR nodes of the with-loop contain"
+                 " the same names!\n"
+                 "This is probably due to an error during un-SSA.");
+#endif
+    } else {
+        INFO_PREC1_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
