@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.18  2000/02/04 16:50:20  cg
  * Changed setting of cache sizes from a KB representation to bytes.
  * Added MSCA (memory size cache adjustment)
@@ -712,7 +718,8 @@ GSCfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_STATUS (arg_node) == ST_regular)
         /*      || (FUNDEF_STATUS(arg_node) == ST_foldfun) */
-        || ((FUNDEF_STATUS (arg_node) == ST_imported)
+        || (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
+             || (FUNDEF_STATUS (arg_node) == ST_imported_class))
             && (FUNDEF_BODY (arg_node) != NULL))) {
         /*
          * Here, we want to check all functions which may contain an SPMD-block.

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.2  1999/06/24 15:31:29  sbs
  * Due to the implicit filename-adjustment in Trav, instead of creating
  * file.dec files, file.sac was destroyed if file.dec was not yet
@@ -360,7 +366,8 @@ CDECtypedef (node *arg_node, node *arg_info)
             }
 
         } else {
-            if (TYPEDEF_STATUS (tdef) == ST_imported) {
+            if ((TYPEDEF_STATUS (tdef) == ST_imported_mod)
+                || (TYPEDEF_STATUS (tdef) == ST_imported_class)) {
                 ERROR (NODE_LINE (arg_node),
                        ("Implementation of implicit type '%s` missing",
                         ItemName (arg_node)));
@@ -379,7 +386,8 @@ CDECtypedef (node *arg_node, node *arg_info)
             WARN (NODE_LINE (arg_node),
                   ("Implementation of explicit type '%s` missing", ItemName (arg_node)));
         } else {
-            if (TYPEDEF_STATUS (tdef) == ST_imported) {
+            if ((TYPEDEF_STATUS (tdef) == ST_imported_mod)
+                || (TYPEDEF_STATUS (tdef) == ST_imported_class)) {
                 ERROR (NODE_LINE (arg_node),
                        ("Implementation of explicit type '%s` missing",
                         ItemName (arg_node)));
@@ -447,7 +455,8 @@ CDECobjdef (node *arg_node, node *arg_info)
         ERROR (NODE_LINE (arg_node),
                ("Implementation of global object '%s` missing", ItemName (arg_node)));
     } else {
-        if (TYPEDEF_STATUS (odef) == ST_imported) {
+        if ((TYPEDEF_STATUS (odef) == ST_imported_mod)
+            || (TYPEDEF_STATUS (odef) == ST_imported_class)) {
             ERROR (NODE_LINE (arg_node),
                    ("Implementation of global object '%s` missing", ItemName (arg_node)));
         } else {
@@ -500,7 +509,8 @@ CDECfundef (node *arg_node, node *arg_info)
                                       "or type mismatch in arguments",
                                       ItemName (arg_node)));
     } else {
-        if (FUNDEF_STATUS (fundef) == ST_imported) {
+        if ((FUNDEF_STATUS (fundef) == ST_imported_mod)
+            || (FUNDEF_STATUS (fundef) == ST_imported_class)) {
             ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing "
                                           "or type mismatch in arguments",
                                           ItemName (arg_node)));

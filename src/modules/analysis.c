@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.2  2000/02/23 10:07:56  dkr
  * cond-, do- and while-dummy-functions are now traversed, too.
  *
@@ -118,7 +124,9 @@ FindAllNeededObjects (node *arg_node)
       || ((FUNDEF_STATUS(arg_node)==ST_objinitfun)
           && (FUNDEF_BODY(arg_node)!=NULL))) {
 #endif
-    if ((FUNDEF_STATUS (arg_node) != ST_imported) && (FUNDEF_BODY (arg_node) != NULL)) {
+    if ((FUNDEF_STATUS (arg_node) != ST_imported_mod)
+        && (FUNDEF_STATUS (arg_node) != ST_imported_class)
+        && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
          *  For each not imported function the list of called functions
          *  is traversed.
@@ -215,11 +223,9 @@ ANAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAfundef");
 
-#if 0
-  if ((FUNDEF_STATUS( arg_node) == ST_regular) ||
-     ((FUNDEF_STATUS( arg_node) == ST_objinitfun) && (FUNDEF_BODY( arg_node) != NULL))) {
-#endif
-    if ((FUNDEF_STATUS (arg_node) != ST_imported) && (FUNDEF_BODY (arg_node) != NULL)) {
+    if ((FUNDEF_STATUS (arg_node) != ST_imported_mod)
+        && (FUNDEF_STATUS (arg_node) != ST_imported_class)
+        && (FUNDEF_BODY (arg_node) != NULL)) {
         Trav (FUNDEF_BODY (arg_node), arg_node);
         FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }

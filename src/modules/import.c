@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.2  1999/05/06 15:38:46  sbs
  * call of yyparse changed to My_yyparse.
  *
@@ -456,7 +462,7 @@ InsertClassType (node *classdec)
       = CLASSDEC_ISEXTERNAL (classdec) ? NULL : StringCopy (classdec->info.fun_name.id);
 
     tmp->info.types->attrib = ST_unique;
-    tmp->info.types->status = ST_imported;
+    tmp->info.types->status = ST_imported_class;
     tmp->lineno = 0;
 
     explist = classdec->node[0];

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.49  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.48  2000/02/23 14:06:32  dkr
  * superfluous indentation of loop- and cond-bodies removed
  *
@@ -1071,7 +1077,9 @@ PrintObjdef (node *arg_node, node *arg_info)
         Trav (OBJDEF_ICM (arg_node), arg_info);
         fprintf (outfile, "\n");
     } else {
-        if ((OBJDEF_STATUS (arg_node) == ST_imported) || print_objdef_for_header_file) {
+        if ((OBJDEF_STATUS (arg_node) == ST_imported_mod)
+            || (OBJDEF_STATUS (arg_node) == ST_imported_class)
+            || print_objdef_for_header_file) {
             fprintf (outfile, "extern ");
         }
 

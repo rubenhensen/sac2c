@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.19  1999/06/02 09:46:31  jhs
  * Fixed a bug in FltnArray occuring when a constant array was nested
  * somehow in a non-constant one (e.g. in a primitive function) and the
@@ -577,7 +583,8 @@ FltnFundef (node *arg_node, node *arg_info)
      * A new temp variable __flat42 may conflict with __flat42 which was
      * inserted in the first flatten phase (module compiliation).
      */
-    if (FUNDEF_BODY (arg_node) && ST_imported != FUNDEF_STATUS (arg_node)) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (ST_imported_mod != FUNDEF_STATUS (arg_node))
+        && (ST_imported_class != FUNDEF_STATUS (arg_node))) {
         DBUG_PRINT ("FLATTEN", ("flattening function %s:", FUNDEF_NAME (arg_node)));
         if (FUNDEF_ARGS (arg_node)) {
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);

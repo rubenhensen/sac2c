@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.34  2000/02/23 17:27:01  cg
  * The entry TYPES_TDEF of the TYPES data structure now contains a
  * reference to the corresponding N_typedef node for all user-defined
@@ -2529,7 +2535,8 @@ CheckRest (node *arg_node, int kind)
         switch (fun_p->tag) {
         case NOT_CHECKED: {
             if ((fun_p->n_dub == max_overload)
-                && (FUNDEF_STATUS (fun_p->node) != ST_imported)
+                && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
+                && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
                 && (FUNDEF_STATUS (fun_p->node) != ST_objinitfun)
                 && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
                 WARN (NODE_LINE (fun_p->node),
@@ -3273,7 +3280,8 @@ Typecheck (node *arg_node)
                 DBUG_ASSERT (N_fundef == NODE_TYPE (fun_p->node),
                              ("wrong node in fun_table"));
                 if ((FUNDEF_BODY (fun_p->node) != NULL)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_imported)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
                     && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
                     /*
                      * When typechecking a module/class implementation, we cannot simply
@@ -4493,7 +4501,10 @@ TCfundef (node *arg_node, node *arg_info)
     ABORT_ON_ERROR;
 
     /* set global variable 'imported_fun' */
-    imported_fun = (ST_imported == FUNDEF_STATUS (arg_node)) ? IMPORTED : NOT_IMPORTED;
+    imported_fun = ((ST_imported_mod == FUNDEF_STATUS (arg_node))
+                    || (ST_imported_class == FUNDEF_STATUS (arg_node)))
+                     ? IMPORTED
+                     : NOT_IMPORTED;
 
     info_node = MakeNode (N_info);
     info_node->node[0] = MakeNode (N_ok); /* status 0 = beginning of function */
@@ -5841,7 +5852,8 @@ TI_ap (node *arg_node, node *arg_info)
 
                 if (FUNDEF_INLINE (fun_p->node) == 1)
                     funtypemask = funtypemask | INL_FUN;
-                if (FUNDEF_STATUS (fun_p->node) == ST_imported)
+                if ((FUNDEF_STATUS (fun_p->node) == ST_imported_mod)
+                    || (FUNDEF_STATUS (fun_p->node) == ST_imported_class))
                     funtypemask = funtypemask | LIB_FUN;
                 if (FUNDEF_ATTRIB (fun_p->node) == ST_generic)
                     funtypemask = funtypemask | OVRLD_FUN;

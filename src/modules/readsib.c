@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.3  1999/05/18 11:22:19  cg
  * Unfortunately, if tar fails, it does NOT produce an error condition.
  * So, we have to check whether extracted files actually exist after the
@@ -978,7 +984,8 @@ RSIBfundef (node *arg_node, node *arg_info)
         sib = FUNDEF_SIB (arg_node);
         FUNDEF_SIB (arg_node) = NULL;
     } else {
-        if ((FUNDEF_STATUS (arg_node) == ST_imported)
+        if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
+             || (FUNDEF_STATUS (arg_node) == ST_imported_class))
             && (FUNDEF_MOD (arg_node) != NULL)) {
             sib = FindSib (FUNDEF_MOD (arg_node));
         }
@@ -1112,7 +1119,8 @@ RSIBobjdef (node *arg_node, node *arg_info)
         sib = OBJDEF_SIB (arg_node);
         OBJDEF_SIB (arg_node) = NULL;
     } else {
-        if ((OBJDEF_STATUS (arg_node) == ST_imported)
+        if (((OBJDEF_STATUS (arg_node) == ST_imported_mod)
+             || (OBJDEF_STATUS (arg_node) == ST_imported_class))
             && (OBJDEF_MOD (arg_node) != NULL)) {
             sib = FindSib (OBJDEF_MOD (arg_node));
         }

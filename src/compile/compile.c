@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.46  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.45  2000/02/23 17:47:34  cg
  * Header file refcount.h no longer included.
  * Type property functions IsUnique(<type>), IsBoxed(<type>)
@@ -5198,7 +5204,8 @@ COMPObjdef (node *arg_node, node *arg_info)
 
         MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (TYPES_DIM (full_type)));
 
-        if (OBJDEF_STATUS (arg_node) == ST_imported) {
+        if ((OBJDEF_STATUS (arg_node) == ST_imported_mod)
+            || (OBJDEF_STATUS (arg_node) == ST_imported_class)) {
             ICM_NAME (icm) = "ND_KD_DECL_EXTERN_ARRAY";
         } else {
             ICM_NAME (icm) = "ND_KS_DECL_GLOBAL_ARRAY";

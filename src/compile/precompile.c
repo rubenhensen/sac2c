@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.5  2000/02/23 17:47:34  cg
  * Header file refcount.h no longer included.
  * Type property functions IsUnique(<type>), IsBoxed(<type>)
@@ -652,7 +658,8 @@ PRECfundef (node *arg_node, node *arg_info)
     /*
      *  The body of an imported inline function is removed.
      */
-    if ((FUNDEF_STATUS (arg_node) == ST_imported)
+    if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
+         || (FUNDEF_STATUS (arg_node) == ST_imported_class))
         && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
         FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
         FUNDEF_RETURN (arg_node) = NULL;

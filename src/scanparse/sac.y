@@ -3,6 +3,12 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/02/23 20:16:34  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.16  2000/01/07 13:04:53  dkr
  * tabs in source code replaced by spaces
  *
@@ -345,6 +351,12 @@ static node *store_wlcomp_pragma_global=NULL;
 /* which are parsed with this single parser          */
 
 static file_type file_kind = F_prog;
+
+static statustype sib_imported_status;
+/*
+ * This variable is used to easily distinguish between modules and
+ * classes when parsing a SIB.
+ */
 
 extern node *Append(node *target_node, node *append_node);
 extern node *string2array(char *str);
@@ -734,7 +746,7 @@ imptype: id SEMIC pragmas
              $$->info.types->id=$1;
              $$->info.types->id_mod=mod_name;
              $$->info.types->id_cmod=link_mod_name;
-             $$->info.types->status=ST_imported;
+             $$->info.types->status=file_kind==F_moddec ? ST_imported_mod : ST_imported_class;
              TYPEDEF_PRAGMA($$)=$3;
               
              DBUG_PRINT("GENTREE",
@@ -757,7 +769,7 @@ exptype: id LET type SEMIC pragmas
              $$->info.types->id=$1;
              $$->info.types->id_mod=mod_name;
              $$->info.types->id_cmod=link_mod_name;
-             $$->info.types->status=ST_imported;
+             $$->info.types->status=file_kind==F_moddec ? ST_imported_mod : ST_imported_class;
              TYPEDEF_PRAGMA($$)=$5;
 
              DBUG_PRINT("GENTREE",
@@ -780,7 +792,7 @@ objdec: type id SEMIC pragmas
             $$->info.types->id=$2;              /* object name */
             $$->info.types->id_mod=mod_name;    /* SAC module name */
             $$->info.types->id_cmod=link_mod_name; /* external module name */
-            $$->info.types->status=ST_imported;
+            $$->info.types->status=file_kind==F_moddec ? ST_imported_mod : ST_imported_class;
             $$->node[1]=NULL;  /* there is no object init here! */
             OBJDEF_PRAGMA($$)=$4;
              
@@ -807,7 +819,7 @@ fundec: varreturntypes id BRACKET_L fundec2
             $$->info.types->id=$2; /* function name */
             $$->info.types->id_mod=mod_name;    /* SAC modul name */
             $$->info.types->id_cmod=link_mod_name; /* external modul name */
-            $$->info.types->status=ST_imported;
+            $$->info.types->status=file_kind==F_moddec ? ST_imported_mod : ST_imported_class;
             
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
@@ -833,7 +845,7 @@ fundec: varreturntypes id BRACKET_L fundec2
               $$->info.types->id_mod=mod_name;    /* SAC module name */
               $$->info.types->id_cmod=link_mod_name; 
                                                   /* external module name */
-              $$->info.types->status=ST_imported;
+              $$->info.types->status=file_kind==F_moddec ? ST_imported_mod : ST_imported_class;
                 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT" Id: %s"P_FORMAT", NULL body,  %s"
@@ -2339,16 +2351,36 @@ sib: sibheader siblinkwith sibtypes
        }
    ;
 
-sibheader: LT id GT
+sibheader: LT MODIMP id GT
              {
-               mod_name=$2;
+               mod_name=$3;
                file_kind=F_sib;
+               sib_imported_status=ST_imported_mod;
+               
                $$=0;
              }
-         | LT id COLON ALL GT
+         | LT MODIMP id COLON ALL GT
              {
-               mod_name=$2;
+               mod_name=$3;
                file_kind=F_sib;
+               sib_imported_status=ST_imported_mod;
+
+               $$=1;
+             }
+         | LT CLASSIMP id GT
+             {
+               mod_name=$3;
+               file_kind=F_sib;
+               sib_imported_status=ST_imported_class;
+
+               $$=0;
+             }
+         | LT CLASSIMP id COLON ALL GT
+             {
+               mod_name=$3;
+               file_kind=F_sib;
+               sib_imported_status=ST_imported_class;
+
                $$=1;
              }
          ;
@@ -2407,7 +2439,7 @@ sibtypes: sibtype sibtypes
 sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
            {
              $$=MakeTypedef($4, NULL, $3, $1, NULL);
-             TYPEDEF_STATUS($$)=ST_imported;
+             TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$6;
 
             DBUG_PRINT("GENSIB",
@@ -2418,7 +2450,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
        | sibevclass TYPEDEF type id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4, $3, $1, NULL);
-             TYPEDEF_STATUS($$)=ST_imported;
+             TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$8;
 
             DBUG_PRINT("GENSIB",
@@ -2431,7 +2463,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
              $$=MakeTypedef($4, NULL,
                             MakeType(T_hidden, 0, NULL, NULL, NULL),
                             $1, NULL);
-             TYPEDEF_STATUS($$)=ST_imported;
+             TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$6;
 
             DBUG_PRINT("GENSIB",
@@ -2444,7 +2476,7 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
              $$=MakeTypedef($6, $4,
                             MakeType(T_hidden, 0, NULL, NULL, NULL),
                             $1, NULL);
-             TYPEDEF_STATUS($$)=ST_imported;
+             TYPEDEF_STATUS($$)=sib_imported_status;
              TYPEDEF_PRAGMA($$)=$8;
 
             DBUG_PRINT("GENSIB",
@@ -2474,7 +2506,7 @@ sibobj: OBJDEF type id SEMIC sibpragmas
           {
             $$=MakeObjdef($3, NULL, $2, NULL, NULL);
             OBJDEF_PRAGMA($$)=$5;
-            OBJDEF_STATUS($$)=ST_imported;
+            OBJDEF_STATUS($$)=sib_imported_status;
             
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
@@ -2485,7 +2517,7 @@ sibobj: OBJDEF type id SEMIC sibpragmas
           {
             $$=MakeObjdef($5, $3, $2, NULL, NULL);
             OBJDEF_PRAGMA($$)=$7;
-            OBJDEF_STATUS($$)=ST_imported;
+            OBJDEF_STATUS($$)=sib_imported_status;
             
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
@@ -2513,11 +2545,11 @@ sibfun: sibevmarker varreturntypes fun_name
             switch ($1)
             {
             case 0:
-              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_STATUS($$)=sib_imported_status;
               FUNDEF_INLINE($$)=0;
               break;
             case 1:
-              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_STATUS($$)=sib_imported_status;
               FUNDEF_INLINE($$)=1;
               break;
             case 2:
@@ -2538,11 +2570,11 @@ sibfun: sibevmarker varreturntypes fun_name
             switch ($1)
             {
             case 0:
-              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_STATUS($$)=sib_imported_status;
               FUNDEF_INLINE($$)=0;
               break;
             case 1:
-              FUNDEF_STATUS($$)=ST_imported;
+              FUNDEF_STATUS($$)=sib_imported_status;
               FUNDEF_INLINE($$)=1;
               break;
             case 2:
@@ -2685,7 +2717,7 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                    $$=MakeFundef($1, NULL,
                                  MakeType(T_unknown, 0, NULL, NULL, NULL),
                                  $3, NULL, NULL);
-                   FUNDEF_STATUS($$)=ST_imported;
+                   FUNDEF_STATUS($$)=sib_imported_status;
                    
                    DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibNeedFun %s",
                                        mdb_nodetype[$$->nodetype],$$,
@@ -2697,7 +2729,7 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                                  MakeType(T_unknown, 0, NULL, NULL, NULL),
                                  $5, NULL, NULL);
 
-                   FUNDEF_STATUS($$)=ST_imported;
+                   FUNDEF_STATUS($$)=sib_imported_status;
                    
                    DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibNeedFun %s",
                                        mdb_nodetype[$$->nodetype],$$,
