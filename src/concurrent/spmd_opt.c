@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/02/22 11:36:00  jhs
+ * Adapted NODE_TEXT.
+ *
  * Revision 2.12  2000/01/26 17:24:51  dkr
  * type of traverse-function-table changed.
  *
@@ -428,8 +431,8 @@ SPMDOassign (node *arg_node, node *arg_info)
     INFO_SPMDO_THISASSIGN (arg_info) = arg_node;
     INFO_SPMDO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
-    DBUG_PRINT ("SPMDO", ("SPMDOassign trav into instr %s",
-                          mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))]));
+    DBUG_PRINT ("SPMDO",
+                ("SPMDOassign trav into instr %s", NODE_TEXT (ASSIGN_INSTR (arg_node))));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     /*
      *  NEXT might have changed during traversal of instruction!

@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/02/22 11:36:00  jhs
+ * Adapted NODE_TEXT.
+ *
  * Revision 2.8  2000/02/02 12:28:38  jhs
- * Fixex compare.
+ * Fixed compare.
  *
  * Revision 2.7  1999/08/27 11:56:12  jhs
  * Brushed code. Added handling of do loops. Corrected pulling spmd-blocks
@@ -338,16 +341,16 @@ SPMDIassign (node *arg_node, node *arg_info)
               = INFO_SPMDI_EXPANDCONTEXT (arg_info) && pullable;
 
             DBUG_PRINT ("SPMDI", ("ignoring traversal of %s; step %i; context %i",
-                                  mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))],
+                                  NODE_TEXT (ASSIGN_INSTR (arg_node)),
                                   INFO_SPMDI_EXPANDSTEP (arg_info),
                                   INFO_SPMDI_EXPANDCONTEXT (arg_info)));
         } else {
             DBUG_PRINT ("SPMDI", ("ignoring traversal of %s",
-                                  mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))]));
+                                  NODE_TEXT (ASSIGN_INSTR (arg_node))));
         } /* if (optimize & OPT_MTI) */
     } else {
         DBUG_PRINT ("SPMDI", ("traverse into instruction %s",
-                              mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))]));
+                              NODE_TEXT (ASSIGN_INSTR (arg_node))));
 
         if (optimize & OPT_MTI) {
             dummy = NODE_TYPE (ASSIGN_INSTR (arg_node));
@@ -430,7 +433,7 @@ SPMDIassign (node *arg_node, node *arg_info)
         } /* if (optimize & OPT_MTI) */
 
         DBUG_PRINT ("SPMDI", ("traverse from instruction %s",
-                              mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))]));
+                              NODE_TEXT (ASSIGN_INSTR (arg_node))));
     }
 
     if (optimize & OPT_MTI) {
@@ -465,9 +468,8 @@ SPMDIassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("SPMDI",
                     ("context %s; instr %s; << %i; >> %i; step %i; context %i",
                      mdb_nodetype[INFO_SPMDI_CONTEXT (arg_info)],
-                     mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))],
-                     INFO_SPMDI_LASTSPMD (arg_info), INFO_SPMDI_NEXTSPMD (arg_info),
-                     INFO_SPMDI_EXPANDSTEP (arg_info),
+                     NODE_TEXT (ASSIGN_INSTR (arg_node)), INFO_SPMDI_LASTSPMD (arg_info),
+                     INFO_SPMDI_NEXTSPMD (arg_info), INFO_SPMDI_EXPANDSTEP (arg_info),
                      INFO_SPMDI_EXPANDCONTEXT (arg_info)));
 
         if (INFO_SPMDI_CONTEXT (arg_info) == N_fundef) {
