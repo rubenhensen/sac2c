@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/01/16 11:00:29  asi
+ * Revision 1.30  1995/01/16 17:26:38  asi
+ * Added PrintMask to PrintDo and PrintWhile
+ *
+ * Revision 1.29  1995/01/16  11:00:29  asi
  * decleration of print_tab removed, no longer needed
  *
  * Revision 1.28  1995/01/12  13:16:34  asi
@@ -505,7 +508,9 @@ PrintDo (node *arg_node, node *arg_info)
         Trav (arg_node->node[1], arg_info); /* traverse body of loop */
         indent--;
     }
-
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
+                  DBUG_PRINT ("MASK", ("Used Variables (do-cnd) : %s", text));
+                  free (text););
     INDENT;
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
@@ -529,6 +534,10 @@ node *
 PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
+
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1]);
+                  DBUG_PRINT ("MASK", ("Used Variables (while-cnd) : %s", text));
+                  free (text););
 
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
