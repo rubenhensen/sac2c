@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/02/23 12:59:21  cg
+ * Bug fixed in separation of function definitions and declarations.
+ *
  * Revision 3.11  2004/02/20 08:28:48  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -179,7 +182,7 @@ MapSpecialized2Generic (node *spec_fundef, node *arg_info)
     DBUG_ENTER ("MapSpecialized2Generic");
 
     gen_fundef = NULL;
-    fundef = MODUL_FUNDECS (INFO_IMPSPEC_MODUL (arg_info));
+    fundef = MODUL_FUNS (INFO_IMPSPEC_MODUL (arg_info));
     while (fundef) {
         if (isSpecialization (FUNDEF_NAME (spec_fundef), FUNDEF_ARGS (spec_fundef),
                               FUNDEF_TYPES (spec_fundef), FUNDEF_NAME (fundef),
