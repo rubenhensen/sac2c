@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/02/25 15:08:42  dkr
+ * some comments changed
+ *
  * Revision 1.20  2000/02/24 15:54:34  dkr
  * RETURN_INWITH removed
  * (needed for old with-loop only, therefore obsolete now)
@@ -3153,7 +3156,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***  sons:
  ***
  ***    node*      WITHID        (N_Nwithid)
- ***    node*      SEGS          (N_WLseg)
+ ***    node*      SEGS          (N_WLseg, N_WLsegVar)
  ***    node*      CODE          (N_Ncode)
  ***    node*      WITHOP        (N_Nwithop)
  ***
@@ -3170,15 +3173,14 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    ids*       DEC_RC_IDS         (wltransform -> compile )
+ ***    ids*       DEC_RC_IDS                     (wltransform -> compile )
  ***
- ***    bool (int) ISSCHEDULED        (new mt -> ...)
- ***                                   Signals whether any segment is
- ***                                   scheduled or not
+ ***    bool (int) ISSCHEDULED                    (new mt -> ...)
+ ***                       [Signals whether any segment is scheduled or not]
  ***
- ***    DFMmask_t  REUSE              (compile ! )
+ ***    DFMmask_t  REUSE                          (compile ! )
  ***
- ***    SCHsched_t SCHEDULING   (O)   (wltransform -> compile )
+ ***    SCHsched_t SCHEDULING   (O)               (wltransform -> compile )
  ***
  ***/
 
@@ -3313,7 +3315,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    int      INNERSTEP                 (wltransform -> compile )
+ ***    int      INNERSTEP                          (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3357,7 +3359,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    int      INNERSTEP                 (wltransform -> compile )
+ ***    int      INNERSTEP                           (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3402,9 +3404,9 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***  temporary attributes:
  ***
  ***    node*    PART         (part this stride is generated from)
- ***                                          (wltransform ! )
- ***    node*    MODIFIED                     (wltransform ! )
- ***    int      INNERSTEP                    (wltransform -> compile )
+ ***                                                 (wltransform ! )
+ ***    node*    MODIFIED                            (wltransform ! )
+ ***    int      INNERSTEP                           (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3449,7 +3451,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    node*   MODIFIED                      (wltransform ! )
+ ***    node*   MODIFIED                                (wltransform ! )
  ***
  ***  remarks:
  ***
@@ -3501,9 +3503,6 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***
- ***  remarks:
- ***
- ***    This node is not yet implemented.
  ***/
 
 extern node *MakeWLsegVar (int dims, node *contents, node *next);
@@ -3543,7 +3542,7 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    int      INNERSTEP                 (wltransform -> compile )
+ ***    int      INNERSTEP                           (wltransform -> compile )
  ***
  ***  remarks:
  ***
