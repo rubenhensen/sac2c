@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/10/19 10:06:42  cg
+ * Revision 1.8  1995/10/19 11:16:00  cg
+ * bug in macro AP_FUNDEF fixed.
+ *
+ * Revision 1.7  1995/10/19  10:06:42  cg
  * new slots for VARDEC nodes: VARDEC_STATUS and VARDEC_TYPEDEF
  *
  * Revision 1.6  1995/10/16  13:00:38  cg
@@ -858,7 +861,7 @@ extern node *MakeAp (char *name, char *mod, node *args);
 #define AP_NAME(n) (n->info.fun_name.id)
 #define AP_MOD(n) (n->info.fun_name.id_mod)
 #define AP_ARGS(n) (n->node[0])
-#define AP_FUNDEF(n) n->node[1])
+#define AP_FUNDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
