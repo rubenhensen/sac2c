@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1995/10/20 09:28:12  cg
+# Revision 1.12  1995/10/22 17:40:38  cg
+# make deps done and a bloody bug fixed.
+#
+# Revision 1.11  1995/10/20  09:28:12  cg
 # added analysis.c
 #
 # Revision 1.10  1995/10/08  11:29:54  sbs
@@ -41,7 +44,7 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../scanparse -I../print
 
-all: filemgr.o import.o sib.o implicittypes.o analysis.o
+all: filemgr.o import.o sib.o implicittypes.o analysis.o checkdec.o
 
 filemgr.o: filemgr.c
 	$(CC) -o filemgr.o -c filemgr.c $(INCS)
@@ -58,11 +61,16 @@ implicittypes.o: implicittypes.c
 analysis.o: analysis.c
 	$(CC) -o analysis.o -c analysis.c $(INCS)
 
+checkdec.o: checkdec.c
+	$(CC) -o checkdec.o -c checkdec.c $(INCS)
+
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) filemgr.o import.o sib.o implicittypes.o analysis.o *.bak
+	$(RM) filemgr.o import.o sib.o implicittypes.o analysis.o  \
+              checkdec.o *.bak
 
 
 
@@ -71,6 +79,11 @@ clean:
 analysis.o: ../../inc/dbug.h /usr/include/stdio.h ../global/types.h
 analysis.o: ../global/tree_basic.h ../global/tree_compound.h
 analysis.o: ../global/Error.h ../global/traverse.h
+checkdec.o: /usr/include/string.h /usr/include/sys/stdtypes.h
+checkdec.o: ../global/types.h ../global/tree_basic.h
+checkdec.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+checkdec.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+checkdec.o: import.h ../print/convert.h filemgr.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
 filemgr.o: filemgr.h
