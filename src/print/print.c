@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2003/05/22 01:10:32  ktr
+ * printArray now prints multidimensional N_array nodes correctly :)
+ *
  * Revision 3.134  2003/05/21 16:38:54  ktr
  * printArray now prints multidimensional N_array nodes.
  *
@@ -2495,14 +2498,20 @@ PrintArray (node *arg_node, node *arg_info)
     shpseg *old_print_shape_counter = INFO_PRINT_SHAPE_COUNTER (arg_info);
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        INFO_PRINT_DIM (arg_info) = ARRAY_DIM (arg_node);
+        INFO_PRINT_DIM (arg_info)
+          = ARRAY_DIM (arg_node)
+            - (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) == N_id
+                 ? ID_DIM (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))
+                 : 0);
+
         INFO_PRINT_SHAPE (arg_info) = ARRAY_SHPSEG (arg_node);
         INFO_PRINT_SHAPE_COUNTER (arg_info)
           = Array2Shpseg (CreateZeroVector (ARRAY_DIM (arg_node), T_int), NULL);
-        for (i = 0; i < ARRAY_DIM (arg_node); i++)
+
+        for (i = 0; i < INFO_PRINT_DIM (arg_info); i++)
             fprintf (outfile, "[ ");
         Trav (ARRAY_AELEMS (arg_node), arg_info);
-        for (i = 0; i < ARRAY_DIM (arg_node); i++)
+        for (i = 0; i < INFO_PRINT_DIM (arg_info); i++)
             fprintf (outfile, " ]");
     } else {
         fprintf (outfile, "[]");
@@ -2540,15 +2549,16 @@ PrintExprs (node *arg_node, node *arg_info)
     Trav (EXPRS_EXPR (arg_node), arg_info);
 
     if (EXPRS_NEXT (arg_node) != NULL) {
-        for (i = 0; (i < INFO_PRINT_DIM (arg_info))
-                    && (++SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i)
-                        >= SHPSEG_SHAPE (INFO_PRINT_SHAPE (arg_info), i));
-             i++)
+        for (i = INFO_PRINT_DIM (arg_info) - 1;
+             (i >= 0)
+             && (++SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i)
+                 >= SHPSEG_SHAPE (INFO_PRINT_SHAPE (arg_info), i));
+             i--)
             SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i) = 0;
-        for (j = 0; j < i; j++)
+        for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
             fprintf (outfile, " ]");
         fprintf (outfile, ", ");
-        for (j = 0; j < i; j++)
+        for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
             fprintf (outfile, "[ ");
         PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info), ;);
     }
