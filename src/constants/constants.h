@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/05 16:57:04  sbs
+ * COAdd, COSub, COMul, and CODiv added
+ *
  * Revision 1.1  2001/03/02 14:32:52  sbs
  * Initial revision
  *
@@ -88,5 +91,16 @@ extern constant *COReshape (constant *idx, constant *a);
 extern constant *COPsi (constant *idx, constant *a);
 extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
+
+/***
+ ***
+ *** value transforming operations implemented in constants_ari_ops.c:
+ ***
+ ***/
+
+extern constant *COAdd (constant *a, constant *b);
+extern constant *COSub (constant *a, constant *b);
+extern constant *COMul (constant *a, constant *b);
+extern constant *CODiv (constant *a, constant *b);
 
 #endif /* _constants_h */
