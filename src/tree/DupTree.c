@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2004/11/27 00:45:29  mwe
+ * interface changes
+ *
  * Revision 3.125  2004/11/26 18:22:05  mwe
  * DUPglobobj added
  *
@@ -2763,11 +2766,11 @@ DUPdoDupTree (node *arg_node)
 
 /* see comment above */
 node *
-DUPdoDupTreeSSA (node *arg_node, node *fundef)
+DUPdoDupTreeSsa (node *arg_node, node *fundef)
 {
     node *new_node;
 
-    DBUG_ENTER ("DUPdoTreeSSA");
+    DBUG_ENTER ("DUPdoTreeSsa");
 
     new_node = DupTreeOrNodeLutType (FALSE, arg_node, NULL, DUP_SSA, fundef);
 
