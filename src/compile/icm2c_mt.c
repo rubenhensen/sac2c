@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/19 10:06:23  cg
+ * minor bugs fixed
+ *
  * Revision 1.5  1998/05/19 09:20:26  cg
  * works with BEtest now.
  *
@@ -211,7 +214,7 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
     fprintf (outfile, "label_worker_continue_%d:\n", barrier_id);
 
     INDENT;
-    fprintf (outfile, "return(SAC_MT_worker_flag);\n");
+    fprintf (outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n");
 
     indent--;
     INDENT;
@@ -643,7 +646,7 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
 
             INDENT;
             fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, %s);\n", basetype,
-                     vararg[i + 2], vararg[i] + 5);
+                     vararg[i + 2], vararg[i] + 8);
 
             INDENT;
             fprintf (outfile, "SAC_MT_SPMD_ARG_inout_rc(%s, %s);\n", name, vararg[i + 2]);
