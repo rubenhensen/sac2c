@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1994/12/20 10:26:03  hw
+# Revision 1.12  1994/12/20 15:44:22  sbs
+# tree.c and free.c added.
+#
+# Revision 1.11  1994/12/20  10:26:03  hw
 # changed  -I/usr/local/lib/gcc-include to
 # -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 # make deps done
@@ -43,7 +46,7 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
-all: main.o Error.o traverse.o usage.o my_debug.o
+all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o
 
 main.o: main.c 
 	$(CC) -c main.c $(INCS)
@@ -60,6 +63,12 @@ usage.o: usage.c usage.h
 my_debug.o: my_debug.c
 	$(CC) -o my_debug.o -c my_debug.c $(INCS)
 
+tree.o: tree.c
+	$(CC) -o tree.o -c tree.c $(INCS)
+
+free.o: free.c
+	$(CC) -o free.o -c free.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
@@ -70,6 +79,8 @@ clean:
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 Error.o: Error.h ../../inc/dbug.h
+free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
+free.o: tree.h node_info.mac prf_node_info.mac
 main.o: ../../inc/main.h ../../inc/dbug.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
@@ -89,6 +100,7 @@ traverse.o: tree.h node_info.mac prf_node_info.mac Error.h ../../inc/dbug.h
 traverse.o: my_debug.h ../flatten/flatten.h ../print/print.h
 traverse.o: ../typecheck/typecheck.h ../optimize/optimize.h
 traverse.o: ../modules/import.h traverse.h
+tree.o: tree.h node_info.mac prf_node_info.mac
 usage.o: usage.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
