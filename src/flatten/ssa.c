@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/09/18 15:58:34  ktr
+ * added RestoreSSAExplicitAllocs
+ *
  * Revision 1.5  2004/08/08 16:05:08  sah
  * fixed some includes.
  *
@@ -218,6 +221,46 @@ RestoreSSAOneFundef (node *fundef)
     fundef = SSATransformOneFundef (fundef);
 
     DBUG_RETURN (fundef);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RestoreSSAExplicitAllocs(node *syntax_tree)
+ *
+ *   @brief  takes an Nmodul node and restores ssa-form
+ *
+ *   <pre>
+ *   1. Check for correct Avis nodes in vardec/arg nodes. All backrefs
+ *      from N_id or IDS structures are checked for consistent values.
+ *      This traversal is needed for compatiblity with old code without
+ *      knowledge of the avis nodes.
+ *   2. Transform code in SSA form.
+ *      Every variable has exaclty one definition.
+ *      After all the valid_ssaform flag is set to TRUE.
+ *   3. A difference is that it assumes the withid elements to be initialized
+ *      explicitlt BEFORE each WL. Therefore, SSAWithid has to behave
+ *      slightly different.
+ *
+ *   </pre>
+ *
+ *   @param syntax_tree  N_modul
+ *   @return syntax_tree in restored ssa-form
+ *
+ *****************************************************************************/
+
+node *
+RestoreSSAExplicitAllocs (node *syntax_tree)
+{
+    DBUG_ENTER ("RestoreSSAExplicitAllocs");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_modul,
+                 "RestoreSSAExplicitAllocs called without N_modul node.");
+
+    syntax_tree = CheckAvis (syntax_tree);
+
+    syntax_tree = SSATransformExplicitAllocs (syntax_tree);
+
+    DBUG_RETURN (syntax_tree);
 }
 
 /**
