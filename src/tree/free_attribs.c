@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/11/25 23:44:04  sbs
+ * FREEattribIndexInfo added.
+ *
  * Revision 1.14  2004/11/24 20:44:50  sah
  * COMPILES!
  *
@@ -790,6 +793,27 @@ FREEattribStringSet (stringset_t *attr)
     DBUG_ENTER ("FREEattribRCCounter");
 
     attr = STRSfree (attr);
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn index_info *FREEattribIndexInfo (index_info * attr)
+ *
+ * @brief Frees index_info attribute
+ *
+ * @param attr StringSet attrib to process
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+index_info *
+FREEattribIndexInfo (index_info *attr)
+{
+    DBUG_ENTER ("FREEattribIndexInfo");
+
+    attr = ILIBfree (attr);
 
     DBUG_RETURN (attr);
 }
