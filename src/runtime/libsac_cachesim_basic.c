@@ -1,6 +1,6 @@
 /*
  * $Log$
- * Revision 2.6  1999/04/26 11:42:50  her
+ * Revision 2.7  1999/04/26 11:55:34  her
  * modifications for the piped-cachesimulation
  *
  * Revision 2.5  1999/04/14 09:23:15  cg
@@ -468,6 +468,9 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
 
     if ((profilinglevel == SAC_CS_piped_simple)
         || (profilinglevel == SAC_CS_piped_advanced)) {
+        /* The CacheSimAnalyser must not get an profilinglevel
+         * like SAC_CS_piped_X!!!
+         */
         switch (profilinglevel) {
         case SAC_CS_piped_simple:
             transmitted_plevel = SAC_CS_simple;
