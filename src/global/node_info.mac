@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.79  1995/06/13 08:50:00  asi
- * added UNRdo, UNRwhile and UNRassign
+ * Revision 1.80  1995/06/23 12:22:46  hw
+ * added DubFundef & DupDec  to dup_tab
  *
+;; Revision 1.79  1995/06/13  08:50:00  asi
+;; added UNRdo, UNRwhile and UNRassign
+;;
 ;; Revision 1.78  1995/06/08  17:48:26  hw
 ;; -CompTypedef inserted
 ;;
@@ -304,15 +307,15 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
-       DummyFun, INLfundef, DummyFun, DummyFun, DummyFun2, DummyFun, DummyFun, DummyFun),
+       DupFundef, INLfundef, DummyFun, DummyFun, DummyFun2, DummyFun, DummyFun, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
-       DummyFun, INLvar, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+       DupDec, INLvar, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DEADblock,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, CompBlock, DummyFun, DupChain, INLblock,
        DummyFun, LIRMblock, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, FltnArgs, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
-       FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun, DummyFun, INLvar, DummyFun,
+       FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun, DupDec, INLvar, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
        DEADassign, DummyFun, FreeNoInfo, CFassign, RCassign, CompAssign, LIRassign,
