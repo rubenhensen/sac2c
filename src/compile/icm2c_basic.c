@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/24 16:02:28  jhb
+ * removed include NameTuples.h
+ *
  * Revision 1.24  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -76,7 +79,7 @@
 #include "dbug.h"
 #include "globals.h"
 #include "print.h"
-#include "NameTuples.h"
+/* #include "NameTuples.h" */
 #include "icm2c_utils.h"
 #include "icm2c_basic.h"
 
