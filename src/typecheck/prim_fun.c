@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/08/08 11:50:07  dkr
+ * definition of TT1, TT2, TT3 moved
+ *
  * Revision 2.16  2000/08/04 17:21:15  dkr
  * NEWTREE removed
  *
@@ -63,7 +66,7 @@
  * Revision 2.1  1999/02/23 12:40:48  sacbase
  * new release made
  *
- *   [...]
+ * [...]
  *
  * Revision 1.1  1995/02/03  07:45:32  hw
  * Initial revision
@@ -184,55 +187,6 @@ enum type_class {
     type->dim = KNOWN_DIM_OFFSET - 1;                                                    \
     DBUG_PRINT ("PRIM_FUN", ("param: int[.]" P_FORMAT, type))
 
-#define TT2(n, a, t1, t2, res)                                                           \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
-    arg1 = MakeNode (N_arg);                                                             \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    arg2 = MakeNode (N_arg);                                                             \
-    t2;                                                                                  \
-    arg2->info.types = type;                                                             \
-    arg1->node[0] = arg2;                                                                \
-    tmp_node->node[1]->node[2] = arg1;                                                   \
-    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
-    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
-    tmp_node = tmp_node->node[1];
-
-#define TT3(n, a, t1, t2, t3, res)                                                       \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
-    arg1 = MakeNode (N_arg);                                                             \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    arg2 = MakeNode (N_arg);                                                             \
-    t2;                                                                                  \
-    arg2->info.types = type;                                                             \
-    arg3 = MakeNode (N_arg);                                                             \
-    t3;                                                                                  \
-    arg3->info.types = type;                                                             \
-    arg2->node[0] = arg3;                                                                \
-    arg1->node[0] = arg2;                                                                \
-    tmp_node->node[1]->node[2] = arg1;                                                   \
-    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
-    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
-    tmp_node = tmp_node->node[1];
-
-#define TT1(n, a, t1, res)                                                               \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
-    arg1 = MakeNode (N_arg);                                                             \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    tmp_node->node[1]->node[2] = arg1;                                                   \
-    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
-    DBUG_PRINT ("PRIM_FUN", ("tc: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a));     \
-    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
-    DBUG_PRINT ("PRIM_FUN",                                                              \
-                ("tc: %d (%d), tag: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a,     \
-                 tmp_node->node[1]->info.prf_dec.tag, n));                               \
-    tmp_node = tmp_node->node[1];
-
 /* follwing macro is used to compare the the dimension of two types
  * especially for comparison of types with known dimension and unknown shape
  * like t[.,.] and types with known shape (and dimension) as t[2,3]
@@ -273,14 +227,9 @@ node *prim_fun_dec;
  *                  3) new tag of primitive function
  *  description   : generates an entry into the primitive function table
  *                  for each member of the type class (type_c)
- *  global vars   : prim_fun_p
- *  internal funs : ---
- *  external funs :
- *  macros        : DBUG...,GEN_PRIM_FUN_TAB_ELEM
- *
- *  remarks       :
  *
  */
+
 void
 GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
 {
@@ -393,12 +342,6 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
  *  arguments     :
  *  description   : generates for each entry (macro) of file "prim_fun_tt.mac"
  *                  a function declaration (N_fundef node)
- *  global vars   : prim_fun_dec
- *  internal funs : ---
- *  external funs : Malloc, free
- *  macros        : DBUG..., TT1, TT2, TT3
- *
- *  remarks       :
  *
  */
 void
@@ -411,6 +354,52 @@ InitPrimFunDeclarations ()
     prim_fun_dec = (node *)Malloc (sizeof (node));
     tmp_node = prim_fun_dec;
 
+#define TT1(n, a, t1, res)                                                               \
+    tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
+    arg1 = MakeNode (N_arg);                                                             \
+    t1;                                                                                  \
+    arg1->info.types = type;                                                             \
+    tmp_node->node[1]->node[2] = arg1;                                                   \
+    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
+    DBUG_PRINT ("PRIM_FUN", ("tc: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a));     \
+    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
+    DBUG_PRINT ("PRIM_FUN",                                                              \
+                ("tc: %d (%d), tag: %d (%d)", tmp_node->node[1]->info.prf_dec.tc, a,     \
+                 tmp_node->node[1]->info.prf_dec.tag, n));                               \
+    tmp_node = tmp_node->node[1];
+#define TT2(n, a, t1, t2, res)                                                           \
+    tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
+    arg1 = MakeNode (N_arg);                                                             \
+    t1;                                                                                  \
+    arg1->info.types = type;                                                             \
+    arg2 = MakeNode (N_arg);                                                             \
+    t2;                                                                                  \
+    arg2->info.types = type;                                                             \
+    arg1->node[0] = arg2;                                                                \
+    tmp_node->node[1]->node[2] = arg1;                                                   \
+    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
+    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
+    tmp_node = tmp_node->node[1];
+#define TT3(n, a, t1, t2, t3, res)                                                       \
+    tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
+    arg1 = MakeNode (N_arg);                                                             \
+    t1;                                                                                  \
+    arg1->info.types = type;                                                             \
+    arg2 = MakeNode (N_arg);                                                             \
+    t2;                                                                                  \
+    arg2->info.types = type;                                                             \
+    arg3 = MakeNode (N_arg);                                                             \
+    t3;                                                                                  \
+    arg3->info.types = type;                                                             \
+    arg2->node[0] = arg3;                                                                \
+    arg1->node[0] = arg2;                                                                \
+    tmp_node->node[1]->node[2] = arg1;                                                   \
+    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
+    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
+    tmp_node = tmp_node->node[1];
 #include "prim_fun_tt.mac"
 #undef TT1
 #undef TT2
@@ -468,6 +457,7 @@ InitPrimFunTab ()
  *  Shortcut for calling MakeType with last two arguments NULL.
  *  For further documentation see MakeType.
  */
+
 static types *
 MakeTypeNN (simpletype basetype, int dim, shpseg *shpseg)
 {
@@ -493,6 +483,7 @@ MakeTypeNN (simpletype basetype, int dim, shpseg *shpseg)
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 AxA (types *array1, types *array2, simpletype s_type)
 {
@@ -606,14 +597,10 @@ AxA (types *array1, types *array2, simpletype s_type)
  *                  2) N_prf node
  *  description   : returns the type of an array with shape of 1) and
  *                  simpletype T_int
- *  global vars   :
- *  internal funs :
- *  external funs : Malloc,
- *  macros        : DBUG..., GEN_TYPE_NODE
- *
  *  remarks       : is part of macro TT1 and is used in typecheck.c
  *
  */
+
 types *
 Shp (types *array)
 {
@@ -660,14 +647,10 @@ Shp (types *array)
  *                  elements of old and new array are equal
  *                  or returns T_unkown if not
  *
- *  global vars   :
- *  internal funs :
- *  external funs : Malloc
- *  macros        : DBUG...,  GEN_TYPE_NODE
- *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 Reshp (node *vec, types *array, types *shp_vec)
 {
@@ -816,14 +799,9 @@ Reshp (node *vec, types *array, types *shp_vec)
  *
  *  description   : computes the result-type of a 'take' or 'drop' operation,
  *                  whoes first argument is NOT a constant vector
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...,
- *
- *  remarks       :
  *
  */
+
 types *
 TakeDropV (types *vec_type, types *array_btype)
 {
@@ -960,14 +938,11 @@ TakeDropV (types *vec_type, types *array_btype)
  *
  *  description   : computes the resulttype of a 'take' operation, whoes
  *                  first argument was a constant vector
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., ERROR2, GEN_TYPE_NODE
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 TakeV (node *vec, types *vec_type, types *array)
 {
@@ -1155,15 +1130,11 @@ TakeV (node *vec, types *vec_type, types *array)
  *
  *  description   : computes the resulttype of a 'drop' operation, whoes
  *                  first argument was a constant vector
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...,  ERROR2, GEN_TYPE_NODE, FREE,
- *                   GET_BASIC_TYPE
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 DropV (node *vec, types *vec_type, types *array)
 {
@@ -1361,14 +1332,11 @@ DropV (node *vec, types *vec_type, types *array)
  *  arguments     : 1) type of index vector
  *                  2) type of an array
  *  description   : computes the resulttype of a 'psi' operation
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., GEN_TYPE_NOD
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 Psi (types *vec, types *array)
 {
@@ -1454,19 +1422,17 @@ Psi (types *vec, types *array)
  *  arguments     : 1) node to scalar
  *                  2) type of an array
  *                  3) tag
+ *
  *  description   : computes the resulttype of a 'take'or 'drop' operation,
  *                  whoes first argument is a constant scalar.
  *                  distinction between 'take' and 'drop' is made by 3)
  *                  3)==0 => take
  *                  3)==1 => drop
- *  global vars   :
- *  internal funs :
- *  external funs : Malloc
- *  macros        : DBUG..., GEN_TYPE_NODE, ERROR2
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 TakeDropS (node *s_node, types *array, int tag)
 {
@@ -1612,6 +1578,7 @@ TakeDropS (node *s_node, types *array, int tag)
  *                  1) has to be a N_num node
  *                  range of 1): 0 <= 1) < dim( 2)
  */
+
 types *
 Rot (node *s_node, types *array)
 {
@@ -1666,15 +1633,11 @@ Rot (node *s_node, types *array)
  *                  first argument is a constant scalar
  *                  if the 1) is not a scalar type T_unknown will be returned
  *
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., GEN_TYPE_NODE
- *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *                  the range of 1) is: 0 <= 1) < dim( 2) )
  *
  */
+
 types *
 Cat (node *s_node, types *array1, types *array2)
 {
@@ -1810,6 +1773,7 @@ Cat (node *s_node, types *array1, types *array2)
  *  remarks       : is part of macros TT1 & TT2 and is used in typecheck.c
  *
  */
+
 types *
 ConvertType (types *array1, simpletype s_type)
 {
@@ -1831,15 +1795,12 @@ ConvertType (types *array1, simpletype s_type)
  *  arguments     : 1) type of array to modify
  *                  2) type of access vector
  *                  3) type of new value
- *  description   :  returns the type 1)
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., GET_BASIC_TYPE
+ *  description   : returns the type 1)
  *
  *  remarks       : is part of macros TT1 & TT2 and is used in typecheck.c
  *
  */
+
 types *
 Modarray (types *array, types *vec, types *value, int line)
 {
@@ -1996,14 +1957,11 @@ Modarray (types *array, types *vec, types *value, int line)
  *  description   : computes the resulttype of a 'genarray' operation
  *                  whoes first argument is a constant vector (only if checking
  *                  SAC_PRGs).
- *  global vars   :
- *  internal funs :
- *  external funs : Malloc
- *  macros        : DBUG...,
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 Genarray_S (node *v_node, types *vec, types *scalar)
 {
@@ -2117,6 +2075,7 @@ Genarray_S (node *v_node, types *vec, types *scalar)
             }
         }
     }
+
     DBUG_RETURN (ret_type);
 }
 
@@ -2128,14 +2087,11 @@ Genarray_S (node *v_node, types *vec, types *scalar)
  *                  3) type of an array
  *  description   : computes the resulttype of a 'genarray' operation
  *                  whoes first argument is a constant vector.
- *  global vars   :
- *  internal funs :
- *  external funs : Malloc
- *  macros        : DBUG...,
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
+
 types *
 Genarray_A (node *v_node, types *vec, types *array)
 {
@@ -2230,5 +2186,6 @@ Genarray_A (node *v_node, types *vec, types *array)
         ABORT (NODE_LINE (v_node), ("Unknown modul type"));
         ret_type = NULL;
     }
+
     DBUG_RETURN (ret_type);
 }
