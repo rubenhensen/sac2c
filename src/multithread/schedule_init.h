@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/28 13:51:02  jhs
+ * Traversal is finished, pragma-schedulings can be used.
+ *
  * Revision 1.2  2000/01/24 18:24:21  jhs
  * Added some infrastructure ...
  *
@@ -14,10 +17,7 @@
  *
  * file:   schedule_init.h
  *
- * prefix:
- *
  * description:
- *
  *   header file for schedule_init.c
  *
  *****************************************************************************/

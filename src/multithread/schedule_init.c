@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/01/28 13:51:02  jhs
+ * Traversal is finished, pragma-schedulings can be used.
+ *
  * Revision 1.5  2000/01/26 17:25:31  dkr
  * type of traverse-function-table changed.
  *
@@ -39,6 +42,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "scheduling.h"
+#include "internal_lib.h"
 
 /******************************************************************************
  *
@@ -46,6 +50,7 @@
  *   node *ScheduleInit(node *arg_node, node *arg_info)
  *
  * description:
+ *   Call this function to run mini-phase schedule-init.
  *   Expects an N_fundef as arg_node!
  *
  ******************************************************************************/
@@ -53,26 +58,36 @@ node *
 ScheduleInit (node *arg_node, node *arg_info)
 {
     funtab *old_tab;
+    node *old_scheduling;
+    int old_innerwls;
 
     DBUG_ENTER ("ScheduleInit");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "ScheduleInit expects a N_fundef as arg_node");
 
-    NOTE (("ScheduleInit not implemented yet"));
+    DBUG_PRINT ("SCHIN", ("entering ScheduleInit"));
 
     old_tab = act_tab;
     act_tab = schin_tab;
 
-    /* push info */
+    /* pushing arg_info information */
+    old_scheduling = INFO_SCHIN_SCHEDULING (arg_info);
+    old_innerwls = INFO_SCHIN_INNERWLS (arg_info);
     INFO_SCHIN_SCHEDULING (arg_info) = NULL;
     INFO_SCHIN_INNERWLS (arg_info) = NULL;
 
-    NOTE (("before"));
+    DBUG_PRINT ("SCHIN", ("trav into fundef"));
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    NOTE (("after"));
+    DBUG_PRINT ("SCHIN", ("trav from fundef"));
+
+    /* poping arg_info_information */
+    INFO_SCHIN_SCHEDULING (arg_info) = old_scheduling;
+    INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
+
     act_tab = old_tab;
-    /* pop info */
+
+    DBUG_PRINT ("SCHIN", ("leaving ScheduleInit"));
 
     DBUG_RETURN (arg_node);
 }
@@ -80,7 +95,7 @@ ScheduleInit (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int WithLoopIsWorthConcurrentExecution(node *withloop, ids *let_var)
+ *   static int WithLoopIsWorthConcurrentExecution(node *withloop, ids *let_var)
  *
  * description:
  *   This function decides whether a with-loop is actually worth to be executed
@@ -93,7 +108,6 @@ ScheduleInit (node *arg_node, node *arg_info)
  *   concurrently (by WithLoopIsAllowedConcurrentExecution, see below).
  *
  ******************************************************************************/
-
 static int
 WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 {
@@ -127,7 +141,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
 /******************************************************************************
  *
  * function:
- *   int WithLoopIsAllowedConcurrentExecution(node *withloop)
+ *   static int WithLoopIsAllowedConcurrentExecution(node *withloop)
  *
  * description:
  *   This function decides whether a with-loop is actually allowed to be
@@ -139,7 +153,6 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
  *   concurrently (by WithLoopIsWorthConcurrentExecution, above).
  *
  ******************************************************************************/
-
 static int
 WithLoopIsAllowedConcurrentExecution (node *withloop)
 {
@@ -165,12 +178,11 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
 /******************************************************************************
  *
  * function:
- *   SCHsched_t MakeDefaultSchedulingConstSegment()
- *   SCHsched_t MakeDefaultSchedulingVarSegment()
- *   SCHsched_t MakeDefaultSchedulingWithloop()
+ *   static SCHsched_t MakeDefaultSchedulingConstSegment()
+ *   static SCHsched_t MakeDefaultSchedulingVarSegment()
+ *   static SCHsched_t MakeDefaultSchedulingWithloop()
  *
  * description:
- *
  *   These functions generate default schedulings for the three different
  *   scheduling cases. Their implementation is responsible for defining
  *   which kind of scheduling actually is the default and what the default
@@ -204,10 +216,9 @@ MakeDefaultSchedulingVarSegment ()
 /******************************************************************************
  *
  * function:
- *   SCHsched_t InferSchedulingConstSegment(node *wlseg, node *arg_info)
+ *   static SCHsched_t InferSchedulingConstSegment(node *wlseg, node *arg_info)
  *
  * description:
- *
  *   This function defines the inference strategy for the scheduling of
  *   constant segments.
  *
@@ -227,10 +238,9 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   SCHsched_t InferSchedulingVarSegment(node *wlsegvar, node *arg_info)
+ *   static SCHsched_t InferSchedulingVarSegment(node *wlsegvar, node *arg_info)
  *
  * description:
- *
  *   This function defines the inference strategy for the scheduling of
  *   variable segments.
  *
@@ -250,39 +260,57 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SCHINassign( node *arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Locks for let-assigments with a rhs with-loop,
+ *   Such a with-loop will be checked if allowed and worth for mt and not a
+ *   nested with-loop.
+ *   In any case the with-loop will be traversed, to find nested pragmas
+ *   in nested with-loops.
+ *   The flag INFO_SCHIN_ALLOWED says whether a with-loop will be executed
+ *   multithreaded.
+ *   While traversing the with-loop the Segments will be scheduled.
  *
  ******************************************************************************/
 node *
 SCHINassign (node *arg_node, node *arg_info)
 {
     node *let;
+    int old_allowed;
 
     DBUG_ENTER ("SCHINassign");
+
+    /* DBUG_PRINT( "SCHIN", ("assign reached")); */
 
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
         /* it is a let */
         let = ASSIGN_INSTR (arg_node);
+        /* DBUG_PRINT( "SCHIN", ("let found")); */
 
         if (NODE_TYPE (LET_EXPR (let)) == N_Nwith2) {
-
-            if ((WithLoopIsAllowedConcurrentExecution (LET_EXPR (let)))
+            /* DBUG_PRINT( "SCHIN", ("with found")); */
+            old_allowed = INFO_SCHIN_ALLOWED (arg_info);
+            if ((!(INFO_SCHIN_INNERWLS (arg_info)))
+                && (WithLoopIsAllowedConcurrentExecution (LET_EXPR (let)))
                 && (WithLoopIsWorthConcurrentExecution (LET_EXPR (let), LET_IDS (let)))) {
-                NOTE (("wl is allowed and worth mt"));
-
-                LET_EXPR (let) = Trav (LET_EXPR (let), arg_info);
-
+                DBUG_PRINT ("SCHIN", ("wl is allowed and worth mt"));
+                INFO_SCHIN_ALLOWED (arg_info) = TRUE;
             } else {
-                NOTE (("wl is not allowed or not worth mt"));
-                /* is a scheduling already annoteted? -> warning #### */
+                DBUG_PRINT ("SCHIN", ("wl is (inner or not-allowed-mt or not-worth-mt)"));
+                INFO_SCHIN_ALLOWED (arg_info) = FALSE;
             }
+            /*
+             *  in any case the expr will be traversed to find annotated pragmas
+             *  in inner-wls.
+             */
+            LET_EXPR (let) = Trav (LET_EXPR (let), arg_info);
+            INFO_SCHIN_ALLOWED (arg_info) = old_allowed;
         } else {
+            /* rhs is not a with: not of interest */
         }
-
     } else {
-        /* it is not a let */
+        /* assignment is not a let: not of interest */
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -295,9 +323,14 @@ SCHINassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SCHINnwith2( node* arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Checks if a given pragma-scheduling (if exists) can be propagated, saves
+ *   the information  about that in the arg_info, gives warnings if necessary,
+ *   because of nested with-loops etc.
+ *   Traverses Segments and Code of the with-loop afterwards to do propagation
+ *   and Scheduling of the with-loop.
  *
  ******************************************************************************/
 node *
@@ -307,22 +340,35 @@ SCHINnwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SCHINnwith2");
 
+    /* The next line is used to test propagation */
+    /* NWITH2_SCHEDULING( arg_node) = SCHMakeScheduling("Block"); */
+
     /*
      *  if a scheduling is annotated to a with-loop this scheduling will be
      *  propagated to the segments.
-     *  Schedulings of inner with-loops will be ignoreddd
+     *  Schedulings of inner with-loops will be ignored
      */
-    if (INFO_SCHIN_INNERWLS (arg_info) == FALSE) {
-        if (NWITH2_SCHEDULING (arg_node) != NULL) {
-            INFO_SCHIN_SCHEDULING (arg_info) = NWITH2_SCHEDULING (arg_info);
+    if (INFO_SCHIN_ALLOWED (arg_info)) {
+        if (!INFO_SCHIN_INNERWLS (arg_info)) {
+            if (NWITH2_SCHEDULING (arg_node) != NULL) {
+                DBUG_PRINT ("SCHIN", ("propagate with-loop scheduling"));
+                INFO_SCHIN_SCHEDULING (arg_info) = NWITH2_SCHEDULING (arg_node);
+            } else {
+                DBUG_PRINT ("SCHIN", ("no pragma scheduling found"));
+                INFO_SCHIN_SCHEDULING (arg_info) = NULL;
+            }
         } else {
+            if (NWITH2_SCHEDULING (arg_node) != NULL) {
+                WARN (linenum, ("pragma-scheduling of inner-wl ignored"));
+            }
             INFO_SCHIN_SCHEDULING (arg_info) = NULL;
         }
     } else {
-        if (NWITH2_SCHEDULING (arg_node) != NULL) {
-            WARN (linenum, ("pragma Scheduling of inner with-loop will be ignored"));
+        if (!INFO_SCHIN_INNERWLS (arg_info)) {
+            WARN (linenum, ("pragma-scheduling of *mt not allowed* wl ignored"));
+        } else {
+            WARN (linenum, ("pragma-scheduling of *mt not allowed* inner-wl ignored"));
         }
-        INFO_SCHIN_SCHEDULING (arg_info) = NULL;
     }
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
@@ -334,8 +380,9 @@ SCHINnwith2 (node *arg_node, node *arg_info)
 
     INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
 
-    NOTE (("SCHINnwith2 reached, nothing done"));
-    /* remove wl scheduling if exists */
+    if (NWITH2_SCHEDULING (arg_node) != NULL) {
+        NWITH2_SCHEDULING (arg_node) = SCHRemoveScheduling (NWITH2_SCHEDULING (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -346,9 +393,14 @@ SCHINnwith2 (node *arg_node, node *arg_info)
  *   node *SCHINwlseg(node *arg_node, node *arg_info)
  *
  * description:
- *   scinh_tab traversal function for N_WLseg nodes.
+ *   schin_tab traversal function for N_WLseg nodes.
  *   Assures each segement of a top-level with-loop has scheduling
- *   specifications.
+ *   specifications infered or propagated.
+ *   Segments of nested with-loops and with-loops not allowed multithreaded
+ *   execution will not be scheduled.
+ *
+ * attention:
+ *   comment is referenced in SCHINwlsegVar
  *
  ******************************************************************************/
 node *
@@ -359,18 +411,36 @@ SCHINwlseg (node *arg_node, node *arg_info)
     /*
      *  Only segments of top-level with-loops are supposed to have schedulings.
      */
-    if (INFO_SCHIN_INNERWLS (arg_info) == FALSE) {
+    if ((INFO_SCHIN_ALLOWED (arg_info)) && (!INFO_SCHIN_INNERWLS (arg_info))) {
         /*
          *  If no scheduling is already present, the inference strategy is used.
          *  Otherwise a scheduling derived from wlcomp pragma is checked for
          *  suitability for constant segments.
          */
         if (WLSEG_SCHEDULING (arg_node) == NULL) {
-            WLSEG_SCHEDULING (arg_node)
-              = InferSchedulingConstSegment (arg_node, arg_info);
+            if (INFO_SCHIN_SCHEDULING (arg_info) == NULL) {
+                DBUG_PRINT ("SCHIN", ("wlseg infer"));
+                WLSEG_SCHEDULING (arg_node)
+                  = InferSchedulingConstSegment (arg_node, arg_info);
+            } else {
+                DBUG_PRINT ("SCHIN", ("wlseg reuse"));
+                WLSEG_SCHEDULING (arg_node)
+                  = SCHCopyScheduling (INFO_SCHIN_SCHEDULING (arg_info));
+                SCHCheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
+            }
         } else {
+            if (INFO_SCHIN_SCHEDULING (arg_info) != NULL) {
+                WARN (linenum,
+                      ("wlseg cannot reuse propagation, already found scheduling"));
+            }
+            DBUG_PRINT ("SCHIN", ("wlseg suit?"));
             SCHCheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
         }
+    } else {
+        /*
+         *  further analysis of allowed and innerwls skipped,
+         *  due to the impossibilty to annotate anything the segments
+         */
     }
 
     if (WLSEG_NEXT (arg_node) != NULL) {
@@ -387,8 +457,7 @@ SCHINwlseg (node *arg_node, node *arg_info)
  *
  * description:
  *   schin_tab traversal function for N_WLsegVar nodes.
- *   Assures each segement of a top-level with-loop has scheduling
- *   specifications.
+ *   See comment on SCHINwlseg above.
  *
  ******************************************************************************/
 node *
@@ -399,18 +468,36 @@ SCHINwlsegVar (node *arg_node, node *arg_info)
     /*
      *  Only segments of top-level with-loops are supposed to have schedulings.
      */
-    if (INFO_SCHIN_INNERWLS (arg_info) == FALSE) {
+    if ((INFO_SCHIN_ALLOWED (arg_info)) && (!INFO_SCHIN_INNERWLS (arg_info))) {
         /*
          *  If no scheduling is already present, the inference strategy is used.
          *  Otherwise a scheduling derived from wlcomp pragma is checked for
          *  suitability for constant segments.
          */
         if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
-            WLSEGVAR_SCHEDULING (arg_node)
-              = InferSchedulingVarSegment (arg_node, arg_info);
+            if (INFO_SCHIN_SCHEDULING (arg_info) == NULL) {
+                DBUG_PRINT ("SCHIN", ("wlseg infer"));
+                WLSEGVAR_SCHEDULING (arg_node)
+                  = InferSchedulingVarSegment (arg_node, arg_info);
+            } else {
+                DBUG_PRINT ("SCHIN", ("wlseg reuse"));
+                WLSEGVAR_SCHEDULING (arg_node)
+                  = SCHCopyScheduling (INFO_SCHIN_SCHEDULING (arg_info));
+                SCHCheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
+            }
         } else {
+            if (INFO_SCHIN_SCHEDULING (arg_info) != NULL) {
+                WARN (linenum,
+                      ("wlsegvar cannot reuse propagation, already found scheduling"));
+            }
+            DBUG_PRINT ("SCHIN", ("wlsegvar suit?"));
             SCHCheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
         }
+    } else {
+        /*
+         *  further analysis of allowed and innerwls skipped,
+         *  due to the impossibilty to annotate anything the segments
+         */
     }
 
     if (WLSEGVAR_NEXT (arg_node) != NULL) {
