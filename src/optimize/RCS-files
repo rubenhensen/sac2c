@@ -35,3 +35,5 @@ generatemasks.c
 generatemasks.h
 optimize.c
 optimize.h
+rmcasts.c
+rmcasts.h
