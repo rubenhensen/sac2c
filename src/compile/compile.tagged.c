@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2002/07/10 19:27:02  dkr
+ * F_modarray for TAGGED_ARRAYS added
+ *
  * Revision 1.20  2002/07/08 21:19:11  dkr
  * compilation of scalar prfs completed :-)
  *
@@ -992,7 +995,9 @@ MakeArgNode (int idx, types *type)
     if (type != NULL) {
         id = MakeId_Copy_NT (name, type);
     } else {
+#if 1
         id = MakeId_Copy (name);
+#endif
     }
 
     name = Free (name);
@@ -1063,7 +1068,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             tag = ATG_notag;
 #endif
             id = FreeTree (id);
-            id = MakeId_Copy ("");
+            id = MakeId_Copy (NULL);
         }
 
         icm_args
@@ -1076,7 +1081,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
     if (argtab->ptr_out[0] == NULL) {
-        icm_args = MakeExprs (MakeId_Copy (""), icm_args);
+        icm_args = MakeExprs (MakeId_Copy (NULL), icm_args);
     } else {
         icm_args = MakeExprs (MakeBasetypeArg_NT (argtab->ptr_out[0]), icm_args);
     }
@@ -1320,7 +1325,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
     if (argtab->ptr_out[0] == NULL) {
-        icm_args = MakeExprs (MakeId_Copy (""), icm_args);
+        icm_args = MakeExprs (MakeId_Copy (NULL), icm_args);
     } else {
         icm_args = MakeExprs (DupIds_Id (argtab->ptr_out[0]), icm_args);
     }
@@ -2266,7 +2271,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
 
     arg_node = FreeTree (arg_node);
     if (cret_node == NULL) {
-        cret_node = MakeId_Copy ("");
+        cret_node = MakeId_Copy (NULL);
     }
     arg_node = MakeIcm3 ("ND_FUN_RET", cret_node, MakeNum (ret_cnt), icm_args);
 
@@ -2317,9 +2322,9 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 
             new_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]),
                                   MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
-                                             /*
-                                                  MakeExprs( MakeArgNode( i, NULL),
-                                              */
+#if 0
+                 MakeExprs( MakeArgNode( i, NULL),
+#endif
                                              NULL));
 
             if (last_arg == NULL) {
@@ -2517,7 +2522,7 @@ COMPApIds (node *ap, node *arg_info)
                 /* function sets no shape information */
 
 #if 1
-                SYSWARN (("return value with unknown shape/dimension found!"));
+                SYSWARN (("return value with unknown shape/dimension found"));
 #else
                 ret_node
                   = MakeAssignIcm1 ("ND_SET_SHAPE",
@@ -3152,7 +3157,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
 
     if (NODE_TYPE (arg1) == N_id) {
         (*set_shape_icm)
-          = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_V",
+          = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_id",
                       MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                     FALSE, MakeExprs (DupId_NT (arg1), NULL)));
     } else {
@@ -3160,7 +3165,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
                      "1st arg of F_reshape is neither N_id nor N_array!");
 
         (*set_shape_icm)
-          = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_C",
+          = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_arr",
                       MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                     FALSE,
                                     MakeExprs (MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
@@ -3168,15 +3173,11 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
     }
 
     if (NODE_TYPE (arg2) == N_id) {
-        ret_node
-          = MakeAssignIcm1 ("ND_COPY__DATA",
-                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                          TRUE, FALSE,
-                                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
-                                                        FALSE, TRUE, FALSE,
-                                                        MakeExprs (MakeId_Copy (NULL),
-                                                                   NULL))),
-                            NULL);
+        ret_node = MakeAssignIcm3 ("ND_COPY__DATA", DupIds_Id_NT (let_ids),
+                                   DupId_NT (arg2), MakeId_Copy (NULL), NULL);
+#if 1
+        SYSWARN (("F_reshape found which copies an array"));
+#endif
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
                      "2nd arg of F_reshape is neither N_id nor N_array!");
@@ -3223,14 +3224,13 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **set_shape_icm)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    if ((NODE_TYPE (arg1) != N_prf) || (NODE_TYPE (PRF_ARG1 (arg1)) != N_num)) {
-        /*
-         * CAUTION: AE, IVE generate unflattened code!
-         * The 1st argument of idx_sel() may be a N_prf node with N_num arguments
-         */
-        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
-                     "1st arg of F_idx_sel is neither N_id nor N_num!");
-    }
+    /*
+     * CAUTION: AE, IVE generate unflattened code!
+     * The 1st argument of idx_sel() may be a N_prf node with N_num arguments
+     */
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)
+                  || ((NODE_TYPE (arg1) == N_prf))),
+                 "1st arg of F_idx_sel is neither N_id nor N_num, N_prf!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_sel is no N_id!");
 
     icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
@@ -3286,33 +3286,25 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **set_shape_icm)
      */
     DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_num)
                   || (NODE_TYPE (arg2) == N_prf)),
-                 "2nd arg of F_idx_modarray is neither N_id nor N_num!");
+                 "2nd arg of F_idx_modarray is neither N_id nor N_num, N_prf!");
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id) || (GetBasetype (ID_TYPE (arg2)) == T_int)),
+                 "2nd arg of F_modarray is a illegal indexing var!");
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
-                 "3rd arg of F_idx_modarray is no N_array!");
+                 "3rd arg of F_idx_modarray is a N_array!");
 
     (*set_shape_icm)
       = MakeIcm1 ("ND_COPY__SHAPE",
                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                 FALSE,
-                                MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
-                                              FALSE, TRUE, FALSE, NULL)));
+                                MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
+                                              FALSE, NULL)));
 
-    ret_node = MakeAssignIcm1 ("ND_PRF_IDX_MODARRAY__DATA",
+    ret_node = MakeAssignIcm4 ("ND_PRF_IDX_MODARRAY__DATA",
                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             FALSE, TRUE, FALSE,
-                                             MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
-                                                           FALSE, TRUE, FALSE,
-#if 0
-                             MakeTypeArgs( ID_NAME( arg2),
-                                           ID_TYPE( arg2),
-                                           FALSE, TRUE, FALSE,
-                             MakeTypeArgs( ID_NAME( arg3),
-                                           ID_TYPE( arg3),
-                                           FALSE, TRUE, FALSE,
-#endif
-                                                           NULL)),
-
-                               NULL);
+                                             FALSE, TRUE, FALSE, NULL),
+                               MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
+                                             FALSE, NULL),
+                               DupNode_NT (arg2), DupNode_NT (arg3), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3394,35 +3386,38 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **set_shape_icm)
     arg3 = PRF_ARG3 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_modarray is no N_id!");
-    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
-                 "2nd arg of F_modarray is neither N_id nor N_array!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array), "3rd arg of F_modarray is no N_array!");
+    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array), "3rd arg of F_modarray is a N_array!");
 
     (*set_shape_icm)
       = MakeIcm1 ("ND_COPY__SHAPE",
                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                 FALSE,
-                                MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
-                                              FALSE, TRUE, FALSE, NULL)));
+                                MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
+                                              FALSE, NULL)));
 
-    ret_node
-      = MakeAssignIcm1 ("ND_PRF_MODARRAY__DATA",
-                        MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
-                                      FALSE,
-                                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE,
-                                                    TRUE, FALSE,
-                                                    MakeTypeArgs (ID_NAME (arg2),
-                                                                  ID_TYPE (arg2), FALSE,
-                                                                  TRUE, FALSE,
-                                                                  MakeTypeArgs (ID_NAME (
-                                                                                  arg3),
-                                                                                ID_TYPE (
-                                                                                  arg3),
-                                                                                FALSE,
-                                                                                TRUE,
-                                                                                FALSE,
-                                                                                NULL)))),
-                        NULL);
+    if (NODE_TYPE (arg2) == N_id) {
+        DBUG_ASSERT (((GetBasetype (ID_TYPE (arg2)) == T_int)),
+                     "2nd arg of F_modarray is a illegal indexing var!");
+
+        ret_node = MakeAssignIcm4 ("ND_PRF_MODARRAY__DATA_id",
+                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 FALSE, TRUE, FALSE, NULL),
+                                   MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE,
+                                                 TRUE, FALSE, NULL),
+                                   DupNode_NT (arg2), DupNode_NT (arg3), NULL);
+    } else {
+        DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
+                     "2nd arg of F_modarray is neither N_id nor N_array!");
+
+        ret_node
+          = MakeAssignIcm5 ("ND_PRF_MODARRAY__DATA_arr",
+                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE, NULL),
+                            MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
+                                          FALSE, NULL),
+                            MakeNum (CountExprs (ARRAY_AELEMS (arg2))),
+                            DupExprs_NT (ARRAY_AELEMS (arg2)), DupNode_NT (arg3), NULL);
+    }
 
     DBUG_RETURN (ret_node);
 }

@@ -1,20 +1,11 @@
 /*
  *
  * $Log$
- * Revision 3.11  2002/07/03 15:53:35  dkr
- * more ICMs for TAGGED_ARRAYS added
- *
- * Revision 3.10  2002/06/07 16:10:49  dkr
- * some new ICMs for TAGGED_ARRAYS added
- *
- * Revision 3.9  2002/06/06 18:22:31  dkr
- * some signatures modified
- *
- * Revision 3.8  2002/06/02 21:35:54  dkr
- * ICMs for TAGGED_ARRAYS added
+ * Revision 3.12  2002/07/10 19:26:32  dkr
+ * F_modarray for TAGGED_ARRAYS added
  *
  * Revision 3.7  2002/05/31 17:25:31  dkr
- * some ICMs for TAGGED_ARRAYS added
+ * ICMs for TAGGED_ARRAYS added
  *
  * Revision 3.6  2002/05/03 14:01:18  dkr
  * some ICM args renamed
@@ -69,11 +60,11 @@
 
 #include "types.h"
 
-extern void ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg);
+extern void ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg_any);
 
-extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg);
+extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg_any);
 
-extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg);
+extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg_any);
 
 #ifdef TAGGED_ARRAYS
 
@@ -91,27 +82,22 @@ extern void ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp);
 
 extern void ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim);
 
-extern void ICMCompileND_SET__SHAPE (char *nt, int dim, char **shp_str);
-
-extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
-
 extern void ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt,
                                       int from_sdim);
 
-extern void ICMCompileND_ALLOC (char *nt, int rc, char *set_shape);
+extern void ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, int *shp);
 
-extern void ICMCompileND_ALLOC_PLACE (char *nt, int rc);
+extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
 
 extern void ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt,
                                        int from_sdim);
 
 extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim);
 
-extern void ICMCompileND_ASSIGN__DESC (char *to_nt, int to_sdim, char *from_nt,
-                                       int from_sdim);
+extern void ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt);
 
-extern void ICMCompileND_ASSIGN__MIRROR (char *to_nt, int to_sdim, char *from_nt,
-                                         int from_sdim);
+extern void ICMCompileND_ASSIGN__SHAPE (char *to_nt, int to_sdim, char *from_nt,
+                                        int from_sdim);
 
 extern void ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                                char *copyfun);
@@ -122,12 +108,25 @@ extern void ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt,
 extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt,
                                       int from_sdim, char *copyfun);
 
-extern void ICMCompileND_ASSIGN__VECT__SHAPE (char *name, int len, char **s);
+extern void ICMCompileND_CREATE__VECT__SHAPE (char *name, int sdim, int len,
+                                              char **vala_any);
 
-extern void ICMCompileND_ASSIGN__VECT__DATA (char *name, int len, char **s);
+extern void ICMCompileND_CREATE__VECT__DATA (char *name, int sdim, int len,
+                                             char **vala_any);
 
-extern void ICMCompileND_PRF_SHAPE (char *to_nt, int to_sdim, char *from_nt,
-                                    int from_sdim);
+extern void ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt,
+                                          int from_sdim);
+
+extern void ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
+                                                int from_sdim, char *idx_any,
+                                                char *val_any);
+
+extern void ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
+                                                 int from_sdim, int len, char **idxa_any,
+                                                 char *val_any);
+
+extern void ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
+                                                 int from_sdim, char *idx, char *val);
 
 #else /* TAGGED_ARRAYS */
 
@@ -182,6 +181,6 @@ extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *
 #endif /* TAGGED_ARRAYS */
 
 extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
-                                         int dims, char **s);
+                                         int dims, char **shp_any);
 
 #endif /* _icm2c_std_h */
