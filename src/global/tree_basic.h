@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/05/12 15:31:15  jhs
+ * simpletype-cast in N_array corrected.
+ *
  * Revision 2.17  1999/05/12 08:39:24  sbs
  * attribute names for handling constant vectors at N_id, N_array, and N_info
  * nodes adjusted to each other...
@@ -1631,8 +1634,8 @@ extern node *MakeArray (node *aelems);
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
 
-#define ARRAY_ISCONST(n) ((simpletype) (n->refcnt))
-#define ARRAY_VECTYPE(n) (n->varno)
+#define ARRAY_ISCONST(n) (n->refcnt)
+#define ARRAY_VECTYPE(n) ((simpletype) (n->varno))
 #define ARRAY_VECLEN(n) (n->counter)
 #define ARRAY_CONSTVEC(n) (n->info2)
 
