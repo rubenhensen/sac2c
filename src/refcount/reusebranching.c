@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/17 09:06:01  ktr
+ * Ongoing implementation
+ *
  * Revision 1.2  2004/11/15 12:29:30  ktr
  * ongoing implementation
  *
@@ -31,9 +34,11 @@
 #include "dbug.h"
 #include "print.h"
 #include "lac2fun.h"
+#include "InferDFMs.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
+#include "DataFlowMaskUtils.h"
 
 /*
  * INFO structure
@@ -194,89 +199,97 @@ GetReuseBranches (node *drcs, node *memop)
  *
  * @brief Build the reuse decision tree
  *
- * @param ass The assignment to be copied
+ * @param ass The assignment chain to be copied
  * @param branches id list list of data reuse candidates
  * @param memvars id list of memory veriables
  * @param fundef Fundef to put the new vardecs into
- *
+ * @param inmask DFM containing the in parameters of the assignment chain
+ * @param lut LUT
  * @return Assignment chain
  *
  *****************************************************************************/
 static node *
-BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
+BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, DFMmask_t inmask,
+               LUT_t lut)
 {
     node *res = NULL;
 
     DBUG_ENTER ("BuildCondTree");
 
     if (branches == NULL) {
-        res = DupTreeSSA (ass, fundef);
+        res = DupTreeLUTSSA (ass, lut, fundef);
     } else {
         if (EXPRS_EXPR (branches) == NULL) {
-            res
-              = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars), fundef);
+            res = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars), fundef,
+                                 inmask, lut);
         } else {
+            node *condfun;
             node *cond;
             node *thenass;
             node *elseass;
+            node *asslast;
             node *thenlast;
             node *elselast;
+            node *ret;
             node *retexprs;
-            node *rc, *stack;
+            node *rc;
+            node *cfap;
             node *memavis, *valavis;
+            ids *condids;
             ids *memids, *valids;
             ids *thenids, *elseids;
+            ids *assids;
+            ids *cfids;
+            types *cftypes;
+            node *cfargs;
+            LUT_t cflut, tmplut;
+            int i;
 
             /*
-             * Create pattern:
-             * c' = alloc( 0, []);
-             * c  = fill( isreused( a, b), c');
-             * if ( c) ...
+             * Create condfun return types
              */
+            cftypes = NULL;
+            asslast = ass;
+            while (ASSIGN_NEXT (asslast) != NULL) {
+                asslast = ASSIGN_NEXT (asslast);
+            }
+            assids = ASSIGN_LHS (asslast);
+            while (assids != NULL) {
+                cftypes = AppendTypes (cftypes, DupOneTypes (IDS_TYPE (assids)));
+                assids = IDS_NEXT (assids);
+            }
 
             /*
-             * Create variable c'
+             * Create condfun
              */
-            FUNDEF_VARDEC (fundef)
-              = MakeVardec (TmpVar (), MakeTypes1 (T_bool), FUNDEF_VARDEC (fundef));
+            cflut = GenerateLUT ();
+            cfargs = DFM2Args (inmask, lut);
+            condfun
+              = MakeFundef (GetLacFunName ("ReuseCond"), FUNDEF_MOD (fundef), cftypes,
+                            cfargs, MakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
 
-            memavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
-            AVIS_TYPE (memavis) = TYMakeAKS (TYMakeSimpleType (T_bool), SHMakeShape (0));
-
-            memids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))), NULL,
-                              ST_regular);
-            IDS_AVIS (memids) = memavis;
-            IDS_VARDEC (memids) = AVIS_VARDECORARG (IDS_AVIS (memids));
-
-            /*
-             * Create variable c
-             */
-            FUNDEF_VARDEC (fundef)
-              = MakeVardec (TmpVar (), MakeTypes1 (T_bool), FUNDEF_VARDEC (fundef));
-
-            valavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
-            AVIS_TYPE (valavis) = TYMakeAKS (TYMakeSimpleType (T_bool), SHMakeShape (0));
-
-            valids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))), NULL,
-                              ST_regular);
-            IDS_AVIS (valids) = valavis;
-            IDS_VARDEC (valids) = AVIS_VARDECORARG (IDS_AVIS (valids));
+            FUNDEF_NEXT (fundef) = condfun;
+            FUNDEF_RET_TYPE (condfun) = TYOldTypes2ProdType (FUNDEF_TYPES (condfun));
+            FUNDEF_STATUS (condfun) = ST_condfun;
 
             /*
              * Build all parts  of the conditional
              */
-            cond = MakeIdFromIds (DupOneIds (valids));
-
-            thenass
-              = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars), fundef);
+            condids = MakeIds (TmpVar (), NULL, ST_regular);
+            cond = MakeIdFromIds (condids);
+            tmplut = DuplicateLUT (cflut);
+            thenass = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars),
+                                     condfun, inmask, tmplut);
+            tmplut = RemoveLUT (tmplut);
 
             /*
              * Save current reuse candidate for later usage
              */
             rc = EXPRS_EXPR (branches);
             EXPRS_EXPR (branches) = EXPRS_NEXT (EXPRS_EXPR (branches));
-            elseass = BuildCondTree (ass, branches, memvars, fundef);
+            elseass = BuildCondTree (ass, branches, memvars, condfun, inmask, cflut);
             EXPRS_EXPR (branches) = rc;
+            cflut = RemoveLUT (cflut);
 
             /*
              * Find last assignments of both blocks
@@ -307,17 +320,17 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
                 /*
                  * Create new lhs variable for FUNCOND
                  */
-                FUNDEF_VARDEC (fundef)
+                FUNDEF_VARDEC (condfun)
                   = MakeVardec (TmpVar (),
                                 DupOneTypes (VARDEC_TYPE (IDS_VARDEC (thenids))),
-                                FUNDEF_VARDEC (fundef));
+                                FUNDEF_VARDEC (condfun));
 
-                cavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
+                cavis = VARDEC_AVIS (FUNDEF_VARDEC (condfun));
                 AVIS_TYPE (cavis) = TYCopyType (AVIS_TYPE (IDS_AVIS (thenids)));
 
                 cids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cavis))), NULL,
                                 ST_regular);
-                IDS_AVIS (cids) = valavis;
+                IDS_AVIS (cids) = cavis;
                 IDS_VARDEC (cids) = AVIS_VARDECORARG (IDS_AVIS (cids));
 
                 /*
@@ -346,7 +359,8 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
             /*
              * Append return( retexprs);
              */
-            res = AppendAssign (res, MakeAssign (MakeReturn (retexprs), NULL));
+            ret = MakeReturn (retexprs);
+            res = AppendAssign (res, MakeAssign (ret, NULL));
 
             /*
              * Create conditional
@@ -354,6 +368,92 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef)
             res = MakeAssign (MakeCond (cond, MakeBlock (thenass, NULL),
                                         MakeBlock (elseass, NULL)),
                               res);
+
+            /*
+             * Put Assignments into function body
+             */
+            FUNDEF_INSTR (condfun) = res;
+            FUNDEF_RETURN (condfun) = ret;
+            res = NULL;
+
+            DBUG_EXECUTE ("EMRB", PrintNode (condfun););
+
+            /*
+             * Create pattern:
+             * c' = alloc( 0, []);
+             * c  = fill( isreused( a, b), c');
+             * r1, ... = reusecond( c, ...)
+             */
+
+            /*
+             * Create variable c'
+             */
+            FUNDEF_VARDEC (fundef)
+              = MakeVardec (TmpVar (), MakeTypes1 (T_bool), FUNDEF_VARDEC (fundef));
+
+            memavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
+            AVIS_TYPE (memavis) = TYMakeAKS (TYMakeSimpleType (T_bool), SHMakeShape (0));
+
+            memids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))), NULL,
+                              ST_regular);
+            IDS_AVIS (memids) = memavis;
+            IDS_VARDEC (memids) = AVIS_VARDECORARG (memavis);
+
+            /*
+             * Create variable c
+             */
+            FUNDEF_VARDEC (fundef)
+              = MakeVardec (TmpVar (), MakeTypes1 (T_bool), FUNDEF_VARDEC (fundef));
+
+            valavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
+            AVIS_TYPE (valavis) = TYMakeAKS (TYMakeSimpleType (T_bool), SHMakeShape (0));
+
+            valids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))), NULL,
+                              ST_regular);
+            IDS_AVIS (valids) = valavis;
+            IDS_VARDEC (valids) = AVIS_VARDECORARG (valavis);
+
+            /*
+             * Create variables returned by condfun
+             */
+            cfids = NULL;
+            i = 0;
+            while (cftypes != NULL) {
+                node *cfavis;
+                ids *newids;
+
+                FUNDEF_VARDEC (fundef)
+                  = MakeVardec (TmpVar (), DupOneTypes (cftypes), FUNDEF_VARDEC (fundef));
+
+                cfavis = VARDEC_AVIS (FUNDEF_VARDEC (fundef));
+                AVIS_TYPE (cfavis)
+                  = TYCopyType (TYGetProductMember (FUNDEF_RET_TYPE (condfun), i));
+
+                newids = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cfavis))),
+                                  NULL, ST_regular);
+                IDS_AVIS (newids) = cfavis;
+                IDS_VARDEC (newids) = AVIS_VARDECORARG (cfavis);
+
+                cfids = AppendIds (cfids, newids);
+
+                cftypes = TYPES_NEXT (cftypes);
+                i += 1;
+            }
+
+            /*
+             * Create application of condfun
+             */
+            cfap = MakeAp (StringCopy (FUNDEF_NAME (condfun)),
+                           StringCopy (FUNDEF_MOD (condfun)),
+                           MakeExprs (MakeIdFromIds (DupOneIds (valids)), NULL));
+
+            AP_FUNDEF (cfap) = condfun;
+
+            res = MakeAssign (MakeLet (cfap, cfids), res);
+            while (cfids != NULL) {
+                AVIS_SSAASSIGN (IDS_AVIS (cfids)) = res;
+                cfids = IDS_NEXT (cfids);
+            }
 
             /*
              * Create  c  = fill( isreused( a, b), c');
@@ -415,17 +515,52 @@ EMRBassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_RB_BRANCHES (arg_info) != NULL) {
-        node *next, *newass;
+        node *next, *newass, *lastass;
+        ids *lhs;
+        DFMmask_t inmask;
+        LUT_t lut;
 
         next = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = NULL;
 
+        /*
+         * Determine in parameters of the assignment
+         */
+        lut = GenerateLUT ();
+        inmask = InferInDFMAssignChain (arg_node, INFO_RB_FUNDEF (arg_info));
+
         newass = BuildCondTree (arg_node, INFO_RB_BRANCHES (arg_info),
-                                INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info));
+                                INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info),
+                                inmask, lut);
 
         INFO_RB_BRANCHES (arg_info) = FreeTree (INFO_RB_BRANCHES (arg_info));
         INFO_RB_MEMVARS (arg_info) = FreeTree (INFO_RB_MEMVARS (arg_info));
 
+        FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info))
+          = DFMRemoveMaskBase (FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info)));
+        inmask = DFMRemoveMask (inmask);
+        lut = RemoveLUT (lut);
+
+        /*
+         * Replace LHS of new assignment in order to match current funcion
+         */
+        lastass = newass;
+        while (ASSIGN_NEXT (lastass) != NULL) {
+            lastass = ASSIGN_NEXT (lastass);
+        }
+        ASSIGN_LHS (lastass) = FreeAllIds (ASSIGN_LHS (lastass));
+        ASSIGN_LHS (lastass) = ASSIGN_LHS (arg_node);
+        ASSIGN_LHS (arg_node) = NULL;
+
+        lhs = ASSIGN_LHS (lastass);
+        while (lhs != NULL) {
+            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = lastass;
+            lhs = IDS_NEXT (lhs);
+        }
+
+        /*
+         * Put new assignments into assignment chain
+         */
         arg_node = FreeNode (arg_node);
         arg_node = AppendAssign (newass, arg_node);
         arg_node = AppendAssign (arg_node, next);
@@ -495,6 +630,7 @@ EMRBprf (node *arg_node, info *arg_info)
 
             switch (PRF_PRF (prf)) {
             case F_copy:
+            case F_add_AxA:
                 /*
                  * a = fill( copy( b), a');
                  *
