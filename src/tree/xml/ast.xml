@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/08/08 16:06:25  sah
+  lots of small fixes
+
   Revision 1.5  2004/08/07 16:23:48  sah
   fixed some nodes
   renamed type Pragma to PragmaLink
@@ -66,20 +69,16 @@
     copy="function" />
     <type name="ArgTab" ctype="argtab_t*" init="NULL"
     copy="function" />
-    <type name="IndexPointer" ctype="void*" init="NULL"
+    <type name="IndexPointer" ctype="index_info*" init="NULL"
     copy="function" />
     <type name="Shape" ctype="shape*" init="NULL"
     copy="function" />
     <type name="SimpleType" ctype="simpletype" init="T_unknown"
-    copy="function" />
+    copy="literal" />
     <type name="ConstVecPointer" ctype="void*" init="NULL"
     copy="function" />
     <type name="UseFlag" ctype="useflag" init="DOLLAR"
-    copy="function" />
-    <type name="Feature" ctype="feature_t*" init="NULL"
-    copy="function" />
-    <type name="Access" ctype="access_t*" init="NULL"
-    copy="function" />
+    copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
     copy="function" />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
@@ -95,7 +94,7 @@
     <type name="NodePointer" ctype="node**" init="NULL"
     copy="function" />
     <type name="SSAPhi" ctype="ssaphit_t" init="PHIT_NONE"
-    copy="function" />
+    copy="literal" />
     <type name="BitField" ctype="int" init="0" copy="literal" />
     <type name="Constant" ctype="constant*" init="NULL"
     copy="function" />
@@ -113,6 +112,8 @@
         <node name="Array" />
         <node name="Ap" />
         <node name="Prf" />
+	<node name="Cast" />
+	<node name="Mop" />
       </target>
     </nodeset>
     <nodeset name="Instr">
@@ -1686,7 +1687,7 @@
       <sons>
         <son name="Exprs" mandatory="no">
           <target>
-            <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
       </sons>
