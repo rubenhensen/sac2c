@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/07/20 19:40:13  srs
+ * fixed a bug in ArrayPrf(), case F_modarray.
+ *
  * Revision 1.68  1998/07/14 12:57:18  srs
  * deactivated folding of reshape()
  *
@@ -2213,9 +2216,21 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         if (N_array == NODE_TYPE (base_array))
             base_array_type = ARRAY_TYPE (base_array);
-        else if (N_id == NODE_TYPE (base_array)) {
+        else if (N_id == NODE_TYPE (base_array))
             base_array_type = ID_TYPE (base_array);
-            MRD_GETDATA (base_array, ID_VARNO (base_array), INFO_VARNO);
+        else
+            break;
+
+        while (N_array != NODE_TYPE (base_array)) {
+            base_array = MRD (ID_VARNO (base_array));
+            base_array = ASSIGN_INSTR (base_array);
+            if (N_let == NODE_TYPE (base_array))
+                base_array = LET_EXPR (base_array);
+            if (N_prf == NODE_TYPE (base_array) && F_modarray == PRF_PRF (base_array)
+                && N_id == NODE_TYPE (PRF_ARG1 (base_array)))
+                base_array = PRF_ARG1 (base_array);
+            else
+                break;
         }
 
         if (N_id == NODE_TYPE (vectorn))
@@ -2226,7 +2241,9 @@ ArrayPrf (node *arg_node, node *arg_info)
         if (base_array && vectorn && valn && N_array == NODE_TYPE (base_array)
             && IsConstantArray (vectorn, N_num) &&
             /* valn should be an N_array or a scalar value, not an id. */
-            (N_array == NODE_TYPE (valn) || N_id != NODE_TYPE (valn))) {
+            (N_array == NODE_TYPE (valn) || N_num == NODE_TYPE (valn)
+             || N_char == NODE_TYPE (valn) || N_float == NODE_TYPE (valn)
+             || N_double == NODE_TYPE (valn) || N_bool == NODE_TYPE (valn))) {
             offset = CalculateArrayOffset (base_array_type, vectorn);
 
             /* offset found, now change elements */
