@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2002/04/08 19:59:51  dkr
+ * PrintAvis() and PrintSSAcnt() modified.
+ * DBUG-strings PRINT_AVIS, PRINT_SSA added.
+ *
  * Revision 3.78  2002/04/08 14:11:58  dkr
  * PrintFundef(): prototype of zombie funs in no longer printed
  *
@@ -176,7 +180,8 @@
 #define PRINT_POINTER_BRACKETS(file, p) PRINTF_POINTER (file, "<" F_PTR ">", p);
 
 #define PRINT_STRING(file, str)                                                          \
-    fprintf (file, "%s<" F_PTR ">", STR_OR_UNKNOWN (str), str);
+    fprintf (file, "%s", STR_OR_UNKNOWN (str));                                          \
+    PRINT_POINTER_BRACKETS (file, str);
 
 /******************************************************************************/
 
@@ -1352,7 +1357,6 @@ PrintFundef (node *arg_node, node *arg_info)
         } else {
 
             if (FUNDEF_BODY (arg_node) != NULL) {
-
                 if (INFO_PRINT_SEPARATE (arg_info)) {
                     outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
                     fprintf (outfile, "#include \"header.h\"\n\n");
@@ -1515,6 +1519,8 @@ PrintArg (node *arg_node, node *arg_info)
         Trav (ARG_COLCHN (arg_node), arg_info);
     }
 
+    Trav (ARG_AVIS (arg_node), arg_info);
+
     if (ARG_NEXT (arg_node) != NULL) {
         fprintf (outfile, ",");
         PRINT_CONT (Trav (ARG_NEXT (arg_node), arg_info), ;);
@@ -1558,7 +1564,11 @@ PrintVardec (node *arg_node, node *arg_info)
             Trav (VARDEC_COLCHN (arg_node), arg_info);
         }
 
-        fprintf (outfile, ";\n");
+        fprintf (outfile, ";");
+
+        Trav (VARDEC_AVIS (arg_node), arg_info);
+
+        fprintf (outfile, "\n");
     } else {
         Trav (VARDEC_ICM (arg_node), arg_info);
         fprintf (outfile, "\n");
@@ -1574,7 +1584,7 @@ PrintVardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintBlock(node *arg_node, node *arg_info)
+ *   node *PrintBlock( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1610,6 +1620,14 @@ PrintBlock (node *arg_node, node *arg_info)
         Trav (BLOCK_VARDEC (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
+
+    DBUG_EXECUTE ("PRINT_SSA", if (BLOCK_SSACOUNTER (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* SSAcnt:\n");
+        Trav (BLOCK_SSACOUNTER (arg_node), arg_info);
+        INDENT;
+        fprintf (outfile, " */\n");
+    });
 
     if (not_yet_done_print_main_begin && (INFO_PRINT_FUNDEF (arg_info) != NULL)
         && (!strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main"))
@@ -1647,7 +1665,7 @@ PrintBlock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintReturn(node *arg_node, node *arg_info)
+ *   node *PrintReturn( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2224,7 +2242,7 @@ PrintNum (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintFloat(node *arg_node, node *arg_info)
+ *   node *PrintFloat( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2248,7 +2266,7 @@ PrintFloat (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintDouble(node *arg_node, node *arg_info)
+ *   node *PrintDouble( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2272,7 +2290,7 @@ PrintDouble (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintBool(node *arg_node, node *arg_info)
+ *   node *PrintBool( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2296,7 +2314,7 @@ PrintBool (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintStr(node *arg_node, node *arg_info)
+ *   node *PrintStr( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2316,7 +2334,7 @@ PrintStr (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintChar(node *arg_node, node *arg_info)
+ *   node *PrintChar( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2341,7 +2359,7 @@ PrintChar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintVectInfo(node *arg_node, node *arg_info)
+ *   node *PrintVectInfo( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2446,7 +2464,7 @@ PrintIcm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintPragma(node *arg_node, node *arg_info)
+ *   node *PrintPragma( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2465,19 +2483,19 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
-        fprintf (outfile, "#pragma linksign [%d", PRAGMA_LS (arg_node, 0));
-
+        fprintf (outfile, "#pragma linksign [");
+        if (PRAGMA_NUMPARAMS (arg_node) > 0) {
+            fprintf (outfile, "%d", PRAGMA_LS (arg_node, 0));
+        }
         for (i = 1; i < PRAGMA_NUMPARAMS (arg_node); i++) {
             fprintf (outfile, ", %d", PRAGMA_LS (arg_node, i));
         }
-
         fprintf (outfile, "]\n");
     }
 
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
         fprintf (outfile, "#pragma refcounting [");
         first = 1;
-
         for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
             if (PRAGMA_RC (arg_node, i)) {
                 if (first) {
@@ -2488,14 +2506,12 @@ PrintPragma (node *arg_node, node *arg_info)
                 }
             }
         }
-
         fprintf (outfile, "]\n");
     }
 
     if (PRAGMA_READONLY (arg_node) != NULL) {
         fprintf (outfile, "#pragma readonly [");
         first = 1;
-
         for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
             if (PRAGMA_RO (arg_node, i)) {
                 if (first) {
@@ -2506,7 +2522,6 @@ PrintPragma (node *arg_node, node *arg_info)
                 }
             }
         }
-
         fprintf (outfile, "]\n");
     }
 
@@ -3721,7 +3736,10 @@ PrintSSAcnt (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSSAcnt");
 
-    fprintf (outfile, "baseid: %s, counter: %d\n", SSACNT_BASEID (arg_node),
+    INDENT;
+    fprintf (outfile, " *  ");
+    PRINT_POINTER_BRACKETS (outfile, arg_node);
+    fprintf (outfile, " baseid = %s, counter = %d\n", SSACNT_BASEID (arg_node),
              SSACNT_COUNT (arg_node));
 
     if (SSACNT_NEXT (arg_node) != NULL) {
@@ -3768,9 +3786,50 @@ PrintCSEinfo (node *arg_node, node *arg_info)
 node *
 PrintAvis (node *arg_node, node *arg_info)
 {
+    bool do_it = FALSE;
+
     DBUG_ENTER ("PrintAvis");
 
     /* to be implemented */
+
+    DBUG_EXECUTE ("PRINT_AVIS", do_it = TRUE;);
+
+    if (do_it) {
+        fprintf (outfile, " /* AVIS:");
+
+        fprintf (outfile, " SSACNT = ");
+        PRINT_POINTER_BRACKETS (outfile, AVIS_SSACOUNT (arg_node));
+#if 1
+        if (valid_ssaform && (AVIS_SSACOUNT (arg_node) != NULL)) {
+            node *cnt = AVIS_SSACOUNT (arg_node);
+
+            fprintf (outfile, " (baseid = %s, counter = %d)", SSACNT_BASEID (cnt),
+                     SSACNT_COUNT (cnt));
+        }
+#endif
+
+        fprintf (outfile, " */ ");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintInfo( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   N_info node found -> ERROR!!
+ *
+ ******************************************************************************/
+
+node *
+PrintInfo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintInfo");
+
+    DBUG_ASSERT ((0), "N_info node found for printing!!");
 
     DBUG_RETURN (arg_node);
 }
@@ -4322,8 +4381,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         new_line = TRUE;
 
         /* print node name */
-        fprintf (outfile, "%s<" F_PTR ">  ", mdb_nodetype[NODE_TYPE (arg_node)],
-                 arg_node);
+        fprintf (outfile, "%s", mdb_nodetype[NODE_TYPE (arg_node)]);
+        PRINT_POINTER_BRACKETS (outfile, arg_node);
+        fprintf (outfile, "  ");
 
         /* print additional information to nodes */
         switch (NODE_TYPE (arg_node)) {
