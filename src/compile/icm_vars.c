@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/10 16:24:05  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
+ *
  * Revision 3.3  2002/03/07 20:12:40  dkr
  * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
  * varint-arguments only) added (ICM_ICM).
@@ -22,19 +25,21 @@
  */
 
 #define ICM_DEF(prf, trf)
+#define ICM_ANY(name) static char *name;
 #define ICM_ICM(name) static char *name;
 #define ICM_STR(name) static char *name;
 #define ICM_INT(name) static int name;
+#define ICM_VARANY(cnt, name) static char **name;
 #define ICM_VARINT(cnt, name) static int *name;
-#define ICM_VAR(cnt, name) static char **name;
 #define ICM_END(prf, args)
 
 #include "icm.data"
 
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_VARANY
 #undef ICM_VARINT
-#undef ICM_VAR
 #undef ICM_END

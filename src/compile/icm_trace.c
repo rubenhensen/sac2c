@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/07/10 16:23:53  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
+ *
  * Revision 3.2  2002/03/07 20:12:14  dkr
  * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
  * varint-arguments only) added (ICM_ICM).
@@ -53,6 +56,12 @@
         INDENT;                                                                          \
         fprintf (outfile, "SAC_Print( \"%s( \");\n", #prf);
 
+#define ICM_ANY(name)                                                                    \
+    SEP;                                                                                 \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_Print( \"%s \");\n", name);                                   \
+    sep = 1;
+
 #define ICM_ICM(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
@@ -75,7 +84,7 @@
     fprintf (outfile, "SAC_Print( \"%d \");\n", name);                                   \
     sep = 1;
 
-#define ICM_VAR(dim, name)                                                               \
+#define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
@@ -110,9 +119,10 @@
 
 #undef SEP
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
-#undef ICM_VAR
+#undef ICM_VARANY
 #undef ICM_VARINT
 #undef ICM_END

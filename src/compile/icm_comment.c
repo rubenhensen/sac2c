@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/10 16:24:11  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
+ *
  * Revision 3.5  2002/07/02 14:03:50  dkr
  * comments are printed in top-level ICMs only now
  *
@@ -61,6 +64,11 @@
         INDENT;                                                                          \
         fprintf (outfile, " * %s( ", #prf);
 
+#define ICM_ANY(name)                                                                    \
+    SEP;                                                                                 \
+    fprintf (outfile, "%s", name);                                                       \
+    sep = 1;
+
 #define ICM_ICM(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%s", name);                                                       \
@@ -76,7 +84,18 @@
     fprintf (outfile, "%d", name);                                                       \
     sep = 1;
 
-#define ICM_VAR(dim, name)                                                               \
+#ifdef TAGGED_ARRAYS
+#define ICM_VARANY(dim, name)                                                            \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < dim; i++) {                                                      \
+            SEP;                                                                         \
+            AccessConst (name, NULL, i);                                                 \
+            sep = 1;                                                                     \
+        }                                                                                \
+    }
+#else
+#define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
@@ -85,6 +104,7 @@
             sep = 1;                                                                     \
         }                                                                                \
     }
+#endif
 
 #define ICM_VARINT(dim, name)                                                            \
     {                                                                                    \
@@ -106,9 +126,10 @@
 
 #undef SEP
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
-#undef ICM_VAR
+#undef ICM_VARANY
 #undef ICM_VARINT
 #undef ICM_END

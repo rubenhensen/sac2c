@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/10 16:23:59  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
+ *
  * Revision 3.3  2002/03/07 20:13:03  dkr
  * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
  * varint-arguments only) added (ICM_ICM).
@@ -31,6 +34,11 @@
     if (strcmp (buffer, #prf) == 0) {                                                    \
         DBUG_PRINT ("BEtest", ("reading args:\n"));
 
+#define ICM_ANY(name)                                                                    \
+    scanf ("%s", buffer);                                                                \
+    DBUG_PRINT ("BEtest", ("any-arg: %s\n", buffer));                                    \
+    STR_DUP (buffer, name);
+
 #define ICM_ICM(name)                                                                    \
     scanf ("%s", buffer);                                                                \
     DBUG_PRINT ("BEtest", ("icm-arg: %s\n", buffer));                                    \
@@ -45,15 +53,15 @@
     scanf ("%i", &name);                                                                 \
     DBUG_PRINT ("BEtest", ("int-arg: %i\n", name));
 
-#define ICM_VAR(dim, name)                                                               \
+#define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
         name = (char **)malloc (dim * sizeof (char *));                                  \
-        DBUG_PRINT ("BEtest", ("var-arg with %d elems:\n", dim));                        \
+        DBUG_PRINT ("BEtest", ("varany-arg with %d elems:\n", dim));                     \
         for (i = 0; i < dim; i++) {                                                      \
             scanf ("%s", buffer);                                                        \
             STR_DUP (buffer, name[i]);                                                   \
-            DBUG_PRINT ("BEtest", ("  string-arg: %s\n", name[i]));                      \
+            DBUG_PRINT ("BEtest", ("  any-arg: %s\n", name[i]));                         \
         }                                                                                \
     }
 
@@ -64,7 +72,7 @@
         DBUG_PRINT ("BEtest", ("varint-arg with %d elems:\n", dim));                     \
         for (i = 0; i < dim; i++) {                                                      \
             scanf ("%d", &(varint[i]));                                                  \
-            DBUG_PRINT ("BEtest", ("  varint-arg: %d\n", varint[i]));                    \
+            DBUG_PRINT ("BEtest", ("  int-arg: %d\n", varint[i]));                       \
         }                                                                                \
     }
 
@@ -79,6 +87,6 @@
 #undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
-#undef ICM_VAR
+#undef ICM_VARANY
 #undef ICM_VARINT
 #undef ICM_END

@@ -1,20 +1,11 @@
 /*
  *
  * $Log$
- * Revision 3.35  2002/07/03 15:56:40  dkr
- * some more ICMs for TAGGED_ARRAYS added
- *
- * Revision 3.34  2002/06/07 16:10:21  dkr
- * - some new ICMs for TAGGED_ARRAYS added
- *
- * Revision 3.33  2002/06/06 18:22:15  dkr
- * some signatures modified
- *
- * Revision 3.32  2002/06/02 21:35:22  dkr
- * ICMs for TAGGED_ARRAYS added
+ * Revision 3.36  2002/07/10 16:23:46  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
  * Revision 3.31  2002/05/31 17:25:12  dkr
- * some ICMs for TAGGED_ARRAYS added
+ * ICMs for TAGGED_ARRAYS added
  *
  * Revision 3.30  2002/05/03 14:00:23  dkr
  * some ICM args renamed
@@ -78,7 +69,8 @@
  * one renaming Bug for  MT_SCHEDULER_Even_... fixed
  *
  * Revision 3.12  2001/03/20 16:10:46  ben
- * Just implemented Static renamed to Even, because of existing Static scheduling
+ * Just implemented Static renamed to Even, because of existing Static
+ * scheduling
  *
  * Revision 3.11  2001/03/20 12:59:12  ben
  * Static scheduling added
@@ -112,7 +104,7 @@ ICM_DEF( ND_FUN_DEC, TRACE_NONE)
   ICM_STR( name)
   ICM_STR( rettype)
   ICM_INT( narg)
-  ICM_VAR( (3*narg), arg)
+  ICM_VARANY( (3*narg), arg)
 ICM_END( ND_FUN_DEC, (name, rettype, narg, arg))
 #endif
 
@@ -121,7 +113,7 @@ ICM_DEF( ND_FUN_AP, TRACE_FUN)
   ICM_STR( name)
   ICM_STR( retname)
   ICM_INT( narg)
-  ICM_VAR( (2*narg), arg)
+  ICM_VARANY( (2*narg), arg)
 ICM_END( ND_FUN_AP, (name, retname, narg, arg))
 #endif
 
@@ -129,7 +121,7 @@ ICM_END( ND_FUN_AP, (name, retname, narg, arg))
 ICM_DEF( ND_FUN_RET, TRACE_FUN)
   ICM_STR( retname)
   ICM_INT( narg)
-  ICM_VAR( (3*narg), arg)
+  ICM_VARANY( (3*narg), arg)
 ICM_END( ND_FUN_RET, (retname, narg, arg))
 #endif
 
@@ -199,25 +191,6 @@ ICM_END( ND_DECL__MIRROR_EXTERN, (nt, sdim))
 #endif
 
 
-/* ND_SET__RC( ...) is a H-ICM */
-
-#if defined(ND_SET__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_SET__SHAPE, TRACE_NONE)
-  ICM_STR( nt)
-  ICM_INT( dim)
-  ICM_VAR( dim, shp_str)
-ICM_END( ND_SET__SHAPE, (nt, dim, shp_str))
-#endif
-
-
-#if defined(ND_REFRESH_MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_REFRESH_MIRROR, TRACE_NONE)
-  ICM_STR( nt)
-  ICM_INT( sdim)
-ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
-#endif
-
-
 #if defined(ND_CHECK_REUSE) || defined(ICM_ALL)
 ICM_DEF( ND_CHECK_REUSE, TRACE_NONE)
   ICM_STR( to_nt)
@@ -227,25 +200,31 @@ ICM_DEF( ND_CHECK_REUSE, TRACE_NONE)
 ICM_END( ND_CHECK_REUSE, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
-#if defined(ND_ALLOC) || defined(ICM_ALL)
-ICM_DEF( ND_ALLOC, TRACE_NONE)
-  ICM_STR( nt)
-  ICM_INT( rc)
-  ICM_ICM( set_shape)
-ICM_END( ND_ALLOC, (nt, rc, set_shape))
+/* ND_ALLOC( ...) is a H-ICM */
+
+/* ND_ALLOC__DATA( ...) is a H-ICM */
+
+/* ND_ALLOC__DESC( ...) is a H-ICM */
+
+
+/* ND_SET__RC( ...) is a H-ICM */
+
+#if defined(ND_SET__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_SET__SHAPE, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_INT( dim)
+  ICM_VARANY( dim, shp_str)
+ICM_END( ND_SET__SHAPE, (to_nt, to_sdim, dim, shp_str))
 #endif
 
-#if defined(ND_ALLOC_PLACE) || defined(ICM_ALL)
-ICM_DEF( ND_ALLOC_PLACE, TRACE_NONE)
+
+#if defined(ND_REFRESH_MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_REFRESH_MIRROR, TRACE_NONE)
   ICM_STR( nt)
-  ICM_INT( rc)
-ICM_END( ND_ALLOC_PLACE, (nt, rc))
+  ICM_INT( sdim)
+ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
 #endif
-
-/* ND_ALLOC_DATA( ...) is a H-ICM */
-
-/* ND_ALLOC_DESC( ...) is a H-ICM */
-
 
 #if defined(ND_CHECK_MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_CHECK_MIRROR, TRACE_NONE)
@@ -271,19 +250,17 @@ ICM_END( ND_ASSIGN, (to_nt, to_sdim, from_nt, from_sdim))
 #if defined(ND_ASSIGN__DESC) || defined(ICM_ALL)
 ICM_DEF( ND_ASSIGN__DESC, TRACE_NONE)
   ICM_STR( to_nt)
-  ICM_INT( to_sdim)
   ICM_STR( from_nt)
-  ICM_INT( from_sdim)
-ICM_END( ND_ASSIGN__DESC, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_ASSIGN__DESC, (to_nt, from_nt))
 #endif
 
-#if defined(ND_ASSIGN__MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN__MIRROR, TRACE_NONE)
+#if defined(ND_ASSIGN__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__SHAPE, TRACE_NONE)
   ICM_STR( to_nt)
   ICM_INT( to_sdim)
   ICM_STR( from_nt)
   ICM_INT( from_sdim)
-ICM_END( ND_ASSIGN__MIRROR, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_ASSIGN__SHAPE, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 
@@ -319,30 +296,66 @@ ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 #endif
 
 
-#if defined(ND_ASSIGN__VECT__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN__VECT__SHAPE, TRACE_NONE)
+#if defined(ND_CREATE__VECT__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE__VECT__SHAPE, TRACE_NONE)
   ICM_STR( nt)
+  ICM_INT( sdim)
   ICM_INT( len)
-  ICM_VAR( len, s)
-ICM_END( ND_ASSIGN__VECT__SHAPE, (nt, len, s))
+  ICM_VARANY( len, s)
+ICM_END( ND_CREATE__VECT__SHAPE, (nt, sdim, len, s))
 #endif
 
-#if defined(ND_ASSIGN__VECT__DATA) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN__VECT__DATA, TRACE_NONE)
+#if defined(ND_CREATE__VECT__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE__VECT__DATA, TRACE_NONE)
   ICM_STR( nt)
+  ICM_INT( sdim)
   ICM_INT( len)
-  ICM_VAR( len, s)
-ICM_END( ND_ASSIGN__VECT__DATA, (nt, len, s))
+  ICM_VARANY( len, s)
+ICM_END( ND_CREATE__VECT__DATA, (nt, sdim, len, s))
 #endif
 
 
-#if defined(ND_PRF_SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SHAPE, TRACE_NONE)
+#if defined(ND_PRF_SHAPE__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SHAPE__DATA, TRACE_NONE)
   ICM_STR( to_nt)
   ICM_INT( to_sdim)
   ICM_STR( from_nt)
   ICM_INT( from_sdim)
-ICM_END( ND_PRF_SHAPE, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_PRF_SHAPE__DATA, (to_nt, to_sdim, from_nt, from_sdim))
+#endif
+
+#if defined(ND_PRF_MODARRAY__DATA_id) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY__DATA_id, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+  ICM_STR( idx)
+  ICM_STR( val)
+ICM_END( ND_PRF_MODARRAY__DATA_id, (to_nt, to_sdim, from_nt, from_sdim, idx, val))
+#endif
+
+#if defined(ND_PRF_MODARRAY__DATA_arr) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY__DATA_arr, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+  ICM_INT( idx_len)
+  ICM_VARANY( idx_len, idx_arr)
+  ICM_STR( val)
+ICM_END( ND_PRF_MODARRAY__DATA_arr, (to_nt, to_sdim, from_nt, from_sdim, idx_len, idx_arr, val))
+#endif
+
+#if defined(ND_PRF_IDX_MODARRAY__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_IDX_MODARRAY__DATA, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+  ICM_STR( idx)
+  ICM_STR( val)
+ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_nt, to_sdim, from_nt, from_sdim, idx, val))
 #endif
 
 
@@ -354,7 +367,7 @@ ICM_DEF( ND_KS_DECL_GLOBAL_ARRAY, TRACE_NONE)
   ICM_STR(basetype)
   ICM_STR(name)
   ICM_INT(dim)
-  ICM_VAR( dim, s)
+  ICM_VARANY( dim, s)
 ICM_END( ND_KS_DECL_GLOBAL_ARRAY, (basetype, name, dim, s))
 #endif
 
@@ -371,7 +384,7 @@ ICM_DEF( ND_KS_DECL_ARRAY, TRACE_NONE)
   ICM_STR(basetype)
   ICM_STR(name)
   ICM_INT(dim)
-  ICM_VAR( dim, s)
+  ICM_VARANY( dim, s)
 ICM_END( ND_KS_DECL_ARRAY, (basetype, name, dim, s))
 #endif
 
@@ -379,7 +392,7 @@ ICM_END( ND_KS_DECL_ARRAY, (basetype, name, dim, s))
 ICM_DEF( ND_KS_DECL_ARRAY_ARG, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(dim)
-  ICM_VAR( dim, s)
+  ICM_VARANY( dim, s)
 ICM_END( ND_KS_DECL_ARRAY_ARG, (name, dim, s))
 #endif
 
@@ -388,7 +401,7 @@ ICM_END( ND_KS_DECL_ARRAY_ARG, (name, dim, s))
 ICM_DEF( ND_CREATE_CONST_ARRAY_S, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(len)
-  ICM_VAR(len, s)
+  ICM_VARANY(len, s)
 ICM_END( ND_CREATE_CONST_ARRAY_S, (name, len, s))
 #endif
 
@@ -397,7 +410,7 @@ ICM_DEF( ND_CREATE_CONST_ARRAY_H, TRACE_NONE)
   ICM_STR(name)
   ICM_STR(copyfun)
   ICM_INT(len)
-  ICM_VAR(len, A)
+  ICM_VARANY(len, A)
 ICM_END( ND_CREATE_CONST_ARRAY_H, (name, copyfun, len, A))
 #endif
 
@@ -406,7 +419,7 @@ ICM_DEF( ND_CREATE_CONST_ARRAY_A, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(len2)
   ICM_INT(len1)
-  ICM_VAR( len1, A)
+  ICM_VARANY( len1, A)
 ICM_END( ND_CREATE_CONST_ARRAY_A, (name, len2, len1, A))
 #endif
 
@@ -416,7 +429,7 @@ ICM_DEF( ND_KD_SEL_CxA_S, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dim)
-  ICM_VAR( dim, vi)
+  ICM_VARANY( dim, vi)
 ICM_END( ND_KD_SEL_CxA_S, (a, res, dim, vi))
 #endif
 
@@ -435,7 +448,7 @@ ICM_DEF( ND_KD_SEL_CxA_A, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dimv)
-  ICM_VAR( dimv, vi)
+  ICM_VARANY( dimv, vi)
 ICM_END( ND_KD_SEL_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
@@ -455,7 +468,7 @@ ICM_DEF( ND_KD_TAKE_CxA_A, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dimv)
-  ICM_VAR( dimv, vi)
+  ICM_VARANY( dimv, vi)
 ICM_END( ND_KD_TAKE_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
@@ -465,14 +478,14 @@ ICM_DEF( ND_KD_DROP_CxA_A, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dimv)
-  ICM_VAR( dimv, vi)
+  ICM_VARANY( dimv, vi)
 ICM_END( ND_KD_DROP_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
 #if defined(ND_KD_CAT_SxAxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_CAT_SxAxA_A, TRACE_PRF)
   ICM_INT(dima)
-  ICM_VAR( 2,ar)
+  ICM_VARANY( 2,ar)
   ICM_STR(res)
   ICM_INT(catdim)
 ICM_END( ND_KD_CAT_SxAxA_A, (dima, ar, res, catdim))
@@ -481,7 +494,7 @@ ICM_END( ND_KD_CAT_SxAxA_A, (dima, ar, res, catdim))
 #if defined(ND_KD_ROT_CxSxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_ROT_CxSxA_A, TRACE_PRF)
   ICM_INT( rotdim)
-  ICM_VAR( 1, numstr)
+  ICM_VARANY( 1, numstr)
   ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
@@ -495,9 +508,9 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
   ICM_INT( dimres)
   ICM_STR( res)
   ICM_STR( old)
-  ICM_VAR( 1, value)
+  ICM_VARANY( 1, value)
   ICM_INT( dimv)
-  ICM_VAR( dimv, vi)
+  ICM_VARANY( dimv, vi)
 ICM_END( ND_PRF_MODARRAY_AxCxS, (res_btype, dimres, res, old, value, dimv, vi))
 #endif
 
@@ -507,7 +520,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxS, TRACE_PRF)
   ICM_INT(dimres)
   ICM_STR(res)
   ICM_STR(old)
-  ICM_VAR( 1, value)
+  ICM_VARANY( 1, value)
   ICM_INT(dim)
   ICM_STR(v)
 ICM_END( ND_PRF_MODARRAY_AxVxS, (res_btype,dimres,res,old,value,dim,v))
@@ -521,7 +534,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
   ICM_STR(old)
   ICM_STR(val)
   ICM_INT(dimv)
-  ICM_VAR( dimv, vi)
+  ICM_VARANY( dimv, vi)
 ICM_END( ND_PRF_MODARRAY_AxCxA, (res_btype,dimres,res,old,val,dimv,vi))
 #endif
 
@@ -547,7 +560,7 @@ ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_STR( arr_name)
   ICM_INT( dim)
   ICM_INT( dims)
-  ICM_VAR( dims, s)
+  ICM_VARANY( dims, s)
 ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, s))
 #endif
 
@@ -605,7 +618,7 @@ ICM_DEF( WL_ASSIGN, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_ASSIGN, (dims_expr, expr, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
@@ -615,7 +628,7 @@ ICM_DEF( WL_ASSIGN__INIT, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_ASSIGN__INIT, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
@@ -626,7 +639,7 @@ ICM_DEF( WL_ASSIGN__COPY, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_ASSIGN__COPY, (source, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
@@ -636,7 +649,7 @@ ICM_DEF( WL_FOLD__OFFSET, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_FOLD__OFFSET, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
@@ -646,7 +659,7 @@ ICM_DEF( WL_FOLD, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_FOLD, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
@@ -657,7 +670,7 @@ ICM_DEF( WL_ADJUST_OFFSET, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_ADJUST_OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
@@ -669,7 +682,7 @@ ICM_DEF( WL_SET_OFFSET, TRACE_NONE)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalars)
+  ICM_VARANY(dims, idx_scalars)
 ICM_END( WL_SET_OFFSET, (dim, first_block_dim,
                          dims_target, target, idx_vec, dims, idx_scalars))
 #endif
@@ -685,7 +698,7 @@ ICM_DEF( MT_SPMD_FUN_DEC, TRACE_NONE)
   ICM_STR(name)
   ICM_STR(from)
   ICM_INT(narg)
-  ICM_VAR((3*narg), vararg)
+  ICM_VARANY((3*narg), vararg)
 ICM_END( MT_SPMD_FUN_DEC, (name, from, narg, vararg))
 #endif
 
@@ -693,7 +706,7 @@ ICM_END( MT_SPMD_FUN_DEC, (name, from, narg, vararg))
 ICM_DEF( MT_SPMD_FUN_RET, TRACE_NONE)
   ICM_INT(barrier_id)
   ICM_INT(narg)
-  ICM_VAR((2*narg), vararg)
+  ICM_VARANY((2*narg), vararg)
 ICM_END( MT_SPMD_FUN_RET, (barrier_id, narg, vararg))
 #endif
 
@@ -701,7 +714,7 @@ ICM_END( MT_SPMD_FUN_RET, (barrier_id, narg, vararg))
 ICM_DEF( MT_START_SYNCBLOCK, TRACE_NONE)
   ICM_INT(barrier_id)
   ICM_INT(narg)
-  ICM_VAR((3*narg), vararg)
+  ICM_VARANY((3*narg), vararg)
 ICM_END( MT_START_SYNCBLOCK, (barrier_id, narg, vararg))
 #endif
 
@@ -715,7 +728,7 @@ ICM_END( MT_SYNC_NONFOLD, (barrier_id))
 ICM_DEF( MT_SYNC_FOLD, TRACE_NONE)
   ICM_INT(barrier_id)
   ICM_INT(narg)
-  ICM_VAR((4*narg), vararg)
+  ICM_VARANY((4*narg), vararg)
 ICM_END( MT_SYNC_FOLD, (barrier_id, narg, vararg))
 #endif
 
@@ -741,44 +754,44 @@ ICM_END( MT_SYNC_ONEFOLD_NONFOLD, (foldtype, accu_var, tmp_var, foldop))
 #if defined(MT_SYNC_FOLD_NONFOLD) || defined(ICM_ALL)
 ICM_DEF( MT_SYNC_FOLD_NONFOLD, TRACE_NONE)
   ICM_INT(narg)
-  ICM_VAR((4*narg), vararg)
+  ICM_VARANY((4*narg), vararg)
 ICM_END( MT_SYNC_FOLD_NONFOLD, (narg, vararg))
 #endif
 
 #if defined(MT_MASTER_SEND_FOLDRESULTS) || defined(ICM_ALL)
 ICM_DEF( MT_MASTER_SEND_FOLDRESULTS, TRACE_NONE)
   ICM_INT(nfoldargs)
-  ICM_VAR((2*nfoldargs), foldargs)
+  ICM_VARANY((2*nfoldargs), foldargs)
 ICM_END( MT_MASTER_SEND_FOLDRESULTS, (nfoldargs, foldargs))
 #endif
 
 #if defined(MT_MASTER_RECEIVE_FOLDRESULTS) || defined(ICM_ALL)
 ICM_DEF( MT_MASTER_RECEIVE_FOLDRESULTS, TRACE_NONE)
   ICM_INT(nfoldargs)
-  ICM_VAR((2*nfoldargs), foldargs)
+  ICM_VARANY((2*nfoldargs), foldargs)
 ICM_END( MT_MASTER_RECEIVE_FOLDRESULTS, (nfoldargs, foldargs))
 #endif
 
 #if defined(MT_MASTER_SEND_SYNCARGS) || defined(ICM_ALL)
 ICM_DEF( MT_MASTER_SEND_SYNCARGS, TRACE_NONE)
   ICM_INT(nsyncargs)
-  ICM_VAR(nsyncargs, syncargs)
+  ICM_VARANY(nsyncargs, syncargs)
 ICM_END( MT_MASTER_SEND_SYNCARGS, (nsyncargs, syncargs))
 #endif
 
 #if defined(MT_MASTER_RECEIVE_SYNCARGS) || defined(ICM_ALL)
 ICM_DEF( MT_MASTER_RECEIVE_SYNCARGS, TRACE_NONE)
   ICM_INT(nsyncargs)
-  ICM_VAR(nsyncargs, syncargs)
+  ICM_VARANY(nsyncargs, syncargs)
 ICM_END( MT_MASTER_RECEIVE_SYNCARGS, (nsyncargs, syncargs))
 #endif
 
 #if defined(MT_CONTINUE) || defined(ICM_ALL)
 ICM_DEF( MT_CONTINUE, TRACE_NONE)
   ICM_INT(nfoldargs)
-  ICM_VAR((2*nfoldargs), vararg)
+  ICM_VARANY((2*nfoldargs), vararg)
   ICM_INT(nsyncargs)
-  ICM_VAR((nsyncargs), syncargs)
+  ICM_VARANY((nsyncargs), syncargs)
 ICM_END( MT_CONTINUE, (nfoldargs, vararg, nsyncargs, syncargs))
 #endif
 
@@ -805,7 +818,7 @@ ICM_END( MT_SPMD_END, (name))
 ICM_DEF( MT_SPMD_SETUP, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(narg)
-  ICM_VAR((3*narg), vararg)
+  ICM_VARANY((3*narg), vararg)
 ICM_END( MT_SPMD_SETUP, (name, narg, vararg))
 #endif
 
@@ -813,7 +826,7 @@ ICM_END( MT_SPMD_SETUP, (name, narg, vararg))
 ICM_DEF( MT_SPMD_PRESET, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(narg)
-  ICM_VAR((2*narg), vararg)
+  ICM_VARANY((2*narg), vararg)
 ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 #endif
 
@@ -837,7 +850,7 @@ ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (array, array_dim, current_dim, lower, upp
 ICM_DEF( MT_SCHEDULER_BEGIN, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((2*dim), vararg)
+  ICM_VARANY((2*dim), vararg)
 ICM_END( MT_SCHEDULER_BEGIN, (sched_id, dim, vararg))
 #endif
 
@@ -845,7 +858,7 @@ ICM_END( MT_SCHEDULER_BEGIN, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_END, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((2*dim), vararg)
+  ICM_VARANY((2*dim), vararg)
 ICM_END( MT_SCHEDULER_END, (sched_id, dim, vararg))
 #endif
 
@@ -853,7 +866,7 @@ ICM_END( MT_SCHEDULER_END, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_INIT, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((2*dim), vararg)
+  ICM_VARANY((2*dim), vararg)
 ICM_END( MT_SCHEDULER_INIT, (sched_id, dim, vararg))
 #endif
 
@@ -863,7 +876,7 @@ ICM_END( MT_SCHEDULER_INIT, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Block_BEGIN, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
+  ICM_VARANY((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Block_BEGIN, (sched_id, dim, vararg))
 #endif
 
@@ -871,7 +884,7 @@ ICM_END( MT_SCHEDULER_Block_BEGIN, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Block_END, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
+  ICM_VARANY((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Block_END, (sched_id, dim, vararg))
 #endif
 
@@ -879,7 +892,7 @@ ICM_END( MT_SCHEDULER_Block_END, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Block_INIT, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
+  ICM_VARANY((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Block_INIT, (sched_id, dim, vararg))
 #endif
 
@@ -889,7 +902,7 @@ ICM_END( MT_SCHEDULER_Block_INIT, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_BlockVar_BEGIN, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
+  ICM_VARANY((3*dim), vararg)
 ICM_END( MT_SCHEDULER_BlockVar_BEGIN, (sched_id, dim, vararg))
 #endif
 
@@ -897,7 +910,7 @@ ICM_END( MT_SCHEDULER_BlockVar_BEGIN, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_BlockVar_END, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
+  ICM_VARANY((3*dim), vararg)
 ICM_END( MT_SCHEDULER_BlockVar_END, (sched_id, dim, vararg))
 #endif
 
@@ -905,7 +918,7 @@ ICM_END( MT_SCHEDULER_BlockVar_END, (sched_id, dim, vararg))
 ICM_DEF( MT_SCHEDULER_BlockVar_INIT, TRACE_NONE)
   ICM_INT(sched_id)
   ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
+  ICM_VARANY((3*dim), vararg)
 ICM_END( MT_SCHEDULER_BlockVar_INIT, (sched_id, dim, vararg))
 #endif
 
@@ -917,9 +930,9 @@ ICM_DEF( MT_SCHEDULER_Static_BEGIN, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Static_BEGIN, (sched_id,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif
 
@@ -929,9 +942,9 @@ ICM_DEF( MT_SCHEDULER_Static_END, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Static_END, (sched_id,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif
 
@@ -941,9 +954,9 @@ ICM_DEF( MT_SCHEDULER_Static_INIT, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Static_INIT, (sched_id,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif
 
@@ -956,9 +969,9 @@ ICM_DEF( MT_SCHEDULER_Self_BEGIN, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Self_BEGIN, (sched_id, first_task,ts_name, ts_dims,ts_arg_num,ts_args,  dim, vararg))
 #endif
 
@@ -969,9 +982,9 @@ ICM_DEF( MT_SCHEDULER_Self_END, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Self_END, (sched_id, first_task,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif
 
@@ -982,9 +995,9 @@ ICM_DEF( MT_SCHEDULER_Self_INIT, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Self_INIT, (sched_id, first_task,ts_name, ts_dims,ts_arg_num,ts_args,  dim, vararg))
 #endif
 
@@ -996,9 +1009,9 @@ ICM_DEF( MT_SCHEDULER_Affinity_BEGIN, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Affinity_BEGIN, (sched_id,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif
 
@@ -1008,20 +1021,20 @@ ICM_DEF( MT_SCHEDULER_Affinity_END, TRACE_NONE)
   ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Affinity_END, (sched_id,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Affinity_INIT) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Affinity_INIT, TRACE_NONE)
   ICM_INT(sched_id)
- ICM_STR(ts_name)
+  ICM_STR(ts_name)
   ICM_INT(ts_dims)
   ICM_INT(ts_arg_num)
-  ICM_VAR((ts_arg_num), ts_args)
+  ICM_VARANY((ts_arg_num), ts_args)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VARANY((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Affinity_INIT, (sched_id,ts_name, ts_dims,ts_arg_num,ts_args, dim, vararg))
 #endif

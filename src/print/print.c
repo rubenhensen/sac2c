@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2002/07/10 16:23:21  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
+ *
  * Revision 3.101  2002/07/04 11:15:43  dkr
  * PrintId: DBUG-string PRINT_NT added
  *
@@ -10,9 +13,6 @@
  * Revision 3.98  2002/07/03 12:04:31  sbs
  * when breaking after typecheck, the ntype attached to AVIS nodes
  * is printed as acomment to every vardec.
- *
- * Revision 3.97  2002/07/02 13:04:18  dkr
- * no changes done
  *
  * Revision 3.96  2002/07/01 19:56:41  sah
  * PrintNgenerator now prints ". (NULL)" instead of "."
@@ -197,18 +197,20 @@
 
 #define ICM_ALL
 #define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, node *arg_info);
+#define ICM_ANY(name)
 #define ICM_ICM(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
-#define ICM_VAR(dim, name)
+#define ICM_VARANY(dim, name)
 #define ICM_VARINT(dim, name)
 #define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
-#undef ICM_VAR
+#undef ICM_VARANY
 #undef ICM_VARINT
 #undef ICM_END
 #undef ICM_ALL
@@ -2590,10 +2592,11 @@ PrintIcm (node *arg_node, node *arg_info)
         indent -= ICM_INDENT_AFTER (arg_node);                                           \
         compiled_icm = TRUE;                                                             \
     } else
+#define ICM_ANY(name)
 #define ICM_ICM(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
-#define ICM_VAR(dim, name)
+#define ICM_VARANY(dim, name)
 #define ICM_VARINT(dim, name)
 #define ICM_END(prf, args)
 #include "icm.data"
@@ -2602,7 +2605,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
-#undef ICM_VAR
+#undef ICM_VARANY
 #undef ICM_VARINT
 #undef ICM_END
         ;

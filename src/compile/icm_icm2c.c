@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/07/10 16:24:15  dkr
+ * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
+ *
  * Revision 3.7  2002/07/08 22:06:40  dkr
  * GetNextVar(): N_icm added
  *
@@ -44,13 +47,15 @@
     {                                                                                    \
         DBUG_ENTER ("Print" #prf);
 
+#define ICM_ANY(name) exprs = GetNextAny (&name, exprs);
+
 #define ICM_ICM(name) exprs = GetNextIcm (&name, exprs);
 
 #define ICM_STR(name) exprs = GetNextId (&name, exprs);
 
 #define ICM_INT(name) exprs = GetNextInt (&name, exprs);
 
-#define ICM_VAR(cnt, name)                                                               \
+#define ICM_VARANY(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
         exprs = GetNextVar (&name, NULL, cnt, exprs);                                    \
     }
@@ -66,7 +71,7 @@
     DBUG_VOID_RETURN;                                                                    \
     }
 
-/* forward declaration */
+/* forward declarations */
 static node *GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs);
 
 static node *
@@ -271,14 +276,67 @@ GetNextDouble (double *ret, node *exprs)
 }
 
 static node *
-GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
+GetNextAny (char **ret, node *exprs)
 {
-    node *expr;
     int ival;
     char cval;
     bool bval;
     float fval;
     double dval;
+    node *expr;
+
+    DBUG_ENTER ("GetNextAny");
+
+    expr = EXPRS_EXPR (exprs);
+    switch (NODE_TYPE (expr)) {
+    case N_icm:
+        exprs = GetNextIcm (ret, exprs);
+        break;
+    case N_id:
+        exprs = GetNextId (ret, exprs);
+        break;
+    case N_str:
+        exprs = GetNextString (ret, exprs);
+        break;
+    case N_num:
+        (*ret) = (char *)Malloc (sizeof (char) * 50);
+        exprs = GetNextInt (&ival, exprs);
+        sprintf ((*ret), "%d", ival);
+        break;
+    case N_char:
+        (*ret) = (char *)Malloc (sizeof (char) * 5);
+        exprs = GetNextChar (&cval, exprs);
+        sprintf ((*ret), "%d", cval);
+        break;
+    case N_bool:
+        (*ret) = (char *)Malloc (sizeof (char) * 6);
+        exprs = GetNextBool (&bval, exprs);
+        if (bval) {
+            sprintf ((*ret), "true");
+        } else {
+            sprintf ((*ret), "false");
+        }
+        break;
+    case N_float:
+        exprs = GetNextFloat (&fval, exprs);
+        (*ret) = Float2String (fval);
+        break;
+    case N_double:
+        exprs = GetNextDouble (&dval, exprs);
+        (*ret) = Double2String (dval);
+        break;
+    default:
+        DBUG_ASSERT ((0), "illegal icm-arg found!");
+    }
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
+{
     int i;
     int len = 0;
 
@@ -290,49 +348,7 @@ GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
 
     len = 0;
     for (i = 0; i < cnt; i++) {
-        expr = EXPRS_EXPR (exprs);
-        switch (NODE_TYPE (expr)) {
-        case N_icm:
-            exprs = GetNextIcm (&((*ret)[i]), exprs);
-            break;
-        case N_id:
-            exprs = GetNextId (&((*ret)[i]), exprs);
-            break;
-        case N_str:
-            exprs = GetNextString (&((*ret)[i]), exprs);
-            break;
-        case N_num:
-            (*ret)[i] = (char *)Malloc (sizeof (char) * 50);
-            exprs = GetNextInt (&ival, exprs);
-            sprintf ((*ret)[i], "%d", ival);
-            break;
-        case N_char:
-            (*ret)[i] = (char *)Malloc (sizeof (char) * 5);
-            exprs = GetNextChar (&cval, exprs);
-            sprintf ((*ret)[i], "%d", cval);
-            break;
-        case N_bool:
-            (*ret)[i] = (char *)Malloc (sizeof (char) * 6);
-            exprs = GetNextBool (&bval, exprs);
-            if (bval) {
-                sprintf ((*ret)[i], "true");
-            } else {
-                sprintf ((*ret)[i], "false");
-            }
-            break;
-        case N_float:
-            exprs = GetNextFloat (&fval, exprs);
-            (*ret)[i] = Float2String (fval);
-            break;
-        case N_double:
-            exprs = GetNextDouble (&dval, exprs);
-            (*ret)[i] = Double2String (dval);
-            break;
-        default:
-            DBUG_PRINT ("PRINT",
-                        ("found icm_arg of type: %s", mdb_nodetype[NODE_TYPE (expr)]));
-            DBUG_ASSERT (0, "wrong icm-arg in var_arg_list");
-        }
+        exprs = GetNextAny (&((*ret)[i]), exprs);
         len += strlen ((*ret)[i]);
     }
 
