@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.31  2004/11/26 16:18:58  sbs
+# INCS eliminated
+#
 # Revision 3.30  2004/11/18 14:34:31  mwe
 # changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
 #
@@ -93,8 +96,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants -I../typecheck
 
 
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
