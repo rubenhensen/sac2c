@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/05/24 16:56:05  sbs
+ * Revision 1.19  1995/06/08 17:49:28  hw
+ *  N_icm ND_TYPEDEF_ARRAY inserted
+ *
+ * Revision 1.18  1995/05/24  16:56:05  sbs
  * now, the memory for the refcnts is freed as well :->>
  *
  * Revision 1.17  1995/05/24  13:58:31  sbs
@@ -329,6 +332,8 @@
 #define ND_GOTO(label) goto label;
 #define ND_LABEL(label)                                                                  \
     label:
+
+#define ND_TYPEDEF_ARRAY(type1, type2) typedef type1 *type2;
 
 #define true 1
 #define false 0
