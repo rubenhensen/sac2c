@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/03/30 15:11:03  jhs
+ *  changed ST_call_mt to ST_call_mt_master
+ *
  * Revision 1.5  2000/03/21 13:09:23  jhs
  * Comments.
  *
@@ -133,7 +136,7 @@ MTFINxt (node *arg_node, node *arg_info)
     old_attrib = INFO_MTFIN_CURRENTATTRIB (arg_info);
 
     if (NODE_TYPE (arg_node) == N_mt) {
-        INFO_MTFIN_CURRENTATTRIB (arg_info) = ST_call_mt;
+        INFO_MTFIN_CURRENTATTRIB (arg_info) = ST_call_mt_master;
     } else if (NODE_TYPE (arg_node) == N_st) {
         INFO_MTFIN_CURRENTATTRIB (arg_info) = ST_call_st;
     } else {
@@ -227,7 +230,7 @@ MTFINlet (node *arg_node, node *arg_info)
                 /*
                  *  Change names.
                  */
-                if (FUNDEF_ATTRIB (old_fundef) == ST_call_mt) {
+                if (FUNDEF_ATTRIB (old_fundef) == ST_call_mt_master) {
                     old_fundef = MUTHExpandFundefName (old_fundef, "__CALL_MT__");
                     new_fundef = MUTHExpandFundefName (new_fundef, "__CALL_ST__");
                 } else {
@@ -255,7 +258,7 @@ MTFINlet (node *arg_node, node *arg_info)
         }
     } else if (NODE_TYPE (LET_EXPR (arg_node)) != N_Nwith2) {
         /*
-         *  We traverse all the rst, but *not* with-loops.
+         *  We traverse all the rest, but *not* with-loops.
          *  Therefore we cannot reach repfuns.
          *  Every function called within a with-loop is a repfun by now,
          *  and these are not transformed in to st-funs or mt-funs, so this

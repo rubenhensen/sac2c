@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/03/30 15:10:46  jhs
+ *  changed ST_call_mt to ST_call_mt_master
+ *
  * Revision 1.13  2000/03/22 17:30:46  jhs
  * Added assertion.
  *
@@ -262,7 +265,15 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 
             result = testfun (AP_FUNDEF (LET_EXPR (instr)));
 
-            result = CheckLHSforHeavyTypes (instr);
+#if 0
+      /* normal: use this */
+      result = 
+               CheckLHSforHeavyTypes( instr);
+#else
+            /* if you want to debug use perhabs this */
+            result = CheckLHSforHeavyTypes (instr)
+                     || CheckLHSforBigArrays (instr, max_replication_size);
+#endif
         } else if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
             DBUG_PRINT ("BLKIN", ("N_prf"));
             /*
