@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/25 15:20:21  jhb
+ * WLSEGX_TASKSEL achanged to L_WLSEGX_TASKSEL
+ *
  * Revision 3.8  2004/11/24 19:29:17  skt
  * Compiler Switch during SACDevCampDK 2k4
  *
@@ -196,7 +199,7 @@ SCHEDwlseg (node *arg_node, info *arg_info)
               = SCHremoveScheduling (WLSEG_SCHEDULING (arg_node));
         }
         if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            WLSEGX_TASKSEL (arg_node) = SCHremoveTasksel (WLSEGX_TASKSEL (arg_node));
+            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
         }
 
     } else {
@@ -249,7 +252,7 @@ SCHEDwlsegVar (node *arg_node, info *arg_info)
               = SCHremoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
         }
         if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            WLSEGX_TASKSEL (arg_node) = SCHremoveTasksel (WLSEGX_TASKSEL (arg_node));
+            L_WLSEGX_TASKSEL (arg_node, SCHremoveTasksel (WLSEGX_TASKSEL (arg_node)));
         }
 
     } else {
