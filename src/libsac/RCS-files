@@ -4,7 +4,6 @@ cachesim.h
 cachesim_access.c
 cachesim_basic.c
 cinterface.c
-free_interface_handler.c
 message.c
 misc.c
 mt.c
