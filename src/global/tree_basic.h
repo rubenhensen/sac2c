@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.191  1998/06/19 19:36:58  dkr
+ * added INFO_REUSE_NEGMASK
+ *
  * Revision 1.190  1998/06/12 14:05:23  cg
  * added access macros/attributes for schedulings
  *
@@ -2498,6 +2501,7 @@ extern node *MakeInfo ();
 #define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
 #define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
 #define INFO_REUSE_MASK(n) ((DFMmask_t)n->dfmask[0])
+#define INFO_REUSE_NEGMASK(n) ((DFMmask_t)n->dfmask[1])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
