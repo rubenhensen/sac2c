@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2002/09/09 19:17:52  dkr
+# tree_basic.c does no longer include prf_node_info.mac
+#
 # Revision 3.27  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -78,10 +81,6 @@ all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
 # recognize the dependency between *.[ch] and the .mac files!
 #
 traverse.c: node_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-tree_basic.c: prf_node_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
