@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/04/15 19:05:50  dkr
+ * macro SET_SHAPES_AUD__XXX used. now it is possible to implement AKS,
+ * AKD arrays as AUD arrays (sac2c flag -minarrayrep)
+ *
  * Revision 3.44  2003/04/15 14:17:44  dkr
  * ICMCompileND_CHECK_REUSE(): \n added
  *
@@ -1479,7 +1483,6 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 {
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_nt);
-    shape_class_t from_sc = ICUGetShapeClass (from_nt);
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
@@ -1523,16 +1526,13 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 
     switch (to_sc) {
     case C_aud:
-        if (from_sc == C_aud) {
-            SET_SHAPES_AUD (to_nt, fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                            , fprintf (outfile, "SAC_ND_A_DIM( %s)", from_nt);
-                            , ,
-                            fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i)", from_nt););
-        } else {
-            SET_SHAPES_AUD__NUM (to_nt, i, 0, from_dim, ,
-                                 fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", from_nt,
-                                          i););
-        }
+        SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
+                             , 0, fprintf (outfile, "0");
+                             , from_dim, fprintf (outfile, "SAC_ND_A_DIM( %s)", from_nt);
+                             ,
+                             /* noop */
+                             , fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", from_nt, i);
+                             , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i)", from_nt););
         break;
 
     case C_akd:
@@ -1756,21 +1756,19 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
                                         "Assignment with incompatible types found!"););
 
             SET_SHAPE_AUD__NUM (to_nt, 0, fprintf (outfile, "%d", val_size););
-            if (val0_dim < 0) {
-                SET_SHAPES_AUD (to_nt, fprintf (outfile, "SAC_i");
-                                , fprintf (outfile, "1");
-                                , fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
-                                , ,
-                                fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i-1)",
-                                         vala_any[0]);
-                                /* SAC_ND_A_SHAPE() with variable index works for AUD
-                                   only! */
-                );
-            } else {
-                SET_SHAPES_AUD__NUM (to_nt, i, 1, val0_dim, ,
-                                     fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)",
-                                              vala_any[0], i - 1););
-            }
+            SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
+                                 , 1, fprintf (outfile, "1");
+                                 , val0_dim,
+                                 fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
+                                 ,
+                                 /* noop */
+                                 , fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)",
+                                            vala_any[0], i - 1);
+                                 , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i-1)",
+                                            vala_any[0]);
+                                 /* SAC_ND_A_SHAPE() with variable index works for AUD
+                                    only! */
+            );
 
             SET_SIZE (to_nt, fprintf (outfile, "%d * SAC_ND_A_SIZE( %s)", val_size,
                                       vala_any[0]););
@@ -2060,11 +2058,19 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AUD (to_nt, fprintf (outfile, "SAC_i");
-                                         , fprintf (outfile, "0");
-                                         , fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
-                                         , INDENT; fprintf (outfile, "SAC_size *= \n");
-                                         , shp_read_fun (shp, "SAC_i", -1););
+                       ,
+                       /*
+                        * although 'to_nt' is AUD, 'to_dim' may indeed be >=0 if the sac2c
+                        * flag -minarrayrep has been used, i.e. 'to_nt' may be implemented
+                        * as AUD although it is AKD!!!
+                        */
+                       SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
+                                            , 0, fprintf (outfile, "0");
+                                            , to_dim,
+                                            fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
+                                            , INDENT; fprintf (outfile, "SAC_size *= \n");
+                                            , shp_read_fun (shp, NULL, i);
+                                            , shp_read_fun (shp, "SAC_i", -1););
 
                        SET_SIZE (to_nt, fprintf (outfile, "SAC_size");););
         break;
