@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/11/29 15:31:34  ktr
+ * PRTprf corrected
+ *
  * Revision 3.37  2004/11/27 05:03:19  ktr
  * blah
  *
@@ -80,7 +83,7 @@ extern node *PRTwhile (node *arg_node, info *arg_info);
 extern node *PRTcond (node *arg_node, info *arg_info);
 extern node *PRTcast (node *arg_node, info *arg_info);
 extern node *PRTlet (node *arg_node, info *arg_info);
-extern node *PRTarf (node *arg_node, info *arg_info);
+extern node *PRTprf (node *arg_node, info *arg_info);
 extern node *PRTap (node *arg_node, info *arg_info);
 extern node *PRTmop (node *arg_node, info *arg_info);
 extern node *PRTempty (node *arg_node, info *arg_info);
