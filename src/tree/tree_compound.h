@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.169  2004/11/26 12:32:40  skt
+ * changed header of TCSearchObjectdef - added const
+ *
  * Revision 3.168  2004/11/26 12:29:25  skt
  * TCmakeStrCopy re-added
  *
@@ -623,7 +626,7 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
  *
  */
 
-extern node *TCsearchObjdef (char *name, char *mod, node *implementations);
+extern node *TCsearchObjdef (const char *name, char *mod, node *implementations);
 
 /*
  *  functionname  : TCobjList2ArgList
