@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/02/09 12:03:46  dkr
+ * superfluous space in output of ND_FUN_DEC removed
+ *
  * Revision 2.13  1999/11/02 14:33:18  sbs
  * SAC_ND_DEC_RC_FREE_ARRAY added at the end of the code for ND_KS_VECT2OFFSET!
  * This makes sure, all index-vectors that will be no longer used are actually freed!
@@ -518,7 +521,7 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
     } else if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char **__argv)", name);
     } else {
-        fprintf (outfile, "%s( ", name);
+        fprintf (outfile, "%s(", name);
 #ifdef TAGGED_ARRAYS
         /*
          * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
