@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2003/03/21 15:23:27  sbs
+ * ifdef YYDEBUG changed into if YYDEBUG
+ *
  * Revision 3.80  2003/03/20 13:55:25  sbs
  * config.h included;  MUST_REFERENCE_YYLABELS used.
  *
@@ -2655,7 +2658,7 @@ int My_yyparse()
   strcpy( tmp, filename);
   filename = tmp;
 
-#ifdef YYDEBUG
+#if YYDEBUG
   DBUG_EXECUTE( "YACC", yydebug=1;);
 #endif
 
