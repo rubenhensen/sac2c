@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.122  1997/05/05 11:53:18  cg
+ * Revision 1.123  1997/05/14 08:14:41  sbs
+ * ANALYSE-Macros inserted in PrintReturn and PrintIcm;
+ * PrintAnnotate added
+ *
+ * Revision 1.122  1997/05/05  11:53:18  cg
  * Now a dummy symbol is generated in the globals.c file. This prevents the linker
  * from warning in the case of non-existing symbol tables due to "empty" object files.
  *
@@ -407,6 +411,7 @@
 #include "convert.h"
 #include "optimize.h"
 #include "trace.h"
+#include "analyse.h"
 #include "filemgr.h"
 #include "globals.h"
 
@@ -420,7 +425,7 @@ static int print_separate = 0;
  */
 
 #define ICM_ALL
-#define ICM_DEF(prf, trf) extern void Print##prf (node *ex);
+#define ICM_DEF(prf, trf) extern void Print##prf (node *ex, node *arg_info);
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
@@ -456,11 +461,20 @@ PrintFileHeader ()
                 fprintf (outfile, "#define TRACE_REF\n");
             }
         }
+        if (analyseflag != 0) {
+            if (analyseflag & ANALYSE_TIME) {
+                fprintf (outfile, "#define ANALYSE_TIME\n");
+            }
+        }
 
         if (check_malloc) {
             fprintf (outfile, "#define CHECK_MALLOC\n");
         }
 
+        if (analyseflag != 0) {
+            fprintf (outfile, "#include <sys/types.h>\n");
+            fprintf (outfile, "#include <sys/times.h>\n");
+        }
         fprintf (outfile, "#include \"libsac.h\"\n");
         fprintf (outfile, "#include \"icm2c.h\"\n");
     }
@@ -552,6 +566,8 @@ PrintAssign (node *arg_node, node *arg_info)
 node *
 PrintBlock (node *arg_node, node *arg_info)
 {
+    static analyse_setup_flag = 0;
+
     DBUG_ENTER ("PrintBlock");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
@@ -565,12 +581,18 @@ PrintBlock (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
+    if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+        && (analyse_setup_flag == 0)) {
+        analyse_setup_flag = 1;
+        INDENT;
+        fprintf (outfile, "ANALYSE_SETUP( %d );\n", ATfuncntr);
+    }
+
     if (BLOCK_INSTR (arg_node) != NULL) {
         Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
     indent--;
-    /*   fprintf(outfile,"\n");  */
     INDENT;
     fprintf (outfile, "}\n");
 
@@ -590,6 +612,27 @@ PrintLet (node *arg_node, node *arg_info)
     }
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "; ");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintAnnotate (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintAnnotate");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    if (ANNOTATE_TAG (arg_node) == CALL_FUN) {
+        fprintf (outfile, "ANALYSE_BEGIN_UDF( %d );", ANNOTATE_FUNNUMBER (arg_node));
+    } else {
+        if (ANNOTATE_TAG (arg_node) == RETURN_FROM_FUN) {
+            fprintf (outfile, "ANALYSE_END_UDF( %d );", ANNOTATE_FUNNUMBER (arg_node));
+
+        } else {
+            DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -869,6 +912,10 @@ PrintFundef (node *arg_node, node *arg_info)
 
     new_info = MakeNode (N_info);
     new_info->varno = arg_node->varno;
+    INFO_FUNDEF (new_info) = arg_node; /* needed for the introduction
+                                        * of ANALYSE_... MACROS in the
+                                        * function body
+                                        */
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
                   PrintMasks (arg_node, new_info););
 
@@ -893,7 +940,7 @@ PrintFundef (node *arg_node, node *arg_info)
             }
 
             fprintf (outfile, "\n");
-            Trav (arg_node->node[0], new_info); /* traverse functionbody */
+            Trav (arg_node->node[0], new_info); /* traverse function body */
 
             if (FUNDEF_PRAGMA (arg_node) != NULL) {
                 Trav (FUNDEF_PRAGMA (arg_node), NULL);
@@ -1104,6 +1151,10 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if ((arg_node->node[0] != NULL) && (!RETURN_INWITH (arg_node))) {
+        if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
+            INDENT;
+            fprintf (outfile, "ANALYSE_PRINT();\n");
+        }
         fprintf (outfile, "return( ");
         Trav (arg_node->node[0], arg_info);
         fprintf (outfile, " );");
@@ -1579,7 +1630,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (arg_node->info.fun_name.id, #prf) == 0) {                                \
-        Print##prf (arg_node->node[0]);                                                  \
+        Print##prf (arg_node->node[0], arg_info);                                        \
         compiled_icm = 1;                                                                \
     } else
 #define ICM_STR(name)
@@ -1597,6 +1648,12 @@ PrintIcm (node *arg_node, node *arg_info)
             compiled_icm = 1;
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
+        if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
+            & (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
+            INDENT;
+            fprintf (outfile, "ANALYSE_PRINT();\n");
+        }
+
         INDENT;
         fprintf (outfile, "%s(", ICM_NAME (arg_node));
         if (NULL != arg_node->node[0])
