@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/07/21 12:40:38  khf
+ * TmpVar(): ea_tab added
+ *
  * Revision 3.45  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -1141,6 +1144,8 @@ PrefixForTmpVar (void)
         s = "wlfs";
     } else if (act_tab == emalloc_tab) {
         s = "emal";
+    } else if (act_tab == ea_tab) {
+        s = "ea";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
