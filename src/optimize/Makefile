@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.44  1998/03/22 18:03:15  srs
+# added rules for WLT, WLI, WLF
+#
 # Revision 1.43  1998/03/19 17:08:35  dkr
 # make deps done
 #
@@ -139,7 +142,7 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
-     WithloopFolding.o
+     WithloopFolding.o WLT.o WLI.o WLF.o
 
 optimize.o: optimize.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o optimize.o -c optimize.c $(INCS)
@@ -173,6 +176,15 @@ CSE.o: CSE.c
 
 WithloopFolding.o: WithloopFolding.c WithloopFolding.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o WithloopFolding.o -c WithloopFolding.c $(INCS)
+
+WLT.o: WLT.c WLT.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLT.o -c WLT.c $(INCS)
+
+WLI.o: WLI.c WLI.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLI.o -c WLI.c $(INCS)
+
+WLF.o: WLF.c WLF.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -254,6 +266,30 @@ Unswitch.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 Unswitch.o: /usr/include/malloc.h ../global/traverse.h
 Unswitch.o: ../global/access_macros.h optimize.h ConstantFolding.h DupTree.h
 Unswitch.o: Unroll.h Unswitch.h
+WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLF.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+WLF.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+WLF.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLF.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WLF.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
+WLF.o: ../global/traverse.h optimize.h ConstantFolding.h WithloopFolding.h
+WLF.o: WLF.h
+WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLI.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+WLI.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+WLI.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLI.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WLI.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
+WLI.o: ../global/traverse.h optimize.h ConstantFolding.h WithloopFolding.h
+WLI.o: WLI.h
+WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLT.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+WLT.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+WLT.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WLT.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WLT.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
+WLT.o: ../global/traverse.h optimize.h ConstantFolding.h WithloopFolding.h
+WLT.o: WLT.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -262,7 +298,7 @@ WithloopFolding.o: /usr/include/string.h ../global/globals.h
 WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
 WithloopFolding.o: ../print/print.h DupTree.h ../global/traverse.h optimize.h
-WithloopFolding.o: ConstantFolding.h WithloopFolding.h
+WithloopFolding.o: ConstantFolding.h WithloopFolding.h WLT.h WLI.h WLF.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WorkReduction.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
