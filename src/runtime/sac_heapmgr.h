@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2003/03/20 09:48:12  sbs
+ * distinction between OSes eliminated as they are identical
+ *
  * Revision 3.8  2002/07/03 17:27:40  dkr
  * some ; added in macros
  *
@@ -103,26 +106,7 @@ typedef long int SAC_HM_size_unit_t;
 
 #ifndef SAC_COMPILE_SACLIB
 
-#if defined(SAC_FOR_SOLARIS_SPARC)
-#include <sys/types.h>
-/* typedef unsigned int size_t;  */
-
-#elif defined(SAC_FOR_LINUX_X86)
-#include <sys/types.h>
-/* typedef unsigned int size_t;  */
-
-#elif defined(SAC_FOR_OSF_ALPHA)
-#include <sys/types.h>
-/* typedef unsigned int size_t;  */
-
-#elif defined(SAC_FOR_OSX_MAC)
-#include <sys/types.h>
-/* typedef unsigned int size_t;  */
-
-#else
-typedef UNKNOWN_OS size_t;
-
-#endif
+#include <sys/types.h> /* typedef unsigned int size_t;  */
 
 #endif /* SAC_COMPILE_SACLIB */
 
