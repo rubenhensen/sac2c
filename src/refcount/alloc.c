@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/09 22:16:06  ktr
+ * Support for F_copy added.
+ *
  * Revision 1.24  2004/09/21 17:27:59  ktr
  * Added support for F_idx_shape_sel, F_shape_sel
  *
@@ -1299,6 +1302,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_sub_SxA:
     case F_mul_SxA:
     case F_div_SxA:
+    case F_copy:
         if ((CountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)
             || ((TYIsAKD (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
@@ -1343,7 +1347,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_inc_rc:
     case F_dec_rc:
     case F_free:
-    case F_copy:
     case F_to_unq:
     case F_from_unq:
         DBUG_ASSERT ((0), "invalid prf found!");
