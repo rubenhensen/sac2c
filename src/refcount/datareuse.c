@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 17:35:36  ktr
+ * COMPILES!!!
+ *
  * Revision 1.6  2004/11/23 15:43:21  jhb
  * compile
  *
@@ -121,9 +124,7 @@ EMDRDataReuse (node *syntax_tree)
     DBUG_PRINT ("EMDR", ("Data reuse optimization..."));
 
     TRAVpush (TR_emdr);
-
     syntax_tree = TRAVdo (syntax_tree, NULL);
-
     TRAVpop ();
 
     DBUG_PRINT ("EMDR", ("Data reuse optimization complete."));
@@ -334,14 +335,6 @@ EMDRcode (node *arg_node, info *arg_info)
             FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)));
 
-#ifdef OLDTYPE
-            /*
-             * For the time being, an old type is required
-             */
-            VARDEC_TYPE (FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)))
-              = TYtype2OldType (AVIS_TYPE (avis));
-#endif
-
             /*
              * Create noop
              * a = noop( iv);
@@ -534,11 +527,12 @@ EMDRprf (node *arg_node, info *arg_info)
                                       ID_AVIS (PRF_ARG2 (arg_node)))
                     == ID_AVIS (PRF_ARG1 (prf))) {
                     PRF_PRF (prf) = F_noop;
-                    /*
-                    LUTInsertIntoLutP( INFO_EMDR_RENAMELUT( arg_info),
-                                       IDS_AVIS( INFO_EMDR_LHS( arg_info)),
-                                       ID_AVIS( PRF_ARG1( prf)));
-                    */
+
+#if 0
+          LUTInsertIntoLutP( INFO_EMDR_RENAMELUT( arg_info),
+	                     IDS_AVIS( INFO_EMDR_LHS( arg_info)),
+                             ID_AVIS( PRF_ARG1( prf)));
+#endif
                 }
                 break;
 

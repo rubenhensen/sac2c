@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 17:40:16  ktr
+ * COMPILES!!!
+ *
  * Revision 1.7  2004/11/23 17:32:52  jhb
  * compile
  *
@@ -135,9 +138,7 @@ EMRCORefCountOpt (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_emrco);
-
     syntax_tree = TRAVdo (syntax_tree, info);
-
     TRAVpop ();
 
     info = FreeInfo (info);
