@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.5  2002/02/22 13:06:11  sbs
+# CCDEPS_FLAGS added
+#
 # Revision 1.4  2001/11/19 19:49:56  dkr
 # CC call: parameter $(CFLAGS) added
 #
@@ -36,8 +39,8 @@ YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
 # is generated!
 #
 .%.d: %.c $(YACC_H_FILES) 
-	@$(ECHO) "$(CC) -M $(CCFLAGS) $(CFLAGS) $(INCS) $<  > $@"
-	@if $(CC) -M $(CCFLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
+	@$(ECHO) "$(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@"
+	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
 	 then sed 's/\($*\)\.o[ :]*/$*\.o $@\: /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
