@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/22 17:58:37  khf
+ * more codebrushing
+ *
  * Revision 1.10  2004/11/21 20:34:10  khf
  * the big 2004 codebrushing event
  *
@@ -45,11 +48,18 @@
  *
  */
 
-#include "types.h"
-
 #ifndef _SAC_ASSOCIATIVELAW_H_
 #define _SAC_ASSOCIATIVELAW_H_
 
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Associative law traversal ( al_tab)
+ *
+ * Prefix: AL
+ *
+ *****************************************************************************/
 extern node *ALdoAssociativeLaw (node *arg_node);
 
 extern node *ALblock (node *, info *);

@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.7  2004/11/22 17:58:37  khf
+ * more codebrushing
+ *
  * Revision 1.6  2004/11/21 20:34:10  khf
  * the big 2004 codebrushing event
  *
@@ -23,11 +26,18 @@
  *
  */
 
-#include "types.h"
-
 #ifndef _SAC_DISTRIBUTIVELAW_H_
 #define _SAC_DISTRIBUTIVELAW_H_
 
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Distributive law traversal ( dl_tab)
+ *
+ * Prefix: DL
+ *
+ *****************************************************************************/
 extern node *DLdoDistributiveLaw (node *);
 extern node *DLblock (node *, info *);
 extern node *DLassign (node *, info *);

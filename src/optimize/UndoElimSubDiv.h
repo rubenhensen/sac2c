@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.5  2004/11/22 17:58:37  khf
+ * more codebrushing
+ *
  * Revision 1.4  2004/11/21 20:34:10  khf
  * the big 2004 codebrushing event
  *
@@ -18,11 +21,18 @@
  * Initial revision
  */
 
-#include "types.h"
-
 #ifndef _SAC_UNDOELIMSUBDIV_H_
 #define _SAC_UNDOELIMSUBDIV_H_
 
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Undo Eliminate subtraction and division traversal ( uesd_tab)
+ *
+ * Prefix: UESD
+ *
+ *****************************************************************************/
 extern node *UESDdoUndoElimSubDiv (node *);
 
 extern node *UESDblock (node *, info *);

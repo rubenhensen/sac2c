@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.5  2004/11/22 17:58:37  khf
+ * more codebrushing
+ *
  * Revision 1.4  2004/11/21 20:34:10  khf
  * the big 2004 codebrushing event
  *
@@ -18,12 +21,19 @@
  * Initial revision
  */
 
-#include "types.h"
-
 #ifndef _SAC_ELIMSUBDIV_H_
 #define _SAC_ELIMSUBDIV_H_
 
-extern node *ESdoElimSubDiv (node *);
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Eliminate subtraction and division traversal ( esd_tab)
+ *
+ * Prefix: ESD
+ *
+ *****************************************************************************/
+extern node *ESDdoElimSubDiv (node *);
 
 extern node *ESDblock (node *, info *);
 extern node *ESDassign (node *, info *);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/22 17:57:54  khf
+ * more codebrushing
+ *
  * Revision 1.4  2004/11/21 20:18:08  khf
  * the big 2004 codebrushing event
  *
@@ -17,11 +20,18 @@
  *
  */
 
-#include "types.h"
-
 #ifndef _SAC_DETECTDEPENDENCIES_H_
 #define _SAC_DETECTDEPENDENCIES_H_
 
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Detect dependencies traversal ( ddepend_tab)
+ *
+ * Prefix: DDEPEND
+ *
+ *****************************************************************************/
 extern node *DDEPENDdoDetectDependencies (node *with, node *fusionable_wl,
                                           nodelist *references_fwl);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/22 17:58:37  khf
+ * more codebrushing
+ *
  * Revision 1.5  2004/11/21 20:34:10  khf
  * the big 2004 codebrushing event
  *
@@ -21,11 +24,18 @@
  *
  */
 
-#include "types.h"
-
 #ifndef _SAC_CONSTVARPROPAGATION_H_
 #define _SAC_CONSTVARPROPAGATION_H_
 
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Constant variable propagation traversal ( cvp_tab)
+ *
+ * Prefix: CVP
+ *
+ *****************************************************************************/
 extern node *CVPdoConstVarPropagation (node *arg_node);
 
 extern node *CVPfundef (node *arg_node, info *arg_info);
