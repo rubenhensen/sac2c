@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/11/23 11:27:12  sbs
+ * next
+ *
  * Revision 3.28  2004/11/22 16:10:11  sbs
  * SACDevCamp04
  *
@@ -100,11 +103,11 @@
  * Functions for printing (parts of) the AST
  */
 extern node *PRTdoPrint (node *syntax_tree);
-extern node *PRTprintNode (node *node);
+extern node *PRTdoPrintNode (node *node);
 
 /* debug output */
-extern void PRTprintAST (node *node);
-extern void PRTprintNodeAST (node *node);
+extern void PRTdoPrintAST (node *node);
+extern void PRTdoPrintNodeAST (node *node);
 
 /*
  * Functions for printing non-node parts of the AST
