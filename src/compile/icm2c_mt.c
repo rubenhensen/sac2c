@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/08/04 16:57:08  dkr
+ * argument of MT_SPMD_FUN_DEC, MT_SPMD_FUN_RET renamed
+ *
  * Revision 3.27  2002/08/01 12:47:44  dkr
  * no changes done
  *
@@ -284,22 +287,22 @@ SearchFoldImplementation (char *foldop)
  *
  * function:
  *   void ICMCompileMT_SPMD_FUN_DEC(char *name, char *from,
- *                                  int narg, char **vararg)
+ *                                  int narg, char **arg_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_DEC( name, from, narg [, tag, type, param]*)
+ *   MT_SPMD_FUN_DEC( name, from, narg [, TAG, type, param_nt]*)
  *
  *   This ICM implements the protoype of an spmd function. The first parameter
  *   specifies the name of this function while the seconf one specifies the
  *   function where the respective piece of code originally has been situated.
- *   Tags may be from the set in | out | in_rc | out_rc | inout_rc.
+ *   TAG may be from the set { in, out, inout }.
  *
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
+ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any)
 {
     int i;
 
@@ -336,8 +339,8 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 
     for (i = 0; i < 3 * narg; i += 3) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
-                 vararg[i + 2]);
+        fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", arg_any[i], arg_any[i + 1],
+                 arg_any[i + 2]);
     }
 
     DBUG_VOID_RETURN;
@@ -346,7 +349,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FUN_RET( int barrier_id, int narg, char **vararg)
+ *   void ICMCompileMT_SPMD_FUN_RET( int barrier_id, int narg, char **arg_any)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -360,7 +363,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg)
+ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any)
 {
     int i;
 
@@ -373,7 +376,7 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg)
 
     for (i = 0; i < 2 * narg; i += 2) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_RET_%s(%s);\n", vararg[i], vararg[i + 1]);
+        fprintf (outfile, "SAC_MT_SPMD_RET_%s(%s);\n", arg_any[i], arg_any[i + 1]);
     }
 
     INDENT;

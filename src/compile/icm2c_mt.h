@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/08/04 16:56:36  dkr
+ * argument of MT_SPMD_FUN_DEC, MT_SPMD_FUN_RET renamed
+ *
  * Revision 3.15  2001/05/11 14:36:56  cg
  * Implementations of ICMs concerned with loop scheduling
  * are now moved to new specific file icm2c_sched.c
@@ -124,8 +127,8 @@
 #ifndef _SAC_ICM2C_MT_H_
 #define _SAC_ICM2C_MT_H_
 
-extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg);
-extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg);
+extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any);
+extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any);
 extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg);
 extern void ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg);
 extern void ICMCompileMT_SYNC_NONFOLD (int barrier_id);
