@@ -16,6 +16,7 @@ sac_idx.h
 sac_message.h
 sac_misc.h
 sac_mt.h
+sac_mt2.h
 sac_prf.h
 sac_profile.h
 sac_std.h
