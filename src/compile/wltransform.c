@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/05/17 02:06:33  dkr
+ * added assertion in IntersectOutline()
+ *
  * Revision 1.17  1998/05/17 00:11:20  dkr
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  *
@@ -783,7 +786,7 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
             (head1 < rear2) && (head2 < rear1) &&
 
             /* are the grids compatible? */
-            (i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1) &&
+            (i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1)
             /*
              * Note: (i_offset_1 < grid1_b1) means, that the grid1 must be split
              *        in two parts to fit the new upper bound in the current dim.
@@ -791,24 +794,40 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
              *        therefore grid1, grid2 must have disjunct outlines!!!
              */
 
-            /* is intersection of 'stride1' with the outline of 'stride2' not empty? */
-            (i_bound1 + grid1_b1 - i_offset1 < i_bound2) &&
-            /* is intersection of 'stride2' with the outline of 'stride1' not empty? */
-            (i_bound1 + grid2_b1 - i_offset2 < i_bound2)
-            /*
-             * example:
-             *
-             *   stride1: 0->5 step 2          stride2: 2->3 step 1
-             *                   1->2: ...                     0->1: ...
-             *
-             * Here we must notice, that the intersection of 'stride1' with the
-             *  outline of 'stride2' is empty:
-             *
-             *            2->3 step 2
-             *                   1->2: ...     !!!!!!!!!!!!
-             */
-
         ) {
+
+            DBUG_ASSERT ((
+                           /* is intersection of 'stride1' with the outline of 'stride2'
+                              not empty? */
+                           (i_bound1 + grid1_b1 - i_offset1 < i_bound2) &&
+                           /* is intersection of 'stride2' with the outline of 'stride1'
+                              not empty? */
+                           (i_bound1 + grid2_b1 - i_offset2 < i_bound2)
+                           /*
+                            * example:
+                            *
+                            *   stride1: 0->5 step 2          stride2: 2->3 step 1
+                            *                   1->2: ...                     0->1: ...
+                            *
+                            * Here we must notice, that the intersection of 'stride1' with
+                            * the outline of 'stride2' is empty:
+                            *
+                            *            2->3 step 2
+                            *                   1->2: ...     !!!!!!!!!!!!
+                            *
+                            * The following parts of the 'cube generation' can not handle
+                            * this case! Therefore we will stop here!!
+                            *
+                            * remark: If this assertion fails, there is a bug in the
+                            * 'first step' of 'ComputeCubes()' !!!
+                            */
+                           ),
+                         ("must resign: "
+                          "intersection of outline(stride1) and outline(stride2) is "
+                          "non-empty, "
+                          "while intersection of outline(stride1) and stride2, as well "
+                          "as "
+                          "intersection of stride1 and outline(stride2) is empty :-("));
 
             if ((WLSTRIDE_PART (stride1) == WLSTRIDE_PART (stride2)) &&
                 /* are 'stride1' and 'stride2' descended from the same Npart? */
