@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1998/10/26 20:16:59  dkr
+ * fixed a bug in FltnLet:
+ *   no DBUG_PRINT on NULL-pointers!
+ *
  * Revision 1.77  1998/08/21 12:36:29  sbs
  * some dummy assignments in some default-cases inserted
  * for convincing the C compiler that these vars indeed
@@ -904,12 +908,17 @@ FltnLet (node *arg_node, node *arg_info)
     mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
     ids = LET_IDS (arg_node);
 
-    DBUG_PRINT ("FLATTEN", ("flattening RHS of let-assignment to %s", IDS_NAME (ids)));
+    if (ids != NULL) {
+        DBUG_PRINT ("FLATTEN",
+                    ("flattening RHS of let-assignment to %s", IDS_NAME (ids)));
+    }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    DBUG_PRINT ("RENAME",
-                ("checking LHS of let-assignment to %s for renaming", IDS_NAME (ids)));
+    if (ids != NULL) {
+        DBUG_PRINT ("RENAME", ("checking LHS of let-assignment to %s for renaming",
+                               IDS_NAME (ids)));
+    }
 
     while (ids != NULL) {
         var_name = IDS_NAME (ids);
