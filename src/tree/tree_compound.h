@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/10/13 15:18:28  sah
+ * MakeIdFromIds works in NEW_AST mode now!
+ *
  * Revision 3.98  2004/10/12 13:22:14  sah
  * modified NCODE_DEC_USED and added
  * NODE_ISALIVE
@@ -1892,6 +1895,10 @@ extern node *MakeId_Copy (char *str);
 extern node *MakeId_Copy_NT (char *str, types *type);
 
 extern node *MakeId_Num (int val);
+
+#ifdef NEW_AST
+extern node *MakeIdFromIds (ids *idss);
+#endif /* NEW_AST */
 
 /***************************************************************************
  *

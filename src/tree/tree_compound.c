@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/10/13 15:18:28  sah
+ * MakeIdFromIds works in NEW_AST mode now!
+ *
  * Revision 3.89  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -3837,6 +3840,27 @@ MakeId_Num (int val)
 
     DBUG_RETURN (result);
 }
+
+#ifdef NEW_AST
+#define AST_NO_COMPAT
+#include "node_compat.h"
+
+node *
+MakeIdFromIds (ids *idss)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeIdFromIds");
+
+    result = MakeId (idss);
+
+    DBUG_RETURN (result);
+}
+
+#undef AST_NO_COMPAT
+#include "node_compat.h"
+
+#endif /* NEW_AST */
 
 /***************************************************************************
  *

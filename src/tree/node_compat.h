@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/10/13 15:18:28  sah
+ * MakeIdFromIds works in NEW_AST mode now!
+ *
  * Revision 1.8  2004/10/12 13:21:41  sah
  * added special handling of WLseg WLsegVar MakeNWith2
  *
@@ -57,7 +60,6 @@
  * This section defines compatibility macros for code written for the old ast
  */
 
-#define MakeIdFromIds(ids) MakeId (IDS_NAME (ids), IDS_MOD (ids), IDS_STATUS (ids))
 #define MakeId(name, mod, status) MakeId (MakeIds (name, mod, status))
 #define MakeSSAcnt(next, count, baseid) MakeSSAcnt (count, baseid, next)
 #define MakeLet(expr, ids) MakeLet (ids, expr)
@@ -102,7 +104,6 @@
 
 #else /* NO_COMPAT */
 
-#undef MakeIdFromIds
 #undef MakeId
 #undef MakeSSAcnt
 #undef MakeLet
