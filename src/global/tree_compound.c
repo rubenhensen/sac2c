@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/26 10:53:59  bs
+ * Function 'IsConstantArray' modified.
+ * These changes are only temporary ones!!
+ *
  * Revision 2.5  1999/04/16 18:48:10  bs
  * Bug fixed in IntVec2Array.
  *
@@ -993,39 +997,65 @@ IsConstantArray (node *array, nodetype type)
 
     DBUG_ENTER ("IsConstantArray");
 
+#if 0
+  /*
+   *   This is the function as it should work. But unfortunately some optimizer functions
+   *   are destroying array informations, so it's neccessarry to modify IsConstantArray
+   *   a little bit ...
+   */
+  if (NODE_TYPE(array) == N_array) {
+    switch (ARRAY_VECTYPE(array)) {
+    case T_bool:
+    case T_char:
+    case T_int:
+    case T_float:
+    case T_double:
+      elems = ARRAY_VECLEN(array);
+      break;
+    case T_nothing:
+      elems = 1;
+      break;
+    default:
+      elems = 0;
+    }
+  }
+  else if (NODE_TYPE(array) == N_id) {
+    elems = ID_VECLEN(array);
+    if (elems == 0)
+      elems = ID_CONSTARRAY(array);
+  }
+  else
+    elems = 0;
+#endif
+
+    /*
+     *   ... and here the modified version:
+     */
     if (NODE_TYPE (array) == N_array) {
-        switch (ARRAY_VECTYPE (array)) {
-        case T_int:
-        case T_float:
-        case T_double:
-            elems = ARRAY_VECLEN (array);
-            break;
-        default:
+        array = ARRAY_AELEMS (array);
+        if (array == NULL) {
             /*
-             * only needed before flattening
+             *  Attention: here we've got an empty array! Since this array is constant
+             *  elems must be !=0 however the number of elements is 0 !!
              */
-            array = ARRAY_AELEMS (array);
-            while (array != NULL) {
-                switch (NODE_TYPE (EXPRS_EXPR (array))) {
-                case N_num:
-                case N_char:
-                case N_float:
-                case N_double:
-                case N_bool:
-                    if ((type != N_ok) && (type != NODE_TYPE (EXPRS_EXPR (array)))) {
-                        elems = 0;
-                        array = NULL;
-                    } else {
-                        elems++;
-                        array = EXPRS_NEXT (array);
-                    }
-                    break;
-                default:
-                    elems = 0;
-                    array = NULL;
-                }
+            elems = -1;
+        }
+        while (array != NULL) {
+            if (NODE_TYPE (EXPRS_EXPR (array)) == N_num) {
+                /*
+                 *  This time only integer arrays have to be checked if they are constant.
+                 */
+                array = EXPRS_NEXT (array);
+                elems++;
+            } else {
+                elems = 0;
+                break;
             }
         }
+    } else if (NODE_TYPE (array) == N_id) {
+        elems = ID_VECLEN (array);
+        if (elems == 0)
+            elems = ID_CONSTARRAY (array);
     } else
         elems = 0;
 
