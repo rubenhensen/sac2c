@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.52  1998/05/03 13:08:04  dkr
+# added icm2c_wl.o
+#
 # Revision 1.51  1998/04/29 17:12:28  dkr
 # added wltransform.o
 #
@@ -168,11 +171,11 @@ INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimi
 MACS=icm.data icm_comment.c icm_trace.c
 
 all: wltransform.o wlpragma_funs.o precompile.o compile.o icm2c.o icm2c_std.o \
-     gen_startup_code.o Old2NewWith.o
+     icm2c_wl.o gen_startup_code.o Old2NewWith.o
 
-BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.o gen_startup_code.o
+BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.o icm2c_wl.o gen_startup_code.o
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
-	../../lib/dbug.o icm2c_std.o gen_startup_code.o ../global/globals.o
+	../../lib/dbug.o icm2c_std.o icm2c_wl.o gen_startup_code.o ../global/globals.o
 
 wltransform.o: wltransform.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
@@ -191,6 +194,9 @@ icm2c.o: icm2c.c icm.data icm_vars.c
 
 icm2c_std.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_std.o -c icm2c_std.c $(INCS)
+
+icm2c_wl.o: icm2c_wl.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_wl.o -c icm2c_wl.c $(INCS)
 
 profile.o: profile.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o profile.o -c profile.c $(INCS)
@@ -250,6 +256,14 @@ icm2c_std.o: ../global/tree_basic.h ../global/tree_compound.h
 icm2c_std.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 icm2c_std.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
 icm2c_std.o: gen_startup_code.h icm_comment.c icm.data icm_trace.c
+icm2c_wl.o: /usr/include/malloc.h /usr/include/stdio.h
+icm2c_wl.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+icm2c_wl.o: ../../inc/dbug.h ../global/my_debug.h ../../inc/main.h
+icm2c_wl.o: ../print/convert.h ../global/tree.h ../global/types.h
+icm2c_wl.o: ../global/tree_basic.h ../global/tree_compound.h
+icm2c_wl.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+icm2c_wl.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+icm2c_wl.o: gen_startup_code.h icm_comment.c icm.data icm_trace.c
 icm_betest.o: icm.data
 icm_comment.o: icm.data
 icm_icm2c.o: icm.data
@@ -262,9 +276,8 @@ precompile.o: /usr/include/sys/va_list.h /usr/include/string.h
 precompile.o: /usr/include/stdlib.h ../global/globals.h
 precompile.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h ../print/convert.h
-precompile.o: ../global/traverse.h ../optimize/DupTree.h
-precompile.o: ../typecheck/typecheck.h ../refcount/refcount.h
-precompile.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
+precompile.o: ../global/traverse.h ../refcount/refcount.h
+precompile.o: ../optimize/DupTree.h ../typecheck/typecheck.h
 wlpragma_funs.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 wlpragma_funs.o: ../global/tree_compound.h ../global/Error.h
 wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -280,4 +293,6 @@ wltransform.o: /usr/include/sys/va_list.h /usr/include/string.h
 wltransform.o: /usr/include/stdlib.h ../global/globals.h
 wltransform.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 wltransform.o: ../global/my_debug.h /usr/include/malloc.h
-wltransform.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
+wltransform.o: ../global/traverse.h ../optimize/optimize.h wlpragma_funs.h
+wltransform.o: ../optimize/DupTree.h /usr/include/limits.h
+wltransform.o: /usr/include/sys/isa_defs.h
