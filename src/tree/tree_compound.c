@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/04/17 15:26:37  nmw
+ * AppendTypes added
+ *
  * Revision 3.32  2001/04/09 15:56:33  nmw
  * MakeArgFromVardec added
  *
@@ -372,6 +375,27 @@ Shpseg2Array (shpseg *shape, int dim)
 /***
  ***  TYPES :
  ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   types *AppendTypes( types *chain, types *item)
+ *
+ * description:
+ *   append item to list of types
+ *
+ ******************************************************************************/
+types *
+AppendTypes (types *chain, types *item)
+{
+    types *ret;
+
+    DBUG_ENTER ("AppendTypes");
+
+    APPEND (ret, types *, TYPES, chain, item);
+
+    DBUG_RETURN (ret);
+}
 
 /******************************************************************************
  *

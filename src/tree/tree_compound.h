@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/04/17 15:26:37  nmw
+ * AppendTypes added
+ *
  * Revision 3.36  2001/04/09 15:56:33  nmw
  * MakeArgFromVardec added
  *
@@ -187,6 +190,7 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
      && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
 
+extern types *AppendTypes (types *chain, types *item);
 extern int CountTypes (types *type);
 extern types *GetTypes_Line (types *type, int line);
 extern types *GetTypes (types *type);
