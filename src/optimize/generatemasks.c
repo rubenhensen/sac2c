@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/10/28 18:06:39  dkr
+ * output of PrintMrdMask() changed
+ *
  * Revision 2.9  1999/10/28 17:49:25  dkr
  * Output of PrintMrdMask() changed
  *
@@ -684,7 +687,7 @@ PrintMrdMask (FILE *handle, long *mrdmask, int varno)
                     nodeptr = (node *)mrdmask[i];
                     break;
                 }
-                fprintf (handle, "(%3d, %-8.8s(%8p))\n", i, typestr, nodeptr);
+                fprintf (handle, "(%3d, %-8.8s(0x%p))\n", i, typestr, nodeptr);
             }
         }
         if (empty) {
