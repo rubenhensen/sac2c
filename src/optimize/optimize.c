@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/04/20 11:17:29  nmw
+ * SSALoopUnrolling added to OPTfundef cycle
+ *
  * Revision 3.18  2001/04/19 16:34:14  nmw
  * statistics for wlir added
  *
@@ -254,6 +257,7 @@
 #include "SSAConstantFolding.h"
 #include "SSALIR.h"
 #include "while2do.h"
+#include "SSALUR.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -954,7 +958,16 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
-                arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
+                if (use_ssaform) {
+                    arg_node = CheckAvisSingleFundef (arg_node);
+                    arg_node = SSATransformSingleFundef (arg_node);
+                    arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
+
+                    /* apply a normal unrolling, too, to get WLUR */
+                    arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
+                } else {
+                    arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
+                }
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
