@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/02/12 17:48:34  cg
+ * Revision 1.9  1996/02/21 15:08:35  cg
+ * Now, pragmas of functions extracted from SIBs is retrieved correctly
+ *
+ * Revision 1.8  1996/02/12  17:48:34  cg
  * bug fixed in RSIBfundef, no more segmentation faults when reading
  * functions without inline information
  *
@@ -719,6 +722,7 @@ RSIBfundef (node *arg_node, node *arg_info)
             FUNDEF_ARGS (arg_node) = FUNDEF_ARGS (sib_entry);
             FUNDEF_TYPES (arg_node) = FUNDEF_TYPES (sib_entry);
             FUNDEF_LINKMOD (arg_node) = SIB_NAME (sib);
+            FUNDEF_PRAGMA (arg_node) = FUNDEF_PRAGMA (sib_entry);
 
             if (FUNDEF_PRAGMA (sib_entry) != NULL) {
                 pragma = FUNDEF_PRAGMA (sib_entry);
