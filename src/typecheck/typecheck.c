@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/04/16 11:47:55  jhs
+ * Changes made for emty arrays.
+ *
  * Revision 2.7  1999/03/30 14:59:27  cg
  * Bug fixed: the number of return values is now checked against
  * the function declaration.
@@ -3401,14 +3404,24 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
         /*
          *  Type '...' is compatible to every other type.
          */
-    } else {
+    }
+    /*  else if (TYPES_BASETYPE(type_2)==T_nothing)
+    {
+      compare=CMP_equal;
 
-        if ((((T_float == TYPES_BASETYPE (type_1)) && (T_int == TYPES_BASETYPE (type_2)))
-             || ((T_double == TYPES_BASETYPE (type_1))
-                 && (T_int == TYPES_BASETYPE (type_2)))
-             || ((T_double == TYPES_BASETYPE (type_1))
-                 && (T_float == TYPES_BASETYPE (type_2))))
-            && (-1 == convert_prim_type)) {
+         Type T_nothing can be casted to everything.
+
+    } */
+    else {
+
+        if ((T_nothing == TYPES_BASETYPE (type_2))
+            || ((((T_float == TYPES_BASETYPE (type_1))
+                  && (T_int == TYPES_BASETYPE (type_2)))
+                 || ((T_double == TYPES_BASETYPE (type_1))
+                     && (T_int == TYPES_BASETYPE (type_2)))
+                 || ((T_double == TYPES_BASETYPE (type_1))
+                     && (T_float == TYPES_BASETYPE (type_2))))
+                && (-1 == convert_prim_type))) {
             if ((UNKNOWN_SHAPE == type_1->dim) && (UNKNOWN_SHAPE == type_2->dim))
                 compare = CMP_both_unknown_shape;
             else if ((UNKNOWN_SHAPE == type_1->dim) || (UNKNOWN_SHAPE == type_2->dim))
@@ -3502,13 +3515,19 @@ UpdateType (types *type_one, types *type_two, int line)
 
     DBUG_ENTER ("UpdateType");
 
-    if ((-1 >= type_one->dim) && (0 <= type_two->dim)) {
-        t_unknown = type_one;
-        t_known = type_two;
-    } else if ((-1 >= type_two->dim) && (0 <= type_one->dim)) {
+    /*
+     *  One of the types has unknown shape, the other one's shape is known. Which one is
+     * which? (jhs)
+     */
+    if ((KNOWN_SHAPE (TYPES_DIM (type_one))) && (!(KNOWN_SHAPE (TYPES_DIM (type_two))))) {
         t_unknown = type_two;
         t_known = type_one;
+    } else if ((KNOWN_SHAPE (TYPES_DIM (type_two)))
+               && (!(KNOWN_SHAPE (TYPES_DIM (type_one))))) {
+        t_unknown = type_one;
+        t_known = type_two;
     }
+
     DBUG_ASSERT (((NULL != t_unknown) && (NULL != t_known)), "wrong types");
 
 #ifndef DBUG_OFF
@@ -3551,15 +3570,25 @@ UpdateType (types *type_one, types *type_two, int line)
                 t_unknown->shpseg->shp[i] = t_known->shpseg->shp[i];
         }
     } else {
+        DBUG_PRINT ("TYPE", ("array-cast"));
 
         /* both types are arrays of compatible primitive type
          * in this case we have to copy the shape of t_known to t_unknown
          */
-        DBUG_ASSERT (((TYPES_BASETYPE (t_unknown) == TYPES_BASETYPE (t_known))
+        DBUG_ASSERT (((TYPES_BASETYPE (t_known) == T_nothing)
+                      || (TYPES_BASETYPE (t_unknown) == TYPES_BASETYPE (t_known))
                       || ((T_int == TYPES_BASETYPE (t_unknown))
                           && (T_float == TYPES_BASETYPE (t_known)))
                       || ((T_float == TYPES_BASETYPE (t_unknown))
-                          && (T_int == TYPES_BASETYPE (t_known)))),
+                          && (T_int == TYPES_BASETYPE (t_known)))
+                      || ((T_int == TYPES_BASETYPE (t_unknown))
+                          && (T_double == TYPES_BASETYPE (t_known)))
+                      || ((T_double == TYPES_BASETYPE (t_unknown))
+                          && (T_int == TYPES_BASETYPE (t_known)))
+                      || ((T_double == TYPES_BASETYPE (t_unknown))
+                          && (T_float == TYPES_BASETYPE (t_known)))
+                      || ((T_float == TYPES_BASETYPE (t_unknown))
+                          && (T_double == TYPES_BASETYPE (t_known)))),
                      "wrong simpletypes ");
 
         t_unknown->dim = t_known->dim;
@@ -3664,22 +3693,22 @@ DuplicateFun (fun_tab_elem *fun_p)
  *
  *                  - parameter-types of external functions will not be updated
  *                  - the meaning of variable 'found':
- *                     0: no function found
- *                     1: found matching userdefined function without formal
+ *  FOUND_NONE         0: no function found
+ *  FOUND_USER         1: found matching userdefined function without formal
  *                        parameters of unknown shape
- *                     2: found matching userdefined function with at least
+ *  FOUND_USER_UNKNOWN 2: found matching userdefined function with at least
  *                        one formal paramter of unknown shape
- *                     3: found matching primitive function without formal
+ *  FOUND_PRIM         3: found matching primitive function without formal
  *                        parameters of unknown shape
- *                     4: found matching primitive function with at least
+ *  FOUND_PRIM_UNKNOWN 4: found matching primitive function with at least
  *                        one formal paramter of unknown shape
  *                  - the meaning of variable 'equal_types':
- *                     0: current function declaration doesn't match with
+ *  EQUAL_NO           0: current function declaration doesn't match with
  *                        given argument-types(3)
- *                     1: current function declaration matches with given
+ *  EQUAL_YES          1: current function declaration matches with given
  *                        argument_types( there isn't any unknown shape in
  *                        declaration of current function)
- *                     2: current function declaration matches given argument-
+ *  EQUAL_YES_UNKNOWN  2: current function declaration matches given argument-
  *                        types, but there is at least one formal parameter of
  *                        unknown shape
  *
@@ -3688,7 +3717,19 @@ void *
 FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node *arg_info,
          int line, int *prf_fun)
 {
-    int i, equal_types, count_param, stored_prf_fun, found = 0, once_again = 0, v_args;
+
+#define FOUND_NONE 0
+#define FOUND_USER 1
+#define FOUND_USER_UNKNOWN 2
+#define FOUND_PRIM 3
+#define FOUND_PRIM_UNKNOWN 4
+
+#define EQUAL_NO 0
+#define EQUAL_YES 1
+#define EQUAL_YES_UNKNOWN 2
+
+    int i, equal_types, count_param, stored_prf_fun, found = FOUND_NONE, once_again = 0,
+                                                     v_args;
     cmp_types is_correct = CMP_incompatible;
     node *fun_args;
     void *ret_node = NULL;
@@ -3703,7 +3744,9 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
     DBUG_ENTER ("FindFun");
 
     if ((NULL != mod_name) && (0 != strcmp (mod_name, PSEUDO_MOD_FOLD))) {
-        /* look where 'fun_name' is defined */
+        /*
+         *  look where 'fun_name' is defined
+         */
         mods = FindSymbolInModul (mod_name, fun_name, 2, NULL, 1);
     }
 
@@ -3741,12 +3784,12 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                     count_param = 0;
                     v_args = 0;
                     while (NULL != fun_args) {
-                        /* increase count_param only, if the type of the formal
-                           parameter is not equal T_dots.
-                           T_dots should be the last parameter of a function,  so we
-                           only have to compare the types of the first parameter and
-                           arguments.
-                        */
+                        /*  increase count_param only, if the type of the formal
+                         *  parameter is not equal T_dots.
+                         *  T_dots should be the last parameter of a function,  so we
+                         *  only have to compare the types of the first parameter and
+                         *  arguments.
+                         */
                         if (T_dots == ARG_BASETYPE (fun_args))
                             v_args = 1;
                         else
@@ -3756,119 +3799,136 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                              Type2String (ARG_TYPE (fun_args), 0),
                                              ARG_TYPE (fun_args)));
                         fun_args = ARG_NEXT (fun_args);
-                    }
+                    } /* while (NULL != funargs) */
 
                     if ((count_args == count_param) || (1 == v_args)) {
                         if (0 != count_param) {
                             /* now compare the types */
                             fun_args = FUN_ARGS;
-                            equal_types = 1;
+                            equal_types = EQUAL_YES;
                             for (i = 0; i < count_param;
                                  fun_args = ARG_NEXT (fun_args), i++) {
-                                if (0 == once_again)
+                                if (0 == once_again) {
                                     is_correct
                                       = CmpTypes (arg_type[i], ARG_TYPE (fun_args));
-                                else if (1 == once_again)
+                                } else if (1 == once_again) {
                                     is_correct = CompatibleTypes (ARG_TYPE (fun_args),
                                                                   arg_type[i], 0, line);
-                                if (CMP_one_unknown_shape == is_correct) /* 2*/
-                                    equal_types = 2;
-                                else if ((CMP_both_unknown_shape == is_correct)
-                                         && (SAC_MOD == kind_of_file))
-                                    equal_types = 2;              /* neu am 8.12. */
-                                else if (CMP_equal != is_correct) /* 1 */
-                                {
-                                    equal_types = 0;
+                                }
+
+                                DBUG_PRINT ("TYPE", ("is_correct is %i", is_correct));
+
+                                if (CMP_one_unknown_shape == is_correct) /* 2 */ {
+                                    equal_types = EQUAL_YES_UNKNOWN;
+                                } else if ((CMP_both_unknown_shape == is_correct)
+                                           && (SAC_MOD == kind_of_file)) {
+                                    equal_types = EQUAL_YES_UNKNOWN; /* neu am 8.12. */
+                                } else if (CMP_equal != is_correct) /* 1 */ {
+                                    equal_types = EQUAL_NO;
                                     break;
                                 }
-                            }
-                            switch (found) {
-                            case 0:
-                                if (1 == equal_types) {
-                                    if (IS_PRIMFUN)
-                                        found = 3;
-                                    else
-                                        found = 1;
-                                    ret_node = FUN_P;
-                                } else if (2 == equal_types) {
-                                    if (IS_PRIMFUN)
-                                        found = 4;
-                                    else
-                                        found = 2;
-                                    ret_node = FUN_P;
-                                }
-                                break;
-                            case 1:
-                            case 3:
-                                if (1 == equal_types) {
-                                    /* there are more than one matching functions,
-                                     * so an error message will be given.
-                                     */
-                                    ERROR (line,
-                                           ("More than one "
-                                            "function matches the call of '%s`",
-                                            ModName (mod_name,
-                                                     ((IS_PRIMFUN) ? prf_string[*prf_fun]
-                                                                   : fun_name))));
-                                }
-                                break;
+                            } /* for */
 
-                            case 4:
-                                if (0 < equal_types) {
-                                    /* there are more than one matching functions,
-                                     * so an error message will be given.
-                                     */
-                                    ERROR (line,
-                                           ("More than one "
-                                            "function matches the call of '%s`",
-                                            ModName (mod_name,
-                                                     ((IS_PRIMFUN) ? prf_string[*prf_fun]
-                                                                   : fun_name))));
+                            DBUG_PRINT ("TYPE", ("Found is %i", found));
+
+                            switch (found) {
+                            case FOUND_NONE:
+                                if (EQUAL_YES == equal_types) {
+                                    if (IS_PRIMFUN)
+                                        found = FOUND_PRIM;
+                                    else
+                                        found = FOUND_USER;
+                                    ret_node = FUN_P;
+                                } else if (EQUAL_YES_UNKNOWN == equal_types) {
+                                    if (IS_PRIMFUN)
+                                        found = FOUND_PRIM_UNKNOWN;
+                                    else
+                                        found = FOUND_USER_UNKNOWN;
+                                    ret_node = FUN_P;
                                 }
                                 break;
-                            case 2:
+                            case FOUND_USER:
+                            case FOUND_PRIM:
+                                if (EQUAL_YES == equal_types) {
+                                    /*
+                                     *  there are more than one matching functions,
+                                     *  so an error message will be given.
+                                     */
+                                    ERROR (
+                                      line,
+                                      ("More than one function matches the call of '%s`",
+                                       ModName (mod_name,
+                                                ((IS_PRIMFUN) ? prf_string[*prf_fun]
+                                                              : fun_name))));
+                                }
+                                break;
+                            case FOUND_PRIM_UNKNOWN:
+                                if (EQUAL_YES_UNKNOWN == equal_types) {
+                                    /*
+                                     * there are more than one matching functions,
+                                     * so an error message will be given.
+                                     */
+                                    ERROR (
+                                      line,
+                                      ("More than one function matches the call of '%s`",
+                                       ModName (mod_name,
+                                                ((IS_PRIMFUN) ? prf_string[*prf_fun]
+                                                              : fun_name))));
+                                }
+                                break;
+                            case FOUND_USER_UNKNOWN:
                                 /* if((1==equal_types) && IS_DUPLICATED(fun_p)) */
-                                if (1 == equal_types) {
-                                    found = 1;
+                                if (EQUAL_YES == equal_types) {
+                                    /*
+                                     * Until now a function with at least one unknown
+                                     * shape was found, but now there is one with all
+                                     * shapes known, this one will be used from now on.
+                                     * (jhs)
+                                     */
+                                    found = FOUND_USER;
                                     ret_node = FUN_P;
                                 } else
                                   /* if((0<equal_types) && (!IS_DUPLICATED(fun_p))) */
-                                  if (1 < equal_types) {
-                                    /* there are more than one matching functions,
-                                     * so an error message will be given.
+                                  if (EQUAL_YES_UNKNOWN == equal_types) {
+                                    /*
+                                     *  there are more than one matching functions,
+                                     *  so an error message will be given.
                                      */
-                                    ERROR (line,
-                                           ("More than one function "
-                                            "matches the call of '%s`",
-                                            ModName (mod_name,
-                                                     ((IS_PRIMFUN) ? prf_string[*prf_fun]
-                                                                   : fun_name))));
+                                    ERROR (
+                                      line,
+                                      ("More than one function matches the call of '%s`",
+                                       ModName (mod_name,
+                                                ((IS_PRIMFUN) ? prf_string[*prf_fun]
+                                                              : fun_name))));
                                 }
                                 break;
                             default:
                                 DBUG_ASSERT (0, "'found' has wrong value");
-                            }
+                            } /* switch (found) */
                         } else {
+                            /*
+                             *  Both functions have no parameters, so it's easy. (jhs)
+                             */
                             if (IS_PRIMFUN)
-                                found = 3;
+                                found = FOUND_PRIM;
                             else
-                                found = 1;
+                                found = FOUND_USER;
                             ret_node = FUN_P;
-                        }
-                    }
-                }
+                        } /* if (0 != count_param ) ... else ... */
+                    }     /* if */
+                }         /* if */
                 /* goto next function */
                 if (-1 == *prf_fun)
                     fun_p = NEXT_FUN_TAB_ELEM (fun_p);
                 else
                     prf_p = prf_p->next;
-            }
+            } /* while */
             if (NULL == ret_node) {
                 if (-1 != stored_prf_fun) {
                     /* we are looking for a primitive function */
                     if (IS_PRIMFUN) {
                         if (0 == once_again) {
-                            /* now look if there is a matching userdefined funktion
+                            /* now look if there is a matching userdefined function
                              * with name of primitive function
                              */
                             fun_name = prf_name_str[*prf_fun];
@@ -3881,23 +3941,27 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                  * 'compatible types'
                                  */
                                 once_again += 1;
-                        } else if (1 == once_again)
-                            if (NULL != fun_p_store)
-                                *prf_fun = -1;
+                        } else {
+                            if (1 == once_again)
+                                if (NULL != fun_p_store)
+                                    *prf_fun = -1;
+                                else
+                                    once_again += 1;
                             else
                                 once_again += 1;
-                        else
-                            once_again += 1;
+                        } /* if */
                     } else {
                         if (0 == once_again)
                             *prf_fun = stored_prf_fun;
                         once_again += 1;
-                    }
-                } else
+                    } /* if */
+                } else {
                     once_again += 1;
-            }
-        } while ((once_again < 2) && (NULL == ret_node));
+                }                                         /* if */
+            }                                             /* (NULL == ret_node) */
+        } while ((once_again < 2) && (NULL == ret_node)); /* do ... while (...) */
         ABORT_ON_ERROR;
+
         if (NULL == ret_node) {
             char arg_str[MAX_ARG_TYPE_LENGTH];
 
@@ -3935,12 +3999,13 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                 fun_p = ret_node;
                 fun_args = FUN_ARGS;
                 for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++)
-                    if ((-1 == ARG_DIM (fun_args)) && (0 < TYPES_DIM (arg_type[i]))) {
+                    if ((UNKNOWN_SHAPE == ARG_DIM (fun_args))
+                        && (KNOWN_SHAPE (TYPES_DIM (arg_type[i])))) {
                         update = 1;
                         break;
                     } else if ((SAC_PRG == kind_of_file)
-                               && (-1 == TYPES_DIM (arg_type[i]))
-                               && (-1 == ARG_DIM (fun_args))) {
+                               && (UNKNOWN_SHAPE == TYPES_DIM (arg_type[i]))
+                               && (UNKNOWN_SHAPE == ARG_DIM (fun_args))) {
                         ABORT (line,
                                ("Argument %d of function '%s' has"
                                 "unknown shape (%s)",
@@ -3954,9 +4019,9 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                     fun_p = DuplicateFun (ret_node);
                     fun_args = FUN_ARGS;
                     for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++)
-                        if (-1 == ARG_DIM (fun_args)) {
+                        if (UNKNOWN_SHAPE == ARG_DIM (fun_args)) {
                             /* update types only if arg_type has known shape */
-                            if (-1 != TYPES_DIM (arg_type[i])) {
+                            if (UNKNOWN_SHAPE != TYPES_DIM (arg_type[i])) {
                                 UpdateType (arg_type[i], ARG_TYPE (fun_args),
                                             NODE_LINE (fun_p->node));
 #ifdef SHAPE_NOTE
@@ -4360,6 +4425,8 @@ TI (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TI");
 
+    DBUG_PRINT ("TYPE", ("Nodetype is %s.", mdb_nodetype[arg_node->nodetype]));
+
     switch (NODE_TYPE (arg_node)) {
     case N_prf:
         return_type = TI_prf (arg_node, arg_info);
@@ -4384,7 +4451,7 @@ TI (node *arg_node, node *arg_info)
         cnt = 0;
         tmp_types = return_type;
         while (tmp_types != NULL) {
-            if (TYPES_DIM (tmp_types) < 0)
+            if (!(KNOWN_SHAPE (TYPES_DIM (tmp_types))))
                 cnt++;
             tmp_types = TYPES_NEXT (tmp_types);
         }
@@ -4566,6 +4633,10 @@ TClet (node *arg_node, node *arg_info)
 
     if (type == NULL)
         ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is not inferable"));
+
+    if (TYPES_BASETYPE (type) == T_nothing)
+        ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is inferable, but "
+                                      "illegal (e.g. an untyped empty array)"));
 
     DBUG_PRINT ("STOP",
                 ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
@@ -5618,30 +5689,32 @@ TI_array (node *arg_node, node *arg_info)
 
     return_type = NULL;
 
-    if (NULL != ARRAY_AELEMS (arg_node)) {
-        elem = ARRAY_AELEMS (arg_node);
-        while (NULL != elem) {
-            tmp_type = TI (EXPRS_EXPR (elem), arg_info);
-            n_elem++;
-            if (NULL == tmp_type) {
-                ABORT (NODE_LINE (arg_node),
-                       ("%d. element of array cannot be infered", n_elem));
-            }
+    elem = ARRAY_AELEMS (arg_node);
+    while (NULL != elem) {
+        n_elem++;
+        tmp_type = TI (EXPRS_EXPR (elem), arg_info);
+        if (NULL == tmp_type) {
+            ABORT (NODE_LINE (arg_node),
+                   ("%d. element of array cannot be infered", n_elem));
+        }
 
-            DBUG_ASSERT ((NULL != tmp_type), "tmp_type is NULL");
+        DBUG_ASSERT ((NULL != tmp_type), "tmp_type is NULL");
 
-            if (NULL == return_type)
-                return_type = tmp_type;
-            else
-              /* CompatibleTypes will be called twice, to infere type of an
-               * array that contains 'ints' and 'floats'
-               */
-              if ((CMP_equal
-                   != CompatibleTypes (tmp_type, return_type, -1, NODE_LINE (arg_node)))
-                  && (CMP_equal
-                      != CompatibleTypes (return_type, tmp_type, -1,
-                                          NODE_LINE (arg_node)))) /* 1, 1 */
-            {
+        if (NULL == return_type) {
+            return_type = tmp_type;
+        } else {
+            /* CompatibleTypes will be called twice, to infere type of an
+             * array that contains 'ints' and 'floats'
+             */
+            if ((CMP_equal
+                 != CompatibleTypes (tmp_type, return_type, -1, NODE_LINE (arg_node)))
+                && (CMP_equal
+                    != CompatibleTypes (return_type, tmp_type, -1,
+                                        NODE_LINE (arg_node)))) /* 1, 1 */ {
+                /*
+                 *  Elements of Array have incompatible types, result ist an Error. (jhs)
+                 */
+
                 str1 = Type2String (tmp_type, 0);
                 str2 = Type2String (return_type, 0);
                 ERROR (NODE_LINE (elem),
@@ -5655,37 +5728,59 @@ TI_array (node *arg_node, node *arg_info)
                            && T_double == TYPES_BASETYPE (tmp_type))
                        || (T_float == TYPES_BASETYPE (return_type)
                            && T_double == TYPES_BASETYPE (tmp_type))) {
+                /*
+                 *  Elements of Array have compatible types (until now), and the tmp_type
+                 * of the last Element viewed covers the return_type. Where doubles cover
+                 * floats and int, floats cover ints. (jhs)
+                 */
                 FREE_TYPES (return_type);
                 return_type = tmp_type;
-            } else
+            } else {
+                /*
+                 *  Elements of Array have compatible types (until now), and the tmp_type
+                 * of the last Element viewed is covered by the return_type. Where doubles
+                 * cover floats and int, floats cover ints. (jhs)
+                 */
                 FREE_TYPES (tmp_type);
-            elem = EXPRS_NEXT (elem);
-        }
-        if (NULL != return_type) {
-            if (0 == return_type->dim) {
-                return_type->dim = 1;
-                return_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                return_type->shpseg->next = NULL;
-                return_type->shpseg->shp[0] = n_elem;
-            } else if (-1 != return_type->dim) {
-                DBUG_ASSERT ((return_type->dim + 1 <= SHP_SEG_SIZE), " dimension"
-                                                                     " out of range");
-                for (i = return_type->dim - 1; i >= 0; i--)
-                    return_type->shpseg->shp[i + 1] = return_type->shpseg->shp[i];
-                return_type->shpseg->shp[0] = n_elem;
-                return_type->dim += 1;
             }
-
-#ifndef DBUG_OFF
-            db_str = Type2String (return_type, 0);
-            DBUG_PRINT ("TYPE", ("type of array: %s", db_str));
-            FREE (db_str);
-#endif
-            /* store type of array in arg_node->info.types */
-            arg_node->info.types = DuplicateTypes (return_type, 1);
-        } else {
-            ABORT (NODE_LINE (arg_node), ("Type of array not inferable"));
         }
+        elem = EXPRS_NEXT (elem);
+    } /* while */
+
+    if (n_elem == 0) {
+        /*
+         *  This produces a virtual type for the not existing arguments of this empty
+         * array.
+         */
+        DBUG_PRINT ("TYPE", ("empty array found"));
+        return_type = MakeType (T_nothing, 0, NULL, NULL, NULL);
+    }
+
+    if (NULL != return_type) {
+        if (0 == TYPES_DIM (return_type)) {
+            TYPES_DIM (return_type) = 1;
+            TYPES_SHPSEG (return_type) = (shpseg *)Malloc (sizeof (shpseg));
+            SHPSEG_NEXT (TYPES_SHPSEG (return_type)) = NULL;
+            SHPSEG_SHAPE (TYPES_SHPSEG (return_type), 0) = n_elem;
+        } else if (-1 != TYPES_DIM (return_type)) {
+            DBUG_ASSERT ((TYPES_DIM (return_type) + 1 <= SHP_SEG_SIZE), " dimension"
+                                                                        " out of range");
+            for (i = TYPES_DIM (return_type) - 1; i >= 0; i--) {
+                SHPSEG_SHAPE (TYPES_SHPSEG (return_type), i + 1)
+                  = SHPSEG_SHAPE (TYPES_SHPSEG (return_type), i);
+            }
+            SHPSEG_SHAPE (TYPES_SHPSEG (return_type), 0) = n_elem;
+            TYPES_DIM (return_type) += 1;
+        }
+#ifndef DBUG_OFF
+        db_str = Type2String (return_type, 0);
+        DBUG_PRINT ("TYPE", ("type of array: %s", db_str));
+        FREE (db_str);
+#endif
+        /* store type of array in arg_node->info.types */
+        arg_node->info.types = DuplicateTypes (return_type, 1);
+    } else {
+        ABORT (NODE_LINE (arg_node), ("Type of array not inferable"));
     }
 
     DBUG_RETURN (return_type);
