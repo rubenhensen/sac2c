@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 2.11  1999/06/17 14:29:22  sbs
+ * patched the typechecker in order to accept programs which only require
+ * the dimensionality rather than the exact shape of all arrays to be
+ * known statically.
+ * This only will be done in case "dynamic_shapes == 1" which can be
+ * achieved by calling sac2c -ds!
+ *
  * Revision 2.10  1999/05/31 16:54:54  sbs
  * bug in Genarray_S eliminated :
  * instead of checking for ID_VECLEN> SCALAR we now check for
@@ -809,30 +816,27 @@ types *
 Shp (types *array)
 {
     types *ret_type;
-    int dim;
+    int dim, n;
 
     DBUG_ENTER ("Shp");
 
-    if (UNKNOWN_SHAPE == TYPES_DIM (array))
-    /* replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-1 if infering of dimension
-     * is integrated
-     */
-#ifndef KNOWN_DIM
-        ret_type = MakeType (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
-#else
+    if (UNKNOWN_SHAPE == TYPES_DIM (array)) {
+        /*
+         * shape( A:int[]) : int[.] !
+         */
         ret_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
-#endif /* KNOWN_DIM */
-    else if (KNOWN_DIM_OFFSET > TYPES_DIM (array))
-    /* replace UNKNOWN_SHAPE with KNOWN_DIM_OFFSET-1 if infering of dimension
-     * is integrated
-     */
-#ifndef KNOWN_DIM
-        ret_type = MakeType (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
-#else
-        ret_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
-#endif /* KNOWN_DIM */
-    else if (SCALAR < TYPES_DIM (array)) {
-        /* it is a array-type */
+    } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array)) {
+        /*
+         * shape( A:int[., ..., .]) : int[ n] !
+         *              \---n---/
+         */
+        n = KNOWN_DIM_OFFSET - TYPES_DIM (array);
+        ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
+        TYPES_SHAPE (ret_type, 0) = n;
+    } else if (SCALAR < TYPES_DIM (array)) {
+        /*
+         * shape( A:int[s0, ..., sn-1]) : int[ n] !
+         */
         ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
         GET_DIM (dim, array);
         TYPES_SHAPE (ret_type, 0) = dim;
@@ -2061,7 +2065,7 @@ Modarray (types *array, types *vec, types *value, int line)
     DBUG_PRINT ("PRF_TYPE", ("b_vec: %s", Type2String (b_vec, 0)));
     DBUG_PRINT ("PRF_TYPE", ("b_value: %s", Type2String (b_value, 0)));
 
-    if (SAC_PRG == kind_of_file) {
+    if ((SAC_PRG == kind_of_file) && (dynamic_shapes == 0)) {
         if (b_vec->dim != 1) {
             ERROR2 (3, ("%s, %d: 2.argument of function 'modarray' has incompatible "
                         "type ( int[x] != %s)",

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.22  1999/06/17 14:29:22  sbs
+ * patched the typechecker in order to accept programs which only require
+ * the dimensionality rather than the exact shape of all arrays to be
+ * known statically.
+ * This only will be done in case "dynamic_shapes == 1" which can be
+ * achieved by calling sac2c -ds!
+ *
  * Revision 2.21  1999/06/02 13:51:16  sbs
  * fixed a nasty bug in TI_Ngenarray
  * in[] nowalso matches int[.]
@@ -488,7 +495,7 @@ types *TI_cast (node *arg_node, node *arg_info);
 types *TI_with (node *arg_node, node *arg_info);
 
 types *TI_Nwith (node *, node *);
-types *TI_Npart (node *, types *, node *);
+types *TI_Npart (node *, types *, node *, node *);
 types *TI_Ngenarray (node *, node *, node **);
 void ConsistencyCheckModarray (int lineno, types *array_type, types *generator_type,
                                types *body_type);
@@ -3667,14 +3674,21 @@ UpdateType (types *type_one, types *type_two, int line)
     DBUG_ENTER ("UpdateType");
 
     /*
-     *  One of the types has unknown shape, the other one's shape is known. Which one is
-     * which? (jhs)
+     *  One of the types has unknown shape, the other one's shape or at least its
+     * dimensionality is known. NB: the latter only comes true if -ds is set since
+     * this may lead to specializations such as int[] => int[.]!
+     *  Which one is which? (jhs)
      */
-    if ((KNOWN_SHAPE (TYPES_DIM (type_one))) && (!(KNOWN_SHAPE (TYPES_DIM (type_two))))) {
+    if ((KNOWN_SHAPE (TYPES_DIM (type_one)) && (!KNOWN_SHAPE (TYPES_DIM (type_two))))
+        || (TYPES_DIM (type_two) == UNKNOWN_SHAPE)) {
+        /*
+         * note here that (! KNOWN_SHAPE) is not identical to UNKNOWN_SHAPE !!!
+         */
         t_unknown = type_two;
         t_known = type_one;
-    } else if ((KNOWN_SHAPE (TYPES_DIM (type_two)))
-               && (!(KNOWN_SHAPE (TYPES_DIM (type_one))))) {
+    } else if (((KNOWN_SHAPE (TYPES_DIM (type_two)))
+                && (!(KNOWN_SHAPE (TYPES_DIM (type_one)))))
+               || (TYPES_DIM (type_one) == UNKNOWN_SHAPE)) {
         t_unknown = type_one;
         t_known = type_two;
     }
@@ -3698,7 +3712,7 @@ UpdateType (types *type_one, types *type_two, int line)
         t_unknown->dim = t_node->DIM + t_known->dim;
         DBUG_ASSERT ((t_unknown->dim <= SHP_SEG_SIZE), "dimension to large");
 
-        if (t_unknown->dim > 0) {
+        if (KNOWN_SHAPE (t_unknown->dim)) {
             t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
             t_unknown->shpseg->next = NULL;
             for (i = 0; i < t_known->dim; i++)
@@ -3714,7 +3728,7 @@ UpdateType (types *type_one, types *type_two, int line)
                    ("Type '%s` is unknown", ModName (t_known->name_mod, t_known->name)));
         DBUG_ASSERT ((NULL != t_node), "t_node is NULL");
         t_unknown->dim = t_known->dim - t_node->DIM;
-        if (t_unknown->dim > 0) {
+        if (KNOWN_SHAPE (t_unknown->dim)) {
             t_unknown->shpseg = (shpseg *)Malloc (sizeof (shpseg));
             t_unknown->shpseg->next = NULL;
             for (i = 0; i < t_unknown->dim; i++)
@@ -3972,7 +3986,8 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                 if (CMP_one_unknown_shape == is_correct) /* 2 */ {
                                     equal_types = EQUAL_YES_UNKNOWN;
                                 } else if ((CMP_both_unknown_shape == is_correct)
-                                           && (SAC_MOD == kind_of_file)) {
+                                           && ((SAC_MOD == kind_of_file)
+                                               || (dynamic_shapes == 1))) {
                                     equal_types = EQUAL_YES_UNKNOWN; /* neu am 8.12. */
                                 } else if (CMP_equal != is_correct) /* 1 */ {
                                     equal_types = EQUAL_NO;
@@ -4146,12 +4161,16 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                  *
                  * We have only to duplicate and to update, if there are args
                  * with known and formal parameters with unknown type.
+                 * OR (in case -ds is turned on) if the args are of known
+                 * dimensionality and formal parameters with unknown shape !!!
                  */
                 fun_p = ret_node;
                 fun_args = FUN_ARGS;
-                for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++)
+                for (i = 0; i < count_args; fun_args = ARG_NEXT (fun_args), i++) {
                     if ((UNKNOWN_SHAPE == ARG_DIM (fun_args))
-                        && (KNOWN_SHAPE (TYPES_DIM (arg_type[i])))) {
+                        && (KNOWN_SHAPE (TYPES_DIM (arg_type[i]))
+                            || (KNOWN_DIMENSION (TYPES_DIM (arg_type[i]))
+                                && (dynamic_shapes == 1)))) {
                         update = 1;
                         break;
                     } else if ((SAC_PRG == kind_of_file)
@@ -4165,6 +4184,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                          (IS_PRIMFUN) ? prf_string[*prf_fun] : fun_name),
                                 Type2String (arg_type[i], 0)));
                     }
+                }
 
                 if (1 == update) {
                     fun_p = DuplicateFun (ret_node);
@@ -4259,7 +4279,8 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
 
         if (is_defined || (!strcmp (ids->id, vardec_p->info.types->id))) {
             /* variable ids->id is defined in variable declaration part
-             * so check if typedeclaration is ok */
+             * so check if typedeclaration is ok
+             */
             is_defined = 1;
             /*
              * sbs: calling CompatibleTypes with 0 as 3rd arg makes int, float,
@@ -4290,11 +4311,17 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
             }
             case CMP_both_unknown_shape: {
                 if (kind_of_file != SAC_MOD) {
-                    str = Type2String (type, 0);
-                    WARN (line, ("Types in declaration (%s) and usage "
-                                 "(%s) of variable '%s` have unknown shape",
-                                 Type2String (vardec_p->info.types, 0), str, ids->id));
-                    FREE (str);
+                    if (dynamic_shapes == 0) {
+                        str = Type2String (type, 0);
+                        WARN (line,
+                              ("Types in declaration (%s) and usage "
+                               "(%s) of variable '%s` have unknown shape",
+                               Type2String (vardec_p->info.types, 0), str, ids->id));
+                        FREE (str);
+                    } else {
+                        /* update int[] => int[.,...,.] ! */
+                        UpdateType (vardec_p->info.types, type, line);
+                    }
                 }
                 break;
             }
@@ -4786,8 +4813,8 @@ TClet (node *arg_node, node *arg_info)
         ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is not inferable"));
 
     if (TYPES_BASETYPE (type) == T_nothing)
-        ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is inferable, but "
-                                      "illegal (e.g. an untyped empty array)"));
+        ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is inferable,"
+                                      " but illegal (e.g. an untyped empty array)"));
 
     DBUG_PRINT ("STOP",
                 ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
@@ -4827,9 +4854,6 @@ TClet (node *arg_node, node *arg_info)
                     /*
                      * sbs: switched the prim_fun_flag from -1 to 0 since we
                      * otherwise get an error in UpdateType for the following example:
-                     *
-                     *
-                     *
                      */
                     cmp = CompatibleTypes (VARDEC_TYPE (vardec_node), type, 0,
                                            NODE_LINE (arg_node));
@@ -5140,9 +5164,6 @@ TClet (node *arg_node, node *arg_info)
                 /*
                  * sbs: switched the prim_fun_flag from -1 to 0 since we
                  * otherwise get an error in UpdateType for the following example:
-                 *
-                 *
-                 *
                  */
                 switch (CompatibleTypes (elem->node->info.types, type, 0,
                                          NODE_LINE (arg_node))) {
@@ -5411,20 +5432,21 @@ TCreturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("TCreturn");
     DBUG_PRINT ("TYPE", ("return of line %d", NODE_LINE (arg_node)));
 
-    exprs = arg_node->node[0];
+    exprs = RETURN_EXPRS (arg_node);
 
 #ifdef NOT_EMPTY_RETURN
     DBUG_ASSERT (NULL != exprs, (" return statement without return-value"));
 #endif /* NOT_EMPTY_RETURN */
     if (NULL != exprs) {
-        /* infere the types of the returnvalue */
+        /* infer the types of the returnvalue */
         return_type = TI (exprs->node[0], arg_info);
-        if (NULL == return_type)
+        if (NULL == return_type) {
             ABORT (NODE_LINE (arg_node), ("Return_type cannot be infered"));
-
+        }
         DBUG_ASSERT ((NULL != return_type), "return_type is NULL");
-    } else
+    } else {
         return_type = MakeTypes (T_void);
+    }
 
     DBUG_PRINT ("STOP",
                 ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
@@ -5534,15 +5556,30 @@ TCreturn (node *arg_node, node *arg_info)
             case CMP_both_unknown_shape: /* neu 8.12 */
             {
                 if (kind_of_file != SAC_MOD) {
-                    str1 = Type2String (fun_tmp, 0);
-                    str2 = Type2String (return_type, 0);
-                    WARN (NODE_LINE (arg_node),
-                          ("Types with unknown shape in declaration (%s) and return "
-                           "value (%s) of function '%s`",
-                           str1, str2, ModName (fun_mod, fun_name)));
+                    if (dynamic_shapes == 1) {
+                        /*
+                         * this is needed for specializing int[] into int[.],...
+                         * therefore, it only occurs when compiling non-modules with -ds !
+                         */
+                        UpdateType (fun_type, return_type, NODE_LINE (arg_node));
+                        str1 = Type2String (fun_tmp, 0);
+#ifdef SHAPE_NOTE
+                        NOTE (("%s:%d: NOTE: one return_type of function '%s` has now"
+                               " defined shape (%s)",
+                               filename, NODE_LINE (arg_node), fun_name, str1));
+#endif /*SHAPE_NOTE */
+                        FREE (str1);
 
-                    FREE (str1);
-                    FREE (str2);
+                    } else {
+                        str1 = Type2String (fun_tmp, 0);
+                        str2 = Type2String (return_type, 0);
+                        WARN (NODE_LINE (arg_node),
+                              ("Types with unknown shape in declaration (%s) and return "
+                               "value (%s) of function '%s`",
+                               str1, str2, ModName (fun_mod, fun_name)));
+                        FREE (str1);
+                        FREE (str2);
+                    }
                 }
                 break;
             }
@@ -7121,7 +7158,7 @@ TI_Nwith (node *arg_node, node *arg_info)
 {
     stack_elem *old_tos;
     types *generator_type, *base_array_type, *body_type, *neutral_type;
-    node *tmpn, *withop, *new_fundef, *new_expr;
+    node *tmpn, *withop, *new_fundef, *new_expr, *new_shp;
     ids *mem_lhs;
     int i;
 
@@ -7141,20 +7178,36 @@ TI_Nwith (node *arg_node, node *arg_info)
        for the withop fold. */
     base_array_type = NULL;
     neutral_type = NULL;
-    if (WO_genarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node)))
+    if (WO_genarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
         base_array_type = TI_Ngenarray (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), arg_info,
                                         &(NWITHOP_SHAPE (NWITH_WITHOP (arg_node))));
-    /* attention: The base type in case of genarray is infered from the
-       constant argument vector. This vector if int[.] of course, but this
-       is not returned. E.g. if the vector is int[2] = [2,3] the base_array_type
-       is int[2,3]. Attend that ALWAYS the simpletype int is returned because
-       we cannot infere the base type from the given vector. The real simpletype
-       has to be infered from the CEXPR later. */
-    else if (WO_modarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
+        /*
+         * attention: The base type in case of genarray is infered from the
+         * constant argument vector. This vector if int[.] of course, but this
+         * is not returned. E.g. if the vector is int[2] = [2,3] the base_array_type
+         * is int[2,3]. Attend that ALWAYS the simpletype int is returned because
+         * we cannot infere the base type from the given vector. The real simpletype
+         * has to be infered from the CEXPR later.
+         */
+        if (!KNOWN_SHAPE (TYPES_DIM (base_array_type))
+            && (NWITH_BOUND2 (arg_node) == NULL)) {
+            /* new_shp is needed for substituting "." as upper bound only!! */
+            new_shp = DupTree (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), NULL);
+        }
+    } else if (WO_modarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
         base_array_type = TI (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
         if (!base_array_type)
             ABORT (NODE_LINE (NWITHOP_ARRAY (NWITH_WITHOP (arg_node))),
                    ("Array component of 'modarray` not inferable"));
+        if (!KNOWN_SHAPE (TYPES_DIM (base_array_type))
+            && (NWITH_BOUND2 (arg_node) == NULL)) {
+            /* new_shp is needed for substituting "." as upper bound only!! */
+            new_shp
+              = MakePrf (F_shape,
+                         MakeExprs (DupTree (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)),
+                                             NULL),
+                                    NULL));
+        }
     } else if (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) /* only if exists */ {
         neutral_type = TI (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
         if (!neutral_type)
@@ -7162,11 +7215,12 @@ TI_Nwith (node *arg_node, node *arg_info)
                    ("Neutral element of 'fold` not inferable"));
     }
 
-    /*  Among other things: last step of normalization to (lb <= iv < ub).
+    /*
+     *  Among other things: last step of normalization to (lb <= iv < ub).
      *  While for not . combined operators this was done in flatten the rest
      *  is done now.
      */
-    generator_type = TI_Npart (NWITH_PART (arg_node), base_array_type, arg_info);
+    generator_type = TI_Npart (NWITH_PART (arg_node), base_array_type, new_shp, arg_info);
 
     /* In case of genarray() check whether generator and base array fit. */
     if (WO_genarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))
@@ -7348,11 +7402,12 @@ TI_Nwith (node *arg_node, node *arg_info)
 
     tos = old_tos;
 
-    if (SAC_PRG == kind_of_file && SCALAR > TYPES_DIM (base_array_type))
+    if ((SAC_PRG == kind_of_file) && (SCALAR > TYPES_DIM (base_array_type))
+        && (dynamic_shapes == 0))
         /* SCALAR == TYPES_DIM() possible in case of fold. */
         ABORT (NODE_LINE (arg_node), ("No constant type for withloop inferable"));
 
-    if (SAC_PRG == kind_of_file) {
+    if ((SAC_PRG == kind_of_file) && (TYPES_DIM (base_array_type) >= SCALAR)) {
         /*  exchange withloops on empty array iv with their shortcut pendant. (jhs)
          *
          *  current assign has to be a let
@@ -7506,7 +7561,8 @@ TI_Nwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   types *TI_Npart(node *arg_node, node *arg_info)
+ *   types *TI_Npart(node *arg_node, types *default_bound_type,
+ *                     node * new_shp, node *arg_info)
  *
  * description:
  *   checks the generator of the new WL and returns the type of the lower
@@ -7522,16 +7578,18 @@ TI_Nwith (node *arg_node, node *arg_info)
  *   function because we have no array identifier (modarray) or shape
  *   vector (like genarray) on which to base the number of elements of
  *   the index vector.
+ *   In case of statically unknown shape, new_shp is required iff . is used
+ *   as upper index vector bound!
  *
  ******************************************************************************/
 
 types *
-TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
+TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_info)
 {
     types *left_type, *right_type, *step_type, *width_type, *gen_type;
     types *tmpt, **concrete_type;
     node *gen, *withid, *tmpn;
-    int i, add;
+    int i, add, dim;
     ids *_ids;
 
     DBUG_ENTER ("TI_Npart");
@@ -7550,12 +7608,16 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
          */
         if (!default_bound_type)
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
-        if (SCALAR <= TYPES_DIM (default_bound_type)) { /* strong TC */
+        if (KNOWN_DIMENSION (TYPES_DIM (default_bound_type))) {
+            if (TYPES_DIM (default_bound_type) > SCALAR)
+                dim = TYPES_DIM (default_bound_type);
+            else
+                dim = KNOWN_DIM_OFFSET - TYPES_DIM (default_bound_type);
             tmpn = NULL;
             add = F_lt == NGEN_OP1 (gen);
             if (add)
                 NGEN_OP1 (gen) = F_le;
-            for (i = TYPES_DIM (default_bound_type) - 1; i >= 0; i--)
+            for (i = dim - 1; i >= 0; i--)
                 tmpn = MakeExprs (MakeNum (add), tmpn);
             if (TYPES_DIM (default_bound_type) == SCALAR) {
                 NGEN_BOUND1 (gen)
@@ -7574,7 +7636,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
          */
         if (!default_bound_type)
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
-        if (SCALAR <= TYPES_DIM (default_bound_type)) { /* strong TC */
+        if (SCALAR <= TYPES_DIM (default_bound_type)) {
             tmpn = NULL;
             add = F_le == NGEN_OP2 (gen);
             if (add)
@@ -7589,6 +7651,17 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
                                         NULL));
             } else {
                 NGEN_BOUND2 (gen) = MakeArray (tmpn);
+            }
+        } else {
+            /*
+             * here, we have to use new-shape or new_shape-1, respectively.
+             */
+            if (F_le == NGEN_OP2 (gen)) {
+                NGEN_OP2 (gen) = F_lt;
+                NGEN_BOUND2 (gen) = new_shp;
+            } else {
+                NGEN_BOUND2 (gen)
+                  = MakePrf (F_sub, MakeExprs (new_shp, MakeExprs (MakeNum (1), NULL)));
             }
         }
     }
@@ -7713,7 +7786,8 @@ TI_Npart (node *arg_node, types *default_bound_type, node *arg_info)
     if (!gen_type)
         gen_type = MakeType (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
 
-    if (SAC_PRG == kind_of_file && SCALAR >= TYPES_DIM (gen_type))
+    if ((SAC_PRG == kind_of_file) && (SCALAR >= TYPES_DIM (gen_type))
+        && (dynamic_shapes == 0))
         ABORT (NODE_LINE (arg_node),
                ("No constant type for generator inferable (TYPES_DIM is %i)",
                 TYPES_DIM (gen_type)));
@@ -7829,12 +7903,23 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
          */
     } else {
         /* weak TC */
-        /* return int[] or float[] ... */
-        ret_type = MakeType (TYPES_BASETYPE (expr_type), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        if (TYPES_DIM (expr_type) == 1) {
+            /*
+             * we do know the exact shape of the shape-arg
+             * => we know the dim of the result
+             * => return int[ ., ..., .] ...
+             */
+            ret_type = MakeType (T_int, KNOWN_DIM_OFFSET - TYPES_SHAPE (expr_type, 0),
+                                 NULL, NULL, NULL);
+        } else {
+            /* return int[] ... */
+            ret_type = MakeType (T_int, UNKNOWN_SHAPE, NULL, NULL, NULL);
+        }
         FreeOneTypes (expr_type);
     }
 
-    if ((kind_of_file == SAC_PRG) && (TYPES_DIM (ret_type) < SCALAR))
+    if ((kind_of_file == SAC_PRG) && (TYPES_DIM (ret_type) < SCALAR)
+        && (dynamic_shapes == 0))
         ABORT (NODE_LINE (arg_node), ("No constant type for genarray shape inferable"));
 
     DBUG_RETURN (ret_type);
