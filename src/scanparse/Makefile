@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.11  2001/11/15 15:18:35  sacbase
 # CLOCK_SKEW_ELIMINATION inserted.
 #
@@ -83,13 +86,15 @@ y.tab.c y.tab.h: sac.y
 	$(YACC)  sac.y
 	$(CLOCK_SKEW_ELIMINATION) y.tab.c y.tab.h
 
+
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 clean:
-	$(RM) y.tab.h y.tab.c lex.yy.c *.o *.bak y.output .*.d
+	$(RM) y.tab.h y.tab.c lex.yy.c
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
@@ -102,6 +107,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

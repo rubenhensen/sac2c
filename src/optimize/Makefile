@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.24  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -33,56 +36,9 @@
 # Revision 3.15  2001/03/26 15:35:35  nmw
 # SSALIR added
 #
-# Revision 3.14  2001/03/22 20:20:00  dkr
-# make deps done
-#
-# Revision 3.13  2001/03/22 20:19:00  dkr
-# INCS corrected
-#
-# Revision 3.12  2001/03/21 15:51:38  nmw
-# include ../constants added
-#
-# Revision 3.11  2001/03/21 11:19:55  dkr
-# make deps done
-#
-# Revision 3.10  2001/03/20 16:17:00  nmw
-# SSAConstantFolding.o added
-#
-# Revision 3.9  2001/03/09 11:53:40  sbs
-# make deps done
-#
-# Revision 3.8  2001/03/05 16:03:23  nmw
-# SSACSE added
-#
-# Revision 3.7  2001/03/02 16:13:52  dkr
-# make deps done
-#
-# Revision 3.6  2001/02/23 13:38:39  nmw
-# SSADeadCodeRemoval added
-#
-# Revision 3.5  2001/02/13 15:54:04  nmw
-# include for lac2fun.h added
-#
-# Revision 3.4  2001/02/02 10:39:01  dkr
-# make deps done
-#
-# Revision 3.3  2001/01/17 10:13:03  dkr
-# make deps done
-#
-# Revision 3.2  2000/12/06 20:09:02  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:00:34  sacbase
-# new release made
-#
-#
 # ... [eliminated]
 #
-# Revision 1.1  1994/12/09  10:48:23  sbs
-# Initial revision
 #
-#
-
 
 
 #######################################################################################
@@ -99,8 +55,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
-     -I../compile -I../concurrent -I../tree -I../flatten -I../constants
+INCS = -I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
+       -I../compile -I../concurrent -I../tree -I../flatten -I../constants
 
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
@@ -108,13 +64,16 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
      rmcasts.o SSAInferLI.o
 
+
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 clean:
-	$(RM) *.o *.bak .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
+
 
 #######################################################################################
 #
@@ -124,6 +83,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.10  2002/06/06 19:35:17  dkr
 # target clean: *.old removed
 #
@@ -34,7 +37,6 @@
 #
 
 
-
 #######################################################################################
 #
 # include general setup:
@@ -48,7 +50,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
 
 INCS := -I../runtime -I../../inc
 LIBS := -L.
@@ -120,8 +121,6 @@ clean:
 	$(RM) -r .sb SunWS_cache
 
 
-
-
 #######################################################################################
 #
 # include automatic dependency mechanism
@@ -130,6 +129,5 @@ clean:
 #
 
 include ../../Makefile.Deps
-
 
 

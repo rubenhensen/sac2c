@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.12  2002/04/17 12:29:23  sbs
 # ../constants used for .h files as well now
 #
@@ -35,32 +38,6 @@
 #
 # Revision 3.2  2000/12/06 20:09:00  dkr
 # make deps done
-#
-# Revision 3.1  2000/11/20 17:59:42  sacbase
-# new release made
-#
-# Revision 2.24  2000/11/02 14:49:01  dkr
-# explicit .mac dependencies added
-#
-# Revision 2.20  2000/07/24 14:46:21  dkr
-# suffix rule for .c.o added
-#
-# Revision 2.17  2000/07/05 11:41:49  nmw
-# moved cinterface files from print to c-interface
-#
-# Revision 2.16  2000/06/23 16:38:42  nmw
-# map_cwrapper inserted
-#
-# Revision 2.15  2000/06/21 12:12:24  nmw
-# make deps, includes modified
-#
-# Revision 2.13  2000/06/08 12:47:38  nmw
-# print_interface added
-#
-# Revision 2.6  2000/01/17 18:37:49  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
 #
 # ... [eliminated] ...
 #
@@ -109,9 +86,11 @@ print.c: ../tree/prf_node_info.mac
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 clean:
-	$(RM) print.o convert.o *.bak .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
+
 
 #######################################################################################
 #
@@ -121,6 +100,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

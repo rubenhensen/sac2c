@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.10  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -55,21 +58,22 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
+INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print -I../typecheck \
+       -I../compile
 
-INCS=-I../global -I../tree -I../../inc -I../scanparse -I../print -I../typecheck \
-     -I../compile
 
 all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \
      checkdec.o cccall.o
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-clean:
-	$(RM) *.o *.bak *.sac *.sib *.dec .*.d
-	$(RM) -r .sb SunWS_cache
 
+clean:
+	$(RM) *.o *.a *.bak *~ .*.d
+	$(RM) -r .sb SunWS_cache
 
 
 #######################################################################################
@@ -80,6 +84,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

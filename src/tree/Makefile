@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.26  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -39,51 +42,10 @@
 # Revision 3.15  2001/03/09 11:48:23  sbs
 # -I../profile added.
 #
-# Revision 3.14  2001/03/06 13:17:29  nmw
-# compare_tree added
-#
-# Revision 3.13  2001/03/02 15:50:58  nmw
-# change_signature added
-#
-# Revision 3.12  2001/03/02 14:44:52  sbs
-# constants added to INCS
-#
-# Revision 3.11  2001/03/02 10:36:37  dkr
-# /home/dkr/sac/BASE/sac2c/src/tree/RCS/Makefile,v used in touch-rules
-#
-# Revision 3.10  2001/02/22 12:41:12  nmw
-# UndoSSATransfrom added
-#
-# Revision 3.9  2001/02/13 15:15:45  nmw
-# SSATransform added
-#
-# Revision 3.8  2001/02/12 17:02:29  nmw
-# CheckAvis added
-#
-# Revision 3.7  2001/02/12 10:52:40  nmw
-# make deps made
-#
-# Revision 3.6  2001/02/02 10:39:11  dkr
-# make deps done
-#
-# Revision 3.5  2001/01/19 14:19:06  dkr
-# make deps done
-#
-# Revision 3.4  2001/01/17 10:13:12  dkr
-# make deps done
-#
-# Revision 3.3  2000/12/15 18:16:31  dkr
-# cleanup_decls.* adjust_ids.* infer_dfms.* moved from flatten to tree
-#
-# Revision 3.2  2000/12/06 20:09:12  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:03:22  sacbase
-# new release made
-#
 # [ eliminated ] .....
 #
 #
+
 
 #######################################################################################
 #
@@ -128,8 +90,9 @@ tree_basic.c: prf_node_info.mac
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 clean:
-	$(RM) *.o *.bak .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
@@ -141,6 +104,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

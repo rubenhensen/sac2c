@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.21  2002/05/31 17:19:55  dkr
 # icm2c_utils.o and NameTuples.o added for target BEtest
 #
@@ -57,11 +60,11 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS=-I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
-     -I../optimize -I../psi-opt -I../scanparse -I../concurrent -I../flatten \
-     -I../c-interface
+INCS = -I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
+       -I../optimize -I../psi-opt -I../scanparse -I../concurrent -I../flatten \
+       -I../c-interface
 
-MACS=icm.data icm_comment.c icm_trace.c
+MACS = icm.data icm_comment.c icm_trace.c
 
 BETEST_OBJS = icm2c_std.BEtest.o icm2c_wl.BEtest.o \
               icm2c_mt.BEtest.o icm2c_sched.BEtest.o \
@@ -83,6 +86,7 @@ all: $(SAC2C_OBJS) BEtest
 wltransform.c: wlpragma_funs.mac
 	touch $@
 
+
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
@@ -98,7 +102,7 @@ BEtest: BEtest.c icm_vars.c icm_betest.c icm.data $(BETEST_OBJS)
 
 
 clean:
-	$(RM) *.o *.bak *~ .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) BEtest
 	$(RM) -r .sb SunWS_cache
 

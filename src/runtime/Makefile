@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.9  2002/06/06 19:35:17  dkr
 # target clean: *.old removed
 #
@@ -64,7 +67,9 @@ all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
       CacheSimAnalyser sac2crc
 
+
 tar: runtime.tar
+
 
 libsac_heap%.a : 
 	@ if [ ! -f $@ ]; \
@@ -80,12 +85,14 @@ lib%.a :
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 sac2crc: 
 	@ if [ ! -f $@ ]; \
 	    then ln -s $@.$(OS) $@; \
                  echo ln -s $@.$(OS) $@;  \
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
+
 
 CacheSimAnalyser: 
 	@ if [ ! -f $@ ]; \
@@ -99,11 +106,13 @@ runtime.tar: *.h sac2crc.README
 	tar cvf $@ $^
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb  SunWS_cache
 	$(RM) runtime.tar
 	$(RM) sac2crc CacheSimAnalyser
+
 
 #######################################################################################
 #
@@ -113,4 +122,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.12  2002/06/06 19:35:17  dkr
 # target clean: *.old removed
 #
@@ -133,8 +136,6 @@ clean:
 	$(RM) -r .sb SunWS_cache
 
 
-
-
 #######################################################################################
 #
 # include automatic dependency mechanism
@@ -143,5 +144,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-

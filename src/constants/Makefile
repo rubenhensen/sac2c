@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.12  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 1.11  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -20,7 +23,6 @@
 #
 # Revision 1.6  2001/05/02 07:58:49  nmw
 # basecv.o added
-# ;.
 #
 # Revision 1.5  2001/04/26 21:09:59  dkr
 # make deps done
@@ -36,7 +38,6 @@
 #
 # Revision 1.1  2001/03/02 14:32:50  sbs
 # Initial revision
-#
 # 
 #
 
@@ -55,7 +56,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS=-I../../inc -I../tree -I../global
+INCS = -I../../inc -I../tree -I../global
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
@@ -89,7 +90,7 @@ zipcv.c: ../tree/type_info.mac
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
-	$(RM) *.o *.bak .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
@@ -101,5 +102,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-

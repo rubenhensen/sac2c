@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.17  2002/03/12 15:12:59  sbs
 # ssi.o added
 #
@@ -26,35 +29,6 @@
 #
 # Revision 3.10  2001/04/26 21:09:43  dkr
 # make deps done
-#
-# Revision 3.9  2001/04/12 15:40:33  sbs
-# force -O0 when compiling prim_fun.c on DEC_ALPHA...
-# Otherwise, the product version yields strange type errors
-# for arrays.sac from the demos.....
-#
-# Revision 3.8  2001/03/02 14:37:41  sbs
-# constants move to ../constants
-#
-# Revision 3.7  2001/03/02 10:36:44  dkr
-# /home/dkr/sac/BASE/sac2c/src/typecheck/RCS/Makefile,v used in touch-rules
-#
-# Revision 3.6  2001/02/23 18:04:22  sbs
-# extended for negative take's and drop's in genarray
-#
-# Revision 3.5  2001/02/02 10:39:01  dkr
-# make deps done
-#
-# Revision 3.4  2001/01/17 10:13:02  dkr
-# make deps done
-#
-# Revision 3.3  2000/12/12 15:09:05  dkr
-# make deps done
-#
-# Revision 3.2  2000/12/06 20:09:01  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:00:00  sacbase
-# new release made
 #
 # ... [ eliminated ]
 #
@@ -122,7 +96,7 @@ endif
 
 
 clean:
-	$(RM) *.o *.bak .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
@@ -134,5 +108,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-

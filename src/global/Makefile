@@ -1,5 +1,9 @@
 #
+#
 # $Log$
+# Revision 3.15  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.14  2002/05/31 17:22:47  dkr
 # NameTuplesUtils.o added
 #
@@ -44,7 +48,6 @@
 # Revision 3.1  2000/11/20 17:59:26  sacbase
 # new release made
 #
-#
 # [...]
 #
 # Revision 1.2  1994/11/10  15:44:34  sbs
@@ -66,12 +69,14 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
-     -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile
+INCS = -I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
+       -I../optimize -I../modules -I../global -I../refcount -I../compile \
+       -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile
+
 
 all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types.h \
      build.o interrupt.o options.o NameTuples.o NameTuplesUtils.o
+
 
 #
 # the *.[ch] objects are to fool makedepend which does not
@@ -113,12 +118,14 @@ build.o: build.c
 	$(RM) build.c
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 clean:
-	$(RM) *.o *.bak *~ .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
@@ -130,6 +137,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

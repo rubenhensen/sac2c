@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.7  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -32,7 +35,6 @@
 #
 
 
-
 #######################################################################################
 #
 # include general setup:
@@ -47,18 +49,20 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS= -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print
+INCS = -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print
+
 
 all: objinit.o objects.o uniquecheck.o
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-clean:
-	$(RM) *.o *.bak .*.d
-	$(RM) -r .sb SunWS_cache
 
+clean:
+	$(RM) *.o *.a *.bak *~ .*.d
+	$(RM) -r .sb SunWS_cache
 
 
 #######################################################################################
@@ -69,6 +73,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

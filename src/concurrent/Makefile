@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.12  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -62,20 +65,22 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS= -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
-      -I../flatten -I../print -I../compile
+INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
+       -I../flatten -I../print -I../compile
+
 
 all: concurrent.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
      sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o
+
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-clean:
-	$(RM) *.o *.bak *~ .*.d
-	$(RM) -r .sb SunWS_cache
 
+clean:
+	$(RM) *.o *.a *.bak *~ .*.d
+	$(RM) -r .sb SunWS_cache
 
 
 #######################################################################################
@@ -86,6 +91,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.16  2002/03/13 16:00:18  ktr
 # WithloopScalarization.c added for compilation
 #
@@ -30,27 +33,6 @@
 # Revision 3.8  2001/03/27 11:12:49  nmw
 # include of directory ../constants added
 #
-# Revision 3.7  2001/03/22 20:20:03  dkr
-# make deps done
-#
-# Revision 3.6  2001/03/02 10:36:22  dkr
-# /home/dkr/sac/BASE/sac2c/src/psi-opt/RCS/Makefile,v used in touch-rules
-#
-# Revision 3.5  2001/02/06 01:52:44  dkr
-# make deps done
-#
-# Revision 3.4  2001/02/02 10:39:04  dkr
-# make deps done
-#
-# Revision 3.3  2001/01/17 10:13:06  dkr
-# make deps done
-#
-# Revision 3.2  2000/12/06 20:09:05  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:01:38  sacbase
-# new release made
-#
 # ... [eliminated] ...
 #
 # Revision 1.1  1995/06/02  10:09:27  sbs
@@ -74,8 +56,10 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
-     -I../print -I../optimize -I../constants
+INCS = -I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
+       -I../print -I../optimize -I../constants
+
+
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      WithloopFolding.o WLT.o WLI.o WLF.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
@@ -104,10 +88,10 @@ pad_transform.c: ../tree/prf_node_info.mac
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-clean:
-	$(RM) *.o *.bak *~ .*.d
-	$(RM) -r .sb SunWS_cache
 
+clean:
+	$(RM) *.o *.a *.bak *~ .*.d
+	$(RM) -r .sb SunWS_cache
 
 
 #######################################################################################
@@ -118,5 +102,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-

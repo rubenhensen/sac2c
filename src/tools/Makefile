@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.9  2002/06/06 19:35:17  dkr
 # target clean: *.old removed
 #
@@ -87,9 +90,11 @@ endif
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac $(LIBM)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
 CacheSimTest: CacheSimTest.o $(LIBDIR)/libsac.a
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac $(LIBM)
 	$(CLOCK_SKEW_ELIMINATION) $@
+
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
@@ -110,6 +115,4 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
 

@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.13  2002/06/06 19:56:03  dkr
+# target clean modified
+#
 # Revision 3.12  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -33,18 +36,13 @@
 # Revision 3.3  2000/12/07 14:19:55  dkr
 # include path modified
 #
-# Revision 3.2  2000/12/06 20:09:11  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:02:58  sacbase
-# new release made
-#
 # ... [eliminated] ...
 #
 # Revision 1.1  2000/01/21 13:11:16  jhs
 # Initial revision
 #
 #
+
 
 #######################################################################################
 #
@@ -61,32 +59,23 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS=-I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatten \
-     -I../print -I../compile -I../refcount
+INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatten \
+       -I../print -I../compile -I../refcount
 
-all: multithread.o \
-     multithread_lib.o \
-     schedule_init.o \
-     repfuns_init.o \
-     blocks_init.o \
-     blocks_propagate.o \
-     blocks_expand.o \
-     mtfuns_init.o \
-     blocks_cons.o \
-     dataflow_analysis.o \
-     barriers_init.o \
-     blocks_lift.o \
-     adjust_calls.o
+
+all: multithread.o multithread_lib.o schedule_init.o repfuns_init.o mtfuns_init.o \
+     blocks_init.o blocks_propagate.o blocks_expand.o blocks_cons.o blocks_lift.o \
+     dataflow_analysis.o barriers_init.o adjust_calls.o
 
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-clean:
-	$(RM) *.o *.bak *~ .*.d
-	$(RM) -r .sb
 
+clean:
+	$(RM) *.o *.a *.bak *~ .*.d
+	$(RM) -r .sb
 
 
 #######################################################################################
@@ -97,6 +86,3 @@ clean:
 #
 
 include ../../Makefile.Deps
-
-
-
