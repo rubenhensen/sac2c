@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/09/01 12:21:53  sbs
+ * PRF_PRF added
+ *
  * Revision 2.18  1999/07/29 07:32:02  cg
  * Bug fixed in folding of consecutive modarray() / psi()
  * operations; the actual value is now determined in the
@@ -1852,7 +1855,7 @@ ArrayPrf (node *arg_node, node *arg_info)
     /*
      * Calculate primitive Functions
      */
-    switch (arg_node->info.prf) {
+    switch (PRF_PRF (arg_node)) {
     case F_div_AxA:
     case F_div_AxS:
     case F_div_SxA:
