@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1997/08/29 12:37:12  sbs
+ * output of prf's if prf-trace is on for
+ * BINOP, PSI and MODARRAY inserted;
+ * trace output for DEC_RC_FREE changed; now the decremented RC
+ * will be printed!
+ *
  * Revision 1.38  1997/05/29 13:41:44  sbs
  * ND_IDX_MODARRAY... added
  *
@@ -412,17 +418,19 @@
 
 #define ND_DEC_RC_FREE_ARRAY(name, num)                                                  \
     PRINT_TRACEHEADER_REF (("ND_DEC_RC_FREE(%s, %d)", #name, num));                      \
-    PRINT_REF (name);                                                                    \
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
+        PRINT_REF (name);                                                                \
         ND_FREE_ARRAY (name);                                                            \
-    }
+    } else                                                                               \
+        PRINT_REF (name);
 
 #define ND_DEC_RC_FREE_HIDDEN(name, num, freefun)                                        \
     PRINT_TRACEHEADER_REF (("ND_DEC_RC_FREE(%s, %d)", #name, num));                      \
-    PRINT_REF (name);                                                                    \
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
+        PRINT_REF (name);                                                                \
         ND_FREE_HIDDEN (name, freefun);                                                  \
-    }
+    } else                                                                               \
+        PRINT_REF (name);
 
 #define ND_CHECK_REUSE_ARRAY(old, new)                                                   \
     if (ND_A_RC (old) == 1) {                                                            \
@@ -567,6 +575,7 @@
  */
 
 #define ND_BINOP_AxA_A(op, a1, a2, res)                                                  \
+    PRINT_PRF (("ND_BINOP_AxA_A( %s, %s, %s, %s)\n", #op, #a1, #a2, #res));              \
     {                                                                                    \
         int __i;                                                                         \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
@@ -574,6 +583,7 @@
     };
 
 #define ND_BINOP_AxS_A(op, a2, s, res)                                                   \
+    PRINT_PRF (("ND_BINOP_AxS_A( %s, %s, %s, %s)\n", #op, #a2, #s, #res));               \
     {                                                                                    \
         int __i;                                                                         \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
@@ -581,6 +591,7 @@
     };
 
 #define ND_BINOP_SxA_A(op, s, a2, res)                                                   \
+    PRINT_PRF (("ND_BINOP_SxA_A( %s, %s, %s, %s)\n", #op, #s, #a2, #res));               \
     {                                                                                    \
         int __i;                                                                         \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
@@ -592,9 +603,12 @@
  * ===========================================
  */
 
-#define ND_IDX_PSI_S(s, a, res) res = ND_A_FIELD (a)[s];
+#define ND_IDX_PSI_S(s, a, res)                                                          \
+    PRINT_PRF (("ND_IDX_PSI_S( %s, %s, %s)\n", #s, #a, #res));                           \
+    res = ND_A_FIELD (a)[s];
 
 #define ND_IDX_PSI_A(s, a, res)                                                          \
+    PRINT_PRF (("ND_IDX_PSI_A( %s, %s, %s)\n", #s, #a, #res));                           \
     {                                                                                    \
         int __i, __s = s;                                                                \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
@@ -607,6 +621,8 @@
  */
 
 #define ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(line, basetype, res, a, s, val)                \
+    PRINT_PRF (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n", #line,   \
+                #basetype, #res, #a, #s, #val));                                         \
     ND_CHECK_REUSE_ARRAY (a, res)                                                        \
     {                                                                                    \
         int __i;                                                                         \
@@ -623,6 +639,8 @@
     }
 
 #define ND_IDX_MODARRAY_AxVxA(line, basetype, res, a, s, val)                            \
+    PRINT_PRF (("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s, %s)\n", #line, #basetype,    \
+                #res, #a, #s, #val));                                                    \
     {                                                                                    \
         int __i, __s;                                                                    \
         ND_ALLOC_ARRAY (basetype, res, 0);                                               \
@@ -635,6 +653,8 @@
     }
 
 #define ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(line, basetype, res, a, s, val)                \
+    PRINT_PRF (("ND_IDX_MODARRAY_AxVxS_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n", #line,   \
+                #basetype, #res, #a, #s, #val));                                         \
     ND_CHECK_REUSE_ARRAY (a, res)                                                        \
     {                                                                                    \
         int __i;                                                                         \
@@ -645,6 +665,8 @@
     ND_A_FIELD (res)[s] = val;
 
 #define ND_IDX_MODARRAY_AxVxS(line, basetype, res, a, s, val)                            \
+    PRINT_PRF (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s, %s)\n", #line, #basetype,    \
+                #res, #a, #s, #val));                                                    \
     {                                                                                    \
         int __i;                                                                         \
         ND_ALLOC_ARRAY (basetype, res, 0);                                               \
