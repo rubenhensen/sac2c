@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2002/07/24 15:03:54  dkr
+ * ND_VECT2OFFSET modified
+ *
  * Revision 3.42  2002/07/16 11:59:35  dkr
  * MT_ADJUST_SCHEDULER__OFFSET modified
  *
@@ -439,12 +442,12 @@ ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_nt, to_sdim, from_nt, from_sdim, idx_any
 
 #if defined(ND_VECT2OFFSET) || defined(ICM_ALL)
 ICM_DEF( ND_VECT2OFFSET, TRACE_PRF)
-  ICM_ID( offset)
+  ICM_NT( off_nt)
   ICM_INT( from_size)
   ICM_NT( from_nt)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_VECT2OFFSET, (offset, from_size, from_nt, shp_size, shpa_any))
+ICM_END( ND_VECT2OFFSET, (off_nt, from_size, from_nt, shp_size, shpa_any))
 #endif
 
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/07/24 15:04:03  dkr
+ * ND_VECT2OFFSET modified
+ *
  * Revision 3.23  2002/07/15 18:40:03  dkr
  * some bugs fixed
  *
@@ -2607,18 +2610,18 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_VECT2OFFSET( char *offset, int from_size, char *from_nt,
+ *   void ICMCompileND_VECT2OFFSET( char *off_nt, int from_size, char *from_nt,
  *                                  int shp_size, char **shpa_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_VECT2OFFSET( offset, from_size, from_nt, shp_size, shpa_any)
+ *   ND_VECT2OFFSET( off_nt, from_size, from_nt, shp_size, shpa_any)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_VECT2OFFSET (char *offset, int from_size, char *from_nt, int shp_size,
+ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt, int shp_size,
                           char **shpa_any)
 {
     DBUG_ENTER ("ICMCompileND_VECT2OFFSET");
@@ -2635,7 +2638,7 @@ ICMCompileND_VECT2OFFSET (char *offset, int from_size, char *from_nt, int shp_si
 
     DBUG_ASSERT ((from_size >= 0), "Illegal size found!");
 
-    VectToOffset2 (offset, from_nt, from_size, NULL, ReadId, shpa_any, shp_size, NULL,
+    VectToOffset2 (off_nt, from_nt, from_size, NULL, ReadId, shpa_any, shp_size, NULL,
                    ReadConstArray);
 
     DBUG_VOID_RETURN;

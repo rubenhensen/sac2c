@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/24 15:04:11  dkr
+ * ND_VECT2OFFSET modified
+ *
  * Revision 3.15  2002/07/12 18:55:09  dkr
  * first (almost) complete TAGGED_ARRAYS revision.
  * some shape computations are missing yet (but SCL, AKS should be
@@ -164,7 +167,7 @@ extern void ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char 
                                                  int from_sdim, char *idx_any,
                                                  char *val_any);
 
-extern void ICMCompileND_VECT2OFFSET (char *offset, int from_size, char *from_nt,
+extern void ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt,
                                       int shp_size, char **shp_any);
 
 #else /* TAGGED_ARRAYS */
