@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/09/24 15:10:17  khf
+ * initialised some pointers to NULL
+ * to please the compiler
+ *
  * Revision 1.10  2004/09/23 17:25:41  khf
  * proceeding implementation (intersection of generators
  * without step and width)
@@ -679,6 +683,7 @@ IntersectParts (node *parts1, node *parts2)
     DBUG_ENTER ("IntersectParts");
 
     dim = ARRAY_VECLEN (NGEN_BOUND1 (NPART_GEN (parts1)));
+    new_parts_1 = new_parts_2 = NULL;
 
     while (parts1 != NULL) {
         parts2_tmp = parts2;
@@ -910,8 +915,8 @@ WLFSassign (node *arg_node, info *arg_info)
     node *assigns2shift = NULL;
     bool is_stacked = FALSE;
     bool fwo_contains_fold = FALSE;
-    int fwl_array_type;
-    constant *fwl_shape;
+    int fwl_array_type = ARRAY_unknown;
+    constant *fwl_shape = NULL;
 
     DBUG_ENTER ("WLFSassign");
 
