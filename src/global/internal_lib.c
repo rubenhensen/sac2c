@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/08/12 20:58:24  dkr
+ * TmpVar(): cwc_tab added
+ *
  * Revision 3.20  2002/07/23 12:08:58  sah
  * hd_tab added to TmpVar known tables.
  *
@@ -656,6 +659,8 @@ TmpVar ()
         s = "wls";
     } else if (act_tab == hd_tab) {
         s = "hd";
+    } else if (act_tab == cwc_tab) {
+        s = "cwc";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "TmpVar(): unknown trav-tab found!");
