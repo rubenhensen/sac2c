@@ -1,7 +1,7 @@
 /*
  * $Log$
- * Revision 1.1  2001/05/14 15:55:08  nmw
- * Initial revision
+ * Revision 1.2  2001/05/15 16:39:21  nmw
+ * SSAWithloopFolding implemented (but not tested)
  *
  *
  * created from WLT.c, Revision 3.9 on 2001/05/14 by  nmw
@@ -765,9 +765,9 @@ SSAWLTNpart (node *arg_node, node *arg_info)
        one referencing generators.
        This is just a cross reference, so just traverse, do not assign the
        resulting node.
-       Only enter in case of !INFO_WLI_REPLACE() because of USE mask. */
+    */
     if ((!NCODE_FLAG (NPART_CODE (arg_node))) && (!INFO_WLI_REPLACE (arg_info))) {
-        NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+        Trav (NPART_CODE (arg_node), arg_info);
     }
 
     if (NPART_NEXT (arg_node) != NULL) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/05/15 16:39:21  nmw
+ * SSAWithloopFolding implemented (but not tested)
+ *
  * Revision 1.1  2001/05/15 15:41:17  nmw
  * Initial revision
  *
@@ -1787,24 +1790,25 @@ SSAWLFid (node *arg_node, node *arg_info)
     case wlfm_rename:
 #if 0
     varno = ID_VARNO(arg_node);
-#endif
-        ren = SearchRen (ID_NAME (arg_node));
-        if (ren /* ||
+    ren = SearchRen(ID_NAME(arg_node));
+    if (ren /* ||
                (varno != -1 && target_mask[varno] != subst_mask[varno]) */) {
-            /* we have to solve a name clash. */
-            if (ren) {
-                new_name = StringCopy (ren->new);
-            } else {
-                new_name = TmpVarName (ID_NAME (arg_node));
-                /* Get vardec's name because ID_NAME will be deleted soon. */
-                ren = AddRen (ID_VARDEC (arg_node), new_name, ID_TYPE (arg_node),
-                              arg_info, 1);
-            }
-            /* replace old name now. */
-            FREE (ID_NAME (arg_node));
-            ID_NAME (arg_node) = new_name;
-            ID_VARDEC (arg_node) = ren->vardec;
-        }
+      /* we have to solve a name clash. */
+      if (ren) {
+        new_name = StringCopy(ren->new);
+      }
+      else {
+        new_name = TmpVarName(ID_NAME(arg_node));
+        /* Get vardec's name because ID_NAME will be deleted soon. */
+        ren = AddRen(ID_VARDEC(arg_node), new_name,
+                     ID_TYPE(arg_node), arg_info, 1);
+      }
+      /* replace old name now. */
+      FREE(ID_NAME(arg_node));
+      ID_NAME(arg_node) = new_name;
+      ID_VARDEC(arg_node) = ren->vardec;
+    }
+#endif
         break;
 
     default:
@@ -1888,21 +1892,20 @@ SSAWLFlet (node *arg_node, node *arg_info)
         varno = IDS_VARNO (LET_IDS (arg_node));
 #if 0
     if (varno != -1 && target_mask[varno]) {
-#endif
-        /* we have to solve a name clash. */
-        ren = SearchRen (IDS_NAME (LET_IDS (arg_node)));
-        if (ren) {
-            new_name = StringCopy (ren->new);
-        } else {
-            new_name = TmpVarName (IDS_NAME (LET_IDS (arg_node)));
-            ren = AddRen (IDS_VARDEC (LET_IDS (arg_node)), new_name,
-                          IDS_TYPE (LET_IDS (arg_node)), arg_info, 0);
-        }
-        /* replace old name now. */
-        FreeAllIds (LET_IDS (arg_node));
-        LET_IDS (arg_node) = MakeIds (new_name, NULL, ST_regular);
-        IDS_VARDEC (LET_IDS (arg_node)) = ren->vardec;
-#if 0
+      /* we have to solve a name clash. */
+      ren = SearchRen(IDS_NAME(LET_IDS(arg_node)));
+      if (ren) {
+        new_name = StringCopy(ren->new);
+      }
+      else {
+        new_name = TmpVarName(IDS_NAME(LET_IDS(arg_node)));
+        ren = AddRen(IDS_VARDEC(LET_IDS(arg_node)), new_name,
+                     IDS_TYPE(LET_IDS(arg_node)), arg_info, 0);
+      }
+      /* replace old name now. */
+      FreeAllIds(LET_IDS(arg_node));
+      LET_IDS(arg_node) = MakeIds(new_name, NULL, ST_regular);
+      IDS_VARDEC(LET_IDS(arg_node)) = ren->vardec;
     }
 #endif
         break;

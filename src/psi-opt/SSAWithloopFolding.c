@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/05/15 16:39:21  nmw
+ * SSAWithloopFolding implemented (but not tested)
+ *
  * Revision 1.1  2001/05/14 15:55:15  nmw
  * Initial revision
  *
@@ -53,9 +56,10 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
-#include "generatemasks.h"
+
+/*
 #include "ConstantFolding.h"
-/*#include "WithloopFolding.h"
+#include "WithloopFolding.h"
 #include "WLI.h"
 #include "WLF.h" */
 
@@ -63,6 +67,9 @@
 #include "SSATransform.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
+#include "SSAWLI.h"
+
+#if 0
 
 /******************************************************************************
  *
@@ -70,7 +77,9 @@
  *
  ******************************************************************************/
 
-/* nodelist *search_wl_nodelist; */ /* usage: see comment in code of SearchWL() */
+nodelist *search_wl_nodelist;  /* usage: see comment in code of SearchWL() */
+
+
 
 /******************************************************************************
  *
@@ -78,9 +87,10 @@
  *
  ******************************************************************************/
 
-/* static node *SearchWL(int, node *, int *, int, int); */
+static node *SearchWL(int, node *, int *, int, int);
 
-#if 0
+
+
 /******************************************************************************
  *
  * function:
@@ -196,13 +206,12 @@ void DbugInternGen(intern_gen *ig)
   
   DBUG_VOID_RETURN;
 }
-
-
+#endif
 
 /******************************************************************************
  *
  * function:
- *   index_info *CreateIndex(int vector) 
+ *   index_info *SSACreateIndex(int vector)
  *
  * description:
  *   create an incarnation of INDEX_INFO.
@@ -214,89 +223,85 @@ void DbugInternGen(intern_gen *ig)
  *   FREE_INDEX
  *
  ******************************************************************************/
-
-index_info *CreateIndex(int vector) 
+index_info *
+SSACreateIndex (int vector)
 {
-  index_info *pindex;
-  DBUG_ENTER("CreateInfoInfo");
+    index_info *pindex;
+    DBUG_ENTER ("SSACreateInfoInfo");
 
-  pindex = Malloc(sizeof(index_info));
-  pindex->vector = vector;
+    pindex = MALLOC (sizeof (index_info));
+    pindex->vector = vector;
 
-  if (!vector)
-    vector = 1;
-  pindex->permutation = Malloc(sizeof(int)        *vector);
-  pindex->last        = Malloc(sizeof(index_info*)*vector);
-  pindex->const_arg   = Malloc(sizeof(int)        *vector);
+    if (!vector)
+        vector = 1;
+    pindex->permutation = MALLOC (sizeof (int) * vector);
+    pindex->last = MALLOC (sizeof (index_info *) * vector);
+    pindex->const_arg = MALLOC (sizeof (int) * vector);
 
-  pindex->arg_no = 0;
-  
-  DBUG_RETURN(pindex);
+    pindex->arg_no = 0;
+
+    DBUG_RETURN (pindex);
 }
-
-
 
 /******************************************************************************
  *
  * function:
- *   index_info *DuplicateIndexInfo(index_info *iinfo)
+ *   index_info *SSADuplicateIndexInfo(index_info *iinfo)
  *
  * description:
  *   duplicates struct
  *
  ******************************************************************************/
-
-index_info *DuplicateIndexInfo(index_info *iinfo)
+index_info *
+SSADuplicateIndexInfo (index_info *iinfo)
 {
-  index_info *new;
-  int i, to;
-  DBUG_ENTER("DuplicateIndexInfo");
-  DBUG_ASSERT(iinfo,("parameter NULL"));
-  
-  new = CreateIndex(iinfo->vector);
+    index_info *new;
+    int i, to;
+    DBUG_ENTER ("SSADuplicateIndexInfo");
+    DBUG_ASSERT (iinfo, ("parameter NULL"));
 
-  to = iinfo->vector ? iinfo->vector : 1;
-  for (i=0; i < to; i++) {
-    new->permutation[i] = iinfo->permutation[i];
-    new->last[i]        = iinfo->last[i];
-    new->const_arg[i]   = iinfo->const_arg[i];
-  }
-  
-  new->prf    = iinfo->prf;
-  new->arg_no = iinfo->arg_no;
-  
-  DBUG_RETURN(new);
+    new = SSACreateIndex (iinfo->vector);
+
+    to = iinfo->vector ? iinfo->vector : 1;
+    for (i = 0; i < to; i++) {
+        new->permutation[i] = iinfo->permutation[i];
+        new->last[i] = iinfo->last[i];
+        new->const_arg[i] = iinfo->const_arg[i];
+    }
+
+    new->prf = iinfo->prf;
+    new->arg_no = iinfo->arg_no;
+
+    DBUG_RETURN (new);
 }
-
-
 
 /******************************************************************************
  *
  * function:
- *   node *ValicLocalId(node *idn) 
+ *   node *SSAValidLocalId(node *idn)
  *
  * description:
  *   returns pointer to index_info if Id (idn) is a valid variable within
  *   the WL body (index vars are excluded). Returns NULL otherwise.
  *
  ******************************************************************************/
-
-index_info *ValidLocalId(node *idn) 
+index_info *
+SSAValidLocalId (node *idn)
 {
-  index_info *iinfo;
-  
-  DBUG_ENTER("ValicLocalId");
-  DBUG_ASSERT(N_id == NODE_TYPE(idn),("not an id node"));
-  
-  idn = MRD(ID_VARNO(idn));
-  if (idn)
-    iinfo = INDEX(idn);
-  else
-    iinfo = NULL;
-  
-  DBUG_RETURN(iinfo);
+    index_info *iinfo;
+
+    DBUG_ENTER ("SSAValidLocalId");
+    DBUG_ASSERT (N_id == NODE_TYPE (idn), ("not an id node"));
+
+    /* get defining assignment via avis_ssaassign link */
+    if (AVIS_SSAASSIGN (ID_AVIS (idn)) != NULL) {
+        iinfo = SSAINDEX (AVIS_SSAASSIGN (ID_AVIS (idn)));
+    } else {
+        iinfo = NULL;
+    }
+
+    DBUG_RETURN (iinfo);
 }
-#endif
 
 /******************************************************************************
  *
@@ -422,11 +427,10 @@ SSAAppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
     DBUG_RETURN (ig);
 }
 
-#if 0
 /******************************************************************************
  *
  * function:
- *   intern_gen *CopyInternGen(intern_gen *source)
+ *   intern_gen *SSACopyInternGen(intern_gen *source)
  *
  * description:
  *   Copy the struct source and return it's pointer. Only the first struct
@@ -436,31 +440,30 @@ SSAAppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
  *   the 'next' component is not copied and instead set to NULL.
  *
  ******************************************************************************/
-
-intern_gen *CopyInternGen(intern_gen *source)
+intern_gen *
+SSACopyInternGen (intern_gen *source)
 {
-  intern_gen *ig;
-  int i;
-  
-  DBUG_ENTER("CopyInternGen");
+    intern_gen *ig;
+    int i;
 
-  ig = CreateInternGen(source->shape, NULL != source->step);
-  ig->code = source->code;
+    DBUG_ENTER ("SSACopyInternGen");
 
-  for (i=0; i < ig->shape; i++) {
-    ig->l[i] = source->l[i];
-    ig->u[i] = source->u[i];
-    if (source->step) {
-      ig->step[i]  = source->step[i];
-      ig->width[i] = source->width[i];
+    ig = SSACreateInternGen (source->shape, NULL != source->step);
+    ig->code = source->code;
+
+    for (i = 0; i < ig->shape; i++) {
+        ig->l[i] = source->l[i];
+        ig->u[i] = source->u[i];
+        if (source->step) {
+            ig->step[i] = source->step[i];
+            ig->width[i] = source->width[i];
+        }
     }
-  }
-  
-  DBUG_RETURN(ig);
+
+    DBUG_RETURN (ig);
 }
 
-
-
+#if 0
 /******************************************************************************
  *
  * function:
@@ -828,8 +831,7 @@ SSACreateVardec (char *name, types *type, node **vardecs)
  *   search last definition of id_varno in this block and mark it invalid.
  *   
  ******************************************************************************/
-
-void SearchWLHelp(int id_varno, node *assignn, int *valid, int mode, int ol)
+static void SearchWLHelp(int id_varno, node *assignn, int *valid, int mode, int ol)
 {
   *valid = -1;
   
@@ -860,7 +862,6 @@ void SearchWLHelp(int id_varno, node *assignn, int *valid, int mode, int ol)
     }
   }
 }
-
 
 
 /******************************************************************************
@@ -898,7 +899,7 @@ void SearchWLHelp(int id_varno, node *assignn, int *valid, int mode, int ol)
  *  to understand the usage of search_wl_nodelist see comment in N_let case.
  *
  ******************************************************************************/
-
+static
 node *SearchWL(int id_varno, node *startn, int *valid, int mode, int original_level)
 {
   node *tmpn;
@@ -931,54 +932,10 @@ node *SearchWL(int id_varno, node *startn, int *valid, int mode, int original_le
     }
   
     switch (ASSIGN_INSTRTYPE(startn)) {
-    case N_while:
-    case N_do:
-      if (N_while == ASSIGN_INSTRTYPE(startn))
-        tmpn = BLOCK_INSTR(WHILE_BODY(ASSIGN_INSTR(startn))); /* while */
-      else
-        tmpn = BLOCK_INSTR(DO_BODY(ASSIGN_INSTR(startn))); /* do */
-
-      /* now we have to distinguish where the 'pointer comes from'. Do we
-         use the Id from within the loop or from behind it? */
-      if (loop_level == original_level) {
-        /* the referencing Id is behind the loop, same level. It 
-           references an ID within the loop. If this ID is defined by
-           a WL, we definitly cannot use this WL for folding. */
-
-        /* we have to find out if idn references a WL. Therefore
-           we traverse the body to its last assignment and call SearchWL
-           again. This happens in SearchWLHelp. */
-        SearchWLHelp(id_varno, tmpn, valid, mode, original_level+1);
-
-        /* additionally, in case of a while loop, we have to search 
-           for a WL before the loop, too. */
-        if (N_while == ASSIGN_INSTRTYPE(startn)) {
-          tmpn = (node*)ASSIGN_MRDMASK(startn)[id_varno];
-          *valid = -1;
-          SearchWL(id_varno, tmpn, valid, mode, original_level);
-        }
-      }
-      else { /* loop_level < original_level */
-        /* this means: Id is defined in this loop (and of course before the loop, 
-           too), but we did not find it directly by MRD. Hence it is defined 
-           - below the occurence of the Id and we connot use it for folding. 
-           - as index of an OLD WL which does not store MRDs correctly in
-             its assign nodes but only in superior compound nodes. */
-
-        /* first, mark this node in search_wl_nodelist.  */
-        search_wl_nodelist = NodeListAppend(search_wl_nodelist, startn, NULL);
-        
-        /* Search last definition in body and mark it invalid. This
-           MAY go wrong if we don't create MRDs in wli_phase 1. */
-        SearchWLHelp(id_varno, tmpn, valid, mode, loop_level+1);
-
-        /* Search definition above loop to mark it invalid. */
-        tmpn = (node*)ASSIGN_MRDMASK(startn)[id_varno];
-        *valid = -1;
-        SearchWL(id_varno, tmpn, valid, mode, loop_level);
-      }
-      *valid = 0;
-      break;
+      /*
+       * there exists no do- or while-nodes in ssa form, so we do not need 
+       * to take care of them.
+       */
 
     case N_cond:
       if (loop_level == original_level) {
@@ -1097,14 +1054,13 @@ node *SearchWL(int id_varno, node *startn, int *valid, int mode, int original_le
 }
 
 
-
 /******************************************************************************
  *
  * function:
- *   node *StartSearchWL(node *idn, node *assignn)
+ *   node *SSAStartSearchWL(node *idn, node *assignn)
  *
  * description:
- *   This function searches the MRD (WL) for idn. If a WL is found which 
+ *   This function searches a defining WL for idn. If a WL is found which 
  *   can be used for folding, the assign node of this WL is returned.
  *   assignn is the assign node in which idn is situated.
  *   mode is used as follows:
@@ -1120,8 +1076,7 @@ node *SearchWL(int id_varno, node *startn, int *valid, int mode, int original_le
  *   This functions can affect various WL. See SearchWL for more details.
  *
  ******************************************************************************/
-
-node *StartSearchWL(node *idn, node *assignn, int mode)
+node *SSAStartSearchWL(node *idn, node *assignn, int mode)
 {
   node *resultn, *mrdn;
   int varno, valid;
@@ -1142,12 +1097,12 @@ node *StartSearchWL(node *idn, node *assignn, int mode)
   DBUG_RETURN(resultn);
 }
 
-
+#endif
 
 /******************************************************************************
  *
  * function:
- *   node *WithloopFolding( node *arg_node, int loop)
+ *   node *SSAWithloopFolding( node *arg_node, int loop)
  *
  * description:
  *   starting point for the withloop folding.
@@ -1156,65 +1111,84 @@ node *StartSearchWL(node *idn, node *assignn, int mode)
  *   needed for correct handling of break specifiers.
  *
  ******************************************************************************/
-
-node *WithloopFolding( node *arg_node, int loop) 
+extern int wli_phase;
+node *
+SSAWithloopFolding (node *arg_node, int loop)
 {
-  funtab *tmp_tab;
-  node *arg_info;
-  int expr;
-  
-  DBUG_ENTER("WithloopFolding");
+    funtab *tmp_tab;
+    node *arg_info;
+    int expr;
 
-  DBUG_ASSERT((NODE_TYPE(arg_node) == N_fundef),
-              "WithloopFolding called for non fundef node");
+    DBUG_ENTER ("SSAWithloopFolding");
 
-  if (!(FUNDEF_IS_LACFUN(arg_node))) {
-    arg_info = MakeInfo();
-    
-    /* WLI traversal: create MRD 
-     This phase does NOTHING important but to create MRD lists which are needed
-     for SearchWL in phase 2. SearchWLHelp does not work properly when
-     the end of a compound node is searched and then (not existing) MRD
-     masks are needed. When the new flatten exists we can remove this 
-     phase because SearchWLHelp will not need MRD masks. The DEF mask can be 
-     used to finde the wanted definition (which IS the last definition
-     because of unique names. */
-    
-    DBUG_PRINT("OPT",("WLI 1"));
-    DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes", current_allocated_mem));
-    wli_phase = 1;
-    tmp_tab = act_tab;
-    act_tab = wli_tab;
-    arg_node = Trav( arg_node, arg_info);
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "SSAWithloopFolding called for non fundef node");
 
-    /* WLI traversal: search information */
-    DBUG_PRINT("OPT",("WLI 2"));
-    DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes", current_allocated_mem));
-    wli_phase = 2;
-    act_tab = wli_tab;
-    arg_node = Trav( arg_node, arg_info);
-    
-    /* break after WLI? */
-    if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
-        || strcmp( break_specifier, "wli")) {
-    /* WLF traversal: fold WLs */
-      DBUG_PRINT("OPT",("WLF"));
-      DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes", current_allocated_mem));
-      act_tab = wlf_tab;
-      arg_node = Trav( arg_node, arg_info);
-      expr = (wlf_expr - old_wlf_expr);
-      DBUG_PRINT("OPT",("                        result: %d",expr));
-    }
-    DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes", current_allocated_mem));
-    
-    act_tab = tmp_tab;
-    arg_info = FreeTree( arg_info); 
-  }
+    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+        arg_info = MakeInfo ();
 
-  DBUG_RETURN( arg_node);
-}
+        /* SSAWLI traversal: create MRD
+         This phase does NOTHING important but to create MRD lists which are needed
+         for SearchWL in phase 2. SearchWLHelp does not work properly when
+         the end of a compound node is searched and then (not existing) MRD
+         masks are needed. When the new flatten exists we can remove this
+         phase because SearchWLHelp will not need MRD masks. The DEF mask can be
+         used to finde the wanted definition (which IS the last definition
+         because of unique names. */
 
+#if 0
+arg_node = GenerateMasks(arg_node, NULL);
 #endif
+
+        DBUG_PRINT ("OPT", ("SSAWLI 1"));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+        ssawli_phase = 1;
+        tmp_tab = act_tab;
+
+#if 0
+    wli_phase = 1;
+    act_tab = wli_tab;
+    arg_node = Trav( arg_node, arg_info);
+#endif
+
+        act_tab = ssawli_tab;
+        arg_node = Trav (arg_node, arg_info);
+
+#if 0
+    /* WLI traversal: search information */
+    DBUG_PRINT("OPT",("SSAWLI 2"));
+    DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes", current_allocated_mem));
+    ssawli_phase = 2;
+    act_tab = ssawli_tab;
+    arg_node = Trav( arg_node, arg_info);
+#endif
+
+        /* break after WLI? */
+        if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
+            || strcmp (break_specifier, "wli")) {
+            /* WLF traversal: fold WLs */
+            DBUG_PRINT ("OPT", ("SSAWLF"));
+            DBUG_PRINT ("OPTMEM",
+                        ("mem currently allocated: %d bytes", current_allocated_mem));
+            act_tab = ssawlf_tab;
+            arg_node = Trav (arg_node, arg_info);
+            expr = (wlf_expr - old_wlf_expr);
+            DBUG_PRINT ("OPT", ("                        result: %d", expr));
+        }
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+
+        act_tab = tmp_tab;
+        arg_info = FreeTree (arg_info);
+
+        /* restore ssa form */
+        arg_node = CheckAvisOneFunction (arg_node);
+        arg_node = SSATransformOneFunction (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
