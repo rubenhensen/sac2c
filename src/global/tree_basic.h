@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.190  1998/06/12 14:05:23  cg
+ * added access macros/attributes for schedulings
+ *
  * Revision 1.189  1998/06/09 16:46:09  dkr
  * IDX_MIN, IDX_MAX now segment-specific
  *
@@ -2603,6 +2606,7 @@ extern node *MakeSpmd (node *region);
  ***  temporary attributes:
  ***
  ***    node*      WITH_PTRS   (N_exprs)   (syncinit -> syncopt -> compile ! )
+ ***    SCHsched_t SCHEDULING              (syncinit (O) -> sched -> compile ! )
  ***
  ***  remarks:
  ***
@@ -2622,6 +2626,7 @@ extern node *MakeSync (node *region, int first);
 #define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
 #define SYNC_WITH_PTRS(n) (n->node[1])
+#define SYNC_SCHEDULING(n) ((SCHsched_t)n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2884,6 +2889,8 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    DFMmask_t  REUSE              (compile ! )
  ***
+ ***    SCHsched_t SCHEDULING   (O)   (wltransform -> compile )
+ ***
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
@@ -2903,6 +2910,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 #define NWITH2_REUSE(n) ((DFMmask_t)n->dfmask[4])
 
+#define NWITH2_SCHEDULING(n) ((SCHsched_t)n->node[4])
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -2910,23 +2919,25 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS       (N_WLblock, N_WLublock, N_WLstride)
- ***    node*    NEXT           (N_WLseg)
+ ***    node*      CONTENTS       (N_WLblock, N_WLublock, N_WLstride)
+ ***    node*      NEXT           (N_WLseg)
  ***
  ***  permanent attributes:
  ***
- ***    int      DIMS      (number of dims)
+ ***    int        DIMS      (number of dims)
  ***
  ***  temporary attributes:
  ***
- ***    int      BLOCKS    (number of blocking levels
- ***                         --- without unrolling-blocking)
- ***    long*    SV        (step vector)           (wltransform -> )
- ***    long*    BV        (blocking vector)       (wltransform -> compile )
- ***    long*    UBV       (unrolling-b. vector)   (wltransform -> compile )
+ ***    int        BLOCKS    (number of blocking levels
+ ***                           --- without unrolling-blocking)
+ ***    long*      SV        (step vector)           (wltransform -> )
+ ***    long*      BV        (blocking vector)       (wltransform -> compile )
+ ***    long*      UBV       (unrolling-b. vector)   (wltransform -> compile )
  ***
- ***    int*     IDX_MIN                           (wltransform -> compile )
- ***    int*     IDX_MAX                           (wltransform -> compile )
+ ***    int*       IDX_MIN                           (wltransform -> compile )
+ ***    int*       IDX_MAX                           (wltransform -> compile )
+ ***
+ ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***
  ***/
 
@@ -2944,6 +2955,8 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 #define WLSEG_IDX_MIN(n) (*((int **)(&(n->node[2]))))
 #define WLSEG_IDX_MAX(n) (*((int **)(&(n->node[3]))))
+
+#define WLSEG_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3146,6 +3159,29 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 #define WLGRID_CODE(n) (n->node[2])
 
 #define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLsegVar :
+ ***
+ ***  sons:
+ ***
+ ***
+ ***  permanent attributes:
+ ***
+ ***
+ ***  temporary attributes:
+ ***
+ ***    SCHsched_t   SCHEDULING    (O)    (wltransform -> compile)
+ ***
+ ***
+ ***  remarks:
+ ***
+ ***    This node is not yet implemented.
+ ***/
+
+#define WLSEGVAR_SCHEDULING(n) ((SCHsched_t)n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
