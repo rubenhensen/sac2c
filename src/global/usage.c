@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/08/01 13:44:40  nmw
+ * comment to -genlib c switch adjusted
+ *
  * Revision 2.35  2000/07/11 16:13:58  dkr
  * psi-opt phase removed
  *
@@ -615,9 +618,9 @@ usage ()
     printf ("\n\nLIBRARY OPTIONS:\n\n"
             "\t -genlib <lang>\tlanguage interface to generate from module.\n"
             "\t\t\tsac: generate SAC library.\n"
-            "\t\t\t  c: generate C library and headerfile. By default PHM,\n"
-            "\t\t\t     APS, RCAO, MSCA and mt are disabled. They can be\n"
-            "\t\t\t     reenabled on the commandline after the genlib switch.\n"
+            "\t\t\t  c: generate C library and headerfile. Be careful to\n"
+            "\t\t\t     use same switches for PHM and MT in all modules you\n"
+            "\t\t\t     link to one c executeable!"
             "\t\t\tdefault: -genlib sac\n"
 
             "\n\t -l <n>\t\tlink level for generating SAC library.\n"
