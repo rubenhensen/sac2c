@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/03 13:09:04  jhs
+ * Changed ICMCompileMT_CONTINUE to handle exchanges of new allocated
+ * arrays between master and slaves threads.
+ *
  * Revision 2.1  1999/02/23 12:42:38  sacbase
  * new release made
  *
@@ -584,12 +588,15 @@ ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_CONTINUE(int narg, char **vararg)
+ *   void ICMCompileMT_CONTINUE(int nfoldargs, int nsyncargs,
+ *                              char **vararg, char **syncargs)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_CONTINUE( narg [, foldtype, accu_var]*)
+ *   MT_CONTINUE( nfoldargs, nsyncargs
+ *                [, foldtype, accu_var]*,
+ *                [, ... ]*);
  *
  *   This ICM implements the continuation after a barrier synchronisation.
  *   It restarts the synchronized worker threads and updates their current
@@ -600,7 +607,7 @@ ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var
  ******************************************************************************/
 
 void
-ICMCompileMT_CONTINUE (int narg, char **vararg)
+ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs, char **syncargs)
 {
     int i, j;
 
@@ -610,6 +617,14 @@ ICMCompileMT_CONTINUE (int narg, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_CONTINUE
+
+    for (i = 0; i < nsyncargs; i++) {
+        INDENT;
+        fprintf (outfile,
+                 "*SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN().SAC_MT_CURRENT_SPMD().%s = "
+                 "%s;\n",
+                 syncargs[i], syncargs[i]);
+    }
 
     INDENT;
     fprintf (outfile, "SAC_MT_START_WORKERS()\n");
@@ -632,10 +647,18 @@ ICMCompileMT_CONTINUE (int narg, char **vararg)
     INDENT;
     fprintf (outfile, "SAC_MT_WORKER_WAIT()\n");
 
-    for (i = 0, j = 1; i < 2 * narg; i += 2, j++) {
+    for (i = 0, j = 1; i < 2 * nfoldargs; i += 2, j++) {
         INDENT;
         fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(0, %d, %s);\n", vararg[i + 1],
                  j, vararg[i]);
+    }
+
+    for (i = 0; i < nsyncargs; i++) {
+        INDENT;
+        fprintf (outfile,
+                 "%s = "
+                 "*SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN().SAC_MT_CURRENT_SPMD().%s;\n",
+                 syncargs[i], syncargs[i]);
     }
 
     indent--;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/03 13:09:04  jhs
+ * Changed ICMCompileMT_CONTINUE to handle exchanges of new allocated
+ * arrays between master and slaves threads.
+ *
  * Revision 2.1  1999/02/23 12:42:39  sacbase
  * new release made
  *
@@ -63,7 +67,8 @@ extern void ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp
 extern void ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var,
                                                char *tmp_var, char *foldop);
 extern void ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg);
-extern void ICMCompileMT_CONTINUE (int narg, char **vararg);
+extern void ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs,
+                                   char **syncargs);
 extern void ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg);
 
