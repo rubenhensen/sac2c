@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/02/13 16:14:39  nmw
+ * save/restore of act_tab added
+ *
  * Revision 1.2  2000/12/15 18:31:20  dkr
  * initial revision
  *
@@ -295,13 +298,18 @@ node *
 CleanupDecls (node *syntax_tree)
 {
     node *info_node;
+    funtab *old_tab;
 
     DBUG_ENTER ("CleanupDecls");
 
     info_node = MakeInfo ();
 
+    old_tab = act_tab;
+
     act_tab = cudecls_tab;
     syntax_tree = Trav (syntax_tree, info_node);
+
+    act_tab = old_tab;
 
     info_node = FreeNode (info_node);
 
