@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.3  1995/11/01 08:03:53  cg
+# Revision 1.4  1995/11/06 09:23:30  cg
+# added uniquecheck.c
+#
+# Revision 1.3  1995/11/01  08:03:53  cg
 # added compilation of objects.c
 #
 # Revision 1.2  1995/10/25  15:18:16  cg
@@ -19,7 +22,7 @@ RM=rm -f
 
 INCS=-I../global -I../../inc 
 
-all: objinit.o objects.o
+all: objinit.o objects.o uniquecheck.o
 
 
 objinit.o: objinit.c
@@ -28,12 +31,15 @@ objinit.o: objinit.c
 objects.o: objects.c
 	$(CC) -o objects.o -c objects.c $(INCS)
 
+uniquecheck.o: uniquecheck.c
+	$(CC) -o uniquecheck.o -c uniquecheck.c $(INCS)
+
 
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) objinit.o objects.o  *.bak
+	$(RM) objinit.o objects.o uniquecheck.o  *.bak
 
 
 
@@ -48,3 +54,7 @@ objinit.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 objinit.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 objinit.o: ../global/Error.h /usr/include/stdio.h ../global/traverse.h
 objinit.o: ../../inc/dbug.h ../global/internal_lib.h
+uniquecheck.o: ../global/types.h ../global/tree_basic.h
+uniquecheck.o: ../global/tree_compound.h ../global/Error.h
+uniquecheck.o: /usr/include/stdio.h ../../inc/dbug.h ../global/traverse.h
+uniquecheck.o: ../global/internal_lib.h /usr/include/malloc.h
