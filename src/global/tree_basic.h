@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1997/12/20 17:33:24  srs
+ * changed comment for N_vardec
+ *
  * Revision 1.63  1997/12/10 18:45:33  srs
  * *** empty log message ***
  *
@@ -1026,9 +1029,9 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***
  ***  permanent attributes:
  ***
- ***    char*       NAME
- ***    types*      TYPE
- ***    statustype  STATUS
+ ***    char*       NAME          (NAME is an element of ...
+ ***    types*      TYPE           ... this struct)
+ ***    statustype  STATUS        (element of TYPE, too)
  ***
  ***  temporary attributes:
  ***
