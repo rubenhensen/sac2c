@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2002/10/09 22:18:17  dkr
+ * macro moved from tree_compound.h to typecheck.c
+ *
  * Revision 3.46  2002/09/11 23:06:41  dkr
  * printing of PRFs modified, prf_node_info.mac modified.
  *
@@ -86,9 +89,11 @@
 
 #include "new_typecheck.h"
 
-/*************
- * ugly macros from access_macros.h included here ...
- */
+/*****************************************************************************/
+
+/**
+ **  ugly macros from access_macros.h included here ...
+ **/
 
 /* macros for access to elements of struct info.types */
 #define DIM info.types->dim
@@ -99,9 +104,15 @@
 #define FUN_NAME info.fun_name.id
 #define FUN_MOD_NAME info.fun_name.id_mod
 
+/*****************************************************************************/
+
 /*
- * ugly macros from access_macros.h included here ...
- *************/
+ * compares two module names (name maybe NULL)
+ * result: 1 - equal, 0 - not equal
+ */
+#define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
+
+/*****************************************************************************/
 
 #define LOCAL_STACK_SIZE 1000 /* used for scope stack */
 #define MAX_ARG_TYPE_LENGTH                                                              \
@@ -176,7 +187,6 @@
 #define T_NAME(i) TYPEDEF_NAME ((tab + i)->node)
 #define T_MOD(i) TYPEDEF_MOD ((tab + i)->node)
 
-#if 1
 #define CMP_TYPEDEF_ID(a, b)                                                             \
     ((NULL == TYPEDEF_MOD (a))                                                           \
        ? ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b))) && (NULL == TYPEDEF_MOD (b)))   \
@@ -184,14 +194,6 @@
             ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                             \
             : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
                && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
-#else
-#define CMP_TYPE_ID(a, b)                                                                \
-    ((NULL == a->id_mod)                                                                 \
-       ? ((!strcmp (a->id, b->id)) && (NULL == b->id_mod))                               \
-       : ((NULL == b->id_mod)                                                            \
-            ? (!strcmp (a->id, b->id))                                                   \
-            : ((!strcmp (a->id, b->id)) && (!strcmp (a->id_mod, b->id_mod)))))
-#endif
 
 #define CMP_TYPE_NAME(a, b)                                                              \
     ((NULL == a->name_mod)                                                               \
@@ -510,35 +512,6 @@ ArrayOfZeros (int count)
 
     DBUG_RETURN (res);
 }
-
-#if 0
-/******************************************************************************
- *
- * function:
- *   node *TypeToZeros (types *type)
- *  
- * description:
- *   type has to be an array-type.
- *   Produces an Array (N_array) with as many elements as the dimension
- *   of the given type, all elements are zero (0).
- *   This one does only work for known shape, not if only the dimension is 
- *   known, perhaps this can be expanded ... (jhs)
- *
- ******************************************************************************/
-
-static
-node *TypeToZeros (types *type)
-{
-  node *res;
-
-  DBUG_ENTER("TypeToZeros");
-  DBUG_ASSERT((TYPES_DIM(type) > 0), "TypeToZeros() called with type dim <= 0");
-
-  res = ArrayOfZeros (TYPES_DIM(type));
-
-  DBUG_RETURN(res);
-}
-#endif
 
 /******************************************************************************
  *
@@ -1117,92 +1090,6 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
 
     DBUG_RETURN (res);
 }
-
-#if 0
-/******************************************************************************
- *
- * Function:
- *   node *LookupObject(char *name, char *mod, int line)
- *
- * Description:
- *   Searches for the objdef-node which defines the given object. The pointer
- *   to this objdef node is returned, if it's found and NULL else.
- *
- * Remarks:
- *   Search-Strategy:
- *                  
- *   If no module name is given, then the object is first searched in the
- *   current module. If it's not found there, it is looked for in all imported
- *   modules. An error message occurs if more than one object matches.
- *                  
- *   If a module name is given, then the object is first searched in this
- *   particular module. If it's not found there, then the search is continued
- *   in all modules which are imported by this module. An error message occurs
- *   if more than one object matches.
- *
- ******************************************************************************/
-
-static
-node *LookupObject(char *name, char *mod, int line)
-{
-  node *tmp, *found=NULL;
-  mods *mods_avail;
-  char *prefix=module_name;
-  
-  DBUG_ENTER("LookupObject");
-  
-  tmp=object_table;
-
-  if ((mod!=NULL) && (strcmp(mod, module_name)!=0)) {
-    prefix=ModulePrefix(mod);
-  }
-
-  while ((tmp!=NULL) && (CMP_OBJ_OBJDEF(name, prefix, tmp)==0)) {
-    tmp=OBJDEF_NEXT(tmp);
-  }
-    
-  if (tmp!=NULL) {
-    found=tmp;
-  } else {
-    if (mod==NULL) {
-      tmp=object_table;
-
-      while (tmp!=NULL) {
-        if (strcmp(name, OBJDEF_NAME(tmp))==0) {
-          if (found==NULL) {
-            found=tmp;
-          } else {
-            ERROR(line,
-                  ("Identifier '%s` matches more than one global object",
-                   name));
-          }
-        }
-        tmp=OBJDEF_NEXT(tmp);
-      }
-    } else {
-      mods_avail=FindSymbolInModul(mod, name, 3, NULL, 1);
-      while (mods_avail!=NULL) {
-        tmp=object_table;
-        while (tmp!=NULL) {
-          if (CMP_OBJ_OBJDEF(name, mods_avail->mod->prefix, tmp)==1) {
-            if (found==NULL) {
-              found=tmp;
-            } else {
-              ERROR(line,
-                    ("Identifier '%s` matches more than one global object",
-                     name));
-            }
-          }
-          tmp=OBJDEF_NEXT(tmp);
-        }
-        mods_avail=mods_avail->next;
-      }
-    }
-  }
-  
-  DBUG_RETURN(found);
-}
-#endif
 
 /******************************************************************************
  *
@@ -2969,70 +2856,6 @@ InitFunTable (node *arg_node)
 
     fun_table = NEXT_FUN_TAB_ELEM (fun_table);
     dummy = Free (dummy);
-
-#if 0   
-   /* allocate memory for table */
-   fun_table=(fun_tab_elem*)Malloc(sizeof(fun_tab_elem)*size);
-   
-   DBUG_PRINT("TYPE",("fun table from "F_PTR" to "F_PTR,
-                      fun_table, fun_table+size));
-   
-   fun_tos=fun_table; /* set pointer to last entry in fun_table */
-   
-   fun_node=arg_node;
-   while(NULL != fun_node)
-   {
-      fun_name = FUNDEF_NAME( fun_node);
-      mod_name = FUNDEF_MOD( fun_node);
-      if (NULL == LookupFun(NULL, NULL, fun_node))
-      {
-         old_tos=fun_tos;
-         INSERT_FUN(fun_name, mod_name,fun_node,
-                  (NULL == fun_node->node[0])?IS_CHECKED:NOT_CHECKED,
-                    max_overload);
-         
-         /*  now look for functions with equal name (id).
-          *  Insert it, if no previous function with equal name & mod_name 
-          *  has same argumenttype (domain).
-          */
-         tmp=fun_node->node[1];
-         while(NULL != tmp)
-         {
-            if (! strcmp(FUNDEF_NAME( tmp), FUNDEF_NAME( fun_node)))
-            {
-               tmp_tos=old_tos;
-               while(tmp_tos < fun_tos)
-               {
-                  if (CMP_MOD( FUNDEF_MOD( tmp), FUNDEF_MOD( fun_node)))
-                  {
-                     if (1==CmpFunParams(tmp_tos->node->node[2], tmp->node[2]))
-                     {
-                        ERROR(0, ("Function '%s` is defined more"
-                                  " than once with equal domain",
-                                  ModName( FUNDEF_MOD( tmp), FUNDEF_NAME( tmp))));
-                        break;
-                     }
-                  }
-                  
-                  tmp_tos++;
-               }
-            
-               if (tmp_tos == fun_tos)
-               {
-                  /* there isn't a function with equal name & mod_name and 
-                   * equal domain. So insert function to fun_table.
-                   */
-                  INSERT_FUN( FUNDEF_NAME( tmp), FUNDEF_MOD( tmp), tmp, 
-                              (NULL == tmp->node[0])?IS_CHECKED: NOT_CHECKED, 
-                              max_overload);
-               }
-            }
-            tmp=tmp->node[1];
-         }
-      }
-      fun_node=fun_node->node[1];
-   }
-#endif
 
     DBUG_VOID_RETURN;
 }
