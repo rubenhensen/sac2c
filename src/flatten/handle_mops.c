@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/08/13 14:40:14  sbs
+ * HMNwithop added.
+ *
  * Revision 1.1  2002/08/13 10:22:39  sbs
  * Initial revision
  *
@@ -125,6 +128,7 @@ InitPrecLut ()
 static bool
 LeftAssoc (ids *lop, ids *rop)
 {
+    prec_t **prec_p;
     prec_t *prec1, *prec2;
     bool res;
 
@@ -132,14 +136,18 @@ LeftAssoc (ids *lop, ids *rop)
 
     DBUG_ENTER ("LeftAssoc");
 
-    prec1 = SearchInLUT_S (prec_lut, IDS_NAME (lop));
-    if (prec1 == NULL) {
+    prec_p = (prec_t **)SearchInLUT_S (prec_lut, IDS_NAME (lop));
+    if (prec_p == NULL) {
         prec1 = &default_prec; /* no precedence found */
+    } else {
+        prec1 = *prec_p;
     }
 
-    prec2 = SearchInLUT_S (prec_lut, IDS_NAME (rop));
-    if (prec2 == NULL) {
+    prec_p = (prec_t **)SearchInLUT_S (prec_lut, IDS_NAME (rop));
+    if (prec_p == NULL) {
         prec2 = &default_prec; /* no precedence found */
+    } else {
+        prec2 = *prec_p;
     }
 
     if (PREC_VAL (prec1) == PREC_VAL (prec2)) {
@@ -259,6 +267,8 @@ HandleMops (node *arg_node)
     arg_node = Trav (arg_node, info_node);
 
     info_node = FreeNode (info_node);
+
+    prec_lut = ApplyToEach_S (prec_lut, (void *(*)(void *))FreePrec);
     prec_lut = RemoveLUT (prec_lut);
 
     act_tab = tmp_tab;
@@ -312,6 +322,64 @@ Name2Prf (char *name, prf *primfun)
 
     if (strcmp (name, "abs") == 0) {
         *primfun = F_abs;
+    } else if (strcmp (name, "reshape") == 0) {
+        *primfun = F_reshape;
+    } else if (strcmp (name, "shape") == 0) {
+        *primfun = F_shape;
+    } else if (strcmp (name, "take") == 0) {
+        *primfun = F_take;
+    } else if (strcmp (name, "drop") == 0) {
+        *primfun = F_drop;
+    } else if (strcmp (name, "dim") == 0) {
+        *primfun = F_dim;
+    } else if (strcmp (name, "rotate") == 0) {
+        *primfun = F_rotate;
+    } else if (strcmp (name, "cat") == 0) {
+        *primfun = F_cat;
+    } else if (strcmp (name, "sel") == 0) {
+        *primfun = F_sel;
+    } else if (strcmp (name, "toi") == 0) {
+        *primfun = F_toi;
+    } else if (strcmp (name, "tof") == 0) {
+        *primfun = F_tof;
+    } else if (strcmp (name, "tod") == 0) {
+        *primfun = F_tod;
+    } else if (strcmp (name, "min") == 0) {
+        *primfun = F_min;
+    } else if (strcmp (name, "max") == 0) {
+        *primfun = F_max;
+    } else if (strcmp (name, "genarray") == 0) {
+        *primfun = F_genarray;
+    } else if (strcmp (name, "modarray") == 0) {
+        *primfun = F_modarray;
+    } else if (strcmp (name, "+") == 0) {
+        *primfun = F_add;
+    } else if (strcmp (name, "-") == 0) {
+        *primfun = F_sub;
+    } else if (strcmp (name, "*") == 0) {
+        *primfun = F_mul;
+    } else if (strcmp (name, "/") == 0) {
+        *primfun = F_div;
+    } else if (strcmp (name, "!") == 0) {
+        *primfun = F_not;
+    } else if (strcmp (name, "%") == 0) {
+        *primfun = F_mod;
+    } else if (strcmp (name, "==") == 0) {
+        *primfun = F_eq;
+    } else if (strcmp (name, "!=") == 0) {
+        *primfun = F_neq;
+    } else if (strcmp (name, ">") == 0) {
+        *primfun = F_gt;
+    } else if (strcmp (name, ">=") == 0) {
+        *primfun = F_ge;
+    } else if (strcmp (name, "<") == 0) {
+        *primfun = F_lt;
+    } else if (strcmp (name, "<=") == 0) {
+        *primfun = F_le;
+    } else if (strcmp (name, "&&") == 0) {
+        *primfun = F_and;
+    } else if (strcmp (name, "||") == 0) {
+        *primfun = F_or;
     } else {
         res = FALSE;
     }
@@ -328,15 +396,58 @@ HMap (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("HMap");
 
-    found = Name2Prf (AP_NAME (arg_node), &primfun);
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
 
-    if (found) {
-        res = MakePrf (primfun, AP_ARGS (arg_node));
-        AP_ARGS (arg_node) = NULL;
-        arg_node = FreeNode (arg_node);
-    } else {
+    if (sbs == 1) {
         res = arg_node;
+    } else {
+        found = Name2Prf (AP_NAME (arg_node), &primfun);
+
+        if (found) {
+            res = MakePrf (primfun, AP_ARGS (arg_node));
+            AP_ARGS (arg_node) = NULL;
+            arg_node = FreeNode (arg_node);
+        } else {
+            res = arg_node;
+        }
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *HMNwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   this function is only needed for converting the "new prf notation",
+ *   which is needed for the new type checker, into the one that is
+ *   required by the old type checker.....8-((
+ *   Once the new TC is as powerful as the old one is, this function
+ *   (and its call in flatten) becomes obsolete 8-)).
+ *
+ ******************************************************************************/
+
+node *
+HMNwithop (node *arg_node, node *arg_info)
+{
+    prf primfun;
+    bool found;
+
+    DBUG_ENTER ("HMNwithop");
+
+    if ((sbs != 1) && (NWITHOP_TYPE (arg_node) == WO_foldfun)) {
+
+        found = Name2Prf (NWITHOP_FUN (arg_node), &primfun);
+
+        if (found) {
+            NWITHOP_TYPE (arg_node) = WO_foldprf;
+            NWITHOP_PRF (arg_node) = primfun;
+        }
+    }
+
+    DBUG_RETURN (arg_node);
 }
