@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/08/10 14:49:49  dkr
+ * fixed a bug in ComputeIndexMinMax
+ *
  * Revision 1.13  1998/06/09 16:47:06  dkr
  * IDX_MIN, IDX_MAX now segment-specific
  *
@@ -376,9 +379,9 @@ ComputeIndexMinMax (int **idx_min, int **idx_max, int dims, node *strides)
                 (*idx_max)[d] = WLSTRIDE_BOUND2 (stride);
             } else { /* N_WLstriVar */
                 if (NODE_TYPE (WLSTRIVAR_BOUND2 (stride)) == N_num) {
-                    (*idx_min)[d] = NUM_VAL (WLSTRIVAR_BOUND2 (stride));
+                    (*idx_max)[d] = NUM_VAL (WLSTRIVAR_BOUND2 (stride));
                 } else {
-                    (*idx_min)[d] = INT_MAX;
+                    (*idx_max)[d] = INT_MAX;
                 }
             }
 
