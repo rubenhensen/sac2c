@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/11/15 14:02:38  sbs
+ * args of tolower casted from char to int.
+ *
  * Revision 2.22  2000/07/17 11:15:13  jhs
  * Added blkli at TmpVar().
  *
@@ -705,7 +708,7 @@ OptCmp (char *first, char *second)
     int i = 0;
 
     while ((first[i] != '\0') && (second[i] != '\0')
-           && (tolower (first[i]) == tolower (second[i])))
+           && (tolower ((int)first[i]) == tolower ((int)second[i])))
         i++;
 
     if (first[i] == second[i])
