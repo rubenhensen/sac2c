@@ -1,8 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/22 15:49:57  cg
+ * Moved from subdirectory modules to global.
+ *
  * Revision 1.1  2004/11/22 15:45:56  cg
  * Initial revision
+ *
+ * Moved from subdirectory modules
  *
  * Revision 3.4  2004/10/11 16:55:48  sah
  * removes TempFileName again
