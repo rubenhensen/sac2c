@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/01/25 16:11:21  dkr
+ * INFO_LAC2FUN_FUNDEF added
+ *
  * Revision 1.3  2000/01/25 13:47:06  dkr
  * INFO_LAC2FUN_FUNS added
  *
@@ -2615,7 +2618,8 @@ extern node *MakeInfo ();
 #define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
-#define INFO_LAC2FUN_FUNS(n) (n->node[0])
+#define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
+#define INFO_LAC2FUN_FUNS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
