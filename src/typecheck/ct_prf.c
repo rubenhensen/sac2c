@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2003/04/09 15:35:57  sbs
+ * NTCPRF_toiS, NTCPRF_toiA, NTCPRF_tofS, NTCPRF_tofA, NTCPRF_todS, NTCPRF_todA,
+ * NTCPRF_ari_op_A, NTCPRF_log_op_A added.
+ *
  * Revision 1.13  2003/04/08 12:26:19  sbs
  * ApplyCF extended for non-binary functions;
  * modarray now folds as well 8-)
@@ -518,6 +522,198 @@ NTCPRF_modarrayS (te_info *info, ntype *args)
     DBUG_RETURN (TYMakeProductType (1, res));
 }
 
+static ntype *
+ConvS (te_info *info, ntype *args, simpletype st)
+{
+    ntype *res = NULL;
+    ntype *array;
+
+    DBUG_ENTER ("ConvS");
+    DBUG_ASSERT (TYGetProductSize (args) == 1,
+                 "ConvS called with incorrect number of arguments");
+
+    array = TYGetProductMember (args, 0);
+
+    TEAssureNumS (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+
+    if (TYIsAKV (array)) {
+        res = TYMakeAKV (TYMakeSimpleType (st), ApplyCF (info, args));
+    } else {
+        res = TYMakeAKS (TYMakeSimpleType (st), SHMakeShape (0));
+    }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+static ntype *
+ConvA (te_info *info, ntype *args, simpletype st)
+{
+    ntype *res = NULL;
+    ntype *array, *scal;
+
+    DBUG_ENTER ("ConvA");
+    DBUG_ASSERT (TYGetProductSize (args) == 1,
+                 "ConvA called with incorrect number of arguments");
+
+    array = TYGetProductMember (args, 0);
+
+    TEAssureNumA (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+
+    if (TYIsAKV (array)) {
+        res = TYMakeAKV (TYMakeSimpleType (st), ApplyCF (info, args));
+    } else {
+        res = TYCopyType (array);
+        scal = TYGetScalar (res);
+        scal = TYSetSimpleType (scal, st);
+    }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCPRF_toiS( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _toi_S_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _toi_S_ is applied to
+ *   @return       the result type of applying _toi_S_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_toiS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCPRF_toiS");
+
+    res = ConvS (info, args, T_int);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCPRF_toiA( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _toi_A_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _toi_A_ is applied to
+ *   @return       the result type of applying _toi_A_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_toiA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCPRF_toiA");
+
+    res = ConvA (info, args, T_int);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCPRF_tofS( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _tof_S_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _tof_S_ is applied to
+ *   @return       the result type of applying _tof_S_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_tofS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCPRF_tofS");
+
+    res = ConvS (info, args, T_float);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCPRF_tofA( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _tof_A_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _tof_A_ is applied to
+ *   @return       the result type of applying _tof_A_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_tofA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCPRF_tofA");
+
+    res = ConvA (info, args, T_float);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCPRF_todS( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _tod_S_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _tod_S_ is applied to
+ *   @return       the result type of applying _tod_S_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_todS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCPRF_todS");
+
+    res = ConvS (info, args, T_double);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCPRF_todA( te_info *info, ntype *args)
+ *
+ *   @brief  computes the return type of an application of _tod_A_
+ *
+ *   @param info   info needed for type errors and for applying CF
+ *   @param args   product of argument types _tod_A_ is applied to
+ *   @return       the result type of applying _tod_A_
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_todA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+
+    DBUG_ENTER ("NTCPRF_todA");
+
+    res = ConvA (info, args, T_double);
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:
@@ -674,6 +870,39 @@ NTCPRF_ari_op_AxA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCPRF_ari_op_A( te_info *info, ntype *args)
+ *
+ * description:
+ *    simple [shp]  ->  simple [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_ari_op_A (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+
+    DBUG_ENTER ("NTCPRF_ari_op_A");
+    DBUG_ASSERT (TYGetProductSize (args) == 1,
+                 "ari_op_A called with incorrect number of arguments");
+
+    array = TYGetProductMember (args, 0);
+
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+
+    if (TYIsAKV (array)) {
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+    } else {
+        res = TYCopyType (array);
+    }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCPRF_rel_op_AxA( te_info *info, ntype *args)
  *
  * description:
@@ -742,6 +971,39 @@ NTCPRF_log_op_AxA (te_info *info, ntype *args)
     if (TYIsAKV (array1) && TYIsAKV (array2)) {
         res = TYFreeType (res);
         res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_log_op_A( te_info *info, ntype *args)
+ *
+ * description:
+ *    bool [shp]  ->  bool [shp]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_log_op_A (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array;
+
+    DBUG_ENTER ("NTCPRF_log_op_A");
+    DBUG_ASSERT (TYGetProductSize (args) == 1,
+                 "log_op_A called with incorrect number of arguments");
+
+    array = TYGetProductMember (args, 0);
+
+    TEAssureBoolA (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+
+    if (TYIsAKV (array)) {
+        res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    } else {
+        res = TYCopyType (array);
     }
 
     DBUG_RETURN (TYMakeProductType (1, res));

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.7  2003/04/09 15:35:57  sbs
+ * NTCPRF_toiS, NTCPRF_toiA, NTCPRF_tofS, NTCPRF_tofA, NTCPRF_todS, NTCPRF_todA,
+ * NTCPRF_ari_op_A, NTCPRF_log_op_A added.
+ *
  * Revision 1.6  2003/04/07 14:34:19  sbs
  * NTCPRF_cffuntab added .
  *
@@ -39,12 +43,20 @@ extern ntype *NTCPRF_shape (te_info *info, ntype *args);
 extern ntype *NTCPRF_reshape (te_info *info, ntype *args);
 extern ntype *NTCPRF_selS (te_info *info, ntype *args);
 extern ntype *NTCPRF_modarrayS (te_info *info, ntype *args);
+extern ntype *NTCPRF_toiS (te_info *info, ntype *args);
+extern ntype *NTCPRF_toiA (te_info *info, ntype *args);
+extern ntype *NTCPRF_tofS (te_info *info, ntype *args);
+extern ntype *NTCPRF_tofA (te_info *info, ntype *args);
+extern ntype *NTCPRF_todS (te_info *info, ntype *args);
+extern ntype *NTCPRF_todA (te_info *info, ntype *args);
 extern ntype *NTCPRF_ari_op_SxS (te_info *info, ntype *args);
 extern ntype *NTCPRF_ari_op_SxA (te_info *info, ntype *args);
 extern ntype *NTCPRF_ari_op_AxS (te_info *info, ntype *args);
 extern ntype *NTCPRF_ari_op_AxA (te_info *info, ntype *args);
+extern ntype *NTCPRF_ari_op_A (te_info *info, ntype *args);
 extern ntype *NTCPRF_rel_op_AxA (te_info *info, ntype *args);
 extern ntype *NTCPRF_log_op_AxA (te_info *info, ntype *args);
+extern ntype *NTCPRF_log_op_A (te_info *info, ntype *args);
 extern ntype *NTCPRF_int_op_SxS (te_info *info, ntype *args);
 extern ntype *NTCPRF_drop_SxV (te_info *info, ntype *args);
 extern ntype *NTCPRF_cat_VxV (te_info *info, ntype *args);
