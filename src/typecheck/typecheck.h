@@ -1,6 +1,12 @@
 /*
  * $Log$
- * Revision 1.6  1994/12/20 14:20:44  hw
+ * Revision 1.7  1994/12/30 10:16:36  hw
+ * *** empty log message ***
+ *
+ * Revision 1.6  1994/12/20  14:20:44  hw
+ * added function TCunaryOp to handle typechecking of N_post & N_pre
+ *
+ * Revision 1.6  1994/12/20  14:20:44  hw
  * added function TCunaryOp to handle typechecking of N_post & N_pre
  *
  * Revision 1.5  1994/12/19  13:01:42  hw
