@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.165  2004/09/30 17:16:54  sah
+ * function types are now printed using
+ * the argument types and the return type iff
+ * the function type itself is not available.
+ *
  * Revision 3.164  2004/09/28 14:07:55  ktr
  * removed old refcount and generatemasks
  *
@@ -1707,6 +1712,10 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
             fprintf (outfile, "%s\n",
                      t2s_fun (FUNDEF_TYPE (arg_node), TRUE,
                               indent + strlen (FUNDEF_NAME (arg_node)) + 8));
+        } else if (FUNDEF_RET_TYPE (arg_node) != NULL) {
+            fprintf (outfile, "%s\n",
+                     TYArgs2FunTypeString (FUNDEF_ARGS (arg_node),
+                                           FUNDEF_RET_TYPE (arg_node)));
         }
     }
     INDENT;
