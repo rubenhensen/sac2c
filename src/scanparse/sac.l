@@ -3,7 +3,13 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/05/30 08:21:55  cg
+ * Revision 1.16  1995/06/30 11:09:37  hw
+ * - tokens for new primitive functions "ftoi" & "itof" inserted
+ * - token C_KEYWORD for not used c-keywords inserted
+ * - identifiers have to begin with a letter.
+ *   more than one "_" in succession will not be accepted
+ *
+ * Revision 1.15  1995/05/30  08:21:55  cg
  * sac-grammar version 0.5 tokens inserted.
  *
  * Revision 1.14  1995/05/22  15:03:43  hw
@@ -69,7 +75,11 @@ int linenum=1;
 int commlevel=0;
 int start_token;
 
+
 %}
+
+%p 3000 /* set positions to 3000 */
+
 %%
 %{
 
@@ -125,7 +135,8 @@ int start_token;
 "rotate"			{FILTER( ROTATE );}
 "cat"                           {FILTER( CAT );}
 "psi"                           {FILTER( PSI );}
-
+"ftoi"                          {FILTER( F2I );}
+"itof"                          {FILTER( I2F );}
 "typedef"			{FILTER( TYPEDEF );}
 "constdef"		        {FILTER( CONSTDEF );}
 "objdef"		        {FILTER( OBJDEF );}
@@ -174,8 +185,23 @@ int start_token;
 "true"                          {FILTER( TRUE );}
 "false"                         {FILTER( FALSE );}
 
+"const"                         {FILTER( C_KEYWORD);}
+"auto"                          {FILTER( C_KEYWORD);}
+"static"                        {FILTER( C_KEYWORD);}
+"extern"                        {FILTER( C_KEYWORD);}
+"struct"                        {FILTER( C_KEYWORD);}
+"union"                         {FILTER( C_KEYWORD);}
+"volatile"                      {FILTER( C_KEYWORD);}
+"case"                          {FILTER( C_KEYWORD);}
+"default"                       {FILTER( C_KEYWORD);}
+"switch"                        {FILTER( C_KEYWORD);}
+"goto"                          {FILTER( C_KEYWORD);}
+"continue"                      {FILTER( C_KEYWORD);}
+"break"                         {FILTER( C_KEYWORD);}
+
+
 \"[^"\n]*\"			{FILTER2( STR );}
-[_A-Za-z][_A-Za-z0-9]*		{FILTER2( ID );}
+[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*		{FILTER2( ID );}
 (0?|([1-9][0-9]*))	{FILTER3 ( NUM);}
 (0?|([1-9][0-9]*))[.][0-9]*(e([+]?|[-]?)[1-9][0-9]*)? \
 				{FILTER4 ( FLOAT);}
