@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.165  2004/07/23 10:06:53  skt
+ * TEMfundef, PENwith2 and PEMcond added
+ *
  * Revision 3.164  2004/07/22 17:25:21  khf
  * added WLFSap and WLPGap
  *
@@ -1379,7 +1382,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
        TravSons, TravSons, TravSons, SPfundef, TSfundef, CVPfundef, WLFSfundef,
 
-       ASMRAfundef, TravSons, PEMfundef, EMALfundef, TravSons, TravSons, TravSons,
+       ASMRAfundef, TEMfundef, PEMfundef, EMALfundef, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -2397,7 +2400,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       ASMRAwith2, TEMwith2, TravNone, EMALwith2, TravSons, TravSons, TravSons, TravSons,
+       ASMRAwith2, TEMwith2, PEMwith2, EMALwith2, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
@@ -2934,7 +2937,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPfuncond, TravSons,
 
-       TravSons, TravSons, TravSons, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, PEMcond, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
