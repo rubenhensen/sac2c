@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/02/16 08:41:50  nmw
+ * SSASTACK_INUSE added
+ *
  * Revision 3.16  2001/02/15 16:59:03  nmw
  * node N_ssastack added
  * ,
@@ -1356,6 +1359,7 @@ MakeSSAstack (node *next, node *avis)
     tmp = CreateCleanNode (N_ssastack);
     SSASTACK_NEXT (tmp) = next;
     SSASTACK_AVIS (tmp) = avis;
+    SSASTACK_INUSE (tmp) = FALSE;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));

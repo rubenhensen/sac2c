@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/02/16 08:41:29  nmw
+ * SSASTACK_INUSE added
+ *
  * Revision 3.13  2001/02/15 16:56:58  nmw
  * DupSSAstack added, DupID and DupIds are now aware of the AVIS
  * attribte.
@@ -2198,6 +2201,8 @@ DupSSAstack (node *arg_node, node *arg_info)
 
     new_node
       = MakeSSAstack (DUPCONT (SSASTACK_NEXT (arg_node)), SSASTACK_AVIS (arg_node));
+
+    SSASTACK_INUSE (arg_node) = SSASTACK_INUSE (arg_node);
 
     DBUG_RETURN (new_node);
 }

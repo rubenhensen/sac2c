@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/02/16 08:41:50  nmw
+ * SSASTACK_INUSE added
+ *
  * Revision 3.29  2001/02/15 16:59:03  nmw
  * node N_ssastack added
  * ,
@@ -1920,6 +1923,7 @@ extern node *MakeSSAcnt (node *next, int count, char *baseid);
  ***  permanent attributes:
  ***
  ***    node*    AVIS           (N_avis)  rename-to Avis node in stack-list
+ ***    bool     INUSE                    mark if stack is in use or to be
  ***/
 
 /*
@@ -1931,6 +1935,7 @@ extern node *MakeSSAstack (node *next, node *avis);
 
 #define SSASTACK_NEXT(n) (n->node[0])
 #define SSASTACK_AVIS(n) (n->node[1])
+#define SSASTACK_INUSE(n) ((bool)(n->flag))
 
 /*--------------------------------------------------------------------------*/
 
