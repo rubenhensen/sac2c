@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.103  2000/11/20 13:40:28  dkr
+ * fixed a bug in COMPSpmdFunReturn() and COMPMT2FunReturn():
+ * all ICM args are correctly allocated now
+ *
  * Revision 2.102  2000/11/14 13:38:56  dkr
  * some '... might be used uninitialized in this function' warnings
  * removed
@@ -358,26 +362,6 @@ static node *wl_seg = NULL;
     ((wl_seg != NULL)                                                                    \
      && ((NODE_TYPE (wl_seg) == N_WLseg) ? (WLSEG_NEXT (wl_seg) != NULL)                 \
                                          : (WLSEGVAR_NEXT (wl_seg) != NULL)))
-
-/*
- ********** PLEASE DO NOT USE THE FOLLOWING MACROS FOR NEW CODE!!!! ***********
- */
-
-#define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
-    {                                                                                    \
-        node *_tmp;                                                                      \
-        _tmp = MakeExprs (new_node, NULL);                                               \
-        EXPRS_NEXT (prev) = _tmp;                                                        \
-        prev = _tmp;                                                                     \
-    }
-
-#define APPEND_ICM_ARG(prev, new)                                                        \
-    EXPRS_NEXT (prev) = new;                                                             \
-    prev = new;
-
-#define APPEND_ASSIGNS(first, next)                                                      \
-    ASSIGN_NEXT (first) = next;                                                          \
-    first = next
 
 /******************************************************************************
  *
@@ -1373,41 +1357,37 @@ CreateIcmND_FUN_DEC (char *name, node **icm_tab, int tab_size)
  * Description:
  *   creates a MT_SPMD_FUN_DEC ICM.
  *
- *
- * *** CODE NOT BRUSHED YET ***
+ * Remark:
+ *   The content of 'icm_tab' is removed!!
  *
  ******************************************************************************/
 
 static node *
 CreateIcmMT_SPMD_FUN_DEC (char *name, char *from, node **icm_tab, int tab_size)
 {
-    node *icm, *icm_arg;
-    int i;
-    int cnt_icm = 0;
+    node *icm, *tmp;
+    int cnt_icm, i;
 
     DBUG_ENTER ("CreateIcmMT_SPMD_FUN_DEC");
 
     DBUG_PRINT ("COMP", ("Creating ICM \"MT_SPMD_FUN_DEC\""));
 
-    icm = MakeIcm0 ("MT_SPMD_FUN_DEC");
-
-    icm_arg = MakeExprs (MakeId_Copy (name), NULL);
-    ICM_ARGS (icm) = icm_arg;
-
-    MAKE_NEXT_ICM_ARG (icm_arg, MakeId_Copy (from));
-
+    cnt_icm = 0;
     for (i = 1; i < tab_size; i++) {
         if (icm_tab[i] != NULL) {
             cnt_icm++;
         }
     }
 
-    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (cnt_icm));
+    icm = MakeIcm3 ("MT_SPMD_FUN_DEC", MakeId_Copy (name), MakeId_Copy (from),
+                    MakeNum (cnt_icm));
 
+    tmp = ICM_EXPRS3 (icm);
     for (i = 1; i < tab_size; i++) {
         if (icm_tab[i] != NULL) {
-            APPEND_ICM_ARG (icm_arg, icm_tab[i]);
-            icm_arg = EXPRS_NEXT (EXPRS_NEXT (icm_arg));
+            EXPRS_NEXT (tmp) = icm_tab[i];
+            tmp = EXPRS_NEXT (EXPRS_NEXT (icm_tab[i]));
+            icm_tab[i] = NULL;
         }
     }
 
@@ -1423,43 +1403,35 @@ CreateIcmMT_SPMD_FUN_DEC (char *name, char *from, node **icm_tab, int tab_size)
  * Description:
  *   creates a MT2_FUN_DEC ICM.
  *
- *
- * *** CODE NOT BRUSHED YET ***
- *
  ******************************************************************************/
 
 static node *
 CreateIcmMT2_FUN_DEC (char *kindof, node *fundef, node **icm_tab, int tab_size)
 {
-    node *icm, *icm_arg;
-    int i;
-    int cnt_icm = 0;
+    node *icm, *tmp;
+    int cnt_icm, i;
 
     DBUG_ENTER ("CreateIcmMT2_FUN_DEC");
 
     DBUG_PRINT ("COMP", ("Creating ICM \"MT2_FUN_DEC\""));
 
-    icm = MakeIcm0 ("MT2_FUN_DEC");
-
-    icm_arg = MakeExprs (MakeId_Copy (kindof), NULL);
-    ICM_ARGS (icm) = icm_arg;
-
-    MAKE_NEXT_ICM_ARG (icm_arg, MakeId_Copy (FUNDEF_NAME (fundef)));
-
-    MAKE_NEXT_ICM_ARG (icm_arg, MakeId_Copy (FUNDEF_NAME (FUNDEF_LIFTEDFROM (fundef))));
-
+    cnt_icm = 0;
     for (i = 1; i < tab_size; i++) {
         if (icm_tab[i] != NULL) {
             cnt_icm++;
         }
     }
 
-    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (cnt_icm));
+    icm
+      = MakeIcm4 ("MT2_FUN_DEC", MakeId_Copy (kindof), MakeId_Copy (FUNDEF_NAME (fundef)),
+                  MakeId_Copy (FUNDEF_NAME (FUNDEF_LIFTEDFROM (fundef))),
+                  MakeNum (cnt_icm));
 
+    tmp = ICM_EXPRS4 (icm);
     for (i = 1; i < tab_size; i++) {
         if (icm_tab[i] != NULL) {
-            APPEND_ICM_ARG (icm_arg, icm_tab[i]);
-            icm_arg = EXPRS_NEXT (EXPRS_NEXT (icm_arg));
+            EXPRS_NEXT (tmp) = icm_tab[i];
+            tmp = EXPRS_NEXT (EXPRS_NEXT (icm_tab[i]));
         }
     }
 
@@ -2966,9 +2938,9 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
 
         if (ID_REFCNT (EXPRS_EXPR (exprs)) >= 0) {
-            tag = MakeExprs (MakeId ("out_rc", NULL, ST_regular), NULL);
+            tag = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
-            tag = MakeExprs (MakeId ("out", NULL, ST_regular), NULL);
+            tag = MakeExprs (MakeId_Copy ("out"), NULL);
         }
 
         if (args == NULL) {
@@ -3020,9 +2992,9 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
 
         if (ID_REFCNT (EXPRS_EXPR (exprs)) >= 0) {
-            tag = MakeExprs (MakeId ("out_rc", NULL, ST_regular), NULL);
+            tag = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
-            tag = MakeExprs (MakeId ("out", NULL, ST_regular), NULL);
+            tag = MakeExprs (MakeId_Copy ("out"), NULL);
         }
 
         if (args == NULL) {
