@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/09/09 19:18:19  dkr
+ * prf_name_str removed
+ *
  * Revision 3.66  2002/09/06 16:18:10  sbs
  * TYPES_POLY for type vars added.
  *
@@ -132,16 +135,6 @@
 #include "internal_lib.h"
 #include "NameTuplesUtils.h"
 #include "refcount.h"
-
-/*--------------------------------------------------------------------------*/
-
-#define PRF_IF(n, s, x, y, z) y
-
-char *prf_name_str[] = {
-#include "prf_node_info.mac"
-};
-
-#undef PRF_IF
 
 /*--------------------------------------------------------------------------*/
 /* local macros for heap allocation                                         */
