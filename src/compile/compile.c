@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.114  1998/02/16 21:33:37  dkr
+ * Revision 1.115  1998/02/17 13:30:43  dkr
  * *** empty log message ***
  *
  * Revision 1.113  1998/02/16 01:11:52  dkr
@@ -5299,6 +5299,10 @@ CompWith (node *arg_node, node *arg_info)
  * compilation of new with-loop
  */
 
+#if 0
+node *ComputeParallelepiped()
+#endif
+
 /******************************************************************************
  *
  * function:
@@ -5461,7 +5465,7 @@ lcm (int x, int y)
 /******************************************************************************
  *
  * function:
- *   node *ProjIntersect(node *proj1, node *proj2, int shape)
+ *   node *ProjIntersect(node *proj1, node *proj2, int shape_int)
  *
  * description:
  *   returns the intersection of 'proj1' and 'proj2'
@@ -5502,8 +5506,8 @@ ProjIntersect (node *proj1, node *proj2, int shape_int)
 
         offset = -1;
         for (k = 0; k < step; k++) {
-            if (((k + bound1 - bound1_1 - offset_1) % step_1 < width_1)
-                && ((k + bound1 - bound1_2 - offset_2) % step_2 < width_2)) {
+            if (((k + bound1 - (bound1_1 + offset_1)) % step_1 < width_1)
+                && ((k + bound1 - (bound1_2 + offset_2)) % step_2 < width_2)) {
                 /* offset k matches both grids */
                 if (offset == -1)
                     /* at the beginning of a new intersection-grid */
@@ -5804,6 +5808,7 @@ ProjInsert (node *insert, node *projs)
             if (compare == 0) {
                 /* this projection was found already, hence of no use */
 #if 0
+        EXPRS_NEXT(to_insert) = NULL;
         FreeTree(to_insert);
 #endif
             } else {
@@ -5820,6 +5825,7 @@ ProjInsert (node *insert, node *projs)
                         if (compare == 0) {
                             /* this projection was found already, hence of no use */
 #if 0
+              EXPRS_NEXT(to_insert) = NULL;
               FreeTree(to_insert);
 #else
                             to_insert = NULL;
@@ -6108,7 +6114,8 @@ ProjPartition2 (node *old_projs, int shape_int)
  *   projs: partition of the current projection after step 2 (N_exprs-chain)
  *
  *   return: modified partition of the current projection (step 3):
- *             all grids with same outline are put together (INDEX_NEXT)
+ *             all grids with same outline are put together (INDEX_NEXT),
+ *             and are set to the same step.
  *           (N_exprs_chain of N_index-nodes)
  *
  ******************************************************************************/
@@ -6117,6 +6124,7 @@ node *
 ProjPartition3 (node *projs)
 {
     node *first, *next, *append, *tmp;
+    int bound1, bound2, offset, step, width, new_step, count_new_proj, i;
 
     DBUG_ENTER ("ProjPartition3");
 
@@ -6124,14 +6132,17 @@ ProjPartition3 (node *projs)
     while (next != NULL) {
         first = next;
         append = EXPRS_EXPR (first); /* store append-position of EXPRS_EXPR(first) */
+        new_step = NUM_VAL (INDEX_STEP (append));
         next = EXPRS_NEXT (next);
         while ((next != NULL)
                && (NUM_VAL (INDEX_BOUND1 (EXPRS_EXPR (next)))
-                   == NUM_VAL (INDEX_BOUND1 (EXPRS_EXPR (first))))
+                   == NUM_VAL (INDEX_BOUND1 (append)))
                && (NUM_VAL (INDEX_BOUND2 (EXPRS_EXPR (next)))
-                   == NUM_VAL (INDEX_BOUND2 (EXPRS_EXPR (first))))) {
+                   == NUM_VAL (INDEX_BOUND2 (append)))) {
             /* append EXPRS_EXPR('next') to EXPRS_EXPR('first') */
             append = INDEX_NEXT (append) = EXPRS_EXPR (next);
+            /* compute the lcm of all steps -> new step */
+            new_step = lcm (new_step, NUM_VAL (INDEX_STEP (append)));
 
             /* remove 'next' from chain */
             EXPRS_NEXT (first) = EXPRS_NEXT (next);
@@ -6142,6 +6153,28 @@ ProjPartition3 (node *projs)
             /* free abandoned N_exprs-node */
             EXPRS_EXPR (tmp) = EXPRS_NEXT (tmp) = NULL;
             FreeTree (tmp);
+        }
+
+        /* equalize the steps of the projs in EXPRS_EXPR('first') */
+        tmp = EXPRS_EXPR (first);
+        bound1 = NUM_VAL (INDEX_BOUND1 (tmp));
+        bound2 = NUM_VAL (INDEX_BOUND2 (tmp));
+
+        while (tmp != NULL) {
+            offset = NUM_VAL (INDEX_OFFSET (tmp));
+            step = NUM_VAL (INDEX_STEP (tmp));
+            width = NUM_VAL (INDEX_WIDTH (tmp));
+
+            count_new_proj = new_step / NUM_VAL (INDEX_STEP (tmp));
+            NUM_VAL (INDEX_STEP (tmp)) = new_step;
+            for (i = 1; i < count_new_proj; i++) {
+                append = INDEX_NEXT (append)
+                  = MakeIndex (MakeNum (bound1), MakeNum (bound2),
+                               MakeNum (offset + i * step), MakeNum (new_step),
+                               MakeNum (width), NULL);
+            }
+
+            tmp = INDEX_NEXT (tmp);
         }
     }
 
@@ -6183,9 +6216,9 @@ ProjPartition (node *withpart, node *shape_vec, node *prev_proj)
     }
     shape_int = NUM_VAL (EXPRS_EXPR (shape_vec));
 
-    projs = ProjPartition1 (projs, shape_int);
-    projs = ProjPartition2 (projs, shape_int);
-    projs = ProjPartition3 (projs);
+    projs = ProjPartition1 (projs, shape_int); /* step 1 */
+    projs = ProjPartition2 (projs, shape_int); /* step 2 */
+    projs = ProjPartition3 (projs);            /* step 3 */
 
     DBUG_RETURN (projs);
 }
@@ -6193,7 +6226,8 @@ ProjPartition (node *withpart, node *shape_vec, node *prev_proj)
 /******************************************************************************
  *
  * function:
- *   void BuildProjs(int dim, int max_dim, node *withpart, node *shape, node *proj)
+ *   void BuildProjs(int dim, int max_dim, node *withpart, node *shape,
+ *                   node *proj, node *last_proj)
  *
  * description:
  *   ???
@@ -6201,37 +6235,31 @@ ProjPartition (node *withpart, node *shape_vec, node *prev_proj)
  ******************************************************************************/
 
 void
-BuildProjs (int dim, int max_dim, node *withpart, node *shape, node *proj)
+BuildProjs (int dim, int max_dim, node *withpart, node *shape, node *proj,
+            node *last_proj)
 {
-    node *partition, *curr_proj, *last_proj;
+    node *partition, *curr_proj;
 
     DBUG_ENTER ("BuildProjs");
 
-    partition = ProjPartition (withpart, shape, proj);
+    if (dim == max_dim) {
+        /* projections complete ('proj') !!! */
+        dim = dim; /* dummy */
+    } else {
+        partition = ProjPartition (withpart, shape, proj);
 
-    last_proj = proj;
-    if (last_proj != NULL) {
-        while (EXPRS_NEXT (last_proj) != NULL) {
-            last_proj = EXPRS_NEXT (last_proj);
-        }
-    }
+        while (partition != NULL) {
+            curr_proj = partition;
+            partition = EXPRS_NEXT (partition);
+            EXPRS_NEXT (curr_proj) = NULL;
 
-    while (partition != NULL) {
-        curr_proj = partition;
-        partition = EXPRS_NEXT (partition);
-        EXPRS_NEXT (curr_proj) = NULL;
+            if (last_proj == NULL) {
+                proj = curr_proj;
+            } else {
+                EXPRS_NEXT (last_proj) = curr_proj;
+            }
 
-        if (last_proj == NULL) {
-            proj = curr_proj;
-        } else {
-            EXPRS_NEXT (last_proj) = curr_proj;
-        }
-
-        if (dim == max_dim - 1) {
-            /* projections complete ('proj') !!! */
-            dim = dim; /* dummy */
-        } else {
-            BuildProjs (dim + 1, max_dim, withpart, shape, proj);
+            BuildProjs (dim + 1, max_dim, withpart, shape, proj, curr_proj);
         }
     }
 }
@@ -6271,7 +6299,8 @@ CompNWith (node *arg_node, node *arg_info)
                     SHPSEG_SHAPE (TYPES_SHPSEG (
                                     ARRAY_TYPE (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)))),
                                   0),
-                    NWITH_PART (arg_node), NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), NULL);
+                    NWITH_PART (arg_node), NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), NULL,
+                    NULL);
     }
 
     DBUG_RETURN (arg_node);
