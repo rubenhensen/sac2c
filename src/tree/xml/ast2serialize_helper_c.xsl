@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2004/11/02 10:43:38  sah
+  fixe typoe
+
   Revision 1.7  2004/11/01 21:53:56  sah
-  added support fo r DownLink attributes and tweaked
-  the entire serialization proeccess a bit
+  added support for DownLink attributes and tweaked
+  the entire serialization process a bit
 
   Revision 1.6  2004/10/25 12:32:28  sah
   added SHLPFixLink
@@ -268,7 +271,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="': switch( no) {'" />
-  <xsl:apply-templates select="attributes/attribute[type/@name = &quot;Link&quot;] | attributes/attribute[type/@name = &quot;DownLink&quot;]" mode="gen-fixlink-fun" />
+  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;DownLink&quot;]" mode="gen-fixlink-fun" />
   <xsl:value-of select="'default: break;'" />
   <xsl:value-of select="'} break;'" />
 </xsl:template>
