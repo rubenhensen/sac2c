@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/07/12 18:48:20  dkr
+ * CT_prf removed (okay, that idea was bullshit... @1)
+ *
  * Revision 3.11  2002/07/08 21:18:38  dkr
  * CT_prf added
  *
@@ -179,7 +182,6 @@
  *              legal values are (enum type contextflag):
  *                CT_normal,
  *                CT_ap,
- *                CT_prf,
  *                CT_array,
  *                CT_return,
  *
@@ -1153,7 +1155,7 @@ FltnAp (node *arg_node, node *arg_info)
  *
  * description:
  *  - If the application has some arguments, set the context-flag of arg_info
- *    either to CT_prf or to CT_normal, traverse the arguments, and finally
+ *    either to CT_ap or to CT_normal, traverse the arguments, and finally
  *    restore the old context-flag.
  *  - The context-flag is set to CT_normal iff we want arrays NOT to be
  *    abstracted out!!! This is needed only for the typechecker when he wants
@@ -1178,10 +1180,10 @@ FltnPrf (node *arg_node, node *arg_info)
         if (PRF_PRF (arg_node) == F_reshape) {
             INFO_FLTN_CONTEXT (arg_info) = CT_normal;
         } else {
-            INFO_FLTN_CONTEXT (arg_info) = CT_prf;
+            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
         }
 #else
-        INFO_FLTN_CONTEXT (arg_info) = CT_prf;
+        INFO_FLTN_CONTEXT (arg_info) = CT_ap;
 #endif
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
@@ -1222,7 +1224,7 @@ FltnReturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FltnExprs(node *arg_node, node *arg_info)
+ *  node *FltnExprs( node *arg_node, node *arg_info)
  *
  * description:
  *  - flattens all the exprs depending on the context INFO_FLTN_CONTEXT
@@ -1247,11 +1249,6 @@ FltnExprs (node *arg_node, node *arg_info)
      * context of the expression, given by INFO_FLTN_CONTEXT( arg_info)
      */
     switch (INFO_FLTN_CONTEXT (arg_info)) {
-    case CT_prf:
-        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
-                    || (NODE_TYPE (expr) == N_cast));
-        break;
     case CT_ap:
 #ifdef TAGGED_ARRAYS
         /* here is no break missing! */
