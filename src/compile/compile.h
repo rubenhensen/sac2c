@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/06/10 14:24:22  sbs
+ * GetFoldCode and GetFoldVardecs declared extern!
+ *
  * Revision 1.31  1998/04/26 21:49:40  dkr
  * COMPSPMD renamed to COMPSpmd
  *
@@ -126,6 +129,9 @@ extern node *COMPWLstride (node *arg_node, node *arg_info);
 extern node *COMPWLgrid (node *arg_node, node *arg_info);
 extern node *COMPWLstriVar (node *arg_node, node *arg_info);
 extern node *COMPWLgridVar (node *arg_node, node *arg_info);
+
+extern node *GetFoldCode (node *fundef);
+extern node *GetFoldVardecs (node *fundef);
 
 /* and now some macros for creation of N_icms */
 
