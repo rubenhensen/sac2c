@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/04/04 19:40:16  dkr
+ * warning about out-vars in with-loop replaced by a DBUG_PRINT
+ *
  * Revision 1.5  2001/03/22 20:01:20  dkr
  * include of tree.h eliminated
  *
@@ -1016,7 +1019,11 @@ INFDFMSwith (node *arg_node, node *arg_info)
      */
     out = NWITH_OUT_MASK (arg_node);
     if ((out != NULL) && (DFMGetMaskEntryDeclSet (out) != NULL)) {
-        WARN (NODE_LINE (arg_node), ("with-loop with out-vars detected"));
+#if 0
+    WARN( NODE_LINE( arg_node), ("with-loop with out-vars detected"));
+#else
+        DBUG_PRINT ("INFDFMS", "with-loop with out-vars detected!");
+#endif
     }
 
     DBUG_RETURN (arg_node);
