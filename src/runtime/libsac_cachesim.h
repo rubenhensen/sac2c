@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  1999/05/10 10:55:31  her
+ * removed SAC_CS_CheckArguments; was already in sac_cachesim.h
+ *
  * Revision 1.2  1999/05/03 11:52:38  her
  * added a forward declaration for SAC_CS_CheckArguments
  *
@@ -56,13 +59,5 @@ typedef struct sCacheLevel { /* about simulated cache */
 typedef void (*tFunRWAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 /* Pointer to a function which gets two void* as argument
  * and returns a void */
-
-extern void SAC_CS_CheckArguments (int argc, char *argv[], unsigned long int *cachesize1,
-                                   int *cachelinesize1, int *associativity1,
-                                   tWritePolicy *writepolicy1,
-                                   unsigned long int *cachesize2, int *cachelinesize2,
-                                   int *associativity2, tWritePolicy *writepolicy2,
-                                   unsigned long int *cachesize3, int *cachelinesize3,
-                                   int *associativity3, tWritePolicy *writepolicy3);
 
 #endif /* LIBSAC_CACHESIM_H */
