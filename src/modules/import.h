@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/07/07 14:52:08  cg
+ * Revision 1.9  1995/07/31 07:11:02  cg
+ * pointer to sib-tree inserted in modtab.
+ *
+ * Revision 1.8  1995/07/07  14:52:08  cg
  * struct MOD changed: pointer to global object symbols added.
  *
  * Revision 1.7  1995/04/05  15:23:20  sbs
@@ -52,6 +55,7 @@ typedef struct MOD {
     int flag;      /* flag for recursion protection */
     int allflag;   /* flag for recursion protection */
     node *moddec;  /* pointer to the respective N_moddec node */
+    node *sib;     /* pointer to the respective N_sib node */
     syms *syms[4]; /* pointer to implicit type symbols */
                    /* pointer to explicit type symbols */
                    /* pointer to function symbols */
