@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/17 17:41:52  dkr
+ * some minor changes done
+ *
  * Revision 3.5  2001/01/10 18:34:37  dkr
  * icm WL_GRID_SET_IDX renamed into WL_GRID_SET_IDXVEC
  *
@@ -158,35 +161,8 @@
  *** naive compilation
  ***/
 
-/*
- * g_bnd2 - g_bnd1 == 1
- */
-
-#define SAC_WL_NAIVE_STRIDE_GRID_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step,     \
-                                            g_bnd1, g_bnd2)                              \
-    {                                                                                    \
-        for (idx_sca = bnd1; idx_sca < bnd2; idx_sca += step - (g_bnd2 - g_bnd1)) {      \
-            int SAC_WL_VAR (stop, idx_sca);                                              \
-            for (SAC_WL_VAR (stop, idx_sca) = idx_sca + (g_bnd2 - g_bnd1);               \
-                 idx_sca < SAC_WL_VAR (stop, idx_sca); idx_sca++) {
-
-#define SAC_WL_NAIVE_STRIDE_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step,       \
-                                          g_bnd1, g_bnd2)                                \
-    }                                                                                    \
-    }                                                                                    \
-    }
-
-/*
- * g_bnd2 - g_bnd1 > 1
- */
-
-#define SAC_WL_NAIVE_STRIDE_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)          \
-    {                                                                                    \
-        for (idx_sca = bnd1; idx_sca < bnd2; idx_sca += step) {
-
-#define SAC_WL_NAIVE_STRIDE_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)            \
-    }                                                                                    \
-    }
+#define SAC_WL_ADJUST_OFFSET(dim, target, bnd1, bnd2)                                    \
+    SAC_WL_DEST (target) += (bnd2 - bnd1);
 
 /*****************************************************************************/
 
@@ -446,7 +422,7 @@
 
 #define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                        \
     {                                                                                    \
-        int SAC_WL_VAR (grid_stop, idx_sca) = idx_sca + bnd2 - bnd1;                     \
+        int SAC_WL_VAR (grid_stop, idx_sca) = idx_sca + (bnd2 - bnd1);                   \
         for (; idx_sca < SAC_WL_VAR (grid_stop, idx_sca); idx_sca++) {
 
 #define SAC_WL_MT_GRID_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
@@ -499,7 +475,7 @@
 #define SAC_WL_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
     {                                                                                    \
         int SAC_WL_VAR (grid_stop, idx_sca)                                              \
-          = SAC_ND_MIN (idx_sca + bnd2 - bnd1, SAC_WL_VAR (stop, idx_sca));              \
+          = SAC_ND_MIN (idx_sca + (bnd2 - bnd1), SAC_WL_VAR (stop, idx_sca));            \
         for (; idx_sca < SAC_WL_VAR (grid_stop, idx_sca); idx_sca++) {
 
 #define SAC_WL_MT_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                  \
@@ -519,11 +495,28 @@
 /*****************************************************************************/
 
 /***
+ *** grid-loop (empty body)
+ ***/
+
+#define SAC_WL_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
+    idx_sca += (bnd2 - bnd1);
+
+#define SAC_WL_MT_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
+    SAC_WL_GRID_EMPTY_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+#define SAC_WL_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2) /* empty */
+
+#define SAC_WL_MT_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
+    SAC_WL_GRID_EMPTY_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*****************************************************************************/
+
+/***
  *** This macro is needed, if the index-vector is referenced somewhere in the
  *** with-loop-body.
  ***/
 
-#define SAC_WL_GRID_SET_IDXVEC(dim, idx_vec, idx_sca, bnd1, bnd2)                        \
+#define SAC_WL_SET_IDXVEC(dim, idx_vec, idx_sca, bnd1, bnd2)                             \
     SAC_ND_WRITE_ARRAY (idx_vec, dim) = idx_sca;
 
 /*****************************************************************************/
