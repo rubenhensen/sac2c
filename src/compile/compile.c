@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/04/19 12:51:59  hw
+ * Revision 1.14  1995/04/19 13:08:28  hw
+ * bug fixed in compilation of primitive function 'cat'
+ *
+ * Revision 1.13  1995/04/19  12:51:59  hw
  * changed parameters of N_icm ND_ALLOC_ARRAY & ND_CREATE_CONST_ARRAY
  *
  * Revision 1.12  1995/04/13  17:21:28  hw
@@ -1110,7 +1113,7 @@ CompPrf (node *arg_node, node *arg_info)
                     GET_DIM (dim, arg2->TYPES);
                     DECL_ARRAY (first_assign, arg2->node[0], "__TMP1", tmp_array1);
                     arg_node = first_assign;
-                    CREATE_CONST_ARRAY (arg2, tmp_array2, type_id_node, tmp_rc);
+                    CREATE_CONST_ARRAY (arg2, tmp_array1, type_id_node, tmp_rc);
                     /* set arg2 for later use as parameters of ND_KD_CAT*/
                     arg2 = tmp_array1;
                 } else {
@@ -1118,7 +1121,7 @@ CompPrf (node *arg_node, node *arg_info)
                     GET_DIM (dim, arg3->TYPES);
                     DECL_ARRAY (first_assign, arg3->node[0], "__TMP2", tmp_array2);
                     arg_node = first_assign;
-                    CREATE_CONST_ARRAY (arg1, tmp_array1, type_id_node, tmp_rc);
+                    CREATE_CONST_ARRAY (arg3, tmp_array2, type_id_node, tmp_rc);
                     /* set arg3 for later use as parameters of ND_KD_CAT*/
                     arg3 = tmp_array2;
                 }
