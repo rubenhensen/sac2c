@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/09 15:55:08  nmw
+ * partial traversal lirmov_tab added
+ *
  * Revision 3.17  2001/04/04 15:12:04  nmw
  * dbug assert modified for better breakpoint
  *
@@ -1203,6 +1206,17 @@ static funtab ssalir_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssalir_tab = &ssalir_tab_rec;
+
+/*
+ *  (95) lirmov_tab
+ */
+static funtab lirmov_tab_rec = {{
+#define NIFlirmov(it_lirmov) it_lirmov
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *lirmov_tab = &lirmov_tab_rec;
 
 /*
  *  nnode

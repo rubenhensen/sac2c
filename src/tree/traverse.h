@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/04/09 15:55:08  nmw
+ * partial traversal lirmov_tab added
+ *
  * Revision 3.11  2001/03/26 15:36:32  nmw
  * SSALIR traversal added
  *
@@ -235,6 +238,7 @@ extern funtab *cmptree_tab;
 extern funtab *profile_tab;
 extern funtab *ssacf_tab;
 extern funtab *ssalir_tab;
+extern funtab *lirmov_tab;
 
 extern int nnode[];
 
