@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.156  1998/03/17 12:19:01  cg
+ * PrintId() no longer prints strings. This is now exclusively done by
+ * PrintStr().
+ *
  * Revision 1.155  1998/03/16 19:28:31  dkr
  * fixed a bug in PrintNwith2
  *
@@ -1208,6 +1212,8 @@ PrintStr (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintStr");
 
+    DBUG_ASSERT ((N_str == arg_node->nodetype), "wrong arg_node->nodetype ");
+
     fprintf (outfile, "\"%s\"", STR_STRING (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -1218,20 +1224,16 @@ PrintId (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintId");
 
-    DBUG_ASSERT ((N_id == arg_node->nodetype) || (N_str == arg_node->nodetype),
-                 "wrong arg_node->nodetype ");
+    DBUG_ASSERT ((N_id == arg_node->nodetype), "wrong arg_node->nodetype ");
 
-    if (N_id == arg_node->nodetype) {
-        if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
-            fprintf (outfile, "%s:", ID_MOD (arg_node));
-        }
+    if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
+        fprintf (outfile, "%s:", ID_MOD (arg_node));
+    }
 
-        if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
-            fprintf (outfile, "%s", arg_node->info.ids->id);
-        else
-            fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
-    } else if (N_str == arg_node->nodetype)
-        fprintf (outfile, "%s", arg_node->info.id);
+    if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
+        fprintf (outfile, "%s", arg_node->info.ids->id);
+    else
+        fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
 
     DBUG_RETURN (arg_node);
 }
