@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.51  1995/04/03 14:02:56  sbs
+ * Revision 1.52  1995/04/04 09:34:26  sbs
+ * parameter to ICM_END macro inserted
+ *
+ * Revision 1.51  1995/04/03  14:02:56  sbs
  * show_icm inserted
  *
  * Revision 1.50  1995/03/31  15:45:41  hw
@@ -177,7 +180,7 @@ int indent = 0;
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
-#define ICM_END
+#define ICM_END(prf)
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_STR
@@ -842,7 +845,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
-#define ICM_END
+#define ICM_END(prf)
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_STR
@@ -850,7 +853,8 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_VAR
 #undef ICM_END
 #undef ICM_ALL
-        compiled_icm = 0;
+        if (strcmp (arg_node->info.fun_name.id, "NOOP") == 0)
+            compiled_icm = 1;
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
         INDENT;
