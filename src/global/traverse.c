@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1997/11/10 23:37:06  dkr
+ * removed a bug with NEWTREE
+ *
  * Revision 1.50  1997/11/10 19:28:16  dkr
  * removed a bug with NEWTREE
  *
@@ -769,7 +772,7 @@ TravSons (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
 #endif
     {
         if (arg_node->node[i] != NULL) {
