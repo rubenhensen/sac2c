@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.160  2005/02/14 11:25:52  cg
+# Added linking of prepare_inlining and inlining.
+#
 # Revision 3.159  2005/02/11 15:02:37  jhb
 # added check.o check_lib.o
 #
@@ -110,7 +113,7 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
       src/tree/node_basic.o src/tree/free_node.o \
       src/tree/free_attribs.o src/tree/traverse_tables.o src/tree/traverse_helper.o \
-      src/tree/check.o src/tree/check_lib.o
+      src/tree/check.o src/tree/check_lib.o src/tree/prepare_inlining.o
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
@@ -161,7 +164,7 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/ElimSubDiv.o \
           src/optimize/UndoElimSubDiv.o src/optimize/type_upgrade.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
-          src/optimize/signature_simplification.o
+          src/optimize/signature_simplification.o src/optimize/inlining.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 

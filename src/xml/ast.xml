@@ -107,6 +107,17 @@
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
       <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" />
+      <traversal id="PINL" name="Prepare inlining" default="sons" include="prepare_inlining.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Vardec" />
+          <node name="Avis" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Arg" />
+          <node name="Id" />
+        </travuser>
+      </traversal>
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
@@ -677,11 +688,13 @@
 	  <node name="Ap" />
 	</travuser>
       </traversal>
-      <traversal id="INL" name="Inline Traversal" default="sons" include="Inline.h" >
+      <traversal id="INL" name="Inline Traversal" default="sons" include="inlining.h" >
 	<travuser>
 	  <node name="Module" />
 	  <node name="Assign" />
 	  <node name="Fundef" />
+	  <node name="Let" />
+	  <node name="Ap" />
 	</travuser>
       </traversal>
       <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
