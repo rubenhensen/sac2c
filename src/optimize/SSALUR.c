@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/05/07 09:03:00  nmw
+ * withloop unrolling by WLUnroll integrated in traversal
+ *
  * Revision 1.5  2001/05/04 11:55:12  nmw
  * added support for AVIS_ASSIGN checks
  *
@@ -52,6 +55,7 @@
 #include "math.h"
 #include "SSATransform.h"
 #include "CheckAvis.h"
+#include "WLUnroll.h"
 
 #ifdef SSALUR_USE_OLD_WLURCODE
 #include "Unroll.h"
@@ -1037,11 +1041,17 @@ node *
 SSALURfundef (node *arg_node, node *arg_info)
 {
     loopc_t unrolling;
+    int start_wlunr_expr;
+    int start_lunr_expr;
 
     DBUG_ENTER ("SSALURfundef");
 
     INFO_SSALUR_FUNDEF (arg_info) = arg_node;
+    /* save start values of opt counters */
+    start_wlunr_expr = wlunr_expr;
+    start_lunr_expr = lunr_expr;
 
+    /* traverse body to get wlur (and special fundefs unrolled) */
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -1060,9 +1070,6 @@ SSALURfundef (node *arg_node, node *arg_info)
             /* start do-loop unrolling - this leads to non ssa form code */
             arg_node = SSALURUnrollLoopBody (arg_node, unrolling);
 
-            /* restore ssa form in this fundef for further processing */
-            arg_node = CheckAvisOneFundef (arg_node);
-            arg_node = SSATransformOneFundef (arg_node);
         } else {
             DBUG_PRINT ("SSALUR",
                         ("no unrolling of %s: should be %d (but set to maxlur %d)",
@@ -1071,6 +1078,13 @@ SSALURfundef (node *arg_node, node *arg_info)
                 NOTE (("LUR: -maxlur %d would unroll loop", unrolling));
             }
         }
+    }
+
+    /* have we done any unrolling? */
+    if ((start_lunr_expr < lunr_expr) || (start_wlunr_expr < wlunr_expr)) {
+        /* restore ssa form in this fundef for further processing */
+        arg_node = CheckAvisOneFundef (arg_node);
+        arg_node = SSATransformOneFundef (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1082,24 +1096,42 @@ SSALURfundef (node *arg_node, node *arg_info)
  *   node *SSALURassign(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
+ *   traverses assignment chain and integreate unrolled with-loop code
  *
  ******************************************************************************/
 node *
 SSALURassign (node *arg_node, node *arg_info)
 {
+    node *pre_assigns;
+    node *tmp;
+    node *old_assign;
+
     DBUG_ENTER ("SSALURassign");
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
+    /* stack actual assign */
+    old_assign = INFO_SSALUR_ASSIGN (arg_info);
     INFO_SSALUR_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
+    pre_assigns = INFO_SSALUR_PREASSIGN (arg_info);
+    INFO_SSALUR_PREASSIGN (arg_info) = NULL;
+
+    /* restore stacked assign */
+    INFO_SSALUR_ASSIGN (arg_info) = old_assign;
+
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    /* integrate pre_assignments in assignment chain and remove this assign */
+    if (pre_assigns != NULL) {
+        tmp = arg_node;
+        arg_node = AppendAssign (pre_assigns, ASSIGN_NEXT (arg_node));
+        tmp = FreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -1189,17 +1221,79 @@ SSALURlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURid(node *arg_node, node *arg_info)
+ *   node *SSALURNwith(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
+ *   triggers the withloop-unrolling. for now it uses the old wlur
+ *   implementation that is not aware of any ssa restrictions. so we have
+ *   to restore ssaform afterwards!
  *
  ******************************************************************************/
 node *
-SSALURid (node *arg_node, node *arg_info)
+SSALURNwith (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("SSALURid");
+    node *tmpn;
+    node *save;
+
+    DBUG_ENTER ("SSALURNwith");
+
+    /* traverse the N_Nwithop node */
+    if (NWITH_WITHOP (arg_node) != NULL) {
+        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    }
+
+    /* traverse all generators */
+    if (NWITH_PART (arg_node) != NULL) {
+        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    }
+
+    /* traverse bodies */
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    }
+
+    save = INFO_SSALUR_ASSIGN (arg_info);
+
+    if (optimize & OPT_WLUR) {
+        /* can this WL be unrolled? */
+        switch (NWITH_TYPE (arg_node)) {
+        case WO_modarray:
+            if (CheckUnrollModarray (arg_node)) {
+                wlunr_expr++;
+
+                /* unroll withloop - returns list of assignments */
+                tmpn = DoUnrollModarray (arg_node, arg_info);
+
+                /* code will be inserted by SSALURassign */
+                INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
+            }
+            break;
+
+        case WO_genarray:
+            if (CheckUnrollGenarray (arg_node, arg_info)) {
+                wlunr_expr++;
+
+                /* unroll withloop - returns list of assignments */
+                tmpn = DoUnrollGenarray (arg_node, arg_info);
+
+                /* code will be inserted by SSALURassign */
+                INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
+            }
+            break;
+
+        default:
+            if (CheckUnrollFold (arg_node)) {
+                wlunr_expr++;
+
+                /* unroll withloop - returns list of assignments */
+                tmpn = DoUnrollFold (arg_node, arg_info);
+
+                /* code will be inserted by SSALURassign */
+                INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
+            }
+            break;
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
