@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2004/11/07 18:07:54  sah
+ * disabled some code in NEW_AST mode
+ *
  * Revision 3.113  2004/10/25 16:50:12  khf
  * added copying of new type in DupAssign and DupNwith
  *
@@ -1103,7 +1106,9 @@ DupObjdef (node *arg_node, info *arg_info)
                     DupTypes_ (OBJDEF_TYPE (arg_node), arg_info),
                     DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
 
+#ifndef NEW_AST
     OBJDEF_LINKMOD (new_node) = StringCopy (OBJDEF_LINKMOD (arg_node));
+#endif
     OBJDEF_ATTRIB (new_node) = OBJDEF_ATTRIB (arg_node);
     OBJDEF_STATUS (new_node) = OBJDEF_STATUS (arg_node);
 
@@ -1183,7 +1188,9 @@ DupFundef (node *arg_node, info *arg_info)
                            NULL);
 
     /* now we copy all the other things ... */
+#ifndef NEW_AST
     FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
+#endif
     FUNDEF_STATUS (new_node) = FUNDEF_STATUS (arg_node);
     FUNDEF_ATTRIB (new_node) = FUNDEF_ATTRIB (arg_node);
     FUNDEF_INLINE (new_node) = FUNDEF_INLINE (arg_node);
