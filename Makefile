@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.31  2001/05/15 16:38:01  nmw
+# SSAWLI.o and SSAWLF.o in src/psi-opt added
+#
 # Revision 3.30  2001/05/14 15:59:18  nmw
 # SSAWLT.o and SSAWithloopFOlding.o added
 #
@@ -250,6 +253,7 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
 	src/psi-opt/WLF.o \
         src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
+        src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
 	src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
 	src/psi-opt/pad_transform.o src/psi-opt/pad_info.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
