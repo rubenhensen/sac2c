@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2003/04/14 13:48:59  sbs
+ * exit replaced by break;
+ *
  * Revision 1.21  2003/04/09 08:10:22  sbs
  * when replacing ob and lb dots in modarray WLs, the shape
  * is computed using the prf _shape_ instead of the udf shape
@@ -388,7 +391,7 @@ LIsDot (int dot, dotinfo *info)
     while ((list != NULL) && (list->position <= dot)) {
         if (list->position == dot) {
             result = list->no;
-            exit;
+            break;
         }
 
         list = list->next;
@@ -436,7 +439,7 @@ GetNthExpr (int n, node *exprs)
 
     for (cnt = 1; cnt < n; cnt++) {
         if (exprs == NULL)
-            exit;
+            break;
         exprs = EXPRS_NEXT (exprs);
     }
 
