@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/02/11 15:03:00  jhb
+ * fix some bugs
+ *
  * Revision 1.6  2005/02/11 14:48:56  jhb
  * change CHKdoCheck in CHKdoTreeCheck
  *
@@ -108,17 +111,16 @@ CHKexistAttribute (void *attribute, node *arg_node, char *string)
     DBUG_RETURN (attribute);
 }
 
-/*
-node *CHKrightType(void *attribute, node *arg_node, char *type, char *string)
+node *
+CHKrightType (void *attribute, node *arg_node, char *type, char *string)
 {
 
-  DBUG_ENTER( "CHKrightType");
+    DBUG_ENTER ("CHKrightType");
+    /*
+      if (String(attribute(type)) != type) {
+      NODE_ERROR(arg_node) = TBmakeError(NODE_ERROR(parent), string);
+      }
 
-    if (String(attribute(type)) != type) {
-    NODE_ERROR(arg_node) = TBmakeError(NODE_ERROR(parent), string);
-    }
-
-
-  DBUG_ENTER( attribute);
+    */
+    DBUG_RETURN (attribute);
 }
-*/
