@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/15 08:03:59  nmw
+ * remove call to OPTTrav when using ssa form
+ *
  * Revision 3.8  2001/05/09 15:51:42  nmw
  * when using ssa form, ArrayElimination does not need masks anymore
  *
@@ -149,6 +152,13 @@
 
 #define AE_PREFIX "__ae_"
 #define AE_PREFIX_LENGTH 5
+
+/*
+ * macro to switch between OPTTrav and std. Trav function used in ssa form.
+ * in future when only ssa form is used, the OPTTrav part can be removed.
+ */
+#define SELTRAV(ssa, subnode, info, node)                                                \
+    (ssa ? Trav (subnode, info) : OPTTrav (subnode, info, node))
 
 /*
  *
@@ -438,7 +448,8 @@ AEfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("AE", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
         INFO_AE_TYPES (arg_info) = NULL;
-        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+        FUNDEF_INSTR (arg_node)
+          = SELTRAV (use_ssaform, FUNDEF_INSTR (arg_node), arg_info, arg_node);
         FUNDEF_VARDEC (arg_node)
           = AppendNodeChain (0, INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_AE_TYPES (arg_info) = NULL;
@@ -479,9 +490,11 @@ AEassign (node *arg_node, node *arg_info)
 
     /* traverse into compound nodes. */
     if (ASSIGN_INSTR (arg_node))
-        ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
+        ASSIGN_INSTR (arg_node)
+          = SELTRAV (use_ssaform, ASSIGN_INSTR (arg_node), arg_info, arg_node);
     if (ASSIGN_NEXT (arg_node))
-        ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        ASSIGN_NEXT (arg_node)
+          = SELTRAV (use_ssaform, ASSIGN_NEXT (arg_node), arg_info, arg_node);
 
     if (new_nodes)
         ASSIGN_NEXT (arg_node) = AppendNodeChain (1, new_nodes, ASSIGN_NEXT (arg_node));
@@ -505,9 +518,12 @@ AEcond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEcond");
 
-    COND_COND (arg_node) = OPTTrav (COND_COND (arg_node), arg_info, arg_node);
-    COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
-    COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
+    COND_COND (arg_node)
+      = SELTRAV (use_ssaform, COND_COND (arg_node), arg_info, arg_node);
+    COND_THENINSTR (arg_node)
+      = SELTRAV (use_ssaform, COND_THENINSTR (arg_node), arg_info, arg_node);
+    COND_ELSEINSTR (arg_node)
+      = SELTRAV (use_ssaform, COND_ELSEINSTR (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -528,8 +544,8 @@ AEdo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEdo");
 
-    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
-    DO_COND (arg_node) = OPTTrav (DO_COND (arg_node), arg_info, arg_node);
+    DO_INSTR (arg_node) = SELTRAV (use_ssaform, DO_INSTR (arg_node), arg_info, arg_node);
+    DO_COND (arg_node) = SELTRAV (use_ssaform, DO_COND (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -550,8 +566,10 @@ AEwhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEwhile");
 
-    WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
-    WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+    WHILE_COND (arg_node)
+      = SELTRAV (use_ssaform, WHILE_COND (arg_node), arg_info, arg_node);
+    WHILE_INSTR (arg_node)
+      = SELTRAV (use_ssaform, WHILE_INSTR (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -572,9 +590,12 @@ AENwith (node *arg_node, node *arg_info)
 
     /* The Phase AE is not in the optimization loop and though
        WLT has not been done. Only one N_Npart and one N_Ncode exist. */
-    NWITH_PART (arg_node) = OPTTrav (NWITH_PART (arg_node), arg_info, arg_node);
-    NWITH_CODE (arg_node) = OPTTrav (NWITH_CODE (arg_node), arg_info, arg_node);
-    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+    NWITH_PART (arg_node)
+      = SELTRAV (use_ssaform, NWITH_PART (arg_node), arg_info, arg_node);
+    NWITH_CODE (arg_node)
+      = SELTRAV (use_ssaform, NWITH_CODE (arg_node), arg_info, arg_node);
+    NWITH_WITHOP (arg_node)
+      = SELTRAV (use_ssaform, NWITH_WITHOP (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }
