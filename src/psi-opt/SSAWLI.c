@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/05/16 09:24:40  nmw
+ * bug fixed that calls wrong traversal functions
+ *
  * Revision 1.1  2001/05/15 15:41:11  nmw
  * Initial revision
  *
@@ -651,7 +654,9 @@ SSAWLIap (node *arg_node, node *arg_info)
         DBUG_PRINT ("OPT", ("SSAWLI 1"));
         DBUG_PRINT ("OPTMEM",
                     ("mem currently allocated: %d bytes", current_allocated_mem));
-        ssawli_phase = 1;
+#if 0
+    ssawli_phase = 1;
+#endif
         tmp_tab = act_tab;
         act_tab = ssawli_tab;
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
@@ -671,7 +676,7 @@ SSAWLIap (node *arg_node, node *arg_info)
             DBUG_PRINT ("OPT", ("WLF"));
             DBUG_PRINT ("OPTMEM",
                         ("mem currently allocated: %d bytes", current_allocated_mem));
-            act_tab = wlf_tab;
+            act_tab = ssawlf_tab;
             AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
             expr = (wlf_expr - old_wlf_expr);
             DBUG_PRINT ("OPT", ("                        result: %d", expr));
