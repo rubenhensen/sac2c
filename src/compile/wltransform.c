@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/04/29 17:26:36  dkr
+ * added a comment
+ *
  * Revision 1.1  1998/04/29 17:17:15  dkr
  * Initial revision
  *
@@ -2774,6 +2777,17 @@ WLTRAAssign (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WlTransform( node *syntax_tree)
+ *
+ * description:
+ *   In this compiler phase all N_Nwith nodes are transformed in N_Nwith2
+ *   nodes.
+ *
+ ******************************************************************************/
 
 node *
 WlTransform (node *syntax_tree)
