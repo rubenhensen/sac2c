@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/12/12 18:26:02  asi
+ * Revision 1.23  1995/12/13 09:38:26  cg
+ * modified macro RETURN_REFERENCE(n)
+ *
+ * Revision 1.22  1995/12/12  18:26:02  asi
  * added VARDEC_FLAG
  *
  * Revision 1.21  1995/12/07  16:23:29  asi
@@ -900,12 +903,14 @@ extern node *MakeCast (node *expr, types *type);
 /*
  *  REFERENCE: List of artificial return values which correspond to
  *             reference parameters.
+ *
+ *  ATTENTION: node[1] of N_return node already used by compile.c
  */
 
 extern node *MakeReturn (node *exprs);
 
 #define RETURN_EXPRS(n) (n->node[0])
-#define RETURN_REFERENCE(n) (n->node[1])
+#define RETURN_REFERENCE(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
