@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/10/22 17:26:20  cg
+ * Revision 1.34  1995/11/01 08:02:02  cg
+ * added obj_tab and include of objects.h
+ *
+ * Revision 1.33  1995/10/22  17:26:20  cg
  * added checkdec_tab and writedec_tab
  *  renamed sib_tab to writesib_tab
  *
@@ -139,6 +142,7 @@
 #include "objinit.h"
 #include "analysis.h"
 #include "checkdec.h"
+#include "objects.h"
 
 #include "traverse.h"
 
