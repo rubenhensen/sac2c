@@ -5,6 +5,8 @@ PatchWith.c
 PatchWith.h
 ReuseWithArrays.c
 ReuseWithArrays.h
+blir.c
+blir.h
 compile.c
 compile.h
 compile.tagged.c
@@ -19,6 +21,8 @@ icm2c_error.c
 icm2c_error.h
 icm2c_mt.c
 icm2c_mt.h
+icm2c_prf.c
+icm2c_prf.h
 icm2c_sched.c
 icm2c_sched.h
 icm2c_std.c
@@ -39,5 +43,3 @@ wlpragma_funs.h
 wlpragma_funs.mac
 wltransform.c
 wltransform.h
-blir.c
-blir.h
