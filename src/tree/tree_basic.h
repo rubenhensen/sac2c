@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.151  2002/10/09 02:04:56  dkr
+ * INFO_PRINT_... macros modified
+ *
  * Revision 3.150  2002/10/08 16:53:19  dkr
  * comments for N_Nwithid added
  *
@@ -2982,10 +2985,11 @@ extern node *MakeInfo ();
 #define INFO_UNR_FUNDEF(n) (n->node[1])
 
 /* Print */
-#define INFO_PRINT_CONT(n) ((node *)(n->info2))
-#define INFO_PRINT_FUNDEF(n) (n->node[0])
-#define INFO_PRINT_INT_SYN(n) (n->node[2])
-#define INFO_PRINT_NWITH(n) (n->node[4])
+#define INFO_PRINT_CONT(n) (n->node[0])
+#define INFO_PRINT_FUNDEF(n) (n->node[2])
+#define INFO_PRINT_INT_SYN(n) (n->node[3])
+#define INFO_PRINT_NPART(n) (n->node[4])
+#define INFO_PRINT_NWITH2(n) (n->node[5])
 #define INFO_PRINT_SIB(n) (n->flag)
 #define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->counter)
 #define INFO_PRINT_VARNO(n) (n->varno)
