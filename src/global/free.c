@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/03/21 21:43:54  dkr
+ * changed FREETRAV:
+ *   FreeNode now skips only the NEXT node of the root
+ *
  * Revision 1.37  1998/03/20 17:25:06  dkr
  * in N_WL... nodes: INNER is now called CONTENTS
  *
@@ -21,9 +25,6 @@
  *
  * Revision 1.31  1998/02/11 17:15:19  srs
  * changed NPART_IDX to NPART_WITHID
- *
- * Revision 1.30  1998/01/28 18:02:05  srs
- * *** empty log message ***
  *
  * Revision 1.29  1997/11/24 16:12:38  sbs
  * usage of NWITHOP_FUN in FreeNWithOp adapted to the changed tree_basic.h
@@ -115,9 +116,6 @@
  * Revision 1.7  1995/03/17  15:54:56  hw
  * changed function FreeInfoType
  *
- * Revision 1.6  1995/01/26  15:16:55  asi
- * *** empty log message ***
- *
  * Revision 1.5  1995/01/18  17:28:37  asi
  * Added FreeTree, FreeNoInfo, FreeInfoId, FreeInfoIds, FreeInfoType, FreeModul
  *
@@ -179,7 +177,7 @@
 #define FREETRAV(node)                                                                   \
     {                                                                                    \
         if (node != NULL) {                                                              \
-            node = Trav (node, arg_info);                                                \
+            node = Trav (node, node); /* dkr: remove whole subtree !!! */                \
         }                                                                                \
     }
 
