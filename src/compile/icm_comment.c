@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/05/04 11:42:34  sbs
+ * Revision 1.6  1995/12/18 16:30:17  cg
+ * small layout change
+ *
+ * Revision 1.5  1995/05/04  11:42:34  sbs
  * trf inserted in ICM-macros
  *
  * Revision 1.4  1995/04/13  09:11:01  sbs
@@ -26,7 +29,7 @@
 #define ICM_DEF(prf, trf)                                                                \
     {                                                                                    \
         int sep = 0;                                                                     \
-        fprintf (outfile, "/*\n * %s( ", #prf);
+        fprintf (outfile, "\n/*\n * %s( ", #prf);
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%s", name);                                                       \
