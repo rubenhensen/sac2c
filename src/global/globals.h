@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1999/01/14 14:25:54  cg
+ * added variable opt_tile to enable/disable tiling.
+ *
  * Revision 1.38  1999/01/07 14:01:01  sbs
  * more sophisticated breaking facilities inserted;
  * Now, a break in a specific cycle can be triggered!
@@ -206,6 +209,7 @@ extern int opt_ae;
 extern int opt_ive;
 extern int opt_rco;
 extern int opt_uip;
+extern int opt_tile;
 
 extern int optvar;
 extern int inlnum;
