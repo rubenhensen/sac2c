@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/05/11 10:31:05  dkr
+ * some minor corrections made
+ *
  * Revision 2.27  2000/04/13 08:20:42  jhs
  * Updated -mtn break-specifiers.
  *
@@ -219,16 +222,16 @@ usage ()
       "\t-b15:dfr       \tstop after dead function removal\n"
       "\t-b15:ae        \tstop after array elimination\n"
       "\t-b15:dcr       \tstop after dead code removal\n"
-      "\t-b15:cycN:cse  \tstop after common subexpression elimination in cycle N\n"
-      "\t-b15:cycN:cf   \tstop after constant folding in cycle N\n"
-      "\t-b15:cycN:wlt  \tstop after with-loop transformation in cycle N\n"
-      "\t-b15:cycN:wli  \tstop after with-loop information gathering in cycle N\n"
-      "\t-b15:cycN:wlf  \tstop after with-loop folding in cycle N\n"
-      "\t-b15:cycN:cf2  \tstop after second constant folding in cycle N\n"
-      "\t-b15:cycN:dcr  \tstop after dead code removal in cycle N\n"
-      "\t-b15:cycN:lur  \tstop after (with-)loop unrolling in cycle N\n"
-      "\t-b15:cycN:lus  \tstop after loop unswitching in cycle N\n"
-      "\t-b15:cycN:lir  \tstop after loop invariant removal in cycle N\n"
+      "\t-b15:cyc<N>:cse\tstop after common subexpression elimination in cycle N\n"
+      "\t-b15:cyc<N>:cf \tstop after constant folding in cycle N\n"
+      "\t-b15:cyc<N>:wlt\tstop after with-loop transformation in cycle N\n"
+      "\t-b15:cyc<N>:wli\tstop after with-loop information gathering in cycle N\n"
+      "\t-b15:cyc<N>:wlf\tstop after with-loop folding in cycle N\n"
+      "\t-b15:cyc<N>:cf2\tstop after second constant folding in cycle N\n"
+      "\t-b15:cyc<N>:dcr\tstop after dead code removal in cycle N\n"
+      "\t-b15:cyc<N>:lur\tstop after (with-)loop unrolling in cycle N\n"
+      "\t-b15:cyc<N>:lus\tstop after loop unswitching in cycle N\n"
+      "\t-b15:cyc<N>:lir\tstop after loop invariant removal in cycle N\n"
       "\n"
       "\t-b18:conv      \tstop after converting\n"
       "\t-b18:cubes     \tstop after cube-building\n"
