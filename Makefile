@@ -1,12 +1,15 @@
 #
 # $Log$
-# Revision 1.3  1994/11/10 15:45:55  sbs
+# Revision 1.4  1994/11/17 11:11:37  sbs
+# -Wall -pedantic forced for all makes
+#
+# Revision 1.3  1994/11/10  15:45:55  sbs
 # RCS-header inserted
 #
 #
 
-MAKE=make
-CC=gcc -ansi -g 
+CC=gcc -ansi -Wall -pedantic -g 
+MAKE=make CC="$(CC)"
 LEX=lex
 YACC=yacc -dv
 LIBS=-ly -ll
