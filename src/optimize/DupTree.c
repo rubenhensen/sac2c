@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/08/27 11:12:55  jhs
+ * Added copy of naive-refcounter while copying IDS.
+ * Added copy of DEF-, USE- and MRDMASKs during DupAssign.
+ *
  * Revision 2.13  1999/07/19 14:45:26  jhs
  * updated duplication of N_sync (SYNC_[FIRST|LAST are duplicated correctly).
  * Changed signature of MakeSync by the way.
@@ -161,6 +165,7 @@
 #include "optimize.h"
 #include "Inline.h"
 #include "scheduling.h"
+#include "generatemasks.h"
 
 /******************************************************************************/
 
@@ -463,6 +468,7 @@ DupOneIds (ids *old_ids, node *arg_info)
 
     IDS_ATTRIB (new_ids) = IDS_ATTRIB (old_ids);
     IDS_REFCNT (new_ids) = IDS_REFCNT (old_ids);
+    IDS_NAIVE_REFCNT (new_ids) = IDS_NAIVE_REFCNT (old_ids);
 
     DBUG_RETURN (new_ids);
 }
@@ -689,6 +695,15 @@ DupAssign (node *arg_node, node *arg_info)
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
                                DUPCONT (ASSIGN_NEXT (arg_node)));
         DUP (arg_node, new_node);
+        if (ASSIGN_DEFMASK (arg_node) != NULL) {
+            ASSIGN_DEFMASK (new_node) = DupMask (ASSIGN_DEFMASK (arg_node), 400);
+        }
+        if (ASSIGN_USEMASK (arg_node) != NULL) {
+            ASSIGN_USEMASK (new_node) = DupMask (ASSIGN_USEMASK (arg_node), 400);
+        }
+        if (ASSIGN_MRDMASK (arg_node) != NULL) {
+            ASSIGN_MRDMASK (new_node) = DupMask (ASSIGN_MRDMASK (arg_node), 400);
+        }
         break;
     }
 
