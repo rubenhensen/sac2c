@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/04/03 06:19:49  sbs
+ * Revision 1.34  1995/04/03 14:00:43  sbs
+ * FreeTree due to bugs commented out
+ *
+ * Revision 1.33  1995/04/03  06:19:49  sbs
  * options converted to -b[piftorc] and show_icm inserted
  *
  * Revision 1.32  1995/03/29  11:59:41  hw
@@ -269,7 +272,7 @@ MAIN
     }
 
     Print (syntax_tree);
-    FreeTree (syntax_tree);
+    /*  FreeTree(syntax_tree);  */
 
     return (0);
 }
