@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.173  2003/11/18 16:33:57  dkr
+ * NWITHOP_TYPE redefined
+ *
  * Revision 3.172  2003/11/11 14:07:04  sbs
  * NWITHOP_DEFAULT added. other NWITHOP attributes shifted.
  *
@@ -3749,7 +3752,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 
 extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 
-#define NWITHOP_TYPE(n) (*((WithOpType *)(n)->info2))
+#define NWITHOP_TYPE(n) ((WithOpTyp) ((n)->dfmask[0]))
 #define NWITHOP_FUN(n) ((n)->info.fun_name.id)
 #define NWITHOP_MOD(n) ((n)->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) ((n)->info.prf)
