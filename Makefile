@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.56  1997/11/20 14:57:47  dkr
+# added Old2NewWith.o to the COMPILE-project
+#
 # Revision 1.55  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
@@ -233,10 +236,10 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
-         src/compile/profile.o
+         src/compile/profile.o src/Old2NewWith/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
-    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
+    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(O2NWITH)
 
 all: dummy sac2c
 
@@ -285,8 +288,8 @@ deps:
 	(cd src/optimize; $(MAKE) deps)
 	(cd src/modules; $(MAKE) deps)
 	(cd src/objects; $(MAKE) deps)
-	(cd src/refcount; $(MAKE) deps )
-	(cd src/compile; $(MAKE) deps )
+	(cd src/refcount; $(MAKE) deps)
+	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 
 clean:
