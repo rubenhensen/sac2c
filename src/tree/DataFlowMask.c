@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/25 18:17:42  mwe
+ * SacDevCamp Dk: compiles!!
+ *
  * Revision 3.8  2004/08/02 14:07:58  sah
  * added lots of ugly defines to remove
  * compiler warning when using the old
@@ -126,10 +129,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef NEW_AST
 #include "DataFlowMask.h"
-#endif
-
+#include "node_basic.h"
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -180,8 +181,8 @@ ExtendMask (mask_t *mask)
     DBUG_ENTER ("ExtendMask");
 
     old = mask->bitfield;
-    mask->bitfield
-      = (unsigned int *)Malloc (mask->mask_base->num_bitfields * sizeof (unsigned int));
+    mask->bitfield = (unsigned int *)ILIBmalloc (mask->mask_base->num_bitfields
+                                                 * sizeof (unsigned int));
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = old[i];
     }
@@ -189,7 +190,7 @@ ExtendMask (mask_t *mask)
         mask->bitfield[i] = 0;
     }
     mask->num_bitfields = mask->mask_base->num_bitfields;
-    old = Free (old);
+    old = ILIBfree (old);
 
     DBUG_VOID_RETURN;
 }
@@ -199,7 +200,7 @@ ExtendMask (mask_t *mask)
  */
 
 mask_base_t *
-DFMGenMaskBase (node *arguments, node *vardecs)
+DFMgenMaskBase (node *arguments, node *vardecs)
 {
     mask_base_t *base;
     int cnt;
@@ -216,8 +217,8 @@ DFMGenMaskBase (node *arguments, node *vardecs)
          * exactly one bit from a data flow mask.
          */
 
-        access_mask_table
-          = (unsigned int *)Malloc (8 * sizeof (unsigned int) * sizeof (unsigned int));
+        access_mask_table = (unsigned int *)ILIBmalloc (8 * sizeof (unsigned int)
+                                                        * sizeof (unsigned int));
         access_mask = 1;
 
         for (cnt = 0; (size_t)cnt < 8 * sizeof (unsigned int); cnt++) {
@@ -250,11 +251,11 @@ DFMGenMaskBase (node *arguments, node *vardecs)
      * Second, a new mask data base data structure of appropriate size is allocated.
      */
 
-    base = (mask_base_t *)Malloc (sizeof (mask_base_t));
+    base = (mask_base_t *)ILIBmalloc (sizeof (mask_base_t));
 
-    base->ids = (char **)Malloc (cnt * sizeof (char *));
+    base->ids = (char **)ILIBmalloc (cnt * sizeof (char *));
 
-    base->decls = (node **)Malloc (cnt * sizeof (node *));
+    base->decls = (node **)ILIBmalloc (cnt * sizeof (node *));
 
     base->num_ids = cnt;
 
@@ -287,15 +288,15 @@ DFMGenMaskBase (node *arguments, node *vardecs)
 }
 
 mask_base_t *
-DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
+DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
     int cnt, old_num_ids, i;
     node *tmp;
     node **old_decls;
 
-    DBUG_ENTER ("DFMUpdateMaskBase");
+    DBUG_ENTER ("DFMupdateMaskBase");
 
-    DBUG_ASSERT ((mask_base != NULL), "DFMUpdateMaskBase() called with mask_base NULL");
+    DBUG_ASSERT ((mask_base != NULL), "DFMupdateMaskBase() called with mask_base NULL");
 
     /*
      * The number of new local identifiers is counted.
@@ -307,7 +308,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      * the respective bits in the data flow masks are not going to be reused.
      */
 
-    old_decls = (node **)Malloc (mask_base->num_ids * sizeof (node *));
+    old_decls = (node **)ILIBmalloc (mask_base->num_ids * sizeof (node *));
 
     for (i = 0; i < mask_base->num_ids; i++) {
         old_decls[i] = NULL;
@@ -357,16 +358,16 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      * identifiers.
      */
 
-    Free (mask_base->ids);
-    Free (mask_base->decls);
+    ILIBfree (mask_base->ids);
+    ILIBfree (mask_base->decls);
 
     old_num_ids = mask_base->num_ids;
     mask_base->num_ids = cnt;
 
     mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
 
-    mask_base->ids = (char **)Malloc ((mask_base->num_ids) * sizeof (char *));
-    mask_base->decls = (node **)Malloc ((mask_base->num_ids) * sizeof (node *));
+    mask_base->ids = (char **)ILIBmalloc ((mask_base->num_ids) * sizeof (char *));
+    mask_base->decls = (node **)ILIBmalloc ((mask_base->num_ids) * sizeof (node *));
 
     /*
      * The temporary identifier table is copied to the newly allocated one and
@@ -381,7 +382,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
                                                         : VARDEC_NAME (old_decls[i]));
     }
 
-    old_decls = Free (old_decls);
+    old_decls = ILIBfree (old_decls);
 
     /*
      * New local identifiers are appended to the identifier table.
@@ -428,37 +429,37 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 }
 
 mask_base_t *
-DFMRemoveMaskBase (mask_base_t *mask_base)
+DFMremoveMaskBase (mask_base_t *mask_base)
 {
-    DBUG_ENTER ("DFMRemoveMaskBase");
+    DBUG_ENTER ("DFMremoveMaskBase");
 
-    DBUG_ASSERT ((mask_base != NULL), "DFMRemoveMaskBase() called with mask_base NULL");
+    DBUG_ASSERT ((mask_base != NULL), "DFMremoveMaskBase() called with mask_base NULL");
 
-    Free (mask_base->ids);
-    Free (mask_base->decls);
-    mask_base = Free (mask_base);
+    ILIBfree (mask_base->ids);
+    ILIBfree (mask_base->decls);
+    mask_base = ILIBfree (mask_base);
 
     DBUG_RETURN (mask_base);
 }
 
 mask_base_t *
-DFMGetMaskBase (mask_t *mask)
+DFMgetMaskBase (mask_t *mask)
 {
-    DBUG_ENTER ("DFMGetMaskBase");
+    DBUG_ENTER ("DFMgetMaskBase");
 
     DBUG_RETURN (mask->mask_base);
 }
 
 mask_base_t *
-DFMUpdateMaskBaseAfterRenaming (mask_base_t *mask_base, node *arguments, node *vardecs)
+DFMupdateMaskBaseAfterRenaming (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
     int i;
     node *tmp;
 
-    DBUG_ENTER ("DFMUpdateMaskBaseAfterRenaming");
+    DBUG_ENTER ("DFMupdateMaskBaseAfterRenaming");
 
     DBUG_ASSERT ((mask_base != NULL),
-                 "DFMUpdateMaskBaseAfterRenaming() called with mask_base NULL");
+                 "DFMupdateMaskBaseAfterRenaming() called with mask_base NULL");
 
     for (i = 0; i < mask_base->num_ids; i++) {
         tmp = arguments;
@@ -500,15 +501,15 @@ DFMUpdateMaskBaseAfterRenaming (mask_base_t *mask_base, node *arguments, node *v
 }
 
 mask_base_t *
-DFMUpdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *vardecs)
+DFMupdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
     node *tmp;
     int i;
 
-    DBUG_ENTER ("DFMUpdateMaskBaseAfterCompiling");
+    DBUG_ENTER ("DFMupdateMaskBaseAfterCompiling");
 
     DBUG_ASSERT ((mask_base != NULL),
-                 "DFMUpdateMaskBaseAfterCompiling() called with mask_base NULL");
+                 "DFMupdateMaskBaseAfterCompiling() called with mask_base NULL");
 
     /*
      * Because arguments are not compiled, we may start with the vardecs.
@@ -540,23 +541,23 @@ DFMUpdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *
  */
 
 mask_t *
-DFMGenMaskClear (mask_base_t *mask_base)
+DFMgenMaskClear (mask_base_t *mask_base)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskClear");
+    DBUG_ENTER ("DFMgenMaskClear");
 
-    DBUG_ASSERT ((mask_base != NULL), "DFMGenMaskClear() called with mask_base NULL");
+    DBUG_ASSERT ((mask_base != NULL), "DFMgenMaskClear() called with mask_base NULL");
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask_base->num_bitfields;
 
     new_mask->mask_base = mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = 0;
@@ -566,23 +567,23 @@ DFMGenMaskClear (mask_base_t *mask_base)
 }
 
 mask_t *
-DFMGenMaskSet (mask_base_t *mask_base)
+DFMgenMaskSet (mask_base_t *mask_base)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskSet");
+    DBUG_ENTER ("DFMgenMaskSet");
 
-    DBUG_ASSERT ((mask_base != NULL), "DFMGenMaskSet() called with mask_base NULL");
+    DBUG_ASSERT ((mask_base != NULL), "DFMgenMaskSet() called with mask_base NULL");
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask_base->num_bitfields;
 
     new_mask->mask_base = mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = ~((unsigned int)0);
@@ -592,25 +593,25 @@ DFMGenMaskSet (mask_base_t *mask_base)
 }
 
 mask_t *
-DFMGenMaskCopy (mask_t *mask)
+DFMgenMaskCopy (mask_t *mask)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskCopy");
+    DBUG_ENTER ("DFMgenMaskCopy");
 
-    DBUG_ASSERT ((mask != NULL), "DFMGenMaskCopy() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMgenMaskCopy() called with mask NULL");
 
     CHECK_MASK (mask);
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
 
     new_mask->mask_base = mask->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask->bitfield[i];
@@ -620,25 +621,25 @@ DFMGenMaskCopy (mask_t *mask)
 }
 
 mask_t *
-DFMGenMaskInv (mask_t *mask)
+DFMgenMaskInv (mask_t *mask)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskInv");
+    DBUG_ENTER ("DFMgenMaskInv");
 
-    DBUG_ASSERT ((mask != NULL), "DFMGenMaskInv() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMgenMaskInv() called with mask NULL");
 
     CHECK_MASK (mask);
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
 
     new_mask->mask_base = mask->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = ~(mask->bitfield[i]);
@@ -648,29 +649,29 @@ DFMGenMaskInv (mask_t *mask)
 }
 
 mask_t *
-DFMGenMaskAnd (mask_t *mask1, mask_t *mask2)
+DFMgenMaskAnd (mask_t *mask1, mask_t *mask2)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskAnd");
+    DBUG_ENTER ("DFMgenMaskAnd");
 
     DBUG_ASSERT (((mask1 != NULL) && (mask2 != NULL)),
-                 "DFMGenMaskAnd() called with mask NULL");
+                 "DFMgenMaskAnd() called with mask NULL");
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
 
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
     new_mask->mask_base = mask1->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask1->bitfield[i] & mask2->bitfield[i];
@@ -680,29 +681,29 @@ DFMGenMaskAnd (mask_t *mask1, mask_t *mask2)
 }
 
 mask_t *
-DFMGenMaskOr (mask_t *mask1, mask_t *mask2)
+DFMgenMaskOr (mask_t *mask1, mask_t *mask2)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskOr");
+    DBUG_ENTER ("DFMgenMaskOr");
 
     DBUG_ASSERT (((mask1 != NULL) && (mask2 != NULL)),
-                 "DFMGenMaskOr() called with mask NULL");
+                 "DFMgenMaskOr() called with mask NULL");
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
 
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
     new_mask->mask_base = mask1->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask1->bitfield[i] | mask2->bitfield[i];
@@ -712,29 +713,29 @@ DFMGenMaskOr (mask_t *mask1, mask_t *mask2)
 }
 
 mask_t *
-DFMGenMaskMinus (mask_t *mask1, mask_t *mask2)
+DFMgenMaskMinus (mask_t *mask1, mask_t *mask2)
 {
     mask_t *new_mask;
     int i;
 
-    DBUG_ENTER ("DFMGenMaskMinus");
+    DBUG_ENTER ("DFMgenMaskMinus");
 
     DBUG_ASSERT (((mask1 != NULL) && (mask2 != NULL)),
-                 "DFMGenMaskMinus() called with mask NULL");
+                 "DFMgenMaskMinus() called with mask NULL");
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
 
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = Malloc (sizeof (mask_t));
+    new_mask = ILIBmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
     new_mask->mask_base = mask1->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask1->bitfield[i] & ~(mask2->bitfield[i]);
@@ -748,13 +749,13 @@ DFMGenMaskMinus (mask_t *mask1, mask_t *mask2)
  */
 
 void
-DFMSetMaskClear (mask_t *mask)
+DFMsetMaskClear (mask_t *mask)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskClear");
+    DBUG_ENTER ("DFMsetMaskClear");
 
-    DBUG_ASSERT ((mask != NULL), "DFMSetMaskClear() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMsetMaskClear() called with mask NULL");
 
     CHECK_MASK (mask);
 
@@ -766,13 +767,13 @@ DFMSetMaskClear (mask_t *mask)
 }
 
 void
-DFMSetMaskSet (mask_t *mask)
+DFMsetMaskSet (mask_t *mask)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskSet");
+    DBUG_ENTER ("DFMsetMaskSet");
 
-    DBUG_ASSERT ((mask != NULL), "DFMSetMaskSet() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMsetMaskSet() called with mask NULL");
 
     CHECK_MASK (mask);
 
@@ -784,14 +785,14 @@ DFMSetMaskSet (mask_t *mask)
 }
 
 void
-DFMSetMaskCopy (mask_t *mask, mask_t *mask2)
+DFMsetMaskCopy (mask_t *mask, mask_t *mask2)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskCopy");
+    DBUG_ENTER ("DFMsetMaskCopy");
 
     DBUG_ASSERT (((mask != NULL) && (mask2 != NULL)),
-                 "DFMGenMaskCopy() called with mask NULL");
+                 "DFMgenMaskCopy() called with mask NULL");
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
@@ -806,13 +807,13 @@ DFMSetMaskCopy (mask_t *mask, mask_t *mask2)
 }
 
 void
-DFMSetMaskInv (mask_t *mask)
+DFMsetMaskInv (mask_t *mask)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskInv");
+    DBUG_ENTER ("DFMsetMaskInv");
 
-    DBUG_ASSERT ((mask != NULL), "DFMSetMaskInv() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMsetMaskInv() called with mask NULL");
 
     CHECK_MASK (mask);
 
@@ -824,14 +825,14 @@ DFMSetMaskInv (mask_t *mask)
 }
 
 void
-DFMSetMaskAnd (mask_t *mask, mask_t *mask2)
+DFMsetMaskAnd (mask_t *mask, mask_t *mask2)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskAnd");
+    DBUG_ENTER ("DFMsetMaskAnd");
 
     DBUG_ASSERT (((mask != NULL) && (mask2 != NULL)),
-                 "DFMSetMaskAnd() called with mask NULL");
+                 "DFMsetMaskAnd() called with mask NULL");
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
@@ -846,14 +847,14 @@ DFMSetMaskAnd (mask_t *mask, mask_t *mask2)
 }
 
 void
-DFMSetMaskOr (mask_t *mask, mask_t *mask2)
+DFMsetMaskOr (mask_t *mask, mask_t *mask2)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskOr");
+    DBUG_ENTER ("DFMsetMaskOr");
 
     DBUG_ASSERT (((mask != NULL) && (mask2 != NULL)),
-                 "DFMSetMaskOr() called with mask NULL");
+                 "DFMsetMaskOr() called with mask NULL");
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
@@ -868,14 +869,14 @@ DFMSetMaskOr (mask_t *mask, mask_t *mask2)
 }
 
 void
-DFMSetMaskMinus (mask_t *mask, mask_t *mask2)
+DFMsetMaskMinus (mask_t *mask, mask_t *mask2)
 {
     int i;
 
-    DBUG_ENTER ("DFMSetMaskMinus");
+    DBUG_ENTER ("DFMsetMaskMinus");
 
     DBUG_ASSERT (((mask != NULL) && (mask2 != NULL)),
-                 "DFMSetMaskMinus() called with mask NULL");
+                 "DFMsetMaskMinus() called with mask NULL");
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
@@ -894,13 +895,13 @@ DFMSetMaskMinus (mask_t *mask, mask_t *mask2)
  */
 
 int
-DFMTestMask (mask_t *mask)
+DFMtestMask (mask_t *mask)
 {
     int i, j, res;
 
-    DBUG_ENTER ("DFMTestMask");
+    DBUG_ENTER ("DFMtestMask");
 
-    DBUG_ASSERT ((mask != NULL), "DFMTestMask() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMtestMask() called with mask NULL");
 
     CHECK_MASK (mask);
 
@@ -932,14 +933,14 @@ DFMTestMask (mask_t *mask)
 }
 
 int
-DFMTest2Masks (mask_t *mask1, mask_t *mask2)
+DFMtest2Masks (mask_t *mask1, mask_t *mask2)
 {
     int i, j, res;
 
-    DBUG_ENTER ("DFMTest2Masks");
+    DBUG_ENTER ("DFMtest2Masks");
 
     DBUG_ASSERT (((mask1 != NULL) && (mask2 != NULL)),
-                 "DFMTest2Masks() called with mask NULL");
+                 "DFMtest2Masks() called with mask NULL");
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
 
@@ -973,14 +974,14 @@ DFMTest2Masks (mask_t *mask1, mask_t *mask2)
 }
 
 int
-DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
+DFMtest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 {
     int i, j, res;
 
-    DBUG_ENTER ("DFMTest3Masks");
+    DBUG_ENTER ("DFMtest3Masks");
 
     DBUG_ASSERT (((mask1 != NULL) && (mask2 != NULL) && (mask3 != NULL)),
-                 "DFMTest3Masks() called with mask NULL");
+                 "DFMtest3Masks() called with mask NULL");
 
     DBUG_ASSERT (((mask1->mask_base == mask2->mask_base)
                   && (mask1->mask_base == mask3->mask_base)),
@@ -1022,14 +1023,14 @@ DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
  */
 
 mask_t *
-DFMRemoveMask (mask_t *mask)
+DFMremoveMask (mask_t *mask)
 {
-    DBUG_ENTER ("DFMRemoveMask");
+    DBUG_ENTER ("DFMremoveMask");
 
-    DBUG_ASSERT ((mask != NULL), "DFMRemoveMask() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMremoveMask() called with mask NULL");
 
-    Free (mask->bitfield);
-    mask = Free (mask);
+    ILIBfree (mask->bitfield);
+    mask = ILIBfree (mask);
 
     DBUG_RETURN (mask);
 }
@@ -1039,13 +1040,13 @@ DFMRemoveMask (mask_t *mask)
  */
 
 void
-DFMPrintMask (FILE *handle, const char *format, mask_t *mask)
+DFMprintMask (FILE *handle, const char *format, mask_t *mask)
 {
     int i, j, cnt;
 
-    DBUG_ENTER ("DFMPrintMask");
+    DBUG_ENTER ("DFMprintMask");
 
-    DBUG_ASSERT ((mask != NULL), "DFMPrintMask() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMprintMask() called with mask NULL");
 
     CHECK_MASK (mask);
 
@@ -1078,13 +1079,13 @@ DFMPrintMask (FILE *handle, const char *format, mask_t *mask)
 }
 
 void
-DFMPrintMaskDetailed (FILE *handle, mask_t *mask)
+DFMprintMaskDetailed (FILE *handle, mask_t *mask)
 {
     int i, j, cnt;
 
-    DBUG_ENTER ("DFMPrintMaskDetailed");
+    DBUG_ENTER ("DFMprintMaskDetailed");
 
-    DBUG_ASSERT ((mask != NULL), "DFMPrintMaskDetailed() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMprintMaskDetailed() called with mask NULL");
 
     CHECK_MASK (mask);
 
@@ -1124,16 +1125,23 @@ DFMPrintMaskDetailed (FILE *handle, mask_t *mask)
  */
 
 void
-DFMSetMaskEntryClear (mask_t *mask, char *id, node *decl)
+DFMsetMaskEntryClear (mask_t *mask, char *id, node *avis)
 {
     int i;
+    node *decl = NULL;
 
-    DBUG_ENTER ("DFMSetMaskEntryClear");
+    DBUG_ENTER ("DFMsetMaskEntryClear");
 
-    DBUG_ASSERT ((mask != NULL), "DFMSetMaskEntryClear() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMsetMaskEntryClear() called with mask NULL");
+
+    if (avis != NULL) {
+
+        DBUG_ASSERT ((N_avis == NODE_TYPE (avis)), "avis expected!");
+        decl = AVIS_DECL (avis);
+    }
 
     DBUG_ASSERT (((id != NULL) || (decl != NULL)),
-                 "Neither name nor declaration provided to call to DFMSetMaskEntryClear");
+                 "Neither name nor declaration provided to call to DFMsetMaskEntryClear");
 
     CHECK_MASK (mask);
 
@@ -1161,23 +1169,29 @@ DFMSetMaskEntryClear (mask_t *mask, char *id, node *decl)
 }
 
 void
-DFMSetMaskEntrySet (mask_t *mask, char *id, node *decl)
+DFMsetMaskEntrySet (mask_t *mask, char *id, node *avis)
 {
     int i;
+    node *decl = NULL;
 
-    DBUG_ENTER ("DFMSetMaskEntrySet");
+    DBUG_ENTER ("DFMsetMaskEntrySet");
 
-    DBUG_ASSERT ((mask != NULL), "DFMSetMaskEntrySet() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMsetMaskEntrySet() called with mask NULL");
+
+    if (avis != NULL) {
+        DBUG_ASSERT ((N_avis == NODE_TYPE (avis)), "avis expected!");
+        decl = AVIS_DECL (avis);
+    }
 
     DBUG_ASSERT (((id != NULL) || (decl != NULL)),
-                 "Neither name nor declaration provided to call to DFMSetMaskEntrySet");
+                 "Neither name nor declaration provided to call to DFMsetMaskEntrySet");
     DBUG_EXECUTE ("DFM",
                   if (id != NULL) {
-                      fprintf (stderr, "DFMSetMaskEntrySet called for identifier %s\n",
+                      fprintf (stderr, "DFMsetMaskEntrySet called for identifier %s\n",
                                id);
                   } else {
                       fprintf (stderr,
-                               "DFMSetMaskEntrySet called for declaration of %s\n",
+                               "DFMsetMaskEntrySet called for declaration of %s\n",
                                VARDEC_NAME (decl));
                   });
 
@@ -1207,16 +1221,23 @@ DFMSetMaskEntrySet (mask_t *mask, char *id, node *decl)
 }
 
 int
-DFMTestMaskEntry (mask_t *mask, char *id, node *decl)
+DFMtestMaskEntry (mask_t *mask, char *id, node *avis)
 {
     int i, res;
+    node *decl = NULL;
 
-    DBUG_ENTER ("DFMTestMaskEntry");
+    DBUG_ENTER ("DFMtestMaskEntry");
 
-    DBUG_ASSERT ((mask != NULL), "DFMTestMaskEntry() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMtestMaskEntry() called with mask NULL");
+
+    if (avis != NULL) {
+
+        DBUG_ASSERT ((N_avis == NODE_TYPE (avis)), "avis expected!");
+        decl = AVIS_DECL (avis);
+    }
 
     DBUG_ASSERT (((id != NULL) || (decl != NULL)),
-                 "Neither name nor declaration provided to call to DFMTestMaskEntry");
+                 "Neither name nor declaration provided to call to DFMtestMaskEntry");
 
     CHECK_MASK (mask);
 
@@ -1248,14 +1269,14 @@ DFMTestMaskEntry (mask_t *mask, char *id, node *decl)
 }
 
 char *
-DFMGetMaskEntryNameClear (mask_t *mask)
+DFMgetMaskEntryNameClear (mask_t *mask)
 {
     char *ret;
 
     static mask_t *store_mask;
     static int i;
 
-    DBUG_ENTER ("DFMGetMaskEntryNameClear");
+    DBUG_ENTER ("DFMgetMaskEntryNameClear");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
@@ -1275,14 +1296,14 @@ DFMGetMaskEntryNameClear (mask_t *mask)
 }
 
 char *
-DFMGetMaskEntryNameSet (mask_t *mask)
+DFMgetMaskEntryNameSet (mask_t *mask)
 {
     char *ret;
 
     static mask_t *store_mask;
     static int i;
 
-    DBUG_ENTER ("DFMGetMaskEntryNameSet");
+    DBUG_ENTER ("DFMgetMaskEntryNameSet");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
@@ -1302,14 +1323,14 @@ DFMGetMaskEntryNameSet (mask_t *mask)
 }
 
 node *
-DFMGetMaskEntryDeclClear (mask_t *mask)
+DFMgetMaskEntryDeclClear (mask_t *mask)
 {
     node *ret;
 
     static mask_t *store_mask;
     static int i;
 
-    DBUG_ENTER ("DFMGetMaskEntryDeclClear");
+    DBUG_ENTER ("DFMgetMaskEntryDeclClear");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
@@ -1330,14 +1351,14 @@ DFMGetMaskEntryDeclClear (mask_t *mask)
 }
 
 node *
-DFMGetMaskEntryDeclSet (mask_t *mask)
+DFMgetMaskEntryDeclSet (mask_t *mask)
 {
     node *ret;
 
     static mask_t *store_mask;
     static int i;
 
-    DBUG_ENTER ("DFMGetMaskEntryDeclSet");
+    DBUG_ENTER ("DFMgetMaskEntryDeclSet");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
@@ -1358,14 +1379,14 @@ DFMGetMaskEntryDeclSet (mask_t *mask)
 }
 
 node *
-DFMVar2Decl (mask_t *mask, char *var)
+DFMvar2Decl (mask_t *mask, char *var)
 {
     node *ret = NULL;
     int i;
 
-    DBUG_ENTER ("DFMVar2Decl");
+    DBUG_ENTER ("DFMvar2Decl");
 
-    DBUG_ASSERT ((mask != NULL), "DFMVar2Decl() called with mask NULL");
+    DBUG_ASSERT ((mask != NULL), "DFMvar2Decl() called with mask NULL");
 
     for (i = 0; i < mask->mask_base->num_ids; i++) {
         if (0 == strcmp (mask->mask_base->ids[i], var)) {
@@ -1375,4 +1396,35 @@ DFMVar2Decl (mask_t *mask, char *var)
     }
 
     DBUG_RETURN (ret);
+}
+
+node *
+DFMgetMaskEntryAvisSet (mask_t *mask)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("DFMgetMaskEntryAvisSet");
+
+    res = DFMgetMaskEntryDeclSet (mask);
+    if (res != NULL) {
+        res = DECL_AVIS (res);
+    }
+
+    DBUG_RETURN (res);
+}
+
+node *
+DFMgetMaskEntryAvisClear (mask_t *mask)
+{
+    node *res;
+
+    DBUG_ENTER ("DFMgetMaskEntryAvisClear");
+
+    res = DFMgetMaskEntryDeclClear (mask);
+
+    if (res != NULL) {
+        res = DECL_AVIS (res);
+    }
+
+    DBUG_RETURN (res);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2004/11/25 18:17:42  mwe
+ * SacDevCamp Dk: compiles!!
+ *
  * Revision 3.5  2004/11/24 14:54:15  skt
  * changed DFMtestMaskEntry from int to bool
  *
@@ -157,7 +160,7 @@ extern char *DFMgetMaskEntryNameSet (dfmask_t *mask);
 extern char *DFMgetMaskEntryNameClear (dfmask_t *mask);
 extern node *DFMgetMaskEntryDeclSet (dfmask_t *mask);
 extern node *DFMgetMaskEntryDeclClear (dfmask_t *mask);
-
-extern node *DFMvar2Decl (dfmask_t *mask, char *var);
+extern node *DFMgetMaskEntryAvisSet (dfmask_t *mask);
+extern node *DFMgetMaskEntryAvisClear (dfmask_t *mask);
 
 #endif /* _SAC_DATAFLOWMASK_H_ */
