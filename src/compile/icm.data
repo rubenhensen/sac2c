@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/10/29 19:07:12  dkr
+ * signature of some WL-ICMs modified
+ *
  * Revision 3.55  2002/10/24 20:52:01  dkr
  * signature of ND_WL_GENARRAY__SHAPE_... modified
  *
@@ -346,7 +349,9 @@ ICM_DEF( ND_CREATE__VECT__SHAPE, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_INT( val_size)
   ICM_VARANY( val_size, vala_any)
-ICM_END( ND_CREATE__VECT__SHAPE, (to_nt, to_sdim, val_size, vala_any))
+  ICM_INT( val0_sdim)
+ICM_END( ND_CREATE__VECT__SHAPE, (to_nt, to_sdim,
+                                  val_size, vala_any, val0_sdim))
 #endif
 
 #if defined(ND_CREATE__VECT__DATA) || defined(ICM_ALL)
@@ -392,10 +397,8 @@ ICM_DEF( ND_PRF_SEL__SHAPE_id, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-  ICM_INT( idx_size)
   ICM_NT( idx_nt)
-ICM_END( ND_PRF_SEL__SHAPE_id, (to_nt, to_sdim, from_nt, from_sdim,
-                                idx_size, idx_nt))
+ICM_END( ND_PRF_SEL__SHAPE_id, (to_nt, to_sdim, from_nt, from_sdim, idx_nt))
 #endif
 
 #if defined(ND_PRF_SEL__SHAPE_arr) || defined(ICM_ALL)
@@ -416,11 +419,11 @@ ICM_DEF( ND_PRF_SEL__DATA_id, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-  ICM_INT( idx_size)
   ICM_NT( idx_nt)
+  ICM_INT( idx_size)
   ICM_ID( copyfun)
 ICM_END( ND_PRF_SEL__DATA_id, (to_nt, to_sdim, from_nt, from_sdim,
-                               idx_size, idx_nt, copyfun))
+                               idx_nt, idx_size, copyfun))
 #endif
 
 #if defined(ND_PRF_SEL__DATA_arr) || defined(ICM_ALL)
@@ -442,12 +445,12 @@ ICM_DEF( ND_PRF_MODARRAY__DATA_id, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-  ICM_INT( idx_size)
   ICM_NT( idx_nt)
+  ICM_INT( idx_size)
   ICM_ANY( val_any)
   ICM_ID( copyfun)
 ICM_END( ND_PRF_MODARRAY__DATA_id, (to_nt, to_sdim, from_nt, from_sdim,
-                                    idx_size, idx_nt, val_any, copyfun))
+                                    idx_nt, idx_size, val_any, copyfun))
 #endif
 
 #if defined(ND_PRF_MODARRAY__DATA_arr) || defined(ICM_ALL)
