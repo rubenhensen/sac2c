@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.12  2000/03/29 16:08:30  jhs
+# Added blocks_lift.o
+#
 # Revision 1.11  2000/03/22 17:30:16  jhs
 # Added barriers_init.o
 #
@@ -54,7 +57,8 @@ all: multithread.o \
      mtfuns_init.o \
      blocks_cons.o \
      dataflow_analysis.o \
-     barriers_init.o
+     barriers_init.o \
+     blocks_lift.o
 
 
 %.o: %.c 
