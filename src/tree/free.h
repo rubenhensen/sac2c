@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2005/03/10 09:41:09  cg
+ * Added FREEzombify()
+ *
  * Revision 3.26  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -44,6 +47,12 @@ extern nodelist *FREEfreeNodelistNode (nodelist *nl);
 extern access_t *FREEfreeOneAccess (access_t *fr);
 extern access_t *FREEfreeAllAccess (access_t *fr);
 extern argtab_t *FREEfreeArgtab (argtab_t *argtab);
+
+/*
+ * special purpose functions
+ */
+
+extern node *FREEzombify (node *arg_node);
 
 /*
  * traversal functions
