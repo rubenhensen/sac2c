@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/10/20 11:29:04  cg
+ * Revision 1.7  1995/12/15 13:40:59  cg
+ * DBUG_PRINT in Malloc reactivated, ( Malloc no longer used by ItemName
+ * and ModName)
+ *
+ * Revision 1.6  1995/10/20  11:29:04  cg
  * DBUG_PRINT removed
  *
  * Revision 1.5  1995/10/18  12:51:58  cg
@@ -50,16 +54,13 @@ Malloc (int size)
 
     DBUG_ENTER ("Malloc");
 
+    DBUG_PRINT ("MEM", ("trying to allocate %d bytes", size));
+
     tmp = malloc (size);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
 
-    /*
-     *  DBUG_PRINT("MEM",("new mem: "P_FORMAT,tmp));
-     *
-     *  DBUG_PRINT in Malloc makes usage of functions like ItemName or ModName
-     *  from Error.c in other DBUG_PRINTs impossible.
-     */
+    DBUG_PRINT ("MEM", ("new memory: " P_FORMAT, tmp));
 
     DBUG_RETURN (tmp);
 }
