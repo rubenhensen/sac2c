@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1994/12/20 15:42:17  sbs
+ * Revision 1.13  1994/12/20 15:56:58  sbs
+ * T_hidden inserted
+ *
+ * Revision 1.12  1994/12/20  15:42:17  sbs
  * externals for Makenode and AppandChain added
  *
  * Revision 1.11  1994/12/20  11:23:48  sbs
@@ -53,7 +56,7 @@ typedef struct NUMS {
  *  now, the nodes generated from lex/yacc
  */
 
-typedef enum { T_int, T_float, T_bool, T_user, T_unknown } simpletype;
+typedef enum { T_int, T_float, T_bool, T_hidden, T_user, T_unknown } simpletype;
 typedef enum { A_let, A_sel, A_for, A_ret } assigntype;
 typedef enum { E_int, E_float, E_bool, E_prf, E_id, E_ap, E_with, E_sel } exprtype;
 typedef enum { L_for, L_do, L_while } looptype;
