@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.53  1998/02/27 09:04:31  cg
+# added compilation of resource.h
+#
 # Revision 1.52  1998/02/25 10:08:23  srs
 # make deps done
 #
@@ -175,7 +178,8 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../psi-opt -I../objects -I../Old2NewWith
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
-     internal_lib.o tree_basic.o tree_compound.o globals.o types.h
+     internal_lib.o tree_basic.o tree_compound.o globals.o \
+     resource.o types.h
 
 #
 # the types.h object is to fool makedepend which does not
@@ -217,6 +221,9 @@ internal_lib.o: internal_lib.c
 
 globals.o: globals.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o globals.o -c globals.c $(INCS)
+
+resource.o: resource.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o resource.o -c resource.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
