@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/12/29 10:41:25  cg
+ * Revision 1.19  1996/01/02 16:03:38  cg
+ * removed declarations of GenLinkerList() and GenExtmodlistList()
+ *
+ * Revision 1.18  1995/12/29  10:41:25  cg
  * All functions concerning SIBs extracted and moved to readsib.c
  *
  * Revision 1.17  1995/10/26  16:11:01  cg
@@ -84,7 +87,6 @@ typedef struct MOD {
     int flag;      /* flag for recursion protection */
     int allflag;   /* flag for recursion protection */
     node *moddec;  /* pointer to the respective N_moddec node */
-    node *sib;     /* pointer to the respective N_sib node */
     syms *syms[4]; /* pointer to implicit type symbols */
                    /* pointer to explicit type symbols */
                    /* pointer to function symbols */
@@ -106,8 +108,7 @@ extern node *ImportOwnDeclaration (char *name, file_type modtype);
 
 extern node *IMmodul (node *, node *);
 extern node *Import (node *);
-extern char *GenLinkerList ();
-extern strings *GenExtmodlistList ();
+
 extern void InsertClassType (node *);
 extern void AddSymbol (char *name, char *module, int symbkind);
 
