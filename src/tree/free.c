@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/06/11 22:03:09  ktr
+ * ARRAY_SHAPE is now deleted
+ *
  * Revision 3.48  2002/10/29 21:19:55  dkr
  * DBUG_ASSERT in FreeOneTypes() added
  *
@@ -1470,6 +1473,8 @@ FreeArray (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_array node ..."));
 
     ARRAY_AELEMS (arg_node) = FREETRAV (ARRAY_AELEMS (arg_node));
+
+    ARRAY_SHAPE (arg_node) = SHFreeShape (ARRAY_SHAPE (arg_node));
 
     if (ARRAY_TYPE (arg_node) != NULL) {
         ARRAY_TYPE (arg_node) = FreeOneTypes (ARRAY_TYPE (arg_node));
