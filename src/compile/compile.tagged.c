@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2002/08/08 12:35:21  dkr
+ * DBUG_ASSERT added
+ *
  * Revision 1.40  2002/08/07 15:49:10  dkr
  * COMP2With: DBUG_ASSERT added
  *
@@ -4969,7 +4972,11 @@ COMP2With2 (node *arg_node, node *arg_info)
         if (NWITH2_TYPE (arg_node) == WO_genarray) {
             node *shp = NWITH2_SHAPE (arg_node);
             get_dim = MakeNum (GetDim (IDS_TYPE (wlids))); /* AKD only!! */
-            if (NODE_TYPE (shp) == N_id) {                 /* AKD only!! */
+            if (NODE_TYPE (shp) == N_id) {                 /* AKS only!! */
+                shape_class_t shp_sc = GetShapeClassFromTypes (ID_TYPE (shp));
+                DBUG_ASSERT (((shp_sc == C_scl) || (shp_sc == C_aks)),
+                             "genarray-with-loop expression with unknown shape found!");
+
                 set_shape_icm
                   = MakeIcm3 ("ND_WL_GENARRAY__SHAPE_id",
                               MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
