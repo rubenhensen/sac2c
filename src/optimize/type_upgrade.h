@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/01/18 16:30:24  mwe
+ * ongoing implementation...
+ *
  * Revision 1.4  2005/01/17 08:52:41  mwe
  * implementation continue...
  *
@@ -44,5 +47,7 @@ extern node *TUPprf (node *arg_node, info *arg_info);
 extern node *TUParray (node *arg_node, info *arg_info);
 extern node *TUPid (node *arg_node, info *arg_info);
 extern node *TUPexprs (node *arg_node, info *arg_info);
+extern node *TUPfuncond (node *arg_node, info *arg_info);
+extern node *TUPfundef (node *arg_node, info *arg_info);
 
 #endif /*_SAC_TYPEUPGRADE_H_ */

@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.9  2005/01/18 16:30:24  mwe
+ * ongoing implementation...
+ *
  * Revision 1.8  2005/01/17 08:52:41  mwe
  * implementation continue...
  *
@@ -30,8 +33,9 @@
  *   ast.xml, DupTree, print: implement FUNGROUP (DONE)
  *   DeadFunctionRemoval: remove function from FUNGROUP_FUNLIST and decrease REFCOUNTER
  * (DONE) DupTree: check if all necessary attributes of FUNDEF are copied (DONE) ast.xml:
- * add missing arguments to FUNDEF (DONE)
- *
+ * add missing arguments to FUNDEF (DONE) implement funcond traversal implement support
+ * for type_error implement creation of fungroups (DONE, but maybe find better place for
+ * code) comment everything insert DBUG_PRINT's
  */
 
 /**************************************************************************
@@ -214,6 +218,8 @@ GetLowestType (ntype *a, ntype *b)
  *   avis-node. Type information for arrays is appended directly at
  *   the array-node.
  *
+ *   TODO: check if correct, why not update types only in ids?
+ *
  ***********************************************************************/
 static node *
 AssignTypeToExpr (node *expr, ntype *type)
@@ -252,7 +258,8 @@ AssignTypeToExpr (node *expr, ntype *type)
  *
  * description:
  *   This function returns TRUE iff 'arg' is an argument of a
- *   special function (confun, dofun, whilefun).
+ *   special function (confun, dofun). Whilefuns are now already
+ *   changed to Dofuns.
  *
  *********************************************************************/
 static bool
@@ -303,7 +310,12 @@ IsArgumentOfSpecialFunction (node *arg)
 
 /***************************************************************************************
  *
+ *  function:
+ *    node *AdjustSignatureToArgs(node *signature, node *args)
  *
+ *  description:
+ *    All types of signature (arg_node chain) are freed and replaced by corresponding
+ *    types of args (exprs_node chain).
  *
  **************************************************************************************/
 static node *
@@ -325,6 +337,16 @@ AdjustSignatureToArgs (node *signature, node *args)
     DBUG_RETURN (signature);
 }
 
+/************************************************************************
+ *
+ *  function:
+ *    node *TryStaticDispatch( node *fundef, node *args, info *arg_info)
+ *
+ *  description:
+ *    If fundef belongs to a wrapper function a static dispatch is apllied
+ *    if possible. The code is reused from typechecker.
+ *
+ **************************************************************************/
 static node *
 TryStaticDispatch (node *fundef, node *args, info *arg_info)
 {
@@ -404,6 +426,16 @@ bool ArgumentIsSpecializeable(ntype *type)
   DBUG_RETURN(result);
 }
 #endif
+
+/*******************************************************************
+ *
+ *  function:
+ *    bool ArgumentIsSpecializeable(ntype *type)
+ *
+ *  description:
+ *
+ **********************************************************************/
+
 static bool
 ArgumentIsSpecializeable (ntype *type)
 {
@@ -434,6 +466,15 @@ ArgumentIsSpecializeable (ntype *type)
 
     DBUG_RETURN (result);
 }
+
+/************************************************************************
+ *
+ *  function:
+ *    bool IsSpecializeable(node *fundef, node *args)
+ *
+ *  description:
+ *
+ ***********************************************************************/
 static bool
 IsSpecializeable (node *fundef, node *args)
 {
@@ -472,6 +513,14 @@ IsSpecializeable (node *fundef, node *args)
     DBUG_RETURN (result);
 }
 
+/***************************************************************************
+ *
+ *  function:
+ *    node *SpecializationOracle(node *fundef, node *args)
+ *
+ *  description:
+ *
+ ***************************************************************************/
 static node *
 SpecializationOracle (node *fundef, node *args)
 {
@@ -523,6 +572,8 @@ SpecializationOracle (node *fundef, node *args)
 
         /*
          * upgrade types in new function
+         * TODO: check if following call is necessarry, new function is directly
+         *       behind current one in AST, so will already be next to check
          */
         result = TUPdoTypeUpgrade (result);
     }
@@ -613,6 +664,9 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
 
             FUNDEF_ARGS (fundef) = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
 
+            /*
+             * TODO: check if this has correct behaviour (termination after that fun)
+             */
             fundef = TUPdoTypeUpgrade (fundef);
 
         } else if (FUNDEF_ISDOFUN (fundef)) {
@@ -621,20 +675,20 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
              * function is a loop function
              */
 
-            node *tmp, *result;
+            node *tmp;
 
             tmp = DUPdoDupNode (fundef);
             FUNDEF_ARGS (tmp) = AdjustSignatureToArgs (FUNDEF_ARGS (tmp), args);
 
             /*
              * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
-             * prüft be N_ap auf rekursiven Aufruf und prüft auf passende Typen
+             * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
              * Typen passen: Ergebnis ist 'upgegradete' Funktion
              * Typen passen nicht: Ergebnis ist NULL
              */
-            result = TryToDoTypeUpgrade (tmp);
+            tmp = TryToDoTypeUpgrade (tmp);
 
-            if (result != NULL) {
+            if (tmp != NULL) {
                 /*
                  * it is possible to specialiaze loop function
                  */
@@ -651,6 +705,10 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
                 FUNDEF_BODY (fundef) = FUNDEF_BODY (tmp);
                 FUNDEF_BODY (tmp) = NULL;
 
+                /*
+                 * TODO: add counter
+                 */
+
                 FREEdoFreeTree (tmp);
             } else {
                 /*
@@ -658,7 +716,6 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
                  */
                 FREEdoFreeTree (tmp);
             }
-
         } else {
 
             /*
@@ -681,6 +738,24 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
+/******************************************************************
+ *
+ *  function:
+ *    node *GetBestFittingFun(node *fun1, node *fun2, node *args)
+ *
+ *  precondition:
+ *    fun2 fits to args, this means the types in args (exprs-chain)
+ *    are less or equal as the types in funs (fundef)
+
+ *  description:
+ *    fun1 and fun2 are two fundefs. It is checked which of both
+ *    fits better to the arguments in exprs-chain args. At least fun2
+ *    has to fit! Fit means: all types in args are less or equal
+ *    as the corresponding type in fun1/fun2. If both fun1 and fun2
+ *    fit, the best fitting fun is the one with the most special
+ *    arguments. The result is a pointer to that function.
+ *
+ ******************************************************************/
 static node *
 GetBestFittingFun (node *fun1, node *fun2, node *args)
 {
@@ -751,6 +826,17 @@ GetBestFittingFun (node *fun1, node *fun2, node *args)
     DBUG_RETURN (result);
 }
 
+/*********************************************************************
+ *
+ *  function:
+ *    bool IsFittingSignature(node *fundef, node *wrapper)
+ *
+ *  description:
+ *    If no type of the signature of fundef is less special or as the
+ *    corresponding type of of the signature of wrapper or uncomparable,
+ *    than the result is TRUE.
+ *
+ ********************************************************************/
 static bool
 IsFittingSignature (node *fundef, node *wrapper)
 {
@@ -783,14 +869,22 @@ IsFittingSignature (node *fundef, node *wrapper)
     DBUG_RETURN (result);
 }
 
+/***********************************************************************
+ *
+ *  function:
+ *    node *GetWrapperFun(node *fundef)
+ *
+ *  description:
+ *    If a wrapper function of fundef exist and this wrapper could
+ *    include fundef, than this wrapper is returned.
+ *
+ **********************************************************************/
 static node *
 GetWrapperFun (node *fundef)
 {
     node *wrapper, *list;
     DBUG_ENTER ("GetWrapperFun");
-#if 0  
-  DBUG_ASSERT( (FUNDEF_FUNGROUP( fundef) != NULL), "No reference to fungroup found!");
-#endif
+
     if (FUNDEF_FUNGROUP (fundef) != NULL) {
         list = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
     } else {
@@ -813,6 +907,19 @@ GetWrapperFun (node *fundef)
     DBUG_RETURN (wrapper);
 }
 
+/******************************************************************************
+ *
+ *  function:
+ *    node *TyrToFindSpecializedFunction(node *fundef, node* args, info* arg_info)
+ *
+ *  description:
+ *    If fundef is a wrapper function a static dispatch is tried. If fundef
+ *    is a non-wrapper function, static dispatch is applied (if possible) to
+ *    an existing fitting wrapper function.
+ *    If all fails, the best fitting function from fungroup is returned.
+ *    So at the end the best fitting existing function is returned!
+ *
+ *******************************************************************************/
 static node *
 TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
 {
@@ -845,8 +952,8 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
         node *funs;
 
         /*
-         * Static dispatch was not successful or function is a non-wrapper function
-         * try to find a more special function in FUNDEF_SPECIALIZEDFUNS
+         * Static dispatch was not successful or no wrapper functions could be found
+         * try to find a more special function in FUNGROUP_FUNLIST
          */
 
         if (NULL != FUNDEF_FUNGROUP (fundef)) {
@@ -888,10 +995,50 @@ node *
 TUPdoTypeUpgrade (node *arg_node)
 {
     info *arg_info;
+    static bool already_visit = FALSE;
 
     DBUG_ENTER ("TUPdoTypeUpgrade");
 
     if (arg_node != NULL) {
+
+        if (!already_visit) {
+            /*
+             * for the first time TypeUpgrade is executed
+             * do initialization of fungroups
+             */
+
+            node *fundef = arg_node;
+            node *grouplist = NULL;
+            node *tmp, *fg;
+            while (fundef != NULL) {
+                /*
+                 * search for corresponding fungroup in grouplist
+                 * nothing found: create new fungroup
+                 */
+                tmp = grouplist;
+                while (tmp != NULL) {
+                    if (ILIBstringCompare (FUNDEF_NAME (fundef),
+                                           FUNDEF_NAME (LINKLIST_LINK (
+                                             FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)))))) {
+                        FUNGROUP_FUNLIST (LINKLIST_LINK (tmp))
+                          = TBmakeLinklist (fundef,
+                                            FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)));
+                        FUNGROUP_REFCOUNTER (LINKLIST_LINK (tmp)) += 1;
+                        FUNDEF_FUNGROUP (fundef) = LINKLIST_LINK (tmp);
+                        break;
+                    }
+                    tmp = LINKLIST_NEXT (tmp);
+                }
+                if (tmp == NULL) {
+                    fg = TBmakeFungroup ();
+                    FUNGROUP_FUNLIST (fg) = TBmakeLinklist (fundef, NULL);
+                    FUNGROUP_REFCOUNTER (fg) = 1;
+                    grouplist = TBmakeLinklist (fg, grouplist);
+                    FUNDEF_FUNGROUP (fundef) = fg;
+                }
+                fundef = FUNDEF_NEXT (fundef);
+            }
+        }
 
         arg_info = MakeInfo ();
 
@@ -903,6 +1050,30 @@ TUPdoTypeUpgrade (node *arg_node)
     }
 
     arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**********************************************************************
+ *
+ * function:
+ *   node *TUPfundef(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverse through fundefs. Sets INFO_TUP_FUNDEF pointer
+ *
+ *********************************************************************/
+node *
+TUPfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TUPfundef");
+
+    INFO_TUP_FUNDEF (arg_info) = arg_node;
+
+    if (NULL != FUNDEF_BODY (arg_node)) {
+
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1038,15 +1209,20 @@ TUPlet (node *arg_node, info *arg_info)
     INFO_TUP_TYPE (arg_info) = NULL;
 
     /*
-     * traverse in ap or with node
+     * traverse in RHS-expression
      */
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
-
+        /*
+         * no typecheck errors while traversal
+         */
         DBUG_ASSERT ((INFO_TUP_TYPE (arg_info) != NULL),
                      "Missing type in info structure");
 
+        /*
+         * insert result types in ids-chain
+         */
         INFO_TUP_TYPECOUNTER (arg_info) = 0;
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
@@ -1154,6 +1330,9 @@ TUPgenerator (node *arg_node, info *arg_info)
 
         tmp = NTCnewTypeCheck_Expr (GENERATOR_STEP (arg_node));
         current = GetLowestType (current, tmp);
+    }
+
+    if (NULL != GENERATOR_WIDTH (arg_node)) {
 
         tmp = NTCnewTypeCheck_Expr (GENERATOR_WIDTH (arg_node));
         current = GetLowestType (current, tmp);
@@ -1177,13 +1356,17 @@ TUPgenerator (node *arg_node, info *arg_info)
 
     if (NULL != GENERATOR_STEP (arg_node)) {
 
-        if (IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node)) == FALSE)
+        if (IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node)) == FALSE) {
             GENERATOR_STEP (arg_node)
               = AssignTypeToExpr (GENERATOR_STEP (arg_node), current);
+        }
+    }
 
-        if (IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node)) == FALSE)
+    if (NULL != GENERATOR_WIDTH (arg_node)) {
+        if (IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node)) == FALSE) {
             GENERATOR_WIDTH (arg_node)
               = AssignTypeToExpr (GENERATOR_WIDTH (arg_node), current);
+        }
     }
 
     /*
@@ -1244,11 +1427,22 @@ TUPcode (node *arg_node, info *arg_info)
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
+    /*
+     * TODO: check if WLEXPRS is correct and used later
+     */
     INFO_TUP_WLEXPR (arg_info) = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
 
+/**************************************************************************
+ *
+ * function:
+ *   node *TUPap(node *arg_node, info *arg_info)
+ *
+ *   description:
+ *
+ ***************************************************************************/
 node *
 TUPap (node *arg_node, info *arg_info)
 {
@@ -1256,6 +1450,9 @@ TUPap (node *arg_node, info *arg_info)
 
     if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
 
+        /*
+         * TODO: put in a separate function
+         */
         /*
          * at the moment we are checking, if the recursive call of a loop function
          * will work with specialized signature
@@ -1308,12 +1505,15 @@ TUPap (node *arg_node, info *arg_info)
                                               arg_info);
         }
 
-        if (result != NULL) {
+        if (result != AP_FUNDEF (arg_node)) {
             /*
              * more special function exists
              * use more special function
              */
             AP_FUNDEF (arg_node) = result;
+            /*
+             * TODO: add counter
+             */
         }
     }
 
@@ -1326,6 +1526,14 @@ TUPap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *TUPids(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
 node *
 TUPids (node *arg_node, info *arg_info)
 {
@@ -1370,6 +1578,14 @@ TUPids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**********************************************************************************
+ *
+ * function:
+ *   node *TUPmodarray(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *********************************************************************************/
 node *
 TUPmodarray (node *arg_node, info *arg_info)
 {
@@ -1391,6 +1607,14 @@ TUPmodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUPgenarray(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *********************************************************************************/
 node *
 TUPgenarray (node *arg_node, info *arg_info)
 {
@@ -1413,6 +1637,14 @@ TUPgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUPfold(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *********************************************************************************/
 node *
 TUPfold (node *arg_node, info *arg_info)
 {
@@ -1433,6 +1665,14 @@ TUPfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUPexprs(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *********************************************************************************/
 node *
 TUPexprs (node *arg_node, info *arg_info)
 {
@@ -1443,6 +1683,16 @@ TUPexprs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUPid(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   The type of the id is transformed to the correct form
+ *   and referenced by INFO_TUP_TYPE
+ *
+ *********************************************************************************/
 node *
 TUPid (node *arg_node, info *arg_info)
 {
@@ -1454,24 +1704,35 @@ TUPid (node *arg_node, info *arg_info)
     DBUG_ASSERT ((type != NULL), "Missing type information");
 
     if (!(TYisProd (type))) {
-        type = TYmakeProductType (1, type);
+        INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, type);
+    } else {
+        INFO_TUP_TYPE (arg_info) = TYcopyType (type);
     }
-
-    INFO_TUP_TYPE (arg_info) = TYcopyType (type);
 
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUParray(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Type inference for array nodes. Code is reused from typechecker.
+ *
+ *********************************************************************************/
 node *
 TUParray (node *arg_node, info *arg_info)
 {
     ntype *elems, *type;
     int num_elems;
     te_info *info;
+
     DBUG_ENTER ("TUParray");
 
     if (NULL != ARRAY_AELEMS (arg_node)) {
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
+
     } else {
         INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
     }
@@ -1513,6 +1774,15 @@ TUParray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUPprf(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Type inference for prf node. Code is reused from typechecker.
+ *
+ *********************************************************************************/
 node *
 TUPprf (node *arg_node, info *arg_info)
 {
@@ -1552,6 +1822,14 @@ TUPprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUPfuncond(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *********************************************************************************/
 node *
 TUPfuncond (node *arg_node, info *arg_info)
 {
@@ -1560,6 +1838,15 @@ TUPfuncond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*********************************************************************************
+ *
+ * function:
+ *   node *TUP<basic>(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Type inference for basic SaC-Types. Code is reused from typechecker.
+ *
+ *********************************************************************************/
 #define TUPBASIC(name, base)                                                             \
     node *TUP##name (node *arg_node, info *arg_info)                                     \
     {                                                                                    \
