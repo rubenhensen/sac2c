@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/14 09:19:54  cg
+ * The tag in pragma cachesim is now optional.
+ *
  * Revision 2.4  1999/04/14 08:42:53  jhs
  * Second Version of empty arrays integrated.
  *
@@ -1497,6 +1500,10 @@ assignblock: SEMIC
 pragmacachesim: PRAGMA CACHESIM string 
                 {
                   $$ = $3;
+                }
+              | PRAGMA CACHESIM 
+                {
+                  $$ = StringCopy("");
                 }
               |
                 {
