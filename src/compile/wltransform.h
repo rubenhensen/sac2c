@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/17 14:16:28  dkr
+ * some new macros and prototypes added
+ *
  * Revision 3.3  2001/01/09 16:15:18  dkr
  * prototype for function AllStridesAreConstant() added
  *
@@ -39,14 +42,27 @@
 #ifndef _sac_wltransform_h
 #define _sac_wltransform_h
 
+/*
+ * symbolic bounds for strides/grids and IDX_MIN, IDX_MAX
+ */
+#define IDX_SHAPE (-1) /* equals the shape */
+#define IDX_OTHER (-2) /* other */
+
+#define IDX_IS_NUM(idx) (idx >= 0)
+
+#define GET_SHAPE_IDX(shape, dim)                                                        \
+    ((shape != NULL) ? SHPSEG_SHAPE (shape, dim) : IDX_SHAPE)
+
 extern node *WlTransform (node *syntax_tree);
 
 extern node *WLTRAwith (node *arg_node, node *arg_info);
 extern node *WLTRAcode (node *arg_node, node *arg_info);
 extern node *WLTRAlet (node *arg_node, node *arg_info);
 
-extern bool AllStridesAreConstant (node *wlnode);
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
+
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
+
+extern bool AllStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim);
 
 #endif /* _sac_wltransform_h */
