@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/04/05 12:32:54  nmw
+ * correct handling for global objects in Inline traversal added
+ *
  * Revision 3.12  2001/04/04 09:54:20  nmw
  * AdjustAvisData added to modify fundef related attributes
  * in avis nodes when moving them out of a fundef
@@ -304,6 +307,10 @@ InlineArg (node *arg_node, node *arg_info)
      * into INFO_INL_PROLOG
      */
     new_ass = MakeAssignLet (StringCopy (new_name), new_vardec, DupNode (arg));
+    /* store definition assignment of this new vardec */
+    if (VARDEC_AVIS (new_vardec) != NULL) {
+        AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = new_ass;
+    }
     ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
     INFO_INL_PROLOG (arg_info) = new_ass;
 
