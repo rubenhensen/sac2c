@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.116  1998/04/07 12:11:17  srs
+ * changed comment
+ *
  * Revision 1.115  1998/04/04 18:44:55  dkr
  * renamed CONC_AP to CONC_AP_LET
  *
@@ -2383,8 +2386,8 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***   2)
  ***   The USED component is a reference counter for the NPART_CODE pointer.
  ***   MakeNPart increments it if the code parameter is != NULL,
- ***   FreeNPart decrements it (unconditionally),
- ***   DupNpart  increments it (implicitly in MakeNPart).
+ ***   FreeNPart decrements it if NPART_CODE is != NULL.
+ ***   DupNpart  increments it (implicitly in MakeNPart, see condition above).
  ***
  ***/
 
