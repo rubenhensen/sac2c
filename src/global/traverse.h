@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/16 10:18:22  jhs
+ * Added spmdtrav_tab.
+ *
  * Revision 2.2  1999/05/10 10:55:25  bs
  *  tsi_tab renamed to wlaa_tab
  *
@@ -232,6 +235,7 @@ extern funptr sched_tab[];
 extern funptr conc_tab[];
 extern funptr opt_tab[];
 extern funptr wlaa_tab[];
+extern funptr spmdtrav_tab[];
 
 extern int nnode[];
 
