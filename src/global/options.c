@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.40  2000/06/08 09:04:03  nmw
+ * added default opt. and mt. settings for generating c library
+ * by default PHM and MT are disabled
+ *
  * Revision 2.39  2000/06/07 11:43:24  nmw
  * commandline switch genlib added with options sac and c
  * default forced if not specified: sac library
@@ -385,7 +389,12 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("genlib", {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("sac", generatelibrary |= GENERATELIBRARY_SAC);
-        ARG_CHOICE ("c", generatelibrary |= GENERATELIBRARY_C);
+        ARG_CHOICE ("c", generatelibrary |= GENERATELIBRARY_C;
+                    optimize &= ~OPT_PHM; /* when generating c library, disable private
+                                             heap management*/
+                    optimize &= ~OPT_APS; /* and multi threading by default*/
+                    optimize &= ~OPT_RCAO; optimize &= ~OPT_MSCA;
+                    gen_mt_code = GEN_MT_NONE);
         ARG_CHOICE_END ();
     });
 
