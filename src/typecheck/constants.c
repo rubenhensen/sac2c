@@ -1,13 +1,15 @@
 /*
  * $Log$
+ * Revision 1.4  2000/05/31 11:40:56  dkr
+ * CODrop() and COTake() are able to handle empty index vectors now
+ *
  * Revision 1.3  2000/05/03 18:00:51  dkr
  * COFreeConstant returns NULL now
- * TileFromArray works correctly now (even for empty index vectors :-)
+ * TileFromArray works correctly now
  *
  * Revision 1.2  1999/10/22 14:12:24  sbs
  * inserted comments and added reshape, take, drop, and psi with non
  * scalar results.
- * ..
  *
  * Revision 1.1  1999/10/19 13:02:59  sacbase
  * Initial revision
@@ -38,7 +40,6 @@
  *   THIS RULE: - the GETxyz - functions for extracting components of constants
  * - The only function for freeing a shape structure is COFreeConstant!
  * - If the result is a shape structure, it has been freshly allocated!
- *
  */
 
 #include "globals.h"
@@ -92,7 +93,7 @@ typedef struct CONSTANT {
 /******************************************************************************
  *
  * function:
- *    constant *MakeConstant( simpletype type, shape * shp, void *elems, int vlen)
+ *    constant *MakeConstant( simpletype type, shape *shp, void *elems, int vlen)
  *
  * description:
  *    most generic function for creating constant structures. It simply assembles
@@ -357,8 +358,7 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
      * (This usually guarantees pretty big chunks to be copied at once)
      */
     off_shp = SHMakeShape (1);
-    /* 'idx' is an empty index vector  ->  off = idx */
-    off_len = MAX (0, CONSTANT_VLEN (idx) - 1);
+    off_len = CONSTANT_VLEN (idx) - 1;
     SHSetExtent (off_shp, 0, off_len);
     off_elems = AllocCV (T_int, off_len);
     for (i = 0; i < off_len; i++) {
@@ -378,19 +378,15 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
     /*
      * calculate the chunk size ('chunk_size') and the number of elements
      * we have omited in 'off' ('off_size')
-     * (remember, that we are using  off = drop( -1, idx)  instead of  off = idx !!)
+     * (remember that we are using  off = drop( -1, idx)  instead of  off = idx !!)
      */
     chunk_size = 1;
     for (i = CONSTANT_VLEN (off) + 1; i < CONSTANT_DIM (a); i++) {
         chunk_size *= SHGetExtent (res_shp, i);
     }
-    if (CONSTANT_VLEN (idx) >= 1) {
-        off_size = chunk_size * (((int *)CONSTANT_ELEMS (idx))[CONSTANT_VLEN (idx) - 1]);
-    } else {
-        /* 'idx' is an empty index vector  ->  off_size = 0 */
-        off_size = 0;
-    }
+    off_size = chunk_size * (((int *)CONSTANT_ELEMS (idx))[CONSTANT_VLEN (idx) - 1]);
     chunk_size *= SHGetExtent (res_shp, CONSTANT_VLEN (off));
+
     /*
      * Now, we copy the desired values from 'a' to the new CV:
      */
@@ -482,7 +478,7 @@ COMakeConstantFromInt (int val)
 /******************************************************************************
  *
  * function:
- *    constant *COMakeConstantFromArray( node * a)
+ *    constant *COMakeConstantFromArray( node *a)
  *
  * description:
  *    translates an N_array node into a constant. It checks, whether a indeed
@@ -513,9 +509,9 @@ COMakeConstantFromArray (node *a)
 /******************************************************************************
  *
  * function:
- *    simpletype COGetType( constant * a)
- *    int COGetDim( constant * a)
- *    shape * COGetShape( constant * a)
+ *    simpletype COGetType( constant *a)
+ *    int COGetDim( constant *a)
+ *    shape *COGetShape( constant *a)
  *
  * description:
  *    several functions for extracting info from constants.
@@ -552,7 +548,7 @@ COGetShape (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant * COCopyConstant( constant *a)
+ *    constant *COCopyConstant( constant *a)
  *
  * description:
  *    copies a including all of its sub-structures.
@@ -786,40 +782,57 @@ COTake (constant *idx, constant *a)
     constant *off, *res;
 
     DBUG_ENTER ("COTake");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COTake not int!");
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COTake not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in COTake!");
 
+    if (CONSTANT_VLEN (idx) > 0) {
+        /* 'idx' is a non-empty array */
+
+        DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COTake not int!");
+
+        /*
+         * First, we create the result shape:
+         *
+         * res_shp = idx ++ drop( len(idx), shape(a))!
+         */
+        res_shp = SHCopyShape (CONSTANT_SHAPE (a));
+        for (i = 0; i < CONSTANT_VLEN (idx); i++) {
+            curr_val_idx = ((int *)CONSTANT_ELEMS (idx))[i];
+            res_shp = SHSetExtent (res_shp, i, curr_val_idx);
+        }
+
+        /*
+         * Now, we create an offset-vector with length len(idx) and values 0!
+         */
+        off_shp = SHMakeShape (1);
+        off_len = CONSTANT_VLEN (idx);
+        SHSetExtent (off_shp, 0, off_len);
+        off_elems = AllocCV (T_int, off_len);
+        for (i = 0; i < off_len; i++) {
+            ((int *)off_elems)[i] = 0;
+        }
+        off = MakeConstant (T_int, off_shp, off_elems, off_len);
+
+        /*
+         * Finally, we pick the tile of shape 'res_shp' from a starting at position 'off'
+         */
+        res = TileFromArray (off, res_shp, a);
+
+        off = COFreeConstant (off);
+    } else {
+        /* 'idx' is an empty array  ->  res = a */
+
+#if 0
     /*
-     * First, we create the result shape:
-     *
-     * res_shp = idx ++ drop( len(idx), shape(a))!
+     * For the time being the TC infers for  '[]'  in  'drop( [], [1,2])'
+     * the type  'T_nothing' !!
      */
-    res_shp = SHCopyShape (CONSTANT_SHAPE (a));
-    for (i = 0; i < CONSTANT_VLEN (idx); i++) {
-        curr_val_idx = ((int *)CONSTANT_ELEMS (idx))[i];
-        res_shp = SHSetExtent (res_shp, i, curr_val_idx);
+    DBUG_ASSERT( (CONSTANT_TYPE( idx) == T_int), "idx to CODrop not int!");
+#endif
+
+        res = COCopyConstant (a);
     }
-
-    /*
-     * Now, we create an offset-vector with length len(idx) and values 0!
-     */
-    off_shp = SHMakeShape (1);
-    off_len = CONSTANT_VLEN (idx);
-    SHSetExtent (off_shp, 0, off_len);
-
-    off_elems = AllocCV (T_int, off_len);
-    for (i = 0; i < off_len; i++) {
-        ((int *)off_elems)[i] = 0;
-    }
-    off = MakeConstant (T_int, off_shp, off_elems, off_len);
-
-    /*
-     * Finally, we pick the tile of shape 'res_shp' from a starting at position 'off'
-     */
-    res = TileFromArray (off, res_shp, a);
-    off = COFreeConstant (off);
 
     DBUG_RETURN (res);
 }
@@ -844,26 +857,44 @@ CODrop (constant *idx, constant *a)
     constant *res;
 
     DBUG_ENTER ("CODrop");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to CODrop not int!");
+
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to CODrop not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in CODrop!");
 
-    /*
-     * First, we create the result shape:
-     *
-     * res_shp = (take( len(idx), shape(a)) - idx ) ++ drop( len(idx), shape(a))!
-     */
-    res_shp = SHCopyShape (CONSTANT_SHAPE (a));
-    for (i = 0; i < CONSTANT_VLEN (idx); i++) {
-        curr_val_idx = SHGetExtent (res_shp, i) - ((int *)CONSTANT_ELEMS (idx))[i];
-        res_shp = SHSetExtent (res_shp, i, curr_val_idx);
-    }
+    if (CONSTANT_VLEN (idx) > 0) {
+        /* 'idx' is a non-empty array */
 
+        DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to CODrop not int!");
+
+        /*
+         * First, we create the result shape:
+         *
+         * res_shp = (take( len(idx), shape(a)) - idx ) ++ drop( len(idx), shape(a))!
+         */
+        res_shp = SHCopyShape (CONSTANT_SHAPE (a));
+        for (i = 0; i < CONSTANT_VLEN (idx); i++) {
+            curr_val_idx = SHGetExtent (res_shp, i) - ((int *)CONSTANT_ELEMS (idx))[i];
+            res_shp = SHSetExtent (res_shp, i, curr_val_idx);
+        }
+
+        /*
+         * Now, we pick the tile of shape 'res_shp' from a starting at position 'idx'
+         */
+        res = TileFromArray (idx, res_shp, a);
+    } else {
+        /* 'idx' is an empty array  ->  res = a */
+
+#if 0
     /*
-     * Now, we pick the tile of shape 'res_shp' from a starting at position 'idx'
+     * For the time being the TC infers for  '[]'  in  'drop( [], [1,2])'
+     * the type  'T_nothing' !!
      */
-    res = TileFromArray (idx, res_shp, a);
+    DBUG_ASSERT( (CONSTANT_TYPE( idx) == T_int), "idx to CODrop not int!");
+#endif
+
+        res = COCopyConstant (a);
+    }
 
     DBUG_RETURN (res);
 }
