@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/24 18:04:09  sah
+ * added a dependency
+ *
  * Revision 3.9  2004/11/23 20:42:47  sbs
  * message_indent globalised.
  *
@@ -122,6 +125,7 @@
 #include "types.h"
 #include "globals.h"
 #include "config.h"
+#include "internal_lib.h"
 
 /*
  ********************************************
