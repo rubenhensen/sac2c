@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/05 21:02:35  dkr
+ * GetLacFunName(): string is dynamically allocated now
+ *
  * Revision 3.18  2002/09/05 19:38:45  dkr
  * L2Ffundef: ignore fundefs that are LaC-funs already!!
  *
@@ -161,7 +164,7 @@
  *   ...FUNDEF   pointer to the current fundef
  *   ...ASSIGN   pointer to the current assign
  *
- *   ...FUNS     chain of newly generated dummy functions
+ *   ...FUNS     chain of newly generated LaC functions
  *
  *****************************************************************************/
 
@@ -182,25 +185,23 @@
 /******************************************************************************
  *
  * function:
- *   char *GetDummyFunName( char *suffix)
+ *   char *GetLacFunName( char *suffix)
  *
  * description:
- *   Creates a new name for a dummy function. 'suffix' should be one of the
+ *   Creates a new name for a LaC function. 'suffix' should be one of the
  *   strings "Cond", "Do" or "While".
  *
  ******************************************************************************/
 
 static char *
-GetDummyFunName (char *suffix)
+GetLacFunName (char *suffix)
 {
-#define NAMLEN 100
     static int number = 0;
-    static char funname[NAMLEN];
+    char *funname;
 
-    DBUG_ENTER ("GetDummyFunName");
+    DBUG_ENTER ("GetLacFunName");
 
-    DBUG_ASSERT (((strlen (suffix) + number / 10 + 4) <= NAMLEN),
-                 "name of dummy function too long");
+    funname = (char *)Malloc ((strlen (suffix) + number / 10 + 4) * sizeof (char));
     sprintf (funname, "__%s%i", suffix, number);
     number++;
 
@@ -216,7 +217,7 @@ GetDummyFunName (char *suffix)
  *                        node *arg_info)
  *
  * description:
- *   Creates the fundef-node of a dummy function.
+ *   Creates the fundef-node of a LaC function.
  *
  ******************************************************************************/
 
@@ -310,7 +311,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
      *    }
      *
      * Although 'stack' was marked as 'ST_was_reference' in function 'fun' that
-     * is no longer true in the context of the dummy function '__Cond1' because
+     * is no longer true in the context of the LaC function '__Cond1' because
      * 'stack' is not an out-var of this function!!
      */
     tmp = args;
@@ -356,7 +357,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
         new_body = DupTreeLUT (WHILE_BODY (instr), lut);
 
         /*
-         * append call of loop-dummy-function to body.
+         * append call of loop-function to body.
          */
         tmp = BLOCK_INSTR (new_body);
         if (tmp != NULL) {
@@ -380,7 +381,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
         assigns = DupTreeLUT (BLOCK_INSTR (WHILE_BODY (instr)), lut);
 
         /*
-         * append conditional with call of loop-dummy-function to assignments.
+         * append conditional with call of loop-function to assignments.
          */
         tmp = assigns;
         if (tmp != NULL) {
@@ -424,7 +425,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
  *                        DFMmask_t in, DFMmask_t out)
  *
  * description:
- *   Creates the let node containing the call of a dummy function.
+ *   Creates the let node containing the call of a LaC function.
  *
  ******************************************************************************/
 
@@ -464,17 +465,18 @@ DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg
     DBUG_ENTER ("DoLifting");
 
     /*
-     * build call of the new dummy function
+     * build call of the new LaC function
      */
-    funname = GetDummyFunName (prefix);
+    funname = GetLacFunName (prefix);
     modname = FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info));
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
     let = MakeL2fFunLet (funname, modname, in, out);
 
     /*
-     * build new dummy function
+     * build new LaC function
      */
     fundef = MakeL2fFundef (funname, modname, arg_node, let, in, out, local, arg_info);
+    funname = Free (funname);
 
     /*
      * set back-references let <-> fundef
@@ -482,13 +484,13 @@ DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg
     AP_FUNDEF (LET_EXPR (let)) = fundef;
 
     /*
-     * insert new dummy function into INFO_L2F_FUNS
+     * insert new LaC function into INFO_L2F_FUNS
      */
     FUNDEF_NEXT (fundef) = INFO_L2F_FUNS (arg_info);
     INFO_L2F_FUNS (arg_info) = fundef;
 
     /*
-     * replace the instruction by a call of the new dummy function
+     * replace the instruction by a call of the new LaC function
      */
     in = DFMRemoveMask (in);
     out = DFMRemoveMask (out);
@@ -505,7 +507,7 @@ DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg
  *   node *L2Ffundef( node *arg_node, node *arg_info)
  *
  * description:
- *   All dummy fundefs created during traversal of the body are inserted
+ *   All LaC fundefs created during traversal of the body are inserted
  *   into the AST.
  *
  ******************************************************************************/
@@ -526,7 +528,7 @@ L2Ffundef (node *arg_node, node *arg_info)
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
         /*
-         * insert dummy fundefs into the AST
+         * insert LaC fundefs into the AST
          */
         tmp = INFO_L2F_FUNS (arg_info);
         if (tmp != NULL) {
