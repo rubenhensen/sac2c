@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.117  1996/04/02 19:37:26  cg
+ * Revision 1.118  1996/08/01 08:54:03  cg
+ * Bug fixed: module name is now initialized when parsing N_ap nodes
+ *
+ * Revision 1.117  1996/04/02  19:37:26  cg
  * reimplemented handling of string constants
  *
  * Revision 1.116  1996/04/02  14:40:52  cg
@@ -1848,6 +1851,7 @@ apl: id BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
          { $$=$<node>3;
            $$->node[0]=$4;                         /* arguments */
            $$->info.fun_name.id=$1;                /* name of function */
+           $$->info.fun_name.id_mod=NULL;          /* name of module */
            $$->nnode=1;
 
            DBUG_PRINT("GENTREE",
@@ -1858,6 +1862,7 @@ apl: id BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
       | id BRACKET_L BRACKET_R
         { $$=MakeNode(N_ap);
           $$->info.fun_name.id=$1;         /* name of function */
+          $$->info.fun_name.id_mod=NULL;   /* name of module */
 
           DBUG_PRINT("GENTREE",
                      ("%s " P_FORMAT " Id: %s,",
