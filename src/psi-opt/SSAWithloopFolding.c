@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 1.14  2004/02/25 15:53:06  cg
+ * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
+ * now provide access to SSA transformations on a per function
+ * basis.
+ * Only functions from ssa.[ch] should be used to initiate the
+ * transformation process in either direction!
+ *
  * Revision 1.13  2003/06/11 21:52:05  ktr
  * Added support for multidimensional arrays.
  *
@@ -93,9 +100,8 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
-#include "CheckAvis.h"
 #include "constants.h"
-#include "SSATransform.h"
+#include "ssa.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
 #include "SSAWLI.h"
@@ -786,8 +792,7 @@ SSAWithloopFolding (node *arg_node, int loop)
         arg_info = FreeTree (arg_info);
 
         /* restore ssa form */
-        arg_node = CheckAvisOneFunction (arg_node);
-        arg_node = SSATransformOneFunction (arg_node);
+        arg_node = RestoreSSAOneFunction (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -836,8 +841,7 @@ SSAWithloopFoldingWLT (node *arg_node)
         act_tab = tmp_tab;
 
         /* restore ssa form */
-        arg_node = CheckAvisOneFunction (arg_node);
-        arg_node = SSATransformOneFunction (arg_node);
+        arg_node = RestoreSSAOneFunction (arg_node);
     }
 
     DBUG_RETURN (arg_node);

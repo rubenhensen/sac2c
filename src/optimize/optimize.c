@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/02/25 15:53:06  cg
+ * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
+ * now provide access to SSA transformations on a per function
+ * basis.
+ * Only functions from ssa.[ch] should be used to initiate the
+ * transformation process in either direction!
+ *
  * Revision 3.56  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -669,8 +676,7 @@ OPTmodul (node *arg_node, node *arg_info)
         /* necessary to guarantee, that the compilation can be stopped
            during the call of DoSSA */
         if ((break_after == PH_sacopt)
-            && ((0 == strcmp (break_specifier, "w2d"))
-                || (0 == strcmp (break_specifier, "l2f"))
+            && ((0 == strcmp (break_specifier, "l2f"))
                 || (0 == strcmp (break_specifier, "cha"))
                 || (0 == strcmp (break_specifier, "ssa")))) {
             goto DONE;
@@ -927,8 +933,7 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if (optimize & OPT_AE) {
                 arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
-                arg_node = CheckAvisOneFunction (arg_node);
-                arg_node = SSATransformOneFunction (arg_node);
+                arg_node = RestoreSSAOneFunction (arg_node);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
@@ -1164,7 +1169,7 @@ OPTfundef (node *arg_node, node *arg_info)
                     /* ktr: This is a very dirty solution for bug #16.
                        The problem of AVIS_SSAASSIGN being wrongly assigned in SSALIR.c
                        is still unresolved. */
-                    arg_node = SSATransformOneFunction (arg_node);
+                    arg_node = RestoreSSAOneFunction (arg_node);
                 }
 
                 if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/02/25 15:53:06  cg
+ * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
+ * now provide access to SSA transformations on a per function
+ * basis.
+ * Only functions from ssa.[ch] should be used to initiate the
+ * transformation process in either direction!
+ *
  * Revision 1.14  2002/10/09 02:08:27  dkr
  * SSAWLUnroll.c instead of WLUnroll.c used
  *
@@ -79,8 +86,7 @@
 #include "optimize.h"
 #include "constants.h"
 #include "math.h"
-#include "SSATransform.h"
-#include "CheckAvis.h"
+#include "ssa.h"
 #include "SSAWLUnroll.h"
 
 #define UNR_NONE -1
@@ -1087,8 +1093,7 @@ SSALURfundef (node *arg_node, node *arg_info)
     /* have we done any unrolling? */
     if ((start_lunr_expr < lunr_expr) || (start_wlunr_expr < wlunr_expr)) {
         /* restore ssa form in this fundef for further processing */
-        arg_node = CheckAvisOneFundef (arg_node);
-        arg_node = SSATransformOneFundef (arg_node);
+        arg_node = RestoreSSAOneFundef (arg_node);
     }
 
     DBUG_RETURN (arg_node);

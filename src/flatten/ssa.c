@@ -1,5 +1,12 @@
 /*
  * $Log$
+ * Revision 1.4  2004/02/25 15:53:06  cg
+ * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
+ * now provide access to SSA transformations on a per function
+ * basis.
+ * Only functions from ssa.[ch] should be used to initiate the
+ * transformation process in either direction!
+ *
  * Revision 1.3  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -68,8 +75,6 @@ DoSSA (node *syntax_tree)
 {
     DBUG_ENTER ("DoSSA");
 
-    DBUG_PRINT ("SSA", ("call TransformWhile2Do"));
-
     DBUG_PRINT ("SSA", ("call Lac2Fun"));
     syntax_tree = Lac2Fun (syntax_tree);
     if ((break_after == compiler_phase) && (0 == strcmp (break_specifier, "l2f"))) {
@@ -130,6 +135,84 @@ UndoSSA (node *syntax_tree)
 
 DONE:
     DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RestoreSSAOneFunction(node *syntax_tree)
+ *
+ *   @brief  takes an N_fundef node and restores ssa-form
+ *
+ *   <pre>
+ *   1. Check for correct Avis nodes in vardec/arg nodes. All backrefs
+ *      from N_id or IDS structures are checked for consistent values.
+ *      This traversal is needed for compatiblity with old code without
+ *      knowledge of the avis nodes.
+ *   2. Transform code in SSA form.
+ *      Every variable has exaclty one definition.
+ *      After all the valid_ssaform flag is set to TRUE.
+ *
+ *   Unlike RestoreSSAOneFundef, this function implicitly traverses applied
+ *   loop and conditional special functions.
+ *   </pre>
+ *
+ *   @param fundef  nomen est omen
+ *   @return fundef in restored ssa-form
+ *
+ *****************************************************************************/
+
+node *
+RestoreSSAOneFunction (node *fundef)
+{
+    DBUG_ENTER ("RestoreSSAOneFunction");
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "RestoreSSAOneFunction called without N_fundef node.");
+
+    fundef = CheckAvisOneFunction (fundef);
+
+    fundef = SSATransformOneFunction (fundef);
+
+    DBUG_RETURN (fundef);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RestoreSSAOneFundef(node *syntax_tree)
+ *
+ *   @brief  takes an N_fundef node and restores ssa-form
+ *
+ *   <pre>
+ *   1. Check for correct Avis nodes in vardec/arg nodes. All backrefs
+ *      from N_id or IDS structures are checked for consistent values.
+ *      This traversal is needed for compatiblity with old code without
+ *      knowledge of the avis nodes.
+ *   2. Transform code in SSA form.
+ *      Every variable has exaclty one definition.
+ *      After all the valid_ssaform flag is set to TRUE.
+ *
+ *   Unlike RestoreSSAOneFunction, this function does NOT traverse nested
+ *   loop and conditional special functions.
+ *   </pre>
+ *
+ *   @param fundef  nomen est omen
+ *   @return fundef in restored ssa-form
+ *
+ *****************************************************************************/
+
+node *
+RestoreSSAOneFundef (node *fundef)
+{
+    DBUG_ENTER ("RestoreSSAOneFundef");
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "RestoreSSAOneFundef called without N_fundef node.");
+
+    fundef = CheckAvisOneFundef (fundef);
+
+    fundef = SSATransformOneFundef (fundef);
+
+    DBUG_RETURN (fundef);
 }
 
 /**
