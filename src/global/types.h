@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/09/16 16:09:51  sbs
+ * spec_mode_t added.
+ *
  * Revision 3.21  2003/04/04 17:00:09  sbs
  * prf_node_info.mac extended
  *
@@ -253,6 +256,8 @@ typedef enum { LOC_usr, LOC_stdlib } locationtype;
 typedef enum { CMPT_EQ, CMPT_NEQ, CMPT_UKNWN } cmptree_t;
 
 typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
+
+typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
 
 /*
  * new nodes for yacc and the syntax tree
