@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/08/09 13:00:43  dkr
+ * call of CreateWrapperCode() added
+ *
  * Revision 3.10  2002/08/06 08:26:49  sbs
  * some vars initialized to please gcc for the product version.
  *
@@ -61,6 +64,7 @@
 #include "SSATransform.h"
 #include "insert_vardec.h"
 #include "create_wrappers.h"
+#include "create_wrapper_code.h"
 #include "new2old.h"
 
 #include "user_types.h"
@@ -277,10 +281,11 @@ NTCmodul (node *arg_node, node *arg_info)
      *
      * Since Lac2Fun needs to know about reference parameters, it requires each
      * application of a user defined function to contain a backref to the function
-     * that is actually applied. Since this -in general- cannot be statically decided,
-     * the backref points to a wrapper function which contains the (intersection type
-     * based) function type of the overloaded function as well as pointers to all
-     * potential implementations. These structures are created by "CreateWrappers".
+     * that is actually applied. Since this -in general- cannot be statically
+     * decided, the backref points to a wrapper function which contains the
+     * (intersection type based) function type of the overloaded function as well
+     * as pointers to all potential implementations. These structures are created
+     * by "CreateWrappers".
      */
     arg_node = CreateWrappers (arg_node);
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cwr"))) {
@@ -333,6 +338,15 @@ NTCmodul (node *arg_node, node *arg_info)
     }
 
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "ntc"))) {
+        goto DONE;
+    }
+
+    /*
+     * Now, we create SAC code for all wrapper functions
+     */
+
+    arg_node = CreateWrapperCode (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cwc"))) {
         goto DONE;
     }
 
