@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/08/15 14:38:22  hw
+ * Revision 1.28  1995/08/16 10:03:58  sbs
+ * bug fixed in ND_PRF_MODARRAY_AxCxS_CHECK_REUSE
+ * ( CHECK_REUSE ( old <-> new ) )
+ *
+ * Revision 1.27  1995/08/15  14:38:22  hw
  * added ICMs ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, ND_PRF_MODARRAY_AxCxS,
  * ND_PRF_MODARRAY_AxCxA and  ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
  *
@@ -1229,7 +1233,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
-fprintf (outfile, " ND_CHECK_REUSE(%s,%s)\n", res, old);
+fprintf (outfile, " ND_CHECK_REUSE(%s,%s)\n", old, res);
 INDENT;
 fprintf (outfile, "{ int __i;\n");
 fprintf (outfile, "  ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
