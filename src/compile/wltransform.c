@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.21  2000/10/31 23:31:13  dkr
+ * empty arrays can be handled now
+ *
  * Revision 2.20  2000/10/31 16:27:13  dkr
  * Parts2Strides: empty parts are detected now.
  * If all parts are empty a single stride over the whole domain is
@@ -1706,13 +1709,12 @@ CompareWLnode (node *node1, node *node2, int outline)
 /******************************************************************************
  *
  * Function:
- *   int NormalizeStride_1( node *stride, bool error_if_empty)
+ *   node *NormalizeStride_1( node *stride, bool *is_empty)
  *
  * Description:
- *   Normalizes the given stride in the FIRST dimension.
- *   A possibly present next node in 'stride' is ignored.
- *   The return value is TRUE iff the stride is non-empty.
- *   But iff 'error_if_empty' is set empty strides are not allowed!!!
+ *   Normalizes the given stride in the FIRST dimension and returns it.
+ *   If 'is_empty' is != NULL, '*is_empty' notifies whether 'stride' is empty
+ *   or not. Otherwise 'stride' has to be non-empty!!
  *
  *   This normalization has two major goals:
  *     * every stride has a unambiguous form
@@ -1731,12 +1733,11 @@ CompareWLnode (node *node1, node *node2, int outline)
  *
  ******************************************************************************/
 
-static int
-NormalizeStride_1 (node *stride, bool error_if_empty)
+static node *
+NormalizeStride_1 (node *stride, bool *is_empty)
 {
     node *grid;
     int bound1, bound2, step, grid_b1, grid_b2, new_bound1, new_bound2;
-    bool non_empty = TRUE;
 
     DBUG_ENTER ("NormalizeStride_1");
 
@@ -1762,7 +1763,7 @@ NormalizeStride_1 (node *stride, bool error_if_empty)
      * assure, that the stride is legal!
      */
     DBUG_ASSERT ((0 <= bound1), "given stride has illegal lower bound (<= 0)");
-    DBUG_ASSERT (((!error_if_empty) || (bound1 < bound2)),
+    DBUG_ASSERT (((is_empty != NULL) || (bound1 < bound2)),
                  "given stride is empty (lower bound >= upper bound)!");
     DBUG_ASSERT ((0 < step), "given step is illegal (<= 0)");
     DBUG_ASSERT ((0 <= grid_b1), "given grid has illegal lower bound (<= 0)");
@@ -1795,7 +1796,7 @@ NormalizeStride_1 (node *stride, bool error_if_empty)
      * assure, that the stride is still legal!
      */
     DBUG_ASSERT ((0 <= bound1), "modified stride has illegal lower bound (<= 0)");
-    DBUG_ASSERT (((!error_if_empty) || (bound1 < bound2)),
+    DBUG_ASSERT (((is_empty != NULL) || (bound1 < bound2)),
                  "modified stride is empty (lower bound >= upper bound)!");
     DBUG_ASSERT ((0 < step), "modified step is illegal (<= 0)");
     DBUG_ASSERT ((0 <= grid_b1), "modified grid has illegal lower bound (<= 0)");
@@ -1821,14 +1822,14 @@ NormalizeStride_1 (node *stride, bool error_if_empty)
     WLGRID_BOUND1 (grid) = grid_b1 + (bound1 - new_bound1);
     WLGRID_BOUND2 (grid) = grid_b2 + (bound1 - new_bound1);
 
-    if (bound1 >= bound2) {
+    if (is_empty != NULL) {
         /*
          * stride is empty!!!
          */
-        non_empty = FALSE;
+        (*is_empty) = (bound1 >= bound2);
     }
 
-    DBUG_RETURN (non_empty);
+    DBUG_RETURN (stride);
 }
 
 /******************************************************************************
@@ -2038,21 +2039,21 @@ CheckWithids (node *part)
 /******************************************************************************
  *
  * Function:
- *   node* Parts2Strides( node *parts, int dims)
+ *   node* Parts2Strides( node *parts, int dims, shpseg* shape)
  *
  * Description:
- *   converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
- *   'dims' is the number of dimensions.
+ *   Converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
+ *   If 'shape' != NULL out-of-bounds values are adjusted accordingly.
  *
  ******************************************************************************/
 
 static node *
-Parts2Strides (node *parts, int dims)
+Parts2Strides (node *parts, int dims, shpseg *shape)
 {
     node *parts_stride, *stride, *new_stride, *new_grid, *last_grid, *gen, *bound1,
       *bound2, *step, *width, *curr_bound1, *curr_bound2, *curr_step, *curr_width;
     int dim, curr_step_, curr_width_;
-    bool part_is_empty;
+    bool is_empty;
 
     DBUG_ENTER ("Parts2Strides");
 
@@ -2078,7 +2079,6 @@ Parts2Strides (node *parts, int dims)
 
         while (parts != NULL) {
             stride = NULL;
-            part_is_empty = FALSE;
 
             gen = NPART_GEN (parts);
             DBUG_ASSERT ((NGEN_OP1 (gen) == F_le), "op1 in generator is not <=");
@@ -2090,6 +2090,7 @@ Parts2Strides (node *parts, int dims)
             step = (NGEN_STEP (gen) != NULL) ? ARRAY_AELEMS (NGEN_STEP (gen)) : NULL;
             width = (NGEN_WIDTH (gen) != NULL) ? ARRAY_AELEMS (NGEN_WIDTH (gen)) : NULL;
 
+            is_empty = FALSE;
             for (dim = 0; dim < dims; dim++) {
                 DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
                 DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
@@ -2098,16 +2099,24 @@ Parts2Strides (node *parts, int dims)
                 curr_width_ = (width != NULL) ? NUM_VAL (EXPRS_EXPR (width)) : 1;
 
                 /* build N_WLstride-node of current dimension */
-                new_stride = MakeWLstride (0, dim, NUM_VAL (EXPRS_EXPR (bound1)),
-                                           NUM_VAL (EXPRS_EXPR (bound2)), curr_step_, 0,
-                                           MakeWLgrid (0, dim, 0, curr_width_, 0, NULL,
-                                                       NULL, NULL),
-                                           NULL);
+                new_stride
+                  = MakeWLstride (0, dim, NUM_VAL (EXPRS_EXPR (bound1)),
+                                  (shape != NULL) ? MIN (NUM_VAL (EXPRS_EXPR (bound2)),
+                                                         SHPSEG_SHAPE (shape, dim))
+                                                  : NUM_VAL (EXPRS_EXPR (bound2)),
+                                  curr_step_, 0,
+                                  MakeWLgrid (0, dim, 0, curr_width_, 0, NULL, NULL,
+                                              NULL),
+                                  NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
 
-                if (NormalizeStride_1 (new_stride, FALSE)) {
+                new_stride = NormalizeStride_1 (new_stride, &is_empty);
+                if (is_empty) {
+                    new_stride = FreeTree (new_stride);
+                    break;
+                } else {
                     /* append 'new_stride' to 'stride' */
                     if (dim == 0) {
                         stride = new_stride;
@@ -2115,10 +2124,6 @@ Parts2Strides (node *parts, int dims)
                         WLGRID_NEXTDIM (last_grid) = new_stride;
                     }
                     last_grid = WLSTRIDE_CONTENTS (new_stride);
-                } else {
-                    new_stride = FreeTree (new_stride);
-                    part_is_empty = TRUE;
-                    break;
                 }
 
                 /* go to next dim */
@@ -2132,7 +2137,7 @@ Parts2Strides (node *parts, int dims)
                 }
             }
 
-            if (!part_is_empty) {
+            if (!is_empty) {
                 WLGRID_CODE (last_grid) = NPART_CODE (parts);
                 NCODE_USED (NPART_CODE (parts))++;
                 parts_stride = InsertWLnodes (parts_stride, stride);
@@ -2677,7 +2682,6 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
         }
 
         WLSTRIDE_BOUND2 (stride) = new_bound2;
-
     } else {
         /*
          * involve all grids of current dimension
@@ -4245,6 +4249,8 @@ GenerateCompleteGrid (node *stride)
  *
  * Description:
  *   Returns strides/grids of the size found in 'shape'.
+ *   If 'is_empty' is != NULL, '*is_empty' notifies whether the generated
+ *   stride is empty or not. Otherwise the stride has to be non-empty!!
  *
  *   This function is called by 'GenerateCompleteDomain',
  *    'GenerateCompleteDomainVar'.
@@ -4261,6 +4267,10 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
     if (dim < dims) {
         new_grid = MakeWLgrid (0, dim, 0, 1, 0,
                                GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
+
+        DBUG_ASSERT ((SHPSEG_SHAPE (shape, dim) > 0),
+                     "Result array of with-loop is empty!");
+
         strides
           = MakeWLstride (0, dim, 0, SHPSEG_SHAPE (shape, dim), 1, 0, new_grid, NULL);
     }
@@ -4838,8 +4848,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride1b)) -= offset;
 
                 result = 1;
-                NormalizeStride_1 (trav_d_stride1a, TRUE);
-                NormalizeStride_1 (trav_d_stride1b, TRUE);
+                trav_d_stride1a = NormalizeStride_1 (trav_d_stride1a, NULL);
+                trav_d_stride1b = NormalizeStride_1 (trav_d_stride1b, NULL);
             } else {
                 if (i_bound1 + grid2_b1 - i_offset2 >= i_bound2) {
                     /*
@@ -4857,8 +4867,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                     WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride2b)) -= offset;
 
                     result = 2;
-                    NormalizeStride_1 (trav_d_stride2a, TRUE);
-                    NormalizeStride_1 (trav_d_stride2b, TRUE);
+                    trav_d_stride2a = NormalizeStride_1 (trav_d_stride2a, NULL);
+                    trav_d_stride2b = NormalizeStride_1 (trav_d_stride2b, NULL);
                 }
             }
 
@@ -5035,7 +5045,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                 WLSTRIDE_BOUND2 (trav_i_stride1) = i_bound2;
                 WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_i_stride1)) = grid1_b1 - i_offset1;
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_i_stride1)) = grid1_b2 - i_offset1;
-                NormalizeStride_1 (trav_i_stride1, TRUE);
+                trav_i_stride1 = NormalizeStride_1 (trav_i_stride1, NULL);
             }
 
             /* intersect 'stride2' with the outline of 'stride1' */
@@ -5044,7 +5054,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                 WLSTRIDE_BOUND2 (trav_i_stride2) = i_bound2;
                 WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_i_stride2)) = grid2_b1 - i_offset2;
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_i_stride2)) = grid2_b2 - i_offset2;
-                NormalizeStride_1 (trav_i_stride2, TRUE);
+                trav_i_stride2 = NormalizeStride_1 (trav_i_stride2, NULL);
             }
 
         } else {
@@ -5209,7 +5219,7 @@ AdjustBounds (node **stride1, node **stride2)
                 if (IndexRearStride (new_stride1) > bound12) { /* bound21 > bound12 */
                     res = 1;
                     WLSTRIDE_BOUND2 (new_stride1) = bound12;
-                    NormalizeStride_1 (new_stride1, TRUE);
+                    new_stride1 = NormalizeStride_1 (new_stride1, NULL);
                 }
                 break;
             } else {
@@ -5218,7 +5228,7 @@ AdjustBounds (node **stride1, node **stride2)
                     if (IndexRearStride (new_stride2) > bound11) { /* bound22 > bound11 */
                         res = 2;
                         WLSTRIDE_BOUND2 (new_stride2) = bound11;
-                        NormalizeStride_1 (new_stride2, TRUE);
+                        new_stride2 = NormalizeStride_1 (new_stride2, NULL);
                     }
                     break;
                 } else {
@@ -5938,7 +5948,7 @@ InferSchedulingParams (node *seg)
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
  *
  * Remark:
- *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of 'LET_IDS'.
+ *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of the let-ids.
  *
  ******************************************************************************/
 
@@ -5946,7 +5956,8 @@ node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
     node *new_node, *strides, *cubes, *segs, *seg;
-    int dims, b;
+    shpseg *wl_shpseg;
+    int wl_dims, b;
     enum {
         WL_PH_conv,
         WL_PH_cubes,
@@ -5971,53 +5982,30 @@ WLTRAwith (node *arg_node, node *arg_info)
     /* analyse 'break_specifier' */
     WL_break_after = WL_PH_norm;
     if (break_after == PH_wltrans) {
-        if (strcmp (break_specifier, "conv") == 0) {
+        if (!strcmp (break_specifier, "conv")) {
             WL_break_after = WL_PH_conv;
-        } else {
-            if (strcmp (break_specifier, "cubes") == 0) {
-                WL_break_after = WL_PH_cubes;
-            } else {
-                if (strcmp (break_specifier, "segs") == 0) {
-                    WL_break_after = WL_PH_segs;
-                } else {
-                    if (strcmp (break_specifier, "split") == 0) {
-                        WL_break_after = WL_PH_split;
-                    } else {
-                        if (strcmp (break_specifier, "block") == 0) {
-                            WL_break_after = WL_PH_block;
-                        } else {
-                            if (strcmp (break_specifier, "ublock") == 0) {
-                                WL_break_after = WL_PH_ublock;
-                            } else {
-                                if (strcmp (break_specifier, "merge") == 0) {
-                                    WL_break_after = WL_PH_merge;
-                                } else {
-                                    if (strcmp (break_specifier, "opt") == 0) {
-                                        WL_break_after = WL_PH_opt;
-                                    } else {
-                                        if (strcmp (break_specifier, "fit") == 0) {
-                                            WL_break_after = WL_PH_fit;
-                                        } else {
-                                            if (strcmp (break_specifier, "norm") == 0) {
-                                                WL_break_after = WL_PH_norm;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        } else if (!strcmp (break_specifier, "cubes")) {
+            WL_break_after = WL_PH_cubes;
+        } else if (!strcmp (break_specifier, "segs")) {
+            WL_break_after = WL_PH_segs;
+        } else if (!strcmp (break_specifier, "split")) {
+            WL_break_after = WL_PH_split;
+        } else if (!strcmp (break_specifier, "block")) {
+            WL_break_after = WL_PH_block;
+        } else if (!strcmp (break_specifier, "ublock")) {
+            WL_break_after = WL_PH_ublock;
+        } else if (!strcmp (break_specifier, "merge")) {
+            WL_break_after = WL_PH_merge;
+        } else if (!strcmp (break_specifier, "opt")) {
+            WL_break_after = WL_PH_opt;
+        } else if (!strcmp (break_specifier, "fit")) {
+            WL_break_after = WL_PH_fit;
+        } else if (!strcmp (break_specifier, "norm")) {
+            WL_break_after = WL_PH_norm;
         }
     }
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-
-    /*
-     * get number of dims of with-loop index range
-     */
-    dims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
 
     /*
      * check whether NWITHID_VEC, NWITHID_IDS of all parts contain the same names.
@@ -6027,44 +6015,66 @@ WLTRAwith (node *arg_node, node *arg_info)
                  " the same VEC and IDS names!\n"
                  "This is probably due to an error during with-loop-folding.");
 
-    new_node = MakeNWith2 (NWITH_WITHID (arg_node), NULL, NWITH_CODE (arg_node),
-                           NWITH_WITHOP (arg_node), dims);
-
-    NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
-    NWITH2_IN (new_node) = NWITH_IN (arg_node);
-    NWITH2_INOUT (new_node) = NWITH_INOUT (arg_node);
-    NWITH2_OUT (new_node) = NWITH_OUT (arg_node);
-    NWITH2_LOCAL (new_node) = NWITH_LOCAL (arg_node);
-
     /*
-     * withid, code, withop and IN/INOUT/OUT/LOCAL are overtaken to the Nwith2-tree
-     *  without a change.
-     * Because of that, these parts are cut off from the old nwith-tree,
-     *  before freeing it.
+     * get number of dims of with-loop index range
      */
+    wl_dims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
 
-    NPART_WITHID (NWITH_PART (arg_node)) = NULL;
-    NWITH_CODE (arg_node) = NULL;
-    NWITH_WITHOP (arg_node) = NULL;
-
-    NWITH_DEC_RC_IDS (arg_node) = NULL;
-    NWITH_IN (arg_node) = NULL;
-    NWITH_INOUT (arg_node) = NULL;
-    NWITH_OUT (arg_node) = NULL;
-    NWITH_LOCAL (arg_node) = NULL;
+    if ((NWITH_TYPE (arg_node) == WO_genarray)
+        || (NWITH_TYPE (arg_node) == WO_modarray)) {
+        wl_shpseg = INFO_WL_SHPSEG (arg_info);
+    } else {
+        wl_shpseg = NULL;
+    }
 
     /*
      * convert parts of with-loop into new format
      */
-    DBUG_EXECUTE ("WLprec", NOTE (("step 0.1: converting parts to strides\n")));
-    strides = Parts2Strides (NWITH_PART (arg_node), dims);
+    DBUG_EXECUTE ("WLprec", NOTE (("step 0.1: converting parts into strides\n")));
+    strides = Parts2Strides (NWITH_PART (arg_node), wl_dims, wl_shpseg);
 
     if (strides == NULL) {
         /*
          * all parts are empty
-         *  -> generate a single stride over the whole domain
          */
-        strides = GenerateShapeStrides (0, dims, INFO_WL_SHPSEG (arg_info));
+
+        switch (NWITH_TYPE (arg_node)) {
+        case WO_genarray:
+            if (GetShpsegLength (wl_dims, wl_shpseg) > 0) {
+                /*
+                 * result array of genarray-with-loop is non-empty
+                 *  -> generate a single stride over the whole domain
+                 */
+                strides = GenerateShapeStrides (0, wl_dims, wl_shpseg);
+                NPART_CODE (NWITH_PART (arg_node)) = NULL;
+                NWITH_CODE (arg_node) = FreeTree (NWITH_CODE (arg_node));
+            } else {
+                /*
+                 * result array of genarray-with-loop is empty
+                 *  -> replace with-loop by empty array
+                 */
+                node *cexpr;
+                simpletype btype;
+
+                cexpr = NWITH_CEXPR (arg_node);
+                DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
+                btype = TYPES_BASETYPE (ID_TYPE (cexpr));
+                DBUG_ASSERT ((btype != T_user), "Array elements of genarray-with-loop "
+                                                "have a user-defined type!");
+                new_node = CreateZeroVector (0, btype);
+            }
+            break;
+
+        case WO_modarray:
+            new_node = DupNode (NWITH_ARRAY (arg_node));
+            break;
+
+        case WO_foldfun:
+            /* here is no break missing! */
+        case WO_foldprf:
+            new_node = DupNode (NWITH_NEUTRAL (arg_node));
+            break;
+        }
     }
 
     /*
@@ -6075,140 +6085,171 @@ WLTRAwith (node *arg_node, node *arg_info)
                  "Consistence check failed: Not all strides are pairwise disjoint!\n"
                  "This is probably due to an error during with-loop-folding.");
 
-    if (WL_break_after >= WL_PH_cubes) {
-        /*
-         * build the cubes
-         */
-        DBUG_EXECUTE ("WLprec", NOTE (("step 1: cube-building\n")));
-        if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
-            /*
-             * we have one part only.
-             *  -> the index-range of the generator is possibly a *proper* subset of
-             *     the index-vector-space.
-             *  -> the generator params are possibly vars.
-             */
-            cubes = ComputeOneCube (strides, NWITH2_TYPE (new_node), dims,
-                                    INFO_WL_SHPSEG (arg_info));
-        } else {
-            /*
-             * we have multiple parts.
-             *  -> the index-ranges of the generators partitionize the index-vector-space.
-             *  -> the generator params are constant.
-             *
-             * Remark: for the time being these assertions are not a restriction, because
-             *         in a SAC-source we can specifiy one part only.
-             *         Therefore multiple parts are generated exclusiv by WLF, and these
-             *         multiple parts meet the above conditions.
-             */
-            cubes = ComputeCubes (strides);
-        }
+    if (strides != NULL) {
+        new_node = MakeNWith2 (NWITH_WITHID (arg_node), NULL, NWITH_CODE (arg_node),
+                               NWITH_WITHOP (arg_node), wl_dims);
+
+        NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
+        NWITH2_IN (new_node) = NWITH_IN (arg_node);
+        NWITH2_INOUT (new_node) = NWITH_INOUT (arg_node);
+        NWITH2_OUT (new_node) = NWITH_OUT (arg_node);
+        NWITH2_LOCAL (new_node) = NWITH_LOCAL (arg_node);
 
         /*
-         * full-featured wltransformation
+         * withid, code, withop and IN/INOUT/OUT/LOCAL are overtaken to the Nwith2-tree
+         *  without a change.
+         * Because of that, these parts are cut off from the old nwith-tree,
+         *  before freeing it.
          */
 
-        if (WL_break_after >= WL_PH_segs) {
-            DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
-            segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, dims);
-            /* free temporary data */
-            if (NWITH_PRAGMA (arg_node) != NULL) {
-                NWITH_PRAGMA (arg_node) = FreeTree (NWITH_PRAGMA (arg_node));
-            }
-            if (cubes != NULL) {
-                cubes = FreeTree (cubes);
+        NPART_WITHID (NWITH_PART (arg_node)) = NULL;
+        NWITH_CODE (arg_node) = NULL;
+        NWITH_WITHOP (arg_node) = NULL;
+
+        NWITH_DEC_RC_IDS (arg_node) = NULL;
+        NWITH_IN (arg_node) = NULL;
+        NWITH_INOUT (arg_node) = NULL;
+        NWITH_OUT (arg_node) = NULL;
+        NWITH_LOCAL (arg_node) = NULL;
+
+        if (WL_break_after >= WL_PH_cubes) {
+            /*
+             * build the cubes
+             */
+            DBUG_EXECUTE ("WLprec", NOTE (("step 1: cube-building\n")));
+            if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
+                /*
+                 * we have one part only.
+                 *  -> the index-range of the generator is possibly a *proper* subset of
+                 *     the index-vector-space.
+                 *  -> the generator params are possibly vars.
+                 */
+                cubes
+                  = ComputeOneCube (strides, NWITH2_TYPE (new_node), wl_dims, wl_shpseg);
+            } else {
+                /*
+                 * we have multiple parts.
+                 *  -> the index-ranges of the generators partitionize the
+                 * index-vector-space.
+                 *  -> the generator params are constant.
+                 *
+                 * Remark: for the time being these assertions are not a restriction,
+                 * because in a SAC-source we can specifiy one part only. Therefore
+                 * multiple parts are generated exclusiv by WLF, and these multiple parts
+                 * meet the above conditions.
+                 */
+                cubes = ComputeCubes (strides);
             }
 
-            seg = segs;
-            while (seg != NULL) {
+            /*
+             * full-featured wltransformation
+             */
+
+            if (WL_break_after >= WL_PH_segs) {
+                DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
+                segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
+                /* free temporary data */
+                if (NWITH_PRAGMA (arg_node) != NULL) {
+                    NWITH_PRAGMA (arg_node) = FreeTree (NWITH_PRAGMA (arg_node));
+                }
+                if (cubes != NULL) {
+                    cubes = FreeTree (cubes);
+                }
+
+                seg = segs;
+                while (seg != NULL) {
+                    /*
+                     * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+                     */
+                    seg = InferSegParams (seg);
+
+                    /*
+                     * check params of segment
+                     */
+                    CheckParams (seg);
+
+                    /* splitting */
+                    if (WL_break_after >= WL_PH_split) {
+                        DBUG_EXECUTE ("WLprec", NOTE (("step 3: splitting\n")));
+                        WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
+                    }
+
+                    /* hierarchical blocking */
+                    if (WL_break_after >= WL_PH_block) {
+                        DBUG_EXECUTE ("WLprec",
+                                      NOTE (("step 4: hierarchical blocking\n")));
+                        for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
+                            DBUG_EXECUTE (
+                              "WLprec",
+                              NOTE (("step 4.%d: hierarchical blocking (level %d)\n",
+                                     b + 1, b)));
+                            WLSEGX_CONTENTS (seg)
+                              = BlockWL (WLSEGX_CONTENTS (seg), wl_dims,
+                                         WLSEGX_BV (seg, b), 0);
+                        }
+                    }
+
+                    /* unrolling-blocking */
+                    if (WL_break_after >= WL_PH_ublock) {
+                        DBUG_EXECUTE ("WLprec", NOTE (("step 5: unrolling-blocking\n")));
+                        WLSEGX_CONTENTS (seg)
+                          = BlockWL (WLSEGX_CONTENTS (seg), wl_dims, WLSEGX_UBV (seg), 1);
+                    }
+
+                    /* merging */
+                    if (WL_break_after >= WL_PH_merge) {
+                        DBUG_EXECUTE ("WLprec", NOTE (("step 6: merging\n")));
+                        WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
+                    }
+
+                    /* optimization */
+                    if (WL_break_after >= WL_PH_opt) {
+                        DBUG_EXECUTE ("WLprec", NOTE (("step 7: optimization\n")));
+                        WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
+                    }
+
+                    /* fitting */
+                    if (WL_break_after >= WL_PH_fit) {
+                        DBUG_EXECUTE ("WLprec", NOTE (("step 8: fitting\n")));
+                        WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
+                    }
+
+                    /* normalization */
+                    if (WL_break_after >= WL_PH_norm) {
+                        DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
+                        WLSEGX_CONTENTS (seg)
+                          = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
+                    }
+
+                    seg = InferSchedulingParams (seg);
+
+                    seg = WLSEG_NEXT (seg);
+                }
+            } else {
+                /*
+                 * we want to stop after cube-building.
+                 *  -> build one segment containing all cubes.
+                 */
+                segs = All (NULL, NULL, cubes, wl_dims, line);
                 /*
                  * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
                  */
-                seg = InferSegParams (seg);
-
-                /*
-                 * check params of segment
-                 */
-                CheckParams (seg);
-
-                /* splitting */
-                if (WL_break_after >= WL_PH_split) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 3: splitting\n")));
-                    WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
-                }
-
-                /* hierarchical blocking */
-                if (WL_break_after >= WL_PH_block) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 4: hierarchical blocking\n")));
-                    for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
-                        DBUG_EXECUTE ("WLprec",
-                                      NOTE (
-                                        ("step 4.%d: hierarchical blocking (level %d)\n",
-                                         b + 1, b)));
-                        WLSEGX_CONTENTS (seg)
-                          = BlockWL (WLSEGX_CONTENTS (seg), dims, WLSEGX_BV (seg, b), 0);
-                    }
-                }
-
-                /* unrolling-blocking */
-                if (WL_break_after >= WL_PH_ublock) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 5: unrolling-blocking\n")));
-                    WLSEGX_CONTENTS (seg)
-                      = BlockWL (WLSEGX_CONTENTS (seg), dims, WLSEGX_UBV (seg), 1);
-                }
-
-                /* merging */
-                if (WL_break_after >= WL_PH_merge) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 6: merging\n")));
-                    WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
-                }
-
-                /* optimization */
-                if (WL_break_after >= WL_PH_opt) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 7: optimization\n")));
-                    WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
-                }
-
-                /* fitting */
-                if (WL_break_after >= WL_PH_fit) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 8: fitting\n")));
-                    WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
-                }
-
-                /* normalization */
-                if (WL_break_after >= WL_PH_norm) {
-                    DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
-                    WLSEGX_CONTENTS (seg)
-                      = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
-                }
-
-                seg = InferSchedulingParams (seg);
-
-                seg = WLSEG_NEXT (seg);
+                segs = InferSegParams (segs);
             }
         } else {
             /*
-             * we want to stop after cube-building.
-             *  -> build one segment containing all cubes.
+             * we want to stop after converting.
+             *  -> build one segment containing the strides.
              */
-            segs = All (NULL, NULL, cubes, dims, line);
+            segs = All (NULL, NULL, strides, wl_dims, line);
             /*
              * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
              */
             segs = InferSegParams (segs);
         }
-    } else {
-        /*
-         * we want to stop after converting.
-         *  -> build one segment containing the strides.
-         */
-        segs = All (NULL, NULL, strides, dims, line);
-        /*
-         * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
-         */
-        segs = InferSegParams (segs);
-    }
 
-    NWITH2_SEGS (new_node) = segs;
+        NWITH2_SEGS (new_node) = segs;
+    }
 
     /*
      * old WL-representation is no longer needed
@@ -6255,8 +6296,7 @@ WLTRAcode (node *arg_node, node *arg_info)
  *   node *WLTRAlet( node *arg_node, node *arg_info)
  *
  * Description:
- *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of 'LET_IDS'
- *   (needed for 'WLTRAwith').
+ *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of the let-ids.
  *
  ******************************************************************************/
 
@@ -6274,7 +6314,7 @@ WLTRAlet (node *arg_node, node *arg_info)
                  "vardec-node of let-variable has wrong type!");
 
     tmp = INFO_WL_SHPSEG (arg_info);
-    INFO_WL_SHPSEG (arg_info) = VARDEC_OR_ARG_SHPSEG (LET_VARDEC (arg_node));
+    INFO_WL_SHPSEG (arg_info) = TYPES_SHPSEG (LET_TYPE (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
