@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/06/23 12:30:21  hw
+ * Revision 1.10  1995/07/11 09:01:43  cg
+ * reference parameters now considered.
+ *
+ * Revision 1.9  1995/06/23  12:30:21  hw
  * -changed Type2String to use for renameing of functions
  * - added new "type-string-table" rename_type[]
  *
@@ -127,6 +130,8 @@ Type2String (types *type, int flag)
             }
         if ((NULL != type->id) && (1 == flag)) {
             strcat (tmp_string, " ");
+            if (type->attrib == ST_reference)
+                strcat (tmp_string, "&");
             strcat (tmp_string, type->id);
         }
 
