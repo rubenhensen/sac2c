@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.3  2004/11/23 22:22:29  sah
+# added traverse*
+#
 # Revision 1.2  2004/11/23 12:27:00  sah
 # added node_info.mac
 #
@@ -34,7 +37,8 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../serialize/serialize_buildstack.h \
           ../serialize/serialize_link.h ../serialize/serialize_link.c \
           ../types/types_trav.h ../types/types_nodetype.h \
-          ../global/node_info.mac
+          ../global/node_info.mac ../tree/traverse_tables.c \
+          ../tree/traverse_tables.h 
 
 all: $(TARGETS)
 
@@ -114,6 +118,14 @@ all: $(TARGETS)
 
 ../global/node_info.mac: ast.xml ast2node_info_mac.xsl
 	$(XSLTENGINE) ast2node_info_mac.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../tree/traverse_tables.c: ast.xml ast2traverse_tables_c.xsl
+	$(XSLTENGINE) ast2traverse_tables_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../tree/traverse_tables.h: ast.xml ast2traverse_tables_h.xsl
+	$(XSLTENGINE) ast2traverse_tables_h.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
