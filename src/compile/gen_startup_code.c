@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/14 10:21:20  cg
+ * Added new setting SAC_SET_MAX_SCHEDULERS to make maximum number
+ * of schedulings within single SPMD function available to macro
+ * implementations of schedulers
+ *
  * Revision 3.7  2001/04/24 09:39:58  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -88,96 +93,7 @@
  * Revision 2.10  1999/07/09 12:45:32  cg
  * Basic prerequisites for diagnostic heap management introduced.
  *
- * Revision 2.9  1999/07/09 07:34:16  cg
- * SAC heap manager integrated into sac2c.
- *
- * Revision 2.8  1999/06/11 12:56:07  cg
- * Default settings for options -csfile, -csdir, and -cshost
- * made accessible to cache simulator
- *
- * Revision 2.7  1999/06/04 14:33:15  cg
- * added global setting CACHESIM_HOST.
- *
- * Revision 2.6  1999/05/26 13:21:44  cg
- * Bug fixed in activating cache simulation.
- *
- * Revision 2.5  1999/05/20 14:12:49  cg
- * Now, reasonable default values are set for unspecified cache parameters.
- *
- * Revision 2.4  1999/05/12 14:39:40  cg
- * added new flags to be defined for extended capabilities of
- * cache simulator.
- *
- * Revision 2.3  1999/04/14 09:20:40  cg
- * Settings for cache simulation improved.
- *
- * Revision 2.2  1999/04/06 13:36:09  cg
- * added startup code for cache simulation
- *
- * Revision 2.1  1999/02/23 12:42:32  sacbase
- * new release made
- *
- * Revision 1.17  1999/02/22 12:54:34  cg
- * SPMD frame is now printed iff multi-threaded code is desired.
- *
- * Revision 1.16  1999/01/08 17:23:21  cg
- * Bug fixed in generation of SPMD-frames: now imported functions
- * with body are also checked for containing SPMD-blocks.
- *
- * Revision 1.15  1998/12/07 17:32:24  cg
- * Now, the platform identification is taken from the global
- * variable target_platform.
- *
- * Revision 1.14  1998/12/07 09:59:00  cg
- * added switch for target platform for multi-platform sac2c
- *
- * Revision 1.13  1998/10/29 16:55:03  cg
- * Bug fixed in PrintSpmdData():
- * works now also if no functions are present at all,
- * e.g. in the case of module implementations
- *
- * Revision 1.12  1998/07/07 13:43:12  cg
- * Global flags SAC_DO_MULTITHREAD, SAC_DO_THREADS_STATC and
- * settings for multithreaded execution may now be set by the C
- * compiler instead of being fixed in the C source.
- * This was necessary to implement the -mt-all command line option.
- *
- * Revision 1.11  1998/07/03 10:18:15  cg
- * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
- * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
- * MT_SPMD_SETUP and MT_SPMD_EXECUTE
- *
- * Revision 1.10  1998/06/29 08:52:19  cg
- * streamlined tracing facilities
- * tracing on new with-loop and multi-threading operations implemented
- *
- * Revision 1.9  1998/06/25 08:08:37  cg
- * definition of NULL-pointer added.
- *
- * Revision 1.8  1998/06/23 12:47:21  cg
- * Now, the correct spmd-function name is used for the specification
- * of the spmd frame.
- *
- * Revision 1.7  1998/05/15 09:21:35  cg
- * tag inout renamed to inout_rc since these arguments are alway
- * refcounted.
- *
- * Revision 1.6  1998/05/12 12:35:58  dkr
- * SPMD_ICM can now be NULL (temporary ?!? needed for non-MT-version)
- *
- * Revision 1.5  1998/05/12 12:27:04  dkr
- * assert in GSCicm changed into if-statement:
- *     if (0==strcmp(ICM_NAME(arg_node), MT_SPMD_BLOCK)) {
- * (GSCicm is called not only for MT_SPMD_BLOCK ICMs !!!)
- *
- * Revision 1.4  1998/05/11 09:51:22  cg
- * added definition of SPMD frame
- *
- * Revision 1.3  1998/05/08 09:04:34  cg
- * The syntax tree is now given as an argument to function GSCPrintFileHeader()
- *
- * Revision 1.2  1998/05/07 08:08:26  cg
- * revised version
+ *   [...]
  *
  * Revision 1.1  1998/03/24 14:33:35  cg
  * Initial revision
@@ -533,11 +449,12 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#endif\n\n");
 
     if (max_sync_fold == -1) {
-        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n\n",
-                 needed_sync_fold);
+        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n", needed_sync_fold);
     } else {
-        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n\n", max_sync_fold);
+        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n", max_sync_fold);
     }
+
+    fprintf (outfile, "#define SAC_SET_MAX_SCHEDULERS       %d\n\n", max_schedulers);
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
