@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/08/06 15:06:39  dkr
+ * OPTicm inserted
+ *
  * Revision 1.64  1998/05/15 15:46:14  srs
  * added comment
  *
@@ -326,5 +329,6 @@ extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
 extern node *OPTwith (node *arg_node, node *arg_info);
 extern node *OPTNwith (node *arg_node, node *arg_info);
+extern node *OPTicm (node *arg_node, node *arg_info);
 
 #endif /* _sac_optimize_h */
