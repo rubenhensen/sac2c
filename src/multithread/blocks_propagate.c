@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/07/13 08:25:25  jhs
+ * Added comments.
+ *
  * Revision 1.2  2000/03/21 13:07:38  jhs
  * Finished this traversal.
  *
@@ -19,7 +22,11 @@
  * prefix: BLKPP
  *
  * description:
- *   ####
+ *   While- and do-loops are represented as special functions while
+ *   executing this phase. These pseudo-loops wil the encapsulated in
+ *   mt-blocks (N_mt) if the first mt-block within the pseudo-loop
+ *   is in front of any st-block (N_st) in this function. If there is no N_mt
+ *   block the pseudo-loop will not be embedded.
  *
  ******************************************************************************/
 
@@ -45,7 +52,7 @@
  * function:
  *
  * description:
- *   ####
+ *   Inits this traversal, see file comment for further information.
  *
  ******************************************************************************/
 node *
@@ -101,7 +108,9 @@ BLKPPfundef (node *arg_node, node *arg_info)
  *   node *BLKPPassign( node *arg_node, node* arg_info)
  *
  * description:
- *   ####
+ *   functions representing a while- or do-loop (FUNDEF_STATUS == ST_whilefun
+ *   or ST_dofun) and containing an N_mt before any N_st block in this
+ *   function will be embedded within an N_mt.
  *
  ******************************************************************************/
 node *
@@ -119,7 +128,7 @@ BLKPPassign (node *arg_node, node *arg_info)
 
     let = ASSIGN_INSTR (arg_node);
     if (NODE_TYPE (let) == N_let) {
-        DBUG_PRINT ("BLKIN", ("instr is %s", NODE_TEXT (LET_EXPR (let))));
+        DBUG_PRINT ("BLKPP", ("instr is %s", NODE_TEXT (LET_EXPR (let))));
         ap = LET_EXPR (let);
         if (NODE_TYPE (ap) == N_ap) {
             fundef = AP_FUNDEF (ap);
@@ -128,21 +137,24 @@ BLKPPassign (node *arg_node, node *arg_info)
                 state = FUNDEF_STATUS (fundef);
                 DBUG_PRINT ("BLKPP", ("hit"));
 
+                /*
+                 *  FUNDEF_COMPANION contains block information (not a fundef)
+                 */
                 if (FUNDEF_COMPANION (fundef) != NULL) {
                     embedding = (NODE_TYPE (FUNDEF_COMPANION (fundef)) == N_mt);
                 } else {
                     embedding = FALSE;
                 }
-                DBUG_PRINT ("BLKIN", ("embedding is %i", embedding));
+                DBUG_PRINT ("BLKPP", ("embedding is %i", embedding));
                 DBUG_PRINT ("BLKPP", ("found %s", mdb_statustype[state]));
 
                 if (state == ST_dofun) {
                     if (embedding) {
-                        arg_node = InsertMT (arg_node, arg_info);
+                        arg_node = MUTHInsertMT (arg_node, arg_info);
                     }
                 } else if (state == ST_whilefun) {
                     if (embedding) {
-                        arg_node = InsertMT (arg_node, arg_info);
+                        arg_node = MUTHInsertMT (arg_node, arg_info);
                     }
                 } else {
                     DBUG_PRINT ("BLKPP", ("ignoring %s", mdb_statustype[state]));

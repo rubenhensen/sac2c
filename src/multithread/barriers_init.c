@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/07/13 08:22:47  jhs
+ * Added comments.
+ *
  * Revision 1.5  2000/07/11 15:39:53  jhs
  * Added creation of MTSYNC_(FOLD|ALLOC).:w
  *
@@ -26,7 +29,10 @@
  * prefix: BARIN
  *
  * description:
- *   ####
+ *   Traverses the programm to add MTallocs, MTsyncs and MTsignals around
+ *   with-loops contained in mt-functions (ST_call_mt_master) or mt-regions
+ *   (N_mt).
+ *   Further comment about main action: see BARINassign.
  *
  ******************************************************************************/
 
@@ -52,7 +58,7 @@
  *   node *BarriersInit(node *arg_node, node *arg_info)
  *
  * description:
- *   inits this traversal ... ####
+ *   Inits this traversal, see file comment above.
  *
  ******************************************************************************/
 node *
@@ -227,6 +233,9 @@ BARINassign (node *arg_node, node *arg_info)
  *   mt-function, and sets the flag back.
  *   The flag meant is INFO_BARIN_WITHINMT, used to show the traversal is
  *   in some mt-region (a mt-block or a mt-function).
+ *
+ * attention:
+ *   DO NOT TRAVERSE THE NEXT HERE!!!
  *
  ******************************************************************************/
 node *
