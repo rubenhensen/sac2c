@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  1999/08/02 08:47:39  jhs
+ * Added some comments.
+ *
  * Revision 2.25  1999/07/30 13:51:47  jhs
  * Brushed.
  *
@@ -1025,7 +1028,15 @@ int basetype_size[] = {
 
 static int label_nr = 0;
 
-/* ####jhs compound??? */
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeExprsNum (int num)
+ *
+ * description:
+ *   Makes an N_Exprs with a N_um (with num as number) as EXPR, NEXT is NULL.
+ *
+ ******************************************************************************/
 node *
 MakeExprsNum (int num)
 {
@@ -1038,7 +1049,15 @@ MakeExprsNum (int num)
     DBUG_RETURN (result);
 }
 
-/* ####jhs compound??? */
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeAssignIcm (char* name, node* args)
+ *
+ * description:
+ *   Makes an Assignment for an new ICM with name and args given.
+ *
+ ******************************************************************************/
 node *
 MakeAssignIcm (char *name, node *args)
 {
@@ -1051,7 +1070,16 @@ MakeAssignIcm (char *name, node *args)
     DBUG_RETURN (result);
 }
 
-/* ####jhs compound??? */
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendAssignIcm (node* assign, char* name, node* args)
+ *
+ * description:
+ *   Appends an new ICM with name and args given as an assign to the given
+ *   chain of assignments assign.
+ *
+ ******************************************************************************/
 node *
 AppendAssignIcm (node *assign, char *name, node *args)
 {
