@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/08/06 08:39:17  sbs
+ * bug in FltnNgenerator (new TS version) fixed
+ *
  * Revision 3.14  2002/08/05 17:02:07  sbs
  * patched for additional support concerning the wl shortcuts
  * and the new type checker
@@ -1934,7 +1937,9 @@ FltnNgenerator (node *arg_node, node *arg_info)
                 NGEN_BOUND2 (arg_node)
                   = MakePrf2 (F_add_AxS, NGEN_BOUND2 (arg_node), MakeNum (1));
             }
-            INFO_FLTN_DOTSHAPE (arg_info) = FreeTree (INFO_FLTN_DOTSHAPE (arg_info));
+            if (INFO_FLTN_DOTSHAPE (arg_info) != NULL) {
+                INFO_FLTN_DOTSHAPE (arg_info) = FreeTree (INFO_FLTN_DOTSHAPE (arg_info));
+            }
         }
     } else { /* OLD TYPECHECKER !!! */
         /*
