@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/05/24 15:17:26  sbs
+ * Revision 1.5  1995/05/29 09:40:29  sbs
+ * N_bool inserted
+ *
+ * Revision 1.4  1995/05/24  15:17:26  sbs
  * one more DBUG_ASSERT
  *
  * Revision 1.3  1995/05/04  11:42:34  sbs
@@ -34,6 +37,16 @@
         ex = ex->node[1];                                                                \
     }
 
+#define GetNextBool(res, ex)                                                             \
+    {                                                                                    \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
+        DBUG_ASSERT ((ex->node[0]->nodetype == N_bool),                                  \
+                     "wrong icm-arg: N_bool expected");                                  \
+        res = ex->node[0]->info.cint;                                                    \
+        DBUG_PRINT ("PRINT", ("icm-arg found: %d(bool)", res));                          \
+        ex = ex->node[1];                                                                \
+    }
+
 #define GetShape(dim, v, ex)                                                             \
     {                                                                                    \
         int i, num;                                                                      \
@@ -48,6 +61,14 @@
                 GetNextInt (num, ex);                                                    \
                 v[i] = (char *)malloc (sizeof (char) * 32);                              \
                 sprintf (v[i], "%d", num);                                               \
+                break;                                                                   \
+            case N_bool:                                                                 \
+                GetNextBool (num, ex);                                                   \
+                v[i] = (char *)malloc (sizeof (char) * 6);                               \
+                if (num)                                                                 \
+                    sprintf (v[i], "true");                                              \
+                else                                                                     \
+                    sprintf (v[i], "false");                                             \
                 break;                                                                   \
             default:                                                                     \
                 DBUG_PRINT ("PRINT", ("found icm_arg of type: %s",                       \
