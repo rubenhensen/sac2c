@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/02/11 14:35:57  dkr
+ * some hard wired tree accesses are replaced by access macros :)
+ *
  * Revision 2.17  2000/01/26 18:09:19  dkr
  * casts for MRD_LIST corrected
  *
@@ -2110,18 +2113,20 @@ GNMlet (node *arg_node, node *arg_info)
     ids *ids_node;
 
     DBUG_ENTER ("GNMlet");
-    ids_node = LET_IDS (arg_node);
-    while (ids_node) /* determine defined variables */
-    {
-        DBUG_PRINT ("VAR", ("Definition of variable %s", ids_node->id));
 
-        DBUG_ASSERT ((ids_node->node != NULL), "N_let without pointer to declaration.");
+    ids_node = LET_IDS (arg_node);
+    while (ids_node) { /* determine defined variables */
+        DBUG_PRINT ("VAR", ("Definition of variable %s", IDS_NAME (ids_node)));
+
+        DBUG_ASSERT ((IDS_VARDEC (ids_node) != NULL),
+                     "N_let without pointer to declaration.");
 
         INC_VAR (arg_info->mask[0], IDS_VARNO (ids_node));
 
-        ids_node = ids_node->next;
+        ids_node = IDS_NEXT (ids_node);
     }
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info); /* Trav expression */
+
     DBUG_RETURN (arg_node);
 }
 
