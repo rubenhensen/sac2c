@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1999/01/11 16:53:22  sbs
+ * || in conditional does NOT work "lazy"[3~[3~ly"
+ * only %[3~&& does!!
+ * ,.
+ *
  * Revision 1.22  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -372,9 +377,12 @@ ACTassign (node *arg_node, node *arg_info)
              *   a = a;      where a is marked active
              * In this case, the assignment is NOT marked active.
              * (sbs: though I don't know why)
+             *
+             * NOTE here, that we can not apply de Morgan here, since
+             * only && in C guarantees "lazy evaluation".
              */
-            if ((instrtype != N_let) || (NODE_TYPE (LET_EXPR (instr)) != N_id)
-                || (LET_VARNO (instr) == ID_VARNO (LET_EXPR (instr)))) {
+            if (!((instrtype == N_let) && (NODE_TYPE (LET_EXPR (instr)) == N_id)
+                  && (LET_VARNO (instr) == ID_VARNO (LET_EXPR (instr))))) {
                 for (i = 0; i < INFO_DCR_VARNO (arg_info); i++) {
                     if (ASSIGN_DEFMASK (arg_node)[i] && INFO_DCR_ACT (arg_info)[i]) {
                         ASSIGN_STATUS (arg_node) = active;
