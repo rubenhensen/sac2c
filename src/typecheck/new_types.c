@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/08/30 10:49:42  dkr
+ * BuildApAssign modified
+ *
  * Revision 3.15  2002/08/15 21:10:57  dkr
  * some errors corrected
  *
@@ -24,7 +27,7 @@
  * some vars initialized to please gcc for the product version.
  *
  * Revision 3.8  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker !!
+ * first alpha version of the new type checker!!
  *
  * Revision 3.7  2002/05/31 14:51:54  sbs
  * intermediate version to ensure compilable overall state.
@@ -1503,12 +1506,12 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
     fun = FindIbase (fun, TYGetScalar (arg));
 
     if (fun != NULL) {
-        /*   new default:  <base>[*]  */
+        /*   new default:   <base>[*]   */
         res = IBASE_GEN (fun);
 
         if (((NTYPE_CON (arg) == TC_aks) || (NTYPE_CON (arg) == TC_akd))
             && (TYGetDim (arg) == 0)) {
-            /* argument is a scalar ! */
+            /* argument is a scalar! */
             if (IBASE_SCAL (fun) == NULL) {
                 lower = 1;
             } else {
@@ -1756,7 +1759,7 @@ TYDispatchFunType (ntype *fun, ntype *args)
 
         res = TYMakeDFT_res (fun, k);
 
-        /* Due to a bug in limits.h (!!!), we have to use INT_MAX here!!! */
+        /* Due to a bug in limits.h (!!), we have to use INT_MAX here!! */
         max_deriveable = 1 - INT_MAX;
         for (i = 0; i < max_funs; i++) {
             if (fundefs[i] != NULL) {
@@ -3171,7 +3174,7 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
             if (IRES_NUMFUNS (type) > 0) {
                 tmp += sprintf (tmp, "fundefs: {");
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
-                    tmp += sprintf (tmp, "%p ", IRES_FUNDEF (type, i));
+                    tmp += sprintf (tmp, F_PTR " ", IRES_FUNDEF (type, i));
                 }
                 tmp += sprintf (tmp, "} ");
             }
@@ -3197,7 +3200,7 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
                 if (multiline) {
                     tmp += sprintf (tmp, "\n%*s", offset - 1, "");
                 }
-                tmp += sprintf (tmp, " %s", tmp_str);
+                tmp += sprintf (tmp, "%s", tmp_str);
             } else {
                 tmp = PrintFunSep (tmp, multiline, offset);
                 tmp += sprintf (tmp, "%s", tmp_str);
@@ -3605,7 +3608,7 @@ TYType2OldType (ntype *new)
  *
  * Description:
  *   Extracts a single FUN_IBASE path from the given type 'type'.
- *   (The found path is removed from 'type'!!!!!)
+ *   (The found path is removed from 'type'!!)
  *   Iff 'type' contains a single FUN_IBASE path only, '*finished' is set to
  *   TRUE.
  *
@@ -3843,20 +3846,25 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass)
 static node *
 BuildApAssign (node *fundef, node *args, node *vardecs)
 {
-    node *ap;
+    node *ap, *exprs;
+    ids *lhs;
     node *assign;
 
     DBUG_ENTER ("BuildApAssign");
 
+    lhs = Vardecs2Ids (vardecs);
+    exprs = Args2Exprs (args);
+
     if (fundef != NULL) {
         DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no N_fundef node found!");
 
-        ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, Args2Exprs (args));
+        ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, exprs);
         AP_FUNDEF (ap) = fundef;
-        assign = MakeAssign (MakeLet (ap, Vardecs2Ids (vardecs)), NULL);
     } else {
-        assign = NULL; /* !!! */
+        ap = MakePrf (F_type_error, exprs);
     }
+
+    assign = MakeAssign (MakeLet (ap, lhs), NULL);
 
     DBUG_RETURN (assign);
 }
@@ -3873,6 +3881,24 @@ PickFundef (ntype *type)
     fundef = IRES_FUNDEF (type, 0); /* !!! */
 
     DBUG_RETURN (fundef);
+}
+
+static bool
+OnlyUpProjections (ntype *type)
+{
+    int i;
+    bool res = TRUE;
+
+    DBUG_ENTER ("OnlyUpProjection");
+
+    for (i = 0; i < IRES_NUMFUNS (type); i++) {
+        if (IRES_POS (type, i) <= 0) {
+            res = FALSE;
+            break;
+        }
+    }
+
+    DBUG_RETURN (res);
 }
 
 static node *
@@ -3945,7 +3971,9 @@ CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
         break;
 
     case TC_ires:
-        if (TYIsProd (IRES_TYPE (type))) {
+        if (OnlyUpProjections (type)) {
+            assigns = BuildApAssign (NULL, args, vardecs);
+        } else if (TYIsProd (IRES_TYPE (type))) {
             assigns = BuildApAssign (PickFundef (type), args, vardecs);
         } else {
             assigns = CreateWrapperCode (IRES_TYPE (type), ARG_NEXT (arg), args, vardecs);
