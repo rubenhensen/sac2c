@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.111  1998/04/02 13:00:49  srs
+ * added ID_WL()
+ *
  * Revision 1.110  1998/04/01 23:57:56  dkr
  * added N_WLstriVar, N_WLgridVar
  *
@@ -1715,6 +1718,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int    REFCNT                      (refcount -> compile -> )
  ***    int    MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*  DEF                         (Unroll !, Unswitch !)
+ ***    node*  WL        (O)               (wli -> wlf !!)
+ ***
  ***/
 
 /*
@@ -1749,6 +1754,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_STATUS(n) (n->info.ids->status)
 #define ID_OBJDEF(n) (n->info.ids->node)
 #define ID_MAKEUNIQUE(n) (n->flag)
+#define ID_WL(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
