@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/13 14:03:28  cg
+ * Bug fixed in MrdGet(): function looks behind applications
+ * of F_reshape only in modes 2 and 3.
+ * MrdGet() now returns the left hand side expression when it used
+ * to point to an N_assign node with an N_let node as instruction.
+ * The functionality of former function GetExpr() is thus integrated
+ * into MrdGet().
+ *
  * Revision 2.2  1999/03/31 15:10:02  bs
  * I did some code cosmetics with the MRD_GET... macros.
  *
@@ -54,11 +62,11 @@ extern stack *mrdl_stack;
 extern node *MrdGet (int i, int varno, int outside_block);
 extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkdef);
 
-#define MRD_GETSUBST(i, v) GetExpr (MrdGet (i, v, 0)); /* only in CF */
-#define MRD_GETLAST(i, v) GetExpr (MrdGet (i, v, 1));  /* CF, Unroll, Unswitch */
-#define MRD_GETDATA(i, v) GetExpr (MrdGet (i, v, 2));  /* CF, WLI, ArrayElimination */
-#define MRD_GETCSE(i, v) GetExpr (MrdGet (i, v, 3));   /* only in CSE */
-#define MRD_GETCFID(i, v) GetExpr (MrdGet (i, v, 4));  /* only in CFid */
+#define MRD_GETSUBST(i, v) MrdGet (i, v, 0); /* only in CF */
+#define MRD_GETLAST(i, v) MrdGet (i, v, 1);  /* CF, Unroll, Unswitch */
+#define MRD_GETDATA(i, v) MrdGet (i, v, 2);  /* CF, WLI, ArrayElimination */
+#define MRD_GETCSE(i, v) MrdGet (i, v, 3);   /* only in CSE */
+#define MRD_GETCFID(i, v) MrdGet (i, v, 4);  /* only in CFid */
 
 extern void PushMRDL (long NumVar);
 extern void PushDupMRDL ();

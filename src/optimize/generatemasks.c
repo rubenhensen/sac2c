@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/13 14:03:28  cg
+ * Bug fixed in MrdGet(): function looks behind applications
+ * of F_reshape only in modes 2 and 3.
+ * MrdGet() now returns the left hand side expression when it used
+ * to point to an N_assign node with an N_let node as instruction.
+ * The functionality of former function GetExpr() is thus integrated
+ * into MrdGet().
+ *
  * Revision 2.2  1999/03/31 15:10:18  bs
  * MrdGet: a flag for CFid added. And
  * I did some code cosmetics with the MRD_GET... macros.
@@ -389,8 +397,22 @@ MrdGet (int i, int varno, int what)
             break;
         } /* switch */
     }     /* while */
-    if (NULL == new)
+
+    if (NULL == new) {
         new = old;
+    }
+
+    if ((new != NULL) && (NODE_TYPE (new) == N_assign)) {
+        if (NODE_TYPE (ASSIGN_INSTR (new)) == N_let) {
+            new = LET_EXPR (ASSIGN_INSTR (new));
+            if (N_prf == NODE_TYPE (new) && (F_reshape == PRF_PRF (new))) {
+                if ((what == 2) || (what == 3)) {
+                    new = PRF_ARG2 (new);
+                }
+            }
+        }
+    }
+
     DBUG_RETURN (new);
 }
 
