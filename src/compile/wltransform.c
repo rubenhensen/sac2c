@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/07 10:14:36  dkr
+ * inference of NWITH2_IN/INOUT/OUT/LOCAL moved to refcount
+ *
  * Revision 1.5  1998/05/06 14:38:16  dkr
  * inference of NWITH_IN/INOUT/OUT/LOCAL moved to refcount
  *
@@ -17,7 +20,6 @@
  * Initial revision
  *
  *
- *
  */
 
 #include "tree.h"
@@ -25,6 +27,7 @@
 
 #include "internal_lib.h"
 #include "traverse.h"
+#include "DataFlowMask.h"
 #include "optimize.h"
 #include "wlpragma_funs.h"
 
@@ -2444,7 +2447,7 @@ WLTRANwith (node *arg_node, node *arg_info)
 
     /* analyse 'break_specifier' */
     WL_break_after = WL_PH_norm;
-    if (break_after == PH_precompile) {
+    if (break_after == PH_wltrans) {
         if (strcmp (break_specifier, "cubes") == 0) {
             WL_break_after = WL_PH_cube;
         } else {
@@ -2487,14 +2490,26 @@ WLTRANwith (node *arg_node, node *arg_info)
     new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
                            NWITH_CODE (arg_node), NWITH_WITHOP (arg_node));
 
+    NWITH2_IN (new_node) = NWITH_IN (arg_node);
+    NWITH2_INOUT (new_node) = NWITH_INOUT (arg_node);
+    NWITH2_OUT (new_node) = NWITH_OUT (arg_node);
+    NWITH2_LOCAL (new_node) = NWITH_LOCAL (arg_node);
+
     /*
-     * withid, code and withop are overtaken to the nwith2-tree without a change.
-     * because of that, these parts are cut off from the old nwith-tree,
-     * before freeing it.
+     * withid, code, withop and IN/INOUT/OUT/LOCAL are overtaken to the Nwith2-tree
+     *  without a change.
+     * Because of that, these parts are cut off from the old nwith-tree,
+     *  before freeing it.
      */
+
     NPART_WITHID (NWITH_PART (arg_node)) = NULL;
     NWITH_CODE (arg_node) = NULL;
     NWITH_WITHOP (arg_node) = NULL;
+
+    NWITH_IN (arg_node) = NULL;
+    NWITH_INOUT (arg_node) = NULL;
+    NWITH_OUT (arg_node) = NULL;
+    NWITH_LOCAL (arg_node) = NULL;
 
     /*
      * get number of dims of with-loop index range
@@ -2663,30 +2678,6 @@ WLTRAFundef (node *arg_node, node *arg_info)
     }
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WLTRAAssign( node *arg_node, node *arg_info)
- *
- * description:
- *   traverses sons.
- *
- ******************************************************************************/
-
-node *
-WLTRAAssign (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLTRAAssign");
-
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
