@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.34  2000/10/12 15:44:22  dkr
+ * WLGRID_CBLOCK_INSTR and WLGRIDVAR_CBLOCK_INSTR added
+ *
  * Revision 1.33  2000/10/09 16:33:50  dkr
  * NWITH2_CEXPR, NWITH2_CBLOCK added
  *
@@ -1682,6 +1685,8 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define WLGRID_CBLOCK(n) (NCODE_CBLOCK (WLGRID_CODE (n)))
 #define WLGRID_CEXPR(n) (NCODE_CEXPR (WLGRID_CODE (n)))
 
+#define WLGRID_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRID_CBLOCK (n)))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1690,6 +1695,8 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define WLGRIDVAR_CBLOCK(n) (NCODE_CBLOCK (WLGRIDVAR_CODE (n)))
 #define WLGRIDVAR_CEXPR(n) (NCODE_CEXPR (WLGRIDVAR_CODE (n)))
+
+#define WLGRIDVAR_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDVAR_CBLOCK (n)))
 
 /*--------------------------------------------------------------------------*/
 
