@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/10/04 17:17:00  sah
+ * fixed bug and rearranged some code
+ *
  * Revision 1.5  2004/09/30 20:15:10  sah
  * fixed signature of FreeRCCounterAttrib
  *
@@ -223,9 +226,12 @@ FreeNumsAttrib (nums *attr)
     DBUG_ENTER ("FreeNumsAttrib");
 
     while (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Freeing nums structure at " F_PTR, attr));
         nums *tmp = attr;
+
+        DBUG_PRINT ("FREE", ("Freeing nums structure at " F_PTR, attr));
+
         attr = NUMS_NEXT (attr);
+
         tmp = Free (tmp);
     }
 
@@ -342,9 +348,12 @@ FreeNodeListAttrib (nodelist *attr)
     DBUG_ENTER ("FreeNodeListAttrib");
 
     while (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Freeing nodelist structure at " F_PTR, attr));
         nodelist *tmp = attr;
+
+        DBUG_PRINT ("FREE", ("Freeing nodelist structure at " F_PTR, attr));
+
         attr = NODELIST_NEXT (attr);
+
         tmp = Free (tmp);
     }
 
