@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/10/27 13:39:54  cg
+ * Added correction factor for -apdiaglimit option.
+ *
  * Revision 1.12  2000/10/27 13:24:56  cg
  * Modified function APprintDiag() in order to support new command
  * line option -apdiaglimit.
@@ -113,10 +116,11 @@ APprintDiag (char *format, ...)
 {
     va_list arg_p;
     static int cnt = 1;
+    int correction = 1;
 
     DBUG_ENTER ("APprintDiag");
 
-    if (apdiag && (cnt <= 3 * apdiag_limit)) {
+    if (apdiag && (cnt <= correction * apdiag_limit)) {
         va_start (arg_p, format);
         vfprintf (apdiag_file, format, arg_p);
         va_end (arg_p);
