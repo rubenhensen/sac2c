@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/23 23:21:51  sah
+ * COMPILES!
+ *
  * Revision 1.1  2004/11/23 22:40:51  sah
  * Initial revision
  *
@@ -17,7 +20,7 @@
 extern void SERdoSerialize (node *module);
 
 extern void SERserializeFundefLink (node *fundef, FILE *file);
-extern const char *SERgenerateSerFunName (STentrytype_t type, node *node);
+extern const char *SERgenerateSerFunName (stentrytype_t type, node *node);
 
 extern serstack_t *SERbuildSerStack (node *arg_node);
 
