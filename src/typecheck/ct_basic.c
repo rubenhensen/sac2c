@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/07/30 17:25:29  sbs
+ * UGLY trick for smuggling through info * node instead of node * node:
+ * casted. Compare UGLY counterpart in NTCcond (new_typecheck.c).
+ *
  * Revision 1.2  2004/03/05 12:06:44  sbs
  * NTCCond added.
  *
@@ -9,6 +13,8 @@
  *
  *
  */
+
+#define NEW_INFO
 
 #include <stdio.h>
 #include <string.h>
@@ -105,10 +111,11 @@ NTCCTComputeType (ct_funptr CtFun, te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCond (te_info *info, ntype *args)
+NTCCond (te_info *err_info, ntype *args)
 {
     ntype *pred, *res;
-    node *cond, *arg_info;
+    node *cond;
+    info *arg_info;
 
     DBUG_ENTER ("NTCCond");
     DBUG_ASSERT ((TYIsProdOfArray (args)), "NTCCond called with non-fixed predicate!");
@@ -116,8 +123,8 @@ NTCCond (te_info *info, ntype *args)
     pred = TYGetProductMember (args, 0);
     TEAssureBoolS ("predicate", pred);
 
-    cond = TEGetWrapper (info);
-    arg_info = TEGetAssign (info);
+    cond = TEGetWrapper (err_info);
+    arg_info = (info *)TEGetAssign (err_info);
 
 #if 0
   /**
