@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2002/06/06 18:13:19  dkr
+ * bug about LiftIds() and LiftArg() corrected
+ *
  * Revision 3.40  2002/06/06 12:41:23  dkr
  * LiftIds() for TAGGED_ARRAYS added
  *
@@ -250,15 +253,23 @@ AddVardec (node *fundef, types *type, char *name)
 /******************************************************************************
  *
  * Function:
- *   void LiftIds( ids *ids_arg, node *fundef, node **new_assigns)
+ *   void LiftIds( ids *ids_arg, node *fundef, types *new_type,
+ *                 node **new_assigns)
  *
  * Description:
- *
+ *   Lifts the given return value of a function application:
+ *    - Generates a new and fresh varname.
+ *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
+ *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
+ *      of IDS_VARDEC(ids_arg).
+ *    - Builds a new assignment and inserts it into the assignment chain
+ *      'new_assigns'.
+ *    - Adjusts the name and vardec of 'ids_arg'.
  *
  ******************************************************************************/
 
 static void
-LiftIds (ids *ids_arg, node *fundef, node **new_assigns)
+LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
 {
     char *new_name;
     node *new_vardec;
@@ -274,7 +285,10 @@ LiftIds (ids *ids_arg, node *fundef, node **new_assigns)
 
     new_name = TmpVarName (IDS_NAME (ids_arg));
     /* Insert vardec for new var */
-    new_vardec = AddVardec (fundef, IDS_TYPE (ids_arg), new_name);
+    if (new_type == NULL) {
+        new_type = IDS_TYPE (ids_arg);
+    }
+    new_vardec = AddVardec (fundef, new_type, new_name);
 
     /*
      * Abstract the found return value:
@@ -307,15 +321,51 @@ LiftIds (ids *ids_arg, node *fundef, node **new_assigns)
 /******************************************************************************
  *
  * Function:
- *   void LiftArg( node *arg_id, node *fundef, node **new_assigns)
+ *   void ReplaceArg( node *arg_id, char *new_name, node *new_vardec)
  *
  * Description:
- *
+ *   Replaces name and vardec of the the given N_id node.
  *
  ******************************************************************************/
 
 static void
-LiftArg (node *arg_id, node *fundef, node **new_assigns)
+ReplaceArg (node *arg_id, char *new_name, node *new_vardec)
+{
+    DBUG_ENTER ("ReplaceArg");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+
+    /*
+     * temporary var already generated
+     * -> just replace the current arg by 'new_id'
+     */
+    ID_NAME (arg_id) = Free (ID_NAME (arg_id));
+    ID_NAME (arg_id) = StringCopy (new_name);
+    ID_VARDEC (arg_id) = new_vardec;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void LiftArg( node *arg_id, node *fundef, types *new_type,
+ *                 node **new_assigns)
+ *
+ * Description:
+ *   Lifts the given argument (N_id node) of a function application:
+ *    - Generates a new and fresh varname.
+ *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
+ *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
+ *      of ID_VARDEC(arg_id).
+ *    - Builds a new assignment and inserts it into the assignment chain
+ *      'new_assigns'.
+ *    - Adjusts the name and vardec of 'arg_id'.
+ *
+ ******************************************************************************/
+
+static void
+LiftArg (node *arg_id, node *fundef, types *new_type, node **new_assigns)
 {
     char *new_name;
     node *new_vardec;
@@ -333,10 +383,13 @@ LiftArg (node *arg_id, node *fundef, node **new_assigns)
 
     new_name = TmpVarName (ID_NAME (arg_id));
     /* Insert vardec for new var */
-    new_vardec = AddVardec (fundef, ID_TYPE (arg_id), new_name);
+    if (new_type == NULL) {
+        new_type = ID_TYPE (arg_id);
+    }
+    new_vardec = AddVardec (fundef, new_type, new_name);
 
     /*
-     * Abstract the found argument:
+     * Abstract the given argument:
      *   ... = fun( A:n, ...);
      * is transformed into
      *   __A:1 = A:n;
@@ -346,9 +399,7 @@ LiftArg (node *arg_id, node *fundef, node **new_assigns)
     IDS_VARDEC (new_ids) = new_vardec;
     (*new_assigns) = MakeAssign (MakeLet (DupNode (arg_id), new_ids), (*new_assigns));
 
-    ID_NAME (arg_id) = Free (ID_NAME (arg_id));
-    ID_NAME (arg_id) = StringCopy (new_name);
-    ID_VARDEC (arg_id) = new_vardec;
+    ReplaceArg (arg_id, new_name, new_vardec);
 
     if (RC_IS_ACTIVE (ID_REFCNT (arg_id))) {
         IDS_REFCNT (new_ids) = ID_REFCNT (arg_id) = 1;
@@ -364,35 +415,8 @@ LiftArg (node *arg_id, node *fundef, node **new_assigns)
 /******************************************************************************
  *
  * Function:
- *   void ReplaceArg( node *arg_id, node *new_id)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static void
-ReplaceArg (node *arg_id, node *new_id)
-{
-    DBUG_ENTER ("ReplaceArg");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
-
-    /*
-     * temporary var already generated
-     * -> just replace the current arg by 'new_id'
-     */
-    ID_NAME (arg_id) = Free (ID_NAME (arg_id));
-    ID_NAME (arg_id) = StringCopy (ID_NAME (new_id));
-    ID_VARDEC (arg_id) = ID_VARDEC (new_id);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void LiftOrReplaceArg( node *arg_id, node *fundef, node *new_id,
+ *   void LiftOrReplaceArg( node *arg_id, node *fundef,
+ *                          node *new_id, types *new_type,
  *                          node **new_assigns)
  *
  * Description:
@@ -401,14 +425,15 @@ ReplaceArg (node *arg_id, node *new_id)
  ******************************************************************************/
 
 static void
-LiftOrReplaceArg (node *arg_id, node *fundef, node *new_id, node **new_assigns)
+LiftOrReplaceArg (node *arg_id, node *fundef, node *new_id, types *new_type,
+                  node **new_assigns)
 {
     DBUG_ENTER ("LiftOrReplaceArg");
 
     if (new_id == NULL) {
-        LiftArg (arg_id, fundef, new_assigns);
+        LiftArg (arg_id, fundef, new_type, new_assigns);
     } else {
-        ReplaceArg (arg_id, new_id);
+        ReplaceArg (arg_id, ID_NAME (new_id), ID_VARDEC (new_id));
     }
 
     DBUG_VOID_RETURN;
@@ -1899,14 +1924,14 @@ PREC2let (node *arg_node, node *arg_info)
 #ifdef TAGGED_ARRAYS
             actual_cls = GetDataClassFromTypes (IDS_TYPE (ap_ids));
             formal_cls = GetDataClassFromTypes (rettypes);
-            if ((FUNDEF_STATUS (fundef) != ST_Cfun) && (actual_cls != formal_cls)) {
+            if (actual_cls != formal_cls) {
                 DBUG_PRINT ("PREC",
                             ("Return value with inappropriate data class found:"));
                 DBUG_PRINT ("PREC",
                             ("   ... %s ... = %s( ... ), %s instead of %s",
                              FUNDEF_NAME (fundef), IDS_NAME (ap_ids),
                              nt_data_string[actual_cls], nt_data_string[formal_cls]));
-                LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info),
+                LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info), rettypes,
                          &(INFO_PREC2_POST_ASSIGNS (arg_info)));
             }
 #endif
@@ -1938,13 +1963,13 @@ PREC2let (node *arg_node, node *arg_info)
 #ifdef TAGGED_ARRAYS
             actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
             formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
-            if ((FUNDEF_STATUS (fundef) != ST_Cfun) && (actual_cls != formal_cls)) {
+            if (actual_cls != formal_cls) {
                 DBUG_PRINT ("PREC", ("Argument with inappropriate data class found:"));
                 DBUG_PRINT ("PREC",
                             ("   ... = %s( ... %s ...), %s instead of %s",
                              FUNDEF_NAME (fundef), ID_NAME (ap_id),
                              nt_data_string[actual_cls], nt_data_string[formal_cls]));
-                LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info),
+                LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info), ARG_TYPE (args),
                          &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
             }
 #endif
@@ -2192,7 +2217,7 @@ PREC3let (node *arg_node, node *arg_info)
                     ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1))
                     && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
                     LiftOrReplaceArg (EXPRS_EXPR (arg), INFO_PREC_FUNDEF (arg_info),
-                                      new_id, &(INFO_PREC3_LASTASSIGN (arg_info)));
+                                      new_id, NULL, &(INFO_PREC3_LASTASSIGN (arg_info)));
                     new_id = EXPRS_EXPR (arg);
                 }
 
@@ -2235,7 +2260,7 @@ PREC3let (node *arg_node, node *arg_info)
 
                             if (argtab->tag[arg_idx] == ATG_in_nodesc) {
                                 LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
-                                                  new_id,
+                                                  new_id, NULL,
                                                   &(INFO_PREC3_LASTASSIGN (arg_info)));
                                 new_id = arg_id;
                             }
@@ -2246,7 +2271,7 @@ PREC3let (node *arg_node, node *arg_info)
 
                             if (argtab->tag[arg_idx] == ATG_in) {
                                 LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
-                                                  new_id,
+                                                  new_id, NULL,
                                                   &(INFO_PREC3_LASTASSIGN (arg_info)));
                                 new_id = arg_id;
                             }
