@@ -4,6 +4,11 @@
  * activated opt_wlf again
  *
  * $Log$
+ * Revision 1.6  1998/03/13 13:15:02  dkr
+ * removed a bug with flag _DBUG:
+ *   new var 'my?dbug'
+ *   vars 'dbug_...' renamed in 'my_dbug...'
+ *
  * Revision 1.5  1998/03/04 16:20:08  cg
  * added  cc_debug,  cc_optimize, tmp_dirname.
  * removed ccflagsstr, useranlib.
@@ -286,10 +291,11 @@ char *compiler_phase_name[] = {"",
  * DBug options
  */
 
-compiler_phase_t dbug_from = PH_initial;
-compiler_phase_t dbug_to = PH_final;
-int dbug_active = 0;
-char *dbug_str = "";
+compiler_phase_t my_dbug_from = PH_initial;
+compiler_phase_t my_dbug_to = PH_final;
+int my_dbug = 0;
+int my_dbug_active = 0;
+char *my_dbug_str = NULL;
 
 /*
  * Memory counters

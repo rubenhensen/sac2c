@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/03/13 13:15:57  dkr
+ * removed a bug with flag _DBUG:
+ *   new var 'my?dbug'
+ *   vars 'dbug_...' renamed in 'my_dbug...'
+ *
  * Revision 1.19  1998/03/04 16:20:08  cg
  * added  cc_debug,  cc_optimize, tmp_dirname.
  * removed ccflagsstr, useranlib.
@@ -158,10 +163,11 @@ extern char *filename;
 extern char *compiler_phase_name[];
 extern char error_message_buffer[];
 
-extern compiler_phase_t dbug_from;
-extern compiler_phase_t dbug_to;
-extern int dbug_active;
-extern char *dbug_str;
+extern compiler_phase_t my_dbug_from;
+extern compiler_phase_t my_dbug_to;
+extern int my_dbug;
+extern int my_dbug_active;
+extern char *my_dbug_str;
 
 extern int Make_Old2NewWith;
 
