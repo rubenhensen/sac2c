@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.34  1998/07/03 14:34:10  cg
+# added ../compile as include directory
+#
 # Revision 1.33  1998/06/23 11:42:11  cg
 # make deps done
 #
@@ -108,7 +111,8 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../scanparse -I../print -I../typecheck
+INCS=-I../global -I../../inc -I../scanparse -I../print -I../typecheck \
+     -I../compile
 
 all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \
      checkdec.o cccall.o
