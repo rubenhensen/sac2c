@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/04/08 17:10:21  jhs
+ * FltnArray expanded for EmptyArrays.
+ *
  * Revision 2.10  1999/03/19 09:40:19  bs
  * PreTypecheck mutated to the global function FltnPreTypecheck
  *
@@ -1128,16 +1131,21 @@ FltnArray (node *arg_node, node *arg_info)
     contextflag old_ctxt;
 
     DBUG_ENTER ("FltnArray");
-
-    DBUG_ASSERT ((ARRAY_AELEMS (arg_node) != NULL), "N_array node where AELEMS is NULL!");
-
+    /*
+    DBUG_ASSERT( (ARRAY_AELEMS( arg_node) != NULL),
+                 "N_array node where AELEMS is NULL!");
+                 */
     old_ctxt = INFO_FLTN_CONTEXT (arg_info);
     INFO_FLTN_VECLEN (arg_info) = 0;
     INFO_FLTN_CONSTVEC (arg_info) = NULL;
     INFO_FLTN_VECTYPE (arg_info) = T_int;
     INFO_FLTN_CONTEXT (arg_info) = CT_array;
 
-    ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+    if (ARRAY_AELEMS (arg_node) != NULL) {
+        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+    } else {
+        INFO_FLTN_VECTYPE (arg_info) = T_unknown;
+    }
 
     ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
 
