@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/21 11:52:07  ben
+ * SAC_MT_SCHEDULER_Block_Select renamed to SAC_MT_SCHEDULER_Select_Block
+ *
  * Revision 3.10  2001/03/20 13:21:17  ben
  *  SAC_MT_SCHEDULER_Block_Select added
  *
@@ -746,7 +749,7 @@ typedef union {
         SAC_MT_SCHEDULER_Block_DIM0 (lower, upper, unrolling)                            \
     }
 
-#define SAC_MT_SCHEDULER_Block_Select(sched_dim, lower, upper, num_tasks, next_taskid)   \
+#define SAC_MT_SCHEDULER_Select_Block(sched_dim, lower, upper, num_tasks, next_taskid)   \
     {                                                                                    \
         const int iterations_per_thread = (upper - lower) / num_tasks;                   \
                                                                                          \
@@ -758,7 +761,11 @@ typedef union {
               = SAC_WL_MT_SCHEDULE_START (sched_dim) + iterations_per_thread;            \
         } else {                                                                         \
             SAC_WL_MT_SCHEDULE_STOP (sched_dim) = upper;                                 \
-        }
+        }                                                                                \
+        SAC_TR_MT_PRINT (("'Select_Block': dim %d: %d -> %d", sched_dim,                 \
+                          SAC_WL_MT_SCHEDULE_START (sched_dim),                          \
+                          SAC_WL_MT_SCHEDULE_STOP (sched_dim)));                         \
+    }
 
 #if 0
 /* These macros are probably no longer used. */
