@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/05 14:28:54  nmw
+ * refcounter handling for T_hidden fixed
+ *
  * Revision 3.2  2000/11/29 16:21:03  nmw
  * function SAC_CI_SACArg2string() added
  *
@@ -196,10 +199,11 @@ SAC_CI_FreeSACArg (SAC_arg sa)
     if (sa != NULL) {
         /* free all allocated resources and the data structure */
         if (SAC_ARG_LRC (sa) > 0) {
-            /* free data */
-            if (SAC_ARG_ELEMS (sa) != NULL)
+            /* free data if arraytype */
+            if ((SAC_ARG_ELEMS (sa) != NULL) && (SAC_ARG_DIM (sa) > 0))
                 SAC_FREE (SAC_ARG_ELEMS (sa));
-            SAC_FREE (SAC_ARG_RC (sa));
+            if (SAC_ARG_RC (sa) != NULL)
+                SAC_FREE (SAC_ARG_RC (sa));
         }
 
         /* if arraytype free shapevector and referencecounter*/
