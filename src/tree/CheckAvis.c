@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/04/24 16:08:12  nmw
+ * CheckAvisSingleFundef renamed to CheckAvisOneFunction
+ * CheckAvisOneFundef added
+ *
  * Revision 1.7  2001/04/18 12:58:47  nmw
  * additional traversal setup function for single fundef traversal added
  *
@@ -46,6 +50,11 @@
 #include "traverse.h"
 #include "free.h"
 #include "CheckAvis.h"
+
+/* CAV_SINGLEFUNDEF mode */
+#define CAVSF_TRAV_FUNDEFS 0
+#define CAVSF_TRAV_SPECIALS 1
+#define CAVSF_TRAV_NONE 2
 
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *CAVids (ids *arg_ids, node *arg_info);
@@ -214,7 +223,8 @@ CAVfundef (node *arg_node, node *arg_info)
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if ((INFO_CAV_SINGLEFUNDEF (arg_info) == FALSE) && (FUNDEF_NEXT (arg_node) != NULL)) {
+    if ((INFO_CAV_SINGLEFUNDEF (arg_info) == CAVSF_TRAV_FUNDEFS)
+        && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -273,7 +283,7 @@ CAVap (node *arg_node, node *arg_info)
 
     /* traverse special fundef without recursion (only in single fundef mode) */
     if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_CAV_SINGLEFUNDEF (arg_info) == TRUE)
+        && (INFO_CAV_SINGLEFUNDEF (arg_info) == CAVSF_TRAV_SPECIALS)
         && (AP_FUNDEF (arg_node) != INFO_CAV_FUNDEF (arg_info))) {
         DBUG_PRINT ("CAV", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -378,7 +388,7 @@ CheckAvis (node *syntax_tree)
     DBUG_PRINT ("OPT", ("start checking avis information"));
 
     arg_info = MakeInfo ();
-    INFO_CAV_SINGLEFUNDEF (arg_info) = FALSE;
+    INFO_CAV_SINGLEFUNDEF (arg_info) = CAVSF_TRAV_FUNDEFS;
 
     old_tab = act_tab;
     act_tab = chkavis_tab;
@@ -395,31 +405,29 @@ CheckAvis (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   node *CheckAvisSingleFundef(node *fundef)
+ *   node *CheckAvisOneFunction(node *fundef)
  *
  * description:
- *   same as CechkAvis, but traverses only the given single fundef. this
- *   improves performance, when updating ssaform in the optimization cycle.
- *   it does NOT traverse special fundefs (they will be traverses in order
- *   of their usage)
+ *   same as CheckAvis, but traverses only the given function including their
+ *   (implicit inlined special functions).
  *
  ******************************************************************************/
 node *
-CheckAvisSingleFundef (node *fundef)
+CheckAvisOneFunction (node *fundef)
 {
     node *arg_info;
     funtab *old_tab;
 
-    DBUG_ENTER ("CheckAvisSingleFundef");
+    DBUG_ENTER ("CheckAvisOneFunction");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "CheckAvisSingleFundef is used for fundef nodes only");
+                 "CheckAvisOneFunction is used for fundef nodes only");
 
     if (!(FUNDEF_IS_LACFUN (fundef))) {
         DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
 
         arg_info = MakeInfo ();
-        INFO_CAV_SINGLEFUNDEF (arg_info) = TRUE;
+        INFO_CAV_SINGLEFUNDEF (arg_info) = CAVSF_TRAV_SPECIALS;
 
         old_tab = act_tab;
         act_tab = chkavis_tab;
@@ -430,6 +438,43 @@ CheckAvisSingleFundef (node *fundef)
 
         FREE (arg_info);
     }
+
+    DBUG_RETURN (fundef);
+}
+/******************************************************************************
+ *
+ * function:
+ *   node *CheckAvisOneFundef(node *fundef)
+ *
+ * description:
+ *   same as CheckAvis, but traverses only the given single fundef but not the
+ *   called included special fundefs.
+ *
+ ******************************************************************************/
+node *
+CheckAvisOneFundef (node *fundef)
+{
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("CheckAvisOneFundef");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "CheckAvisOneFundef is used for fundef nodes only");
+
+    DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
+
+    arg_info = MakeInfo ();
+    INFO_CAV_SINGLEFUNDEF (arg_info) = CAVSF_TRAV_NONE;
+
+    old_tab = act_tab;
+    act_tab = chkavis_tab;
+
+    fundef = Trav (fundef, arg_info);
+
+    act_tab = old_tab;
+
+    FREE (arg_info);
 
     DBUG_RETURN (fundef);
 }

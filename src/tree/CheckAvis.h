@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.4  2001/04/24 16:08:12  nmw
+ * CheckAvisSingleFundef renamed to CheckAvisOneFunction
+ * CheckAvisOneFundef added
+ *
  * Revision 1.3  2001/04/18 12:58:47  nmw
  * additional traversal setup function for single fundef traversal added
  *
@@ -31,7 +35,8 @@
 #define SAC_CHECKAVIS_H
 
 extern node *CheckAvis (node *syntax_tree);
-extern node *CheckAvisSingleFundef (node *fundef);
+extern node *CheckAvisOneFunction (node *fundef);
+extern node *CheckAvisOneFundef (node *fundef);
 
 extern node *CAVarg (node *arg_node, node *arg_info);
 extern node *CAVvardec (node *arg_node, node *arg_info);
