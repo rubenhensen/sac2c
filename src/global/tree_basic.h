@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.180  1998/05/27 13:16:38  sbs
+ * INFO_TC_LHSVARS added
+ *
  * Revision 1.179  1998/05/24 00:40:00  dkr
  * removed WLGRID_CODE_TEMPLATE
  *
@@ -654,6 +657,8 @@ file can be found in tree_basic.c
 #ifndef _sac_tree_basic_h
 
 #define _sac_tree_basic_h
+
+#include "types.h"
 
 /* Uncomment the #define statement to use new virtual syntaxtree
  *
@@ -2291,6 +2296,7 @@ extern node *MakePragma ();
  ***
  ***    node *     NEXTASSIGN    (O)  (N_assign)
  ***    node *     LASSIGN       (0)  (N_assign)
+ ***    ids*       LHSVARS       (O)
  ***
  ***  when used in writesib.c :
  ***
@@ -2370,6 +2376,7 @@ extern node *MakeInfo ();
 /* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
 #define INFO_TC_LASSIGN(n) (n->node[3])
+#define INFO_TC_LHSVARS(n) (n->info.ids)
 
 /* writesib */
 #define INFO_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
