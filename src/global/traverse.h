@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1998/04/03 11:56:56  dkr
+ * renamed concregs_tab to concregions_tab
+ *
  * Revision 1.41  1998/04/02 16:12:02  dkr
  * added new traverse tabular concregs_tab
  *
@@ -177,7 +180,7 @@ extern funptr readsib_tab[];
 extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
-extern funptr concregs_tab[];
+extern funptr concregions_tab[];
 extern funptr o2nWith_tab[];
 
 extern int nnode[];
