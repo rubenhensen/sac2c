@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/07/17 10:45:53  sah
+ * fixed a warning
+ *
  * Revision 3.11  2004/07/16 21:49:35  sah
  * one has to be very careful when using
  * * and / in a log message;)
@@ -312,6 +315,7 @@ TCWLprf (node *arg_node, node *arg_info)
                         break;
                     default:
                         /* unreachable code, but few c compiler know;) */
+                        res = NULL;
                         break;
                     }
                     arg1 = COFreeConstant (arg1);
@@ -368,6 +372,7 @@ TCWLprf (node *arg_node, node *arg_info)
                     default:
                         /* unreachable, but most compiler do not
                            know this ;) */
+                        res = NULL;
                         break;
                     }
 
