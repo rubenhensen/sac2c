@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.6  1999/04/15 15:00:56  cg
+ * ';' added behind the definitions of several ICMs.
+ *
  * Revision 2.5  1999/04/14 09:22:48  cg
  * Cache simulation may now be triggered by pragmas.
  *
@@ -265,22 +268,22 @@ extern void SAC_CS_Stop (void);
     SAC_CS_WriteAccess (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (name) + (pos)),
 
 #define SAC_CS_REGISTER_ARRAY(name)                                                      \
-    SAC_CS_RegisterArray (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name))
+    SAC_CS_RegisterArray (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));
 
-#define SAC_CS_UNREGISTER_ARRAY(name) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (name))
+#define SAC_CS_UNREGISTER_ARRAY(name) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (name));
 
 #if SAC_DO_CACHESIM_PRAGMA
 
 #define SAC_CS_START_GLOBAL()
 #define SAC_CS_STOP_GLOBAL()
 
-#define SAC_CS_START_PRAGMA(tag) SAC_CS_Start (tag)
-#define SAC_CS_STOP_PRAGMA(tag) SAC_CS_Stop ()
+#define SAC_CS_START_PRAGMA(tag) SAC_CS_Start (tag);
+#define SAC_CS_STOP_PRAGMA(tag) SAC_CS_Stop ();
 
 #else
 
-#define SAC_CS_START_GLOBAL() SAC_CS_Start (NULL)
-#define SAC_CS_STOP_GLOBAL() SAC_CS_Stop ()
+#define SAC_CS_START_GLOBAL() SAC_CS_Start (NULL);
+#define SAC_CS_STOP_GLOBAL() SAC_CS_Stop ();
 
 #define SAC_CS_START_PRAGMA(tag)
 #define SAC_CS_STOP_PRAGMA(tag)
