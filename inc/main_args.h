@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/18 12:51:33  cg
+ * All macros are now prefixed with either ARGS or ARG.
+ * Invalid command line entries not necessarily lead to an error
+ * message.
+ *
  * Revision 2.1  1999/05/12 14:13:41  cg
  * new release made
  *
@@ -29,17 +34,17 @@
  * {
  *   ARGS_BEGIN( argc, argv);
  *
- *   FLAG( "help", usage(); exit(0));
+ *   ARGS_FLAG( "help", usage(); exit(0));
  *
- *   OPTION( "D", cppvars[num_cpp_vars++] = ARG);
+ *   ARGS_OPTION( "D", cppvars[num_cpp_vars++] = ARG);
  *
- *   OPTION( "maxinl", ARG_NUM(maxinl));
+ *   ARGS_OPTION( "maxinl", ARG_NUM(maxinl));
  *
- *   OPTION( "maxinl", ARG_INT(maxinl));
+ *   ARGS_OPTION( "maxinl", ARG_INT(maxinl));
  *
- *   OPTION( "O", ARG_RANGE(cc_optimize, 0, 3));
+ *   ARGS_OPTION( "O", ARG_RANGE(cc_optimize, 0, 3));
  *
- *   OPTION( "d",
+ *   ARGS_OPTION( "d",
  *   {
  *     ARG_CHOICE_BEGIN();
  *     ARG_CHOICE("efence",    use_efence=1);
@@ -49,7 +54,7 @@
  *     ARG_CHOICE_END();
  *   });
  *
- *   OPTION( "check",
+ *   ARGS_OPTION( "check",
  *   {
  *     ARG_FLAGMASK_BEGIN();
  *     ARG_FLAGMASK( 'a', runtimecheck = RUNTIMECHECK_ALL);
@@ -59,7 +64,7 @@
  *     ARG_FLAGMASK_END();
  *   });
  *
- *   ARGUMENT(
+ *   ARGS_ARGUMENT(
  *   {
  *      strcpy(filename, ARG);
  *   });
@@ -133,7 +138,7 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
                                                                                          \
         while (ARGS_i < ARGS_argc) {
 
-#define FLAG(s, action)                                                                  \
+#define ARGS_FLAG(s, action)                                                             \
     if ((ARGS_argv[ARGS_i][0] == '-') && (0 == strcmp (s, ARGS_argv[ARGS_i] + 1))) {     \
         OPT = ARGS_argv[ARGS_i] + 1;                                                     \
         ARG = NULL;                                                                      \
@@ -142,7 +147,7 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
         continue;                                                                        \
     }
 
-#define OPTION(s, action)                                                                \
+#define ARGS_OPTION(s, action)                                                           \
     if ((ARGS_shift                                                                      \
          = ARGS_CheckOption (s, ARGS_argv[ARGS_i],                                       \
                              ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL,      \
@@ -157,7 +162,7 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
         continue;                                                                        \
     }
 
-#define ARGUMENT(action)                                                                 \
+#define ARGS_ARGUMENT(action)                                                            \
     if (ARGS_argv[ARGS_i][0] != '-') {                                                   \
         ARG = ARGS_argv[ARGS_i];                                                         \
         OPT = NULL;                                                                      \
@@ -167,10 +172,14 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
         continue;                                                                        \
     }
 
+#define ARGS_UNKNOWN(action)                                                             \
+    {                                                                                    \
+        ARG = ARGS_argv[ARGS_i];                                                         \
+        OPT = NULL;                                                                      \
+        action;                                                                          \
+    }
+
 #define ARGS_END()                                                                       \
-    ARG = ARGS_argv[ARGS_i];                                                             \
-    OPT = NULL;                                                                          \
-    ARGS_ERROR ("Invalid command line argument");                                        \
     ARGS_i++;                                                                            \
     }                                                                                    \
     }
