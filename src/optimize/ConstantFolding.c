@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1997/10/05 15:25:40  dkr
+ * added CF in function SkalarPrf() for % and abs()
+ *
  * Revision 1.51  1997/09/05 18:31:38  dkr
  * removed a bug in function CFid.
  * constant-folding now does not lose type-shapes after function-inlining anymore
@@ -1081,6 +1084,12 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
         DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));
         cf_expr++;
         break;
+    case F_abs:
+        if (arg[0]->info.cint < 0)
+            arg[0]->info.cint *= -1;
+        DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));
+        cf_expr++;
+        break;
     case F_add:
     case F_add_AxA:
     case F_add_AxS:
@@ -1104,6 +1113,14 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
     case F_div_AxS:
     case F_div_SxA:
         ARI (/, arg[0], arg[1]);
+        break;
+    case F_mod:
+        if (!swap)
+            arg[0]->info.cint = arg[0]->info.cint % arg[1]->info.cint;
+        else
+            arg[0]->info.cint = arg[1]->info.cint % arg[0]->info.cint;
+        DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));
+        cf_expr++;
         break;
     case F_gt:
         ARI (>, arg[0], arg[1]);
@@ -1810,7 +1827,9 @@ CFprf (node *arg_node, node *arg_info)
         /*
          * Calculate non array primitive functions
          */
-        if ((IsConst (arg[0])) && ((F_not == PRF_PRF (arg_node)) || (IsConst (arg[1])))) {
+        if ((IsConst (arg[0]))
+            && ((F_abs == PRF_PRF (arg_node)) || (F_not == PRF_PRF (arg_node))
+                || (IsConst (arg[1])))) {
             if (!((F_div == PRF_PRF (arg_node)) && (TRUE == FoundZero (arg[1])))) {
                 arg[0] = SkalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE, FALSE);
                 FreePrf2 (arg_node, 0);
