@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/25 13:40:34  dkr
+ * some rearrangements made
+ * all the constvec stuff moved from internal_lib.h
+ * function FindVardec_Name and FindVardec_Varno added
+ *
  * Revision 1.1  2000/01/21 15:38:29  dkr
  * Initial revision
  *
@@ -174,15 +179,6 @@
  * forced check in 8-(((
  *  not yet cleaned up!
  *
- * Revision 1.53  1997/12/10 14:24:02  sbs
- * MAKE_BIN_PRF macro inserted !
- *
- * Revision 1.52  1997/11/05 16:30:40  dkr
- * moved nnode[] from tree_compound.[ch] to traverse.[ch]
- *
- * Revision 1.51  1997/11/05 09:38:49  dkr
- * export of nnode[] added
- *
  * ... [eliminated] ...
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
@@ -253,33 +249,19 @@ specific implementation of a function should remain with the source code.
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  SHAPES :
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  SHPSEG :
+ ***  Shpseg :
  ***/
 
 /*
- *
  *  functionname  : CopyShpseg
  *  arguments     : 1) pointer to old shpseg
  *  description   : returns a copy of the given shpseg
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
  *  remarks       : returns NULL if old shpseg is NULL
- *
  */
 
 extern shpseg *CopyShpseg (shpseg *old);
 
 /*
- *
  *  functionname  : MergeShpseg
  *  arguments     : 1) pointer to first shpseg
  *                  2) dimension of first shpseg
@@ -288,13 +270,6 @@ extern shpseg *CopyShpseg (shpseg *old);
  *  description   : returns a new shpseg that starts with the shapes of
  *                  the first shpseg and ends with the shapes of the
  *                  second shpseg
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
  */
 
 extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
@@ -302,7 +277,7 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  TYPES :
+ ***  Types :
  ***/
 
 /*
@@ -312,29 +287,23 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 #define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
 
 /*
- *
  *  macro name    : CMP_TYPE_USER
  *  arg types     : 1) types*
  *                  2) types*
  *  result type   : int
  *  description   : compares two user-defined types (name and module)
  *                  Names and module names must be equal.
- *  global vars   : ---
- *  funs          : ---
- *
  *  remarks       : result: 1 - equal, 0 - not equal
- *
  */
 
 #define CMP_TYPE_USER(a, b)                                                              \
-                                                                                         \
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
      && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  IDS :
+ ***  Ids :
  ***/
 
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
@@ -344,19 +313,12 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
     SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))), x)
 
 /*
- *
  *  macro name    : IDS_IS_UNIQUE
  *  arg types     : 1) ids*
  *  result type   : int (bool)
  *  description   : checks if the given ids is unique or not
- *  global vars   : ---
- *  funs          : ---
- *
  *  remarks       : This macro will only work properly with the VARNO
  *                  settings done in uniquecheck.c
- *
- *
- *
  */
 
 #define IDS_IS_UNIQUE(i)                                                                 \
@@ -364,19 +326,11 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
                                               : (ARG_VARNO (IDS_VARDEC (i)) >= 0))
 
 /*
- *
  *  functionname  : AppendIdsChain
  *  arguments     : 1) first ids chain
  *                  2) second ids chain to be appended after first one
  *  description   : follows first chain to it's end and
  *                  appends second.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG, TREE
- *
- *  remarks       :
- *
  */
 
 extern ids *AppendIdsChain (ids *first, ids *second);
@@ -399,7 +353,7 @@ extern ids *LookupIds (char *name, ids *ids_chain);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  NUMS :
+ ***  Nums :
  ***/
 
 /*
@@ -421,48 +375,18 @@ extern int CountNums (nums *numsp);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  STRINGS :
+ ***  Constvec :
  ***/
 
-/*
- *
- *  functionname  : StoreString
- *  arguments     : 1) list of strings
- *                  2) string to store in 1)
- *  description   : adds 2) to 1) if it's not yet in the list
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcmp
- *  macros        :
- *
- *  remarks       : The strings are not copied !!
- *
- */
-
-extern strings *AddToLinkList (strings *list, char *str);
-
-/*
- *
- *  functionname  : StringsLength
- *  arguments     : 1) list of strings
- *  description   : counts the total length of all strings
- *                  in the given list including the terminating 0.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strlen
- *  macros        : ---
- *
- *  remarks       :
- *
- *
- */
-
-extern int StringsLength (strings *list);
+extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
+extern void *AllocConstVec (simpletype vectype, int veclen);
+extern void *ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node);
+extern node *AnnotateIdWithConstVec (node *expr, node *id);
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  NODELIST :
+ ***  Nodelist :
  ***/
 
 /*
@@ -603,12 +527,6 @@ extern nodelist *NodeListFree (nodelist *nl, int free_attrib);
 extern nodelist *NodeListFind (nodelist *nl, node *node);
 
 /*--------------------------------------------------------------------------*/
-
-/***
- ***  OTHERS :
- ***/
-
-/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 /*  macros and functions for node structures                                */
 /*--------------------------------------------------------------------------*/
@@ -640,67 +558,6 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 #define BLOCK_INSTR_OR_ASSIGN_NEXT(n)                                                    \
     (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
-
-/*--------------------------------------------------------------------------*/
-
-/*
- * CAUTION: Do not use the following macros as l-values!!!
- *          (this is *no* ANSI C style!)
- *          Use the L_VARDEC_OR_... macros instead!!
- */
-#define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
-#define VARDEC_OR_ARG_ACTCHN(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_ACTCHN (n) : VARDEC_ACTCHN (n))
-#define VARDEC_OR_ARG_COLCHN(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
-#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
-#define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
-#define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
-    ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
-#define VARDEC_OR_ARG_SHPSEG(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_SHPSEG (n) : VARDEC_SHPSEG (n))
-#define VARDEC_OR_ARG_VARNO(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
-#define VARDEC_OR_ARG_REFCNT(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
-#define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
-    ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
-#define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
-
-#define L_VARDEC_OR_ARG_NEXT(n, rhs)                                                     \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_NEXT (n) = (rhs);                                                            \
-    } else {                                                                             \
-        VARDEC_NEXT (n) = (rhs);                                                         \
-    }
-
-#define L_VARDEC_OR_ARG_REFCNT(n, rhs)                                                   \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_REFCNT (n) = (rhs);                                                          \
-    } else {                                                                             \
-        VARDEC_REFCNT (n) = (rhs);                                                       \
-    }
-
-#define L_VARDEC_OR_ARG_NAIVE_REFCNT(n, rhs)                                             \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_NAIVE_REFCNT (n) = (rhs);                                                    \
-    } else {                                                                             \
-        VARDEC_NAIVE_REFCNT (n) = (rhs);                                                 \
-    }
-
-#define SET_VARDEC_OR_ARG_COLCHN(n, rhs)                                                 \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_COLCHN (n) = (rhs);                                                          \
-    } else {                                                                             \
-        VARDEC_COLCHN (n) = (rhs);                                                       \
-    }
-
-#define SET_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                 \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_ACTCHN (n) = (rhs);                                                          \
-    } else {                                                                             \
-        VARDEC_ACTCHN (n) = (rhs);                                                       \
-    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -943,6 +800,15 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 
 extern node *SearchObjdef (char *name, char *mod, node *implementations);
 
+/*
+ *  functionname  : ObjList2ArgList
+ *  arguments     : 1) pointer to chain of objdef nodes
+ *  description   : makes an argument list from an objdef chain
+ *
+ */
+
+extern void ObjList2ArgList (node *objdef);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -999,6 +865,31 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 #define FUNDEC_TMOD(n) (FUNDEF_MOD (FUNDEC_DEF (n)))
 
 /*
+ *  macro name    : CMP_FUN_ID(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two fundef nodes (name and module only)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_FUN_ID(a, b)                                                                 \
+    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
+     && (0 == strcmp (CHECK_NULL (FUNDEF_MOD (a)), CHECK_NULL (FUNDEF_MOD (b)))))
+
+/*
+ *  macro name    : CMP_FUNDEF(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two fundef nodes (name, module, and domain)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_FUNDEF(a, b)                                                                 \
+    ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
+
+/*
  *
  *  functionname  : CountFunctionParams
  *  arguments     : 1) N_fundef node
@@ -1016,7 +907,6 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 extern int CountFunctionParams (node *fundef);
 
 /*
- *
  *  functionname  : CmpDomain
  *  arguments     : 1) N_arg node of one function
  *                  2) N_arg node of another function
@@ -1030,13 +920,11 @@ extern int CountFunctionParams (node *fundef);
  *  remarks       : similar to function CmpFunParams of typechecker.
  *                  some minor changes to fix appearing segmentation
  *                  faults.
- *
  */
 
 extern int CmpDomain (node *args1, node *args2);
 
 /*
- *
  *  functionname  : SearchFundef
  *  arguments     : 1) fundef node of function to search for
  *                  2) ptr to head of fundef chain
@@ -1050,93 +938,12 @@ extern int CmpDomain (node *args1, node *args2);
  *                  a function which is declared in a module/class
  *                  implementation. For the representation of function
  *                  declarations the fundef node is reused.
- *
  */
 
 extern node *SearchFundef (node *fun, node *allfuns);
 
-/*
- *
- *  functionname  : ObjList2ArgList
- *  arguments     : 1) pointer to chain of objdef nodes
- *  description   : makes an argument list from an objdef chain
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
- */
-
-extern void ObjList2ArgList (node *objdef);
-
-/*
- *
- *  macro name    : CMP_FUN_ID(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name and module only)
- *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       :
- *
- */
-
-#if 0
-#define CMP_FUN_ID(a, b)                                                                 \
-                                                                                         \
-    ((NULL == FUNDEF_MOD (a))                                                            \
-       ? (!strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)) && (NULL == FUNDEF_MOD (b)))        \
-       : ((NULL == FUNDEF_MOD (b)) ? 0                                                   \
-                                   : ((!strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))       \
-                                      && (!strcmp (FUNDEF_MOD (a), FUNDEF_MOD (b))))))
-#endif
-
-#define CMP_FUN_ID(a, b)                                                                 \
-                                                                                         \
-    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
-     && (0 == strcmp (CHECK_NULL (FUNDEF_MOD (a)), CHECK_NULL (FUNDEF_MOD (b)))))
-
-/*
- *
- *  macro name    : CMP_FUNDEF(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name, module, and domain)
- *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : CmpDomain
- *
- *  remarks       :
- *
- */
-
-#define CMP_FUNDEF(a, b)                                                                 \
-                                                                                         \
-    ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_arg :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
-#define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
-#define ARG_SHAPE(n, x) (TYPES_SHAPE (ARG_TYPE (n), x))
-#define ARG_SHPSEG(n) (TYPES_SHPSEG (ARG_TYPE (n)))
-#define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
-#define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
-#define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
+extern node *FindVardec_Name (char *name, node *fundef);
+extern node *FindVardec_Varno (int varno, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1177,6 +984,102 @@ extern void ObjList2ArgList (node *objdef);
         VARDEC_NEXT (old) = new;                                                         \
     } else                                                                               \
         old = new
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_arg :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
+#define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
+#define ARG_SHAPE(n, x) (TYPES_SHAPE (ARG_TYPE (n), x))
+#define ARG_SHPSEG(n) (TYPES_SHPSEG (ARG_TYPE (n)))
+#define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
+#define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
+#define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_vardec / N_arg :
+ ***/
+
+/*
+ * CAUTION: Do not use the following macros as l-values!!!
+ *          (this is *no* ANSI C style!)
+ *          Use the L_VARDEC_OR_... macros instead!!
+ */
+#define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
+#define VARDEC_OR_ARG_ACTCHN(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_ACTCHN (n) : VARDEC_ACTCHN (n))
+#define VARDEC_OR_ARG_COLCHN(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
+#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
+#define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
+#define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
+    ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
+#define VARDEC_OR_ARG_SHPSEG(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_SHPSEG (n) : VARDEC_SHPSEG (n))
+#define VARDEC_OR_ARG_VARNO(n)                                                           \
+    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
+#define VARDEC_OR_ARG_REFCNT(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
+#define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
+    ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
+#define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
+
+#define L_VARDEC_OR_ARG_NEXT(n, rhs)                                                     \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_NEXT (n) = (rhs);                                                            \
+    } else {                                                                             \
+        VARDEC_NEXT (n) = (rhs);                                                         \
+    }
+
+#define L_VARDEC_OR_ARG_REFCNT(n, rhs)                                                   \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_REFCNT (n) = (rhs);                                                          \
+    } else {                                                                             \
+        VARDEC_REFCNT (n) = (rhs);                                                       \
+    }
+
+#define L_VARDEC_OR_ARG_NAIVE_REFCNT(n, rhs)                                             \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_NAIVE_REFCNT (n) = (rhs);                                                    \
+    } else {                                                                             \
+        VARDEC_NAIVE_REFCNT (n) = (rhs);                                                 \
+    }
+
+#define SET_VARDEC_OR_ARG_COLCHN(n, rhs)                                                 \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_COLCHN (n) = (rhs);                                                          \
+    } else {                                                                             \
+        VARDEC_COLCHN (n) = (rhs);                                                       \
+    }
+
+#define SET_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                 \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_ACTCHN (n) = (rhs);                                                          \
+    } else {                                                                             \
+        VARDEC_ACTCHN (n) = (rhs);                                                       \
+    }
+
+/*
+ * this macro is usefull for traversing the arg- und vardec-list
+ */
+#define FOREACH_VARDEC_AND_ARG(fundef, vardec, code)                                     \
+    vardec = FUNDEF_ARGS (fundef);                                                       \
+    while (vardec != NULL) {                                                             \
+        code vardec = ARG_NEXT (vardec);                                                 \
+    }                                                                                    \
+    vardec = FUNDEF_VARDEC (fundef);                                                     \
+    while (vardec != NULL) {                                                             \
+        code vardec = VARDEC_NEXT (vardec);                                              \
+    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -1300,6 +1203,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 /***
  ***  N_let :
  ***/
+
 /*
  *  compound access macros
  */
@@ -1738,9 +1642,7 @@ extern node *MakeVinfoDollar (node *next);
  */
 
 extern node *MakePrf1 (prf prf, node *arg1);
-
 extern node *MakePrf2 (prf prf, node *arg1, node *arg2);
-
 extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
