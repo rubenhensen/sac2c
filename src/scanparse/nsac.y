@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/22 13:22:31  sah
+ * removed all artificial namespaces
+ * added during parsing
+ *
  * Revision 1.2  2004/10/17 14:52:30  sah
  * added support for except
  * in interface descriptions
@@ -499,7 +503,8 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          { $$ = $6;
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $3);    /* function name  */
-           FUNDEF_MOD( $$) = mod_name;          /* module name    */
+           FUNDEF_MOD( $$) = IDS_MOD( $3);      /* module name    */
+
            FUNDEF_LINKMOD( $$) = NULL;
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
@@ -508,7 +513,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            DBUG_PRINT( "PARSE",
                         ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
-                        FUNDEF_MOD( $$),
+                        (FUNDEF_MOD( $$) == NULL) ? "(null)": FUNDEF_MOD( $$),
                         FUNDEF_NAME( $$),
                         FUNDEF_NAME( $$)));
 
@@ -517,7 +522,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          { $$ = $4;
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $2);    /* function name  */
-           FUNDEF_MOD( $$) = mod_name;          /* module name    */
+           FUNDEF_MOD( $$) = IDS_MOD( $2);      /* module name    */
            FUNDEF_LINKMOD( $$) = NULL;
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
@@ -526,7 +531,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            DBUG_PRINT( "PARSE",
                         ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
-                        FUNDEF_MOD( $$),
+                        (FUNDEF_MOD( $$) == NULL) ? "(null)" : FUNDEF_MOD( $$),
                         FUNDEF_NAME( $$),
                         FUNDEF_NAME( $$)));
 
@@ -608,7 +613,6 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = linenum; } exprb
         NODE_LINE( $$) = $<cint>6;
 
         FUNDEF_NAME( $$) = StringCopy( "main");
-        FUNDEF_MOD( $$) = mod_name;               /* SAC modul name */
         FUNDEF_STATUS( $$) = ST_exported;
 
         DBUG_PRINT( "PARSE",
@@ -1049,12 +1053,7 @@ exprs: expr COMMA exprs          { $$ = MakeExprs( $1, $3);   }
      | expr                      { $$ = MakeExprs( $1, NULL); }
      ;
 
-expr: fun_id                     { if( (file_kind == F_sib) && (sbs == 1)
-                                       && (strcmp( IDS_MOD( $1), EXTERN_MOD_NAME) == 0)) {
-                                     IDS_MOD( $1) = NULL;
-                                   }
-                                   $$ = MakeIdFromIds( $1);
-                                 }
+expr: fun_id                     { $$ = MakeIdFromIds( $1); }
     | DOT                        { $$ = MakeDot( 1);        }
     | DOT DOT DOT                { $$ = MakeDot( 3);        }
     | NUM                        { $$ = MakeNum( $1);       }
@@ -1513,11 +1512,6 @@ types: type COMMA types
 
 type: localtype
       { $$ = $1;
-        if( (file_kind == F_sib) && (sbs == 1) && (TYPES_BASETYPE( $1) == T_user)) {
-          if( TYPES_MOD( $1) == NULL) {
-            TYPES_MOD( $1) = EXTERN_MOD_NAME;
-          }
-        }
       }
     | id COLON localtype
       { $$ = $3;
