@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/06/15 15:32:37  asi
+ * Revision 1.6  1995/06/23 13:09:20  hw
+ * - functions "DupDec" & "DupFundef" inserted
+ * -  added argument to call of 'DuplicateTypes'
+ *
+ * Revision 1.5  1995/06/15  15:32:37  asi
  * DupTree generates arg_info if not present
  *
  * Revision 1.4  1995/06/08  09:55:13  asi
@@ -184,7 +188,7 @@ DupCast (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupCast");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->info.types = DuplicateTypes (arg_node->info.types);
+    new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
     new_node->nnode = arg_node->nnode;
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
@@ -226,5 +230,46 @@ DupFun (node *arg_node, node *arg_info)
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupFundef (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupFundef");
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    new_node = MakeNode (arg_node->nodetype);
+    new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    new_node->nnode = arg_node->nnode;
+    for (i = 0; i < MAX_SONS; i++)
+        if (NULL != arg_node->node[i])
+            new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    DBUG_RETURN (new_node);
+}
+
+/*
+ * This function is used for N_vardec & N_arg nodes
+ *
+ */
+node *
+DupDec (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupDec");
+    DBUG_ASSERT (((N_vardec == arg_node->nodetype) || (N_arg == arg_node->nodetype)),
+                 "wrong nodetype");
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    new_node = MakeNode (arg_node->nodetype);
+    new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    if (NULL != arg_node->node[0]) {
+        new_node->node[0] = Trav (arg_node->node[0], arg_info);
+        new_node->nnode = 1;
+    }
+
     DBUG_RETURN (new_node);
 }
