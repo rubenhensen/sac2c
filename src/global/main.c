@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/01/21 18:04:44  dkr
+ * include of lac2fun.h added
+ *
  * Revision 2.10  2000/01/21 13:19:53  jhs
  * Added new mt ... infrastructure expanded ...
  *
@@ -147,6 +150,7 @@
 #include "globals.h"
 #include "Error.h"
 #include "usage.h"
+#include "lac2fun.h"
 #include "flatten.h"
 #include "print.h"
 #include "typecheck.h"
@@ -379,6 +383,10 @@ main (int argc, char *argv[])
     if (break_after == PH_typecheck)
         goto BREAK;
     compiler_phase++;
+
+#if 0
+  syntax_tree = LaC2Fun( syntax_tree);
+#endif
 
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
