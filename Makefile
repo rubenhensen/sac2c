@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.39  1995/12/29 10:20:15  cg
+# Revision 1.40  1996/01/02 15:37:13  cg
+# added linking of scnprs.o and cccall.o
+#
+# Revision 1.39  1995/12/29  10:20:15  cg
 # added linking of readsib.o,
 # switched -pedantic off to avoid cast warnings
 #
@@ -139,7 +142,8 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
 	src/global/tree_basic.o src/global/tree_compound.o \
         src/global/free.o src/global/internal_lib.o
-SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
+SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
+       src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
@@ -152,7 +156,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
-         src/modules/checkdec.o src/modules/readsib.o
+         src/modules/checkdec.o src/modules/readsib.o \
+         src/modules/cccall.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
