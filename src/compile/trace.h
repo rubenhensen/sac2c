@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/05/22 12:06:51  sbs
+ * Revision 1.3  1995/05/24 13:58:04  sbs
+ * ctrl-l eliminated
+ *
+ * Revision 1.2  1995/05/22  12:06:51  sbs
  * TRACE_MEM inserted
  *
  * Revision 1.1  1995/05/04  11:48:35  sbs
