@@ -1,16 +1,15 @@
-ND_KS_VECT2OFFSET( myvect 2 3 4 5 6 )
+ND_KS_VECT2OFFSET( off arr 2 3 4 5 6 )
 clear-indent !
-ND_BEGIN_FOLDFUN( res 2 start stop iv 2 1 neutral )
+WL_BEGIN__OFFSET( res iv 3 )
+WL_END__OFFSET( res iv 3 )
 clear-indent !
 ND_CREATE_CONST_ARRAY_S( A 3 7 8 9 )
 clear-indent !
 MT_SPMD_FUN_DEC( myspmdfun originalfun 5 in float arg1 out double arg2 in_rc int* arg3 out_rc float* arg4 inout_rc double* arg5 )
-MT_START_SYNCBLOCK( 2 in float arg1 in_rc int* arg3 )
-MT_SYNC_NONFOLD( )
-MT_CONTINUE( 0 )
-MT_START_SYNCBLOCK( 2 in float arg1 in_rc int* arg3 )
-MT_SYNC_ONEFOLD( double arg2 tmp foldop )
-MT_SPMD_FUN_RET( 2 out arg2 out_rc arg4 )
+MT_START_SYNCBLOCK( 0 2 in_rc float* arg1 in int arg3 )
+MT_SYNC_NONFOLD( 0 )
+MT_CONTINUE( 0 0 )
+MT_START_SYNCBLOCK( 0 2 in float arg1 in_rc int* arg3 )
+MT_SYNC_ONEFOLD( 0 double arg2 tmp foldop )
+MT_SPMD_FUN_RET( 0 2 out arg2 out_rc arg4 )
 clear-indent !
-
-
