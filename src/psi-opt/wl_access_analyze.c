@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/04/25 17:17:18  bs
+ * Bug fixed in WLAAprf.
+ *
  * Revision 2.12  2000/01/31 19:29:50  bs
  * Function added: AddIntVec2Shpseg
  * Function modified: WLAAprf: the cases F_add_AxA and F_sub_AxA
@@ -966,47 +969,60 @@ WLAAprf (node *arg_node, node *arg_info)
                 }
                 if (IDS_DIM (INFO_WLAA_LASTLETIDS (arg_info)) == SCALAR) {
 
-                    DBUG_ASSERT ((NODE_TYPE (arg_node_arg1) == N_id),
-                                 "1st arg of psi is not variable");
+                    DBUG_ASSERT (((NODE_TYPE (arg_node_arg1) == N_id)
+                                  || (NODE_TYPE (arg_node_arg1) == N_array)),
+                                 "1st arg of psi is neither an array nor a variable");
                     DBUG_ASSERT ((NODE_TYPE (arg_node_arg2) == N_id),
                                  "2nd arg of psi is not variable");
 
-                    INFO_WLAA_ACCESS (arg_info)
-                      = MakeAccess (ID_VARDEC (arg_node_arg2), ID_VARDEC (arg_node_arg1),
-                                    ACL_unknown, NULL, ADIR_read,
-                                    INFO_WLAA_ACCESS (arg_info));
+                    if (NODE_TYPE (arg_node_arg1) == N_id) {
+                        INFO_WLAA_ACCESS (arg_info)
+                          = MakeAccess (ID_VARDEC (arg_node_arg2),
+                                        ID_VARDEC (arg_node_arg1), ACL_unknown, NULL,
+                                        ADIR_read, INFO_WLAA_ACCESS (arg_info));
+                        if (ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
+                            == INFO_WLAA_INDEXVAR (arg_info)) {
+                            /*
+                             * The array is accessed by the index vector of the
+                             * surrounding with-loop.
+                             */
+                            ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_offset;
+
+                            DBUG_ASSERT ((ID_DIM (arg_node_arg2) > 0),
+                                         "Unknown dimension for 2nd arg of psi");
+
+                            ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
+                              = IntVec2Shpseg (1, 0, NULL,
+                                               ACCESS_OFFSET (
+                                                 INFO_WLAA_ACCESS (arg_info)));
+                        } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
+                            ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_const;
+
+                            DBUG_ASSERT ((ID_VECLEN (arg_node_arg1) > SCALAR),
+                                         "propagated constant vector is no array");
+
+                            ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
+                              = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg1),
+                                               ((int *)ID_CONSTVEC (arg_node_arg1)),
+                                               ACCESS_OFFSET (
+                                                 INFO_WLAA_ACCESS (arg_info)));
+                        } else {
+                            /*
+                             * The first arg of psi is a variable. The offset of the
+                             * access have to be infered later.
+                             */
+                        }
+                    } else {
+                        INFO_WLAA_ACCESS (arg_info)
+                          = MakeAccess (ID_VARDEC (arg_node_arg2), NULL, ACL_const, NULL,
+                                        ADIR_read, INFO_WLAA_ACCESS (arg_info));
+                        ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
+                          = IntVec2Shpseg (1, ARRAY_VECLEN (arg_node_arg1),
+                                           ((int *)ARRAY_CONSTVEC (arg_node_arg1)),
+                                           ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
+                    }
                     INFO_WLAA_COUNT (arg_info)++;
 
-                    if (ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
-                        == INFO_WLAA_INDEXVAR (arg_info)) {
-                        /*
-                         * The array is accessed by the index vector of the surrounding
-                         * with-loop.
-                         */
-                        ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_offset;
-
-                        DBUG_ASSERT ((ID_DIM (arg_node_arg2) > 0),
-                                     "Unknown dimension for 2nd arg of psi");
-
-                        ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
-                          = IntVec2Shpseg (1, 0, NULL,
-                                           ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
-                    } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
-                        ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_const;
-
-                        DBUG_ASSERT ((ID_VECLEN (arg_node_arg1) > SCALAR),
-                                     "propagated constant vector is no array");
-
-                        ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
-                          = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg1),
-                                           ((int *)ID_CONSTVEC (arg_node_arg1)),
-                                           ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
-                    } else {
-                        /*
-                         * The first arg of psi is a variable. The offset of the access
-                         * have to be infered later.
-                         */
-                    }
                 } else {
                     DBUG_PRINT ("WLAA_INFO",
                                 ("primitive function psi with array return value"));
