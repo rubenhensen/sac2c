@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.17  1995/05/31 15:50:33  hw
- * changed information for node N_foldfun (node[1])
+ * Revision 1.18  1995/06/06 08:01:31  cg
+ * status in types added.
  *
+# Revision 1.17  1995/05/31  15:50:33  hw
+# changed information for node N_foldfun (node[1])
+#
 # Revision 1.16  1995/05/30  12:03:42  cg
 # Storage of constants and global objects in the syntax tree described.
 #
@@ -96,13 +99,16 @@ typedef struct NODE
           
 typedef struct TYPES{
    simpletype   simpletype;
-   char         *name;     /* only used for T_user !! */
-   char         *name_mod; /* name of modul belonging to 'name' */
-   int          dim;       /* if (dim == 0) => simpletype */
+   char         *name;         /* only used for T_user !! */
+   char         *name_mod;     /* name of modul belonging to 'name' */
+   int          dim;           /* if (dim == 0) => simpletype */
    shpseg       *shpseg;
-   struct TYPES *next;     /* only needed for fun-results */
-   id           *id;    /* Bezeichner  */
-   char         *id_mod;  /* name of modul belonging to 'id' */
+   struct TYPES *next;         /* only needed for fun-results */
+   id           *id;           /* Bezeichner  */
+   char         *id_mod;       /* name of modul belonging to 'id' */
+   statustype   status;        /* status of this type, used to identify */
+                               /* hidden, unique or artificially        */
+                               /* inserted types                        */
 } types;
  
 typedef struct IDS{
@@ -154,6 +160,8 @@ node[3]    : constdefs (N_constdef) if present...
               !! not yet implemented !!
 node[4]    : objdefs (N_objdef) if present...
               !! not yet implemented !!
+node[5]    : N_isclass node if module is a class implementation
+              !! not yet implemented !!
 info.id    : Modul name/ NULL if simple program.
 
 N_implist:
@@ -179,8 +187,10 @@ info.types : containes type and new typename (info.type->id) in one types-struct
 N_constdef:
 ==========
               !! not yet implemented !!
+nnode = 1/2 !!!
 node[0]    : value of constant (expr)
 node[1]    : subsequent constdefs if present...
+node[2]    : N_imported node if constant is imported from another module/class
 info.types : containes type and name of constant.
 
 N_objdef:
@@ -419,3 +429,15 @@ N_dec :
 =======
 /* this node indicates that the unary operator is a decrementation */
 
+N_imported:
+===========
+/* This node indicates that a constant is imported from another module/class. 
+   It is necessary because the value of the constant can be made public 
+   in a module/class declaration.
+*/
+
+N_class:
+========
+/* this node indicates that a module/class implementation is in fact a class
+   implementation.
+*/
