@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/09/11 16:00:43  cg
+ * Revision 1.42  1997/04/25 09:29:32  sbs
+ * NULL -> 0 in compaison with tyarg[0]
+ *
+ * Revision 1.41  1996/09/11  16:00:43  cg
  * bug fixed in FUN_DEC
  *
  * Revision 1.40  1996/09/11  06:28:20  cg
@@ -671,7 +674,7 @@ extern int check_boundary; /* defined in main.c */
           tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
           sep = 1,
 
-          if (NULL != (tyarg[i + 1])[0]) {
+          if (0 != (tyarg[i + 1])[0]) {
               fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
               sep = 1;
           } else {
@@ -679,7 +682,7 @@ extern int check_boundary; /* defined in main.c */
               sep = 1;
           },
 
-          if (NULL != (tyarg[i + 1])[0]) {
+          if (0 != (tyarg[i + 1])[0]) {
               fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
               sep = 1;
           } else {
@@ -691,7 +694,7 @@ extern int check_boundary; /* defined in main.c */
           sep = 1, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
           sep = 1,
 
-          if (NULL != (tyarg[i + 1])[0])
+          if (0 != (tyarg[i + 1])[0])
             fprintf (outfile, " ND_KS_DEC_IN_RC(%s, %s)", tyarg[i++], tyarg[i++]);
           else {
               fprintf (outfile, "ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i++]);
@@ -699,7 +702,7 @@ extern int check_boundary; /* defined in main.c */
           };
           sep = 1,
 
-          if (NULL != (tyarg[i + 1])[0])
+          if (0 != (tyarg[i + 1])[0])
             fprintf (outfile, " ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
           else {
               fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i++]);
@@ -707,7 +710,7 @@ extern int check_boundary; /* defined in main.c */
           };
           sep = 1,
 
-          if (NULL != (tyarg[i + 1])[0])
+          if (0 != (tyarg[i + 1])[0])
             fprintf (outfile, " ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
           else {
               fprintf (outfile, "ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i++]);
