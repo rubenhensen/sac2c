@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/06/26 14:06:24  hw
+ * Revision 1.10  1995/06/28 09:30:22  hw
+ * moved some macros form compile.h to typecheck.h
+ *
+ * Revision 1.9  1995/06/26  14:06:24  hw
  * added new macros (moved from compile.c )
  *
  * Revision 1.8  1995/06/08  17:48:57  hw
@@ -127,34 +130,6 @@ extern node *CompTypedef (node *arg_node, node *arg_info);
     first->node[1] = next;                                                               \
     first->nnode = 2;                                                                    \
     first = next
-
-/* and now some usefull macros to get some information */
-
-#define GET_DIM(result, type)                                                            \
-    if (T_user == type->simpletype) {                                                    \
-        result = LookupType (type->name, type->name_mod, 042)->DIM;                      \
-        result += type->dim;                                                             \
-    } else                                                                               \
-        result = type->dim
-
-#define GET_BASIC_TYPE(res, type)                                                        \
-    if (T_user == type->simpletype)                                                      \
-        res = LookupType (type->name, type->name_mod, 042)->SIMPLETYPE;                  \
-    else                                                                                 \
-        res = type->simpletype
-
-/* number of total elements of an array */
-#define GET_LENGTH(length, vardec_node)                                                  \
-    {                                                                                    \
-        types *type;                                                                     \
-        int i;                                                                           \
-        if (T_user == vardec_node->SIMPLETYPE)                                           \
-            type = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->TYPES;    \
-        else                                                                             \
-            type = vardec_node->TYPES;                                                   \
-        for (i = 0, length = 1; i < type->dim; i++)                                      \
-            length *= type->shpseg->shp[i];                                              \
-    }
 
 /* length of N_exprs-chain */
 #define COUNT_ELEMS(n, exprs)                                                            \

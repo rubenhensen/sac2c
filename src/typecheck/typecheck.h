@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.13  1995/06/23 12:38:43  hw
+ * Revision 1.14  1995/06/28 09:29:21  hw
+ * moved some macros form compile.h to typecheck.h
+ *
+ * Revision 1.13  1995/06/23  12:38:43  hw
  * added parameter to function 'DuplicateTypes'
  *
  * Revision 1.12  1995/04/20  10:23:43  asi
@@ -55,5 +58,33 @@ extern node *TCunaryOp (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
 extern types *DuplicateTypes (types *source, int share);
+
+/* and now some usefull macros to get some information */
+
+#define GET_DIM(result, type)                                                            \
+    if (T_user == type->simpletype) {                                                    \
+        result = LookupType (type->name, type->name_mod, 042)->DIM;                      \
+        result += type->dim;                                                             \
+    } else                                                                               \
+        result = type->dim
+
+#define GET_BASIC_TYPE(res, type)                                                        \
+    if (T_user == type->simpletype)                                                      \
+        res = LookupType (type->name, type->name_mod, 042)->SIMPLETYPE;                  \
+    else                                                                                 \
+        res = type->simpletype
+
+/* number of total elements of an array */
+#define GET_LENGTH(length, vardec_node)                                                  \
+    {                                                                                    \
+        types *type;                                                                     \
+        int i;                                                                           \
+        if (T_user == vardec_node->SIMPLETYPE)                                           \
+            type = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->TYPES;    \
+        else                                                                             \
+            type = vardec_node->TYPES;                                                   \
+        for (i = 0, length = 1; i < type->dim; i++)                                      \
+            length *= type->shpseg->shp[i];                                              \
+    }
 
 #endif /* _typecheck_h */
