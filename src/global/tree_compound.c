@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1999/01/19 14:20:38  sbs
+ * some warnings concerning uninitialized values eliminated.
+ *
  * Revision 1.41  1998/07/03 10:16:38  cg
  * new functions MakeIcm[012345] added
  * function AppendExpr renamed to AppendExprs
@@ -499,6 +502,7 @@ StoreNeededNode (node *insert, node *fundef, statustype status)
 
     default:
         DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreNeededNode`");
+        list = NULL;
     }
 
     if (list == NULL) {
@@ -590,15 +594,20 @@ TidyUpNodelist (nodelist *list)
 
     first = list;
 
-    while (list != NULL) {
-        if (NODELIST_STATUS (list) == ST_artificial) {
-            tmp = list;
-            NODELIST_NEXT (last) = NODELIST_NEXT (list);
-            list = NODELIST_NEXT (list);
-            FREE (tmp);
-        } else {
-            last = list;
-            list = NODELIST_NEXT (list);
+    if (list != NULL) {
+        last = list;
+        list = NODELIST_NEXT (list);
+
+        while (list != NULL) {
+            if (NODELIST_STATUS (list) == ST_artificial) {
+                tmp = list;
+                NODELIST_NEXT (last) = NODELIST_NEXT (list);
+                list = NODELIST_NEXT (list);
+                FREE (tmp);
+            } else {
+                last = list;
+                list = NODELIST_NEXT (list);
+            }
         }
     }
 
