@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.2  2000/06/23 15:30:58  dkr
+ * minor changes done
+ *
  * Revision 2.1  1999/02/23 12:43:02  sacbase
  * new release made
  *
@@ -18,8 +20,6 @@
  *
  * Revision 1.1  1998/04/29 17:17:17  dkr
  * Initial revision
- *
- *
  */
 
 #ifndef _sac_wltransform_h
