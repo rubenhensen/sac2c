@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2004/12/09 12:26:27  sbs
+ * never correct AP_NAMEs anymore pls!!!!
+ * corrected severe problem in DUPcheckAndDupSpecialFundef
+ *
  * Revision 3.135  2004/12/08 18:02:40  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -3321,11 +3325,6 @@ DUPcheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
             DBUG_ASSERT ((FUNDEF_INT_ASSIGN (new_fundef) != NULL),
                          "missing link to recursive function call");
 
-            AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
-              = ILIBfree (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
-            AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
-              = ILIBstringCopy (FUNDEF_NAME (new_fundef));
-
             AP_FUNDEF (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))) = new_fundef;
         }
 
@@ -3334,8 +3333,6 @@ DUPcheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         FUNDEF_USED (new_fundef) = 1;
 
         /* rename the external assign/funap */
-        AP_NAME (ASSIGN_RHS (assign)) = ILIBfree (AP_NAME (ASSIGN_RHS (assign)));
-        AP_NAME (ASSIGN_RHS (assign)) = ILIBstringCopy (new_name);
         AP_FUNDEF (ASSIGN_RHS (assign)) = new_fundef;
 
         /* add new fundef to global chain of fundefs */
