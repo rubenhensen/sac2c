@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/05/12 08:17:40  skt
+ * added conditional to check out ssa flag before using mtmode 3
+ *
  * Revision 3.38  2004/05/11 12:49:47  ktr
  * Order of phases wltransform, refcount and mt streamlined
  *
@@ -579,6 +582,11 @@ main (int argc, char *argv[])
         NOTE_COMPILER_PHASE;
         NOTE (("Using mt/st-block version of multithreading (MT3)"));
         /* this version of multithreading is only for code in SSA-form */
+        if (!use_ssaform) {
+            SYSABORT (("Use of mtmode 3 implied ssa-form!\n Please use the -ssa flag "
+                       "additionally."));
+        }
+
         /* After SSA-Refcounting, Code is already in SSA-Form */
         /* syntax_tree = DoSSA(syntax_tree); */
         syntax_tree = BuildMultiThread (syntax_tree);
