@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2001/05/07 09:07:35  nmw
+ * AST2Constant uses type information when called for an id node
+ *
  * Revision 1.8  2001/05/03 16:53:43  nmw
  * COIsZero/COIsOne compares ALL elements
  *
@@ -622,6 +625,15 @@ COAST2Constant (node *n)
 
         case N_id:
             new_co = COCopyConstant (AVIS_SSACONST (ID_AVIS (n)));
+
+            /* update constants shape info according to type info */
+            DBUG_ASSERT ((TYPES_BASETYPE (
+                            VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))))
+                          == CONSTANT_TYPE (new_co)),
+                         "different basetype in id and assigned array");
+            CONSTANT_SHAPE (new_co) = SHFreeShape (CONSTANT_SHAPE (new_co));
+            CONSTANT_SHAPE (new_co)
+              = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))));
             break;
 
         default:
