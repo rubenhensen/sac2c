@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/06/27 17:01:48  dkr
+ * - CheckOptimize...() works also for nested WLs now
+ * - CreateSel() used now
+ *
  * Revision 3.12  2002/06/21 14:03:24  dkr
  * Zero-Arrays are build correctly now (by CreateZero...())
  *
@@ -414,7 +418,7 @@ check_genarray_full_part (node *wln)
 static node *
 CreateFullPartition (node *wln, node *arg_info)
 {
-    node *coden, *sel_index, *sel_array, *idn;
+    node *coden, *idn;
     ids *_ids;
     intern_gen *ig;
     types *type;
@@ -504,11 +508,14 @@ CreateFullPartition (node *wln, node *arg_info)
             /* create a zero of the correct type */
             coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
         } else { /* modarray */
-            _ids = NWITH_VEC (wln);
-            sel_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
-            ID_VARDEC (sel_index) = IDS_VARDEC (_ids);
-            sel_array = DupTree (NWITH_ARRAY (wln));
-            coden = MakePrf (F_sel, MakeExprs (sel_index, MakeExprs (sel_array, NULL)));
+            /*
+             * we build NO with-loop here in order to ease optimizations
+             *    B = modarray( A, iv, sel( iv, A));   ->   B = A;
+             * and to avoid loss of performance
+             *    sel( iv, A)   ->   idx_sel( ..., A)
+             */
+            coden = CreateSel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln), TRUE,
+                               INFO_WLI_FUNDEF (arg_info));
         }
         varname = TmpVar ();
         _ids = MakeIds (varname, NULL, ST_regular);
@@ -570,39 +577,44 @@ CheckOptimizeSel (node *sel, node *arg_info)
 
     DBUG_ENTER ("CheckOptimizeSel");
 
-    /* first check if the array is the index vector and the index is a
-       constant in range. */
-    ivn = PRF_ARG2 (sel);
-    indexn = PRF_ARG1 (sel);
+    while ((arg_info != NULL) && (INFO_WLI_WL (arg_info) != NULL)) {
+        /* first check if the array is the index vector and the index is a
+           constant in range. */
+        ivn = PRF_ARG2 (sel);
+        indexn = PRF_ARG1 (sel);
 
-    if (N_id == NODE_TYPE (indexn)) {
-        datan = MRD_GETDATA (ID_VARNO (indexn), INFO_VARNO (arg_info));
-    } else {
-        datan = indexn;
-    }
-
-    if (datan && N_array == NODE_TYPE (datan)
-        && N_num == NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (datan)))
-        && -1 == LocateIndexVar (ivn, INFO_WLI_WL (arg_info))) {
-        index = NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (datan)));
-
-        /* find index'th scalar index var */
-        _ids = NWITH_IDS (INFO_WLI_WL (arg_info));
-        while (index > 0 && IDS_NEXT (_ids)) {
-            index--;
-            _ids = IDS_NEXT (_ids);
+        if (N_id == NODE_TYPE (indexn)) {
+            datan = MRD_GETDATA (ID_VARNO (indexn), INFO_VARNO (arg_info));
+        } else {
+            datan = indexn;
         }
 
-        if (!index) { /* found scalar index var. */
-            INFO_USE[ID_VARNO (ivn)]--;
-            if (N_id == NODE_TYPE (indexn))
-                INFO_USE[ID_VARNO (indexn)]--;
-            sel = FreeTree (sel);
-            sel = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
-            ID_VARDEC (sel) = IDS_VARDEC (_ids);
-            INFO_USE[IDS_VARNO (_ids)]++;
-            wlt_expr++;
+        if (datan && (N_array == NODE_TYPE (datan))
+            && (N_num == NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (datan))))
+            && (-1 == LocateIndexVar (ivn, INFO_WLI_WL (arg_info)))) {
+            index = NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (datan)));
+
+            /* find index'th scalar index var */
+            _ids = NWITH_IDS (INFO_WLI_WL (arg_info));
+            while (index > 0 && IDS_NEXT (_ids)) {
+                index--;
+                _ids = IDS_NEXT (_ids);
+            }
+
+            if (!index) { /* found scalar index var. */
+                INFO_USE[ID_VARNO (ivn)]--;
+                if (N_id == NODE_TYPE (indexn))
+                    INFO_USE[ID_VARNO (indexn)]--;
+                sel = FreeTree (sel);
+                sel = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
+                ID_VARDEC (sel) = IDS_VARDEC (_ids);
+                INFO_USE[IDS_VARNO (_ids)]++;
+                wlt_expr++;
+                break;
+            }
         }
+
+        arg_info = INFO_WLI_NEXT (arg_info);
     }
 
     DBUG_RETURN (sel);
@@ -632,39 +644,46 @@ CheckOptimizeArray (node *array, node *arg_info)
     char *vec_name;
 
     DBUG_ENTER ("CheckOptimizeArray");
+
     DBUG_ASSERT ((N_array == NODE_TYPE (array)), "no N_array node");
 
-    /* shape of index vector */
-    _ids = NWITH_VEC (INFO_WLI_WL (arg_info));
+    while ((arg_info != NULL) && (INFO_WLI_WL (arg_info) != NULL)) {
+        /* shape of index vector */
+        _ids = NWITH_VEC (INFO_WLI_WL (arg_info));
 
-    tmpn = ARRAY_AELEMS (array);
-    elts = 0;
-    while (tmpn) {
-        if (N_id == NODE_TYPE (EXPRS_EXPR (tmpn))
-            && LocateIndexVar (EXPRS_EXPR (tmpn), INFO_WLI_WL (arg_info)) == elts + 1) {
-            elts++;
-            tmpn = EXPRS_NEXT (tmpn);
-        } else {
-            tmpn = NULL;
-            elts = 0;
-        }
-    }
-
-    if (elts == IDS_SHAPE (_ids, 0)) { /* change to index vector */
-        /* adjust USE mask */
         tmpn = ARRAY_AELEMS (array);
-        for (i = 0; i < elts; i++) {
-            INFO_USE[ID_VARNO (EXPRS_EXPR (tmpn))]--;
-            tmpn = EXPRS_NEXT (tmpn);
+        elts = 0;
+        while (tmpn) {
+            if ((N_id == NODE_TYPE (EXPRS_EXPR (tmpn)))
+                && (LocateIndexVar (EXPRS_EXPR (tmpn), INFO_WLI_WL (arg_info))
+                    == elts + 1)) {
+                elts++;
+                tmpn = EXPRS_NEXT (tmpn);
+            } else {
+                tmpn = NULL;
+                elts = 0;
+            }
         }
 
-        /* free subtree and make new id node. */
-        array = FreeTree (array);
-        vec_name = StringCopy (IDS_NAME (_ids));
-        array = MakeId (vec_name, NULL, ST_regular);
-        ID_VARDEC (array) = IDS_VARDEC (_ids);
-        INFO_USE[IDS_VARNO (_ids)]++;
-        wlt_expr++;
+        if (elts == IDS_SHAPE (_ids, 0)) { /* change to index vector */
+            /* adjust USE mask */
+            tmpn = ARRAY_AELEMS (array);
+            for (i = 0; i < elts; i++) {
+                INFO_USE[ID_VARNO (EXPRS_EXPR (tmpn))]--;
+                tmpn = EXPRS_NEXT (tmpn);
+            }
+
+            /* free subtree and make new id node. */
+            array = FreeTree (array);
+            vec_name = StringCopy (IDS_NAME (_ids));
+            array = MakeId (vec_name, NULL, ST_regular);
+            ID_VARDEC (array) = IDS_VARDEC (_ids);
+            INFO_USE[IDS_VARNO (_ids)]++;
+            wlt_expr++;
+            break;
+        }
+
+        arg_info = INFO_WLI_NEXT (arg_info);
     }
 
     DBUG_RETURN (array);
