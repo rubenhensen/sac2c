@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.147  1998/05/08 00:55:50  dkr
+ * removed unused vars
+ *
  * Revision 1.146  1998/05/08 00:44:52  dkr
  * with-loop:
  *   index-vector is now set up correctly, if needed.
@@ -6309,8 +6312,8 @@ node *wl_withid = NULL;
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_arg, *last_icm_arg, *vardec;
-    ids *wl_ids, *withid_ids, *in_ids, *new_in_ids, *last_in_ids;
+    node *icm_args, *icm_arg, *last_icm_arg;
+    ids *wl_ids, *withid_ids;
     int num_args;
     node *assigns = NULL;
 
