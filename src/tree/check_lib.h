@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/02/11 14:49:34  jhb
+ * change CHKdoCheck in CHKdoTreeCheck
+ *
  * Revision 1.4  2005/02/10 14:08:49  jhb
  * change the revisionslog
  *
@@ -22,7 +25,7 @@
  * Prefix: CHK
  *
  *****************************************************************************/
-extern node *CHKdoCheck (node *syntax_tree);
+extern node *CHKdoTreeCheck (node *syntax_tree);
 
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
 extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/02/11 14:48:56  jhb
+ * change CHKdoCheck in CHKdoTreeCheck
+ *
  * Revision 1.5  2005/02/10 14:08:49  jhb
  * change the revisionslog
  *
@@ -42,15 +45,15 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CHKdoCheck( node *syntax_tree)
+ * @fn node *CHKdoTreeCheck( node *syntax_tree)
  *
  *****************************************************************************/
 node *
-CHKdoCheck (node *syntax_tree)
+CHKdoTreeCheck (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CHKdoCheck");
+    DBUG_ENTER ("CHKdoTreeCheck");
 
     DBUG_PRINT ("CHK", ("Starting the Checkmechanism"));
 
