@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1997/08/07 13:52:13  dkr
+ * *** empty log message ***
+ *
  * Revision 1.50  1997/08/07 11:13:38  dkr
  * added option -_DBUG<from>/<to>/<string>
  *
@@ -190,7 +193,7 @@ usage (char *prg_name)
 
     printf ("\t -# <string>\t\t\toptions (string) for DBUG information\n"
             "\t\t\t\t\t  (\"-#<string>\" is aquivalent to \"-_DBUG //<string>\")\n");
-    printf ("\t -_DBUG <from>/<to>/<string>\tDBUG information only in compiler phases "
+    printf ("\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases "
             "<from>..<to>\n"
             "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n");
     printf ("\t -I <path>\t\t\tspecify additional declaration path\n");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.98  1997/08/07 13:53:30  dkr
+ * *** empty log message ***
+ *
  * Revision 1.97  1997/08/07 11:11:43  dkr
  * added option -_DBUG<from>/<to>/<string>
  *
@@ -498,9 +501,6 @@ MAIN
     {
         if (!strncmp (*argv, "DBUG", 4)) {
             (*argv) += 4;
-
-            while (**argv == ' ')
-                (*argv)++;
 
             if (**argv != 0) {
                 dbug_from = strtol (*argv, argv, 10);
