@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.44  1997/04/25 12:13:52  sbs
+ * Revision 1.45  1997/05/14 08:17:59  sbs
+ * error with_0001.sac solved:
+ * a = with.... now PUSHES a on stack!
+ *
+ * Revision 1.44  1997/04/25  12:13:52  sbs
  * malloc replaced by Malloc
  *
  * Revision 1.43  1996/09/11  06:10:04  cg
@@ -1267,7 +1271,7 @@ FltnLet (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnLet");
 
     ids = arg_node->IDS;
-    if (N_with != arg_node->node[0]->nodetype) {
+    if (N_with != NODE_TYPE (LET_EXPR (arg_node))) {
         while (NULL != ids) {
             tmp = FindId (ids->id);
             if (NULL == tmp) {
@@ -1304,6 +1308,8 @@ FltnLet (node *arg_node, node *arg_info)
             PUSH (ids->id, new_name, with_level);
             ids->id = StringCopy (let_name);
             new_assign = AppendIdentity (new_assign, StringCopy (tmp->id_new), new_name);
+        } else {
+            PUSH (ids->id, ids->id, with_level);
         }
     }
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
@@ -1377,19 +1383,18 @@ FltnCon (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnCon");
     info_node = MakeNode (N_info);
 
-    switch (arg_node->nodetype) {
+    switch (NODE_TYPE (arg_node)) {
     case N_modarray: {
         if ((N_prf == arg_node->node[0]->nodetype)
             || (N_ap == arg_node->node[0]->nodetype)
             || (N_array == arg_node->node[0]->nodetype)) {
             int old_tag = arg_info->info.cint;
-            node *exprs = MakeNode (N_exprs);
-            exprs->node[0] = arg_node->node[0];
+            node *exprs = MakeExprs (MODARRAY_ARRAY (arg_node), NULL);
             exprs->nnode = 1;
             arg_info->info.cint = MODARRAY;
             exprs = Trav (exprs, arg_info);
             arg_info->info.cint = old_tag;
-            arg_node->node[0] = exprs->node[0];
+            MODARRAY_ARRAY (arg_node) = EXPRS_EXPR (exprs);
             FREE (exprs);
         } else
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
