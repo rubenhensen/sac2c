@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2004/11/23 15:53:20  ktr
+ * Corrected WITHOP_NEXT
+ *
  * Revision 3.114  2004/11/23 15:24:11  mwe
  * *** empty log message ***
  *
@@ -1697,13 +1700,13 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_withop :
+ ***  withop :
  ***/
 
 #define WITHOP_NEXT(n)                                                                   \
-   ( ( NODE_TYPE(n) == N_genarray) ? GENARRAY_NEXT(n) :          \
-   ( ( NODE_TYPE(n) == N_modarray) ? MODARRAY_NEXT(n) :          \
-   ( ( NODE_TYPE(n) == N_fold) ? FOLD_NEXT(n))))
+    ((NODE_TYPE (n) == N_genarray)                                                       \
+       ? GENARRAY_NEXT (n)                                                               \
+       : ((NODE_TYPE (n) == N_modarray) ? MODARRAY_NEXT (n) : FOLD_NEXT (n)))
 
 /*--------------------------------------------------------------------------*/
 
