@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/03/08 10:39:40  hw
+ * Revision 1.9  1995/03/13 15:13:36  asi
+ * added initialization of 'varno' in MakeNode
+ *
+ * Revision 1.8  1995/03/08  10:39:40  hw
  * - added initialization of refcnt in MakeNode
  *
  * Revision 1.7  1995/02/22  10:48:08  hw
@@ -101,9 +104,10 @@ MakeNode (nodetype nodetype)
         tmp->node[i] = NULL;
     tmp->nnode = 0;
     tmp->info.id = NULL;
+    tmp->varno = 0;
     tmp->lineno = linenum;
     tmp->refcnt = 0;
-    for (i = 0; i < MAX_MASK; i++)
+    for (i = 0; i < MAX_MASK - 1; i++)
         tmp->mask[i] = NULL;
 
     DBUG_PRINT ("MAKENODE",
