@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/04 17:23:14  cg
+ * Bug fixed in free(), dignostic heap management now works with
+ * refernce counter allocation optimization.
+ *
  * Revision 1.3  2000/01/17 17:58:45  cg
  * Added support for optimized allocation of refernce counters.
  *
@@ -200,12 +204,12 @@ free (void *addr)
     SAC_HM_arena_t *arena;
 
     if (addr != NULL) {
-        DIAG_CHECK_ALLOCPATTERN_ANYCHUNK ((SAC_HM_header_t *)addr);
         arena = SAC_HM_ADDR_ARENA (addr);
 
-        DIAG_INC (arena->cnt_free_var_size);
-
         if (arena != NULL) {
+            DIAG_CHECK_ALLOCPATTERN_ANYCHUNK ((SAC_HM_header_t *)addr);
+            DIAG_INC (arena->cnt_free_var_size);
+
             if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
                 SAC_HM_FreeSmallChunk (addr, arena);
                 return;
