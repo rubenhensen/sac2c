@@ -33,3 +33,4 @@ tree_compound.h
 type_info.mac
 wl_bounds.c
 wl_bounds.h
+node_compat.h
