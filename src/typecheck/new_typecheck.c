@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/08/14 16:22:21  dkr
+ * SSATransform() after CreateWrapperCode() added
+ *
  * Revision 3.11  2002/08/09 13:00:43  dkr
  * call of CreateWrapperCode() added
  *
@@ -349,6 +352,7 @@ NTCmodul (node *arg_node, node *arg_info)
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cwc"))) {
         goto DONE;
     }
+    arg_node = SSATransform (arg_node);
 
     /*
      *
