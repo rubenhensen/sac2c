@@ -126,6 +126,30 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
                    "/usr/lib"
 
 
+ 
+ 
+ 
+/*******************************************************************************
+ *
+ * target hoard: use the Hoard memory allocator instead of regular malloc
+ *
+ */
+
+target hoard:
+
+CCMTLINK        :=  "-lhoard -lpthread -lthread -lrt"
+
+
+/*******************************************************************************
+ *
+ * target mtmalloc: use the Sun mtmalloc library instead of regular malloc
+ *
+ */
+
+target mtmalloc:
+
+CCMTLINK        +=  -lmtmalloc
+
 
 /*******************************************************************************
  *
@@ -269,6 +293,70 @@ CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
 
 
 target picard_cc::suncc::ultra2_entr4000:
+
+CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
+
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using gcc and SUN mtmalloc
+ *
+ */
+
+target blitz_mtmalloc::ultra_entr3000::mtmalloc:
+
+
+target picard_mtmalloc::ultra2_entr4000::mtmalloc:
+
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using Sun cc and SUN mtmalloc
+ *
+ */
+
+target blitz_cc_mtmalloc::suncc::ultra_entr3000::mtmalloc:
+
+CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
+
+
+target picard_cc_mtmalloc::suncc::ultra2_entr4000::mtmalloc:
+
+CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
+
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using gcc and Hoard
+ *
+ */
+
+target blitz_hoard::ultra_entr3000::hoard:
+
+
+target picard_hoard::ultra2_entr4000::hoard:
+
+
+
+
+/*******************************************************************************
+ *
+ * specific machine targets using Sun cc and Hoard
+ *
+ */
+
+target blitz_cc_hoard::suncc::ultra_entr3000::hoard:
+
+CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
+
+
+target picard_cc_hoard::suncc::ultra2_entr4000::hoard:
 
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
 
