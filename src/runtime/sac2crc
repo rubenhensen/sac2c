@@ -88,6 +88,24 @@ CACHE3_ASSOC   :=  0
 /*******************************************************************************/
 
 
+target suncc:
+
+CC             :=  cc
+CCFLAGS        :=  ""
+
+OPT_O0         :=  ""
+OPT_O1         :=  -xO3
+OPT_O2         :=  -xO4
+OPT_O3         :=  -xO5
+
+SYSTEM_LIBPATH :=  "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/ccs/bin:"
+                   "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/ccs/lib:"
+                   "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/lib:"
+                   "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                   "/usr/lib"
 
 
 
