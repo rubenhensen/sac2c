@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/01/24 23:34:01  dkr
+ * signature of MakeWLgrid() and MakeWLgridVar() modified
+ * signature of MakeWLseg() and MakeWLsegVar() modified
+ * WLGRIDX_FITTED added
+ *
  * Revision 3.16  2001/01/19 11:56:10  dkr
  * NWITH2_OFFSET_NEEDED added
  *
@@ -1774,6 +1779,8 @@ extern node *MakeId (char *name, char *mod, statustype status);
 
 extern node *MakeId_Copy (char *str);
 
+extern node *MakeId_Num (int val);
+
 #define ID_IDS(n) (n->info.ids)
 #define ID_NAME(n) (n->info.ids->id)
 #define ID_DEF(n) (n->info.ids->def)
@@ -3275,7 +3282,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_DIMS(n) ((n)->refcnt)
 #define WLSEGX_CONTENTS(n) ((n)->node[0])
 #define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
-#define WLSEGX_FULL_RANGE(n) ((bool)((n)->counter))
 #define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
 #define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 #define WLSEGX_BLOCKS(n) ((n)->flag)
@@ -3312,6 +3318,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 #define WLGRIDX_LEVEL(n) (WLNODE_LEVEL (n))
 #define WLGRIDX_DIM(n) (WLNODE_DIM (n))
+#define WLGRIDX_FITTED(n) ((bool)((n)->varno))
 #define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRIDX_CODE(n) ((n)->node[4])
@@ -3329,7 +3336,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***  permanent attributes:
  ***
  ***    int        DIMS        [number of dims]
- ***    bool       FULL_RANGE  [domain of segment of full range?]
  ***
  ***  temporary attributes:
  ***
@@ -3357,10 +3363,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***      (HOMSV[i] > 0)   <->  (i <= MAXHOMDIM).
  ***/
 
-extern node *MakeWLseg (int dims, bool full_range, node *contents, node *next);
+extern node *MakeWLseg (int dims, node *contents, node *next);
 
 #define WLSEG_DIMS(n) (WLSEGX_DIMS (n))
-#define WLSEG_FULL_RANGE(n) (WLSEGX_FULL_RANGE (n))
 #define WLSEG_CONTENTS(n) (WLSEGX_CONTENTS (n))
 #define WLSEG_NEXT(n) (WLSEGX_NEXT (n))
 
@@ -3389,7 +3394,6 @@ extern node *MakeWLseg (int dims, bool full_range, node *contents, node *next);
  ***  permanent attributes:
  ***
  ***    int        DIMS        [number of dims]
- ***    bool       FULL_RANGE  [domain of segment of full range?]
  ***
  ***  temporary attributes:
  ***
@@ -3411,10 +3415,9 @@ extern node *MakeWLseg (int dims, bool full_range, node *contents, node *next);
  ***      size DIMS.
  ***/
 
-extern node *MakeWLsegVar (int dims, bool full_range, node *contents, node *next);
+extern node *MakeWLsegVar (int dims, node *contents, node *next);
 
 #define WLSEGVAR_DIMS(n) (WLSEGX_DIMS (n))
-#define WLSEGVAR_FULL_RANGE(n) (WLSEGX_FULL_RANGE (n))
 #define WLSEGVAR_CONTENTS(n) (WLSEGX_CONTENTS (n))
 #define WLSEGVAR_NEXT(n) (WLSEGX_NEXT (n))
 
@@ -3601,6 +3604,7 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
  ***    int     BOUND1
  ***    int     BOUND2
  ***    bool    UNROLLING
+ ***    bool    FITTED
  ***
  ***  temporary attributes:
  ***
@@ -3615,13 +3619,14 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
  ***/
 
 extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling,
-                         node *nextdim, node *next, node *code);
+                         bool fitted, node *nextdim, node *next, node *code);
 
 #define WLGRID_LEVEL(n) (WLGRIDX_LEVEL (n))
 #define WLGRID_DIM(n) (WLGRIDX_DIM (n))
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLGRID_UNROLLING(n) ((bool)((n)->info.prf_dec.tag))
+#define WLGRID_FITTED(n) (WLGRIDX_FITTED (n))
 #define WLGRID_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
 #define WLGRID_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRID_CODE(n) (WLGRIDX_CODE (n))
@@ -3645,6 +3650,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***    node*    CODE            (N_Ncode)
  ***    int      LEVEL
  ***    int      DIM
+ ***    bool     FITTED
  ***
  ***  temporary attributes:
  ***
@@ -3658,13 +3664,14 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***      operation.
  ***/
 
-extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim,
-                            node *next, node *code);
+extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool fitted,
+                            node *nextdim, node *next, node *code);
 
 #define WLGRIDVAR_LEVEL(n) (WLGRIDX_LEVEL (n))
 #define WLGRIDVAR_DIM(n) (WLGRIDX_DIM (n))
 #define WLGRIDVAR_BOUND1(n) ((n)->node[2])
 #define WLGRIDVAR_BOUND2(n) ((n)->node[3])
+#define WLGRIDVAR_FITTED(n) (WLGRIDX_FITTED (n))
 #define WLGRIDVAR_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
 #define WLGRIDVAR_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRIDVAR_CODE(n) (WLGRIDX_CODE (n))
