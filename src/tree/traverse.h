@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/03/09 18:37:00  jhs
+ * dfa, blkpp
+ *
  * Revision 1.9  2000/03/02 13:05:38  jhs
  * Added blkco_tab, added functiobns for BLKCO and MTFIN.
  *
@@ -139,6 +142,8 @@ extern funtab *mtfin_tab;
 extern funtab *l2f_infer_tab;
 extern funtab *l2f_lift_tab;
 extern funtab *blkco_tab;
+extern funtab *dfa_tab;
+extern funtab *blkpp_tab;
 
 extern int nnode[];
 

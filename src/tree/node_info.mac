@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2000/03/09 18:36:43  jhs
+ * dfa, blkpp
+ *
  * Revision 1.21  2000/03/02 13:05:38  jhs
  * Added blkco_tab, added functiobns for BLKCO and MTFIN.
  *
@@ -15,7 +18,7 @@
  *
  * Revision 1.17  2000/02/21 17:55:39  jhs
  * Added blkex_tab.
- * Added LOST OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
+ * Added LOSTS OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
  *
  * Revision 1.16  2000/02/17 16:21:13  cg
  * Added new tree traversal function tables fun2lac_tab and ai_tab.
@@ -68,67 +71,7 @@
  * Revision 2.23  2000/01/21 14:27:29  jhs
  * Added muth_tab ...
  *
- * Revision 2.22  2000/01/21 12:41:38  dkr
- * Functions for lac2fun added .
- *
- * Revision 2.21  1999/11/16 12:03:45  dkr
- * PrintNgenerator activated for WriteSib
- *
- * Revision 2.20  1999/11/11 18:26:51  dkr
- * PrintNgenerator is now called by Trav only :))
- *
- * Revision 2.19  1999/10/19 17:09:50  sbs
- * ntc_tab added
- *
- * Revision 2.18  1999/08/27 11:04:49  jhs
- * Added spmdco_tab and adjusted names of functions out of spmd_trav.
- *
- * Revision 2.17  1999/08/09 11:29:20  jhs
- * Added SPMDPMassign.
- *
- * Revision 2.16  1999/08/05 13:33:11  jhs
- * Added traversals spmdlc, spmddn and spmdpm.
- *
- * Revision 2.15  1999/08/04 14:33:26  bs
- * TSI traverse functions added.
- *
- * Revision 2.14  1999/07/28 12:59:32  jhs
- * Added spmdcons_tab.
- *
- * Revision 2.13  1999/07/26 11:24:10  jhs
- * Commented restructured version. Reformated and brushed up the code.
- *
- * Revision 2.12  1999/07/23 17:17:46  jhs
- * Restructured node_info.mac and simplified it's usage.
- *
- * Revision 2.11  1999/07/23 12:43:38  cg
- * Added function SCHEDnwith2() for sched_tab.
- *
- * Revision 2.10  1999/07/21 10:22:20  jhs
- * Added SYNCOsync and SYNCOassign (from my former patched version).
- *
- * Revision 2.9  1999/07/15 20:39:39  sbs
- * CFarray added.
- *
- * Revision 2.8  1999/07/14 12:14:08  sbs
- * some Idx... funs added.
- *
- * Revision 2.7  1999/07/07 06:02:08  sbs
- * added some IdxXXX funs needed for IVE
- *
- * Revision 2.6  1999/06/25 14:59:40  jhs
- * Added spmdrmtrav_tab and spmdrotrav_tab.
- *
- * Revision 2.5  1999/05/26 14:32:23  jhs
- * Added options MTO and SBE for multi-thread optimsation and
- * synchronisation barrier elimination, both options are by
- * default disabled.
- *
- * Revision 2.4  1999/05/10 10:52:33  bs
- * TSI renamed to WLAA
- *
- * Revision 2.3  1999/04/13 14:01:48  cg
- * added function DupBlock for duplication of N_block nodes.
+ * [...]
  *
  * Revision 2.2  1999/02/25 10:59:39  bs
  * N_Array: DupTypes changed to DupArray.
@@ -139,40 +82,6 @@
  * Revision 1.223  1999/01/15 17:00:40  sbs
  * freemask_tab added
  * format slightly changed (empty line after each five lines!)
- *
- * Revision 1.222  1999/01/15 15:14:32  cg
- * added tsi_tab for new compiler module tile size inference.
- *
- * Revision 1.221  1999/01/08 13:01:38  cg
- * added functions ANAfundef and ANAnwithop for analy_tab.
- *
- * Revision 1.220  1999/01/07 14:02:33  sbs
- * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
- *
- * Revision 1.219  1998/08/07 14:38:01  dkr
- * stuff for N_WLsegVar added
- *
- * Revision 1.218  1998/08/06 15:39:13  dkr
- * added OPTicm
- *
- * Revision 1.217  1998/07/03 10:14:49  cg
- * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
- *
- * Revision 1.216  1998/06/23 12:40:07  cg
- * added function PRECspmd for precompile table
- *
- * Revision 1.215  1998/06/18 13:42:42  cg
- * traversal function tables related to spmd- and sync blocks
- * completely revised.
- *
- * Revision 1.214  1998/06/07 18:39:07  dkr
- * added entries for reuse_tab
- *
- * Revision 1.212  1998/06/03 14:27:35  cg
- * added some more functions for precomp_tab for renaming purposes
- *
- * Revision 1.211  1998/05/21 13:30:12  dkr
- * added SPMDLiftNwith2
  *
  * ... [eliminated]
  *
@@ -213,7 +122,7 @@
  *
  *   muth_tab        schin_tab       blkin_tab       rfin_tab
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
- *   l2f_lift_tab    blkco_tab       unused_tab3     unused_tab4
+ *   l2f_lift_tab    blkco_tab       dfa_tab         blkpp_tab
  *
  *   nnode
  *
@@ -487,9 +396,14 @@
 #ifndef NIFl2f_lift
 #define NIFl2f_lift(it_l2f_lift)
 #endif
-
 #ifndef NIFblkco
 #define NIFblkco(it_blkco)
+#endif
+#ifndef NIFdfa
+#define NIFdfa(it_dfa)
+#endif
+#ifndef NIFblkpp
+#define NIFblkpp(it_blkpp)
 #endif
 
 #ifndef NIFnnode
@@ -517,7 +431,7 @@
   it_spmdpm, it_spmdco, it_ntc, it_l2f_infer,                                            \
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
-  it_l2f_lift, it_blkco, it_unused3, it_unused4, it_unused5, it_unused6, it_unused7,     \
+  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_unused5, it_unused6, it_unused7,           \
   it_unused8, it_unused9, it_unusedA, it_unusedB, it_unusedC,                            \
                                                                                          \
   nnode)                                                                                 \
@@ -533,31 +447,30 @@
               NIFwritesib (it_writesib) NIFobj (it_obj) NIFimpltype (it_impltype)        \
                 NIFobjinit (it_objinit) NIFanaly (it_analy) NIFcheckdec (it_checkdec)    \
                   NIFwritedec (it_writedec) NIFunique (it_unique) NIFrmvoid (it_rmvoid)  \
-                    NIFprecomp (it_precomp) NIFactive (it_active)                        \
-                      NIFreadsib (it_readsib) NIFwlt (it_wlt) NIFcse (it_cse)            \
-                        NIFdfr (it_dfr) NIFtcwl (it_tcwl) NIFspmdinit (it_spmdinit)      \
-                          NIFspmdopt (it_spmdopt) NIFspmdlift (it_spmdlift)              \
-                            NIFsyncinit (it_syncinit)                                    \
+                    NIFprecomp (it_precomp) NIFactive (it_active) NIFreadsib (           \
+                      it_readsib) NIFwlt (it_wlt) NIFcse (it_cse) NIFdfr (it_dfr)        \
+                      NIFtcwl (it_tcwl) NIFspmdinit (it_spmdinit) NIFspmdopt (           \
+                        it_spmdopt) NIFspmdlift (it_spmdlift) NIFsyncinit (it_syncinit)  \
                                                                                          \
-                              NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (   \
-                                it_gsc) NIFreuse (it_reuse) NIFo2nWith (it_o2nWith)      \
-                                NIFsched (it_sched) NIFconc (it_conc) NIFopt (it_opt)    \
-                                  NIFwlaa (it_wlaa) NIFfreemask (it_freemask)            \
-                                    NIFspmdrm (it_spmdrm) NIFspmdro (it_spmdro)          \
-                                      NIFspmdcons (it_spmdcons) NIFtsi (it_tsi)          \
-                                        NIFspmdlc (it_spmdlc) NIFspmddn (it_spmddn)      \
-                                          NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco)    \
-                                            NIFntc (it_ntc) NIFl2f_infer (it_l2f_infer)  \
+                        NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (it_gsc)  \
+                          NIFreuse (it_reuse) NIFo2nWith (it_o2nWith)                    \
+                            NIFsched (it_sched) NIFconc (it_conc) NIFopt (it_opt)        \
+                              NIFwlaa (it_wlaa) NIFfreemask (it_freemask)                \
+                                NIFspmdrm (it_spmdrm) NIFspmdro (it_spmdro)              \
+                                  NIFspmdcons (it_spmdcons) NIFtsi (it_tsi)              \
+                                    NIFspmdlc (it_spmdlc) NIFspmddn (it_spmddn)          \
+                                      NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco)        \
+                                        NIFntc (it_ntc) NIFl2f_infer (it_l2f_infer)      \
                                                                                          \
-                                              NIFmuth (it_muth) NIFschin (it_schin)      \
-                                                NIFblkin (it_blkin) NIFrfin (it_rfin)    \
-                                                  NIFfun2lac (it_fun2lac) NIFai (it_ai)  \
-                                                    NIFblkex (it_blkex)                  \
-                                                      NIFmtfin (it_mtfin)                \
-                                                        NIFl2f_lift (it_l2f_lift)        \
-                                                          NIFblkco (it_blkco)            \
+                                          NIFmuth (it_muth) NIFschin (it_schin)          \
+                                            NIFblkin (it_blkin) NIFrfin (it_rfin)        \
+                                              NIFfun2lac (it_fun2lac) NIFai (it_ai)      \
+                                                NIFblkex (it_blkex) NIFmtfin (it_mtfin)  \
+                                                  NIFl2f_lift (it_l2f_lift)              \
+                                                    NIFblkco (it_blkco) NIFdfa (it_dfa)  \
+                                                      NIFblkpp (it_blkpp)                \
                                                                                          \
-                                                            NIFnnode (nnode)
+                                                        NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -831,7 +744,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, L2F_INFERfundef,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
-       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, TravSons, TravSons, TravSons, TravSons,
+       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        3),
@@ -958,7 +871,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIreturn, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, DFAreturn, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -1048,7 +961,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERlet,
 
        TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, DFAlet, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -1899,6 +1812,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFl2f_lift
 #undef NIFblkco
+#undef NIFdfa
+#undef NIFblkpp
 
 #undef NIFnnode
 

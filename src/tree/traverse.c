@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/03/09 18:37:00  jhs
+ * dfa, blkpp
+ *
  * Revision 1.11  2000/03/02 13:05:38  jhs
  * Added blkco_tab, added functiobns for BLKCO and MTFIN.
  *
@@ -206,6 +209,8 @@
 #include "repfuns_init.h"
 #include "mtfuns_init.h"
 #include "blocks_cons.h"
+#include "dataflow_analysis.h"
+#include "blocks_propagate.h"
 
 #include "traverse.h"
 
@@ -988,6 +993,28 @@ static funtab blkco_tab_rec = {{
                                NULL,
                                NULL};
 funtab *blkco_tab = &blkco_tab_rec;
+
+/*
+ *  (72) dfa_tab
+ */
+static funtab dfa_tab_rec = {{
+#define NIFdfa(it_dfa) it_dfa
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *dfa_tab = &dfa_tab_rec;
+
+/*
+ *  (73) blkpp_tab
+ */
+static funtab blkpp_tab_rec = {{
+#define NIFblkpp(it_blkpp) it_blkpp
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *blkpp_tab = &blkpp_tab_rec;
 
 /*
  *  nnode
