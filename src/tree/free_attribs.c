@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/01/26 17:32:20  mwe
+ * special rules for fungroup and linklist in FREEattribLink added
+ *
  * Revision 1.23  2005/01/08 09:54:58  ktr
  * Fixed some issues related to loops.
  *
@@ -205,6 +208,7 @@ FREEattribNode (node *attr, node *parent)
 node *
 FREEattribLink (node *attr, node *parent)
 {
+    node *tmp, *tofree;
     DBUG_ENTER ("FREEattribLink");
 
     /*
@@ -219,6 +223,58 @@ FREEattribLink (node *attr, node *parent)
             }
             break;
 
+        case N_fungroup:
+            tmp = FUNGROUP_FUNLIST (attr);
+            tofree = NULL;
+
+            if (tmp != NULL) {
+                if (LINKLIST_LINK (tmp) == parent) {
+                    /*
+                     * first function in FUNLIST will be freed
+                     */
+                    tofree = tmp;
+                    FUNGROUP_FUNLIST (attr) = LINKLIST_NEXT (FUNGROUP_FUNLIST (attr));
+                    LINKLIST_NEXT (tofree) = NULL;
+                    LINKLIST_LINK (tofree) = NULL;
+                    tofree = FREEdoFreeNode (tofree);
+                    (FUNGROUP_REFCOUNTER (attr))--;
+
+                } else {
+                    /*
+                     * function to be freed is not first function in
+                     * FUNLIST
+                     */
+                    while ((NULL != LINKLIST_NEXT (tmp))
+                           && (parent != LINKLIST_LINK (LINKLIST_NEXT (tmp)))) {
+                        tmp = LINKLIST_NEXT (tmp);
+                    }
+                    if (tmp != NULL) {
+                        /*
+                         * LINKLIST_NEXT(tmp) contains parent
+                         */
+                        tofree = LINKLIST_NEXT (tmp);
+                        LINKLIST_NEXT (tmp) = LINKLIST_NEXT (LINKLIST_NEXT (tmp));
+                        LINKLIST_NEXT (tofree) = NULL;
+                        LINKLIST_LINK (tofree) = NULL;
+                        tofree = FREEdoFreeNode (tofree);
+                        (FUNGROUP_REFCOUNTER (attr))--;
+                    }
+                }
+            }
+            break;
+
+        case N_linklist:
+            if (N_fungroup == NODE_TYPE (parent)) {
+                /*
+                 * now the FUNLIST from fungroups should be deleted
+                 */
+                tmp = attr;
+                while (tmp != NULL) {
+                    LINKLIST_LINK (tmp) = NULL;
+                    tmp = LINKLIST_NEXT (tmp);
+                }
+                attr = FREEdoFreeTree (attr);
+            }
         default:
             break;
         }
