@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.46  1997/11/12 19:17:59  dkr
+# build main.o now with -g!!
+#
 # Revision 1.45  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
@@ -165,7 +168,7 @@ types.h: type_info.mac node_info.mac prf_node_info.mac
 	touch types.h
 
 main.o: main.c 
-	$(CC) -c main.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o main.o -c main.c $(INCS)
 
 Error.o: Error.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) -o Error.o -c Error.c $(INCS) 
