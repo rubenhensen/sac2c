@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.13  1997/11/20 15:02:02  dkr
+# make deps done
+#
 # Revision 1.12  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
@@ -55,8 +58,9 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-flatten.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-flatten.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-flatten.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-flatten.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-flatten.o: ../global/access_macros.h ../global/free.h /usr/include/malloc.h
+flatten.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+flatten.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+flatten.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+flatten.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
+flatten.o: ../global/traverse.h ../global/access_macros.h ../global/free.h
+flatten.o: /usr/include/malloc.h

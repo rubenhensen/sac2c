@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.31  1997/11/20 15:02:07  dkr
+# make deps done
+#
 # Revision 1.30  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
@@ -140,83 +143,91 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 CSE.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-CSE.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-CSE.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-CSE.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-CSE.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-CSE.o: /usr/include/malloc.h ../print/print.h ../global/traverse.h
-CSE.o: ../typecheck/typecheck.h optimize.h DupTree.h CSE.h
+CSE.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+CSE.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+CSE.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+CSE.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+CSE.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h
+CSE.o: ../global/traverse.h ../typecheck/typecheck.h optimize.h DupTree.h
+CSE.o: CSE.h
 ConstantFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-ConstantFolding.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-ConstantFolding.o: ../global/tree_basic.h ../global/tree_compound.h
-ConstantFolding.o: ../global/Error.h /usr/include/string.h
-ConstantFolding.o: ../global/globals.h ../global/internal_lib.h
-ConstantFolding.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-ConstantFolding.o: /usr/include/malloc.h ../print/print.h
-ConstantFolding.o: ../global/traverse.h ../typecheck/typecheck.h
-ConstantFolding.o: ../global/access_macros.h optimize.h DupTree.h
-ConstantFolding.o: LoopInvariantRemoval.h ConstantFolding.h
+ConstantFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+ConstantFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+ConstantFolding.o: ../global/tree_compound.h ../global/Error.h
+ConstantFolding.o: /usr/include/string.h ../global/globals.h
+ConstantFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+ConstantFolding.o: ../global/my_debug.h /usr/include/malloc.h
+ConstantFolding.o: ../print/print.h ../global/traverse.h
+ConstantFolding.o: ../typecheck/typecheck.h ../global/access_macros.h
+ConstantFolding.o: optimize.h DupTree.h LoopInvariantRemoval.h
+ConstantFolding.o: ConstantFolding.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-DeadCodeRemoval.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-DeadCodeRemoval.o: ../global/tree_basic.h ../global/tree_compound.h
-DeadCodeRemoval.o: ../global/Error.h /usr/include/string.h
-DeadCodeRemoval.o: ../global/globals.h ../global/internal_lib.h
-DeadCodeRemoval.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-DeadCodeRemoval.o: /usr/include/malloc.h ../global/traverse.h optimize.h
-DeadCodeRemoval.o: DeadCodeRemoval.h
+DeadCodeRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+DeadCodeRemoval.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+DeadCodeRemoval.o: ../global/tree_compound.h ../global/Error.h
+DeadCodeRemoval.o: /usr/include/string.h ../global/globals.h
+DeadCodeRemoval.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+DeadCodeRemoval.o: ../global/my_debug.h /usr/include/malloc.h
+DeadCodeRemoval.o: ../global/traverse.h optimize.h DeadCodeRemoval.h
 DupTree.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 DupTree.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 DupTree.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-DupTree.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
-DupTree.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-DupTree.o: ../typecheck/typecheck.h ../global/free.h /usr/include/malloc.h
-DupTree.o: DupTree.h optimize.h Inline.h
+DupTree.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+DupTree.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
+DupTree.o: ../global/my_debug.h ../global/traverse.h ../typecheck/typecheck.h
+DupTree.o: ../global/free.h /usr/include/malloc.h DupTree.h optimize.h
+DupTree.o: Inline.h
 Inline.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Inline.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Inline.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
-Inline.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-Inline.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-Inline.o: ../global/free.h /usr/include/malloc.h ../typecheck/typecheck.h
-Inline.o: optimize.h LoopInvariantRemoval.h DupTree.h Inline.h
+Inline.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+Inline.o: ../global/globals.h ../global/types.h ../global/tree.h
+Inline.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+Inline.o: /usr/include/string.h ../global/internal_lib.h ../../inc/dbug.h
+Inline.o: ../global/my_debug.h ../global/traverse.h ../global/free.h
+Inline.o: /usr/include/malloc.h ../typecheck/typecheck.h optimize.h
+Inline.o: LoopInvariantRemoval.h DupTree.h Inline.h
 LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-LoopInvariantRemoval.o: /usr/include/stdlib.h ../global/tree.h
-LoopInvariantRemoval.o: ../global/types.h ../global/tree_basic.h
-LoopInvariantRemoval.o: ../global/tree_compound.h ../global/Error.h
-LoopInvariantRemoval.o: /usr/include/string.h ../global/globals.h
-LoopInvariantRemoval.o: ../global/internal_lib.h ../global/free.h
-LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
-LoopInvariantRemoval.o: /usr/include/malloc.h ../global/traverse.h
-LoopInvariantRemoval.o: ../typecheck/typecheck.h ../global/access_macros.h
-LoopInvariantRemoval.o: optimize.h DupTree.h LoopInvariantRemoval.h
+LoopInvariantRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+LoopInvariantRemoval.o: ../global/tree.h ../global/types.h
+LoopInvariantRemoval.o: ../global/tree_basic.h ../global/tree_compound.h
+LoopInvariantRemoval.o: ../global/Error.h /usr/include/string.h
+LoopInvariantRemoval.o: ../global/globals.h ../global/internal_lib.h
+LoopInvariantRemoval.o: ../global/free.h ../../inc/dbug.h
+LoopInvariantRemoval.o: ../global/my_debug.h /usr/include/malloc.h
+LoopInvariantRemoval.o: ../global/traverse.h ../typecheck/typecheck.h
+LoopInvariantRemoval.o: ../global/access_macros.h optimize.h DupTree.h
+LoopInvariantRemoval.o: LoopInvariantRemoval.h
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Unroll.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Unroll.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
-Unroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
-Unroll.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-Unroll.o: /usr/include/malloc.h ../global/traverse.h
-Unroll.o: ../global/access_macros.h optimize.h ConstantFolding.h DupTree.h
-Unroll.o: Unroll.h
+Unroll.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+Unroll.o: ../global/globals.h ../global/types.h ../global/tree.h
+Unroll.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+Unroll.o: /usr/include/string.h ../global/internal_lib.h ../global/free.h
+Unroll.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+Unroll.o: ../global/traverse.h ../global/access_macros.h optimize.h
+Unroll.o: ConstantFolding.h DupTree.h Unroll.h
 Unswitch.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-Unswitch.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
-Unswitch.o: ../global/tree.h ../global/tree_basic.h ../global/tree_compound.h
+Unswitch.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+Unswitch.o: ../global/globals.h ../global/types.h ../global/tree.h
+Unswitch.o: ../global/tree_basic.h ../global/tree_compound.h
 Unswitch.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 Unswitch.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 Unswitch.o: /usr/include/malloc.h ../global/traverse.h
 Unswitch.o: ../global/access_macros.h optimize.h ConstantFolding.h DupTree.h
 Unswitch.o: Unroll.h Unswitch.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WorkReduction.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-WorkReduction.o: ../global/tree_basic.h ../global/tree_compound.h
-WorkReduction.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+WorkReduction.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+WorkReduction.o: ../global/tree_compound.h ../global/Error.h
+WorkReduction.o: /usr/include/string.h ../global/globals.h
 WorkReduction.o: ../global/internal_lib.h ../../inc/dbug.h
 WorkReduction.o: ../global/my_debug.h ../global/traverse.h optimize.h
 WorkReduction.o: ../global/free.h /usr/include/malloc.h WorkReduction.h
 optimize.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-optimize.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-optimize.o: ../global/tree_basic.h ../global/tree_compound.h
-optimize.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-optimize.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-optimize.o: ../global/my_debug.h /usr/include/malloc.h ../global/traverse.h
-optimize.o: ../print/print.h optimize.h ConstantFolding.h DeadCodeRemoval.h
-optimize.o: WorkReduction.h LoopInvariantRemoval.h Inline.h Unroll.h
-optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
+optimize.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+optimize.o: ../global/types.h ../global/tree_basic.h
+optimize.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
+optimize.o: ../global/globals.h ../global/internal_lib.h ../global/free.h
+optimize.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+optimize.o: ../global/traverse.h ../print/print.h optimize.h
+optimize.o: ConstantFolding.h DeadCodeRemoval.h WorkReduction.h
+optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
+optimize.o: ../psi-opt/ArrayElimination.h CSE.h

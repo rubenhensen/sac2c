@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.48  1997/11/20 15:02:03  dkr
+# make deps done
+#
 # Revision 1.47  1997/11/19 19:41:19  dkr
 # added include-path ../Old2NewWith
 #
@@ -234,8 +237,7 @@ main.o: ../compile/compile.h ../psi-opt/psi-opt.h ../modules/writesib.h
 main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
 main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-main.o: ../compile/precompile.h ../modules/cccall.h
-main.o: ../Old2NewWith/Old2NewWith.h
+main.o: ../compile/precompile.h ../modules/cccall.h ../compile/Old2NewWith.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h
@@ -258,7 +260,7 @@ traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 traverse.o: ../compile/precompile.h ../modules/cccall.h
-traverse.o: ../Old2NewWith/Old2NewWith.h traverse.h node_info.mac
+traverse.o: ../compile/Old2NewWith.h traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h

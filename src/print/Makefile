@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.22  1997/11/20 15:02:04  dkr
+# make deps done
+#
 # Revision 1.21  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
@@ -85,15 +88,15 @@ clean:
 convert.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 convert.o: /usr/include/stdlib.h /usr/include/math.h ../global/tree.h
 convert.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-convert.o: ../global/Error.h /usr/include/stdio.h ../global/globals.h
-convert.o: ../global/internal_lib.h ../../inc/dbug.h convert.h
-convert.o: ../global/type_info.mac
+convert.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
+convert.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
+convert.o: convert.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-print.o: /usr/include/stdlib.h /usr/include/string.h ../global/types.h
-print.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-print.o: ../global/globals.h print.h ../global/tree.h
-print.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
-print.o: ../global/traverse.h convert.h ../optimize/optimize.h
-print.o: ../global/free.h /usr/include/malloc.h ../compile/trace.h
-print.o: ../compile/profile.h ../modules/filemgr.h ../compile/icm.data
-print.o: ../global/prf_node_info.mac
+print.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+print.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
+print.o: ../global/tree_compound.h ../global/Error.h ../global/globals.h
+print.o: print.h ../global/tree.h ../global/internal_lib.h
+print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
+print.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
+print.o: ../compile/trace.h ../compile/profile.h ../modules/filemgr.h
+print.o: ../compile/icm.data ../global/prf_node_info.mac

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.30  1997/11/20 15:02:09  dkr
+# make deps done
+#
 # Revision 1.29  1997/11/12 15:59:49  sbs
 # CC+CCFLAGS handling changed.
 # Now, it suffices to preset CC=cc if the SUN-compiler isdesired
@@ -100,7 +103,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o libsac.a profile.o
+all: compile.o icm2c.o precompile.o libsac.a profile.o Old2NewWith.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -124,6 +127,9 @@ libsac.a: libsac.o
 libsac.o: libsac.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o libsac.o -c libsac.c $(INCS)
 
+Old2NewWith.o: Old2NewWith.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o Old2NewWith.o -c Old2NewWith.c $(INCS)
+
 
 deps:
 	makedepend $(INCS) *.c
@@ -136,20 +142,28 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+Old2NewWith.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+Old2NewWith.o: ../global/tree_compound.h ../global/Error.h
+Old2NewWith.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+Old2NewWith.o: /usr/include/sys/va_list.h /usr/include/string.h
+Old2NewWith.o: /usr/include/stdlib.h ../global/globals.h
+Old2NewWith.o: ../global/internal_lib.h ../global/traverse.h ../global/free.h
+Old2NewWith.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-compile.o: ../global/globals.h ../print/print.h ../global/tree.h
-compile.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-compile.o: ../global/traverse.h compile.h ../print/convert.h
-compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ../global/free.h
-compile.o: /usr/include/malloc.h ../global/type_info.mac
+compile.o: /usr/include/sys/va_list.h ../global/globals.h ../print/print.h
+compile.o: ../global/tree.h ../global/internal_lib.h ../../inc/dbug.h
+compile.o: ../global/my_debug.h ../global/traverse.h compile.h
+compile.o: ../print/convert.h ../refcount/refcount.h ../typecheck/typecheck.h
+compile.o: ../global/free.h /usr/include/malloc.h ../global/type_info.mac
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h
-icm2c.o: /usr/include/sys/feature_tests.h ../print/print.h ../global/tree.h
-icm2c.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-icm2c.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-icm2c.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
-icm2c.o: ../global/my_debug.h ../../inc/main.h trace.h ../print/convert.h
+icm2c.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+icm2c.o: ../print/print.h ../global/tree.h ../global/types.h
+icm2c.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+icm2c.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
+icm2c.o: ../../inc/main.h trace.h ../print/convert.h icm2c.h libsac.h
 icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c icm_trace.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
@@ -158,15 +172,17 @@ icm_trace.o: icm.data
 libsac.o: /usr/include/sys/time.h /usr/include/sys/feature_tests.h
 libsac.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
 libsac.o: /usr/include/sys/machtypes.h /usr/include/sys/resource.h
-libsac.o: /usr/include/stdio.h /usr/include/stdarg.h /usr/include/varargs.h
-libsac.o: /usr/include/malloc.h profile.h
+libsac.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+libsac.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/malloc.h
+libsac.o: profile.h
 precompile.o: ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-precompile.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-precompile.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-precompile.o: /usr/include/malloc.h ../global/internal_lib.h
-precompile.o: ../print/convert.h ../global/traverse.h ../refcount/refcount.h
+precompile.o: /usr/include/sys/va_list.h /usr/include/string.h
+precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
+precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+precompile.o: ../global/internal_lib.h ../print/convert.h
+precompile.o: ../global/traverse.h ../refcount/refcount.h
 profile.o: ../../inc/dbug.h /usr/include/stdio.h
-profile.o: /usr/include/sys/feature_tests.h ../global/globals.h
-profile.o: ../global/types.h profile.h
+profile.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+profile.o: ../global/globals.h ../global/types.h profile.h
