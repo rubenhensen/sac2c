@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/03/17 16:00:49  dkr
+ * include of cleanup_decls.h added
+ *
  * Revision 1.14  2000/03/17 15:59:18  dkr
  * added call of CleanupDecls()
  *
@@ -58,6 +61,7 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
+#include "cleanup_decls.h"
 
 #define MAIN_HAS_NO_MODNAME
 
