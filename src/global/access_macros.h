@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/03/31 15:46:33  hw
+ * Revision 1.4  1995/04/11 15:10:24  hw
+ * added macro IDS_NEXT
+ *
+ * Revision 1.3  1995/03/31  15:46:33  hw
  * added macro IDS_REFCNT
  *
  * Revision 1.2  1995/03/29  11:52:22  hw
@@ -36,5 +39,6 @@
 #define IDS_ID IDS->id
 #define IDS_NODE IDS->node
 #define IDS_REFCNT IDS->refcnt
+#define IDS_NEXT IDS->next
 
 #endif /* _access_macros_h */
