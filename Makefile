@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.61  2002/10/18 13:36:48  sbs
+# new targets   twice    and sac2c.twice   added
+#
 # Revision 3.60  2002/10/08 22:09:17  dkr
 # SSAWLUnroll.o added
 #
@@ -192,6 +195,8 @@ product: check_os tools/bin/cse clean prod sac2c.prod
 
 distrib_product: check_os tools/bin/cse prod sac2c.prod
 
+twice: check_os tools/bin/cse dummy sac2c sac2c.twice
+
 tools/bin/cse:
 	$(MAKE) -C tools
 
@@ -274,6 +279,12 @@ sac2c.efence: $(OBJ) $(LIB)
 
 sac2c.prod:  $(OBJ) $(LIB)
 	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
+
+sac2c.twice: $(OBJ) $(LIB)
+	ssh twice \
+	  "cd $(RCSROOT); \
+           setenv PATH /opt/gnu/bin\:$$$$PATH; \
+           $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.twice $(OBJ) $(LIB) $(LIBS)"
 
 deps:
 	$(ECHO) "make deps is obsolete"
