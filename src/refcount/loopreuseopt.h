@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/09 20:54:20  ktr
+ * Typo corrected.
+ *
  * Revision 1.1  2004/11/02 14:26:57  ktr
  * Initial revision
  *
@@ -8,7 +11,7 @@
 #ifndef _sac_loopreuseopt_h
 #define _sac_loopreuseopt_h
 
-extern node *EMLRLoopReuseInference (node *syntax_tree);
+extern node *EMLRLoopReuseOptimization (node *syntax_tree);
 
 /*****************************************************************************
  *
