@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.8  2005/02/10 12:58:44  jhb
+# added ast2check_c.xsl and ast2check_h.xsl
+#
 # Revision 1.7  2004/12/07 14:12:35  sah
 # added generation of static html
 #
@@ -51,7 +54,8 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../types/types_trav.h ../types/types_nodetype.h \
           ../global/node_info.mac ../tree/traverse_tables.c \
           ../tree/traverse_tables.h ../tree/sons.h \
-          ../tree/traverse_helper.c
+          ../tree/traverse_helper.c \
+		  ../tree/check.h ../tree/check.c
 
 all: $(TARGETS) html
 
@@ -156,6 +160,15 @@ ast.html: ast.xml ast2html.xsl
 ../tree/traverse_helper.c: ast.xml ast2traverse_helper_c.xsl
 	$(XSLTENGINE) ast2traverse_helper_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
+
+../tree/check.h: ast.xml ast2check_h.xsl
+	$(XSLTENGINE) ast2check_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../tree/check.c: ast.xml ast2check_c.xsl
+	$(XSLTENGINE) ast2check_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
 
 clean:
 	$(RM) $(TARGETS) ast.html
