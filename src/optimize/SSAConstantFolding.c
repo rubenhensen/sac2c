@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.81  2005/01/31 15:28:04  mwe
+ * reimplement folding of conditionals
+ *
  * Revision 1.80  2005/01/26 10:25:40  mwe
  * AVIS_SSACONST removed and replaced by usage of akv types
  * traversals changed: now constant values are infered when type is akv
@@ -293,6 +296,7 @@ struct INFO {
     node *assign;
     bool inlfundef;
     node *withid;
+    bool akv2ast;
 };
 
 /*
@@ -309,6 +313,7 @@ struct INFO {
 #define INFO_CF_ASSIGN(n) (n->assign)
 #define INFO_CF_INLFUNDEF(n) (n->inlfundef)
 #define INFO_CF_WITHID(n) (n->withid)
+#define INFO_CF_AKV2AST(n) (n->akv2ast)
 
 /*
  * INFO functions
@@ -333,6 +338,7 @@ MakeInfo ()
     INFO_CF_ASSIGN (result) = NULL;
     INFO_CF_INLFUNDEF (result) = FALSE;
     INFO_CF_WITHID (result) = NULL;
+    INFO_CF_AKV2AST (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -407,7 +413,6 @@ static node *SetSsaAssign (node *chain, node *assign);
 static node **GetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **Args2Const (constant **co_array, node **arg_expr, int max_args);
 static shape *GetShapeOfExpr (node *expr);
-static void RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info);
 
 /*
  * primitive functions for non full-constant expressions like:
@@ -1974,64 +1979,6 @@ Sel (node *idx_expr, node *array_expr)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *RemovePhiCopyTargetAttributes(bool thenpart, info *arg_info)
- *
- * description:
- *   update all phi functions to the correct assign in thenpart (== TRUE)
- *   or elsepart (== FALSE)
- *
- *****************************************************************************/
-
-static void
-RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
-{
-    node *phifun, *tmp, *del;
-
-    DBUG_ENTER ("RemovePhiCopyTargetAttributes");
-
-    /* pointer to first assign node behind conditional N_cond */
-
-    if (NODE_TYPE (ASSIGN_INSTR (INFO_CF_ASSIGN (arg_info))) == N_cond) {
-        phifun = ASSIGN_NEXT (INFO_CF_ASSIGN (arg_info));
-    } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (INFO_CF_ASSIGN (arg_info))))
-               == N_funcond) {
-        phifun = INFO_CF_ASSIGN (arg_info);
-    } else {
-        phifun = NULL;
-    }
-
-    if (phifun != NULL) {
-        /* update all phi functions */
-        while (NODE_TYPE (ASSIGN_INSTR (phifun)) != N_return) {
-
-            tmp = ASSIGN_INSTR (phifun);
-            del = LET_EXPR (tmp);
-
-            if (thenpart) {
-                /* append then argument to assignment */
-                LET_EXPR (tmp) = FUNCOND_THEN (LET_EXPR (tmp));
-                FUNCOND_THEN (del) = NULL;
-
-            } else {
-                /* append else argument to assignment */
-                LET_EXPR (tmp) = FUNCOND_ELSE (LET_EXPR (tmp));
-                FUNCOND_ELSE (del) = NULL;
-            }
-
-            /* delete obsolete argument */
-            FREEdoFreeTree (del);
-
-            /* next assignment node */
-            phifun = ASSIGN_NEXT (phifun);
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /*
  * traversal functions for CF traversal
  */
@@ -2207,19 +2154,34 @@ CFfuncond (node *arg_node, info *arg_info)
      * and substitute constants with their values to get
      * a simple N_bool node for the condition (if constant)
      */
-    INFO_CF_INSCONST (arg_info) = SUBST_SCALAR;
-    FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
-    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
+    if ((N_id == NODE_TYPE (FUNCOND_IF (arg_node)))
+        && (TYisAKV (AVIS_TYPE (ID_AVIS (FUNCOND_IF (arg_node)))))) {
+        node *tmp;
+
+        tmp = COconstant2AST (TYgetValue (AVIS_TYPE (ID_AVIS (FUNCOND_IF (arg_node)))));
+        FUNCOND_IF (arg_node) = FREEdoFreeNode (FUNCOND_IF (arg_node));
+        FUNCOND_IF (arg_node) = tmp;
+    }
 
     /* check for constant condition */
     if (NODE_TYPE (FUNCOND_IF (arg_node)) == N_bool) {
+        node *tmp;
 
-        INFO_CF_POSTASSIGN (arg_info) = NULL;
-        /* ex special function can be simply inlined in calling context */
-        INFO_CF_INLFUNDEF (arg_info) = TRUE;
-        /*FUNDEF_VARDEC(INFO_CF_FUNDEF(arg_info))*/
-        RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
+        if (BOOL_VAL (FUNCOND_IF (arg_node)) == TRUE) {
+
+            tmp = FUNCOND_THEN (arg_node);
+            FUNCOND_THEN (arg_node) = NULL;
+        } else {
+
+            tmp = FUNCOND_ELSE (arg_node);
+            FUNCOND_ELSE (arg_node) = NULL;
+        }
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = tmp;
     }
+
+    INFO_CF_AKV2AST (arg_info) = FALSE;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2250,9 +2212,19 @@ CFcond (node *arg_node, info *arg_info)
      * and substitute constants with their values to get
      * a simple N_bool node for the condition (if constant)
      */
-    INFO_CF_INSCONST (arg_info) = SUBST_SCALAR;
-    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
+
+    /*
+     * TODO: check id for akv
+     */
+
+    if ((N_id == NODE_TYPE (COND_COND (arg_node)))
+        && (TYisAKV (AVIS_TYPE (ID_AVIS (COND_COND (arg_node)))))) {
+        node *tmp;
+
+        tmp = COconstant2AST (TYgetValue (AVIS_TYPE (ID_AVIS (COND_COND (arg_node)))));
+        COND_COND (arg_node) = FREEdoFreeNode (COND_COND (arg_node));
+        COND_COND (arg_node) = tmp;
+    }
 
     /* check for constant condition */
     if (NODE_TYPE (COND_COND (arg_node)) == N_bool) {
@@ -2310,19 +2282,11 @@ CFcond (node *arg_node, info *arg_info)
             && (FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)))) {
             CTIwarnLine (NODE_LINE (arg_node),
                          "Infinite loop detected, program may not terminate");
-
-            /* ex special function cannot be inlined and is now a regular one */
-            FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
-            FUNDEF_USED (INFO_CF_FUNDEF (arg_info)) = USED_INACTIVE;
-            /*FUNDEF_VARDEC(INFO_CF_FUNDEF(arg_info))*/
-            RemovePhiCopyTargetAttributes (TRUE, arg_info);
-        } else {
-            /* ex special function can be simply inlined in calling context */
-            INFO_CF_INLFUNDEF (arg_info) = TRUE;
-            /*FUNDEF_VARDEC(INFO_CF_FUNDEF(arg_info))*/
-            RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
         }
 
+        FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
+        FUNDEF_USED (INFO_CF_FUNDEF (arg_info)) = USED_INACTIVE;
+        FUNDEF_ISINLINE (INFO_CF_FUNDEF (arg_info)) = TRUE;
     } else {
         /*
          * no constant condition:
@@ -2338,6 +2302,7 @@ CFcond (node *arg_node, info *arg_info)
             COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2396,11 +2361,15 @@ CFlet (node *arg_node, info *arg_info)
 
     if ((LET_IDS (arg_node) != NULL)) {
 
+        INFO_CF_AKV2AST (arg_info) = TRUE;
+
         /* traverse expression to calculate constants */
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-        if (LET_IDS (arg_node) != NULL) {
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        if (INFO_CF_AKV2AST (arg_info)) {
+            if (LET_IDS (arg_node) != NULL) {
+                LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+            }
         }
 
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
@@ -2439,7 +2408,6 @@ CFlet (node *arg_node, info *arg_info)
             }
         } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
         }
-
     } else {
         /* left side is already maked as constant - no further processing needed */
     }
