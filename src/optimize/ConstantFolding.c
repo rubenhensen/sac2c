@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/03/13 13:23:53  asi
+ * Revision 1.8  1995/03/13 15:52:58  asi
+ * changed DupConst
+ *
+ * Revision 1.7  1995/03/13  13:23:53  asi
  * bug fixed in CFwith : sets c.f. flag to false
  *
  * Revision 1.6  1995/03/08  17:28:09  asi
@@ -258,8 +261,8 @@ DupConst (node *arg_node)
         new_node->info.cfloat = arg_node->info.cfloat;
         break;
     case N_id:
-        new_node->info.id = arg_node->info.id;
-        new_node->node[0] = arg_node->node[0];
+        new_node->info.ids = MakeIds (arg_node->info.ids->id);
+        new_node->info.ids->node = arg_node->info.ids->node;
         break;
     default:
         DBUG_ASSERT ((0), "Unknown constant type for primitive function");
