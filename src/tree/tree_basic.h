@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2000/03/15 15:04:26  dkr
+ * WL..._INNERSTEP removed
+ * WLSEG_HOMSV added
+ *
  * Revision 1.24  2000/03/09 18:35:19  jhs
  * Additinal macros.
  *
@@ -3096,7 +3100,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLNODE_STEP(n) ((n)->varno)
 #define WLNODE_NEXTDIM(n) ((n)->node[0])
 #define WLNODE_NEXT(n) ((n)->node[1])
-#define WLNODE_INNERSTEP(n) ((n)->info.prf_dec.tag)
 
 /*
  * some macros for N_WLseg, N_WLsegVar nodes
@@ -3108,9 +3111,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
 #define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 #define WLSEGX_BLOCKS(n) ((n)->flag)
-#define WLSEGX_SV(n) ((n)->mask[0])
-#define WLSEGX_BV(n, level) ((n)->mask[level + 2])
-#define WLSEGX_UBV(n) ((n)->mask[1])
+#define WLSEGX_SV(n) ((int *)((n)->mask[0]))
+#define WLSEGX_BV(n, level) ((int *)((n)->mask[level + 2]))
+#define WLSEGX_UBV(n) ((int *)((n)->mask[1]))
 #define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
 
 /*
@@ -3151,15 +3154,15 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int*       IDX_MIN                           (wltransform -> compile )
  ***    int*       IDX_MAX                           (wltransform -> compile )
  ***
- ***    int        BLOCKS    (number of blocking levels
+ ***    int        BLOCKS    (number of blocking levels (0..3)
  ***                           --- without unrolling-blocking)
- ***    long*      SV        (step vector)           (wltransform -> )
- ***    long*      BV        (blocking vector)       (wltransform -> compile )
- ***    long*      UBV       (unrolling-b. vector)   (wltransform -> compile )
+ ***    int*       SV        (step vector)           (wltransform -> )
+ ***    int*       BV        (blocking vector)       (wltransform -> compile )
+ ***    int*       UBV       (unrolling-bl. vector)  (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
- ***    long*      HOMSTEP   (homog. step vector)    (wltransform -> compile )
+ ***    int*       HOMSV     (homog. step vector)    (wltransform -> compile )
  ***/
 
 extern node *MakeWLseg (int dims, node *contents, node *next);
@@ -3178,7 +3181,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 #define WLSEG_MAXHOMDIM(n) ((n)->varno)
-#define WLSEG_HOMSTEP(n) ((n)->mask[6])
+#define WLSEG_HOMSV(n) ((int *)((n)->mask[6]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3201,12 +3204,11 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    int      INNERSTEP                          (wltransform -> compile )
+ ***    ---
  ***
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
- ***    - INNERSTEP is only valid, iff (LEVEL == 0).
  ***/
 
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
@@ -3220,8 +3222,6 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLBLOCK_CONTENTS(n) ((n)->node[2])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
-
-#define WLBLOCK_INNERSTEP(n) (WLNODE_INNERSTEP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3244,12 +3244,11 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    int      INNERSTEP                           (wltransform -> compile )
+ ***    ---
  ***
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
- ***    - INNERSTEP is only valid, iff (LEVEL == 0).
  ***/
 
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
@@ -3263,8 +3262,6 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 #define WLUBLOCK_NEXTDIM(n) (WLBLOCK_NEXTDIM (n))
 #define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
-
-#define WLUBLOCK_INNERSTEP(n) (WLBLOCK_INNERSTEP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3290,11 +3287,6 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***    node*    PART         (part this stride is generated from)
  ***                                                 (wltransform ! )
  ***    node*    MODIFIED                            (wltransform ! )
- ***    int      INNERSTEP                           (wltransform -> compile )
- ***
- ***  remarks:
- ***
- ***    - INNERSTEP is only valid, iff (LEVEL == 0).
  ***/
 
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
@@ -3311,7 +3303,6 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 
 #define WLSTRIDE_PART(n) ((n)->node[2])
 #define WLSTRIDE_MODIFIED(n) ((n)->node[3])
-#define WLSTRIDE_INNERSTEP(n) (WLNODE_INNERSTEP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3379,9 +3370,9 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***    int        BLOCKS    (number of blocking levels
  ***                           --- without unrolling-blocking)
- ***    long*      SV        (step vector)           (wltransform -> )
- ***    long*      BV        (blocking vector)       (wltransform -> compile )
- ***    long*      UBV       (unrolling-b. vector)   (wltransform -> compile )
+ ***    int*       SV        (step vector)           (wltransform -> )
+ ***    int*       BV        (blocking vector)       (wltransform -> compile )
+ ***    int*       UBV       (unrolling-b. vector)   (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***/
