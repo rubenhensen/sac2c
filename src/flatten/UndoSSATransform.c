@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.10  2004/07/23 13:19:26  khf
+ * if explicit accumulation was applied, no identical names for
+ * cexpr nodes of multigenerator fold WLs are longer necessary
+ *
  * Revision 1.9  2004/07/16 18:36:55  sah
  * forgotten to allocate space for info structure;)
  *
@@ -724,7 +728,8 @@ USSANcode (node *arg_node, info *arg_info)
  *   node *USSANwith(node *arg_node, info *arg_info)
  *
  * description:
- *   if this is a fold-withloop. we have to create a new unique result valiable
+ *   if this is a fold-withloop and ExplicitAccumulate wasn't applied
+ *   we have to create a new unique result valiable
  *   for all results of a multigenerator withloop. The renaming and inserting
  *   of the necessary copy assignment is done by USSANcode.
  *
@@ -741,11 +746,12 @@ USSANwith (node *arg_node, info *arg_info)
     INFO_USSA_ARGS (new_arg_info) = INFO_USSA_ARGS (arg_info);
 
     /*
-     * first check for fold-withloop with at least two code segments
+     * If ExplicitAccumulate wasn't applied (activated by flag ktr):
+     * check for fold-withloop with at least two code segments
      * (first code has a next attribute set) that needs a new
      * unique target variable
      */
-    if ((NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
+    if ((!ktr) && (NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
         && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
         /*
          * For the time beeing there are no fused multioperator WLs containing
