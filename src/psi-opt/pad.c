@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/19 12:39:28  mab
+ * added dummy values for testing purposes
+ *
  * Revision 1.7  2000/07/07 12:07:51  mab
  * *** empty log message ***
  *
@@ -78,13 +81,25 @@ ArrayPadding (node *arg_node)
 
     /* collect information for inference phase */
 
-    /* collection phase is not implemented yet
-     * APcollect(arg_node);
-     */
+    /*APcollect();*/
 
-    /* infer new array shapes */
+    /* apply array padding */
 
-    /* dumies only !!! */
+    /* APinfer(); */
+
+    /* dummies only !!! */
+
+    tmp_old_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
+    SHPSEG_SHAPE (tmp_old_shape, 1) = 3;
+    SHPSEG_SHAPE (tmp_old_shape, 2) = 4;
+
+    tmp_new_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
+    SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
+    SHPSEG_SHAPE (tmp_new_shape, 2) = 4;
+
+    PIaddInferredShape (MakeType (T_int, 3, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
@@ -94,7 +109,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
 
-    PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
@@ -104,7 +119,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 6;
 
-    PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
@@ -114,7 +129,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 6;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
 
-    PIadd (MakeType (T_float, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (MakeType (T_float, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
@@ -124,7 +139,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 8;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 9;
 
-    PIadd (MakeType (T_double, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (MakeType (T_double, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 8;
@@ -134,13 +149,11 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 10;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 11;
 
-    PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     /* apply array padding */
 
-    /* transformation phase is not completed yet
-     * @@@ enable pad_transform.c here !
-     * APtransform(arg_node);*/
+    /* APtransform(arg_node); */
 
     /* free pad_info structure */
     PIfree ();
