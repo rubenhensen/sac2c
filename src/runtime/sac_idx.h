@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/12/21 13:33:37  dkr
+ * ALLOC_ARRAY, CHECK_REUSE ICMs seperated
+ * (they no longer occur in other ICMs)
+ *
  * Revision 3.3  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -77,67 +81,50 @@
     SAC_TR_PRF_PRINT (("ND_IDX_SEL_A( %s, %s, %s)\n", #s, #a, #res));                    \
     {                                                                                    \
         int __i, __s;                                                                    \
-        for (__i = 0, __s = s; __i < SAC_ND_A_SIZE (res); __i++, __s++)                  \
+        for (__i = 0, __s = s; __i < SAC_ND_A_SIZE (res); __i++, __s++) {                \
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __s);                  \
-    };
+        }                                                                                \
+    }
 
 /*
  * Macros used for primitive function idx_modarray:
  * ================================================
  */
 
-#define SAC_ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(basetype, res, a, s, val)                  \
-    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s)\n",       \
-                       #basetype, #res, #a, #s, #val));                                  \
-    SAC_ND_CHECK_REUSE_ARRAY (a, res)                                                    \
-    {                                                                                    \
-        int __i;                                                                         \
-        SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
-        for (__i = 0; __i < s; __i++)                                                    \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-        for (__i = __i + SAC_ND_A_SIZE (val); __i < SAC_ND_A_SIZE (res); __i++)          \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-    }                                                                                    \
-    {                                                                                    \
-        int __i, __s;                                                                    \
-        for (__s = 0, __i = s; __s < SAC_ND_A_SIZE (val); __i++, __s++)                  \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
-    }
-
 #define SAC_ND_IDX_MODARRAY_AxVxA(basetype, res, a, s, val)                              \
-    SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s)\n", #basetype, #res, #a, #s, #val));  \
-    {                                                                                    \
+    if (SAC_ND_A_FIELD (a) != SAC_ND_A_FIELD (res)) {                                    \
         int __i, __s;                                                                    \
-        SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
-        for (__i = 0; __i < s; __i++)                                                    \
+        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s)\n", #basetype,    \
+                           #res, #a, #s, #val));                                         \
+        for (__i = 0; __i < s; __i++) {                                                  \
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-        for (__s = 0; __s < SAC_ND_A_SIZE (val); __i++, __s++)                           \
+        }                                                                                \
+        for (__s = 0; __s < SAC_ND_A_SIZE (val); __i++, __s++) {                         \
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
-        for (; __i < SAC_ND_A_SIZE (res); __i++)                                         \
+        }                                                                                \
+        for (; __i < SAC_ND_A_SIZE (res); __i++) {                                       \
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
+        }                                                                                \
+    } else {                                                                             \
+        int __i, __s;                                                                    \
+        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA__REUSE( %s, %s, %s, %s, %s)\n",        \
+                           #basetype, #res, #a, #s, #val));                              \
+        for (__i = s, __s = 0; __s < SAC_ND_A_SIZE (val); __i++, __s++) {                \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
+        }                                                                                \
     }
-
-#define SAC_ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(basetype, res, a, s, val)                  \
-    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS_CHECK_REUSE( %s, %s, %s, %s, %s)\n",       \
-                       #basetype, #res, #a, #s, #val));                                  \
-    SAC_ND_CHECK_REUSE_ARRAY (a, res)                                                    \
-    {                                                                                    \
-        int __i;                                                                         \
-        SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
-    }                                                                                    \
-    SAC_ND_WRITE_ARRAY (res, s) = val;
 
 #define SAC_ND_IDX_MODARRAY_AxVxS(basetype, res, a, s, val)                              \
-    SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s)\n", #basetype, #res, #a, #s, #val));  \
-    {                                                                                    \
+    if (SAC_ND_A_FIELD (a) != SAC_ND_A_FIELD (res)) {                                    \
         int __i;                                                                         \
-        SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
+        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s)\n", #basetype,    \
+                           #res, #a, #s, #val));                                         \
+        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++) {                                \
             SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
+        }                                                                                \
+    } else {                                                                             \
+        SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS__REUSE( %s, %s, %s, %s, %s)\n",        \
+                           #basetype, #res, #a, #s, #val));                              \
     }                                                                                    \
     SAC_ND_WRITE_ARRAY (res, s) = val;
 
