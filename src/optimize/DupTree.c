@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/25 10:58:42  bs
+ * DupArray added.
+ *
  * Revision 2.1  1999/02/23 12:41:17  sacbase
  * new release made
  *
@@ -650,9 +653,11 @@ DupId (node *arg_node, node *arg_info)
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
         }
     }
+    ID_CONSTARRAY (new_node)
+      = CopyIntArray (ID_ARRAYLENGTH (arg_node), ID_CONSTARRAY (arg_node));
 
     if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
-        DBUG_PRINT ("SRS", ("Here I am"));
+        DBUG_PRINT ("DUP", ("duplicating N_id ..."));
         /* Withloop folding (wlf) needs this. */
         if (ID_WL (arg_node) && N_id == NODE_TYPE (ID_WL (arg_node)))
             /* new code in new_codes, see 'usage of ID_WL' in WLF.c for more infos */
@@ -661,6 +666,36 @@ DupId (node *arg_node, node *arg_info)
             ID_WL (new_node) = arg_node; /* original code */
     }
 
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupArray (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupTypes");
+
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
+    new_node = MakeNode (arg_node->nodetype);
+    if (arg_node->info.types != NULL)
+        new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    else
+        new_node->info.types = NULL;
+
+    DUP (arg_node, new_node);
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
+        if (arg_node->node[i] != NULL) {
+            new_node->node[i] = Trav (arg_node->node[i], arg_info);
+        }
+    }
+    ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
+    ARRAY_INTARRAY (new_node)
+      = CopyIntArray (ARRAY_LENGTH (arg_node), ARRAY_INTARRAY (arg_node));
     DBUG_RETURN (new_node);
 }
 
