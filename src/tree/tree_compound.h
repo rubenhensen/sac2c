@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2004/11/23 17:25:53  ktr
+ * changed some GENs into GENERATORs
+ *
  * Revision 3.116  2004/11/23 16:15:02  khf
  * IDS_TYPE, IDS_VARDEC added
  *
@@ -1665,10 +1668,10 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 #define PART_IDS(n) (WITHID_IDS (PART_WITHID (n)))
 #define PART_VEC(n) (WITHID_VEC (PART_WITHID (n)))
 
-#define PART_BOUND1(n) (GEN_BOUND1 (PART_GEN (n)))
-#define PART_BOUND2(n) (GEN_BOUND2 (PART_GEN (n)))
-#define PART_STEP(n) (GEN_STEP (PART_GEN (n)))
-#define PART_WIDTH(n) (GEN_WIDTH (PART_GEN (n)))
+#define PART_BOUND1(n) (GENERATOR_BOUND1 (PART_GENERATOR (n)))
+#define PART_BOUND2(n) (GENERATOR_BOUND2 (PART_GENERATOR (n)))
+#define PART_STEP(n) (GENERATOR_STEP (PART_GENERATOR (n)))
+#define PART_WIDTH(n) (GENERATOR_WIDTH (PART_GENERATOR (n)))
 
 #define PART_CEXPR(n) (CODE_CEXPR (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
