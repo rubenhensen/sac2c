@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/10/16 17:55:15  sbs
+ * hopefully bug 71 is gone now...
+ *
  * Revision 3.60  2004/10/14 14:14:49  sbs
  * provided IdxChangeIdOld in addition to IdxChangeId to ensure
  * compatibility in ReuseArray.c if needed.
@@ -2544,46 +2547,52 @@ IdxNcode (node *arg_node, info *arg_info)
                     arr_shape = Type2Shape (arr_type);
                     DBUG_ASSERT ((tmp_withop != NULL), "missing N_Nwithop node!");
 
-                    if (((NWITHOP_TYPE (tmp_withop) == WO_modarray)
-                         || (NWITHOP_TYPE (tmp_withop) == WO_genarray))
-                        && SHCompareShapes (VINFO_SHAPE (vinfo), arr_shape)) {
-
-                        /*
-                         * we can reuse the genvar as index directly!
-                         * therefore we create an ICM of the form:
-                         * ND_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
-                         */
-
-                        new_id
-                          = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)), arr_shape),
-                                    NULL, ST_regular);
-                        col_vinfo = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_shape);
-                        DBUG_ASSERT (((col_vinfo != NULL)
-                                      && (VINFO_VARDEC (col_vinfo) != NULL)),
-                                     "missing vardec for IDX variable");
-                        ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
-                        array_id = MakeId_Copy (IDS_NAME (tmp_ids));
-
-                        /*
-                         * The backref to declaration of the array-id must set correctly
-                         * because following compilation steps (e.g. AdjustIdentifiers())
-                         * depend on it!
-                         * Therefore RC itself must be patch in order to ignore this icm!
-                         */
-                        ID_VARDEC (array_id) = IDS_VARDEC (tmp_ids);
-
-                        new_id = AddNtTag (new_id);
-                        array_id = AddNtTag (array_id);
-
-                        new_assign = MakeAssign (MakeIcm2 ("ND_USE_GENVAR_OFFSET", new_id,
-                                                           array_id),
-                                                 NULL);
-
-                        use_genvar_offset = TRUE;
-                        break;
-                    }
-
                     if (arr_shape != NULL) {
+                        if (((NWITHOP_TYPE (tmp_withop) == WO_modarray)
+                             || (NWITHOP_TYPE (tmp_withop) == WO_genarray))
+                            && SHCompareShapes (VINFO_SHAPE (vinfo), arr_shape)) {
+
+                            /*
+                             * we can reuse the genvar as index directly!
+                             * therefore we create an ICM of the form:
+                             * ND_USE_GENVAR_OFFSET( <idx-varname>,
+                             * <result-array-varname>)
+                             */
+
+                            new_id = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)),
+                                                          arr_shape),
+                                             NULL, ST_regular);
+                            col_vinfo
+                              = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_shape);
+                            DBUG_ASSERT (((col_vinfo != NULL)
+                                          && (VINFO_VARDEC (col_vinfo) != NULL)),
+                                         "missing vardec for IDX variable");
+                            ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
+                            array_id = MakeId_Copy (IDS_NAME (tmp_ids));
+
+                            /*
+                             * The backref to declaration of the array-id must set
+                             * correctly because following compilation steps (e.g.
+                             * AdjustIdentifiers()) depend on it! Therefore RC itself must
+                             * be patch in order to ignore this icm!
+                             */
+                            ID_VARDEC (array_id) = IDS_VARDEC (tmp_ids);
+
+                            new_id = AddNtTag (new_id);
+                            array_id = AddNtTag (array_id);
+
+                            new_assign = MakeAssign (MakeIcm2 ("ND_USE_GENVAR_OFFSET",
+                                                               new_id, array_id),
+                                                     NULL);
+
+                            use_genvar_offset = TRUE;
+                            /**
+                             * The use of break in other positions than switches is
+                             * deprecated!!!!! (sbs) Needs to be brushed!!!!
+                             */
+                            break;
+                        }
+
                         arr_shape = SHFreeShape (arr_shape);
                     }
                     tmp_ids = IDS_NEXT (tmp_ids);
