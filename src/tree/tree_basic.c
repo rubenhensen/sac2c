@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2004/10/28 17:23:11  sah
+ * CreateIds no more consumes its arguments.
+ *
  * Revision 3.106  2004/10/19 14:03:25  sah
  * added CreateIds
  *
@@ -429,7 +432,7 @@ CreateIds (char *name, char *mod, statustype status, statustype attrib, int refc
 
     DBUG_ENTER ("CreateIds");
 
-    result = MakeIds (name, mod, status);
+    result = MakeIds (StringCopy (name), StringCopy (mod), status);
 
     IDS_ATTRIB (result) = attrib;
     IDS_REFCNT (result) = refcnt;
