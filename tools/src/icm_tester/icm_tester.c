@@ -6,6 +6,18 @@
 #define DBUG 0
 #define BUFLEN 5000
 
+void
+CleanUp (char *prefix)
+{
+    char filename[BUFLEN];
+
+    sprintf (filename, "%s.c", prefix);
+    remove (filename);
+
+    sprintf (filename, "%s.E", prefix);
+    remove (filename);
+}
+
 int
 SystemCall (char *format, ...)
 {
@@ -40,6 +52,7 @@ OpenFile (char *prefix, char *postfix, char *mode)
 
     if (!file) {
         fprintf (stderr, "ERROR: File \"%s\" not found!\n\n", filename);
+        CleanUp (prefix);
         exit (1);
     }
 
@@ -59,6 +72,8 @@ InvokeCC (char *prefix, char *shp, char *hid, char *unq)
 
     if (exit_code != 0) {
         fprintf (stderr, "ERROR: System call failed (exit code %d)!\n\n", exit_code);
+        CleanUp (prefix);
+        exit (2);
     }
 }
 
@@ -218,6 +233,7 @@ main ()
 
     CreateCFile (tmpfileprefix, &use_shp, &use_hid, &use_unq);
     ProcessCFile (tmpfileprefix, use_shp, use_hid, use_unq);
+    CleanUp (tmpfileprefix);
 
     return (0);
 }
