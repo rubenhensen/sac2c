@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/02/12 21:22:31  dkr
+ * INFO_INFDFMS_FIRST added.
+ * bug fixed: all DFMs in the AST are initialized correctly now
+ *
  * Revision 1.2  2001/02/12 18:30:08  dkr
  * fixed a bug in INFDFMSfundef:
  * Now, DFMUpdateMaskBase() is called in order to get definitely correct
@@ -49,6 +53,7 @@
  *          LOCAL-var)
  *
  *   ...ISFIX    flag: fixpoint reached?
+ *   ...FIRST    flag: first traversal?
  *   ...HIDELOC  bit field: steers hiding of local vars
  *
  *****************************************************************************/
@@ -81,10 +86,10 @@
     if ((old) != NULL) {                                                                 \
         if (DFMTestMask (old) != DFMTest2Masks (old, new)) {                             \
             /* 'old' and 'new' differs */                                                \
-            INFO_INFDFMS_ISFIX (arg_info) = 0;                                           \
+            INFO_INFDFMS_ISFIX (arg_info) = FALSE;                                       \
         }                                                                                \
     } else {                                                                             \
-        INFO_INFDFMS_ISFIX (arg_info) = 0;                                               \
+        INFO_INFDFMS_ISFIX (arg_info) = FALSE;                                           \
     }                                                                                    \
     UPDATE (old, new);
 
@@ -119,7 +124,7 @@ DbugPrintSignature (char *node_str, DFMmask_t in, DFMmask_t out, DFMmask_t local
                   } fprintf (stderr, "\n    local-vars: ");
                   if (local != NULL) { DFMPrintMask (stderr, "%s ", local); } else {
                       fprintf (stderr, "NULL");
-                  } fprintf (stderr, "\n\n"););
+                  } fprintf (stderr, "\n"););
 
     DBUG_VOID_RETURN;
 }
@@ -577,6 +582,16 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
 
     DBUG_ENTER ("InferMasks");
 
+    if (INFO_INFDFMS_FIRST (arg_info)) {
+        /*
+         * first traversal
+         *  -> init the given in/out/local-masks!!!!
+         */
+        (*in) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+        (*out) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+        (*local) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    }
+
     /*
      * save old masks
      */
@@ -643,10 +658,10 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
          * we have to hide the local vars!!
          */
         DBUG_PRINT ("INFDFMS",
-                    ("local vars of node %s are hid!!!\n", NODE_TEXT (arg_node)));
+                    ("local vars of node %s are hid!!!", NODE_TEXT (arg_node)));
     } else {
         DBUG_PRINT ("INFDFMS",
-                    ("local vars of node %s are not hid.\n", NODE_TEXT (arg_node)));
+                    ("local vars of node %s are not hid.", NODE_TEXT (arg_node)));
         DFMSetMaskOr (INFO_INFDFMS_LOCAL (arg_info), *local);
     }
 
@@ -681,6 +696,7 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
 node *
 INFDFMSfundef (node *arg_node, node *arg_info)
 {
+    DFMmask_base_t old_dfm_base;
 #ifndef DBUG_OFF
     int cnt = 0;
 #endif
@@ -690,19 +706,31 @@ INFDFMSfundef (node *arg_node, node *arg_info)
     INFO_INFDFMS_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_DFM_BASE (arg_node)
-          = (FUNDEF_DFM_BASE (arg_node) == NULL)
-              ? DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node))
-              : DFMUpdateMaskBase (FUNDEF_DFM_BASE (arg_node), FUNDEF_ARGS (arg_node),
+        DBUG_PRINT ("INFDFMS", ("-> %s():", FUNDEF_NAME (arg_node)));
+
+        old_dfm_base = FUNDEF_DFM_BASE (arg_node);
+        if (old_dfm_base == NULL) {
+            FUNDEF_DFM_BASE (arg_node)
+              = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+            DBUG_PRINT ("INFDFMS", ("no DFM base found -> created (%p)",
+                                    FUNDEF_DFM_BASE (arg_node)));
+        } else {
+            FUNDEF_DFM_BASE (arg_node)
+              = DFMUpdateMaskBase (old_dfm_base, FUNDEF_ARGS (arg_node),
                                    FUNDEF_VARDEC (arg_node));
+
+            DBUG_ASSERT ((FUNDEF_DFM_BASE (arg_node) == old_dfm_base),
+                         "address of DFM base has changed during update!");
+
+            DBUG_PRINT ("INFDFMS",
+                        ("DFM base found -> updated (%p)", FUNDEF_DFM_BASE (arg_node)));
+        }
 
         INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_OUT (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
-
-        DBUG_PRINT ("INFDFMS",
-                    ("Infering data flow masks in %s():\n", FUNDEF_NAME (arg_node)));
 
         /*
          * search in formal args for reference parameters
@@ -712,10 +740,11 @@ INFDFMSfundef (node *arg_node, node *arg_info)
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
         }
 
+        INFO_INFDFMS_FIRST (arg_info) = TRUE;
         do {
             DBUG_EXECUTE ("INFDFMS", cnt++;);
             DBUG_PRINT ("INFDFMS", ("fixpoint iteration --- loop %i", cnt));
-            INFO_INFDFMS_ISFIX (arg_info) = 1;
+            INFO_INFDFMS_ISFIX (arg_info) = TRUE;
 
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
@@ -723,10 +752,11 @@ INFDFMSfundef (node *arg_node, node *arg_info)
             DFMSetMaskClear (INFO_INFDFMS_OUT (arg_info));
             DFMSetMaskClear (INFO_INFDFMS_LOCAL (arg_info));
             DFMSetMaskClear (INFO_INFDFMS_NEEDED (arg_info));
-        } while (INFO_INFDFMS_ISFIX (arg_info) != 1);
+            INFO_INFDFMS_FIRST (arg_info) = FALSE;
+        } while (!INFO_INFDFMS_ISFIX (arg_info));
 
-        DBUG_PRINT ("INFDFMS",
-                    ("%s() finished after %i iterations\n", FUNDEF_NAME (arg_node), cnt));
+        DBUG_PRINT ("INFDFMS", ("<- %s(): finished after %i iterations\n",
+                                FUNDEF_NAME (arg_node), cnt));
 
         INFO_INFDFMS_IN (arg_info) = DFMRemoveMask (INFO_INFDFMS_IN (arg_info));
         INFO_INFDFMS_OUT (arg_info) = DFMRemoveMask (INFO_INFDFMS_OUT (arg_info));
