@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/11/16 17:24:36  sbs
+ * nasty potential side effect in MergeCopyTop eliminated.
+ * (Showed off on linux only 8-)
+ *
  * Revision 2.18  2000/10/31 23:01:55  dkr
  * signature of Type2Shpseg() changed
  *
@@ -1013,8 +1017,14 @@ MergeCopyTop (node *actchn)
 
     scndchn = CutVinfoChn (actchn);
     restchn = CutVinfoChn (scndchn);
-    res = AppendVinfoChn (MergeVinfoChn (actchn, scndchn),
-                          AppendVinfoChn (actchn, restchn));
+
+    /*
+     * scndchn is abstraced out since it has to be made sure, that MergeVinfoChn
+     * is called BEFORE AppendVinfoChn. This is essential, because AppendVinfoChn
+     * operates in place, i.e. it performes a side effect on it's first parameter!!
+     */
+    scndchn = MergeVinfoChn (actchn, scndchn);
+    res = AppendVinfoChn (scndchn, AppendVinfoChn (actchn, restchn));
 
     DBUG_EXECUTE ("IVE", Print (res););
     DBUG_RETURN (res);
