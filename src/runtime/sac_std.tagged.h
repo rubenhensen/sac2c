@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2003/10/20 18:15:12  dkr
+ * some comments added
+ *
  * Revision 3.52  2003/10/15 17:25:01  dkrHH
  * some comments corrected
  *
@@ -1542,11 +1545,14 @@ typedef int *SAC_array_descriptor_t;
  * UNQ
  */
 
-#define SAC_ND_SET__RC__UNQ(var_NT, rc) SAC_NOOP ()
+#define SAC_ND_SET__RC__UNQ(var_NT, rc)                                                  \
+    SAC_NOOP () /* (rc != 1)  -->  uniqueness violation!!! */
 
-#define SAC_ND_INC_RC__UNQ(var_NT, rc) SAC_NOOP ()
+#define SAC_ND_INC_RC__UNQ(var_NT, rc)                                                   \
+    SAC_NOOP () /* Most likely a uniqueness violation!!! */
 
-#define SAC_ND_DEC_RC__UNQ(var_NT, rc) SAC_NOOP ()
+#define SAC_ND_DEC_RC__UNQ(var_NT, rc)                                                   \
+    SAC_NOOP () /* Most likely a uniqueness violation!!! */
 
 /* 'nt' is unique -> 'nt' has been consumed -> free 'nt' */
 #define SAC_ND_DEC_RC_FREE__UNQ(var_NT, rc, freefun) SAC_ND_FREE (var_NT, freefun)
