@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/06/07 13:36:53  hw
- * - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
- * - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
+ * Revision 1.18  1995/06/08 18:32:08  hw
+ * - changed args-name of ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
  *
+# Revision 1.17  1995/06/07  13:36:53  hw
+# - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
+# - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
+#
 # Revision 1.16  1995/06/02  08:48:13  hw
 # ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN and ND_END_FOLD inserted
 #
@@ -261,7 +264,7 @@ ICM_END( ND_END_MODARRAY_S )
 ICM_DEF( ND_BEGIN_FOLDPRF, TRACE_WST)
   ICM_STR( res)
   ICM_INT(dimres)
-  ICM_VAR( 1, valstr)
+  ICM_VAR( 1, neutral)
   ICM_STR( from)
   ICM_STR( to)
   ICM_STR( idx)
@@ -280,7 +283,7 @@ ICM_END( ND_END_FOLD)
 ICM_DEF( ND_BEGIN_FOLDFUN, TRACE_WST)
   ICM_STR( res)
   ICM_INT(dimres)
-  ICM_VAR( 1, valstr)
+  ICM_VAR( 1, neutral)
   ICM_STR( from)
   ICM_STR( to)
   ICM_STR( idx)
