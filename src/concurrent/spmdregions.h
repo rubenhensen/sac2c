@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/04/29 20:15:40  dkr
+ * *** empty log message ***
+ *
  * Revision 1.5  1998/04/24 17:16:53  dkr
  * renamed Spmd...() to SPMD...()
  *
@@ -25,11 +28,21 @@
 
 #define _sac_spmdregions_h
 
-/* init SPMD/sync-regions */
-extern node *SPMDInitFundef (node *arg_node, node *arg_info);
+/* build SPMD-regions */
 extern node *SPMDInitAssign (node *arg_node, node *arg_info);
 
-/* optimize SPMD/sync-regions */
+/* optimize SPMD-regions */
+/* not yet implemented */
+
+/* lift SPMD-regions */
+extern node *SPMDLiftFundef (node *arg_node, node *arg_info);
+extern node *SPMDLiftSpmd (node *arg_node, node *arg_info);
+extern node *SPMDLiftId (node *arg_node, node *arg_info);
+
+/* build sync-regions */
+extern node *SYNCInitAssign (node *arg_node, node *arg_info);
+
+/* optimize sync-regions */
 /* not yet implemented */
 
 extern node *SpmdRegions (node *syntax_tree);
