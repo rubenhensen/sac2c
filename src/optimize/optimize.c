@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/10/17 17:08:14  dkr
+ * -noWLT now skips the WLT in the second cycle, too
+ *
  * Revision 2.21  2000/09/29 14:52:01  sbs
  * no changes
- * ,.
  *
  * Revision 2.20  2000/08/01 13:17:45  dkr
  * check of (break_cycle_specifier == 0) added for breaks before the
@@ -75,7 +77,7 @@
  * calls in WithloopFolding / WithloopFoldingWLT respectively.
  *
  * Revision 1.106  1999/01/11 16:52:33  sbs
- * typos in arfg[3~[3~[3~_info nodes for ConstantFolding and
+ * typos in arg_info nodes for ConstantFolding and
  * WithloopFolding.
  *
  * Revision 1.105  1999/01/08 11:29:46  sbs
@@ -427,16 +429,18 @@ OPTmodul (node *arg_node, node *arg_info)
     }
 
     if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "inl")))
+        && (0 == strcmp (break_specifier, "inl"))) {
         goto DONE;
+    }
 
     if (optimize & OPT_DFR) {
         arg_node = DeadFunctionRemoval (arg_node, arg_info);
     }
 
     if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "dfr")))
+        && (0 == strcmp (break_specifier, "dfr"))) {
         goto DONE;
+    }
 
     if (MODUL_FUNS (arg_node)) {
         /*
@@ -458,8 +462,9 @@ OPTmodul (node *arg_node, node *arg_info)
     if (optimize & (OPT_TSI | OPT_AP)) {
         arg_node = WLAccessAnalyze (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa")))
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa"))) {
             goto DONE;
+        }
     }
 
     /*
@@ -468,8 +473,9 @@ OPTmodul (node *arg_node, node *arg_info)
     if (optimize & OPT_AP) {
         arg_node = ArrayPadding (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ap")))
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ap"))) {
             goto DONE;
+        }
     }
 
     /*
@@ -478,8 +484,9 @@ OPTmodul (node *arg_node, node *arg_info)
     if (optimize & OPT_TSI) {
         arg_node = TileSizeInference (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi")))
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi"))) {
             goto DONE;
+        }
     }
 
     /*
@@ -499,8 +506,9 @@ OPTmodul (node *arg_node, node *arg_info)
     if (optimize & OPT_IVE) {
         arg_node = IndexVectorElimination (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ive")))
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ive"))) {
             goto DONE;
+        }
     }
 
 DONE:
@@ -619,8 +627,9 @@ OPTfundef (node *arg_node, node *arg_info)
         }
 
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "ae")))
+            && (0 == strcmp (break_specifier, "ae"))) {
             goto INFO;
+        }
 
         /*
          * necessary after AE (which does not care about masks while introducing
@@ -633,8 +642,9 @@ OPTfundef (node *arg_node, node *arg_info)
         }
 
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "dcr")))
+            && (0 == strcmp (break_specifier, "dcr"))) {
             goto INFO;
+        }
 
         /*
          * Now, we enter the first loop. It consists of:
@@ -662,8 +672,9 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cse")))
+                && (0 == strcmp (break_specifier, "cse"))) {
                 goto INFO;
+            }
 
             if (optimize & OPT_CF) {
                 arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
@@ -683,8 +694,9 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf")))
+                && (0 == strcmp (break_specifier, "cf"))) {
                 goto INFO;
+            }
 
             if (optimize & OPT_WLT) {
                 arg_node = WithloopFoldingWLT (arg_node); /* wlt */
@@ -692,8 +704,9 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wlt")))
+                && (0 == strcmp (break_specifier, "wlt"))) {
                 goto INFO;
+            }
 
             if (optimize & OPT_WLF) {
                 arg_node = WithloopFolding (arg_node, loop1); /* wli, wlf */
@@ -706,8 +719,9 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && ((0 == strcmp (break_specifier, "wli"))
-                    || (0 == strcmp (break_specifier, "wlf"))))
+                    || (0 == strcmp (break_specifier, "wlf")))) {
                 goto INFO;
+            }
 
             if (wlf_expr != old_wlf_expr) {
                 /*
@@ -721,8 +735,9 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf2")))
+                && (0 == strcmp (break_specifier, "cf2"))) {
                 goto INFO;
+            }
 
             if (optimize & OPT_DCR) {
                 arg_node = DeadCodeRemoval (arg_node, arg_info); /* s.o. */
@@ -730,24 +745,27 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "dcr")))
+                && (0 == strcmp (break_specifier, "dcr"))) {
                 goto INFO;
+            }
 
             if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
                 arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lur")))
+                && (0 == strcmp (break_specifier, "lur"))) {
                 goto INFO;
+            }
 
             if (optimize & OPT_LUS) {
                 arg_node = Unswitch (arg_node, arg_info); /* unswitch_tab */
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lus")))
+                && (0 == strcmp (break_specifier, "lus"))) {
                 goto INFO;
+            }
 
             if (optimize & OPT_LIR) {
                 arg_node = LoopInvariantRemoval (arg_node,
@@ -755,8 +773,9 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lir")))
+                && (0 == strcmp (break_specifier, "lir"))) {
                 goto INFO;
+            }
 
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
                   || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
@@ -784,25 +803,30 @@ OPTfundef (node *arg_node, node *arg_info)
                         ("---------------------------------------- loop TWO, pass %d",
                          loop2));
 
-            arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
-            /* srs: CF does not handle the USE mask correctly. */
-            /* quick fix: always rebuild masks after CF */
-            arg_node = GenerateMasks (arg_node, NULL);
+            if (optimize & OPT_CF) {
+                arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                /* srs: CF does not handle the USE mask correctly. */
+                /* quick fix: always rebuild masks after CF */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "cf")))
+                && (0 == strcmp (break_specifier, "cf"))) {
                 goto INFO;
+            }
 
             /*
              * This is needed to transform more index vectors in scalars or vice versa.
              */
-            DBUG_PRINT ("WLF", ("WITHLOOP TRANSFORMATIONS"));
-            arg_node = WithloopFoldingWLT (arg_node); /* wlt */
-            arg_node = GenerateMasks (arg_node, NULL);
+            if (optimize & OPT_WLT) {
+                arg_node = WithloopFoldingWLT (arg_node); /* wlt */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "wlt")))
+                && (0 == strcmp (break_specifier, "wlt"))) {
                 goto INFO;
+            }
         }
 
         /*
