@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.103  1998/03/26 18:05:43  srs
+ * added NWITH_NO_CHANCE
+ *
  * Revision 1.102  1998/03/26 14:00:25  dkr
  * some changes in N_WLgrid:
  *   changed usage of MakeWLgrid
@@ -2133,6 +2136,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_REFERENCED_FOLD(n) (((wl_info *)n->info2)->referenced_fold)
 #define NWITH_COMPLEX(n) (((wl_info *)n->info2)->complex)
 #define NWITH_FOLDABLE(n) (((wl_info *)n->info2)->foldable)
+#define NWITH_NO_CHANCE(n) (((wl_info *)n->info2)->no_chance)
 
 /*--------------------------------------------------------------------------*/
 
