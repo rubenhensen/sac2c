@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/12 09:03:42  cg
+ * The new macro SAC_MT_CURRENT_FUN() is now set before each function definition.
+ *
  * Revision 1.3  1998/05/07 10:13:53  dkr
  * some routines are moved to icm2c_basic.h
  *
@@ -424,6 +427,9 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_FUN_DEC
+
+    fprintf (outfile, "#undef SAC_MT_CURRENT_FUN()\n");
+    fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", name);
 
     INDENT;
     fprintf (outfile, "%s ", rettype);
