@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.3  1994/12/21 12:22:07  sbs
+# Revision 1.4  1994/12/31 14:31:32  sbs
+# preliminary (working) version
+#
+# Revision 1.3  1994/12/21  12:22:07  sbs
 # includes extended
 #
 # Revision 1.2  1994/12/16  14:33:39  sbs
@@ -36,6 +39,10 @@ clean:
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
 filemgr.o: filemgr.h
-import.o: ../global/tree.h ../global/node_info.mac
-import.o: ../global/prf_node_info.mac ../global/Error.h /usr/include/stdio.h
-import.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h import.h
+import.o: /usr/include/malloc.h /usr/include/string.h
+import.o: /usr/include/sys/stdtypes.h /usr/include/limits.h ../../inc/dbug.h
+import.o: /usr/include/stdio.h ../global/tree.h ../global/type_info.mac
+import.o: ../global/node_info.mac ../global/prf_node_info.mac
+import.o: ../global/free.h ../global/Error.h ../global/my_debug.h
+import.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
+import.o: filemgr.h import.h
