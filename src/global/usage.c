@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.38  2000/08/04 09:54:30  nmw
+ * added hint for additional docu of the cinterface
+ *
  * Revision 2.37  2000/08/02 11:13:44  nmw
  * genlib c comment for profiling and MT changed
  *
@@ -625,6 +628,7 @@ usage ()
             "\t\t\t     use same switches for PHM and profiling in all\n"
             "\t\t\t     modules you link to one c executeable!\n"
             "\t\t\t     Multithreading is not yet available for c libraries!\n"
+            "\t\t\t     (see also documentation in sac_cinterface.h)\n"
             "\t\t\tdefault: -genlib sac\n"
 
             "\n\t -l <n>\t\tlink level for generating SAC library.\n"
