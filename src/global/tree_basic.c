@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/20 13:45:58  cg
+ * Revision 1.6  1995/11/01 07:08:46  sbs
+ * neutral addded to N_foldprf;
+ * some DBUG_PRINTS inserted
+ *
+ * Revision 1.5  1995/10/20  13:45:58  cg
  * added DBUG_PRINT in MakeNodelist
  *
  * Revision 1.4  1995/10/19  10:05:54  cg
@@ -441,8 +445,10 @@ MakeBlock (node *instr, node *vardec)
     BLOCK_INSTR (tmp) = instr;
     BLOCK_VARDEC (tmp) = vardec;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " vardec: " P_FORMAT,
+                 NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp, BLOCK_INSTR (tmp),
+                 BLOCK_VARDEC (tmp)));
 
     DBUG_RETURN (tmp);
 }
@@ -480,8 +486,10 @@ MakeAssign (node *instr, node *next)
     ASSIGN_INSTR (tmp) = instr;
     ASSIGN_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " next: " P_FORMAT,
+                 NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp, ASSIGN_INSTR (tmp),
+                 ASSIGN_NEXT (tmp)));
 
     DBUG_RETURN (tmp);
 }
@@ -706,20 +714,23 @@ MakeModarray (node *array, node *body)
 }
 
 node *
-MakeFoldprf (prf prf, node *body)
+MakeFoldprf (prf prf, node *body, node *neutral)
 {
     node *tmp;
     DBUG_ENTER ("MakeFoldprf");
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_foldprf;
-    NODE_NNODE (tmp) = 1;
+    NODE_NNODE (tmp) = 2;
 
     FOLDPRF_PRF (tmp) = prf;
     FOLDPRF_BODY (tmp) = body;
+    FOLDPRF_NEUTRAL (tmp) = neutral;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
-                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT " body: " P_FORMAT " neutral: " P_FORMAT,
+                 NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp, FOLDPRF_BODY (tmp),
+                 FOLDPRF_NEUTRAL (tmp)));
 
     DBUG_RETURN (tmp);
 }
