@@ -1,326 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2004/11/23 13:14:05  skt
+ * SacDevCampDK 2k4
+ *
  * Revision 3.108  2004/11/22 21:10:09  ktr
  * IMSOP 04
- *
- * Revision 3.107  2004/11/20 17:25:31  sah
- * added some defines
- *
- * Revision 3.106  2004/11/19 21:04:13  sah
- * added some linklist features
- *
- * Revision 3.105  2004/11/19 10:18:29  sah
- * ST_classfuns are external now as well
- *
- * Revision 3.104  2004/11/07 18:09:30  sah
- * modified some macros to reflect newast
- *
- * Revision 3.103  2004/10/26 16:14:31  sah
- * added RemoveFundef
- *
- * Revision 3.102  2004/10/14 13:38:04  sbs
- * eliminated second parameter ot Type2Shape
- *
- * Revision 3.101  2004/10/14 13:18:04  sbs
- * eliminated VINFO_DIM VINFO_SHPSEG VINFO_SELEMS
- *
- * Revision 3.100  2004/10/14 12:43:19  sbs
- * Type2Shape added.
- *
- * Revision 3.99  2004/10/13 15:18:28  sah
- * MakeIdFromIds works in NEW_AST mode now!
- *
- * Revision 3.98  2004/10/12 13:22:14  sah
- * modified NCODE_DEC_USED and added
- * NODE_ISALIVE
- *
- * Revision 3.97  2004/10/12 10:26:32  ktr
- * Corrected IDS_NTYPE.
- *
- * Revision 3.96  2004/10/11 16:48:33  sah
- * fixed problem with NCODE_DEC_USED
- *
- * Revision 3.95  2004/10/11 14:57:53  sah
- * made INC/DEC NCODE_USED explicit 
- *
- * Revision 3.94  2004/10/11 14:17:35  ktr
- * Added IDS_NTYPE, PRF_EXPRS4, PRF_ARG4
- *
- * Revision 3.93  2004/10/07 12:12:45  sah
- * added NCODE_INC_USED macro
- *
- * Revision 3.92  2004/10/05 09:09:35  sah
- * replaced some NULL by 0 in macros on int
- *
- * Revision 3.91  2004/10/04 17:15:12  sah
- * created new L_WLNODE and WLNODE macros
- *
- * Revision 3.90  2004/10/01 08:39:32  sah
- * added first idea of new WLNODE_NEXT
- * in a comment
- *
- * Revision 3.89  2004/09/28 14:11:18  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.88  2004/09/24 11:15:14  khf
- * ID_NTYPE added
- *
- * Revision 3.87  2004/09/20 08:42:44  ktr
- * added NWITHOP_MEM
- *
- * Revision 3.86  2004/08/02 19:30:43  sah
- * moved MakeStr_Copy to tree_compound
- *
- * Revision 3.85  2004/08/02 17:18:01  sah
- * removed all the WLxxxX_xxx macros from tree_basic.h
- * and wrote new ones in tree_compound.h
- * unfortunately these can only be used as r-values!
- *
- * Revision 3.84  2004/07/31 16:11:35  sah
- * moved MakeId_xxx functions to tree_compund
- *
- * Revision 3.83  2004/07/31 13:48:11  sah
- * removed MakeNCodeExprs
- * moved NCODE_WLAA_* macros to tree_compound, as they
- * ease the access to NCODE_WLAA_INFO and do not access
- * attributes of the node
- *
- * Revision 3.82  2004/07/29 18:02:23  sah
- * some macro cleanup
- *
- * Revision 3.81  2004/07/14 14:21:37  sah
- * moved NodeBehindCast from LoopInvariantRemoval here
- *
- * Revision 3.80  2004/02/06 14:19:33  mwe
- * isPhiFun added, PHITARGET's removed
- *
- * Revision 3.79  2003/12/23 10:52:56  khf
- * NCODE_CEXPR added because NCODE_CEXPR in tree_basic.h changed to NCODE_CEXPRS.
- *
- * Revision 3.78  2003/11/11 14:25:11  dkr
- * NWITH_DEFAULT, NWITH2_DEFAULT added
- *
- * Revision 3.77  2003/06/17 16:07:51  dkr
- * NWITH_OR_NWITH2_CEXPR added
- *
- * Revision 3.76  2003/06/11 22:03:09  ktr
- * ARRAY_SHAPE added.
- *
- * Revision 3.75  2003/04/20 20:25:11  dkr
- * L_AP_OR_PRF_ARG added
- *
- * Revision 3.74  2003/03/10 09:22:05  sbs
- * MAKE_OPON_LET and MAKE_INCDEC_LET adjusted to the new
- * prf convention reqiuired by the TC
- *
- * Revision 3.73  2002/10/22 12:40:49  sbs
- * DBUG_ASSERTs in expression position replaced by DBUG_ASSERT_EXPR
- *
- * Revision 3.72  2002/10/18 13:46:16  sbs
- * various VARDEC_OR_ARG_.... macros extended to handle
- * N_objdef backlinks as well.
- * VARDEC_OR_ARG_OR_OBJDEF)_... macros killed
- *
- * Revision 3.71  2002/10/16 11:07:30  sbs
- * VARDEC_OR_ARG_OR_OBJDEF_AVIS and L_VARDEC_OR_ARG_OR_OBJDEF_AVIS added.
- *
- * Revision 3.70  2002/10/11 15:58:52  sbs
- * FUNDEF_IS_EXTERNAL added.
- *
- * Revision 3.69  2002/10/09 22:00:11  dkr
- * IDS_SHPSEG, ID_SHPSEG added
- *
- * Revision 3.68  2002/10/08 13:03:36  sbs
- * ID_OR_ARRAY_TYPE added.
- *
- * Revision 3.67  2002/09/06 10:03:15  sbs
- * Ids2Exprs added.
- *
- * Revision 3.66  2002/09/03 11:09:07  dkr
- * signature of CompareTypesImplementation() modified
- *
- * Revision 3.65  2002/08/05 17:03:45  sbs
- * several extensions required for the alpha version of the new type checker
- *
- * Revision 3.64  2002/07/15 17:25:02  dkr
- * LiftArg() moved from precompile.c to tree_compound.[ch]
- *
- * Revision 3.63  2002/06/27 16:56:26  dkr
- * signature of CreateSel() modified
- *
- * Revision 3.62  2002/06/27 13:31:47  dkr
- * Ids2Array() added
- *
- * Revision 3.61  2002/06/27 12:51:29  dkr
- * signature of CreateSel() modified
- *
- * Revision 3.60  2002/06/27 10:59:52  dkr
- * - CreateScalarWith() and CreateSel() added
- * - bug in CreateScalarWith() fixed
- *
- * Revision 3.59  2002/06/25 23:52:06  ktr
- * NPART_CEXPR and NPART_CBLOCK added.
- *
- * Revision 3.58  2002/06/20 15:24:56  dkr
- * CreateZeroFromType(), CreateZero() added
- * AddVardecs() added
- *
- * Revision 3.57  2002/04/29 15:59:34  sbs
- * function HasDotTypes added.
- *
- * Revision 3.56  2002/03/07 16:42:03  sbs
- * HasDotArgs added.
- *
- * Revision 3.55  2002/03/01 02:35:14  dkr
- * type ARGTAB added
- *
- * Revision 3.54  2002/02/22 13:56:09  dkr
- * L_NWITH_OR_NWITH2_DEC_RC_IDS added
- *
- * Revision 3.53  2002/02/21 14:38:00  dkr
- * some VARDEC_OR_ARG_... macros added
- *
- * Revision 3.52  2002/02/20 17:03:54  dkr
- * some FUNDEF_... macros added or removed
- *
- * Revision 3.51  2001/12/13 15:15:44  dkr
- * signature of MakeAssignIcm?() modified
- *
- * Revision 3.50  2001/12/12 14:33:14  dkr
- * function CombineExprs() added
- *
- * Revision 3.49  2001/12/11 15:58:21  dkr
- * GetDim() renamed into GetShapeDim()
- * GetDim() added
- *
- * Revision 3.48  2001/12/10 13:45:58  dkr
- * function MakeAssignInstr() added
- * functions MakeAssigns?() added
- *
- * Revision 3.47  2001/07/19 16:19:57  cg
- * Added new inquiery functions IsImported, IsExternal, IsFromModule
- * and IsFromClass to avoid clumsy direct checks for import status
- * of types, objects, and functions.
- *
- * Revision 3.46  2001/07/18 12:57:45  cg
- * Function ExprsConcat renamed to AppendExprs.
- *
- * Revision 3.45  2001/07/17 15:12:12  cg
- * Some compound macros moved from tree_basic.h to tree_compound.h
- *
- * Revision 3.44  2001/06/01 14:46:51  dkr
- * macro NWITH_OR_NWITH2_DEC_RC_IDS added
- *
- * Revision 3.43  2001/05/31 14:50:43  nmw
- * CompareTypesImplementation() added
- *
- * Revision 3.42  2001/04/26 21:06:45  dkr
- * L_VARDEC_OR_ARG_TYPE added
- *
- * Revision 3.41  2001/04/26 13:10:16  dkr
- * CountIds() added
- *
- * Revision 3.40  2001/04/26 12:18:42  dkr
- * GetExprsLength() renamed into CountExprs()
- *
- * Revision 3.39  2001/04/24 20:08:08  dkr
- * macros ASSIGN_LHS, ASSIGN_RHS added
- *
- * Revision 3.38  2001/04/24 09:35:06  dkr
- * CHECK_NULL renamed into STR_OR_EMPTY
- *
- * Revision 3.37  2001/04/17 15:26:37  nmw
- * AppendTypes added
- *
- * Revision 3.36  2001/04/09 15:56:33  nmw
- * MakeArgFromVardec added
- *
- * Revision 3.35  2001/04/06 16:05:10  dkr
- * CountTypes(), CountArgs() added
- *
- * Revision 3.34  2001/04/04 19:41:45  dkr
- * FUNDEF_DOES_REFCOUNT and FUNDEF_WANTS_REFCOUNT added
- *
- * Revision 3.33  2001/04/04 09:58:30  nmw
- * AdjustAvisData added
- *
- * Revision 3.32  2001/04/02 15:20:03  dkr
- * macros FUNDEF_IS_LACFUN, FUNDEF_IS_CONDFUN, FUNDEF_IS_LOOPFUN added
- *
- * Revision 3.31  2001/04/02 14:42:57  dkr
- * WLSEGVAR_IDX_PRINT modified
- * WLSEGX_IDX_MIN, WLSEGX_IDX_MAX added
- *
- * Revision 3.30  2001/04/02 11:44:53  dkr
- * functions NodeOrInt...(), NameOrVal...() moved to wl_bounds.[ch]
- *
- * Revision 3.29  2001/03/29 09:18:49  nmw
- * tabs2spaces done
- *
- * Revision 3.28  2001/03/29 01:33:43  dkr
- * functions for NodeOrInt, NameOrVal recoded
- *
- * Revision 3.26  2001/03/28 14:53:49  dkr
- * CHECK_NULL moved from tree_compound.h to internal_lib.h
- *
- * Revision 3.25  2001/03/27 15:40:17  nmw
- * Array2Vec as wrapper for different Array2<XYZ>Vec added
- *
- * Revision 3.22  2001/03/05 16:43:13  dkr
- * new macros NWITH???_IS_FOLD added
- *
- * Revision 3.21  2001/02/16 08:42:14  nmw
- * macro AVIS_SSASTACK_INUSE added
- *
- * Revision 3.20  2001/02/15 16:59:43  nmw
- * access macro for SSAstack added
- *
- * Revision 3.19  2001/02/13 15:17:39  nmw
- * compound macro VARDEC_OR_ARG_AVIS added
- *
- * Revision 3.17  2001/02/09 10:47:07  dkr
- * macros PRF_EXPRS?, AP_EXPRS? added
- *
- * Revision 3.16  2001/02/07 21:14:04  dkr
- * some WL... macros corrected: all ?-expressions in brackets now
- *
- * Revision 3.15  2001/02/07 20:16:56  dkr
- * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
- *
- * Revision 3.14  2001/02/06 01:48:06  dkr
- * WLBLOCKSTR_GET_ADDR added
- *
- * Revision 3.12  2001/01/29 16:08:19  dkr
- * WL_GET_ADDRESS replaced by WLNODE_GET_ADDR, WLSTRIDEX_GET_ADDR,
- * WLGRIDX_GET_ADDR
- *
- * Revision 3.11  2001/01/24 23:34:24  dkr
- * NameOrVal_MakeIndex, NodeOrInt_MakeIndex added
- *
- * Revision 3.10  2001/01/19 11:54:43  dkr
- * signature of NameOrVal_MakeNode modified
- *
- * Revision 3.9  2001/01/17 14:17:27  dkr
- * functions NameOrVal_... and NodeOrInt_... added
- *
- * Revision 3.8  2001/01/10 14:27:32  dkr
- * function MakeWLsegX added
- *
- * Revision 3.7  2001/01/10 11:30:18  dkr
- * some WLGRIDX_... macros added
- *
- * Revision 3.6  2001/01/09 17:26:49  dkr
- * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.5  2001/01/09 16:55:13  dkr
- * some redundant macros for WL-nodes removed
- *
- * Revision 3.3  2000/12/12 15:34:07  dkr
- * some macros renamed
- *
- * Revision 3.2  2000/11/29 13:13:29  dkr
- * macros AP_ARG? added
  *
  * [...]
  *
@@ -351,130 +36,11 @@ specific implementation of a function should remain with the source code.
 #define _SAC_TREE_COMPOUND_H_
 
 #include "types.h"
-#include "shape.h"
+/*#include "shape.h"
 #include "tree_basic.h"
 #include "Error.h"
 #include "free.h"
-
-/*****************************************************************************/
-
-/**
- **  some ugly macros (better use modul CompareTree!)
- **/
-
-/*
- *  macro name    : CMP_TYPE_USER
- *  arg types     : 1) types*
- *                  2) types*
- *  result type   : int
- *  description   : compares two user-defined types (name and module)
- *                  Names and module names must be equal.
- *  remarks       : result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPE_USER(a, b)                                                              \
-    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
-     && (!strcmp (STR_OR_EMPTY (TYPES_MOD (a)), STR_OR_EMPTY (TYPES_MOD (b)))))
-
-/*
- *  macro name    : CMP_TYPEDEF(a,b)
- *  arg types     : 1) node*  (N_typedef)
- *                  2) node*  (N_typedef)
- *  result type   : int
- *  description   : compares two typedef nodes (name and module)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPEDEF(a, b)                                                                \
-    ((NULL == TYPEDEF_MOD (a))                                                           \
-       ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)) && (NULL == TYPEDEF_MOD (b)))     \
-       : ((NULL == TYPEDEF_MOD (b))                                                      \
-            ? 0                                                                          \
-            : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
-               && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
-
-/*
- *  macro name    : CMP_TYPE_TYPEDEF(name, mod, typedef)
- *  arg types     : 1) char*
- *                  2) char*
- *                  3) node*  (N_typedef)
- *  result type   : int
- *  description   : compares name and module name of a type with the
- *                  defined name and module name of a typedef
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
-    ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
-     && (!strcmp (STR_OR_EMPTY (mod), STR_OR_EMPTY (TYPEDEF_MOD (tdef)))))
-
-/*
- *  macro name    : CMP_OBJDEF(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two objdef nodes (name and module)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_OBJDEF(a, b)                                                                 \
-    ((NULL == OBJDEF_MOD (a))                                                            \
-       ? (!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)) && (NULL == OBJDEF_MOD (b)))        \
-       : ((NULL == OBJDEF_MOD (b)) ? 0                                                   \
-                                   : ((!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)))       \
-                                      && (!strcmp (OBJDEF_MOD (a), OBJDEF_MOD (b))))))
-
-/*
- *  macro name    : CMP_OBJ_OBJDEF
- *  arg types     : 1) char*
- *                  2) char*
- *                  3) node*  (N_objdef)
- *  result type   : int
- *  description   : compares name and module name of an object with the
- *                  defined name and module name of an objdef
- *                  result: 1 - equal, 0 - not equal
- */
-
-#ifndef NEW_AST
-#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
-    ((mod == NULL)                                                                       \
-       ? (0 == strcmp (name, OBJDEF_NAME (odef)))                                        \
-       : ((0 == strcmp (name, OBJDEF_NAME (odef)))                                       \
-          && ((OBJDEF_MOD (odef) == NULL) ? (0 == strcmp (mod, OBJDEF_LINKMOD (odef)))   \
-                                          : (0 == strcmp (mod, OBJDEF_MOD (odef))))))
-#else
-#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
-    ((mod == NULL) ? (0 == strcmp (name, OBJDEF_NAME (odef)))                            \
-                   : ((0 == strcmp (name, OBJDEF_NAME (odef)))                           \
-                      && (0 == strcmp (mod, OBJDEF_MOD (odef)))))
-#endif /* NEW_AST */
-
-/*
- *  macro name    : CMP_FUN_ID(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name and module only)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_FUN_ID(a, b)                                                                 \
-    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
-     && (0 == strcmp (STR_OR_EMPTY (FUNDEF_MOD (a)), STR_OR_EMPTY (FUNDEF_MOD (b)))))
-
-/*
- *  macro name    : CMP_FUNDEF(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name, module, and domain)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_FUNDEF(a, b)                                                                 \
-    ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
-
-/*****************************************************************************/
+*/
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
@@ -491,50 +57,19 @@ specific implementation of a function should remain with the source code.
 /* value, representing an inactive reference counter */
 #define RC_INACTIVE (-1)
 
-/*
- * macros for testing the RC status
- */
-#define RC_IS_UNDEF(rc) ((rc) == RC_UNDEF)
-#define RC_IS_INACTIVE(rc) ((rc) == RC_INACTIVE)
-#define RC_IS_ACTIVE(rc) ((rc) >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
-
-#define RC_INIT(rc) (RC_IS_ACTIVE (rc) ? 1 : (rc))
-
-#define RC_IS_LEGAL(rc) ((RC_IS_INACTIVE (rc)) || (RC_IS_ACTIVE (rc)))
-
-#define RC_IS_ZERO(rc) ((rc) == 0)
-#define RC_IS_VITAL(rc) ((rc) > 0)
-
-/*
- *  Steering which variables to be refcounted.
- */
-#define DECL_MUST_REFCOUNT(vardec_or_arg)                                                \
-    (VARDEC_OR_ARG_STATUS (vardec_or_arg) != ST_artificial)
-#define DECL_MUST_NAIVEREFCOUNT(vardec_or_arg)                                           \
-    (VARDEC_OR_ARG_STATUS (vardec_or_arg) != ST_artificial)
-
-#define TYPE_MUST_REFCOUNT(type) (TRUE)
-
-/***
- ***  SHAPE :
- ***/
-
-#define SHAPES_SELEMS(s) (SHPSEG_ELEMS (SHAPES_SHPSEG (s)))
-#define SHAPES_SNEXT(s) (SHPSEG_NEXT (SHAPES_SHPSEG (s)))
-
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  SHPSEG :
  ***/
 
-extern int GetShpsegLength (int dims, shpseg *shape);
-extern shpseg *DiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
-extern bool EqualShpseg (int dim, shpseg *shape2, shpseg *shape1);
-extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
+extern int TCgetShpsegLength (int dims, shpseg *shape);
+extern shpseg *TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
+extern bool TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1);
+extern shpseg *TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 
-extern shpseg *Array2Shpseg (node *array, int *ret_dim);
-extern node *Shpseg2Array (shpseg *shape, int dim);
+extern shpseg *TCarray2Shpseg (node *array, int *ret_dim);
+extern node *TCshpseg2Array (shpseg *shape, int dim);
 
 /*--------------------------------------------------------------------------*/
 
@@ -548,30 +83,29 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
 
 #define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
 
-extern types *AppendTypes (types *chain, types *item);
-extern int CountTypes (types *type);
-extern int HasDotTypes (types *type);
-extern types *GetTypes_Line (types *type, int line);
-extern types *GetTypes (types *type);
-extern int GetShapeDim (types *type);
-extern int GetDim (types *type);
-extern simpletype GetBasetype (types *type);
-extern int GetBasetypeSize (types *type);
-extern int GetTypesLength (types *type);
-extern int CompareTypesImplementation (types *t1, types *t2);
-extern shpseg *Type2Shpseg (types *type, int *ret_dim);
-extern shape *Type2Shape (types *type);
-extern node *Type2Exprs (types *type);
-extern node *CreateZeroFromType (types *type, bool unroll, node *fundef);
+extern types *TCappendTypes (types *chain, types *item);
+extern int TCcountTypes (types *type);
+extern types *TCgetTypes_Line (types *type, int line);
+extern types *TCgetTypes (types *type);
+extern int TCgetShapeDim (types *type);
+extern int TCgetDim (types *type);
+extern simpletype TCgetBasetype (types *type);
+extern int TCgetBasetypeSize (types *type);
+extern int TCgetTypesLength (types *type);
+extern int TCcompareTypesImplementation (types *t1, types *t2);
+extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
+extern shape *TCtype2Shape (types *type);
+extern node *TCtype2Exprs (types *type);
+extern node *TCcreateZeroFromType (types *type, bool unroll, node *fundef);
 
 /******************************************************************************
  *
  * function:
- *   int IsBoxed( types *type)
- *   int IsArray( types *type)
- *   int IsUnique( types *type)
- *   int IsHidden( types *type)
- *   int IsNonUniqueHidden( types *type)
+ *   bool TCisBoxed( types *type)
+ *   bool TCisArray( types *type)
+ *   bool TCisUnique( types *type)
+ *   bool TCisHidden( types *type)
+ *   bool TCisNonUniqueHidden( types *type)
  *
  * description:
  *   These functions may be used to check for particular properties
@@ -579,11 +113,11 @@ extern node *CreateZeroFromType (types *type, bool unroll, node *fundef);
  *
  ******************************************************************************/
 
-extern bool IsBoxed (types *type);
-extern bool IsArray (types *type);
-extern bool IsUnique (types *type);
-extern bool IsHidden (types *type);
-extern bool IsNonUniqueHidden (types *type);
+extern bool TCisBoxed (types *type);
+extern bool TCisArray (types *type);
+extern bool TCisUnique (types *type);
+extern bool TCisHidden (types *type);
+extern bool TCisNonUniqueHidden (types *type);
 
 /*--------------------------------------------------------------------------*/
 
@@ -601,13 +135,13 @@ extern bool IsNonUniqueHidden (types *type);
 #define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
 
-extern ids *AppendIds (ids *chain, ids *item);
-extern int CountIds (ids *ids_arg);
+extern node *TCappendIds (node *chain, node *item);
+extern int CountIds (node *ids_arg);
 
 /******************************************************************************
  *
  * function:
- *   ids *LookupIds(char *name, ids *ids_chain)
+ *   node *LookupIds(char *name, node *ids_chain)
  *
  * description:
  *   This function searches for a given identifier name within an ids-chain
@@ -615,7 +149,7 @@ extern int CountIds (ids *ids_arg);
  *
  ******************************************************************************/
 
-extern ids *LookupIds (char *name, ids *ids_chain);
+extern node *TClookupIds (const char *name, node *ids_chain);
 
 /*--------------------------------------------------------------------------*/
 
@@ -623,7 +157,7 @@ extern ids *LookupIds (char *name, ids *ids_chain);
  ***  NUMS :
  ***/
 
-extern int CountNums (nums *numsp);
+extern int TCcountNums (nums *numsp);
 
 /*--------------------------------------------------------------------------*/
 
@@ -631,13 +165,15 @@ extern int CountNums (nums *numsp);
  ***  ConstVec :
  ***/
 
-extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
+/* TODO  - eleminate the void* */
+extern void *TCcopyConstVec (simpletype vectype, int veclen, void *const_vec);
 
-extern void *AllocConstVec (simpletype vectype, int veclen);
+extern void *TCallocConstVec (simpletype vectype, int veclen);
 
-extern void *ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node);
+extern void *TCmodConstVec (simpletype vectype, void *const_vec, int idx,
+                            node *const_node);
 
-extern node *AnnotateIdWithConstVec (node *expr, node *id);
+extern node *TCannotateIdWithConstVec (node *expr, node *id);
 
 /*--------------------------------------------------------------------------*/
 
@@ -645,53 +181,10 @@ extern node *AnnotateIdWithConstVec (node *expr, node *id);
  ***  NODELIST :
  ***/
 
+#if 0 /* TODO - to be deleted after SACDevCampDK 2k4 */
 /*
  *
- *  functionname  : StoreNeededNode
- *  arguments     : 1) node which has to be inserted
- *                  2) fundef node where 1) has to be inserted
- *                  3) status of the new nodelist entry
- *  description   : inserts the given node at the end of the correct
- *                  nodelist (funlist, objlist, or typelist) of the
- *                  given fundef node and
- *  remarks       : status may be ST_regular | ST_artificial
- *
- */
-
-extern void StoreNeededNode (node *insert, node *fundef, statustype status);
-
-/*
- *
- *  functionname  : StoreNeededNodes
- *  arguments     : 1) list of nodes
- *                  2) fundef node where inserts are to be done
- *                  3) status of the new nodelist entry
- *  description   : inserts each node of the nodelist into the correct
- *                  nodelist of the fundef node
- *  remarks       : status may be ST_regular | ST_artificial
- *
- */
-
-extern void StoreNeededNodes (nodelist *inserts, node *fundef, statustype status);
-
-/*
- *
- *  functionname  : StoreUnresolvedNodes
- *  arguments     : 1) list of nodes
- *                  2) fundef node where inserts are to be done
- *                  3) status of the new nodelist entry
- *  description   : inserts all those nodes of the nodelist into the correct
- *                  nodelist of the fundef node
- *                  which have attribute 'unresolved'.
- *  remarks       : status may be ST_regular | ST_artificial
- *
- */
-
-extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status);
-
-/*
- *
- *  functionname  : TidyUpNodelist
+ *  functionname  : TCtidyUpNodelist
  *  arguments     : 1) beginning of nodelist
  *  description   : frees all those entries of a node list which have
  *                  status 'ST_artificial'
@@ -699,11 +192,12 @@ extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype st
  *
  */
 
-extern nodelist *TidyUpNodelist (nodelist *list);
+extern nodelist *TCtidyUpNodelist(nodelist *list);
+
 
 /*
  *
- *  functionname  : ConcatNodelist
+ *  functionname  : TCconcatNodelist
  *  arguments     : 1) first node list
  *                  2) second node list
  *  description   : concatenates two node lists without checking double
@@ -711,15 +205,16 @@ extern nodelist *TidyUpNodelist (nodelist *list);
  *
  */
 
-extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
+extern nodelist *TCconcatNodelist(nodelist *first, nodelist *second);
+#endif
 
 /******************************************************************************
  *
  * function:
- *   nodelist *NodeListAppend( nodelist *nl, node *newnode, void *attrib)
- *   nodelist *NodeListDelete( nodelist *nl, node *node, bool free_attrib)
- *   nodelist *NodeListFree( nodelist *nl, bool free_attrib)
- *   nodelist *NodeListFind( nodelist *nl, node *node)
+ *   nodelist *TCnodeListAppend( nodelist *nl, node *newnode, void *attrib)
+ *   nodelist *TCnodeListDelete( nodelist *nl, node *node, bool free_attrib)
+ *   nodelist *TCnodeListFree( nodelist *nl, bool free_attrib)
+ *   nodelist *TCnodeListFind( nodelist *nl, node *node)
  *
  * description:
  *   the following functions realize basic functions on pure node lists.
@@ -737,11 +232,11 @@ extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
  *           with fitting node. If not found, returns NULL.
  *
  ******************************************************************************/
-
-extern nodelist *NodeListAppend (nodelist *nl, node *newnode, void *attrib);
-extern nodelist *NodeListDelete (nodelist *nl, node *node, bool free_attrib);
-extern nodelist *NodeListFree (nodelist *nl, bool free_attrib);
-extern nodelist *NodeListFind (nodelist *nl, node *node);
+/* TODO - void* be deleted after SACDevCampDK 2k4 */
+extern nodelist *TCnodeListAppend (nodelist *nl, node *newnode, void *attrib);
+extern nodelist *TCnodeListDelete (nodelist *nl, node *node, bool free_attrib);
+extern nodelist *TCnodeListFree (nodelist *nl, bool free_attrib);
+extern nodelist *TCnodeListFind (nodelist *nl, node *node);
 
 /*--------------------------------------------------------------------------*/
 
@@ -749,8 +244,8 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
  ***  ARGTAB :
  ***/
 
-extern int GetArgtabIndexOut (types *type, argtab_t *argtab);
-extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
+extern int TCgetArgtabIndexOut (types *type, argtab_t *argtab);
+extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
@@ -792,17 +287,15 @@ extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
         BLOCK_INSTR (n) = (rhs);                                                         \
     }
 
-#ifdef NEW_AST
 #define NODE_ISALIVE(n) (n->attribs.any != NULL)
-#endif /* NEW_AST */
 
 /*****************************************************************************
  *
  * function:
- *   bool IsImported( node* symbol)
- *   bool IsExternal( node* symbol)
- *   bool IsFromModule( node* symbol)
- *   bool IsFromClass( node* symbol)
+ *   bool TCisImported( node* symbol)
+ *   bool TCisExternal( node* symbol)
+ *   bool TCisFromModule( node* symbol)
+ *   bool TCisFromClass( node* symbol)
  *
  * description:
  *
@@ -811,15 +304,15 @@ extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
  *
  *****************************************************************************/
 
-extern bool IsImported (node *symbol);
-extern bool IsExternal (node *symbol);
-extern bool IsFromModule (node *symbol);
-extern bool IsFromClass (node *symbol);
+extern bool TCisImported (node *symbol);
+extern bool TCisExternal (node *symbol);
+extern bool TCisFromModule (node *symbol);
+extern bool TCisFromClass (node *symbol);
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_modul :
+ ***  N_module :
  ***/
 
 /*--------------------------------------------------------------------------*/
@@ -904,7 +397,7 @@ extern bool IsFromClass (node *symbol);
 
 /*
  *
- *  functionname  : SearchTypedef
+ *  functionname  : TCsearchTypedef
  *  arguments     : 1) type name to be searched for
  *                  2) module name of type to be searched for
  *                  3) list of type implementations (typedef nodes)
@@ -912,12 +405,12 @@ extern bool IsFromClass (node *symbol);
  *
  */
 
-extern node *SearchTypedef (char *name, char *mod, node *implementations);
+extern node *TCSearchTypedef (char *name, char *mod, node *implementations);
 
 /*****************************************************************************
  *
  * function:
- *   node *AppendTypedef( node *tdef_chain, node *tdef)
+ *   node *TCappendTypedef( node *tdef_chain, node *tdef)
  *
  * description:
  *
@@ -925,7 +418,7 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *
  *****************************************************************************/
 
-extern node *AppendTypedef (node *tdef_chain, node *tdef);
+extern node *TCappendTypedef (node *tdef_chain, node *tdef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -956,7 +449,7 @@ extern node *AppendTypedef (node *tdef_chain, node *tdef);
 
 /*
  *
- *  functionname  : SearchObjdef
+ *  functionname  : TCsearchObjdef
  *  arguments     : 1) global object name to be searched for
  *                  2) module name of global object to be searched for
  *                  3) list of object implementations (objdef nodes)
@@ -964,21 +457,21 @@ extern node *AppendTypedef (node *tdef_chain, node *tdef);
  *
  */
 
-extern node *SearchObjdef (char *name, char *mod, node *implementations);
+extern node *TCsearchObjdef (char *name, char *mod, node *implementations);
 
 /*
- *  functionname  : ObjList2ArgList
+ *  functionname  : TCobjList2ArgList
  *  arguments     : 1) pointer to chain of objdef nodes
  *  description   : makes an argument list from an objdef chain
  *
  */
 
-extern void ObjList2ArgList (node *objdef);
+extern void TCobjList2ArgList (node *objdef);
 
 /*****************************************************************************
  *
  * function:
- *   node *AppendObjdef( node *objdef_chain, node *objdef)
+ *   node *TCappendObjdef( node *objdef_chain, node *objdef)
  *
  * description:
  *
@@ -986,7 +479,7 @@ extern void ObjList2ArgList (node *objdef);
  *
  *****************************************************************************/
 
-extern node *AppendObjdef (node *objdef_chain, node *objdef);
+extern node *TCappendObjdef (node *objdef_chain, node *objdef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1017,23 +510,7 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_LINKSIGN(n) (PRAGMA_LINKSIGN (FUNDEF_PRAGMA (n)))
 #define FUNDEF_REFCOUNTING(n) (PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (n)))
 
-#define FUNDEF_IS_LACFUN(n)                                                              \
-    ((FUNDEF_STATUS (n) == ST_condfun) || (FUNDEF_STATUS (n) == ST_dofun)                \
-     || (FUNDEF_STATUS (n) == ST_whilefun))
-#define FUNDEF_IS_CONDFUN(n) (FUNDEF_STATUS (n) == ST_condfun)
-#define FUNDEF_IS_LOOPFUN(n)                                                             \
-    ((FUNDEF_STATUS (n) == ST_dofun) || (FUNDEF_STATUS (n) == ST_whilefun))
-#ifndef NEW_AST
-#define FUNDEF_IS_EXTERNAL(n)                                                            \
-    ((FUNDEF_STATUS (n) == ST_imported_mod) || (FUNDEF_STATUS (n) == ST_imported_class)  \
-     || (FUNDEF_STATUS (n) == ST_imported_extclass)                                      \
-     || (FUNDEF_STATUS (n) == ST_imported_extmod)                                        \
-     || (FUNDEF_STATUS (n) == ST_objinitfun) || (FUNDEF_STATUS (n) == ST_classfun))
-#else
-#define FUNDEF_IS_EXTERNAL(n)                                                            \
-    ((FUNDEF_STATUS (n) == ST_Cfun) || (FUNDEF_STATUS (n) == ST_classfun))
-#endif /* NEW_AST */
-
+#define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
 /*
  *  The following compound access macros are useful whenever a fundef
  *  node is used to represent a function declaration rather than a
@@ -1052,12 +529,12 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEC_TNAME(n) (FUNDEF_NAME (FUNDEC_DEF (n)))
 #define FUNDEC_TMOD(n) (FUNDEF_MOD (FUNDEC_DEF (n)))
 
-extern node *FindVardec_Name (char *name, node *fundef);
-extern node *FindVardec_Varno (int varno, node *fundef);
+extern node *TCfindVardec_Name (char *name, node *fundef);
+extern node *TCfindVardec_Varno (int varno, node *fundef);
 
 /*
  *
- *  functionname  : CountFunctionParams
+ *  functionname  : TCcountFunctionParams
  *  arguments     : 1) N_fundef node
  *  description   : counts the number of parameters of a function.
  *                  This includes return values AND formal arguments.
@@ -1070,7 +547,7 @@ extern node *FindVardec_Varno (int varno, node *fundef);
  *
  */
 
-extern int CountFunctionParams (node *fundef);
+extern int TCcountFunctionParams (node *fundef);
 
 /*
  *  functionname  : SearchFundef
@@ -1083,12 +560,12 @@ extern int CountFunctionParams (node *fundef);
  *                  declarations the fundef node is reused.
  */
 
-extern node *SearchFundef (node *fun, node *allfuns);
+extern node *TCsearchFundef (node *fun, node *allfuns);
 
 /*****************************************************************************
  *
  * function:
- *   node *AppendFundef( node *fundef_chain, node *fundef)
+ *   node *TCappendFundef( node *fundef_chain, node *fundef)
  *
  * description:
  *
@@ -1096,9 +573,9 @@ extern node *SearchFundef (node *fun, node *allfuns);
  *
  *****************************************************************************/
 
-extern node *AppendFundef (node *fundef_chain, node *fundef);
+extern node *TCappendFundef (node *fundef_chain, node *fundef);
 
-extern node *RemoveFundef (node *fundef_chain, node *fundef);
+extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1109,7 +586,7 @@ extern node *RemoveFundef (node *fundef_chain, node *fundef);
 /*
  *  compound access macros
  */
-#define MAKE_EMPTY_BLOCK() MakeBlock (MakeEmpty (), NULL)
+#define MAKE_EMPTY_BLOCK() TBmakeBlock (TBmakeEmpty (), NULL)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1132,7 +609,7 @@ extern node *RemoveFundef (node *fundef_chain, node *fundef);
 /******************************************************************************
  *
  * Function:
- *   node *AddVardecs( node *fundef, node *vardecs)
+ *   node *TCaddVardecs( node *fundef, node *vardecs)
  *
  * Description:
  *   Inserts new declarations into the AST, updates the DFMbase and returns
@@ -1140,24 +617,24 @@ extern node *RemoveFundef (node *fundef_chain, node *fundef);
  *
  ******************************************************************************/
 
-extern node *AddVardecs (node *fundef, node *vardecs);
+extern node *TCaddVardecs (node *fundef, node *vardecs);
 
 /******************************************************************************
  *
  * function:
- *   node *AppendVardec( node *vardec_chain, node *vardec)
+ *   node *TCappendVardec( node *vardec_chain, node *vardec)
  *
  * description:
  *   Appends 'vardec' to 'vardec_chain' and returns the new chain.
  *
  ******************************************************************************/
 
-extern node *AppendVardec (node *vardec_chain, node *vardec);
+extern node *TCappendVardec (node *vardec_chain, node *vardec);
 
 /******************************************************************************
  *
  * function:
- *   node *MakeVardecFromArg( node *arg)
+ *   node *TCmakeVardecFromArg( node *arg)
  *
  * description:
  *   copies all attributes from an arg node to a new allocated vardec node.
@@ -1169,24 +646,24 @@ extern node *AppendVardec (node *vardec_chain, node *vardec);
  *
  ******************************************************************************/
 
-extern node *MakeVardecFromArg (node *arg_node);
+extern node *TCmakeVardecFromArg (node *arg_node);
 
 /******************************************************************************
  *
  * function:
- *   node *MakeArgFromVardec( node *vardec_node)
+ *   node *TCmakeArgFromVardec( node *vardec_node)
  *
  * description:
  *   copies all attributes from an vardec node to a new allocated arg node.
  *
  ******************************************************************************/
 
-extern node *MakeArgFromVardec (node *vardec_node);
+extern node *TCmakeArgFromVardec (node *vardec_node);
 
 /******************************************************************************
  *
  * function:
- *   node *AdjustAvisData( node *new_vardec, node *fundef)
+ *   node *TCadjustAvisData( node *new_vardec, node *fundef)
  *
  * description:
  *   when a vardec is duplicated via DupTree all dependend infomation in the
@@ -1209,7 +686,7 @@ extern node *MakeArgFromVardec (node *vardec_node);
  *
  ******************************************************************************/
 
-extern node *AdjustAvisData (node *new_vardec, node *fundef);
+extern node *TCadjustAvisData (node *new_vardec, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1229,9 +706,8 @@ extern node *AdjustAvisData (node *new_vardec, node *fundef);
 #define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
-extern int CountArgs (node *args);
-extern int HasDotArgs (node *args);
-extern int CmpDomain (node *args1, node *args2);
+extern int TCcountArgs (node *args);
+extern int TCcmpDomain (node *args1, node *args2);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1383,7 +859,7 @@ extern int CmpDomain (node *args1, node *args2);
         code vardec = VARDEC_NEXT (vardec);                                              \
     }
 
-extern node *SearchDecl (char *name, node *decl_node);
+extern node *TCsearchDecl (char *name, node *decl_node);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1403,7 +879,7 @@ extern node *SearchDecl (char *name, node *decl_node);
 /******************************************************************************
  *
  * function:
- *   node *MakeAssignLet(char *var_name, node *vardec_node, node *let_expr);
+ *   node *TCmakeAssignLet(char *var_name, node *vardec_node, node *let_expr);
  *
  * arguments: 1) name of the variable
  *            2) vardec-node
@@ -1418,51 +894,51 @@ extern node *SearchDecl (char *name, node *decl_node);
  *
  ******************************************************************************/
 
-extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
+extern node *TCmakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
 
 /******************************************************************************
  *
  * Function:
- *   node *MakeAssignInstr( node *instr, node *next)
+ *   node *TCmakeAssignInstr( node *instr, node *next)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-extern node *MakeAssignInstr (node *instr, node *next);
+extern node *TCmakeAssignInstr (node *instr, node *next);
 
 /******************************************************************************
  *
  * Function:
- *   node *MakeAssign?( node *part?, ...)
+ *   node *TCmakeAssign?( node *part?, ...)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-extern node *MakeAssigns1 (node *part1);
-extern node *MakeAssigns2 (node *part1, node *part2);
-extern node *MakeAssigns3 (node *part1, node *part2, node *part3);
-extern node *MakeAssigns4 (node *part1, node *part2, node *part3, node *part4);
-extern node *MakeAssigns5 (node *part1, node *part2, node *part3, node *part4,
-                           node *part5);
-extern node *MakeAssigns6 (node *part1, node *part2, node *part3, node *part4,
-                           node *part5, node *part6);
-extern node *MakeAssigns7 (node *part1, node *part2, node *part3, node *part4,
-                           node *part5, node *part6, node *part7);
-extern node *MakeAssigns8 (node *part1, node *part2, node *part3, node *part4,
-                           node *part5, node *part6, node *part7, node *part8);
-extern node *MakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
-                           node *part5, node *part6, node *part7, node *part8,
-                           node *part9);
+extern node *TCmakeAssigns1 (node *part1);
+extern node *TCmakeAssigns2 (node *part1, node *part2);
+extern node *TCmakeAssigns3 (node *part1, node *part2, node *part3);
+extern node *TCmakeAssigns4 (node *part1, node *part2, node *part3, node *part4);
+extern node *TCmakeAssigns5 (node *part1, node *part2, node *part3, node *part4,
+                             node *part5);
+extern node *TCmakeAssigns6 (node *part1, node *part2, node *part3, node *part4,
+                             node *part5, node *part6);
+extern node *TCmakeAssigns7 (node *part1, node *part2, node *part3, node *part4,
+                             node *part5, node *part6, node *part7);
+extern node *TCmakeAssigns8 (node *part1, node *part2, node *part3, node *part4,
+                             node *part5, node *part6, node *part7, node *part8);
+extern node *TCmakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
+                             node *part5, node *part6, node *part7, node *part8,
+                             node *part9);
 
 /******************************************************************************
  *
  * function:
- *   node *MakeAssignIcm0( char *name, node *next)
- *   node *MakeAssignIcm?( char *name, node *arg?, ..., node *next)
+ *   node *TCmakeAssignIcm0( char *name, node *next)
+ *   node *TCmakeAssignIcm?( char *name, node *arg?, ..., node *next)
  *
  * description:
  *   These functions generate an N_assign node with a complete ICM
@@ -1473,35 +949,36 @@ extern node *MakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
  *
  ******************************************************************************/
 
-extern node *MakeAssignIcm0 (char *name, node *next);
-extern node *MakeAssignIcm1 (char *name, node *arg1, node *next);
-extern node *MakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next);
-extern node *MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next);
-extern node *MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *next);
-extern node *MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *arg5, node *next);
-extern node *MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *arg5, node *arg6, node *next);
-extern node *MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *arg5, node *arg6, node *arg7, node *next);
+extern node *TCmakeAssignIcm0 (char *name, node *next);
+extern node *TCmakeAssignIcm1 (char *name, node *arg1, node *next);
+extern node *TCmakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next);
+extern node *TCmakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3,
+                               node *next);
+extern node *TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                               node *next);
+extern node *TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                               node *arg5, node *next);
+extern node *TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                               node *arg5, node *arg6 node *next);
+extern node *TCmakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                               node *arg5, node *arg6, node *arg7, node *next);
 
 /******************************************************************************
  *
  * function:
- *   node *GetCompoundNode(node *arg_node);
+ *   node *TCgetCompoundNode(node *arg_node);
  *
  * description:
  *   returns the compund_node that is attached to the assign-node
  *
  ******************************************************************************/
 
-extern node *GetCompoundNode (node *arg_node);
+extern node *TCgetCompoundNode (node *arg_node);
 
 /*****************************************************************************
  *
  * function:
- *   AppendAssign( node *assign_chain, node *assign)
+ *   TCappendAssign( node *assign_chain, node *assign)
  *
  * description:
  *   This function concatenates two chains of N_assign nodes.
@@ -1509,12 +986,12 @@ extern node *GetCompoundNode (node *arg_node);
  *
  *****************************************************************************/
 
-extern node *AppendAssign (node *assign_chain, node *assign);
+extern node *TCappendAssign (node *assign_chain, node *assign);
 
 /******************************************************************************
  *
  * function:
- *   node *AppendAssignIcm( node *assign, char *name, node *args)
+ *   node *TCappendAssignIcm( node *assign, char *name, node *args)
  *
  * description:
  *   Appends a new ICM with name and args given as an assign to the given
@@ -1522,7 +999,7 @@ extern node *AppendAssign (node *assign_chain, node *assign);
  *
  ******************************************************************************/
 
-extern node *AppendAssignIcm (node *assign, char *name, node *args);
+extern node *TCappendAssignIcm (node *assign, char *name, node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1533,19 +1010,19 @@ extern node *AppendAssignIcm (node *assign, char *name, node *args);
 /******************************************************************************
  *
  * function:
- *   node *AppendExprs( node *exprs1, node *exprs2)
+ *   node *TCappendExprs( node *exprs1, node *exprs2)
  *
  * description:
  *   This function concatenates two N_exprs chains of nodes.
  *
  ******************************************************************************/
 
-extern node *AppendExprs (node *exprs1, node *exprs2);
+extern node *TCappendExprs (node *exprs1, node *exprs2);
 
 /******************************************************************************
  *
  * function:
- *   node *CombineExprs( node *first, node *second)
+ *   node *TCcombineExprs( node *first, node *second)
  *
  * description:
  *   'first' and 'second' are N_exprs chains or expression nodes (N_id, N_num,
@@ -1553,31 +1030,31 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
  *
  ******************************************************************************/
 
-extern node *CombineExprs (node *first, node *second);
+extern node *TCcombineExprs (node *first, node *second);
 
 /******************************************************************************
  *
  * function:
- *   node *MakeExprsNum( int num)
+ *   node *TCmakeExprsNum( int num)
  *
  * description:
  *   Makes an N_exprs with a N_num as EXPR, NEXT is NULL.
  *
  ******************************************************************************/
 
-extern node *MakeExprsNum (int num);
+extern node *TCmakeExprsNum (int num);
 
 /******************************************************************************
  *
  * function:
- *   int CountExprs( node *exprs)
+ *   int TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 
-extern int CountExprs (node *exprs);
+extern int TCcountExprs (node *exprs);
 
 #define EXPRS_EXPRS1(n) (n)
 #define EXPRS_EXPRS2(n) EXPRS_NEXT (n)
@@ -1604,22 +1081,10 @@ extern int CountExprs (node *exprs);
  */
 
 #define LET_NAME(n) (IDS_NAME (LET_IDS (n)))
-#define LET_VARDEC(n) (IDS_VARDEC (LET_IDS (n)))
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
-#define LET_VARNO(n) (VARDEC_OR_ARG_VARNO (LET_VARDEC (n)))
-#define LET_TYPE(n) (VARDEC_OR_ARG_TYPE (LET_VARDEC (n)))
 #define LET_BASETYPE(n) (TYPES_BASETYPE (LET_TYPE (n)))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
-
-#define MAKE_OPON_LET(id, expr, op)                                                      \
-    MakeLet (MakeAp2 (StringCopy (op), NULL, MakeId (id, NULL, ST_regular), expr),       \
-             MakeIds (StringCopy (id), NULL, ST_regular))
-
-#define MAKE_INCDEC_LET(id, op)                                                          \
-    MakeLet (MakeAp2 (StringCopy (op), NULL, MakeId (id, NULL, ST_regular),              \
-                      MakeNum (1)),                                                      \
-             MakeIds (StringCopy (id), NULL, ST_regular))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1629,7 +1094,7 @@ extern int CountExprs (node *exprs);
 
 /*
  *
- *  functionname  : NodeBehindCast
+ *  functionname  : TCnodeBehindCast
  *  arguments     : 1) expression-node of a let-node
  *                  R) node behind various cast's
  *  description   : determine what node is hidden behind the cast-nodes
@@ -1642,7 +1107,7 @@ extern int CountExprs (node *exprs);
  *
  */
 
-extern node *NodeBehindCast (node *arg_node);
+extern node *TCnodeBehindCast (node *arg_node);
 
 /*
  *  compound access macros
@@ -1804,13 +1269,13 @@ extern node *NodeBehindCast (node *arg_node);
  *  function declarations
  */
 
-extern node *CreateZeroScalar (simpletype btype);
-extern node *CreateZeroVector (int length, simpletype btype);
+extern node *TCcreateZeroScalar (simpletype btype);
+extern node *TCcreateZeroVector (int length, simpletype btype);
 
 /******************************************************************************
  *
  * Function:
- *   int IsConstArray( node *array);
+ *   int TCisConstArray( node *array);
  *
  * Description:
  *   Returns number of constant elements if argument is an N_array and all
@@ -1822,27 +1287,27 @@ extern node *CreateZeroVector (int length, simpletype btype);
  *
  ******************************************************************************/
 
-extern int IsConstArray (node *array);
+extern int TCisConstArray (node *array);
 
-extern node *Ids2Exprs (ids *ids_arg);
-extern node *Ids2Array (ids *ids_arg);
+extern node *TCids2Exprs (node *ids_arg);
+extern node *TCids2Array (node *ids_arg);
 
 /******************************************************************************
  *
  * Function:
- *   node *IntVec2Array( int length, int *intvec);
+ *   node *TCintVec2Array( int length, int *intvec);
  *
  * Description:
  *   Returns an N_exprs node containing the elements of intvec.
  *
  ******************************************************************************/
 
-extern node *IntVec2Array (int length, int *intvec);
+extern node *TCintVec2Array (int length, int *intvec);
 
 /*****************************************************************************
  *
  * Function:
- *   node *AdjustVectorShape( node *array)
+ *   node *TCadjustVectorShape( node *array)
  *
  * Description:
  *   adjusts ARRAY_SHAPE according to the number of elements.
@@ -1850,30 +1315,30 @@ extern node *IntVec2Array (int length, int *intvec);
  *
  *****************************************************************************/
 
-extern node *AdjustVectorShape (node *array);
+extern node *TCadjustVectorShape (node *array);
 
 /*****************************************************************************
  *
  * Function:
- *   node *ConcatVecs( node* vec1, node *vec2 )
+ *   node *TCconcatVecs( node* vec1, node *vec2 )
  *
  * Description:
  *   concatenates two vectors.
  *
  *****************************************************************************/
 
-extern node *ConcatVecs (node *vec1, node *vec2);
+extern node *TCconcatVecs (node *vec1, node *vec2);
 
 /******************************************************************************
  *
  * Function:
- *   int    *Array2IntVec( node *aelems, int *length);
- *   int    *Array2BoolVec( node *aelems, int *length);
- *   char   *Array2CharVec( node *aelems, int *length);
- *   float  *Array2FloatVec( node *aelems, int *length);
- *   double *Array2DblVec( node *aelems, int *length);
+ *   int    *TCarray2IntVec( node *aelems, int *length);
+ *   int    *TCarray2BoolVec( node *aelems, int *length);
+ *   char   *TCarray2CharVec( node *aelems, int *length);
+ *   float  *TCarray2FloatVec( node *aelems, int *length);
+ *   double *TCarray2DblVec( node *aelems, int *length);
  *
- *   void   *Array2Vec( simpletype t, node *aelems, int *length);
+ *   void   *TCarray2Vec( simpletype t, node *aelems, int *length);
  *
  * Description:
  *   Returns an iteger (char | float | double) vector and stores the number of
@@ -1881,16 +1346,16 @@ extern node *ConcatVecs (node *vec1, node *vec2);
  *   argument is an N_exprs and all its elements are N_num otherwise the
  *   result is not defined.
  *   If the length of the vector is not of interest, length may be NULL.
- *   The Array2Vec function is a dispatching wrapper for all above.
+ *   The TCarray2Vec function is a dispatching wrapper for all above.
  *
  ******************************************************************************/
 
-extern int *Array2IntVec (node *aelems, int *length);
-extern int *Array2BoolVec (node *aelems, int *length);
-extern char *Array2CharVec (node *aelems, int *length);
-extern float *Array2FloatVec (node *aelems, int *length);
-extern double *Array2DblVec (node *aelems, int *length);
-extern void *Array2Vec (simpletype t, node *aelems, int *length);
+extern int *TCarray2IntVec (node *aelems, int *length);
+extern int *TCarray2BoolVec (node *aelems, int *length);
+extern char *TCarray2CharVec (node *aelems, int *length);
+extern float *TCarray2FloatVec (node *aelems, int *length);
+extern double *TCarray2DblVec (node *aelems, int *length);
+extern void *TCarray2Vec (simpletype t, node *aelems, int *length);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1898,7 +1363,7 @@ extern void *Array2Vec (simpletype t, node *aelems, int *length);
  ***  N_vinfo :
  ***/
 
-extern node *MakeVinfoDollar (node *next);
+extern node *TCmakeVinfoDollar (node *next);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1925,20 +1390,18 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
 
-extern node *MakeId_Copy (char *str);
+extern node *TCmakeId_Copy (char *str);
 
-extern node *MakeId_Copy_NT (char *str, types *type);
+extern node *TCmakeId_Copy_NT (char *str, types *type);
 
-extern node *MakeId_Num (int val);
+extern node *TCmakeId_Num (int val);
 
-#ifdef NEW_AST
-extern node *MakeIdFromIds (ids *idss);
-#endif /* NEW_AST */
+extern node *TCmakeIdFromIds (node *idss);
 
 /***************************************************************************
  *
  * function:
- *   bool isPhiFun(node *id)
+ *   bool TCisPhiFun(node *id)
  *
  * description:
  *   this function returns TRUE if the defining assignment of 'id'
@@ -1948,7 +1411,7 @@ extern node *MakeIdFromIds (ids *idss);
  *
  ****************************************************************************/
 
-extern bool isPhiFun (node *id);
+extern bool PHisPhiFun (node *id);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1973,15 +1436,16 @@ extern bool isPhiFun (node *id);
 #define PRF_ARG3(n) EXPRS_EXPR (PRF_EXPRS3 (n))
 #define PRF_ARG4(n) EXPRS_EXPR (PRF_EXPRS4 (n))
 
-#define MAKE_BIN_PRF(f, arg1, arg2) MakePrf (f, MakeExprs (arg1, MakeExprs (arg2, NULL)))
+#define MAKE_BIN_PRF(f, arg1, arg2)                                                      \
+    TBmakePrf (f, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)))
 
 /*
  *  function declarations
  */
 
-extern node *MakePrf1 (prf prf, node *arg1);
-extern node *MakePrf2 (prf prf, node *arg1, node *arg2);
-extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
+extern node *TCmakePrf1 (prf prf, node *arg1);
+extern node *TCmakePrf2 (prf prf, node *arg1, node *arg2);
+extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
 
@@ -2008,11 +1472,11 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *  function declarations
  */
 
-extern node *MakeAp1 (char *name, char *mod, node *arg1);
+extern node *TCmakeAp1 (char *name, char *mod, node *arg1);
 
-extern node *MakeAp2 (char *name, char *mod, node *arg1, node *arg2);
+extern node *TCmakeAp2 (char *name, char *mod, node *arg1, node *arg2);
 
-extern node *MakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3);
+extern node *TCmakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
 
@@ -2035,8 +1499,8 @@ extern node *MakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3)
 /******************************************************************************
  *
  * Function:
- *   node *LiftArg( node *arg, node *fundef, types *new_type, bool do_rc,
- *                  node **new_assigns)
+ *   node *TCliftArg( node *arg, node *fundef, types *new_type, bool do_rc,
+ *                    node **new_assigns)
  *
  * Description:
  *   Lifts the given argument of a function application:
@@ -2050,7 +1514,8 @@ extern node *MakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3)
  *
  ******************************************************************************/
 
-node *LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assigns);
+node *TCliftArg (node *arg, node *fundef, types *new_type, bool do_rc,
+                 node **new_assigns);
 
 /*--------------------------------------------------------------------------*/
 
@@ -2093,8 +1558,8 @@ node *LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_
 /******************************************************************************
  *
  * function:
- *   node *MakeIcm0(char *name)
- *   node *MakeIcm?(char *name, node *arg1, ...)
+ *   node *TCmakeIcm0(char *name)
+ *   node *TCmakeIcm?(char *name, node *arg1, ...)
  *
  * description:
  *   These functions generate complete ICM representations including arguments.
@@ -2103,50 +1568,23 @@ node *LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_
  *
  ******************************************************************************/
 
-extern node *MakeIcm0 (char *name);
-extern node *MakeIcm1 (char *name, node *arg1);
-extern node *MakeIcm2 (char *name, node *arg1, node *arg2);
-extern node *MakeIcm3 (char *name, node *arg1, node *arg2, node *arg3);
-extern node *MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
-extern node *MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                       node *arg5);
-extern node *MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                       node *arg5, node *arg6);
-extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                       node *arg5, node *arg6, node *arg7);
+extern node *TCmakeIcm0 (char *name);
+extern node *TCmakeIcm1 (char *name, node *arg1);
+extern node *TCmakeIcm2 (char *name, node *arg1, node *arg2);
+extern node *TCmakeIcm3 (char *name, node *arg1, node *arg2, node *arg3);
+extern node *TCmakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
+extern node *TCmakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                         node *arg5);
+extern node *TCmakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                         node *arg5, node *arg6);
+extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                         node *arg5, node *arg6, node *arg7);
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_mt :   N_st :
+ ***  N_mt :   N_st :   N_ex :
  ***/
-
-#define MT_OR_ST_REGION(n) (((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n))
-
-#define MT_OR_ST_USEMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_USEMASK (n) : ST_USEMASK (n))
-
-#define MT_OR_ST_DEFMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_DEFMASK (n) : ST_DEFMASK (n))
-
-#define L_MT_OR_ST_REGION(n, region)                                                     \
-    if (NODE_TYPE (n) == N_mt) {                                                         \
-        MT_REGION (n) = region;                                                          \
-    } else {                                                                             \
-        ST_REGION (n) = region;                                                          \
-    }
-
-#define L_MT_OR_ST_USEMASK(n, region)                                                    \
-    if (NODE_TYPE (n) == N_mt) {                                                         \
-        MT_USEMASK (n) = region;                                                         \
-    } else {                                                                             \
-        ST_USEMASK (n) = region;                                                         \
-    }
-
-#define L_MT_OR_ST_DEFMASK(n, region)                                                    \
-    if (NODE_TYPE (n) == N_mt) {                                                         \
-        MT_DEFMASK (n) = region;                                                         \
-    } else {                                                                             \
-        ST_DEFMASK (n) = region;                                                         \
-    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -2163,72 +1601,61 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith :
+ ***  N_with :
  ***/
 
-#define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
+#define WITH_TYPE(n) (WITHOP_TYPE (WITH_WITHOP (n)))
 
 /*
  * We only need to inspect the withid of the first part,
  * because the withid is in *all* parts the same!!
  */
-#define NWITH_WITHID(n) (NPART_WITHID (NWITH_PART (n)))
-#define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
-#define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
+#define WITH_WITHID(n) (PART_WITHID (WITH_PART (n)))
+#define WITH_IDS(n) (PART_IDS (WITH_PART (n)))
+#define WITH_VEC(n) (PART_VEC (WITH_PART (n)))
 
 /*
  * BOUND1, BOUND2, STEP, WIDTH of the *first* N_Npart-node
  * (useful *before* with-loop-folding only!!!)
  */
-#define NWITH_BOUND1(n) (NPART_BOUND1 (NWITH_PART (n)))
-#define NWITH_BOUND2(n) (NPART_BOUND2 (NWITH_PART (n)))
-#define NWITH_STEP(n) (NPART_STEP (NWITH_PART (n)))
-#define NWITH_WIDTH(n) (NPART_WIDTH (NWITH_PART (n)))
+#define WITH_BOUND1(n) (PART_BOUND1 (WITH_PART (n)))
+#define WITH_BOUND2(n) (PART_BOUND2 (WITH_PART (n)))
+#define WITH_STEP(n) (PART_STEP (WITH_PART (n)))
+#define WITH_WIDTH(n) (PART_WIDTH (WITH_PART (n)))
 
 /*
- * CBLOCK, CEXPR of the *first* N_Ncode-node
+ * CBLOCK, CEXPR of the *first* N_code-node
  * (useful in case of single-generator with-loops only,
  *  e.g. before with-loop-folding)
  */
-#define NWITH_CBLOCK(n) (NCODE_CBLOCK (NWITH_CODE (n)))
-#define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
+#define WITH_CBLOCK(n) (CODE_CBLOCK (WITH_CODE (n)))
+#define WITH_CEXPR(n) (CODE_CEXPR (WITH_CODE (n)))
 
-#define NWITH_FUN(n) (NWITHOP_FUN (NWITH_WITHOP (n)))
-#define NWITH_MOD(n) (NWITHOP_MOD (NWITH_WITHOP (n)))
-#define NWITH_FUNDEF(n) (NWITHOP_FUNDEF (NWITH_WITHOP (n)))
-#define NWITH_SHAPE(n) (NWITHOP_SHAPE (NWITH_WITHOP (n)))
-#define NWITH_DEFAULT(n) (NWITHOP_DEFAULT (NWITH_WITHOP (n)))
-#define NWITH_ARRAY(n) (NWITHOP_ARRAY (NWITH_WITHOP (n)))
-#define NWITH_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH_WITHOP (n)))
+extern node *TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr,
+                                 node *fundef);
 
-#define NWITH_IS_FOLD(n)                                                                 \
-    ((NWITH_TYPE (n) == WO_foldprf) || (NWITH_TYPE (n) == WO_foldfun))
+extern node *TCcreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
+                           node *fundef);
 
-extern node *CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr,
-                               node *fundef);
-
-extern node *CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
-                         node *fundef);
-
-extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
-                        node *fundef);
+extern node *TCcreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
+                          node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Npart :
+ ***  N_part :
  ***/
 
-#define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
-#define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
+#define PART_IDS(n) (WITHID_IDS (PART_WITHID (n)))
+#define PART_VEC(n) (WITHID_VEC (PART_WITHID (n)))
 
-#define NPART_BOUND1(n) (NGEN_BOUND1 (NPART_GEN (n)))
-#define NPART_BOUND2(n) (NGEN_BOUND2 (NPART_GEN (n)))
-#define NPART_STEP(n) (NGEN_STEP (NPART_GEN (n)))
-#define NPART_WIDTH(n) (NGEN_WIDTH (NPART_GEN (n)))
+#define PART_BOUND1(n) (GEN_BOUND1 (PART_GEN (n)))
+#define PART_BOUND2(n) (GEN_BOUND2 (PART_GEN (n)))
+#define PART_STEP(n) (GEN_STEP (PART_GEN (n)))
+#define PART_WIDTH(n) (GEN_WIDTH (PART_GEN (n)))
 
-#define NPART_CEXPR(n) (NCODE_CEXPR (NPART_CODE (n)))
-#define NPART_CBLOCK(n) (NCODE_CBLOCK (NPART_CODE (n)))
+#define PART_CEXPR(n) (CODE_CEXPR (PART_CODE (n)))
+#define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2270,6 +1697,11 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 
 #define NWITHOP_IS_FOLD(n)                                                               \
     ((NWITHOP_TYPE (n) == WO_foldprf) || (NWITHOP_TYPE (n) == WO_foldfun))
+
+#define WITHOP_NEXT(n)                                                                   \
+   ( ( NODE_TYPE(n) == N_genarray) ? GENARRAY_NEXT(n) :          \
+   ( ( NODE_TYPE(n) == N_modarray) ? MODARRAY_NEXT(n) :          \
+   ( ( NODE_TYPE(n) == N_fold) ? FOLD_NEXT(n))))
 
 /*--------------------------------------------------------------------------*/
 
