@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.186  2004/12/19 23:16:37  ktr
+ * removed TCcountFunctionParams
+ *
  * Revision 3.185  2004/12/16 14:39:07  ktr
  * Cleaned up some WITH_OR_WITH2 macros.
  *
@@ -595,23 +598,6 @@ extern node *TCappendObjdef (node *objdef_chain, node *objdef);
 
 extern node *TCfindVardec_Name (char *name, node *fundef);
 extern node *TCfindVardec_Varno (int varno, node *fundef);
-
-/*
- *
- *  functionname  : TCcountFunctionParams
- *  arguments     : 1) N_fundef node
- *  description   : counts the number of parameters of a function.
- *                  This includes return values AND formal arguments.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG, TREE
- *
- *  remarks       : even the return type 'void' counts !
- *
- */
-
-extern int TCcountFunctionParams (node *fundef);
 
 /*
  *  functionname  : TCsearchFundef

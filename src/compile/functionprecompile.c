@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/12/19 23:15:42  ktr
+ * removed TCcountFunctionParams
+ *
  * Revision 1.8  2004/12/13 18:45:45  ktr
  * LET_EXPR is now always traversed in order to handle nested code.
  *
@@ -434,7 +437,9 @@ FPCfundef (node *arg_node, info *arg_info)
     INFO_FPC_FUNDEF (arg_info) = arg_node;
 
     if (!FUNDEF_ISZOMBIE (arg_node)) {
-        INFO_FPC_ARGTAB (arg_info) = TBmakeArgtab (TCcountFunctionParams (arg_node) + 1);
+        INFO_FPC_ARGTAB (arg_info)
+          = TBmakeArgtab (TCcountRets (FUNDEF_RETS (arg_node))
+                          + TCcountArgs (FUNDEF_ARGS (arg_node)) + 1);
 
         if (FUNDEF_RETS (arg_node) != NULL) {
             FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.129  2004/12/19 23:16:37  ktr
+ * removed TCcountFunctionParams
+ *
  * Revision 3.128  2004/12/17 18:58:58  ktr
  * TCgetNthExpr reverted to old counting (n=1 yields the first expression).
  *
@@ -1382,30 +1385,6 @@ TCappendObjdef (node *objdef_chain, node *objdef)
 /***
  ***  N_fundef :
  ***/
-
-/******************************************************************************
- *
- * function:
- *   int TCcountFunctionParams( node *fundef)
- *
- * description:
- *   Counts the number of arguments AND return-values, adds both and returns
- *   the sum.
- *
- ******************************************************************************/
-
-int
-TCcountFunctionParams (node *fundef)
-{
-    int count;
-
-    DBUG_ENTER ("TCcountFunctionParams");
-
-    count = TCcountTypes (FUNDEF_TYPES (fundef));
-    count += TCcountArgs (FUNDEF_ARGS (fundef));
-
-    DBUG_RETURN (count);
-}
 
 node *
 TCappendFundef (node *fundef_chain, node *fundef)
