@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  1999/10/28 17:06:54  dkr
+ * compound macros for masks added
+ *
  * Revision 2.20  1999/10/27 15:12:41  sbs
  * MakeAssignIcmX(...) added.
  *
@@ -1126,6 +1129,7 @@ extern void ObjList2ArgList (node *objdef);
 
 #define BLOCK_DEFMASK(n) (BLOCK_MASK (n, 0))
 #define BLOCK_USEMASK(n) (BLOCK_MASK (n, 1))
+#define BLOCK_MRDMASK(n) (BLOCK_MASK (n, 2))
 
 #define MAKE_EMPTY_BLOCK() MakeBlock (MakeEmpty (), NULL)
 
@@ -1345,6 +1349,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 #define DO_DEFMASK(n) (BLOCK_DEFMASK (DO_BODY (n)))
 #define DO_USEMASK(n) (BLOCK_USEMASK (DO_BODY (n)))
+#define DO_MRDMASK(n) (BLOCK_MRDMASK (DO_BODY (n)))
 #define DO_TERMMASK(n) (DO_MASK (n, 1))
 #define DO_INSTR(n) (BLOCK_INSTR (DO_BODY (n)))
 
@@ -1360,6 +1365,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 #define WHILE_DEFMASK(n) (BLOCK_DEFMASK (WHILE_BODY (n)))
 #define WHILE_USEMASK(n) (BLOCK_USEMASK (WHILE_BODY (n)))
+#define WHILE_MRDMASK(n) (BLOCK_MRDMASK (WHILE_BODY (n)))
 #define WHILE_TERMMASK(n) (WHILE_MASK (n, 1))
 #define WHILE_INSTR(n) (BLOCK_INSTR (WHILE_BODY (n)))
 
@@ -1516,11 +1522,17 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 #define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
 #define NPART_BOUND2(n) (NGEN_BOUND2 (NPART_GEN (n)))
 
+#define NPART_DEFMASK(n) (NPART_MASK (n, 0))
+#define NPART_USEMASK(n) (NPART_MASK (n, 1))
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_Ncode :
  ***/
+
+#define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
+#define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1532,6 +1544,9 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
     (WO_modarray == NWITHOP_TYPE (n)                                                     \
        ? NWITHOP_ARRAY (n)                                                               \
        : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
+
+#define NWITHOP_DEFMASK(n) (NWITHOP_MASK (n, 0))
+#define NWITHOP_USEMASK(n) (NWITHOP_MASK (n, 1))
 
 /*--------------------------------------------------------------------------*/
 
