@@ -111,7 +111,7 @@
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
-      <traversal id="FREE" name="Free Tree" default="sons" include="free_node.h" />
+      <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" />
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
@@ -2607,7 +2607,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Label" mandatory="yes">
+        <attribute name="Label">
           <type name="String" />
           <phases>
             <range from="fun2lac" to="final" />
