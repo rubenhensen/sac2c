@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/05/16 13:42:45  nmw
+ * MALLOC/FREE changed to Malloc/Free
+ *
  * Revision 1.2  2001/05/15 16:39:21  nmw
  * SSAWithloopFolding implemented (but not tested)
  *
@@ -190,7 +193,7 @@ AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
 
     /* alloc new mem, search (or create) vardec for new_name and insert
        new element into renaming list. */
-    ren = MALLOC (sizeof (renaming_type));
+    ren = Malloc (sizeof (renaming_type));
     ren->old = VARDEC_NAME (old_name);
     ren->new = new_name;
     ren->vardec
@@ -233,7 +236,7 @@ FreeRen (void)
     while (renaming) {
         ren = renaming;
         renaming = renaming->next;
-        FREE (ren);
+        Free (ren);
     }
 
     DBUG_RETURN (renaming);
@@ -363,7 +366,7 @@ FreeCC (code_constr_type *cc)
     while (cc) {
         tmpcc = cc;
         cc = cc->next;
-        FREE (tmpcc);
+        Free (tmpcc);
     }
 
     DBUG_VOID_RETURN;
@@ -762,7 +765,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
         tmpig = tmpig->next;
     }
 
-    FREE (help);
+    Free (help);
     SSAFreeInternGenChain (substig);
 
     DBUG_RETURN (rootig);
@@ -1118,7 +1121,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
             }
         }
 
-    FREE (found);
+    Free (found);
 
     DBUG_RETURN (subst_ig);
 }
@@ -1316,12 +1319,11 @@ FoldDecision (node *target_wl, node *subst_wl)
 
     subst_wl = LET_EXPR (ASSIGN_INSTR (subst_wl));
 
-    result
-      = (NWITH_PARTS (target_wl) > 0 && NWITH_PARTS (subst_wl) > 0
-         && NWITH_FOLDABLE (target_wl) > 0
-         && NWITH_REFERENCED (subst_wl) == NWITH_REFERENCED_FOLD (subst_wl)
-         && (WO_genarray == NWITH_TYPE (subst_wl) || WO_modarray == NWITH_TYPE (subst_wl))
-         && !NWITH_NO_CHANCE (subst_wl));
+    result = (NWITH_PARTS (target_wl) > 0 && NWITH_PARTS (subst_wl) > 0
+              && NWITH_FOLDABLE (target_wl) > 0
+              && NWITH_REFERENCED (subst_wl) == NWITH_REFERENCED_FOLD (subst_wl)
+              && (WO_genarray == NWITH_TYPE (subst_wl)
+                  || WO_modarray == NWITH_TYPE (subst_wl)));
 
     DBUG_RETURN (result);
 }
@@ -1804,7 +1806,7 @@ SSAWLFid (node *arg_node, node *arg_info)
                      ID_TYPE(arg_node), arg_info, 1);
       }
       /* replace old name now. */
-      FREE(ID_NAME(arg_node));
+      Free(ID_NAME(arg_node));
       ID_NAME(arg_node) = new_name;
       ID_VARDEC(arg_node) = ren->vardec;
     }
@@ -1972,16 +1974,16 @@ SSAWLFNwith (node *arg_node, node *arg_info)
             new_codes = NULL;
 
             intersect_grids_ot
-              = MALLOC (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
+              = Malloc (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
             intersect_grids_os
-              = MALLOC (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
+              = Malloc (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
 
             DBUG_PRINT ("WLF", ("=> found something to fold in WL in line %d",
                                 NODE_LINE (arg_node)));
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-            FREE (intersect_grids_ot);
-            FREE (intersect_grids_os);
+            Free (intersect_grids_ot);
+            Free (intersect_grids_os);
 
             /* all codes have been traversed. Now append new_codes to WL and
                exchange old generators with all_new_ig. */
@@ -2021,7 +2023,7 @@ SSAWLFNwith (node *arg_node, node *arg_info)
         /* restore arg_info */
         tmpn = arg_info;
         arg_info = INFO_WLI_NEXT (arg_info);
-        FREE (tmpn);
+        Free (tmpn);
         break;
 
     case wlfm_replace:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/16 13:43:34  nmw
+ * MALLOC/FREE changed to Malloc/Free
+ *
  * Revision 3.1  2000/11/20 18:01:55  sacbase
  * new release made
  *
@@ -148,16 +151,16 @@ InsortByCLine (void *element, list_t *list)
     list_t *result = list;
 
     if (result == NULL) {
-        result = (list_t *)MALLOC (sizeof (list_t));
+        result = (list_t *)Malloc (sizeof (list_t));
         result->element = element;
         result->next = list;
     } else {
         next = (enh_access_t *)list->element;
         if (elem->cline <= next->cline) {
             if (elem->vaddr == next->vaddr) {
-                free (elem);
+                Free (elem);
             } else {
-                result = (list_t *)MALLOC (sizeof (list_t));
+                result = (list_t *)Malloc (sizeof (list_t));
                 result->element = element;
                 result->next = list;
             }
@@ -291,7 +294,7 @@ ComputeEnhAccess (int vaddr, node *arg_info)
         cline = abscl % (cSize / lSize);
         cinst = abscl / (cSize / lSize);
     }
-    eaccess = (enh_access_t *)MALLOC (sizeof (enh_access_t));
+    eaccess = (enh_access_t *)Malloc (sizeof (enh_access_t));
     eaccess->vaddr = vaddr;
     eaccess->cline = cline;
     eaccess->cinst = cinst;
@@ -586,7 +589,7 @@ TSIMakePragmaWLComp (int tilesize, node *arg_info)
                 aelems = MakeExprs (MakeNum (tilesize), aelems);
             }
             pragma = MakePragma ();
-            ap_name = MALLOC (6 * sizeof (char));
+            ap_name = Malloc (6 * sizeof (char));
             ap_name = strcpy (ap_name, "BvL0");
             PRAGMA_WLCOMP_APS (pragma)
               = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
@@ -752,7 +755,7 @@ TSInwith (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
                  "Tile size selection not initiated on N_Nwith level");
 
-    cacheparam = (int *)MALLOC (NUM_OF_CACHEPARAM * sizeof (int));
+    cacheparam = (int *)Malloc (NUM_OF_CACHEPARAM * sizeof (int));
     cacheparam[CSIZE_INDEX] = 1024 * config.cache1_size;
     cacheparam[LSIZE_INDEX] = config.cache1_line;
     INFO_TSI_CACHEPARAM (arg_info) = (void *)cacheparam;
@@ -789,7 +792,7 @@ TSInwith (node *arg_node, node *arg_info)
             }
         }
     }
-    FREE (cacheparam);
+    Free (cacheparam);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/05/16 13:43:58  nmw
+ * MALLOC/FREE changed to Malloc/Free
+ *
  * Revision 1.2  2001/04/04 10:00:02  nmw
  *  missing convert functions for basetype char added
  *
@@ -59,7 +62,7 @@ cv2strfunptr cv2str[] = {
                                                                                          \
         DBUG_ENTER ("COCv2Str##ext");                                                    \
         sprintf (format, " %s", form);                                                   \
-        buffer = (char *)malloc (100 * sizeof (char));                                   \
+        buffer = (char *)Malloc (100 * sizeof (char));                                   \
         buffer_act = buffer;                                                             \
                                                                                          \
         if (len > 0) {                                                                   \
