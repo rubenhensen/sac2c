@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.25  1999/02/12 13:48:08  srs
+ * fixed infinite recursion in SearchWL()
+ *
  * Revision 1.24  1999/02/06 13:35:15  srs
  * fixed bug in SearchWL()
  *
@@ -933,6 +936,8 @@ SearchWLHelp (int id_varno, node *assignn, int *valid, int mode, int ol)
  *   If this happens (*valid==0) we still continue to find the WL to
  *   mark it (see mode).
  *
+ *  to understand the usage of search_wl_nodelist see comment in N_let case.
+ *
  ******************************************************************************/
 
 node *
@@ -948,8 +953,13 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
     if (startn && (N_Npart == NODE_TYPE (startn) || N_with == NODE_TYPE (startn)))
         startn = NULL;
 
-    if (startn) { /* N_assign node. */
-        DBUG_ASSERT (N_assign == NODE_TYPE (startn), ("startn no assign node"));
+    /* If we reached a node which is marked in search_wl_nodelist we
+       abort recursion because this node has already been traversed. */
+    if (startn && NodeListFind (search_wl_nodelist, startn))
+        startn = NULL;
+
+    if (startn) { /* This is an N_assign node. */
+        DBUG_ASSERT (N_assign == NODE_TYPE (startn), ("startn is not an assign node"));
         loop_level = ASSIGN_LEVEL (startn);
 
         while (loop_level > original_level) {
@@ -995,6 +1005,9 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                    - as index of an OLD WL which does not store MRDs correctly in
                      its assign nodes but only in superior compound nodes. */
 
+                /* first, mark this node in search_wl_nodelist.  */
+                search_wl_nodelist = NodeListAppend (search_wl_nodelist, startn, NULL);
+
                 /* Search last definition in body and mark it invalid. This
                    MAY go wrong if we don't create MRDs in wli_phase 1. */
                 SearchWLHelp (id_varno, tmpn, valid, mode, loop_level + 1);
@@ -1021,8 +1034,8 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                     tmpn = COND_ELSEINSTR (ASSIGN_INSTR (startn)); /* else-part */
                     SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
                 }
-                if (!ct
-                    || !ce) { /* if Id is not defined in both trees, search above cond. */
+                if (!ct || !ce) { /* if Id is not defined in both trees,
+                                     continue search above the conditional. */
                     tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
                     *valid = -1;
                     SearchWL (id_varno, tmpn, valid, mode, original_level);
@@ -1043,36 +1056,53 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
             break;
 
         case N_let:
-            if (N_id == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
-                /* if the Id we search for is renamed, let's search for the new
-                   name to find a referenced WL.
+            /*   consider the following example:
+                 w = ...
+                 do {
+                   ...1
+                   w = w;
+                   ...2
+                 }
 
-                   consider the following example:
-                   w = ...
-                   do {
-                     ...1
-                     w = w;
+                 where ...1 and ...2 does not define w.
+                 This example can only exist if CF or DCR is disabled.
+
+                 Now, when we reach the assignment w = w in this context, we
+                 start to search for the right Id - for w. The MRD points to
+                 the do-node, so we know that w is not defined in ...1. That's
+                 why we start to search w in ...2. Again we reach the
+                 assignment w=w and would end in an infinite recursion.
+
+                 Another problem with the same effect can happen even with a more
+                 complex expression. Instead of w=w examine the example
+                 w=modarray(w,.,.) below.
+
+                 while(.)                    (1)
+                   ...1
+                   while(.)                  (2)
                      ...2
-                   }
+                     w = modarray(w,.,.);    (3)
+                     ...3
 
-                   where ...1 and ...2 does not define w.
-                   This example can only exist if CF or DCR is disabled.
+                 Here we start in line (3), search for w and find the mrd in (2).
+                 Because w is not defined in ...2, we search again in ...3 (and
+                 find (3) which is no problem) and outside the loop (2). Since
+                 w is not defined in ...1, we find the next mrd of w in (1).
+                 Hence we search w before (1) (which is no problem) and then
+                 we traverse the body of (1) again. We see that w is defined in
+                 (2), traverse into (2) and reach the line (3) again which
+                 leads to an infinite recursion.
 
-                   Now, when we reach the assignment w = w in this context, we
-                   start to search for the right Id - for w. The MRD points to
-                   the do-node, so we know that w is not defined in ...1. That's
-                   why we start to search w in ...2. Again we reach the
-                   assignment w=w and would end in an infinite recursion. To
-                   avoid this, we remeber the assignment node of w=w and abort
-                   the recursion if hit twice.
-                   */
-                if (!NodeListFind (search_wl_nodelist, startn)) {
-                    search_wl_nodelist
-                      = NodeListAppend (search_wl_nodelist, startn, NULL);
-                    id_varno = ID_VARNO (LET_EXPR (ASSIGN_INSTR (startn)));
-                    tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
-                    startn = SearchWL (id_varno, tmpn, valid, mode, original_level);
-                }
+                 solution: we introduce a node list search_wl_nodelist to store
+                 nodes of loops where we already have been. If we reach such a
+                 loop again, we can abort recursion. */
+
+            /* if the Id we search for is renamed, let's search for the new
+               name to find a referenced WL. */
+            if (N_id == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
+                id_varno = ID_VARNO (LET_EXPR (ASSIGN_INSTR (startn)));
+                tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                startn = SearchWL (id_varno, tmpn, valid, mode, original_level);
             } else if (N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
                 /* now we found a WL */
                 if (0 == mode)
