@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/18 12:51:58  cg
+ * Revision 1.6  1995/10/20 11:29:04  cg
+ * DBUG_PRINT removed
+ *
+ * Revision 1.5  1995/10/18  12:51:58  cg
  * converted to new error macros
  *
  * Revision 1.4  1995/07/24  15:43:52  asi
@@ -31,7 +34,7 @@
  *
  *  functionname  : Malloc
  *  arguments     :  1) size of memory to allocate
- *  description   : allociates memory, if there is enough
+ *  description   : allocates memory, if there is enough
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : malloc, Error
@@ -51,7 +54,12 @@ Malloc (int size)
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
 
-    DBUG_PRINT ("MEM", ("new mem: " P_FORMAT, tmp));
+    /*
+     *  DBUG_PRINT("MEM",("new mem: "P_FORMAT,tmp));
+     *
+     *  DBUG_PRINT in Malloc makes usage of functions like ItemName or ModName
+     *  from Error.c in other DBUG_PRINTs impossible.
+     */
 
     DBUG_RETURN (tmp);
 }
