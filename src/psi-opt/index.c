@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2003/03/26 14:41:53  sbs
+ * doxygenic
+ *
  * Revision 3.47  2003/03/26 14:23:34  sbs
  * doxygen again
  *
@@ -201,10 +204,10 @@
 /**
  *
  * @defgroup ive IVE
- * @ingroup Optimizations
+ * @ingroup opt
  *
- * The "index vector elimination" (IVE for short) tries to eliminate index vectors
- * which are used for array selections only.
+ * @brief The "index vector elimination" (IVE for short) tries to eliminate index vectors
+ *        which are used for array selections only.
  *
  * <pre>
  * Example:
@@ -2750,4 +2753,4 @@ IndexVectorElimination (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 /*@}*/
-/*@}*/ /* defgroup IVE */
+/*@}*/ /* defgroup ive */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/03/26 14:42:09  sbs
+ * doxygenic
+ *
  * Revision 3.42  2003/03/26 14:17:01  sbs
  * defgroup Optimizations and file included
  *
@@ -271,13 +274,14 @@
 
 /**
  *
- * @defgroup Optimizations
+ * @defgroup opt Optimizations
  *
  * This group contains all those files/ modules that apply optimizations
  * on the level of SaC code.
  *
  * @{
  */
+
 /**
  *
  * @file optimize.c
@@ -465,22 +469,18 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************/
-/*
- * Here, the functions needed for opt_tab follow.
- * Basically, these are
- *   Optimize      which governs the whole optimization phase and installs opt_tab
- *   OPTmodul      which runs all inter-procedural optimizations, i.e.:
- *                 - Inline
- *   OPTfundef     which runs all intra-procedural optimizations.
+/**
+ *
+ * @name Entry Function for Applying High-Level Optimizations:
+ *
+ * @{
  */
-/******************************************************************************
+
+/** <!--*********************************************************************-->
  *
- * function:
- *  node *Optimize( node *arg_node)
+ * @fn node *Optimize( node *arg_node)
  *
- * description:
- *   steers the whole optimization process.
+ *   @brief governs the whole optimization phase and installs opt_tab.
  *
  ******************************************************************************/
 
@@ -510,14 +510,28 @@ Optimize (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/* @} */
+/**
  *
- * function:
- *  node *OPTmodul( node *arg_node, node *arg_info)
+ * @name Traversal Functions for the Optimizations:
  *
- * description:
- *   this functions applies all those optimizations that are inter-procedural,
- *   i.e., Inlining (INL) and DeadFunctionRemoval (DFR).
+ * <!--
+ * These are
+ *   OPTmodul      which runs all inter-procedural optimizations, i.e.:
+ *                 - Inline
+ *   OPTfundef     which runs all intra-procedural optimizations.
+ * -->
+ *
+ * @{
+ */
+
+/** <!--*********************************************************************-->
+ *
+ * @fn node *OPTmodul( node *arg_node, node *arg_info)
+ *
+ *   @brief this functions applies all those optimizations that are inter-procedural,
+ *          i.e., Inlining (INL) and DeadFunctionRemoval (DFR).
+ *
  *   Although INL could be done function-wise, i.e. in OPTfundef, it seems
  *   to be advantageous to do it for all functions BEFORE applying the other
  *   optimizations function-wise. The reason being, that it allows to prevent
@@ -527,6 +541,8 @@ Optimize (node *arg_node)
  *   be removed and thus requires all inlining to be finished before DFR is
  *   called.
  *   So the overall course of action during optimization is:
+ *
+ *   <pre>
  *
  *               INL
  *               DFR
@@ -542,6 +558,8 @@ Optimize (node *arg_node)
  *               TSI
  *               DFR
  *               IVE
+ *
+ *   </pre>
  *
  ******************************************************************************/
 
@@ -718,14 +736,13 @@ DONE:
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--*********************************************************************-->
  *
- * function:
- *  node *OPTfundef( node *arg_node, node *arg_info)
+ * @fn node *OPTfundef( node *arg_node, node *arg_info)
  *
- * description:
- *    this function steers the intr-procedural optimization process. It
- *    successively applies most of the optimizations, i.e. a single function
+ *   @brief this function steers the intr-procedural optimization process.
+ *
+ *    It successively applies most of the optimizations, i.e. a single function
  *    is optimized "completely" before the next one is processed.
  *    The order in which the optimizations are applied is critical to the
  *    overall effect; so changes made here should be done very CAREFULLY!
@@ -736,6 +753,8 @@ DONE:
  *    expressions before they are moved out of the loop (LIR) and cannot be
  *    folded anymore (for now SSACF does not support intra functional
  *    structural folding operations).
+ *
+ *    <pre>
  *
  *        AE
  *        DCR
@@ -761,6 +780,7 @@ DONE:
  *         |--------/
  *        DCR
  *
+ *   </pre>
  ******************************************************************************/
 
 node *
@@ -1226,4 +1246,5 @@ OPTfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */ /* defgroup Optimizations */
+/* @} */
+/* @} */ /* defgroup opt */
