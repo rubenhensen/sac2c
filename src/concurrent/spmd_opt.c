@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/01 13:04:24  jhs
+ * Added comments.
+ *
  * Revision 2.3  1999/06/25 15:36:33  jhs
  * Checked these in just to provide compileabilty.
  *
@@ -436,7 +439,18 @@ SPMDOassign (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### document!!!! */
+/******************************************************************************
+ *
+ * function:
+ *   node *SPMDOfundef (node* arg_node, node* arg_info)
+ *
+ * description:
+ *   Ensures that the actual FUNDEF or the actual function in which the
+ *   SPMD-Block are located is known.
+ *   The rountine automatically creates an info-node if non exists until
+ *   reaching this function.
+ *
+ ******************************************************************************/
 node *
 SPMDOfundef (node *arg_node, node *arg_info)
 {
