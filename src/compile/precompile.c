@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/03/24 21:45:41  dkr
+ * changed IntersectOutline
+ *
  * Revision 1.31  1998/03/24 21:31:41  dkr
  * removed a bug with WLPROJ_PART
  *
@@ -1618,7 +1621,8 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
 
     DBUG_ENTER ("IntersectOutline");
 
-    *isect1 = *isect2 = NULL;
+    new_isect1 = *isect1 = DupNode (proj1);
+    new_isect2 = *isect2 = DupNode (proj2);
 
     while (proj1 != NULL) {
         DBUG_ASSERT ((proj2 != NULL), "dim not found");
@@ -1681,22 +1685,6 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                  * disjunkt */
                 flag = 1;
 
-                new_isect1
-                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), bound11,
-                                bound21, step1, WLPROJ_UNROLLING (proj1),
-                                MakeWLgrid (WLGRID_DIM (grid1), grid1_b1, grid1_b2,
-                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
-                                NULL);
-                WLPROJ_PART (new_isect1) = WLPROJ_PART (proj1);
-
-                new_isect2
-                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), bound12,
-                                bound22, step2, WLPROJ_UNROLLING (proj2),
-                                MakeWLgrid (WLGRID_DIM (grid2), grid2_b1, grid2_b2,
-                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
-                                NULL);
-                WLPROJ_PART (new_isect2) = WLPROJ_PART (proj2);
-
                 if (WLPROJ_BOUND2 (proj1) < WLPROJ_BOUND2 (proj2)) {
                     WLPROJ_BOUND2 (new_isect1) = i_bound1;
                     new_isect1 = NormalizeProj_1 (new_isect1);
@@ -1705,48 +1693,17 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                     new_isect2 = NormalizeProj_1 (new_isect2);
                 }
             } else {
-                new_isect1
-                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
-                                i_bound2, step1, WLPROJ_UNROLLING (proj1),
-                                MakeWLgrid (WLGRID_DIM (grid1), grid1_b1 - i_offset1,
-                                            grid1_b2 - i_offset1,
-                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
-                                NULL);
-                WLPROJ_PART (new_isect1) = WLPROJ_PART (proj1);
+                WLPROJ_BOUND1 (new_isect1) = i_bound1;
+                WLPROJ_BOUND2 (new_isect1) = i_bound2;
+                WLGRID_BOUND1 (WLPROJ_CONTENTS (new_isect1)) = grid1_b1 - i_offset1;
+                WLGRID_BOUND2 (WLPROJ_CONTENTS (new_isect1)) = grid1_b2 - i_offset1;
                 new_isect1 = NormalizeProj_1 (new_isect1);
 
-                new_isect2
-                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
-                                i_bound2, step2, WLPROJ_UNROLLING (proj2),
-                                MakeWLgrid (WLGRID_DIM (grid2), grid2_b1 - i_offset2,
-                                            grid2_b2 - i_offset2,
-                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
-                                NULL);
-                WLPROJ_PART (new_isect2) = WLPROJ_PART (proj2);
+                WLPROJ_BOUND1 (new_isect2) = i_bound1;
+                WLPROJ_BOUND2 (new_isect2) = i_bound2;
+                WLGRID_BOUND1 (WLPROJ_CONTENTS (new_isect2)) = grid2_b1 - i_offset2;
+                WLGRID_BOUND2 (WLPROJ_CONTENTS (new_isect2)) = grid2_b2 - i_offset2;
                 new_isect2 = NormalizeProj_1 (new_isect2);
-            }
-
-            /* append new dimension to 'isect1', 'isect2' */
-            if (*isect1 == NULL) {
-                DBUG_ASSERT ((*isect2 == NULL), "intersection missed");
-                *isect1 = new_isect1;
-                *isect2 = new_isect2;
-            } else {
-                WLGRID_NEXTDIM (WLPROJ_CONTENTS (last_isect1)) = new_isect1;
-                WLGRID_NEXTDIM (WLPROJ_CONTENTS (last_isect2)) = new_isect2;
-            }
-            last_isect1 = new_isect1;
-            last_isect2 = new_isect2;
-
-            /* copy the code pointers */
-            if (WLGRID_NEXTDIM (grid1) == NULL) {
-                DBUG_ASSERT ((WLGRID_NEXTDIM (grid2) == NULL), "too many dims");
-
-                DBUG_ASSERT ((WLGRID_CODE (grid1) != NULL), "no code found");
-                WLGRID_CODE (WLPROJ_CONTENTS ((last_isect1))) = WLGRID_CODE (grid1);
-
-                DBUG_ASSERT ((WLGRID_CODE (grid2) != NULL), "no code found");
-                WLGRID_CODE (WLPROJ_CONTENTS ((last_isect2))) = WLGRID_CODE (grid2);
             }
 
         } else {
@@ -1762,6 +1719,8 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
 
         proj1 = WLGRID_NEXTDIM (grid1);
         proj2 = WLGRID_NEXTDIM (grid2);
+        new_isect1 = WLGRID_NEXTDIM (WLPROJ_CONTENTS (new_isect1));
+        new_isect2 = WLGRID_NEXTDIM (WLPROJ_CONTENTS (new_isect2));
     }
 }
 
