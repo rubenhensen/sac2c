@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2004/08/18 13:33:46  skt
+ * added a wonderful shortlink into UpdateDependencies
+ * (thank you Clemens)
+ *
  * Revision 1.8  2004/08/13 16:16:39  skt
  * some comments added
  *
@@ -285,6 +289,9 @@ CDFGassign (node *arg_node, info *arg_info)
           = ASSIGN_EXECMODE (arg_node);
     }
 
+    /* set the back-pointer, too */
+    ASSIGN_DATAFLOWNODE (arg_node) = INFO_CDFG_CURRENTDFN (arg_info);
+
     /* continue traversal */
     DBUG_PRINT ("CDFG", ("trav into instruction"));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -408,9 +415,14 @@ CDFGUpdateDependency (node *dfn_assign, node *outer_graph, node *current_node)
                      "1st parameter is no N_assign");
 
         /* first you've to find the dataflownode which assignment is dfn_assign */
-        node_found = CDFGFindAssignCorrespondingNode (outer_graph, dfn_assign);
+        /*node_found = CDFGFindAssignCorrespondingNode(outer_graph, dfn_assign);
 
-        DBUG_ASSERT ((node_found != NULL), "No corresponding node found");
+        DBUG_ASSERT((node_found == ASSIGN_DATAFLOWNODE(dfn_assign)),
+        "oops - should two identical dataflownodes exist?");
+
+        DBUG_ASSERT((node_found != NULL),"No corresponding node found");*/
+
+        node_found = ASSIGN_DATAFLOWNODE (dfn_assign);
 
         /* then you've to find the graph which the lowest level, which includes
          * both nodes */
