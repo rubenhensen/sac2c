@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2000/11/29 13:06:56  dkr
+ * no warnigns '... might be used uninitialized' anymore
+ *
  * Revision 3.3  2000/11/29 12:59:18  dkr
  * no warnings ...
  *
@@ -2351,6 +2354,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
     DBUG_RETURN (parts_stride);
 }
 
+#ifndef DBUG_OFF
 /******************************************************************************
  ******************************************************************************
  **
@@ -2534,6 +2538,7 @@ ret:
  **
  ******************************************************************************
  ******************************************************************************/
+#endif
 
 /******************************************************************************
  *
@@ -4456,8 +4461,11 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
 static node *
 GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
 {
-    node *new_strides, *comp_strides, *stride, *grid, *comp_stride, *comp_grid,
-      *last_comp_grid, *new_stride, *new_grid, *dup_strides, *last_dup_grid, *next_dim;
+    node *new_strides, *comp_strides, *stride, *grid, *comp_stride, *last_comp_grid,
+      *new_stride, *new_grid, *next_dim;
+    node *comp_grid = NULL;
+    node *dup_strides = NULL;
+    node *last_dup_grid = NULL;
 
     DBUG_ENTER ("GenerateCompleteDomain");
 
@@ -5059,9 +5067,11 @@ static bool
 IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                             node **i_stride2)
 {
-    node *grid1, *grid2, *trav_i_stride1, *trav_i_stride2;
+    node *grid1, *grid2;
     int bound11, bound21, grid1_b1, grid1_b2, bound12, bound22, grid2_b1, grid2_b2, head1,
       rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
+    node *trav_i_stride1 = NULL;
+    node *trav_i_stride2 = NULL;
     bool result = TRUE;
 
     DBUG_ENTER ("IntersectStrideWithOutline");
@@ -6084,7 +6094,7 @@ InferSchedulingParams (node *seg)
 node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
-    node *new_node, *strides, *cubes, *segs, *seg;
+    node *strides, *cubes, *segs, *seg;
     shpseg *wl_shpseg;
     int wl_dims, b;
     enum {
@@ -6099,6 +6109,7 @@ WLTRAwith (node *arg_node, node *arg_info)
         WL_PH_fit,
         WL_PH_norm
     } WL_break_after;
+    node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
 
