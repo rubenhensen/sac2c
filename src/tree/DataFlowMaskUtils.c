@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/11/25 22:33:12  mwe
+ * SacDevCamp Dk: Compiles!
+ *
  * Revision 3.16  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -13,6 +16,15 @@
  */
 
 #include "DataFlowMaskUtils.h"
+#include "new_types.h"
+#include "node_basic.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "globals.h"
+#include "internal_lib.h"
+#include "DataFlowMask.h"
+#include "DupTree.h"
+#include "LookUpTable.h"
 
 /************************************************
  *
@@ -24,34 +36,32 @@
  */
 
 struct STACK_T {
-    DFMmask_t mask;
+    dfmask_t *mask;
     struct STACK_T *next;
 };
-
-typedef int (*fun_t) (DFMmask_t mask, char *id, node *decl);
 
 /******************************************************************************
  *
  * Function:
- *   dfmstack_t GenerateDFMstack( void)
+ *   dfmstack_t DFMUgenerateDfmStack( void)
  *
  * Description:
  *   Generates a new DFMstack.
  *
  ******************************************************************************/
 
-stack_t *
-GenerateDFMstack (void)
+dfmstack_t *
+DFMUgenerateDfmStack (void)
 {
-    DBUG_ENTER ("GenerateDFMstack");
+    DBUG_ENTER ("DFMUgenerateDfmStack");
 
-    DBUG_RETURN ((stack_t *)NULL);
+    DBUG_RETURN ((dfmstack_t *)NULL);
 }
 
 /******************************************************************************
  *
  * Function:
- *   extern int IsEmptyDFMstack( DFMstack_t stack)
+ *   extern int DFMUisEmptyDfmStack( DFMstack_t stack)
  *
  * Description:
  *   Checks, whether the given DFMstack is empty or not.
@@ -59,11 +69,11 @@ GenerateDFMstack (void)
  ******************************************************************************/
 
 extern int
-IsEmptyDFMstack (stack_t *stack)
+DFMUisEmptyDfmStack (dfmstack_t *stack)
 {
     int res;
 
-    DBUG_ENTER ("IsEmptyDFMstack");
+    DBUG_ENTER ("DFMUisEmptyDfmStack");
 
     if (stack == NULL) {
         res = TRUE;
@@ -77,21 +87,21 @@ IsEmptyDFMstack (stack_t *stack)
 /******************************************************************************
  *
  * Function:
- *   void PushDFMstack( stack_t **dfmstack, DFMmask_t mask)
+ *   void PushDfmStack( dfmstack_t **dfmstack, dfmask_t *mask)
  *
  * Description:
- *   Pushs a DFMmask onto the given DFMstack.
+ *   Pushs a DFMmask onto the given DfmStack.
  *
  ******************************************************************************/
 
 void
-PushDFMstack (stack_t **stack, DFMmask_t mask)
+DFMUpushDfmStack (dfmstack_t **stack, dfmask_t *mask)
 {
-    stack_t *new_stack;
+    dfmstack_t *new_stack;
 
-    DBUG_ENTER ("PushDFMstack");
+    DBUG_ENTER ("DFMUpushDfmStack");
 
-    new_stack = (stack_t *)Malloc (sizeof (stack_t));
+    new_stack = (dfmstack_t *)ILIBmalloc (sizeof (dfmstack_t));
     new_stack->mask = mask;
     new_stack->next = *stack;
     *stack = new_stack;
@@ -102,27 +112,27 @@ PushDFMstack (stack_t **stack, DFMmask_t mask)
 /******************************************************************************
  *
  * Function:
- *   DFMmask_t PopDFMstack( stack_t **stack)
+ *   dfmask_t* PopDfmStack( dfmstack_t **stack)
  *
  * Description:
- *   Pops a DFMmask from the given DFMstack.
+ *   Pops a DFMmask from the given DfmStack.
  *
  ******************************************************************************/
 
-DFMmask_t
-PopDFMstack (stack_t **stack)
+dfmask_t *
+DFMUpopDfmStack (dfmstack_t **stack)
 {
-    stack_t *old_stack;
-    DFMmask_t mask;
+    dfmstack_t *old_stack;
+    dfmask_t *mask;
 
-    DBUG_ENTER ("PopDFMstack");
+    DBUG_ENTER ("DFMUpopDfmStack");
 
-    DBUG_ASSERT ((!IsEmptyDFMstack (*stack)), "POP failed: stack is empty!");
+    DBUG_ASSERT ((!DFMUisEmptyDfmStack (*stack)), "POP failed: stack is empty!");
 
     mask = (*stack)->mask;
     old_stack = *stack;
     (*stack) = (*stack)->next;
-    old_stack = Free (old_stack);
+    old_stack = ILIBfree (old_stack);
 
     DBUG_RETURN (mask);
 }
@@ -130,19 +140,19 @@ PopDFMstack (stack_t **stack)
 /******************************************************************************
  *
  * Function:
- *   void ForeachDFMstack( stack_t *stack, fun_t fun, char *id, node *decl)
+ *   void DFMUforeachDfmStack( dfmstack_t *stack, fun_t fun, char *id, node *decl)
  *
  * Description:
- *   Calls the function 'fun' for each DFMmask found in the given DFMstack.
+ *   Calls the function 'fun' for each DFMmask found in the given DfmStack.
  *
  ******************************************************************************/
 
 void
-ForeachDFMstack (stack_t *stack, fun_t fun, char *id, node *decl)
+DFMUforeachDfmStack (dfmstack_t *stack, fun_t fun, char *id, node *decl)
 {
-    stack_t *tmp;
+    dfmstack_t *tmp;
 
-    DBUG_ENTER ("ForeachDFMstack");
+    DBUG_ENTER ("DFMUforeachDfmStack");
 
     tmp = stack;
     while (tmp != NULL) {
@@ -156,21 +166,21 @@ ForeachDFMstack (stack_t *stack, fun_t fun, char *id, node *decl)
 /******************************************************************************
  *
  * Function:
- *   void WhileDFMstack( stack_t stack, fun_t fun, char *id, node *decl)
+ *   void DFMUwhileDfmStack( dfmstack_t stack, fun_t fun, char *id, node *decl)
  *
  * Description:
- *   Calls the function 'fun' for each DFMmask found in the given DFMstack
+ *   Calls the function 'fun' for each DFMmask found in the given DfmStack
  *   until the return value of the function is >0.
  *
  ******************************************************************************/
 
 void
-WhileDFMstack (stack_t *stack, fun_t fun, char *id, node *decl)
+DFMUwhileDfmStack (dfmstack_t *stack, fun_t fun, char *id, node *decl)
 {
-    stack_t *tmp;
-    int error = 0;
+    dfmstack_t *tmp;
+    bool error = FALSE;
 
-    DBUG_ENTER ("WhileDFMstack");
+    DBUG_ENTER ("DFMUwhileDfmStack");
 
     tmp = stack;
     while ((tmp != NULL) && (!error)) {
@@ -184,20 +194,20 @@ WhileDFMstack (stack_t *stack, fun_t fun, char *id, node *decl)
 /******************************************************************************
  *
  * Function:
- *   void RemoveDFMstack( stack_t **stack)
+ *   void DFMUremoveDfmStack( dfmstack_t **stack)
  *
  * Description:
- *   Removes the given DFMstack.
+ *   Removes the given DfmStack.
  *
  ******************************************************************************/
 
 void
-RemoveDFMstack (stack_t **stack)
+DFMUremoveDfmStack (dfmstack_t **stack)
 {
-    DBUG_ENTER ("RemoveDFMstack");
+    DBUG_ENTER ("DFMUremoveDfmStack");
 
     while ((*stack) != NULL) {
-        DFMRemoveMask (PopDFMstack (stack));
+        DFMremoveMask (DFMUpopDfmStack (stack));
     }
     (*stack) = NULL;
 
@@ -217,7 +227,7 @@ RemoveDFMstack (stack_t **stack)
 /******************************************************************************
  *
  * function:
- *   types *DFM2ReturnTypes( DFMmask_t mask)
+ *   types *DFMUdfm2ReturnTypes( dfmask_t* mask)
  *
  * description:
  *   Creates a types chain based on the given DFmask.
@@ -225,58 +235,41 @@ RemoveDFMstack (stack_t **stack)
  ******************************************************************************/
 
 types *
-DFM2ReturnTypes (DFMmask_t mask)
+DFMUdfm2ReturnTypes (dfmask_t *mask)
 {
     node *decl;
     types *tmp;
     types *rettypes = NULL;
 
-    DBUG_ENTER ("DFM2ReturnTypes");
+    DBUG_ENTER ("DFMUdfm2ReturnTypes");
 
     /*
      * build return types, return exprs (use SPMD_OUT).
      */
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         tmp = rettypes;
-        rettypes = DupAllTypes (VARDEC_OR_ARG_TYPE (decl));
+        rettypes = DUPdupAllTypes (VARDEC_OR_ARG_TYPE (decl));
 
         /*
          * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
          *   -> TYPES_STATUS = 'ST_artificial'
          */
-        if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
+
+        if ((N_arg == NODE_TYPE (decl))
+            && ((ARG_WASREFERENCE (decl)) || (ARG_ISARTIFICIAL (decl)))) {
             TYPES_STATUS (rettypes) = ST_artificial;
-#ifndef DBUG_OFF
-            if (TYPES_NAME (rettypes) != NULL) {
-                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] := ST_artificial !!!",
-                                     TYPES_NAME (rettypes)));
-            } else {
-                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ (null) ] := ST_artificial !!!"));
-            }
-#endif
-        } else {
-            TYPES_STATUS (rettypes) = VARDEC_OR_ARG_STATUS (decl);
-#ifndef DBUG_OFF
-            if (TYPES_NAME (rettypes) != NULL) {
-                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] == %s", TYPES_NAME (rettypes),
-                                     mdb_statustype[TYPES_STATUS (rettypes)]));
-            } else {
-                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ (null) ] == %s",
-                                     mdb_statustype[TYPES_STATUS (rettypes)]));
-            }
-#endif
         }
 
         TYPES_NEXT (rettypes) = tmp;
-        decl = DFMGetMaskEntryDeclSet (NULL);
+        decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
     /*
      * we must build a void-type if ('rettypes' == NULL) is hold
      */
     if (rettypes == NULL) {
-        rettypes = MakeTypes1 (T_void);
+        rettypes = TBmakeTypes1 (T_void);
     }
 
     DBUG_RETURN (rettypes);
@@ -284,7 +277,7 @@ DFM2ReturnTypes (DFMmask_t mask)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *DFM2ProductType( DFMmask_t mask)
+ * @fn ntype *DFMUdfm2ProductType( dfmask_t* mask)
  *
  * @brief recursive helper function for creating a product type
  *
@@ -293,23 +286,23 @@ DFM2ReturnTypes (DFMmask_t mask)
  *
  ******************************************************************************/
 static ntype *
-DFM2ProductTypeRec (node *decl, int pos)
+DFMUdfm2ProductTypeRec (node *decl, int pos)
 {
     ntype *result;
 
-    DBUG_ENTER ("DFM2ProductTypeRec");
+    DBUG_ENTER ("DFMUdfm2ProductTypeRec");
 
     if (decl == NULL) {
         if (pos == 0) {
             result = NULL;
         } else {
-            result = TYMakeEmptyProductType (pos);
+            result = TYmakeEmptyProductType (pos);
         }
     } else {
-        ntype *ptype = AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl));
+        ntype *ptype = AVIS_TYPE (DECL_AVIS (decl));
 
         if (ptype != NULL) {
-            result = DFM2ProductTypeRec (DFMGetMaskEntryDeclSet (NULL), pos + 1);
+            result = DFMUdfm2ProductTypeRec (DFMgetMaskEntryDeclSet (NULL), pos + 1);
         } else {
             /**
              * We have found a return value without a ntype attached to it.
@@ -321,7 +314,7 @@ DFM2ProductTypeRec (node *decl, int pos)
         }
 
         if (result != NULL) {
-            TYSetProductMember (result, pos, TYCopyType (ptype));
+            TYsetProductMember (result, pos, TYcopyType (ptype));
         }
     }
 
@@ -330,7 +323,7 @@ DFM2ProductTypeRec (node *decl, int pos)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *DFM2ProductType( DFMmask_t mask)
+ * @fn ntype *DFMUdfm2ProductType( dfmask_t* mask)
  *
  * @brief Creates the product type of all types attached to to given mask
  *
@@ -338,23 +331,23 @@ DFM2ProductTypeRec (node *decl, int pos)
  *
  ******************************************************************************/
 ntype *
-DFM2ProductType (DFMmask_t mask)
+DFMUdfm2ProductType (dfmask_t *mask)
 {
     node *decl;
     ntype *result = NULL;
 
-    DBUG_ENTER ("DFM2ProductType");
+    DBUG_ENTER ("DFMUdfm2ProductType");
 
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryDeclSet (mask);
 
-    result = DFM2ProductTypeRec (decl, 0);
+    result = DFMUdfm2ProductTypeRec (decl, 0);
 
     DBUG_RETURN (result);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *DFM2FunctionType( DFMMask_t in, DFMMask_t out, node *fundef)
+ * @fn ntype *DFMUdfm2FunctionType( DFMMask_t in, DFMMask_t out, node *fundef)
  *
  * @brief Creates the type of the function given as arguments
  *
@@ -364,25 +357,25 @@ DFM2ProductType (DFMmask_t mask)
  *
  ******************************************************************************/
 ntype *
-DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
+DFMUdfm2FunctionType (dfmask_t *in, dfmask_t *out, node *fundef)
 {
     ntype *result;
     node *decl;
 
-    DBUG_ENTER ("DFM2FunctionType");
+    DBUG_ENTER ("DFMUdfm2FunctionType");
 
     DBUG_PRINT ("DFMU", ("Creating ntype for function `%s'", FUNDEF_NAME (fundef)));
 
-    result = DFM2ProductType (out);
+    result = DFMUdfm2ProductType (out);
 
     if (result != NULL) {
-        decl = DFMGetMaskEntryDeclSet (in);
+        decl = DFMgetMaskEntryDeclSet (in);
 
         while (decl != NULL) {
-            ntype *tmp = AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl));
+            ntype *tmp = AVIS_TYPE (DECL_AVIS (decl));
 
             if (tmp != NULL) {
-                result = TYMakeFunType (TYCopyType (tmp), result, fundef);
+                result = TYmakeFunType (TYcopyType (tmp), result, fundef);
             } else {
                 /**
                  * We have found an argument without a ntype! This may happen
@@ -394,7 +387,7 @@ DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
                  * For the time beeing, we just return a NULL pointer!
                  */
                 if (result != NULL) {
-                    result = TYFreeType (result);
+                    result = TYfreeType (result);
                 }
 
                 DBUG_PRINT ("DFMU", ("Missing Argument type for function `%s'",
@@ -403,7 +396,7 @@ DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
                 break;
             }
 
-            decl = DFMGetMaskEntryDeclSet (NULL);
+            decl = DFMgetMaskEntryDeclSet (NULL);
         }
     } else {
         /**
@@ -428,7 +421,7 @@ DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *DFM2Vardecs( DFMmask_t mask, LUT_t lut)
+ *   node *DFMUdfm2Vardecs( dfmask_t* mask, LUT_t lut)
  *
  * description:
  *   Creates a vardec-node chain based on the given DFmask.
@@ -437,34 +430,30 @@ DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
  ******************************************************************************/
 
 node *
-DFM2Vardecs (DFMmask_t mask, LUT_t lut)
+DFMUdfm2Vardecs (dfmask_t *mask, lut_t *lut)
 {
     node *decl, *tmp;
     node *vardecs = NULL;
 
-    DBUG_ENTER ("DFM2Vardecs");
+    DBUG_ENTER ("DFMUdfm2Vardecs");
 
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         if (NODE_TYPE (decl) == N_vardec) {
             tmp = vardecs;
-            vardecs = DupNode (decl);
+            vardecs = DUPdoDupNode (decl);
             VARDEC_NEXT (vardecs) = tmp;
         } else {
             DBUG_ASSERT ((NODE_TYPE (decl) == N_arg),
                          "mask entry is neither an arg nor a vardec.");
-            vardecs = MakeVardec (StringCopy (ARG_NAME (decl)),
-                                  DupAllTypes (ARG_TYPE (decl)), vardecs);
-            VARDEC_ATTRIB (vardecs) = ARG_ATTRIB (decl);
-            VARDEC_OBJDEF (vardecs) = ARG_OBJDEF (decl);
+            vardecs
+              = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (decl)),
+                                          TYcopyType (AVIS_TYPE (DECL_AVIS (decl)))),
+                              vardecs);
         }
 
-        DBUG_PRINT ("DFMU", ("VARDEC_ATTRIB/STATUS[ %s ] == %s/%s", VARDEC_NAME (vardecs),
-                             mdb_statustype[VARDEC_ATTRIB (vardecs)],
-                             mdb_statustype[VARDEC_STATUS (vardecs)]));
-
-        lut = InsertIntoLUT_P (lut, decl, vardecs);
-        decl = DFMGetMaskEntryDeclSet (NULL);
+        lut = LUTinsertIntoLutP (lut, decl, vardecs);
+        decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
     DBUG_RETURN (vardecs);
@@ -473,7 +462,7 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   node *DFM2Args( DFMmask_t mask, LUT_t lut)
+ *   node *DFMUdfm2Args( dfmask_t* mask, lut_t *lut)
  *
  * description:
  *   Creates a argument list (arg-node chain) based on the given DFmask.
@@ -482,41 +471,35 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
  ******************************************************************************/
 
 node *
-DFM2Args (DFMmask_t mask, LUT_t lut)
+DFMUdfm2Args (dfmask_t *mask, lut_t *lut)
 {
     node *decl, *tmp;
     node *args = NULL;
 
-    DBUG_ENTER ("DFM2Args");
+    DBUG_ENTER ("DFMUdfm2Args");
 
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         if (NODE_TYPE (decl) == N_arg) {
             tmp = args;
-            args = DupNode (decl);
+            args = DUPdoDupNode (decl);
             ARG_NEXT (args) = tmp;
         } else {
             DBUG_ASSERT ((NODE_TYPE (decl) == N_vardec),
                          "mask entry is neither an arg nor a vardec.");
-            args = MakeArg (StringCopy (VARDEC_NAME (decl)),
-                            DupAllTypes (VARDEC_TYPE (decl)), VARDEC_STATUS (decl),
-                            VARDEC_ATTRIB (decl), args);
-            ARG_OBJDEF (args) = VARDEC_OBJDEF (decl);
+            args = TBmakeArg (TBmakeAvis (ILIBstringCopy (VARDEC_NAME (decl)),
+                                          TYcopyType (AVIS_TYPE (DECL_AVIS (decl)))),
+                              args);
         }
 
-        DBUG_PRINT ("DFMU", ("ARG_ATTRIB/STATUS[ %s ] == %s/%s", ARG_NAME (args),
-                             mdb_statustype[ARG_ATTRIB (args)],
-                             mdb_statustype[ARG_STATUS (args)]));
-
-        lut = InsertIntoLUT_P (lut, decl, args);
-        if (VARDEC_OR_ARG_AVIS (decl) != NULL) {
-            if (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl)) != NULL) {
-                AVIS_TYPE (ARG_AVIS (args))
-                  = TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl)));
+        lut = LUTinsertIntoLutP (lut, decl, args);
+        if (DECL_AVIS (decl) != NULL) {
+            if (AVIS_TYPE (DECL_AVIS (decl)) != NULL) {
+                AVIS_TYPE (ARG_AVIS (args)) = TYcopyType (AVIS_TYPE (DECL_AVIS (decl)));
             }
-            lut = InsertIntoLUT_P (lut, VARDEC_OR_ARG_AVIS (decl), ARG_AVIS (args));
+            lut = LUTinsertIntoLutP (lut, DECL_AVIS (decl), ARG_AVIS (args));
         }
-        decl = DFMGetMaskEntryDeclSet (NULL);
+        decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
     DBUG_RETURN (args);
@@ -525,7 +508,7 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   node *DFM2ReturnExprs( DFMmask_t mask, LUT_t lut)
+ *   node *DFMUdfm2ReturnExprs( dfmask_t* mask, LUT_t lut)
  *
  * description:
  *   Creates a exprs/id-node chain for RETURN_EXPRS based on the given DFmask.
@@ -535,58 +518,28 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
  ******************************************************************************/
 
 node *
-DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
+DFMUdfm2ReturnExprs (dfmask_t *mask, lut_t *lut)
 {
-    node *decl, *id;
+    node *decl, *id, *newavis;
     node *exprs = NULL;
+    node *vardec_or_arg;
 
-    DBUG_ENTER ("DFM2ReturnExprs");
+    DBUG_ENTER ("DFMUdfm2ReturnExprs");
 
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryAvisSet (mask);
     while (decl != NULL) {
-        id = MakeId_Copy (VARDEC_OR_ARG_NAME (decl));
+
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
-        ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
-        ID_AVIS (id) = VARDEC_OR_ARG_AVIS (ID_VARDEC (id));
-        SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
-        SET_FLAG (ID, id, IS_REFERENCE, FALSE);
 
-        /*
-         * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
-         *   -> ID_STATUS = 'ST_artificial'
-         */
-        if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
-            /*
-             * who does use this ????
-             *
-             *    IDS_ATTRIB( IDS_ID(id)) = ST_unique;
-             */
-            ID_STATUS (id) = ST_artificial;
-            DBUG_PRINT ("DFMU", ("ID_STATUS[ return( %s) ] :="
-                                 " ST_artificial !!!",
-                                 ID_NAME (id)));
-        } else {
-            SET_FLAG (ID, id, IS_GLOBAL, (VARDEC_OR_ARG_ATTRIB (decl) == ST_global));
-            SET_FLAG (ID, id, IS_REFERENCE,
-                      ((VARDEC_OR_ARG_ATTRIB (decl) == ST_reference)
-                       || (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference)));
-            SET_FLAG (ID, id, IS_READ_ONLY,
-                      (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference));
+        vardec_or_arg = LUTsearchInLutPp (lut, decl);
+        newavis = DECL_AVIS (vardec_or_arg);
+        id = TBmakeId (newavis);
 
-            ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
+        exprs = TBmakeExprs (id, exprs);
 
-            DBUG_PRINT ("DFMU", ("ID_FLAGS[ return( %s) ] %s%s%s", ID_NAME (id),
-                                 FLAG2STRING (ID, id, IS_GLOBAL),
-                                 FLAG2STRING (ID, id, IS_REFERENCE),
-                                 FLAG2STRING (ID, id, IS_READ_ONLY)));
-            DBUG_PRINT ("DFMU", ("ID_STATUS[ return( %s) ] == %s", ID_NAME (id),
-                                 mdb_statustype[ID_STATUS (id)]));
-        }
-        exprs = MakeExprs (id, exprs);
-
-        decl = DFMGetMaskEntryDeclSet (NULL);
+        decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
     DBUG_RETURN (exprs);
@@ -595,7 +548,7 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   node *DFM2ApArgs( DFMmask_t mask, LUT_t lut)
+ *   node *DFMUdfm2ApArgs( dfmask_t* mask, LUT_t lut)
  *
  * description:
  *   Creates a exprs/id-node chain for AP/PRF_ARGS based on the given DFmask.
@@ -605,37 +558,26 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
  ******************************************************************************/
 
 node *
-DFM2ApArgs (DFMmask_t mask, LUT_t lut)
+DFMUdfm2ApArgs (dfmask_t *mask, lut_t *lut)
 {
-    node *decl, *id;
+    node *decl, *id, *vardec_or_arg;
     node *exprs = NULL;
 
-    DBUG_ENTER ("DFM2ApArgs");
+    DBUG_ENTER ("DFMUdfm2ApArgs");
 
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryDeclSet (mask);
     while (decl != NULL) {
-        id = MakeId_Copy (VARDEC_OR_ARG_NAME (decl));
+
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
-        ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
-        ID_AVIS (id) = VARDEC_OR_ARG_AVIS (ID_VARDEC (id));
 
-        SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
-        SET_FLAG (ID, id, IS_REFERENCE,
-                  ((VARDEC_OR_ARG_ATTRIB (decl) == ST_reference)
-                   || (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference)));
-        SET_FLAG (ID, id, IS_READ_ONLY,
-                  (VARDEC_OR_ARG_ATTRIB (decl) == ST_readonly_reference));
+        vardec_or_arg = LUTsearchInLutPp (lut, decl);
+        id = TBmakeId (DECL_AVIS (vardec_or_arg));
 
-        ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
+        exprs = TBmakeExprs (id, exprs);
 
-        DBUG_PRINT ("DFMU", ("ID_STATUS[ fun( %s) ] == %s", ID_NAME (id),
-                             mdb_statustype[ID_STATUS (id)]));
-
-        exprs = MakeExprs (id, exprs);
-
-        decl = DFMGetMaskEntryDeclSet (NULL);
+        decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
     DBUG_RETURN (exprs);
@@ -644,7 +586,7 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   ids *DFM2LetIds( DFMmask_t mask, LUT_t lut)
+ *   ids *DFMUdfm2LetIds( dfmask_t* mask, LUT_t lut)
  *
  * description:
  *   Creates an ids chain based on the given DFmask.
@@ -653,46 +595,23 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
  *
  ******************************************************************************/
 
-ids *
-DFM2LetIds (DFMmask_t mask, LUT_t lut)
+node *
+DFMUdfm2LetIds (dfmask_t *mask, lut_t *lut)
 {
-    node *decl;
-    ids *tmp;
-    ids *_ids = NULL;
+    node *decl, *vardec_or_arg;
+    node *tmp;
+    node *_ids = NULL;
 
-    DBUG_ENTER ("DFM2LetIds");
+    DBUG_ENTER ("DFMUdfm2LetIds");
 
-    decl = DFMGetMaskEntryDeclSet (mask);
+    decl = DFMgetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         tmp = _ids;
-        _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
-        IDS_VARDEC (_ids) = SearchInLUT_PP (lut, decl);
-        IDS_AVIS (_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (_ids));
+        vardec_or_arg = LUTsearchInLutPp (lut, decl);
+        _ids = TBmakeIds (DECL_AVIS (vardec_or_arg), NULL);
         IDS_NEXT (_ids) = tmp;
 
-        /*
-         * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
-         *   -> ID_STATUS = 'ST_artificial'
-         * All left hand side ids with attrib 'ST_was_reference' must have the status
-         *  'ST_artificial'
-         */
-        if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
-            IDS_ATTRIB (_ids) = ST_unique;
-            IDS_STATUS (_ids) = ST_artificial;
-
-            DBUG_PRINT ("DFMU", ("IDS_ATTRIB/STATUS[ %s = ... ] :="
-                                 " ST_unique/ST_artificial !!!",
-                                 IDS_NAME (_ids)));
-        } else {
-            IDS_ATTRIB (_ids) = VARDEC_OR_ARG_ATTRIB (decl);
-            IDS_STATUS (_ids) = VARDEC_OR_ARG_STATUS (decl);
-
-            DBUG_PRINT ("DFMU", ("IDS_ATTRIB/STATUS[ %s = ... ] == %s/%s",
-                                 IDS_NAME (_ids), mdb_statustype[IDS_ATTRIB (_ids)],
-                                 mdb_statustype[IDS_STATUS (_ids)]));
-        }
-
-        decl = DFMGetMaskEntryDeclSet (NULL);
+        decl = DFMgetMaskEntryDeclSet (NULL);
     }
 
     DBUG_RETURN (_ids);
@@ -706,7 +625,7 @@ DFM2LetIds (DFMmask_t mask, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *   DFMmask_t DFMDuplicateMask( DFMmask_t mask, DFMmask_base_t base)
+ *   dfmask_t* DFMDuplicateMask( dfmask_t* mask, DFMmask_base_t base)
  *
  * description:
  *   Creates a copy of the DFMmask mask, if mask == NULL, NULL is returned.
@@ -723,30 +642,30 @@ DFM2LetIds (DFMmask_t mask, LUT_t lut)
  *
  ******************************************************************************/
 
-DFMmask_t
-DFMDuplicateMask (DFMmask_t mask, DFMmask_base_t base)
+dfmask_t *
+DFMUduplicateMask (dfmask_t *mask, dfmask_base_t *base)
 {
     char *name;
-    DFMmask_t new_mask;
+    dfmask_t *new_mask;
 
-    DBUG_ENTER ("DFMDuplicateMask");
+    DBUG_ENTER ("DFMUduplicateMask");
 
     if (mask != NULL) {
-        if ((base != NULL) && (base != DFMGetMaskBase (mask))) {
+        if ((base != NULL) && (base != DFMgetMaskBase (mask))) {
             /* copy by hand */
-            new_mask = DFMGenMaskClear (base);
+            new_mask = DFMgenMaskClear (base);
 
             /* copy each name, DFMSetMaskEntrySet will fail if name not found */
-            name = DFMGetMaskEntryNameSet (mask);
+            name = DFMgetMaskEntryNameSet (mask);
             while (name != NULL) {
                 DBUG_PRINT ("DFMU", ("Entry in duplicated mask: %s", name));
 
-                DFMSetMaskEntrySet (new_mask, name, NULL);
-                name = DFMGetMaskEntryNameSet (NULL);
+                DFMsetMaskEntrySet (new_mask, name, NULL);
+                name = DFMgetMaskEntryNameSet (NULL);
             }
         } else {
             /* copy by native */
-            new_mask = DFMGenMaskCopy (mask);
+            new_mask = DFMgenMaskCopy (mask);
         }
     } else {
         new_mask = NULL;
