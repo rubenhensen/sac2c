@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/23 18:18:51  cg
+ * Added support for propagating scalar integer constants in a similar way
+ * as constant vectors.
+ *
  * Revision 3.9  2000/12/12 11:40:53  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -219,6 +223,9 @@
 #include "new_typecheck.h"
 
 static node *pseudo_fold_fundefs;
+#if 0
+static node * syntax_tree;
+#endif
 
 #define LOCAL_STACK_SIZE 1000 /* used for scope stack */
 #define MAX_ARG_TYPE_LENGTH                                                              \
@@ -3222,6 +3229,9 @@ Typecheck (node *arg_node)
      */
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "Typecheck() not called with N_modul node!");
+#if 0
+  syntax_tree = arg_node;
+#endif
 
     /*
      * if compiling for a c library, search for specializations
@@ -3993,14 +4003,29 @@ DuplicateFun (fun_tab_elem *fun_p)
                      ModName (FUNDEF_MOD (new_fun_node), FUNDEF_NAME (new_fun_node)),
                      FUNDEF_ATTRIB (new_fun_node)));
 
-        /* insert copied function into fun_table */
+        /*
+         * Insert copied function into fun_table.
+         *
+         *  The fun table stores functions with equal names right behind each
+         *  other. Since typecheck constant propagation may lead to function
+         *  specializations with different names, specialized functions are
+         *  always inserted at the end of the table or between two chains of
+         *  of functions with identical names.
+         */
+
+        while ((fun_p->next != NULL) && (0 == strcmp (fun_p->id, fun_p->next->id))) {
+            fun_p = fun_p->next;
+        }
+
         OLD_INSERT_FUN (fun_p, new_fun_node->ID, new_fun_node->ID_MOD, new_fun_node,
                         NOT_CHECKED, -2);
         new_fun_p = NEXT_FUN_TAB_ELEM (fun_p);
     } else {
-        WARN (NODE_LINE (fun_p->node),
-              ("maxspecialize exceeded for function %s", FUNDEF_NAME (fun_p->node)));
-        new_fun_p = fun_p;
+        ABORT (NODE_LINE (fun_p->node),
+               ("%d specializations already created for function %s !  "
+                "Use option -maxspecialize to enable additional "
+                "specializations",
+                max_overload, FUNDEF_NAME (fun_p->node)));
     }
 
     DBUG_RETURN (new_fun_p);
@@ -4156,8 +4181,9 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                     is_correct
                                       = CmpTypes (arg_type[i], ARG_TYPE (fun_args));
                                 } else if (1 == once_again) {
-                                    is_correct = CompatibleTypes (ARG_TYPE (fun_args),
-                                                                  arg_type[i], 0, line);
+                                    is_correct
+                                      = CompatibleTypes (arg_type[i], ARG_TYPE (fun_args),
+                                                         0, line);
                                 }
 
                                 DBUG_PRINT ("TYPE", ("is_correct is %i", is_correct));
@@ -4321,7 +4347,9 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                 if (i + 1 != count_args)
                     strcat (arg_str, ", ");
             }
-
+#if 0         
+         Print(syntax_tree);
+#endif
             ABORT (line,
                    ("Function '%s` is undefined or is applied to"
                     " wrong arguments '%s`",
@@ -7870,27 +7898,32 @@ TCNcode (node *arg_node, node *arg_info)
  *
  * function:
  *   fun_tab_elem *TryConstantPropagation(fun_tab_elem *fun_p, node *args)
+ *   fun_tab_elem *DoConstantPropagation(fun_tab_elem *fun_p, nodelist *propas)
  *
  * description:
  *
  *   This function represents a more or less quick hack to realize the
- *   propagation of integer vector constants across function definitions
- *   in order to allow typechecking of functions like
+ *   propagation of integer vector and scalar constants across function
+ *   definitions in order to allow typechecking of functions like
  *
  *    int[] create_array(int[.] shp)
  *
  *
  *   This works about as follows:
- *    1. At function application check whether constant int vectors
- *       are available among the function arguments.
+ *    1. At function application, check whether constant int vectors
+ *       or scalars are available among the function arguments.
  *    2. If so, the function is duplicated
- *    3. It is traversed with a list parameter-constant vector mappings
- *    4. At each occurrence of a parameter the constant vector information
+ *    3. It is traversed with a list parameter-constant mappings.
+ *    4. Additonal assignments of constants to parameters are inserted
+ *       into the assignment chain.
+ *    5. At each occurrence of a parameter the constant vector information
  *       is annotated.
- *    5. At each parameter occurrence in the specification of the result
+ *    6. At each parameter occurrence in the specification of the result
  *       shape of a genarray-withloop, the identifier is replaced by the
- *       constant vector.
- *    6. If (5) never happened, the function copy is removed again.
+ *       constant vector or scalar.
+ *    7. If (6) never happened, the specialized function is removed again,
+ *       i.e., its body is freed immediately whereas the function prototype
+ *       is eliminated by subsequent dead function removal.
  *
  ******************************************************************************/
 
@@ -7906,6 +7939,8 @@ TryConstantPropagation (fun_tab_elem *fun_p, node *args)
     param = FUNDEF_ARGS (fun_p->node);
     propnodes = NULL;
 
+    DBUG_PRINT ("TCCP", ("Checking tccp for function %s", FUNDEF_NAME (fun_p->node)));
+
     while ((param != NULL) && (arg != NULL)) {
         if ((NODE_TYPE (EXPRS_EXPR (arg)) == N_id) && (ID_ISCONST (EXPRS_EXPR (arg)))
             && (ID_VECTYPE (EXPRS_EXPR (arg)) == T_int)) {
@@ -7914,7 +7949,17 @@ TryConstantPropagation (fun_tab_elem *fun_p, node *args)
             ID_NAME (propnode) = StringCopy (ARG_NAME (param));
 
             propnodes = MakeNodelistNode (propnode, propnodes);
+        } else {
+            if (NODE_TYPE (EXPRS_EXPR (arg)) == N_num) {
+                propnode = MakeId (StringCopy (ARG_NAME (param)), NULL, ST_regular);
+                ID_ISCONST (propnode) = 1;
+                ID_VECLEN (propnode) = 0;
+                ID_NUM (propnode) = NUM_VAL (EXPRS_EXPR (arg));
+
+                propnodes = MakeNodelistNode (propnode, propnodes);
+            }
         }
+
         arg = EXPRS_NEXT (arg);
         param = ARG_NEXT (param);
     }
@@ -7922,23 +7967,12 @@ TryConstantPropagation (fun_tab_elem *fun_p, node *args)
     if (propnodes != NULL) {
         fun_p = DoConstantPropagation (fun_p, propnodes);
         FreeNodelist (propnodes);
+    } else {
+        DBUG_PRINT ("TCCP", ("No tccp for function %s", FUNDEF_NAME (fun_p->node)));
     }
 
     DBUG_RETURN (fun_p);
 }
-
-/******************************************************************************
- *
- * function:
- *   fun_tab_elem *DoConstantPropagation(fun_tab_elem *fun_p, nodelist *propas)
- *
- * description:
- *
- *
- *
- *
- *
- ******************************************************************************/
 
 static fun_tab_elem *
 DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
@@ -7951,15 +7985,32 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
 
     DBUG_ENTER ("DoConstantPropagation");
 
+    DBUG_PRINT ("TCCP", ("Trying tccp for function %s", FUNDEF_NAME (fun_p->node)));
+
     n_dub = fun_p->n_dub;
     fun_p->n_dub = 1;
+
     new_fun_p = DuplicateFun (fun_p);
+
     fun_p->n_dub = n_dub;
+    /*
+     * The manipulation of the specialization counter is necessary because we may
+     * want to further specialize already type-specialized functions. However, their
+     * counter is set to -2 which is subsequently used for identification of
+     * specialized functions.
+     * Unfortunately, this implies that their is no limit on the number of
+     * function specializations due to constant propagation.
+     */
 
     newname = TmpVarName (FUNDEF_NAME (new_fun_p->node));
     FREE (FUNDEF_NAME (new_fun_p->node));
     FUNDEF_NAME (new_fun_p->node) = newname;
-    new_fun_p->id = newname;
+
+    new_fun_p->id = FUNDEF_NAME (new_fun_p->node);
+    /*
+     * The entry in the fun table must be updated accordingly.
+     * However, it shares the name with the "real" synatax tree.
+     */
 
     old_tab = act_tab;
     act_tab = tccp_tab;
@@ -7974,8 +8025,10 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
 
     if (INFO_TC_TCCPSUCCESS (arg_info)) {
         res_fun_p = new_fun_p;
+        DBUG_PRINT ("TCCP", ("TCCP successful"));
     } else {
         res_fun_p = fun_p;
+        DBUG_PRINT ("TCCP", ("TCCP rejected"));
     }
 
     FREE (arg_info);
@@ -7983,6 +8036,24 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
     act_tab = old_tab;
 
     DBUG_RETURN (res_fun_p);
+}
+
+static node *
+CreateConstLet (node *id)
+{
+    node *new;
+
+    DBUG_ENTER ("CreateConstLet");
+
+    if (ID_VECLEN (id) == 0) {
+        new = MakeLet (MakeNum (ID_NUM (id)),
+                       MakeIds (StringCopy (ID_NAME (id)), NULL, ST_regular));
+    } else {
+        new = MakeLet (MakeArray (IntVec2Array (ID_VECLEN (id), ID_CONSTVEC (id))),
+                       MakeIds (StringCopy (ID_NAME (id)), NULL, ST_regular));
+    }
+
+    DBUG_RETURN (new);
 }
 
 /******************************************************************************
@@ -8006,14 +8077,41 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
 node *
 TCCPfundef (node *arg_node, node *arg_info)
 {
+    nodelist *param;
+    node *new_assigns, *last_assign;
+
     DBUG_ENTER ("TCCPfundef");
+
+    /*
+     * After  the traversal, parts of the information may be destroyed.
+     * Therefore, we set up the new assignments right now and add them
+     * to the chain if necessary.
+     */
+
+    param = INFO_TC_TCCP (arg_info);
+
+    new_assigns = MakeAssign (CreateConstLet (NODELIST_NODE (param)), NULL);
+    last_assign = new_assigns;
+    param = NODELIST_NEXT (param);
+
+    while (param != NULL) {
+        new_assigns = MakeAssign (CreateConstLet (NODELIST_NODE (param)), new_assigns);
+        param = NODELIST_NEXT (param);
+    }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (!INFO_TC_TCCPSUCCESS (arg_info)) {
+    if (INFO_TC_TCCPSUCCESS (arg_info)) {
+        ASSIGN_NEXT (last_assign) = BLOCK_INSTR (FUNDEF_BODY (arg_node));
+        BLOCK_INSTR (FUNDEF_BODY (arg_node)) = new_assigns;
+    } else {
+        /*
+         * Constant propagation does not help typechecking, so we omit it.
+         */
         FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
+        new_assigns = FreeTree (new_assigns);
     }
 
     DBUG_RETURN (arg_node);
@@ -8069,6 +8167,10 @@ TCCPlet (node *arg_node, node *arg_info)
             if (0 == strcmp (IDS_NAME (ids), ID_NAME (NODELIST_NODE (param)))) {
                 FREE (ID_NAME (NODELIST_NODE (param)));
                 ID_NAME (NODELIST_NODE (param)) = StringCopy ("_");
+                /*
+                 * Parameters which are shadowed by assignments are cleared from
+                 * the list of parameter-constant mappings to avoid false bindings.
+                 */
             }
             param = NODELIST_NEXT (param);
         }
@@ -8105,26 +8207,52 @@ TCCPid (node *arg_node, node *arg_info)
     while (param != NULL) {
         if (0 == strcmp (ID_NAME (arg_node), ID_NAME (NODELIST_NODE (param)))) {
             if (INFO_TC_ISGWLSHAPE (arg_info)) {
+                /*
+                 * Here, we are in the result shape specification of a
+                 * genarray-withloop.
+                 *
+                 * Both scalars and vectors are replaced by the respective constants.
+                 */
                 arg_node = FreeTree (arg_node);
-                arg_node = MakeArray (IntVec2Array (ID_VECLEN (NODELIST_NODE (param)),
-                                                    ID_CONSTVEC (NODELIST_NODE (param))));
-                ARRAY_ISCONST (arg_node) = 1;
-                ARRAY_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
-                ARRAY_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
-                ARRAY_CONSTVEC (arg_node)
-                  = CopyConstVec (ID_VECTYPE (NODELIST_NODE (param)),
-                                  ID_VECLEN (NODELIST_NODE (param)),
-                                  ID_CONSTVEC (NODELIST_NODE (param)));
+                if (ID_VECLEN (NODELIST_NODE (param)) == 0) {
+                    arg_node = MakeNum (ID_NUM (NODELIST_NODE (param)));
+                } else {
+                    arg_node
+                      = MakeArray (IntVec2Array (ID_VECLEN (NODELIST_NODE (param)),
+                                                 ID_CONSTVEC (NODELIST_NODE (param))));
+                    ARRAY_ISCONST (arg_node) = 1;
+                    ARRAY_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
+                    ARRAY_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
+                    ARRAY_CONSTVEC (arg_node)
+                      = CopyConstVec (ID_VECTYPE (NODELIST_NODE (param)),
+                                      ID_VECLEN (NODELIST_NODE (param)),
+                                      ID_CONSTVEC (NODELIST_NODE (param)));
+                }
 
                 INFO_TC_TCCPSUCCESS (arg_info) = 1;
             } else {
-                ID_ISCONST (arg_node) = 1;
-                ID_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
-                ID_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
-                ID_CONSTVEC (arg_node)
-                  = CopyConstVec (ID_VECTYPE (NODELIST_NODE (param)),
-                                  ID_VECLEN (NODELIST_NODE (param)),
-                                  ID_CONSTVEC (NODELIST_NODE (param)));
+                /*
+                 * Here, we are NOT in the result shape specification of a
+                 * genarray-withloop.
+                 */
+                if (ID_VECLEN (NODELIST_NODE (param)) == 0) {
+                    arg_node = FreeTree (arg_node);
+                    arg_node = MakeNum (ID_NUM (NODELIST_NODE (param)));
+                    /*
+                     * Scalars are replaced by the respective constants.
+                     */
+                } else {
+                    ID_ISCONST (arg_node) = 1;
+                    ID_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
+                    ID_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
+                    ID_CONSTVEC (arg_node)
+                      = CopyConstVec (ID_VECTYPE (NODELIST_NODE (param)),
+                                      ID_VECLEN (NODELIST_NODE (param)),
+                                      ID_CONSTVEC (NODELIST_NODE (param)));
+                    /*
+                     * Constant vectors are annotated.
+                     */
+                }
             }
 
             break;
