@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/31 18:33:59  sbs
+ * Print in BREAK surrounded by CHECK_DBUGs
+ * => enables DBUG-output during print,
+ * e.g. ARRAY_FLAT, MASKS
+ *
  * Revision 2.5  1999/05/18 12:29:10  cg
  * added new resource entry TMPDIR to specify where sac2c puts
  * its temporary files.
@@ -582,7 +587,9 @@ BREAK:
 
     if (compiler_phase >= PH_scanparse) {
         if (compiler_phase < PH_genccode) {
+            CHECK_DBUG_START; /* needed for DBUG-infos during print, e.g. ARRAY_FLAT */
             Print (syntax_tree);
+            CHECK_DBUG_STOP;
         }
         FreeTree (syntax_tree);
 
