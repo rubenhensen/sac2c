@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/01/25 13:42:57  dkr
+ * function GetVardec moved to tree_compound.h and renamed to
+ * FindVardec_Name
+ *
  * Revision 2.5  1999/08/27 11:57:37  jhs
  * Added copying of varnos (fundef and vardecs) while lifting the
  * spmd-blocks to spmd-functions.
@@ -53,39 +57,8 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "typecheck.h"
-#include "refcount.h"
 #include "internal_lib.h"
-
 #include "concurrent_lib.h"
-
-/******************************************************************************
- *
- * function:
- *   node *GetVardec( char *name, node *fundef)
- *
- * description:
- *   returns a pointer to the vardec of var with name 'name'
- *
- ******************************************************************************/
-
-static node *
-GetVardec (char *name, node *fundef)
-{
-    node *tmp, *vardec = NULL;
-
-    DBUG_ENTER ("GetVardec");
-
-    FOREACH_VARDEC_AND_ARG (fundef, tmp,
-                            if (strcmp (VARDEC_OR_ARG_NAME (tmp), name) == 0) {
-                                vardec = tmp;
-                            }) /* FOREACH_VARDEC_AND_ARG */
-
-    if (vardec == NULL) {
-        DBUG_PRINT ("SPMDL", ("Cannot find %s", name));
-    }
-
-    DBUG_RETURN (vardec);
-}
 
 /******************************************************************************
  *
@@ -116,7 +89,7 @@ SPMDLids (ids *arg_node, node *arg_info)
          *   -> correct the pointers to the vardec
          */
 
-        IDS_VARDEC (arg_node) = GetVardec (IDS_NAME (arg_node), fundef);
+        IDS_VARDEC (arg_node) = FindVardec_Name (IDS_NAME (arg_node), fundef);
         DBUG_ASSERT ((IDS_VARDEC (arg_node) != NULL), "vardec not found");
 
         if (IDS_NEXT (arg_node) != NULL) {
@@ -370,7 +343,7 @@ SPMDLid (node *arg_node, node *arg_info)
          *   -> correct the pointer to the vardec (ID_VARDEC)
          */
 
-        ID_VARDEC (arg_node) = GetVardec (ID_NAME (arg_node), fundef);
+        ID_VARDEC (arg_node) = FindVardec_Name (ID_NAME (arg_node), fundef);
         DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "vardec not found");
     }
 
