@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2000/04/20 11:38:33  jhs
+ * Added comment at MT_FUNDEF.
+ *
  * Revision 1.40  2000/04/13 09:00:48  jhs
  * Added INFO_MUTH_TOPDOWN.
  *
@@ -2820,7 +2823,9 @@ extern node *MakeSync (node *region);
  ***    DFMmask_t  USEMASK                (multithread.dfa   ->)
  ***    DFMmask_t  DEFMASK                (multithread.dfa   ->)
  ***    DFMmask_t  NEEDLATER              (multithread.dfa   ->)
- ***    node*      FUNDEF     (N_fundef)  (multithread.blkli ->)
+ ***    node*      FUNDEF     (N_fundef)  (multithread.blkli ->
+ ***                                       This mt-block was lifted to which
+ ***                                       function?)
  ***/
 
 extern node *MakeMT (node *region);
