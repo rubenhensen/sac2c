@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/03/01 03:20:27  dkr
+ * minor changes done
+ *
  * Revision 1.6  2002/02/22 13:48:19  dkr
  * error in COMPMT2FunReturn() corrected
  *
@@ -106,6 +109,12 @@ static ids *wlids = NULL;
 static node *wlnode = NULL;
 static node *wlseg = NULL;
 static node *wlstride = NULL;
+
+#define INFO_COMP_MERGE(n) (n->node[4])
+#define INFO_COMP_CNTPARAM(n) (n->lineno)
+#define INFO_COMP_TYPETAB(n) ((types **)(n->dfmask[0]))
+#define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
+#define INFO_COMP_TABSIZE(n) (n->flag)
 
 #define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
     ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
@@ -4572,7 +4581,7 @@ COMPIdLet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPIdFromClass( node *arg_node, node *arg_info)
+ *   node *COMPIdFromUnique( node *arg_node, node *arg_info)
  *
  * Description:
  *   Compiles let expression with a N_id node representing an application of
@@ -4583,12 +4592,12 @@ COMPIdLet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPIdFromClass (node *arg_node, node *arg_info)
+COMPIdFromUnique (node *arg_node, node *arg_info)
 {
     ids *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPIdFromClass");
+    DBUG_ENTER ("COMPIdFromUnique");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
 
@@ -4620,7 +4629,7 @@ COMPIdFromClass (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPIdToClass( node *arg_node, node *arg_info)
+ *   node *COMPIdToUnique( node *arg_node, node *arg_info)
  *
  * Description:
  *   Compiles let expression with a N_id node representing an application of
@@ -4631,13 +4640,13 @@ COMPIdFromClass (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPIdToClass (node *arg_node, node *arg_info)
+COMPIdToUnique (node *arg_node, node *arg_info)
 {
     ids *let_ids;
     types *rhs_type;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPIdToClass");
+    DBUG_ENTER ("COMPIdToUnique");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
     rhs_type = ID_TYPE (arg_node);
@@ -4707,17 +4716,17 @@ COMP2Id (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPId");
 
-    switch (ID_CLSCONV (arg_node)) {
-    case NO_CLSCONV:
+    switch (ID_UNQCONV (arg_node)) {
+    case NO_UNQCONV:
         ret_node = COMPIdLet (arg_node, arg_info);
         break;
 
-    case FROM_CLASS:
-        ret_node = COMPIdFromClass (arg_node, arg_info);
+    case FROM_UNQ:
+        ret_node = COMPIdFromUnique (arg_node, arg_info);
         break;
 
-    case TO_CLASS:
-        ret_node = COMPIdToClass (arg_node, arg_info);
+    case TO_UNQ:
+        ret_node = COMPIdToUnique (arg_node, arg_info);
         break;
 
     default:
