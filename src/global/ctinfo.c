@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/01/12 15:50:46  cg
+ * Added CTIterminateCompilation.
+ *
  * Revision 1.3  2005/01/11 15:11:46  cg
  * Added some useful functionality.
  *
@@ -55,6 +58,11 @@
 #include "filemgr.h"
 #include "internal_lib.h"
 #include "build.h"
+#include "resource.h"
+#include "print.h"
+#include "convert.h"
+#include "globals.h"
+#include "free.h"
 
 #include "ctinfo.h"
 
@@ -153,8 +161,8 @@ PrintMessage (const char *header, const char *format, ...)
     DBUG_ENTER ("PrintMessage");
 
     va_start (arg_p, format);
-
     len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
+    va_end (arg_p);
 
     if (len >= message_buffer_size) {
         /* buffer too small */
@@ -162,11 +170,12 @@ PrintMessage (const char *header, const char *format, ...)
         message_buffer = (char *)ILIBmalloc (len + 2);
         message_buffer_size = len + 2;
 
+        va_start (arg_p, format);
         len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
+        va_end (arg_p);
+
         DBUG_ASSERT ((len < message_buffer_size), "message buffer corruption");
     }
-
-    va_end (arg_p);
 
     ProcessMessage (message_buffer, message_line_length - strlen (header));
 
@@ -677,6 +686,66 @@ CTInote (const char *format, ...)
 
         va_end (arg_p);
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIterminateCompilation()
+ *
+ *   @brief  terminates successful compilation process
+ *
+ ******************************************************************************/
+
+void
+CTIterminateCompilation ()
+{
+    DBUG_ENTER ("CTIterminateCompilation");
+
+    if (global.compiler_phase < PH_final) {
+        if (global.compiler_phase < PH_scanparse) {
+            RSCshowResources ();
+        } else {
+            if (global.print_after_break && (global.compiler_phase <= PH_compile)) {
+                global.syntax_tree = PRTdoPrint (global.syntax_tree);
+            }
+            global.syntax_tree = FREEdoFreeTree (global.syntax_tree);
+        }
+    }
+
+    /*
+     *  Finally, we do some clean up ...
+     */
+
+    /*
+     *  ... and display a success message.
+     */
+
+    CTIstate ("*** Compilation successful ***");
+
+    if (global.compiler_phase < PH_final) {
+        CTIstate ("*** BREAK after: %s",
+                  global.compiler_phase_name[global.compiler_phase]);
+        if (global.break_specifier[0] != '\0') {
+            CTIstate ("*** BREAK specifier: '%s`", global.break_specifier);
+        }
+    }
+
+#ifdef SHOW_MALLOC
+    CTIstate ("*** Maximum allocated memory (bytes):   %s",
+              CVintBytes2String (global.max_allocated_mem));
+    CTIstate ("*** Currently allocated memory (bytes): %s",
+              CVintBytes2String (global.current_allocated_mem));
+#endif
+
+    CTIstate ("*** Exit code 0");
+    CTIstate ("*** 0 error(s), %d warning(s)", warnings);
+    CTIstate ("\n\n");
+
+    FMGRcleanUp ();
+
+    exit (0);
 
     DBUG_VOID_RETURN;
 }

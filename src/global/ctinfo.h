@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/01/12 15:50:46  cg
+ * Added CTIterminateCompilation.
+ *
  * Revision 1.3  2005/01/11 15:11:46  cg
  * Added some useful functionality.
  *
@@ -38,5 +41,6 @@ extern void CTIwarnContinued (const char *format, ...);
 extern int CTIgetWarnMessageLineLength ();
 extern void CTIstate (const char *format, ...);
 extern void CTInote (const char *format, ...);
+extern void CTIterminateCompilation ();
 
 #endif /* _SAC_CTINFO_H_ */
