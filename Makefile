@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.21  1995/04/05 15:52:38  asi
+# Revision 1.22  1995/05/01 15:36:19  asi
+# src/optimize/DupTree.o inserted
+#
+# Revision 1.21  1995/04/05  15:52:38  asi
 # loop invariant removal added
 #
 # Revision 1.20  1995/04/03  10:11:30  sbs
@@ -78,7 +81,7 @@ FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
-	  src/optimize/LoopInvariantRemoval.o
+	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
