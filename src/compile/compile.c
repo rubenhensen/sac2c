@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  1999/07/30 13:51:47  jhs
+ * Brushed.
+ *
  * Revision 2.24  1999/07/28 13:12:10  jhs
  * Added some comments.
  *
@@ -2741,7 +2744,7 @@ COMPFundef (node *arg_node, node *arg_info)
         && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
         ReorganizeReturnIcm (ICM_ARGS (FUNDEF_RETURN (arg_node)));
     }
-    /* #### */
+
     if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
         FUNDEF_ICM (arg_node)
           = CreateIcmMT_SPMD_FUN_DEC (FUNDEF_NAME (arg_node),
