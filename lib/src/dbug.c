@@ -602,7 +602,7 @@ int *_slevel_;
     file = BaseName (_file_);
     stack->level++;
     if (stack->level == stack->maxdepth + 1)
-        fprintf (_db_fp_, "WARNING: dbug-maxdepth too low\n");
+        fprintf (_db_fp_, "WARNING: dbug-maxdepth %d too low\n", stack->maxdepth);
     *_slevel_ = stack->level;
     if (DoTrace ()) {
         DoPrefix (_line_);
