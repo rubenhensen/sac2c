@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.12  2003/03/21 17:11:52  sah
+dnl now testing on sqrt for libm
+dnl
 dnl Revision 1.11  2003/03/21 16:59:24  sah
 dnl added test on
 dnl bison functionality
@@ -124,7 +127,7 @@ if [ test "$YACC" != "yacc" ]; then
   mkdir .ac_yacc_test
   cd .ac_yacc_test
   cp ../src/scanparse/sac.y .
-  if [ $YACC sac.y ]; then
+  if [ $YACC sac.y >/dev/null 2>/dev/null ]; then
     AC_MSG_RESULT(ok)
   else
     YACC=yacc
@@ -156,7 +159,7 @@ AC_SUBST(DISABLE_MT, yes)
 ])
 
 dnl check whether to link math library
-AC_SEARCH_LIBS(fabs, m)
+AC_SEARCH_LIBS(sqrt, m)
 
 dnl checking for presence of strtok and strrchr
 AC_CHECK_FUNCS([strtok strrchr])

@@ -2392,7 +2392,7 @@ echo $ECHO_N "checking whether $YACC works... $ECHO_C" >&6
   mkdir .ac_yacc_test
   cd .ac_yacc_test
   cp ../src/scanparse/sac.y .
-  if  $YACC sac.y ; then
+  if  $YACC sac.y >/dev/null 2>/dev/null ; then
     echo "$as_me:$LINENO: result: ok" >&5
 echo "${ECHO_T}ok" >&6
   else
@@ -3090,13 +3090,13 @@ fi
 
 
 
-echo "$as_me:$LINENO: checking for library containing fabs" >&5
-echo $ECHO_N "checking for library containing fabs... $ECHO_C" >&6
-if test "${ac_cv_search_fabs+set}" = set; then
+echo "$as_me:$LINENO: checking for library containing sqrt" >&5
+echo $ECHO_N "checking for library containing sqrt... $ECHO_C" >&6
+if test "${ac_cv_search_sqrt+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_func_search_save_LIBS=$LIBS
-ac_cv_search_fabs=no
+ac_cv_search_sqrt=no
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -3107,7 +3107,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char fabs ();
+char sqrt ();
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
      extern "C"
@@ -3117,7 +3117,7 @@ char fabs ();
 int
 main ()
 {
-fabs ();
+sqrt ();
   ;
   return 0;
 }
@@ -3134,13 +3134,13 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_search_fabs="none required"
+  ac_cv_search_sqrt="none required"
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_fabs" = no; then
+if test "$ac_cv_search_sqrt" = no; then
   for ac_lib in m; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
@@ -3153,7 +3153,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char fabs ();
+char sqrt ();
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
      extern "C"
@@ -3163,7 +3163,7 @@ char fabs ();
 int
 main ()
 {
-fabs ();
+sqrt ();
   ;
   return 0;
 }
@@ -3180,7 +3180,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_search_fabs="-l$ac_lib"
+  ac_cv_search_sqrt="-l$ac_lib"
 break
 else
   echo "$as_me: failed program was:" >&5
@@ -3191,10 +3191,10 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 fi
 LIBS=$ac_func_search_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_search_fabs" >&5
-echo "${ECHO_T}$ac_cv_search_fabs" >&6
-if test "$ac_cv_search_fabs" != no; then
-  test "$ac_cv_search_fabs" = "none required" || LIBS="$ac_cv_search_fabs $LIBS"
+echo "$as_me:$LINENO: result: $ac_cv_search_sqrt" >&5
+echo "${ECHO_T}$ac_cv_search_sqrt" >&6
+if test "$ac_cv_search_sqrt" != no; then
+  test "$ac_cv_search_sqrt" = "none required" || LIBS="$ac_cv_search_sqrt $LIBS"
 
 fi
 
