@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/04/02 17:41:21  dkr
+ * added PrintConc
+ *
  * Revision 1.26  1998/04/01 23:56:54  dkr
  * added PrintWLstriVar, PrintWLgridVar
  *
@@ -141,11 +144,15 @@ extern node *PrintPre (node *arg_node, node *arg_info);
 extern node *PrintIcm (node *arg_node, node *arg_info);
 extern node *PrintVectInfo (node *arg_node, node *arg_info);
 extern node *PrintPragma (node *arg_node, node *arg_info);
+extern node *PrintConc (node *arg_node, node *arg_info);
+
+/* new with-loop */
 extern node *PrintNwith (node *arg_node, node *arg_info);
 extern node *PrintNwithid (node *arg_node, node *arg_info);
 extern node *PrintNcode (node *arg_node, node *arg_info);
 extern node *PrintNpart (node *arg_node, node *arg_info);
 extern node *PrintNwithop (node *arg_node, node *arg_info);
+
 extern node *PrintNwith2 (node *arg_node, node *arg_info);
 extern node *PrintWLseg (node *arg_node, node *arg_info);
 extern node *PrintWLblock (node *arg_node, node *arg_info);
@@ -157,7 +164,7 @@ extern node *PrintWLgridVar (node *arg_node, node *arg_info);
 
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
-extern node *Print (node *);
+extern node *Print (node *syntax_tree);
 
 extern void PrintNodeTree (node *node); /* debugoutput */
 
