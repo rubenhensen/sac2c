@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2003/11/05 14:14:23  sah
+ * fixes bugs #28 and #29
+ *
  * Revision 1.27  2003/10/06 14:18:51  sah
  * fixed small bug
  *
@@ -760,14 +763,16 @@ BuildRightShape (node *args, node *array, dotinfo *info)
     for (cnt = 1; cnt <= maxdot; cnt++) {
         result = MakeExprs (
           MAKE_BIN_PRF (F_sel,
-                        MAKE_BIN_PRF (F_sub_SxS,
-                                      MakePrf (F_dim,
-                                               MakeExprs (MakePrf (F_shape,
-                                                                   MakeExprs (DupTree (
-                                                                                array),
-                                                                              NULL)),
-                                                          NULL)),
-                                      MakeNum (RDot2Pos (cnt, info))),
+                        MakeFlatArray (MakeExprs (
+                          MAKE_BIN_PRF (F_sub_SxS,
+                                        MakePrf (F_dim,
+                                                 MakeExprs (MakePrf (F_shape,
+                                                                     MakeExprs (DupTree (
+                                                                                  array),
+                                                                                NULL)),
+                                                            NULL)),
+                                        MakeNum (RDot2Pos (cnt, info))),
+                          NULL)),
                         MakePrf (F_shape, MakeExprs (DupTree (array), NULL))),
           result);
     }
