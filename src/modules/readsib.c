@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/01/22 18:35:31  cg
+ * Revision 1.8  1996/02/12 17:48:34  cg
+ * bug fixed in RSIBfundef, no more segmentation faults when reading
+ * functions without inline information
+ *
+ * Revision 1.7  1996/01/22  18:35:31  cg
  * added new pragmas for global objects: effect, initfun
  *
  * Revision 1.6  1996/01/07  16:59:29  cg
@@ -763,16 +767,20 @@ RSIBfundef (node *arg_node, node *arg_info)
                 DBUG_PRINT ("READSIB", ("Resolving needed types of function %s",
                                         ItemName (arg_node)));
 
-                FUNDEF_NEEDTYPES (arg_node)
-                  = EnsureExistTypes (PRAGMA_NEEDTYPES (pragma), arg_info, sib);
-                PRAGMA_NEEDTYPES (pragma) = NULL;
+                if (PRAGMA_NEEDTYPES (pragma) != NULL) {
+                    FUNDEF_NEEDTYPES (arg_node)
+                      = EnsureExistTypes (PRAGMA_NEEDTYPES (pragma), arg_info, sib);
+                    PRAGMA_NEEDTYPES (pragma) = NULL;
+                }
 
                 DBUG_PRINT ("READSIB", ("Resolving needed functions of function %s",
                                         ItemName (arg_node)));
 
-                FUNDEF_NEEDFUNS (arg_node)
-                  = EnsureExistFuns (PRAGMA_NEEDFUNS (pragma), arg_info, sib);
-                PRAGMA_NEEDFUNS (pragma) = NULL;
+                if (PRAGMA_NEEDFUNS (pragma) != NULL) {
+                    FUNDEF_NEEDFUNS (arg_node)
+                      = EnsureExistFuns (PRAGMA_NEEDFUNS (pragma), arg_info, sib);
+                    PRAGMA_NEEDFUNS (pragma) = NULL;
+                }
             }
         }
     }
