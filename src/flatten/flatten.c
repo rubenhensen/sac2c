@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/01/30 17:53:29  srs
+ * adjusted flattening of new WL generator to new node structure.
+ *
  * Revision 1.55  1998/01/21 12:52:50  srs
  * Fixed bug in function which flattens fold.
  * Neutral element may be optional.
@@ -1575,6 +1578,8 @@ FltnNpart (node *arg_node, node *arg_info)
 
     /* rename index-vector or index scalars if necessary */
     _ids = NWITHID_IDS (NPART_IDX (arg_node));
+    if (!_ids)
+        _ids = NWITHID_VEC (NPART_IDX (arg_node));
 
     while (_ids) {
         lstack = FindId (IDS_NAME (_ids));
