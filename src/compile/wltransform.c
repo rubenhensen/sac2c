@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/08/09 12:44:46  dkr
+ * minor changes done
+ *
  * Revision 3.60  2002/08/09 12:38:36  dkr
  * - more code brushing done
  * - INFO_WL_TYPES move from tree_basic.h to wltransform.c
@@ -2849,7 +2852,7 @@ EmptyParts2Expr (node *wl)
         /*
          * empty genarray with-loops are not allowed!!!
          */
-        ERROR (NODE_LINE (wl), ("genarray-with-loop with empty index vector set found"));
+        ERROR (line, ("genarray-with-loop with empty index vector set found"));
         new_node = NULL;
         break;
 
@@ -6952,7 +6955,7 @@ WLTRAwith (node *arg_node, node *arg_info)
          *   -> we have to create totally different C code
          *   -> we leave the N_Nwith node untouched
          */
-        DBUG_PRINT ("WLtrans", ("AUD with-loop found (line %d)\n", NODE_LINE (arg_node)));
+        DBUG_PRINT ("WLtrans", ("AUD with-loop found (line %d)\n", line));
         new_node = arg_node;
     } else {
         node *strides;
@@ -7022,7 +7025,6 @@ WLTRAwith (node *arg_node, node *arg_info)
             }
 
             DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choose segments\n")));
-
             if (do_naive_comp) {
                 /* naive compilation  ->  put each stride in a separate segment */
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, line);
