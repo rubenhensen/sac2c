@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/11/19 15:39:59  ktr
+ * OPT_SRF is now activeted by default.
+ *
  * Revision 3.70  2004/10/28 16:58:43  khf
  * support for max_newgens and no_fold_fusion added
  *
@@ -580,7 +583,6 @@ unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation 
 
 #else /* PRODUCTION */
 unsigned int optimize = OPT_ALL & (~OPT_APL) /* Only rudimentary implementation exists. */
-                        & (~OPT_SRF)         /* not yet fully operational */
                         & (~OPT_LRO)         /* not yet fully operational */
                         & (~OPT_TSI);        /* Bugs to be fixed. */
 
