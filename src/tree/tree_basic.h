@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.183  2004/03/09 14:37:19  cg
+ * Mapped FUNDEF_IDENTIFIER to less ambiguous struct entry.
+ *
  * Revision 3.182  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -1267,7 +1270,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
 
 /* multithreading: ST_spmdfun */
-#define FUNDEF_IDENTIFIER(n) (n->int_data)
+#define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
 #define FUNDEF_MT2DEF(n) (n->dfmask[2])
 
