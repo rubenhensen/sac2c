@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.10  2005/02/14 14:09:42  jhb
+  right = correct
+
   Revision 1.9  2005/02/11 14:48:26  jhb
   added enum attr_list all attributes
 
@@ -335,7 +338,7 @@ static info *FreeInfo(info *info)
         <xsl:value-of select="'; cnt++) { '" />
         <xsl:value-of select="$newline"/>
       </xsl:if>
-      <xsl:value-of select="'  CHKrightType( '"/>
+      <xsl:value-of select="'  CHKcorrectType( '"/>
       <xsl:call-template name="node-access">
         <xsl:with-param name="node">arg_node</xsl:with-param>
         <xsl:with-param name="nodetype">
@@ -379,7 +382,7 @@ static info *FreeInfo(info *info)
           <xsl:value-of select="@name"/>
         </xsl:with-param>
       </xsl:call-template>
-      <xsl:value-of select="' hasnt the right type'"/>
+      <xsl:value-of select="' hasnt the correct type'"/>
       <xsl:value-of select="'&quot;'"/>
       <xsl:value-of select="');'"/>
       <xsl:value-of select="$newline"/>
