@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/14 10:18:39  sbs
+ * Revision 1.5  1994/12/15 17:14:03  sbs
+ * PrintCast inserted
+ *
+ * Revision 1.4  1994/12/14  10:18:39  sbs
  * PrintModul & PrintImportlist & PrintTypedef inserted
  *
  * Revision 1.3  1994/11/11  13:50:54  hw
@@ -32,6 +35,7 @@ extern node *PrintBool (node *, node *);
 extern node *PrintReturn (node *, node *);
 extern node *PrintAp (node *, node *);
 extern node *PrintExprs (node *, node *);
+extern node *PrintCast (node *, node *);
 extern node *PrintAssign (node *, node *);
 extern node *PrintArg (node *, node *);
 extern node *PrintVardec (node *, node *);

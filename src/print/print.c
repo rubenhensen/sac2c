@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1994/12/14 10:18:39  sbs
+ * Revision 1.19  1994/12/15 17:14:03  sbs
+ * PrintCast inserted
+ *
+ * Revision 1.18  1994/12/14  10:18:39  sbs
  * PrintModul & PrintImportlist & PrintTypedef inserted
  *
  * Revision 1.17  1994/12/08  14:23:41  hw
@@ -374,6 +377,17 @@ PrintAp (node *arg_node, node *arg_info)
     if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintCast (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintCast");
+
+    fprintf (outfile, "(: %s) ", Type2String (arg_node->info.types, 0));
+    Trav (arg_node->node[0], arg_info);
 
     DBUG_RETURN (arg_node);
 }
