@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/03/02 13:09:12  sbs
+ * DbugPrintBinOp surrounded by ifndef DBUG_OFF
+ *
  * Revision 3.2  2001/02/23 18:04:22  sbs
  * extended for negative take's and drop's
  * added print facility
@@ -622,6 +625,8 @@ COPrintConstant (FILE *file, constant *a)
  *
  ******************************************************************************/
 
+#ifndef DBUG_OFF
+
 static void
 DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 {
@@ -636,6 +641,8 @@ DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 
     DBUG_VOID_RETURN;
 }
+
+#endif
 
 /******************************************************************************
  *
