@@ -1408,15 +1408,15 @@
         <travuser>
           <node name="Assign" />
           <node name="Block" />
+          <node name="Fold" />
+          <node name="Fundef" />
           <node name="Genarray" />
           <node name="Let" />
           <node name="Modarray" />
-          <node name="Fold" />
           <node name="Prf" />
         </travuser>
         <travsons>
           <node name="Module" />
-          <node name="Fundef" />
           <node name="Cond" />
           <node name="With" />
           <node name="With2" />
