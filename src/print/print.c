@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.128  2002/10/29 19:50:09  dkr
+ * PrintAp() prints name of AP_FUNDEF if present!
+ *
  * Revision 3.127  2002/10/21 18:43:30  sah
  * added debug flag PRINT_SYMBOL to disable printing
  * long prf identifiers and enable printing prf symbols
@@ -2334,27 +2337,37 @@ PrintPrf (node *arg_node, node *arg_info)
 node *
 PrintAp (node *arg_node, node *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("PrintAp");
 
-    if (compiler_phase < PH_precompile) {
+    fundef = AP_FUNDEF (arg_node);
+    if (compiler_phase >= PH_precompile) {
+        DBUG_ASSERT ((fundef != NULL), "no AP_FUNDEF found!");
+    }
+    if (fundef != NULL) {
+        /*
+         * print name of 'AP_FUNDEF(arg_node)'
+         */
+        if (FUNDEF_MOD (fundef) != NULL) {
+            fprintf (outfile, "%s:", FUNDEF_MOD (fundef));
+        }
+        fprintf (outfile, "%s", FUNDEF_NAME (fundef));
+    } else {
+        /*
+         * print name of 'arg_node'
+         */
         if (AP_MOD (arg_node) != NULL) {
             fprintf (outfile, "%s:", AP_MOD (arg_node));
         }
         fprintf (outfile, "%s", AP_NAME (arg_node));
-    } else {
-        /*
-         * fundef has been renamed -> print new name!
-         */
-        DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "no AP_FUNDEF found!");
-        fprintf (outfile, "%s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
-    fprintf (outfile, "(");
 
+    fprintf (outfile, "(");
     if (AP_ARGS (arg_node) != NULL) {
         fprintf (outfile, " ");
         Trav (AP_ARGS (arg_node), arg_info);
     }
-
     fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
