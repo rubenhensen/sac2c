@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.27  2000/07/12 15:22:07  dkr
+ * code brushed:
+ * DuplicateTypes removed (use DupTypes instead!)
+ * INFO_DUP_BASEFUNDEF and INFO_DUP_DFMBASE removed
+ * Duplication of DFM-bases and -masks completed and simplified
+ *
  * Revision 1.26  2000/07/11 15:42:51  jhs
  * Changed usage of DFMDuplicateMask to DupDFMmask,
  * DFM_BASE will be provided by lut now, not via special
@@ -137,8 +143,6 @@
 #include "scheduling.h"
 #include "generatemasks.h"
 
-/******************************************************************************/
-
 /*
  *  always traverses son 'node'
  *
@@ -146,8 +150,6 @@
  *  arg_info exist.
  */
 #define DUPTRAV(node) (node != NULL) ? Trav (node, arg_info) : NULL
-
-/******************************************************************************/
 
 /*
  *  If INFO_DUP_CONT(arg_info) contains the root of syntaxtree.
@@ -159,8 +161,6 @@
  *  arg_info exist.
  */
 #define DUPCONT(node) (INFO_DUP_CONT (arg_info) != arg_node) ? DUPTRAV (node) : NULL
-
-/******************************************************************************/
 
 /******************************************************************************
  *
@@ -178,27 +178,28 @@
  *
  * parameters:
  *   - NodeOnly:
- *     FALSE : duplicate whole subtree
- *     TRUE  : duplicate node only
+ *       FALSE : duplicate whole subtree
+ *       TRUE  : duplicate node only
  *   - arg_node:
- *     starting point of duplication
+ *       starting point of duplication
  *   - arg_info:
- *     == NULL : An internal Arg_info is created for the traversal.
- *     != NULL : The given arg_info is used for the traversal,
- *               flags and data can be stored in arg_info by caller.
- *               Most of such usages is undocumented!!!
- *               So the usage of arg_info is not very nice.
- *               Some (not all) of what is done is the following:
- *               - If the given arg_info is NULL, everything is copied in
- *                 DUP_NORMAL mode, else the mode is taken from INFO_DUP_TYPE.
- *               - If the given arg_info is NULL, INFO_DUP_ALL is set to FALSE,
- *                 else the value from a handed over arg_info is reused.
- *                 If INFO_DUP_ALL is TRUE some masks of N_assign are copied,
- *                 which is not done otherwise.
- *               The duplication needs to store some values at the arg_info
- *               itself, so their could be problems with colliding accesses!
+ *       == NULL : An internal Arg_info is created for the traversal.
+ *       != NULL : The given arg_info is used for the traversal,
+ *                 flags and data can be stored in arg_info by caller.
+ *                 Most of such usages is undocumented!!!
+ *                 So the usage of arg_info is not very nice.
+ *                 Some (not all) of what is done is the following:
+ *                 - If the given arg_info is NULL, everything is copied in
+ *                   DUP_NORMAL mode, else the mode is taken from INFO_DUP_TYPE.
+ *                 - If the given arg_info is NULL, INFO_DUP_ALL is set to
+ *                   FALSE, else the value from a handed over arg_info is
+ *                   reused.
+ *                   If INFO_DUP_ALL is TRUE some masks of N_assign are copied,
+ *                   which is not done otherwise.
+ *                 The duplication needs to store some values at the arg_info
+ *                 itself, so their could be problems with colliding accesses!
  *   - lut:
- *     If you want to use yout own LUT you can hand it over here.
+ *       If you want to use yout own LUT you can hand over it here.
  *
  ******************************************************************************/
 
@@ -206,11 +207,8 @@ static node *
 DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
 {
     funtab *old_tab;
-    DFMmask_base_t old_base;
-    node *new_node;
-    node *old_fundef;
-    node *old_basefundef;
-    int own_arg_info; /* bool */
+    node *new_node, *old_fundef;
+    bool own_arg_info;
 
     DBUG_ENTER ("DupTreeOrNodeLUT");
 
@@ -225,10 +223,11 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
         if (arg_info == NULL) {
             arg_info = MakeInfo ();
             INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
-            INFO_DUP_ALL (arg_info) = 0;
+            INFO_DUP_ALL (arg_info) = FALSE;
             own_arg_info = TRUE;
         } else {
             own_arg_info = FALSE;
+            old_fundef = INFO_DUP_FUNDEF (arg_info);
         }
 
         /*
@@ -239,7 +238,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
          *  value in INFO_DUP_CONT. If they are the same the xxx_NEXT will be
          *  ignored, otherwise it will be traversed. If the start-node is stored as
          *  INFO_DUP_CONT it's xx_NEXT will not be duplicated, but the xxx_NEXT's
-         *  of all sons are copied, because they differ from INFO_DUP_ONLY.
+         *  of all sons are copied, because they differ from INFO_DUP_CONT.
          *  If NULL is stored in INFO_DUP_CONT (and in a traversal the arg_node
          *  never is NULL) all nodes and their xxx_NEXT's are duplicated.
          *  So we set INFO_DUP_CONT with NULL to copy all, arg_node to copy
@@ -251,16 +250,6 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
             INFO_DUP_CONT (arg_info) = NULL;
         }
 
-        /*
-         *  INFO_DUP_DFMBASE is explained at DupFundef.
-         */
-        old_base = INFO_DUP_DFMBASE (arg_info);
-        old_fundef = INFO_DUP_FUNDEF (arg_info);
-        old_basefundef = INFO_DUP_BASEFUNDEF (arg_info);
-        INFO_DUP_DFMBASE (arg_info) = NULL;
-        INFO_DUP_FUNDEF (arg_info) = NULL;
-        INFO_DUP_BASEFUNDEF (arg_info) = NULL;
-
         if (lut == NULL) {
             INFO_DUP_LUT (arg_info) = GenerateLUT ();
         } else {
@@ -270,15 +259,14 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
         new_node = Trav (arg_node, arg_info);
 
         if (lut == NULL) {
-            lut = INFO_DUP_LUT (arg_info) = RemoveLUT (INFO_DUP_LUT (arg_info));
+            INFO_DUP_LUT (arg_info) = RemoveLUT (INFO_DUP_LUT (arg_info));
         }
-
-        INFO_DUP_FUNDEF (arg_info) = old_fundef;
-        INFO_DUP_BASEFUNDEF (arg_info) = old_basefundef;
-        INFO_DUP_DFMBASE (arg_info) = old_base;
 
         if (own_arg_info) {
             arg_info = FreeNode (arg_info);
+        } else {
+            /* pop information */
+            INFO_DUP_FUNDEF (arg_info) = old_fundef;
         }
 
         act_tab = old_tab;
@@ -419,7 +407,15 @@ DupTreePost (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *   shpseg *DupShpSeg( shpseg *shp_seg)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 shpseg *
 DupShpSeg (shpseg *shp_seg)
@@ -459,6 +455,7 @@ DupOneIds (ids *old_ids, node *arg_info)
     if ((arg_info != NULL) && (INFO_DUP_TYPE (arg_info) == DUP_INLINE)) {
         new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
+
         IDS_VARDEC (new_ids) = SearchDecl (IDS_NAME (new_ids), INFO_INL_TYPES (arg_info));
 
         /*
@@ -516,15 +513,23 @@ DupIds (ids *old_ids, node *arg_info)
     DBUG_RETURN (new_ids);
 }
 
-/******************************************************************************/
+/******************************************************************************
+ *
+ * Function:
+ *   types *DupTypes( types* source)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 types *
-DuplicateTypes (types *source, int share)
+DupTypes (types *source)
 {
     types *return_types, *tmp;
     int i;
 
-    DBUG_ENTER ("DuplicateTypes");
+    DBUG_ENTER ("DupTypes");
 
     if (source == NULL) {
         return_types = NULL;
@@ -581,13 +586,16 @@ DuplicateTypes (types *source, int share)
     DBUG_RETURN (return_types);
 }
 
-types *
-DupTypes (types *source)
-{
-    DBUG_ENTER ("DupTypes");
-
-    DBUG_RETURN (DuplicateTypes (source, 42));
-}
+/******************************************************************************
+ *
+ * Function:
+ *   DFMmask_t DupDFMmask( DFMmask_t mask, node *arg_info)
+ *
+ * Description:
+ *   Duplicates the given DFMmask.
+ *   If a new DFMbase is found in the LUT the new one is used!
+ *
+ ******************************************************************************/
 
 DFMmask_t
 DupDFMmask (DFMmask_t mask, node *arg_info)
@@ -620,9 +628,8 @@ DupVinfo (node *arg_node, node *arg_info)
     if (VINFO_FLAG (arg_node) == DOLLAR) {
         new_node = MakeVinfoDollar (rest);
     } else {
-        new_node
-          = MakeVinfo (VINFO_FLAG (arg_node), DuplicateTypes (VINFO_TYPE (arg_node), 1),
-                       rest, VINFO_DOLLAR (rest));
+        new_node = MakeVinfo (VINFO_FLAG (arg_node), DupTypes (VINFO_TYPE (arg_node)),
+                              rest, VINFO_DOLLAR (rest));
     }
     VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
@@ -802,8 +809,7 @@ DupCast (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupCast");
 
-    new_node = MakeCast (DUPTRAV (CAST_EXPR (arg_node)),
-                         DuplicateTypes (CAST_TYPE (arg_node), 1));
+    new_node = MakeCast (DUPTRAV (CAST_EXPR (arg_node)), DupTypes (CAST_TYPE (arg_node)));
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
@@ -838,32 +844,117 @@ DupReturn (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
+DupFundef (node *arg_node, node *arg_info)
+{
+    node *new_node, *old_fundef;
+
+    DBUG_ENTER ("DupFundef");
+
+    /*
+     *  We can't copy the FUNDEF_DFM_BASE and DFMmasks belonging to this base
+     *  directly!
+     *  Such DFMmasks are attached to N_with, N_with2, N_sync and N_spmd.
+     *  All of them can be found in the body of the function.
+     *  But when we copy the body we must already know the base to create the
+     *  new masks. On the other hand to create the base we must already have
+     *  the new FUNDEF_ARGS and FUNDEF_VARDECS available.
+     *  Therefore we first create the raw function without the body via
+     *  MakeFundef(), then we create the base while duplicating the body
+     *  and finally we attach the body to the fundef.
+     */
+
+    /*
+     * INFO_DUP_FUNDEF is a pointer to the OLD fundef node!!
+     * We can get the pointer to the NEW fundef via the LUT!
+     */
+    old_fundef = INFO_DUP_FUNDEF (arg_info);
+    INFO_DUP_FUNDEF (arg_info) = arg_node;
+
+    new_node
+      = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
+                    StringCopy (FUNDEF_MOD (arg_node)),
+                    DupTypes (FUNDEF_TYPES (arg_node)), DUPTRAV (FUNDEF_ARGS (arg_node)),
+                    NULL, DUPCONT (FUNDEF_NEXT (arg_node)));
+
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    /* copy the body */
+    FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
+
+    /* store new DFMbase */
+    FUNDEF_DFM_BASE (new_node)
+      = SearchInLUT (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_info));
+
+    /* now we copy all the other things ... */
+    FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
+    FUNDEF_STATUS (new_node) = FUNDEF_STATUS (arg_node);
+    FUNDEF_ATTRIB (new_node) = FUNDEF_ATTRIB (arg_node);
+    FUNDEF_INLINE (new_node) = FUNDEF_INLINE (arg_node);
+    FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
+    FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
+
+    FUNDEF_RETURN (new_node)
+      = SearchInLUT (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
+    FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
+    FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
+    FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_NEEDFUNS (new_node) = CopyNodelist (FUNDEF_NEEDFUNS (arg_node));
+        FUNDEF_NEEDTYPES (new_node) = CopyNodelist (FUNDEF_NEEDTYPES (arg_node));
+    }
+
+#if 0
+  FUNDEF_SIB( new_node) = ???;
+  FUNDEF_ICM( new_node) = ???;
+  FUNDEF_MASK( new_node, ?) = ???;
+  FUNDEF_LIFTEDFROM( new_node) = ???;
+  FUNDEC_DEF( new_node) = ???;
+#endif
+
+    NODE_LINE (new_node) = NODE_LINE (arg_node);
+    NODE_FILE (new_node) = NODE_FILE (arg_node);
+
+    INFO_DUP_FUNDEF (arg_info) = old_fundef;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DupBlock (node *arg_node, node *arg_info)
 {
-    node *new_vardec;
+    node *new_vardecs;
     node *new_node;
+    DFMmask_base_t old_base, new_base;
 
     DBUG_ENTER ("DupBlock");
 
-    new_vardec = DUPTRAV (BLOCK_VARDEC (arg_node));
+    new_vardecs = DUPTRAV (BLOCK_VARDEC (arg_node));
 
-    /*
-     *  If we find an INFO_DUP_BASEFUNDEF, we know we have to copy the
-     *  DFMBASE, then reset INFO_DUP_BASEFUNDEF, look at DupFundef for further
-     *  comment.
-     */
-    if (INFO_DUP_BASEFUNDEF (arg_info) != NULL) {
-        INFO_DUP_DFMBASE (arg_info)
-          = DFMGenMaskBase (FUNDEF_ARGS (INFO_DUP_BASEFUNDEF (arg_info)), new_vardec);
-        INFO_DUP_BASEFUNDEF (arg_info) = NULL;
-
-        /*
-            INFO_DUP_LUT( arg_info) = InsertIntoLUT( INFO_DUP_LUT( arg_info),
-                                                     INFO_DUP_
-        */
+    if (INFO_DUP_FUNDEF (arg_info) != NULL) {
+        old_base = FUNDEF_DFM_BASE (INFO_DUP_FUNDEF (arg_info));
+    } else {
+        old_base = NULL;
     }
 
-    new_node = MakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardec);
+    /*
+     * If the current block is the top most block of the current fundef
+     * we have to copy FUNDEF_DFMBASE.
+     * Look at DupFundef() for further comments.
+     */
+    if ((old_base != NULL) && (arg_node == FUNDEF_BODY (INFO_DUP_FUNDEF (arg_info)))) {
+        new_base = DFMGenMaskBase (FUNDEF_ARGS (
+                                     ((node *)SearchInLUT (INFO_DUP_LUT (arg_info),
+                                                           INFO_DUP_FUNDEF (arg_info)))),
+                                   new_vardecs);
+
+        INFO_DUP_LUT (arg_info)
+          = InsertIntoLUT (INFO_DUP_LUT (arg_info), old_base, new_base);
+    }
+
+    new_node = MakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardecs);
     BLOCK_CACHESIM (new_node) = StringCopy (BLOCK_CACHESIM (arg_node));
 
     BLOCK_VARNO (new_node) = BLOCK_VARNO (arg_node);
@@ -892,8 +983,8 @@ DupTypedef (node *arg_node, node *arg_info)
 
     new_node = MakeTypedef (StringCopy (TYPEDEF_NAME (arg_node)),
                             StringCopy (TYPEDEF_MOD (arg_node)),
-                            DuplicateTypes (TYPEDEF_TYPE (arg_node), 1),
-                            TYPEDEF_ATTRIB (arg_node), DUPCONT (TYPEDEF_NEXT (arg_node)));
+                            DupTypes (TYPEDEF_TYPE (arg_node)), TYPEDEF_ATTRIB (arg_node),
+                            DUPCONT (TYPEDEF_NEXT (arg_node)));
     TYPEDEF_STATUS (new_node) = TYPEDEF_STATUS (arg_node);
 
 #if 0
@@ -921,8 +1012,7 @@ DupObjdef (node *arg_node, node *arg_info)
 
     new_node
       = MakeObjdef (StringCopy (OBJDEF_NAME (arg_node)),
-                    StringCopy (OBJDEF_MOD (arg_node)),
-                    DuplicateTypes (OBJDEF_TYPE (arg_node), 1),
+                    StringCopy (OBJDEF_MOD (arg_node)), DupTypes (OBJDEF_TYPE (arg_node)),
                     DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
     OBJDEF_LINKMOD (new_node) = StringCopy (OBJDEF_LINKMOD (arg_node));
     OBJDEF_ATTRIB (new_node) = OBJDEF_ATTRIB (arg_node);
@@ -953,9 +1043,9 @@ DupVardec (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupVardec");
 
-    new_node = MakeVardec (StringCopy (VARDEC_NAME (arg_node)),
-                           DuplicateTypes (VARDEC_TYPE (arg_node), 1),
-                           DUPCONT (VARDEC_NEXT (arg_node)));
+    new_node
+      = MakeVardec (StringCopy (VARDEC_NAME (arg_node)),
+                    DupTypes (VARDEC_TYPE (arg_node)), DUPCONT (VARDEC_NEXT (arg_node)));
     VARDEC_STATUS (new_node) = VARDEC_STATUS (arg_node);
 
     VARDEC_ATTRIB (new_node) = VARDEC_ATTRIB (arg_node);
@@ -986,9 +1076,9 @@ DupArg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupArg");
 
-    new_node = MakeArg (StringCopy (ARG_NAME (arg_node)),
-                        DuplicateTypes (ARG_TYPE (arg_node), 1), ARG_STATUS (arg_node),
-                        ARG_ATTRIB (arg_node), DUPCONT (ARG_NEXT (arg_node)));
+    new_node = MakeArg (StringCopy (ARG_NAME (arg_node)), DupTypes (ARG_TYPE (arg_node)),
+                        ARG_STATUS (arg_node), ARG_ATTRIB (arg_node),
+                        DUPCONT (ARG_NEXT (arg_node)));
 
     ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
@@ -1048,7 +1138,7 @@ DupArray (node *arg_node, node *arg_info)
     new_node = MakeArray (DUPTRAV (ARRAY_AELEMS (arg_node)));
     ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
 
-    ARRAY_TYPE (new_node) = DuplicateTypes (ARRAY_TYPE (arg_node), 1);
+    ARRAY_TYPE (new_node) = DupTypes (ARRAY_TYPE (arg_node));
 
     ARRAY_ISCONST (new_node) = ARRAY_ISCONST (arg_node);
     ARRAY_VECLEN (new_node) = ARRAY_VECLEN (arg_node);
@@ -1185,10 +1275,10 @@ DupAssign (node *arg_node, node *arg_info)
 
         ASSIGN_STATUS (new_node) = ASSIGN_STATUS (arg_node);
 #if 0
-      ASSIGN_MASK( new_node, ?) = ???;
-      ASSIGN_CSE( new_node) = ???;
-      ASSIGN_CF( new_node) = ???;
-      ASSIGN_INDEX( new_node) = ???;
+    ASSIGN_MASK( new_node, ?) = ???;
+    ASSIGN_CSE( new_node) = ???;
+    ASSIGN_CF( new_node) = ???;
+    ASSIGN_INDEX( new_node) = ???;
 #endif
         ASSIGN_LEVEL (new_node) = ASSIGN_LEVEL (arg_node);
 
@@ -1263,100 +1353,6 @@ DupAp (node *arg_node, node *arg_info)
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupFundef (node *arg_node, node *arg_info)
-{
-    DFMmask_base_t old_base;
-    node *old_fundef;
-    node *old_basefundef;
-    node *new_node;
-
-    DBUG_ENTER ("DupFundef");
-
-    /*
-     *  We can't copy the FUNDEF_DFM_BASE directly, but create a new one.
-     *  DFMmasks belonging to the old base can't be copied directly also,
-     *  and also we have to create new ones.
-     *  Such DFMmasks are attached to N_with, N_with2, N_sync and N_spmd.
-     *  All of them can potentially be found in the body of the function to be
-     *  copied.
-     *  But when we copy the body we must already know the base to create the
-     *  new masks. On the other hand to create the base we must already have
-     *  the new FUNDEF_ARGS and FUNDEF_VARDEC.
-     *  The solution is to create the basic function via MakeFundef without
-     *  the body, create the base while duplicating the body
-     *  and finally attach the body to the fundef.
-     *  INFO_DUP_BASEFUNDEF will tell DupBlock to copy the base or not. (jhs)
-     */
-
-    new_node = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
-                           StringCopy (FUNDEF_MOD (arg_node)),
-                           DuplicateTypes (FUNDEF_TYPES (arg_node), 1),
-                           DUPTRAV (FUNDEF_ARGS (arg_node)), NULL,
-                           DUPCONT (FUNDEF_NEXT (arg_node)));
-
-    /* push the information at arg_info and store new one */
-    old_base = INFO_DUP_DFMBASE (arg_info);
-    old_fundef = INFO_DUP_FUNDEF (arg_info);
-    old_basefundef = INFO_DUP_BASEFUNDEF (arg_info);
-    if (FUNDEF_DFM_BASE (arg_node) != NULL) {
-        INFO_DUP_DFMBASE (arg_info) = NULL;
-        INFO_DUP_FUNDEF (arg_info) = new_node;
-        INFO_DUP_BASEFUNDEF (arg_info) = new_node;
-        /* copy the body */
-        FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
-        FUNDEF_DFM_BASE (new_node) = INFO_DUP_DFMBASE (arg_info);
-    } else {
-        INFO_DUP_DFMBASE (arg_info) = NULL;
-        INFO_DUP_FUNDEF (arg_info) = NULL;
-        INFO_DUP_BASEFUNDEF (arg_info) = NULL;
-        /* copy the body */
-        FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
-        FUNDEF_DFM_BASE (new_node) = NULL;
-    }
-    /* pop information */
-    INFO_DUP_DFMBASE (arg_info) = old_base;
-    INFO_DUP_FUNDEF (arg_info) = old_fundef;
-    INFO_DUP_BASEFUNDEF (arg_info) = old_basefundef;
-
-    /* now we copy all the other things ... */
-
-    FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
-    FUNDEF_STATUS (new_node) = FUNDEF_STATUS (arg_node);
-    FUNDEF_ATTRIB (new_node) = FUNDEF_ATTRIB (arg_node);
-    FUNDEF_INLINE (new_node) = FUNDEF_INLINE (arg_node);
-    FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
-    FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
-
-    FUNDEF_RETURN (new_node)
-      = SearchInLUT (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
-    FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
-    FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
-    FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_NEEDFUNS (new_node) = CopyNodelist (FUNDEF_NEEDFUNS (arg_node));
-        FUNDEF_NEEDTYPES (new_node) = CopyNodelist (FUNDEF_NEEDTYPES (arg_node));
-    }
-
-#if 0
-  FUNDEF_SIB( new_node) = ???;
-  FUNDEF_ICM( new_node) = ???;
-  FUNDEF_MASK( new_node, ?) = ???;
-  FUNDEF_LIFTEDFROM( new_node) = ???;
-  FUNDEC_DEF( new_node) = ???;
-#endif
-
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
-
-    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1443,11 +1439,6 @@ DupSpmd (node *arg_node, node *arg_info)
 
     new_node = MakeSpmd (DUPTRAV (SPMD_REGION (arg_node)));
 
-    /*
-     *  if INFO_DUP_DFMBASE is NULL the original DFMbase is used,
-     *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
-     *  Further information: see DupFundef
-     */
     SPMD_IN (new_node) = DupDFMmask (SPMD_IN (arg_node), arg_info);
     SPMD_INOUT (new_node) = DupDFMmask (SPMD_INOUT (arg_node), arg_info);
     SPMD_OUT (new_node) = DupDFMmask (SPMD_OUT (arg_node), arg_info);
@@ -1471,11 +1462,6 @@ DupSync (node *arg_node, node *arg_info)
     SYNC_FIRST (new_node) = SYNC_FIRST (arg_node);
     SYNC_LAST (new_node) = SYNC_LAST (arg_node);
 
-    /*
-     *  if INFO_DUP_DFMBASE is NULL the original DFMbase is used,
-     *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
-     *  Further information: see DupFundef
-     */
     SYNC_IN (new_node) = DupDFMmask (SYNC_IN (arg_node), arg_info);
     SYNC_INOUT (new_node) = DupDFMmask (SYNC_INOUT (arg_node), arg_info);
     SYNC_OUT (new_node) = DupDFMmask (SYNC_OUT (arg_node), arg_info);
@@ -1520,11 +1506,6 @@ DupNwith (node *arg_node, node *arg_info)
         NWITH_DEC_RC_IDS (new_node) = DupIds (NWITH_DEC_RC_IDS (arg_node), arg_info);
     }
 
-    /*
-     *  if INFO_DUP_DFMBASE is NULL the original DFMbase is used,
-     *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
-     *  Further information: see DupFundef
-     */
     NWITH_IN (new_node) = DupDFMmask (NWITH_IN (arg_node), arg_info);
     NWITH_INOUT (new_node) = DupDFMmask (NWITH_INOUT (arg_node), arg_info);
     NWITH_OUT (new_node) = DupDFMmask (NWITH_OUT (arg_node), arg_info);
@@ -1692,11 +1673,6 @@ DupNwith2 (node *arg_node, node *arg_info)
         NWITH2_DEC_RC_IDS (new_node) = DupIds (NWITH2_DEC_RC_IDS (arg_node), arg_info);
     }
 
-    /*
-     *  if INFO_DUP_DFMBASE is NULL the original DFMbase is used,
-     *  else the new DFMbase stored in INFO_DUP_DFMBASE is used.
-     *  Further information: see DupFundef
-     */
     NWITH2_IN (new_node) = DupDFMmask (NWITH2_IN (arg_node), arg_info);
     NWITH2_INOUT (new_node) = DupDFMmask (NWITH2_INOUT (arg_node), arg_info);
     NWITH2_OUT (new_node) = DupDFMmask (NWITH2_OUT (arg_node), arg_info);
