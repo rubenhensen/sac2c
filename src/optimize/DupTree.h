@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/03/16 00:23:05  dkr
+ * added DupWLseg, DupWLblock, DupWLublock, DupWLproj, DupWLgrid
+ *
  * Revision 1.15  1998/03/02 22:27:40  dkr
  * removed bugs in duplication of N_cond, N_do, N_while
  *
@@ -102,9 +105,16 @@ extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
+
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
 extern node *DupNgen (node *arg_node, node *arg_info);
+
+extern node *DupWLseg (node *arg_node, node *arg_info);
+extern node *DupWLblock (node *arg_node, node *arg_info);
+extern node *DupWLublock (node *arg_node, node *arg_info);
+extern node *DupWLproj (node *arg_node, node *arg_info);
+extern node *DupWLgrid (node *arg_node, node *arg_info);
 
 #endif /* _DupTree_h */

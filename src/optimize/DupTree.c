@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/03/16 00:22:35  dkr
+ * added DupWLseg, DupWLblock, DupWLublock, DupWLproj, DupWLgrid
+ *
  * Revision 1.29  1998/03/03 17:32:19  dkr
  * removed unused var 'i' in DupCond(), DupLoop()
  *
@@ -602,16 +605,7 @@ DupPragma (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *DupNwithop(node *arg_node, node *arg_info)
- *
- * description:
- *   duplicates a N_Nwithop-node
- *
- *
- ******************************************************************************/
+/******************************************************************************/
 
 node *
 DupNwithop (node *arg_node, node *arg_info)
@@ -646,16 +640,7 @@ DupNwithop (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *DupNpart(node *arg_node, node *arg_info)
- *
- * description:
- *   duplicates a N_Npart-node
- *
- *
- ******************************************************************************/
+/******************************************************************************/
 
 node *
 DupNpart (node *arg_node, node *arg_info)
@@ -674,16 +659,7 @@ DupNpart (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *DupNwithid(node *arg_node, node *arg_info)
- *
- * description:
- *   duplicates a N_Nwithid-node
- *
- *
- ******************************************************************************/
+/******************************************************************************/
 
 node *
 DupNwithid (node *arg_node, node *arg_info)
@@ -697,16 +673,7 @@ DupNwithid (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *DupNgen(node *arg_node, node *arg_info)
- *
- * description:
- *   duplicates a N_Ngenerator-node
- *
- *
- ******************************************************************************/
+/******************************************************************************/
 
 node *
 DupNgen (node *arg_node, node *arg_info)
@@ -719,6 +686,90 @@ DupNgen (node *arg_node, node *arg_info)
                         Trav (NGEN_BOUND2 (arg_node), arg_info), NGEN_OP1 (arg_node),
                         NGEN_OP2 (arg_node), Trav (NGEN_STEP (arg_node), arg_info),
                         Trav (NGEN_WIDTH (arg_node), arg_info));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLseg (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupWLseg");
+    new_node = MakeWLseg (Trav (WLSEG_INNER (arg_node), arg_info),
+                          Trav (WLSEG_NEXT (arg_node), arg_info));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLblock (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupWLblock");
+    new_node = MakeWLblock (WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
+                            WLBLOCK_BOUND1 (arg_node), WLBLOCK_BOUND2 (arg_node),
+                            WLBLOCK_BLOCKING (arg_node),
+                            Trav (WLBLOCK_NEXTDIM (arg_node), arg_info),
+                            Trav (WLBLOCK_INNER (arg_node), arg_info),
+                            Trav (WLBLOCK_NEXT (arg_node), arg_info));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLublock (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupWLublock");
+    new_node = MakeWLublock (WLUBLOCK_LEVEL (arg_node), WLUBLOCK_DIM (arg_node),
+                             WLUBLOCK_BOUND1 (arg_node), WLUBLOCK_BOUND2 (arg_node),
+                             WLUBLOCK_BLOCKING (arg_node),
+                             Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info),
+                             Trav (WLUBLOCK_INNER (arg_node), arg_info),
+                             Trav (WLUBLOCK_NEXT (arg_node), arg_info));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLproj (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupWLproj");
+    new_node = MakeWLproj (WLPROJ_LEVEL (arg_node), WLPROJ_DIM (arg_node),
+                           WLPROJ_BOUND1 (arg_node), WLPROJ_BOUND2 (arg_node),
+                           WLPROJ_STEP (arg_node), WLPROJ_UNROLLING (arg_node),
+                           Trav (WLPROJ_INNER (arg_node), arg_info),
+                           Trav (WLPROJ_NEXT (arg_node), arg_info));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLgridg (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupWLgrid");
+    new_node = MakeWLgrid (WLGRID_DIM (arg_node), WLGRID_OFFSET (arg_node),
+                           WLGRID_WIDTH (arg_node), WLGRID_UNROLLING (arg_node),
+                           Trav (WLGRID_NEXTDIM (arg_node), arg_info),
+                           Trav (WLGRID_CODE (arg_node), arg_info),
+                           Trav (WLGRID_NEXT (arg_node), arg_info));
 
     DBUG_RETURN (new_node);
 }
