@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/05/12 12:59:40  ktr
+ * Code for NCODE_EPILOGUE added
+ *
  * Revision 1.6  2004/05/11 13:27:30  khf
  * Replaced NCODE_CEXPR in USSANcode() by NCODE_CEXPRS for genarray or modarray WLs
  *
@@ -633,6 +636,10 @@ USSANcode (node *arg_node, node *arg_info)
         if (NCODE_CEXPRS (arg_node) != NULL) {
             NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
         }
+    }
+
+    if (NCODE_EPILOGUE (arg_node) != NULL) {
+        NCODE_EPILOGUE (arg_node) = Trav (NCODE_EPILOGUE (arg_node), arg_info);
     }
 
     if (NCODE_NEXT (arg_node) != NULL) {

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/05/12 12:59:40  ktr
+ * Code for NCODE_EPILOGUE added
+ *
  * Revision 1.5  2004/05/11 13:25:21  khf
  * NCODE_CEXPR in SSANcode() replaced by NCODE_CEXPRS
  *
@@ -1075,6 +1078,11 @@ SSANcode (node *arg_node, node *arg_info)
     /* traverse expressions */
     DBUG_ASSERT ((NCODE_CEXPRS (arg_node) != NULL), "Ncode without Ncexprs node!");
     NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+
+    /* traverse epilogue */
+    if (NCODE_EPILOGUE (arg_node) != NULL) {
+        NCODE_EPILOGUE (arg_node) = Trav (NCODE_EPILOGUE (arg_node), arg_info);
+    }
 
     /* restore old rename stack !!! */
     FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
