@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2002/09/03 14:41:07  sbs
+ * NTCassign added
+ *
  * Revision 3.97  2002/08/30 16:33:36  dkr
  * NT2OTarray added
  *
@@ -1405,7 +1408,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        SYNCOassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAassign, FMTravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons, TravSons,
-       TravSons, SPMDPMassign, SPMDCOassign, TravSons, INFDFMSassign,
+       TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
        TravSons, L2Fassign, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
