@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.29  2004/07/21 12:40:38  khf
+# WLEnhancement.o and ExplizitAccumulate.o added
+#
 # Revision 3.28  2004/02/26 13:04:21  khf
 # WLPartitionGeneration.o added
 #
@@ -93,7 +96,7 @@ INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants
 
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      CheckAvis.o SSATransform.o UndoSSATransform.o ssa.o \
-     WLPartitionGeneration.o
+     WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o
 
 
 %.o: %.c
