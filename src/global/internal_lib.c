@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/08/13 17:19:46  dkr
+ * Free(): DBUG_ASSERT for overflow in allocation counter added
+ *
  * Revision 3.21  2002/08/12 20:58:24  dkr
  * TmpVar(): cwc_tab added
  *
@@ -74,8 +77,10 @@
 #define MAX_SYSCALL 1000
 
 #ifdef SHOW_MALLOC
-/* These types are only used to compute malloc_align_step.
-   No instances are raised */
+/*
+ * These types are only used to compute malloc_align_step.
+ * No instances are raised.
+ */
 typedef union {
     long int l;
     double d;
@@ -86,7 +91,7 @@ typedef struct {
     malloc_align_type align;
 } malloc_header_type;
 
-#endif
+#endif /* SHOW_MALLOC */
 
 /******************************************************************************
  *
@@ -95,7 +100,6 @@ typedef struct {
  *   void *Free( void *address)
  *
  * description:
- *
  *   These functions for memory allocation and de-allocation are wrappers
  *   for the standard functions malloc() and free().
  *
@@ -122,20 +126,21 @@ Malloc (int size)
      * we do complain for ((NULL == tmp) && (size > 0)) only!!
      */
     if ((NULL == tmp) && (size > 0)) {
-        SYSABORT (("Out of memory: %d Bytes already allocated!", current_allocated_mem));
+        SYSABORT (("Out of memory: %u Bytes already allocated!", current_allocated_mem));
     }
 
     *(int *)tmp = size;
     tmp = (char *)tmp + malloc_align_step;
+    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
 
+    DBUG_ASSERT ((current_allocated_mem + size > current_allocated_mem),
+                 "counter for allocated memory: overflow detected");
     current_allocated_mem += size;
-
     if (max_allocated_mem < current_allocated_mem) {
         max_allocated_mem = current_allocated_mem;
     }
 
-    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
-    DBUG_PRINT ("MEM_TOTAL", ("Currently allocated memory: %d", current_allocated_mem));
+    DBUG_PRINT ("MEM_TOTAL", ("Currently allocated memory: %u", current_allocated_mem));
 
     DBUG_RETURN (tmp);
 }
@@ -146,7 +151,10 @@ void *
 Free (void *address)
 {
     DBUG_ENTER ("Free");
-    DBUG_RETURN ((void *)NULL);
+
+    address = NULL;
+
+    DBUG_RETURN (address);
 }
 
 #else /* NOFREE */
@@ -162,14 +170,18 @@ Free (void *address)
     if (address != NULL) {
         orig_address = (void *)((char *)address - malloc_align_step);
         size = *(int *)orig_address;
+        DBUG_ASSERT ((size >= 0), "illegal size found!");
+        DBUG_PRINT ("MEM_ALLOC",
+                    ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+
+        DBUG_ASSERT ((current_allocated_mem > current_allocated_mem - size),
+                     "counter for allocated memory: overflow detected");
         current_allocated_mem -= size;
 
         free (orig_address);
 
-        DBUG_PRINT ("MEM_ALLOC",
-                    ("Free memory: %d Bytes at adress: " F_PTR, size, address));
         DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %d", current_allocated_mem));
+                    ("Currently allocated memory: %u", current_allocated_mem));
 
         address = NULL;
     }
@@ -211,7 +223,10 @@ void *
 Free (void *address)
 {
     DBUG_ENTER ("Free");
-    DBUG_RETURN ((void *)NULL);
+
+    address = NULL;
+
+    DBUG_RETURN (address);
 }
 
 #else /* NOFREE */
@@ -222,10 +237,9 @@ Free (void *address)
     DBUG_ENTER ("Free");
 
     if (address != NULL) {
-
         free (address);
 
-        DBUG_PRINT ("MEM_ALLOC", ("Free memory: ?? Bytes at adress: " F_PTR, address));
+        DBUG_PRINT ("MEM_ALLOC", ("Free memory: ??? Bytes at adress: " F_PTR, address));
 
         address = NULL;
     }
@@ -239,9 +253,11 @@ Free (void *address)
 
 /******************************************************************************
  *
- *  functionname  : StringCopy
- *  arguments     : 1) source string
- *  description   : allocates memory and returns a pointer to the copy of 1)
+ * Function:
+ *   char *StringCopy( char *source)
+ *
+ * Description:
+ *   Allocates memory and returns a pointer to the copy of 'source'.
  *
  ******************************************************************************/
 
@@ -265,7 +281,7 @@ StringCopy (char *source)
 /******************************************************************************
  *
  * function:
- *   char *StringConcat(char *first, char* second)
+ *   char *StringConcat( char *first, char* second)
  *
  * description
  *   Reserves new memory for the concatinated string first + second,
@@ -292,17 +308,17 @@ StringConcat (char *first, char *second)
 /******************************************************************************
  *
  * function:
- *   char *StrTok(char *first, char *sep)
+ *   char *StrTok( char *first, char *sep)
  *
  * description
- *    Implements a version of the c-strtok, which can operate on static strings,
- *    too. It returns the string always till the next occurence off the string sep
- *    in first. If there are no more tokens in first a null pointer will be
- *    returned.
+ *    Implements a version of the c-strtok, which can operate on static
+ *    strings, too. It returns the string always till the next occurence off
+ *    the string sep in first. If there are no more tokens in first a NULL
+ *    pointer will be returned.
  *    On first call the string first will be copied, and on last call the
  *    allocated memory of the copy will be freeed.
- *    To get more than one token from one string, call StrTok with NULL
- *    as first parameter, just like c-strtok
+ *    To get more than one token from one string, call StrTok with NULL as
+ *    first parameter, just like c-strtok.
  *
  ******************************************************************************/
 
@@ -316,8 +332,9 @@ StrTok (char *first, char *sep)
     DBUG_ENTER ("StrTok");
 
     if (first != NULL) {
-        if (act_string != NULL)
+        if (act_string != NULL) {
             act_string = Free (act_string);
+        }
         new_string = StringCopy (first);
         act_string = new_string;
     }
@@ -333,10 +350,11 @@ StrTok (char *first, char *sep)
 
 /******************************************************************************
  *
- *  functionname  : itoa
- *  arguments     : 1) number
- *		    R) result string
- *  description   : converts long to string
+ * Function:
+ *   char *itoa( long number)
+ *
+ * Description:
+ *   converts long to string
  *
  ******************************************************************************/
 
@@ -351,7 +369,6 @@ itoa (long number)
 
     tmp = number;
     length = 1;
-
     while (9 < tmp) {
         tmp /= 10;
         length++;
@@ -360,7 +377,7 @@ itoa (long number)
     str = (char *)Malloc (sizeof (char) * length + 1);
     str[length] = atoi ("\0");
 
-    for (i = 0; (i < length); i++) {
+    for (i = 0; i < length; i++) {
         str[i] = ((int)'0') + (number / pow (10, (length - 1)));
         number = number % ((int)pow (10, (length - 1)));
     }
@@ -402,12 +419,13 @@ lcm (int x, int y)
 
 /******************************************************************************
  *
- *  functionname  : SystemCall
- *  arguments     : 1) format string like that of printf
- *                  2) variable argument list for 1)
- *  description   : evaluates the given string and executes the respective
- *                  system call. If the system call fails, an error message
- *                  occurs and compilation is aborted.
+ * Function:
+ *   void SystemCall( char *format, ...)
+ *
+ * Description:
+ *   Evaluates the given string and executes the respective system call.
+ *   If the system call fails, an error message occurs and compilation is
+ *   aborted.
  *
  ******************************************************************************/
 
@@ -444,12 +462,13 @@ SystemCall (char *format, ...)
 
 /******************************************************************************
  *
- *  functionname  : SystemCall2
- *  arguments     : 1) format string like that of printf
- *                  2) variable argument list for 1)
- *  description   : evaluates the given string and executes the respective
- *                  system call. In contrast to SystemCall no error message
- *                  is printed upon failure but the exit code is returned.
+ * Function:
+ *   int SystemCall2( char *format, ...)
+ *
+ * Description:
+ *   Evaluates the given string and executes the respective system call.
+ *   In contrast to SystemCall() no error message is printed upon failure but
+ *   the exit code is returned.
  *
  ******************************************************************************/
 
@@ -477,12 +496,13 @@ SystemCall2 (char *format, ...)
 
 /******************************************************************************
  *
- *  functionname  : SystemTest
- *  arguments     : 1) format string like that of printf
- *                  2) variable argument list for 1)
- *  description   : evaluates the given string and executes the respective
- *                  system call. If the system call fails, an error message
- *                  occurs and compilation is aborted.
+ * Function:
+ *   int SystemTest( char *format, ...)
+ *
+ * Description:
+ *   Evaluates the given string and executes the respective system call.
+ *   If the system call fails, an error message occurs and compilation is
+ *   aborted.
  *
  ******************************************************************************/
 
@@ -562,11 +582,11 @@ TmpVar ()
       if (act_tab == comp2_tab) {
         s = "comp";
     } else
-#else
+#else  /* TAGGED_ARRAYS */
       if (act_tab == comp_tab) {
         s = "comp";
     } else
-#endif
+#endif /* TAGGED_ARRAYS */
       if (act_tab == lir_tab) {
         s = "lir";
     } else if (act_tab == lir_mov_tab) {
@@ -675,7 +695,7 @@ TmpVar ()
 /******************************************************************************
  *
  * function:
- *   char *TmpVarName(char* postfix)
+ *   char *TmpVarName( char* postfix)
  *
  * description:
  *   creates a unique variable like TmpVar() and additionally appends
@@ -699,6 +719,7 @@ TmpVarName (char *postfix)
 }
 
 #ifdef SHOW_MALLOC
+
 /* -------------------------------------------------------------------------- *
  * task: calculates the number of bytes for a safe alignment (used in Malloc)
  * initializes global variable malloc_align_step
@@ -716,13 +737,15 @@ ComputeMallocAlignStep (void)
 
     DBUG_VOID_RETURN;
 }
-#endif
+
+#endif /* SHOW_MALLOC */
 
 #ifndef DBUG_OFF
+
 /******************************************************************************
  *
  * function:
- *   void DbugMemoryLeakCheck()
+ *   void DbugMemoryLeakCheck( void)
  *
  * description:
  *   computes and prints memory usage w/o memory used for the actual
@@ -731,7 +754,7 @@ ComputeMallocAlignStep (void)
  ******************************************************************************/
 
 void
-DbugMemoryLeakCheck ()
+DbugMemoryLeakCheck (void)
 {
     node *ast_dup;
     int mem_before;
@@ -739,17 +762,18 @@ DbugMemoryLeakCheck ()
     DBUG_ENTER ("DbugMemoryLeakCheck");
 
     mem_before = current_allocated_mem;
-    NOTE2 (("*** Currently allocated memory (bytes):   %s",
+    NOTE2 (("*** Currently allocated memory (Bytes):   %s",
             IntBytes2String (current_allocated_mem)));
     ast_dup = DupTree (syntax_tree);
-    NOTE2 (("*** Size of the syntax tree (bytes):      %s",
+    NOTE2 (("*** Size of the syntax tree (Bytes):      %s",
             IntBytes2String (current_allocated_mem - mem_before)));
-    NOTE2 (("*** Other memory allocated/ Leak (bytes): %s",
+    NOTE2 (("*** Other memory allocated/ Leak (Bytes): %s",
             IntBytes2String (2 * mem_before - current_allocated_mem)));
     FreeTree (ast_dup);
-    NOTE2 (("*** FreeTree / DupTree leak (bytes):      %s",
+    NOTE2 (("*** FreeTree / DupTree leak (Bytes):      %s",
             IntBytes2String (current_allocated_mem - mem_before)));
 
     DBUG_VOID_RETURN;
 }
+
 #endif /* DBUG_OFF */
