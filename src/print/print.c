@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.104  2000/10/09 19:22:39  dkr
+ * DBUG-string PRINT_PRF added
+ *
  * Revision 2.103  2000/09/25 15:11:44  dkr
  * PrintTypedef(): TYPEDEF_NAME(arg_node) used instead of void* for
  * argument types of TYPEDEF_COPYFUN, TYPEDEF_FREEFUN
@@ -1513,6 +1516,8 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_min:
     case F_max:
         /* primitive functions that are printed as function application */
+        DBUG_EXECUTE ("PRINT_PRF", fprintf (outfile, "PRF:"););
+
         fprintf (outfile, "%s( ", prf_string[PRF_PRF (arg_node)]);
         Trav (PRF_ARGS (arg_node), arg_info);
         fprintf (outfile, ")");
