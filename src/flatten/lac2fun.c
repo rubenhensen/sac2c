@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2000/06/23 15:01:55  dkr
+ * signature of DupTreeLUT changed
+ *
  * Revision 1.21  2000/05/25 17:19:13  dkr
  * header added
  *
@@ -1140,11 +1143,11 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
 
     switch (status) {
     case ST_condfun:
-        assigns = MakeAssign (DupTreeLUT (instr, NULL, lut), ret);
+        assigns = MakeAssign (DupTreeLUT (instr, lut), ret);
         break;
 
     case ST_whilefun:
-        new_body = DupTreeLUT (WHILE_BODY (instr), NULL, lut);
+        new_body = DupTreeLUT (WHILE_BODY (instr), lut);
 
         /*
          * append call of loop-dummy-function to body.
@@ -1154,18 +1157,18 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
             while (ASSIGN_NEXT (tmp) != NULL) {
                 tmp = ASSIGN_NEXT (tmp);
             }
-            let = DupTreeLUT (funcall_let, NULL, lut);
+            let = DupTreeLUT (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
             ASSIGN_NEXT (tmp) = MakeAssign (let, NULL);
         }
 
-        assigns = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), NULL, lut),
-                                        new_body, MakeBlock (MakeEmpty (), NULL)),
+        assigns = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), lut), new_body,
+                                        MakeBlock (MakeEmpty (), NULL)),
                               ret);
         break;
 
     case ST_dofun:
-        assigns = DupTreeLUT (BLOCK_INSTR (WHILE_BODY (instr)), NULL, lut);
+        assigns = DupTreeLUT (BLOCK_INSTR (WHILE_BODY (instr)), lut);
 
         /*
          * append conditional with call of loop-dummy-function to assignments.
@@ -1175,10 +1178,10 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
             while (ASSIGN_NEXT (tmp) != NULL) {
                 tmp = ASSIGN_NEXT (tmp);
             }
-            let = DupTreeLUT (funcall_let, NULL, lut);
+            let = DupTreeLUT (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
             ASSIGN_NEXT (tmp)
-              = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), NULL, lut),
+              = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), lut),
                                       MakeBlock (MakeAssign (let, NULL), NULL),
                                       MakeBlock (MakeEmpty (), NULL)),
                             ret);
