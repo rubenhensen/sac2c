@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 1.6  2004/09/18 15:58:34  ktr
  * added RestoreSSAExplicitAllocs
  *
@@ -47,7 +50,7 @@
 
 #include "globals.h"
 #include "lac2fun.h"
-#include "CheckAvis.h"
+#include "ToNewTypes.h"
 #include "SSATransform.h"
 #include "fun2lac.h"
 #include "UndoSSATransform.h"
@@ -89,8 +92,8 @@ DoSSA (node *syntax_tree)
         goto DONE;
     }
 
-    DBUG_PRINT ("SSA", ("call CheckAvis"));
-    syntax_tree = CheckAvis (syntax_tree);
+    DBUG_PRINT ("SSA", ("call ToNewTypes"));
+    syntax_tree = ToNewTypes (syntax_tree);
     if ((break_after == compiler_phase) && (0 == strcmp (break_specifier, "cha"))) {
         goto DONE;
     }
@@ -177,7 +180,7 @@ RestoreSSAOneFunction (node *fundef)
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "RestoreSSAOneFunction called without N_fundef node.");
 
-    fundef = CheckAvisOneFunction (fundef);
+    fundef = ToNewTypesOneFunction (fundef);
 
     fundef = SSATransformOneFunction (fundef);
 
@@ -216,7 +219,7 @@ RestoreSSAOneFundef (node *fundef)
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "RestoreSSAOneFundef called without N_fundef node.");
 
-    fundef = CheckAvisOneFundef (fundef);
+    fundef = ToNewTypesOneFundef (fundef);
 
     fundef = SSATransformOneFundef (fundef);
 
@@ -256,7 +259,7 @@ RestoreSSAExplicitAllocs (node *syntax_tree)
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_modul,
                  "RestoreSSAExplicitAllocs called without N_modul node.");
 
-    syntax_tree = CheckAvis (syntax_tree);
+    syntax_tree = ToNewTypes (syntax_tree);
 
     syntax_tree = SSATransformExplicitAllocs (syntax_tree);
 

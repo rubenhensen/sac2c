@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 3.110  2004/11/17 19:49:22  sah
  * made implicittypes.c invisible in new ast mode
  *
@@ -431,7 +434,7 @@
 #include "map_cwrapper.h"
 #include "markmemvals.h"
 #include "import_specialization.h"
-#include "CheckAvis.h"
+#include "ToNewTypes.h"
 #include "SSATransform.h"
 #include "UndoSSATransform.h"
 #include "SSADeadCodeRemoval.h"
@@ -1507,15 +1510,15 @@ static funtab ssafrm_tab_rec = {{
 funtab *ssafrm_tab = &ssafrm_tab_rec;
 
 /*
- *  (87) chkavis_tab
+ *  (87) tonewtypes_tab
  */
-static funtab chkavis_tab_rec = {{
-#define NIFchkavis(it_chkavis) it_chkavis
+static funtab tonewtypes_tab_rec = {{
+#define NIFtonewtypes(it_tonewtypes) it_tonewtypes
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *chkavis_tab = &chkavis_tab_rec;
+                                    },
+                                    NULL,
+                                    NULL};
+funtab *tonewtypes_tab = &tonewtypes_tab_rec;
 
 /*
  *  (88) undossa_tab

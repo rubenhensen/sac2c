@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.233  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 3.232  2004/11/07 15:50:02  sah
  * added CreateNums and CreateIntegerArray
  *
@@ -1159,6 +1162,7 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***    char*       NAME
  ***    char*       MOD     (O)
  ***    types*      TYPE
+ ***    ntype*      NTYPE
  ***    statustype  ATTRIB
  ***    statustype  STATUS
  ***
@@ -1213,6 +1217,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_COPYFUN(n) ((char *)(n->node[3]))
 #define TYPEDEF_FREEFUN(n) ((char *)(n->node[4]))
 #define TYPEDEF_ICM(n) (n->node[5])
+#define TYPEDEF_NTYPE(n) ((ntype *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1778,12 +1783,14 @@ extern node *MakeLet (node *expr, ids *ids);
  ***  permanent attributes:
  ***
  ***    types*  TYPE
+ ***    ntype*  NTYPE
  ***/
 
 extern node *MakeCast (node *expr, types *type);
 
 #define CAST_EXPR(n) (n->node[0])
 #define CAST_TYPE(n) (n->info.types)
+#define CAST_NTYPE(n) ((ntype *)(n->node[1]))
 
 /*--------------------------------------------------------------------------*/
 

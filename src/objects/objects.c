@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 3.11  2004/07/17 14:30:09  sah
  * switch to INFO structure
  * PHASE I
@@ -158,7 +161,7 @@
 #include "internal_lib.h"
 #include "Error.h"
 #include "DupTree.h"
-#include "CheckAvis.h"
+#include "ToNewTypes.h"
 
 #include <string.h>
 

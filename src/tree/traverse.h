@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 3.83  2004/11/14 13:44:42  ktr
  * added emrb_tab (reuse branching)
  *
@@ -450,7 +453,7 @@ extern funtab *piw_tab;
 extern funtab *impspec_tab;
 extern funtab *tccp_tab;
 extern funtab *ssafrm_tab;
-extern funtab *chkavis_tab;
+extern funtab *tonewtypes_tab;
 extern funtab *undossa_tab;
 extern funtab *ssadcr_tab;
 extern funtab *ssacse_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.240  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 3.239  2004/11/14 15:24:22  sah
  * extended EXP traversal
  *
@@ -527,7 +530,7 @@
  *   unused_tab28    precomp3_tab    apc_tab         apt_tab
  *
  *   mapcw_tab       pih_tab         piw_tab         impspec_tab
- *   tcpp_tab        ssafrm_tab      chkavis_tab     undossa_tab
+ *   tcpp_tab        ssafrm_tab      tonewtype_tab   undossa_tab
  *   ssadcr_tab      ssacse_tab      cmptree_tab     profile_tab
  *   ssacf_tab       ssalir_tab      lirmov_tab      wlpg_tab
  *   ssalur_tab      ssawlt_tab      ssawli_tab      ssawlf_tab
@@ -871,8 +874,8 @@
 #ifndef NIFssafrm
 #define NIFssafrm(it_ssafrm)
 #endif
-#ifndef NIFchkavis
-#define NIFchkavis(it_chkavis)
+#ifndef NIFtonewtypes
+#define NIFtonewtypes(it_tonewtypes)
 #endif
 #ifndef NIFundossa
 #define NIFundossa(it_undossa)
@@ -1079,7 +1082,7 @@
   it_emec, it_unused_35, it_unused_34, it_cudecls, it_unused_29, it_rsp, it_unused_27,                 \
   it_unused_28, it_precomp3, it_apc, it_apt,                                                           \
                                                                                                        \
-  it_mapcw, it_pih, it_piw, it_impspec, it_tccp, it_ssafrm, it_chkavis, it_undossa,                    \
+  it_mapcw, it_pih, it_piw, it_impspec, it_tccp, it_ssafrm, it_tonewtypes, it_undossa,                 \
   it_ssadcr, it_ssacse, it_cmptree, it_profile, it_ssacf, it_ssalir, it_lirmov, it_wlpg,               \
   it_ssalur, it_ssawlt, it_ssawli, it_ssawlf,                                                          \
                                                                                                        \
@@ -1131,8 +1134,8 @@
                                                                                                        \
                                       NIFmapcw (it_mapcw) NIFpih (it_pih) NIFpiw (                     \
                                         it_piw) NIFimpspec (it_impspec) NIFtccp (it_tccp)              \
-                                        NIFssafrm (it_ssafrm) NIFchkavis (                             \
-                                          it_chkavis) NIFundossa (it_undossa)                          \
+                                        NIFssafrm (it_ssafrm) NIFtonewtypes (                          \
+                                          it_tonewtypes) NIFundossa (it_undossa)                       \
                                           NIFssadcr (it_ssadcr) NIFssacse (                            \
                                             it_ssacse) NIFcmptree (it_cmptree)                         \
                                             NIFprofile (it_profile) NIFssacf (                         \
@@ -1373,7 +1376,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, CUDid, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCid, APTid,
 
-       TravSons, TravSons, TravSons, TravSons, TCCPid, SSAid, CAVid, USSAid, SSADCRid,
+       TravSons, TravSons, TravSons, TravSons, TCCPid, SSAid, TNTid, USSAid, SSADCRid,
        SSACSEid, CMPTid, TravSons, SSACFid, SSALIRid, LIRMOVid, TravSons, TravSons,
        TravSons, SSAWLIid, SSAWLFid,
 
@@ -1514,7 +1517,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, PIWobjdef, TravSons, TravSons, TravSons, CAVobjdef, TravSons,
+       TravSons, TravSons, PIWobjdef, TravSons, TravSons, TravSons, TNTobjdef, TravSons,
        TravSons, TravSons, CMPTunknown, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1599,7 +1602,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, EMRBfundef, L2Ffundef, EMECfundef, TravSons, TravSons, CUDfundef,
        TravSons, RSPFundef, TravSons, TravSons, PREC3fundef, APCfundef, APTfundef,
 
-       MCWfundef, PIHfundef, PIWfundef, IMPSPECfundef, TCCPfundef, SSAfundef, CAVfundef,
+       MCWfundef, PIHfundef, PIWfundef, IMPSPECfundef, TCCPfundef, SSAfundef, TNTfundef,
        USSAfundef, SSADCRfundef, SSACSEfundef, CMPTunknown, PFfundef, SSACFfundef,
        SSALIRfundef, TravSons, WLPGfundef, SSALURfundef, SSAWLTfundef, SSAWLIfundef,
        SSAWLFfundef,
@@ -1628,7 +1631,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravNone, APTarg,
 
-       MCWarg, PIHarg, PIWarg, IMPSPECarg, TravSons, SSAarg, CAVarg, USSAarg, SSADCRarg,
+       MCWarg, PIHarg, PIWarg, IMPSPECarg, TravSons, SSAarg, TNTarg, USSAarg, SSADCRarg,
        SSACSEarg, CMPTunknown, TravSons, SSACFarg, SSALIRarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1656,7 +1659,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, CUDvardec, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravNone, APTvardec,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSAvardec, CAVvardec, USSAvardec,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSAvardec, TNTvardec, USSAvardec,
        SSADCRvardec, SSACSEvardec, CMPTunknown, TravSons, TravSons, SSALIRvardec,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1684,7 +1687,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, CUDblock, TravSons, TravSons, TravSons,
        TravSons, PREC3block, TravSons, APTblock,
 
-       TravSons, TravSons, TravSons, TravSons, TCCPblock, SSAblock, CAVblock, USSAblock,
+       TravSons, TravSons, TravSons, TravSons, TCCPblock, SSAblock, TNTblock, USSAblock,
        SSADCRblock, SSACSEblock, CMPTTravSons, TravSons, SSACFblock, SSALIRblock,
        LIRMOVblock, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -2106,7 +2109,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, CUDlet, TravSons, TravSons, TravSons,
        TravSons, PREC3let, APClet, APTlet,
 
-       TravSons, TravSons, TravSons, TravSons, TCCPlet, SSAlet, CAVlet, USSAlet,
+       TravSons, TravSons, TravSons, TravSons, TCCPlet, SSAlet, TNTlet, USSAlet,
        SSADCRlet, SSACSElet, CMPTlet, TravSons, SSACFlet, SSALIRlet, LIRMOVlet, WLPGlet,
        TravSons, SSAWLTlet, SSAWLIlet, SSAWLFlet,
 
@@ -2162,7 +2165,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, APCap, APTap,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSAap, CAVap, TravSons, SSADCRap,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSAap, TNTap, TravSons, SSADCRap,
        SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, WLPGap, SSALURap, SSAWLTap,
        SSAWLIap, TravSons,
 
@@ -2531,7 +2534,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, CUDwithid, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravNone,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSAwithid, CAVNwithid,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSAwithid, TNTNwithid,
        USSANwithid, SSADCRNwithid, TravSons, CMPTNwithid, TravSons, TravSons,
        SSALIRNwithid, LIRMOVNwithid, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -3557,7 +3560,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
 #undef NIFtccp
 #undef NIFssafrm
-#undef NIFchkavis
+#undef NIFtonewtypes
 #undef NIFundossa
 
 #undef NIFssadcr

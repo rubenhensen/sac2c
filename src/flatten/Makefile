@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.30  2004/11/18 14:34:31  mwe
+# changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+#
 # Revision 3.29  2004/07/21 12:40:38  khf
 # WLEnhancement.o and ExplizitAccumulate.o added
 #
@@ -95,7 +98,7 @@ INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants
 
 
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
-     CheckAvis.o SSATransform.o UndoSSATransform.o ssa.o \
+     ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
      WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o
 
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/11/18 14:34:31  mwe
+ * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
+ *
  * Revision 3.52  2004/11/14 15:20:16  sah
  * added support for import of udts
  *
@@ -113,7 +116,7 @@
 #include "globals.h"
 #include "print.h"
 #include "lac2fun.h"
-#include "CheckAvis.h"
+#include "ToNewTypes.h"
 #include "SSATransform.h"
 #include "insert_vardec.h"
 #include "create_wrappers.h"
@@ -577,7 +580,7 @@ NTCmodul (node *arg_node, info *arg_info)
         goto DONE;
     }
 
-    arg_node = CheckAvis (arg_node);
+    arg_node = ToNewTypes (arg_node);
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cha"))) {
         goto DONE;
     }
@@ -682,7 +685,7 @@ NTCmodul (node *arg_node, info *arg_info)
      * Convert the wrapper function code into SSA form
      */
     arg_node = Lac2Fun (arg_node);
-    arg_node = CheckAvis (arg_node);
+    arg_node = ToNewTypes (arg_node);
     arg_node = SSATransformAllowGOs (arg_node);
 
 DONE:
