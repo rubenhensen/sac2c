@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/02 12:29:09  jhs
+ * Added INFO_MUTH_FUNDEF.
+ * Added N_mt and N_st.
+ * Added ST_xxx-macros, added MT_OR_ST_xxx-macros.
+ *
  * Revision 1.3  2000/01/26 13:47:00  jhs
  * L_BLOCK_INSTR_OR_ASSIGN_NEXT added.
  *
@@ -1680,6 +1685,21 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 #define PRAGMA_LS(n, i) PRAGMA_LINKSIGN (n)[i]
 #define PRAGMA_RC(n, i) PRAGMA_REFCOUNTING (n)[i]
 #define PRAGMA_RO(n, i) PRAGMA_READONLY (n)[i]
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_mt :   N_st :
+ ***/
+
+#define MT_OR_ST_REGION(n) ((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n)
+
+#define L_MT_OR_ST_REGION(n, region)                                                     \
+    if (NODE_TYPE (n) == N_mt) {                                                         \
+        MT_REGION (n) = region;                                                          \
+    } else {                                                                             \
+        ST_REGION (n) = region;                                                          \
+    }
 
 /*--------------------------------------------------------------------------*/
 

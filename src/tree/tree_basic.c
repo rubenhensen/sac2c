@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/02 12:29:09  jhs
+ * Added INFO_MUTH_FUNDEF.
+ * Added N_mt and N_st.
+ * Added ST_xxx-macros, added MT_OR_ST_xxx-macros.
+ *
  * Revision 1.2  2000/01/28 12:41:15  dkr
  * NCODE_CODE removed
  *
@@ -1524,6 +1529,34 @@ MakeSync (node *region)
     SYNC_FIRST (tmp) = FALSE;
     SYNC_LAST (tmp) = TRUE;
     SYNC_FOLDCOUNT (tmp) = 0;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeMT (node *region)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeMT");
+
+    MT_REGION (tmp) = region;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeST (node *region)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeST");
+
+    ST_REGION (tmp) = region;
 
     DBUG_RETURN (tmp);
 }

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/02 12:29:09  jhs
+ * Added INFO_MUTH_FUNDEF.
+ * Added N_mt and N_st.
+ * Added ST_xxx-macros, added MT_OR_ST_xxx-macros.
+ *
  * Revision 1.7  2000/01/28 13:53:07  jhs
  * Added INFO_SCHIN_ALLOWED.
  *
@@ -2301,15 +2306,23 @@ extern node *MakePragma ();
  ***
  ***    node*      INFO_SPMDC_FIRSTSYNC
  ***
- ***  old mt!!!
+ ***  new mt!!!
  ***  when used in multithread ...
  ***    (na) multithread.[ch]
  ***    (nb) schedule_init.[ch]
+ ***    (nc)  ...
+ ***    (nd) blocks_init.[ch]
+ ***
+ ***  in all:
+ ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
  ***
  ***  in (na), (nb):
  ***    node*      INFO_SCHIN_SCHEDULING
  ***    int        INFO_SCHIN_INNERWLS
  ***    int        INFO_SCHIN_ALLOWED
+ ***
+ ***  in (na), (nd):
+ ***    [nothing]
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2491,7 +2504,10 @@ extern node *MakeInfo ();
 #define INFO_SPMDPM_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_SPMDPM_SHARED(n) ((DFMmask_t) (n->dfmask[4]))
 
-/* multithread-schedule_init */
+/* multithread - all mini-phases */
+#define INFO_MUTH_FUNDEF(n) (n->node[0])
+
+/* multithread - schedule_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_SCHIN_SCHEDULING(n) (n->node[1])
 #define INFO_SCHIN_INNERWLS(n) (n->int_data)
@@ -2715,9 +2731,6 @@ extern node *MakeSpmd (node *region);
  ***
  ***  remarks:
  ***
- ***    'WITH_PTRS' is a N_exprs-chain containing pointers to all with-loop
- ***    assignments of this sync-region.
- ***
  ***/
 
 extern node *MakeSync (node *region);
@@ -2733,6 +2746,34 @@ extern node *MakeSync (node *region);
 #define SYNC_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SYNC_OUTREP(n) ((DFMmask_t)n->dfmask[3])
 #define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[4])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_mt :
+ ***
+ ***  sons:
+ ***    node*     REGION      (N_block)
+ ***
+ ***/
+
+extern node *MakeMT (node *region);
+
+#define MT_REGION(n) (n->node[0])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_st :
+ ***
+ ***  sons:
+ ***    node*     REGION      (N_block)
+ ***
+ ***/
+
+extern node *MakeST (node *region);
+
+#define ST_REGION(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
