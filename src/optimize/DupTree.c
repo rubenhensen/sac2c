@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/04/26 22:12:08  dkr
+ * fixed a bug in DupSpmd
+ *
  * Revision 1.75  1998/04/26 21:52:45  dkr
  * DupSPMD renamed to DupSpmd
  *
@@ -857,7 +860,7 @@ DupSpmd (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupSpmd");
 
-    new_node = MakeSPMD (DUPTRAV (SPMD_REGION (arg_node)));
+    new_node = MakeSpmd (DUPTRAV (SPMD_REGION (arg_node)));
 
     if (SPMD_IN (arg_node) != NULL) {
         SPMD_IN (new_node) = DupIds (SPMD_IN (arg_node), arg_info);
