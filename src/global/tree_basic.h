@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  1999/07/06 14:05:01  jhs
+ * Added INFO_SYNCO_[THIS|NEXT]ASSIGN.
+ *
  * Revision 2.32  1999/06/30 12:59:59  jhs
  * Added INFO_SPMD_LAST.
  *
@@ -2201,6 +2204,7 @@ extern node *MakePragma ();
  ***
  ***  when used in managing spmd- and sync blocks :
  ***  also when used in spmd traversal (spmd_trav.[ch]) :
+ ***  also when used in sync optimization (sync_opt.[ch]) :
  ***
  ***    node*      INFO_SPMD_FUNDEF   (N_fundef)
  ***    int        INFO_SPMD_FIRST
@@ -2212,6 +2216,9 @@ extern node *MakePragma ();
  ***    DFMmask_t  INFO_SPMDT_RESULT
  ***    DFMmask_t  INFO_SPMDT_CHECK
  ***    int*       INFO_SPMDT_COUTERS
+ ***
+ ***    node*      INFO_SYNCO_NEXTASSIGN
+ ***    node*      INFO_SYNCO_THISASSIGN
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2336,6 +2343,9 @@ extern node *MakeInfo ();
 #define INFO_SPMDT_RESULT(n) (n->dfmask[1])
 #define INFO_SPMDT_CHECK(n) (n->dfmask[2])
 #define INFO_SPMDT_COUNTERS(n) ((int *)(n->node[0]))
+
+#define INFO_SYNCO_THISASSIGN(n) (n->node[0])
+#define INFO_SYNCO_NEXTASSIGN(n) (n->node[1])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
