@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1997/12/08 19:19:01  dkr
+ * no arithmetic on void-pointers anymore (FREE)
+ *
  * Revision 1.15  1997/12/06 17:14:55  srs
  * changed FREE
  *
@@ -73,7 +76,7 @@
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
-        address = ((void *)address) - malloc_align_step;                                 \
+        address = (void *)((char *)address - malloc_align_step);                         \
         current_allocated_mem -= *(int *)(address);                                      \
                                                                                          \
         free (address);                                                                  \
