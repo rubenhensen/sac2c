@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/09/26 16:52:52  cg
+ * Revision 1.15  1995/09/26 16:55:16  cg
+ * type charlist renamed to strings
+ *
+ * Revision 1.14  1995/09/26  16:52:52  cg
  * declaration of CmpDomain moved to tree_compound.h
  *
  * Revision 1.13  1995/09/01  08:44:29  cg
@@ -93,7 +96,7 @@ extern node *IMtypedef (node *, node *);
 extern node *IMfundef (node *, node *);
 extern node *Import (node *);
 extern char *GenLinkerList ();
-extern charlist *GenExtmodlistList ();
+extern strings *GenExtmodlistList ();
 extern void InsertClassType (node *);
 
 #endif /* _sac_import_h */
