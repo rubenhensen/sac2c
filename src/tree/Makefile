@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/15 18:16:31  dkr
+# cleanup_decls.* adjust_ids.* infer_dfms.* moved from flatten to tree
+#
 # Revision 3.2  2000/12/06 20:09:12  dkr
 # make deps done
 #
@@ -55,8 +58,9 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
      -I../psi-opt -I../objects -I../concurrent -I../multithread \
      -I../c-interface
 
-all: tree.o tree_basic.o tree_compound.o free.o traverse.o DupTree.o LookUpTable.o \
-     DataFlowMask.o DataFlowMaskUtils.o scheduling.o LookUpTable.o
+all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
+     DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
+     LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o
 
 
 #
@@ -114,6 +118,17 @@ DupTree.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 DupTree.o: /usr/include/sys/int_types.h DupTree.h LookUpTable.h
 DupTree.o: DataFlowMask.h DataFlowMaskUtils.h ../optimize/Inline.h
 DupTree.o: ../typecheck/typecheck.h scheduling.h ../optimize/generatemasks.h
+InferDFMs.o: tree.h ../global/types.h tree_basic.h tree_compound.h
+InferDFMs.o: ../global/Error.h /usr/include/stdio.h
+InferDFMs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+InferDFMs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+InferDFMs.o: /usr/include/stdio_impl.h /usr/include/string.h
+InferDFMs.o: /usr/include/stdlib.h ../global/globals.h
+InferDFMs.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
+InferDFMs.o: ../global/my_debug.h /usr/include/malloc.h
+InferDFMs.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+InferDFMs.o: /usr/include/sys/int_types.h DupTree.h LookUpTable.h
+InferDFMs.o: DataFlowMask.h DataFlowMaskUtils.h InferDFMs.h
 LookUpTable.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 LookUpTable.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h
 LookUpTable.o: tree_basic.h tree_compound.h ../global/Error.h
@@ -124,6 +139,27 @@ LookUpTable.o: ../global/internal_lib.h free.h ../../inc/dbug.h
 LookUpTable.o: ../global/my_debug.h /usr/include/malloc.h
 LookUpTable.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 LookUpTable.o: /usr/include/sys/int_types.h
+adjust_ids.o: ../../inc/dbug.h /usr/include/stdio.h
+adjust_ids.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+adjust_ids.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+adjust_ids.o: /usr/include/stdio_impl.h tree.h ../global/types.h tree_basic.h
+adjust_ids.o: tree_compound.h ../global/Error.h /usr/include/string.h
+adjust_ids.o: /usr/include/stdlib.h ../global/globals.h
+adjust_ids.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
+adjust_ids.o: /usr/include/malloc.h /usr/include/sys/types.h
+adjust_ids.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+adjust_ids.o: DupTree.h LookUpTable.h ../print/print.h
+cleanup_decls.o: tree.h ../global/types.h tree_basic.h tree_compound.h
+cleanup_decls.o: ../global/Error.h /usr/include/stdio.h
+cleanup_decls.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+cleanup_decls.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cleanup_decls.o: /usr/include/stdio_impl.h /usr/include/string.h
+cleanup_decls.o: /usr/include/stdlib.h ../global/globals.h
+cleanup_decls.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
+cleanup_decls.o: ../global/my_debug.h /usr/include/malloc.h
+cleanup_decls.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+cleanup_decls.o: /usr/include/sys/int_types.h DataFlowMask.h
+cleanup_decls.o: DataFlowMaskUtils.h LookUpTable.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -176,9 +212,8 @@ traverse.o: ../concurrent/spmd_trav.h DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
-traverse.o: ../flatten/infer_dfms.h ../flatten/lac2fun.h
-traverse.o: ../flatten/cleanup_decls.h ../flatten/fun2lac.h
-traverse.o: ../flatten/adjust_ids.h ../multithread/schedule_init.h
+traverse.o: InferDFMs.h ../flatten/lac2fun.h cleanup_decls.h
+traverse.o: ../flatten/fun2lac.h adjust_ids.h ../multithread/schedule_init.h
 traverse.o: ../multithread/blocks_init.h ../multithread/blocks_expand.h
 traverse.o: ../multithread/repfuns_init.h ../multithread/mtfuns_init.h
 traverse.o: ../multithread/blocks_cons.h ../multithread/dataflow_analysis.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2000/12/15 18:16:58  dkr
+# cleanup_decls.* adjust_ids.* infer_dfms.* moved from flatten to tree
+#
 # Revision 3.9  2000/12/15 14:08:55  sbs
 # -D_OSF_SOURCE for ALPHA => eliminates inconsistencies in times.h
 #
@@ -155,16 +158,12 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/options.o src/global/NameTuples.o
 TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
-      src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
-      src/tree/scheduling.o
+      src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
+      src/tree/cleanup_decls.o src/tree/adjust_ids.o src/tree/scheduling.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
-
-FLATTEN= src/flatten/flatten.o \
-         src/flatten/lac2fun.o \
-         src/flatten/infer_dfms.o src/flatten/cleanup_decls.o \
-         src/flatten/fun2lac.o src/flatten/adjust_ids.o
+FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
