@@ -17,6 +17,8 @@ SSAConstantFolding.c
 SSAConstantFolding.h
 SSADeadCodeRemoval.c
 SSADeadCodeRemoval.h
+SSALIR.c
+SSALIR.h
 Unroll.c
 Unroll.h
 Unswitch.c
