@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/01/17 17:58:45  cg
+ * Added new heap manager optimization options
+ * APS (arena preselection) and
+ * RCAO (reference counter allocation optimization).
+ *
  * Revision 2.14  2000/01/17 16:25:58  cg
  * Added new options to control initial heap sizes separately
  * for master's arena of arenas, workers' arena of arenas and the
@@ -243,6 +248,10 @@ PrintGlobalSwitches ()
 
     fprintf (outfile, "#define SAC_DO_PHM             %d\n",
              (optimize & OPT_PHM) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_APS             %d\n",
+             (optimize & OPT_APS) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_RCAO            %d\n",
+             (optimize & OPT_RCAO) ? 1 : 0);
     fprintf (outfile, "\n");
 
     fprintf (outfile, "#define SAC_DO_PROFILE         %d\n", profileflag ? 1 : 0);

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/01/17 17:58:45  cg
+ * Added new heap manager optimization options
+ * APS (arena preselection) and
+ * RCAO (reference counter allocation optimization).
+ *
  * Revision 2.24  2000/01/17 16:25:58  cg
  * Added new options to control initial heap sizes separately
  * for master's arena of arenas, workers' arena of arenas and the
@@ -302,6 +307,12 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("phm", optimize |= OPT_PHM);
         ARG_CHOICE ("PHM", optimize |= OPT_PHM);
 
+        ARG_CHOICE ("aps", optimize |= OPT_APS);
+        ARG_CHOICE ("APS", optimize |= OPT_APS);
+
+        ARG_CHOICE ("rcao", optimize |= OPT_RCAO);
+        ARG_CHOICE ("RCAO", optimize |= OPT_RCAO);
+
         ARG_CHOICE_END ();
     });
 
@@ -463,6 +474,12 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("phm", optimize &= ~OPT_PHM);
         ARG_CHOICE ("PHM", optimize &= ~OPT_PHM);
+
+        ARG_CHOICE ("aps", optimize &= ~OPT_APS);
+        ARG_CHOICE ("APS", optimize &= ~OPT_APS);
+
+        ARG_CHOICE ("rcao", optimize &= ~OPT_RCAO);
+        ARG_CHOICE ("RCAO", optimize &= ~OPT_RCAO);
 
         ARG_CHOICE_END ();
     });

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/01/17 17:58:45  cg
+ * Added new heap manager optimization options
+ * APS (arena preselection) and
+ * RCAO (reference counter allocation optimization).
+ *
  * Revision 2.17  2000/01/17 16:25:58  cg
  * Added new options to control initial heap sizes separately
  * for master's arena of arenas, workers' arena of arenas and the
@@ -391,6 +396,8 @@ usage ()
             "\t\tMTO \t multi-thread optimization \n"
             "\t\tSBE \t syncronisation barrier elimination \n"
             "\t\tPHM \t private heap management \n"
+            "\t\tAPS \t arena preselection (in conjunction with PHM) \n"
+            "\t\tPHM \t refcount allocation optimization (in conjunction with PHM) \n"
             "\n"
             "\t\tOPT  \t enables/disables all optimizations at once.\n"
             "\n"
