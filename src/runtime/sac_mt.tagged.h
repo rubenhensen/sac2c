@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/17 17:18:36  dkr
+ * MT_DECL_LOCAL_DESC, MT_INIT_DESC added.
+ * This revision is not working correctly yet :(
+ *
  * Revision 1.3  2003/09/15 16:45:06  dkr
  * all NT-tags added. This revision is still incomplete!
  *
@@ -358,6 +362,62 @@ typedef union {
 
 /******************************************************************************
  *
+ * MT_DECL_LOCAL_DESC( nt)
+ * MT_INIT_DESC( nt, new_desc)
+ *
+ */
+
+#define SAC_MT_DECL_LOCAL_DESC(nt) CAT11 (SAC_MT_DECL_LOCAL_DESC__, NT_SHP (nt) (nt))
+
+#define SAC_MT_INIT_DESC(nt) CAT11 (SAC_MT_INIT_DESC__, NT_SHP (nt) (nt))
+/*
+ * SCL
+ */
+
+#define SAC_MT_DECL_LOCAL_DESC__SCL(nt)                                                  \
+    CAT12 (SAC_MT_DECL_LOCAL_DESC__SCL_, NT_HID (nt) (nt))
+#define SAC_MT_DECL_LOCAL_DESC__SCL_NHD(nt) SAC_NOTHING ()
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID(nt)                                              \
+    CAT13 (SAC_MT_DECL_LOCAL_DESC__SCL_HID_, NT_UNQ (nt) (nt))
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_NUQ(nt) SAC_MT_DECL_LOCAL_DESC__AKS (nt)
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_UNQ(nt) SAC_MT_DECL_LOCAL_DESC__SCL_NHD (nt)
+
+#define SAC_MT_INIT_DESC__SCL(nt) CAT12 (SAC_MT_INIT_DESC__SCL_, NT_HID (nt) (nt))
+#define SAC_MT_INIT_DESC__SCL_NHD(nt) SAC_NOOP ()
+#define SAC_MT_INIT_DESC__SCL_HID(nt) CAT13 (SAC_MT_INIT_DESC__SCL_HID_, NT_UNQ (nt) (nt))
+#define SAC_MT_INIT_DESC__SCL_HID_NUQ(nt) SAC_MT_INIT_DESC__AKS (nt)
+#define SAC_MT_INIT_DESC__SCL_HID_UNQ(nt) SAC_MT_INIT_DESC__SCL_NHD (nt)
+
+/*
+ * AKS
+ */
+
+#define SAC_MT_DECL_LOCAL_DESC__AKS(nt)                                                  \
+    /* SAC_ND_DESC_TYPE( nt) */ int CAT0 (SAC_local_, SAC_ND_A_DESC (nt))[10];
+
+#define SAC_MT_INIT_DESC__AKS(nt)                                                        \
+    {                                                                                    \
+        SAC_ND_A_DESC (nt) = CAT0 (SAC_local_, SAC_ND_A_DESC (nt));                      \
+    }
+
+/*
+ * AKD
+ */
+
+#define SAC_MT_DECL_LOCAL_DESC__AKD(nt) SAC_MT_DECL_LOCAL_DESC__AKS (nt)
+
+#define SAC_MT_INIT_DESC__AKD(nt) SAC_MT_INIT_DESC__AKS (nt)
+
+/*
+ * AUD
+ */
+
+#define SAC_MT_DECL_LOCAL_DESC__AUD(nt) SAC_MT_DECL_LOCAL_DESC__AKS (nt)
+
+#define SAC_MT_INIT_DESC__AUD(nt) SAC_MT_INIT_DESC__AKS (nt)
+
+/******************************************************************************
+ *
  * MT_SPMD_ARG_in
  * MT_SPMD_ARG_out
  * MT_SPMD_ARG_inout
@@ -567,7 +627,7 @@ typedef union {
 #define SAC_MT_SPMD_PARAM_in(basetype, nt)                                               \
     CAT11 (SAC_MT_SPMD_PARAM_in__, NT_SHP (nt) BuildArgs2 (basetype, nt))
 
-#define SAC_MT_SPMD_PARAM_out(basetype, nt) SAC_NOTHING () /* dkr: is this correct? */
+#define SAC_MT_SPMD_PARAM_out(basetype, nt) SAC_NOTHING ()
 
 /*
  * SCL
