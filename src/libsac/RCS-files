@@ -5,6 +5,7 @@ cachesim_access.c
 cachesim_basic.c
 heapmgr.h
 heapmgr_basic.c
+heapmgr_diag.c
 heapmgr_disabled.c
 heapmgr_malloc.c
 heapmgr_memalign.c
