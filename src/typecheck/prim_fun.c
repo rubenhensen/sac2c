@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.26  1997/10/28 18:26:25  srs
+ * dead code removed
+ *
  * Revision 1.25  1997/10/03 18:00:54  dkr
  * added type-classes ixi_i, i_i
  *
@@ -163,20 +166,6 @@ enum type_class {
     AxAxS_A,
     AxAxA_A
 };
-
-#if 0
-#define FREE(a)                                                                          \
-    DBUG_PRINT ("FREE", ("free" P_FORMAT, a));                                           \
-    free (a)
-
-#define FREE_TYPES(a)                                                                    \
-    if (NULL != a->shpseg) {                                                             \
-        FREE (a->shpseg);                                                                \
-        FREE (a);                                                                        \
-    } else {                                                                             \
-        FREE (a);                                                                        \
-    }
-#endif /* 0 */
 
 #ifdef OLD_GET_TYPE_NODE
 #define GEN_TYPE_NODE(node, type)                                                        \
