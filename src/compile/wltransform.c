@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/05/24 00:41:16  dkr
+ * fixed some minor bugs
+ * code templates are not used anymore
+ *
  * Revision 1.18  1998/05/17 02:06:33  dkr
  * added assertion in IntersectOutline()
  *
@@ -61,6 +65,1230 @@
  *
  */
 
+/*****************************************************************************
+
+
+Transformation N_Nwith -> N_Nwith2:
+===================================
+
+
+Beispiel:
+---------
+
+  [  0,  0] -> [ 50,150] step [1,1] width [1,1]: e1
+  [  0,150] -> [300,400] step [9,1] width [2,1]: e2
+  [  2,150] -> [300,400] step [9,1] width [7,1]: e1
+  [ 50,  0] -> [300,150] step [1,1] width [1,1]: e2
+  [300,  0] -> [400,100] step [1,1] width [1,1]: e3
+  [300,100] -> [400,400] step [1,3] width [1,1]: e3
+  [300,101] -> [400,400] step [1,3] width [1,2]: e4
+
+
+1.) Quader-Building (Berechnung der Quadermenge)
+-------------------
+
+    -> Quader-Menge
+
+  Im Beispiel:
+
+      0-> 50, step[0] 1
+                   0->1:   0->150, step[1] 1
+                                        0->1: e1
+      0->300, step[0] 9
+                   0->2: 150->400, step[1] 1
+                                        0->1: e2
+                   2->9: 150->400, step[1] 1
+                                        0->1: e1
+     50->300, step[0] 1
+                   0->1:   0->150, step[1] 1
+                                        0->1: e2
+    300->400, step[0] 1
+                   0->1:   0->100, step[1] 1
+                                        0->1: e3
+    300->400, step[0] 1
+                   0->1: 100->400, step[1] 3
+                                        0->1: e3
+                                        1->3: e4
+
+
+2a.) Wahl der Segmente mit bv0, bv1, ... (blocking-Vektoren),
+     -----------------     ubv (unrolling-blocking-Vektor)
+
+     sv sei der globale step-Vektor eines Segmentes S --- d.h. sv ist das kgV
+     aller steps der Quader, die sich mit S nicht-leer schneiden.
+     Dann m"ussen in jeder Dimension (d) ubv_d, bv0_d, bv1_d, ...
+     Vielfache von sv_d sein.
+     Abweichend davon, ist f"ur die ersten Komponenten von bv0, bv1, ... und
+     ubv auch der Wert 1 erlaubt: es wird dann in diesen Dimensionen kein
+     Blocking durchgef"uhrt.
+
+     Falls bv = (1, ..., 1, ?, gt, ..., gt) gilt --- gt bedeute, da"s bv_d
+     hier mindestens so gro"s wie die Segmentbreite ist ---, ist dies
+     gleichbedeutend mit bv = (1, ..., 1), soweit ubv dies zul"a"st.
+     Diese Vereinfachung wird jedoch *nicht* vorgenommen!
+
+     -> Menge von Segmenten (Segment := ein Quader ohne Raster)
+
+  Im Beispiel: Wir w"ahlen als Segment den gesamten shape
+               und bv0 = (180,156), ubv = (1,6) --- beachte: sv = (9,3)
+
+
+2b.) Anpassen der Quader auf die Segmente
+     ------------------------------------
+
+     -> jedes Segment zerf"allt in eine Menge von Quadern
+
+  Im Beispiel: Wir erhalten f"ur das gew"ahlte Segment genau die
+               Quadermenge aus 1.)
+
+
+F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
+
+
+3.) Quader-Splitting (Schneiden der Projektionen)
+    ----------------
+
+    Zuerst wird das splitting auf allen Quadern in der 0-ten Dimension
+    durchgef"uhrt:
+    Die Quader werden in der 0-ten Dimension so lange zerteilt, bis die
+    Projektionen ihrer Grenzen in der 0-ten Dimension paarweise disjunkt
+    oder identisch sind.
+    Die Quader lassen anschlie"send zu Gruppen mit jeweils identischen
+    0-Projektionen zusammenfassen.
+    Auf jeder dieser Gruppen wird dann das splitting in der 1-ten
+    Dimension durchgef"uhrt ... usw.
+
+    Das splitting ist Vorbereitung f"ur das merging (siehe 6.Schritt). Es
+    erscheint auf den ersten Blick sinnvoll, splitting und merging
+    dimensionsweise verschr"ankt durchzuf"uhren: Die nach dem splitting in
+    einer Dimension gebildeten Gruppen stellen ja genau die Projektionen dar,
+    welche sp"ater beim merging vereinigt werden.
+    Allerdings ist es einfacher und "ubersichtlicher, die beiden Phasen strikt
+    zu trennen: Das merging kann auf jeden Fall erst nach dem blocking
+    durchgef"uhrt werden (Begr"undung: siehe dort), das splitting findet jedoch
+    am besten vor dem blocking statt, da sich durch das splitting i. a. die
+    Raster verschieben (siehe Beispiel) --- sich also der Inhalt eines Blockes
+    noch "andern w"urde!
+
+  Im Beispiel:
+
+      0-> 50, step[0] 1
+                   0->1:   0->150, step[1] 1
+                                        0->1: e1
+      0-> 50, step[0] 9
+                   0->2: 150->400, step[1] 1
+                                        0->1: e2
+                   2->9: 150->400, step[1] 1
+                                        0->1: e1
+     50->300, step[0] 1
+                   0->1:   0->150, step[1] 1
+                                        0->1: e2
+     50->300, step[0] 9
+                   0->4: 150->400, step[1] 1
+                                        0->1: e1
+                   4->6: 150->400, step[1] 1
+                                        0->1: e2
+                   6->9: 150->400, step[1] 1
+                                        0->1: e1
+    300->400, step[0] 1
+                   0->1:   0->100, step[1] 1
+                                        0->1: e3
+    300->400, step[0] 1
+                   0->1: 100->400, step[1] 3
+                                        0->1: e3
+                                        1->3: e4
+
+
+4.) Blocking (ohne sp"ateres Fitting) entsprechend den Werten aus bv
+    --------
+
+  Das blocking wird so fr"uh durchgef"uhrt, da sich durch das blocking die
+  Ausf"uhrungsreihenfolge innerhalb des Arrays ver"andert und deshalb alle
+  "ubrigen Stufen --- insbesondere merging und optimize --- nur mit genauer
+  Kenntnis des blockings arbeiten k"onnen.
+  Zum Beispiel: Ohne blocking bekommt beim merging der e1-Quader vom
+                e2/e3-Quader in der 0-ten Dimension einen step von 9
+                aufgezwungen, und anschlie"send k"onnen in der Optimierung
+                die (0->2)-Zweige beider Teile zusammengef"ugt werden.
+                Mit blocking wird beides nicht durchgef"uhrt, da diese Teile
+                dann in verschiedenen Bl"ocken liegen!
+                Vergleiche auch mit den Beispielen weiter unten...
+
+  Das blocking wird im Baum a"hnlich wie die Quader dargestellt --- es wird
+  eine analog aufgebaute Blockhierarchie vorgeschaltet.
+
+  Im Beispiel (Grenzen x10 f"ur realistische Verh"altnisse):
+
+    An den Quadergrenzen m"ussen immer neue Bl"ocke begonnen werden, also
+    brauchen wir f"ur jeden Quader eigene blocking-Schleifen:
+
+    0000->0500, block[0] 180:      // dies ist das Koordinatensystem f"ur ...
+        0000->1500, block[1] 156:  // ... die Bl"ocke im ersten Quader.
+               op1               // hier mu"s noch definiert werden, was ...
+                                 // ... innerhalb eines Blockes passieren soll
+    0000->0500, block[0] 180:
+        1500->4000, block[1] 156:
+               op2
+
+    0500->3000, block[0] 180:
+        0000->1500, block[1] 156:
+               op3
+
+    0500->3000, block[0] 180:
+        1500->4000, block[1] 156:
+               op4
+
+    3000->4000, block[0] 180:
+        0000->1000, block[1] 156:
+               op5
+
+    3000->4000, block[0] 180:
+        1000->4000, block[1] 156:
+               op6
+
+    An den Bl"attern dieses blocking-Baumes k"onnen wir jetzt die Beschreibungen
+    f"ur die Blockinhalte einf"ugen:
+
+    0000->0500, block[0] 180:
+        0000->1500, block[1] 156:
+               0->180, step[0] 1
+                            0->1: 0->156, step[1] 1
+                                               0->1: e1
+
+    0000->0500, block[0] 180:
+        1500->4000, block[1] 156:
+               0->180, step[0] 9
+                            0->2: 0->156, step[1] 1
+                                               0->1: e2
+                            2->9: 0->156, step[1] 1
+                                               0->1: e1
+
+    0500->3000, block[0] 180:
+        0000->1500, block[1] 156:
+               0->180, step[0] 1
+                            0->1: 0->156, step[1] 1
+                                               0->1: e2
+
+    0500->3000, block[0] 180:
+        1500->4000, block[1] 156:
+               0->180, step[0] 9
+                            0->4: 0->156, step[1] 1
+                                               0->1: e1
+                            4->6: 0->156, step[1] 1
+                                               0->1: e2
+                            6->9: 0->156, step[1] 1
+                                               0->1: e1
+
+    3000->4000, block[0] 180:
+        0000->1000, block[1] 156:
+               0->180, step[0] 1
+                            0->1: 0->156, step[1] 1
+                                               0->1: e3
+
+    3000->4000, block[0] 180:
+        1000->4000, block[1] 156:
+               0->180, step[0] 1
+                            0->1: 0->156, step[1] 3
+                                               0->1: e3
+                                               1->3: e4
+
+  In dieses Schema lassen sich analog beliebig viele Stufen f"ur hierarchisches
+  blocking einziehen.
+
+  Soll in allen oder einigen Dimensionen keine blocking stattfinden, l"a"st
+  sich dies --- zumindest im Falle (sv_d > 1) --- wegen der eventuell
+  vorhandenen Raster nicht wie oben und einem blocking-step von 1 erreichen.
+  Dann w"urde in den entsprechenden Zweigen des Baumes ein komplettes Raster
+  n"amlich keinen Platz mehr finden.
+  Ein blocking von 1 erreicht man vielmehr dadurch, da"s f"ur die entsprechende
+  Dimension kein 'block[d]'-Zweig gebildet wird, sondern sofort der 'step[d]'-
+  Zweig im Baum erscheint. Dem kann sich dann die blocking-Hierarchie f"ur die
+  nachfolgenden Dimensionen anschlie"sen.
+  Also etwa im Beispiel mit bv = (1,156):
+
+    0000->0500, step[0] 1
+                     0->1:    0->1500, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e1
+    0000->0500, step[0] 9
+                     0->2: 1500->4000, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e2
+                     2->9: 1500->4000, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e1
+    0500->3000, step[0] 1
+                     0->1:    0->1500, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e2
+    0500->3000, step[0] 9
+                     0->4: 1500->4000, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e1
+                     4->6: 1500->4000, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e2
+                     6->9: 1500->4000, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e1
+    3000->4000, step[0] 1
+                     0->1:    0->1000, block[1] 156:
+                                             0->156, step[1] 1
+                                                          0->1: e3
+    3000->4000, step[0] 1
+                     0->1: 1000->4000, block[1] 156:
+                                             0->156, step[1] 3
+                                                          0->1: e3
+                                                          1->3: e4
+
+  Nach dieser Systematik l"a"st sich blocking (bv_d > 1) und non-blocking
+  (bv_d = 1) bei Bedarf f"ur alle Dimensionen und Level (hierarchisches
+  blocking) mischen.
+  Auf Grund der gew"ahlten Baumdarstellung lassen sich die nachfolgenden
+  Transformationen (Schritt 6 bis 9) in jedem Fall auf "ubersichtliche und
+  einfach zu definierende Art und Weise durchf"uhren:
+  Es m"ussen nur Indexgrenzen von Knoten und deren Unterb"aume verglichen
+  werden; u. U. werden Unterb"aume kopiert, gel"oscht oder verschoben --- aber
+  all dies geschieht lokal, unabh"angig von der genauen Position im Baum,
+  und funktioniert f"ur jeden Knotentyp (step, block, ...).
+  Auch f"ur die Code-Erzeugung im letzten Schritt braucht nur der Typ eines
+  Knotens mit dem Wert seiner Attribute bekannt zu sein, nicht seine Position
+  im Baum.
+
+  Mit den Originalzahlen (f"ur etwas pathologische Verh"altnisse) ergibt sich
+  f"ur das Beispiel nach dem blocking mit bv = (180,156):
+
+    000->050, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, step[1] 1
+                                              0->1: e1
+    000->050, block[0] 180:
+        150->400, block[1] 156:
+              0->180, step[0] 9
+                           0->2: 0->156, step[1] 1
+                                              0->1: e2
+                           2->9: 0->156, step[1] 1
+                                              0->1: e1
+    050->300, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, step[1] 1
+                                              0->1: e2
+    050->300, block[0] 180:
+        150->400, block[1] 156:
+              0->180, step[0] 9
+                           0->4: 0->156, step[1] 1
+                                              0->1: e1
+                           4->6: 0->156, step[1] 1
+                                              0->1: e2
+                           6->9: 0->156, step[1] 1
+                                              0->1: e1
+    300->400, block[0] 180:
+        000->100, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, step[1] 1
+                                              0->1: e3
+    300->400, block[0] 180:
+        100->400, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, step[1] 3
+                                              0->1: e3
+                                              1->3: e4
+
+  Anm.: statt sofort
+          0->50, block[0] 50: ...
+        zu schreiben, bleiben erst einmal die Originalwerte f"ur das blocking
+        stehen, da diese f"ur die Baum-Optimierung noch gebraucht werden.
+        Die angepa"sten blocking-Gr"o"sen werden auch erst f"ur das fitting
+        ben"otigt (siehe 9.Schritt)!
+
+  Mit bv = (1,156) --- wegen ubv = (1,6) darf dies nicht in (1,1) konvertiert
+  werden --- w"urde sich ergeben:
+
+      0-> 50, step[0] 1
+                   0->1:   0->150, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e1
+      0-> 50, step[0] 9
+                   0->2: 150->400, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e2
+                   2->9: 150->400, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e1
+     50->300, step[0] 1
+                   0->1:   0->150, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e2
+     50->300, step[0] 9
+                   0->4: 150->400, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e1
+                   4->6: 150->400, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e2
+                   6->9: 150->400, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e1
+    300->400, step[0] 1
+                   0->1:   0->100, block[1] 156:
+                                         0->156, step[1] 1
+                                                      0->1: e3
+    300->400, step[0] 1
+                   0->1: 100->400, block[1] 156:
+                                         0->156, step[1] 3
+                                                      0->1: e3
+                                                      1->3: e4
+
+
+5.) Unrolling-Blocking (mit sp"aterem Fitting) entsprechend den Werten aus ubv
+    ------------------
+
+    Es wird auf jedem Block f"ur jede Dimension mit (ubv_d > 1) ein weiteres
+    Blocking durchgef"uhrt.
+    Dieses unterscheidet sich jedoch von einem konventionellen hierarchischen
+    Blocking darin, da"s u. U. noch ein Fitting durchgef"uhrt wird --- siehe
+    8. Schritt)
+
+  Im Beispiel mit bv = (180,156):
+
+    000->050, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    000->050, block[0] 180:
+        150->400, block[1] 156:
+              0->180, step[0] 9
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    050->300, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+    050->300, block[0] 180:
+        150->400, block[1] 156:
+              0->180, step[0] 9
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    300->400, block[0] 180:
+        000->100, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e3
+    300->400, block[0] 180:
+        100->400, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 3
+                                                           0->1: e3
+                                                           1->3: e4
+
+  Im Beispiel mit bv = (1,156):
+
+      0-> 50, step[0] 1
+                   0->1:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+      0-> 50, step[0] 9
+                   0->2: 150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   2->9: 150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+     50->300, step[0] 1
+                   0->1:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+     50->300, step[0] 9
+                   0->4: 150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                   4->6: 150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   6->9: 150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+    300->400, step[0] 1
+                   0->1:   0->100, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e3
+    300->400, step[0] 1
+                   0->1: 100->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 3
+                                                                   0->1: e3
+                                                                   1->3: e4
+
+
+6.) Quader-Merging (Quader mit identischen Unterb"aumen kompatibel machen
+    --------------  und zusammenfassen)
+
+    -> Der Baum bildet in jeder Dimension eine Partition der betreffenden
+       Indexmengen-Projektion
+
+  Im Beispiel mit bv = (180,156):
+
+    000->050, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        150->400, block[1] 156:
+              0->180, step[0] 9
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    050->300, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+        150->400, block[1] 156:
+              0->180, step[0] 9
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    300->400, block[0] 180:
+        000->100, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e3
+        100->400, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 3
+                                                           0->1: e3
+                                                           1->3: e4
+
+  Im Beispiel mit bv = (1,156):
+
+      0-> 50, step[0] 9
+                   0->2:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   2->9:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+     50->300, step[0] 9
+                   0->4:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                   4->6:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   6->9:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+    300->400, step[0] 1
+                   0->1:   0->100, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e3
+                         100->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 3
+                                                                   0->1: e3
+                                                                   1->3: e4
+
+
+7.) Baum-Optimierung (identische Unterb"aume werden zusammengefa"st)
+    ----------------
+
+    Projektionen mit aufeinanderfolgenden Indexranges und identischen
+    Operationen (Unterb"aumen) werden zusammengefa"st.
+
+  Im Beispiel mit bv = (1,156):
+
+      0-> 50, step[0] 9
+               ...
+                   2->9:   0->150, block[1] 156: ... tree_1 ...
+
+                         150->400, block[1] 156: ... tree_1 ...
+                        zum Gl"uck stehen da ^ noch gleiche Werte!
+
+    wird zu
+
+      0-> 50, step[0] 9
+               ...
+                   2->9:   0->400, block[1] 156: ... tree_1 ...
+                          jetzt macht dieser ^ Wert wieder Sinn!
+
+  Insgesamt:
+
+      0-> 50, step[0] 9
+                   0->2:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   2->9:   0->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+     50->300, step[0] 9
+                   0->4:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                   4->6:   0->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   6->9:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+    300->400, step[0] 1
+                   0->1:   0->100, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e3
+                         100->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 3
+                                                                   0->1: e3
+                                                                   1->3: e4
+
+
+8.) Projektions-Fitting (nicht-komplette Perioden am Ende abtrennen)
+    -------------------
+    (^ nach der Optimierung liegen i. a. keine Quader mehr vor ...)
+
+    Die Grenzen des "au"sersten Knotens jeder Dimension werden auf die Anzahl
+    der abzurollenden Elemente --- also max(ubv_d, step) --- angepa"st.
+
+  Im Beispiel mit bv = (180,156):
+
+    000->045, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        150->396, block[1] 156:
+              0->180, step[0] 9
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1] 156:
+              0->180, step[0] 9
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    045->050, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->150, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        150->396, block[1] 156:
+              0->180, step[0] 5
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->5: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1] 156:
+              0->180, step[0] 5
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->5: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    050->293, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+        150->396, block[1] 156:
+              0->180, step[0] 9
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1] 156:
+              0->180, step[0] 9
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    293->300, block[0] 180:
+        000->150, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+        150->396, block[1] 156:
+              0->180, step[0] 7
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->7: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1] 156:
+              0->180, step[0] 7
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->7: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+    300->400, block[0] 180:
+        000-> 96, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e3
+        096->100, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e3
+        100->400, block[1] 156:
+              0->180, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 3
+                                                           0->1: e3
+                                                           1->3: e4
+
+  Im Beispiel mit bv = (1,156):
+
+      0-> 45, step[0] 9
+                   0->2:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   2->9:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+     45-> 50, step[0] 5
+                   0->2:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   2->5:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+     50->293, step[0] 9
+                   0->4:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                   4->6:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   6->9:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+    293->300, step[0] 7
+                   0->4:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                   4->6:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                   6->7:   0->150, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+    300->400, step[0] 1
+                   0->1:   0-> 96, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e3
+                          96->100, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e3
+                         100->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 3
+                                                                   0->1: e3
+                                                                   1->3: e4
+
+
+9.) Blockgr"o"sen an Projektionsgrenzen anpassen
+    --------------------------------------------
+
+  Im Beispiel mit bv = (180,156):
+
+    000->045, block[0]  45:
+        000->150, block[1] 150:
+              0-> 45, step[0] 1
+                           0->1: 0->150, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        150->396, block[1] 156:
+              0-> 45, step[0] 9
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1]   4:
+              0-> 45, step[0] 9
+                           0->2: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e2
+                           2->9: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e1
+    045->050, block[0]   5:
+        000->150, block[1] 150:
+              0->  5, step[0] 1
+                           0->1: 0->150, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        150->396, block[1] 156:
+              0->  5, step[0] 5
+                           0->2: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           2->5: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1]   4:
+              0->  5, step[0] 5
+                           0->2: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e2
+                           2->5: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e1
+    050->293, block[0] 180:
+        000->150, block[1] 150:
+              0->180, step[0] 1
+                           0->1: 0->150, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+        150->396, block[1] 156:
+              0->180, step[0] 9
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->9: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1]   4:
+              0->180, step[0] 9
+                           0->4: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e2
+                           6->9: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e1
+    293->300, block[0]   7:
+        000->150, block[1] 150:
+              0->  7, step[0] 1
+                           0->1: 0->150, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+        150->396, block[1] 156:
+              0->  7, step[0] 7
+                           0->4: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e2
+                           6->7: 0->156, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e1
+        396->400, block[1]   4:
+              0->  7, step[0] 7
+                           0->4: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e1
+                           4->6: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e2
+                           6->7: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e1
+    300->400, block[0] 100:
+        000-> 96, block[1]  96:
+              0->100, step[0] 1
+                           0->1: 0-> 96, ublock[1] 6:
+                                                0->6, step[1] 1
+                                                           0->1: e3
+        096->100, block[1]   4:
+              0->100, step[0] 1
+                           0->1: 0->  4, ublock[1] 4:
+                                                0->4, step[1] 1
+                                                           0->1: e3
+        100->400, block[1] 156:
+              0->100, step[0] 1
+                           0->1: 0->156, ublock[1] 6:
+                                                0->6, step[1] 3
+                                                           0->1: e3
+                                                           1->3: e4
+
+  Im Beispiel mit bv = (1,156):
+
+      0-> 45, step[0] 9
+                   0->2:   0->150, block[1] 150:
+                                         0->150, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e2
+                   2->9:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e1
+     45-> 50, step[0] 5
+                   0->2:   0->150, block[1] 150:
+                                         0->150, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e2
+                   2->5:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e1
+     50->293, step[0] 9
+                   0->4:   0->150, block[1] 150:
+                                         0->150, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e1
+                   4->6:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e2
+                   6->9:   0->150, block[1] 150:
+                                         0->150, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e1
+    293->300, step[0] 7
+                   0->4:   0->150, block[1] 150:
+                                         0->150, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e1
+                   4->6:   0->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e2
+                   6->7:   0->150, block[1] 150:
+                                         0->150, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e2
+                         150->396, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e1
+                         396->400, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e1
+    300->400, step[0] 1
+                   0->1:   0-> 96, block[1]  96:
+                                         0-> 96, ublock[1] 6:
+                                                        0->6, step[1] 1
+                                                                   0->1: e3
+                          96->100, block[1]   4:
+                                         0->  4, ublock[1] 4:
+                                                        0->4, step[1] 1
+                                                                   0->1: e3
+                         100->400, block[1] 156:
+                                         0->156, ublock[1] 6:
+                                                        0->6, step[1] 3
+                                                                   0->1: e3
+                                                                   1->3: e4
+
+
+
+interne Darstellung im Syntaxbaum:
+==================================
+
+
+  Die mei"sten Knoten verf"ugen "uber ein Attribut 'level', welches angibt,
+  wieviele Vorfahren im Baum ebenfalls die Dimension 'dim' betreffen.
+
+
+  Knotentyp:   Attribut  (Typ des Attributes)
+  -------------------------------------------
+
+    WLseg:     contents  (WLblock, WLublock, WLstride)
+               next      (WLseg)
+
+
+    WLblock:   level     (int)
+               dim       (int)
+               bound1    (int)
+               bound2    (int)
+               step      (int)                // blocking-factor
+               nextdim   (WLblock)            // blocking-node of next dim
+               contents  (WLublock, WLstride) // op. of interior of block
+               next      (WLblock)            // next blocking this dim
+
+
+    WLublock:  level     (int)
+               dim       (int)
+               bound1    (int)
+               bound2    (int)
+               step      (int)
+               nextdim   (WLublock)           // only one of this ...
+               contents  (WLstride)           // ... nodes is != NULL
+               next      (WLublock)
+
+
+    WLstride:  level     (int)
+               dim       (int)
+               bound1    (int)
+               bound2    (int)
+               step      (int)
+               unrolling (bool)      // is unrolling wanted? ...
+                                     // ... e. g. because of a WLublock-node
+               contents  (WLgrid)    // description of the inner grids
+               next      (WLstride)  // next stride this dim
+
+
+    WLgrid:    dim       (int)
+               bound1    (int)                         // == offset
+               bound2    (int)                         // == offset + width
+               unrolling (bool)
+               nextdim   (WLblock, WLublock, WLstride) // only one of this ..
+               code      (WLcode)                      // .. nodes is != NULL
+               next      (WLgrid)
+
+
+    WLcode:    cblock    (block)
+               cexpr     ("expr")
+
+
+*****************************************************************************/
+
 #include "tree.h"
 #include "free.h"
 
@@ -72,6 +1300,8 @@
 
 #include "DupTree.h"
 #include "dbug.h"
+
+#include <limits.h> /* INT_MAX */
 
 /*
  * these macros are used in 'Parts2Strides' to manage
@@ -134,48 +1364,91 @@
 void
 ComputeIndexMinMax (int **idx_min, int **idx_max, int dims, node *strides)
 {
-    int d;
+    node *stride;
+    int min, max, d;
 
-    DBUG_ENTER (" ComputeIndexMinMax");
+    DBUG_ENTER ("ComputeIndexMinMax");
 
     *idx_min = (int *)MALLOC (dims * sizeof (int));
     *idx_max = (int *)MALLOC (dims * sizeof (int));
 
-    for (d = 0; d < dims; d++) {
+    switch (NODE_TYPE (strides)) {
 
-        DBUG_ASSERT (((strides != NULL)
-                      && ((NODE_TYPE (strides) == N_WLstride)
-                          || (NODE_TYPE (strides) == N_WLstriVar))),
-                     "no stride found");
+    case N_WLstride:
 
-        if (NODE_TYPE (strides) == N_WLstride) {
+        /*
+         * initialize 'idx_min', 'idx_max'.
+         */
+        for (d = 0; d < dims; d++) {
+            (*idx_min)[d] = 0;
+            (*idx_max)[d] = INT_MAX;
+        }
 
-            (*idx_min)[d] = WLSTRIDE_BOUND1 (strides);
+        /*
+         * we must visit every dim in every stride.
+         */
+        while (strides != NULL) {
+            stride = strides;
+            for (d = 0; d < dims; d++) {
+                DBUG_ASSERT ((stride != NULL), "no stride found");
 
-            while (WLSTRIDE_NEXT (strides) != NULL) {
-                strides = WLSTRIDE_NEXT (strides);
+                min = WLSTRIDE_BOUND1 (stride);
+                max = WLSTRIDE_BOUND2 (stride);
+                stride = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (stride));
+
+                if (min < (*idx_min)[d]) {
+                    (*idx_min)[d] = min;
+                }
+                if (max > (*idx_max)[d]) {
+                    (*idx_max)[d] = max;
+                }
             }
-            (*idx_max)[d] = WLSTRIDE_BOUND2 (strides);
+            strides = WLSTRIDE_NEXT (strides);
+        }
+        break;
 
-            strides = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (strides));
+    case N_WLstriVar:
 
-        } else {
+        /*
+         * we have not a cube, but a fully optimized chain.
+         *  -> we need to traverse the first stride only.
+         */
+        for (d = 0; d < dims; d++) {
+            DBUG_ASSERT ((strides != NULL), "no stride found");
 
-            DBUG_ASSERT ((NODE_TYPE (WLSTRIVAR_BOUND1 (strides)) == N_num),
-                         "variable bound found");
-            (*idx_min)[d] = NUM_VAL (WLSTRIVAR_BOUND1 (strides));
-
-            while (WLSTRIVAR_NEXT (strides) != NULL) {
-                strides = WLSTRIVAR_NEXT (strides);
+            if (NODE_TYPE (strides) == N_WLstride) {
+                (*idx_min)[d] = WLSTRIDE_BOUND1 (strides);
+            } else { /* N_WLstriVar */
+                DBUG_ASSERT ((NODE_TYPE (WLSTRIVAR_BOUND1 (strides)) == N_num),
+                             "variable bound found");
+                (*idx_min)[d] = NUM_VAL (WLSTRIVAR_BOUND1 (strides));
             }
-            DBUG_ASSERT ((NODE_TYPE (WLSTRIVAR_BOUND2 (strides)) == N_num),
-                         "variable bound found");
-            (*idx_max)[d] = NUM_VAL (WLSTRIVAR_BOUND2 (strides));
+
+            /*
+             * we will find the maximum in the last stride of current dim
+             */
+            stride = strides;
+            while (WLSTRIVAR_NEXT (stride) != NULL) {
+                stride = WLSTRIVAR_NEXT (stride);
+            }
+
+            if (NODE_TYPE (stride) == N_WLstride) {
+                (*idx_max)[d] = WLSTRIDE_BOUND2 (stride);
+            } else { /* N_WLstriVar */
+                DBUG_ASSERT ((NODE_TYPE (WLSTRIVAR_BOUND2 (stride)) == N_num),
+                             "variable bound found");
+                (*idx_max)[d] = NUM_VAL (WLSTRIVAR_BOUND2 (stride));
+            }
 
             strides = (NODE_TYPE (WLSTRIVAR_CONTENTS (strides)) == N_WLgridVar)
                         ? WLGRIDVAR_NEXTDIM (WLSTRIVAR_CONTENTS (strides))
                         : WLGRID_NEXTDIM (WLSTRIVAR_CONTENTS (strides));
         }
+        break;
+
+    default:
+
+        DBUG_ASSERT ((0), "wrong node type found");
     }
 
     DBUG_VOID_RETURN;
@@ -940,7 +2213,7 @@ node *
 SetSegs (node *pragma, node *cubes, int dims)
 {
     node *aps;
-    node *segs = NULL;
+    node *segs;
 
     DBUG_ENTER ("SetSegs");
 
@@ -948,9 +2221,9 @@ SetSegs (node *pragma, node *cubes, int dims)
      * create default configuration
      */
 #if 1 /* -> sac2c flag!?! */
-    segs = All (segs, NULL, cubes, dims);
+    segs = All (NULL, NULL, cubes, dims);
 #else
-    segs = Cubes (segs, NULL, cubes, dims);
+    segs = Cubes (NULL, NULL, cubes, dims);
 #endif
 
     /*
@@ -1263,10 +2536,22 @@ BlockStride (node *stride, long *bv)
                 grids = WLGRID_NEXT (grids);
             } while (grids != NULL);
 
-            /* fit bounds of stride to blocking step */
-            DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] > 1), "wrong bv value found");
+            /*
+             * contains bv an illegal value?
+             *  -> abort compilation and produce an error-message
+             */
+            DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] > 1),
+                         "blocking step <= 1\n"
+                         "please check the parameters of the wlcomp-pragma");
             DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] >= WLSTRIDE_STEP (curr_stride)),
-                         "blocking step (>1) is smaller than stride step");
+                         "blocking step is greater than 1 and smaller than stride step"
+                         "please check the parameters of the wlcomp-pragma");
+            DBUG_ASSERT (((bv[WLSTRIDE_DIM (curr_stride)] % WLSTRIDE_STEP (curr_stride))
+                          == 0),
+                         "stride step is not a divisor of blocking step"
+                         "please check the parameters of the wlcomp-pragma");
+
+            /* fit bounds of stride to blocking step */
             WLSTRIDE_BOUND1 (curr_stride) = 0;
             WLSTRIDE_BOUND2 (curr_stride) = bv[WLSTRIDE_DIM (curr_stride)];
 
@@ -1388,7 +2673,10 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
                     lastdim = NULL;
                     for (d = WLSTRIDE_DIM (curr_stride); d < dims; d++) {
                         DBUG_ASSERT ((NODE_TYPE (contents) == N_WLstride),
-                                     "wrong hierarchical blocking");
+                                     "no stride found");
+                        DBUG_ASSERT (((d == WLSTRIDE_DIM (curr_stride))
+                                      || (WLSTRIDE_NEXT (contents) == NULL)),
+                                     "more than one stride found");
 
                         block
                           = MakeWLblock (level, WLSTRIDE_DIM (contents),
@@ -1396,7 +2684,10 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
                                          WLSTRIDE_BOUND2 (contents),
                                          bv[WLSTRIDE_DIM (contents)], NULL, NULL, NULL);
 
-                        if (unroll > 0) { /* unrolling-blocking wanted? */
+                        /*
+                         * unrolling-blocking wanted?
+                         */
+                        if (unroll > 0) {
                             NODE_TYPE (block) = N_WLublock;
                         }
 
@@ -1407,7 +2698,9 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
                              */
                             WLBLOCK_NEXTDIM (lastdim) = block;
                         } else {
-                            /* current dim is first blocking dim */
+                            /*
+                             * current dim is first blocking dim
+                             */
                             if (last_block != NULL) {
                                 /* append to last block */
                                 WLBLOCK_NEXT (last_block) = block;
@@ -1784,6 +3077,7 @@ IsEqualWLnodes (node *tree1, node *tree2)
         tmp1 = tree1;
         tmp2 = tree2;
         do {
+            DBUG_ASSERT ((tmp2 != NULL), "trees differ in length");
 
             /*
              * compare type-independent data
@@ -1997,8 +3291,9 @@ OptimizeWL (node *nodes)
         if (next != NULL) {
             if ((WLNODE_STEP (nodes) == WLNODE_STEP (next))
                 && (WLNODE_BOUND2 (nodes) == WLNODE_BOUND1 (next))) {
-                if ((NODE_TYPE (comp1) != N_Ncode) ? IsEqualWLnodes (comp1, comp2)
-                                                   : (comp1 == comp2)) {
+                if (((comp1 != NULL) && (NODE_TYPE (comp1) != N_Ncode))
+                      ? IsEqualWLnodes (comp1, comp2)
+                      : (comp1 == comp2)) {
                     /* concate 'nodes' and 'next' */
                     WLNODE_BOUND2 (nodes) = WLNODE_BOUND2 (next);
                     /* free useless data in 'next' */
@@ -2306,19 +3601,17 @@ NormalizeWL (node *nodes, int *idx_max)
 /******************************************************************************
  *
  * function:
- *   node *GenerateCompleteGrid( node *stride_var, node *code_template)
+ *   node *GenerateCompleteGrid( node *stride_var)
  *
  * description:
  *   Supplements missings parts of the grid in 'stride_var'.
- *   For the new grid-parts 'WLGRID_CODE_TEMPLATE' is set to 1,
- *    and 'WLGRID_CODE' is set to 'code_template'.
  *
  *   This function is called by 'ComputeOneCube'.
  *
  ******************************************************************************/
 
 node *
-GenerateCompleteGrid (node *stride_var, node *code_template)
+GenerateCompleteGrid (node *stride_var)
 {
     node *grid_var;
 
@@ -2343,15 +3636,12 @@ GenerateCompleteGrid (node *stride_var, node *code_template)
                 WLGRID_NEXT (grid_var)
                   = MakeWLgrid (0, WLGRID_DIM (grid_var), WLGRID_BOUND2 (grid_var),
                                 WLSTRIDE_STEP (stride_var), 0, NULL, NULL, NULL);
-                WLGRID_CODE_TEMPLATE (WLGRID_NEXT (grid_var)) = 1;
-                WLGRID_CODE (WLGRID_NEXT (grid_var)) = code_template;
             }
 
             /*
              * next dim
              */
-            WLGRID_NEXTDIM (grid_var)
-              = GenerateCompleteGrid (WLGRID_NEXTDIM (grid_var), code_template);
+            WLGRID_NEXTDIM (grid_var) = GenerateCompleteGrid (WLGRID_NEXTDIM (grid_var));
 
         } else { /* NODE_TYPE( stride_var) == N_WLstriVar */
 
@@ -2374,15 +3664,13 @@ GenerateCompleteGrid (node *stride_var, node *code_template)
                                        MakeNum (WLGRID_BOUND2 (grid_var)),
                                        DupNode (WLSTRIVAR_STEP (stride_var)), NULL, NULL,
                                        NULL);
-                    WLGRIDVAR_CODE_TEMPLATE (WLGRID_NEXT (grid_var)) = 1;
-                    WLGRIDVAR_CODE (WLGRID_NEXT (grid_var)) = code_template;
                 }
 
                 /*
                  * next dim
                  */
                 WLGRID_NEXTDIM (grid_var)
-                  = GenerateCompleteGrid (WLGRID_NEXTDIM (grid_var), code_template);
+                  = GenerateCompleteGrid (WLGRID_NEXTDIM (grid_var));
 
             } else { /* NODE_TYPE( grid_var) == N_WLgridVar */
                 DBUG_ASSERT (((NODE_TYPE (WLGRIDVAR_BOUND1 (grid_var)) == N_num)
@@ -2402,15 +3690,13 @@ GenerateCompleteGrid (node *stride_var, node *code_template)
                                        DupNode (WLGRIDVAR_BOUND2 (grid_var)),
                                        DupNode (WLSTRIVAR_STEP (stride_var)), NULL, NULL,
                                        NULL);
-                    WLGRIDVAR_CODE_TEMPLATE (WLGRIDVAR_NEXT (grid_var)) = 1;
-                    WLGRIDVAR_CODE (WLGRIDVAR_NEXT (grid_var)) = code_template;
                 }
 
                 /*
                  * next dim
                  */
                 WLGRIDVAR_NEXTDIM (grid_var)
-                  = GenerateCompleteGrid (WLGRIDVAR_NEXTDIM (grid_var), code_template);
+                  = GenerateCompleteGrid (WLGRIDVAR_NEXTDIM (grid_var));
             }
         }
     }
@@ -2421,20 +3707,18 @@ GenerateCompleteGrid (node *stride_var, node *code_template)
 /******************************************************************************
  *
  * function:
- *   node *GenerateShapeStrides( int dim, node *code_template,
- *                               int dims, shpseg* shape)
+ *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
  *
  * description:
  *   Returns strides/grids of the size found in 'shape'.
- *   For the new grids 'WLGRID_CODE_TEMPLATE' is set to 1,
- *    and 'WLGRID_CODE' is set to 'code_template'.
  *
- *   This function is called by 'GenerateCompleteDomain'.
+ *   This function is called by 'GenerateCompleteDomain',
+ *    'GenerateCompleteDomainVar'.
  *
  ******************************************************************************/
 
 node *
-GenerateShapeStrides (int dim, node *code_template, int dims, shpseg *shape)
+GenerateShapeStrides (int dim, int dims, shpseg *shape)
 {
     node *new_grid, *strides = NULL;
 
@@ -2442,14 +3726,7 @@ GenerateShapeStrides (int dim, node *code_template, int dims, shpseg *shape)
 
     if (dim < dims) {
         new_grid = MakeWLgrid (0, dim, 0, 1, 0,
-                               GenerateShapeStrides (dim + 1, code_template, dims, shape),
-                               NULL, NULL);
-
-        if (dim == dims - 1) {
-            WLGRID_CODE_TEMPLATE (new_grid) = 1;
-            WLGRID_CODE (new_grid) = code_template;
-        }
-
+                               GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
         strides
           = MakeWLstride (0, dim, 0, SHPSEG_SHAPE (shape, dim), 1, 0, new_grid, NULL);
     }
@@ -2460,269 +3737,379 @@ GenerateShapeStrides (int dim, node *code_template, int dims, shpseg *shape)
 /******************************************************************************
  *
  * function:
- *   node *GenerateCompleteDomain( node *stride_var, node *code_template,
+ *   node *GenerateCompleteDomain( node *strides,
  *                                 int dims, shpseg *shape)
  *
  * description:
- *   supplements strides/grids for the complement of 'stride_var'.
- *   For the new grids 'WLGRID_CODE_TEMPLATE' is set to 1,
- *    and 'WLGRID_CODE' is set to 'code_template'.
+ *   Supplements strides/grids for the complement of 'stride'.
+ *
+ *   For constant strides we must *not* optimize and merge strides, because
+ *   'BlockWL()' can not handle them!! We must create simple cubes instead.
+ *   Example:
+ *
+ *       0 -> 10 step 2
+ *               0 -> 1: 0 -> 5  step 1
+ *                               0 -> 1: op
+ *
+ *     is *not* converted into (the following is not a cube!!)
+ *
+ *       0 -> 10 step 2
+ *               0 -> 1: 0 -> 5  step 1
+ *                               0 -> 1: op
+ *                       5 -> 10 step 1
+ *                               0 -> 1: init/copy/noop
+ *               1 -> 2: 0 -> 10 step 1
+ *                               0 -> 1: init/copy/noop
+ *
+ *     but into
+ *
+ *       0 -> 10 step 2
+ *               0 -> 1: 0 -> 5  step 1
+ *                               0 -> 1: op
+ *               1 -> 2: 0 -> 5  step 1
+ *                               0 -> 1: init/copy/noop
+ *       0 -> 10 step 1
+ *               0 -> 1: 5 -> 10 step 1
+ *                               0 -> 1: init/copy/noop
  *
  *   This function is called by 'ComputeOneCube'.
  *
  ******************************************************************************/
 
 node *
-GenerateCompleteDomain (node *stride_var, node *code_template, int dims, shpseg *shape)
+GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
 {
-    node *grid_var, *new_grid;
+    node *new_strides, *comp_strides, *stride, *grid, *comp_stride, *comp_grid,
+      *last_comp_grid, *new_stride, *new_grid, *dup_strides, *last_dup_grid, *next_dim;
 
     DBUG_ENTER ("GenerateCompleteDomain");
 
     DBUG_ASSERT ((shape != NULL), "no shape found");
-    if (stride_var != NULL) {
-        grid_var = WLSTRIANY_CONTENTS (stride_var);
 
-        if (NODE_TYPE (stride_var) == N_WLstride) {
-            DBUG_ASSERT ((NODE_TYPE (grid_var) == N_WLgrid), "wrong node type found");
+    /*
+     * we duplicate 'strides'
+     *  -> later on we use this to generate complement strides
+     */
+    DBUG_ASSERT ((WLSTRIDE_NEXT (strides) == NULL), "more than one stride found");
+    comp_strides = DupNode (strides);
+    /*
+     * in the duplicated chain we set all steps to '1'
+     */
+    comp_stride = comp_strides;
+    while (comp_stride != NULL) {
+        WLSTRIDE_STEP (comp_stride) = 1;
+        comp_grid = WLSTRIDE_CONTENTS (comp_stride);
+        WLSTRIDE_BOUND1 (comp_stride) += WLGRID_BOUND1 (comp_grid);
+        WLGRID_BOUND1 (comp_grid) = 0;
+        WLGRID_BOUND2 (comp_grid) = 1;
+        comp_stride = WLGRID_NEXTDIM (comp_grid);
+    }
+    /*
+     * this chain is base for complements.
+     *  -> we must remove the code.
+     */
+    WLGRID_CODE (comp_grid) = NULL;
+
+    new_strides = NULL;
+    stride = strides;
+    comp_stride = comp_strides;
+    last_comp_grid = NULL;
+    while (stride != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride), "no constant stride found");
+
+        grid = WLSTRIDE_CONTENTS (stride);
+        comp_grid = WLSTRIDE_CONTENTS (comp_stride);
+        DBUG_ASSERT ((NODE_TYPE (grid) == N_WLgrid), "no constant grid found");
+
+        /*
+         * normalize the bounds
+         */
+        WLSTRIDE_BOUND1 (stride) += WLGRID_BOUND1 (grid);
+        WLGRID_BOUND2 (grid) -= WLGRID_BOUND1 (grid);
+        WLGRID_BOUND1 (grid) = 0;
+
+        /*
+         * insert lower part of complement
+         */
+        if (WLSTRIDE_BOUND2 (stride) < SHPSEG_SHAPE (shape, WLSTRIDE_DIM (stride))) {
+            if (last_comp_grid != NULL) {
+                /*
+                 * duplicate 'comp_strides' from root til 'last_comp_grid'.
+                 */
+                next_dim = WLGRID_NEXTDIM (last_comp_grid);
+                WLGRID_NEXTDIM (last_comp_grid) = NULL;
+                dup_strides = DupNode (comp_strides);
+                WLGRID_NEXTDIM (last_comp_grid) = next_dim;
+                /*
+                 * go to duplicated 'last_comp_grid'
+                 */
+                last_dup_grid = WLSTRIDE_CONTENTS (dup_strides);
+                while (WLGRID_NEXTDIM (last_dup_grid) != NULL) {
+                    last_dup_grid = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (last_dup_grid));
+                }
+            }
 
             /*
-             * normalize the bounds
+             * generate new stride/grid
              */
-            WLSTRIDE_BOUND1 (stride_var) += WLGRID_BOUND1 (grid_var);
-            WLGRID_BOUND2 (grid_var) -= WLGRID_BOUND1 (grid_var);
-            WLGRID_BOUND1 (grid_var) = 0;
+            new_grid
+              = MakeWLgrid (0, WLGRID_DIM (grid), 0, 1, 0,
+                            GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
+                            NULL, NULL);
+            new_stride = MakeWLstride (0, WLSTRIDE_DIM (stride), WLSTRIDE_BOUND2 (stride),
+                                       SHPSEG_SHAPE (shape, WLSTRIDE_DIM (stride)), 1, 0,
+                                       new_grid, NULL);
+
+            /*
+             * append new stride/grid to duplicated 'comp_strides'
+             */
+            if (last_comp_grid != NULL) {
+                WLGRID_NEXTDIM (last_dup_grid) = new_stride;
+            } else {
+                dup_strides = new_stride;
+            }
+
+            /*
+             * insert 'dup_strides' into 'new_strides'
+             */
+            new_strides = InsertWLnodes (new_strides, dup_strides);
+        }
+
+        /*
+         * insert upper part of complement
+         */
+        if (WLSTRIDE_BOUND1 (stride) > 0) {
+            if (last_comp_grid != NULL) {
+                /*
+                 * duplicate 'comp_strides' from root til 'last_comp_grid'.
+                 */
+                next_dim = WLGRID_NEXTDIM (last_comp_grid);
+                WLGRID_NEXTDIM (last_comp_grid) = NULL;
+                dup_strides = DupNode (comp_strides);
+                WLGRID_NEXTDIM (last_comp_grid) = next_dim;
+                /*
+                 * go to duplicated 'last_comp_grid'
+                 */
+                last_dup_grid = WLSTRIDE_CONTENTS (dup_strides);
+                while (WLGRID_NEXTDIM (last_dup_grid) != NULL) {
+                    last_dup_grid = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (last_dup_grid));
+                }
+            }
+
+            /*
+             * generate new stride/grid
+             */
+            new_grid
+              = MakeWLgrid (0, WLGRID_DIM (grid), 0, 1, 0,
+                            GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
+                            NULL, NULL);
+            new_stride = MakeWLstride (0, WLSTRIDE_DIM (stride), 0,
+                                       WLSTRIDE_BOUND1 (stride), 1, 0, new_grid, NULL);
+
+            /*
+             * append new stride/grid to duplicated 'comp_strides'
+             */
+            if (last_comp_grid != NULL) {
+                WLGRID_NEXTDIM (last_dup_grid) = new_stride;
+            } else {
+                dup_strides = new_stride;
+            }
+
+            /*
+             * insert 'dup_strides' into 'new_strides'
+             */
+            new_strides = InsertWLnodes (new_strides, dup_strides);
+        }
+
+        /*
+         * is the grid incomplete?
+         */
+        if (WLGRID_BOUND2 (grid) - WLGRID_BOUND1 (grid) < WLSTRIDE_STEP (stride)) {
+            WLGRID_NEXT (grid)
+              = MakeWLgrid (0, WLGRID_DIM (grid), WLGRID_BOUND2 (grid),
+                            WLSTRIDE_STEP (stride), 0,
+                            DupNode (WLGRID_NEXTDIM (comp_grid)), NULL, NULL);
+        }
+
+        /*
+         * next dim
+         */
+        stride = WLGRID_NEXTDIM (grid);
+        comp_stride = WLGRID_NEXTDIM (comp_grid);
+        last_comp_grid = comp_grid;
+    }
+
+    /*
+     * insert completed stride/grid into 'new_strides'
+     */
+    new_strides = InsertWLnodes (new_strides, strides);
+
+    /*
+     * the copy of 'strides' is useless now
+     */
+    comp_strides = FreeTree (comp_strides);
+
+    DBUG_RETURN (new_strides);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *GenerateCompleteDomainVar( node *stride_var, int dims, shpseg *shape)
+ *
+ * description:
+ *   Supplements strides/grids for the complement of 'stride_var'.
+ *
+ *   For variable strides we do not call 'SplitWL()', 'MergeWL()', 'OptWL()', ...
+ *   therefore we must create optimized and merged strides/grids.
+ *   (This means, we actually do not create a cube!!!)
+ *   Example:
+ *
+ *       0 -> 10 step 2
+ *               0 -> 1: a -> b  step 1
+ *                               0 -> 1: op
+ *
+ *     is converted into
+ *
+ *       0 -> 10 step 1
+ *               0 -> 1: 0 -> a  step 1
+ *                               0 -> 1: init/copy/noop
+ *                       a -> b  step 1
+ *                               0 -> 1: op
+ *                       b -> 10 step 1
+ *                               0 -> 1: init/copy/noop
+ *               1 -> 2: 0 -> 10 step 1
+ *                               0 -> 1: init/copy/noop
+ *
+ *   This function is called by 'ComputeOneCube'.
+ *
+ ******************************************************************************/
+
+node *
+GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
+{
+    node *grid_var, *new_grid;
+
+    DBUG_ENTER ("GenerateCompleteDomainVar");
+
+    DBUG_ASSERT ((shape != NULL), "no shape found");
+
+    if (stride_var != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (stride_var) == N_WLstriVar), "no variable stride found");
+
+        grid_var = WLSTRIANY_CONTENTS (stride_var);
+        /*
+         * CAUTION: the grid can be a N_WLgrid node!!!
+         */
+
+        if (NODE_TYPE (grid_var) == N_WLgrid) {
 
             /*
              * is the grid incomplete?
              */
-            if (WLGRID_BOUND2 (grid_var) - WLGRID_BOUND1 (grid_var)
-                < WLSTRIDE_STEP (stride_var)) {
-
+            if ((NODE_TYPE (WLSTRIVAR_STEP (stride_var)) != N_num)
+                || (WLGRID_BOUND2 (grid_var) < NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
                 WLGRID_NEXT (grid_var)
-                  = MakeWLgrid (0, WLGRID_DIM (grid_var), WLGRID_BOUND2 (grid_var),
-                                WLSTRIDE_STEP (stride_var), 0,
-                                GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                      code_template, dims, shape),
-                                NULL, NULL);
-
-                if (WLGRID_DIM (grid_var) == dims - 1) {
-                    WLGRID_CODE_TEMPLATE (WLGRID_NEXT (grid_var)) = 1;
-                    WLGRID_CODE (WLGRID_NEXT (grid_var)) = code_template;
-                }
+                  = MakeWLgridVar (WLGRID_DIM (grid_var),
+                                   MakeNum (WLGRID_BOUND2 (grid_var)),
+                                   DupNode (WLSTRIVAR_STEP (stride_var)),
+                                   GenerateShapeStrides (WLGRID_DIM (grid_var) + 1, dims,
+                                                         shape),
+                                   NULL, NULL);
             }
 
             /*
              * next dim
              */
             WLGRID_NEXTDIM (grid_var)
-              = GenerateCompleteDomain (WLGRID_NEXTDIM (grid_var), code_template, dims,
-                                        shape);
+              = GenerateCompleteDomainVar (WLGRID_NEXTDIM (grid_var), dims, shape);
 
             /*
              * append lower part of complement
              */
-            if (WLSTRIDE_BOUND2 (stride_var)
-                < SHPSEG_SHAPE (shape, WLSTRIDE_DIM (stride_var))) {
-
+            if ((NODE_TYPE (WLSTRIVAR_BOUND2 (stride_var)) != N_num)
+                || (NUM_VAL (WLSTRIVAR_BOUND2 (stride_var))
+                    < SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var)))) {
                 new_grid = MakeWLgrid (0, WLGRID_DIM (grid_var), 0, 1, 0,
                                        GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                             code_template, dims, shape),
+                                                             dims, shape),
                                        NULL, NULL);
-
-                if (WLGRID_DIM (grid_var) == dims - 1) {
-                    WLGRID_CODE_TEMPLATE (new_grid) = 1;
-                    WLGRID_CODE (new_grid) = code_template;
-                }
-
-                WLSTRIDE_NEXT (stride_var)
-                  = MakeWLstride (0, WLSTRIDE_DIM (stride_var),
-                                  WLSTRIDE_BOUND2 (stride_var),
-                                  SHPSEG_SHAPE (shape, WLSTRIDE_DIM (stride_var)), 1, 0,
-                                  new_grid, NULL);
+                WLSTRIVAR_NEXT (stride_var)
+                  = MakeWLstriVar (WLSTRIVAR_DIM (stride_var),
+                                   DupNode (WLSTRIVAR_BOUND2 (stride_var)),
+                                   MakeNum (
+                                     SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var))),
+                                   MakeNum (1), new_grid, NULL);
             }
 
             /*
              * insert upper part of complement
              */
-            if (WLSTRIDE_BOUND1 (stride_var) > 0) {
-
+            if ((NODE_TYPE (WLSTRIVAR_BOUND1 (stride_var)) != N_num)
+                || (NUM_VAL (WLSTRIVAR_BOUND1 (stride_var)) > 0)) {
                 new_grid = MakeWLgrid (0, WLGRID_DIM (grid_var), 0, 1, 0,
                                        GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                             code_template, dims, shape),
+                                                             dims, shape),
                                        NULL, NULL);
-
-                if (WLGRID_DIM (grid_var) == dims - 1) {
-                    WLGRID_CODE_TEMPLATE (new_grid) = 1;
-                    WLGRID_CODE (new_grid) = code_template;
-                }
-
-                stride_var = MakeWLstride (0, WLSTRIDE_DIM (stride_var), 0,
-                                           WLSTRIDE_BOUND1 (stride_var), 1, 0, new_grid,
-                                           stride_var);
+                stride_var = MakeWLstriVar (WLSTRIVAR_DIM (stride_var), MakeNum (0),
+                                            DupNode (WLSTRIVAR_BOUND1 (stride_var)),
+                                            MakeNum (1), new_grid, stride_var);
             }
 
-        } else { /* NODE_TYPE( stride_var) == N_WLstriVar */
+        } else { /* NODE_TYPE( grid_var) == N_WLgridVar */
+
             /*
-             * CAUTION: the grid can be a N_WLgrid node!!!
+             * is the grid incomplete?
              */
+            if ((NODE_TYPE (WLGRIDVAR_BOUND2 (grid_var)) != N_num)
+                || (NODE_TYPE (WLSTRIVAR_STEP (stride_var)) != N_num)
+                || (NUM_VAL (WLGRIDVAR_BOUND2 (grid_var))
+                    < NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
+                WLGRIDVAR_NEXT (grid_var)
+                  = MakeWLgridVar (WLGRIDVAR_DIM (grid_var),
+                                   DupNode (WLGRIDVAR_BOUND2 (grid_var)),
+                                   DupNode (WLSTRIVAR_STEP (stride_var)),
+                                   GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
+                                                         dims, shape),
+                                   NULL, NULL);
+            }
 
-            if (NODE_TYPE (grid_var) == N_WLgrid) {
+            /*
+             * next dim
+             */
+            WLGRIDVAR_NEXTDIM (grid_var)
+              = GenerateCompleteDomainVar (WLGRIDVAR_NEXTDIM (grid_var), dims, shape);
 
-                /*
-                 * is the grid incomplete?
-                 */
-                if ((NODE_TYPE (WLSTRIVAR_STEP (stride_var)) != N_num)
-                    || (WLGRID_BOUND2 (grid_var)
-                        < NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
-
-                    WLGRID_NEXT (grid_var)
-                      = MakeWLgridVar (WLGRID_DIM (grid_var),
-                                       MakeNum (WLGRID_BOUND2 (grid_var)),
-                                       DupNode (WLSTRIVAR_STEP (stride_var)),
-                                       GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                             code_template, dims, shape),
-                                       NULL, NULL);
-
-                    if (WLGRID_DIM (grid_var) == dims - 1) {
-                        WLGRIDVAR_CODE_TEMPLATE (WLGRID_NEXT (grid_var)) = 1;
-                        WLGRIDVAR_CODE (WLGRID_NEXT (grid_var)) = code_template;
-                    }
-                }
-
-                /*
-                 * next dim
-                 */
-                WLGRID_NEXTDIM (grid_var)
-                  = GenerateCompleteDomain (WLGRID_NEXTDIM (grid_var), code_template,
-                                            dims, shape);
-
-                /*
-                 * append lower part of complement
-                 */
-                if ((NODE_TYPE (WLSTRIVAR_BOUND2 (stride_var)) != N_num)
-                    || (NUM_VAL (WLSTRIVAR_BOUND2 (stride_var))
-                        < SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var)))) {
-
-                    new_grid
-                      = MakeWLgrid (0, WLGRID_DIM (grid_var), 0, 1, 0,
-                                    GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                          code_template, dims, shape),
-                                    NULL, NULL);
-
-                    if (WLGRID_DIM (grid_var) == dims - 1) {
-                        WLGRID_CODE_TEMPLATE (new_grid) = 1;
-                        WLGRID_CODE (new_grid) = code_template;
-                    }
-
-                    WLSTRIVAR_NEXT (stride_var)
-                      = MakeWLstriVar (WLSTRIVAR_DIM (stride_var),
-                                       DupNode (WLSTRIVAR_BOUND2 (stride_var)),
-                                       MakeNum (SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (
-                                                                       stride_var))),
-                                       MakeNum (1), new_grid, NULL);
-                }
-
-                /*
-                 * insert upper part of complement
-                 */
-                if ((NODE_TYPE (WLSTRIVAR_BOUND1 (stride_var)) != N_num)
-                    || (NUM_VAL (WLSTRIVAR_BOUND1 (stride_var)) > 0)) {
-
-                    new_grid
-                      = MakeWLgrid (0, WLGRID_DIM (grid_var), 0, 1, 0,
-                                    GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                          code_template, dims, shape),
-                                    NULL, NULL);
-
-                    if (WLGRID_DIM (grid_var) == dims - 1) {
-                        WLGRID_CODE_TEMPLATE (new_grid) = 1;
-                        WLGRID_CODE (new_grid) = code_template;
-                    }
-
-                    stride_var = MakeWLstriVar (WLSTRIVAR_DIM (stride_var), MakeNum (0),
-                                                DupNode (WLSTRIVAR_BOUND1 (stride_var)),
-                                                MakeNum (1), new_grid, stride_var);
-                }
-
-            } else { /* NODE_TYPE( grid_var) == N_WLgridVar */
-
-                /*
-                 * is the grid incomplete?
-                 */
-                if ((NODE_TYPE (WLGRIDVAR_BOUND2 (grid_var)) != N_num)
-                    || (NODE_TYPE (WLSTRIVAR_STEP (stride_var)) != N_num)
-                    || (NUM_VAL (WLGRIDVAR_BOUND2 (grid_var))
-                        < NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
-
-                    WLGRIDVAR_NEXT (grid_var)
-                      = MakeWLgridVar (WLGRIDVAR_DIM (grid_var),
-                                       DupNode (WLGRIDVAR_BOUND2 (grid_var)),
-                                       DupNode (WLSTRIVAR_STEP (stride_var)),
+            /*
+             * append lower part of complement
+             */
+            if ((NODE_TYPE (WLSTRIVAR_BOUND2 (stride_var)) != N_num)
+                || (NUM_VAL (WLSTRIVAR_BOUND2 (stride_var))
+                    < SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var)))) {
+                new_grid = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, 0,
                                        GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
-                                                             code_template, dims, shape),
+                                                             dims, shape),
                                        NULL, NULL);
+                WLSTRIVAR_NEXT (stride_var)
+                  = MakeWLstriVar (WLSTRIVAR_DIM (stride_var),
+                                   DupNode (WLSTRIVAR_BOUND2 (stride_var)),
+                                   MakeNum (
+                                     SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var))),
+                                   MakeNum (1), new_grid, NULL);
+            }
 
-                    if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
-                        WLGRIDVAR_CODE_TEMPLATE (WLGRIDVAR_NEXT (grid_var)) = 1;
-                        WLGRIDVAR_CODE (WLGRIDVAR_NEXT (grid_var)) = code_template;
-                    }
-                }
-
-                /*
-                 * next dim
-                 */
-                WLGRIDVAR_NEXTDIM (grid_var)
-                  = GenerateCompleteDomain (WLGRIDVAR_NEXTDIM (grid_var), code_template,
-                                            dims, shape);
-
-                /*
-                 * append lower part of complement
-                 */
-                if ((NODE_TYPE (WLSTRIVAR_BOUND2 (stride_var)) != N_num)
-                    || (NUM_VAL (WLSTRIVAR_BOUND2 (stride_var))
-                        < SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var)))) {
-
-                    new_grid
-                      = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, 0,
-                                    GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
-                                                          code_template, dims, shape),
-                                    NULL, NULL);
-
-                    if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
-                        WLGRID_CODE_TEMPLATE (new_grid) = 1;
-                        WLGRID_CODE (new_grid) = code_template;
-                    }
-
-                    WLSTRIVAR_NEXT (stride_var)
-                      = MakeWLstriVar (WLSTRIVAR_DIM (stride_var),
-                                       DupNode (WLSTRIVAR_BOUND2 (stride_var)),
-                                       MakeNum (SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (
-                                                                       stride_var))),
-                                       MakeNum (1), new_grid, NULL);
-                }
-
-                /*
-                 * insert upper part of complement
-                 */
-                if ((NODE_TYPE (WLSTRIVAR_BOUND1 (stride_var)) != N_num)
-                    || (NUM_VAL (WLSTRIVAR_BOUND1 (stride_var)) > 0)) {
-
-                    new_grid
-                      = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, 0,
-                                    GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
-                                                          code_template, dims, shape),
-                                    NULL, NULL);
-
-                    if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
-                        WLGRID_CODE_TEMPLATE (new_grid) = 1;
-                        WLGRID_CODE (new_grid) = code_template;
-                    }
-
-                    stride_var = MakeWLstriVar (WLSTRIVAR_DIM (stride_var), MakeNum (0),
-                                                DupNode (WLSTRIVAR_BOUND1 (stride_var)),
-                                                MakeNum (1), new_grid, stride_var);
-                }
+            /*
+             * insert upper part of complement
+             */
+            if ((NODE_TYPE (WLSTRIVAR_BOUND1 (stride_var)) != N_num)
+                || (NUM_VAL (WLSTRIVAR_BOUND1 (stride_var)) > 0)) {
+                new_grid = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, 0,
+                                       GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
+                                                             dims, shape),
+                                       NULL, NULL);
+                stride_var = MakeWLstriVar (WLSTRIVAR_DIM (stride_var), MakeNum (0),
+                                            DupNode (WLSTRIVAR_BOUND1 (stride_var)),
+                                            MakeNum (1), new_grid, stride_var);
             }
         }
     }
@@ -2770,24 +4157,16 @@ GenerateCompleteDomain (node *stride_var, node *code_template, int dims, shpseg 
 node *
 ComputeOneCube (node *stride_var, WithOpType wltype, int dims, shpseg *shape)
 {
-    node *grid_var, *code_template;
-
     DBUG_ENTER ("ComputeOneCube");
 
-    /*
-     * store any code expression
-     */
-    grid_var = WLSTRIANY_CONTENTS (stride_var);
-    while (WLGRIDANY_NEXTDIM (grid_var) != NULL) {
-        grid_var = WLSTRIANY_CONTENTS (WLGRIDANY_NEXTDIM (grid_var));
-    }
-    DBUG_ASSERT ((WLGRIDANY_CODE (grid_var) != NULL), "no code found");
-    code_template = WLGRIDANY_CODE (grid_var);
-
     if ((wltype == WO_genarray) || (wltype == WO_modarray)) {
-        stride_var = GenerateCompleteDomain (stride_var, code_template, dims, shape);
+        if (NODE_TYPE (stride_var) == N_WLstriVar) {
+            stride_var = GenerateCompleteDomainVar (stride_var, dims, shape);
+        } else { /* N_WLstride */
+            stride_var = GenerateCompleteDomain (stride_var, dims, shape);
+        }
     } else { /* WO_fold... */
-        stride_var = GenerateCompleteGrid (stride_var, code_template);
+        stride_var = GenerateCompleteGrid (stride_var);
     }
 
     DBUG_RETURN (stride_var);
@@ -3202,21 +4581,21 @@ WLTRANwith (node *arg_node, node *arg_info)
                  * we want to stop after cube-building.
                  *  -> build one segment containing all cubes.
                  */
-                segs = MakeWLseg (dims, cubes, NULL);
+                segs = All (NULL, NULL, cubes, dims);
             }
         } else {
             /*
              * not all params are constant.
              *  -> build one segment containing all cubes.
              */
-            segs = MakeWLseg (dims, cubes, NULL);
+            segs = All (NULL, NULL, cubes, dims);
         }
     } else {
         /*
          * we want to stop after converting.
          *  -> build one segment containing the strides.
          */
-        segs = MakeWLseg (dims, strides, NULL);
+        segs = All (NULL, NULL, strides, dims);
     }
 
     NWITH2_SEGS (new_node) = segs;
