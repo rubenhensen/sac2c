@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.70  1995/12/21 15:09:15  cg
+ * Revision 1.71  1995/12/30 17:01:23  cg
+ *  removed external declaration of 'filename'
+ *
+ * Revision 1.70  1995/12/21  15:09:15  cg
  * converted from nums to array representation of pragma linksign.
  *
  * Revision 1.69  1995/12/18  18:28:55  cg
@@ -313,10 +316,6 @@
 #include "refcount.h"  /* to use IsArray and IsNonUniqueHidden */
 #include "typecheck.h" /* to use LookupType */
 #include "free.h"
-
-extern int malloc_verify ();
-extern int malloc_debug (int level);
-extern char filename[]; /* imported from main.c */
 
 #define DUMMY_NAME "__OUT_"
 #define LABEL_NAME "__Label" /* basic-name for goto label */
