@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/29 16:09:16  jhs
+ * DFMPrintMask's outcommented.
+ *
  * Revision 1.3  2000/03/21 16:11:34  jhs
  * NEEDCHAIN and NEEDBLOCK are pushed and poped at N_mt and N_st now.
  *
@@ -276,10 +279,10 @@ DFAreturn_dn (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DFAreturn_dn");
     DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
-
-    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
-    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
-
+    /*
+      DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
+      DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
+    */
     RETURN_USEMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     RETURN_DEFMASK (arg_node)
@@ -306,10 +309,10 @@ DFAreturn_up (node *arg_node, node *arg_info)
 
     DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), RETURN_USEMASK (arg_node));
     DFMSetMaskClear (INFO_DFA_NEEDBLOCK (arg_info));
-
-    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
-    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
-
+    /*
+      DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
+      DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
+    */
     DBUG_RETURN (arg_node);
 }
 
@@ -375,10 +378,10 @@ DFAlet_dn (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DFAlet");
     DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
-
-    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
-    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
-
+    /*
+      DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
+      DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
+    */
     LET_USEMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     LET_DEFMASK (arg_node)
@@ -478,10 +481,10 @@ DFAlet_dn (node *arg_node, node *arg_info)
 
     /* INFO_DFA_DEFMASK += LET_DEFMASK */
     DFMSetMaskOr (INFO_DFA_DEFMASK (arg_info), LET_DEFMASK (arg_node));
-
-    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
-    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
-
+    /*
+      DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
+      DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
+    */
     DBUG_PRINT ("DFA", ("end %i", INFO_DFA_HEADING (arg_info)));
     DBUG_RETURN (arg_node);
 }
@@ -492,20 +495,20 @@ DFAlet_up (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFAlet_up");
     DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
-
-    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
-    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
-
+    /*
+      DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
+      DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
+    */
     /* tag if ... #### */
 
     DFMSetMaskMinus (INFO_DFA_NEEDCHAIN (arg_info), LET_DEFMASK (arg_node));
     DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), LET_USEMASK (arg_node));
 
     DFMSetMaskMinus (INFO_DFA_NEEDBLOCK (arg_info), LET_DEFMASK (arg_node));
-
-    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
-    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
-
+    /*
+      DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
+      DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
+    */
     DBUG_PRINT ("DFA", ("end %i", INFO_DFA_HEADING (arg_info)));
     DBUG_RETURN (arg_node);
 }
