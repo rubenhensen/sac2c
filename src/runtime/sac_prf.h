@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/09/29 23:38:34  dkr
+ * comment about ICMs for prfs corrected
+ *
  * Revision 3.17  2003/09/25 13:44:39  dkr
  * new argument 'copyfun' added to some ICMs.
  * ND_WRITE replaced by ND_WRITE_READ_COPY.
@@ -149,15 +152,15 @@
  *                            idx_size, ...idxs_ANY..., val_ANY, copyfun)
  *
  * ND_PRF_TAKE__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
- * ND_PRF_TAKE__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ * ND_PRF_TAKE__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
  *
  * ND_PRF_DROP__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
- * ND_PRF_DROP__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ * ND_PRF_DROP__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY, copyfun)
  *
  * ND_PRF_CAT__SHAPE( to_NT, to_sdim,
  *                    from1_NT, from1_sdim, from2_NT, from2_sdim)
  * ND_PRF_CAT__DATA( to_NT, to_sdim,
- *                   from1_NT, from1_sdim, from2_NT, from2_sdim)
+ *                   from1_NT, from1_sdim, from2_NT, from2_sdim, copyfun)
  *
  * ND_PRF_CONV_A__DATA( to_NT, from_NT)
  *
