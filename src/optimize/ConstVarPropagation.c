@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/09/24 17:08:35  ktr
+ * Bug #60: Constant arguments of PRFs are not propagted for all prfs any
+ * longer.
+ *
  * Revision 1.7  2004/08/11 13:15:10  ktr
  * QUICKFIX: CVP does not propagate into branches of funcond in order to prevent
  * problems with UndoSSATransform. (branches with final dec_rc statement)
@@ -116,6 +120,7 @@
  *   withloop_cexprs: is set when traversing in the cexprs chain of a withloop
  *   cond:            is set when traversing in the conditional of a condition
  *   neutral:         is set when traversing in the neutral element of fold-wl
+ *   sel:             constant N_num arrays and N_ids arrays are allowed
  *
  */
 typedef enum {
@@ -130,6 +135,7 @@ typedef enum {
     CON_cond,
     CON_funcond,
     CON_neutral,
+    CON_sel,
     CON_undef
 } context_t;
 
@@ -214,6 +220,43 @@ IsConstant (node *arg_node)
 /****************************************************************************
  *
  * function:
+ *   bool IsNumArray(node *arg_node)
+ *
+ * description:
+ *   returns TRUE if arg_node is of type N_array and all elements are
+ *   of type N_num
+ *   otherwise returns FALSE
+ *
+ *****************************************************************************/
+static bool
+IsNumArray (node *arg_node)
+{
+    bool ret;
+    node *elems;
+
+    DBUG_ENTER ("IsNumArray");
+
+    if (NODE_TYPE (arg_node) == N_array) {
+        ret = TRUE;
+    } else {
+        ret = FALSE;
+    }
+
+    elems = ARRAY_AELEMS (arg_node);
+    while (ret && (elems != NULL)) {
+        if (NODE_TYPE (EXPRS_EXPR (elems)) != N_num) {
+            ret = FALSE;
+            break;
+        }
+        elems = EXPRS_NEXT (elems);
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/****************************************************************************
+ *
+ * function:
  *   bool IsVariable(node *arg_node)
  *
  * description:
@@ -285,6 +328,11 @@ AskPropagationOracle (node *let, info *arg_info)
     case CON_ap:
         /* TRUE iff behind let node is an id node */
         answer = IsVariable (LET_EXPR (let));
+        break;
+
+    case CON_sel:
+        /* TRUE iff behind let node is an id node or an array of constant N_num */
+        answer = ((IsVariable (LET_EXPR (let))) || (IsNumArray (LET_EXPR (let))));
         break;
 
     case CON_undef:
@@ -470,12 +518,95 @@ CVPprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPprf");
 
-    INFO_CVP_CONTEXT (arg_info) = CON_primfun;
+    /*
+     * Depending on the primitive function, different arguments
+     * are allowed to become constant
+     */
+    switch (PRF_PRF (arg_node)) {
+    case F_dim:
+    case F_shape:
+    case F_accu:
+    case F_type_error:
+        /*
+         * Only propagate variables here
+         *
+         * NOT IMPLEMENTED: Constant arrays are allowed as 1. argument of F_sel
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_ap;
+        if (PRF_ARGS (arg_node) != NULL) {
+            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        }
+        break;
 
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+    case F_sel:
+    case F_shape_sel:
+        /*
+         * First argument may be N_id or array of N_num,
+         * second argument may only be variable
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_sel;
+        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_CVP_CONTEXT (arg_info) = CON_ap;
+        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
+          = Trav (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+        break;
+
+    case F_idx_sel:
+    case F_idx_shape_sel:
+    case F_take_SxV:
+    case F_drop_SxV:
+        /*
+         * Only the first argument may be constant
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_primfun;
+        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_CVP_CONTEXT (arg_info) = CON_ap;
+        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
+          = Trav (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+        break;
+
+    case F_modarray:
+        /*
+         * The first argument of modarray must be variable
+         * the others can as well be constant
+         *
+         * 2nd arg of modarray may be a constant array.
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_ap;
+        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_CVP_CONTEXT (arg_info) = CON_sel;
+        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+
+        INFO_CVP_CONTEXT (arg_info) = CON_primfun;
+        PRF_ARG3 (arg_node) = Trav (PRF_ARG3 (arg_node), arg_info);
+        break;
+
+    case F_idx_modarray:
+        /*
+         * The first argument of idx_modarray must be variable
+         * the others can as well be constant
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_ap;
+        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_CVP_CONTEXT (arg_info) = CON_primfun;
+        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
+          = Trav (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+        break;
+
+    default:
+        /*
+         * In the default case, all arguments may become constant
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_primfun;
+
+        if (PRF_ARGS (arg_node) != NULL) {
+            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        }
     }
-
     DBUG_RETURN (arg_node);
 }
 
