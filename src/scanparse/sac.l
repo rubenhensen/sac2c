@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/12/04 16:17:21  hw
+ * Revision 1.24  1995/12/21 15:04:06  cg
+ * added new primitive type char
+ *
+ * Revision 1.23  1995/12/04  16:17:21  hw
  * added primitve functions toi, tof & tod
  *
  * Revision 1.22  1995/12/01  17:15:44  cg
@@ -89,28 +92,39 @@
 
 
 #define FILTER(token) if (0==commlevel)  return(token)
+
 #define FILTER2(token) if (0==commlevel)  {                             \
                          yylval.id=(char *)malloc(strlen(yytext));      \
                          strcpy(yylval.id, yytext);  	                \
                          return(token); }
+
 #define FILTER3(token) if (0==commlevel) {                              \
                          yylval.cint=atoi(yytext);		        \
                          return(token); }
+
 #define FILTER4(token) if (0==commlevel) {                              \
                          yylval.cfloat=atof(yytext);		       \
                          return(token); }
+
 #define FILTER5(token) if (0==commlevel) {                              \
                          yytext[strlen(yytext)]='\0';                   \
                          yylval.cdbl=atof(yytext);                      \
                          return(token); }
+
 #define FILTER6(token) if (0==commlevel) {                              \
                          yytext[strlen(yytext)]='\0';                   \
                          yylval.cfloat=atof(yytext);                    \
                          return(token); }
+
 #define FILTER7(token, name) if (0==commlevel)  {                       \
                                yylval.id=name;                          \
                                return(token); }
+
+#define FILTER8(token) if (0==commlevel) {                              \
+                         yylval.cchar=yytext[1];		        \
+                         return(token); }
         
+
 extern int indent;
 extern int i;
 
@@ -273,6 +287,8 @@ int start_token;
                                 {FILTER2( ID );}
 
 [_A-Za-z][_A-Za-z0-9]*          {FILTER2( PRIVATEID );}
+
+'.'                             {FILTER8( CHAR );}
 
 (0?|([1-9][0-9]*))              {FILTER3 ( NUM);}
 
