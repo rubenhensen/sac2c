@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/04/24 17:14:51  dkr
+ * renamed Prec...() to PREC...()
+ *
  * Revision 1.13  1998/04/23 17:33:16  dkr
  * added PrecSync
  *
@@ -55,21 +58,21 @@
 
 extern node *precompile (node *syntax_tree);
 
-extern node *PrecModul (node *arg_node, node *arg_info);
-extern node *PrecObjdef (node *arg_node, node *arg_info);
-extern node *PrecFundef (node *arg_node, node *arg_info);
-extern node *PrecArg (node *arg_node, node *arg_info);
-extern node *PrecLet (node *arg_node, node *arg_info);
-extern node *PrecAp (node *arg_node, node *arg_info);
-extern node *PrecAssign (node *arg_node, node *arg_info);
-extern node *PrecReturn (node *arg_node, node *arg_info);
-extern node *PrecId (node *arg_node, node *arg_info);
-extern node *PrecVardec (node *arg_node, node *arg_info);
-extern node *PrecTypedef (node *arg_node, node *arg_info);
-extern node *PrecSPMD (node *arg_node, node *arg_info);
-extern node *PrecSync (node *arg_node, node *arg_info);
-extern node *PrecNwith (node *arg_node, node *arg_info);
-extern node *PrecNcode (node *arg_node, node *arg_info);
+extern node *PRECModul (node *arg_node, node *arg_info);
+extern node *PRECObjdef (node *arg_node, node *arg_info);
+extern node *PRECFundef (node *arg_node, node *arg_info);
+extern node *PRECArg (node *arg_node, node *arg_info);
+extern node *PRECLet (node *arg_node, node *arg_info);
+extern node *PRECAp (node *arg_node, node *arg_info);
+extern node *PRECAssign (node *arg_node, node *arg_info);
+extern node *PRECReturn (node *arg_node, node *arg_info);
+extern node *PRECId (node *arg_node, node *arg_info);
+extern node *PRECVardec (node *arg_node, node *arg_info);
+extern node *PRECTypedef (node *arg_node, node *arg_info);
+extern node *PRECSPMD (node *arg_node, node *arg_info);
+extern node *PRECSync (node *arg_node, node *arg_info);
+extern node *PRECNwith (node *arg_node, node *arg_info);
+extern node *PRECNcode (node *arg_node, node *arg_info);
 
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
