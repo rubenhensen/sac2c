@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2004/09/27 11:55:35  ktr
+ * Some more code brushing done.
+ *
  * Revision 1.43  2004/09/27 10:06:17  ktr
- * Fixed bug #42 and brushed some code.
+ * Fixed bug #41 and brushed some code.
  *
  * Revision 1.42  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
@@ -415,27 +418,6 @@ CreateOneVector (int nr)
     while (temp != NULL) {
         NUM_VAL (EXPRS_EXPR (temp)) = 1;
         temp = EXPRS_NEXT (temp);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/**
- * converts a chain of ids into an exprs-node.
- *
- * @param _ids a chain of ids
- *
- * @return An exprs-node containing all the ids in idschain
- */
-node *
-MakeExprsIdChain (ids *_ids)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ("MakeExprsIdChain");
-
-    if (_ids != NULL) {
-        res = MakeExprs (DupIds_Id (_ids), MakeExprsIdChain (IDS_NEXT (_ids)));
     }
 
     DBUG_RETURN (res);
@@ -1588,14 +1570,13 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 
     DBUG_ENTER ("joinCodes");
 
-    /* the new code consinst of... */
-    /* the definitions of the two old withvecs */
-    array = MakeFlatArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
-
-    ARRAY_TYPE (array)
-      = MakeTypes (T_int, 1,
-                   MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
-                   NULL);
+    /*
+     * the new code consinst of...
+     */
+    /*
+     * the definitions of the old outer index vector
+     */
+    array = Ids2Array (NWITHID_IDS (outerwithid));
 
     newwithid_vec = DupAllIds (NWITHID_VEC (outerwithid));
     newcode = MakeAssignLet (IDS_NAME (newwithid_vec), IDS_VARDEC (newwithid_vec), array);
@@ -1607,12 +1588,10 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
         oldids = IDS_NEXT (oldids);
     }
 
-    array = MakeFlatArray (MakeExprsIdChain (DupAllIds (newids)));
-
-    ARRAY_TYPE (array)
-      = MakeTypes (T_int, 1,
-                   MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
-                   NULL);
+    /*
+     * The definition of the old inner index vector
+     */
+    array = Ids2Array (newids);
 
     newwithid_vec = DupAllIds (NWITHID_VEC (innerwithid));
     ASSIGN_NEXT (newcode)
@@ -1625,10 +1604,14 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
     AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (newcode))) = newcode;
     AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (tmp_node))) = tmp_node;
 
-    /* the old OUTER part's code (if any) */
+    /*
+     * the old OUTER part's code, except for the final with-loop
+     */
     ASSIGN_NEXT (tmp_node) = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
 
-    /* be sure to erase the last N_assign node from the copied block */
+    /*
+     * be sure to erase the last N_assign node from the copied block
+     */
     tmp_node2 = newcode;
     while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL)
         tmp_node2 = ASSIGN_NEXT (tmp_node2);
@@ -1637,11 +1620,17 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 
     tmp_node = ASSIGN_NEXT (tmp_node);
 
-    /* the old INNER part's code */
-    /* Create a new LUT */
+    /*
+     * the old INNER part's code with replaced references to old ids
+     */
+    /*
+     * Create a new LUT
+     */
     lut = GenerateLUT ();
 
-    /* Rename all occurences of old ids */
+    /*
+     * Rename all occurences of old ids
+     */
     oldids = NWITHID_IDS (outerwithid);
     newids = NWITHID_IDS (newwithid);
 
@@ -1667,9 +1656,10 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
         BLOCK_INSTR (NCODE_CBLOCK (newcode))
           = Free (BLOCK_INSTR (NCODE_CBLOCK (newcode)));
         BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
-    } else
+    } else {
         BLOCK_INSTR (NCODE_CBLOCK (newcode))
           = AppendAssign (tmp_node, BLOCK_INSTR (NCODE_CBLOCK (newcode)));
+    }
 
     RemoveLUT (lut);
 
