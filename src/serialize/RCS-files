@@ -2,3 +2,4 @@ deserialize.c
 deserialize.h
 serialize.c
 serialize.h
+serialize_attribs.c
