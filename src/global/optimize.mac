@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/24 16:00:09  cg
+ * some renamings.
+ *
  * Revision 1.2  2004/11/23 11:36:42  cg
  * Switched mac-file based declaration of global variables.
  *
@@ -10,63 +13,67 @@
  *
  */
 
-#ifndef OPTabbr
-#define OPTabbr(abbr)
+#ifndef OPTIMIZEstr
+#define OPTIMIZEstr(str)
 #endif
 
-#ifndef OPTdevl
-#define OPTdevl(devl)
+#ifndef OPTIMIZEabbr
+#define OPTIMIZEabbr(abbr)
 #endif
 
-#ifndef OPTprod
-#define OPTprod(prod)
+#ifndef OPTIMIZEdevl
+#define OPTIMIZEdevl(devl)
 #endif
 
-#ifndef OPTname
-#define OPTname(name)
+#ifndef OPTIMIZEprod
+#define OPTIMIZEprod(prod)
 #endif
 
-#ifndef OPTdelim
-#define OPTdelim
+#ifndef OPTIMIZEname
+#define OPTIMIZEname(name)
 #endif
 
-#define OPT(a, b, c, d) OPTabbr (a) OPTdevl (b) OPTprod (c) OPTname (d) OPTdelim
+#ifndef OPTIMIZE
+#define OPTIMIZE(str, abbr, devl, prod, name)                                            \
+    OPTIMIZEstr (str) OPTIMIZEabbr (abbr) OPTIMIZEdevl (devl) OPTIMIZEprod (prod)        \
+      OPTIMIZEname (name)
+#endif
 
-OPT (dcr, TRUE, TRUE, "dead code removal")
-OPT (cf, TRUE, TRUE, "constant folding")
-OPT (lir, TRUE, TRUE, "loop invariant removal")
-OPT (inl, TRUE, TRUE, "function inlining")
-OPT (lur, TRUE, TRUE, "loop unrolling")
-OPT (wlur, TRUE, TRUE, "with-loop unrolling")
-OPT (lus, TRUE, TRUE, "loop unswitching")
-OPT (cse, TRUE, TRUE, "common subexpression elimination")
-OPT (dfr, TRUE, TRUE, "dead function removal")
-OPT (wlt, TRUE, TRUE, "with-loop transformation")
-OPT (wlf, TRUE, TRUE, "with-loop folding")
-OPT (ive, TRUE, TRUE, "index vector elimination")
-OPT (ae, TRUE, TRUE, "array elimination")
-OPT (dl, TRUE, TRUE, "distributive law")
-OPT (rco, TRUE, TRUE, "reference count optimization")
-OPT (uip, TRUE, TRUE, "update-in-place analysis")
-OPT (tsi, FALSE, FALSE, "with-loop tile size inference")
-OPT (tsp, TRUE, TRUE, "with-loop tile size pragmas")
-OPT (wlpg, TRUE, TRUE, "with-loop partition generation")
-OPT (cvp, TRUE, TRUE, "constant and variable propagation")
-OPT (srf, FALSE, FALSE, "static reuse / static free")
-OPT (phm, TRUE, TRUE, "private heap management")
-OPT (aps, TRUE, TRUE, "arena preselection (for PHM)")
-OPT (dao, TRUE, TRUE, "descriptor allocation opt. (for PHM)")
-OPT (msca, TRUE, TRUE, "memory size cache adjustment (for PHM)")
-OPT (ap, TRUE, TRUE, "array padding")
-OPT (apl, FALSE, FALSE, "array placement")
-OPT (wls, TRUE, TRUE, "with-loop scalarization")
-OPT (al, TRUE, TRUE, "associative law")
-OPT (sp, FALSE, FALSE, "selection propagation")
-OPT (wlfs, TRUE, TRUE, "with-loop fusion")
-OPT (lro, FALSE, FALSE, "loop reuse optimization")
+OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
+OPTIMIZE ("cf", cf, TRUE, TRUE, "constant folding")
+OPTIMIZE ("lir", lir, TRUE, TRUE, "loop invariant removal")
+OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
+OPTIMIZE ("lur", lur, TRUE, TRUE, "loop unrolling")
+OPTIMIZE ("wlur", wlur, TRUE, TRUE, "with-loop unrolling")
+OPTIMIZE ("lus", lus, TRUE, TRUE, "loop unswitching")
+OPTIMIZE ("cse", cse, TRUE, TRUE, "common subexpression elimination")
+OPTIMIZE ("dfr", dfr, TRUE, TRUE, "dead function removal")
+OPTIMIZE ("wlt", wlt, TRUE, TRUE, "with-loop transformation")
+OPTIMIZE ("wlf", wlf, TRUE, TRUE, "with-loop folding")
+OPTIMIZE ("ive", ive, TRUE, TRUE, "index vector elimination")
+OPTIMIZE ("ae", ae, TRUE, TRUE, "array elimination")
+OPTIMIZE ("dl", dl, TRUE, TRUE, "distributive law")
+OPTIMIZE ("rco", rco, TRUE, TRUE, "reference count optimization")
+OPTIMIZE ("uip", uip, TRUE, TRUE, "update-in-place analysis")
+OPTIMIZE ("tsi", tsi, FALSE, FALSE, "with-loop tile size inference")
+OPTIMIZE ("tsp", tsp, TRUE, TRUE, "with-loop tile size pragmas")
+OPTIMIZE ("wlpg", wlpg, TRUE, TRUE, "with-loop partition generation")
+OPTIMIZE ("cvp", cvp, TRUE, TRUE, "constant and variable propagation")
+OPTIMIZE ("srf", srf, FALSE, FALSE, "static reuse / static free")
+OPTIMIZE ("phm", phm, TRUE, TRUE, "private heap management")
+OPTIMIZE ("aps", aps, TRUE, TRUE, "arena preselection (for PHM)")
+OPTIMIZE ("dao", dao, TRUE, TRUE, "descriptor allocation opt. (for PHM)")
+OPTIMIZE ("msca", msca, TRUE, TRUE, "memory size cache adjustment (for PHM)")
+OPTIMIZE ("ap", ap, TRUE, TRUE, "array padding")
+OPTIMIZE ("apl", apl, FALSE, FALSE, "array placement")
+OPTIMIZE ("wls", wls, TRUE, TRUE, "with-loop scalarization")
+OPTIMIZE ("al", al, TRUE, TRUE, "associative law")
+OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
+OPTIMIZE ("wlfs", wlfs, TRUE, TRUE, "with-loop fusion")
+OPTIMIZE ("lro", lro, FALSE, FALSE, "loop reuse optimization")
 
-#undef OPTabbr
-#undef OPTdevl
-#undef OPTprod
-#undef OPTdelim
-#undef OPT
+#undef OPTIMIZEstr
+#undef OPTIMIZEabbr
+#undef OPTIMIZEdevl
+#undef OPTIMIZEprod
+#undef OPTIMIZE

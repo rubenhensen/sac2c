@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/11/24 16:00:09  cg
+ * some renamings.
+ *
  * Revision 3.78  2004/11/23 21:51:49  cg
  * Added genlib flags.
  *
@@ -205,38 +208,19 @@
 #include "cv2scalar.h"
 #include "cv2str.h"
 
-static int **
-BuildFunApLine (int maxfun, int maxfunap)
-{
-    int i, **aps;
-
-    DBUG_ENTER ("BuildFunApLine");
-
-    aps = (int **)ILIBmalloc (maxfun * sizeof (int *));
-
-    for (i = 0; i < maxfunap; i++) {
-        aps[i] = (int *)ILIBmalloc (maxfunap * sizeof (int));
-    }
-
-    DBUG_RETURN (aps);
-}
-
 static const char *compiler_phase_name_init[PH_final + 1] = {
 #define PH_SELtext(it_text) it_text
 #include "phase_info.mac"
-#undef PH_SELtext
 };
 
 static bool do_lac2fun_init[PH_final + 1] = {
 #define PH_SELlac2fun(it_lac2fun) it_lac2fun
 #include "phase_info.mac"
-#undef PH_SELlac2fun
 };
 
 static bool do_fun2lac_init[PH_final + 1] = {
 #define PH_SELfun2lac(it_fun2lac) it_fun2lac
 #include "phase_info.mac"
-#undef PH_SELfun2lac
 };
 
 static bool ATG_has_shp_init[] = {
@@ -317,13 +301,13 @@ static char *nt_unique_string_init[] = {
 #undef NTIFstr
 };
 
-static const ct_funptr NTCPRF_funtab_init[] = {
+static const ct_funptr ntc_funtab_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) g
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
 
-static const void *NTCPRF_cffuntab_init[] = {
+static const void *ntc_cffuntab_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) (void *)h
 #include "prf_node_info.mac"
 #undef PRF_IF
@@ -521,22 +505,22 @@ static configuration_t config_init;
  */
 
 static optimize_flags_t optimize_developer_init = {
-#define OPTdevl(devl) devl,
+#define OPTIMIZEdevl(devl) devl,
 #include "optimize.mac"
 };
 
 static optimize_flags_t optimize_production_init = {
-#define OPTprod(prod) prod,
+#define OPTIMIZEprod(prod) prod,
 #include "optimize.mac"
 };
 
 static optimize_flags_t optimize_all_init = {
-#define OPTprod(prod) TRUE,
+#define OPTIMIZEprod(prod) TRUE,
 #include "optimize.mac"
 };
 
 static optimize_flags_t optimize_none_init = {
-#define OPTprod(prod) FALSE,
+#define OPTIMIZEprod(prod) FALSE,
 #include "optimize.mac"
 };
 
@@ -617,7 +601,7 @@ static runtimecheck_flags_t runtimecheck_none_init = {
 };
 
 /*
- * Initialize runtime check flags from flags.mac
+ * Initialize library generation flags from flags.mac
  */
 
 static genlib_flags_t genlib_init = {
@@ -625,15 +609,25 @@ static genlib_flags_t genlib_init = {
 #include "flags.mac"
 };
 
-static genlib_flags_t genlib_all_init = {
-#define GENLIBdefault(default) TRUE,
-#include "flags.mac"
-};
+/*
+ * Initialization helper functions
+ */
 
-static genlib_flags_t genlib_none_init = {
-#define GENLIBdefault(default) FALSE,
-#include "flags.mac"
-};
+static int **
+BuildFunApLine (int maxfun, int maxfunap)
+{
+    int i, **aps;
+
+    DBUG_ENTER ("BuildFunApLine");
+
+    aps = (int **)ILIBmalloc (maxfun * sizeof (int *));
+
+    for (i = 0; i < maxfunap; i++) {
+        aps[i] = (int *)ILIBmalloc (maxfunap * sizeof (int));
+    }
+
+    DBUG_RETURN (aps);
+}
 
 /*
  * Initialize global variables from globals.mac

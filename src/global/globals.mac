@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/24 16:00:09  cg
+ * some renamings.
+ *
  * Revision 1.11  2004/11/23 21:51:49  cg
  * Added genlib flags.
  *
@@ -94,7 +97,7 @@ GLOBAL (FILE *, outfile, NULL)
  * stream to write result to
  */
 
-GLOBAL (char *, sacfilename, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, sacfilename, NULL)
 /*
  * name of file to be compiled
  */
@@ -232,13 +235,13 @@ GLOBAL (bool, executionmodes_available, FALSE)
  *  refer to -D, -cppI command line options:
  */
 
-GLOBAL (char *, cppvars, (char *)ILIBmalloc (MAX_CPP_VARS))
+GLOBAL (char **, cpp_vars, (char **)ILIBmalloc (MAX_CPP_VARS * sizeof (char *)))
 /* pointer to respective argv field */
 
 GLOBAL (int, num_cpp_vars, 0)
 /* number of preprocessor -D options */
 
-GLOBAL (char *, cppincs, (char *)ILIBmalloc (MAX_CPP_INCS))
+GLOBAL (char **, cpp_incs, (char **)ILIBmalloc (MAX_CPP_INCS * sizeof (char *)))
 /* pointer to respective argv field */
 
 GLOBAL (int, num_cpp_incs, 0)
@@ -365,17 +368,25 @@ GLOBAL (bool, show_idx, FALSE)
 
 GLOBAL (bool, print_after_break, TRUE)
 
+GLOBAL (bool, dotrace, FALSE)
+
 GLOBAL (trace_flags_t, trace, trace_init)
 GLOBAL (trace_flags_t, trace_all, trace_all_init)
 GLOBAL (trace_flags_t, trace_none, trace_none_init)
+
+GLOBAL (bool, doruntimecheck, FALSE)
 
 GLOBAL (runtimecheck_flags_t, runtimecheck, runtimecheck_init)
 GLOBAL (runtimecheck_flags_t, runtimecheck_all, runtimecheck_all_init)
 GLOBAL (runtimecheck_flags_t, runtimecheck_none, runtimecheck_none_init)
 
+GLOBAL (bool, doprofile, FALSE)
+
 GLOBAL (profile_flags_t, profile, profile_init)
 GLOBAL (profile_flags_t, profile_all, profile_all_init)
 GLOBAL (profile_flags_t, profile_none, profile_none_init)
+
+GLOBAL (bool, docachesim, FALSE)
 
 GLOBAL (cachesim_flags_t, cachesim, cachesim_init)
 GLOBAL (cachesim_flags_t, cachesim_all, cachesim_all_init)
@@ -449,8 +460,6 @@ GLOBAL (char *, break_specifier, (char *)ILIBmalloc (MAX_BREAK_SPECIFIER))
  */
 
 GLOBAL (genlib_flags_t, genlib, genlib_init)
-GLOBAL (genlib_flags_t, genlib_all, genlib_all_init)
-GLOBAL (genlib_flags_t, genlib_none, genlib_none_init)
 /*
  * Specify interfaces to generate from SAC modules.
  * Init: nothing, but changed to default standard SAC library
@@ -555,7 +564,6 @@ GLOBAL (int, my_dbug_active, 0)
 GLOBAL (char *, my_dbug_str, NULL)
 
 #ifdef SHOW_MALLOC
-GLOBAL (int, malloc_align_step, 0)
 GLOBAL (unsigned int, current_allocated_mem, 0)
 GLOBAL (unsigned int, max_allocated_mem, 0)
 #endif
@@ -652,8 +660,8 @@ GLOBAL (char **, nt_unique_string, nt_unique_string_init)
  * Unknown, new typecheck
  */
 
-GLOBAL (const ct_funptr *, NTCPRF_funtab, NTCPRF_funtab_init)
-GLOBAL (const void **, NTCPRF_cffuntab, NTCPRF_cffuntab_init)
+GLOBAL (const ct_funptr *, ntc_funtab, ntc_funtab_init)
+GLOBAL (const void **, ntc_cffuntab, ntc_cffuntab_init)
 
 /*
  * Primitive zip function tables, previously defined in zipcv.c
