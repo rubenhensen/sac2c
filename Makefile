@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.101  1999/01/15 15:28:15  cg
+# added linking of file psi-opt/tile_size_inference.o
+#
 # Revision 1.100  1999/01/14 13:13:21  sacbase
 # in clean: rm src.tar.gz added .
 #
@@ -192,7 +195,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/Unswitch.o src/optimize/CSE.o \
 	  src/optimize/WithloopFolding.o src/optimize/WLT.o \
 	  src/optimize/WLI.o src/optimize/WLF.o src/optimize/DataFlowMask.o
-PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o
+PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o \
+        src/psi-opt/tile_size_inference.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \
