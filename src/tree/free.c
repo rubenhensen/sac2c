@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.10  2000/10/26 14:28:57  dkr
+ * FreeNCodeWLAA inlined
+ * FreeShpseg modified: SHPSEG_NEXT is removed now, too.
+ *
  * Revision 1.9  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -149,19 +153,6 @@ Free (void *addr)
  *  All elements of list are freed in this case.
  */
 
-node *
-FreeNCodeWLAA (node *arg_node)
-{
-    DBUG_ENTER ("FreeNcodeWLAA");
-
-    if (NCODE_WLAA_INFO (arg_node) != NULL) {
-        NCODE_WLAA_ACCESS (arg_node) = FreeAllAccess (NCODE_WLAA_ACCESS (arg_node));
-        FreeNode (NCODE_WLAA_INFO (arg_node));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 /*--------------------------------------------------------------------------*/
 
 shpseg *
@@ -170,6 +161,10 @@ FreeShpseg (shpseg *fr)
     DBUG_ENTER ("FreeShpseg");
 
     DBUG_PRINT ("FREE", ("Removing shpseg"));
+
+    if (SHPSEG_NEXT (fr) != NULL) {
+        SHPSEG_NEXT (fr) = FreeShpseg (SHPSEG_NEXT (fr));
+    }
 
     FREE (fr);
     fr = NULL;
@@ -388,6 +383,8 @@ FreeNodelist (nodelist *list)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 /*
  *  FreeNodelistNode free a nodelist item and return the next item
@@ -1710,7 +1707,11 @@ FreeNCode (node *arg_node, node *arg_info)
     FREETRAV (NCODE_CEXPR (arg_node));
 
     NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
-    arg_node = FreeNCodeWLAA (arg_node);
+
+    if (NCODE_WLAA_INFO (arg_node) != NULL) {
+        NCODE_WLAA_ACCESS (arg_node) = FreeAllAccess (NCODE_WLAA_ACCESS (arg_node));
+        FreeNode (NCODE_WLAA_INFO (arg_node));
+    }
 
     FREE (arg_node);
 
