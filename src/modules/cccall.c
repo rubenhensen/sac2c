@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/02/11 14:28:51  dkr
+ * CC call patched for TAGGED_ARRAYS
+ *
  * Revision 3.6  2001/11/30 12:18:37  sbs
  * if RANLIB is set, <file>.a files created by -genlib c are converted
  * by RANLIB as well now 8-)) (essential on MAC)
@@ -734,7 +737,12 @@ InvokeCC ()
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
-                fprintf (shellscript, "%s %s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
+                fprintf (shellscript,
+                         "%s %s"
+#ifdef TAGGED_ARRAYS
+                         "-DTAGGED_ARRAYS"
+#endif
+                         " %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
                          config.cc, config.ccflags, config.ldflags, config.ccdir,
                          tmp_dirname, opt_buffer, outfilename, cfilename, linklist,
                          (optimize & OPT_PHM
