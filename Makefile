@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.68  1998/03/24 11:47:10  cg
+# compilation of compile/profile.c removed
+# sources of libsac moved to new directory runtime
+#
 # Revision 1.67  1998/03/22 18:02:26  srs
 # added WLT.o, WLI.o, WLF.o
 #
@@ -273,7 +277,7 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
-         src/compile/profile.o src/compile/Old2NewWith.o
+         src/compile/gen_startup_code.o src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
@@ -296,6 +300,7 @@ dummy:
 	(cd src/refcount; $(MAKE) )       
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
+	(cd src/runtime; $(MAKE) )
 	(cd lib/src; $(MAKE) )
 
 prod:
@@ -310,6 +315,7 @@ prod:
 	(cd src/refcount; $(MAKEPROD) )       
 	(cd src/compile; $(MAKEPROD) )
 	(cd src/psi-opt; $(MAKEPROD) )
+	(cd src/runtime; $(MAKEPROD) )
 	(cd lib/src; $(MAKEPROD) )
 
 sac2c: $(OBJ) $(LIB)
@@ -330,6 +336,7 @@ deps:
 	(cd src/refcount; $(MAKE) deps)
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
+	(cd src/runtime; $(MAKE) deps)
 	(cd lib/src; $(MAKE) deps)
 
 clean:
@@ -344,6 +351,7 @@ clean:
 	(cd src/refcount; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
+	(cd src/runtime; $(MAKE) clean)
 	(cd lib/src; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
