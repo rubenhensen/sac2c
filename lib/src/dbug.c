@@ -127,12 +127,18 @@ typedef int BOOLEAN;
  *     be accessed via the macro package facilities.
  */
 
+#ifdef SAC_FOR_LINUX_X86
+#define C370
+#endif
+
 #ifndef C370
 
 EXPORT FILE *_db_fp_ = stderr; /* Output stream, default stderr */
 /* this impossible with C370, because the expression "stderr"
    calls a function, i.e. isn't constant. We have to check for the
    value NULL before use, instead */
+#else
+EXPORT FILE *_db_fp_; /* Output stream, default stderr */
 #endif
 
 EXPORT char *_db_process_ = "dbug"; /* Pointer to process name; argv[0] */
