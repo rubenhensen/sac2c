@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/10/17 17:48:16  sah
+ * reactivated CreateLibrary in new ast mode
+ *
  * Revision 3.64  2004/10/17 14:52:06  sah
  * added export traversal
  *
@@ -777,9 +780,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     if (filetype != F_prog) {
         NOTE_COMPILER_PHASE;
-#ifndef NEW_AST
         CreateLibrary ();
-#endif /* NEW_AST */
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
