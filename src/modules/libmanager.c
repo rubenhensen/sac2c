@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/04 14:56:27  sah
+ * removed link.h as it seems not to be needed
+ * and creates problems on some platforms.
+ *
  * Revision 1.3  2004/09/30 20:02:59  sah
  * added some DBUG_PRINTs
  *
@@ -18,7 +22,6 @@
 #include "libmanager.h"
 #include "dbug.h"
 #include "Error.h"
-#include <link.h>
 #include <dlfcn.h>
 
 static const char *
