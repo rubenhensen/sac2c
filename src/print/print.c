@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2001/05/03 17:32:01  dkr
+ * MAXHOMDIM replaced by HOMSV
+ *
  * Revision 3.57  2001/04/30 12:03:04  nmw
  * PrintFundef does not print zombie fundefs in code generation at all
  *
@@ -3323,9 +3326,12 @@ PrintWLsegx (node *arg_node, node *arg_info)
 
         if (NODE_TYPE (arg_node) == N_WLseg) {
             fprintf (outfile, " * sv: ");
-            PRINT_SV (outfile, WLSEG_SV (arg_node), WLSEG_DIMS (arg_node),
-                      WLSEG_MAXHOMDIM (arg_node));
-            fprintf (outfile, ", maxhomdim: %i\n", WLSEG_MAXHOMDIM (arg_node));
+            PRINT_VECT (outfile, WLSEG_SV (arg_node), WLSEG_DIMS (arg_node), "%i");
+            fprintf (outfile, "\n");
+            INDENT;
+            fprintf (outfile, " * homsv: ");
+            PRINT_HOMSV (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node));
+            fprintf (outfile, "\n");
             INDENT;
         }
 
@@ -4621,7 +4627,8 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             PRINT_VECT (outfile, WLSEG_SV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "maxhomdim: %i", WLSEG_MAXHOMDIM (arg_node));
+            fprintf (outfile, "homsv: ");
+            PRINT_VECT (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             fprintf (outfile, ", ");
             fprintf (outfile, "scheduler: ");

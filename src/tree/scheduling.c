@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/03 17:31:55  dkr
+ * MAXHOMDIM replaced by HOMSV
+ *
  * Revision 3.22  2001/04/03 22:31:05  dkr
  * Signature of MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END icms
  * modified: Blocking-vector is now longer given as an argument because
@@ -239,7 +242,7 @@ typedef sched_t *SCHsched_t;
  *   That means:
  *     adjust == 0: The MT_ADJUST_SCHEDULER-icm is needed for *all* dimensions.
  *     adjust != 0: This icm is needed for inhomogenous dimensions only
- *                  (-> WLSEG_MAXHOMDIM).
+ *                  (-> (WLSEG_HOMSV[dim] == 0)).
  *
  *   The maximum scheduling dimension is the highest dimension on which a
  *   particular scheduling will schedule loops. Counting dimensions always
@@ -811,14 +814,11 @@ SCHAdjustmentRequired (int dim, node *wlseg)
         i++;
     }
 
-    if ((dim <= scheduler_table[i].max_sched_dim)
-        && ((NODE_TYPE (wlseg) == N_WLsegVar)
-            || (((!scheduler_table[i].adjust_flag) || (dim > WLSEG_MAXHOMDIM (wlseg)))
-                && (WLSEG_SV (wlseg)[dim] > 1)))) {
-        adjust = TRUE;
-    } else {
-        adjust = FALSE;
-    }
+    adjust
+      = ((dim <= scheduler_table[i].max_sched_dim)
+         && ((NODE_TYPE (wlseg) == N_WLsegVar)
+             || (((!scheduler_table[i].adjust_flag) || (WLSEG_HOMSV (wlseg)[dim] == 0))
+                 && (WLSEG_SV (wlseg)[dim] > 1))));
 
     DBUG_RETURN (adjust);
 }

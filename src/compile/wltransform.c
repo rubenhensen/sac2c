@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/05/03 17:31:44  dkr
+ * MAXHOMDIM replaced by HOMSV
+ *
  * Revision 3.48  2001/04/26 18:17:43  dkr
  * fixed a bug in WLTRAlet: LET_IDS may be NULL ...
  *
@@ -6224,9 +6227,7 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
              *       SV        *
              *******************/
 
-            if (WLSEG_SV (segs) == NULL) {
-                WLSEG_SV (segs) = (int *)MALLOC (WLSEG_DIMS (segs) * sizeof (int));
-            }
+            MALLOC_VECT (WLSEG_SV (segs), WLSEG_DIMS (segs), int);
             for (d = 0; d < WLSEG_DIMS (segs); d++) {
                 (WLSEG_SV (segs))[d] = GetLcmUnroll (WLSEG_CONTENTS (segs), d, FALSE);
             }
@@ -6351,7 +6352,7 @@ IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
  *   node* InferSegsParams_Post( node *segs)
  *
  * Description:
- *   Infers the temporary attributes SV, MAXHOMDIM of all the given segments.
+ *   Infers the temporary attributes SV and HOMSV of all the given segments.
  *
  ******************************************************************************/
 
@@ -6370,12 +6371,12 @@ InferSegsParams_Post (node *segs)
 
         if (NODE_TYPE (segs) == N_WLseg) {
 
-            /*******************
-             *  SV, MAXHOMDIM  *
-             *******************/
+            /***************
+             *  SV, HOMSV  *
+             ***************/
 
-            WLSEG_MAXHOMDIM (segs) = WLSEG_DIMS (segs) - 1;
-            for (d = WLSEG_DIMS (segs) - 1; d >= 0; d--) {
+            MALLOC_VECT (WLSEG_HOMSV (segs), WLSEG_DIMS (segs), int);
+            for (d = 0; d < WLSEG_DIMS (segs); d++) {
                 /*
                  * We must recalculate SV here because the with-loop transformations
                  * (especially the fitting) probabily have modified the layout!
@@ -6385,17 +6386,17 @@ InferSegsParams_Post (node *segs)
                  */
                 sv = GetLcmUnroll (WLSEG_CONTENTS (segs), d, TRUE);
                 (WLSEG_SV (segs))[d] = sv;
-
-                if (!IsHomSV (WLSEG_CONTENTS (segs), d, sv, TRUE)) {
-                    WLSEG_MAXHOMDIM (segs) = (d - 1);
+                if (IsHomSV (WLSEG_CONTENTS (segs), d, sv, TRUE)) {
+                    (WLSEG_HOMSV (segs))[d] = sv;
+                } else {
+                    (WLSEG_HOMSV (segs))[d] = 0;
                 }
             }
 
             DBUG_EXECUTE ("WLtrans", fprintf (stderr, "WLSEG_SV = ");
-                          PRINT_SV (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs),
-                                    WLSEG_MAXHOMDIM (segs));
-                          fprintf (stderr, ", WLSEG_MAXHOMDIM = %i",
-                                   WLSEG_MAXHOMDIM (segs));
+                          PRINT_VECT (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs), "%i");
+                          fprintf (stderr, ", WLSEG_HOMSV = ");
+                          PRINT_HOMSV (stderr, WLSEG_HOMSV (segs), WLSEG_DIMS (segs));
                           fprintf (stderr, "\n"););
 
         } else {
@@ -6804,7 +6805,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                     seg = WLSEGX_NEXT (seg);
                 }
 
-                /* compute SEG_SV and SEG_MAXHOMDIM */
+                /* recompute SEG_SV and compute SEG_HOMSV */
                 segs = InferSegsParams_Post (segs);
             }
 
