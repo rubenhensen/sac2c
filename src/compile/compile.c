@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.184  1998/08/07 19:46:47  dkr
+ * fixed a bug with generation of WL_ADJUST_OFFSET
+ *
  * Revision 1.183  1998/08/07 18:10:36  sbs
  * inserted SAC_PF_BEGIN_WITH and SAC_PF_END_WITH Icms for New-wl2
  *
@@ -6733,7 +6736,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     }
 
     /*
-     * create PF_BEGIN_WITH (for profiling) and 'WL_..._BEGIN'-ICM
+     * create 'PF_BEGIN_WITH' (for profiling) and 'WL_..._BEGIN'-ICM
      */
     assigns
       = AppendAssign (assigns,
@@ -7366,9 +7369,9 @@ COMPWLgrid (node *arg_node, node *arg_info)
          * insert ICM 'WL_ADJUST_OFFSET'
          *
          * 'multiple_segs' == 0:
-         *    insert ICM, if next dim is the last blocked dim (otherwise the ICM
-         *    redundant) and we do not have a fold with-loop (is this case we do
-         *    not use any offset!).
+         *    insert ICM, if blocking is activ and the next dim is the last one
+         *    (otherwise the ICM redundant) and we do not have a fold with-loop
+         *    (in this case we do not use any offset!).
          *
          * 'multiple_segs' == 1:
          *    insert ICM, if next dim is the last dim and we do not have a fold
@@ -7378,42 +7381,43 @@ COMPWLgrid (node *arg_node, node *arg_info)
         if ((NWITH2_TYPE (wl_node) != WO_foldprf)
             && (NWITH2_TYPE (wl_node) != WO_foldfun)) {
 
-            first_block_dim = WLSEG_DIMS (wl_seg);
-            insert_icm = 0;
+            /*
+             * infer first blocking dimension
+             */
+            d = 0;
+            while ((d < WLSEG_DIMS (wl_seg)) && ((WLSEG_BV (wl_seg, 0))[d] == 1)) {
+                d++;
+            }
+            if (d == WLSEG_DIMS (wl_seg)) {
+                /*
+                 * no blocking -> inspect 'ubv'
+                 */
+                d = 0;
+                while ((d < WLSEG_DIMS (wl_seg)) && ((WLSEG_UBV (wl_seg))[d] == 1)) {
+                    d++;
+                }
+            }
+            first_block_dim = d;
+
+            /*
+             * check whether 'WL_ADJUST_OFFSET' is needed or not
+             */
             if (multiple_segs == 0) {
 
                 /*
-                 * if (bv0 > 1) get bv0, otherwise ubv
+                 * is blocking activ and the next dim the last one?
                  */
-                bv = NULL;
-                for (d = 0; d < WLSEG_DIMS (wl_seg); d++) {
-                    if ((WLSEG_BV (wl_seg, 0))[d] > 1) {
-                        bv = WLSEG_BV (wl_seg, 0);
-                        break;
-                    }
-                }
-                if (bv == NULL) {
-                    bv = WLSEG_UBV (wl_seg);
-                }
-
-                /*
-                 * is next dim the last blocked dim?
-                 */
-                if ((WLGRID_DIM (arg_node) + 1 < WLSEG_DIMS (wl_seg))) {
-                    insert_icm = (bv[WLGRID_DIM (arg_node) + 1] > 1);
-                    if (insert_icm > 0) {
-                        for (d = WLGRID_DIM (arg_node) + 2; d < WLSEG_DIMS (wl_seg);
-                             d++) {
-                            if (bv[d] > 1) {
-                                insert_icm = 0;
-                            }
-                        }
-                    }
+                if ((WLGRID_DIM (arg_node) + 2 == WLSEG_DIMS (wl_seg))
+                    && (first_block_dim < WLSEG_DIMS (wl_seg))) {
+                    insert_icm = 1;
                 }
 
             } else {
                 /* 'multiple_segs' == 1 */
 
+                /*
+                 * is the next dim the last one?
+                 */
                 if (WLGRID_DIM (arg_node) + 2 == WLSEG_DIMS (wl_seg)) {
                     insert_icm = 1;
                 }
