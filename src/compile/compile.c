@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2001/12/10 14:51:28  dkr
+ * some functions moved to tree_compound.c
+ *
  * Revision 3.64  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -1181,7 +1184,7 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
  *
  ******************************************************************************/
 
-node *
+static node *
 GenerateIcmTypeTables (node *arg_info, node *fundef, bool gen_icm_tab, bool gen_type_tab)
 {
     node **icm_tab;
@@ -1231,7 +1234,7 @@ GenerateIcmTypeTables (node *arg_info, node *fundef, bool gen_icm_tab, bool gen_
  *
  ******************************************************************************/
 
-node *
+static node *
 RemoveIcmTypeTables (node *arg_info)
 {
     DBUG_ENTER ("RemoveIcmTypeTables");
@@ -2191,7 +2194,7 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
  *
  ******************************************************************************/
 
-node *
+static node *
 DoSomeReallyUglyTransformations_MT2 (node *fundef)
 {
     node *front, *back;
@@ -5886,7 +5889,7 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 /******************************************************************************
  *
  * Function:
- *   node *COMPNwith2( node *arg_node, node *arg_info)
+ *   node *COMPWith2( node *arg_node, node *arg_info)
  *
  * Description:
  *   Compilation of a N_with2 node.
@@ -5902,7 +5905,7 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  ******************************************************************************/
 
 node *
-COMPNwith2 (node *arg_node, node *arg_info)
+COMPWith2 (node *arg_node, node *arg_info)
 {
     node *fundef, *vardec, *icm_args, *fold_vardecs;
     node *let_neutral, *comp_neutral, *tmp, *new;
@@ -5913,7 +5916,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     node *rc_icms_wlids = NULL;
     node *assigns = NULL;
 
-    DBUG_ENTER ("COMPNwith2");
+    DBUG_ENTER ("COMPWith2");
 
     /*
      * we must store the with-loop ids *before* compiling the codes
@@ -6134,7 +6137,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
  * Description:
  *   Compilation of a N_WLseg- or N_WLsegVar-node:
  *   Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
- *   (The whole with-loop-tree should be freed by 'COMPNwith2' only!!)
+ *   (The whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remark:
  *   - 'wlseg' points to the current with-loop segment.
@@ -6224,7 +6227,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
  * Description:
  *   compilation of a N_WLblock- or N_WLublock-node:
  *     returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
- *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
+ *     (the whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remarks:
  *   - 'wlids' points always to LET_IDS of the current with-loop.
@@ -6368,7 +6371,7 @@ COMPWLxblock (node *arg_node, node *arg_info)
  * Description:
  *   compilation of a N_WLstride- or N_WLstrideVar-node:
  *     returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
- *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
+ *     (the whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remarks:
  *   - 'wlids' points always to LET_IDS of the current with-loop.
@@ -6523,7 +6526,7 @@ COMPWLstridex (node *arg_node, node *arg_info)
  * Description:
  *   compilation of a N_WLgrid- or N_WLgridVar-node:
  *     returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
- *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
+ *     (the whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remarks:
  *   - 'wlids' points always to LET_IDS of the current with-loop.
@@ -6789,19 +6792,19 @@ COMPWLgridx (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPNcode( node *arg_node, node *arg_info)
+ *   node *COMPWLcode( node *arg_node, node *arg_info)
  *
  * Description:
- *   compiles a Ncode node.
+ *   compiles a N_Ncode node.
  *
  ******************************************************************************/
 
 node *
-COMPNcode (node *arg_node, node *arg_info)
+COMPWLcode (node *arg_node, node *arg_info)
 {
     node *icm_assigns;
 
-    DBUG_ENTER ("COMPNcode");
+    DBUG_ENTER ("COMPWLcode");
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
@@ -6837,7 +6840,7 @@ COMPNcode (node *arg_node, node *arg_info)
 
 /**************************
  *
- *  MT
+ *  old MT
  *
  */
 
@@ -7467,88 +7470,11 @@ COMPSync (node *arg_node, node *arg_info)
 
 /*****************************************************************************
  **
- ** CONSTRUCTION AREA:
+ **  CONSTRUCTION AREA (new MT)
  **
  **/
 
-/* move to tree_compound  !!! #### */
-
-node *
-MakeAssign_ (node *instr, node *next)
-{
-    node *result;
-
-    if (NODE_TYPE (instr) == N_assign) {
-        result = AppendAssign (instr, next);
-    } else {
-        result = MakeAssign (instr, next);
-    }
-
-    return (result);
-}
-
-node *
-MakeAssigns1 (node *part1)
-{
-    return (MakeAssign_ (part1, NULL));
-}
-
-node *
-MakeAssigns2 (node *part1, node *part2)
-{
-    return (MakeAssign_ (part1, MakeAssigns1 (part2)));
-}
-
-node *
-MakeAssigns3 (node *part1, node *part2, node *part3)
-{
-    return (MakeAssign_ (part1, MakeAssigns2 (part2, part3)));
-}
-
-node *
-MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
-{
-    return (MakeAssign_ (part1, MakeAssigns3 (part2, part3, part4)));
-}
-
-node *
-MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
-{
-    return (MakeAssign_ (part1, MakeAssigns4 (part2, part3, part4, part5)));
-}
-
-node *
-MakeAssigns6 (node *part1, node *part2, node *part3, node *part4, node *part5,
-              node *part6)
-{
-    return (MakeAssign_ (part1, MakeAssigns5 (part2, part3, part4, part5, part6)));
-}
-
-node *
-MakeAssigns7 (node *part1, node *part2, node *part3, node *part4, node *part5,
-              node *part6, node *part7)
-{
-    return (MakeAssign_ (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7)));
-}
-
-node *
-MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
-              node *part6, node *part7, node *part8)
-{
-    return (MakeAssign_ (part1,
-                         MakeAssigns7 (part2, part3, part4, part5, part6, part7, part8)));
-}
-
-node *
-MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
-              node *part6, node *part7, node *part8, node *part9)
-{
-    return (MakeAssign_ (part1, MakeAssigns8 (part2, part3, part4, part5, part6, part7,
-                                              part8, part9)));
-}
-
-/* #### */
-node *
+static node *
 MakeAllocs (DFMmask_t mask)
 {
     char *name;
@@ -7558,7 +7484,6 @@ MakeAllocs (DFMmask_t mask)
     DBUG_ENTER ("MakeAllocs");
 
     if (DFMTestMask (mask) != 0) {
-
         result = NULL;
 
         name = DFMGetMaskEntryNameSet (mask);
@@ -7569,7 +7494,6 @@ MakeAllocs (DFMmask_t mask)
         }
 
         result = MakeAssign (MakeIcm1 ("COMMENT", MakeId_Copy ("ALLOCS")), result);
-
     } else {
         result = MakeAssigns1 (MakeIcm1 ("COMMENT", MakeId_Copy ("NO ALLOCS")));
     }
@@ -7577,10 +7501,11 @@ MakeAllocs (DFMmask_t mask)
     DBUG_RETURN (result);
 }
 
-/*
- *  jhs ####
+/*****************************************************************************
+ *
+ *  new MT
+ *
  */
-#define DO_NOT_COMPILE_MTN_xxx
 
 /******************************************************************************
  *
@@ -7604,20 +7529,17 @@ COMPMt (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPMt");
 
-#ifdef DO_NOT_COMPILE_MTN
-    DBUG_ASSERT (0, ("COMPMt not implemented yet, cannot compile this"));
-#endif
-
     /*
      *  Part 1 - Allocate
      */
-    /*
-      allocate  = MakeIcm2( "MT2_ALLOCATE",
-                            MakeNum( DFMTestMask( MT_ALLOC( arg_node))),
-                            BuildParamsByDFM( MT_ALLOC( arg_node), "alloc", NULL, NULL));
+#if 0
+  allocate  = MakeIcm2( "MT2_ALLOCATE",
+                        MakeNum( DFMTestMask( MT_ALLOC( arg_node))),
+                        BuildParamsByDFM( MT_ALLOC( arg_node), "alloc", NULL, NULL));
 
-    */
+#else
     allocate = MakeAllocs (MT_ALLOC (arg_node));
+#endif
 
     /*
      *  Part 2 - Broadcast
@@ -7679,10 +7601,6 @@ COMPSt (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPSt");
 
-#ifdef DO_NOT_COMPILE_MTN
-    DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot compile this"));
-#endif
-
     dfm_flat = DFMGenMaskAnd (ST_SYNC (arg_node), ST_NEEDLATER_MT (arg_node));
     bset = DFMGenMaskOr (ST_ALLOC (arg_node), dfm_flat);
     dfm_flat = DFMRemoveMask (dfm_flat);
@@ -7697,11 +7615,12 @@ COMPSt (node *arg_node, node *arg_info)
         barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
         code = MakeIcm0 ("CODE");
 
-        allocate = MakeAllocs (ST_ALLOC (arg_node));
 #if 0
     allocate  = MakeIcm2( "MT2_ALLOCATE",
                           MakeNum( DFMTestMask( ST_ALLOC( arg_node))),
                           BuildParamsByDFM( ST_ALLOC( arg_node), "alloc", NULL, NULL));
+#else
+        allocate = MakeAllocs (ST_ALLOC (arg_node));
 #endif
         broadcast
           = MakeIcm4 ("MT2_MASTER_BROADCAST", MakeId_Copy ("SYNC"),
@@ -7748,10 +7667,6 @@ COMPMTsignal (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPMTsignal");
 
-#ifdef DO_NOT_COMPILE_MTN
-    DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
-#endif
-
     assigns = MakeAssigns1 (MakeIcm0 ("MT2_SIGNAL_DATA"
 #if 0
                 ,
@@ -7796,10 +7711,6 @@ COMPMTalloc (node *arg_node, node *arg_info)
     char *receive_icm;
 
     DBUG_ENTER ("COMPMTalloc");
-
-#ifdef DO_NOT_COMPILE_MTN
-    DBUG_ASSERT (0, ("COMPMTalloc not implemented yet, cannot compile this"));
-#endif
 
     fundef = INFO_COMP_FUNDEF (arg_info);
     if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
@@ -7868,10 +7779,6 @@ COMPMTsync (node *arg_node, node *arg_info)
     char *receive_icm;
 
     DBUG_ENTER ("COMPMTsync");
-
-#ifdef DO_NOT_COMPILE_MTN
-    DBUG_ASSERT (0, ("COMPMTsync not implemented yet, cannot compile this"));
-#endif
 
     fundef = INFO_COMP_FUNDEF (arg_info);
     if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
