@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1997/10/29 17:17:33  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.30  1997/10/29 14:33:38  srs
  * free -> FREE
  *
@@ -304,7 +307,9 @@ Shape2Array (shapes *shp)
     i--;
     for (; i >= 0; i--) {
         next = MakeExprs (MakeNum (SHAPES_SELEMS (shp)[i]), next);
+#ifndef NEWTREE
         next->nnode = 2;
+#endif
     }
     DBUG_RETURN (MakeArray (next));
 }

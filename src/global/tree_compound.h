@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1997/10/29 17:18:32  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.48  1997/05/02 13:53:00  sbs
  * VINFO_SHPSEG inserted
  *
@@ -1058,12 +1061,24 @@ extern void ObjList2ArgList (node *objdef);
 #define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
 #define VARDEC_TDEF(n) (TYPES_TDEF (VARDEC_TYPE (n)))
 
+#ifdef NEWTREE
+
 #define APPEND_VARDECS(old, new)                                                         \
     if (NULL != old) {                                                                   \
         VARDEC_NEXT (old) = new;                                                         \
         old->nnode = 1;                                                                  \
     } else                                                                               \
         old = new
+
+#else /* NEWTREE */
+
+#define APPEND_VARDECS(old, new)                                                         \
+    if (NULL != old) {                                                                   \
+        VARDEC_NEXT (old) = new;                                                         \
+    } else                                                                               \
+        old = new
+
+#endif
 
 /*--------------------------------------------------------------------------*/
 
