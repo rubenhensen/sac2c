@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.24  1995/08/15 12:39:06  cg
- * object handling updated.
+ * Revision 1.25  1995/08/30 09:43:14  cg
+ * difference between name and prefix in moduldec updated
  *
+# Revision 1.24  1995/08/15  12:39:06  cg
+# object handling updated.
+#
 # Revision 1.23  1995/07/17  14:14:14  hw
 # information about N_fundef updated
 #
@@ -164,9 +167,11 @@ Description of the different node types:
 
 N_moduldec, N_classdec:
 =======================
-node[0]    : export-list (N_explist)
-node[1]    : import_list (N_implist) if present...
-info.id    : name of the modul/class
+node[0]              : export-list (N_explist)
+node[1]              : import_list (N_implist) if present...
+info.fun_name.id     : name of the module/class
+info.fun_name.id_mod : prefix of the module/class 
+                       (NULL for external modules, name elsewhere)
 
 N_explist:
 ==========
