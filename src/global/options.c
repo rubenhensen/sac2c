@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/06/10 09:49:03  cg
+ * Bug fixed in implementation of option -cshost.
+ *
  * Revision 2.9  1999/06/09 08:41:02  rob
  * Introduce support for dynamic shape arrays option "ds".
  *
@@ -164,7 +167,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_OPTION ("-cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
 
     ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
 
