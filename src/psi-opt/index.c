@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/03/12 18:02:19  dkr
+ * comment for CreateVect2OffsetIcm() modified
+ *
  * Revision 3.33  2002/10/08 16:37:14  dkr
  * dead code in IdxNcode() deactivated
  *
@@ -1204,7 +1207,7 @@ CreateIdxs2OffsetIcm (node *vardec, ids *idxs, types *type)
  *    'type' indicates which IDX(type) version has to be computed.
  *    CreateVect2OffsetIcm creates the required  ND_VECT2OFFSET-ICM, e.g.,
  *    if   vardec ->  int[2] iv    and   type -> double [4,5,6],
- *    an icm ND_VECT2OFFSET( iv_4_5_6__, iv, 2, 3, 4, 5, 6)  is created.
+ *    an icm ND_VECT2OFFSET( iv_4_5_6__, 2, iv, 3, 4, 5, 6)  is created.
  *    While doing so it makes sure, that a vardec for iv_3_4_5__ exists and
  *    it insertes back-refs from the N_id nodes of the icm to the respective
  *    vardecs!
