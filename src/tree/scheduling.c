@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/21 11:57:53  ben
+ * In scheduler_table Even set to SC_var_seg
+ *
  * Revision 3.12  2001/03/20 22:37:38  dkr
  * comment for SCHMakeSchedulingByPragma() modified
  *
@@ -231,7 +234,7 @@ static struct {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
   {"Block", SC_const_seg, 1, 0, 0, ""},
   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"Even", SC_const_seg, 1, 0, 0, ""},
+  {"Even", SC_var_seg, 1, 0, 0, ""},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
   {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
   {"Static", SC_withloop, 0, 0, 0, ""},
