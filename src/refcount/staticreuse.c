@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/23 17:38:25  jhb
+ * compile
+ *
  * Revision 1.3  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -30,6 +33,8 @@
  */
 #define NEW_INFO
 
+#include "staticreuse.h"
+
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -37,6 +42,7 @@
 #include "dbug.h"
 #include "print.h"
 #include "DupTree.h"
+#include "free.h"
 
 /**
  * INFO structure
@@ -62,9 +68,11 @@ EMSRStaticReuse (node *syntax_tree)
 
     DBUG_PRINT ("EMSR", ("Starting static reuse inference"));
 
-    act_tab = emsr_tab;
+    TRAVpush (TR_emsr);
 
-    syntax_tree = Trav (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+
+    TRAVpop ();
 
     DBUG_PRINT ("EMSR", ("Static reuse inference complete"));
 
@@ -102,13 +110,13 @@ EMSRprf (node *arg_node, info *arg_info)
         while (rcexprs != NULL) {
             node *rc = EXPRS_EXPR (rcexprs);
 
-            if (!AVIS_ALIAS (ID_AVIS (rc))) {
+            if (!AVIS_ISALIAS (ID_AVIS (rc))) {
                 /*
                  * STATIC REUSE!!!
                  */
                 if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
-                    node *new_node = MakePrf1 (F_reuse, DupNode (rc));
-                    arg_node = FreeNode (arg_node);
+                    node *new_node = TCmakePrf1 (F_reuse, DUPdoDupNode (rc));
+                    arg_node = FREEdoFreeNode (arg_node);
                     arg_node = new_node;
 
                     /*
@@ -116,7 +124,7 @@ EMSRprf (node *arg_node, info *arg_info)
                      *
                      * Mark b as ALIASed such that it will not be statically freed
                      */
-                    AVIS_ALIAS (ID_AVIS (PRF_ARG1 (arg_node))) = TRUE;
+                    AVIS_ISALIAS (ID_AVIS (PRF_ARG1 (arg_node))) = TRUE;
                 }
 
                 if (PRF_PRF (arg_node) == F_alloc_or_reshape) {
@@ -127,7 +135,7 @@ EMSRprf (node *arg_node, info *arg_info)
                      *
                      * Mark b as ALIASed such that it will not be statically freed
                      */
-                    AVIS_ALIAS (ID_AVIS (PRF_ARG3 (arg_node))) = TRUE;
+                    AVIS_ISALIAS (ID_AVIS (PRF_ARG3 (arg_node))) = TRUE;
                 }
                 break;
             }
