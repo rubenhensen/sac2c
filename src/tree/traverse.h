@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/04/08 08:09:55  khf
+ * wlfs_tab added
+ *
  * Revision 3.39  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -346,6 +349,7 @@ extern funtab *sp_tab;
 extern funtab *ts_tab;
 extern funtab *wlpg_tab;
 extern funtab *cvp_tab;
+extern funtab *wlfs_tab;
 
 extern int nnode[];
 

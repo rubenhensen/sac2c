@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/04/08 08:09:55  khf
+ * wlfs_tab added
+ *
  * Revision 3.49  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -279,6 +282,7 @@
 #include "type_statistics.h"
 #include "WLPartitionGeneration.h"
 #include "ConstVarPropagation.h"
+#include "WithloopFusion.h"
 
 #include "traverse.h"
 
@@ -1589,6 +1593,17 @@ static funtab cvp_tab_rec = {{
                              NULL,
                              NULL};
 funtab *cvp_tab = &cvp_tab_rec;
+
+/*
+ *  (119) wlfs_tab
+ */
+static funtab wlfs_tab_rec = {{
+#define NIFwlfs(it_wlfs) it_wlfs
+#include "node_info.mac"
+                              },
+                              NULL,
+                              NULL};
+funtab *wlfs_tab = &wlfs_tab_rec;
 
 /*
  *  nnode
