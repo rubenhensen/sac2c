@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/02/28 18:26:12  asi
+ * Revision 1.35  1995/03/01 16:04:41  asi
+ * debug-output for with loops added
+ *
+ * Revision 1.34  1995/02/28  18:26:12  asi
  * added argument to functioncall PrintMask
  * added function PrintMasks
  *
@@ -139,11 +142,11 @@ PrintMasks (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintMasks");
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0], VARNO);
-                  DBUG_PRINT ("MASK", ("Def. Variables (then): %s", text)); free (text););
+                  DBUG_PRINT ("MASK", ("Def. Variables : %s", text)); free (text););
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables (then): %s", text)); free (text););
+                  DBUG_PRINT ("MASK", ("Used Variables : %s", text)); free (text););
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[2], VARNO);
-                  DBUG_PRINT ("MASK", ("Spz. Variables (then): %s", text)); free (text););
+                  DBUG_PRINT ("MASK", ("Spz. Variables : %s", text)); free (text););
     DBUG_VOID_RETURN;
 }
 
@@ -634,7 +637,6 @@ PrintWith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWith");
 
-    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
     fprintf (outfile, "with (");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")\n");
@@ -647,6 +649,14 @@ node *
 PrintGenator (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintGenator");
+
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0], VARNO);
+                  DBUG_PRINT ("MASK", ("Bound Variable (generator) : %s", text));
+                  free (text););
+
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  DBUG_PRINT ("MASK", ("Used Variables (generator) : %s", text));
+                  free (text););
 
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " <= %s <= ", arg_node->info.id);
