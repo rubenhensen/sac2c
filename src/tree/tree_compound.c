@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2004/11/27 01:42:07  mwe
+ * SearchDecl to TCsearchDecl
+ *
  * Revision 3.117  2004/11/27 00:40:03  khf
  * adjusted names of TCmakePrf*
  *
@@ -2096,11 +2099,11 @@ TCreturnTypes2Ret (types *type)
  */
 
 node *
-SearchDecl (const char *name, node *decl_node)
+TCsearchDecl (const char *name, node *decl_node)
 {
     node *found = NULL;
 
-    DBUG_ENTER ("SearchDecl");
+    DBUG_ENTER ("TCsearchDecl");
 
     while (NULL != decl_node) {
         if (N_vardec == NODE_TYPE (decl_node)) {
