@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2000/07/21 14:39:20  mab
+ * *** empty log message ***
+ *
  * Revision 1.8  2000/07/19 12:39:28  mab
  * added dummy values for testing purposes
  *
@@ -81,7 +84,7 @@ ArrayPadding (node *arg_node)
 
     /* collect information for inference phase */
 
-    /*APcollect();*/
+    /* APcollect(); */
 
     /* apply array padding */
 
@@ -99,7 +102,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
     SHPSEG_SHAPE (tmp_new_shape, 2) = 4;
 
-    PIaddInferredShape (MakeType (T_int, 3, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (3, T_int, tmp_old_shape, tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
@@ -109,7 +112,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
 
-    PIaddInferredShape (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (2, T_int, tmp_old_shape, tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
@@ -119,7 +122,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 6;
 
-    PIaddInferredShape (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (2, T_int, tmp_old_shape, tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
@@ -129,7 +132,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 6;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
 
-    PIaddInferredShape (MakeType (T_float, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (2, T_float, tmp_old_shape, tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 3;
@@ -139,7 +142,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 8;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 9;
 
-    PIaddInferredShape (MakeType (T_double, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (2, T_double, tmp_old_shape, tmp_new_shape);
 
     tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 8;
@@ -149,7 +152,7 @@ ArrayPadding (node *arg_node)
     SHPSEG_SHAPE (tmp_new_shape, 0) = 10;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 11;
 
-    PIaddInferredShape (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+    PIaddInferredShape (2, T_int, tmp_old_shape, tmp_new_shape);
 
     /* apply array padding */
 
