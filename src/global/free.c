@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/04/24 12:12:45  dkr
+ * changed FreeSPMD
+ *
  * Revision 1.53  1998/04/24 01:14:37  dkr
  * added FreeSync
  *
@@ -1589,6 +1592,7 @@ FreeSPMD (node *arg_node, node *arg_info)
     FREETRAV (SPMD_IN (arg_node));
     FREETRAV (SPMD_OUT (arg_node));
     FREETRAV (SPMD_INOUT (arg_node));
+    FREETRAV (SPMD_LOCAL (arg_node));
 
     FREEMASK (SPMD_MASK);
 
