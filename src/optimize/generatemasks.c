@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/10/28 17:11:44  dkr
+ * functions Print...Mask() changed
+ *
  * Revision 2.7  1999/10/26 13:51:52  dkr
  * PushDupMRDL simplified
  *
@@ -77,6 +80,10 @@
   In OPTassign arg_info->node[2] is set, don't know why.
   In OPTfundef the NODE_TYPE of arg_info is changed, don't know why.
  */
+
+#ifndef DUPMRD
+#define DUPMRD 1
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -561,139 +568,119 @@ ReadMask (long *mask, long number)
     DBUG_RETURN (mask[number]);
 }
 
-void
-DbugMaskOut (node *n, int varno)
-{
-    char *s;
-    s = PrintMask (n->mask[0], varno);
-    printf ("DEF: %s\n", s);
-    FREE (s);
-    s = PrintMask (n->mask[1], varno);
-    printf ("USE: %s\n", s);
-    FREE (s);
-    s = PrintMask (n->mask[2], varno);
-    printf ("M3 : %s\n", s);
-    FREE (s);
-}
+/******************************************************************************
+ *
+ * function:
+ *   void PrintDefUseMask( FILE *handle, long *mask, int varno)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
 
 void
-DbugMaskOut2 (long *mask, int varno)
+PrintDefUseMask (FILE *handle, long *mask, int varno)
 {
-    char *s;
-    s = PrintMask (mask, varno);
-    printf ("MASK: %s\n", s);
-    FREE (s);
-}
-
-/*
- *
- *  functionname  : PrintMask
- *  arguments     : 1) the mask you whant to print in a string
- *                  2) number of variables
- *                  R) returns the generated string
- *  description   : generates a string with the textual description of the mask
- *  global vars   : --
- *  internal funs : Malloc
- *  external funs : --
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-
-char *
-PrintMask (long *mask, int varno)
-{
-    char *text, *temp;
     int i;
+    int empty = 1;
 
-    DBUG_ENTER ("PrintMask");
-    text = (char *)Malloc (sizeof (char) * 10 * varno);
+    DBUG_ENTER ("PrintDefUseMask");
+
     if (mask) {
-        temp = text;
-        for (i = 0; i < varno; i++)
+        for (i = 0; i < varno; i++) {
             if (mask[i]) {
-                sprintf (temp, "(%3d,%3d) ", i, (int)mask[i]);
-                temp = temp + (sizeof (char) * 10);
+                empty = 0;
+                fprintf (handle, "(%3d,%3d) ", i, (int)mask[i]);
             }
-        sprintf (temp, "%c", '\0');
-        if (text == temp)
-            sprintf (text, " EMPTY");
-    } else
-        sprintf (text, " NULL");
-    DBUG_RETURN (text);
+        }
+        if (empty) {
+            fprintf (handle, " EMPTY");
+        }
+    } else {
+        fprintf (handle, " NULL");
+    }
+    fprintf (handle, "\n");
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
  *
  * function:
- *  char *PrintMRD(long *mask, int varno)
+ *   void PrintDefUseMasks( FILE *handle, long *defmask, long *usemask, int varno)
  *
  * description:
- *   generates a string with a textual description of the MRD-list
+ *
  *
  ******************************************************************************/
 
-char *
-PrintMRD (long *mask, int varno)
-{
-    char *text, *temp;
-    node *nodeptr;
-    int i;
-    nodetype n_type;
-
-    DBUG_ENTER ("PrintMRD");
-    text = (char *)Malloc (sizeof (char) * 39 * varno);
-    if (mask) {
-        temp = text;
-        for (i = 0; i < varno; i++)
-            if (mask[i]) {
-                n_type = NODE_TYPE ((node *)mask[i]);
-                switch (n_type) {
-                case N_assign: {
-                    nodeptr = ASSIGN_INSTR (((node *)mask[i]));
-                    sprintf (temp, "(%3d,%-5.5s(%6p))\n%19s", i,
-                             mdb_nodetype[NODE_TYPE (nodeptr)], nodeptr, "");
-                    temp = temp + (sizeof (char) * 39);
-                    break;
-                }
-                case N_Npart: {
-                    sprintf (temp, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[N_Npart], "");
-                    temp = temp + (sizeof (char) * 34);
-                    break;
-                }
-                default: {
-                    if ((N_num <= n_type) && (n_type <= N_ok))
-                        sprintf (temp, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[n_type], "");
-                    else
-                        sprintf (temp, "(%3d,%-8p)\n%19s", i, (node *)mask[i], "");
-                    temp = temp + (sizeof (char) * 34);
-                    break;
-                }
-                }
-            }
-        sprintf (temp, "%c", '\0');
-        if (text == temp)
-            sprintf (text, " EMPTY");
-    } else
-        sprintf (text, " NULL");
-    DBUG_RETURN (text);
-}
-
-/*
- *  Prints all masks
- */
-
 void
-PrintMasks (node *arg_node, node *arg_info)
+PrintDefUseMasks (FILE *handle, long *defmask, long *usemask, int varno)
 {
     DBUG_ENTER ("PrintMasks");
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0], VARNO);
-                  fprintf (outfile, "**Global Def. Var: %s\n", text); FREE (text););
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  fprintf (outfile, "**Global Used Var: %s\n", text); FREE (text););
-    DBUG_EXECUTE ("MRD", char *text; text = PrintMRD (arg_node->mask[2], VARNO);
-                  fprintf (outfile, "**MRD-list       : %s\n", text); FREE (text););
+
+    fprintf (handle, "**Def. Vars: ");
+    PrintDefUseMask (handle, defmask, varno);
+    fprintf (handle, "**Used Vars: ");
+    PrintDefUseMask (handle, usemask, varno);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  void PrintMRDMask( FILE *handle, long *mrdmask, int varno)
+ *
+ * description:
+ *   generates an output with a textual description of the MRD-list
+ *
+ ******************************************************************************/
+
+void
+PrintMrdMask (FILE *handle, long *mrdmask, int varno)
+{
+    node *nodeptr;
+    nodetype n_type;
+    int i;
+    int empty = 1;
+
+    DBUG_ENTER ("PrintMRD");
+
+    fprintf (handle, "**MRD list: ");
+    if (mrdmask) {
+        for (i = 0; i < varno; i++) {
+            if (mrdmask[i]) {
+                empty = 0;
+                n_type = NODE_TYPE ((node *)mrdmask[i]);
+                switch (n_type) {
+                case N_assign:
+                    nodeptr = ASSIGN_INSTR (((node *)mrdmask[i]));
+                    fprintf (handle, "(%3d,%-5.5s(%6p))\n%19s", i,
+                             mdb_nodetype[NODE_TYPE (nodeptr)], nodeptr, "");
+                    break;
+                case N_Npart:
+                    fprintf (handle, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[N_Npart], "");
+                    break;
+                default:
+                    if ((N_num <= n_type) && (n_type <= N_ok)) {
+                        fprintf (handle, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[n_type],
+                                 "");
+                    } else {
+                        fprintf (handle, "(%3d,%-8p)\n%19s", i, (node *)mrdmask[i], "");
+                    }
+                    break;
+                }
+            }
+        }
+        if (empty) {
+            fprintf (handle, " EMPTY");
+        }
+    } else {
+        fprintf (handle, " NULL");
+    }
+    fprintf (handle, "\n");
+
     DBUG_VOID_RETURN;
 }
 
@@ -1145,18 +1132,22 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                            Outside of the new WL this has the same effect as the old WL.
                            But inside we have the index variables defined.
                            See comment below at N_Nwith. */
+#if DUPMRD
                         if (comp_node
                             && (N_Nwith == NODE_TYPE (comp_node)
                                 || N_with == NODE_TYPE (comp_node)))
                             PushDupMRDL ();
+#endif
 
                         /* traverse into the N_let node */
                         trav_node = Trav (trav_node, arg_info);
 
+#if DUPMRD
                         if (comp_node
                             && (N_Nwith == NODE_TYPE (comp_node)
                                 || N_with == NODE_TYPE (comp_node)))
                             PopMRDL ();
+#endif
 
                         /* add new defines to MRD list */
                         ids_node = LET_IDS (trav_node);
@@ -1283,11 +1274,13 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_DEF = GenMask (INFO_CF_VARNO (arg_info));
                 INFO_USE = GenMask (INFO_CF_VARNO (arg_info));
 
+#if DUPMRD
                 if (MRD_TAB) {
                     PushDupMRDL ();
                     trav_node = Trav (trav_node, arg_info);
                     PopMRDL ();
                 } else
+#endif
                     trav_node = Trav (trav_node, arg_info);
 
                 if (!trav_node)
@@ -1371,11 +1364,13 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_DEF = GenMask (INFO_CF_VARNO (arg_info));
                 INFO_USE = GenMask (INFO_CF_VARNO (arg_info));
 
+#if DUPMRD
                 if (MRD_TAB) {
                     PushDupMRDL ();
                     trav_node = Trav (trav_node, arg_info);
                     PopMRDL ();
                 } else
+#endif
                     trav_node = Trav (trav_node, arg_info);
 
                 if (!trav_node)
@@ -1449,11 +1444,15 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_USE = GenMask (INFO_CF_VARNO (arg_info));
                 /* defines within this code must not appear as MRDs while traversing
                    other N_Ncode nodes. So the MRDL has to be saved. */
+#if DUPMRD
                 if (MRD_TAB)
                     PushDupMRDL ();
+#endif
                 trav_node = Trav (trav_node, arg_info);
+#if DUPMRD
                 if (MRD_TAB)
                     PopMRDL ();
+#endif
                 PlusMask (trav_node->mask[0], INFO_DEF, INFO_CF_VARNO (arg_info));
                 PlusMask (trav_node->mask[1], INFO_USE, INFO_CF_VARNO (arg_info));
                 PlusMask (INFO_DEF, old_mask[0], INFO_CF_VARNO (arg_info));
