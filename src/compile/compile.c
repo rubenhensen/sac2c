@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/04/27 17:33:00  nmw
+ * refcounting for special fundef (non recursive) AP icms added
+ *
  * Revision 3.48  2001/04/26 21:07:54  dkr
  * fixed a bug in COMPPrfIdxPsi: DBUG_ASSERT too regide
  *
@@ -1334,7 +1337,7 @@ CreateIcmND_FUN_AP (node *fundef, node **icm_tab, int tab_size)
     ret_node = MakeAssignIcm3 ("ND_FUN_AP", MakeId_Copy (FUNDEF_NAME (fundef)), icm_arg2,
                                MakeNum (cnt_icm));
 
-    /* insert pointer to fundef */
+    /* insert pointer to fundef and increment FUNDEF_USED counter*/
     ICM_FUNDEF (ASSIGN_INSTR (ret_node)) = fundef;
 
     /*
@@ -2867,6 +2870,7 @@ COMPAssign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPAssign");
 
+    INFO_COMP_ASSIGN (arg_info) = arg_node;
     instr = Trav (ASSIGN_INSTR (arg_node), arg_info);
     next = ASSIGN_NEXT (arg_node);
 
@@ -3536,18 +3540,13 @@ COMPAp (node *arg_node, node *arg_info)
     node *ret_node;
     node *fundef;
     node *assigns1, *assigns2;
+    node *new_icm;
 
     DBUG_ENTER ("COMPAp");
 
     fundef = AP_FUNDEF (arg_node);
 
     DBUG_PRINT ("COMP", ("COMPiling application of function %s", ItemName (fundef)));
-
-    if (FUNDEF_USED (fundef) != USED_INACTIVE) {
-        (FUNDEF_USED (fundef))++;
-        DBUG_PRINT ("COMP",
-                    ("incrementing FUNDEF_USED: new value = %d", FUNDEF_USED (fundef)));
-    }
 
     arg_info = GenerateIcmTypeTables (arg_info, fundef, TRUE, FALSE);
 
@@ -3569,10 +3568,27 @@ COMPAp (node *arg_node, node *arg_info)
 
     ret_node = AdjustAddedAssigns (ret_node, INFO_COMP_MERGE (arg_info));
 
+    /* create new icm */
+
+    new_icm = CreateIcmND_FUN_AP (fundef, INFO_COMP_ICMTAB (arg_info),
+                                  INFO_COMP_TABSIZE (arg_info));
+
+    /*
+     * increment FUNDEF_USED counter for external call to special loop fundefs
+     * or some cond special fundef
+     */
+    if (FUNDEF_USED (fundef) != USED_INACTIVE) {
+        if (((FUNDEF_IS_LOOPFUN (fundef))
+             && (INFO_COMP_ASSIGN (arg_info) != FUNDEF_INT_ASSIGN (fundef)))
+            || (FUNDEF_IS_CONDFUN (fundef))) {
+            (FUNDEF_USED (fundef))++;
+            DBUG_PRINT ("COMP", ("incrementing FUNDEF_USED: new value = %d",
+                                 FUNDEF_USED (fundef)));
+        }
+    }
+
     /* insert ND_FUN_AP icm at head of assignment chain */
-    ret_node = AppendAssign (CreateIcmND_FUN_AP (fundef, INFO_COMP_ICMTAB (arg_info),
-                                                 INFO_COMP_TABSIZE (arg_info)),
-                             ret_node);
+    ret_node = AppendAssign (new_icm, ret_node);
 
     /* insert 'merge_node' at head of assignment chain */
     ret_node = AppendAssign (INFO_COMP_MERGE (arg_info), ret_node);

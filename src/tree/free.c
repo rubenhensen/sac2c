@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/04/27 17:33:58  nmw
+ * refcounting for special fundef (non recursive) AP icms added
+ *
  * Revision 3.22  2001/04/26 11:54:54  nmw
  * FUNDEF_USED refcounting for ICMs, too
  *
@@ -1297,14 +1300,15 @@ FreeAp (node *arg_node, node *arg_info)
             /* caution: INT_ASSIGN may be NULL already!!! */
             (FUNDEF_INT_ASSIGN (fundef) != NULL)
             && (arg_node == ASSIGN_RHS (FUNDEF_INT_ASSIGN (fundef)))) {
-            FUNDEF_INT_ASSIGN (fundef) = NULL;
+            /* FUNDEF_INT_ASSIGN( fundef) = NULL;  */
+            /* noop */
         } else if (FUNDEF_USED (fundef) != USED_INACTIVE) {
             (FUNDEF_USED (fundef))--;
 
             DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0");
 
-            DBUG_PRINT ("FREE",
-                        ("decrementing used counter to %d", FUNDEF_USED (fundef)));
+            DBUG_PRINT ("FREE", ("decrementing used counter of %s to %d",
+                                 FUNDEF_NAME (fundef), FUNDEF_USED (fundef)));
 
             if ((FUNDEF_IS_LACFUN (fundef)) && (compiler_phase < PH_compile)) {
                 /* remove assignment from external assignment list */
@@ -1593,12 +1597,16 @@ FreeIcm (node *arg_node, node *arg_info)
 
     fundef = ICM_FUNDEF (arg_node);
 
-    if ((fundef != NULL) && (FUNDEF_USED (fundef) != USED_INACTIVE)) {
+    /* icm does external function application of loop special fundef */
+    if ((fundef != NULL) && (FUNDEF_USED (fundef) != USED_INACTIVE)
+        && (!((FUNDEF_IS_LOOPFUN (fundef))
+              && (INFO_FREE_ASSIGN (arg_info) == FUNDEF_INT_ASSIGN (fundef))))) {
         (FUNDEF_USED (fundef))--;
 
         DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0");
 
-        DBUG_PRINT ("FREE", ("decrementing used counter to %d", FUNDEF_USED (fundef)));
+        DBUG_PRINT ("FREE", ("decrementing used counter of %s to %d",
+                             FUNDEF_NAME (fundef), FUNDEF_USED (fundef)));
 
         if (FUNDEF_USED (fundef) == 0) {
             /*
