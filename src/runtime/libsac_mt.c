@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/07/10 15:21:15  cg
+ * bug fixed in vararg macro usage
+ *
  * Revision 1.7  1998/07/10 08:08:25  cg
  * header file stdarg.h used instead of varargs.h which is not
  * available under Linux.
@@ -128,7 +131,7 @@ SAC_TRMT_Print (char *format, ...)
 
     fprintf (stderr, "TR:%2u:-> ", threadid);
 
-    va_start (arg_p, );
+    va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);
 
