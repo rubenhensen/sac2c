@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/28 09:44:40  sbs
+ * compiler warning in InferMasks eliminated. For further info see "remarks"
+ * section in function declaration comment.
+ *
  * Revision 3.1  2000/11/20 17:59:23  sacbase
  * new release made
  *
@@ -351,6 +355,13 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
  * description:
  *   Inferes the in-, out-, local-vars of a conditional or loop.
  *
+ * remarks:
+ *   The initializations of in_then, out_then, local_then, in_else, out_else,
+ *   local_else, and tmp are required to avoid a compiler warning
+ *   "...might be used uninitialized" only. However, they should do no harm
+ *   either 8-) since type is assigned only once, and these vars are referred
+ *   to iff (type == N_cond) holds.
+ *
  ******************************************************************************/
 
 static node *
@@ -358,9 +369,9 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
             node *arg_info)
 {
     DFMmask_t old_needed, old_in, old_out, old_local;
-    DFMmask_t in_then, out_then, local_then;
-    DFMmask_t in_else, out_else, local_else;
-    DFMmask_t tmp;
+    DFMmask_t in_then = NULL, out_then = NULL, local_then = NULL;
+    DFMmask_t in_else = NULL, out_else = NULL, local_else = NULL;
+    DFMmask_t tmp = NULL;
     nodetype type = NODE_TYPE (arg_node);
 
     DBUG_ENTER ("InferMasks");
