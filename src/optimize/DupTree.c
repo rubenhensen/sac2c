@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/03/26 12:04:09  dkr
+ * removed a spelling mistake in DupWLproj
+ *
  * Revision 1.44  1998/03/26 11:11:33  dkr
  * changed DupWLproj
  *
@@ -811,7 +814,7 @@ DupWLproj (node *arg_node, node *arg_info)
                            DUPTRAV (WLPROJ_CONTENTS (arg_node)), NULL);
 
     WLPROJ_PART (new_node) = WLPROJ_PART (arg_node);
-    WLPROJ_MDOFIED (new_node) = 0;
+    WLPROJ_MODIFIED (new_node) = 0;
 
     WLPROJ_NEXT (new_node) = DUPCONT (WLPROJ_NEXT (arg_node));
 
