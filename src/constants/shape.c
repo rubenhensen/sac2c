@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2003/06/13 09:28:23  ktr
+ * Fixed a bug in SHTakeFromShape which caused a call of SHMakeShape with a
+ * negative argument.
+ *
  * Revision 1.11  2003/06/11 22:05:36  ktr
  * Added support for multidimensional arrays
  *
@@ -488,6 +492,7 @@ SHTakeFromShape (int n, shape *a)
             SHAPE_EXT (res, i) = SHAPE_EXT (a, i);
         }
     } else {
+        n *= -1;
         res = SHMakeShape (n);
         for (i = 0; i < n; i++) {
             SHAPE_EXT (res, i) = SHAPE_EXT (a, i + m - n);
