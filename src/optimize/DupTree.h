@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/04/17 11:42:17  srs
+ * added DupNcode()
+ *
  * Revision 1.24  1998/04/14 22:50:16  dkr
  * *** empty log message ***
  *
@@ -139,6 +142,7 @@ extern node *DupConc (node *arg_node, node *arg_info);
 extern node *DupNwith (node *arg_node, node *arg_info);
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
+extern node *DupNcode (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
 extern node *DupNgen (node *arg_node, node *arg_info);
 
