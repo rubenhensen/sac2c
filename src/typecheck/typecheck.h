@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:26:04  cg
+ * Added new functionality to the typechecker that allows to propagate
+ * constant integer arrays in certain situations and to successfully
+ * typecheck functions whose result type depends on the values of
+ * arguments.
+ *
  * Revision 3.1  2000/11/20 18:00:21  sacbase
  * new release made
  *
@@ -85,6 +91,13 @@ extern types *TI_array (node *arg_node, node *arg_info);
 extern node *Types2Array (types *type, types *res_type);
 extern node *LookupType (char *type_name, char *mod_name, int line);
 extern cmp_types CmpTypes (types *type_one, types *type_two);
+
+extern node *TCCPfundef (node *arg_node, node *arg_info);
+extern node *TCCPblock (node *arg_node, node *arg_info);
+extern node *TCCPassign (node *arg_node, node *arg_info);
+extern node *TCCPlet (node *arg_node, node *arg_info);
+extern node *TCCPnwithop (node *arg_node, node *arg_info);
+extern node *TCCPid (node *arg_node, node *arg_info);
 
 /* some global variables */
 extern file_type kind_of_file; /* to distinguish between compilation of a

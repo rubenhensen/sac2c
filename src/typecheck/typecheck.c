@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2000/12/06 18:26:04  cg
+ * Added new functionality to the typechecker that allows to propagate
+ * constant integer arrays in certain situations and to successfully
+ * typecheck functions whose result type depends on the values of
+ * arguments.
+ *
  * Revision 3.6  2000/12/06 08:15:02  cg
  * Added some new features that improve casting between user-defined
  * and primitive array types.
@@ -420,24 +426,6 @@ char *module_name = NULL; /* name of module to typecheck;
                            * is set in function Typecheck
                            */
 
-/*
- *  forward declarations
- */
-static types *TI_prf (node *arg_node, node *arg_info);
-static types *TI_ap (node *arg_node, node *arg_info);
-static types *TI (node *arg_node, node *arg_info);
-static types *TI_cast (node *arg_node, node *arg_info);
-
-static types *TI_Nwith (node *, node *);
-static types *TI_Npart (node *, types *, node *, node *);
-static types *TI_Ngenarray (node *, node *, node **);
-static void ConsistencyCheckModarray (int lineno, types *array_type,
-                                      types *generator_type, types *body_type);
-static types *TI_Nfoldprf (node *arg_node, types *block_type, types *neutral,
-                           node *arg_info);
-static types *TI_Nfoldfun (node *arg_node, types *body_type, types *neutral,
-                           node *arg_info);
-
 /* some local typedefs */
 typedef struct STACK_ELEM {
     node *node;
@@ -457,6 +445,27 @@ typedef struct FUN_TAB_ELEM {
     int n_dub;                 /* number of remaining dublications */
     struct FUN_TAB_ELEM *next; /* next fun_tab_elem node */
 } fun_tab_elem;
+
+/*
+ *  forward declarations
+ */
+static types *TI_prf (node *arg_node, node *arg_info);
+static types *TI_ap (node *arg_node, node *arg_info);
+static types *TI (node *arg_node, node *arg_info);
+static types *TI_cast (node *arg_node, node *arg_info);
+
+static types *TI_Nwith (node *, node *);
+static types *TI_Npart (node *, types *, node *, node *);
+static types *TI_Ngenarray (node *, node *, node **);
+static void ConsistencyCheckModarray (int lineno, types *array_type,
+                                      types *generator_type, types *body_type);
+static types *TI_Nfoldprf (node *arg_node, types *block_type, types *neutral,
+                           node *arg_info);
+static types *TI_Nfoldfun (node *arg_node, types *body_type, types *neutral,
+                           node *arg_info);
+
+static fun_tab_elem *DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas);
+static fun_tab_elem *TryConstantPropagation (fun_tab_elem *fun_p, node *args);
 
 /* some local variables */
 static type_tab_elem *type_table = NULL; /* table for typedefs */
@@ -3972,6 +3981,7 @@ DuplicateFun (fun_tab_elem *fun_p)
 
         /* set ATTRIB tag */
         FUNDEF_ATTRIB (new_fun_node) = ST_generic;
+
         DBUG_PRINT ("FUN_TAG",
                     ("ATTRIB-tag of function '%s' set to:%d",
                      ModName (FUNDEF_MOD (new_fun_node), FUNDEF_NAME (new_fun_node)),
@@ -4183,6 +4193,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                      *  there are more than one matching functions,
                                      *  so an error message will be given.
                                      */
+
                                     ERROR (
                                       line,
                                       ("More than one function matches the call of '%s`",
@@ -4197,6 +4208,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                      * there are more than one matching functions,
                                      * so an error message will be given.
                                      */
+
                                     ERROR (
                                       line,
                                       ("More than one function matches the call of '%s`",
@@ -4223,6 +4235,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                      *  there are more than one matching functions,
                                      *  so an error message will be given.
                                      */
+
                                     ERROR (
                                       line,
                                       ("More than one function matches the call of '%s`",
@@ -5846,6 +5859,15 @@ TI_ap (node *arg_node, node *arg_info)
     if (NULL == fun_p) {
         ABORT (NODE_LINE (arg_node),
                ("Function '%s` not defined", ModName (mod_name, fun_name)));
+    }
+
+    if (FUNDEF_BODY (fun_p->node) != NULL) {
+        fun_p = TryConstantPropagation (fun_p, AP_ARGS (arg_node));
+
+        if (0 != strcmp (fun_p->id, AP_NAME (arg_node))) {
+            FREE (AP_NAME (arg_node));
+            AP_NAME (arg_node) = StringCopy (fun_p->id);
+        }
     }
 
     CheckIfGOonlyCBR (FUNDEF_ARGS (fun_p->node), AP_ARGS (arg_node));
@@ -7892,6 +7914,276 @@ TCNcode (node *arg_node, node *arg_info)
 
     /* now we have to find the vardec for CEXPR and return it in arg_info. */
     arg_info->node[2]->info.types = TI (NCODE_CEXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   fun_tab_elem *TryConstantPropagation(fun_tab_elem *fun_p, node *args)
+ *
+ * description:
+ *
+ *   This function represents a more or less quick hack to realize the
+ *   propagation of integer vector constants across function definitions
+ *   in order to allow typechecking of functions like
+ *
+ *    int[] create_array(int[.] shp)
+ *
+ *
+ *   This works about as follows:
+ *    1. At function application check whether constant int vectors
+ *       are available among the function arguments.
+ *    2. If so, the function is duplicated
+ *    3. It is traversed with a list parameter-constant vector mappings
+ *    4. At each occurrence of a parameter the constant vector information
+ *       is annotated.
+ *    5. At each parameter occurrence in the specification of the result
+ *       shape of a genarray-withloop, the identifier is replaced by the
+ *       constant vector.
+ *    6. If (5) never happened, the function copy is removed again.
+ *
+ ******************************************************************************/
+
+static fun_tab_elem *
+TryConstantPropagation (fun_tab_elem *fun_p, node *args)
+{
+    node *arg, *param, *propnode;
+    nodelist *propnodes;
+
+    DBUG_ENTER ("TryConstantPropagation");
+
+    arg = args;
+    param = FUNDEF_ARGS (fun_p->node);
+    propnodes = NULL;
+
+    while ((param != NULL) && (arg != NULL)) {
+        if ((NODE_TYPE (EXPRS_EXPR (arg)) == N_id) && (ID_ISCONST (EXPRS_EXPR (arg)))
+            && (ID_VECTYPE (EXPRS_EXPR (arg)) == T_int)) {
+            propnode = DupTree (EXPRS_EXPR (arg));
+            FREE (ID_NAME (propnode));
+            ID_NAME (propnode) = StringCopy (ARG_NAME (param));
+
+            propnodes = MakeNodelistNode (propnode, propnodes);
+        }
+        arg = EXPRS_NEXT (arg);
+        param = ARG_NEXT (param);
+    }
+
+    if (propnodes != NULL) {
+        fun_p = DoConstantPropagation (fun_p, propnodes);
+        FreeNodelist (propnodes);
+    }
+
+    DBUG_RETURN (fun_p);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   fun_tab_elem *DoConstantPropagation(fun_tab_elem *fun_p, nodelist *propas)
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static fun_tab_elem *
+DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
+{
+    funtab *old_tab;
+    node *arg_info;
+    int n_dub;
+    fun_tab_elem *new_fun_p, *res_fun_p;
+    char *newname;
+
+    DBUG_ENTER ("DoConstantPropagation");
+
+    n_dub = fun_p->n_dub;
+    fun_p->n_dub = 1;
+    new_fun_p = DuplicateFun (fun_p);
+    fun_p->n_dub = n_dub;
+
+    newname = TmpVarName (FUNDEF_NAME (new_fun_p->node));
+    FREE (FUNDEF_NAME (new_fun_p->node));
+    FUNDEF_NAME (new_fun_p->node) = newname;
+    FREE (new_fun_p->id);
+    new_fun_p->id = StringCopy (newname);
+
+    old_tab = act_tab;
+    act_tab = tccp_tab;
+
+    arg_info = MakeInfo ();
+
+    INFO_TC_TCCP (arg_info) = propas;
+    INFO_TC_TCCPSUCCESS (arg_info) = 0;
+    INFO_TC_ISGWLSHAPE (arg_info) = 0;
+
+    new_fun_p->node = Trav (new_fun_p->node, arg_info);
+
+    if (INFO_TC_TCCPSUCCESS (arg_info)) {
+        res_fun_p = new_fun_p;
+    } else {
+        res_fun_p = fun_p;
+    }
+
+    FREE (arg_info);
+
+    act_tab = old_tab;
+
+    DBUG_RETURN (res_fun_p);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TCCPfundef(node *arg_node, node *arg_info)
+ *   node *TCCPblock(node *arg_node, node *arg_info)
+ *   node *TCCPassign(node *arg_node, node *arg_info)
+ *   node *TCCPlet(node *arg_node, node *arg_info)
+ *   node *TCCPnwithop(node *arg_node, node *arg_info)
+ *   node *TCCPid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *   Traversal routines for typecheck constant propagation.
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+TCCPfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TCCPfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (!INFO_TC_TCCPSUCCESS (arg_info)) {
+        FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TCCPblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TCCPblock");
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TCCPassign (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TCCPassign");
+
+    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_do)
+        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_while)
+        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
+
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TCCPlet (node *arg_node, node *arg_info)
+{
+    ids *ids;
+    nodelist *param;
+
+    DBUG_ENTER ("TCCPlet");
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    ids = LET_IDS (arg_node);
+
+    while (ids != NULL) {
+        param = INFO_TC_TCCP (arg_info);
+
+        while (param != NULL) {
+            if (0 == strcmp (IDS_NAME (ids), ID_NAME (NODELIST_NODE (param)))) {
+                FREE (ID_NAME (NODELIST_NODE (param)));
+                ID_NAME (NODELIST_NODE (param)) = StringCopy ("_");
+            }
+            param = NODELIST_NEXT (param);
+        }
+
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TCCPnwithop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TCCPnwithop");
+
+    if (NWITHOP_TYPE (arg_node) == WO_genarray) {
+        INFO_TC_ISGWLSHAPE (arg_info) = 1;
+        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        INFO_TC_ISGWLSHAPE (arg_info) = 0;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TCCPid (node *arg_node, node *arg_info)
+{
+    nodelist *param;
+
+    DBUG_ENTER ("TCCPid");
+
+    param = INFO_TC_TCCP (arg_info);
+
+    while (param != NULL) {
+        if (0 == strcmp (ID_NAME (arg_node), ID_NAME (NODELIST_NODE (param)))) {
+            if (INFO_TC_ISGWLSHAPE (arg_info)) {
+                arg_node = FreeTree (arg_node);
+                arg_node = MakeArray (IntVec2Array (ID_VECLEN (NODELIST_NODE (param)),
+                                                    ID_CONSTVEC (NODELIST_NODE (param))));
+                ARRAY_ISCONST (arg_node) = 1;
+                ARRAY_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
+                ARRAY_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
+                ARRAY_CONSTVEC (arg_node)
+                  = CopyConstVec (ID_VECTYPE (NODELIST_NODE (param)),
+                                  ID_VECLEN (NODELIST_NODE (param)),
+                                  ID_CONSTVEC (NODELIST_NODE (param)));
+
+                INFO_TC_TCCPSUCCESS (arg_info) = 1;
+            } else {
+                ID_ISCONST (arg_node) = 1;
+                ID_VECLEN (arg_node) = ID_VECLEN (NODELIST_NODE (param));
+                ID_VECTYPE (arg_node) = ID_VECTYPE (NODELIST_NODE (param));
+                ID_CONSTVEC (arg_node)
+                  = CopyConstVec (ID_VECTYPE (NODELIST_NODE (param)),
+                                  ID_VECLEN (NODELIST_NODE (param)),
+                                  ID_CONSTVEC (NODELIST_NODE (param)));
+            }
+
+            break;
+        }
+        param = NODELIST_NEXT (param);
+    }
 
     DBUG_RETURN (arg_node);
 }
