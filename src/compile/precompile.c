@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/03/24 21:31:41  dkr
+ * removed a bug with WLPROJ_PART
+ *
  * Revision 1.30  1998/03/24 21:09:53  dkr
  * removed a bug in IntersectOutline
  *
@@ -1615,13 +1618,13 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
 
     DBUG_ENTER ("IntersectOutline");
 
-    DBUG_ASSERT ((WLPROJ_PART (proj1) != NULL), "no part found");
-    DBUG_ASSERT ((WLPROJ_PART (proj2) != NULL), "no part found");
-
     *isect1 = *isect2 = NULL;
 
     while (proj1 != NULL) {
         DBUG_ASSERT ((proj2 != NULL), "dim not found");
+
+        DBUG_ASSERT ((WLPROJ_PART (proj1) != NULL), "no part found");
+        DBUG_ASSERT ((WLPROJ_PART (proj2) != NULL), "no part found");
 
         grid1 = WLPROJ_CONTENTS (proj1);
         DBUG_ASSERT ((grid1 != NULL), "grid not found");
@@ -1677,8 +1680,23 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                 /* modify the bounds of the first proj, so that the new outlines are
                  * disjunkt */
                 flag = 1;
-                new_isect1 = DupNode (proj1);
-                new_isect2 = DupNode (proj2);
+
+                new_isect1
+                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), bound11,
+                                bound21, step1, WLPROJ_UNROLLING (proj1),
+                                MakeWLgrid (WLGRID_DIM (grid1), grid1_b1, grid1_b2,
+                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
+                                NULL);
+                WLPROJ_PART (new_isect1) = WLPROJ_PART (proj1);
+
+                new_isect2
+                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), bound12,
+                                bound22, step2, WLPROJ_UNROLLING (proj2),
+                                MakeWLgrid (WLGRID_DIM (grid2), grid2_b1, grid2_b2,
+                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
+                                NULL);
+                WLPROJ_PART (new_isect2) = WLPROJ_PART (proj2);
+
                 if (WLPROJ_BOUND2 (proj1) < WLPROJ_BOUND2 (proj2)) {
                     WLPROJ_BOUND2 (new_isect1) = i_bound1;
                     new_isect1 = NormalizeProj_1 (new_isect1);
