@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/10/31 13:05:27  dkr
+ * bug in PREC1fundef fixed:
+ * status flag of main function is not set to ST_Cfun anymore
+ *
  * Revision 2.32  2000/10/30 19:23:10  dkr
  * bug in PREC2ap fixed:
  * applications of class conversion functions to scalar values are
@@ -325,7 +329,11 @@ PREC1fundef (node *arg_node, node *arg_info)
     /*
      * no module name -> must be an external C-fun
      */
+#ifdef MAIN_HAS_MODNAME
     if (FUNDEF_MOD (arg_node) == NULL) {
+#else
+    if ((FUNDEF_MOD (arg_node) == NULL) && strcmp (FUNDEF_NAME (arg_node), "main")) {
+#endif
         FUNDEF_STATUS (arg_node) = ST_Cfun;
     }
 
