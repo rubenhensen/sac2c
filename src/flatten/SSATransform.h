@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/06 21:05:24  sbs
+ * SSAfuncond added SSAexprs removed
+ *
  * Revision 1.3  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -55,7 +58,6 @@
 
 extern node *SSAfundef (node *arg_node, info *arg_info);
 extern node *SSAblock (node *arg_node, info *arg_info);
-extern node *SSAexprs (node *arg_node, info *arg_info);
 extern node *SSAassign (node *arg_node, info *arg_info);
 extern node *SSAlet (node *arg_node, info *arg_info);
 extern node *SSAicm (node *arg_node, info *arg_info);
@@ -67,6 +69,7 @@ extern node *SSANcode (node *arg_node, info *arg_info);
 extern node *SSANpart (node *arg_node, info *arg_info);
 extern node *SSANwithid (node *arg_node, info *arg_info);
 extern node *SSAcond (node *arg_node, info *arg_info);
+extern node *SSAfuncond (node *arg_node, info *arg_info);
 extern node *SSAreturn (node *arg_node, info *arg_info);
 extern node *SSAap (node *arg_node, info *arg_info);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.178  2004/08/06 21:06:38  sbs
+ * SSAfuncond added SSAexprs removed
+ *
  * Revision 3.177  2004/08/06 17:25:30  skt
  * creating the dataflowgraph still continues
  *
@@ -2032,7 +2035,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, DFAexprs, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSAexprs, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTTravSons, TravSons, TravSons, SSALIRexprs, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -2997,7 +3000,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSAfuncond, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, SSACFfuncond, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
