@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/07/21 12:40:38  khf
+ * ea_tab added
+ *
  * Revision 3.47  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -289,7 +292,7 @@ extern funtab *precomp2_tab;
 extern funtab *precomp3_tab;
 extern funtab *precomp4_tab;
 extern funtab *readsib_tab;
-extern funtab *unused_tab1;
+extern funtab *ea_tab;
 extern funtab *dfr_tab;
 extern funtab *tcwl_tab;
 extern funtab *wltrans_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/07/21 12:40:38  khf
+ * ea_tab added
+ *
  * Revision 3.59  2004/07/19 12:42:48  ktr
  * updated EMRC traversal.
  *
@@ -304,6 +307,7 @@
 #include "SelectionPropagation.h"
 #include "type_statistics.h"
 #include "WLPartitionGeneration.h"
+#include "ExplicitAccumulate.h"
 #include "ConstVarPropagation.h"
 #include "WithloopFusion.h"
 
@@ -679,15 +683,15 @@ static funtab unused_tab28_rec = {{
 funtab *unused_tab28 = &unused_tab28_rec;
 
 /*
- *  (34) unused_tab1
+ *  (34) ea_tab
  */
-static funtab unused_tab1_rec = {{
-#define NIFunused_1(it_unused_1) it_unused_1
+static funtab ea_tab_rec = {{
+#define NIFea(it_ea) it_ea
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab1 = &unused_tab1_rec;
+                            },
+                            NULL,
+                            NULL};
+funtab *ea_tab = &ea_tab_rec;
 
 /*
  *  (35) dfr_tab
