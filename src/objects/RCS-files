@@ -3,3 +3,5 @@ objects.c
 objects.h
 objinit.c
 objinit.h
+uniquecheck.c
+uniquecheck.h
