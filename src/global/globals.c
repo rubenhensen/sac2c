@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/01/21 13:19:53  jhs
+ * Added new mt ... infrastructure expanded ...
+ *
  * Revision 2.21  2000/01/17 19:45:25  cg
  * Default value for top arena initialization set to 0.
  * See comment in file why.
@@ -183,10 +186,13 @@ int dynamic_shapes = 0; /* Dynamic shapes are disabled by default */
  * Multi-thread options
  */
 
-int gen_mt_code = 0;
+int gen_mt_code = GEN_MT_NONE;
 /*
- * will be set to 1 iff one of the following options is set:
- * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
+ * will be set to GEN_MT_OLD iff one of the following options is set:
+ * -mt
+ *
+ * will be set to GEN_MT_NEW iff one of the following options is set:
+ * -mtn
  */
 
 int num_threads = 1;

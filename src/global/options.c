@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/01/21 13:19:53  jhs
+ * Added new mt ... infrastructure expanded ...
+ *
  * Revision 2.25  2000/01/17 17:58:45  cg
  * Added new heap manager optimization options
  * APS (arena preselection) and
@@ -384,7 +387,16 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("minmtsize", ARG_NUM (min_parallel_size));
 
     ARGS_FLAG ("mt", {
-        gen_mt_code = 1;
+        gen_mt_code = GEN_MT_OLD;
+        if (store_num_threads > 0) {
+            num_threads = store_num_threads;
+        } else {
+            num_threads = 0;
+        }
+    });
+
+    ARGS_FLAG ("mtn", {
+        gen_mt_code = GEN_MT_NEW;
         if (store_num_threads > 0) {
             num_threads = store_num_threads;
         } else {
@@ -398,7 +410,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("numthreads", {
         ARG_RANGE (store_num_threads, 1, max_threads);
-        if (gen_mt_code) {
+        if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
             num_threads = store_num_threads;
         }
     });
@@ -597,7 +609,7 @@ CheckOptionConsistency ()
 {
     DBUG_ENTER ("CheckOptionConsistency");
 
-    if (gen_mt_code) {
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
 
         if (cachesim & CACHESIM_YES) {
             SYSERROR (("Cache simulation is not available for multi-threaded "

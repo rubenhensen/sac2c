@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/01/21 13:19:53  jhs
+ * Added new mt ... infrastructure expanded ...
+ *
  * Revision 2.9  1999/10/28 20:01:43  sbs
  * comment changed from ARRAY_FLAT to PRINT_xxx.
  *
@@ -172,6 +175,7 @@
 #include "resource.h"
 #include "interrupt.h"
 #include "options.h"
+#include "multithread.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -501,10 +505,18 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code == 1) {
+    if (gen_mt_code == GEN_MT_OLD) {
         NOTE_COMPILER_PHASE;
+        NOTE (("using old version of mt"));
         CHECK_DBUG_START;
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    } else if (gen_mt_code == GEN_MT_NEW) {
+        NOTE_COMPILER_PHASE;
+        NOTE (("using new version of mt"));
+        CHECK_DBUG_START;
+        syntax_tree = BuildMultiThread (syntax_tree);
         CHECK_DBUG_STOP;
         ABORT_ON_ERROR;
     }

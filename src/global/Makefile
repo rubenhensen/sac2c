@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  2000/01/21 13:19:53  jhs
+# Added new mt ... infrastructure expanded ...
+#
 # Revision 2.13  2000/01/21 12:03:07  dkr
 # directory tree added
 #
@@ -82,7 +85,8 @@ ECHO      := echo -n
 
 INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects -I../concurrent -I../Old2NewWith
+     -I../psi-opt -I../objects -I../concurrent -I../Old2NewWith \
+     -I../multithread
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
      internal_lib.o tree_basic.o tree_compound.o globals.o \
@@ -157,13 +161,12 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: /usr/include/stdarg.h /usr/include/varargs.h
-Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
-Error.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-Error.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Error.o: /usr/include/string.h Error.h /usr/include/stdlib.h types.h
-Error.o: globals.h tree_basic.h ../../inc/dbug.h internal_lib.h
-Error.o: ../modules/filemgr.h resource.h
+Error.o: /usr/include/stdarg.h /usr/include/sys/va_list.h
+Error.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+Error.o: /usr/include/sys/isa_defs.h /usr/include/stdio_tag.h
+Error.o: /usr/include/stdio_impl.h /usr/include/string.h Error.h
+Error.o: /usr/include/stdlib.h types.h globals.h tree_basic.h
+Error.o: ../../inc/dbug.h internal_lib.h ../modules/filemgr.h resource.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -172,7 +175,8 @@ free.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h globals.h
 free.o: internal_lib.h traverse.h ../tree/DataFlowMask.h
 free.o: ../concurrent/scheduling.h free.h /usr/include/malloc.h
 free.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-free.o: /usr/include/sys/int_types.h
+free.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+free.o: /usr/include/sys/time.h /usr/include/sys/time.h
 globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 globals.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -182,12 +186,13 @@ globals.o: nt_info.mac
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/sys/isa_defs.h /usr/include/math.h
 internal_lib.o: /usr/include/string.h /usr/include/stdarg.h
-internal_lib.o: /usr/include/varargs.h /usr/include/sys/va_list.h
-internal_lib.o: /usr/include/ctype.h Error.h /usr/include/stdio.h
-internal_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h types.h
-internal_lib.o: globals.h free.h ../../inc/dbug.h my_debug.h
-internal_lib.o: /usr/include/malloc.h /usr/include/sys/types.h
-internal_lib.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+internal_lib.o: /usr/include/sys/va_list.h /usr/include/ctype.h Error.h
+internal_lib.o: /usr/include/stdio.h /usr/include/stdio_tag.h
+internal_lib.o: /usr/include/stdio_impl.h types.h globals.h free.h
+internal_lib.o: ../../inc/dbug.h my_debug.h /usr/include/malloc.h
+internal_lib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+internal_lib.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+internal_lib.o: /usr/include/sys/time.h /usr/include/sys/time.h
 internal_lib.o: internal_lib.h traverse.h tree_basic.h tree_compound.h
 interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
 interrupt.o: /usr/include/sys/isa_defs.h /usr/include/sys/signal.h
@@ -203,17 +208,19 @@ main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h
 main.o: free.h ../../inc/dbug.h my_debug.h /usr/include/malloc.h
 main.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-main.o: /usr/include/sys/int_types.h usage.h ../flatten/flatten.h
-main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
-main.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h
-main.o: ../psi-opt/psi-opt.h ../modules/writesib.h ../modules/readsib.h
-main.o: ../modules/implicittypes.h ../objects/objinit.h ../modules/analysis.h
-main.o: ../modules/checkdec.h ../objects/objects.h ../objects/uniquecheck.h
-main.o: ../objects/rmvoidfun.h ../compile/wltransform.h
-main.o: ../concurrent/concurrent.h ../compile/precompile.h
-main.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
-main.o: interrupt.h options.h
+main.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+main.o: /usr/include/sys/time.h /usr/include/sys/time.h usage.h
+main.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
+main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
+main.o: ../refcount/refcount.h ../scanparse/scnprs.h resource.h
+main.o: ../scanparse/y.tab.h ../psi-opt/psi-opt.h ../modules/writesib.h
+main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
+main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
+main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: ../compile/wltransform.h ../concurrent/concurrent.h
+main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
+main.o: ../compile/Old2NewWith.h interrupt.h options.h
+main.o: ../multithread/multithread.h
 my_debug.o: node_info.mac prf_node_info.mac type_info.mac
 options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 options.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h /usr/include/stdio.h
@@ -222,7 +229,8 @@ options.o: /usr/include/stdio_impl.h ../../inc/main_args.h
 options.o: /usr/include/string.h usage.h ../modules/filemgr.h globals.h
 options.o: types.h internal_lib.h free.h my_debug.h /usr/include/malloc.h
 options.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-options.o: /usr/include/sys/int_types.h Error.h
+options.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+options.o: /usr/include/sys/time.h /usr/include/sys/time.h Error.h
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 resource.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 resource.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -231,7 +239,8 @@ resource.o: tree_basic.h ../../inc/dbug.h resource.h ../scanparse/scnprs.h
 resource.o: globals.h ../scanparse/y.tab.h ../modules/filemgr.h free.h
 resource.o: my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
 resource.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-resource.o: internal_lib.h Error.h
+resource.o: /usr/include/sys/select.h /usr/include/sys/time.h
+resource.o: /usr/include/sys/time.h internal_lib.h Error.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 traverse.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -241,9 +250,11 @@ traverse.o: ../../inc/dbug.h my_debug.h ../flatten/flatten.h ../print/print.h
 traverse.o: ../typecheck/typecheck.h ../typecheck/typecheck_WL.h
 traverse.o: ../optimize/optimize.h free.h /usr/include/malloc.h
 traverse.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-traverse.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
-traverse.o: ../optimize/freemasks.h ../optimize/ConstantFolding.h
-traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/DeadFunctionRemoval.h
+traverse.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+traverse.o: /usr/include/sys/time.h /usr/include/sys/time.h
+traverse.o: ../optimize/generatemasks.h ../optimize/freemasks.h
+traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
+traverse.o: ../optimize/DeadFunctionRemoval.h
 traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
 traverse.o: ../modules/import.h ../tree/DupTree.h ../optimize/Inline.h
 traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
@@ -274,6 +285,8 @@ tree.o: internal_lib.h ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
 tree.o: resource.h ../scanparse/y.tab.h ../optimize/optimize.h free.h
 tree.o: /usr/include/malloc.h /usr/include/sys/types.h
 tree.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+tree.o: /usr/include/sys/select.h /usr/include/sys/time.h
+tree.o: /usr/include/sys/time.h
 tree_basic.o: types.h tree_basic.h Error.h /usr/include/stdio.h
 tree_basic.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 tree_basic.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -282,7 +295,8 @@ tree_basic.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
 tree_basic.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h free.h
 tree_basic.o: /usr/include/malloc.h /usr/include/sys/types.h
 tree_basic.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-tree_basic.o: internal_lib.h prf_node_info.mac
+tree_basic.o: /usr/include/sys/select.h /usr/include/sys/time.h
+tree_basic.o: /usr/include/sys/time.h internal_lib.h prf_node_info.mac
 tree_compound.o: types.h tree_basic.h tree_compound.h Error.h
 tree_compound.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 tree_compound.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -290,7 +304,9 @@ tree_compound.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 tree_compound.o: /usr/include/string.h /usr/include/stdlib.h globals.h
 tree_compound.o: ../../inc/dbug.h my_debug.h free.h /usr/include/malloc.h
 tree_compound.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-tree_compound.o: /usr/include/sys/int_types.h internal_lib.h
+tree_compound.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+tree_compound.o: /usr/include/sys/time.h /usr/include/sys/time.h
+tree_compound.o: internal_lib.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

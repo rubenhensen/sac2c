@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/01/21 13:19:53  jhs
+ * Added new mt ... infrastructure expanded ...
+ *
  * Revision 2.22  2000/01/17 17:58:45  cg
  * Added new heap manager optimization options
  * APS (arena preselection) and
@@ -35,6 +38,9 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.23  2000/01/21 13:19:53  jhs
+ * Added new mt ... infrastructure expanded ...
+ *
  * Revision 2.22  2000/01/17 17:58:45  cg
  * Added new heap manager optimization options
  * APS (arena preselection) and
@@ -176,6 +182,10 @@ extern char *tmp_dirname;
 extern int dynamic_shapes;
 
 extern char *target_name;
+
+#define GEN_MT_NONE 0
+#define GEN_MT_OLD 1
+#define GEN_MT_NEW 2
 
 extern int gen_mt_code;
 extern int num_threads;
