@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.183  1998/08/07 18:10:36  sbs
+ * inserted SAC_PF_BEGIN_WITH and SAC_PF_END_WITH Icms for New-wl2
+ *
  * Revision 1.182  1998/08/07 16:04:00  dkr
  * COMPWLsegVar added
  * some names of WL-ICMs changed
@@ -6546,7 +6549,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     node *fundef, *vardec, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
       *old_wl_node, *rc_icms_wl_ids = NULL, *assigns = NULL;
     ids *old_wl_ids;
-    char *icm_name1, *icm_name2;
+    char *icm_name1, *icm_name2, *profile_name;
     int old_multiple_segs;
 
     DBUG_ENTER ("COMPNwith2");
@@ -6641,9 +6644,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
 
     /*
-     * insert 'WL_..._BEGIN'-ICM
+     * build arguments for  'WL_..._BEGIN'-ICM and 'WL_..._END'-ICM
      */
-
     icm_args
       = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
                    MakeExprs (MakeId2 (
@@ -6652,10 +6654,14 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
     switch (NWITHOP_TYPE (NWITH2_WITHOP (arg_node))) {
     case WO_genarray:
-        /* here is no break missing! */
+        icm_name1 = "WL_NONFOLD_BEGIN";
+        icm_name2 = "WL_NONFOLD_END";
+        profile_name = "genarray";
+        break;
     case WO_modarray:
         icm_name1 = "WL_NONFOLD_BEGIN";
         icm_name2 = "WL_NONFOLD_END";
+        profile_name = "modarray";
         break;
 
     case WO_foldfun:
@@ -6719,14 +6725,22 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
         icm_name1 = "WL_FOLD_BEGIN";
         icm_name2 = "WL_FOLD_END";
+        profile_name = "fold";
         break;
 
     default:
         DBUG_ASSERT ((0), "wrong withop type found");
     }
 
+    /*
+     * create PF_BEGIN_WITH (for profiling) and 'WL_..._BEGIN'-ICM
+     */
     assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name1, icm_args, NULL), NULL));
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm ("PF_BEGIN_WITH",
+                                           MakeId (profile_name, NULL, ST_regular), NULL),
+                                  MakeAssign (MakeIcm (icm_name1, icm_args, NULL),
+                                              NULL)));
 
     /*
      * compile the with-segments
@@ -6735,10 +6749,14 @@ COMPNwith2 (node *arg_node, node *arg_info)
     assigns = AppendAssign (assigns, Trav (NWITH2_SEGS (arg_node), arg_info));
 
     /*
-     * insert 'WL_END'-ICM
+     * create PF_END_WITH (for profiling) and  'WL_END'-ICM
      */
     assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name2, icm_args, NULL), NULL));
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm ("PF_END_WITH",
+                                           MakeId (profile_name, NULL, ST_regular), NULL),
+                                  MakeAssign (MakeIcm (icm_name2, icm_args, NULL),
+                                              NULL)));
 
     /*
      * insert RC-ICMs from 'wl_ids = neutral'
