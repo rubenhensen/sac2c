@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/27 21:06:51  cg
+ * Added support for APL entry in wlcomp pragma.
+ *
  * Revision 3.2  2000/11/24 11:59:19  sbs
  * yyparse and yylex prototypes given for avoiding
  * warnings in bison.simple....
@@ -1549,14 +1552,20 @@ wlcomp_expr: DEFAULT
                    $$ = $4;
                  }
                  else {
-                   $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
-                   /* append $$ to $4 */
-                   if (tmp != NULL) {
-                     while (EXPRS_NEXT(tmp) != NULL) {
-                       tmp = EXPRS_NEXT(tmp);
-                     }
-                     EXPRS_NEXT(tmp) = $$;
+                   if ((!(optimize & OPT_APL))
+                       && (0==strcmp( $1, "APL"))) {
                      $$ = $4;
+                   }
+                   else {
+                     $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
+                     /* append $$ to $4 */
+                     if (tmp != NULL) {
+                       while (EXPRS_NEXT(tmp) != NULL) {
+                         tmp = EXPRS_NEXT(tmp);
+                       }
+                       EXPRS_NEXT(tmp) = $$;
+                       $$ = $4;
+                     }
                    }
                  }
                }
@@ -1567,6 +1576,9 @@ wlcomp_args: expr_ar COMMA wlcomp_args
                }
            | expr_num COMMA wlcomp_args
                { $$ = MakeExprs($1, $3);
+               }
+           | STR COMMA wlcomp_args
+               { $$ = MakeExprs(MakeId($1, NULL, ST_regular), $3);
                }
            |
                { $$ = NULL;
@@ -2048,7 +2060,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
              $$=MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR($8)), $8);
              NWITHOP_EXPR($8) = NULL;
              NCODE_USED(NWITH_CODE($$))++;
-             NODE_LINE($$)= $<cint>3;
+             NODE_LINE($$)= $<cint>4;
              NWITH_PRAGMA($$) = $1;
 
              /*
