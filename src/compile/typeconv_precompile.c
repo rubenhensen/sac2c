@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/12/07 17:46:23  sah
+ * rearranged code to fix segfault
+ *
  * Revision 1.2  2004/11/27 02:39:27  ktr
  * errorcorrection.
  *
@@ -381,9 +384,10 @@ TCPap (node *arg_node, info *arg_info)
         }
 
         arg = fun_argtab->ptr_in[idx];
-        id = EXPRS_EXPR (ap_argtab->ptr_in[idx]);
 
         if (arg != NULL) {
+            id = EXPRS_EXPR (ap_argtab->ptr_in[idx]);
+
             DBUG_ASSERT (id != NULL, "Malformed argtab!");
 
             actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (ids));
