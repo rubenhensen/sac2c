@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.212  1998/05/05 11:16:32  srs
+ * modified MASK output of PrintWith
+ *
  * Revision 1.211  1998/05/02 18:12:15  dkr
  * fixed a bug in PrintSync, PrintSpmd
  *
@@ -1713,7 +1716,7 @@ PrintWith (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", char *text;
                   text = PrintMask (arg_node->node[1]->mask[1], VARNO);
-                  fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
+                  fprintf (outfile, "\n\n**Used Variables (gen-,modarray) : %s\n", text);
                   FREE (text););
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - with body\n");
