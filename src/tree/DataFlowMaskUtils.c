@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/17 09:03:35  ktr
+ * added support for AVIS nodes.
+ *
  * Revision 3.12  2004/09/29 16:55:48  sah
  * added lots of DBUG_PRINT statements and switched DFM2ProductType to
  * a recursive implementation avoiding copying types
@@ -592,6 +595,12 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
                              mdb_statustype[ARG_STATUS (args)]));
 
         lut = InsertIntoLUT_P (lut, decl, args);
+        if (VARDEC_AVIS (decl) != NULL) {
+            if (AVIS_TYPE (VARDEC_AVIS (decl)) != NULL) {
+                AVIS_TYPE (args) = TYCopyType (AVIS_TYPE (VARDEC_AVIS (decl)));
+            }
+            lut = InsertIntoLUT_P (lut, VARDEC_AVIS (decl), ARG_AVIS (args));
+        }
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
@@ -625,6 +634,7 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
+        ID_AVIS (id) = VARDEC_AVIS (ID_VARDEC (id));
         SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
         SET_FLAG (ID, id, IS_REFERENCE, FALSE);
 
@@ -694,6 +704,8 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
+        ID_AVIS (id) = VARDEC_AVIS (ID_VARDEC (id));
+
         SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
         SET_FLAG (ID, id, IS_REFERENCE,
                   ((VARDEC_OR_ARG_ATTRIB (decl) == ST_reference)
@@ -740,6 +752,7 @@ DFM2LetIds (DFMmask_t mask, LUT_t lut)
         tmp = _ids;
         _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
         IDS_VARDEC (_ids) = SearchInLUT_PP (lut, decl);
+        IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
         IDS_NEXT (_ids) = tmp;
 
         /*
