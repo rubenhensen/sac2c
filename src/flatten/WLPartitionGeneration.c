@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/08/03 09:05:36  khf
+ * some code brushing done
+ * call of MakeNCode adjusted, corrected type of new struct constants
+ * and identifiers
+ * corrected inference of generator properties
+ *
  * Revision 1.9  2004/07/22 17:26:23  khf
  * Special functions are now traversed when they are used
  *
@@ -40,6 +46,7 @@
 #include <stdlib.h>
 
 #include "types.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
@@ -71,6 +78,7 @@ struct INFO {
     node *modul;
     int genprob;
     int genshp;
+    int subphase;
 };
 
 /*******************************************************************************
@@ -95,6 +103,7 @@ struct INFO {
 #define INFO_WLPG_MODUL(n) (n->modul)
 #define INFO_WLPG_GENPROP(n) (n->genprob)
 #define INFO_WLPG_GENSHP(n) (n->genshp)
+#define INFO_WLPG_SUBPHASE(n) (n->subphase)
 
 /**
  * INFO functions
@@ -115,6 +124,7 @@ MakeInfo ()
     INFO_WLPG_MODUL (result) = NULL;
     INFO_WLPG_GENPROP (result) = 0;
     INFO_WLPG_GENSHP (result) = 0;
+    INFO_WLPG_SUBPHASE (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -138,6 +148,8 @@ typedef enum {
     GV_unknown_shape
 } gen_shape_t;
 
+typedef enum { SP_cf, SP_mod, SP_func } sub_phase_t;
+
 #ifndef DBUG_OFF
 static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
 #endif
@@ -158,10 +170,9 @@ static node *
 CreateStructConstant (node *expr, node *nassigns)
 {
     node *tmp1, *tmp2, *idn, *iterator;
-    ids *tmp_ids;
     shpseg *nshpseg;
     int dim = 0;
-    char *varname;
+    simpletype btype;
 
     DBUG_ENTER ("CreateStructConstant");
 
@@ -172,12 +183,7 @@ CreateStructConstant (node *expr, node *nassigns)
     iterator = nassigns;
 
     while (iterator) {
-        tmp_ids = LET_IDS (ASSIGN_INSTR (iterator));
-        varname = StringCopy (IDS_NAME (tmp_ids));
-
-        idn = MakeId (varname, NULL, ST_regular);
-        ID_VARDEC (idn) = IDS_VARDEC (tmp_ids);
-        ID_AVIS (idn) = IDS_AVIS (tmp_ids);
+        idn = DupIds_Id (LET_IDS (ASSIGN_INSTR (iterator)));
 
         if (tmp1) {
             EXPRS_NEXT (tmp2) = MakeExprs (idn, NULL);
@@ -192,8 +198,9 @@ CreateStructConstant (node *expr, node *nassigns)
     }
 
     tmp1 = MakeFlatArray (tmp1);
+    btype = TYPES_BASETYPE (IDS_TYPE (LET_IDS (ASSIGN_INSTR (nassigns))));
     nshpseg = MakeShpseg (MakeNums (dim, NULL));
-    ARRAY_TYPE (tmp1) = MakeTypes (N_id, 1, nshpseg, NULL, NULL);
+    ARRAY_TYPE (tmp1) = MakeTypes (btype, 1, nshpseg, NULL, NULL);
     expr = FreeTree (expr);
     expr = tmp1;
 
@@ -202,32 +209,38 @@ CreateStructConstant (node *expr, node *nassigns)
 
 /** <!--********************************************************************-->
  *
- * @fn node *AppendAssigns( node *nassigns, node *oassigns)
+ * @fn ids *NewIds( node *id, node *fundef)
  *
- *   @brief appends nassigns on oassigns.
+ *   @brief creates new IDS.
  *
- *   @param  node *nassigns :  a new chained list of N_assign nodes
- *           node *oassigns :  a old chained list of N_assign nodes
- *   @return node *         :  updated oassigns
+ *   @param  node *id       :  N_id node the new name and type will be
+ *                             infered from
+ *           node *fundef   :  N_fundef
+ *   @return ids *          :  new Ids
  ******************************************************************************/
-static node *
-AppendAssigns (node *nassigns, node *oassigns)
+static ids *
+NewIds (node *id, node *fundef)
 {
-    node *iterator;
+    node *vardec;
+    ids *_ids;
+    char *nvarname;
 
-    DBUG_ENTER ("AppendAssigns");
+    DBUG_ENTER ("NewIds");
 
-    if (oassigns) {
-        iterator = oassigns;
-        while (ASSIGN_NEXT (iterator)) {
-            iterator = ASSIGN_NEXT (iterator);
-        }
-        ASSIGN_NEXT (iterator) = nassigns;
-    } else {
-        oassigns = nassigns;
-    }
+    DBUG_ASSERT ((id != NULL) && (NODE_TYPE (id) == N_id), "ID is empty or not N_id");
 
-    DBUG_RETURN (oassigns);
+    nvarname = TmpVarName (ID_NAME (id));
+    _ids = MakeIds (nvarname, NULL, ST_regular);
+    vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (ID_TYPE (id)), NULL);
+
+    AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (ID_AVIS (id)));
+
+    IDS_VARDEC (_ids) = vardec;
+    IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
+
+    fundef = AddVardecs (fundef, vardec);
+
+    DBUG_RETURN (_ids);
 }
 
 /** <!--********************************************************************-->
@@ -598,11 +611,9 @@ static node *
 CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
               node *coden, info *arg_info)
 {
-    node *nw, *stpe, *wthe, *nwe, *partn, *withidn, *lbn, *wthn, *tmp1, *tmp2, *vardec,
-      *nassign, *idn;
+    node *nw, *stpe, *wthe, *nwe, *partn, *withidn, *lbn, *wthn, *tmp1, *tmp2, *nassign;
     int i, d, stpnum, wthnum;
     ids *_ids;
-    char *nvarname;
 
     DBUG_ENTER ("CompleteGrid");
 
@@ -636,15 +647,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 if (NODE_TYPE (EXPRS_EXPR (lbn)) == N_num) {
                     NUM_VAL (EXPRS_EXPR (lbn)) = NUM_VAL (EXPRS_EXPR (lbn)) + wthnum;
                 } else {
-                    nvarname = TmpVarName (ID_NAME (EXPRS_EXPR (lbn)));
-                    _ids = MakeIds (nvarname, NULL, ST_regular);
-                    vardec = MakeVardec (StringCopy (nvarname),
-                                         DupOneTypes (ID_TYPE (EXPRS_EXPR (lbn))), NULL);
-                    IDS_VARDEC (_ids) = vardec;
-                    IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
 
-                    INFO_WLPG_FUNDEF (arg_info)
-                      = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
+                    _ids = NewIds (EXPRS_EXPR (lbn), INFO_WLPG_FUNDEF (arg_info));
 
                     /* the identifier to add wthnum to */
                     tmp1 = DupTree (EXPRS_EXPR (lbn));
@@ -654,15 +658,14 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                     tmp1 = MakePrf (F_add_SxS, MakeExprs (tmp1, tmp2));
 
                     nassign = MakeAssign (MakeLet (tmp1, _ids), NULL);
-                    INFO_WLPG_NASSIGNS (arg_info)
-                      = AppendAssigns (nassign, INFO_WLPG_NASSIGNS (arg_info));
+                    /* set correct backref to defining assignment */
+                    AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
-                    idn = MakeId (StringCopy (nvarname), NULL, ST_regular);
-                    ID_VARDEC (idn) = IDS_VARDEC (_ids);
-                    ID_AVIS (idn) = IDS_AVIS (_ids);
+                    INFO_WLPG_NASSIGNS (arg_info)
+                      = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
 
                     EXPRS_EXPR (lbn) = FreeTree (EXPRS_EXPR (lbn));
-                    EXPRS_EXPR (lbn) = idn;
+                    EXPRS_EXPR (lbn) = DupIds_Id (_ids);
                 }
                 NUM_VAL (EXPRS_EXPR (wthn)) = stpnum - wthnum;
                 i = NormalizeStepWidth (&(NPART_STEP (partn)), &(NPART_WIDTH (partn)));
@@ -685,15 +688,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 NUM_VAL (EXPRS_EXPR (lbn))
                   = NUM_VAL (EXPRS_EXPR (lbn)) + NUM_VAL (EXPRS_EXPR (wthe));
             } else {
-                nvarname = TmpVarName (ID_NAME (EXPRS_EXPR (lbn)));
-                _ids = MakeIds (nvarname, NULL, ST_regular);
-                vardec = MakeVardec (StringCopy (nvarname),
-                                     DupOneTypes (ID_TYPE (EXPRS_EXPR (lbn))), NULL);
-                IDS_VARDEC (_ids) = vardec;
-                IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
 
-                INFO_WLPG_FUNDEF (arg_info)
-                  = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
+                _ids = NewIds (EXPRS_EXPR (lbn), INFO_WLPG_FUNDEF (arg_info));
 
                 /* the identifier to add current width to */
                 tmp1 = DupTree (EXPRS_EXPR (lbn));
@@ -703,15 +699,14 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 tmp1 = MakePrf (F_add_SxS, MakeExprs (tmp1, tmp2));
 
                 nassign = MakeAssign (MakeLet (tmp1, _ids), NULL);
-                INFO_WLPG_NASSIGNS (arg_info)
-                  = AppendAssigns (nassign, INFO_WLPG_NASSIGNS (arg_info));
+                /* set correct backref to defining assignment */
+                AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
-                idn = MakeId (StringCopy (nvarname), NULL, ST_regular);
-                ID_VARDEC (idn) = IDS_VARDEC (_ids);
-                ID_AVIS (idn) = IDS_AVIS (_ids);
+                INFO_WLPG_NASSIGNS (arg_info)
+                  = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
 
                 EXPRS_EXPR (lbn) = FreeTree (EXPRS_EXPR (lbn));
-                EXPRS_EXPR (lbn) = idn;
+                EXPRS_EXPR (lbn) = DupIds_Id (_ids);
             }
 
             if ((NODE_TYPE (EXPRS_EXPR (stpe)) == N_num)
@@ -719,15 +714,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 NUM_VAL (EXPRS_EXPR (wthn))
                   = NUM_VAL (EXPRS_EXPR (stpe)) - NUM_VAL (EXPRS_EXPR (wthe));
             } else {
-                nvarname = TmpVarName (ID_NAME (EXPRS_EXPR (wthn)));
-                _ids = MakeIds (nvarname, NULL, ST_regular);
-                vardec = MakeVardec (StringCopy (nvarname),
-                                     DupOneTypes (ID_TYPE (EXPRS_EXPR (wthn))), NULL);
-                IDS_VARDEC (_ids) = vardec;
-                IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
 
-                INFO_WLPG_FUNDEF (arg_info)
-                  = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
+                _ids = NewIds (EXPRS_EXPR (wthn), INFO_WLPG_FUNDEF (arg_info));
 
                 /* the first identifier */
                 tmp1 = DupTree (EXPRS_EXPR (stpe));
@@ -737,15 +725,14 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 tmp1 = MakePrf (F_sub_SxS, MakeExprs (tmp1, tmp2));
 
                 nassign = MakeAssign (MakeLet (tmp1, _ids), NULL);
-                INFO_WLPG_NASSIGNS (arg_info)
-                  = AppendAssigns (nassign, INFO_WLPG_NASSIGNS (arg_info));
+                /* set correct backref to defining assignment */
+                AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
-                idn = MakeId (StringCopy (nvarname), NULL, ST_regular);
-                ID_VARDEC (idn) = IDS_VARDEC (_ids);
-                ID_AVIS (idn) = IDS_AVIS (_ids);
+                INFO_WLPG_NASSIGNS (arg_info)
+                  = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
 
                 EXPRS_EXPR (wthn) = FreeTree (EXPRS_EXPR (wthn));
-                EXPRS_EXPR (wthn) = idn;
+                EXPRS_EXPR (wthn) = DupIds_Id (_ids);
             }
 
             i = NormalizeStepWidth (&(NPART_STEP (partn)), &(NPART_WIDTH (partn)));
@@ -799,7 +786,7 @@ CreateFullPartition (node *wln, info *arg_info)
     ids *_ids;
     types *type;
     shpseg *oshpseg, *nshpseg;
-    char *varname, *nvarname;
+    char *varname;
     int dim, i, gen_shape = 0;
     bool do_create;
 
@@ -842,14 +829,7 @@ CreateFullPartition (node *wln, info *arg_info)
             nassigns = NULL;
 
             for (i = (abs (dim) - 3); i >= 0; i--) {
-                nvarname = TmpVarName (ID_NAME (NWITH_ARRAY (wln)));
-                _ids = MakeIds (nvarname, NULL, ST_regular);
-                vardec = MakeVardec (StringCopy (nvarname),
-                                     DupOneTypes (ID_TYPE (NWITH_ARRAY (wln))), NULL);
-                IDS_VARDEC (_ids) = vardec;
-                IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
-                INFO_WLPG_FUNDEF (arg_info)
-                  = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
+                _ids = NewIds (NWITH_ARRAY (wln), INFO_WLPG_FUNDEF (arg_info));
 
                 /* index position for selection */
                 tmp1 = MakeNum (i);
@@ -865,7 +845,7 @@ CreateFullPartition (node *wln, info *arg_info)
 
             array_shape = CreateStructConstant (array_shape, nassigns);
             INFO_WLPG_NASSIGNS (arg_info)
-              = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
+              = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
         } else {
             /* dimension unknown */
             array_shape = NULL;
@@ -928,16 +908,13 @@ CreateFullPartition (node *wln, info *arg_info)
         IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
         INFO_WLPG_FUNDEF (arg_info) = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
 
-        /* varname is duplicated here (own mem) */
-        idn = MakeId (StringCopy (varname), NULL, ST_regular);
-        ID_VARDEC (idn) = IDS_VARDEC (_ids);
-        ID_AVIS (idn) = IDS_AVIS (_ids);
+        idn = DupIds_Id (_ids);
 
         /* create new N_Ncode node  */
         nassign = MakeAssign (MakeLet (coden, _ids), NULL);
         /* set correct backref to defining assignment */
         AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
-        coden = MakeNCode (MakeBlock (nassign, NULL), idn);
+        coden = MakeNCode (MakeBlock (nassign, NULL), MakeExprs (idn, NULL));
 
         /* create surrounding cuboids */
         wln = CutSlices (array_null, array_shape, NWITH_BOUND1 (wln), NWITH_BOUND2 (wln),
@@ -990,11 +967,10 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 {
     ids *let_ids;
     int dim, i;
-    node *lb, *ub, *lbe, *ube, *vardec;
+    node *lb, *ub, *lbe, *ube;
     node *code;
-    node *tmpn, *assignn, *idn, *blockn;
+    node *tmpn, *assignn, *blockn, *cexpr;
     ids *_ids;
-    char *varname;
     types *type;
 
     node *res;
@@ -1046,53 +1022,41 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
         } else {
             blockn = NCODE_CBLOCK (code);
             tmpn = BLOCK_INSTR (blockn);
+            cexpr = NCODE_CEXPR (code);
 
             if (N_empty == NODE_TYPE (tmpn)) {
                 /* there is no instruction in the block right now. */
-                BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
-                /* first, introduce a new variable */
-                varname = TmpVar ();
-                _ids = MakeIds (varname, NULL, ST_regular);
-                /* determine type of expr in the operator (result of body) */
-                type = ID_TYPE (NWITH_CEXPR (INFO_WLPG_WL (arg_info)));
-                vardec = MakeVardec (StringCopy (varname), DupOneTypes (type), NULL);
-                IDS_VARDEC (_ids) = vardec;
-                IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
-                INFO_WLPG_FUNDEF (arg_info)
-                  = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
+                _ids = NewIds (cexpr, INFO_WLPG_FUNDEF (arg_info));
 
-                tmpn = CreateZeroFromType (type, FALSE, INFO_WLPG_FUNDEF (arg_info));
+                /* determine type of expr in the operator (result of body) */
+                tmpn = CreateZeroFromType (ID_TYPE (cexpr), FALSE,
+                                           INFO_WLPG_FUNDEF (arg_info));
 
                 /* replace N_empty with new assignment "_ids = [0,..,0]" */
                 assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
-                BLOCK_INSTR (blockn) = assignn;
+                BLOCK_INSTR (blockn) = AppendAssign (BLOCK_INSTR (blockn), assignn);
 
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
 
                 /* replace CEXPR */
-                idn = MakeId (StringCopy (varname), NULL, ST_regular);
-                ID_VARDEC (idn) = IDS_VARDEC (_ids);
-                ID_AVIS (idn) = IDS_AVIS (_ids);
                 tmpn = NWITH_CODE (INFO_WLPG_WL (arg_info));
                 NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
-                NCODE_CEXPR (tmpn) = idn;
+                NCODE_CEXPR (tmpn) = DupIds_Id (_ids);
 
             } else {
                 /* we have a non-empty block.
-                   search last assignment and make it the only one in the block. */
-                while (ASSIGN_NEXT (tmpn)) {
-                    tmpn = ASSIGN_NEXT (tmpn);
-                }
-                assignn = DupTree (tmpn);
-                FreeTree (BLOCK_INSTR (blockn));
-                FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+                   search cexpr assignment and make it the only one in the block. */
+
+                assignn = DupNode (AVIS_SSAASSIGN (ID_AVIS (cexpr)));
+                BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
+                assignn = FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
                 BLOCK_INSTR (blockn) = assignn;
                 _ids = LET_IDS (ASSIGN_INSTR (assignn));
                 type = IDS_TYPE (_ids);
 
                 tmpn = CreateZeroFromType (type, FALSE, INFO_WLPG_FUNDEF (arg_info));
-                NCODE_FLAG (NWITH_CODE (INFO_WLPG_WL (arg_info))) = TRUE;
+                NCODE_FLAG (code) = TRUE;
 
                 LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
             }
@@ -1116,7 +1080,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
  * @fn node *CreateNewAssigns( node *expr, node *f_def)
  *
  *   @brief expects (expr) to point to an identifier and generates as many
- *          new assigns as the value of the shapevektor at position 0 of (expr)
+ *          new assigns as the value of the shapevector at position 0 of (expr)
  *          indicates.
  *
  *   @param  node *expr  :  expr
@@ -1130,6 +1094,7 @@ CreateNewAssigns (node *expr, node *f_def)
     node *tmp1, *tmp2, *tmp3, *nassigns, *vardec;
     ids *_ids;
     char *nvarname;
+    types *type;
 
     DBUG_ENTER ("CreateNewAssigns");
 
@@ -1143,7 +1108,9 @@ CreateNewAssigns (node *expr, node *f_def)
     for (i = ID_SHAPE (expr, 0) - 1; i >= 0; i--) {
         nvarname = TmpVarName (ID_NAME (expr));
         _ids = MakeIds (nvarname, NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (ID_TYPE (expr)), NULL);
+        type = MakeTypes1 (TYPES_BASETYPE (ID_TYPE (expr)));
+        vardec = MakeVardec (StringCopy (nvarname), type, NULL);
+
         IDS_VARDEC (_ids) = vardec;
         IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
 
@@ -1412,10 +1379,21 @@ WLPGmodul (node *arg_node, info *arg_info)
 
     INFO_WLPG_MODUL (arg_info) = arg_node;
 
+    /* For Constant Folding */
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
+    if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "cf")))
+        goto DONE;
+
+    /* For WLPartitionGeneration module-wise */
+    INFO_WLPG_SUBPHASE (arg_info) = SP_mod;
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+DONE:
     DBUG_RETURN (arg_node);
 }
 
@@ -1440,7 +1418,7 @@ WLPGfundef (node *arg_node, info *arg_info)
     INFO_WLPG_WL (arg_info) = NULL;
     INFO_WLPG_FUNDEF (arg_info) = arg_node;
 
-    if (compiler_phase == PH_wlenhance) {
+    if (INFO_WLPG_SUBPHASE (arg_info) == SP_cf) {
         /*
          * to compute primitive function for constant expressions, especially
          * for bounds, steps and widths of WL's generator.
@@ -1450,20 +1428,22 @@ WLPGfundef (node *arg_node, info *arg_info)
               = SSAConstantFolding (arg_node, INFO_WLPG_MODUL (arg_info)); /* ssacf_tab */
         }
 
-        if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "cf"))) {
-            if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-            }
-        } else {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+    } else if (INFO_WLPG_SUBPHASE (arg_info) == SP_mod) {
+
+        if (khf) {
             if (FUNDEF_BODY (arg_node)) {
                 FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
             }
-
-            if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-            }
         }
-    } else {
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
+    } else if (INFO_WLPG_SUBPHASE (arg_info) == SP_func) {
         /* compiler_phase == PH_sacopt */
         if (FUNDEF_BODY (arg_node)) {
             FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
@@ -1576,7 +1556,8 @@ WLPGap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLPGap");
 
-    if ((compiler_phase == PH_sacopt) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+    if ((INFO_WLPG_SUBPHASE (arg_info) == SP_func)
+        && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
         /*
          * special functions must be traversed when they are used
          */
@@ -1731,7 +1712,7 @@ WLPGNwithop (node *arg_node, info *arg_info)
               = CreateStructConstant (NWITHOP_SHAPE (arg_node), nassigns);
             current_shape = GV_struct_constant;
             INFO_WLPG_NASSIGNS (arg_info)
-              = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
+              = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
         }
 
         if (INFO_WLPG_GENSHP (arg_info) < current_shape) {
@@ -1836,7 +1817,7 @@ WLPGNgenerator (node *arg_node, info *arg_info)
         NGEN_BOUND1 (arg_node) = CreateStructConstant (NGEN_BOUND1 (arg_node), nassigns);
         gshape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
+          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     } else {
         gshape = current_shape;
     }
@@ -1847,7 +1828,7 @@ WLPGNgenerator (node *arg_node, info *arg_info)
         NGEN_BOUND2 (arg_node) = CreateStructConstant (NGEN_BOUND2 (arg_node), nassigns);
         current_shape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
+          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     }
     if (gshape < current_shape) {
         gshape = current_shape;
@@ -1860,7 +1841,7 @@ WLPGNgenerator (node *arg_node, info *arg_info)
         NGEN_STEP (arg_node) = CreateStructConstant (NGEN_STEP (arg_node), nassigns);
         current_shape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
+          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     }
     if (gshape < current_shape) {
         gshape = current_shape;
@@ -1874,7 +1855,7 @@ WLPGNgenerator (node *arg_node, info *arg_info)
         NGEN_WIDTH (arg_node) = CreateStructConstant (NGEN_WIDTH (arg_node), nassigns);
         current_shape = GV_struct_constant;
         INFO_WLPG_NASSIGNS (arg_info)
-          = AppendAssigns (nassigns, INFO_WLPG_NASSIGNS (arg_info));
+          = AppendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
     }
     if (gshape < current_shape) {
         gshape = current_shape;
@@ -1897,6 +1878,13 @@ WLPGNgenerator (node *arg_node, info *arg_info)
         shp = SHFreeShape (shp);
     } else {
         gprop = ComputeGeneratorProperties (wln, NULL);
+    }
+
+    if (gshape == GV_struct_constant) {
+        if (NWITH_IS_FOLD (wln))
+            gprop = GPT_full;
+        else
+            gprop = GPT_partial;
     }
 
     if (check_stepwidth) {
@@ -1942,6 +1930,7 @@ WLPartitionGeneration (node *arg_node)
     DBUG_PRINT ("WLPG", ("starting WLPartitionGeneration"));
 
     arg_info = MakeInfo ();
+    INFO_WLPG_SUBPHASE (arg_info) = SP_cf;
 
     tmp_tab = act_tab;
     act_tab = wlpg_tab;
@@ -1979,6 +1968,7 @@ WLPartitionGenerationOPT (node *arg_node)
     DBUG_PRINT ("WLPG", ("starting WLPartitionGenerationOPT"));
 
     arg_info = MakeInfo ();
+    INFO_WLPG_SUBPHASE (arg_info) = SP_func;
 
     tmp_tab = act_tab;
     act_tab = wlpg_tab;
