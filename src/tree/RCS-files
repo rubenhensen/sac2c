@@ -35,6 +35,5 @@ wl_bounds.h
 free_attribs.c
 free_info.h
 deserialize_info.h
-check_lib.h
 traverse_helper.c
 traverse_helper.h
