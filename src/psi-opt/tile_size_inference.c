@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/11/24 15:38:25  bs
+ * tilesizing mechanism splitted into CalcTSInnerDim and CalcTSOuterDims.
+ *
  * Revision 2.11  1999/11/09 09:58:49  bs
  * New function added: MakePragmaWLComp()
  * TYP_ID changed.
@@ -59,7 +62,7 @@
  *      INFO_TSI_ACCESSCNT(n)             (n->counter)
  *      INFO_TSI_ARRAYDIM(n)              (n->varno)
  *      INFO_TSI_ARRAYSHP(n)    ((shpseg*)(n->node[0]))
- *      INFO_TSI_BLOCKSHP(n)    ((shpseg*)(n->node[1]))
+ *      INFO_TSI_TILESHP(n)    ((shpseg*)(n->node[1]))
  *      INFO_TSI_CACHEPAR(n)       ((int*)(n->node[2]))
  *      INFO_TSI_WLARRAY(n)               (n->node[3])
  *
@@ -76,6 +79,7 @@
 #include "free.h"
 #include "globals.h"
 #include "resource.h"
+#include "DupTree.h"
 #include "print.h"
 #include "tile_size_inference.h"
 
@@ -143,7 +147,7 @@ InsortByCLine (void *element, list_t *list)
 static int
 MinDistance (list_t *acc_list, int tilesize, node *arg_info)
 {
-    int cLine, cInst, NumLines, cSize, lSize, *cacheparam;
+    int cLine, cInst, NumLines, cSize, lSize, dType, NumElems, *cacheparam;
     list_t *a_list = acc_list;
     enh_access_t *access;
 
@@ -152,9 +156,11 @@ MinDistance (list_t *acc_list, int tilesize, node *arg_info)
     cacheparam = INFO_TSI_CACHEPARAM (arg_info);
     cSize = cacheparam[CSIZE_INDEX];
     lSize = cacheparam[LSIZE_INDEX];
+    dType = cacheparam[DTYPE_INDEX];
+    NumLines = cSize / lSize;
+    NumElems = lSize / dType;
 
     if (tilesize > 0) {
-        NumLines = cSize / lSize;
         access = a_list->element;
         cLine = access->cline;
         cInst = access->cinst;
@@ -162,7 +168,7 @@ MinDistance (list_t *acc_list, int tilesize, node *arg_info)
         while (a_list != NULL) {
             access = a_list->element;
             if (cInst != access->cinst) {
-                tilesize = MIN (tilesize, (access->cline - cLine));
+                tilesize = MIN (tilesize, NumElems * (access->cline - cLine));
                 cInst = access->cinst;
             }
             cLine = access->cline;
@@ -171,7 +177,7 @@ MinDistance (list_t *acc_list, int tilesize, node *arg_info)
         cInst++;
         access = acc_list->element;
         if (cInst != access->cinst) {
-            tilesize = MIN (tilesize, (NumLines - cLine + access->cline));
+            tilesize = MIN (tilesize, NumElems * (NumLines - cLine + access->cline));
         }
     }
 
@@ -267,11 +273,18 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
     cSize = cacheparam[CSIZE_INDEX];
     lSize = cacheparam[LSIZE_INDEX];
     dType = cacheparam[DTYPE_INDEX];
-    minline = INFO_TSI_MINLINE (arg_info);
-    maxline = INFO_TSI_MAXLINE (arg_info);
+    minline = INT_MAX;
+    maxline = INT_MIN;
+
+    DBUG_ASSERT ((ACCESS_CLASS (accesses) == ACL_offset),
+                 "Access without ACL_offset found !!");
 
     while (accesses != NULL) {
         vaddr = SHPSEG_SHAPE (ACCESS_OFFSET (accesses), (dim - 1));
+
+        DBUG_ASSERT ((ACCESS_OFFSET (accesses) != NULL),
+                     "Access with ACL_offset found, but no offset !!");
+
         for (j = dim - 2; j >= 0; j--) {
             vaddr += SHPSEG_SHAPE (shape, (SHPSEG_SHAPE (ACCESS_OFFSET (accesses), j)
                                            * (j + 1)));
@@ -279,7 +292,8 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
         vaddr *= dType;
         if ((vaddr < 0) && (lSize > dType)) {
             abscl = (vaddr - lSize + dType) / lSize;
-            cline = (cSize / lSize) - (abscl % (cSize / lSize));
+            cline = (cSize / lSize) + (abscl % (cSize / lSize));
+            /* 2nd summand is negative ! */
         } else {
             abscl = vaddr / lSize;
             cline = abscl % (cSize / lSize);
@@ -305,7 +319,7 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   int CalcTilesizeInnerDim(access_t* accesses, node* arg_info)
+ *   int CalcTSInnerDim(access_t* accesses, node* arg_info)
  *
  * description:
  *
@@ -313,45 +327,116 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
  *****************************************************************************/
 
 static int
-CalcTilesizeInnerDim (access_t *accesses, node *arg_info)
+CalcTSInnerDim (list_t *acc_list, node *arg_info)
 {
-    int tilesize, minline, maxline, i, dim;
-    list_t *acc_list;
+    int minline, maxline, i, dim, maxsize, tilesize;
+    int *cacheparam, cSize, lSize, dType;
     shpseg *shape;
 
-    DBUG_ENTER ("CalcTilesizeInnerDim");
+    DBUG_ENTER ("CalcTSInnerDim");
 
-    INFO_TSI_MINLINE (arg_info) = INT_MAX;
-    INFO_TSI_MAXLINE (arg_info) = 0;
+    cacheparam = INFO_TSI_CACHEPARAM (arg_info);
+    cSize = cacheparam[CSIZE_INDEX];
+    lSize = cacheparam[LSIZE_INDEX];
+    dType = cacheparam[DTYPE_INDEX];
     dim = INFO_TSI_ARRAYDIM (arg_info);
     shape = INFO_TSI_ARRAYSHP (arg_info);
-    tilesize = SHPSEG_SHAPE (INFO_TSI_ARRAYSHP (arg_info), (dim - 1));
+    minline = INFO_TSI_MINLINE (arg_info);
+    maxline = INFO_TSI_MAXLINE (arg_info);
+    maxsize = MIN (SHPSEG_SHAPE (shape, (dim - 1)), (dType * cSize / lSize));
+    tilesize = MinDistance (acc_list, maxsize, arg_info);
+
+    for (i = 0; i < (maxline - minline); i++) {
+        fprintf (stderr, "*** tilesizing ... %d\n", tilesize);
+        acc_list = RecreateEnhAccesslist (acc_list, arg_info);
+        tilesize = MinDistance (acc_list, tilesize, arg_info);
+    }
+    if (tilesize >= maxsize)
+        tilesize = 1;
+    fprintf (stderr, "*** tilesize found: %d\n", tilesize);
+
+    DBUG_RETURN (tilesize);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   int CalcTSOuterDims(access_t* accesses, node* arg_info)
+ *
+ * description:
+ *
+ *
+ *****************************************************************************/
+
+static int
+CalcTSOuterDims (list_t *acc_list, int index, node *arg_info)
+{
+    int tilesize, dim;
+    shpseg *shape;
+
+    DBUG_ENTER ("CalcTSOuterDims");
+
+    dim = INFO_TSI_ARRAYDIM (arg_info);
+    /*
+     *  shape = INFO_TSI_ARRAYSHP(arg_info);
+     */
+    shape = INFO_TSI_TILESHP (arg_info);
+    tilesize = SHPSEG_SHAPE (shape, index + 1);
+
+    DBUG_RETURN (tilesize);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   int CalcTilesize(access_t* accesses, node* arg_info)
+ *
+ * description:
+ *
+ *
+ *****************************************************************************/
+
+static int
+CalcTilesize (access_t *accesses, node *arg_info)
+{
+    int tilesize, i, dim;
+    list_t *acc_list;
+    shpseg *shape, *tileshp;
+
+    DBUG_ENTER ("CalcTilesize");
+
+    dim = INFO_TSI_ARRAYDIM (arg_info);
+    shape = INFO_TSI_ARRAYSHP (arg_info);
+    tileshp = INFO_TSI_TILESHP (arg_info);
+
     if (dim < 2) {
         tilesize = 0;
-        /* No tiling required !  No #pragma wlcomp allowed ! */
+        /*
+         *  No tiling required !  No #pragma wlcomp allowed !
+         */
     } else if (accesses == NULL) {
         tilesize = 0;
-        /* No tiling required !  No #pragma wlcomp allowed ! */
+        /*
+         *  No tiling required !  No #pragma wlcomp allowed !
+         */
     } else if (INFO_TSI_INDEXDIM (arg_info) != INFO_TSI_ARRAYDIM (arg_info)) {
         tilesize = 0;
-        /* No tiling required !  No #pragma wlcomp allowed ! */
+        /*
+         *  No tiling required !  No #pragma wlcomp allowed !
+         */
     } else {
         acc_list = CreateEnhAccesslist (accesses, arg_info);
+
         DBUG_ASSERT ((acc_list != NULL),
                      ("Tiling without accesses ? Accesses exspected!"));
 
-        tilesize = MinDistance (acc_list, tilesize, arg_info);
-        minline = INFO_TSI_MINLINE (arg_info);
-        maxline = INFO_TSI_MAXLINE (arg_info);
-        for (i = 0; i < (maxline - minline); i++) {
-            fprintf (stderr, "*** tilesizing ... %d\n", tilesize);
-            acc_list = RecreateEnhAccesslist (acc_list, arg_info);
-            tilesize = MinDistance (acc_list, tilesize, arg_info);
+        tilesize = CalcTSInnerDim (acc_list, arg_info);
+        SHPSEG_SHAPE (tileshp, dim - 1) = tilesize;
+
+        for (i = dim - 2; i >= 0; i--) {
+            SHPSEG_SHAPE (tileshp, i) = CalcTSOuterDims (acc_list, i, arg_info);
+            tilesize = MIN (tilesize, SHPSEG_SHAPE (tileshp, i));
         }
-        if ((tilesize == (INFO_TSI_CACHESIZE (arg_info) / INFO_TSI_LINESIZE (arg_info)))
-            || (tilesize >= SHPSEG_SHAPE (shape, (dim - 1))) || (tilesize < 1))
-            tilesize = 1;
-        fprintf (stderr, "*** tilesize found: %d\n", tilesize);
     }
 
     DBUG_RETURN (tilesize);
@@ -368,19 +453,22 @@ CalcTilesizeInnerDim (access_t *accesses, node *arg_info)
  *****************************************************************************/
 
 static node *
-MakePragmaWLComp (node *aelems, node *arg_info)
+MakePragmaWLComp (int tilesize, node *arg_info)
 {
-    node *pragma;
+    node *pragma, *aelems;
     char *ap_name;
-    int i, tilesize;
+    shpseg *tileshp;
+    int i, dim;
 
     DBUG_ENTER ("MakePragmaWLComp");
 
-    tilesize = NUM_VAL (aelems);
+    dim = INFO_TSI_ARRAYDIM (arg_info);
+    tileshp = INFO_TSI_TILESHP (arg_info);
+    aelems = NULL;
 
     if (tilesize > 0) {
-        aelems = MakeExprs (aelems, NULL);
-        for (i = INFO_TSI_ARRAYDIM (arg_info) - 2; i >= 0; i--) {
+        for (i = INFO_TSI_ARRAYDIM (arg_info) - 1; i >= 0; i--) {
+            tilesize = SHPSEG_SHAPE (INFO_TSI_TILESHP (arg_info), i);
             aelems = MakeExprs (MakeNum (tilesize), aelems);
         }
         pragma = MakePragma ();
@@ -394,11 +482,12 @@ MakePragmaWLComp (node *aelems, node *arg_info)
          *  No #pragma wlcomp required or allowed.
          */
         pragma = NULL;
-        FreeNode (aelems);
     }
 
     DBUG_RETURN (pragma);
 }
+
+/*****************************************************************************/
 
 /*****************************************************************************
  *
@@ -537,7 +626,7 @@ TSInwith (node *arg_node, node *arg_info)
     if ((NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray)
         || (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_modarray)) {
 
-        INFO_TSI_WLCOMP (arg_info) = MakeNum (INT_MAX);
+        INFO_TSI_WLCOMP (arg_info) = INT_MAX;
 
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
@@ -582,7 +671,7 @@ TSInwith (node *arg_node, node *arg_info)
 node *
 TSIncode (node *arg_node, node *arg_info)
 {
-    int tilesize, *cacheparam;
+    int *cacheparam;
 
     DBUG_ENTER ("TSIncode");
 
@@ -597,19 +686,17 @@ TSIncode (node *arg_node, node *arg_info)
     INFO_TSI_ACCESS (arg_info) = NCODE_WLAA_ACCESS (arg_node);
     INFO_TSI_FEATURE (arg_info) = NCODE_WLAA_FEATURE (arg_node);
     INFO_TSI_ACCESSCNT (arg_info) = NCODE_WLAA_ACCESSCNT (arg_node);
+    INFO_TSI_TILESHP (arg_info) = DupShpSeg (INFO_TSI_ARRAYSHP (arg_info));
 
     DBUG_ASSERT ((INFO_TSI_ARRAYSHP (arg_info) != NULL), ("Array without shape!"));
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     if (INFO_TSI_FEATURE (arg_info) == FEATURE_NONE) {
-        tilesize = CalcTilesizeInnerDim (NCODE_WLAA_ACCESS (arg_node), arg_info);
+        INFO_TSI_WLCOMP (arg_info)
+          = CalcTilesize (NCODE_WLAA_ACCESS (arg_node), arg_info);
     } else {
-        tilesize = 0;
-    }
-
-    if (tilesize < NUM_VAL (INFO_TSI_WLCOMP (arg_info))) {
-        NUM_VAL (INFO_TSI_WLCOMP (arg_info)) = tilesize;
+        INFO_TSI_WLCOMP (arg_info) = 0;
     }
 
     if (NCODE_NEXT (arg_node) != NULL) {
