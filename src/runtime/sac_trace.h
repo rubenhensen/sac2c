@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/04/30 08:18:24  dkr
+ * some comments added
+ *
  * Revision 3.2  2000/11/21 13:59:26  cg
  * Bug fixed in tracing fold with-loops in multithreaded execution.
  *
@@ -29,12 +32,8 @@
  * Revision 1.3  1998/05/07 08:17:51  cg
  * SAC header files converted to new naming conventions.
  *
- * Revision 1.2  1998/03/24 13:56:21  cg
- * *** empty log message ***
- *
  * Revision 1.1  1998/03/19 16:55:06  cg
  * Initial revision
- *
  *
  */
 
@@ -55,9 +54,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_TRACE_H
-
-#define SAC_TRACE_H
+#ifndef _SAC_TRACE_H
+#define _SAC_TRACE_H
 
 /*
  *  External declarations of global variables and functions defined in trace.c
@@ -87,21 +85,21 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #define SAC_TR_FUN_PRINT(msg) SAC_TR_PRINT (msg)
 
-#else
+#else /* SAC_DO_TRACE_FUN */
 
 #define SAC_TR_FUN_PRINT(msg)
 
-#endif
+#endif /* SAC_DO_TRACE_FUN */
 
 #if SAC_DO_TRACE_PRF
 
 #define SAC_TR_PRF_PRINT(msg) SAC_TR_PRINT (msg)
 
-#else
+#else /* SAC_DO_TRACE_PRF */
 
 #define SAC_TR_PRF_PRINT(msg)
 
-#endif
+#endif /* SAC_DO_TRACE_PRF */
 
 #if SAC_DO_TRACE_REF
 
@@ -110,32 +108,32 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_REF_PRINT_RC(name)                                                        \
     SAC_TR_REF_PRINT (("refcnt of %s: %d", #name, SAC_ND_A_RC (name)));
 
-#else
+#else /* SAC_DO_TRACE_REF */
 
 #define SAC_TR_REF_PRINT(msg)
 #define SAC_TR_REF_PRINT_RC(name)
 
-#endif
+#endif /* SAC_DO_TRACE_REF */
 
 #if SAC_DO_TRACE_OWL
 
 #define SAC_TR_OWL_PRINT(msg) SAC_TR_PRINT (msg)
 
-#else
+#else /* SAC_DO_TRACE_OWL */
 
 #define SAC_TR_OWL_PRINT(msg)
 
-#endif
+#endif /* SAC_DO_TRACE_OWL */
 
 #if SAC_DO_TRACE_WL
 
 #define SAC_TR_WL_PRINT(msg) SAC_TR_PRINT (msg)
 
-#else
+#else /* SAC_DO_TRACE_WL */
 
 #define SAC_TR_WL_PRINT(msg)
 
-#endif
+#endif /* SAC_DO_TRACE_WL */
 
 #if SAC_DO_TRACE_MT
 
@@ -206,4 +204,4 @@ typedef enum {
 
 #endif /* SAC_DO_TRACE_MEM */
 
-#endif /* SAC_TRACE_H */
+#endif /* _SAC_TRACE_H */
