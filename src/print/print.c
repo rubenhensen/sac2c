@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.57  1995/04/15 15:11:44  asi
+ * Revision 1.58  1995/04/28 15:25:20  hw
+ * changed PrintGenator ( refcount of index_vector will be shown )
+ *
+ * Revision 1.57  1995/04/15  15:11:44  asi
  * debug option LINE added, for linenumber output
  *
  * Revision 1.56  1995/04/11  15:08:50  hw
@@ -762,7 +765,11 @@ PrintGenator (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintGenator");
 
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, " <= %s <= ", arg_node->info.ids->id);
+    if ((-1 == arg_node->info.ids->refcnt) || (0 == show_refcnt))
+        fprintf (outfile, " <= %s <= ", arg_node->info.ids->id);
+    else
+        fprintf (outfile, " <= %s:%d <= ", arg_node->info.ids->id,
+                 arg_node->info.ids->refcnt);
     Trav (arg_node->node[1], arg_info);
 
     DBUG_RETURN (arg_node);
