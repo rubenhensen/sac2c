@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2001/05/31 11:33:30  nmw
+ * blocks with NULL assignment chain will get an N_empty node instead
+ *
  * Revision 1.17  2001/05/25 08:43:34  nmw
  * comments added
  *
@@ -314,6 +317,11 @@ SSADCRblock (node *arg_node, node *arg_info)
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        /* the complete block is empty -> create N_empty node */
+        BLOCK_INSTR (arg_node) = MakeEmpty ();
+    }
+
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /*
          * traverse all vardecs in block (concerns only toplevel block in
@@ -321,6 +329,7 @@ SSADCRblock (node *arg_node, node *arg_info)
          */
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
