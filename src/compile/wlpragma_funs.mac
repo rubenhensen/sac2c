@@ -1,0 +1,13 @@
+/*
+ * fun_name  fun_string
+ *
+ */
+
+WLP (All, "All")
+WLP (Cubes, "Cubes")
+WLP (NoBlocking, "NoBlocking")
+WLP (Bv, "Bv")
+WLP (BvL0, "BvL0")
+WLP (BvL1, "BvL1")
+WLP (BvL2, "BvL2")
+WLP (Ubv, "Ubv")
