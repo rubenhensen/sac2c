@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/01/26 14:59:02  dkr
+ * type of traverse-function-table changed
+ *
  * Revision 2.3  1999/11/15 18:06:29  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  * INFO_DCR_VARNO replaced
@@ -135,7 +138,7 @@ typedef enum { active, redundant } assignstatus;
 node *
 DeadCodeRemoval (node *arg_node, node *info_node)
 {
-    funptr *tmp_tab;
+    funtab tmp_tab;
 #ifndef DBUG_OFF
     int mem_dead_var = dead_var;
     int mem_dead_expr = dead_expr;
