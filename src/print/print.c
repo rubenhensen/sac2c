@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.71  1995/06/13 15:40:35  hw
+ * Revision 1.72  1995/06/15 16:13:46  hw
+ * changed PrintIcm( ND_TYPEDEF_ARRAY will be printed in another way)
+ *
+ * Revision 1.71  1995/06/13  15:40:35  hw
  * changed PrintId (now N_str will be printed also )
  *
  * Revision 1.70  1995/06/09  13:31:42  asi
@@ -1062,9 +1065,14 @@ PrintIcm (node *arg_node, node *arg_info)
     }
 
     if (NULL != arg_node->node[1]) {
-        if ((1 == show_icm) || (0 == compiled_icm))
-            fprintf (outfile, ", ");
-        Trav (arg_node->node[1], arg_info);
+        if ((1 == show_icm) || (0 == compiled_icm)) {
+            if (0 == strcmp (arg_node->info.fun_name.id, "ND_TYPEDEF_ARRAY")) {
+                fprintf (outfile, "\n");
+                INDENT;
+            } else
+                fprintf (outfile, ", ");
+            Trav (arg_node->node[1], arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
