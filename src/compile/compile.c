@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.105  1997/11/25 10:33:42  dkr
+ * rudimental CompNWith added
+ *
  * Revision 1.104  1997/11/22 23:07:52  dkr
  * removed a bug in CompPrf() with F_{add,sub,...}_AxA, arg{1,2}->refcnt==-1
  *   - previous N_let replaced by ND_ALLOC_ARRAY (reuse)
@@ -3085,7 +3088,7 @@ CompPrfModarray (node *arg_node, node *arg_info)
             COUNT_ELEMS (n, ARRAY_AELEMS (arg2));
             MAKENODE_NUM (length, n);
 
-            if ((N_id == arg3->nodetype) ? (1 == IsArray (arg3->IDS_NODE->TYPES)) : 0) {
+            if ((N_id == NODE_TYPE (arg3)) && (1 == IsArray (arg3->IDS_NODE->TYPES))) {
                 char *icm_name;
 
                 if (1 == arg1->refcnt)
@@ -5427,6 +5430,12 @@ CompReturn (node *arg_node, node *arg_info)
 }
 
 /*
+ **********************************************************************************
+ * compile old with-loop
+ **********************************************************************************
+ */
+
+/*
  *
  *  functionname  : CompWith
  *  arguments     : 1) N_with node
@@ -5642,6 +5651,38 @@ CompWith (node *arg_node, node *arg_info)
         first_assign = first_assign->node[1];
 
     INSERT_ASSIGN;
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ **********************************************************************************
+ * compile new with-loop
+ **********************************************************************************
+ */
+
+/*
+ *
+ *  functionname  : CompNWith
+ *  arguments     : 1) N_Nwith node
+ *                  2) info node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...,
+ *  remarks       : arg_info->info.ids contains name of assigned variable
+ *                  arg_info->node[0] contains pointer to last but one
+ *                    assign_node
+ *                  arg_info->node[1] contains pointer to previous N_let
+ *                  arg_info->node[2] will be set to  pointer to N_icm
+ *                  of with_loop begin
+ *
+ */
+node *
+CompNWith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompNWith");
 
     DBUG_RETURN (arg_node);
 }
