@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/09/05 12:05:23  dkr
+ * -b7:n2o added
+ *
  * Revision 3.17  2002/09/05 09:44:09  dkr
  * NewTypeCheck_Expr() modified
  *
@@ -404,11 +407,17 @@ NTCmodul (node *arg_node, node *arg_info)
 
     /*
      * Finally, we compute the old type representation from the ntypes
-     * we just inferred and convert the wrapper function code into SSA form.
+     * we just inferred.
      */
 
     arg_node = NT2OTTransform (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "n2o"))) {
+        goto DONE;
+    }
 
+    /*
+     * Convert the wrapper function code into SSA form
+     */
     arg_node = Lac2Fun (arg_node);
     arg_node = CheckAvis (arg_node);
     arg_node = SSATransform (arg_node);

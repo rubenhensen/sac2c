@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/09/05 12:05:08  dkr
+ * -b7:n2o added
+ *
  * Revision 3.26  2002/09/03 22:27:21  dkr
  * CONT_BREAK_SPEC added
  *
@@ -271,6 +274,8 @@ usage ()
     PRINT_BREAK_SPEC (PH_typecheck, "ntc", "stop after infering all types");
     PRINT_BREAK_SPEC (PH_typecheck, "cwc",
                       "stop after creating SAC code for wrapper functions");
+    PRINT_BREAK_SPEC (PH_typecheck, "n2o",
+                      "stop after computing old type representation");
 
     printf ("\n");
 
