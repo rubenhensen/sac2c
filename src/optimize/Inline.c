@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/05/08 15:46:03  srs
+ * no semantic changes
+ *
  * Revision 1.18  1998/04/16 16:07:34  srs
  * renamed macros which access arg_info
  *
@@ -139,7 +142,7 @@ node *
 INLmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLmodul");
-    if (NULL != MODUL_FUNS (arg_node)) {
+    if (MODUL_FUNS (arg_node)) {
         INFO_INL_FIRST_FUNC (arg_info) = MODUL_FUNS (arg_node);
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
@@ -168,7 +171,7 @@ InlineNo (node *first)
     DBUG_ENTER ("InlineNo");
 
     fun_node = first;
-    while (NULL != fun_node) {
+    while (fun_node) {
         if (FUNDEF_INLINE (fun_node))
             FUNDEF_INLREC (fun_node) = inlnum;
         fun_node = FUNDEF_NEXT (fun_node);
@@ -198,7 +201,7 @@ INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
 
-    if ((FUNDEF_BODY (arg_node)) && (0 == FUNDEF_INLINE (arg_node))) {
+    if (FUNDEF_BODY (arg_node) && (0 == FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
         InlineNo (INFO_INL_FIRST_FUNC (arg_info));
 
@@ -267,7 +270,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 
     DUPTYPE = DUP_NORMAL;
 
-    while ((NULL != var_node) && (NULL != expr_node)) {
+    while (var_node && expr_node) {
         new_name = RenameInlinedVar (ARG_NAME (var_node));
         vardec_node = SearchDecl (new_name, INFO_INL_TYPES (arg_info));
         new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
@@ -285,7 +288,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 
     DUPTYPE = DUP_INLINE;
 
-    while ((NULL != ids_node) && (NULL != expr_node)) {
+    while (ids_node && expr_node) {
         new_name = StringCopy (IDS_NAME (ids_node));
         new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, IDS_VARDEC (ids_node), new_expr);
@@ -347,19 +350,19 @@ INLassign (node *arg_node, node *arg_info)
         }
     }
 
-    if (NULL == inlined_nodes) {
+    if (!inlined_nodes) {
         /* Trav if-then-else and loops */
-        if (NULL != ASSIGN_INSTR (arg_node))
+        if (ASSIGN_INSTR (arg_node))
             ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         /* Trav next assign */
-        if (NULL != ASSIGN_NEXT (arg_node))
+        if (ASSIGN_NEXT (arg_node))
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     } else {
         FUNDEF_INLREC (AP_FUNDEF (node_behind))--;
         inlined_nodes = Trav (inlined_nodes, arg_info);
         FUNDEF_INLREC (AP_FUNDEF (node_behind))++;
 
-        if (NULL != ASSIGN_NEXT (arg_node))
+        if (ASSIGN_NEXT (arg_node))
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         arg_node = AppendNodeChain (1, inlined_nodes, FreeNode (arg_node));
     }
@@ -389,8 +392,10 @@ RenameInlinedVar (char *old_name)
     char *new_name;
 
     DBUG_ENTER ("RenameInlinedVar");
-    new_name
-      = (char *)Malloc ((sizeof (char)) * (strlen (old_name) + INLINE_PREFIX_LENGTH + 5));
+    new_name = (char *)Malloc (sizeof (char)
+                               * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
+                                  5 +  /* max length of inline_nr */
+                                  1)); /* #0 at eol */
     sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
     DBUG_RETURN (new_name);
 }
@@ -464,11 +469,9 @@ INLarg (node *arg_node, node *arg_info)
     DBUG_ASSERT (N_arg == NODE_TYPE (arg_node), ("wrong node type"));
 
     new_name = RenameInlinedVar (ARG_NAME (arg_node));
-    if (NULL == SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
-        new_type = DuplicateTypes (ARG_TYPE (arg_node), 2);
-        /*
-         * DuplicateTypes also copies attrib and status information.
-         */
+    if (!SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
+        new_type = DuplicateTypes (ARG_TYPE (arg_node), 1);
+        /* DuplicateTypes also copies attrib and status information. */
 
         INFO_INL_TYPES (arg_info)
           = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
@@ -484,7 +487,7 @@ INLarg (node *arg_node, node *arg_info)
     } else
         FREE (new_name);
 
-    if (NULL != ARG_NEXT (arg_node))
+    if (ARG_NEXT (arg_node))
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -500,8 +503,8 @@ INLvardec (node *arg_node, node *arg_info)
     DBUG_ASSERT (N_vardec == NODE_TYPE (arg_node), ("wrong node type"));
 
     new_name = RenameInlinedVar (VARDEC_NAME (arg_node));
-    if (NULL == SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
-        new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 2);
+    if (!SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
+        new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 1);
         /*
          * DuplicateTypes also copies attrib and status information.
          */
