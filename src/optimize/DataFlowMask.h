@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/06 21:19:03  dkr
+ * corrected signature of DFMSetMaskCopy
+ *
  * Revision 1.3  1998/05/06 17:19:34  dkr
  * added DFMGenMaskMinus(), DFMSetMaskMinus()
  *
@@ -104,7 +107,7 @@ extern DFMmask_t DFMGenMaskInv (DFMmask_t mask);
 
 extern void DFMSetMaskClear (DFMmask_t mask);
 extern void DFMSetMaskSet (DFMmask_t mask);
-extern void DFMSetMaskCopy (DFMmask_t mask);
+extern void DFMSetMaskCopy (DFMmask_t mask, DFMmask_t mask2);
 extern void DFMSetMaskAnd (DFMmask_t mask, DFMmask_t mask2);
 extern void DFMSetMaskOr (DFMmask_t mask, DFMmask_t mask2);
 extern void DFMSetMaskMinus (DFMmask_t mask, DFMmask_t mask2);
