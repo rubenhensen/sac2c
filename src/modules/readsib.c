@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/03/25 10:41:43  cg
+ * library format of SAC libraries slightly modified:
+ * archives are now called lib<modname>.a instead of <modname>.a
+ * This allows for using the -l option of C compilers in conjunction
+ * with -L<tmpdir>.
+ *
  * Revision 1.18  1998/03/17 12:14:24  cg
  * added resource SYSTEM_LIBPATH.
  * This makes the gcc special feature '--print-file-name' obsolete.
@@ -100,10 +106,10 @@ static node *sib_tab = NULL; /* start of list of N_sib nodes storing parsed
  *  forward declarations
  */
 
-extern nodelist *EnsureExistTypes (ids *type, node *modul, node *sib);
-extern strings *CheckLibraries (deps *depends, strings *done, char *required_by,
+static nodelist *EnsureExistTypes (ids *type, node *modul, node *sib);
+static strings *CheckLibraries (deps *depends, strings *done, char *required_by,
                                 int level);
-extern deps *AddOwnDecToDependencies (node *arg_node, deps *depends);
+static deps *AddOwnDecToDependencies (node *arg_node, deps *depends);
 
 /*
  *
@@ -154,7 +160,7 @@ ReadSib (node *syntax_tree)
  *
  */
 
-deps *
+static deps *
 AddOwnDecToDependencies (node *arg_node, deps *depends)
 {
     static char buffer[MAX_FILE_NAME];
@@ -207,7 +213,7 @@ AddOwnDecToDependencies (node *arg_node, deps *depends)
  *
  */
 
-strings *
+static strings *
 CheckLibraries (deps *depends, strings *done, char *required_by, int level)
 {
     deps *tmp;
@@ -256,52 +262,9 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 NOTE (("  Required by module/class '%s` !", required_by));
             }
 
-#if 0
-      if ((DEPS_STATUS(tmp)==ST_system)
-          && (0==strncmp(DEPS_NAME(tmp), "lib", 3)))
-      {
-        /*
-         *  Here, we exploit the gcc command line option '-print-file-name=...'
-         *  This causes gcc to write the path name of the file it would use
-         *  to link to stdout from where it is redirected to the file
-         *  'libpath' in the temporary directory. This file is read afterwards.
-         *  If gcc does not find an appropriate file, it returns simply the 
-         *  file name. This is checked and either this path name is taken
-         *  for further processing or the standard path MODIMP_PATH is searched
-         *  using FindFile().
-         *
-         *  This feature allows to use implicit gcc search paths for system
-         *  libraries without explicitly specifying them as MODIMP_PATH.
-         */
-
-        sprintf(libpath_buffer, "%s/libpath", tmp_dirname);
-        
-        SystemCall("gcc -print-file-name=%s > %s", 
-                    buffer, libpath_buffer);
-        libpath=fopen(libpath_buffer, "r");
-        DBUG_ASSERT(libpath!=NULL, "Unable to open libpath file");
-        fscanf(libpath, "%s", libpath_buffer);
-        fclose(libpath);
-        
-        if (libpath_buffer[0]=='/')
-        {
-          pathname=libpath_buffer;
-        }
-        else
-        {
-          pathname=FindFile(MODIMP_PATH, buffer);
-        }
-      }
-
-#else
-
             if (DEPS_STATUS (tmp) == ST_system) {
                 pathname = FindFile (SYSTEMLIB_PATH, buffer);
-            }
-
-#endif /*  0  */
-
-            else {
+            } else {
                 pathname = FindFile (MODIMP_PATH, buffer);
             }
 
@@ -317,7 +280,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 if (DEPS_STATUS (tmp) == ST_sac) {
                     if (level == 1) {
                         success
-                          = SystemCall2 ("%s %s; %s %s %s.a %s.sib %s", config.chdir,
+                          = SystemCall2 ("%s %s; %s %s lib%s.a %s.sib %s", config.chdir,
                                          tmp_dirname, config.tar_extract, abspathname,
                                          DEPS_NAME (tmp), DEPS_NAME (tmp),
                                          config.dump_output);
@@ -359,7 +322,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                         }
                     } else {
                         success
-                          = SystemCall2 ("%s %s; %s %s %s.a "
+                          = SystemCall2 ("%s %s; %s %s lib%s.a "
                                          ">/dev/null 2>&1",
                                          config.chdir, tmp_dirname, config.tar_extract,
                                          abspathname, DEPS_NAME (tmp));
@@ -406,7 +369,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
  *
  */
 
-node *
+static node *
 FindSib (char *name)
 {
     node *tmp;
@@ -443,7 +406,7 @@ FindSib (char *name)
  *
  */
 
-node *
+static node *
 FindSibEntry (node *item, node *sib)
 {
     node *tmp;
@@ -503,7 +466,7 @@ FindSibEntry (node *item, node *sib)
  *
  */
 
-void
+static void
 ExtractTypeFromSib (node *type, node *sib, node *modul)
 {
     node *tmp;
@@ -566,7 +529,7 @@ ExtractTypeFromSib (node *type, node *sib, node *modul)
  *
  */
 
-void
+static void
 ExtractObjFromSib (node *obj, node *sib, node *modul)
 {
     node *tmp;
@@ -628,7 +591,7 @@ ExtractObjFromSib (node *obj, node *sib, node *modul)
  *
  */
 
-void
+static void
 AddFunToModul (node *fun, node *modul)
 {
     node *tmp;
@@ -677,7 +640,7 @@ AddFunToModul (node *fun, node *modul)
  *
  */
 
-nodelist *
+static nodelist *
 EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
 {
     node *find;
@@ -748,7 +711,7 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
  *
  */
 
-nodelist *
+static nodelist *
 EnsureExistTypes (ids *type, node *modul, node *sib)
 {
     node *find;
@@ -825,7 +788,7 @@ EnsureExistTypes (ids *type, node *modul, node *sib)
  *
  */
 
-nodelist *
+static nodelist *
 EnsureExistFuns (node *fundef, node *modul, node *sib)
 {
     node *find, *next;
