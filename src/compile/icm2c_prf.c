@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2003/09/30 00:02:13  dkr
+ * definition of ND_PRF_RESHAPE__SHAPE_id simplified: uses
+ * ND_SET__SHAPE_id now
+ *
  * Revision 1.7  2003/09/29 22:52:59  dkr
  * PrfReshape_Shape() no longer needed
  *
@@ -275,95 +279,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
                      , fprintf (outfile, "1st argument of F_reshape is not a vector!"););
 
-    /*
-     * check constant part of mirror
-     */
-    switch (to_sc) {
-    case C_scl:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) == 0", shp_NT);
-                         ,
-                         fprintf (outfile, "Assignment with incompatible types found!"););
-        break;
-
-    case C_aks:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        for (i = 0; i < to_dim; i++) {
-            ASSURE_TYPE_ASS (fprintf (outfile,
-                                      "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_READ( %s, %d)",
-                                      to_NT, i, shp_NT, i);
-                             , fprintf (outfile,
-                                        "Assignment with incompatible types found!"););
-        }
-        /* here is no break missing */
-
-    case C_akd:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
-                                  to_NT, shp_NT);
-                         ,
-                         fprintf (outfile, "Assignment with incompatible types found!"););
-        break;
-
-    case C_aud:
-        /* noop */
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
-    }
-
-    /*
-     * set descriptor entries and non-constant part of mirror
-     */
-    switch (to_sc) {
-    case C_aud:
-        /*
-         * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
-         */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
-                                  to_NT, shp_NT);
-                         ,
-                         fprintf (outfile, "Assignment with incompatible types found!"););
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       ,
-                       /*
-                        * although 'to_NT' is AUD, 'to_dim' may indeed be >=0 if the sac2c
-                        * flag -minarrayrep has been used, i.e. 'to_NT' may be implemented
-                        * as AUD although it is AKD!!!
-                        */
-                       SET_SHAPES_AUD__XXX (to_NT, i, fprintf (outfile, "SAC_i");
-                                            , 0, fprintf (outfile, "0");
-                                            , to_dim,
-                                            fprintf (outfile, "SAC_ND_A_DIM( %s)", to_NT);
-                                            , INDENT; fprintf (outfile, "SAC_size *= \n");
-                                            , fprintf (outfile, "SAC_ND_READ( %s, %d)",
-                                                       shp_NT, i);
-                                            , fprintf (outfile, "SAC_ND_READ( %s, SAC_i)",
-                                                       shp_NT););
-
-                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
-        break;
-
-    case C_akd:
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AKD (to_NT, i, 0, to_dim, INDENT;
-                                         fprintf (outfile, "SAC_size *= \n");
-                                         , fprintf (outfile, "SAC_ND_READ( %s, %d)",
-                                                    shp_NT, i););
-
-                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
-        break;
-
-    case C_aks:
-        /* here is no break missing */
-    case C_scl:
-        /* noop */
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
-    }
+    ICMCompileND_SET__SHAPE_id (to_NT, to_sdim, shp_NT);
 
     DBUG_VOID_RETURN;
 }
