@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/01/21 12:42:32  dkr
+ * new traverse table for lac2fun added
+ *
  * Revision 2.9  1999/10/19 17:09:50  sbs
  * ntc_tab added
  *
@@ -264,6 +267,7 @@ extern funptr spmddn_tab[];
 extern funptr spmdpm_tab[];
 extern funptr spmdco_tab[];
 extern funptr ntc_tab[];
+extern funptr lac2fun_tab[];
 
 extern int nnode[];
 

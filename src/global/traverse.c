@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/01/21 12:42:14  dkr
+ * new traverse table for lac2fun added
+ *
  * Revision 2.12  1999/10/19 17:09:50  sbs
  * ntc_tab added
  *
@@ -628,6 +631,14 @@ funptr spmdco_tab[] = {
  */
 #define NIFntc(it_ntc) it_ntc
 funptr ntc_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  (60) ntc_tab
+ */
+#define NIFntc(it_ntc) it_ntc
+funptr lac2fun_tab[] = {
 #include "node_info.mac"
 };
 
