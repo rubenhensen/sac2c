@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2001/05/11 14:41:35  cg
+ * New ICMs for scheduler initialization are now inserted
+ * when setting up environment for multithreaded execution.
+ *
  * Revision 3.53  2001/05/11 14:36:56  cg
  * Scheduler ICMs now always get an additional generic argument
  * which specifies the scheduler ID for selecting an appropriate
