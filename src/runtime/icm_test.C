@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2003/09/29 23:39:08  dkr
+ * some ICM signatures modified
+ *
  * Revision 1.7  2003/09/25 13:45:33  dkr
  * some ICMs added
  *
@@ -66,7 +69,7 @@ CHECK (SAC_ND_WRITE_READ ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 0,
                           (from_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1))
 CHECK (SAC_ND_WRITE_COPY ((nt, (_SHP_, (_HID_, (_UNQ_, )))), 0, expr, copyfun))
 CHECK (SAC_ND_WRITE_READ_COPY ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 0,
-                               (from_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1, expr, copyfun))
+                               (from_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1, copyfun))
 
 CHECK (SAC_ND_TYPEDEF ((nt, (_SHP_, (_HID_, (_UNQ_, )))), int))
 
@@ -131,7 +134,7 @@ CHECK (SAC_IS_REUSED__BLOCK_END ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))),
 
 CHECK (SAC_ND_PRF_CAT__DATA ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
                              (from1_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1,
-                             (from2_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1))
+                             (from2_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1, copyfun))
 
 CHECK (SAC_MT_SPMD_ARG_in (int, (nt, (_SHP_, (_HID_, (_UNQ_, ))))))
 CHECK (SAC_MT_SPMD_ARG_out (int, (nt, (_SHP_, (_HID_, (_UNQ_, ))))))
