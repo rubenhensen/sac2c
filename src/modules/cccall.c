@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/01/25 15:58:19  cg
+ * Revision 1.8  1996/09/11 06:21:34  cg
+ * Converted to new lib-file format.
+ * Added facilities for updating makefiles with dependencies
+ * and creating libstat information.
+ *
+ * Revision 1.7  1996/01/25  15:58:19  cg
  * bug fixed when linking with external archive files
  *
  * Revision 1.6  1996/01/21  13:59:05  cg
@@ -29,6 +34,8 @@
  */
 
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -45,8 +52,14 @@
 #include "traverse.h"
 
 static strings *linklist = NULL;
-static strings *ofilelist = NULL;
-static strings *afilelist = NULL;
+static strings *included_libs = NULL;
+static strings *required_libs = NULL;
+static strings *required_stdlibs = NULL;
+
+strings *imported_decs = NULL; /* set by import.c */
+strings *dependencies = NULL;  /* set by import.c */
+
+static int link_archives = 0;
 
 /*
  *
@@ -76,135 +89,279 @@ static strings *afilelist = NULL;
  *
  */
 
-#if 0
-
-/*
- *
- *  functionname  : CheckExternalImplementation
- *  arguments     : 1) name of external module/class
- *  description   : looks for implementation of module/class
- *                  and copies it to store_dirname
- *  global vars   : store_dirname, ext_mods, sibs
- *  internal funs : ---
- *  external funs : SystemCall, strcpy, strcat, FindFile
- *  macros        : MODIMP_PATH
- *
- *  remarks       : 
- *
- */
-
-void CheckExternalImplementation(char *name)
+void
+UpdateMakefile ()
 {
-  strings *tmp;
-  static char buffer[MAX_FILE_NAME];
-  char *pathname;
-  node *tmpsibs;
-  
-  DBUG_ENTER("CheckExternalImplementation");
-  
-  DBUG_ASSERT(name!=NULL,
-              "called CheckExternalImplementation with name==NULL");
-  
-  /*
-   *  First, we look among sibs because even external items can be imported
-   *  through sibs rather than directly.
-   */
+    FILE *makefile, *new;
+    char buffer[255], *newname, makefilename[30];
+    int depflag = 0;
+    strings *deps;
 
-  strcpy(buffer, name);
-  strcat(buffer, ".a");
-  
-  if (!SystemTest("-f %s%s", store_dirname, buffer))
-  {
-    strcpy(buffer, name);
-    strcat(buffer, ".o");
+    DBUG_ENTER ("UpdateMakefile");
 
-    if (!SystemTest("-f %s%s", store_dirname, buffer))
-    {
-      NOTE(("Searching for implementation of external module/class '%s` ..."
-            , name));
+    makefile = fopen ("Makefile", "r");
 
-      pathname=FindFile(MODIMP_PATH, buffer);
+    if (makefile == NULL) {
+        makefile = fopen ("makefile", "r");
 
-      if (pathname==NULL)
-      {
-        strcpy(buffer, name);
-        strcat(buffer, ".a");
-    
-        pathname=FindFile(MODIMP_PATH, buffer);
-
-        if (pathname==NULL)
-        {
-          SYSABORT(("Unable to find implementation of external "
-                    "module/class '%s`",
-                    name));
+        if (makefile == NULL) {
+            SYSWARN (("Unable to update makefile in current directory"));
+        } else {
+            strcpy (makefilename, "makefile");
         }
-        else
-        {
-          NOTE(("  Found archive file \"%s\" !", pathname));
-          SystemCall("cp %s %s", pathname, store_dirname);
-        }
-      }
-      else
-      {
-        NOTE(("  Found object file \"%s\"", pathname));
-        SystemCall("cp %s %s", pathname, store_dirname);
-      }
+
+    } else {
+        strcpy (makefilename, "Makefile");
     }
-  }
-  
-  DBUG_VOID_RETURN;
-}
-#endif
 
-#if 0
+    if (makefile != NULL) {
+        newname = tmpnam (NULL);
+        new = WriteOpen (newname);
+
+        while (!feof (makefile)) {
+            fgets (buffer, 255, makefile);
+
+            if (strncmp (buffer, "# DO NOT DELETE", 15) == 0) {
+                depflag = 1;
+            }
+
+            if ((!depflag)
+                || (strncmp (outfilename, buffer, strlen (outfilename)) != 0)) {
+                fprintf (new, "%s", buffer);
+            }
+        }
+
+        if (!depflag) {
+            fprintf (new, "\n# DO NOT DELETE THIS LINE"
+                          "-- make depend depends on it.\n\n");
+        }
+
+        deps = dependencies;
+
+        while (deps != NULL) {
+            fprintf (new, "%s: %s\n", outfilename, STRINGS_STRING (deps));
+            deps = STRINGS_NEXT (deps);
+        }
+
+        fclose (makefile);
+        fclose (new);
+
+        SystemCall ("mv %s %s", newname, makefilename);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /*
  *
- *  functionname  : 
- *  arguments     : 
- *  description   : 
- *  global vars   : 
- *  internal funs : 
- *  external funs : 
- *  macros        : 
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
  *
- *  remarks       : 
+ *  remarks       :
  *
  */
 
-void MakeObjectFile(char *name)
+void
+StoreRequiredMod (char *name, char *pathname, int stdmod)
 {
-  char *systemcall;
-  int exit_code;
-  
-  DBUG_ENTER("MakeObjectFile");
-  
-  systemcall=(char*)Malloc((strlen(ccflagsstr)
-                            + 2*strlen(name)
-                            + MAX_PATH_LEN)
-                           *sizeof(char));
-  
-  sprintf(systemcall,
-          "gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/"
-          " -o %s%s -c %s%s",
-          ccflagsstr, build_dirname, outfilename, targetdir, cfilename);
+    static char buffer[MAX_PATH_LEN];
 
-  NEWLINE(3);
-  
-  NOTE(("%s", systemcall));
-  
-  exit_code=system(systemcall);
-  
-  if (exit_code>0)
-  {
-    NEWLINE(0);
-    SYSABORT(("Compilation to object file failed (%d)", exit_code/256));
-  }
-  
-  FREE(systemcall);
-  
-  DBUG_VOID_RETURN;
+    DBUG_ENTER ("StoreRequiredMod");
+
+    if (pathname == NULL) {
+        sprintf (buffer, "  %-15sfound implicit version", name);
+    } else {
+        sprintf (buffer, "  %-15sfound : %s", name, pathname);
+    }
+
+    if (stdmod) {
+        required_stdlibs = MakeStrings (StringCopy (buffer), required_stdlibs);
+    } else {
+        if (linkstyle == 3) {
+            included_libs = MakeStrings (StringCopy (buffer), included_libs);
+        } else {
+            required_libs = MakeStrings (StringCopy (buffer), required_libs);
+        }
+    }
+
+    DBUG_VOID_RETURN;
 }
-#endif
+
+/*
+ *
+ *  functionname  : PrintLibStat
+ *  arguments     : ---
+ *  description   : extracts status file from SAC library and prints it
+ *                  to stdout
+ *  global vars   : sacfilename
+ *  internal funs : ---
+ *  external funs : SystemCall, SystemCall2, StringCopy, strlen, FindFile,
+ *                  strrchr
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+PrintLibStat ()
+{
+    char *pathname, *modname, *nopath;
+    int success;
+
+    DBUG_ENTER ("PrintLibStat");
+
+    pathname = FindFile (MODIMP_PATH, sacfilename);
+
+    if (pathname == NULL) {
+        SYSABORT (("Unable to find library file \"%s\"", sacfilename));
+    }
+
+    nopath = strrchr (sacfilename, '/');
+
+    modname = StringCopy (nopath == NULL ? sacfilename : (nopath + 1));
+
+    modname[strlen (modname) - 4] = 0;
+
+    success = SystemCall2 ("tar xf %s %s.stt >/dev/null 2>&1", pathname, modname);
+
+    if (success != 0) {
+        SYSABORT (("Corrupted library file format: \"%s\"", pathname));
+    }
+
+    SystemCall ("cat %s.stt", modname);
+
+    SystemCall ("rm -f %s.stt", modname);
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : GenLibStat
+ *  arguments     :
+ *  description   :
+ *  global vars   : included_libs, required_libs, required_stdlibs
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+GenLibStat ()
+{
+    FILE *statusfile;
+    strings *tmp;
+    long int current;
+
+    DBUG_ENTER ("GenLibStat");
+
+    statusfile = WriteOpen ("%s%s.stt", build_dirname, modulename);
+
+    current = time (NULL);
+
+    fprintf (statusfile, "\n***  Status Report - %s.lib  ***\n\n", modulename);
+    fprintf (statusfile, "Call : %s\n", commandline);
+    fprintf (statusfile, "From : %s\n", getenv ("PWD"));
+    fprintf (statusfile, "On   : %s\n", getenv ("HOST"));
+    fprintf (statusfile, "By   : %s\n", getenv ("USER"));
+    fprintf (statusfile, "Date : %s", ctime (&current));
+
+    tmp = imported_decs;
+
+    fprintf (statusfile, "\nDependencies from imported modules and classes :  %s\n",
+             tmp == NULL ? "none" : "");
+
+    while (tmp != NULL) {
+        fprintf (statusfile, "%s\n", STRINGS_STRING (tmp));
+        tmp = STRINGS_NEXT (tmp);
+    }
+
+    tmp = included_libs;
+
+    fprintf (statusfile, "\nIncluded libraries :  %s\n", tmp == NULL ? "none" : "");
+
+    while (tmp != NULL) {
+        fprintf (statusfile, "%s\n", STRINGS_STRING (tmp));
+        tmp = STRINGS_NEXT (tmp);
+    }
+
+    tmp = required_libs;
+
+    fprintf (statusfile, "\nRequired libraries :  %s\n", tmp == NULL ? "none" : "");
+
+    while (tmp != NULL) {
+        fprintf (statusfile, "%s\n", STRINGS_STRING (tmp));
+        tmp = STRINGS_NEXT (tmp);
+    }
+
+    tmp = required_stdlibs;
+
+    fprintf (statusfile, "\nRequired standard libraries :  %s\n",
+             tmp == NULL ? "none" : "");
+
+    while (tmp != NULL) {
+        fprintf (statusfile, "%s\n", STRINGS_STRING (tmp));
+        tmp = STRINGS_NEXT (tmp);
+    }
+
+    fprintf (statusfile, "\n***  Status Report - %s.lib  ***\n\n", modulename);
+
+    fclose (statusfile);
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : IsStandardMod
+ *  arguments     : 1) module name
+ *  description   : tests whether the given module is a standard one or not
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : strcmp
+ *  macros        :
+ *
+ *  remarks       : The standard modules are hard coded as a list which
+ *                  has to be kept up to date.
+ *
+ */
+
+int
+IsStandardMod (char *name)
+{
+    static char *standard_modules[]
+      = {"String", "StringBase", "World",     "File",       "TermFile", "StdIO",
+         "CType",  "PrintArray", "SysErr",    "SysErrBase", "ArrayIO",  "Complex",
+         "Env",    "GetEnv",     "FibreScan", "FibrePrint", "MathD",    "MathDBase",
+         "MathF",  "MathFBase",  "Time",      "Random",     ""};
+
+    int i, res;
+
+    DBUG_ENTER ("IsStandardMod");
+
+    i = 0;
+
+    while ((standard_modules[i][0] != 0) && (strcmp (standard_modules[i], name) != 0)) {
+        i += 1;
+    }
+
+    if (standard_modules[i][0] == 0) {
+        res = 0;
+    } else {
+        res = 1;
+    }
+
+    DBUG_RETURN (res);
+}
 
 /*
  *
@@ -223,98 +380,30 @@ void MakeObjectFile(char *name)
 void
 CreateLibrary (node *syntax_tree)
 {
-    char *name;
-    strings *tmp;
-
     DBUG_ENTER ("CreateLibrary");
 
-    name = MODUL_NAME (syntax_tree);
+    NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
 
-    NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, name));
+    SystemCall ("ar cr %s%s.a %s*.o", build_dirname, modulename, store_dirname);
 
-    tmp = afilelist;
-
-    while (tmp != NULL) {
-        SystemCall ("cd %s; ar x %s", build_dirname, STRINGS_STRING (tmp));
-        tmp = STRINGS_NEXT (tmp);
+    if (useranlib) {
+        SystemCall ("ranlib %s%s.a", build_dirname, modulename);
     }
 
-    SystemCall ("ar rc %s%s.a %s*.o", build_dirname, name, build_dirname);
-    SystemCall ("ranlib %s%s.a", build_dirname, name);
+    GenLibStat ();
 
-    SystemCall ("cat %s%s.sib %s%s.a > %s%s.lib", store_dirname, name, build_dirname,
-                name, targetdir, name);
+    if (linkstyle == 3) {
+        SystemCall ("cd %s; tar cf %s.lib *.a %s.sib %s.stt", build_dirname, modulename,
+                    modulename, modulename);
+    } else {
+        SystemCall ("cd %s; tar cf %s.lib %s.a %s.sib %s.stt", build_dirname, modulename,
+                    modulename, modulename, modulename);
+    }
+
+    SystemCall ("mv %s%s.lib %s", build_dirname, modulename, targetdir);
 
     DBUG_VOID_RETURN;
 }
-
-#if 0
-
-/*
- *
- *  functionname  : MakeExecutable
- *  arguments     : ---
- *  description   : generates string to call gcc including all object and
- *                  archive files to link with and executes it
- *  global vars   : afilelist, ofilelist
- *  internal funs : ---
- *  external funs : Malloc, sprintf, strcat, FreeOneStrings, system,
- *                  StringsLength
- *  macros        : MAX_PATH_LEN, FREE
- *
- *  remarks       : 
- *
- */
-
-void MakeExecutable()
-{
-  strings *tmp;
-  int exit_code;
-  
-  DBUG_ENTER("MakeExecutable");
-  
-  SystemCall("gcc %s -Wall -Wno-unused -I $RCSROOT/src/compile/ "
-             "-o %s %s %s*.o %s*.a",
-             ccflagsstr, outfilename, cfilename,
-             build_dirname, build_dirname);
- 
-  tmp=ofilelist;
-  
-  while (tmp!=NULL)
-  {
-    strcat(systemcall, " ");
-    strcat(systemcall, STRINGS_STRING(tmp));
-
-    tmp=FreeOneStrings(tmp);
-  }
- 
-  tmp=afilelist;
-  
-  while (tmp!=NULL)
-  {
-    strcat(systemcall, " ");
-    strcat(systemcall, STRINGS_STRING(tmp));
-
-    tmp=FreeOneStrings(tmp);
-  }
-
-  NEWLINE(3);
-  
-  NOTE(("%s", systemcall));
-  
-  exit_code=system(systemcall);
-  
-  if (exit_code>0)
-  {
-    NEWLINE(0);
-    SYSABORT(("Compilation to executable failed (%d)", exit_code/256));
-  }
-  
-  FREE(systemcall);
-  
-  DBUG_VOID_RETURN;
-}
-#endif
 
 /*
  *
@@ -334,28 +423,45 @@ void MakeExecutable()
 void
 InvokeCC (node *syntax_tree)
 {
+    int i;
+
     DBUG_ENTER ("InvokeCC");
 
     if (MODUL_FILETYPE (syntax_tree) == F_prog) {
-        char ofiles[MAX_FILE_NAME] = "";
-        char afiles[MAX_FILE_NAME] = "";
-
-        if (ofilelist != NULL) {
-            sprintf (ofiles, "%s*.o", build_dirname);
+        if (link_archives) {
+            SystemCall ("gcc %s -Wall -Wno-unused "
+                        "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                        "-fno-builtin "
+                        "-o %s %s %s*.a -lsac -lm -ly -ll",
+                        ccflagsstr, outfilename, cfilename, build_dirname);
+        } else {
+            SystemCall ("gcc %s -Wall -Wno-unused "
+                        "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                        "-fno-builtin "
+                        "-o %s %s -lsac -lm -ly -ll",
+                        ccflagsstr, outfilename, cfilename);
         }
-
-        if (afilelist != NULL) {
-            sprintf (afiles, "%s*.a", build_dirname);
-        }
-
-        SystemCall ("gcc %s -Wall -Wno-unused "
-                    "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
-                    "-o %s %s %s %s -lsac",
-                    ccflagsstr, outfilename, cfilename, ofiles, afiles);
     } else {
-        SystemCall ("gcc %s -Wall -Wno-unused -I$RCSROOT/src/compile/ "
-                    "-o %s%s -c %s%s",
-                    ccflagsstr, build_dirname, outfilename, targetdir, cfilename);
+        if (linkstyle == 1) {
+            SystemCall ("gcc %s -Wall -Wno-unused -I$RCSROOT/src/compile/ "
+                        "-fno-builtin "
+                        "-o %s%s.o -c %s%s.c",
+                        ccflagsstr, store_dirname, modulename, targetdir, modulename);
+        } else {
+            SystemCall ("gcc %s -Wall -Wno-unused -I$RCSROOT/src/compile/ "
+                        "-fno-builtin "
+                        "-o %sglobals.o -c %sglobals.c",
+                        ccflagsstr, store_dirname, store_dirname);
+            NOTE (("**\n"));
+
+            for (i = 1; i < function_counter; i++) {
+                SystemCall ("gcc %s -Wall -Wno-unused -I$RCSROOT/src/compile/ "
+                            "-fno-builtin "
+                            "-o %sfun%d.o -c %sfun%d.c",
+                            ccflagsstr, store_dirname, i, store_dirname, i);
+                NOTE (("**\n"));
+            }
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -363,16 +469,16 @@ InvokeCC (node *syntax_tree)
 
 /*
  *
- *  functionname  : SearchLinkFiles
+ *  functionname  : SearchLinkFile
  *  arguments     : ---
- *  description   : traverses the linklist and searches for the
- *                  implementations in store_dirname. The complete pathname
- *                  of archive files is written to afilelist. Object files
- *                  are moved to build_dirname and that new complete
- *                  pathname is written to ofilelist.
- *  global vars   : linklist, afilelist, ofilelist
+ *  description   :
+ *
+ *
+ *
+ *
+ *  global vars   :
  *  internal funs : ---
- *  external funs : StringCopy, sprintf, MakeStrings, SystemCall, SystemTest
+ *  external funs :
  *  macros        : MAX_PATH_LEN
  *
  *  remarks       :
@@ -380,62 +486,125 @@ InvokeCC (node *syntax_tree)
  */
 
 void
-SearchLinkFiles ()
+SearchLinkFile (char *name)
 {
-    strings *tmp, *old;
     char buffer[MAX_FILE_NAME];
-    char *pathname;
+    char *pathname, *abspathname, *standard;
+    int stdmod;
 
-    DBUG_ENTER ("SearchLinkFiles");
+    DBUG_ENTER ("SearchLinkFile");
 
-    tmp = linklist;
+    stdmod = IsStandardMod (name);
 
-    while (tmp != NULL) {
-        if (SystemTest ("-f %s%s.a", store_dirname, STRINGS_STRING (tmp))) {
-            SystemCall ("mv %s%s.a %s", store_dirname, STRINGS_STRING (tmp),
-                        build_dirname);
+    if (stdmod) {
+        standard = "standard ";
+    } else {
+        standard = "";
+    }
 
-            strcpy (buffer, STRINGS_STRING (tmp));
-            strcat (buffer, ".a");
-            afilelist = MakeStrings (StringCopy (buffer), afilelist);
+    NOTE (("Required for linking: SAC %slibrary '%s` ...", standard, name));
+
+    strcpy (buffer, name);
+    strcat (buffer, ".lib");
+
+    pathname = FindFile (MODIMP_PATH, buffer);
+
+    if (pathname == NULL) {
+        if (SystemTest ("-f %s%s.a", store_dirname, name)) {
+            NOTE (("  Found implicit version !"));
+            if ((linkstyle == 0) || ((linkstyle == 3) && !stdmod)) {
+                SystemCall ("cd %s; ln -s %s%s.a", build_dirname, store_dirname, name);
+            }
         } else {
-            NOTE (("Searching for implementation of external module/class '%s` ...",
-                   STRINGS_STRING (tmp)));
+            SYSERROR (("Unable to find SAC %slibrary '%s`", standard, name));
+        }
+    } else {
+        NOTE (("  Found \"%s\" !", pathname));
 
-            strcpy (buffer, STRINGS_STRING (tmp));
-            strcat (buffer, ".o");
+        abspathname = AbsolutePathname (pathname);
 
-            pathname = FindFile (MODIMP_PATH, buffer);
+        if ((linkstyle == 0) || ((linkstyle == 3) && !stdmod)) {
+            SystemCall ("cd %s; tar xf %s %s.a", build_dirname, abspathname, name);
+        }
+    }
 
-            if (pathname == NULL) {
-                strcpy (buffer, STRINGS_STRING (tmp));
-                strcat (buffer, ".a");
+    StoreRequiredMod (name, pathname, stdmod);
 
-                pathname = FindFile (MODIMP_PATH, buffer);
+    DBUG_VOID_RETURN;
+}
 
-                if (pathname == NULL) {
-                    SYSERROR (("Unable to find implementation of external "
-                               "module/class '%s`",
-                               STRINGS_STRING (tmp)));
-                } else {
-                    NOTE (("  Found archive file \"%s\" !", pathname));
-                    SystemCall ("cp %s %s", pathname, build_dirname);
-                    SystemCall ("ranlib %s%s", build_dirname, buffer);
+/*
+ *
+ *  functionname  : SearchExternalLinkFile
+ *  arguments     : ---
+ *  description   :
+ *
+ *
+ *
+ *
+ *  global vars   :
+ *  internal funs : ---
+ *  external funs :
+ *  macros        : MAX_PATH_LEN
+ *
+ *  remarks       :
+ *
+ */
 
-                    afilelist = MakeStrings (StringCopy (buffer), afilelist);
+void
+SearchExternalLinkFile (char *name)
+{
+    char buffer[MAX_FILE_NAME];
+    char *pathname, *standard;
+    int stdmod;
+
+    DBUG_ENTER ("SearchExternalLinkFile");
+
+    stdmod = IsStandardMod (name);
+
+    if (stdmod) {
+        standard = "standard ";
+    } else {
+        standard = "";
+    }
+
+    NOTE (("Required for linking: external %slibrary '%s` ...", standard, name));
+
+    strcpy (buffer, name);
+    strcat (buffer, ".a");
+
+    pathname = FindFile (MODIMP_PATH, buffer);
+
+    if (pathname == NULL) {
+        strcpy (buffer, name);
+        strcat (buffer, ".o");
+
+        pathname = FindFile (MODIMP_PATH, buffer);
+
+        if (pathname == NULL) {
+            if (SystemTest ("-f %s%s.a", store_dirname, name)) {
+                NOTE (("  Found implicit version !"));
+                if ((linkstyle == 0) || ((linkstyle == 3) && !stdmod)) {
+                    SystemCall ("cd %s; ln -s %s%s.a", build_dirname, store_dirname,
+                                name);
                 }
             } else {
-                NOTE (("  Found object file \"%s\"", pathname));
-                SystemCall ("cp %s %s", pathname, build_dirname);
-                ofilelist = MakeStrings (StringCopy (buffer), ofilelist);
+                SYSERROR (("Unable to find external %slibrary '%s`", standard, name));
+            }
+        } else {
+            NOTE (("  Found \"%s\" !", pathname));
+            if ((linkstyle == 0) || ((linkstyle == 3) && !stdmod)) {
+                SystemCall ("ar cr %s%s.a %s", build_dirname, name, pathname);
             }
         }
-
-        old = tmp;
-        tmp = STRINGS_NEXT (tmp);
-        FREE (old);
-        /* The strings are not freed because they are shared. */
+    } else {
+        NOTE (("  Found \"%s\" !", pathname));
+        if ((linkstyle == 0) || ((linkstyle == 3) && !stdmod)) {
+            SystemCall ("cd %s; ln -s %s", build_dirname, AbsolutePathname (pathname));
+        }
     }
+
+    StoreRequiredMod (name, pathname, stdmod);
 
     DBUG_VOID_RETURN;
 }
@@ -454,10 +623,11 @@ SearchLinkFiles ()
  *
  */
 
-void
+int
 AddToLinklist (char *mod)
 {
     strings *tmp;
+    int result;
 
     DBUG_ENTER ("AddToLinklist");
 
@@ -469,13 +639,16 @@ AddToLinklist (char *mod)
 
     if (tmp == NULL) {
         linklist = MakeStrings (mod, linklist);
+        result = 1;
 
         DBUG_PRINT ("LINK", ("Added %s to linklist", mod));
     } else {
+        result = 0;
+
         DBUG_PRINT ("LINK", ("module %s already in linklist", mod));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (result);
 }
 
 /*
@@ -500,14 +673,25 @@ LINKfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("LINK", ("Checking function %s", ItemName (arg_node)));
 
     if (FUNDEF_LINKMOD (arg_node) != NULL) {
-        AddToLinklist (FUNDEF_LINKMOD (arg_node));
+        if (AddToLinklist (FUNDEF_LINKMOD (arg_node))) {
+            if (FUNDEF_MOD (arg_node) == NULL) {
+                SearchExternalLinkFile (FUNDEF_LINKMOD (arg_node));
+            } else {
+                SearchLinkFile (FUNDEF_LINKMOD (arg_node));
+            }
+        }
+
+        link_archives = 1;
+        /*
+         * Flag is set at least one archive must be linked.
+         */
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 /*
@@ -532,14 +716,20 @@ LINKobjdef (node *arg_node, node *arg_info)
     DBUG_PRINT ("LINK", ("Checking object %s", ItemName (arg_node)));
 
     if (OBJDEF_LINKMOD (arg_node) != NULL) {
-        AddToLinklist (OBJDEF_LINKMOD (arg_node));
+        if (AddToLinklist (OBJDEF_LINKMOD (arg_node))) {
+            if (OBJDEF_MOD (arg_node) == NULL) {
+                SearchExternalLinkFile (OBJDEF_LINKMOD (arg_node));
+            } else {
+                SearchLinkFile (OBJDEF_LINKMOD (arg_node));
+            }
+        }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_RETURN (arg_node);
 }
 
 /*
@@ -568,8 +758,6 @@ LINKmodul (node *arg_node, node *arg_info)
     if (MODUL_FUNS (arg_node) != NULL) {
         Trav (MODUL_FUNS (arg_node), arg_info);
     }
-
-    SearchLinkFiles ();
 
     DBUG_RETURN (arg_node);
 }
