@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/07 14:25:24  ktr
+ * ongoing implementation.
+ *
  * Revision 1.3  2004/11/02 14:33:25  ktr
  * Reuseelimination is now performed seperately for each branch of a cond.
  *
@@ -28,6 +31,7 @@ extern node *EMREcond (node *arg_node, info *arg_info);
 extern node *EMREfundef (node *arg_node, info *arg_info);
 extern node *EMRElet (node *arg_node, info *arg_info);
 extern node *EMREprf (node *arg_node, info *arg_info);
+extern node *EMREvardec (node *arg_node, info *arg_info);
 extern node *EMREwithop (node *arg_node, info *arg_info);
 
 #endif

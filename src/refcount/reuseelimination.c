@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/07 14:25:24  ktr
+ * ongoing implementation.
+ *
  * Revision 1.3  2004/11/02 14:33:25  ktr
  * Reuseelimination is now performed seperately for each branch of a cond.
  *
@@ -162,45 +165,6 @@ EMREassign (node *arg_node, info *arg_info)
     if (remassign) {
         arg_node = FreeNode (arg_node);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *EMREblock(node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
- *
- *****************************************************************************/
-node *
-EMREblock (node *arg_node, info *arg_info)
-{
-    /*  LUT_t old_lut; */
-    /*  DFMmask_t old_mask; */
-
-    DBUG_ENTER ("EMREblock");
-
-    /*  old_lut  = INFO_RE_LUT( arg_info);*/
-    /*  old_mask = INFO_RE_MASK( arg_info); */
-
-    /*  INFO_RE_LUT( arg_info)  = GenerateLUT(); */
-    /*INFO_RE_MASK( arg_info) = DFMGenMaskClear( INFO_RE_MASKBASE( arg_info));*/
-
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-    }
-
-    /*  INFO_RE_LUT( arg_info)  = RemoveLUT( INFO_RE_LUT( arg_info)); */
-    /*  INFO_RE_MASK( arg_info) = DFMRemoveMask( INFO_RE_MASK( arg_info)); */
-
-    /*  INFO_RE_LUT( arg_info)  = old_lut; */
-    /*  INFO_RE_MASK( arg_info) = old_mask; */
 
     DBUG_RETURN (arg_node);
 }
@@ -418,6 +382,34 @@ EMREprf (node *arg_node, info *arg_info)
 
     default:
         break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMREvardec(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMREvardec (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMREvardec");
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    if (SearchInLUT_PP (INFO_RE_LUT (arg_info), arg_node) != arg_node) {
+        arg_node = FreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
