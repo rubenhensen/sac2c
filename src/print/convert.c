@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/15 16:53:52  dkr
+ * Type2String: types->id and the '&' for reference objects are no longer printed here!
+ * Note, that types->id and types->attrib is *not* part of the virtual
+ * TYPES 'types'!!
+ *
  * Revision 3.5  2001/03/15 15:48:28  dkr
  * Type2String streamlined
  *
@@ -246,14 +251,6 @@ Type2String (types *type, int flag, bool all)
                 }
             }
         }
-
-#if 1
-        if (type->attrib == ST_reference) {
-            strcat (tmp_string, " &");
-        } else if (type->attrib == ST_readonly_reference) {
-            strcat (tmp_string, " (&)");
-        }
-#endif
 
         type = TYPES_NEXT (type);
 
