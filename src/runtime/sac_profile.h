@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/06/28 09:53:27  sbs
+ * superfluous prep concats eliminated.
+ *
  * Revision 3.1  2000/11/20 18:02:19  sacbase
  * new release made
  *
@@ -273,7 +276,7 @@ extern struct rusage SAC_PF_stop_timer;
 
 #define SAC_PF_INIT_CLOCK()
 
-#define SAC_PF_INIT_TIMER(timer) timer##.tv_sec = timer##.tv_usec = 0
+#define SAC_PF_INIT_TIMER(timer) timer.tv_sec = timer.tv_usec = 0
 
 #define SAC_PF_START_CLOCK() getrusage (RUSAGE_SELF, &SAC_PF_start_timer)
 
@@ -295,8 +298,8 @@ extern struct rusage SAC_PF_stop_timer;
 
 #define SAC_PF_ADD_TIMERS(timer, timer1, timer2)                                         \
     {                                                                                    \
-        timer##.tv_sec = timer1##.tv_sec + timer2##.tv_sec;                              \
-        timer##.tv_usec = timer1##.tv_usec + timer2##.tv_usec;                           \
+        timer.tv_sec = timer1.tv_sec + timer2.tv_sec;                                    \
+        timer.tv_usec = timer1.tv_usec + timer2.tv_usec;                                 \
     }
 
 #define SAC_PF_TIMER_SPACE "              "
