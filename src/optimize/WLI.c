@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.5  1998/04/20 08:59:22  srs
+ * added comments
+ *
  * Revision 1.4  1998/04/07 08:19:24  srs
  * inserted wli_phase
  *
@@ -23,10 +26,10 @@
  *******************************************************************************
 
  Usage of arg_info:
- - node[0]: store old information in nested WLs
- - node[1]: reference to base node of current WL (N_Nwith)
- - node[2]: always the last N_assign node (see WLIassign)
- - node[3]: pointer to last fundef node. needed to access vardecs.
+ - node[0]: NEXT  : store old information in nested WLs
+ - node[1]: WL    : reference to base node of current WL (N_Nwith)
+ - node[2]: ASSIGN: always the last N_assign node (see WLIassign)
+ - node[3]: FUNDEF: pointer to last fundef node. needed to access vardecs.
  - varno  : number of variables in this function, see optimize.c
  - mask[0]: DEF mask, see optimize.c
  - mask[1]: USE mask, see optimize.c
@@ -442,6 +445,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 if (iinfo->permutation[i])
                     iinfo->const_arg[i] = val;
                 else {
+                    /* constant. Use ScalarPrf() to constantfold. */
                     type = MakeType (T_int, 0, NULL, NULL, NULL);
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (tmpinfo->const_arg[i]);
@@ -694,7 +698,7 @@ WLIid (node *arg_node, node *arg_info)
     DBUG_ENTER ("WLIid");
 
     if (1 == wli_phase)
-        ID_WL (arg_node) = NULL;
+        ID_WL (arg_node) = NULL; /* could be done in phase 2, too. */
     else {
         /* if arg_node describes a WL the NWITH_REFERENCED has to be
            incremented. But this must not be done if we have an assignment
