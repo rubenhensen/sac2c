@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/29 14:24:19  dkr
+ * NWITH2_SCHEDULING removed
+ *
  * Revision 3.14  2001/03/29 14:04:37  dkr
  * no changes done
  *
@@ -1745,10 +1748,6 @@ FreeNwith2 (node *arg_node, node *arg_info)
     }
     if (NWITH2_LOCAL_MASK (arg_node) != NULL) {
         NWITH2_LOCAL_MASK (arg_node) = DFMRemoveMask (NWITH2_LOCAL_MASK (arg_node));
-    }
-
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        NWITH2_SCHEDULING (arg_node) = SCHRemoveScheduling (NWITH2_SCHEDULING (arg_node));
     }
 
     NWITH2_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH2_DEC_RC_IDS (arg_node));
