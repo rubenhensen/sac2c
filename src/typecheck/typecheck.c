@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/05/18 07:51:42  sbs
+ * some bugs concerning user-defined types eliminated.
+ *
  * Revision 2.18  1999/05/17 11:22:58  jhs
  * with-loops with empty bounds will be rebuild to direct let's.
  *
@@ -7185,6 +7188,8 @@ TI_Nwith (node *arg_node, node *arg_info)
     case WO_genarray:
         TYPES_BASETYPE (base_array_type) = TYPES_BASETYPE (body_type);
         if (SCALAR == TYPES_DIM (body_type)) {
+            TYPES_NAME (base_array_type) = StringCopy (TYPES_NAME (body_type));
+            TYPES_MOD (base_array_type) = TYPES_MOD (body_type);
             FreeOneTypes (body_type);
         } else if (SCALAR > TYPES_DIM (body_type)
                    || SCALAR > TYPES_DIM (base_array_type)) {
@@ -7194,6 +7199,8 @@ TI_Nwith (node *arg_node, node *arg_info)
             FreeOneTypes (base_array_type);
             base_array_type = body_type;
         } else {
+            TYPES_NAME (base_array_type) = StringCopy (TYPES_NAME (body_type));
+            TYPES_MOD (base_array_type) = TYPES_MOD (body_type);
             /* if type of body is non scalar: extend base_array_type */
             for (i = 0; i < TYPES_DIM (body_type); i++) {
                 TYPES_SHAPE (base_array_type, TYPES_DIM (base_array_type))
