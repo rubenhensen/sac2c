@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/11/08 13:29:45  cg
+ * Added infos concerning Fred Fish DBUG package options.
+ * Beautified entire layout of usage screen.
+ * Modified contact information to new domain sac-home.org.
+ * Added Stephan Herhut as new developer to sac2c.
+ *
  * Revision 3.33  2002/10/30 14:19:42  dkr
  * -enforceIEEE for with-loops implemented now
  *
@@ -98,11 +104,8 @@
 #define PRINT_BREAK_SPEC(ph, spec, comment)                                              \
     {                                                                                    \
         int _i;                                                                          \
-        printf ("\t -b%i:%s", ph, spec);                                                 \
-        for (_i = 0; _i < (13 - strlen (spec)); _i++) {                                  \
-            printf (" ");                                                                \
-        }                                                                                \
-        if (ph < 10) {                                                                   \
+        printf ("    -b %2i:%s", ph, spec);                                              \
+        for (_i = 0; _i < (12 - strlen (spec)); _i++) {                                  \
             printf (" ");                                                                \
         }                                                                                \
         printf ("%s\n", comment);                                                        \
@@ -110,7 +113,7 @@
 
 #define CONT_BREAK_SPEC(comment)                                                         \
     {                                                                                    \
-        printf ("\t                     %s\n", comment);                                 \
+        printf ("                      %s\n", comment);                                  \
     }
 
 void
@@ -121,647 +124,782 @@ usage ()
 
     DBUG_ENTER ("usage");
 
-    printf ("\n\n\t  sac2c  --  The ultimate SAC compiler\n"
-            "\t----------------------------------------\n\n"
+    printf (
+      "\n\n"
+      "      sac2c  --  The Ultimate SAC Compiler\n"
+      "    ----------------------------------------\n\n\n"
 
-            "NAME:     \tsac2c\n\n\n"
+      "NAME:         sac2c\n\n\n"
 
-            "DESCRIPTION:\n\n"
+      "DESCRIPTION:\n\n"
 
-            "\tThe sac2c compiler transforms SAC source code into executable programs\n"
-            "\t(SAC programs) or into a SAC specific library format (SAC module and\n"
-            "\tclass implementations), respectively.\n"
-            "\t\n"
-            "\tThe compilation process is performed in 4 separate stages:\n"
-            "\t  1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
-            "\t  2. sac2c itself transforms preprocessed SAC source code into C code;\n"
-            "\t  3. sac2c uses any C compiler to generate target machine code;\n"
-            "\t  4. sac2c uses any C linker to create an executable program\n"
-            "\t     or sac2c itself creates a SAC library file.\n"
-            "\t\n"
-            "\tWhen compiling a SAC program, sac2c stores the corresponding\n"
-            "\tintermediate C code either in the file a.out.c in the current directory\n"
-            "\t(default) or in the file <file>.c if <file> is specified using the -o\n"
-            "\toption. Here, any absolute or relative path name may be used.\n"
-            "\tThe executable program is either written to the file a.out or to any\n"
-            "\tfile specified using the -o option.\n"
-            "\t\n"
-            "\tHowever, when compiling a SAC module/class implementation, the\n"
-            "\tresulting SAC library is stored in the file <mod/class name>.lib in the\n"
-            "\tcurrent directory. In this case, the -o option may be used to specify a\n"
-            "\tdifferent directory but not a different file name.\n");
+      "    The sac2c compiler transforms SAC source code into executable programs\n"
+      "    (SAC programs) or into a SAC specific library format (SAC module and\n"
+      "    class implementations), respectively.\n"
+      "    \n"
+      "    The compilation process is performed in 4 separate stages:\n"
+      "      1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
+      "      2. sac2c itself transforms preprocessed SAC source code into C code;\n"
+      "      3. sac2c uses any C compiler to generate target machine code;\n"
+      "      4. sac2c uses any C linker to create an executable program\n"
+      "         or sac2c itself creates a SAC library file.\n"
+      "    \n"
+      "    When compiling a SAC program, sac2c stores the corresponding\n"
+      "    intermediate C code either in the file a.out.c in the current directory\n"
+      "    (default) or in the file <file>.c if <file> is specified using the -o\n"
+      "    option. Here, any absolute or relative path name may be used.\n"
+      "    The executable program is either written to the file a.out or to any\n"
+      "    file specified using the -o option.\n"
+      "    \n"
+      "    However, when compiling a SAC module/class implementation, the\n"
+      "    resulting SAC library is stored in the file <mod/class name>.lib in the\n"
+      "    current directory. In this case, the -o option may be used to specify a\n"
+      "    different directory but not a different file name.\n");
 
-    printf ("\n\nSPECIAL OPTIONS:\n\n"
+    printf (
+      "\n\nSPECIAL OPTIONS:\n\n"
 
-            "\t -h\t\tdisplay this helptext.\n"
-            "\t -help\t\tdisplay this helptext.\n"
-            "\t -copyright\tdisplay copyright/disclaimer.\n"
-            "\t -V\t\tdisplay version identification.\n"
-            "\n"
-            "\t -libstat \tprint status information of the given SAC library file.\n"
-            "\t\t\tThis option requires the environment variables PWD,\n"
-            "\t\t\tUSER, and HOST to be set when compiling the module/\n"
-            "\t\t\tclass implementation in order to work correctly.\n"
-            "\n"
-            "\t -M\t\tdetect dependencies from imported modules/classes and\n"
-            "\t\t\twrite them to stdout in a way suitable for the make\n"
-            "\t\t\tutility. Only dependencies from declaration files are\n"
-            "\t\t\tconsidered.\n"
-            "\n"
-            "\t -MM\t\tlike `-M' but the output mentions only non standard lib\n"
-            "\t\t\tdependencies.\n"
-            "\n"
-            "\t -Mlib\t\tdetect dependencies from imported modules/classes and\n"
-            "\t\t\twrite them to stdout in a way suitable for the make\n"
-            "\t\t\tutility. Dependencies from declaration files as well\n"
-            "\t\t\tas library files are (recursively) considered.\n"
-            "\n"
-            "\t -MMlib\t\tlike `-Mlib' but the output mentions only non standard\n"
-            "\t\t\tlib dependencies.\n"
-            "\n"
-            "\tWhen called with one of these options, sac2c does not perform\n"
-            "\tany compilation steps.\n");
+      "    -h              Display this helptext.\n"
+      "    -help           Display this helptext.\n"
+      "    -copyright      Display copyright/disclaimer.\n"
+      "    -V              Display version identification.\n"
+      "\n"
+      "    -libstat        Print status information of the given SAC library file.\n"
+      "                    This option requires the environment variables PWD,\n"
+      "                    USER, and HOST to be set when compiling the module/\n"
+      "                    class implementation in order to work correctly.\n"
+      "\n"
+      "    -M              Detect dependencies from imported modules/classes and\n"
+      "                    write them to stdout in a way suitable for the make\n"
+      "                    utility. Only dependencies from declaration files are\n"
+      "                    considered.\n"
+      "\n"
+      "    -MM             Like `-M' but the output mentions only non-standard \n"
+      "                    library dependencies.\n"
+      "\n"
+      "    -Mlib           Detect dependencies from imported modules/classes and\n"
+      "                    write them to stdout in a way suitable for the make\n"
+      "                    utility. Dependencies from declaration files as well\n"
+      "                    as library files are (recursively) considered.\n"
+      "\n"
+      "    -MMlib          Like `-Mlib' but the output mentions only non standard\n"
+      "                    library dependencies.\n"
+      "\n"
+      "    NOTE:\n"
+      "    When called with one of these options, sac2c does not perform\n"
+      "    any compilation steps.\n");
 
     printf ("\n\nGENERAL OPTIONS:\n\n"
 
-            "\t -D <cpp-var>[=<value>]?\n"
-            "\t\t\tset <cpp-var> (to <value>) when running C preprocessor\n"
+            "    -D <var>        Set preprocessor variable <var>.\n"
+            "    -D <var>=<val>  Set preprocessor variable <var> to <val>.\n"
             "\n"
-            "\t -I <path>\tspecify additional declaration path\n"
-            "\t -L <path>\tspecify additional library path\n"
+            "    -I <path>       Specify additional module/class declaration file path.\n"
+            "    -L <path>       Specify additional SAC library file path.\n"
             "\n"
-            "\t -o <name>\tfor compilation of programs:\n"
-            "\t\t\t  write executable to specified file\n"
-            "\t\t\tfor compilation of module/class implementations:\n"
-            "\t\t\t  write library to specified directory\n"
+            "    -o <name>       For compilation of programs:\n"
+            "                      Write executable to specified file.\n"
+            "                    For compilation of module/class implementations:\n"
+            "                      Write library to specified directory.\n"
             "\n"
-            "\t -c \t\tgenerate C-file only\n"
+            "    -c              Generate C-file only; do not invoke C compiler.\n"
             "\n"
-            "\t -v <n> \tverbose level\n"
-            "\t\t\t  0: error messages only\n"
-            "\t\t\t  1: error messages and warnings\n"
-            "\t\t\t  2: basic compile time information\n"
-            "\t\t\t  3: full compile time information\n"
-            "\t\t\tdefault: -v %d\n",
+            "    -v <n>          Specify verbose level:\n"
+            "                      0: error messages only,\n"
+            "                      1: error messages and warnings,\n"
+            "                      2: basic compile time information,\n"
+            "                      3: full compile time information,\n"
+            "                    default: -v %d.\n",
             verbose_level);
 
     printf ("\n\nBREAK OPTIONS:\n\n"
 
-            "\tBreak options allow you to stop the compilation process\n"
-            "\tafter a particular phase.\n"
-            "\tPer default the programm will then be printed out, but\n"
-            "\t\t-noPAB\tdeactivates print\n"
-            "\t\t-doPAB\tactivates print\n\n");
+            "    Break options allow you to stop the compilation process\n"
+            "    after a particular phase.\n"
+            "    By default the programm will then be printed out, but this behaviour\n"
+            "    may be influenced by the following compiler options:\n"
+            "\n"
+            "    -noPAB          Deactivates printing after break.\n"
+            "    -doPAB          Activates printing after break.\n\n");
 
     for (ph = 1; ph <= PH_genccode; ph++) {
-        printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
+        printf ("    -b %2i           Stop after: %s.\n", ph, compiler_phase_name[ph]);
     }
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
 
-            "\tBreak specifiers allow you to stop the compilation process\n"
-            "\twithin a particular phase.\n\n"
+            "    Break specifiers allow you to stop the compilation process\n"
+            "    within a particular phase.\n\n"
 
-            "\tCurrently supported:\n\n");
+            "    Currently supported break specifiers are as follows:\n\n");
 
-    PRINT_BREAK_SPEC (PH_scanparse, "yacc", "stop after parsing (yacc)");
+    PRINT_BREAK_SPEC (PH_scanparse, "yacc", "Stop after parsing (yacc).");
 
     printf ("\n");
 
     PRINT_BREAK_SPEC (PH_flatten, "mop",
-                      "stop after resolving (multiple) applications of infix");
-    CONT_BREAK_SPEC ("operations");
+                      "Stop after resolving (multiple) applications of infix");
+    CONT_BREAK_SPEC ("operations.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_typecheck, "ivd", "stop after inserting vardecs");
-    PRINT_BREAK_SPEC (PH_typecheck, "cwr", "stop after creating wrappers");
+    PRINT_BREAK_SPEC (PH_typecheck, "ivd", "Stop after inserting vardecs.");
+    PRINT_BREAK_SPEC (PH_typecheck, "cwr", "Stop after creating wrappers.");
     PRINT_BREAK_SPEC (PH_typecheck, "l2f",
-                      "stop after converting loops and conditionals into");
-    CONT_BREAK_SPEC ("functions");
-    PRINT_BREAK_SPEC (PH_typecheck, "cha", "stop after checking avis consistency");
-    PRINT_BREAK_SPEC (PH_typecheck, "ssa", "stop after converting into SSA form");
-    PRINT_BREAK_SPEC (PH_typecheck, "ntc", "stop after infering all types");
+                      "Stop after converting loops and conditionals into");
+    CONT_BREAK_SPEC ("functions.");
+    PRINT_BREAK_SPEC (PH_typecheck, "cha", "Stop after checking avis consistency.");
+    PRINT_BREAK_SPEC (PH_typecheck, "ssa", "Stop after converting into SSA form.");
+    PRINT_BREAK_SPEC (PH_typecheck, "ntc", "Stop after infering all types.");
     PRINT_BREAK_SPEC (PH_typecheck, "cwc",
-                      "stop after creating SAC code for wrapper functions");
+                      "Stop after creating SAC code for wrapper functions.");
     PRINT_BREAK_SPEC (PH_typecheck, "n2o",
-                      "stop after computing old type representation");
+                      "Stop after computing old type representation.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_sacopt, "inl", "stop after function inlining");
-    PRINT_BREAK_SPEC (PH_sacopt, "dfr", "stop after initial dead function removal");
+    PRINT_BREAK_SPEC (PH_sacopt, "inl", "Stop after function inlining.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "w2d",
-                      "stop after transf. of while into do loops (ssa only)");
+                      "Stop after transf. of while into do loops (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "l2f",
-                      "stop after transf. into fun representation (ssa only)");
+                      "Stop after transf. into fun representation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "ssa",
-                      "stop after initial ssa transformation (ssa only)");
-    PRINT_BREAK_SPEC (PH_sacopt, "ae", "stop after array elimination");
-    PRINT_BREAK_SPEC (PH_sacopt, "dcr", "stop after dead code removal");
+                      "Stop after initial ssa transformation (ssa only).");
+    PRINT_BREAK_SPEC (PH_sacopt, "ae", "Stop after array elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dcr", "Stop after dead code removal.");
 
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cse",
-                      "stop after common subexpression elimination ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf", "stop after constant folding ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wlt", "stop after with-loop transformation ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wli",
-                      "stop after with-loop information gathering ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wlf", "stop after with-loop folding ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wls", "stop after with-loop scalarization ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:al", "stop after associative law ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf2", "stop after second constant folding ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:dcr", "stop after dead code removal ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lur", "stop after (with-)loop unrolling ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf3", "stop after third constant folding ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lus", "stop after loop unswitching ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lir",
-                      "stop after (with-)loop invariant removal ...");
-    CONT_BREAK_SPEC ("... in cycle <N>");
+    printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_sacopt, "funopt", "stop after fundef optimization cycle");
-    PRINT_BREAK_SPEC (PH_sacopt, "ussa", "stop after undo ssa transformation (ssa only)");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cse",
+                      "Stop in cycle <n> after common subexpression elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf",
+                      "Stop in cycle <n> after constant folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlt",
+                      "Stop in cycle <n> after with-loop transformation.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wli",
+                      "Stop in cycle <n> after with-loop information gathering.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlf",
+                      "Stop in cycle <n> after with-loop folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wls",
+                      "Stop in cycle <n> after with-loop scalarization.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:al", "Stop in cycle <n> after associative law.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf2",
+                      "Stop in cycle <n> after second constant folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dcr",
+                      "Stop in cycle <n> after dead code removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lur",
+                      "Stop in cycle <n> after (with-)loop unrolling.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf3",
+                      "Stop in cycle <n> after third constant folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lus",
+                      "Stop in cycle <n> after loop unswitching.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lir",
+                      "Stop in cycle <n> after (with-)loop invariant removal.");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_sacopt, "funopt", "Stop after fundef optimization cycle.");
+    PRINT_BREAK_SPEC (PH_sacopt, "ussa",
+                      "Stop after undo ssa transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "f2l",
-                      "stop after transf. into lac representation (ssa only)");
-    PRINT_BREAK_SPEC (PH_sacopt, "wlaa", "stop after with loop array access inference");
-    PRINT_BREAK_SPEC (PH_sacopt, "ap", "stop after array padding");
-    PRINT_BREAK_SPEC (PH_sacopt, "tsi", "stop after tile size inference");
-    PRINT_BREAK_SPEC (PH_sacopt, "dfr2", "stop after final dead function removal");
-    PRINT_BREAK_SPEC (PH_sacopt, "ive", "stop after index vector elimination");
+                      "Stop after transf. into lac representation (ssa only).");
+    PRINT_BREAK_SPEC (PH_sacopt, "wlaa", "Stop after with loop array access inference.");
+    PRINT_BREAK_SPEC (PH_sacopt, "ap", "Stop after array padding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "tsi", "Stop after tile size inference.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dfr2", "Stop after final dead function removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "ive", "Stop after index vector elimination.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_wltrans, "conv", "stop after converting");
-    PRINT_BREAK_SPEC (PH_wltrans, "cubes", "stop after cube-building");
-    PRINT_BREAK_SPEC (PH_wltrans, "fill1", "stop after gap filling (grids only)");
-    PRINT_BREAK_SPEC (PH_wltrans, "segs", "stop after choice of segments");
-    PRINT_BREAK_SPEC (PH_wltrans, "split", "stop after splitting");
-    PRINT_BREAK_SPEC (PH_wltrans, "block", "stop after hierarchical blocking");
-    PRINT_BREAK_SPEC (PH_wltrans, "ublock", "stop after unrolling-blocking");
-    PRINT_BREAK_SPEC (PH_wltrans, "merge", "stop after merging");
-    PRINT_BREAK_SPEC (PH_wltrans, "opt", "stop after optimization");
-    PRINT_BREAK_SPEC (PH_wltrans, "fit", "stop after fitting");
-    PRINT_BREAK_SPEC (PH_wltrans, "norm", "stop after normalization");
-    PRINT_BREAK_SPEC (PH_wltrans, "fill2", "stop after gap filling (all nodes)");
+    PRINT_BREAK_SPEC (PH_wltrans, "conv", "Stop after converting.");
+    PRINT_BREAK_SPEC (PH_wltrans, "cubes", "Stop after cube-building.");
+    PRINT_BREAK_SPEC (PH_wltrans, "fill1", "Stop after gap filling (grids only).");
+    PRINT_BREAK_SPEC (PH_wltrans, "segs", "Stop after choice of segments.");
+    PRINT_BREAK_SPEC (PH_wltrans, "split", "Stop after splitting.");
+    PRINT_BREAK_SPEC (PH_wltrans, "block", "Stop after hierarchical blocking.");
+    PRINT_BREAK_SPEC (PH_wltrans, "ublock", "Stop after unrolling-blocking.");
+    PRINT_BREAK_SPEC (PH_wltrans, "merge", "Stop after merging.");
+    PRINT_BREAK_SPEC (PH_wltrans, "opt", "Stop after optimization.");
+    PRINT_BREAK_SPEC (PH_wltrans, "fit", "Stop after fitting.");
+    PRINT_BREAK_SPEC (PH_wltrans, "norm", "Stop after normalization.");
+    PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
 
     printf ("\n");
-    printf ("\t with -mt\n");
+    printf ("     with -mt\n");
 
-    PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "stop after building SPMD blocks");
-    PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "stop after optimizing SPMD blocks");
-    PRINT_BREAK_SPEC (PH_multithread, "spmdlift", "stop after lifting SPMD blocks");
-    PRINT_BREAK_SPEC (PH_multithread, "syncinit", "stop after building SYNC blocks");
-    PRINT_BREAK_SPEC (PH_multithread, "syncopt", "stop after optimizing SYNC blocks");
+    PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "Stop after building SPMD blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "Stop after optimizing SPMD blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "spmdlift", "Stop after lifting SPMD blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "syncinit", "Stop after building SYNC blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "syncopt", "Stop after optimizing SYNC blocks.");
     PRINT_BREAK_SPEC (PH_multithread, "scheduling",
-                      "stop after scheduling SYNC blocks and with-loop");
-    CONT_BREAK_SPEC ("segments");
-    PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "stop after constraining SPMD blocks");
+                      "Stop after scheduling SYNC blocks and with-loop");
+    CONT_BREAK_SPEC ("segments.");
+    PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "Stop after constraining SPMD blocks.");
 
     printf ("\n");
-    printf ("\t with -mtn (UNDER CONSTRUCTION!!!)\n");
+    printf ("     with -mtn (UNDER CONSTRUCTION!!!)\n");
 
-    PRINT_BREAK_SPEC (PH_multithread, "init", "stop after internal initialization");
-    PRINT_BREAK_SPEC (PH_multithread, "schin", "stop after schedulings initialized");
-    PRINT_BREAK_SPEC (PH_multithread, "rfin", "stop after replicated functions builded");
-    PRINT_BREAK_SPEC (PH_multithread, "blkin", "stop after ST- and MT-blocks builded");
-    PRINT_BREAK_SPEC (PH_multithread, "blkpp", "stop after blocks propagated");
-    PRINT_BREAK_SPEC (PH_multithread, "blkex", "stop after blocks expanded");
-    PRINT_BREAK_SPEC (PH_multithread, "mtfin",
-                      "stop after multithread functions builded");
-    PRINT_BREAK_SPEC (PH_multithread, "blkco", "stop after blocks consolidated");
-    PRINT_BREAK_SPEC (PH_multithread, "dfa", "stop after dataflow-analysis");
-    PRINT_BREAK_SPEC (PH_multithread, "barin", "stop after barriers initialized");
-    PRINT_BREAK_SPEC (PH_multithread, "blkli", "stop after blocks lifted");
-    PRINT_BREAK_SPEC (PH_multithread, "adjca", "stop after adjusted calls");
+    PRINT_BREAK_SPEC (PH_multithread, "init", "Stop after internal initialization.");
+    PRINT_BREAK_SPEC (PH_multithread, "schin", "Stop after schedulings initialized.");
+    PRINT_BREAK_SPEC (PH_multithread, "rfin", "Stop after replicated functions built.");
+    PRINT_BREAK_SPEC (PH_multithread, "blkin", "Stop after ST- and MT-blocks built.");
+    PRINT_BREAK_SPEC (PH_multithread, "blkpp", "Stop after blocks propagated.");
+    PRINT_BREAK_SPEC (PH_multithread, "blkex", "Stop after blocks expanded.");
+    PRINT_BREAK_SPEC (PH_multithread, "mtfin", "Stop after multithread functions built.");
+    PRINT_BREAK_SPEC (PH_multithread, "blkco", "Stop after blocks consolidated.");
+    PRINT_BREAK_SPEC (PH_multithread, "dfa", "Stop after dataflow-analysis.");
+    PRINT_BREAK_SPEC (PH_multithread, "barin", "Stop after barriers initialized.");
+    PRINT_BREAK_SPEC (PH_multithread, "blkli", "Stop after blocks lifted.");
+    PRINT_BREAK_SPEC (PH_multithread, "adjca", "Stop after adjusted calls.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_precompile, "prec1", "stop after first traversal");
-    PRINT_BREAK_SPEC (PH_precompile, "prec2", "stop after second traversal");
-    PRINT_BREAK_SPEC (PH_precompile, "prec3", "stop after third traversal");
+    PRINT_BREAK_SPEC (PH_precompile, "prec1", "Stop after first traversal.");
+    PRINT_BREAK_SPEC (PH_precompile, "prec2", "Stop after second traversal.");
+    PRINT_BREAK_SPEC (PH_precompile, "prec3", "Stop after third traversal.");
 
-    printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
-            "\t -enforceIEEE\ttreat float numbers as defined in IEEE-754 standard:\n"
-            "\t\t\t  disable some algebraic optimizations,\n"
-            "\t\t\t  disable segmentation and tiling on fold-with-loops.\n"
-            "\t\t\tcurrently implemented for: AL, with-loops.\n"
-            "\t -ssa\t\tuse optimizations based on ssa-form.\n"
-            "\t -no <opt>\tdisable optimization technique <opt>\n"
-            "\t -do <opt>\tenable optimization technique <opt>\n"
-            "\n"
-            "\tThe following optimization techniques are currently supported:\n\n"
+    printf (
+      "\n\nOPTIMIZATION OPTIONS:\n\n"
+      "    -enforceIEEE    Treat floating point arithmetic as defined in the IEEE-754\n"
+      "                    standard. In particular, this means\n"
+      "                      - disable some algebraic optimizations,\n"
+      "                      - disable segmentation and tiling of fold-with-loops,\n"
+      "                      - disable parallel execution of fold-with-loops.\n"
+      "                    Currently implemented for:\n"
+      "                      - associative law optimization,\n"
+      "                      - segmentation and tiling of fold-with-loops.\n"
+      "\n"
+      "    -ssa            Apply optimizations based on ssa-form, instead of using\n"
+      "                    the old non-ssa based implementations.\n"
+      "                    NOTE:\n"
+      "                    Some optimizations are exclusively implemented in ssa\n"
+      "                    style.\n"
+      "                    Support for non-ssa based implementations will be removed\n"
+      "                    in future releases.\n"
+      "\n"
+      "    -no <opt>       Disable optimization technique <opt>.\n"
+      "\n"
+      "    -do <opt>       Enable optimization technique <opt>.\n"
+      "\n\n"
+      "    The following optimization techniques are currently supported:\n\n"
 
-            "\t\tCF  \tconstant folding\n"
-            "\t\tINL \tfunction inlining\n"
-            "\t\tLUR \tloop unrolling\n"
-            "\t\tWLUR\twith-loop unrolling\n"
-            "\t\tLUS \tloop unswitching\n"
-            "\t\tDCR \tdead code removal\n"
-            "\t\tDFR \tdead function removal\n"
-            "\t\tLIR \tloop invariant removal\n"
-            "\t\tCSE \tcommon subexpression elimination\n"
-            "\t\tWLT \twith-loop transformation\n"
-            "\t\tWLF \twith-loop folding\n"
-            "\t\tWLS \twith-loop scalarization\n"
-            "\t\tAL  \tapplication of associative law\n"
-            "\t\tDL  \tapplication of distributive law\n"
-            "\t\tIVE \tindex vector elimination\n"
-            "\t\tAE  \tarray elimination\n"
-            "\t\tRCO \trefcount optimization\n"
-            "\t\tUIP \tupdate-in-place\n"
-            "\t\tAP  \tarray padding\n"
-            "\t\tAPL \tarray placement\n"
-            "\t\tTSI \ttile size inference (blocking)\n"
-            "\t\tTSP \ttile size pragmas (blocking)\n"
-            "\t\tMTO \tmulti-thread optimization\n"
-            "\t\tSBE \tsyncronisation barrier elimination\n"
-            "\t\tPHM \tprivate heap management\n"
-            "\t\tAPS \tarena preselection           (in conjunction with PHM)\n"
-            "\t\tRCAO\trefcount allocation optimiz. (in conjunction with PHM)\n"
-            "\t\tMSCA\tmemory size cache adjustment (in conjunction with PHM)\n"
-            "\n"
-            "\t\tOPT \tenables/disables all optimizations at once.\n"
-            "\n"
-            "\tLower case letters may be used to indicate optimization techniques.\n"
-            "\n"
-            "\tCommand line arguments are evaluated from left to right, i.e.,\n"
-            "\t\"-no OPT -do INL\" disables all optimizations except for\n"
-            "\tfunction inlining.\n\n");
+      "        CF      constant folding\n"
+      "        INL     function inlining\n"
+      "        LUR     loop unrolling\n"
+      "        WLUR    with-loop unrolling\n"
+      "        LUS     loop unswitching\n"
+      "        DCR     dead code removal\n"
+      "        DFR     dead function removal\n"
+      "        LIR     loop invariant removal\n"
+      "        CSE     common subexpression elimination\n"
+      "        WLT     with-loop transformation\n"
+      "        WLF     with-loop folding\n"
+      "        WLS     with-loop scalarization\n"
+      "        AL      application of associative law\n"
+      "        DL      application of distributive law\n"
+      "        IVE     index vector elimination\n"
+      "        AE      array elimination\n"
+      "        RCO     refcount optimization\n"
+      "        UIP     update-in-place\n"
+      "        AP      array padding\n"
+      "        APL     array placement\n"
+      "        TSI     tile size inference (blocking)\n"
+      "        TSP     tile size pragmas (blocking)\n"
+      "        MTO     multi-thread optimization\n"
+      "        SBE     syncronisation barrier elimination\n"
+      "        PHM     private heap management\n"
+      "        APS     arena preselection           (in conjunction with PHM)\n"
+      "        RCAO    refcount allocation optimiz. (in conjunction with PHM)\n"
+      "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
+      "\n"
+      "        OPT     enables/disables all optimizations at once.\n"
+      "\n"
+      "    NOTE:\n"
+      "    Lower case letters may be used to indicate optimization techniques.\n"
+      "\n"
+      "    NOTE:\n"
+      "    Command line arguments are evaluated from left to right, i.e.,\n"
+      "    \"-no OPT -do INL\" disables all optimizations except for\n"
+      "    function inlining.\n\n");
 
-    printf ("\tOptimization side conditions:\n\n"
+    printf (
+      "    Some of the optimization techniques are parameterized by additional side\n"
+      "    conditions. They are controlled by the following options:\n"
+      "\n"
+      "    -maxoptcyc <n>  Repeat optimization cycle <n> times\n"
+      "                      (default: -maxoptcyc %d).\n\n",
+      max_optcycles);
 
-            "\t -maxoptcyc <no>    \trepeat optimization phase <no> times.\n"
-            "\t\t\t\tdefault: -maxoptcyc %d\n\n",
-            max_optcycles);
-
-    printf ("\t -maxoptvar <no>    \treserve <no> variables for optimization.\n"
-            "\t\t\t\tdefault: -maxoptvar %d\n\n",
+    printf ("    -maxoptvar <n>  Reserve <n> variables for optimization\n"
+            "                      (default: -maxoptvar %d).\n\n",
             optvar);
 
-    printf ("\t -maxinl <no>       \tinline recursive functions <no> times.\n"
-            "\t\t\t\tdefault: -maxinl %d\n\n",
+    printf ("    -maxinl <n>     Inline recursive functions at most <n> times\n"
+            "                      (default: -maxinl %d).\n\n",
             inlnum);
 
-    printf ("\t -maxlur <no>       \tunroll loops having no more than <no>\n"
-            "\t\t\t\t  iterations.\n"
-            "\t\t\t\tdefault: -maxlur %d\n\n",
+    printf ("    -maxlur <n>     Unroll loops having at most <n> iterations\n"
+            "                      (default: -maxlur %d).\n\n",
             unrnum);
 
-    printf ("\t -maxwlur <no>      \tunroll with-loops having no more than <no>\n"
-            "\t\t\t\t  elements.\n"
-            "\t\t\t\tdefault: -maxwlur %d\n\n",
+    printf ("    -maxwlur <n>    Unroll with-loops with at most <n> elements generator\n"
+            "                    set size\n"
+            "                      (default: -maxwlur %d).\n\n",
             wlunrnum);
 
-    printf ("\t -maxae <no>        \ttry array elimination for arrays with length\n"
-            "\t\t\t\t  less than or equal <no>.\n"
-            "\t\t\t\tdefault: -maxae %d\n\n",
+    printf ("    -maxae <n>      Try to eliminate arrays with at most <n> elements\n"
+            "                      (default: -maxae %d).\n\n",
             minarray);
 
-    printf ("\t -maxspecialize <no>\tfunctions with unknown shape will at most\n"
-            "\t\t\t\t  <no> times be specialized.\n"
-            "\t\t\t\tdefault: -maxspecialize %d\n\n",
-            max_overload);
+    printf (
+      "    -maxspec <n>    Individual functions will be specialized at most <n> times\n"
+      "                      (default: -maxspec %d).\n\n",
+      max_overload);
 
-    printf ("\t -initmheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\t  of heap memory for usage by the master thread.\n"
-            "\t\t\t\tdefault: -initmheap %d\n\n",
+    printf ("    -initmheap <n>  At program startup initially request <n> KB\n"
+            "                    of heap memory for  master thread\n"
+            "                      (default: -initmheap %d).\n\n",
             initial_master_heapsize);
 
-    printf ("\t -initwheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\t  of heap memory for usage by each worker\n"
-            "\t\t\t\t  thread.\n"
-            "\t\t\t\tdefault: -initwheap %d\n\n",
+    printf ("    -initwheap <n>  At program startup initially request <n> KB\n"
+            "                    of heap memory for each worker thread\n"
+            "                      (default: -initwheap %d).\n\n",
             initial_worker_heapsize);
 
-    printf ("\t -inituheap <size>\tat program startup initially request <size> KB\n"
-            "\t\t\t\t  of heap memory for usage by all threads\n"
-            "\t\t\t\t  (unified heap).\n"
-            "\t\t\t\tdefault: -inituheap %d\n\n",
+    printf ("    -inituheap <n>  At program startup initially request <n> KB\n"
+            "                    of heap memory for usage by all threads\n"
+            "                      (default: -inituheap %d).\n\n",
             initial_unified_heapsize);
 
-    printf ("\t -aplimit <limit> \tset the array padding resource allocation\n"
-            "\t\t\t\t  overhead limit to <limit> %%.\n"
-            "\t\t\t\tdefault: -aplimit %d\n\n",
+    printf ("    -aplimit <n>    Set the array padding resource allocation\n"
+            "                    overhead limit to <n> %%\n"
+            "                      (default: -aplimit %d).\n\n",
             padding_overhead_limit);
 
-    printf ("\t -apdiag          \tprint additional information for array padding\n"
-            "\t\t\t\t  to file 'outfile.ap', where 'outfile' is the\n"
-            "\t\t\t\t  name specified with option -o.\n\n");
+    printf ("    -apdiag         Print additional information for array padding\n"
+            "                    to file \"<outfile>.ap\", where <outfile> is the\n"
+            "                    name specified via the -o option.\n\n");
 
-    printf ("\t -apdiaglimit <n> \tlimits the amount of information written to\n"
-            "\t\t\t\t  the diagnostic output file created by the\n"
-            "\t\t\t\t  -apdiag option to approximately <n> lines.\n"
-            "\t\t\t\tdefault: -apdiaglimit %d\n\n",
+    printf ("    -apdiagsize <n> Limit the amount of information written to\n"
+            "                    the diagnostic output file created via the\n"
+            "                    -apdiag option to approximately <n> lines\n"
+            "                      (default: -apdiagsize %d).\n\n",
             apdiag_limit);
 
-    printf ("\t -wls_aggressive \tset WLS optimization level to aggressive\n"
-            "\t\t\t\t  WARNING: might cause multiple code execution\n\n");
+    printf (
+      "    -wls_aggressive Set WLS optimization level to aggressive.\n"
+      "                    WARNING:\n"
+      "                    Aggressive with-loop scalarization may have the opposite\n"
+      "                    effect as with-loop invariant removal and cause duplication\n"
+      "                    of code execution.\n"
+      "\n");
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
-            "\t -mt \t\t\tcompile program for multi-threaded execution.\n"
-            "\t\t\t\tThe number of threads to be used can either\n"
-            "\t\t\t\t  be specified statically using the option\n"
-            "\t\t\t\t  \"-numthreads\" or dynamically upon application\n"
-            "\t\t\t\t  startup using the generic command line option\n"
-            "\t\t\t\t  \"-mt <no>\".\n"
+            "    -mt             Compile program for multi-threaded execution, \n"
+            "                    e.g. implicitly parallelize the code for "
+            "non-sequential\n"
+            "                    execution on shared memory multiprocessors.\n"
             "\n"
-            "\t -mtn \t\t\tnew support for multi-threading\n"
-            "\t\t\t\t  UNDER CONSTRUCTION!!!\n"
+            "                    Note:\n"
+            "                    The number of threads to be used can either\n"
+            "                    be specified statically using the option\n"
+            "                    \"-numthreads\" or dynamically upon application\n"
+            "                    startup using the generic command line option\n"
+            "                    \"-mt <n>\".\n"
             "\n"
-            "\t -numthreads <no>\tstatically specify exact number of threads\n"
-            "\t\t\t\t  to be used.\n"
+            "    -mtn            Enable a new organization scheme for multi-threaded\n"
+            "                    program execution.\n"
+            "                    WARNING: UNDER CONSTRUCTION!!!\n"
             "\n"
-            "\t -maxthreads <no>\tmaximum number of threads to be used when exact\n"
-            "\t\t\t\t  number is specified dynamically.\n"
-            "\t\t\t\tdefault: -maxthreads %d.\n"
+            "    -numthreads <n> Specify at compile time the exact number of threads to "
+            "be\n"
+            "                    used for parallel execution.\n"
             "\n"
-            "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
-            "\t\t\t\t  synchronisation block.\n"
-            "\t\t\t\t  -1: maximum of needed (mechanical infered)\n"
-            "\t\t\t\t   0: no fold-with-loops are allowed\n"
-            "\t\t\t\t        (implies fold-with-loop will not be\n"
-            "\t\t\t\t        executed concurrently)\n"
-            "\t\t\t\t  >0: number is limited by value of maxsyncfold\n"
-            "\t\t\t\tdefault: -maxsyncfold %d.\n"
+            "    -maxthreads <n> Specify at compile time only an upper bound on the "
+            "number\n"
+            "                    of threads to be used  for parallel execution when "
+            "exact\n"
+            "                    number is determined at runtime\n"
+            "                      (default: -maxthreads %d).\n"
             "\n"
-            "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
-            "\t\t\t\t  of with-loops.\n"
-            "\t\t\t\tdefault: -minmtsize %d.\n"
+            "    -maxsync <n>    Specify maximum number of fold with-loops to be "
+            "combined\n"
+            "                    into a single synchronisation block.\n"
+            "                    Legal values:\n"
+            "                     -1: maximum number needed (mechanically infered)\n"
+            "                      0: no fold-with-loops are allowed\n"
+            "                         (This implies that fold-with-loops are not\n"
+            "                          executed in parallel.)\n"
+            "                     >0: maximum number set to <n>\n"
+            "                    (default: -maxsyncfold %d).\n"
             "\n"
-            "\t -maxrepsize <no>\t(-mtn) maximum size for arrays to be replicated\n"
-            "\t\t\t\tdefault: -maxrepsize %d.\n",
+            "    -minmtsize <n>  Specify minimum generator set size for parallel "
+            "execution\n"
+            "                    of with-loops\n"
+            "                      (default: -minmtsize %d).\n"
+            "\n"
+            "    -maxrepsize <n> Specify maximum size for arrays to be replicated as\n"
+            "                    private data of multiple threads\n"
+            "                      (default: -maxrepsize %d).\n"
+            "                    Option applies to -mtn style parallelization only.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
 
-    printf ("\n\nGENERAL DEBUG OPTIONS:\n\n"
+    printf (
+      "\n\nGENERAL DEBUG OPTIONS:\n\n"
 
-            "\t -d nocleanup\t\tdon't remove temporary files and directories.\n"
-            "\t -d syscall\t\tshow all system calls during compilation.\n"
-            "\t -d cccall\t\tgenerate shell script \".sac2c\" that contains C\n"
-            "\t\t\t\t  compiler call.\n"
-            "\t\t\t\t  This implies option \"-d nocleanup\".\n");
+      "    -d nocleanup    Do not remove temporary files and directories.\n"
+      "    -d syscall      Show all system calls during compilation.\n"
+      "    -d cccall       Generate shell script \".sac2c\" that contains C compiler\n"
+      "                    invocation.\n"
+      "                    This implies option \"-d nocleanup\".\n");
 
-    printf ("\n\nINTERNAL DEBUG OPTIONS:\n\n"
+    printf (
+      "\n\nINTERNAL DEBUG OPTIONS:\n\n"
 
-            "\t -d efence\t\tfor compilation of programs:\n"
-            "\t\t\t\t  link executable with ElectricFence\n"
-            "\t\t\t\t  (malloc debugger).\n\n"
-
-            "\t -# <str>\t\toptions (string) for DBUG information\n"
-            "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
-            "\t\t\t\t  <from>..<to>\n"
-            "\t\t\t\tdefault: <from> = first compiler phase,\n"
-            "\t\t\t\t         <to>   = last compiler phase\n\n"
-
-            "\t -lac2fun <ph>[:<ph>]*\ttransformation of loops and conditions into\n"
-            "\t\t\t\t  functions before the compiler phases <ph>.\n"
-            "\t -fun2lac <ph>[:<ph>]*\ttransformation vice versa after the compiler\n"
-            "\t\t\t\t  phases <ph>.\n"
-            "\t\t\t\tnote: -b<ph> stops the compiler *after* the\n"
-            "\t\t\t\t  lac2fun transformation of phase <ph+1>!\n");
+      "    -d efence       Link executable with ElectricFence\n"
+      "                    (malloc debugger).\n"
+      "\n"
+      "    -# t            Display trace information generated by Fred Fish DBUG\n"
+      "                    package.\n"
+      "                    Each function entry and exit during program execution is\n"
+      "                    printed on the screen.\n"
+      "\n"
+      "    -# d            Display debug output information generated by Fred \n"
+      "                    Fish DBUG package.\n"
+      "                    Each DBUG_PRINT macro in the code will be executed.\n"
+      "                    Each DBUG_EXECUTE macro in the code will be executed.\n"
+      "\n"
+      "    -# d,<str>      Restrict -# d option to DBUG_PRINT / DBUG_EXECUTE macros\n"
+      "                    which are tagged with the string <str> (no quotes).\n"
+      "\n"
+      "    -# <f>/<t>/<o>  Restrict the effect of any Fred Fish DBUG package option <o>\n"
+      "                    to the range <f> to <t> of sac2c compiler phases.\n"
+      "                    Default: <f> = first compiler phase,\n"
+      "                             <t> = last compiler phase.\n"
+      "\n"
+      "    -lac2fun <ph>[:<ph>]*\n"
+      "                    Transform loops and conditionals into functions before\n"
+      "                    compiler phases <ph>.\n"
+      "                    NOTE:\n"
+      "                      -b<ph> stops the compiler *after* the\n"
+      "                      lac2fun transformation of phase <ph+1>!\n"
+      "\n"
+      "    -fun2lac <ph>[:<ph>]*\n"
+      "                    Transform specific functions back into loops and \n"
+      "                    conditionals after compiler phases <ph>.\n");
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
 #ifdef TAGGED_ARRAYS
-            "\t -check [atbmeh]+ \tinclude runtime checks into executable program.\n"
+            "    -check [atbmeh]+\n"
 #else
-            "\t -check [abmeh]+ \tinclude runtime checks into executable program.\n"
+            "    -check [abmeh]+\n"
 #endif
-            "\t\t\t\t  a: include all checks available.\n"
+            "                    Incorporate runtime checks into executable program.\n"
+            "                    The following flags are supported:\n"
+            "                      a: Incorporate all available runtime checks.\n"
 #ifdef TAGGED_ARRAYS
-            "\t\t\t\t  t: check assignments for type violations.\n"
+            "                      t: Check assignments for type violations.\n"
 #endif
-            "\t\t\t\t  b: check array accesses for boundary\n"
-            "\t\t\t\t     violations.\n"
-            "\t\t\t\t  m: check success of memory allocations.\n"
-            "\t\t\t\t  e: check errno variable upon applications of\n"
-            "\t\t\t\t     external functions.\n"
-            "\t\t\t\t  h: use diagnostic heap manager.\n");
+            "                      b: Check array accesses for boundary violations.\n"
+            "                      m: Check success of memory allocations.\n"
+            "                      e: Check errno variable upon applications of\n"
+            "                         external functions.\n"
+            "                      h: Use diagnostic heap manager.\n");
 
-    printf ("\n\nRUNTIME TRACE OPTIONS:\n\n"
+    printf (
+      "\n\nRUNTIME TRACE OPTIONS:\n\n"
 
-            "\t -trace [amrfpowt]+ \tinclude runtime program tracing.\n"
-            "\t\t\t\t  a: trace all (same as mrfpowt).\n"
-            "\t\t\t\t  m: trace memory operations.\n"
-            "\t\t\t\t  r: trace reference counting operations.\n"
-            "\t\t\t\t  f: trace user-defined function calls.\n"
-            "\t\t\t\t  p: trace primitive function calls.\n"
-            "\t\t\t\t  o: trace old with-loop execution.\n"
-            "\t\t\t\t  w: trace new with-loop execution.\n"
-            "\t\t\t\t  t: trace multi-threading specific operations.\n"
-            "\t\t\t\t  c: trace runtime enviroment init/exit when\n"
-            "\t\t\t\t     using sac-libraries in c programms.\n");
+      "    -trace [amrfpwt]+\n"
+      "                    Incorporate trace output generation into executable program.\n"
+      "                    The following flags are supported:\n"
+      "                      a: Trace all (same as mrfpowt).\n"
+      "                      m: Trace memory operations.\n"
+      "                      r: Trace reference counting operations.\n"
+      "                      f: Trace user-defined function calls.\n"
+      "                      p: Trace primitive function calls.\n"
+      "                      w: Trace with-loop execution.\n"
+      "                      t: Trace multi-threading specific operations.\n"
+      "                      c: Trace runtime enviroment init/exit when\n"
+      "                         using SAC libraries in C programs.\n");
 
-    printf ("\n\nRUNTIME PROFILING OPTIONS:\n\n"
+    printf (
+      "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-            "\t -profile [afilw]+ \tinclude runtime profiling analysis.\n"
-            "\t\t\t\t  a: analyse all (same as filw).\n"
-            "\t\t\t\t  f: analyse time spent in non-inline functions.\n"
-            "\t\t\t\t  i: analyse time spent in inline functions.\n"
-            "\t\t\t\t  l: analyse time spent in library functions.\n"
-            "\t\t\t\t  w: analyse time spent in with-loops.\n");
+      "    -profile [afilw]+\n"
+      "                    Incorporate profiling analysis into executable program.\n"
+      "                      a: Analyse all (same as filw).\n"
+      "                      f: Analyse time spent in non-inline functions.\n"
+      "                      i: Analyse time spent in inline functions.\n"
+      "                      l: Analyse time spent in library functions.\n"
+      "                      w: Analyse time spent in with-loops.\n");
 
     env = getenv ("SACBASE");
     printf ("\n\nCACHE SIMULATION OPTIONS:\n\n"
 
-            "\t -cs\t\tenable runtime cache simulation\n"
+            "    -cs             Enable runtime cache simulation.\n"
             "\n"
-            "\t -csdefaults [sagbifp]+\n\n"
-
-            "\t\tThis option sets default parameters for cache simulation.\n"
-            "\t\tThese settings may be overridden when starting the analysis of\n"
-            "\t\tan application program.\n"
-            "\t\t  s: simple cache simulation.\n"
-            "\t\t  a: advanced cache simulation.\n"
-            "\t\t  g: global cache simulation.\n"
-            "\t\t  b: cache simulation on selected blocks.\n"
-            "\t\t  i: immediate analysis of memory accesses.\n"
-            "\t\t  f: storage of memory accesses in file.\n"
-            "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
-            "\t\tThe default simulation parameters are \"sgp\".\n"
+            "    -csdefaults [sagbifp]+\n"
+            "                    This option sets default parameters for cache "
+            "simulation.\n"
+            "                    These settings may be overridden when starting the "
+            "analysis\n"
+            "                    of an application program:\n"
+            "                      s: simple cache simulation,\n"
+            "                      a: advanced cache simulation,\n"
+            "                      g: global cache simulation,\n"
+            "                      b: cache simulation on selected blocks,\n"
+            "                      i: immediate analysis of memory access data,\n"
+            "                      f: storage of memory access data in file,\n"
+            "                      p: piping of memory access data to concurrently "
+            "running\n"
+            "                         analyser process.\n"
+            "                    The default simulation parameters are \"sgp\".\n"
             "\n"
-            "\tSimple cache simulation only counts cache hits and cache misses while\n"
-            "\tadvanced cache simulation additionally classifies cache misses into\n"
-            "\tcold start, cross interference, self interference, and invalidation\n"
-            "\tmisses.\n"
+            "    -cshost <name>  This option specifies the host machine to run the\n"
+            "                    additional analyser process on when doing piped cache\n"
+            "                    simulation. This is very useful for single processor\n"
+            "                    machines because the rather limited buffer size of the\n"
+            "                    pipe determines the synchronisation distance of the "
+            "two\n"
+            "                    processes, i.e. the application process and the "
+            "analysis\n"
+            "                    process. This results in very frequent context "
+            "switches\n"
+            "                    when both processes are run on the same processor, and\n"
+            "                    consequently, degrades the performance by orders of\n"
+            "                    magnitude. So, when doing piped cache simulation "
+            "always\n"
+            "                    be sure to do so either on a multiprocessor or specify "
+            "a\n"
+            "                    different machine to run the analyser process on.\n"
+            "                    However, this only defines a default which may be\n"
+            "                    overridden by using this option when starting the\n"
+            "                    compiled application program.\n"
             "\n"
-            "\tSimulation results may be presented for the entire program run or more\n"
-            "\tspecifically for any code block marked by the following pragma:\n"
-            "\t\t#pragma cachesim [tag]\n"
-            "\tThe optional tag allows to distinguish between the simulation results\n"
-            "\tfor various code blocks. The tag must be a string.\n"
+            "    -csfile <name>  This option specifies a default file where to\n"
+            "                    write the memory access trace when performing cache\n"
+            "                    simulation via a file. This default may be overridden "
+            "by\n"
+            "                    using this option when starting the compiled "
+            "application\n"
+            "                    program.\n"
+            "                    The general default name is \"<executable_name>.cs\".\n"
             "\n"
-            "\tMemory accesses may be evaluated with respect to their cache behavior\n"
-            "\teither immediately within the application process, stored in a file,\n"
-            "\tor they may be piped to a concurrently running analyser process.\n"
-            "\tWhile immediate analysis usually is the fastest alternative,\n"
-            "\tresults, in particular for advanced analysis, are often inaccurate due\n"
-            "\tto changes in the memory layout caused by the analyser. If you choose\n"
-            "\tto write memory accesses to a file, beware that even for small programs\n"
-            "\tto be analysed the amount of data may be quite large. However, once a\n"
-            "\tmemory trace file exists, it can be used to simulate different cache\n"
-            "\tconfigurations without repeatedly running the application program\n"
-            "\titself. The simulation tool for memory access trace files is called\n"
-            "\t\tCacheSimAnalyser\n"
-            "\tand may be found in the directory\n"
-            "\t\t%s%sruntime\n"
-            "\tas part of your SAC %s installation.\n"
+            "    -csdir <name>   This option specifies a default directory where to\n"
+            "                    write the memory access trace file when performing "
+            "cache\n"
+            "                    simulation via a file. This default may be overridden "
+            "by\n"
+            "                    using this option when starting the compiled "
+            "application\n"
+            "                    program.\n"
+            "                    The general default directory is the tmp directory\n"
+            "                    specified in your sac2crc file.\n"
             "\n"
-            "\tThese default cache simulation parameters may be overridden when\n"
-            "\tinvoking the application program to be analysed by using the generic\n"
-            "\tcommand line option\n"
-            "\t\t-cs [sagbifp]+\n"
+            "\n\n"
+            "CACHE SIMULATION FEATURES:\n"
             "\n"
-            "\tCache parameters for up to 3 levels of caches may be provided as target\n"
-            "\tspecification in the sac2crc file. However, these only serve as a\n"
-            "\tdefault cache specification which may well be altered when running the\n"
-            "\tcompiled SAC program with cache simulation enabled. This can be done\n"
-            "\tusing the following command line options:\n"
-            "\t\t-cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
-            "\tThe cache size must be given in KBytes, the cache line size in\n"
-            "\tBytes. A cache size of 0 KB disables the corresponding cache level\n"
-            "\tcompletely regardless of any other setting.\n"
-            "\tWrite miss policies are specified by a single letter:\n"
-            "\t\td: default (fetch on write)\n"
-            "\t\tf: fetch on write\n"
-            "\t\tv: write validate\n"
-            "\t\ta: write around\n"
+            "    Simple cache simulation only counts cache hits and cache misses while\n"
+            "    advanced cache simulation additionally classifies cache misses into\n"
+            "    cold start, cross interference, self interference, and invalidation\n"
+            "    misses.\n"
             "\n"
-            "\t-cshost <name> \tallows the specification of a specific host to run the\n"
-            "\t\t\tadditional analyser process on when doing piped cache\n"
-            "\t\t\tsimulation. This is very useful for single processor\n"
-            "\t\t\tmachines because the rather limited buffer size of the\n"
-            "\t\t\tpipe determines the synchronisation distance of the two\n"
-            "\t\t\tprocesses, i.e. the application process and the analysis\n"
-            "\t\t\tprocess. This results in very frequent context switches\n"
-            "\t\t\twhen both processes are run on the same processor, and\n"
-            "\t\t\tconsequently, degrades the performance by orders of\n"
-            "\t\t\tmagnitude. So, when doing piped cache simulation always\n"
-            "\t\t\tbe sure to do so either on a multiprocessor or specify a\n"
-            "\t\t\tdifferent machine to run the analyser process on.\n"
-            "\t\t\tHowever, this only defines a default which may be\n"
-            "\t\t\toverridden by using this option when starting the\n"
-            "\t\t\tcompiled application program.\n"
+            "    Simulation results may be presented for the entire program run or more\n"
+            "    specifically for any code block marked by the following pragma:\n"
+            "        #pragma cachesim [tag]\n"
+            "    The optional tag allows to distinguish between the simulation results\n"
+            "    for various code blocks. The tag must be a string.\n"
             "\n"
-            "\t-csfile <name> \tallows the specification of a default file where to\n"
-            "\t\t\twrite the memory access trace when performing cache\n"
-            "\t\t\tsimulation via a file. This default may be overridden by\n"
-            "\t\t\tusing this option when starting the compiled application\n"
-            "\t\t\tprogram.\n"
-            "\t\t\tThe general default name is <exec file name>.cs.\n"
+            "    Memory accesses may be evaluated with respect to their cache behaviour\n"
+            "    either immediately within the application process, stored in a file,\n"
+            "    or they may be piped to a concurrently running analyser process.\n"
+            "    Whereas immediate analysis usually is the fastest alternative,\n"
+            "    results, in particular for advanced analysis, are often inaccurate due\n"
+            "    to changes in the memory layout caused by the analyser. If you choose\n"
+            "    to write memory accesses to a file, beware that even for small "
+            "programs\n"
+            "    to be analysed the amount of data may be quite large. However, once a\n"
+            "    memory trace file exists, it can be used to simulate different cache\n"
+            "    configurations without repeatedly running the application program\n"
+            "    itself. The simulation tool for memory access trace files is called\n"
+            "        CacheSimAnalyser\n"
+            "    and may be found in the directory\n"
+            "        %s%sruntime\n"
+            "    as part of your SAC %s installation.\n"
             "\n"
-            "\t-csdir <name> \tallows the specification of a default directory where to\n"
-            "\t\t\twrite the memory access trace file when performing cache\n"
-            "\t\t\tsimulation via a file. This default may be overridden by\n"
-            "\t\t\tusing this option when starting the compiled application\n"
-            "\t\t\tprogram.\n"
-            "\t\t\tThe general default directory is the tmp directory\n"
-            "\t\t\tspecified in your sac2crc file.\n",
+            "    These default cache simulation parameters may be overridden when\n"
+            "    invoking the application program to be analysed by using the generic\n"
+            "    command line option\n"
+            "        -cs [sagbifp]+\n"
+            "    where the various flags have the same meaning as described for the\n"
+            "    -csdefaults compiler option.\n"
+            "\n"
+            "    Cache parameters for up to 3 levels of caches may be provided as "
+            "target\n"
+            "    specification in the sac2crc file. However, these only serve as a\n"
+            "    default cache specification which may well be altered when running the\n"
+            "    compiled SAC program with cache simulation enabled. This can be done\n"
+            "    using the following command line options:\n"
+            "        -cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
+            "    The cache size must be given in KBytes, the cache line size in\n"
+            "    Bytes. A cache size of 0 KB disables the corresponding cache level\n"
+            "    completely regardless of any other setting.\n"
+            "    Write miss policies are specified by a single letter:\n"
+            "        d: default (fetch on write)\n"
+            "        f: fetch on write\n"
+            "        v: write validate\n"
+            "        a: write around\n",
             STR_OR_EMPTY (env),
             ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "", version_id);
 
     printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-            "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
-            "\t\t\t\t\t  a: use all intrinsic operations\n"
+            "    For compatibility reasons with older versions of sac2c intrinsic\n"
+            "    implementations still exist for some of the basic array operations\n"
+            "    which today are imported from the array module of the SAC standard\n"
+            "    library. These intrinsic implementations can be activated by the\n"
+            "    following compiler option.\n"
+            "\n"
+            "    -intrinsic [a+-x/tdcrpo]+\n"
+            "                    Use intrinsic implementations for array operations.\n"
+            "                      a: Use all intrinsic operations  available\n"
 #ifndef TAGGED_ARRAYS
-            "\t\t\t\t\t     available (same as +-x/tdcrso).\n"
+            "                         (same as +-x/tdcrso).\n"
 #else
-            "\t\t\t\t\t     available (same as +-x/so).\n"
+            "                         (same as +-x/so).\n"
 #endif
-            "\t\t\t\t\t  +: use intrinsic add.\n"
-            "\t\t\t\t\t  -: use intrinsic sub.\n"
-            "\t\t\t\t\t  x: use intrinsic mul.\n"
-            "\t\t\t\t\t  /: use intrinsic div.\n"
+            "                      +: Use intrinsic add.\n"
+            "                      -: Use intrinsic sub.\n"
+            "                      x: Use intrinsic mul.\n"
+            "                      /: Use intrinsic div.\n"
 #ifndef TAGGED_ARRAYS
-            "\t\t\t\t\t  t: use intrinsic take.\n"
-            "\t\t\t\t\t  d: use intrinsic drop.\n"
-            "\t\t\t\t\t  c: use intrinsic cat.\n"
-            "\t\t\t\t\t  r: use intrinsic rotate.\n"
+            "                      t: Use intrinsic take.\n"
+            "                      d: Use intrinsic drop.\n"
+            "                      c: Use intrinsic cat.\n"
+            "                      r: Use intrinsic rotate.\n"
 #endif
-            "\t\t\t\t\t  s: use intrinsic sel.\n"
-            "\t\t\t\t\t  o: use intrinsic type conversion.\n");
+            "                      s: Use intrinsic sel.\n"
+            "                      o: Use intrinsic type conversion.\n");
 
     printf ("\n\nLIBRARY OPTIONS:\n\n"
-            "\t -genlib <lang>\tlanguage interface to generate from module.\n"
-            "\t\t\tsac: generate SAC library.\n"
-            "\t\t\t  c: generate C library and headerfile. Be careful to\n"
-            "\t\t\t     use same switches for PHM and profiling in all\n"
-            "\t\t\t     modules you link to one c executeable! Multi-\n"
-            "\t\t\t     threading is not yet available for c libraries!\n"
-            "\t\t\t     (see also documentation in sac_cinterface.h)\n"
-            "\t\t\tdefault: -genlib sac\n"
 
-            "\n\t -l <n>\t\tlink level for generating SAC library.\n"
-            "\t\t\t  1: compile to one large object file.\n"
-            "\t\t\t  2: compile to archive of object files.\n"
-            "\t\t\tdefault: -l %d\n",
+            "    -genlib <lang>  Specify library format when compiling SAC module/class\n"
+            "                    implementations.\n"
+            "                    Supported values for <lang> are:\n"
+            "                      sac: Generate SAC library file (default).\n"
+            "                        c: Generate C object and header files.\n"
+            "\n"
+            "                    NOTE:\n"
+            "                    Be careful to use same options for privat heap "
+            "management\n"
+            "                    (PHM) and profiling for compilation of all "
+            "modules/classes\n"
+            "                    you are going to link together to a single executable.\n"
+            "\n"
+            "                    NOTE:\n"
+            "                    Multithreading is not yet available for C libraries.\n"
+
+            "\n"
+            "    -l <style>      Specify the link style for generating SAC library "
+            "files.\n"
+            "                    Supported values for <style> are:\n"
+            "                      1: Compile to one large object file.\n"
+            "                      2: Compile to archive of object files.\n"
+            "                    The default link style is: -l %d.\n",
             linkstyle);
 
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
-            "\t -g     \tinclude debug information into object code.\n"
+            "    -g              Include debug information into object code.\n"
             "\n"
-            "\t -O <n> \tC compiler level of optimization.\n"
-            "\t\t\t  0: no C compiler optimizations.\n"
-            "\t\t\t  1: minor C compiler optimizations.\n"
-            "\t\t\t  2: medium C compiler optimizations.\n"
-            "\t\t\t  3: full C compiler optimizations.\n"
-            "\t\t\tdefault: -O %d\n"
+            "    -O <n>          Specify  the C compiler level of optimization.\n"
+            "                      0: no C compiler optimizations.\n"
+            "                      1: minor C compiler optimizations.\n"
+            "                      2: medium C compiler optimizations.\n"
+            "                      3: full C compiler optimizations.\n"
+            "                    The default setting is: -O %d.\n"
             "\n"
-            "\tThe actual effects of these options are C compiler specific!\n",
+            "                    NOTE:\n"
+            "                    The actual effects of these options are specific to the "
+            "\n"
+            "                    C compiler used for code generation. Both the choice "
+            "of\n"
+            "                    a C compiler as well as the mapping of these generic\n"
+            "                    options to compiler-specific optimization options are\n"
+            "                    are determined via the sac2crc configuration file.\n"
+            "                    For details concerning sac2crc files see below under\n"
+            "                    \"customization\".\n",
             cc_optimize);
 
     printf ("\n\nCUSTOMIZATION:\n\n"
 
-            "\t-target <name>\tspecify a particular compilation target.\n"
-            "\t\t\tCompilation targets are used to customize sac2c for\n"
-            "\t\t\tvarious target architectures, operating systems, and C\n"
-            "\t\t\tcompilers.\n"
-            "\t\t\tThe target description is either read from the\n"
-            "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
-            "\t\t\tfrom a file named .sac2crc within the user's home\n"
-            "\t\t\tdirectory.\n");
+            "    -target <name>  Specify a particular compilation target.\n"
+            "                    Compilation targets are used to customize sac2c for\n"
+            "                    various target architectures, operating systems, and C\n"
+            "                    compilers.\n"
+            "                    The target description is either read from the\n"
+            "                    installation specific file $SACBASE/runtime/sac2crc or\n"
+            "                    from a file named .sac2crc within the user's home\n"
+            "                    directory.\n");
 
-    printf ("\n\nENVIRONMENT VARIABLES:\n\n"
+    printf (
+      "\n\nENVIRONMENT VARIABLES:\n\n"
 
-            "\tSACBASE\t\t\tbase directory of SAC installation\n"
-            "\tSAC_PATH\t\tsearch paths for program source\n"
-            "\tSAC_DEC_PATH\t\tsearch paths for declarations\n"
-            "\tSAC_LIBRARY_PATH\tsearch paths for libraries\n"
-            "\n"
-            "\tThe following environment variables must be set correctly when compiling\n"
-            "\ta SAC module/class implementation in order to enable full usability of\n"
-            "\tsac2c command line option \"-libstat\": PWD, USER, and HOST.\n");
+      "    The following environment variables are used by sac2c:\n"
+      "\n"
+      "    SACBASE           Base directory of SAC installation.\n"
+      "    SAC_PATH          Search path for SAC source code files.\n"
+      "    SAC_DEC_PATH      Search path for module/class declaration files.\n"
+      "    SAC_LIBRARY_PATH  Search path for SAC library files.\n"
+      "\n"
+      "    The following environment variables must be set correctly when compiling\n"
+      "    a SAC module/class implementation in order to enable full usability of\n"
+      "    sac2c command line option \"-libstat\": PWD, USER, and HOST.\n");
 
     printf ("\n\nAUTHORS:\n\n"
 
-            "\tSven-Bodo Scholz\n"
-            "\tHenning Wolf\n"
-            "\tArne Sievers\n"
-            "\tClemens Grelck\n"
-            "\tDietmar Kreye\n"
-            "\tSoeren Schwartz\n"
-            "\tBjoern Schierau\n"
-            "\tHelge Ernst\n"
-            "\tJan-Hendrik Schoeler\n"
-            "\tNico Marcussen-Wulff\n"
-            "\tMarkus Bradtke\n"
-            "\tBorg Enders\n"
-            "\tKai Trojahner\n"
-            "\tMichael Werner\n");
+            "    The following people contributed their time and mind to create sac2c\n"
+            "    (roughly in order of entering the project):\n"
+            "\n"
+            "      Sven-Bodo Scholz\n"
+            "      Henning Wolf\n"
+            "      Arne Sievers\n"
+            "      Clemens Grelck\n"
+            "      Dietmar Kreye\n"
+            "      Soeren Schwartz\n"
+            "      Bjoern Schierau\n"
+            "      Helge Ernst\n"
+            "      Jan-Hendrik Schoeler\n"
+            "      Nico Marcussen-Wulff\n"
+            "      Markus Bradtke\n"
+            "      Borg Enders\n"
+            "      Kai Trojahner\n"
+            "      Michael Werner\n"
+            "      Stephan Herhut\n");
 
     printf ("\n\nCONTACT:\n\n"
 
-            "\tWorld Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
-            "\tE-Mail: sacbase@informatik.uni-kiel.de\n");
+            "    WWW:    http://www.sac-home.org/\n"
+            "    E-Mail: info@sac-home.org\n");
 
     printf ("\n\nBUGS:\n\n"
 
-            "\tBugs??  We????\n"
+            "    Bugs??  We????\n"
             "\n"
-            "\tUnfortunately, two of our optimizations are quite buggy 8-(\n"
-            "\tTherefore, we decided to preset -noLIR and -noDLAW in the current\n"
-            "\tcompiler release!\n\n");
+            "    Sac2c is a research compiler!\n"
+            "\n"
+            "    It is intended as a platform for scientific research rather than a \n"
+            "    \"product\" for end users. Although we try to do our very best,\n"
+            "    you may well run into a compiler bug. So, we are happy to receive\n"
+            "    your bug reports (Well, not really \"happy\", but ...)\n"
+            "\n"
+            "    Unfortunately, two of our optimizations are quite buggy 8-(\n"
+            "    Therefore, we decided to preset -noLIR (non-ssa version) \n"
+            "    and -noDL in the current compiler release.\n");
 
     DBUG_VOID_RETURN;
 }
@@ -771,8 +909,8 @@ version ()
 {
     DBUG_ENTER ("version");
 
-    printf ("\n\t\t  SAC - Single Assignment C\n"
-            "\t---------------------------------------------\n\n"
+    printf ("\n          SAC - Single Assignment C\n"
+            "    ---------------------------------------------\n\n"
 
             "NAME:      sac2c\n"
             "VERSION:   %s\n"
@@ -783,21 +921,21 @@ version ()
             "BY USER:   %s\n"
             "ON HOST:   %s\n"
             "FOR OS:    %s\n"
-            "\n\n"
-
-            "(c) Copyright 1994 - 2002 by\n\n"
-
-            "  Christian-Albrechts-Universitaet zu Kiel\n"
-            "  Institut fuer Informatik und Praktische Mathematik\n"
-            "  Herman-Rodewald-Str.3\n"
-            "  D-24118 Kiel\n"
-            "  Germany\n\n",
+            "\n\n",
             (version_id[0] == '\0') ? "???" : version_id,
             (target_platform[0] == '\0') ? "???" : target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host,
             (build_os[0] == '\0') ? "???" : build_os);
+
+    printf ("(c) Copyright 1994 - 2002 by\n\n"
+
+            "  Christian-Albrechts-Universitaet zu Kiel\n"
+            "  Institut fuer Informatik und Praktische Mathematik\n"
+            "  Herman-Rodewald-Str.3\n"
+            "  D-24118 Kiel\n"
+            "  Germany\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -807,17 +945,17 @@ copyright ()
 {
     DBUG_ENTER ("copyright");
 
-    printf ("\n\t\t  SAC - Single Assignment C\n"
-            "\t---------------------------------------------\n\n"
+    printf ("\n          SAC - Single Assignment C\n"
+            "    ---------------------------------------------\n\n"
 
-            "\tSAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
+            "    SAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
 
             "(c) Copyright 1994 - 2000 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
             "  Institut fuer Informatik und Praktische Mathematik\n"
-            "  Preusserstrasse 1 - 9\n"
-            "  D-24105 Kiel\n"
+            "  Herman-Rodewald-Str.3\n"
+            "  D-24118 Kiel\n"
             "  Germany\n\n");
 
     printf (
