@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/06/13 12:54:54  dkr
+ * parsing of old with-loop removed
+ *
  * Revision 2.18  2000/02/24 15:53:44  dkr
  * RETURN_INWITH not supported anymore
  * (for old with-loop only, therefore obsolete now)
@@ -393,7 +396,7 @@ extern types *GenComplexType( types *types, nums *numsp);
        COMMA, AMPERS, ASSIGN, DOT, QUESTION,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
-       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, NWITH, FOLD,
+       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, NWITH, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
@@ -433,14 +436,13 @@ extern types *GenComplexType( types *types, nums *numsp);
              objdefs, objdef, exprblock, exprblock2,
              assign, assigns, assignblock, letassign, 
              selassign, forassign, assignsOPTret, wlassignblock, optelse,
-             exprsNOar, exprNOdot, exprORdot, exprNOar, 
+             exprsNOar, /* exprNOdot */, exprORdot, exprNOar, 
              expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
-             conexpr, generator,
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
              exptypes, exptype, objdecs, objdec, evimport, modheader,
              imptypes, imptype,import, imports, impdesc, impdesc2, impdesc3,
-             impdesc4, foldfun, opt_arguments,
+             impdesc4, opt_arguments,
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
              sibargs, sibarg, sibfunlist, sibfunlistentry,
@@ -1798,8 +1800,12 @@ exprsNOar: exprNOar COMMA exprsNOar { $$=MakeExprs($1, $3);   }
          | exprNOar                 { $$=MakeExprs($1, NULL); }
          ;
 
+/*
+ * not needed anymore
+ *
 exprNOdot: expr %prec GENERATOR { $$ = $1; }
          ;
+ */
 
 exprORdot: expr %prec GENERATOR { $$ = $1;   }
          | DOT                  { $$ = NULL; }
@@ -1976,9 +1982,6 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
               */
              NPART_CODE( NWITH_PART($$)) = NWITH_CODE($$);
            }
-         | WITH {$<cint>$=linenum;} BRACKET_L generator  BRACKET_R conexpr 
-           { $$=MakeWith( $4, $6);
-           }
          ;
 
 
@@ -2044,102 +2047,6 @@ Nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        ;
 
-/* NOT BRUSHED BEGIN */
-
-generator: exprNOdot  LE id LE exprNOdot
-            { $$=MakeNode(N_generator);
-              $$->node[0]=$1;        /* left border  */
-              $$->node[1]=$5;        /* right border */
-              $$->info.ids=MakeIds($3, NULL, ST_regular); /*index-variable  */
-
-              DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT": %s "P_FORMAT", ID: %s, %s "P_FORMAT ,
-                          mdb_nodetype[$$->nodetype], $$,
-                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
-                          $$->info.ids->id,
-                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
-            }
-        ;
-
-conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL); }
-         expr BRACKET_R
-           { node *ret;
-
-             $$=$<node>6;
-             ret = MakeReturn( MakeExprs($7, NULL) );
-#if 0   /* old with-loops are not supported anymore */
-             RETURN_INWITH(ret)=1;
-#endif
-             
-             GENARRAY_BODY($$)=Append( $1, ret);
-             
-           }
-         | wlassignblock MODARRAY BRACKET_L expr COMMA id COMMA
-           { $$=MakeModarray($4, NULL); } expr BRACKET_R
-           { node *ret;
-
-             $$=$<node>8;
-             ret = MakeReturn( MakeExprs($9, NULL) );
-#if 0   /* old with-loops are not supported anymore */
-             RETURN_INWITH(ret)=1;
-#endif
-
-             MODARRAY_BODY($$)=Append( $1, ret);
-             MODARRAY_ID($$)=$6;
-           }
-         | wlassignblock FOLD BRACKET_L foldop COMMA expr BRACKET_R
-           { node *ret;
-
-             $$=MakeFoldprf($4, NULL, NULL);
-             ret = MakeReturn( MakeExprs($6, NULL) );
-#if 0   /* old with-loops are not supported anymore */
-             RETURN_INWITH(ret)=1;
-#endif
-             FOLDPRF_BODY($$)=Append( $1, ret);
-
-           }
-         | wlassignblock FOLD BRACKET_L foldop COMMA expr COMMA expr
-           BRACKET_R
-           { node *ret;
-
-             $$=MakeFoldprf($4,NULL,$6);
-             ret = MakeReturn( MakeExprs($8, NULL) );
-#if 0   /* old with-loops are not supported anymore */
-             RETURN_INWITH(ret)=1;
-#endif
-             FOLDPRF_BODY($$)=Append($1, ret);
-           }
-         | wlassignblock FOLD BRACKET_L foldfun expr COMMA expr 
-           BRACKET_R
-           { node *ret;
-
-              $$=$<node>4;
-              ret = MakeReturn( MakeExprs($7, NULL) );
-#if 0   /* old with-loops are not supported anymore */
-              RETURN_INWITH(ret)=1;
-#endif
-              FOLDFUN_BODY($$)=Append( $1, ret);
-              FOLDFUN_NEUTRAL($$)= $5;
-
-           }
-         ;
-
-
-foldfun: id COMMA 
-         {
-           $$=MakeNode(N_foldfun);
-           $$->info.fun_name.id=$1;
-         }
-       | id COLON id COMMA
-         {
-           $$=MakeNode(N_foldfun);
-           $$->info.fun_name.id=$3;
-           $$->info.fun_name.id_mod=$1;
-         }
-       ;
-     
-/* NOT BRUSHED END  */
- 
 foldop: PLUS    {$$=F_add;}
       | MUL     {$$=F_mul;}
       | PRF_MIN {$$=F_min;}
