@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 1.54  2000/06/23 14:17:14  dkr
+ * macros for old with-loop removed
+ * NWITH_COMPLEX removed
+ *
  * Revision 1.53  2000/06/22 13:32:07  mab
  * INFO_APT_EXPRESSION_PADDED corrected
  *
@@ -26,7 +29,6 @@
  *
  * Revision 1.46  2000/06/08 12:15:38  jhs
  * Added some INFO_DFA_XXX stuff
- * /
  *
  * Revision 1.45  2000/05/29 14:30:18  dkr
  * minor error in comment of N_Ncode corrected
@@ -70,103 +72,7 @@
  * Revision 1.32  2000/03/22 17:37:28  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync macros.
  *
- * Revision 1.31  2000/03/21 15:52:31  jhs
- * Rearrange arg_info usage in INFO_DFA.
- *
- * Revision 1.30  2000/03/21 13:51:25  dkr
- * remarks for N_WLseg and N_WLsegVar added
- *
- * Revision 1.29  2000/03/21 13:12:16  jhs
- * Added macros: INFO_DFA_xxx, MT_xxx, ST_xxx.
- *
- * Revision 1.28  2000/03/19 15:47:01  dkr
- * type of INFO_CUD_REF changed
- *
- * Revision 1.27  2000/03/17 20:41:18  dkr
- * INFO_CUD_... macros added
- *
- * Revision 1.26  2000/03/15 16:07:11  dkr
- * definition of FUNDEF_COMPANION changed
- *
- * Revision 1.25  2000/03/15 15:04:26  dkr
- * WL..._INNERSTEP removed
- * WLSEG_HOMSV added
- *
- * Revision 1.24  2000/03/09 18:35:19  jhs
- * Additinal macros.
- *
- * Revision 1.23  2000/03/02 13:07:02  jhs
- * Added several macros for multithreaded.
- *
- * Revision 1.22  2000/03/01 19:01:32  dkr
- * macros for WL...-nodes reorganized
- *
- * Revision 1.21  2000/02/25 15:08:42  dkr
- * some comments changed
- *
- * Revision 1.20  2000/02/24 15:54:34  dkr
- * RETURN_INWITH removed
- * (needed for old with-loop only, therefore obsolete now)
- *
- * Revision 1.19  2000/02/23 23:07:24  dkr
- * ..._IN_VARS, ..._OUT_VARS, ..._LOCAL_VARS for COND, DO and WHILE added
- * INFO_LAC2FUN_DFMBASE removed
- *
- * Revision 1.18  2000/02/23 13:18:21  jhs
- * Added INFO_BLKEX_BLOCKABOVE.
- *
- * Revision 1.17  2000/02/22 11:58:36  jhs
- * Added and adapted NODE_TEXT.
- *
- * Revision 1.16  2000/02/17 16:22:03  cg
- * Added several new access macros for usage of N_info node
- * in fun2lac.c and adjust_ids.c.
- *
- * Revision 1.15  2000/02/16 15:11:54  dkr
- * removed FUNDEF_LAC_LET
- *
- * Revision 1.14  2000/02/11 18:31:17  dkr
- * INFO_PRINT_CONT added
- *
- * Revision 1.13  2000/02/11 16:21:41  jhs
- * Added RFINfundef, INFO_RFIN_xxx
- *
- * Revision 1.12  2000/02/10 15:48:13  jhs
- * Added NWITH2_ISSCHEDULED.
- *
- * Revision 1.11  2000/02/09 14:14:22  dkr
- * WLSEGVAR_MAXHOMDIM removed
- * INFO_LAC2FUN_FUNDEF added
- *
- * Revision 1.10  2000/02/09 09:59:31  dkr
- * FUNDEF_LAC_LET added
- *
- * Revision 1.9  2000/02/04 14:46:53  jhs
- * Added rfin_tab and it's functions.
- * Added INFO_RFIN_xxx.
- *
- * Revision 1.8  2000/02/02 12:29:09  jhs
- * Added INFO_MUTH_FUNDEF.
- * Added N_mt and N_st.
- * Added ST_xxx-macros, added MT_OR_ST_xxx-macros.
- *
- * Revision 1.7  2000/01/28 13:53:07  jhs
- * Added INFO_SCHIN_ALLOWED.
- *
- * Revision 1.6  2000/01/28 12:39:17  dkr
- * removed NCODE_CODE
- *
- * Revision 1.5  2000/01/25 16:52:20  jhs
- * Fixed a semicolon ...
- *
- * Revision 1.4  2000/01/25 16:11:21  dkr
- * INFO_LAC2FUN_FUNDEF added
- *
- * Revision 1.3  2000/01/25 13:47:06  dkr
- * INFO_LAC2FUN_FUNS added
- *
- * Revision 1.2  2000/01/24 18:21:51  jhs
- * Added some INFO macros for schedule_init.[ch].
+ * [...]
  *
  * Revision 1.1  2000/01/21 15:38:35  dkr
  * Initial revision
@@ -189,7 +95,6 @@
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  *
  * [...]
- *
  */
 
 /*============================================================================
@@ -2192,7 +2097,7 @@ extern node *MakePragma ();
  ***    ####
  ***
  ***  in (na), (nj):
- ***    int (bool) INFO_BARIN_WITHINMT
+ ***    int(bool)  INFO_BARIN_WITHINMT
  ***
  ***  in (na), (nk):
  ***    ####
@@ -2859,9 +2764,8 @@ extern node *MakeMTalloc ();
  ***    int        REFERENCED             (wlt -> wlf !!
  ***    int        REFERENCED_FOLD        (wlt -> wlf !!)
  ***    int        REFERENCES_FOLDED      (wlt -> wlf !!)
- ***    int        COMPLEX                (wlt -> wlf !!)
- ***    int        FOLDABLE               (wlt -> wlf !!)
- ***    int        NO_CHANCE              (wlt -> wlf !!)
+ ***    bool       FOLDABLE               (wlt -> wlf !!)
+ ***    bool       NO_CHANCE              (wlt -> wlf !!)
  ***    ids*       DEC_RC_IDS             (refcount -> wltransform )
  ***    node*      TSI                    (tile size inference -> )
  ***
@@ -2873,25 +2777,24 @@ extern node *MakeMTalloc ();
 
 extern node *MakeNWith (node *part, node *code, node *withop);
 
-#define NWITH_PART(n) (n->node[0])
-#define NWITH_CODE(n) (n->node[1])
-#define NWITH_WITHOP(n) (n->node[2])
-#define NWITH_PRAGMA(n) (n->node[3])
-#define NWITH_DEC_RC_IDS(n) ((ids *)(n->node[4]))
-#define NWITH_WLAA(n) (n->node[5])
+#define NWITH_PART(n) ((n)->node[0])
+#define NWITH_CODE(n) ((n)->node[1])
+#define NWITH_WITHOP(n) ((n)->node[2])
+#define NWITH_PRAGMA(n) ((n)->node[3])
+#define NWITH_DEC_RC_IDS(n) ((ids *)((n)->node[4]))
+#define NWITH_WLAA(n) ((n)->node[5])
 
-#define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
-#define NWITH_REFERENCED(n) (((wl_info *)(n->info2))->referenced)
-#define NWITH_REFERENCED_FOLD(n) (((wl_info *)(n->info2))->referenced_fold)
-#define NWITH_REFERENCES_FOLDED(n) (((wl_info *)(n->info2))->references_folded)
-#define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
-#define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
-#define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
+#define NWITH_PARTS(n) (((wl_info *)((n)->info2))->parts)
+#define NWITH_REFERENCED(n) (((wl_info *)((n)->info2))->referenced)
+#define NWITH_REFERENCED_FOLD(n) (((wl_info *)((n)->info2))->referenced_fold)
+#define NWITH_REFERENCES_FOLDED(n) (((wl_info *)((n)->info2))->references_folded)
+#define NWITH_FOLDABLE(n) (((wl_info *)((n)->info2))->foldable)
+#define NWITH_NO_CHANCE(n) (((wl_info *)((n)->info2))->no_chance)
 
-#define NWITH_IN(n) ((DFMmask_t)n->dfmask[0])
-#define NWITH_INOUT(n) ((DFMmask_t)n->dfmask[1])
-#define NWITH_OUT(n) ((DFMmask_t)n->dfmask[2])
-#define NWITH_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+#define NWITH_IN(n) ((DFMmask_t) (n)->dfmask[0])
+#define NWITH_INOUT(n) ((DFMmask_t) (n)->dfmask[1])
+#define NWITH_OUT(n) ((DFMmask_t) (n)->dfmask[2])
+#define NWITH_LOCAL(n) ((DFMmask_t) (n)->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2911,17 +2814,17 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***  temporary attributes:
  ***
  ***    long*  MASK          (optimize -> )
- ***    int    COPY          (Unroll!)
+ ***    bool   COPY          (Unroll !)
  ***/
 
 extern node *MakeNPart (node *withid, node *generator, node *code);
 
-#define NPART_WITHID(n) (n->node[0])
-#define NPART_GEN(n) (n->node[1])
-#define NPART_NEXT(n) (n->node[2])
-#define NPART_CODE(n) (n->node[3])
-#define NPART_COPY(n) (n->flag)
-#define NPART_MASK(n, x) (n->mask[x])
+#define NPART_WITHID(n) ((n)->node[0])
+#define NPART_GEN(n) ((n)->node[1])
+#define NPART_NEXT(n) ((n)->node[2])
+#define NPART_CODE(n) ((n)->node[3])
+#define NPART_COPY(n) ((bool)((n)->flag))
+#define NPART_MASK(n, x) ((n)->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2936,8 +2839,8 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 
 extern node *MakeNWithid (ids *vec, ids *scalars);
 
-#define NWITHID_VEC(n) (n->info.ids)
-#define NWITHID_IDS(n) ((ids *)(n->info2))
+#define NWITHID_VEC(n) ((n)->info.ids)
+#define NWITHID_IDS(n) ((ids *)((n)->info2))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2967,14 +2870,14 @@ extern node *MakeNWithid (ids *vec, ids *scalars);
 extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step,
                              node *width);
 
-#define NGEN_BOUND1(n) (n->node[0])
-#define NGEN_BOUND2(n) (n->node[1])
-#define NGEN_STEP(n) (n->node[2])
-#define NGEN_WIDTH(n) (n->node[3])
-#define NGEN_OP1(n) (n->info.genrel.op1)
-#define NGEN_OP2(n) (n->info.genrel.op2)
-#define NGEN_OP1_ORIG(n) (n->info.genrel.op1_orig)
-#define NGEN_OP2_ORIG(n) (n->info.genrel.op2_orig)
+#define NGEN_BOUND1(n) ((n)->node[0])
+#define NGEN_BOUND2(n) ((n)->node[1])
+#define NGEN_STEP(n) ((n)->node[2])
+#define NGEN_WIDTH(n) ((n)->node[3])
+#define NGEN_OP1(n) ((n)->info.genrel.op1)
+#define NGEN_OP2(n) ((n)->info.genrel.op2)
+#define NGEN_OP1_ORIG(n) ((n)->info.genrel.op1_orig)
+#define NGEN_OP2_ORIG(n) ((n)->info.genrel.op2_orig)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3010,15 +2913,15 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 extern node *MakeNWithOp (WithOpType WithOp);
 
 #define NWITHOP_TYPE(n) (*((WithOpType *)(n)->info2))
-#define NWITHOP_FUN(n) (n->info.fun_name.id)
-#define NWITHOP_MOD(n) (n->info.fun_name.id_mod)
-#define NWITHOP_PRF(n) (n->info.prf)
-#define NWITHOP_SHAPE(n) (n->node[0])
-#define NWITHOP_ARRAY(n) (n->node[0])
-#define NWITHOP_NEUTRAL(n) (n->node[0])
-#define NWITHOP_EXPR(n) (n->node[1])
-#define NWITHOP_FUNDEF(n) (n->node[2])
-#define NWITHOP_MASK(n, x) (n->mask[x])
+#define NWITHOP_FUN(n) ((n)->info.fun_name.id)
+#define NWITHOP_MOD(n) ((n)->info.fun_name.id_mod)
+#define NWITHOP_PRF(n) ((n)->info.prf)
+#define NWITHOP_SHAPE(n) ((n)->node[0])
+#define NWITHOP_ARRAY(n) ((n)->node[0])
+#define NWITHOP_NEUTRAL(n) ((n)->node[0])
+#define NWITHOP_EXPR(n) ((n)->node[1])
+#define NWITHOP_FUNDEF(n) ((n)->node[2])
+#define NWITHOP_MASK(n, x) ((n)->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3041,7 +2944,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***                                      (precompile -> )
  ***    long*      MASK                    (optimize -> )
  ***    node *     USE         (N_vinfo)   (IVE -> )
- ***    int        FLAG                    (WLI -> WLF)
+ ***    bool       FLAG                    (WLI -> WLF)
  ***    ids*       INC_RC_IDS              (refcount -> compile )
  ***
  ***    node*      WLAA_INFO(n)            (wlaa -> )
@@ -3077,28 +2980,28 @@ extern node *MakeNWithOp (WithOpType WithOp);
 
 extern node *MakeNCode (node *block, node *expr);
 
-#define NCODE_CBLOCK(n) (n->node[0])
-#define NCODE_CEXPR(n) (n->node[1])
-#define NCODE_NEXT(n) (n->node[2])
-#define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
-#define NCODE_USE(n) (n->node[4])
-#define NCODE_USED(n) (n->info.cint)
-#define NCODE_MASK(n, x) (n->mask[x])
-#define NCODE_NO(n) (n->refcnt)
-#define NCODE_FLAG(n) (n->flag)
+#define NCODE_CBLOCK(n) ((n)->node[0])
+#define NCODE_CEXPR(n) ((n)->node[1])
+#define NCODE_NEXT(n) ((n)->node[2])
+#define NCODE_INC_RC_IDS(n) ((ids *)((n)->node[3]))
+#define NCODE_USE(n) ((n)->node[4])
+#define NCODE_USED(n) ((n)->info.cint)
+#define NCODE_MASK(n, x) ((n)->mask[x])
+#define NCODE_NO(n) ((n)->refcnt)
+#define NCODE_FLAG(n) ((bool)((n)->flag))
 
-#define NCODE_WLAA_INFO(n) ((node *)n->info2)
-#define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)n->info2)->info2))
-#define NCODE_WLAA_ACCESSCNT(n) (((node *)n->info2)->counter)
-#define NCODE_WLAA_FEATURE(n) (((node *)n->info2)->varno)
-#define NCODE_WLAA_INDEXVAR(n) (((node *)n->info2)->node[2])
-#define NCODE_WLAA_WLARRAY(n) (((node *)n->info2)->node[3])
+#define NCODE_WLAA_INFO(n) ((node *)(n)->info2)
+#define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)(n)->info2)->info2))
+#define NCODE_WLAA_ACCESSCNT(n) (((node *)(n)->info2)->counter)
+#define NCODE_WLAA_FEATURE(n) (((node *)(n)->info2)->varno)
+#define NCODE_WLAA_INDEXVAR(n) (((node *)(n)->info2)->node[2])
+#define NCODE_WLAA_WLARRAY(n) (((node *)(n)->info2)->node[3])
 
 #define NCODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (n))
 #define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
 #define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
-#define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)n->info2)->node[4]))
+#define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)(n)->info2)->node[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3120,14 +3023,14 @@ extern node *MakeNCode (node *block, node *expr);
  ***    DFMmask_t  INOUT
  ***    DFMmask_t  OUT
  ***    DFMmask_t  LOCAL
- ***    int        MT
+ ***    bool       MT
  ***
  ***
  ***  temporary attributes:
  ***
  ***    ids*       DEC_RC_IDS                     (wltransform -> compile )
  ***
- ***    bool (int) ISSCHEDULED                    (new mt -> ...)
+ ***    bool       ISSCHEDULED                    (new mt -> ...)
  ***                       [Signals whether any segment is scheduled or not]
  ***
  ***    DFMmask_t  REUSE                          (ReuseWithArrays -> compile ! )
@@ -3137,22 +3040,22 @@ extern node *MakeNCode (node *block, node *expr);
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
 
-#define NWITH2_DIMS(n) (n->flag)
-#define NWITH2_MT(n) (n->counter)
-#define NWITH2_WITHID(n) (n->node[0])
-#define NWITH2_SEGS(n) (n->node[1])
-#define NWITH2_CODE(n) (n->node[2])
-#define NWITH2_WITHOP(n) (n->node[3])
+#define NWITH2_DIMS(n) ((n)->flag)
+#define NWITH2_MT(n) ((bool)((n)->counter))
+#define NWITH2_WITHID(n) ((n)->node[0])
+#define NWITH2_SEGS(n) ((n)->node[1])
+#define NWITH2_CODE(n) ((n)->node[2])
+#define NWITH2_WITHOP(n) ((n)->node[3])
 
-#define NWITH2_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
-#define NWITH2_ISSCHEDULED(n) (n->int_data)
-#define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
+#define NWITH2_SCHEDULING(n) ((SCHsched_t) ((n)->node[4]))
+#define NWITH2_ISSCHEDULED(n) ((n)->int_data)
+#define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
 
-#define NWITH2_IN(n) ((DFMmask_t) (n->dfmask[0]))
-#define NWITH2_INOUT(n) ((DFMmask_t) (n->dfmask[1]))
-#define NWITH2_OUT(n) ((DFMmask_t) (n->dfmask[2]))
-#define NWITH2_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
-#define NWITH2_REUSE(n) ((DFMmask_t) (n->dfmask[4]))
+#define NWITH2_IN(n) ((DFMmask_t) ((n)->dfmask[0]))
+#define NWITH2_INOUT(n) ((DFMmask_t) ((n)->dfmask[1]))
+#define NWITH2_OUT(n) ((DFMmask_t) ((n)->dfmask[2]))
+#define NWITH2_LOCAL(n) ((DFMmask_t) ((n)->dfmask[3]))
+#define NWITH2_REUSE(n) ((DFMmask_t) ((n)->dfmask[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3374,7 +3277,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***    int      BOUND1
  ***    int      BOUND2
  ***    int      STEP
- ***    int      UNROLLING    (unrolling wanted?)
+ ***    bool     UNROLLING    (unrolling wanted?)
  ***
  ***  temporary attributes:
  ***
@@ -3384,14 +3287,14 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***/
 
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
-                           int unrolling, node *contents, node *next);
+                           bool unrolling, node *contents, node *next);
 
 #define WLSTRIDE_LEVEL(n) (WLSTRIX_LEVEL (n))
 #define WLSTRIDE_DIM(n) (WLSTRIX_DIM (n))
 #define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLSTRIDE_STEP(n) (WLNODE_STEP (n))
-#define WLSTRIDE_UNROLLING(n) ((n)->info.prf_dec.tc)
+#define WLSTRIDE_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
 #define WLSTRIDE_CONTENTS(n) (WLSTRIX_CONTENTS (n))
 #define WLSTRIDE_NEXT(n) (WLSTRIX_NEXT (n))
 
@@ -3415,7 +3318,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***    int     DIM
  ***    int     BOUND1
  ***    int     BOUND2
- ***    int     UNROLLING
+ ***    bool    UNROLLING
  ***
  ***  temporary attributes:
  ***
@@ -3429,14 +3332,14 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***      operation.
  ***/
 
-extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling,
+extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling,
                          node *nextdim, node *next, node *code);
 
 #define WLGRID_LEVEL(n) (WLGRIDX_LEVEL (n))
 #define WLGRID_DIM(n) (WLGRIDX_DIM (n))
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLGRID_UNROLLING(n) ((n)->info.prf_dec.tag)
+#define WLGRID_UNROLLING(n) ((bool)((n)->info.prf_dec.tag))
 #define WLGRID_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
 #define WLGRID_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRID_CODE(n) (WLGRIDX_CODE (n))
@@ -3569,172 +3472,5 @@ extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node
 #define WLGRIDVAR_CODE(n) (WLGRIDX_CODE (n))
 
 /*--------------------------------------------------------------------------*/
-
-/*************************
- * start of OLD WITH-LOOP
- */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_with :
- ***
- ***  sons:
- ***
- ***    node*  GEN      (N_generator)
- ***    node*  OPERATOR (N_modarray, N_genarray, N_foldprf, N_foldfun)
- ***
- ***  temporary attributes:
- ***
- ***    long*  MASK[x]                 (optimize -> )
- ***    ids*   USEVARS                 (refcount -> compile ->)
- ***
- ***  remark (srs): the 'body' of MakeWith() can be reached by WITH_OPERATOR.
- ***/
-
-/*
- * The temporary attribute USEVARS is a chain of identifiers
- * along with refcounting information which is generated by refcount.c and
- * used by compile.c for generating refcounting instructions in the context
- * of a with-loop.
- */
-
-#define WITH_GEN(n) (n->node[0])
-#define WITH_OPERATOR(n) (n->node[1])
-#define WITH_USEVARS(n) ((ids *)n->node[2])
-#define WITH_MASK(n, x) (n->mask[x])
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_generator :
- ***
- ***  sons:
- ***
- ***    node*  LEFT    ("N_expr")
- ***    node*  RIGHT   ("N_expr")
- ***
- ***  permanent attributes:
- ***
- ***    char*  ID
- ***    ids*   IDS
- ***
- ***  temporary attributes:
- ***
- ***    node*  VARDEC                  (typechecker -> )
- ***    long*  MASK[x]                 (optimize -> )
- ***    node*  USE     (O) (N_vinfo)   (psi-optimize -> )
- ***
- ***  remark: IDS->id == ID
- ***/
-
-#define GEN_LEFT(n) (n->node[0])
-#define GEN_RIGHT(n) (n->node[1])
-#define GEN_ID(n) (n->info.ids->id)
-#define GEN_IDS(n) (n->info.ids)
-#define GEN_USE(n) (n->info.ids->use)
-#define GEN_VARDEC(n) (n->info.ids->node)
-#define GEN_MASK(n, x) (n->mask[x])
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_genarray :
- ***
- ***  sons:
- ***
- ***    node*  ARRAY  (N_array)
- ***    node*  BODY   (N_block)
- ***
- ***
- ***  temporary attributes:
- ***
- ***    long*  MASK[x]                 (optimize -> )
- ***/
-
-#define GENARRAY_ARRAY(n) (n->node[0])
-#define GENARRAY_BODY(n) (n->node[1])
-#define OPERATOR_MASK(n, x) (n->mask[x])
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_modarray :
- ***
- ***  sons:
- ***
- ***    node*  ARRAY  (N_id)
- ***    node*  BODY   (N_block)
- ***
- ***
- ***  permanent attributes:
- ***
- ***    char*  ID
- ***
- ***
- ***  temporary attributes:
- ***
- ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
- ***/
-
-#define MODARRAY_ARRAY(n) (n->node[0])
-#define MODARRAY_BODY(n) (n->node[1])
-#define MODARRAY_ID(n) (n->info.id)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_foldprf :
- ***
- ***  sons:
- ***
- ***    node*  BODY         (N_block)
- ***    node*  NEUTRAL  (O) ("N_expr")
- ***
- ***  permanent attributes:
- ***
- ***    prf    PRF
- ***
- ***  temporary attributes:
- ***
- ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
- ***/
-
-#define FOLDPRF_PRF(n) (n->info.prf)
-#define FOLDPRF_BODY(n) (n->node[0])
-#define FOLDPRF_NEUTRAL(n) (n->node[1])
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_foldfun :
- ***
- ***  sons:
- ***
- ***    node*  BODY          (N_block)
- ***    node*  NEUTRAL       ("N_expr")
- ***
- ***  permanent attributes:
- ***
- ***    char*  NAME
- ***    char*  MOD                (O)
- ***
- ***  temporary attributes:
- ***
- ***    node*  FUNDEF        (N_fundef)  (typecheck -> )
- ***    long*  MASK[x]                   (optimize -> )  (see N_genarray)
- ***/
-
-#define FOLDFUN_NAME(n) (n->info.fun_name.id)
-#define FOLDFUN_MOD(n) (n->info.fun_name.id_mod)
-#define FOLDFUN_BODY(n) (n->node[0])
-#define FOLDFUN_NEUTRAL(n) (n->node[1])
-#define FOLDFUN_FUNDEF(n) (n->node[2])
-
-/*--------------------------------------------------------------------------*/
-
-/*
- * end of OLD WITH-LOOP
- ***********************/
 
 #endif /* _sac_tree_basic_h */
