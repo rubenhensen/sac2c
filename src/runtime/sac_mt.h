@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/07/03 10:21:33  cg
+ * ICM MT_START_SPMD replaced by MT_SPMD_EXECUTE
+ *
  * Revision 1.9  1998/07/02 09:27:39  cg
  * fixed several bugs
  * dynamic multi-threading option renamed to -mt <num>
@@ -251,12 +254,14 @@ typedef union {
  *  Definition of macro implemented ICMs for handling of spmd-function
  */
 
-#define SAC_MT_START_SPMD(name)                                                          \
+#define SAC_MT_SPMD_EXECUTE(name)                                                        \
     {                                                                                    \
         SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s started.", #name));       \
         SAC_MT_spmd_function = &name;                                                    \
+        SAC_MT_not_yet_parallel = 0;                                                     \
         SAC_MT_START_WORKERS ();                                                         \
         name (0, SAC_MT_MASTERCLASS (), 0);                                              \
+        SAC_MT_not_yet_parallel = 1;                                                     \
         SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s finished.", #name));      \
     }
 
