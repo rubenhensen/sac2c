@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.6  2000/10/31 15:07:41  sbs
+ * ST_gen_remove not set anymore --- I'm not sure what implications
+ * this change has therefore it's marked SBS
+ *
  * Revision 1.5  2000/08/03 10:23:06  nmw
  * removal of generic fundefs after specialization added
  *
@@ -94,7 +98,10 @@ IMPSPECfundef (node *arg_node, node *arg_info)
     generic_fundef = MapSpecialized2Generic (arg_node, arg_info);
 
     /* this function can be removed after specialization */
-    FUNDEF_ATTRIB (generic_fundef) = ST_gen_remove;
+
+#if 0 /* SBS*/
+   FUNDEF_ATTRIB(generic_fundef) = ST_gen_remove;
+#endif
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
