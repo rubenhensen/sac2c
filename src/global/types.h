@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/10/19 10:08:41  cg
+ * Revision 1.5  1995/10/20 09:27:00  cg
+ * added 4 new items to macro NIF
+ *
+ * Revision 1.4  1995/10/19  10:08:41  cg
  * new entry in enum statustype: ST_used
  *
  * Revision 1.3  1995/10/16  17:57:00  cg
@@ -157,7 +160,7 @@ typedef struct FUN_NAME {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae)                                                                      \
+            ad, ae, af, ag, ah, ai)                                                      \
     n
 
 typedef enum {
