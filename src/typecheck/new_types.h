@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/04/07 14:31:32  sbs
+ * support for AKV types added.
+ * functions TYGetValue, TYIsProdOfAKV, and TYIsProdContainingAKV built
+ *
  * Revision 3.15  2003/04/01 17:12:57  sbs
  * started integrating TY_akv i.e. constant types ....
  *
@@ -242,6 +246,7 @@ extern ntype *TYSetScalar (ntype *array, ntype *scalar);
 
 extern int TYGetDim (ntype *array);
 extern shape *TYGetShape (ntype *array);
+extern constant *TYGetValue (ntype *array);
 extern ntype *TYGetScalar (ntype *array);
 
 /*
@@ -320,6 +325,8 @@ extern bool TYIsFun (ntype *);
 extern bool TYIsAKSSymb (ntype *);
 extern bool TYIsProdOfArray (ntype *);
 extern bool TYIsProdOfArrayOrFixedAlpha (ntype *);
+extern bool TYIsProdOfAKV (ntype *);
+extern bool TYIsProdContainingAKV (ntype *);
 
 extern int TYCountNonFixedAlpha (ntype *);
 extern int TYCountNoMinAlpha (ntype *);
@@ -347,6 +354,7 @@ extern ntype *TYLubOfTypes (ntype *t1, ntype *t2);
 extern ntype *TYEliminateAlpha (ntype *t1);
 extern ntype *TYFixAndEliminateAlpha (ntype *t1);
 extern ntype *TYEliminateUser (ntype *t1);
+extern ntype *TYEliminateAKV (ntype *t1);
 
 /*
  * General Type handling functions

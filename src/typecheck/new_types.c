@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/04/07 14:31:32  sbs
+ * support for AKV types added.
+ * functions TYGetValue, TYIsProdOfAKV, and TYIsProdContainingAKV built
+ *
  * Revision 3.44  2003/04/01 17:12:57  sbs
  * started integrating TY_akv i.e. constant types ....
  *
@@ -125,7 +129,13 @@
 
 /**
  *
- * @addtogroup ntc
+ * @defgroup nty New Types
+ * @ingroup ntc
+ *
+ * @brief The module "New Types" encapsulates the abstract data type "ntype".
+ *
+ *  It contains all functions needed for constructing and manipuloating these
+ *  structures.
  *
  * @{
  */
@@ -699,9 +709,10 @@ TYSetScalar (ntype *array, ntype *scalar)
 /******************************************************************************
  *
  * function:
- *   int     TYGetDim( ntype *array)
- *   shape * TYGetShape( ntype *array)
- *   ntype * TYGetScalar( ntype *array)
+ *   int        TYGetDim( ntype *array)
+ *   shape *    TYGetShape( ntype *array)
+ *   constant * TYGetValue( ntype *array)
+ *   ntype *    TYGetScalar( ntype *array)
  *
  * description:
  *   Several functions for extracting the attributes / sons of array types.
@@ -750,6 +761,19 @@ TYGetShape (ntype *array)
     } else {
         res = AKD_SHP (array);
     }
+
+    DBUG_RETURN (res);
+}
+
+constant *
+TYGetValue (ntype *array)
+{
+    constant *res;
+
+    DBUG_ENTER ("TYGetValue");
+    DBUG_ASSERT ((NTYPE_CON (array) == TC_akv),
+                 "TYGetValue applied to ther than AKV type!");
+    res = AKV_CONST (array);
 
     DBUG_RETURN (res);
 }
@@ -2207,11 +2231,12 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
         /*   new default:   <base>[*]   */
         res = IBASE_GEN (fun);
 
-        if (((NTYPE_CON (arg) == TC_aks) || (NTYPE_CON (arg) == TC_akd))
+        if (((NTYPE_CON (arg) == TC_akv) || (NTYPE_CON (arg) == TC_aks)
+             || (NTYPE_CON (arg) == TC_akd))
             && (TYGetDim (arg) == 0)) {
             /* argument is a scalar! */
             if (IBASE_SCAL (fun) == NULL) {
-                lower = 1;
+                lower = ((NTYPE_CON (arg) == TC_akv) ? 2 : 1);
             } else {
                 res = IBASE_SCAL (fun);
             }
@@ -2219,9 +2244,11 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
             if (NTYPE_CON (arg) != TC_aud) {
                 fun = IBASE_IARR (fun);
                 if (fun == NULL) {
-                    lower = ((NTYPE_CON (arg) == TC_aks)
-                               ? 3
-                               : ((NTYPE_CON (arg) == TC_akd) ? 2 : 1));
+                    lower = ((NTYPE_CON (arg) == TC_akv)
+                               ? 4
+                               : ((NTYPE_CON (arg) == TC_aks)
+                                    ? 3
+                                    : ((NTYPE_CON (arg) == TC_akd) ? 2 : 1)));
                 } else {
 
                     /*   new default:   <base>[+]   */
@@ -2230,7 +2257,9 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
                     if (NTYPE_CON (arg) != TC_audgz) {
                         fun = FindIdim (fun, TYGetDim (arg));
                         if (fun == NULL) {
-                            lower = (NTYPE_CON (arg) == TC_aks ? 2 : 1);
+                            lower = ((NTYPE_CON (arg) == TC_akv)
+                                       ? 3
+                                       : (NTYPE_CON (arg) == TC_aks ? 2 : 1));
                         } else {
 
                             /*   new default:   <base>[...]   */
@@ -2239,7 +2268,7 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
                             if (NTYPE_CON (arg) != TC_akd) {
                                 fun = FindIshape (fun, TYGetShape (arg));
                                 if (fun == NULL) {
-                                    lower = 1;
+                                    lower = (NTYPE_CON (arg) == TC_akv ? 2 : 1);
                                 } else {
                                     res = ISHAPE_GEN (fun);
                                 }
@@ -2649,6 +2678,8 @@ TYIsFun (ntype *type)
  * function:
  *    bool TYIsAKSSymb( ntype *type)
  *    bool TYIsProdOfArrayOrFixedAlpha( ntype *type)
+ *    bool TYIsProdOfAKV( ntype *type)
+ *    bool TYIsProdContainingAKV( ntype *type)
  *    bool TYIsProdOfArray( ntype *type)
  *
  * description:
@@ -2699,6 +2730,48 @@ TYIsProdOfArray (ntype *args)
         for (i = 0; i < TYGetProductSize (args); i++) {
             arg = TYGetProductMember (args, i);
             res = res && TYIsArray (arg);
+        }
+    } else {
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+TYIsProdOfAKV (ntype *args)
+{
+    bool res = TRUE;
+    ntype *arg;
+    int i;
+
+    DBUG_ENTER ("TYIsProdContainingAKV");
+
+    if (TYIsProd (args)) {
+        for (i = 0; i < TYGetProductSize (args); i++) {
+            arg = TYGetProductMember (args, i);
+            res = res && TYIsAKV (arg);
+        }
+    } else {
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+TYIsProdContainingAKV (ntype *args)
+{
+    bool res = FALSE;
+    ntype *arg;
+    int i;
+
+    DBUG_ENTER ("TYIsProdContainingAKV");
+
+    if (TYIsProd (args)) {
+        for (i = 0; i < TYGetProductSize (args); i++) {
+            arg = TYGetProductMember (args, i);
+            res = res || TYIsAKV (arg);
         }
     } else {
         res = FALSE;
@@ -2810,8 +2883,64 @@ TYCmpTypes (ntype *t1, ntype *t2)
             res = TY_eq;
         }
         break;
+    case TC_akv:
+        switch (NTYPE_CON (t2)) {
+        case TC_akv:
+            if (TYCmpTypes (AKV_BASE (t1), AKV_BASE (t2)) == TY_eq) {
+                if (COCompareConstants (AKV_CONST (t1), AKV_CONST (t2))) {
+                    res = TY_eq;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
+        case TC_aks:
+            if (TYCmpTypes (AKV_BASE (t1), AKS_BASE (t2)) == TY_eq) {
+                if (SHCompareShapes (COGetShape (AKV_CONST (t1)), AKS_SHP (t2))) {
+                    res = TY_lt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
+        case TC_akd:
+            if (TYCmpTypes (AKV_BASE (t1), AKD_BASE (t2)) == TY_eq) {
+                if (TYGetDim (t1) == TYGetDim (t2)) {
+                    res = TY_lt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
+        case TC_audgz:
+            if (TYCmpTypes (AKV_BASE (t1), AUDGZ_BASE (t2)) == TY_eq) {
+                if (TYGetDim (t1) > 0) {
+                    res = TY_lt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
+        case TC_aud:
+            if (TYCmpTypes (AKV_BASE (t1), AUD_BASE (t2)) == TY_eq) {
+                res = TY_lt;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
     case TC_aks:
         switch (NTYPE_CON (t2)) {
+        case TC_akv:
+            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
+                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
+                    res = TY_gt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
         case TC_aks:
             if (TYCmpTypes (AKS_BASE (t1), AKS_BASE (t2)) == TY_eq) {
                 if (SHCompareShapes (AKS_SHP (t1), AKS_SHP (t2))) {
@@ -2850,6 +2979,15 @@ TYCmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_akd:
         switch (NTYPE_CON (t2)) {
+        case TC_akv:
+            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
+                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
+                    res = TY_gt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
         case TC_aks:
             if (TYCmpTypes (AKD_BASE (t1), AKS_BASE (t2)) == TY_eq) {
                 if (TYGetDim (t1) == TYGetDim (t2)) {
@@ -2888,6 +3026,15 @@ TYCmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_audgz:
         switch (NTYPE_CON (t2)) {
+        case TC_akv:
+            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
+                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
+                    res = TY_gt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
         case TC_aks:
             if (TYCmpTypes (AUDGZ_BASE (t1), AKS_BASE (t2)) == TY_eq) {
                 if (TYGetDim (t2) > 0) {
@@ -2922,6 +3069,15 @@ TYCmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_aud:
         switch (NTYPE_CON (t2)) {
+        case TC_akv:
+            if (TYCmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
+                if (SHCompareShapes (AKS_SHP (t1), COGetShape (AKV_CONST (t2)))) {
+                    res = TY_gt;
+                } else {
+                    res = TY_hcs;
+                }
+            }
+            break;
         case TC_aks:
             if (TYCmpTypes (AUD_BASE (t1), AKS_BASE (t2)) == TY_eq) {
                 res = TY_gt;
@@ -3000,6 +3156,12 @@ TYLubOfTypes (ntype *t1, ntype *t2)
         break;
     case TY_hcs:
         switch (NTYPE_CON (t1)) {
+        case TC_akv:
+            new_t1 = TYMakeAKS (TYCopyType (AKV_BASE (t1)),
+                                SHCopyShape (COGetShape (AKV_CONST (t1))));
+            res = TYLubOfTypes (new_t1, t2);
+            new_t1 = TYFreeType (new_t1);
+            break;
         case TC_aks:
             if (SHGetDim (AKS_SHP (t1)) == 0) {
                 new_t1 = TYMakeAUD (TYCopyType (AKS_BASE (t1)));
@@ -3145,6 +3307,40 @@ TYEliminateUser (ntype *t1)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn ntype * TYEliminateAKV( ntype *t1)
+ *
+ *   @brief if t1 is a AKV type, the respective AKS type is returned;
+ *          otherwise, a copy of t1 is returned.
+ *
+ ******************************************************************************/
+
+ntype *
+TYEliminateAKV (ntype *t1)
+{
+    ntype *res;
+    int i;
+
+    DBUG_ENTER ("TYEliminateAKV");
+
+    if (TYIsProd (t1)) {
+        res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
+        for (i = 0; i < NTYPE_ARITY (t1); i++) {
+            PROD_MEMBER (res, i) = TYEliminateAKV (PROD_MEMBER (t1, i));
+        }
+    } else {
+        if (TYIsAKV (t1)) {
+            res = TYMakeAKS (TYCopyType (TYGetScalar (t1)),
+                             SHCopyShape (COGetShape (AKV_CONST (t1))));
+        } else {
+            res = TYCopyType (t1);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 /***
  *** functions for handling types in general:
  ***/
@@ -3173,6 +3369,9 @@ TYFreeTypeConstructor (ntype *type)
     case TC_symbol:
         SYMBOL_MOD (type) = Free (SYMBOL_MOD (type));
         SYMBOL_NAME (type) = Free (SYMBOL_NAME (type));
+        break;
+    case TC_akv:
+        AKV_CONST (type) = COFreeConstant (AKV_CONST (type));
         break;
     case TC_aks:
         AKS_SHP (type) = SHFreeShape (AKS_SHP (type));
@@ -3289,6 +3488,9 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             break;
         case TC_user:
             USER_TYPE (res) = USER_TYPE (type);
+            break;
+        case TC_akv:
+            AKV_CONST (res) = COCopyConstant (AKV_CONST (type));
             break;
         case TC_aks:
             AKS_SHP (res) = SHCopyShape (AKS_SHP (type));
@@ -3492,6 +3694,16 @@ ArrayType2String (ntype *type)
     tmp_str = Free (tmp_str);
 
     switch (NTYPE_CON (type)) {
+    case TC_akv:
+        if (TYGetDim (type) > 0) {
+            tmp_str = SHShape2String (0, COGetShape (AKV_CONST (type)));
+            buf = StrBufprint (buf, tmp_str);
+            tmp_str = Free (tmp_str);
+        }
+        tmp_str = COConstantData2String (3, AKV_CONST (type));
+        buf = StrBufprintf (buf, "{%s}", tmp_str);
+        tmp_str = Free (tmp_str);
+        break;
     case TC_aks:
         if (TYGetDim (type) > 0) {
             tmp_str = SHShape2String (0, AKS_SHP (type));
@@ -3710,6 +3922,7 @@ TYType2String (ntype *type, bool multiline, int offset)
         case TC_audgz:
         case TC_akd:
         case TC_aks:
+        case TC_akv:
             res = ArrayType2String (type);
             break;
         case TC_fun:
@@ -3774,6 +3987,12 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
         buf = StrBufprintf (buf, "%s{ ", dbug_str[NTYPE_CON (type)]);
 
         switch (NTYPE_CON (type)) {
+        case TC_akv:
+            multiline = FALSE;
+            tmp_str = COConstant2String (AKV_CONST (type));
+            buf = StrBufprintf (buf, "%s, ", tmp_str);
+            tmp_str = Free (tmp_str);
+            break;
         case TC_aks:
             multiline = FALSE;
             tmp_str = SHShape2String (0, AKS_SHP (type));
@@ -3983,6 +4202,7 @@ TYNestTypes (ntype *outer, ntype *inner)
     switch (NTYPE_CON (outer)) {
     case TC_aks:
         /*
+         * AKS{ a, s1}, AKV{ b, s2, v2}  => AKS{ b, s1++s2}}
          * AKS{ a, s1}, AKS{ b, s2}      => AKS{ b, s1++s2}}
          * AKS{ a, s1}, AKD{ b, do2, --} => AKD{ b, d1+do2, --}
          * AKS{ a, s1}, AUDGZ{ b}        => AUDGZ{ b}
@@ -3991,6 +4211,10 @@ TYNestTypes (ntype *outer, ntype *inner)
          *
          */
         switch (NTYPE_CON (inner)) {
+        case TC_akv:
+            res = TYMakeAKS (TYCopyType (AKV_BASE (inner)),
+                             SHAppendShapes (AKS_SHP (outer), TYGetShape (inner)));
+            break;
         case TC_aks:
             res = TYMakeAKS (TYCopyType (AKS_BASE (inner)),
                              SHAppendShapes (AKS_SHP (outer), AKS_SHP (inner)));
@@ -4016,6 +4240,7 @@ TYNestTypes (ntype *outer, ntype *inner)
 
     case TC_akd:
         /*
+         * AKD{ a, do1, --}, AKV{ b, s2, v2}  => AKD{ b, do1+d2, --}}
          * AKD{ a, do1, --}, AKS{ b, s2}      => AKD{ b, do1+d2, --}}
          * AKD{ a, do1, --}, AKD{ b, do2, --} => AKD{ b, do1+do2, --}
          * AKD{ a, do1, --}, AUDGZ{ b}        => AUDGZ{ b}
@@ -4024,6 +4249,7 @@ TYNestTypes (ntype *outer, ntype *inner)
          *
          */
         switch (NTYPE_CON (inner)) {
+        case TC_akv:
         case TC_aks:
         case TC_akd:
             res = TYMakeAKD (TYCopyType (AKD_BASE (inner)),
@@ -4047,6 +4273,7 @@ TYNestTypes (ntype *outer, ntype *inner)
 
     case TC_audgz:
         /*
+         * AUDGZ{ a}, AKV{ b, s2, v2}  => AUDGZ{ b}
          * AUDGZ{ a}, AKS{ b, s2}      => AUDGZ{ b}
          * AUDGZ{ a}, AKD{ b, do2, s2} => AUDGZ{ b}
          * AUDGZ{ a}, AUDGZ{ b}        => AUDGZ{ b}
@@ -4059,6 +4286,7 @@ TYNestTypes (ntype *outer, ntype *inner)
 
     case TC_aud:
         /*
+         * AUD{ a}, AKV{ b, s2, v2}  => AUDGZ{ b} / AUD{ b}
          * AUD{ a}, AKS{ b, s2}      => AUDGZ{ b} / AUD{ b}
          * AUD{ a}, AKD{ b, do2, s2} => AUDGZ{ b} / AUD{ b}
          * AUD{ a}, AUDGZ{ b}        => AUDGZ{ b}
@@ -4067,6 +4295,7 @@ TYNestTypes (ntype *outer, ntype *inner)
          *
          */
         switch (NTYPE_CON (inner)) {
+        case TC_akv:
         case TC_aks:
         case TC_akd:
             if (TYGetDim (inner) > 0) {
@@ -4396,6 +4625,11 @@ Type2OldType (ntype *new)
                 tmp = res;
             }
         }
+        break;
+    case TC_akv:
+        res = Type2OldType (AKS_BASE (new));
+        TYPES_DIM (res) = TYGetDim (new);
+        TYPES_SHPSEG (res) = SHShape2OldShpseg (TYGetShape (new));
         break;
     case TC_aks:
         res = Type2OldType (AKS_BASE (new));
@@ -5332,4 +5566,4 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
     DBUG_RETURN (assigns);
 }
 
-/* @} */ /* addtogroup ntc */
+/* @} */ /* defgroup nty */
