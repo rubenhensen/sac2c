@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/12/10 15:35:48  dkr
+ * comp2_tab added
+ *
  * Revision 3.19  2001/05/30 14:04:11  nmw
  * ssalil_tab traversal added (SSAInferLoopInvariants())
  *
@@ -266,6 +269,7 @@ extern funtab *ssawli_tab;
 extern funtab *ssawlf_tab;
 extern funtab *rmcasts_tab;
 extern funtab *ssaili_tab;
+extern funtab *comp2_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/12/10 15:36:11  dkr
+ * comp2_tab added
+ *
  * Revision 3.26  2001/07/13 13:23:41  cg
  * Some useless DBUG_PRINTs eliminated.
  *
@@ -133,6 +136,7 @@
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
+#include "compile.tagged.h"
 #include "ReuseWithArrays.h"
 #include "cccall.h"
 #include "PatchWith.h"
@@ -1313,6 +1317,17 @@ static funtab ssaili_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssaili_tab = &ssaili_tab_rec;
+
+/*
+ *  (102) comp2_tab
+ */
+static funtab comp2_tab_rec = {{
+#define NIFcomp2(it_comp2) it_comp2
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *comp2_tab = &comp2_tab_rec;
 
 /*
  *  nnode
