@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.49  1995/03/29 12:01:34  hw
+ * Revision 1.50  1995/03/31 15:45:41  hw
+ * changed PrintAssign
+ *
+ * Revision 1.49  1995/03/29  12:01:34  hw
  * PrintIcm added
  * changed PrintAssign (to use it with N_icm)
  *
@@ -199,8 +202,6 @@ PrintIds (ids *ids)
 node *
 PrintAssign (node *arg_node, node *arg_info)
 {
-    int i;
-
     DBUG_ENTER ("PrintAssign");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
@@ -213,6 +214,7 @@ PrintAssign (node *arg_node, node *arg_info)
 
     if (N_icm == arg_node->node[0]->nodetype) {
         PrintIcm (arg_node->node[0], arg_info);
+        fprintf (outfile, ";\n");
         if (2 == arg_node->nnode)
             Trav (arg_node->node[1], arg_info);
     } else {
@@ -810,7 +812,7 @@ PrintIcm (node *arg_node, node *arg_info)
     fprintf (outfile, "%s(", arg_node->info.fun_name.id);
     if (NULL != arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, ");\n");
+    fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
 }
