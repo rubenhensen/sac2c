@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.85  1996/01/25 18:37:50  cg
+ * Revision 1.86  1996/05/29 14:18:57  sbs
+ * inserted noRCO opt_rco!
+ *
+ * Revision 1.85  1996/01/25  18:37:50  cg
  * added new stop options using compiler phase numbers
  *
  * Revision 1.84  1996/01/22  17:28:30  cg
@@ -362,6 +365,7 @@ int max_optcycles = 4;
 int psi_optimize = 1;
 int psi_opt_ive = 1;
 
+int opt_rco = 1;
 int show_refcnt = 0;
 int show_idx = 0;
 int show_icm = 0;
@@ -629,6 +633,7 @@ MAIN
             optimize = 0;
             sac_optimize = 0;
             psi_optimize = 0;
+            opt_rco = 0;
         } else if (!strncmp (*argv, "oLIR", 4))
             opt_lir = 0;
         else if (!strncmp (*argv, "oloop_invariant_removal", 23))
@@ -661,6 +666,10 @@ MAIN
             opt_cse = 0;
         else if (!strncmp (*argv, "oCSE", 4))
             opt_cse = 0;
+        else if (!strncmp (*argv, "orefcount_opt", 3))
+            opt_rco = 0;
+        else if (!strncmp (*argv, "oRCO", 3))
+            opt_rco = 0;
         else
             SYSWARN (("Unknown compiler option '-n%s`", *argv));
     }

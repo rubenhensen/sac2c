@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/01/17 16:49:21  asi
+ * Revision 1.6  1996/05/29 14:18:57  sbs
+ * inserted noRCO opt_rco!
+ *
+ * Revision 1.5  1996/01/17  16:49:21  asi
  * added common subexpression elimination
  *
  * Revision 1.4  1996/01/16  16:42:22  cg
@@ -64,6 +67,7 @@ extern int max_optcycles;
 extern int psi_optimize;
 extern int psi_opt_ive;
 
+extern int opt_rco;
 extern int show_refcnt;
 extern int show_idx;
 extern int show_icm;

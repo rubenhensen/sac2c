@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/01/25 18:39:25  cg
+ * Revision 1.41  1996/05/29 14:18:57  sbs
+ * inserted noRCO opt_rco!
+ *
+ * Revision 1.40  1996/01/25  18:39:25  cg
  * added new stop options  using compiler phase numbers
  *
  * Revision 1.39  1996/01/17  16:49:21  asi
@@ -165,27 +168,6 @@ usage (char *prg_name)
     printf ("\t\t\t\t\t3: full compile time information (default)\n");
 
     printf ("\n\nSTOP OPTIONS:\n\n");
-#if 0
-   printf("\t -bp -b2\tstop after scan/parse\n");
-   printf("\t -bi -b3\tstop after module imports\n");
-   printf("\t -bb -b4\tstop after writing SIB-file\n");
-   printf("\t -bj \t\t\tstop after object init transformation\n");
-   printf("\t -bf \t\t\tstop after flatten\n");
-   printf("\t -bt \t\t\tstop after typecheck\n");
-   printf("\t -bd \t\t\tstop after checking module/class declaration\n");
-   printf("\t -bm \t\t\tstop after resolving implicit types\n");
-   printf("\t -by \t\t\tstop after analysing functions\n");
-   printf("\t -bb \t\t\tstop after writing SIB-file\n");
-   printf("\t -be \t\t\tstop after handling objects\n");
-   printf("\t -bq \t\t\tstop after checking uniqueness\n");
-   printf("\t -bv \t\t\tstop after generating purely functional code\n");
-   printf("\t -bo \t\t\tstop after sac-optimizations\n");
-   printf("\t -ba \t\t\tstop after array-elimination\n");
-   printf("\t -bs \t\t\tstop after psi-optimizations\n");
-   printf("\t -br \t\t\tstop after refcount inference\n");
-   printf("\t -bl \t\t\tstop after preparing code generation\n");
-   printf("\t -bc \t\t\tstop after generating ICM code\n");
-#endif
 
     printf ("\t -bp -b2\tstop after: %s\n", compiler_phase_name[2]);
     printf ("\t -bi -b3\tstop after: %s\n", compiler_phase_name[3]);
@@ -223,6 +205,7 @@ usage (char *prg_name)
     printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");
     printf ("\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n");
     printf ("\t -noarray_elimination or -noAE \t\t  no array elimination \n");
+    printf ("\n\t -norefcount_opt or -noRCO \t\t  no refcount optimization \n");
 
     printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
             "\t\t\t\tDefault: -maxoptvar %d\n",
