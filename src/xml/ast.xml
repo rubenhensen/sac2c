@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.50  2004/11/24 16:31:21  sbs
+  TR_nt2ot added
+
   Revision 1.49  2004/11/24 15:37:43  sbs
   NTCobjdef eliminated
 
@@ -321,6 +324,26 @@
           <node name="genarray" />
           <node name="modarray" />
           <node name="fold" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="NT2OT" name="Convert from new to old types and do some cleanup" default="sons" include="new2old.h" >
+        <travuser>
+          <node name="module" />
+          <node name="fundef" />
+          <node name="arg" />
+          <node name="block" />
+          <node name="vardec" />
+          <node name="array" />
+          <node name="cast" />
+          <node name="let" />
+          <node name="fold" />
+          <node name="withid" />
         </travuser>
         <travsons>
         </travsons>
