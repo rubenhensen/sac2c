@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/02/13 17:44:14  mwe
+ * MODUL_FUNDECS added
+ *
  * Revision 3.52  2003/12/23 10:43:58  khf
  * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
  * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
@@ -773,6 +776,10 @@ RemoveAllZombies (node *arg_node)
         if (MODUL_FUNS (arg_node) != NULL) {
             MODUL_FUNS (arg_node) = RemoveAllZombies (MODUL_FUNS (arg_node));
         }
+        if (MODUL_FUNDECS (arg_node) != NULL) {
+            MODUL_FUNDECS (arg_node) = RemoveAllZombies (MODUL_FUNDECS (arg_node));
+        }
+
         break;
 
     case N_fundef:
@@ -827,6 +834,7 @@ FreeModul (node *arg_node, node *arg_info)
     MODUL_DECL (arg_node) = FREETRAV (MODUL_DECL (arg_node));
     MODUL_FOLDFUNS (arg_node) = FREETRAV (MODUL_FOLDFUNS (arg_node));
     MODUL_STORE_IMPORTS (arg_node) = FREETRAV (MODUL_STORE_IMPORTS (arg_node));
+    MODUL_FUNDECS (arg_node) = FREETRAV (MODUL_FUNDECS (arg_node));
 
 #if FREE_MODNAMES
     MODUL_NAME (arg_node) = Free (MODUL_NAME (arg_node));
