@@ -1,5 +1,8 @@
 /*
  *  $Log$
+ *  Revision 1.18  1997/10/09 13:55:38  srs
+ *  TC: inserted F_min and F_max as SxS_S
+ *
  *  Revision 1.17  1997/10/03 18:01:52  dkr
  *  added prf abs: int -> int
  *
@@ -87,6 +90,8 @@ FT (F_div, SxA_A, F_div_SxA)
 FT (F_div_AxA, AxA_A, F_div_AxA)
 FT (F_div_AxS, AxS_A, F_div_AxS)
 FT (F_div_SxA, SxA_A, F_div_SxA)
+FT (F_min, SxS_S, F_min)
+FT (F_max, SxS_S, F_max)
 FT (F_mod, ixi_i, F_mod)
 FT (F_abs, i_i, F_abs)
 FT (F_eq, BxB_B, F_eq)
