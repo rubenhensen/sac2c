@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/10/31 13:41:51  sbs
+ * ... args are tagged IS_REFERENCE FALSE now.
+ *
  * Revision 1.12  2002/10/30 12:13:38  sbs
  * handling of ... args / rets corrected..
  *
@@ -352,6 +355,17 @@ TagReferenceArgs (node *act_args, node *args)
         args = ARG_NEXT (args);
         exprs = EXPRS_NEXT (exprs);
     }
+    /*
+     * Finally, all surplus arguments ( in case of '...')
+     * have to be tagged IS_REFERENCE = FALSE
+     */
+    while (exprs != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
+            SET_FLAG (ID, EXPRS_EXPR (exprs), IS_REFERENCE, FALSE);
+        }
+        exprs = EXPRS_NEXT (exprs);
+    }
+
     DBUG_RETURN (act_args);
 }
 
