@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/04/16 21:07:12  dkr
+ * GSCPrintMain() added
+ *
  * Revision 3.2  2001/04/03 12:06:53  dkr
  * GSCPrintDefines added
  *
@@ -51,6 +54,7 @@
 extern void GSCPrintFileHeader (node *syntax_tree);
 extern void GSCPrintInternalInitFileHeader (node *syntax_tree);
 extern void GSCPrintDefines ();
+extern void GSCPrintMain ();
 extern void GSCPrintMainBegin ();
 extern void GSCPrintMainEnd ();
 
