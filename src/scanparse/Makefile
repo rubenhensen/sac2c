@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.24  1998/04/09 21:25:47  dkr
+# added 'optimize' to INCS
+#
 # Revision 1.23  1998/03/04 00:09:54  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -83,7 +86,7 @@ LEX       :=lex -n
 YACC      :=yacc -dv
 LIBS      :=-ly -ll
 
-INCS=-I../global -I../../inc -I../modules -I../typecheck
+INCS=-I../global -I../../inc -I../modules -I../typecheck -I../optimize
 
 all: y.tab.o lex.yy.o scnprs.o
 
