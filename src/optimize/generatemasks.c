@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/24 15:03:42  dkr
+ * GNMicm() simplified
+ *
  * Revision 3.15  2002/07/12 17:16:23  dkr
  * GNMicm(): modifications for TAGGED_ARRAYS done
  *
@@ -2531,43 +2534,23 @@ GNMicm (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("GNMicm");
 
-#ifdef TAGGED_ARRAYS
-    if (strcmp (ICM_NAME (arg_node), "ND_VECT2OFFSET") == 0) {
+    if (strstr (ICM_NAME (arg_node), "VECT2OFFSET") != NULL) {
         /*
-         * ICM "ND_VECT2OFFSET"
+         * VECT2OFFSET icm
+         */
+        icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
+        INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
+
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+    } else if (strstr (ICM_NAME (arg_node), "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET icm
          */
         icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
         INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
     } else {
-        /*
-         * ICM "ND_USE_GENVAR_OFFSET"
-         */
-        if (strcmp (ICM_NAME (arg_node), "ND_USE_GENVAR_OFFSET") == 0) {
-            icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
-            INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
-        } else {
-            DBUG_ASSERT ((0), "unknown ICM found while mask-generation");
-        }
+        DBUG_ASSERT ((0), "unknown ICM found while mask-generation");
     }
-#else
-    if (strcmp (ICM_NAME (arg_node), "ND_KS_VECT2OFFSET") == 0) {
-        /*
-         * ICM "ND_KS_VECT2OFFSET"
-         */
-        icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
-        INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
-    } else {
-        /*
-         * ICM "ND_KS_USE_GENVAR_OFFSET"
-         */
-        if (strcmp (ICM_NAME (arg_node), "ND_KS_USE_GENVAR_OFFSET") == 0) {
-            icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
-            INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
-        } else {
-            DBUG_ASSERT ((0), "unknown ICM found while mask-generation");
-        }
-    }
-#endif
 
     DBUG_RETURN (arg_node);
 }
