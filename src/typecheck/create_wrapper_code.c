@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/08/28 11:36:05  dkr
+ * SignatureIsMatching() added
+ *
  * Revision 1.5  2002/08/15 21:27:50  dkr
  * MODUL_WRAPPERFUNS added (not used yet ...)
  *
@@ -276,6 +279,18 @@ CWCfundef (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
+static bool
+SignatureIsMatching (node *formal, node *actual)
+{
+    bool match = TRUE;
+
+    DBUG_ENTER ("SignatureIsMatching");
+
+    /* !!! not implemented yet !!! */
+
+    DBUG_RETURN (match);
+}
+
 node *
 CWCap (node *arg_node, node *arg_info)
 {
@@ -293,7 +308,7 @@ CWCap (node *arg_node, node *arg_info)
         do {
             fundef = FUNDEF_NEXT (fundef);
             DBUG_ASSERT ((fundef != NULL), "no appropriate wrapper function found!");
-        } while (0); /* !!! not implemented yet !!! */
+        } while (!SignatureIsMatching (FUNDEF_ARGS (fundef), AP_ARGS (arg_node)));
         DBUG_ASSERT ((!strcmp (AP_NAME (arg_node), FUNDEF_NAME (fundef))),
                      "no appropriate wrapper function found!");
         AP_FUNDEF (arg_node) = fundef;
