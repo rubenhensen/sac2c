@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/12/09 16:29:20  sbs
+ * now, the used counter is decremented for all those do-loops which do not
+ * constitute the immediate recursive call.
+ *
  * Revision 1.17  2004/12/09 14:33:05  sah
  * added dbug message
  *
@@ -219,7 +223,9 @@ FREEattribExtLink (node *attr)
                              "FUNDEF_USED must be active for LaC functions!");
 
                 /* check whether this function is use-counted */
-                if ((FUNDEF_USED (attr) != USED_INACTIVE) && (!(FUNDEF_ISDOFUN (attr)))) {
+                if ((FUNDEF_USED (attr) != USED_INACTIVE)
+                    && ((!FUNDEF_ISDOFUN (attr))
+                        || (attr != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr))))) {
                     (FUNDEF_USED (attr))--;
 
                     DBUG_ASSERT ((FUNDEF_USED (attr) >= 0),
