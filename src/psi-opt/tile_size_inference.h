@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/26 15:21:07  mwe
+ * SacDevCamp
+ *
  * Revision 3.2  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -49,19 +52,20 @@
  *
  *****************************************************************************/
 
-#ifndef _tile_size_inference_h
+#ifndef _SAC_TILE_SIZE_INFERENCE_H_
+#define _SAC_TILE_SIZE_INFERENCE_H_
 
-#define _tile_size_inference_h
+#include "types.h"
 
 #define NUM_OF_CACHEPARAM 3
 #define CSIZE_INDEX 0
 #define LSIZE_INDEX 1
 #define DTYPE_INDEX 2
 
-extern node *TileSizeInference (node *arg_node);
+extern node *TSIdoTileSizeInference (node *arg_node);
 extern node *TSIfundef (node *arg_node, info *arg_info);
 extern node *TSIblock (node *arg_node, info *arg_info);
 extern node *TSInwith (node *arg_node, info *arg_info);
 extern node *TSIncode (node *arg_node, info *arg_info);
 
-#endif /* _tile_size_inference_h  */
+#endif /* _SAC_TILE_SIZE_INFERENCE_H_  */
