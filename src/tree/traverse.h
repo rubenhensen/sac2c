@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/29 16:10:31  jhs
+ * blkli_tab added
+ *
  * Revision 1.12  2000/03/22 17:36:19  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync and barin_tab.
  *
@@ -152,6 +155,7 @@ extern funtab *dfa_tab;
 extern funtab *blkpp_tab;
 extern funtab *cudecls_tab;
 extern funtab *barin_tab;
+extern funtab *blkli_tab;
 
 extern int nnode[];
 

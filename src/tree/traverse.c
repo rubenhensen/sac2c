@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/03/29 16:10:31  jhs
+ * blkli_tab added
+ *
  * Revision 1.15  2000/03/22 17:36:19  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync and barin_tab.
  *
@@ -222,6 +225,7 @@
 #include "dataflow_analysis.h"
 #include "blocks_propagate.h"
 #include "barriers_init.h"
+#include "blocks_lift.h"
 
 #include "traverse.h"
 
@@ -1048,6 +1052,17 @@ static funtab barin_tab_rec = {{
                                NULL,
                                NULL};
 funtab *barin_tab = &barin_tab_rec;
+
+/*
+ *  (76) blkli_tab
+ */
+static funtab blkli_tab_rec = {{
+#define NIFblkli(it_blkli) it_blkli
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *blkli_tab = &blkli_tab_rec;
 
 /*
  *  nnode
