@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/08/04 14:28:38  bs
+ * traverse funtab entry for tsi added.
+ *
  * Revision 2.5  1999/07/28 13:00:09  jhs
  * Added: funptr spmdcons_tab[].
  *
@@ -244,6 +247,7 @@ extern funptr wlaa_tab[];
 extern funptr spmdrmtrav_tab[];
 extern funptr spmdrotrav_tab[];
 extern funptr spmdcons_tab[];
+extern funptr tsi_tab[];
 
 extern int nnode[];
 

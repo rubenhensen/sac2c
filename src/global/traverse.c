@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/08/04 14:28:38  bs
+ * traverse funtab entry for tsi added.
+ *
  * Revision 2.8  1999/07/28 13:00:09  jhs
  * Added: funptr spmdcons_tab[].
  *
@@ -133,6 +136,7 @@
 #include "spmd_cons.h"
 #include "schedule.h"
 #include "wl_access_analyze.h"
+#include "tile_size_inference.h"
 #include "scnprs.h" /* needed for linenum only!!! */
 
 #include "traverse.h"
@@ -616,6 +620,15 @@ funptr spmdrotrav_tab[] = {
 
 #define NIFspmdcons(it_spmdcons) it_spmdcons
 funptr spmdcons_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  54) tsi_tab
+ */
+
+#define NIFtsi(it_tsi) it_tsi
+funptr tsi_tab[] = {
 #include "node_info.mac"
 };
 
