@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/25 12:08:16  dkr
+ * layout of ICMs WL_SET_OFFSET and WL_INIT_OFFSET modified.
+ *
  * Revision 3.8  2001/01/25 09:42:54  dkr
  * PrintShapeFactor() used wherever possible
  *
@@ -725,18 +728,17 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
 #undef WL_INIT_OFFSET
 
     INDENT;
-    fprintf (outfile, "SAC_WL_OFFSET( %s) = ", target);
+    fprintf (outfile, "SAC_WL_OFFSET( %s)\n", target);
     indent++;
 
-    fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( 0)");
-
+    INDENT;
+    fprintf (outfile, "= SAC_WL_MT_SCHEDULE_START( 0)");
     PrintShapeFactor (0, dims_target, target);
 
     for (i = 1; i < dims_wl; i++) {
         fprintf (outfile, "\n");
         INDENT;
         fprintf (outfile, "+ SAC_WL_MT_SCHEDULE_START( %d)", i);
-
         PrintShapeFactor (i, dims_target, target);
     }
 
@@ -790,15 +792,20 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target, char *ta
 #undef WL_SET_OFFSET
 
     INDENT;
-    fprintf (outfile, "SAC_WL_OFFSET( %s) = ", target);
+    fprintf (outfile, "SAC_WL_OFFSET( %s) \n", target);
+    indent++;
 
+    INDENT;
+    fprintf (outfile, "= ");
     for (i = dims - 1; i > 0; i--) {
         fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", target, i);
     }
-    fprintf (outfile, "%s", idx_scalars[0]);
+    fprintf (outfile, "%s \n", idx_scalars[0]);
+
+    INDENT;
     for (i = 1; i < dims; i++) {
         if (i <= dim) {
-            fprintf (outfile, " + %s )", idx_scalars[i]);
+            fprintf (outfile, "+ %s )", idx_scalars[i]);
         } else {
             if (i <= first_block_dim) {
                 /*
@@ -816,7 +823,9 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target, char *ta
         }
     }
     PrintShapeFactor (dims - 1, dims_target, target);
+
     fprintf (outfile, ";\n");
+    indent--;
 
     DBUG_VOID_RETURN;
 }
