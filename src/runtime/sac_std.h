@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/03/07 20:21:57  dkr
+ * ICMs for function arguments modified
+ *
  * Revision 3.5  2002/03/07 02:25:48  dkr
  * macros ND_MAKE_UNIQUE_HIDDEN, ND_KS_NO_RC_MAKE_UNIQUE_ARRAY removed
  * some minor changes done
@@ -557,44 +560,68 @@
     }
 
 /*
- * ICMs for passing refcounted data to functions :
+ * ICMs for arguments to functions :
  * =================================================
  *
  *
- * ND_KS_DEC_IN_RC( type, name)
+ * ND_PARAM_in( type, name)
+ *   macro for prototyping non-refcounted data as "in" parameter
+ *
+ * ND_PARAM_in_rc( type, name)
  *   macro for prototyping refcounted data as "in" parameter
  *
- * ND_KS_DEC_OUT_RC( type, name)
+ * ND_PARAM_out( type, name)
+ *   macro for prototyping non-refcounted data as "out" parameter
+ *
+ * ND_PARAM_out_rc( type, name)
  *   macro for prototyping refcounted data as "out" parameter
  *
- * ND_KS_DEC_INOUT_RC( type, name)
+ * ND_PARAM_inout( type, name)
+ *   macro for prototyping non-refcounted data as "inout" parameter
+ *
+ * ND_PARAM_inout_rc( type, name)
  *   macro for prototyping refcounted data as "inout" parameter
  *
- * ND_KS_DEC_IMPORT_IN_RC( type)
- *   macro for prototyping refcounted data as "in" parameter
- *   (imported functions only )
+ * ND_PARAM_upd( type, name)
+ *   macro for prototyping unboxed data as "upd" parameter
  *
- * ND_KS_DEC_IMPORT_OUT_RC( type)
- *   macro for prototyping refcounted data as "out" parameter
- *   (imported functions only )
+ * ND_PARAM_upd_bx( type, name)
+ *   macro for prototyping boxed data as "upd" parameter
  *
- * ND_KS_DEC_IMPORT_INOUT_RC( type)
- *   macro for prototyping refcounted data as "inout" parameter
- *   (imported functions only )
+ * ND_ARG_in( name)
+ *   macro for giving non-refcounted data as argument
  *
- * ND_KS_AP_IN_RC( name)
+ * ND_ARG_in_rc( name)
  *   macro for giving refcounted data as argument
  *
- * ND_KS_AP_OUT_RC( name)
+ * ND_ARG_out( name)
+ *   macro for getting non-refcounted data as result
+ *
+ * ND_ARG_out_rc( name)
  *   macro for getting refcounted data as result
  *
- * ND_KS_AP_INOUT_RC( name)
+ * ND_ARG_inout( name)
+ *   macro for giving non-refcounted data as "inout" argument
+ *
+ * ND_ARG_inout_rc( name)
  *   macro for giving refcounted data as "inout" argument
  *
- * ND_KS_RET_OUT_RC( name, namep)
+ * ND_ARG_upd( name)
+ *   macro for giving unboxed data as "upd" argument
+ *
+ * ND_ARG_upd_bx( name)
+ *   macro for giving boxed data as "upd" argument
+ *
+ * ND_RET_out( name, namep)
+ *   macro for returning non-refcounted data
+ *
+ * ND_RET_out_rc( name, namep)
  *   macro for returning refcounted data
  *
- * ND_KS_RET_INOUT_RC( name, namep)
+ * ND_RET_inout( name, namep)
+ *   macro for returning "inout" non-refcounted data
+ *
+ * ND_RET_inout_rc( name, namep)
  *   macro for returning "inout" refcounted data
  *
  */
@@ -604,39 +631,59 @@
  */
 #define SAC_NAMEP(name) CAT0 (name, __p)
 
-#define SAC_ND_KS_DEC_IN_RC(type, name)                                                  \
+#define SAC_ND_PARAM_in(type, name) type SAC_ND_A_FIELD (name)
+
+#define SAC_ND_PARAM_in_rc(type, name)                                                   \
     type SAC_ND_A_FIELD (name), int *SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_DEC_OUT_RC(type, name)                                                 \
+#define SAC_ND_PARAM_out(type, name) type *SAC_NAMEP (SAC_ND_A_FIELD (name))
+
+#define SAC_ND_PARAM_out_rc(type, name)                                                  \
     type *SAC_NAMEP (SAC_ND_A_FIELD (name)), int **SAC_NAMEP (SAC_ND_A_RCP (name))
 
-#define SAC_ND_KS_DEC_INOUT_RC(type, name)                                               \
+#define SAC_ND_PARAM_inout(type, name) type *SAC_NAMEP (SAC_ND_A_FIELD (name))
+
+#define SAC_ND_PARAM_inout_rc(type, name)                                                \
     type *SAC_NAMEP (SAC_ND_A_FIELD (name)), int **SAC_NAMEP (SAC_ND_A_RCP (name))
 
-#define SAC_ND_KS_DEC_IMPORT_IN_RC(type) type, int *
+#define SAC_ND_PARAM_upd(type, name) type *SAC_ND_A_FIELD (name)
 
-#define SAC_ND_KS_DEC_IMPORT_OUT_RC(type) type *, int **
+#define SAC_ND_PARAM_upd_bx(type, name) type SAC_ND_A_FIELD (name)
 
-#define SAC_ND_KS_DEC_IMPORT_INOUT_RC(type) type *, int **
+#define SAC_ND_ARG_in(name) SAC_ND_A_FIELD (name)
 
-#define SAC_ND_KS_AP_IN_RC(name) SAC_ND_A_FIELD (name), SAC_ND_A_RCP (name)
+#define SAC_ND_ARG_in_rc(name) SAC_ND_A_FIELD (name), SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_AP_OUT_RC(name) &SAC_ND_A_FIELD (name), &SAC_ND_A_RCP (name)
+#define SAC_ND_ARG_out(name) &SAC_ND_A_FIELD (name)
 
-#define SAC_ND_KS_AP_INOUT_RC(name) &SAC_ND_A_FIELD (name), &SAC_ND_A_RCP (name)
+#define SAC_ND_ARG_out_rc(name) &SAC_ND_A_FIELD (name), &SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_RET_OUT_RC(name, namep)                                                \
+#define SAC_ND_ARG_inout(name) &SAC_ND_A_FIELD (name)
+
+#define SAC_ND_ARG_inout_rc(name) &SAC_ND_A_FIELD (name), &SAC_ND_A_RCP (name)
+
+#define SAC_ND_ARG_upd(name) &SAC_ND_A_FIELD (name)
+
+#define SAC_ND_ARG_upd_bx(name) SAC_ND_A_FIELD (name)
+
+#define SAC_ND_RET_out(name, namep)                                                      \
+    *SAC_NAMEP (SAC_ND_A_FIELD (namep)) = SAC_ND_A_FIELD (name);
+
+#define SAC_ND_RET_out_rc(name, namep)                                                   \
     *SAC_NAMEP (SAC_ND_A_FIELD (namep)) = SAC_ND_A_FIELD (name);                         \
-    *SAC_NAMEP (SAC_ND_A_RCP (namep)) = SAC_ND_A_RCP (name)
+    *SAC_NAMEP (SAC_ND_A_RCP (namep)) = SAC_ND_A_RCP (name);
 
-#define SAC_ND_KS_RET_INOUT_RC(name, namep)                                              \
+#define SAC_ND_RET_inout(name, namep)                                                    \
+    *SAC_NAMEP (SAC_ND_A_FIELD (namep)) = SAC_ND_A_FIELD (name);
+
+#define SAC_ND_RET_inout_rc(name, namep)                                                 \
     *SAC_NAMEP (SAC_ND_A_FIELD (namep)) = SAC_ND_A_FIELD (name);                         \
-    *SAC_NAMEP (SAC_ND_A_RCP (namep)) = SAC_ND_A_RCP (name)
+    *SAC_NAMEP (SAC_ND_A_RCP (namep)) = SAC_ND_A_RCP (name);
 
-#define SAC_ND_DECL_INOUT_PARAM(type, name)                                              \
+#define SAC_ND_DECL_PARAM_inout(type, name)                                              \
     type SAC_ND_A_FIELD (name) = *SAC_NAMEP (SAC_ND_A_FIELD (name));
 
-#define SAC_ND_DECL_INOUT_PARAM_RC(type, name)                                           \
+#define SAC_ND_DECL_PARAM_inout_rc(type, name)                                           \
     type SAC_ND_A_FIELD (name) = *SAC_NAMEP (SAC_ND_A_FIELD (name));                     \
     int *SAC_ND_A_RCP (name) = *SAC_NAMEP (SAC_ND_A_RCP (name));
 
