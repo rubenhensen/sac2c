@@ -1,21 +1,16 @@
 #
-# $Log$
-# Revision 1.7  2000/07/28 09:16:27  mab
-# make deps done
 #
-# Revision 1.6  2000/07/11 15:56:37  dkr
+# $Log$
+# Revision 1.8  2000/11/02 14:43:50  dkr
+# header compressed
+#
+# Revision 1.7  2000/07/28 09:16:27  mab
 # make deps done
 #
 # Revision 1.5  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 1.4  1999/12/13 11:28:59  dkr
-# *** empty log message ***
-#
-# Revision 1.3  1999/07/09 11:39:08  cg
-# make deps done
 #
 # Revision 1.2  1999/07/08 15:39:55  cg
 # Dependency from libsac now uses libsac/libsac.a instead of

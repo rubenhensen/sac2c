@@ -1,43 +1,14 @@
 #
+#
 # $Log$
-# Revision 2.23  2000/08/17 10:17:37  dkr
-# make deps done
-#
-# Revision 2.22  2000/07/28 09:16:26  mab
-# make deps done
-#
-# Revision 2.21  2000/07/11 15:56:33  dkr
-# make deps done
-#
-# Revision 2.20  2000/05/29 14:36:44  dkr
-# make deps done
-#
-# Revision 2.19  2000/05/29 14:35:22  dkr
-# make deps done
-#
-# Revision 2.18  2000/03/31 09:33:47  jhs
-# make deps done
-#
-# Revision 2.17  2000/03/01 14:52:40  dkr
-# make deps done
-#
-# Revision 2.16  2000/01/25 13:52:36  dkr
-# make deps done
-#
-# Revision 2.15  2000/01/24 17:58:38  dkr
-# make deps done
+# Revision 2.24  2000/11/02 14:39:00  dkr
+# header compressed
 #
 # Revision 2.14  2000/01/24 11:54:55  jhs
 # Moved scheduling.[ch] to tree.
 #
-# Revision 2.13  2000/01/21 17:02:12  dkr
-# make deps done
-#
 # Revision 2.12  2000/01/21 12:03:29  dkr
 # directory tree added
-#
-# Revision 2.11  2000/01/17 18:41:13  cg
-# make deps done
 #
 # Revision 2.10  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
@@ -50,29 +21,8 @@
 # Revision 2.7  1999/07/28 08:32:46  jhs
 # Added spmd_cons.o.
 #
-# Revision 2.6  1999/07/09 11:39:01  cg
-# make deps done
-#
 # Revision 2.5  1999/06/25 15:00:17  jhs
 # Added spmd_trav.c.
-#
-# Revision 2.4  1999/06/01 15:17:10  dkr
-# make deps done
-#
-# Revision 2.3  1999/03/11 18:18:28  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:45  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:44:03  sacbase
-# new release made
-#
-# Revision 1.16  1998/11/04 18:22:43  dkr
-# make deps done
-#
-# Revision 1.15  1998/06/23 11:42:17  cg
-# make deps done
 #
 # Revision 1.14  1998/06/18 13:26:26  cg
 # added compilation of spmd_init.c spmd_opt.c spmd_lift.c sync_init.c
@@ -82,41 +32,21 @@
 # Revision 1.13  1998/06/12 14:18:07  cg
 # added compilation of scheduling.c
 #
-# Revision 1.12  1998/05/12 14:22:28  dkr
-# make deps done
-#
-# Revision 1.11  1998/05/03 14:04:43  dkr
-# make deps done
-#
 # Revision 1.10  1998/04/30 13:56:13  dkr
 # added path to INCS
-#
-# Revision 1.9  1998/04/25 13:17:53  dkr
-# make deps done
 #
 # Revision 1.8  1998/04/23 22:08:51  dkr
 # changed INCS
 #
-# Revision 1.7  1998/04/20 02:43:57  dkr
-# make deps done
-#
-# Revision 1.6  1998/04/20 01:09:36  dkr
-# make deps done
-#
 # Revision 1.5  1998/04/17 17:24:45  dkr
 # concregions.[ch] renamed to spmdregions.[ch]
-#
-# Revision 1.4  1998/04/09 12:04:04  dkr
-# make deps done
 #
 # Revision 1.3  1998/04/08 22:11:16  dkr
 # expanded INCS
 #
-# Revision 1.2  1998/04/03 11:52:52  srs
-# made deps
-#
 # Revision 1.1  1998/04/03 11:47:26  dkr
 # Initial revision
+#
 #
 
 

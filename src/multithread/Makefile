@@ -1,26 +1,8 @@
 #
 # 
 # $Log$
-# Revision 1.20  2000/08/17 10:17:40  dkr
-# make deps done
-#
-# Revision 1.19  2000/07/28 09:16:28  mab
-# make deps done
-#
-# Revision 1.18  2000/07/11 15:56:39  dkr
-# make deps done
-#
-# Revision 1.17  2000/06/13 13:46:34  dkr
-# deps done
-#
-# Revision 1.16  2000/05/29 14:36:48  dkr
-# make deps done
-#
-# Revision 1.15  2000/03/31 09:33:49  jhs
-# make deps done
-#
-# Revision 1.14  2000/03/31 09:22:41  cg
-# make deps done
+# Revision 1.21  2000/11/02 14:39:12  dkr
+# header compressed
 #
 # Revision 1.13  2000/03/30 15:09:32  jhs
 # added adjust_calls.o
@@ -31,17 +13,11 @@
 # Revision 1.11  2000/03/22 17:30:16  jhs
 # Added barriers_init.o
 #
-# Revision 1.10  2000/03/16 14:32:52  dkr
-# make deps done
-#
 # Revision 1.9  2000/03/09 18:32:39  jhs
 # Added dfa and blkpp.
 #
 # Revision 1.8  2000/03/02 12:55:48  jhs
 # Added mtfuns_init.o and blkco_cons.o.
-#
-# Revision 1.7  2000/03/01 14:52:44  dkr
-# make deps done
 #
 # Revision 1.6  2000/02/21 17:51:16  jhs
 # Added multithread_lib.o, blokcs_expand.o
@@ -52,15 +28,11 @@
 # Revision 1.4  2000/01/28 13:49:43  jhs
 # blocks_init added
 #
-# Revision 1.3  2000/01/25 13:52:39  dkr
-# make deps done
-#
 # Revision 1.2  2000/01/21 14:46:09  dkr
 # directory tree added
 #
 # Revision 1.1  2000/01/21 13:11:16  jhs
 # Initial revision
-#
 #
 #
 

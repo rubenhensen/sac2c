@@ -1,58 +1,20 @@
 #
+#
 # $Log$
-# Revision 2.35  2000/10/23 11:35:36  dkr
-# make deps done
-#
-# Revision 2.34  2000/10/12 17:11:55  dkr
-# make deps done
-#
-# Revision 2.33  2000/08/17 10:17:32  dkr
-# make deps done
-#
-# Revision 2.32  2000/07/14 15:01:20  nmw
-# *** empty log message ***
-#
-# Revision 2.31  2000/07/14 14:43:59  nmw
-# make deps made
-#
-# Revision 2.30  2000/07/13 15:09:23  nmw
-# make deps made
-#
-# Revision 2.29  2000/07/11 15:56:26  dkr
-# make deps done
+# Revision 2.36  2000/11/02 14:43:01  dkr
+# header compressed
 #
 # Revision 2.28  2000/07/06 14:51:48  dkr
 # target BEtest modified
 #
-# Revision 2.27  2000/07/05 14:23:45  dkr
-# make deps done
-#
 # Revision 2.26  2000/07/05 11:42:09  nmw
 # moved cinterface files from print to c-interface
-#
-# Revision 2.25  2000/06/28 09:10:00  nmw
-# makedeps
-#
-# Revision 2.24  2000/06/13 13:46:50  dkr
-# deps done
 #
 # Revision 2.23  2000/06/13 13:21:02  dkr
 # module Old2NewWith.[ch] renamed into PatchWith.[ch]
 #
-# Revision 2.22  2000/05/29 14:36:40  dkr
-# make deps done
-#
-# Revision 2.21  2000/05/29 14:35:16  dkr
-# make deps done
-#
 # Revision 2.20  2000/05/25 18:31:49  dkr
 # -I../flatten added
-#
-# Revision 2.19  2000/03/31 09:33:44  jhs
-# make deps done
-#
-# Revision 2.18  2000/03/31 09:22:22  cg
-# make deps done
 #
 # Revision 2.17  2000/03/17 15:50:59  dkr
 # *.o targets simplified
@@ -60,23 +22,8 @@
 # Revision 2.16  2000/03/16 14:22:54  dkr
 # target wltransform.c added
 #
-# Revision 2.15  2000/03/01 14:52:36  dkr
-# make deps done
-#
-# Revision 2.14  2000/01/25 13:52:31  dkr
-# make deps done
-#
-# Revision 2.13  2000/01/24 17:58:33  dkr
-# make deps done
-#
-# Revision 2.12  2000/01/21 17:02:08  dkr
-# make deps done
-#
 # Revision 2.11  2000/01/21 12:03:44  dkr
 # directory tree added
-#
-# Revision 2.10  2000/01/17 18:41:03  cg
-# make deps done
 #
 # Revision 2.9  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
@@ -89,28 +36,13 @@
 # Revision 2.6  1999/06/16 17:21:37  rob
 # Add support for TAGGED_ARRAYS.
 #
-# Revision 2.4  1999/05/12 15:13:26  cg
-# make deps done
-#
-# Revision 2.3  1999/03/11 18:18:24  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:41  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:42:20  sacbase
-# new release made
-#
-# Revision 1.65  1998/11/04 18:22:36  dkr
-# make deps done
-#
 # [...]
 #
 # Revision 1.1  1995/03/29  12:12:52  hw
 # Initial revision
 #
-#
 # 
+
 
 
 #

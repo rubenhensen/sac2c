@@ -1,78 +1,19 @@
 #
+#
 # $Log$
-# Revision 2.24  2000/10/12 15:48:19  dkr
-# make deps done
-#
-# Revision 2.23  2000/08/17 10:17:31  dkr
-# make deps done
-#
-# Revision 2.22  2000/07/28 09:16:22  mab
-# make deps done
-#
-# Revision 2.21  2000/07/11 15:56:23  dkr
-# make deps done
+# Revision 2.25  2000/11/02 14:43:26  dkr
+# header compressed
 #
 # Revision 2.20  2000/07/11 15:52:12  dkr
 # explicit *.o rules removed
 #
-# Revision 2.19  2000/05/29 14:36:38  dkr
-# make deps done
-#
-# Revision 2.18  2000/05/29 14:35:13  dkr
-# make deps done
-#
-# Revision 2.17  2000/03/31 09:33:43  jhs
-# make deps done
-#
-# Revision 2.16  2000/03/31 09:22:18  cg
-# make deps done
-#
-# Revision 2.15  2000/03/01 14:52:35  dkr
-# make deps done
-#
-# Revision 2.14  2000/01/23 15:01:13  dkr
-# make deps done
-#
-# Revision 2.13  2000/01/21 17:02:06  dkr
-# make deps done
-#
 # Revision 2.12  2000/01/21 12:04:29  dkr
 # directory tree added
-#
-# Revision 2.11  2000/01/17 18:40:59  cg
-# make deps done
 #
 # Revision 2.10  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.8  1999/07/09 11:38:47  cg
-# make deps done
-#
-# Revision 2.7  1999/06/01 15:17:04  dkr
-# make deps done
-#
-# Revision 2.6  1999/05/12 15:13:25  cg
-# make deps done
-#
-# Revision 2.5  1999/05/10 10:48:10  bs
-# make deps done
-#
-# Revision 2.4  1999/03/15 21:15:30  dkr
-# make deps done
-#
-# Revision 2.3  1999/03/11 18:18:22  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:40  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:41:25  sacbase
-# new release made
-#
-# Revision 1.57  1999/02/09 20:04:21  dkr
-# make deps done
 #
 # Revision 1.56  1999/01/26 15:37:22  sbs
 # -DNEWTREE eliminated from CFLAGS
@@ -83,45 +24,18 @@
 # Revision 1.54  1999/01/07 13:55:20  sbs
 # generatemasks and DeadFunctionRemoval inserted.
 #
-# Revision 1.53  1998/11/04 18:22:34  dkr
-# make deps done
-#
-# Revision 1.52  1998/06/23 11:42:10  cg
-# make deps done
-#
 # Revision 1.51  1998/06/17 14:47:39  sbs
 # further includes added 8-)
 #
-# Revision 1.50  1998/05/21 09:51:57  dkr
-# make deps done
-#
 # Revision 1.49  1998/05/13 14:07:29  srs
 # added WLUnroll
-#
-# Revision 1.48  1998/05/12 14:22:21  dkr
-# make deps done
 #
 # Revision 1.47  1998/05/05 15:51:42  cg
 # added compilation of DataFlowMask.c
 # flag NEWTREE is now set locally as well.
 #
-# Revision 1.46  1998/04/20 12:08:47  dkr
-# make deps done
-#
-# Revision 1.45  1998/03/25 17:03:47  srs
-# made deps
-#
 # Revision 1.44  1998/03/22 18:03:15  srs
 # added rules for WLT, WLI, WLF
-#
-# Revision 1.43  1998/03/19 17:08:35  dkr
-# make deps done
-#
-# Revision 1.42  1998/03/13 12:55:29  dkr
-# make deps done
-#
-# Revision 1.41  1998/03/10 17:30:16  srs
-# made deps
 #
 # ... [eliminated]
 #
