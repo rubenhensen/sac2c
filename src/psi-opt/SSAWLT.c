@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2002/10/11 14:09:47  dkr
+ * SSAWLTNgenerator() works correctly now (really!)
+ *
  * Revision 1.17  2002/10/09 22:07:40  dkr
  * fixed a bug in SSAWLTNgenerator()
  *
@@ -975,20 +978,30 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
              *                        ^^^^^^^^^ :-))
              */
             if ((*bound) != NULL) {
-                struct_constant *bound_const = SCOExpr2StructConstant (*bound);
+                constant *bound_const = COAST2Constant (*bound);
+                node *tmp;
 
                 if (bound_const != NULL) {
                     /* substitute bound */
-                    node *tmp = *bound;
-                    (*bound) = SCODupStructConstant2Expr (bound_const);
+                    tmp = *bound;
+                    (*bound) = COConstant2AST (bound_const);
                     DBUG_ASSERT ((NODE_TYPE (*bound) == N_array), "illegal node found!");
                     tmp = FreeTree (tmp);
-                    bound_const = SCOFreeStructConstant (bound_const);
-                }
-
-                /* value also constant? */
-                if (!COIsConstant (*bound)) {
+                    bound_const = COFreeConstant (bound_const);
+                } else {
                     /* non-constant son found */
+                    struct_constant *bound_sco = SCOExpr2StructConstant (*bound);
+
+                    /* it is a (non-constant) array -> substitute bound */
+                    if (bound_sco != NULL) {
+                        tmp = *bound;
+                        (*bound) = SCODupStructConstant2Expr (bound_sco);
+                        DBUG_ASSERT ((NODE_TYPE (*bound) == N_array),
+                                     "illegal node found!");
+                        tmp = FreeTree (tmp);
+                        bound_sco = SCOFreeStructConstant (bound_sco);
+                    }
+
                     if (i <= 2) {
                         /* non-constant lower or upper bound found */
                         check_bounds = 0;
