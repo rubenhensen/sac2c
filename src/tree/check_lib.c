@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/02/14 14:08:48  jhb
+ * change name
+ *
  * Revision 1.7  2005/02/11 15:03:00  jhb
  * fix some bugs
  *
@@ -112,10 +115,10 @@ CHKexistAttribute (void *attribute, node *arg_node, char *string)
 }
 
 node *
-CHKrightType (void *attribute, node *arg_node, char *type, char *string)
+CHKcorrectType (void *attribute, node *arg_node, char *type, char *string)
 {
 
-    DBUG_ENTER ("CHKrightType");
+    DBUG_ENTER ("CHKcorrectType");
     /*
       if (String(attribute(type)) != type) {
       NODE_ERROR(arg_node) = TBmakeError(NODE_ERROR(parent), string);

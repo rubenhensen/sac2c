@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/02/14 14:08:48  jhb
+ * change name
+ *
  * Revision 1.5  2005/02/11 14:49:34  jhb
  * change CHKdoCheck in CHKdoTreeCheck
  *
@@ -29,6 +32,6 @@ extern node *CHKdoTreeCheck (node *syntax_tree);
 
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
 extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);
-extern node *CHKrightType (void *attribute, node *arg_node, char *type, char *string);
+extern node *CHKcorrectType (void *attribute, node *arg_node, char *type, char *string);
 
 #endif /*_SAC_CHECK_LIB_H_ */
