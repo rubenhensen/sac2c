@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.139  2004/10/05 17:42:05  khf
+ * only removing of fold-functions if Inlining was applied
+ * MakeIcm_MT_ADJUST_SCHEDULER(): added support of
+ * multiple offsets
+ *
  * Revision 3.138  2004/10/04 17:16:22  sah
  * removed MT/ST/EX-Identifier
  * added a NEW_AST define
@@ -3007,14 +3012,21 @@ COMPFundef (node *arg_node, info *arg_info)
          * implementations. Therefore, all fold-functions are stored in a special
          * fundef-chain fixed to the N_modul node. So, they still exist, but
          * won't be printed.
+         *
+         * When ExplicitAccumulation was applied the fold-function call
+         * is made explicit in NCODE and therefore removing of fold-functions
+         * is only permitted when Inlining was also applied.
          */
-        if (FUNDEF_STATUS (arg_node) == ST_foldfun) {
-            node *tmp;
+        if (((optimize & OPT_INL) && (emm)) || (!emm)) {
 
-            tmp = FUNDEF_NEXT (arg_node);
-            FUNDEF_NEXT (arg_node) = MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info));
-            MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info)) = arg_node;
-            arg_node = tmp;
+            if (FUNDEF_STATUS (arg_node) == ST_foldfun) {
+                node *tmp;
+
+                tmp = FUNDEF_NEXT (arg_node);
+                FUNDEF_NEXT (arg_node) = MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info));
+                MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info)) = arg_node;
+                arg_node = tmp;
+            }
         }
 
         /*
@@ -6344,6 +6356,11 @@ MakeIcmArgs_WL_OP2 (node *arg_node, ids *_ids)
 static node *
 MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 {
+    node *withop;
+    node *begin_icm = NULL;
+    node *end_icm = NULL;
+    node *offset_icms = NULL;
+    ids *tmp_ids;
     int dim;
 
     DBUG_ENTER ("MakeIcm_MT_ADJUST_SCHEDULER");
@@ -6358,12 +6375,10 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 
     if ((!WLNODE_NOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0) && NWITH2_MT (wlnode)
         && (SCHAdjustmentRequired (dim, wlseg))) {
-        assigns
-          = MakeAssignIcm6 ((NWITH2_OFFSET_NEEDED (wlnode))
-                              ? "MT_ADJUST_SCHEDULER__OFFSET"
-                              : "MT_ADJUST_SCHEDULER",
-                            DupIds_Id_NT (wlids), MakeNum (WLSEGX_DIMS (wlseg)),
-                            MakeNum (dim),
+
+        begin_icm
+          = MakeAssignIcm6 ("MT_ADJUST_SCHEDULER__BEGIN", DupIds_Id_NT (wlids),
+                            MakeNum (WLSEGX_DIMS (wlseg)), MakeNum (dim),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, BOUND1),
                                                  dim, wlids),
@@ -6373,7 +6388,55 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, STEP),
                                                  dim, wlids),
-                            assigns);
+                            begin_icm);
+
+        /* for every ids of wlids (multioperator WL) */
+        tmp_ids = wlids;
+        withop = NWITH2_WITHOP (wlnode);
+        if (NWITHOP_NEXT (withop) != NULL) {
+            DBUG_ASSERT ((emm), "no withloop fusion while emm is disabled!");
+        }
+
+        while (tmp_ids != NULL) {
+            if (NWITHOP_OFFSET_NEEDED (withop)) {
+
+                offset_icms
+                  = MakeAssignIcm6 ("MT_ADJUST_SCHEDULER__OFFSET", DupIds_Id_NT (tmp_ids),
+                                    MakeNum (WLSEGX_DIMS (wlseg)), MakeNum (dim),
+                                    NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                         WLBLOCKSTR_GET_ADDR (arg_node,
+                                                                              BOUND1),
+                                                         dim, tmp_ids),
+                                    NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                         WLBLOCKSTR_GET_ADDR (arg_node,
+                                                                              BOUND2),
+                                                         dim, tmp_ids),
+                                    NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                         WLBLOCKSTR_GET_ADDR (arg_node,
+                                                                              STEP),
+                                                         dim, tmp_ids),
+                                    offset_icms);
+            }
+
+            tmp_ids = IDS_NEXT (tmp_ids);
+            withop = NWITHOP_NEXT (withop);
+        }
+
+        end_icm
+          = MakeAssignIcm6 ("MT_ADJUST_SCHEDULER__END", DupIds_Id_NT (wlids),
+                            MakeNum (WLSEGX_DIMS (wlseg)), MakeNum (dim),
+                            NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                 WLBLOCKSTR_GET_ADDR (arg_node, BOUND1),
+                                                 dim, wlids),
+                            NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                 WLBLOCKSTR_GET_ADDR (arg_node, BOUND2),
+                                                 dim, wlids),
+                            NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                 WLBLOCKSTR_GET_ADDR (arg_node, STEP),
+                                                 dim, wlids),
+                            end_icm);
+
+        assigns = MakeAssigns4 (begin_icm, offset_icms, end_icm, assigns);
     }
 
     DBUG_RETURN (assigns);
