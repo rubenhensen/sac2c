@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.110  2004/10/05 13:54:49  sah
+# changed subset of files used in NEW_AST mode
+#
 # Revision 3.109  2004/10/04 17:18:29  sah
 # a different subset of files is compiled, depending
 # on the compiler version to create
@@ -257,7 +260,7 @@ ifeq ($(NEWAST),yes)
                src/tree/serialize_attribs.o src/modules/libstat.o \
                src/modules/modulemanager.o src/modules/libmanager.o \
                src/tree/deserialize.o
-  NEWASTFLAGS = -ldl -export-dynamic
+  NEWASTFLAGS = -ldl --export-dynamic
 endif
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
@@ -306,9 +309,9 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/ct_basic.o src/typecheck/ct_fun.o \
            src/typecheck/ct_with.o src/typecheck/type_errors.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
-           src/typecheck/create_wrapper_code.o src/typecheck/type_statistics.o
-TYPECHECK_OLD= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
-               src/typecheck/typecheck_WL.o
+           src/typecheck/create_wrapper_code.o \
+           src/typecheck/type_statistics.o src/typecheck/typecheck.o
+TYPECHECK_OLD= src/typecheck/prim_fun.o src/typecheck/typecheck_WL.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
@@ -338,10 +341,10 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 PSIOPT_OLD=
 
 MODULES= src/modules/symboltable.o src/modules/filemgr.o \
-         src/modules/implicittypes.o 
+         src/modules/implicittypes.o src/modules/cccall.o
 MODULES_OLD= src/modules/import.o src/modules/writesib.o \
              src/modules/analysis.o \
-             src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
+             src/modules/checkdec.o src/modules/readsib.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 OBJECTS_OLD=

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2004/10/05 13:54:49  sah
+# changed subset of files used in NEW_AST mode
+#
 # Revision 3.24  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -78,10 +81,10 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
 OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
-      type_statistics.o
+      type_statistics.o typecheck.o
 
 ifeq ($(NEWAST),no)
-  OBJS:= typecheck.o prim_fun.o typecheck_WL.o $(OBJS)
+  OBJS:= prim_fun.o typecheck_WL.o $(OBJS)
 endif
 
 all: $(OBJS)
