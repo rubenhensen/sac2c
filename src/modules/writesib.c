@@ -1,53 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/12/21 16:17:49  cg
+ * Revision 1.2  1995/12/23 17:02:41  cg
+ * first running version for SIB grammar v0.5
+ *
+ * Revision 1.1  1995/12/21  16:17:49  cg
  * Initial revision
  *
- * Revision 1.11  1995/12/21  15:06:04  cg
- * bug fixed in printing of arguments.
- *
- * Revision 1.10  1995/12/01  17:21:06  cg
- * bug in freeing nodelists fixed
- * storage of alternative link names converted to new pragma node
- *
- * Revision 1.9  1995/11/10  15:05:04  cg
- * converted to new error macros
- *
- * Revision 1.8  1995/11/01  09:34:26  cg
- * Bug fixed in SibPrintFunctions.
- * PrintArg now called with NULL as second argument instead of N_info
- * node as usual when used for printing the syntax tree.
- *
- * Revision 1.7  1995/10/31  09:02:21  cg
- * Parameters of implicitly needed functions are now printed without
- * identifier name.
- *
- * Revision 1.6  1995/10/30  10:22:01  cg
- * now, SIB information about functions (inline info and needed
- * global objects) is printed to SIB-file.
- *
- * Revision 1.5  1995/10/22  17:38:26  cg
- * Totally modified revision:
- * A lot of code moved to checkdec.c
- * Making a new start with writing SIBs in the context of new
- * compiler modules such as analysis or checkdec.
- *
- * Revision 1.4  1995/10/12  13:57:03  cg
- * now imported items cannot be exported again (->Error message)
- *
- * Revision 1.3  1995/10/05  16:05:39  cg
- * implicit type resolution completely renewed.
- * and afterwards extracted to new file implicittype.c
- *
- * Revision 1.2  1995/09/01  07:51:33  cg
- * first working revision.
- * writes implementation of implicit types to SIB-file end checks
- * implementation of explicit types against their declaration
- *
- * Revision 1.1  1995/08/31  08:37:41  cg
- * Initial revision
- *
+ * First version after renaming sib.c to writesib.c
  *
  */
 
@@ -67,12 +27,31 @@
 
 #include "convert.h"
 #include "filemgr.h"
+#include "print.h"
 
-#include "sib.h"
+extern FILE *outfile;   /* is set in main.c */
+extern int link_module; /* is set in main.c */
 
-static FILE *sibfile;
+#define PRINTMODNAME(mod, name)                                                          \
+    if (mod == NULL) {                                                                   \
+        fprintf (sibfile, "%s", name);                                                   \
+    } else {                                                                             \
+        fprintf (sibfile, "%s:%s", mod, name);                                           \
+    }
 
-extern FILE *outfile; /* is set in main.c */
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
 
 /*
  *
@@ -90,13 +69,13 @@ extern FILE *outfile; /* is set in main.c */
  */
 
 node *
-WriteSib (node *arg_node)
+WriteSib (node *syntax_tree)
 {
     DBUG_ENTER ("WriteSib");
 
     act_tab = writesib_tab;
 
-    DBUG_RETURN (Trav (arg_node, NULL));
+    DBUG_RETURN (Trav (syntax_tree, NULL));
 }
 
 /*
@@ -133,6 +112,113 @@ OpenSibFile (char *name)
 
 /*
  *
+ *  functionname  : StoreExportNode
+ *  arguments     : 1) node which has to be inserted
+ *                  2) N_info node where 1) has to be inserted
+ *  description   : inserts the given node at the end of the correct
+ *                  nodelist (funlist, objlist, or typelist) of the
+ *                  given N_info node if it's not already included.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeNodelist
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+void
+StoreExportNode (node *insert, node *info)
+{
+    nodelist *act, *last, *list;
+
+    DBUG_ENTER ("StoreExportNode");
+
+    DBUG_PRINT ("WSIB", ("Must export '%s` (%s)", ItemName (insert),
+                         mdb_nodetype[NODE_TYPE (insert)]));
+
+    switch (NODE_TYPE (insert)) {
+    case N_fundef:
+        list = INFO_EXPORTFUNS (info);
+        break;
+
+    case N_objdef:
+        list = INFO_EXPORTOBJS (info);
+        break;
+
+    case N_typedef:
+        list = INFO_EXPORTTYPES (info);
+        break;
+
+    default:
+        DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreExportNode`");
+    }
+
+    if (list == NULL) {
+        switch (NODE_TYPE (insert)) {
+        case N_fundef:
+            INFO_EXPORTFUNS (info) = MakeNodelist (insert, ST_regular, NULL);
+            break;
+
+        case N_objdef:
+            INFO_EXPORTOBJS (info) = MakeNodelist (insert, ST_regular, NULL);
+            break;
+
+        case N_typedef:
+            INFO_EXPORTTYPES (info) = MakeNodelist (insert, ST_regular, NULL);
+            break;
+
+        default:
+            DBUG_ASSERT (0, "Wrong insert node in call to function 'StoreExportNode`");
+        }
+    } else {
+        act = list;
+        last = list;
+
+        while ((act != NULL) && (NODELIST_NODE (act) != insert)) {
+            last = act;
+            act = NODELIST_NEXT (act);
+        }
+
+        if (act == NULL) {
+            NODELIST_NEXT (last) = MakeNodelist (insert, ST_regular, NULL);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : StoreExportNodes
+ *  arguments     : 1) list of nodes
+ *                  2) N_info node where inserts are to be done
+ *  description   : inserts each node of the nodelist into the correct
+ *                  nodelist of the N_info node
+ *  global vars   : ---
+ *  internal funs : StoreExportNode
+ *  external funs : ---
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+void
+StoreExportNodes (nodelist *inserts, node *info)
+{
+    DBUG_ENTER ("StoreExportNodes");
+
+    while (inserts != NULL) {
+        StoreExportNode (NODELIST_NODE (inserts), info);
+        inserts = NODELIST_NEXT (inserts);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  :
  *  arguments     :
  *  description   :
@@ -147,48 +233,62 @@ OpenSibFile (char *name)
 
 /*
  *
- *  functionname  : SibPrintTypes
+ *  functionname  : AddImplicitItems
  *  arguments     :
  *  description   :
  *  global vars   :
  *  internal funs :
- *  external funs : free
+ *  external funs :
  *  macros        :
  *
  *  remarks       :
  *
  */
 
-void
-SibPrintTypes (nodelist *types)
+node *
+AddImplicitItems (node *info, node *all_types)
 {
-    node *type;
+    nodelist *tmp;
+    node *fundef, *tdef, *impl_tdef;
 
-    DBUG_ENTER ("SibPrintTypes");
+    DBUG_ENTER ("AddImplicitItems");
 
-    while (types != NULL) {
-        type = NODELIST_NODE (types);
+    tmp = INFO_EXPORTFUNS (info);
 
-        if (TYPEDEF_ATTRIB (type) == ST_unique) {
-            fprintf (sibfile, "class ");
+    while (tmp != NULL) {
+        fundef = NODELIST_NODE (tmp);
+        StoreExportNodes (FUNDEF_NEEDOBJS (fundef), info);
+
+        if ((FUNDEF_BODY (fundef) != NULL)
+            && (FUNDEF_INLINE (fundef) || (FUNDEF_ATTRIB (fundef) == ST_independent))) {
+            StoreExportNodes (FUNDEF_NEEDTYPES (NODELIST_NODE (tmp)), info);
+            StoreExportNodes (FUNDEF_NEEDFUNS (NODELIST_NODE (tmp)), info);
         }
 
-        if (TYPEDEF_MOD (type) != NULL) {
-            fprintf (sibfile, "%s:", TYPEDEF_MOD (type));
-        }
-
-        fprintf (sibfile, "%s=%s;\n", TYPEDEF_NAME (type),
-                 Type2String (TYPEDEF_TYPE (type), 0));
-
-        types = NODELIST_NEXT (types);
+        tmp = NODELIST_NEXT (tmp);
     }
 
-    DBUG_VOID_RETURN;
+    tmp = INFO_EXPORTTYPES (info);
+
+    while (tmp != NULL) {
+        tdef = NODELIST_NODE (tmp);
+
+        if (((TYPEDEF_BASETYPE (tdef) == T_user) || (TYPEDEF_BASETYPE (tdef) == T_hidden))
+            && (TYPEDEF_NAME (tdef) != NULL)) {
+            impl_tdef
+              = SearchTypedef (TYPEDEF_NAME (tdef), TYPEDEF_MOD (tdef), all_types);
+            StoreExportNode (impl_tdef, info);
+        }
+
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    DBUG_RETURN (info);
 }
 
 /*
  *
- *  functionname  : SibPrintFunctions
+ *  functionname  : PrintNeededTypes
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -201,27 +301,67 @@ SibPrintTypes (nodelist *types)
  */
 
 void
-SibPrintFunctions (nodelist *funs)
+PrintNeededTypes (FILE *sibfile, nodelist *types)
 {
-    node *fun, *obj;
-    nodelist *objs;
+    node *type;
+    nodelist *tmp;
 
-    DBUG_ENTER ("SibPrintFunctions");
+    DBUG_ENTER ("PrintNeededTypes");
+
+    if (types != NULL) {
+        fprintf (sibfile, "#pragma types ");
+    }
+
+    tmp = types;
+
+    while (tmp != NULL) {
+        type = NODELIST_NODE (tmp);
+
+        PRINTMODNAME (TYPEDEF_MOD (type), TYPEDEF_NAME (type));
+
+        if (NODELIST_NEXT (tmp) != NULL) {
+            fprintf (sibfile, ", ");
+        }
+
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    if (types != NULL) {
+        fprintf (sibfile, "\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : PrintNeededFunctions
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+PrintNeededFunctions (FILE *sibfile, nodelist *funs)
+{
+    node *fun;
+
+    DBUG_ENTER ("PrintNeededFunctions");
+
+    if (funs != NULL) {
+        fprintf (sibfile, "#pragma functions ");
+    }
 
     while (funs != NULL) {
         fun = NODELIST_NODE (funs);
 
-        fprintf (sibfile, "%s ", Type2String (FUNDEF_TYPES (fun), 0));
-
-        if (FUNDEF_MOD (fun) != NULL) {
-            fprintf (sibfile, "%s:", FUNDEF_MOD (fun));
-        }
-
-        fprintf (sibfile, "%s ", FUNDEF_NAME (fun));
-
-        if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
-            fprintf (sibfile, "{%s} ", FUNDEF_LINKNAME (fun));
-        }
+        PRINTMODNAME (FUNDEF_MOD (fun), FUNDEF_NAME (fun));
 
         fprintf (sibfile, "(");
 
@@ -238,27 +378,11 @@ SibPrintFunctions (nodelist *funs)
 
         fprintf (sibfile, ")");
 
-        objs = FUNDEF_NEEDOBJS (fun);
-        while (objs != NULL) {
-            obj = NODELIST_NODE (objs);
-
-            fprintf (sibfile, "\n  %s ", Type2String (OBJDEF_TYPE (obj), 0));
-            fprintf (sibfile, "& ");
-
-            if (OBJDEF_MOD (obj) != NULL) {
-                fprintf (sibfile, "%s:", OBJDEF_MOD (obj));
-            }
-
-            fprintf (sibfile, "%s", OBJDEF_NAME (obj));
-
-            objs = NODELIST_NEXT (objs);
-
-            if (objs != NULL) {
-                fprintf (sibfile, ",");
-            }
+        if (NODELIST_NEXT (funs) == NULL) {
+            fprintf (sibfile, "\n");
+        } else {
+            fprintf (sibfile, ",\n                  ");
         }
-
-        fprintf (sibfile, ";\n");
 
         funs = NODELIST_NEXT (funs);
     }
@@ -268,7 +392,7 @@ SibPrintFunctions (nodelist *funs)
 
 /*
  *
- *  functionname  : SibPrintObjects
+ *  functionname  : PrintNeededObjects
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -281,24 +405,60 @@ SibPrintFunctions (nodelist *funs)
  */
 
 void
-SibPrintObjects (nodelist *objs)
+PrintNeededObjects (FILE *sibfile, nodelist *objs)
 {
     node *obj;
+    int first;
+    nodelist *tmp;
 
-    DBUG_ENTER ("SibPrintObjects");
+    DBUG_ENTER ("PrintNeededObjects");
 
-    while (objs != NULL) {
-        obj = NODELIST_NODE (objs);
+    tmp = objs;
+    first = 1;
 
-        fprintf (sibfile, "%s ", Type2String (OBJDEF_TYPE (obj), 0));
-        fprintf (sibfile, "& ");
-        if (OBJDEF_MOD (obj) != NULL) {
-            fprintf (sibfile, "%s:", OBJDEF_MOD (obj));
+    while (tmp != NULL) {
+        if (NODELIST_ATTRIB (tmp) == ST_reference) {
+            obj = NODELIST_NODE (tmp);
+
+            if (first) {
+                first = 0;
+                fprintf (sibfile, "#pragma effect ");
+            } else {
+                fprintf (sibfile, ", ");
+            }
+
+            PRINTMODNAME (OBJDEF_MOD (obj), OBJDEF_NAME (obj));
         }
 
-        fprintf (sibfile, "%s;\n", OBJDEF_NAME (obj));
+        tmp = NODELIST_NEXT (tmp);
+    }
 
-        objs = NODELIST_NEXT (objs);
+    if (!first) {
+        fprintf (sibfile, "\n");
+    }
+
+    tmp = objs;
+    first = 1;
+
+    while (tmp != NULL) {
+        if (NODELIST_ATTRIB (tmp) == ST_readonly_reference) {
+            obj = NODELIST_NODE (tmp);
+
+            if (first) {
+                first = 0;
+                fprintf (sibfile, "#pragma touch ");
+            } else {
+                fprintf (sibfile, ", ");
+            }
+
+            PRINTMODNAME (OBJDEF_MOD (obj), OBJDEF_NAME (obj));
+        }
+
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    if (!first) {
+        fprintf (sibfile, "\n");
     }
 
     DBUG_VOID_RETURN;
@@ -306,7 +466,218 @@ SibPrintObjects (nodelist *objs)
 
 /*
  *
- *  functionname  : SIBfundef
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  : PrintSibTypes
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname)
+{
+    node *tdef;
+    nodelist *tmp;
+    int did_print = 0;
+
+    DBUG_ENTER ("PrintSibTypes");
+
+    tmp = tdeflist;
+
+    while (tmp != NULL) {
+        tdef = NODELIST_NODE (tmp);
+
+        if (link_module || (TYPEDEF_MOD (tdef) == NULL)
+            || (0 == strcmp (MOD (TYPEDEF_MOD (tdef)), modname))) {
+            did_print = 1;
+
+            if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+                fprintf (sibfile, "class ");
+            }
+
+            fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
+            PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
+            fprintf (sibfile, ";\n");
+
+            if (TYPEDEF_PRAGMA (tdef) != NULL) {
+                PrintPragma (TYPEDEF_PRAGMA (tdef), tdef);
+            }
+
+            if (TYPEDEF_CMOD (tdef) != NULL) {
+                fprintf (sibfile, "#pragma external %s\n", TYPEDEF_CMOD (tdef));
+            }
+        }
+
+        tmp = NODELIST_NEXT (tmp);
+    }
+
+    if (did_print) {
+        fprintf (sibfile, "\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : PrintSibObjs
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname)
+{
+    node *objdef;
+    int did_print = 0;
+
+    DBUG_ENTER ("PrintSibObjs");
+
+    while (objdeflist != NULL) {
+        objdef = NODELIST_NODE (objdeflist);
+
+        if (link_module || (OBJDEF_MOD (objdef) == NULL)
+            || (0 == strcmp (MOD (OBJDEF_MOD (objdef)), modname))) {
+            did_print = 1;
+
+            fprintf (sibfile, "objdef %s ", Type2String (OBJDEF_TYPE (objdef), 0));
+            PRINTMODNAME (OBJDEF_MOD (objdef), OBJDEF_NAME (objdef));
+            fprintf (sibfile, ";\n");
+
+            if (OBJDEF_PRAGMA (objdef) != NULL) {
+                PrintPragma (OBJDEF_PRAGMA (objdef), objdef);
+            }
+
+            if (OBJDEF_CMOD (objdef) != NULL) {
+                fprintf (sibfile, "#pragma external %s\n", OBJDEF_CMOD (objdef));
+            }
+        }
+
+        objdeflist = NODELIST_NEXT (objdeflist);
+    }
+
+    if (did_print) {
+        fprintf (sibfile, "\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : PrintSibFuns
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname)
+{
+    node *fundef;
+
+    DBUG_ENTER ("PrintSibFuns");
+
+    while (fundeflist != NULL) {
+        fundef = NODELIST_NODE (fundeflist);
+
+        if (link_module || (FUNDEF_MOD (fundef) == NULL)
+            || (0 == strcmp (MOD (FUNDEF_MOD (fundef)), modname))) {
+            PrintFunctionHeader (fundef, fundef);
+
+            if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
+                fprintf (sibfile, "\n");
+                Trav (FUNDEF_BODY (fundef), NULL);
+            } else {
+                fprintf (sibfile, ";\n");
+            }
+
+            if (FUNDEF_PRAGMA (fundef) != NULL) {
+                PrintPragma (FUNDEF_PRAGMA (fundef), fundef);
+            }
+
+            if (FUNDEF_CMOD (fundef) != NULL) {
+                fprintf (sibfile, "#pragma external %s\n", FUNDEF_CMOD (fundef));
+            }
+
+            PrintNeededObjects (sibfile, FUNDEF_NEEDOBJS (fundef));
+
+            if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
+                PrintNeededTypes (sibfile, FUNDEF_NEEDTYPES (fundef));
+                PrintNeededFunctions (sibfile, FUNDEF_NEEDFUNS (fundef));
+            }
+        }
+
+        fprintf (sibfile, "\n");
+        fundeflist = NODELIST_NEXT (fundeflist);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : WSIBfundef
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -319,70 +690,57 @@ SibPrintObjects (nodelist *objs)
  */
 
 node *
-SIBfundef (node *arg_node, node *arg_info)
+WSIBfundef (node *arg_node, node *arg_info)
 {
-    FILE *store_outfile;
-    node *fundef;
+    node *ret;
 
-    DBUG_ENTER ("SIBfundef");
+    DBUG_ENTER ("WSIBfundef");
 
-    store_outfile = outfile;
-    outfile = sibfile;
-    mod_name_con = mod_name_con_2;
-
-    fundef = FUNDEC_DEF (arg_node);
-
-    if (FUNDEF_INLINE (fundef) || (FUNDEF_NEEDOBJS (fundef) != NULL)) {
-        fprintf (sibfile, "\n");
-
-        fprintf (sibfile, "%s(", FUNDEF_NAME (fundef));
-
-        if (FUNDEF_ARGS (fundef) != NULL) {
-            Trav (FUNDEF_ARGS (fundef), fundef);
+    if (arg_info != NULL) {
+        if (FUNDEF_INLINE (FUNDEC_DEF (arg_node))
+            || (FUNDEF_ATTRIB (FUNDEC_DEF (arg_node)) == ST_independent)
+            || (FUNDEF_NEEDOBJS (FUNDEC_DEF (arg_node)) != NULL)) {
+            StoreExportNode (FUNDEC_DEF (arg_node), arg_info);
         }
 
-        fprintf (sibfile, ")");
-
-        if (FUNDEF_INLINE (fundef)) {
-            fprintf (sibfile, "\n");
-            Trav (FUNDEF_BODY (fundef), arg_info);
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            ret = Trav (FUNDEF_NEXT (arg_node), arg_info);
         } else {
-            fprintf (sibfile, ";\n");
+            ret = arg_info;
+        }
+    } else {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
 
-        fprintf (sibfile, "implicit:\n{\n");
+        if (FUNDEF_ATTRIB (arg_node) == ST_independent) {
+            DBUG_PRINT ("WSIB", ("Removing dimension independent function %s",
+                                 ItemName (arg_node)));
 
-        if (FUNDEF_NEEDTYPES (fundef) != NULL) {
-            fprintf (sibfile, "types:\n");
-            SibPrintTypes (FUNDEF_NEEDTYPES (fundef));
+            ret = FreeNode (arg_node);
+        } else {
+            if (FUNDEF_BODY (arg_node) != NULL) {
+                DBUG_PRINT ("WSIB", ("Removing list of functions needed by %s",
+                                     ItemName (arg_node)));
+
+                FUNDEF_NEEDFUNS (arg_node) = FreeNodelist (FUNDEF_NEEDFUNS (arg_node));
+
+                DBUG_PRINT ("WSIB",
+                            ("Removing list of types needed by %s", ItemName (arg_node)));
+
+                FUNDEF_NEEDTYPES (arg_node) = FreeNodelist (FUNDEF_NEEDTYPES (arg_node));
+            }
+
+            ret = arg_node;
         }
-
-        if (FUNDEF_NEEDOBJS (fundef) != NULL) {
-            fprintf (sibfile, "objects:\n");
-            SibPrintObjects (FUNDEF_NEEDOBJS (fundef));
-        }
-
-        if (FUNDEF_NEEDFUNS (fundef) != NULL) {
-            fprintf (sibfile, "functions:\n");
-            SibPrintFunctions (FUNDEF_NEEDFUNS (fundef));
-        }
-
-        fprintf (sibfile, "}\n");
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    mod_name_con = mod_name_con_1;
-    outfile = store_outfile;
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (ret);
 }
 
 /*
  *
- *  functionname  : SIBtypedef
+ *  functionname  : WSIBtypedef
  *  arguments     : 1)
  *                  2)
  *  description   :
@@ -397,23 +755,22 @@ SIBfundef (node *arg_node, node *arg_info)
  */
 
 node *
-SIBtypedef (node *arg_node, node *arg_info)
+WSIBtypedef (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("SIBtypedef");
+    DBUG_ENTER ("WSIBtypedef");
 
-    fprintf (sibfile, "typedef %s ", Type2String (TYPEDEC_TYPE (arg_node), 0));
-    fprintf (sibfile, "%s;\n", TYPEDEF_NAME (arg_node));
+    StoreExportNode (TYPEDEC_DEF (arg_node), arg_info);
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        Trav (TYPEDEF_NEXT (arg_node), arg_info);
+        arg_info = Trav (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_info);
 }
 
 /*
  *
- *  functionname  : SIBmodul
+ *  functionname  : WSIBexplist
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -426,28 +783,101 @@ SIBtypedef (node *arg_node, node *arg_info)
  */
 
 node *
-SIBmodul (node *arg_node, node *arg_info)
+WSIBexplist (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WSIBexplist");
+
+    if (EXPLIST_ITYPES (arg_node) != NULL) {
+        arg_info = Trav (EXPLIST_ITYPES (arg_node), arg_info);
+    }
+
+    if (EXPLIST_FUNS (arg_node) != NULL) {
+        arg_info = Trav (EXPLIST_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_info);
+}
+
+/*
+ *
+ *  functionname  : WSIBmodul
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+WSIBmodul (node *arg_node, node *arg_info)
 {
     node *export;
+    FILE *sibfile, *store_outfile;
 
-    DBUG_ENTER ("SIBmodul");
+    DBUG_ENTER ("WSIBmodul");
 
-    export = MODDEC_OWN (MODUL_DECL (arg_node));
     sibfile = OpenSibFile (MODUL_NAME (arg_node));
 
-    fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
-
-    if (EXPLIST_ITYPES (export) != NULL) {
-        Trav (EXPLIST_ITYPES (export), NULL);
+    if (link_module) {
+        fprintf (sibfile, "<%s:all>\n\n", MODUL_NAME (arg_node));
+    } else {
+        fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
     }
 
-    if (EXPLIST_FUNS (export) != NULL) {
-        Trav (EXPLIST_FUNS (export), NULL);
+    if (MODDEC_OWN (MODUL_DECL (arg_node)) != NULL) {
+        /*
+         *  First, lists of functions, objects, and types which have to be
+         *  printed to the SIB are generated.
+         */
+
+        export = MakeInfo ();
+        export = Trav (MODDEC_OWN (MODUL_DECL (arg_node)), export);
+        export = AddImplicitItems (export, MODUL_TYPES (arg_node));
+
+        /*
+         *  Second, the infered functions, objects, and types are printed.
+         *  The temporary modification of some global variables allows the
+         *  reuse of functions from print.c and convert.c
+         */
+
+        store_outfile = outfile;
+        outfile = sibfile;
+        mod_name_con = mod_name_con_2;
+
+        PrintSibTypes (sibfile, INFO_EXPORTTYPES (export), MODUL_NAME (arg_node));
+        PrintSibObjs (sibfile, INFO_EXPORTOBJS (export), MODUL_NAME (arg_node));
+        PrintSibFuns (sibfile, INFO_EXPORTFUNS (export), MODUL_NAME (arg_node));
+
+        mod_name_con = mod_name_con_1;
+        outfile = store_outfile;
+
+        /*
+         *  Third, the lists infered at the beginning are removed again.
+         */
+
+        FreeNodelist (INFO_EXPORTTYPES (export));
+        FreeNodelist (INFO_EXPORTOBJS (export));
+        FreeNodelist (INFO_EXPORTFUNS (export));
+        FreeNode (export);
     }
 
-    fprintf (sibfile, "\n");
+    fprintf (sibfile, "\n&&&");
 
     fclose (sibfile);
+
+    /*
+     *  Finally, the syntax tree can be tidied up:
+     *  Lists of needed types and functions are removed as well as
+     *  dimension independent functions.
+     */
+
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
