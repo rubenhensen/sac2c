@@ -1,5 +1,6 @@
 Makefile
-libsac_cachesim.c
+libsac_cachesim_access.c
+libsac_cachesim_basic.c
 libsac_malloc.c
 libsac_message.c
 libsac_misc.c
