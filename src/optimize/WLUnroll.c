@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/06/23 14:10:45  dkr
+ * nodetype N_with removed
+ *
  * Revision 2.11  2000/05/26 21:57:44  dkr
  * minor changes in CreateFold() done
  *
@@ -564,9 +567,9 @@ CheckUnrollModarray (node *wln)
            programmer. */
 
         coden = NPART_CODE (partn);
-        if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
-            NPART_COPY (partn) = 0;
-        else {
+        if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden)))) {
+            NPART_COPY (partn) = FALSE;
+        } else {
             tmpn = ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
             NPART_COPY (partn)
