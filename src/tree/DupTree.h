@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2004/11/23 19:07:39  khf
+ * SacDevCampDk: compiles!
+ *
  * Revision 3.34  2004/11/23 13:31:14  khf
  * more codebrushing
  *
@@ -199,9 +202,6 @@ extern node *DUPspmd (node *arg_node, info *arg_info);
 extern node *DUPsync (node *arg_node, info *arg_info);
 extern node *DUPmt (node *arg_node, info *arg_info);
 extern node *DUPst (node *arg_node, info *arg_info);
-extern node *DUPmtsignal (node *arg_node, info *arg_info);
-extern node *DUPmtsync (node *arg_node, info *arg_info);
-extern node *DUPmtalloc (node *arg_node, info *arg_info);
 extern node *DUPavis (node *arg_node, info *arg_info);
 extern node *DUPssastack (node *arg_node, info *arg_info);
 extern node *DUPssacnt (node *arg_node, info *arg_info);
