@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.10  2000/07/28 14:43:42  nmw
+ * Refcounting bug for simple types fixed
+ * changes to handle T_user types internally
+ *
  * Revision 1.9  2000/07/20 11:38:43  nmw
  * SAC_FreeRuntimesystem now frees all used sac-modules
  *
@@ -185,14 +189,15 @@ int
 SAC_SetRefcounter (SAC_arg sa, int newrc)
 {
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();
-    if (newrc < 0)
-        SAC_RuntimeError ("Illegal refcounter value specified!\n");
-    if (SAC_ARG_LRC (sa) > 0) {
-        *(SAC_ARG_RC (sa)) = newrc;
-        return ((SAC_ARG_LRC (sa)) = newrc);
-    } else {
-        return (SAC_ARG_LRC (sa));
+    if (SAC_ARG_DIM (sa) > 0) {
+        if (newrc < 0)
+            SAC_RuntimeError ("Illegal refcounter value specified!\n");
+        if (SAC_ARG_LRC (sa) > 0) {
+            *(SAC_ARG_RC (sa)) = newrc;
+            SAC_ARG_LRC (sa) = newrc;
+        }
     }
+    return (SAC_ARG_LRC (sa));
 }
 
 /*
@@ -242,7 +247,7 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
         elems = array;                                                                   \
     }                                                                                    \
                                                                                          \
-    result = SAC_CI_NewSACArg (SAC_type, dim, shpvec);                                   \
+    result = SAC_CI_NewSACArg (SAC_type, NULL, dim, shpvec);                             \
                                                                                          \
     SAC_ARG_ELEMS (result) = elems;                                                      \
                                                                                          \
@@ -255,7 +260,7 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
     SAC_arg result;                                                                      \
                                                                                          \
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();                                                   \
-    result = SAC_CI_NewSACArg (SAC_type, 0, NULL);                                       \
+    result = SAC_CI_NewSACArg (SAC_type, NULL, 0, NULL);                                 \
     SAC_ARG_ELEMS (result) = (c_type *)SAC_MALLOC (sizeof (c_type));                     \
     *((c_type *)SAC_ARG_ELEMS (result)) = value;                                         \
                                                                                          \
@@ -271,7 +276,7 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
                                                                                          \
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();                                                   \
     /* check for valid data */                                                           \
-    SAC_CI_ExitOnInvalidArg (sa, SAC_type, SAC_CI_ARRAYTYPE);                            \
+    SAC_CI_ExitOnInvalidArg (sa, SAC_type, NULL, SAC_CI_ARRAYTYPE);                      \
     if (reuseflag == SAC_COPY_ARG) {                                                     \
         elemscount = 1;                                                                  \
         for (i = 0; i < SAC_ARG_DIM (sa); i++)                                           \
@@ -298,7 +303,7 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
                                                                                          \
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();                                                   \
     /* check for valid data */                                                           \
-    SAC_CI_ExitOnInvalidArg (sa, SAC_type, SAC_CI_SIMPLETYPE);                           \
+    SAC_CI_ExitOnInvalidArg (sa, SAC_type, NULL, SAC_CI_SIMPLETYPE);                     \
     /* return value */                                                                   \
     return (*((c_type *)SAC_ARG_ELEMS (sa)))
 
