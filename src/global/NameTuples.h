@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/05/31 17:17:38  dkr
+ * functions now in NameTuplesUtils.h
+ *
  * Revision 3.1  2000/11/20 17:59:27  sacbase
  * new release made
  *
@@ -11,6 +14,9 @@
  * Initial revision
  *
  */
+
+#ifndef _NameTuples_h_
+#define _NameTuples_h_
 
 /*
  * The following defines indicate the position of tags
@@ -44,6 +50,4 @@ typedef enum {
 extern char *nt_class_string[];
 extern char *nt_unq_string[];
 
-extern void PrintNT (FILE *handle, char *name, types *type);
-extern unq_class_t GetUnqFromTypes (types *type);
-extern data_class_t GetClassFromTypes (types *type);
+#endif /* _NameTuples_h_ */
