@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.25  1995/06/02 11:58:17  asi
+# Revision 1.26  1995/07/07 15:47:43  asi
+# make deps done
+#
+# Revision 1.25  1995/06/02  11:58:17  asi
 # make deps done
 #
 # Revision 1.24  1995/06/02  10:08:21  sbs
@@ -145,6 +148,7 @@ main.o: usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
 main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
 main.o: ../scanparse/y.tab.h ../compile/trace.h ../compile/compile.h
+main.o: ../psi-opt/psi-opt.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
@@ -160,7 +164,8 @@ traverse.o: ../typecheck/typecheck.h ../optimize/optimize.h free.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
 traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
 traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
-traverse.o: ../optimize/DupTree.h ../optimize/Inline.h traverse.h
+traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
+traverse.o: ../optimize/Unswitch.h ../psi-opt/index.h traverse.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h type_info.mac node_info.mac prf_node_info.mac ../../inc/dbug.h
@@ -171,4 +176,5 @@ tree.o: ../optimize/optimize.h
 usage.o: usage.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
-usage.o: ../../inc/dbug.h
+usage.o: ../../inc/dbug.h tree.h type_info.mac node_info.mac
+usage.o: prf_node_info.mac ../optimize/optimize.h
