@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.4  2004/09/22 12:07:56  skt
  * initialization of old_flag added
  *
@@ -38,12 +41,9 @@
 #define NEW_INFO
 
 #include "dbug.h"
-
-#include "types.h"
 #include "tree_basic.h"
 #include "DupTree.h"
 #include "traverse.h"
-#include "print.h"
 #include "create_withinwith.h"
 #include "multithread_lib.h"
 
@@ -55,7 +55,7 @@ struct INFO {
     bool createspecialized;
     bool duplicatemode;
     node *actassign;
-    node *modul;
+    node *module;
 };
 
 /*
@@ -64,7 +64,7 @@ struct INFO {
  */
 #define INFO_CRWIW_WITHINMULTI(n) (n->withinmulti)
 #define INFO_CRWIW_ACTASSIGN(n) (n->actassign)
-#define INFO_CRWIW_MODUL(n) (n->modul)
+#define INFO_CRWIW_MODULE(n) (n->module)
 
 /*
  * INFO functions
@@ -76,11 +76,11 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CRWIW_WITHINMULTI (result) = FALSE;
     INFO_CRWIW_ACTASSIGN (result) = NULL;
-    INFO_CRWIW_MODUL (result) = NULL;
+    INFO_CRWIW_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -90,43 +90,43 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateWithinwith(node *arg_node)
+ * @fn node *CRWIWdoCreateWithinwith(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
- *   @param arg_node a N_modul
- *   @return the N_modul with duplicated/specialized functions within
+ *   @param arg_node a N_module
+ *   @return the N_module with duplicated/specialized functions within
  *           multithreaded withloops
  *
  *****************************************************************************/
 node *
-CreateWithinwith (node *arg_node)
+CRWIWdoCreateWithinwith (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
-    DBUG_ENTER ("CreateWithinwith");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "CreateWithinwith expects a N_modul as arg_node");
+    DBUG_ENTER ("CRWIWdoCreateWithinwith");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "CRWIWdoCreateWithinwith expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
     /* push info ... */
     old_tab = act_tab;
     act_tab = crwiw_tab;
 
-    INFO_CRWIW_MODUL (arg_info) = arg_node;
+    INFO_CRWIW_MODULE (arg_info) = arg_node;
 
-    DBUG_PRINT ("CRWIW", ("trav into modul-funs"));
-    Trav (MODUL_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("CRWIW", ("trav from modul-funs"));
+    DBUG_PRINT ("CRWIW", ("trav into module-funs"));
+    Trav (MODULE_FUNS (arg_node), arg_info);
+    DBUG_PRINT ("CRWIW", ("trav from module-funs"));
 
-    arg_node = INFO_CRWIW_MODUL (arg_info);
+    arg_node = INFO_CRWIW_MODULE (arg_info);
 
     /* pop info ... */
     act_tab = old_tab;
@@ -243,22 +243,20 @@ CRWIWap (node *arg_node, info *arg_info)
         /* let's duplicate it */
         else {
             /* LaC-functions are handled seperatly */
-            if (((FUNDEF_STATUS (my_fundef) != ST_dofun)
-                 && (FUNDEF_STATUS (my_fundef) != ST_whilefun)
-                 && (FUNDEF_STATUS (my_fundef) != ST_condfun))) {
+            if (!FUNDEF_ISDOFUN (my_fundef) && !FUNDEF_ISCONDFUN (my_fundef)) {
                 tmp = DupNode (my_fundef);
                 FUNDEF_NEXT (tmp) = FUNDEF_NEXT (my_fundef);
                 FUNDEF_NEXT (my_fundef) = tmp;
             } else {
-                INFO_CRWIW_MODUL (arg_info)
-                  = CheckAndDupSpecialFundef (INFO_CRWIW_MODUL (arg_info), my_fundef,
+                INFO_CRWIW_MODULE (arg_info)
+                  = CheckAndDupSpecialFundef (INFO_CRWIW_MODULE (arg_info), my_fundef,
                                               INFO_CRWIW_ACTASSIGN (arg_info));
                 tmp
                   = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (INFO_CRWIW_ACTASSIGN (arg_info))));
             }
 
             FUNDEF_EXECMODE (tmp) = MUTH_MULTI_SPECIALIZED;
-            tmp = MUTHExpandFundefName (tmp, "__MS_");
+            tmp = MUTHLIBexpandFundefName (tmp, "__MS_");
 
             FUNDEF_COMPANION (my_fundef) = tmp;
             FUNDEF_COMPANION (tmp) = my_fundef;

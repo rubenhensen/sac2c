@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.3  2004/11/22 13:48:10  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -36,10 +39,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "print.h"
 #include "cell_growth.h"
-#include "multithread.h"
-#include "multithread_lib.h"
 
 /*
  * INFO structure
@@ -65,7 +65,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CEGRO_NEXTCELL (result) = NULL;
 
@@ -77,7 +77,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }

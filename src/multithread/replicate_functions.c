@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.3  2004/09/02 16:01:35  skt
  * comments added
  *
@@ -36,11 +39,9 @@
 
 #include "dbug.h"
 
-#include "types.h"
 #include "tree_basic.h"
 #include "DupTree.h"
 #include "traverse.h"
-#include "print.h"
 #include "replicate_functions.h"
 #include "multithread_lib.h"
 
@@ -49,7 +50,7 @@
  */
 struct INFO {
     node *actassign;
-    node *modul;
+    node *module;
     mtexecmode_t execmode;
 };
 
@@ -60,7 +61,7 @@ struct INFO {
  *    node    REPFUN_EXECMODE
  */
 #define INFO_REPFUN_ACTASSIGN(n) (n->actassign)
-#define INFO_REPFUN_MODUL(n) (n->modul)
+#define INFO_REPFUN_MODULE(n) (n->module)
 #define INFO_REPFUN_EXECMODE(n) (n->execmode)
 
 /*
@@ -73,10 +74,10 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_REPFUN_ACTASSIGN (result) = NULL;
-    INFO_REPFUN_MODUL (result) = NULL;
+    INFO_REPFUN_MODULE (result) = NULL;
     INFO_REPFUN_EXECMODE (result) = MUTH_ANY;
 
     DBUG_RETURN (result);
@@ -87,42 +88,42 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *ReplicateFunctions(node *arg_node)
+ * @fn node *REPFUNdoReplicateFunctions(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
- *   @param arg_node a N_modul
- *   @return the N_modul with replicated, correct assigned functions
+ *   @param arg_node a N_module
+ *   @return the N_module with replicated, correct assigned functions
  *
  *****************************************************************************/
 node *
-ReplicateFunctions (node *arg_node)
+REPFUNdoReplicateFunctions (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
-    DBUG_ENTER ("ReplicateFunctions");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "ReplicateFunctions expects a N_modul as arg_node");
+    DBUG_ENTER ("REPFUNdoReplicateFunctions");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "REPFUNdoReplicateFunctions expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
     /* push info ... */
     old_tab = act_tab;
     act_tab = repfun_tab;
 
-    INFO_REPFUN_MODUL (arg_info) = arg_node;
+    INFO_REPFUN_MODULE (arg_info) = arg_node;
 
     DBUG_PRINT ("REPFUN", ("trav into modul-funs"));
     Trav (MODUL_FUNS (arg_node), arg_info);
     DBUG_PRINT ("REPFUN", ("trav from modul-funs"));
 
-    arg_node = INFO_REPFUN_MODUL (arg_info);
+    arg_node = INFO_REPFUN_MODULE (arg_info);
 
     /* pop info ... */
     act_tab = old_tab;
@@ -158,10 +159,13 @@ REPFUNfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        /*FUNDEF_NEXT(arg_node) = */
         DBUG_PRINT ("REPFUN", ("trav into fundef-next"));
+        /*
+         * FUNDEF_NEXT(arg_node) =
+         */
         Trav (FUNDEF_NEXT (arg_node), arg_info);
-        /* (the FUNDEF_NEXT could change during the traversal - the pointer
+        /*
+         * (the FUNDEF_NEXT could change during the traversal - the pointer
          * is handled correct during REPFUNap)
          */
         DBUG_PRINT ("REPFUN", ("trav from fundef-next"));
@@ -331,7 +335,8 @@ REPFUNap (node *arg_node, info *arg_info)
     DBUG_ENTER ("REPFUNap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "arg_node is no a N_ap");
 
-    /* only function applications within MUTH_ANY assignments have to be handled
+    /*
+     * only function applications within MUTH_ANY assignments have to be handled
      */
     if (ASSIGN_EXECMODE (INFO_REPFUN_ACTASSIGN (arg_info)) == MUTH_ANY) {
         ASSIGN_EXECMODE (INFO_REPFUN_ACTASSIGN (arg_info))
@@ -350,11 +355,9 @@ REPFUNap (node *arg_node, info *arg_info)
 
         if (build_replications == TRUE) {
             /* LaC-functions are handled seperatly */
-            if (((FUNDEF_STATUS (my_fundef) != ST_dofun)
-                 && (FUNDEF_STATUS (my_fundef) != ST_whilefun)
-                 && (FUNDEF_STATUS (my_fundef) != ST_condfun))) {
-                tmp_1 = DupNode (my_fundef);
-                tmp_2 = DupNode (my_fundef);
+            if (!FUNDEF_ISDOFUN (my_fundef) && !FUNDEF_ISCONDFUN (my_fundef)) {
+                tmp_1 = DUPdupNode (my_fundef);
+                tmp_2 = DUPdupNode (my_fundef);
 
                 FUNDEF_EXECMODE (my_fundef) = MUTH_EXCLUSIVE;
                 ASSIGN_EXECMODE (FUNDEF_RETURN (my_fundef)) = MUTH_EXCLUSIVE;
@@ -363,9 +366,9 @@ REPFUNap (node *arg_node, info *arg_info)
                 FUNDEF_EXECMODE (tmp_2) = MUTH_MULTI;
                 ASSIGN_EXECMODE (FUNDEF_RETURN (tmp_2)) = MUTH_MULTI;
 
-                my_fundef = MUTHExpandFundefName (my_fundef, "__EX_");
-                tmp_1 = MUTHExpandFundefName (tmp_1, "__ST_");
-                tmp_2 = MUTHExpandFundefName (tmp_2, "__MT_");
+                my_fundef = MUTHLIBexpandFundefName (my_fundef, "__EX_");
+                tmp_1 = MUTHLIBexpandFundefName (tmp_1, "__ST_");
+                tmp_2 = MUTHLIBexpandFundefName (tmp_2, "__MT_");
 
                 if (FUNDEF_COMPANION (my_fundef) == NULL) {
                     FUNDEF_NEXT (tmp_2) = FUNDEF_NEXT (my_fundef);
@@ -400,8 +403,8 @@ REPFUNap (node *arg_node, info *arg_info)
                     AP_FUNDEF (arg_node) = my_fundef;
                 }
             } else {
-                INFO_REPFUN_MODUL (arg_info)
-                  = CheckAndDupSpecialFundef (INFO_REPFUN_MODUL (arg_info), my_fundef,
+                INFO_REPFUN_MODULE (arg_info)
+                  = CheckAndDupSpecialFundef (INFO_REPFUN_MODULE (arg_info), my_fundef,
                                               INFO_REPFUN_ACTASSIGN (arg_info));
             }
         }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.12  2004/08/31 11:57:28  skt
  * handling of CALCPARALLEL-flag added
  *
@@ -73,9 +76,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "print.h"
 #include "tag_executionmode.h"
-#include "multithread.h"
 #include "multithread_lib.h"
 
 /*
@@ -112,7 +113,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_TEM_LETLHS (result) = NULL;
     INFO_TEM_EXECMODE (result) = MUTH_ANY;
@@ -127,10 +128,32 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
+
+#define TEM_TRAVMODE_DEFAULT 0
+#define TEM_TRAVMODE_MUSTEX 1
+#define TEM_TRAVMODE_MUSTST 2
+#define TEM_TRAVMODE_COULDMT 3
+
+/* some declarations */
+static int IsMTAllowed (node *withloop);
+
+static int IsGeneratorBigEnough (ids *test_variables);
+
+static int IsMTClever (ids *test_variables);
+
+static int IsSTClever (ids *test_variables);
+
+static int MustExecuteExclusive (node *assign, info *arg_info);
+
+static int CouldExecuteMulti (node *assign, info *arg_info);
+
+static int MustExecuteSingle (node *assign, info *arg_info);
+
+static int AnyUniqueTypeInThere (ids *letids);
 
 /** <!--********************************************************************-->
  *
@@ -225,7 +248,7 @@ TEMassign (node *arg_node, info *arg_info)
             NWITH2_CALCPARALLEL (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
 
             /* tag the allocations of the withloop */
-            TagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);
+            MUTHLIBtagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);
         } else if (MustExecuteSingle (arg_node, arg_info)) {
             ASSIGN_EXECMODE (arg_node) = MUTH_SINGLE;
         }

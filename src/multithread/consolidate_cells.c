@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.2  2004/11/22 14:37:39  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -34,7 +37,6 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "print.h"
 #include "consolidate_cells.h"
 
 /*
@@ -60,7 +62,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CONCEL_CELLASSIGN (result) = NULL;
 
@@ -72,7 +74,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -143,7 +145,7 @@ CONCELfundef (node *arg_node, info *arg_info)
                 myblock = Trav (myblock, arg_info);
                 DBUG_PRINT ("CONCEL", ("trav from fundef-body"));
 
-                /*BLOCK_INSTR(myblock) = Free(BLOCK_INSTR(myblock));*/
+                /*BLOCK_INSTR(myblock) = ILIBfree(BLOCK_INSTR(myblock));*/
                 /*BLOCK_INSTR(myblock) = INFO_CONCEL_CELLASSIGN(arg_info);*/
             }
         }

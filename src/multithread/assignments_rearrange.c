@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.14  2004/11/22 13:09:21  skt
  * modul -> module in comments
  *
@@ -129,7 +132,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_ASMRA_NEXT (result) = NULL;
 
@@ -141,7 +144,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -806,7 +809,7 @@ MakeCluster (node *dfn)
 
     DBUG_ENTER ("MakeCluster");
 
-    result = Malloc (sizeof (struct asmra_cluster_s));
+    result = ILIBmalloc (sizeof (struct asmra_cluster_s));
 
     ASMRA_CLUSTER_DFN (result) = dfn;
     ASMRA_CLUSTER_DISTANCE (result) = 0;
@@ -833,7 +836,7 @@ FreeCluster (struct asmra_cluster_s *cluster)
     if (ASMRA_CLUSTER_NEXT (cluster) != NULL) {
         ASMRA_CLUSTER_NEXT (cluster) = FreeCluster (ASMRA_CLUSTER_NEXT (cluster));
     }
-    cluster = Free (cluster);
+    cluster = ILIBfree (cluster);
 
     DBUG_RETURN (cluster);
 }
@@ -955,7 +958,7 @@ PrintCluster (struct asmra_cluster_s *cluster)
         fprintf (stdout, "%s dist:%i execm:%s; ",
                  DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)),
                  ASMRA_CLUSTER_DISTANCE (cluster),
-                 MUTHDecodeExecmode (
+                 MUTHLIBdecodeExecmode (
                    DATAFLOWNODE_EXECMODE (ASMRA_CLUSTER_DFN (cluster))));
         PrintCluster (ASMRA_CLUSTER_NEXT (cluster));
         fflush (stdout);
@@ -981,7 +984,7 @@ FreeList (struct asmra_list_s *list)
     if (ASMRA_LIST_NEXT (list) != NULL) {
         list = FreeList (ASMRA_LIST_NEXT (list));
     }
-    list = Free (list);
+    list = ILIBfree (list);
 
     DBUG_RETURN (list);
 }
@@ -1012,7 +1015,7 @@ ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *clust
         while (ASMRA_LIST_NEXT (iter) != NULL) {
             iter = ASMRA_LIST_NEXT (iter);
         }
-        ASMRA_LIST_NEXT (iter) = Malloc (sizeof (struct asmra_list_s));
+        ASMRA_LIST_NEXT (iter) = ILIBmalloc (sizeof (struct asmra_list_s));
         if (node != NULL) {
             ASMRA_LIST_NODEELEM (ASMRA_LIST_NEXT (iter)) = node;
         } else {
@@ -1021,7 +1024,7 @@ ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *clust
         ASMRA_LIST_NEXT (ASMRA_LIST_NEXT (iter)) = NULL;
     } else {
 
-        list = Malloc (sizeof (struct asmra_list_s));
+        list = ILIBmalloc (sizeof (struct asmra_list_s));
         if (node != NULL) {
             ASMRA_LIST_NODEELEM (ASMRA_LIST_NEXT (list)) = node;
         } else {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 3.12  2004/11/21 14:22:39  skt
  * uncomment some old stuff to make it run this newast
  *
@@ -70,7 +73,7 @@
  *
  * file:   multithread_lib.c
  *
- * prefix:
+ * prefix: MUTHLIB
  *
  * description:
  *   helper functions for multithread-compilation
@@ -87,190 +90,12 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "multithread_lib.h"
-#include "multithread.h"
 #include "internal_lib.h"
 
 /******************************************************************************
  *
  * function:
- *   static void MUTHAssertSimpleBlock (node *block)
- *
- * description:
- *   Asserts whether the block is an N_block and has only the attribute
- *   BLOCK_INSTR set. This check is needed at various places to check wether
- *   the block was newly introduced, and has no extra information that cannot
- *   be handled by the calling routines.
- *
- ******************************************************************************/
-static void
-MUTHAssertSimpleBlock (node *block)
-{
-    DBUG_ENTER ("MUTHAssertBlock");
-
-    DBUG_PRINT ("MUTH", ("%s", NODE_TEXT (block)));
-    DBUG_ASSERT (NODE_TYPE (block) == N_block,
-                 "Wrong NODE_TYPE, not a N_block (watch MUTH)");
-
-    /* what is this for??? copied from the old spmd version ??? */
-    DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
-    DBUG_ASSERT (BLOCK_NEEDFUNS (block) == NULL, "BLOCK_NEEDFUNS not NULL");
-    DBUG_ASSERT (BLOCK_NEEDTYPES (block) == NULL, "BLOCK_NEEDTYPES not NULL");
-    DBUG_ASSERT (BLOCK_SPMD_PROLOG_ICMS (block) == NULL, "BLOCK_SPMD_... not NULL");
-    DBUG_ASSERT (BLOCK_CACHESIM (block) == NULL, "BLOCK_CACHESIM not NULL");
-    DBUG_ASSERT (BLOCK_VARNO (block) == 0, "BLOCK_VARNO not 0");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MUTHBlocksLastInstruction(node *block)
- *
- * description:
- *   Find the last instruction (N_assign) of a block.
- *
- * attention:
- *   One can only step over N_assign until now, N_empty is not handled yet.
- *
- ******************************************************************************/
-node *
-MUTHBlocksLastInstruction (node *block)
-{
-    node *result;
-
-    DBUG_ENTER ("MUTHBlocksLastInstruction");
-    DBUG_PRINT ("MUTH", ("begin"));
-
-    DBUG_ASSERT ((block != NULL), ("block == NULL"));
-    DBUG_ASSERT (NODE_TYPE (block) == N_block, ("Wrong NODE_TYPE of argument"));
-
-    result = BLOCK_INSTR (block);
-
-    DBUG_ASSERT ((result != NULL), ("result == NULL"));
-    DBUG_ASSERT (NODE_TYPE (result) == N_assign, "Wrong node for instruction");
-
-    while (ASSIGN_NEXT (result) != NULL) {
-        result = ASSIGN_NEXT (result);
-        DBUG_ASSERT (NODE_TYPE (result) == N_assign,
-                     "Wrong node for further instruction");
-    }
-
-    DBUG_PRINT ("MUTH", ("end"));
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * functions:
- *   (1) node *MUTHMeltBlocks (node *first_block, node *second_block)
- *   (2) node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
- *
- * description:
- *   Melts to N_blocks to one.
- *
- *   (1) normal version:
- *   If the normal version is used the first entry is reused, and the second
- *   one is given free. That means both arguments are modified!
- *
- *   (2) copying version:
- *   Both arguments (and also the two complete trees!) are copied here, and
- *   no harm is done to them, one gets a complety new node as result.
- *
- ******************************************************************************/
-node *
-MUTHMeltBlocks (node *first_block, node *second_block)
-{
-    node *result;
-    node *lassign;
-
-    DBUG_ENTER ("MeltBlocks");
-
-    MUTHAssertSimpleBlock (first_block);
-    MUTHAssertSimpleBlock (second_block);
-
-    lassign = MUTHBlocksLastInstruction (first_block);
-    ASSIGN_NEXT (lassign) = BLOCK_INSTR (second_block);
-    /* cut old connection */
-    BLOCK_INSTR (second_block) = NULL;
-
-    FreeTree (second_block);
-    result = first_block;
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *  see comment above
- ******************************************************************************/
-/*node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
-{
-  node *result;
-  node * arg_info;
-
-  DBUG_ENTER("MUTHMeltBlocksOnCopies");
-
-  arg_info = MakeInfo();
-  first_block = DupTree( first_block);
-  arg_info = FreeTree( arg_info);
-
-  arg_info = MakeInfo();
-  second_block = DupTree( second_block);
-  arg_info = FreeTree( arg_info);
-
-  result = MUTHMeltBlocks( first_block, second_block);
-
-  DBUG_RETURN(result);
-}
-*/
-/******************************************************************************
- *
- * function:
- *   node* MUTHExchangeApplication (node *arg_node, node *new_fundef)
- *
- * description:
- *   The fundef belonging to a N_ap cannot be changed directly, because
- *   some other features have to bechanged as well.
- *   This function realizes all what has to be done.
- *
- ******************************************************************************/
-node *
-MUTHExchangeApplication (node *arg_node, node *new_fundef)
-{
-    DBUG_ENTER ("ExchangeApplication");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "wrong type of node");
-
-    DBUG_PRINT ("MUTH", ("begin"));
-
-    DBUG_PRINT ("MUTH", ("new_fundef = %s", FUNDEF_NAME (new_fundef)));
-
-    AP_FUNDEF (arg_node) = new_fundef;
-
-    if (AP_NAME (arg_node) != NULL) {
-        Free (AP_NAME (arg_node));
-    }
-    AP_NAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
-    /*  DBUG_ASSERT((AP_MOD( arg_node) != NULL), ("null1!!")); */
-    if (AP_MOD (arg_node) != NULL) {
-        /*    Free( AP_MOD( arg_node)); */
-    }
-
-    /*  DBUG_ASSERT((FUNDEF_MOD( new_fundef) != NULL), ("null2!!"));  */
-    if (FUNDEF_MOD (new_fundef) != NULL) {
-        AP_MOD (arg_node) = StringCopy (FUNDEF_MOD (new_fundef));
-    } else {
-        AP_MOD (arg_node) = NULL;
-    }
-    DBUG_PRINT ("MUTH", ("end"));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MUTHExpandFundefName (node *fundef, char *prefix)
+ *   node *MUTHLIBexpandFundefName (node *fundef, char *prefix)
  *
  * description:
  *   Changes the name of the fundef. The prefix and original will will be
@@ -284,182 +109,56 @@ MUTHExchangeApplication (node *arg_node, node *new_fundef)
  *
  ******************************************************************************/
 node *
-MUTHExpandFundefName (node *fundef, char *prefix)
+MUTHLIBexpandFundefName (node *fundef, char *prefix)
 {
     char *old_name;
     char *new_name;
 
-    DBUG_ENTER ("MUTHExpandFundefName");
+    DBUG_ENTER ("MUTHLIBexpandFundefName");
 
     old_name = FUNDEF_NAME (fundef);
-    new_name = Malloc (strlen (old_name) + strlen (prefix) + 1);
+    new_name = ILIBmalloc (strlen (old_name) + strlen (prefix) + 1);
     strcpy (new_name, prefix);
     strcat (new_name, old_name);
     FUNDEF_NAME (fundef) = new_name;
-    old_name = Free (old_name);
+    old_name = ILIBfree (old_name);
 
     DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MUTHReduceFundefName( node *fundef, int count)
- *
- * description:
- *   deletes the first "count" chars of the fundef name
- *
- ******************************************************************************/
-node *
-MUTHReduceFundefName (node *fundef, int count)
-{
-    int i;
-
-    DBUG_ENTER ("MUTHReduceFundefName");
-    DBUG_PRINT ("BARIN", ("begin %i %i", strlen (FUNDEF_NAME (fundef)), count));
-
-    for (i = 0; (i < ((int)strlen (FUNDEF_NAME (fundef)) - count + 1)); i++) {
-        DBUG_PRINT ("BARIN", ("%i %i", i, (strlen (FUNDEF_NAME (fundef)) - count + 1)));
-        FUNDEF_NAME (fundef)[i] = FUNDEF_NAME (fundef)[i + count];
-    }
-    /*
-        FUNDEF_NAME( fundef)[0] = FUNDEF_NAME( fundef)[0 + count];
-    */
-    DBUG_PRINT ("BARIN", ("end"));
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *MUTHInsertBlock(node *assign, node *block, node *fundef)
- *
- * description:
- *   Inserts an MT or ST-Block into assign, block contains a MT- or ST-Block
- *   with REGION == NULL, fundef is the actual fundef node.
- *   assign gets the block as new instruction, while the region of the block
- *   will get the old instruction of the assignment.
- *   So the instruction at the assign will be embedded into block.
- *
- ******************************************************************************/
-static node *
-MUTHInsertBlock (node *assign, node *block, node *fundef)
-{
-    node *newassign;
-    int varno;
-
-    DBUG_ENTER ("MUTHInsertBlock");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("assign: N_assign expected"));
-    DBUG_ASSERT (((NODE_TYPE (block) == N_mt) || (NODE_TYPE (block) == N_st)
-                  || (NODE_TYPE (block) == N_ex)),
-                 ("block: N_ex, N_mt or N_st expected"));
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("fundef: N_fundef expected"));
-
-    newassign = MakeAssign (ASSIGN_INSTR (assign), NULL);
-    L_MT_OR_ST_REGION (block, MakeBlock (newassign, NULL));
-    ASSIGN_INSTR (assign) = block;
-    varno = FUNDEF_VARNO (fundef);
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *MUTHInsertMT(node *assign, node *fundef)
- *
- * description:
- *   inserts mt-cell around the instruction of the assignment
- *
- ******************************************************************************/
-node *
-MUTHInsertMT (node *assign, node *fundef)
-{
-    DBUG_ENTER ("MUTHInsertMT");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
-
-    assign = MUTHInsertBlock (assign, MakeMT (NULL), fundef);
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *MUTHInsertEX(node *assign, node *fundef)
- *
- * description:
- *   inserts ex-cell around the instruction of the assignment
- *
- ******************************************************************************/
-node *
-MUTHInsertEX (node *assign, node *fundef)
-{
-    DBUG_ENTER ("MUTHInsertEX");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
-
-    assign = MUTHInsertBlock (assign, MakeEX (NULL), fundef);
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
- *   static node *MUTHInsertST(node *assign, node *fundef)
- *
- * description:
- *   inserts st-cell around the instruction of the assignment
- *
- ******************************************************************************/
-node *
-MUTHInsertST (node *assign, node *fundef)
-{
-    DBUG_ENTER ("MUTHInsertST");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
-
-    assign = MUTHInsertBlock (assign, MakeST (NULL), fundef);
-
-    DBUG_RETURN (assign);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node* MUTHGetLastExpression(node* expression)
+ * @fn node *RenewExecutionmode(node *assign, mtexecmode_t executionmode)
  *
- *   @brief  Returns the last N_exprs of a N_exprs->N_exprs->NULL chain
+ *   @brief renew the executionmode of the assignment
  *
- *           after the insertion of the primitive function fill() by
- *           SSARefCount(), this function ist useful to get the original
- *           right-hand-side of the former Assignment
- *
- *   @param expression a chain of N_exprs
- *   @return the last expression of the chain, an N_exprs
+ *   @param assign an allocation, somehow involved with a with-loop
+ *   @param executionmode the executiomode of the with-loop
+ *   @return the assignment with the renewed executionmode
  *
  *****************************************************************************/
-node *
-MUTHGetLastExpression (node *expression)
+static node *
+RenewExecutionmode (node *assign, mtexecmode_t executionmode)
 {
-    node *tmp;
-    DBUG_ENTER ("MUTH_GetLastExpression");
+    DBUG_ENTER ("RenewExecutionmode");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "RenewExecutionmode expects a N_assign as #1 arg.");
 
-    DBUG_ASSERT ((NODE_TYPE (expression) == N_exprs), "expression-node is not a N_exprs");
-
-    tmp = expression;
-    while (EXPRS_NEXT (tmp) != NULL) {
-        tmp = EXPRS_NEXT (tmp);
+    /* change the executionmode, if it's no MUTH_EXCLUSIVE already */
+    if (ASSIGN_EXECMODE (assign) != MUTH_EXCLUSIVE) {
+        if (executionmode == MUTH_EXCLUSIVE) {
+            ASSIGN_EXECMODE (assign) = MUTH_EXCLUSIVE;
+        } else {
+            ASSIGN_EXECMODE (assign) = MUTH_SINGLE;
+        }
     }
 
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (assign);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn void TagAllocs(node *withloop, mtexecmode_t executionmode)
+ * @fn void MUTHLIBtagAllocs(node *withloop, mtexecmode_t executionmode)
  *
  *   @brief This function tags the executionmode of the allocation-assignments
  *          belonging to the with-loop, i.e. the allocations of the withop an
@@ -485,36 +184,36 @@ MUTHGetLastExpression (node *expression)
  *
  *****************************************************************************/
 void
-TagAllocs (node *withloop, mtexecmode_t executionmode)
+MUTHLIBtagAllocs (node *withloop, mtexecmode_t executionmode)
 {
     node *assign;
     node *wlops;
-    ids *iterator;
-    DBUG_ENTER ("TagAllocs");
-    DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
-                 "TagAllocs expects a N_Nwith2 as #1 argument");
+    node *iterator;
+    DBUG_ENTER ("MUTHLIBtagAllocs");
+    DBUG_ASSERT ((NODE_TYPE (withloop) == N_with2),
+                 "MUTHLIBtagAllocs expects a N_with2 as #1 argument");
 
     /* work on the withop */
-    wlops = NWITH2_WITHOP (withloop);
+    wlops = WITH2_WITHOP (withloop);
     while (wlops != NULL) {
-        if ((NWITHOP_TYPE (wlops) == WO_genarray)
-            || (NWITHOP_TYPE (wlops) == WO_modarray)) {
-            assign = AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (wlops)));
+        if ((WITHOP_TYPE (wlops) == WO_genarray)
+            || (WITHOP_TYPE (wlops) == WO_modarray)) {
+            assign = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (wlops)));
 
             DBUG_ASSERT ((ASSIGN_EXECMODE (assign) != MUTH_MULTI),
                          "The execmode of the alloc-assign must'n be MUTH_MULTI");
 
             assign = RenewExecutionmode (assign, executionmode);
         }
-        wlops = NWITHOP_NEXT (wlops);
+        wlops = WITHOP_NEXT (wlops);
     }
 
     /* handle the with-id vector */
-    iterator = NWITHID_VEC (NWITH2_WITHID (withloop));
+    iterator = WITHID_VEC (WITH2_WITHID (withloop));
     ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = executionmode;
 
     /* handle the with-id vector elements */
-    iterator = NWITHID_IDS (NWITH2_WITHID (withloop));
+    iterator = WITHID_IDS (WITH2_WITHID (withloop));
     while (iterator != NULL) {
         ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = executionmode;
 
@@ -526,37 +225,7 @@ TagAllocs (node *withloop, mtexecmode_t executionmode)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RenewExecutionmode(node *assign, mtexecmode_t executionmode)
- *
- *   @brief renew the executionmode of the assignment
- *
- *   @param assign an allocation, somehow involved with a with-loop
- *   @param executionmode the executiomode of the with-loop
- *   @return the assignment with the renewed executionmode
- *
- *****************************************************************************/
-node *
-RenewExecutionmode (node *assign, mtexecmode_t executionmode)
-{
-    DBUG_ENTER ("RenewExecutionmode");
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
-                 "RenewExecutionmode expects a N_assign as #1 arg.");
-
-    /* change the executionmode, if it's no MUTH_EXCLUSIVE already */
-    if (ASSIGN_EXECMODE (assign) != MUTH_EXCLUSIVE) {
-        if (executionmode == MUTH_EXCLUSIVE) {
-            ASSIGN_EXECMODE (assign) = MUTH_EXCLUSIVE;
-        } else {
-            ASSIGN_EXECMODE (assign) = MUTH_SINGLE;
-        }
-    }
-
-    DBUG_RETURN (assign);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn char *MUTHDecodeExecmode(mtexecmode_t execmode)
+ * @fn char *MUTHLIBdecodeExecmode(mtexecmode_t execmode)
  *
  *   @brief A small helper function to make debug-output more readable
  *          !It must be adapted if the names of the modes change!
@@ -566,10 +235,10 @@ RenewExecutionmode (node *assign, mtexecmode_t executionmode)
  *
  *****************************************************************************/
 char *
-MUTHDecodeExecmode (mtexecmode_t execmode)
+MUTHLIBdecodeExecmode (mtexecmode_t execmode)
 {
     char *result;
-    DBUG_ENTER ("MUTHDecodeExecmode");
+    DBUG_ENTER ("MUTHLIBdecodeExecmode");
     switch (execmode) {
     case MUTH_ANY:
         result = "AT";

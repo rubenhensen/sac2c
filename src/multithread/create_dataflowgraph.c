@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.11  2004/11/22 16:27:16  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -130,7 +133,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CDFG_CURRENTDFG (result) = NULL;
     INFO_CDFG_OUTERMOSTDFG (result) = NULL;
@@ -144,7 +147,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -188,7 +191,7 @@ CDFGdoCreateDataflowgraph (node *arg_node)
     act_tab = cdfg_tab;
 
     DBUG_PRINT ("CDFG", ("trav into module-funs"));
-    MODUL_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from module-funs"));
 
     /* pop info ... */
@@ -485,7 +488,7 @@ FindAssignCorrespondingNode (node *graph, node *dfn_assign)
 #if CDFG_DEBUG
     /*fprintf(stdout,"searching for node which corresponds to");
       PRTPrintNode(dfn_assign);*/
-#endifHERE
+#endif
 
     result = NULL;
     member_iterator = DATAFLOWGRAPH_MEMBERS (graph);

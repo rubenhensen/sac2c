@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.12  2004/08/27 15:42:03  skt
  * fixed bug of with-loops wong executionmode assignment
  *
@@ -64,21 +67,19 @@
 
 #include "dbug.h"
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "print.h"
 #include "propagate_executionmode.h"
-#include "multithread.h"
 #include "multithread_lib.h"
 
 /*
  * INFO structure
  */
 struct INFO {
-    int changeflag;
-    int firstflag;
+    bool changeflag;
+    bool firstflag;
     node *actualfundef;
     node *myassign;
     node *lastconditionalassignment;
@@ -89,9 +90,9 @@ struct INFO {
 
 /*
  * INFO macros
- *   int        ANYCHANGE     (is 1, if there was a change of the executionmode
+ *   bool       ANYCHANGE     (is 1, if there was a change of the executionmode
  *                             somewhere in the current traversal)
- *   int        FIRSTTRAV     (holds the information, wheter this is the first
+ *   bool       FIRSTTRAV     (holds the information, wheter this is the first
  *                             traversal (=>1) or not (=>0)
  *   node*      MYASSIGN      (the current assignment, the traversal.mechanism
  *                             is in)
@@ -114,7 +115,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_PEM_ANYCHANGE (result) = FALSE;
     INFO_PEM_FIRSTTRAV (result) = TRUE;
@@ -132,14 +133,25 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
+#define PEM_DEBUG 0
+
+/* dome declarations */
+static void UpdateExecmodes (node *assign, info *arg_info);
+
+static void UpdateFundefExecmode (node *fundef, mtexecmode_t execmode);
+
+static void UpdateCondExecmode (node *condassign, mtexecmode_t execmode);
+
+static void UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode);
+
 /** <!--********************************************************************-->
  *
- * @fn node *PropagateExecutionmode(node *arg_node)
+ * @fn node *PEMdoPropagateExecutionmode(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -149,7 +161,7 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-PropagateExecutionmode (node *arg_node)
+PEMdoPropagateExecutionmode (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
@@ -157,9 +169,9 @@ PropagateExecutionmode (node *arg_node)
     int counter;
     counter = 1;
 #endif
-    DBUG_ENTER ("PropagateExecutionmode");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "PropagateExecutionmode expects a N_modul as arg_node");
+    DBUG_ENTER ("PEMdoPropagateExecutionmode");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "PEMdoPropagateExecutionmode expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
@@ -175,9 +187,9 @@ PropagateExecutionmode (node *arg_node)
         /* some more initialisation */
         INFO_PEM_ANYCHANGE (arg_info) = FALSE;
 
-        DBUG_PRINT ("PEM", ("trav into modul-funs"));
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-        DBUG_PRINT ("PEM", ("trav from modul-funs"));
+        DBUG_PRINT ("PEM", ("trav into module-funs"));
+        MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from module-funs"));
 
         /* even more initialisation */
         INFO_PEM_FIRSTTRAV (arg_info) = FALSE;
@@ -215,9 +227,9 @@ PEMfundef (node *arg_node, info *arg_info)
     INFO_PEM_ACTFUNDEF (arg_info) = arg_node;
 #if PEM_DEBUG
     fprintf (stdout, "current function:\n");
-    PrintNode (arg_node);
+    PRTPrintNode (arg_node);
     fprintf (stdout, "Executionmode was %s.\n",
-             MUTHDecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+             MUTHLIBdecodeExecmode (FUNDEF_EXECMODE (arg_node)));
 #endif
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into function-body"));
@@ -234,7 +246,7 @@ PEMfundef (node *arg_node, info *arg_info)
 
 #if PEM_DEBUG
     fprintf (stdout, "Executionmode is %s.\n",
-             MUTHDecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+             MUTHLIBdecodeExecmode (FUNDEF_EXECMODE (arg_node)));
 #endif
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -387,34 +399,33 @@ PEMwith2 (node *arg_node, info *arg_info)
     node *old_lastwith2;
     int old_executionmode;
     DBUG_ENTER ("PEMwith2");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2),
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_with2),
                  "PEMwith2 expects a N_with2 as argument");
 
     old_lastwith2 = INFO_PEM_LASTWITHASSIGN (arg_info);
     INFO_PEM_LASTWITHASSIGN (arg_info) = INFO_PEM_MYASSIGN (arg_info);
     old_executionmode = ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info));
 
-    if (NWITH2_SEGS (arg_node) != NULL) {
+    if (WITH2_SEGS (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into segments"));
-        NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+        WITH2_SEGS (arg_node) = Trav (WITH2_SEGS (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from segments"));
     }
-    if (NWITH2_CODE (arg_node) != NULL) {
+    if (WITH2_CODE (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into with-loop-code"));
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+        WITH2_CODE (arg_node) = Trav (WITH2_CODE (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from with-loop-code"));
     }
-
-    if (NWITH2_WITHOP (arg_node) != NULL) {
+    if (WITH2_WITHOP (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into withops"));
-        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = Trav (WITH2_WITHOP (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from withops"));
     }
 
     /* perhaps some changes appeared
        - update the allocations of the with-loop */
     if (old_executionmode != ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info))) {
-        TagAllocs (arg_node, ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info)));
+        MUTHLIBtagAllocs (arg_node, ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info)));
     }
 
     INFO_PEM_LASTWITHASSIGN (arg_info) = old_lastwith2;
@@ -433,7 +444,7 @@ PEMwith2 (node *arg_node, info *arg_info)
  *   @return nothing at all
  *
  *****************************************************************************/
-void
+static void
 UpdateExecmodes (node *assign, info *arg_info)
 {
     DBUG_ENTER ("UpdateExecmodes");
@@ -448,7 +459,7 @@ UpdateExecmodes (node *assign, info *arg_info)
     DBUG_VOID_RETURN;
 }
 
-void
+static void
 UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
 {
     DBUG_ENTER ("UpdateFundefExecmode");
@@ -506,7 +517,7 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
     DBUG_VOID_RETURN;
 }
 
-void
+static void
 UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
 {
     DBUG_ENTER ("UpdateCondExecmode");
@@ -562,7 +573,7 @@ UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
     DBUG_VOID_RETURN;
 }
 
-void
+static void
 UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode)
 {
     DBUG_ENTER ("UpdateWithExecmode");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/11/23 14:38:13  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 3.20  2004/11/22 13:47:10  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -186,7 +189,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_MUTH_MODUL (result) = NULL;
 
@@ -198,7 +201,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
