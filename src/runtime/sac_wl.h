@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/30 12:23:21  dkr
+ * WL_..._GRID_FIT_EMPTY_... ICMs added
+ *
  * Revision 3.9  2001/01/24 23:40:39  dkr
  * ICMs SAC_WL_GRIDVAR_... renamed into SAC_WL_GRID_FIT_...
  *
@@ -117,7 +120,7 @@
  */
 
 /*
- * BEGIN: if (BLOCK_LEVEL == 0)
+ * BEGIN: (BLOCK_LEVEL == 0)
  */
 
 #define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                \
@@ -139,7 +142,7 @@
                             SAC_WL_VAR (block_stop, idx_sca));
 
 /*
- * BEGIN: if (BLOCK_LEVEL > 0)
+ * BEGIN: (BLOCK_LEVEL > 0)
  */
 
 #define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                 \
@@ -186,7 +189,7 @@
  */
 
 /*
- * BEGIN: if (UBLOCK_LEVEL == 0)
+ * BEGIN: (UBLOCK_LEVEL == 0)
  */
 
 #define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)               \
@@ -203,7 +206,7 @@
             int SAC_WL_VAR (first, idx_sca) = idx_sca;
 
 /*
- * BEGIN: if (UBLOCK_LEVEL > 0)
+ * BEGIN: (UBLOCK_LEVEL > 0)
  */
 
 #define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                \
@@ -234,11 +237,11 @@
 
 /*
  * SAC_WL_VAR( stop, idx_sca) contain always the upper bound of the current
- * stride and is needed by the ..GRID_FIT_LOOP_BEGIN.. macros.
+ * stride and is needed by the ..GRID_FIT_..._BEGIN.. macros.
  */
 
 /*
- * BEGIN: if (STRIDE_LEVEL == 0), (STRIDE_UNROLLING == FALSE)
+ * BEGIN: (STRIDE_LEVEL == 0) && (STRIDE_UNROLLING == FALSE)
  */
 
 #define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)               \
@@ -254,7 +257,7 @@
              idx_sca < SAC_WL_VAR (stop, idx_sca);) {
 
 /*
- * BEGIN: if (STRIDE_LEVEL > 0), (STRIDE_UNROLLING == FALSE)
+ * BEGIN: (STRIDE_LEVEL > 0) && (STRIDE_UNROLLING == FALSE)
  */
 
 /*
@@ -283,7 +286,7 @@
     SAC_WL_STRIDE_LAST_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2, step)
 
 /*
- * BEGIN: if (STRIDE_UNROLLING == TRUE)
+ * BEGIN: (STRIDE_UNROLLING == TRUE)
  */
 
 #define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)              \
@@ -293,7 +296,7 @@
     SAC_WL_STRIDE_UNROLL_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2, step)
 
 /*
- * END: if (STRIDE_UNROLLING == FALSE)
+ * END: (STRIDE_UNROLLING == FALSE)
  */
 
 #define SAC_WL_STRIDE_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)                  \
@@ -304,7 +307,7 @@
     SAC_WL_STRIDE_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2, step)
 
 /*
- * END: if (STRIDE_UNROLLING == TRUE)
+ * END: (STRIDE_UNROLLING == TRUE)
  */
 
 #define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2, step) /* empty */
@@ -369,7 +372,7 @@
  */
 
 /*
- * BEGIN: if (GRID_UNROLLING == FALSE)
+ * BEGIN: (GRID_UNROLLING == FALSE) && (non-empty body)
  */
 
 #define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                        \
@@ -381,7 +384,7 @@
     SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * BEGIN: if (GRID_UNROLLING == TRUE)
+ * BEGIN: (GRID_UNROLLING == TRUE) && (non-empty body)
  */
 
 #define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2) /* empty */
@@ -390,7 +393,17 @@
     SAC_WL_GRID_UNROLL_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * END: if (GRID_UNROLLING == FALSE)
+ * BEGIN: (empty body)
+ */
+
+#define SAC_WL_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
+    SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+#define SAC_WL_MT_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
+    SAC_WL_GRID_EMPTY_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * END: (GRID_UNROLLING == FALSE) && (non-empty body)
  */
 
 #define SAC_WL_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                          \
@@ -401,13 +414,23 @@
     SAC_WL_GRID_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * END: if (GRID_UNROLLING == TRUE)
+ * END: (GRID_UNROLLING == TRUE) && (non-empty body)
  */
 
 #define SAC_WL_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2) idx_sca++;
 
 #define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
     SAC_WL_GRID_UNROLL_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * END: (empty body)
+ */
+
+#define SAC_WL_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                         \
+    SAC_WL_GRID_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+#define SAC_WL_MT_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
+    SAC_WL_GRID_EMPTY_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*****************************************************************************/
 
@@ -421,7 +444,7 @@
  */
 
 /*
- * BEGIN
+ * BEGIN: (non-empty body)
  */
 
 #define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
@@ -434,7 +457,17 @@
     SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * END
+ * BEGIN: (empty body)
+ */
+
+#define SAC_WL_GRID_FIT_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
+    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+#define SAC_WL_MT_GRID_FIT_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                \
+    SAC_WL_GRID_FIT_EMPTY_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * END: (non-empty body)
  */
 
 #define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
@@ -444,22 +477,15 @@
 #define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
     SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
-/*****************************************************************************/
+/*
+ * END: (empty body)
+ */
 
-/***
- *** grid-loop (empty body)
- ***/
+#define SAC_WL_GRID_FIT_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
+    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
-#define SAC_WL_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
-    idx_sca += (bnd2 - bnd1);
-
-#define SAC_WL_MT_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
-    SAC_WL_GRID_EMPTY_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-#define SAC_WL_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2) /* empty */
-
-#define SAC_WL_MT_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
-    SAC_WL_GRID_EMPTY_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                  \
+    SAC_WL_GRID_FIT_EMPTY_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*****************************************************************************/
 
