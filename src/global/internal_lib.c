@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/17 13:29:29  cg
+ * Moved de-allocation function Free() from free.c to internal_lib.c
+ *
  * Revision 3.11  2001/05/17 11:15:59  sbs
  * return value of Free used now 8-()
  *
@@ -134,13 +137,21 @@ typedef struct {
 
 /******************************************************************************
  *
- *  functionname  : Malloc
- *  arguments     :  1) size of memory to allocate
- *  description   : allocates memory, if there is enough
- *                  iff size=0 NULL is returned!
- *  remarks       : exit if there is not enough memory
+ * function:
+ *   void *Malloc( int size)
+ *   void *Free( void *address)
+ *
+ * description:
+ *
+ *   These functions for memory allocation and de-allocation are wrappers
+ *   for the standard functions malloc() and free().
+ *
+ *   They allow to implement some additional functionality, e.g. accounting
+ *   of currently allocated memory.
  *
  ******************************************************************************/
+
+#ifdef SHOW_MALLOC
 
 void *
 Malloc (int size)
@@ -152,9 +163,13 @@ Malloc (int size)
     DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
     DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
 
-#ifdef SHOW_MALLOC
     tmp = malloc (size + malloc_align_step);
-    if (NULL == tmp) {
+
+    /*
+     * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
+     * we do complain for ((NULL == tmp) && (size > 0)) only!!
+     */
+    if ((NULL == tmp) && (size > 0)) {
         SYSABORT (("Out of memory: %d Bytes allocated!", current_allocated_mem));
     }
     *(int *)tmp = size;
@@ -166,8 +181,57 @@ Malloc (int size)
     if (max_allocated_mem < current_allocated_mem) {
         max_allocated_mem = current_allocated_mem;
     }
-#else /* not SHOW_MALLOC */
+
+    DBUG_PRINT ("MEMALLOC", ("new memory: " F_PTR, tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+#ifdef NOFREE
+
+void *
+Free (void *address)
+{
+    DBUG_ENTER ("Free");
+    DBUG_PRINT ("FREEMEM", ("Not freeing memory at adress: " F_PTR, address));
+    DBUG_RETURN ((void *)NULL);
+}
+
+#else /* NOFREE */
+
+void *
+Free (void *address)
+{
+    DBUG_ENTER ("Free");
+
+    if (address != NULL) {
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, address));
+        address = (void *)((char *)address - malloc_align_step);
+        current_allocated_mem -= *(int *)address;
+
+        free (address);
+        address = NULL;
+    }
+
+    DBUG_RETURN (address);
+}
+
+#endif /* NOFREE */
+
+#else /* SHOW_MALLOC */
+
+void *
+Malloc (int size)
+{
+    void *tmp;
+
+    DBUG_ENTER ("Malloc");
+
+    DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
+    DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
+
     tmp = malloc (size);
+
     /*
      * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
      * we do complain for ((NULL == tmp) && (size > 0)) only!!
@@ -175,12 +239,42 @@ Malloc (int size)
     if ((NULL == tmp) && (size > 0)) {
         SYSABORT (("Out of memory"));
     }
-#endif
 
     DBUG_PRINT ("MEMALLOC", ("new memory: " F_PTR, tmp));
 
     DBUG_RETURN (tmp);
 }
+
+#ifdef NOFREE
+
+void *
+Free (void *address)
+{
+    DBUG_ENTER ("Free");
+    DBUG_PRINT ("FREEMEM", ("Not freeing memory at adress: " F_PTR, address));
+    DBUG_RETURN ((void *)NULL);
+}
+
+#else /* NOFREE */
+
+void *
+Free (void *address)
+{
+    DBUG_ENTER ("Free");
+
+    if (address != NULL) {
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, address));
+
+        free (address);
+        address = NULL;
+    }
+
+    DBUG_RETURN (address);
+}
+
+#endif /* NOFREE */
+
+#endif /* SHOW_MALLOC */
 
 /******************************************************************************
  *

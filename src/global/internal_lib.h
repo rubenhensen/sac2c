@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/17 13:29:29  cg
+ * Moved de-allocation function Free() from free.c to internal_lib.c
+ *
  * Revision 3.12  2001/05/17 08:36:02  sbs
  * PHASE_DONE_EPILOG added.
  *
@@ -103,6 +106,7 @@
  *********************************/
 
 extern void *Malloc (int size);
+extern void *Free (void *address);
 
 extern char *StringCopy (char *source);
 extern char *StringConcat (char *first, char *second);
