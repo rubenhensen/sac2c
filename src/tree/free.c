@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/10/26 11:21:23  khf
+ * Now, FreeNode works with N_Nwithop also
+ *
  * Revision 3.69  2004/10/19 11:52:18  ktr
  * Added FUNDEF_RETALIAS
  *
@@ -2146,6 +2149,8 @@ FreeNGenerator (node *arg_node, info *arg_info)
 node *
 FreeNWithOp (node *arg_node, info *arg_info)
 {
+    node *ret_node;
+
     DBUG_ENTER ("FreeNWithOp");
 
     DBUG_PRINT ("FREE", ("Removing N_Nwithop node ..."));
@@ -2175,11 +2180,11 @@ FreeNWithOp (node *arg_node, info *arg_info)
         break;
     }
 
-    NWITHOP_NEXT (arg_node) = FREETRAV (NWITHOP_NEXT (arg_node));
+    ret_node = FREECONT (NWITHOP_NEXT (arg_node));
 
     arg_node = Free (arg_node);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (ret_node);
 }
 
 /*--------------------------------------------------------------------------*/
