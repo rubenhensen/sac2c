@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2002/10/02 12:08:08  sbs
+ * now, sqare brackets used in set notation rather than brackets
+ *
  * Revision 3.68  2002/09/26 11:52:35  sbs
  * ugly trick for OSF_ALPHA is now obsolete.
  *
@@ -1307,7 +1310,7 @@ expr: fun_id                     { $$ = MakeIdFromIds( $1); }
       { $$ = MakeSetWL( MakeId( $2, NULL, ST_regular),
                         $4);
       }
-    | BRACE_L BRACKET_L exprs BRACKET_R ARROW expr BRACE_R
+    | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
       { $$ = MakeSetWL( $3, $6);
       }
     | wlcomp_pragma_local
