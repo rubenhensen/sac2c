@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/05/19 13:33:30  hw
+ * Revision 1.33  1995/05/22 10:10:46  hw
+ * - added function "CompCast" to delete N_cast nodes
+ *  - remove N_cast nodes while compilation in functions ( CompReturn,
+ *    CompPrf, CompAp )
+ *
+ * Revision 1.32  1995/05/19  13:33:30  hw
  * - bug fixed in CompPrf ( added ND_DEC_... while compilation of F_psi (case:
  *     ND_KD_PSI_VxA_S))
  * - bug fixed in CompAp (refcounts of arrays which are returned from a function
@@ -1441,6 +1446,17 @@ CompPrf (node *arg_node, node *arg_info)
             /*   DBUG_ASSERT(0,"wrong prf"); */
             break;
         }
+    } else {
+        node *exprs = arg_node->node[0];
+        do {
+            if (N_cast == exprs->node[0]->nodetype) {
+                tmp = exprs->node[0]->node[0];
+                FREE_TYPE (exprs->node[0]->TYPES);
+                FREE (exprs->node[0]);
+                exprs->node[0] = tmp;
+            }
+            exprs = exprs->node[1];
+        } while (NULL != exprs);
     }
 
     DBUG_RETURN (arg_node);
@@ -1666,7 +1682,6 @@ CompAp (node *arg_node, node *arg_info)
     /* first take Let ids (variables assigned to) */
     ids = arg_info->node[1]->IDS;
     MAKENODE_ID_REUSE_IDS (id_node, ids);
-    id_node->IDS_NEXT = NULL;
     if (1 == IsArray (id_node->IDS_NODE->TYPES)) {
         MAKENODE_ID (tag_node, "out_a");
         if (1 < ids->refcnt) {
@@ -1687,7 +1702,6 @@ CompAp (node *arg_node, node *arg_info)
     ids = ids->next;
     while (NULL != ids) {
         MAKENODE_ID_REUSE_IDS (id_node, ids);
-        id_node->IDS_NEXT = NULL;
         if (1 == IsArray (id_node->IDS_NODE->TYPES)) {
             if (1 < ids->refcnt) {
                 /* create N_icm to increment refcount of function result.
@@ -1718,15 +1732,28 @@ CompAp (node *arg_node, node *arg_info)
         if (N_id == exprs->node[0]->nodetype)
             if (1 == IsArray (exprs->node[0]->IDS_NODE->TYPES)) {
                 INSERT_ID_NODE (exprs, last, "in_a");
+                last = exprs;
+                exprs = next;
+                n += 1;
             } else {
                 INSERT_ID_NODE (exprs, last, "in");
+                last = exprs;
+                exprs = next;
+                n += 1;
             }
-        else {
+        else if (N_cast == exprs->node[0]->nodetype) {
+            tmp = exprs->node[0];
+            exprs->node[0] = exprs->node[0]->node[0];
+            FREE_TYPE (tmp->TYPES);
+            FREE (tmp);
+            /* do loop again with new exprs->node[0] */
+        } else {
+
             INSERT_ID_NODE (exprs, last, "in");
+            last = exprs;
+            exprs = next;
+            n += 1;
         }
-        last = exprs;
-        exprs = next;
-        n += 1;
     }
 
     /* put number of arguments and return value in front of 'outs' */
@@ -1800,16 +1827,23 @@ CompReturn (node *arg_node, node *arg_info)
          * temporaryly
          */
         do {
-            DBUG_ASSERT ((N_id == exprs->node[0]->nodetype), " wrong node (!= N_id)");
-            next = exprs->node[1];
-            if (1 == IsArray (exprs->node[0]->IDS_NODE->TYPES)) {
-                INSERT_ID_NODE (exprs, last, "out_a");
+            if (N_cast == exprs->node[0]->nodetype) {
+                next = exprs->node[0]->node[0];
+                FREE_TYPE (exprs->node[0]->TYPES);
+                FREE (exprs->node[0]);
+                exprs->node[0] = next;
             } else {
-                INSERT_ID_NODE (exprs, last, "out");
+                DBUG_ASSERT ((N_id == exprs->node[0]->nodetype), " wrong node (!= N_id)");
+                next = exprs->node[1];
+                if (1 == IsArray (exprs->node[0]->IDS_NODE->TYPES)) {
+                    INSERT_ID_NODE (exprs, last, "out_a");
+                } else {
+                    INSERT_ID_NODE (exprs, last, "out");
+                }
+                last = exprs;
+                exprs = next;
+                n += 1;
             }
-            last = exprs;
-            exprs = next;
-            n += 1;
         } while (NULL != exprs);
 
         arg_node->nodetype = N_icm;
@@ -2459,5 +2493,32 @@ CompBlock (node *arg_node, node *arg_info)
     if (2 == arg_node->nnode)
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CompCast
+ *  arguments     : 1) arg node
+ *                  2) info node
+ *  description   : deletes N_cast-node
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG...,, NULL
+ *  remarks       :
+ *
+ */
+node *
+CompCast (node *arg_node, node *arg_info)
+{
+    node *tmp;
+
+    DBUG_ENTER ("CompCast");
+
+    tmp = arg_node;
+    arg_node = Trav (arg_node->node[0], arg_info);
+    FREE_TYPE (tmp->TYPES);
+    FREE (tmp);
     DBUG_RETURN (arg_node);
 }
