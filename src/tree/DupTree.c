@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/03/28 17:06:50  dkr
+ * comment added
+ *
  * Revision 3.30  2001/03/27 21:39:47  dkr
  * macro DUPVECT renamed into DUP_VECT and moved to internal_lib.h
  *
@@ -137,6 +140,11 @@
  *
  * description:
  *   Traversal for duplication of nodes and trees.
+ *
+ * flags for some special behaviour ('type'):
+ *   DUP_NORMAL : no special behaviour
+ *   DUP_INLINE : do not duplicate N_assign nodes which contain a N_return
+ *   DUP_WLF    : set ID_WL
  *
  ******************************************************************************/
 
@@ -1153,6 +1161,7 @@ DupCond (node *arg_node, node *arg_info)
     if (COND_ELSEVARS (arg_node) != NULL) {
         COND_ELSEVARS (new_node) = DupIds_ (COND_ELSEVARS (arg_node), arg_info);
     }
+
 #if 0
   COND_MASK( new_node, ?) = ???;
 #endif
@@ -2039,13 +2048,16 @@ DupAvis (node *arg_node, node *arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
+
     AVIS_SSAASSIGN (new_node)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
     AVIS_SSAASSIGN2 (new_node)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
+
     if (AVIS_SSACONST (arg_node) != NULL) {
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
     }
+
     AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DupTree (AVIS_SSASTACK (arg_node));
