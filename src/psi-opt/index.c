@@ -1,6 +1,9 @@
-
 /*
+ *
  * $Log$
+ * Revision 2.15  2000/07/11 15:49:49  dkr
+ * function IndexVectorElimination() added
+ *
  * Revision 2.14  2000/06/23 15:25:02  dkr
  * signature of DupTree changed
  *
@@ -152,7 +155,6 @@
  * Revision 1.1  1995/06/02  10:06:56  sbs
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
@@ -163,7 +165,6 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "index.h"
-#include "psi-opt.h"
 #include "free.h"
 
 #include "access_macros.h"
@@ -605,6 +606,8 @@
  *                            of the non-scalar argument has to be known when traversing
  *                            the scalar argument (cf. IdxNum).
  */
+
+int ive_expr, ive_op;
 
 /*
  * Some functions for handling N_vinfo nodes:
@@ -2359,4 +2362,42 @@ IdxDo (node *arg_node, node *arg_info)
     MAP_TO_ALL_VARDEC_ACTCHNS (FreeTop, INFO_IVE_VARDECS (arg_info));
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *IndexVectorElimination( node *syntax_tree)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+IndexVectorElimination (node *syntax_tree)
+{
+    funtab *tmp_tab;
+    node *info_node;
+
+    DBUG_ENTER ("IndexVectorElimination");
+
+    DBUG_PRINT ("OPT", ("INDEX VECTOR ELIMINATION"));
+
+    ive_expr = 0;
+    ive_op = 0;
+
+    tmp_tab = act_tab;
+    act_tab = idx_tab;
+
+    info_node = MakeInfo ();
+    syntax_tree = Trav (syntax_tree, info_node);
+
+    info_node = FreeNode (info_node);
+    act_tab = tmp_tab;
+
+    NOTE (("  %d index-vector(s) eliminated", ive_expr));
+    NOTE (("  %d index-vector-operation(s) eliminated", ive_op));
+
+    DBUG_RETURN (syntax_tree);
 }
