@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2002/08/13 16:34:46  sbs
+ * HMfundef added.
+ *
  * Revision 3.93  2002/08/13 14:41:57  sbs
  * HMNwithop added.
  *
@@ -1139,7 +1142,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLFfundef,
 
        SSAILIfundef, COMP2Fundef, PREC2fundef, INSVDfundef, CRTWRPfundef, WLSfundef,
-       PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
+       PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, HMfundef, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,

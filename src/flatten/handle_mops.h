@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/08/13 16:34:08  sbs
+ * HMfundef added.
+ *
  * Revision 1.2  2002/08/13 14:41:00  sbs
  * HMNwithop added.
  * ./
@@ -22,6 +25,7 @@
 
 extern node *HandleMops (node *arg_node);
 
+extern node *HMfundef (node *arg_node, node *arg_info);
 extern node *HMap (node *arg_node, node *arg_info);
 extern node *HMNwithop (node *arg_node, node *arg_info);
 extern node *HMmop (node *arg_node, node *arg_info);
