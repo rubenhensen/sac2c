@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.65  1998/02/27 09:03:55  cg
+# added linkage of global/resource.o
+#
 # Revision 1.64  1998/02/25 09:04:29  cg
 # added file globals.c for linkage
 #
@@ -242,7 +245,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
 	src/global/tree_basic.o src/global/tree_compound.o \
         src/global/free.o src/global/internal_lib.o \
-        src/global/globals.o
+        src/global/globals.o src/global/resource.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
