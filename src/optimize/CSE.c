@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/02/14 14:12:27  asi
+ * Revision 1.5  1996/09/09 19:00:09  cg
+ * bug fixed when comparing function applications:
+ * Somebody did not know that functions may have zero arguments.
+ *
+ * Revision 1.4  1996/02/14  14:12:27  asi
  * bug fixed: compares identifiers if mrd-nodes are equal
  *
  * Revision 1.3  1996/02/13  13:59:53  asi
@@ -347,14 +351,36 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                         equal = TRUE;
                         arg1_expr = AP_ARGS (arg1_expr);
                         arg2_expr = AP_ARGS (arg2_expr);
-                        do {
+
+                        /*
+                                      do
+                                        {
+                                        if (Equal(EXPRS_EXPR(arg1_expr),
+                           EXPRS_EXPR(arg2_expr), arg_info))
+                                          {
+                                          arg1_expr = EXPRS_NEXT(arg1_expr);
+                                          arg2_expr = EXPRS_NEXT(arg2_expr);
+                                          }
+                                        else
+                                          equal = FALSE;
+                                        }
+                                      while(equal && ((NULL!=arg1_expr) ||
+                           (NULL!=arg2_expr)));
+                        */
+
+                        while (equal && ((NULL != arg1_expr) || (NULL != arg2_expr))) {
                             if (Equal (EXPRS_EXPR (arg1_expr), EXPRS_EXPR (arg2_expr),
                                        arg_info)) {
                                 arg1_expr = EXPRS_NEXT (arg1_expr);
                                 arg2_expr = EXPRS_NEXT (arg2_expr);
                             } else
                                 equal = FALSE;
-                        } while (equal && ((NULL != arg1_expr) || (NULL != arg2_expr)));
+                        }
+
+                        /*
+                         * In the above sequence the do-loop was replaced by a while-loop.
+                         */
+
                         if (equal) {
                             DBUG_PRINT ("CSE", (">CSE, same user defined function"));
                             cs = arg2;
