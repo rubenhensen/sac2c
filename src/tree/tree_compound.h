@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.36  2000/10/16 16:01:03  dkr
+ * VARDEC_OR_ARG_OBJDEF added
+ *
  * Revision 1.35  2000/10/12 18:02:24  dkr
  * return value type of Is...() functions is bool, now
  *
@@ -885,6 +888,8 @@ extern int CmpDomain (node *args1, node *args2);
     ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n) : VARDEC_ATTRIB (n))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
+#define VARDEC_OR_ARG_OBJDEF(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_OBJDEF (n) : VARDEC_OBJDEF (n))
 #define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
 #define VARDEC_OR_ARG_PADDED(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
