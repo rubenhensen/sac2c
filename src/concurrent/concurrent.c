@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/08/27 11:55:09  jhs
+ * Added DBUG_PRINTS.
+ *
  * Revision 2.8  1999/08/09 11:32:20  jhs
  * Cleaned up info-macros for concurrent-phase.
  *
@@ -188,7 +191,9 @@ CONCfundef (node *arg_node, node *arg_info)
                 INFO_SPMDI_EXPANDCONTEXT (arg_info) = TRUE;
                 INFO_SPMDI_EXPANDSTEP (arg_info) = FALSE;
             }
+            DBUG_PRINT ("SPMDI", ("begin a spmdi trav"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_PRINT ("SPMDI", ("end a spmdi trav"));
 
             if ((break_after == PH_spmdregions)
                 && (0 == strcmp ("spmdinit", break_specifier))) {
@@ -203,7 +208,11 @@ CONCfundef (node *arg_node, node *arg_info)
              */
             act_tab = spmdopt_tab;
             if (optimize & OPT_MTO) {
+                DBUG_PRINT ("SPMDO", ("begin a spmdo trav"));
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+                DBUG_PRINT ("SPMDO", ("end a spmdo trav"));
+            } else {
+                DBUG_PRINT ("SPMDO", ("no spmdo"));
             }
 
             if ((break_after == PH_spmdregions)
