@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2005/02/16 22:29:13  sah
+ * added some DBUGS and fixed a small bug
+ *
  * Revision 1.11  2005/01/07 18:01:31  cg
  * Updated usage of ctinfo
  *
@@ -222,6 +225,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 
     DBUG_ENTER ("InsertIntoOut");
 
+    DBUG_PRINT ("FPC", ("out: parameter matched to %d", RET_LINKSIGN (ret)));
+
     line = NODE_LINE (fundef);
 
     idx = RET_LINKSIGN (ret);
@@ -275,7 +280,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
         DBUG_ASSERT (((retexprs != NULL) && (rets != NULL)),
                      "not enough return values found!");
 
-        RETURN_CRET (ret) = retexprs;
+        RETURN_CRET (FUNDEF_RETURN (fundef)) = retexprs;
     }
     /*
      * update the argtab
@@ -338,6 +343,9 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
     int idx;
 
     DBUG_ENTER ("InsertIntoIn");
+
+    DBUG_PRINT ("FPC",
+                ("in: parameter %s matched to %d", ARG_NAME (arg), ARG_LINKSIGN (arg)));
 
     line = NODE_LINE (fundef);
 
@@ -454,6 +462,9 @@ node *
 FPCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCfundef");
+
+    DBUG_PRINT ("FPC", ("processing fundef %s:%s...", FUNDEF_MOD (arg_node),
+                        FUNDEF_NAME (arg_node)));
 
     INFO_FPC_FUNDEF (arg_info) = arg_node;
 
