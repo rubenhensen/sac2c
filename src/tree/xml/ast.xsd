@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   $Log$
+  Revision 1.8  2004/11/14 15:47:33  sah
+  fixed a schema bug
+
   Revision 1.7  2004/11/14 15:18:21  sah
   added support for default values for flags
 
@@ -212,20 +215,22 @@
     <xsd:complexType>
       <xsd:choice>
         <xsd:sequence>
-          <xsd:element name="node" minOccurs="0"
-          maxOccurs="unbounded">
-            <xsd:complexType>
-              <xsd:attribute name="name" type="xsd:NMTOKEN"
-              use="required" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="set" minOccurs="0"
-          maxOccurs="unbounded">
-            <xsd:complexType>
-              <xsd:attribute name="name" type="xsd:NMTOKEN"
-              use="required" />
-            </xsd:complexType>
-          </xsd:element>
+          <xsd:choice>
+            <xsd:element name="node" minOccurs="0"
+            maxOccurs="unbounded">
+              <xsd:complexType>
+                <xsd:attribute name="name" type="xsd:NMTOKEN"
+                use="required" />
+              </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="set" minOccurs="0"
+            maxOccurs="unbounded">
+              <xsd:complexType>
+                <xsd:attribute name="name" type="xsd:NMTOKEN"
+                use="required" />
+              </xsd:complexType>
+            </xsd:element>
+          </xsd:choice>
         </xsd:sequence>
         <xsd:element ref="unknown" minOccurs="1" maxOccurs="1" />
       </xsd:choice>
