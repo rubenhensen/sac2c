@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1994/11/22 14:22:53  hw
+ * Revision 1.18  1994/11/23 09:45:00  hw
+ * added rule: expr -> TRUE ; expr -> FALSE
+ *
+ * Revision 1.17  1994/11/22  14:22:53  hw
  * error in declaration of arrays without shape fixed
  *
  * Revision 1.16  1994/11/22  13:42:58  hw
@@ -82,8 +85,7 @@ node *syntax_tree;
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
-       ARRAY,
-       SC;
+       ARRAY,SC, TRUE, FALSE;
 %token <id> ID;
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL;
 %token <cint> NUM;
@@ -735,6 +737,22 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
            DBUG_PRINT("GENTREE",
                       ("%s " P_FORMAT ": %f ", 
                        mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
+         }
+      | TRUE 
+         { $$=MakeNode(N_bool);
+           $$->info.cint=1;
+
+           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
+                                 mdb_nodetype[$$->nodetype],$$,
+                                 $$->info.cint ? "true" : "false"));
+         }
+      | FALSE
+         { $$=MakeNode(N_bool);
+           $$->info.cint=0;
+
+           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
+                                 mdb_nodetype[$$->nodetype],$$,
+                                 $$->info.cint ? "true" : "false"));
          }
       ;
 
