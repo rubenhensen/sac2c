@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/01/28 13:53:07  jhs
+ * Added INFO_SCHIN_ALLOWED.
+ *
  * Revision 1.6  2000/01/28 12:39:17  dkr
  * removed NCODE_CODE
  *
@@ -2306,6 +2309,7 @@ extern node *MakePragma ();
  ***  in (na), (nb):
  ***    node*      INFO_SCHIN_SCHEDULING
  ***    int        INFO_SCHIN_INNERWLS
+ ***    int        INFO_SCHIN_ALLOWED
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2491,6 +2495,7 @@ extern node *MakeInfo ();
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_SCHIN_SCHEDULING(n) (n->node[1])
 #define INFO_SCHIN_INNERWLS(n) (n->int_data)
+#define INFO_SCHIN_ALLOWED(n) (n->flag)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
