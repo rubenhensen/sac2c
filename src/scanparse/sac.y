@@ -3,14 +3,14 @@
 /*
  *
  * $Log$
+ * Revision 1.156  1998/04/09 22:51:23  dkr
+ * added parsing of wlcomp-pragmas
+ *
  * Revision 1.155  1998/03/25 15:01:38  srs
  * added incrementation of usage of N_Ncode node in rule expr_main.NWITH...
  *
  * Revision 1.154  1998/03/24 10:55:59  srs
  * changed parameters of MakeNPart in rule Ngenerator
- *
- * Revision 1.153  1998/03/17 13:37:14  cg
- * *** empty log message ***
  *
  * Revision 1.152  1998/03/17 12:19:52  cg
  * Now, character arrays defined as strings keep the original string
@@ -549,8 +549,9 @@
 #include "dbug.h"
 #include "tree.h"
 #include "typecheck.h"
+#include "DupTree.h"        /* for use of DupTree */
 #include "my_debug.h"
-#include "internal_lib.h" /* for use of StringCopy */
+#include "internal_lib.h"   /* for use of StringCopy */
 #include "Error.h"
 #include "free.h"
 
@@ -571,6 +572,7 @@ node *sib_tree;
 static char *mod_name="__MAIN";
 static char *link_mod_name=NULL;
 static node *store_pragma=NULL;
+static node *store_wlcomp_pragma_global=NULL;
 
 
 /* used to distinguish the different kinds of files  */
@@ -611,6 +613,7 @@ static file_type file_kind = F_prog;
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
+       WLCOMP, DEFAULT
        STEP, WIDTH, TARGET, EQUALS
 %token <id> ID, STR, AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
@@ -653,7 +656,8 @@ static file_type file_kind = F_prog;
              impdesc4, foldfun,
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
-             sibargs, sibarg, sibfunlist, sibfunlistentry
+             sibargs, sibarg, sibfunlist, sibfunlistentry,
+             wlcomp_args, wlcomp_expr, wlcomp_pragma_local, wlcomp_pragma_global
 %type <target_list_t> targets
 %type <resource_list_t> resources
 
@@ -1348,12 +1352,17 @@ objdef: OBJDEF type id LET expr SEMIC
 
 
 
-fundefs: fundef fundefs { $$=$1;
-                          $$->node[1]=$2;
-                        }
-	| fundef {$$=$1;}
-	| main {$$=$1;}
-	;
+fundefs: wlcomp_pragma_global fundef fundefs
+         { $$ = $2;
+           FUNDEF_NEXT($$) = $3;
+         }
+       | wlcomp_pragma_global main
+         { $$ = $2;
+         }
+       | wlcomp_pragma_global fundef
+         { $$ = $2;
+         }
+       ;
 
 fundef: returntypes fun_name BRACKET_L fundef2 
         {  $$=$4;
@@ -1577,7 +1586,7 @@ prf_name : AND { $$=$1; }
         ;
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
-       {
+      {
         $$=$<node>5;     /* $$=$5 */
         $$->node[0]=$6;                 /* Funktionsrumpf */
 
@@ -1592,8 +1601,63 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
                               mdb_nodetype[ $$->node[0]->nodetype], 
                               $$->node[0]));
         
-       }
-      ;
+      }
+    ;
+
+
+wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
+                      { if (store_wlcomp_pragma_global != NULL) {
+                          /* remove old global pragma */
+                          store_wlcomp_pragma_global
+                            = FreeTree(store_wlcomp_pragma_global);
+                        }
+                        store_wlcomp_pragma_global = MakePragma();
+                        PRAGMA_WLCOMP(store_wlcomp_pragma_global) = $3;
+                      }
+                    | /* empty */
+                      {
+                      }
+                    ;
+
+wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
+                     { $$ = MakePragma();
+                       PRAGMA_WLCOMP($$) = $3;
+                     }
+                   | /* empty */
+                     { $$ = NULL;
+                     }
+                   ;
+
+wlcomp_expr: DEFAULT
+             { $$ = NULL;
+             }
+           | id BRACKET_L wlcomp_args wlcomp_expr BRACKET_R
+             { node *tmp = $4;
+
+               $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
+               /* append $$ to $4 */
+               if (tmp != NULL) {
+                 while (EXPRS_NEXT(tmp) != NULL) {
+                   tmp = EXPRS_NEXT(tmp);
+                 }
+                 EXPRS_NEXT(tmp) = $$;
+                 $$ = $4;
+               }
+             }
+           ;
+
+wlcomp_args: expr_ar COMMA wlcomp_args
+             { $$ = MakeExprs($1, $3);
+             }
+           | expr_num COMMA wlcomp_args
+             { $$ = MakeExprs($1, $3);
+             }
+           |
+             { $$ = NULL;
+             }
+           ;
+
+
 
 
 /* BRUSH BEGIN */
@@ -1684,7 +1748,7 @@ assignblock: SEMIC
                  NODE_LINE($$)=$<cint>2;
                }
              }
-           | assign  
+           | assign
              { $$=MakeBlock( MakeAssign( $1, NULL), NULL);
              } 
            ;
@@ -1731,9 +1795,11 @@ assignsOPTret: /*
                }
              ;
 
-assigns: /* empty */  { $$=NULL; }
-       | assign assigns 
-         { if( NODE_TYPE($1)==N_assign){
+assigns: /* empty */
+         { $$=NULL;
+         }
+       | assign assigns
+         { if (NODE_TYPE($1)==N_assign){
              /*
               * The only situation where "assign" returns an N_assign
               * node is when a for-loop had to be parsed.
@@ -1749,10 +1815,10 @@ assigns: /* empty */  { $$=NULL; }
                            && (ASSIGN_NEXT( ASSIGN_NEXT($1))==NULL),
                           "corrupted node returned for \"assign\"!");
              $$=$1;
-             ASSIGN_NEXT( ASSIGN_NEXT($$))=$2;
+             ASSIGN_NEXT(ASSIGN_NEXT($$))=$2;
            }
            else {
-             $$=MakeAssign( $1, $2);
+             $$=MakeAssign($1, $2);
            }
          }
        ;
@@ -1980,20 +2046,32 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | PLUS DOUBLE %prec UMINUS  { $$=MakeDouble( $2);         }
          | TRUE                      { $$=MakeBool( 1);            }
          | FALSE                     { $$=MakeBool( 0);            }
-         | string                       { $$=string2array($1); }
-         | NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
-           optassignblock Nwithop 
+         | string                    { $$=string2array($1);        }
+         | wlcomp_pragma_local
+           NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
+           optassignblock Nwithop
            { /*
-              * the tricky part about this rule is that $7 (an N_Nwithop node)
+              * the tricky part about this rule is that $8 (an N_Nwithop node)
               * carries the goal-expression of the With-Loop, i.e., the "N-expr"
               * node which belongs into the N_Ncode node!!!
               * The reason for this is that an exclusion of the goal expression
               * from the non-terminal Nwithop would lead to a shift/reduce
               * conflict in that rule!
               */
-             $$=MakeNWith( $4, MakeNCode( $6, NWITHOP_EXPR($7)), $7);
+             $$=MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR($8)), $8);
              NCODE_USED(NWITH_CODE($$))++;
-             NODE_LINE($$)= $<cint>2;
+             NODE_LINE($$)= $<cint>3;
+
+             if ($1 == NULL) {
+               if (store_wlcomp_pragma_global != NULL) {
+                 NWITH_PRAGMA($$) = MakePragma();
+                 PRAGMA_WLCOMP(NWITH_PRAGMA($$))
+                   = DupTree(PRAGMA_WLCOMP(store_wlcomp_pragma_global), NULL);
+               }
+             }
+             else {
+               NWITH_PRAGMA($$) = $1;
+             }
 
              /*
               * Finally, we generate the connection between the 
@@ -3061,5 +3139,3 @@ node *Append(node *target_node, node *append_node)
       
    DBUG_RETURN(target_node);
 }
-
-
