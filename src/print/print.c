@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.115  1996/02/12 14:13:46  asi
+ * Revision 1.116  1996/02/21 18:02:09  cg
+ * now, special characters such as '\n' or '\0' are accepted for printing
+ *
+ * Revision 1.115  1996/02/12  14:13:46  asi
  * PrintArg and PrintVardec updated for correct idx-output
  *
  * Revision 1.114  1996/02/06  16:10:20  sbs
@@ -920,7 +923,11 @@ PrintChar (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintChar");
 
-    fprintf (outfile, "'%c'", arg_node->info.cchar);
+    if ((arg_node->info.cchar >= '!') && (arg_node->info.cchar <= 'z')) {
+        fprintf (outfile, "'%c'", arg_node->info.cchar);
+    } else {
+        fprintf (outfile, "'\\%d'", arg_node->info.cchar);
+    }
 
     DBUG_RETURN (arg_node);
 }
