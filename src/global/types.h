@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/06/03 14:23:52  jhs
+ * Brushed up some comments I 'hacked in' earlier.
+ *
  * Revision 2.11  1999/05/18 16:55:33  dkr
  * added int_data in NODE
  *
@@ -458,29 +461,33 @@ typedef struct TYPESS {
  *
  *  For empty arrays, a special treatment is necessary, so original
  *  Values before nomalization are stored also.
+ *  The xxx_orig values will be set on creation and are not to be changed
+ *  from that on.
  */
 
 typedef struct {
-    prf op1;      /* <= or < */
-    prf op2;      /* <= or < */
-    prf op1_orig; /* <= or <, will be set on node creation, not to be changed */
-    prf op2_orig; /* dito */
+    prf op1;      /* only <= and < allowed, later normalized to <= */
+    prf op2;      /* only <= and < allowed, later normalized to <= */
+    prf op1_orig; /* only <= and < allowed, not to be changed      */
+    prf op2_orig; /* only <= and < allowed, not to be changed      */
 } GeneratorRel;
 
-/* and now some macros for the use with 'types->dim'
- * They are used to classify :
- * - shape of type is known:               dim > SCALAR                  shape is known
- * dimension is known       array
- * - dimension is only known:              dim < KNOWN_DIM_OFFSET        shape is not
- * known    dimension is known       array
- * - shape and dimension are not known:    dim == UNKNOWN_SHAPE          shape is not
- * known    dimension is not known   array
- * - type of on array or a scalar:         dim == ARRAY_OR_SCALAR        shape is not
- * knwon    dimension is not known   array or scalar
- * - type of an scalar:                    dim == SCALAR                 shape is known
- * dimension is known       scalar
+/*
+ *  And now some constants (macros) for the use with TYPES_DIM (resp. 'types->dim').
  *
- * The known-macros test for knowledge of properties of TYPES_DIM. (jhs)
+ *  They are used to classify, whether the type is an array or (not: xor!) a scalar.
+ *  If we know it's a scalar we know shape == [] and dimension == 0.
+ *  If it's an array some cases for shape and dimension are possible.
+ *
+ *  TYPES_DIM can have the following values (and meanings):
+ *  - array, shape and dimension are know                 dim > SCALAR
+ *  - array, shape is not known, dimension is known       dim < KNOWN_DIM_OFFSET
+ *  - array, shape and dimension is not known             dim == UNKNOWN_SHAPE
+ *  - array or scalar, shape and dimension are not known  dim == ARRAY_OR_SCALAR
+ *  - scalar, shape and dimension are known               dim == SCALAR
+ *
+ *  The known-macros test for knowledge about the properties of TYPES_DIM.
+ *  So one can easily test, wheter shape or dimension are known or not.
  */
 #define SCALAR 0
 #define UNKNOWN_SHAPE -1
