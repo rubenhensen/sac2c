@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/04/05 14:01:53  asi
+ * Revision 1.3  1995/12/30 17:00:48  cg
+ * removed external declaration of 'filename'
+ *
+ * Revision 1.2  1995/04/05  14:01:53  asi
  * added WRfundef
  *
  * Revision 1.1  1995/03/17  17:45:41  asi
@@ -20,8 +23,6 @@
 
 #include "optimize.h"
 #include "WorkReduction.h"
-
-extern char filename[]; /* is set temporary; will be set later on in main.c */
 
 /*
  *
