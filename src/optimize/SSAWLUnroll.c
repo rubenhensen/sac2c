@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/10/10 23:55:46  dkr
+ * another bug in CountElements() fixed ...
+ *
  * Revision 1.2  2002/10/09 02:05:34  dkr
  * bug in CountElements() fixed
  *
@@ -353,16 +356,19 @@ CountElements (node *genn)
 
     const_l = COAST2Constant (NGEN_BOUND1 (genn));
     l = COGetDataVec (const_l);
-    dim = COGetDim (const_l);
+    DBUG_ASSERT ((COGetDim (const_l) == 1), "inconsistant wl bounds found!");
+    dim = SHGetExtent (COGetShape (const_l), 0);
 
     const_u = COAST2Constant (NGEN_BOUND2 (genn));
     u = COGetDataVec (const_u);
-    DBUG_ASSERT ((COGetDim (const_u) == dim), "inconsistant wl bounds found!");
+    DBUG_ASSERT ((SHGetExtent (COGetShape (const_u), 0) == dim),
+                 "inconsistant wl bounds found!");
 
     if (NGEN_STEP (genn) != NULL) {
         const_s = COAST2Constant (NGEN_STEP (genn));
         s = COGetDataVec (const_s);
-        DBUG_ASSERT ((COGetDim (const_s) == dim), "inconsistant wl bounds found!");
+        DBUG_ASSERT ((SHGetExtent (COGetShape (const_s), 0) == dim),
+                     "inconsistant wl bounds found!");
     } else {
         const_s = NULL;
         s = NULL;
@@ -371,7 +377,8 @@ CountElements (node *genn)
     if (NGEN_WIDTH (genn) != NULL) {
         const_w = COAST2Constant (NGEN_WIDTH (genn));
         w = COGetDataVec (const_w);
-        DBUG_ASSERT ((COGetDim (const_w) == dim), "inconsistant wl bounds found!");
+        DBUG_ASSERT ((SHGetExtent (COGetShape (const_w), 0) == dim),
+                     "inconsistant wl bounds found!");
     } else {
         const_w = NULL;
         w = NULL;
