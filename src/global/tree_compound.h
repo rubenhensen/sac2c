@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  1999/11/09 21:15:57  dkr
+ * Functions MakeIcm7, MakeAssignIcm7 added.
+ *
  * Revision 2.21  1999/10/28 17:06:54  dkr
  * compound macros for masks added
  *
@@ -1205,6 +1208,9 @@ extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
  *                                    node *arg4, node *arg5)
  *   node *MakeAssignIcm6(char *name, node *arg1, node *arg2, node *arg3,
  *                                    node *arg4, node *arg5, node *arg6)
+ *   node *MakeAssignIcm7(char *name, node *arg1, node *arg2, node *arg3,
+ *                                    node *arg4, node *arg5, node *arg6,
+ *                                    node *arg7)
  *
  * description:
  *
@@ -1225,6 +1231,8 @@ extern node *MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, nod
                              node *arg5);
 extern node *MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                              node *arg5, node *arg6);
+extern node *MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                             node *arg5, node *arg6, node *arg7);
 
 /******************************************************************************
  *
@@ -1763,8 +1771,12 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *   node *MakeIcm1(char *name, node *arg1)
  *   node *MakeIcm3(char *name, node *arg1, node *arg2)
  *   node *MakeIcm4(char *name, node *arg1, node *arg2, node *arg3, node *arg4)
- *   node *MakeIcm5(char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
- **arg5)
+ *   node *MakeIcm5(char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+ *                              node *arg5)
+ *   node *MakeIcm6(char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+ *                              node *arg5, node *arg6)
+ *   node *MakeIcm7(char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+ *                              node *arg5, node *arg6, node *arg7)
  *
  * description:
  *
@@ -1783,6 +1795,8 @@ extern node *MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg
                        node *arg5);
 extern node *MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                        node *arg5, node *arg6);
+extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                       node *arg5, node *arg6, node *arg7);
 
 /*--------------------------------------------------------------------------*/
 

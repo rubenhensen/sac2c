@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/11/09 21:15:31  dkr
+ * Functions MakeIcm7, MakeAssignIcm7 added.
+ *
  * Revision 2.13  1999/10/27 15:12:41  sbs
  * MakeAssignIcmX(...) added.
  *
@@ -819,6 +822,13 @@ MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
     return (MakeAssign (MakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), NULL));
 }
 
+node *
+MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+                node *arg6, node *arg7)
+{
+    return (MakeAssign (MakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), NULL));
+}
+
 /***
  ***  GetCompoundNode
  ***/
@@ -1538,6 +1548,27 @@ MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
     DBUG_ENTER ("MakeIcm6");
 
     arg6 = CombineExprs (arg6, NULL);
+    arg5 = CombineExprs (arg5, arg6);
+    arg4 = CombineExprs (arg4, arg5);
+    arg3 = CombineExprs (arg3, arg4);
+    arg2 = CombineExprs (arg2, arg3);
+    arg1 = CombineExprs (arg1, arg2);
+
+    icm = MakeIcm (name, arg1, NULL);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+          node *arg6, node *arg7)
+{
+    node *icm;
+
+    DBUG_ENTER ("MakeIcm6");
+
+    arg7 = CombineExprs (arg7, NULL);
+    arg6 = CombineExprs (arg6, arg7);
     arg5 = CombineExprs (arg5, arg6);
     arg4 = CombineExprs (arg4, arg5);
     arg3 = CombineExprs (arg3, arg4);
