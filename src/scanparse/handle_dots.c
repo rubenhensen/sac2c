@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2003/12/10 16:00:15  sah
+ * disabled support for vectors and added HDid.
+ * intermediate version just to please node_info.mac
+ *
  * Revision 1.31  2003/12/03 15:37:04  sah
  * basic support for withloop default
  * value, except set notation
@@ -174,6 +178,16 @@
  * NOTE: the withloop code was never tested and may contain bugs.
  */
 #define HD_USE_BUILTIN_CONCAT
+
+/**
+ * set this to enable support for vectors as index of a set notation.
+ *
+ * NOTE: The implementation is far from complete:
+ *       -missing default values in resulting WL
+ *       -no support of partial selection on arrays of different
+ *        dimenionalitz
+ */
+#undef HD_SETWL_VECTOR
 
 /**
  * Structures to store all information about dots occuring in select state-
@@ -1205,13 +1219,23 @@ BuildIdTable (node *ids, idtable *appendto)
             result = newtab;
             ids = EXPRS_NEXT (ids);
         }
-    } else {
+    } else if (NODE_TYPE (ids) == N_id)
+#ifdef HD_SETWL_VECTOR
+    {
         idtable *newtab = Malloc (sizeof (idtable));
         newtab->id = StringCopy (ID_NAME (ids));
         newtab->type = ID_vector;
         newtab->shapes = NULL;
         newtab->next = result;
         result = newtab;
+    }
+#else
+    {
+        ABORT (linenum, ("vector as index in WL set notation not allowed"));
+    }
+#endif
+    else {
+        ABORT (linenum, ("malformed index vector in WL set notation"));
     }
 
     DBUG_RETURN (result);
@@ -1337,6 +1361,7 @@ ScanVector (node *vector, node **array, node *arg_info)
     DBUG_VOID_RETURN;
 }
 
+#ifdef HD_SETWL_VECTOR
 /**
  * scans a selection vector given as a single vector variable. If it
  * exists within ids, the corresponding shape is stored in ids.
@@ -1374,6 +1399,7 @@ ScanId (node *id, node **array, node *arg_info)
 
     DBUG_VOID_RETURN;
 }
+#endif
 
 /**
  * builds runtime code that calculates the minimum of all shapes
@@ -1461,7 +1487,9 @@ BuildWLShape (idtable *table, idtable *end)
         }
 
         result = MakeFlatArray (result);
-    } else if (table->type == ID_vector) {
+    }
+#ifdef HD_SETWL_VECTOR
+    else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
             ERROR (linenum, ("no shape information found for %s", table->id));
         } else {
@@ -1476,6 +1504,7 @@ BuildWLShape (idtable *table, idtable *end)
             }
         }
     }
+#endif
 
     DBUG_RETURN (result);
 }
@@ -1943,9 +1972,12 @@ HDap (node *arg_node, node *arg_info)
         && (strcmp (AP_NAME (arg_node), "sel") == 0)) {
         if (NODE_TYPE (AP_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), &AP_ARG2 (arg_node), arg_info);
-        } else if (NODE_TYPE (AP_ARG1 (arg_node)) == N_id) {
+        }
+#ifdef HD_SETWL_VECTOR
+        else if (NODE_TYPE (AP_ARG1 (arg_node)) == N_id) {
             ScanId (AP_ARG1 (arg_node), &AP_ARG2 (arg_node), arg_info);
         }
+#endif
     }
 
     /* if in HD_default mode, rebuild selection */
@@ -1995,9 +2027,12 @@ HDprf (node *arg_node, node *arg_info)
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), &PRF_ARG2 (arg_node),
                         arg_info);
-        } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
+        }
+#ifdef HD_SETWL_VECTOR
+        else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
             ScanId (PRF_ARG1 (arg_node), &PRF_ARG2 (arg_node), arg_info);
         }
+#endif
     }
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_default) && (PRF_PRF (arg_node) == F_sel)) {
@@ -2142,7 +2177,9 @@ HDsetwl (node *arg_node, node *arg_info)
                                   NULL),
                        MakeNCode (MAKE_EMPTY_BLOCK (), DupTree (SETWL_EXPR (arg_node))),
                        MakeNWithOp (WO_genarray, shape));
-    } else {
+    }
+#ifdef HD_SETWL_VECTOR
+    else {
         result
           = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (ids), NULL),
                                   MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
@@ -2151,6 +2188,7 @@ HDsetwl (node *arg_node, node *arg_info)
                        MakeNCode (MAKE_EMPTY_BLOCK (), DupTree (SETWL_EXPR (arg_node))),
                        MakeNWithOp (WO_genarray, shape));
     }
+#endif
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
@@ -2196,4 +2234,10 @@ HDsetwl (node *arg_node, node *arg_info)
     result = Trav (result, arg_info);
 
     DBUG_RETURN (result);
+}
+
+node *
+HDid (node *arg_node, node *arg_info)
+{
+    return (TravSons (arg_node, arg_info));
 }
