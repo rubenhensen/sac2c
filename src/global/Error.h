@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/10/26 15:56:48  cg
+ * Revision 1.14  1995/11/06 09:24:54  cg
+ * added macro NOTE_INDENT
+ *
+ * Revision 1.13  1995/10/26  15:56:48  cg
  * modified lay-out of error messages slightly.
  *
  * Revision 1.12  1995/10/19  10:04:45  cg
@@ -90,6 +93,15 @@
 
 #define NOTE(message)                                                                    \
     if (!silent) {                                                                       \
+        DoPrint message;                                                                 \
+        fprintf (stderr, "\n");                                                          \
+    }
+
+#define NOTE_INDENT(n, message)                                                          \
+    if (!silent) {                                                                       \
+        int i;                                                                           \
+        for (i = 0; i < n; i++)                                                          \
+            fprintf (stderr, "  ");                                                      \
         DoPrint message;                                                                 \
         fprintf (stderr, "\n");                                                          \
     }
