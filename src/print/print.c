@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.206  2005/03/04 21:21:42  cg
+ * Added printing of EXT-/INT-ASSIGN of LaC-functions.
+ * Adjusted zombification of fundefs.
+ *
  * Revision 3.205  2005/03/01 13:21:13  jhb
  * fix bug in PRTerror
  *
@@ -1228,7 +1232,13 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         node *tmp = Argtab2Fundef (arg_node);
 
         PrintFunctionHeader (tmp, arg_info, in_comment);
-        tmp = FREEfreeZombie (FREEdoFreeTree (tmp));
+        tmp = FREEdoFreeTree (tmp);
+        /*
+         * There is a small space leak here because the N_fundef node is not
+         * entirely freed, but zombified. We should look for a different solution
+         * here rather than generating the function header from the argtab on the
+         * spot.
+         */
 
         fprintf (global.outfile, " ");
         if (!print_argtab) {
@@ -1433,8 +1443,31 @@ PRTfundef (node *arg_node, info *arg_info)
                 } else {
                     fprintf (global.outfile, "/* wrapper function */\n");
                 }
-            } else if ((FUNDEF_ISCONDFUN (arg_node)) || (FUNDEF_ISDOFUN (arg_node))) {
-                fprintf (global.outfile, "/* LaC function */\n");
+            } else if (FUNDEF_ISCONDFUN (arg_node)) {
+                fprintf (global.outfile, "/* Cond function */\n");
+                if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
+                    fprintf (global.outfile, "/*  external assignment: missing */\n");
+                } else {
+                    fprintf (global.outfile, "/*  external assignment: %s */\n",
+                             IDS_NAME (
+                               LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)))));
+                }
+            } else if (FUNDEF_ISDOFUN (arg_node)) {
+                fprintf (global.outfile, "/* Loop function */\n");
+                if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
+                    fprintf (global.outfile, "/*  external assignment: missing */\n");
+                } else {
+                    fprintf (global.outfile, "/*  external assignment: %s */\n",
+                             IDS_NAME (
+                               LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)))));
+                }
+                if (FUNDEF_INT_ASSIGN (arg_node) == NULL) {
+                    fprintf (global.outfile, "/*  internal assignment: missing */\n");
+                } else {
+                    fprintf (global.outfile, "/*  external assignment: %s */\n",
+                             IDS_NAME (
+                               LET_IDS (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)))));
+                }
             }
 
             if (FUNDEF_BODY (arg_node) != NULL) {
