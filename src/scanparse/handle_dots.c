@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2003/03/18 12:23:35  sah
+ * added doxygen style comments,
+ * shapes are as less flattened as possible,
+ * support for builtin take/drop and cat.
+ *
  * Revision 1.18  2002/10/28 22:17:31  sah
  * fixed small performance issue:
  * - a min-WL was created even if there was only one
@@ -83,14 +88,53 @@
 #include "internal_lib.h"
 #include <strings.h>
 
-/*
+/**
+ * @file handle_dots.c
+ *
+ * This file contains any code needed to eleminate dots within
+ * sac source code. Dots can appear in the following positions:
+ * - as boundary shortcuts in withloops
+ * - to mark free dimensions within a selection
+ *
+ * Dots at boundary positions within withloops are replaced by the
+ * minimal/maximal possible value, eg. 0 and the shape vector. As
+ * a side effect, the comparison operators are 'normalized' to <= for
+ * lower boundaries and < for the upper ones.
+ *
+ * Multi dimensional selections are transfomed to their withloop
+ * representation, thus eleminating any dots.
+ *
+ * As well, the new set notation is transformed into its withloop
+ * representation, as it usually appears near to multi dimensional
+ * selections.
+ *
+ * After traversal, there should be no more dot nodes within the AST.
+ * Otherwise a warning is generated.
+ */
+
+/**
+ * set this to defined in order to create explanatory ids. use this only
+ * for debugging as it might create very long identifier names.
+ */
+#undef HD_USE_EXPLANATORY_NAMES
+
+/**
+ * set this to use build in take/drop instead of withloops.
+ */
+#undef HD_USE_BUILTIN_TAKEDROP
+
+/**
+ * set this to use build in concat instead of withloops.
+ */
+#undef HD_USE_BUILTIN_CONCAT
+
+/**
  * Structures to store all information about dots occuring in select state-
  * ments that are needed to perform the transformation. These structures are
  * built by BuildDotList.
  * All int values are counted beginning with 1. The 0 value is used as
  * flag for non-existent (false).
  */
-
 typedef struct DOTLIST {
     int no;               /* number of dots counted from left */
     int position;         /* position of dot within selection */
@@ -108,11 +152,10 @@ typedef struct DOTINFO {
     int selcnt;     /* amount of selectors at all */
 } dotinfo;
 
-/*
+/**
  * Structures to store ids and shapes during shape-scan. Filled during
  * traversal in HD_sacn mode.
  */
-
 typedef enum TRAVSTATE { HD_sel, HD_scan } travstate;
 typedef enum IDTYPE { ID_vector, ID_scalar } idtype;
 
@@ -128,7 +171,7 @@ typedef struct IDTABLE {
     struct IDTABLE *next;
 } idtable;
 
-/*
+/**
  * arg_info in this file:
  * DOTSHAPE:    this field is used in order to transport the generic shape
  * (node[0])    from Nwithid (via Nwith) to Ngenerator, where it may be used
@@ -141,12 +184,19 @@ typedef struct IDTABLE {
  * ASSIGNS:     stores any assigns that have to be inserted prior to
  * (node[1])    the current one. Used to build shape for WLs.
  */
-
 #define INFO_HD_DOTSHAPE(n) n->node[0]
 #define INFO_HD_TRAVSTATE(n) ((travstate)n->flag)
 #define INFO_HD_IDTABLE(n) ((idtable *)n->info2)
 #define INFO_HD_ASSIGNS(n) n->node[1]
 
+/**
+ * builds an assign-let construct.
+ *
+ * @param var_name the name of the identifier to use
+ * @param let_expr right side expression of the assignment
+ *
+ * @return the ready built assignment to be inserted into the AST
+ */
 node *
 MakeAssignLetNV (char *var_name, node *let_expr)
 {
@@ -162,16 +212,17 @@ MakeAssignLetNV (char *var_name, node *let_expr)
     DBUG_RETURN (tmp_node);
 }
 
-/******************************************************************************
+/**
+ * collects the needed dot information by traversing the AST:
+ * - counts the total amount of dots found (. and ..)
+ * - stores for each dot ist position within the selection vector
+ * - stores the position of ... if any found
+ * - counts the amount of expressions within the selection vector
  *
- * Function:
- *   void BuildDotList(node* tree, dotinfo* info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
+ * @param tree part of the AST, usually a vector of expressions linked by
+ *             EXPRS nodes.
+ * @param info dotinfo structure for storing the information found
+ */
 void
 BuildDotList (node *tree, dotinfo *info)
 {
@@ -217,16 +268,14 @@ BuildDotList (node *tree, dotinfo *info)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
+/**
+ * wrapper function for BuildDotList. Creates an empty dotinfo structure
+ * and initializes it with legal values prior to calling BuildDotList.
  *
- * Function:
- *   dotinfo* MakeDotInfo(node* args)
+ * @param args part of the AST, usually a selection vector
  *
- * Description:
- *
- *
- ******************************************************************************/
-
+ * @return ready built dotinfo structure
+ */
 dotinfo *
 MakeDotInfo (node *args)
 {
@@ -248,16 +297,12 @@ MakeDotInfo (node *args)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/**
+ * frees all memory allocated by a dotinfo structure, including the inner
+ * linked list.
  *
- * Function:
- *   void FreeDotInfo(dotinfo* node)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
+ * @param node dotinfo structure to clear
+ */
 void
 FreeDotInfo (dotinfo *node)
 {
@@ -274,16 +319,12 @@ FreeDotInfo (dotinfo *node)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
+/**
+ * transforms a given number of a dot (counted from the left) into its
+ * position within the selection vector. Counting starts at 1.
  *
- * Function:
- *   int LDot2Pos(int dot, dotinfo* info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
+ * @return the position of the given dot within the selection vector
+ */
 int
 LDot2Pos (int dot, dotinfo *info)
 {
@@ -298,7 +339,12 @@ LDot2Pos (int dot, dotinfo *info)
 
     DBUG_RETURN (dots->position);
 }
-
+/**
+ * transforms a given number of a dot (counted from the right) into its
+ * postion within the selection vector. Counting starts with 1.
+ *
+ * @return the position of the given dot within the selection vector
+ */
 int
 RDot2Pos (int dot, dotinfo *info)
 {
@@ -314,6 +360,13 @@ RDot2Pos (int dot, dotinfo *info)
     DBUG_RETURN (info->selcnt - dots->position + 1);
 }
 
+/**
+ * checks whether the expression at position dot within the selection vector
+ * is a dot or not. If it is a dot, its number counted from the left is
+ * returned, zero otherwise. Counting starts with one.
+ *
+ * @return dot position counted from left or zero if not a dot
+ */
 int
 LIsDot (int dot, dotinfo *info)
 {
@@ -334,6 +387,13 @@ LIsDot (int dot, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * Checks whether the expression at position dot within the selection vector
+ * is a dot or not. If it is a dot, its number counted from the right is
+ * returned, zero otherwise. Counting starts at one.
+ *
+ * @return position counted from the right or zero
+ */
 int
 RIsDot (int dot, dotinfo *info)
 {
@@ -350,6 +410,12 @@ RIsDot (int dot, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * returns the nth expression of a exprs-node chain or null if the chain
+ * has no nth element.
+ *
+ * @return the nth element of exprs or null.
+ */
 node *
 GetNthExpr (int n, node *exprs)
 {
@@ -370,6 +436,15 @@ GetNthExpr (int n, node *exprs)
     DBUG_RETURN (result);
 }
 
+/**
+ * builds an id with a free name by calling TmpVarName. If
+ * HD_USE_EXPLANATORY_NAMES is set, name is appended to the new id,
+ * Use this feature only for debugging, as it might create very long
+ * identifier names.
+ *
+ * @param name explanatory name of the identifier
+ * @return a new created unique id node
+ */
 node *
 MakeTmpId (char *name)
 {
@@ -377,14 +452,41 @@ MakeTmpId (char *name)
 
     DBUG_ENTER ("MakeTmpId");
 
+#ifdef HD_USE_EXPLANATORY_NAMES
     result = MakeId (TmpVarName (name), NULL, ST_regular);
+#else
+    result = MakeId (TmpVar (), NULL, ST_regular);
+#endif
 
     DBUG_RETURN (result);
 }
 
+/**
+ * builds code for a take/drop operation used to isolate the middle part
+ * of an index or shape vector.
+ *
+ * @param from a sac expression that can be evaluated to an integer. Lower
+ *             bound of the part to grab.
+ * @param to a sac expression that can be evaluated to an integer. Upper
+ *           bound of the part to grab.
+ * @param vector vector to operate on
+ * @return part of the AST that evaluates to the requested desired middle part.
+ */
 node *
 BuildTakeDrop (node *from, node *to, node *vector)
 {
+#ifdef HD_USE_BUILTIN_TAKEDROP
+    node *result;
+
+    DBUG_ENTER ("BuildTakeDrop");
+
+    result
+      = MAKE_BIN_PRF (F_drop, from,
+                      MAKE_BIN_PRF (F_drop, MAKE_BIN_PRF (F_mul_SxS, MakeNum (-1), to),
+                                    vector));
+
+    DBUG_RETURN (result);
+#else
     node *result;
     node *iv;
 
@@ -412,11 +514,29 @@ BuildTakeDrop (node *from, node *to, node *vector)
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
 
     DBUG_RETURN (result);
+#endif
 }
 
+/**
+ * builds code that concatenates two vectors.
+ *
+ * @param a sac expression that evaluates to a vector.
+ * @param b sac expression that evaluates to a vector.
+ * @return part if the AST containing the code concatenating the two
+ *         vectors
+ */
 node *
 BuildConcat (node *a, node *b)
 {
+#ifdef HD_USE_BUILTIN_CONCAT
+    node *result;
+
+    DBUG_ENTER ("BuildConcat");
+
+    result = MAKE_BIN_PRF (F_cat, a, b);
+
+    DBUG_RETURN (result);
+#else
     node *result;
     node *iv;
     node *tmpid;
@@ -497,8 +617,21 @@ BuildConcat (node *a, node *b)
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
 
     DBUG_RETURN (result);
+#endif
 }
 
+/**
+ * builds the left part of the result shape vector containing any
+ * shape information based upon dots found before a tripledot. For
+ * every dot within the selection vector, the corresponding shape
+ * of the current array is inserted. The shape at non-dot positions
+ * is ignored.
+ *
+ * @param args selection vector that the selection operates on
+ * @param array the id of the array on that the selection operates
+ * @param info the dotinfo structure
+ * @return sac code representing the shape vector
+ */
 node *
 BuildLeftShape (node *args, node *array, dotinfo *info)
 {
@@ -530,6 +663,17 @@ BuildLeftShape (node *args, node *array, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * Builds the middle part of the result shape vector. The middle shape is
+ * built by removing all elements corresponding to entries wihtin the
+ * selection vector occuring prior to the triple dot from the left and
+ * removing those entries occuring past the triple dot from the right.
+ *
+ * @param args selection vector that the selection operates on
+ * @param array array that the selection operates on
+ * @param info dotinfo structure
+ * @return sac code representing the middle shape vector
+ */
 node *
 BuildMiddleShape (node *args, node *array, dotinfo *info)
 {
@@ -556,6 +700,17 @@ BuildMiddleShape (node *args, node *array, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * builds the right part of the result shape vector. For every dot occuring
+ * on the right side of the triple dot, the corresponding shape of the
+ * array the selection operartes on, is inserted. The shape information
+ * corresponding to non dot entries is ignored.
+ *
+ * @param args selection vector the selection operates on
+ * @param array array the selection operates on
+ * @param info dotinfo structure
+ * @return sac representation of the right result shape vector
+ */
 node *
 BuildRightShape (node *args, node *array, dotinfo *info)
 {
@@ -589,88 +744,90 @@ BuildRightShape (node *args, node *array, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * Build the result shape vector of the selection. The shape consists of
+ * three parts, the left, middle and right shape vector. See
+ * BuildMiddle/Left/RightShape for details. The parts are assigned to
+ * temporary identifiers and concatenated by runtime code. See
+ * BuildConcat for details.
+ * In order to insert the new identifiers, they are added to the
+ * assigns chain and inserted by HDAp in front of the selection.
+ *
+ * @param args selection vector the selection operates on
+ * @param array array the selection operates on
+ * @param assigns root of the assigns chain
+ * @param info dotinfo structure
+ * @result sac representation of the result shape vector
+ */
 node *
 BuildShape (node *args, node *array, node **assigns, dotinfo *info)
 {
     node *leftshape = NULL;
-    node *leftid = NULL;
     node *middleshape = NULL;
-    node *middleid = NULL;
     node *rightshape = NULL;
-    node *rightid = NULL;
 
     DBUG_ENTER ("BuildShape");
 
     if (info->triplepos != 1) {
         leftshape = BuildLeftShape (args, array, info);
-
-        /* BuildLeftShape returns NULL if shape were [] */
-
-        if (leftshape != NULL) {
-            leftid = MakeTmpId ("left_shape");
-            *assigns
-              = AppendAssign (*assigns,
-                              MakeAssignLetNV (StringCopy (ID_NAME (leftid)), leftshape));
-        }
     }
 
     if (info->triplepos != 0) {
         middleshape = BuildMiddleShape (args, array, info);
-        middleid = MakeTmpId ("middle_shape");
-        *assigns
-          = AppendAssign (*assigns,
-                          MakeAssignLetNV (StringCopy (ID_NAME (middleid)), middleshape));
     }
 
     if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
         rightshape = BuildRightShape (args, array, info);
-
-        /* BuildRightShape returns NULL if shape were [] */
-
-        if (rightshape != NULL) {
-            rightid = MakeTmpId ("right_shape");
-            *assigns
-              = AppendAssign (*assigns, MakeAssignLetNV (StringCopy (ID_NAME (rightid)),
-                                                         rightshape));
-        }
     }
 
-    if (rightid != NULL) {
+    if (rightshape != NULL) {
         node *tmpid = NULL;
 
         tmpid = MakeTmpId ("middle_and_right_shape");
 
-        *assigns
-          = AppendAssign (*assigns, MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
-                                                     BuildConcat (middleid, rightid)));
+        *assigns = AppendAssign (*assigns,
+                                 MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
+                                                  BuildConcat (middleshape, rightshape)));
 
-        middleid = tmpid;
-        rightid = NULL;
+        middleshape = tmpid;
+        rightshape = NULL;
     }
 
-    if (middleid != NULL) {
-        if (leftid == NULL) {
-            leftid = middleid;
-            middleid = NULL;
+    if (middleshape != NULL) {
+        if (leftshape == NULL) {
+            leftshape = middleshape;
+            middleshape = NULL;
         } else {
             node *tmpid = NULL;
 
             tmpid = MakeTmpId ("complete_shape");
 
             *assigns
-              = AppendAssign (*assigns, MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
-                                                         BuildConcat (leftid, middleid)));
+              = AppendAssign (*assigns,
+                              MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
+                                               BuildConcat (leftshape, middleshape)));
 
-            leftid = tmpid;
-            middleid = NULL;
+            leftshape = tmpid;
+            middleshape = NULL;
         }
     }
 
-    DBUG_ASSERT ((leftid != NULL), "error building shape: the shape is empty!");
+    DBUG_ASSERT ((leftshape != NULL), "error building shape: the shape is empty!");
 
-    DBUG_RETURN (leftid);
+    DBUG_RETURN (leftshape);
 }
 
+/**
+ * builds the left part of the index vector that is used to select each
+ * element of the result within the withloop. For every dot within the
+ * selection vector, the corresponding part of the withloops index vector
+ * is inserted, otherwise the element within the selection vector is inserted.
+ *
+ * @param args selection vector the selection operates on
+ * @param iv identifier of the withloop index vector
+ * @param info dotinfo structure
+ * @return left part of the index vector
+ */
 node *
 BuildLeftIndex (node *args, node *iv, dotinfo *info)
 {
@@ -706,6 +863,17 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * build the middle part of the index vector used within the withloop
+ * to select the elements of the result. The middle part is constructed
+ * by dropping the elements not belonging to the triple dot, thus already
+ * matched by another element of the selection vector.
+ *
+ * @param args selection vector the selection operates on
+ * @param iv id of the withloops index vector
+ * @param info dotinfo structure
+ * @return sac representation of the middle index vector
+ */
 node *
 BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 {
@@ -723,6 +891,17 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * builds the right part of selection vector used within the withloop
+ * to select every element of the result. For every dot within the
+ * selection vector the corresponding element of the indexvector is inserted.
+ * For non dot elements, those are inserted.
+ *
+ * @param args selection vector the selection operates on
+ * @param iv identifier of the withloops indexvector
+ * @param info dotinfo structure
+ * @return sac representation of the index vectors right part
+ */
 node *
 BuildRightIndex (node *args, node *iv, dotinfo *info)
 {
@@ -759,6 +938,19 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
     DBUG_RETURN (result);
 }
 
+/**
+ * builds the indexvector used within the withloop to select each element
+ * of the result. The indexvector is built out of three parts. See
+ * BuildMiddle/Left/RightIndex for details. The three parts are concatenated
+ * during runtime. The sac code is built by BuildConcat.
+ *
+ * @param args selection vector the selection operates on
+ * @param iv identifier of the withloops index vector
+ * @param block returns the code block of the withloop used to concatenate
+ *              the three parts during runtime
+ * @param info dotinfo structure
+ * @return identifiert of the selection index created
+ */
 node *
 BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 {
@@ -833,6 +1025,16 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
     DBUG_RETURN (leftid);
 }
 
+/**
+ * builds the withloop construct replacing the selection.
+ *
+ * @param shape shape vector of the withloop
+ * @param iv identifier of the index vector
+ * @param array array the withloop operates ib
+ * @param index index of the selection
+ * @param block the withloops inner code block
+ * @return sac code of the withloop
+ */
 node *
 BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
 {
@@ -854,6 +1056,16 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block)
     DBUG_RETURN (result);
 }
 
+/**
+ * appends all ids within ids to the idtable appendto. The gathered
+ * information is used to collect shapes of arrays these ids are
+ * used on within a selection. New ids are appended on top in order
+ * to hide lower ones.
+ *
+ * @param ids EXPRS node containing ids
+ * @param appendto idtable to append the ids to (may be null)
+ * @return new idtable containing found ids
+ */
 idtable *
 BuildIdTable (node *ids, idtable *appendto)
 {
@@ -893,6 +1105,16 @@ BuildIdTable (node *ids, idtable *appendto)
     DBUG_RETURN (result);
 }
 
+/**
+ * frees all elements in idtable until the element until is reached.
+ * Used to clean up the idtable after the code of a lamination was
+ * parsed. After a clean up until points to the top of the idtable.
+ * The shapes stored in the idtable are not freed as they are reused
+ * to build the withloop replacing the lamination.
+ *
+ * @param table table to clean up
+ * @param until marker where to stop
+ */
 void
 FreeIdTable (idtable *table, idtable *until)
 {
@@ -917,6 +1139,18 @@ FreeIdTable (idtable *table, idtable *until)
     DBUG_VOID_RETURN;
 }
 
+/**
+ * scans a selection vector for occurancies of an id in ids within it
+ * and stores the corresponding shape of the array the selection
+ * is performed on in ids. Used to gather shape information to build
+ * the withloop replacing the lamination.
+ * The shape is taken from the corresponding element of array w.r.t.
+ * occurencies of any tripledot.
+ *
+ * @param vector selection vector to scan
+ * @param array array the selection operates on
+ * @param ids idtable containing ids to scan
+ */
 void
 ScanVector (node *vector, node *array, idtable *ids)
 {
@@ -977,6 +1211,14 @@ ScanVector (node *vector, node *array, idtable *ids)
     DBUG_VOID_RETURN;
 }
 
+/**
+ * scans a selection vector given as a single vector variable. If it
+ * exists within ids, the corresponding shape is stored in ids.
+ *
+ * @param id selection vector id
+ * @param array array the selection operates on
+ * @param ids idtable structure
+ */
 void
 ScanId (node *id, node *array, idtable *ids)
 {
@@ -1000,6 +1242,14 @@ ScanId (node *id, node *array, idtable *ids)
     DBUG_VOID_RETURN;
 }
 
+/**
+ * builds runtime code that calculates the minimum of all shapes
+ * found in vectors. This is only used if the selection vectors
+ * was a single indentifier.
+ *
+ * @param vectors shapechain containing vectors to build the minimum of
+ * @return sac code representing the minimum of all given shapes
+ */
 node *
 BuildShapeVectorMin (shpchain *vectors)
 {
@@ -1037,6 +1287,17 @@ BuildShapeVectorMin (shpchain *vectors)
     DBUG_RETURN (result);
 }
 
+/**
+ * builds the shape for the withloop replacing the lamination. For each
+ * identifier within the lamination vector the shape is built as the
+ * minimum of all shapes of arrays the identifier is used with within a
+ * selection. If the lamination vector is given as a single vector,
+ * BuildMinShapeVector is used instead of primitive functions.
+ *
+ * @param table idtable structure
+ * @param end first identifier within idtable not belonging to this lamination
+ * @return sac code representing the shape vector
+ */
 node *
 BuildWLShape (idtable *table, idtable *end)
 {
@@ -1084,7 +1345,12 @@ BuildWLShape (idtable *table, idtable *end)
 
     DBUG_RETURN (result);
 }
-
+/**
+ * converts ID nodes within an EXPR chain to an Ids chain.
+ *
+ * @param exprs EXPR node chain containing ID nodes
+ * @return ids chain corresponding to the ID nodes within the EXPR chain
+ */
 ids *
 Exprs2Ids (node *exprs)
 {
@@ -1118,16 +1384,12 @@ Exprs2Ids (node *exprs)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/**
+ * hook to start the handle dots traversal of the AST.
  *
- * function:
- *    node* EliminateSelDots( node *arg_node);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current AST
+ * @result transformed AST without dots and dot constructs
+ */
 node *
 EliminateSelDots (node *arg_node)
 {
@@ -1153,16 +1415,17 @@ EliminateSelDots (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**
+ * hook for with nodes. Needed to normalize dots within withloop
+ * generators. At first, the withop node is traversed in order to
+ * get the result shape of the withloop, needed to calculate the
+ * replacements. The shape is stored in the arg_info structure.
+ * Afterwards the rest is traversed in order to replace the dots.
  *
- * function:
- *    node *HDwith( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node within the AST
+ * @param arg_info info node
+ * @result transformed AST
+ */
 node *
 HDwith (node *arg_node, node *arg_info)
 {
@@ -1190,16 +1453,15 @@ HDwith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**
+ * scans the withop node for the shape of the current withloop and stores
+ * it within the arg_info node. For fold withloops a null is stored as
+ * there is no shape information in fold withop nodes.
  *
- * function:
- *    node *HDwithop( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return current node of the AST
+ */
 node *
 HDwithop (node *arg_node, node *arg_info)
 {
@@ -1242,16 +1504,18 @@ HDwithop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**
+ * replaces dots in generators and normalizes the generator.
+ * A dot as left boundary is replaced by 0 * shape, a right boundary
+ * dot is replaced by shape. the left comparison operator is normalized
+ * to <= by adding 1 to the left boundary if necessary, the right
+ * boundary is normalized to < by decreasing the right boundary by 1 if
+ * necessary.
  *
- * function:
- *    node *HDgenerator( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return transformed AST
+ */
 node *
 HDgenerator (node *arg_node, node *arg_info)
 {
@@ -1316,16 +1580,14 @@ HDgenerator (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**
+ * hook for dot nodes used to generate a warning if an unhandled dot is
+ * found.
  *
- * function:
- *    node *HDdot( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return current node of the AST
+ */
 node *
 HDdot (node *arg_node, node *arg_info)
 {
@@ -1337,16 +1599,17 @@ HDdot (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**
+ * hook to handle axis control selections. Any selection found is parsed
+ * for dots and if any found replaced by the matching withloop.
+ * If currently scanning for selection ids, the ids of the selection are
+ * passed to ScanId/ScanVector depending on the selection vector type.
+ * All other AP nodes are passed without any further action.
  *
- * function:
- *    node *HDap( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return transformed AST
+ */
 node *
 HDap (node *arg_node, node *arg_info)
 {
@@ -1420,16 +1683,15 @@ HDap (node *arg_node, node *arg_info)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/**
+ * Used to scan selections for ids found in a prior lamination.
+ * Depending on the type of the selection vector, ScanId or ScanVector
+ * is called.
  *
- * function:
- *    node *HDprf( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return current node of the AST
+ */
 node *
 HDprf (node *arg_node, node *arg_info)
 {
@@ -1451,16 +1713,15 @@ HDprf (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**
+ * hook used to insert pending assings created by BuildShape prior
+ * to the axis control selection. The code is parsed and afterwards any pending
+ * assignments are inserted prior to this node.
  *
- * function:
- *    node *HDassign( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @result current node of the AST and inserted assigns
+ */
 node *
 HDassign (node *arg_node, node *arg_info)
 {
@@ -1477,11 +1738,16 @@ HDassign (node *arg_node, node *arg_info)
     /* check for assigns that are to be inserted */
 
     if (INFO_HD_ASSIGNS (arg_info) != NULL) {
-        /* we need to traverse them once more in order */
-        /* to do dot elemination in wl generators      */
-        /* and simplification of boundaries            */
-        result = Trav (INFO_HD_ASSIGNS (arg_info), arg_info);
-        AppendAssign (result, arg_node);
+        if (NODE_TYPE (INFO_HD_ASSIGNS (arg_info)) == N_empty) {
+            /* there is nothing to insert here */
+            FreeTree (INFO_HD_ASSIGNS (arg_info));
+        } else {
+            /* we need to traverse them once more in order */
+            /* to do dot elemination in wl generators      */
+            /* and simplification of boundaries            */
+            result = Trav (INFO_HD_ASSIGNS (arg_info), arg_info);
+            AppendAssign (result, arg_node);
+        }
     }
 
     /* reinstall old assigns-chain */
@@ -1491,16 +1757,17 @@ HDassign (node *arg_node, node *arg_info)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/**
+ * hook to handle any lamination operators. The inner expression is parsed for
+ * occuriencies of ids in the lamination vector. Afterwards the lamination
+ * operator is replaced by the corresponding withloop and the inner expression
+ * is parsed. To distinguish between parsing for ids and normal dot
+ * replacement, an entry within the info node is used.
  *
- * function:
- *    node *HDsetwl( node *arg_node, node *arg_info);
- *
- * description:
- *    ...
- *
- ******************************************************************************/
-
+ * @param arg_node current node of the ast
+ * @param arg_info info node
+ * @return transformed AST
+ */
 node *
 HDsetwl (node *arg_node, node *arg_info)
 {
