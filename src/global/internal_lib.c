@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/11/02 14:58:36  sah
+ * added MemCopy
+ *
  * Revision 3.59  2004/11/02 14:22:22  ktr
  * Added emlr_tab, emdr_tab.
  *
@@ -826,6 +829,30 @@ StrTok (char *first, char *sep)
     }
 
     DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void *MemCopy( int size, void *mem)
+ *
+ * Description:
+ *   Allocates memory and returns a pointer to the copy of 'mem'.
+ *
+ ******************************************************************************/
+
+void *
+MemCopy (int size, void *mem)
+{
+    void *result;
+
+    DBUG_ENTER ("MemCopy");
+
+    result = Malloc (sizeof (char) * size);
+
+    result = memcpy (result, mem, size);
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************

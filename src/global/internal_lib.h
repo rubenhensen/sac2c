@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/11/02 14:58:36  sah
+ * added MemCopy
+ *
  * Revision 3.25  2004/09/22 13:19:11  sah
  * changed argument to StringCopy to const char*
  * as the functions does not modify it
@@ -167,6 +170,8 @@ extern void *StrBufFree (str_buf *s);
 extern char *StringCopy (const char *source);
 extern char *StringConcat (char *first, char *second);
 extern char *StrTok (char *first, char *sep);
+
+extern void *MemCopy (int size, void *mem);
 
 extern int lcm (int x, int y);
 extern char *itoa (long number);
