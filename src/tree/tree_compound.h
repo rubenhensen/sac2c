@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/02/16 08:42:14  nmw
+ * macro AVIS_SSASTACK_INUSE added
+ *
  * Revision 3.20  2001/02/15 16:59:43  nmw
  * access macro for SSAstack added
  *
@@ -1903,6 +1906,7 @@ extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
  ***/
 
 #define AVIS_SSASTACK_TOP(n) SSASTACK_AVIS (AVIS_SSASTACK (n))
+#define AVIS_SSASTACK_INUSE(n) SSASTACK_INUSE (AVIS_SSASTACK (n))
 
 /*--------------------------------------------------------------------------*/
 
