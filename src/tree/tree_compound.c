@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/07/05 15:18:02  mab
+ * added Shpseg2Array
+ *
  * Revision 1.9  2000/06/30 15:24:39  jhs
  * CombineExprs can handle arguments being NULL now.
  * This effect can be used within MakeIcmXXX now.
@@ -1779,6 +1782,42 @@ Array2Shpseg (node *array)
     }
 
     DBUG_RETURN (shape);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *Shpseg2Array(shpseg* shape, int dim)
+ *
+ * description:
+ *   convert shpseg with given dimension into array with simpletype T_int
+ *
+ *****************************************************************************/
+
+node *
+Shpseg2Array (shpseg *shape, int dim)
+{
+
+    int i;
+    node *next;
+    node *array_node;
+    shpseg *array_shape;
+
+    DBUG_ENTER ("Shpseg2Array");
+
+    i = dim - 1;
+    next = MakeExprs (MakeNum (SHPSEG_SHAPE (shape, i)), NULL);
+    i--;
+    for (; i >= 0; i--) {
+        next = MakeExprs (MakeNum (SHPSEG_SHAPE (shape, i)), next);
+    }
+
+    array_node = MakeArray (next);
+    array_shape = MakeShpseg (NULL);
+    SHPSEG_SHAPE (array_shape, 0) = dim;
+    ARRAY_TYPE (array_node) = MakeType (T_int, 1, array_shape, NULL, NULL);
+
+    DBUG_RETURN (array_node);
 }
 
 /*****************************************************************************
