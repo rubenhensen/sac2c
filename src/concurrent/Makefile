@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  1999/07/30 13:45:12  jhs
+# Added concurrent_lib.[ch], make deps done.
+#
 # Revision 2.7  1999/07/28 08:32:46  jhs
 # Added spmd_cons.o.
 #
@@ -82,7 +85,7 @@ INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../pri
      -I../compile
 
 all: concurrent.o scheduling.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
-     sync_opt.o schedule.o spmd_trav.o spmd_cons.o
+     sync_opt.o schedule.o spmd_trav.o spmd_cons.o concurrent_lib.o
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
@@ -103,7 +106,10 @@ concurrent.o: /usr/include/stdio_impl.h ../global/types.h
 concurrent.o: ../global/tree_basic.h ../global/traverse.h ../global/globals.h
 concurrent.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
 concurrent.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-concurrent.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+concurrent.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+concurrent.o: /usr/include/sys/time.h /usr/include/sys/time.h
+concurrent.o: ../global/internal_lib.h ../global/Error.h
+concurrent.o: /usr/include/string.h /usr/include/stdlib.h
 schedule.o: ../../inc/dbug.h /usr/include/stdio.h
 schedule.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 schedule.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -117,8 +123,23 @@ scheduling.o: ../global/tree_basic.h ../global/internal_lib.h
 scheduling.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 scheduling.o: /usr/include/malloc.h /usr/include/sys/types.h
 scheduling.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-scheduling.o: ../global/traverse.h ../global/Error.h /usr/include/stdlib.h
-scheduling.o: ../global/globals.h ../compile/precompile.h
+scheduling.o: /usr/include/sys/select.h /usr/include/sys/time.h
+scheduling.o: /usr/include/sys/time.h ../global/traverse.h ../global/Error.h
+scheduling.o: /usr/include/stdlib.h ../global/globals.h
+scheduling.o: ../compile/precompile.h
+spmd_cons.o: ../../inc/dbug.h /usr/include/stdio.h
+spmd_cons.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+spmd_cons.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+spmd_cons.o: /usr/include/stdio_impl.h ../global/types.h
+spmd_cons.o: ../global/tree_basic.h ../global/tree_compound.h
+spmd_cons.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+spmd_cons.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
+spmd_cons.o: ../optimize/DataFlowMask.h ../global/internal_lib.h
+spmd_cons.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
+spmd_cons.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+spmd_cons.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+spmd_cons.o: /usr/include/sys/time.h /usr/include/sys/time.h
+spmd_cons.o: ../typecheck/typecheck.h concurrent_lib.h spmd_cons.h
 spmd_init.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -126,7 +147,7 @@ spmd_init.o: /usr/include/stdio_impl.h ../global/types.h
 spmd_init.o: ../global/tree_basic.h ../global/tree_compound.h
 spmd_init.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 spmd_init.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
-spmd_init.o: ../optimize/DataFlowMask.h
+spmd_init.o: ../optimize/DataFlowMask.h ../global/internal_lib.h
 spmd_lift.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_lift.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -135,7 +156,7 @@ spmd_lift.o: ../global/tree_basic.h ../global/tree_compound.h
 spmd_lift.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 spmd_lift.o: ../global/globals.h ../global/traverse.h ../optimize/DupTree.h
 spmd_lift.o: ../optimize/DataFlowMask.h ../typecheck/typecheck.h
-spmd_lift.o: ../refcount/refcount.h ../global/internal_lib.h
+spmd_lift.o: ../refcount/refcount.h ../global/internal_lib.h concurrent_lib.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -143,9 +164,10 @@ spmd_opt.o: /usr/include/stdio_impl.h ../global/types.h
 spmd_opt.o: ../global/tree_basic.h ../global/traverse.h ../global/free.h
 spmd_opt.o: ../global/my_debug.h /usr/include/malloc.h
 spmd_opt.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-spmd_opt.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-spmd_opt.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h spmd_trav.h
-spmd_opt.o: spmd_opt.h
+spmd_opt.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+spmd_opt.o: /usr/include/sys/time.h /usr/include/sys/time.h
+spmd_opt.o: ../global/internal_lib.h ../optimize/DupTree.h
+spmd_opt.o: ../optimize/DataFlowMask.h spmd_trav.h spmd_opt.h
 spmd_trav.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_trav.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_trav.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -156,15 +178,25 @@ spmd_trav.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
 spmd_trav.o: ../global/globals.h ../global/free.h ../global/my_debug.h
 spmd_trav.o: /usr/include/malloc.h /usr/include/sys/types.h
 spmd_trav.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-spmd_trav.o: spmd_trav.h
+spmd_trav.o: /usr/include/sys/select.h /usr/include/sys/time.h
+spmd_trav.o: /usr/include/sys/time.h spmd_trav.h
 sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 sync_init.o: /usr/include/stdio_impl.h ../global/types.h
 sync_init.o: ../global/tree_basic.h ../global/traverse.h
 sync_init.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
+sync_init.o: ../global/globals.h ../global/internal_lib.h
 sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sync_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 sync_opt.o: /usr/include/stdio_impl.h ../global/types.h
-sync_opt.o: ../global/tree_basic.h ../global/traverse.h
+sync_opt.o: ../global/tree_basic.h ../global/traverse.h ../global/free.h
+sync_opt.o: ../global/my_debug.h /usr/include/malloc.h
+sync_opt.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+sync_opt.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+sync_opt.o: /usr/include/sys/time.h /usr/include/sys/time.h
+sync_opt.o: ../global/internal_lib.h ../optimize/DupTree.h
+sync_opt.o: ../optimize/DataFlowMask.h spmd_trav.h spmd_opt.h
+sync_opt.o: ../global/globals.h ../global/Error.h /usr/include/string.h
+sync_opt.o: /usr/include/stdlib.h sync_opt.h
