@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.55  1995/04/11 11:34:45  asi
+ * Revision 1.56  1995/04/11 15:08:50  hw
+ * changed PrintFundef
+ *
+ * Revision 1.55  1995/04/11  11:34:45  asi
  * added 'flag' to struct 'node'
  *
  * Revision 1.54  1995/04/05  07:39:43  hw
@@ -383,6 +386,8 @@ PrintTypedef (node *arg_node, node *arg_info)
 node *
 PrintFundef (node *arg_node, node *arg_info)
 {
+    int print_icm = 0;
+
     DBUG_ENTER ("PrintFundef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
@@ -392,15 +397,26 @@ PrintFundef (node *arg_node, node *arg_info)
                   PrintMasks (arg_node, arg_info););
 
     fprintf (outfile, "\n");
+    if (NULL != arg_node->node[3])
+        /* after typechecking arg_node->node[3] contains a pointer to
+         * corresponding N_return. So we have to look wether this node
+         * is a N_icm
+         */
+        if (N_icm == arg_node->node[3]->nodetype)
+            print_icm = 1;
+
     if (arg_node->node[0] == NULL) /* pure fundec! */
         fprintf (outfile, "extern ");
-    fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
-    if (arg_node->info.types->id_mod != NULL)
-        fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
-    fprintf (outfile, "%s(", arg_node->info.types->id);
-    if (arg_node->node[2] != NULL)
-        Trav (arg_node->node[2], arg_info); /* print args of function */
-    fprintf (outfile, ")");
+    if (0 == print_icm) {
+        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+        if (arg_node->info.types->id_mod != NULL)
+            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+        fprintf (outfile, "%s(", arg_node->info.types->id);
+        if (arg_node->node[2] != NULL)
+            Trav (arg_node->node[2], arg_info); /* print args of function */
+        fprintf (outfile, ")");
+    } else
+        Trav (arg_node->node[3], arg_info); /* print N_icm ND_FUN_DEC */
 
     if (arg_node->node[0] == NULL) {
         fprintf (outfile, ";\n");
