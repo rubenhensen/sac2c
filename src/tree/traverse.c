@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2004/11/08 17:00:26  sah
+ * rsp_tab now hidden in old ast mode
+ *
  * Revision 3.106  2004/11/07 18:08:47  sah
  * added ResolvePragma (rsp) traversal
  *
@@ -1357,8 +1360,13 @@ funtab *unused_tab29 = &unused_tab29_rec;
  *  (75) rsp_tab
  */
 static funtab rsp_tab_rec = {{
+#ifdef NEW_AST
 #define NIFrsp(it_rsp) it_rsp
 #include "node_info.mac"
+#else /* NEW_AST */
+#define NIFunused_39(it_unused39) it_unused39
+#include "node_info.mac"
+#endif /* NEW_AST */
                              },
                              NULL,
                              NULL};
