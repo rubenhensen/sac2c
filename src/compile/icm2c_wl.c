@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/10/24 20:54:18  dkr
+ * some ICMs modified in order to support dynamic shapes
+ *
  * Revision 3.22  2002/10/07 23:35:45  dkr
  * some bugs with TAGGED_ARRAYS fixed
  *
@@ -41,10 +44,7 @@
  * Revision 3.9  2001/01/25 12:08:16  dkr
  * layout of ICMs WL_SET_OFFSET and WL_INIT_OFFSET modified.
  *
- * [ eliminated ]
- *
- * Revision 1.1  1998/05/03 14:06:09  dkr
- * Initial revision
+ * [...]
  *
  */
 
@@ -113,7 +113,7 @@ PrintTraceICM (char *to_nt, char *idx_vec_nt, int dims, char **idxa_scl, char *o
 /******************************************************************************
  *
  * Function:
- *   void PrintShapeFactor( int current_dim, int to_dim, char *to_nt)
+ *   void DefineShapeFactor( char *to_nt, int to_sdim, int current_dim)
  *
  * Description:
  *
@@ -121,14 +121,46 @@ PrintTraceICM (char *to_nt, char *idx_vec_nt, int dims, char **idxa_scl, char *o
  ******************************************************************************/
 
 static void
-PrintShapeFactor (int current_dim, int to_dim, char *to_nt)
+DefineShapeFactor (char *to_nt, int to_sdim, int current_dim)
 {
-    int j;
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+    int i;
 
-    DBUG_ENTER ("PrintShapeFactor");
+    DBUG_ENTER ("DefineShapeFactor");
 
-    for (j = current_dim + 1; j < to_dim; j++) {
-        fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_nt, j);
+    INDENT;
+#ifdef TAGGED_ARRAYS
+    fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d) = 1", to_nt,
+             current_dim);
+#else
+    fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d) = 1", to_nt, current_dim);
+#endif
+    if (to_dim >= 0) {
+        for (i = current_dim + 1; i < to_dim; i++) {
+            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_nt, i);
+        }
+        fprintf (outfile, ";\n");
+    } else {
+        fprintf (outfile, ";\n");
+        INDENT;
+        fprintf (outfile,
+                 "for (SAC_i = %d; SAC_i < SAC_ND_A_DIM( %s); SAC_i++)"
+                 " {\n",
+                 current_dim + 1, to_nt);
+        indent++;
+        INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile,
+                 "SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d)"
+#else
+        fprintf (outfile,
+                 "SAC_WL_SHAPE_FACTOR( %s, %d)"
+#endif
+                 " *= SAC_ND_A_SHAPE( %s, SAC_i);\n",
+                 to_nt, current_dim, to_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
     }
 
     DBUG_VOID_RETURN;
@@ -153,7 +185,7 @@ PrintShapeFactor (int current_dim, int to_dim, char *to_nt)
 static void
 WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
                   void (*shp_size_fun) (void *),
-                  void (*shp_read_fun) (void *, char *, int), char *val_nt)
+                  void (*shp_read_fun) (void *, char *, int), char *val_nt, int val_sdim)
 {
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_nt);
@@ -170,19 +202,12 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
          * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
         INDENT;
-#if 0
-      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_MIRROR_DIM( %s) = ",
-                        to_nt, to_nt);
-      GetAttr( shp, shp_size, shp_size_fun);
-      fprintf( outfile, " + SAC_ND_A_DIM( %s);\n", val_nt);
-#else
         fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
         GetAttr (shp, shp_size, shp_size_fun);
         fprintf (outfile,
                  " + SAC_ND_A_DIM( %s)),"
                  " (\"Assignment with incompatible types found!\"));\n",
                  val_nt);
-#endif
         INDENT;
         fprintf (outfile, "{ int SAC_i, SAC_j, SAC_size = 1;\n");
         indent++;
@@ -360,7 +385,8 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
  *
  * function:
  *   void ICMCompileND_WL_GENARRAY__SHAPE_id( char *to_nt, int to_sdim,
- *                                            char *shp_nt, char *val_nt)
+ *                                            char *shp_nt,
+ *                                            char *val_nt, int val_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -370,7 +396,8 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
  ******************************************************************************/
 
 void
-ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt, char *val_nt)
+ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt, char *val_nt,
+                                    int val_sdim)
 {
     DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id");
 
@@ -391,7 +418,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt, char
              " (\"Shape of genarray with-loop has (dim != 1)!\"));\n",
              shp_nt);
 
-    WLGenarray_Shape (to_nt, to_sdim, shp_nt, -1, SizeId, ReadId, val_nt);
+    WLGenarray_Shape (to_nt, to_sdim, shp_nt, -1, SizeId, ReadId, val_nt, val_sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -401,18 +428,19 @@ ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt, char
  * function:
  *   void ICMCompileND_WL_GENARRAY__SHAPE_arr( char *to_nt, int to_sdim,
  *                                             int shp_size, char **shpa_any,
- *                                             char *val_nt)
+ *                                             char *val_nt, int val_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_WL_GENARRAY__SHAPE_arr( to_nt, to_sdim, shp_size, shpa_any, val_nt)
+ *   ND_WL_GENARRAY__SHAPE_arr( to_nt, to_sdim, shp_size, shpa_any,
+ *                              val_nt, val_sdim)
  *
  ******************************************************************************/
 
 void
 ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
-                                     char **shpa_any, char *val_nt)
+                                     char **shpa_any, char *val_nt, int val_sdim)
 {
     int i;
 
@@ -425,7 +453,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
 
     /*
      * CAUTION:
-     * 'shpa_any[i]' is either a tagged identifier or a constant scalar!!
+     * 'shpa_any[i]' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!!
      */
 
     INDENT;
@@ -444,7 +473,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
         }
     }
 
-    WLGenarray_Shape (to_nt, to_sdim, shpa_any, shp_size, NULL, ReadConstArray, val_nt);
+    WLGenarray_Shape (to_nt, to_sdim, shpa_any, shp_size, NULL, ReadConstArray, val_nt,
+                      val_sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -454,17 +484,18 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_BEGIN__OFFSET( char *to_nt, char *idx_vec_nt, int dims)
+ *   void ICMCompileWL_BEGIN__OFFSET( char *to_nt, int to_sdim,
+ *                                    char *idx_vec_nt, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_BEGIN__OFFSET( to_nt, idx_vec_nt, dims)
+ *   WL_BEGIN__OFFSET( to_nt, to_sdim, idx_vec_nt, dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
+ICMCompileWL_BEGIN__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt, int dims)
 {
     int i;
 
@@ -478,6 +509,9 @@ ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
     INDENT;
     fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n", to_nt);
     indent++;
+    for (i = 0; i < dims; i++) {
+        DefineShapeFactor (to_nt, DIM_NO_OFFSET (to_sdim), i);
+    }
 
     for (i = 0; i < dims; i++) {
         INDENT;
@@ -492,17 +526,18 @@ ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_BEGIN( char *to_nt, char *idx_vec_nt, int dims)
+ *   void ICMCompileWL_BEGIN( char *to_nt, int to_sdim,
+ *                            char *idx_vec_nt, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_BEGIN( to_nt, idx_vec_nt, dims)
+ *   WL_BEGIN( to_nt, to_sdim, idx_vec_nt, dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_BEGIN (char *to_nt, char *idx_vec_nt, int dims)
+ICMCompileWL_BEGIN (char *to_nt, int to_sdim, char *idx_vec_nt, int dims)
 {
     int i;
 
@@ -530,17 +565,18 @@ ICMCompileWL_BEGIN (char *to_nt, char *idx_vec_nt, int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_END__OFFSET( char *to_nt, char *idx_vec_nt, int dims)
+ *   void ICMCompileWL_END__OFFSET( char *to_nt, int to_sdim,
+ *                                  char *idx_vec_nt, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_END__OFFSET( to_nt, idx_vec_nt, dims)
+ *   WL_END__OFFSET( to_nt, to_sdim, idx_vec_nt, dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_END__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
+ICMCompileWL_END__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt, int dims)
 {
     DBUG_ENTER ("ICMCompileWL_END__OFFSET");
 
@@ -559,17 +595,18 @@ ICMCompileWL_END__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_END( char *to_nt, char *idx_vec_nt, int dims)
+ *   void ICMCompileWL_END( char *to_nt, int to_sdim,
+ *                          char *idx_vec_nt, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_END( to_nt, idx_vec_nt, dims)
+ *   WL_END( to_nt, to_sdim, idx_vec_nt, dims)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_END (char *to_nt, char *idx_vec_nt, int dims)
+ICMCompileWL_END (char *to_nt, int to_sdim, char *idx_vec_nt, int dims)
 {
     DBUG_ENTER ("ICMCompileWL_END");
 
@@ -588,23 +625,25 @@ ICMCompileWL_END (char *to_nt, char *idx_vec_nt, int dims)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN( int val_dim, char *val_nt,
- *                             int to_dim, char *to_nt,
+ *   void ICMCompileWL_ASSIGN( char *val_nt, int val_sdim,
+ *                             char *to_nt, int to_sdim
  *                             char *idx_vec_nt,
  *                             int dims, char **idxa_scl)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN( val_dim, val_nt, to_dim, to_nt, idx_vec_nt,
- *              dims, [ idxa_scl ]* )
+ *   WL_ASSIGN( val_nt, val_sdim, to_nt, to_sdim,
+ *              idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN (int val_dim, char *val_nt, int to_dim, char *to_nt, char *idx_vec_nt,
-                     int dims, char **idxa_scl)
+ICMCompileWL_ASSIGN (char *val_nt, int val_sdim, char *to_nt, int to_sdim,
+                     char *idx_vec_nt, int dims, char **idxa_scl)
 {
+    int val_dim = DIM_NO_OFFSET (val_sdim);
+
     DBUG_ENTER ("ICMCompileWL_ASSIGN");
 
 #define WL_ASSIGN
@@ -614,7 +653,20 @@ ICMCompileWL_ASSIGN (int val_dim, char *val_nt, int to_dim, char *to_nt, char *i
 
     PrintTraceICM (to_nt, idx_vec_nt, dims, idxa_scl, "assign", TRUE);
 
-    if (val_dim > 0) {
+    if (val_dim == 0) {
+        INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile,
+                 "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
+                 "SAC_ND_READ( %s, 0);\n",
+                 to_nt, to_nt, val_nt);
+#else
+        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_OFFSET( %s)) = %s;\n", to_nt,
+                 to_nt, val_nt);
+#endif
+        INDENT;
+        fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_nt);
+    } else {
         INDENT;
         fprintf (outfile, "{ int SAC_i;\n");
         indent++;
@@ -648,19 +700,6 @@ ICMCompileWL_ASSIGN (int val_dim, char *val_nt, int to_dim, char *to_nt, char *i
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
-    } else {
-        INDENT;
-#ifdef TAGGED_ARRAYS
-        fprintf (outfile,
-                 "SAC_ND_WRITE( %s, SAC_WL_OFFSET( %s)) = "
-                 "SAC_ND_READ( %s, 0);\n",
-                 to_nt, to_nt, val_nt);
-#else
-        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, SAC_WL_OFFSET( %s)) = %s;\n", to_nt,
-                 to_nt, val_nt);
-#endif
-        INDENT;
-        fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_nt);
     }
 
     DBUG_VOID_RETURN;
@@ -669,21 +708,23 @@ ICMCompileWL_ASSIGN (int val_dim, char *val_nt, int to_dim, char *to_nt, char *i
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN__INIT( int to_dim, char *to_nt,
+ *   void ICMCompileWL_ASSIGN__INIT( char *to_nt, int to_sdim,
  *                                   char *idx_vec_nt,
  *                                   int dims, char **idxa_scl)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN__INIT( to_dim, to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
+ *   WL_ASSIGN__INIT( to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
+ICMCompileWL_ASSIGN__INIT (char *to_nt, int to_sdim, char *idx_vec_nt, int dims,
                            char **idxa_scl)
 {
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+
     DBUG_ENTER ("ICMCompileWL_ASSIGN__INIT");
 
 #define WL_ASSIGN__INIT
@@ -693,15 +734,40 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
 
     PrintTraceICM (to_nt, idx_vec_nt, dims, idxa_scl, "init", TRUE);
 
-    if (to_dim > dims) {
+    /*
+     * the size of the area to be initialized can be found in
+     *   SAC_WL_SHAPE_FACTOR( NT_NAME( to_nt), dims - 1)
+     */
+
+    DBUG_ASSERT (((to_dim < 0) || (to_dim >= dims)), "inconsistant WL found!");
+    if (to_dim == dims) {
+        INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE("
+                 " (SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d) == 1),"
+#else
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_WL_SHAPE_FACTOR( %s, %d) == 1),"
+#endif
+                 " (\"Inconsistent with-loop found!\"));\n",
+                 to_nt, dims - 1);
+    } else {
         INDENT;
         fprintf (outfile, "{ int SAC_i;\n");
         indent++;
 
         INDENT;
-        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", to_nt, dims);
-        PrintShapeFactor (dims, to_dim, to_nt);
-        fprintf (outfile, "; SAC_i++) {\n");
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile,
+                 "for (SAC_i = 0; SAC_i <"
+                 " SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d)"
+#else
+        fprintf (outfile,
+                 "for (SAC_i = 0; SAC_i < SAC_WL_SHAPE_FACTOR( %s, %d)"
+#endif
+                 "; SAC_i++) {\n",
+                 to_nt, dims - 1);
         indent++;
     }
 
@@ -715,7 +781,7 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
     INDENT;
     fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_nt);
 
-    if (to_dim > dims) {
+    if (to_dim != dims) {
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
@@ -732,22 +798,23 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
  *
  * function:
  *   void ICMCompileWL_ASSIGN__COPY( char *from_nt,
- *                                   int to_dim, char *to_nt,
+ *                                   char *to_nt, int to_sdim,
  *                                   char *idx_vec_nt,
  *                                   int dims, char **idxa_scl)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN__COPY( from_nt,
- *                    to_dim, to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
+ *   WL_ASSIGN__COPY( from_nt, to_nt, to_sdim, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt, char *idx_vec_nt,
+ICMCompileWL_ASSIGN__COPY (char *from_nt, char *to_nt, int to_sdim, char *idx_vec_nt,
                            int dims, char **idxa_scl)
 {
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+
     DBUG_ENTER ("ICMCompileWL_ASSIGN__COPY");
 
 #define WL_ASSIGN__COPY
@@ -757,15 +824,40 @@ ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt, char *idx_vec
 
     PrintTraceICM (to_nt, idx_vec_nt, dims, idxa_scl, "copy", TRUE);
 
-    if (to_dim > dims) {
+    /*
+     * the size of the area to be copied can be found in
+     *   SAC_WL_SHAPE_FACTOR( NT_NAME( to_nt), dims - 1)
+     */
+
+    DBUG_ASSERT (((to_dim < 0) || (to_dim >= dims)), "inconsistant WL found!");
+    if (to_dim == dims) {
+        INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE("
+                 " (SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d) == 1),"
+#else
+        fprintf (outfile,
+                 "SAC_ASSURE_TYPE( (SAC_WL_SHAPE_FACTOR( %s, %d) == 1),"
+#endif
+                 " (\"Inconsistent with-loop found!\"));\n",
+                 to_nt, dims - 1);
+    } else {
         INDENT;
         fprintf (outfile, "{ int SAC_i;\n");
         indent++;
 
         INDENT;
-        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", to_nt, dims);
-        PrintShapeFactor (dims, to_dim, to_nt);
-        fprintf (outfile, "; SAC_i++) {\n");
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile,
+                 "for (SAC_i = 0; SAC_i <"
+                 " SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d)"
+#else
+        fprintf (outfile,
+                 "for (SAC_i = 0; SAC_i < SAC_WL_SHAPE_FACTOR( %s, %d)"
+#endif
+                 "; SAC_i++) {\n",
+                 to_nt, dims - 1);
         indent++;
     }
 
@@ -785,7 +877,7 @@ ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt, char *idx_vec
     INDENT;
     fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_nt);
 
-    if (to_dim > dims) {
+    if (to_dim != dims) {
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
@@ -801,19 +893,18 @@ ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt, char *idx_vec
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_FOLD( int to_dim, char *to_nt,
- *                           char *idx_vec_nt,
- *                           int dims, char **idxa_scl)
+ *   void ICMCompileWL_FOLD( char *to_nt, int to_sdim,
+ *                           char *idx_vec_nt, int dims, char **idxa_scl)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_FOLD( to_dim, to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
+ *   WL_FOLD( to_nt, to_sdim, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_FOLD (int to_dim, char *to_nt, char *idx_vec_nt, int dims, char **idxa_scl)
+ICMCompileWL_FOLD (char *to_nt, int to_sdim, char *idx_vec_nt, int dims, char **idxa_scl)
 {
     DBUG_ENTER ("ICMCompileWL_FOLD");
 
@@ -833,19 +924,19 @@ ICMCompileWL_FOLD (int to_dim, char *to_nt, char *idx_vec_nt, int dims, char **i
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_FOLD__OFFSET( int to_dim, char *to_nt,
+ *   void ICMCompileWL_FOLD__OFFSET( char *to_nt, int to_sdim,
  *                                   char *idx_vec_nt,
  *                                   int dims, char **idxa_scl)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_FOLD__OFFSET( to_dim, to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
+ *   WL_FOLD__OFFSET( to_nt, to_sdim, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_FOLD__OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
+ICMCompileWL_FOLD__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt, int dims,
                            char **idxa_scl)
 {
     DBUG_ENTER ("ICMCompileWL_FOLD__OFFSET");
@@ -868,13 +959,13 @@ ICMCompileWL_FOLD__OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_INIT_OFFSET( int to_dim, char *to_nt,
+ *   void ICMCompileWL_INIT_OFFSET( char *to_nt, int to_sdim,
  *                                  char *idx_vec_nt, int dims)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *     WL_INIT_OFFSET( to_dim, to_nt, idx_vec_nt, dims)
+ *     WL_INIT_OFFSET( to_nt, to_sdim, idx_vec_nt, dims)
  *
  *   The SAC_WL_OFFSET() of the WL-array is initialized, i.e. set to the index
  *   of the first WL element.
@@ -889,7 +980,7 @@ ICMCompileWL_FOLD__OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
  ******************************************************************************/
 
 void
-ICMCompileWL_INIT_OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims)
+ICMCompileWL_INIT_OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt, int dims)
 {
     int i;
 
@@ -905,14 +996,25 @@ ICMCompileWL_INIT_OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims)
     indent++;
 
     INDENT;
-    fprintf (outfile, "= SAC_WL_MT_SCHEDULE_START( 0)");
-    PrintShapeFactor (0, to_dim, to_nt);
+    fprintf (outfile,
+             "= SAC_WL_MT_SCHEDULE_START( 0)"
+#ifdef TAGGED_ARRAYS
+             " * SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d)",
+             to_nt, 0);
+#else
+             " * SAC_WL_SHAPE_FACTOR( %s, %d)",
+             to_nt, 0);
+#endif
 
     for (i = 1; i < dims; i++) {
         fprintf (outfile, "\n");
         INDENT;
         fprintf (outfile, "+ SAC_WL_MT_SCHEDULE_START( %d)", i);
-        PrintShapeFactor (i, to_dim, to_nt);
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, " * SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d)", to_nt, i);
+#else
+        fprintf (outfile, " * SAC_WL_SHAPE_FACTOR( %s, %d)", to_nt, i);
+#endif
     }
 
     fprintf (outfile, ";\n");
@@ -925,15 +1027,14 @@ ICMCompileWL_INIT_OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims)
  *
  * function:
  *   void ICMCompileWL_ADJUST_OFFSET( int dim,
- *                                    int to_dim, char *to_nt,
+ *                                    char *to_nt, int to_sdim,
  *                                    char *idx_vec_nt,
  *                                    int dims, char **idxa_scl)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ADJUST_OFFSET( dim, to_dim, to_nt, idx_vec_nt,
- *                     dims, [ idxa_scl ]* )
+ *   WL_ADJUST_OFFSET( dim, to_nt, to_sdim, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  * remark:
  *   This ICM is needed (and usefull) in combination with NOOP N_WL..-nodes
@@ -943,7 +1044,7 @@ ICMCompileWL_INIT_OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims)
  ******************************************************************************/
 
 void
-ICMCompileWL_ADJUST_OFFSET (int dim, int to_dim, char *to_nt, char *idx_vec_nt, int dims,
+ICMCompileWL_ADJUST_OFFSET (int dim, char *to_nt, int to_sdim, char *idx_vec_nt, int dims,
                             char **idxa_scl)
 {
     DBUG_ENTER ("ICMCompileWL_ADJUST_OFFSET");
@@ -954,10 +1055,14 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int to_dim, char *to_nt, char *idx_vec_nt, 
 #undef WL_ADJUST_OFFSET
 
     INDENT;
-    fprintf (outfile, "SAC_WL_OFFSET( %s) += SAC_WL_VAR( diff, %s)", to_nt,
-             idxa_scl[dim]);
-    PrintShapeFactor (dim, to_dim, to_nt);
-    fprintf (outfile, ";\n");
+    fprintf (outfile,
+             "SAC_WL_OFFSET( %s) += SAC_WL_VAR( diff, %s)"
+#ifdef TAGGED_ARRAYS
+             " * SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d);\n",
+#else
+             " * SAC_WL_SHAPE_FACTOR( %s, %d);\n",
+#endif
+             to_nt, idxa_scl[dim], to_nt, dim);
 
     DBUG_VOID_RETURN;
 }
@@ -966,14 +1071,13 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int to_dim, char *to_nt, char *idx_vec_nt, 
  *
  * function:
  *   void ICMCompileWL_SET_OFFSET( int dim, int first_block_dim,
- *                                 int to_dim, char *to_nt,
- *                                 char *idx_vec_nt,
- *                                 int dims, char **idxa_scl)
+ *                                 char *to_nt, int to_sdim,
+ *                                 char *idx_vec_nt, int dims, char **idxa_scl)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_SET_OFFSET( dim, first_block_dim, to_dim, to_nt, idx_vec_nt,
+ *   WL_SET_OFFSET( dim, first_block_dim, to_nt, to_sdim, idx_vec_nt,
  *                  dims, [ idxa_scl ]* )
  *
  * remark:
@@ -993,7 +1097,7 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int to_dim, char *to_nt, char *idx_vec_nt, 
  ******************************************************************************/
 
 void
-ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int to_dim, char *to_nt,
+ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_nt, int to_sdim,
                          char *idx_vec_nt, int dims, char **idxa_scl)
 {
     int i;
@@ -1036,9 +1140,11 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int to_dim, char *to_nt,
             }
         }
     }
-    PrintShapeFactor (dims - 1, to_dim, to_nt);
-
-    fprintf (outfile, ";\n");
+#ifdef TAGGED_ARRAYS
+    fprintf (outfile, " * SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d);\n", to_nt, dims - 1);
+#else
+    fprintf (outfile, " * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_nt, dims - 1);
+#endif
     indent--;
 
     DBUG_VOID_RETURN;
