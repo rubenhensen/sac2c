@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/08/30 10:49:54  dkr
+ * F_type_error added
+ *
  * Revision 3.5  2002/08/06 15:52:52  sbs
  * F_xxx_SxS added.
  *
@@ -32,29 +35,33 @@
 */
 
 /*
- * NOTE: At the time being, there are 4 categories of prf's:
  *
- *       - the first legal prf HAS TO BE "F_toi" !!
+ * NOTE: At the time being, there are 5 categories of prf's:
+ *
+ *       - the first legal prf HAS TO BE "F_toi"!!
  *
  *       - funs with exactly 1 scalar arg. The last fun of this
- *         category HAS TO BE "F_not" !!
+ *         category HAS TO BE "F_not"!!
  *
  *       - funs which require more than one argument. All of the fun's
  *         arguments should be scalars (not arrays). The last fun of
- *         this category HAS TO BE "F_neq" !!
+ *         this category HAS TO BE "F_neq"!!
  *
  *       - funs that require at least one non-scalar (array) argument
  *         and are purely intrinsics.
- *         The last fun of this category HAS TO BE "F_modarray" !!
+ *         The last fun of this category HAS TO BE "F_modarray"!!
  *
  *       - funs that require at least one non-scalar (array) argument
  *         and are not purely intrinsics (i.e. they can be found in the
- *         Array module, too).
+ *         Array module, too). The last fun of this category HAS TO BE
+ *         "F_rotate"!!
  *
- *       - the last legal prf HAS TO BE "F_rotate" !!
+ *       - funs that cause runtime errors. These funs HAVE TO BE located
+ *         at the end of the list (after "F_rotate")!!
  *
- * These side-conditions are used and defined in prf.h !!!
- * And they should be be used ONLY in prf.h !!!!!!!
+ * These side-conditions are used and defined in prf.h!!!
+ * And they should be be used EXCLUSIVELY in prf.h!!!!!!!
+ *
  */
 
 /*  node_name           mdb_prf[]         prf_string[]    prf_name_str[]  */
@@ -112,4 +119,6 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_take, "F_take", "take", "take", NTCPRF_dummy),
   PRF_IF (F_drop, "F_drop", "drop", "drop", NTCPRF_dummy),
   PRF_IF (F_cat, "F_cat", "cat", "cat", NTCPRF_dummy),
-  PRF_IF (F_rotate, "F_rotate", "rotate", "rotate", NTCPRF_dummy)
+  PRF_IF (F_rotate, "F_rotate", "rotate", "rotate", NTCPRF_dummy),
+
+  PRF_IF (F_type_error, "F_type_error", "_type_error", "_type_error", NTCPRF_dummy)
