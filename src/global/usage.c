@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/06/09 15:28:46  hw
+ * Revision 1.16  1995/06/13 08:30:27  asi
+ * added -maxoptvar, -maxinline und -maxunroll
+ *
+ * Revision 1.15  1995/06/09  15:28:46  hw
  *  new option '-fcheck_boundary'  inserted
  *
  * Revision 1.14  1995/06/02  09:54:53  sbs
@@ -49,6 +52,8 @@
 #include "usage.h"
 #include <stdio.h>
 #include "dbug.h"
+#include "tree.h"
+#include "optimize.h"
 
 void
 usage (char *prg_name)
@@ -84,7 +89,16 @@ usage (char *prg_name)
     printf ("\t -noloop_invariant_removal\tno loop invariant removal \n");
     printf ("\t -nopsi_opt\t\t\tno psi optimisations\n");
     printf ("\t -noindex_vect_elimination\tno index vector elimination \n");
-    printf ("\t -v <no>\t\t\treserve <no> variables for optimization\n");
+
+    printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
+            "\t\t\t\tDefault: -maxoptvar %d\n",
+            optvar);
+    printf ("\t -maxinline <no>\tinline recursive functions <no> times\n"
+            "\t\t\t\tDefault: -maxinline %d\n",
+            inlnum);
+    printf ("\t -maxunroll <no>\tunroll loops having no more than <no> iterations\n"
+            "\t\t\t\tDefault: -maxunroll %d\n",
+            unrnum);
 
     printf ("\nTRACE OPTIONS:\n");
     printf ("\t -t [arupw] \t\ttrace array-opts\n");
@@ -101,7 +115,7 @@ usage (char *prg_name)
     printf ("\nC-COMPILER OPTIONS:\n");
     printf ("\t  (these options handed to the C-compiler)\n");
     printf ("\t -g \t\t\tinclude debug information\n");
-    printf ("\t -O[12] \t\tC-compiler level of optimization\n");
+    printf ("\t -O[123] \t\tC-compiler level of optimization\n");
 
     printf ("\nENVIROMENT VARIABLES:\n");
     printf ("\t SAC_PATH\t\tsearch paths for program source\n");
