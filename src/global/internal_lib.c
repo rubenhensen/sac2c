@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/09/30 22:39:52  dkrHH
+ * Malloc(): DBUG_ASSERT put into if-clause to ease debugging
+ *
  * Revision 3.38  2003/09/09 14:57:23  sbs
  * PtrBuf support added.
  *
@@ -191,8 +194,9 @@ Malloc (int size)
         *(int *)tmp = size;
         tmp = (char *)tmp + malloc_align_step;
 
-        DBUG_ASSERT ((current_allocated_mem + size >= current_allocated_mem),
-                     "counter for allocated memory: overflow detected");
+        if (current_allocated_mem + size < current_allocated_mem) {
+            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+        }
         current_allocated_mem += size;
         if (max_allocated_mem < current_allocated_mem) {
             max_allocated_mem = current_allocated_mem;
