@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.96  1995/12/01 17:16:53  cg
+ * Revision 1.97  1995/12/01 20:28:09  cg
+ * Changed generic module name for SAC programs to "__MAIN"
+ *
+ * Revision 1.96  1995/12/01  17:16:53  cg
  * changed storage of alternative linkname.
  * new pragma node used for storage but syntax is still unmodified
  *
@@ -362,7 +365,7 @@ node *decl_tree;
 node *sib_tree;
 
 
-static char *mod_name="__SAC";
+static char *mod_name="__MAIN";
 
 
 /* used to distinguish the different kinds of files  */
