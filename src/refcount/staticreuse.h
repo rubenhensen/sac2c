@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/21 20:42:14  ktr
+ * Ismop
+ *
  * Revision 1.2  2004/10/22 15:38:19  ktr
  * Ongoing implementation.
  *
@@ -8,18 +11,20 @@
  * Initial revision
  *
  */
-#ifndef _staticreuse_h
-#define _staticreuse_h
+#ifndef _SAC_STATICREUSE_H_
+#define _SAC_STATICREUSE_H_
+
+#include "types.h"
 
 /******************************************************************************
  *
- * Static reuse traversal
+ * Static reuse traversal ( emsr_tab)
  *
  * Prefix: EMSR
  *
  *****************************************************************************/
-extern node *EMSRStaticReuse (node *syntax_tree);
+extern node *EMSRdoStaticReuse (node *syntax_tree);
 
 extern node *EMSRprf (node *arg_node, info *arg_info);
 
-#endif
+#endif /* _SAC_STATICREUSE_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/21 20:42:14  ktr
+ * Ismop
+ *
  * Revision 1.4  2004/10/22 15:18:40  ktr
  * Moved some functionality into reuseelimination.c
  *
@@ -14,8 +17,10 @@
  * Initial revision
  *
  */
-#ifndef _rcopt_h
-#define _rcopt_h
+#ifndef _SAC_RCOPT_H_
+#define _SAC_RCOPT_H_
+
+#include "types.h"
 
 /******************************************************************************
  *
@@ -24,12 +29,13 @@
  * prefix: EMRCO
  *
  *****************************************************************************/
-extern node *EMRCORefCountOpt (node *syntax_tree);
+extern node *EMRCOdoRefCountOpt (node *syntax_tree);
 
 extern node *EMRCOassign (node *arg_node, info *arg_info);
 extern node *EMRCOblock (node *arg_node, info *arg_info);
+extern node *EMRCOgenarray (node *arg_node, info *arg_info);
 extern node *EMRCOlet (node *arg_node, info *arg_info);
+extern node *EMRCOmodarray (node *arg_node, info *arg_info);
 extern node *EMRCOprf (node *arg_node, info *arg_info);
-extern node *EMRCOwithop (node *arg_node, info *arg_info);
 
-#endif
+#endif /* _SAC_RCOPT_H_ */

@@ -1,14 +1,19 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/21 20:42:14  ktr
+ * Ismop
+ *
  * Revision 1.1  2004/10/11 14:45:13  ktr
  * Initial revision
  *
  */
 
-#ifndef _rcphase_h
-#define _rcphase_h
+#ifndef _SAC_RCPHASE_H_
+#define _SAC_RCPHASE_H_
 
-extern node *RCphase (node *syntax_tree);
+#include "types.h"
 
-#endif
+extern node *EMrefcounting (node *syntax_tree);
+
+#endif /* _SAC_RCPHASE_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/21 20:42:14  ktr
+ * Ismop
+ *
  * Revision 1.2  2004/11/09 20:54:20  ktr
  * Typo corrected.
  *
@@ -8,10 +11,12 @@
  * Initial revision
  *
  */
-#ifndef _sac_loopreuseopt_h
-#define _sac_loopreuseopt_h
+#ifndef _SAC_LOOPREUSEOPT_H_
+#define _SAC_LOOPREUSEOPT_H_
 
-extern node *EMLRLoopReuseOptimization (node *syntax_tree);
+#include "types.h"
+
+extern node *EMLRdoLoopReuseOptimization (node *syntax_tree);
 
 /*****************************************************************************
  *
@@ -19,6 +24,8 @@ extern node *EMLRLoopReuseOptimization (node *syntax_tree);
  *
  * Nodes which must not be traversed:
  *  - N_objdef
+ *
+ * Prefix: EMLR
  *
  ****************************************************************************/
 extern node *EMLRap (node *arg_node, info *arg_info);
@@ -32,6 +39,8 @@ extern node *EMLRfundef (node *arg_node, info *arg_info);
  * Nodes which must not be traversed:
  *  - N_objdef
  *
+ * Prefix: EMLRO
+ *
  ***************************************************************************/
 extern node *EMLROap (node *arg_node, info *arg_info);
 extern node *EMLROarg (node *arg_node, info *arg_info);
@@ -39,4 +48,4 @@ extern node *EMLROfundef (node *arg_node, info *arg_info);
 extern node *EMLROid (node *arg_node, info *arg_info);
 extern node *EMLROprf (node *arg_node, info *arg_info);
 
-#endif
+#endif /* _SAC_LOOPREUSEOPT_H_ */

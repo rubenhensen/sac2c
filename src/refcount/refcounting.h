@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/21 20:42:14  ktr
+ * Ismop
+ *
  * Revision 1.6  2004/10/10 09:55:45  ktr
  * Reference counting now works transparently over CONDFUN boundaries,
  * using the scheme presented in IFL04 paper.
@@ -39,31 +42,40 @@
  *
  */
 
-#ifndef _sac_refcounting_h
-#define _sac_refcounting_h
+#ifndef _SAC_REFCOUNTING_H_
+#define _SAC_REFCOUNTING_H_
 
-extern node *EMRefCount (node *syntax_tree);
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Reference counting traversal (emrc_tab)
+ *
+ * prefix: EMRC
+ *
+ *****************************************************************************/
+extern node *EMdoRefcounting (node *syntax_tree);
 
 extern node *EMRCap (node *arg_node, info *arg_info);
 extern node *EMRCarg (node *arg_node, info *arg_info);
 extern node *EMRCarray (node *arg_node, info *arg_info);
 extern node *EMRCassign (node *arg_node, info *arg_info);
 extern node *EMRCblock (node *arg_node, info *arg_info);
+extern node *EMRCcode (node *arg_node, info *arg_info);
 extern node *EMRCcond (node *arg_node, info *arg_info);
+extern node *EMRCfold (node *arg_node, info *arg_info);
 extern node *EMRCfuncond (node *arg_node, info *arg_info);
 extern node *EMRCfundef (node *arg_node, info *arg_info);
+extern node *EMRCgenarray (node *arg_node, info *arg_info);
 extern node *EMRCicm (node *arg_node, info *arg_info);
 extern node *EMRCid (node *arg_node, info *arg_info);
 extern node *EMRClet (node *arg_node, info *arg_info);
-extern node *EMRCNcode (node *arg_node, info *arg_info);
-extern node *EMRCNwith (node *arg_node, info *arg_info);
-extern node *EMRCNwith2 (node *arg_node, info *arg_info);
-extern node *EMRCNwithid (node *arg_node, info *arg_info);
-extern node *EMRCNwithop (node *arg_node, info *arg_info);
+extern node *EMRCmodarray (node *arg_node, info *arg_info);
 extern node *EMRCprf (node *arg_node, info *arg_info);
 extern node *EMRCreturn (node *arg_node, info *arg_info);
 extern node *EMRCvardec (node *arg_node, info *arg_info);
+extern node *EMRCwith (node *arg_node, info *arg_info);
+extern node *EMRCwith2 (node *arg_node, info *arg_info);
+extern node *EMRCwithid (node *arg_node, info *arg_info);
 
-extern node *EMACFfundef (node *arg_node, info *arg_info);
-
-#endif /* _sac_refcounting_h */
+#endif /* _SAC_REFCOUNTING_H_ */

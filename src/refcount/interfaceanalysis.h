@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/21 20:42:14  ktr
+ * Ismop
+ *
  * Revision 1.2  2004/11/02 14:28:44  ktr
  * Better loop support.
  *
@@ -8,16 +11,19 @@
  * Initial revision
  *
  */
-#ifndef _interfaceanalysis_h
-#define _interfaceanalysis_h
+#ifndef _SAC_INTERFACEANALYSIS_H_
+#define _SAC_INTERFACEANALYSIS_H_
+
+#include "types.h"
+
 /*****************************************************************************
  *
  * Interface analysis traversal (emia_tab)
  *
- * prefix: EMAA
+ * prefix: EMIA
  *
  ****************************************************************************/
-extern node *EMIAInterfaceAnalysis (node *syntax_tree);
+extern node *EMIAdoInterfaceAnalysis (node *syntax_tree);
 
 extern node *EMIAap (node *arg_node, info *arg_info);
 extern node *EMIAarg (node *arg_node, info *arg_info);
@@ -32,7 +38,7 @@ extern node *EMIAreturn (node *arg_node, info *arg_info);
 extern node *EMIAvardec (node *arg_node, info *arg_info);
 extern node *EMIAwith (node *arg_node, info *arg_info);
 extern node *EMIAwith2 (node *arg_node, info *arg_info);
-extern node *EMIAwithop (node *arg_node, info *arg_info);
+extern node *EMIAfold (node *arg_node, info *arg_info);
 
 /****************************************************************************
  *
@@ -45,4 +51,4 @@ extern node *EMIAwithop (node *arg_node, info *arg_info);
  *
  ****************************************************************************/
 
-#endif
+#endif /* _SAC_INTERFACEANALYSIS_H_ */
