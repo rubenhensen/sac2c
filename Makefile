@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.34  1995/10/26 17:59:36  cg
+# Revision 1.35  1995/11/01 08:00:38  cg
+# added linking of objects.o
+#
+# Revision 1.34  1995/10/26  17:59:36  cg
 # Makefile prepared for usage of shell script sac_gcc to avoid
 # the boring warning 'casts not allowed as lvalues'.
 #
@@ -130,7 +133,7 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o
-OBJECTS= src/objects/objinit.o
+OBJECTS= src/objects/objinit.o src/objects/objects.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
 
