@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.89  2000/08/03 10:22:36  nmw
+ * N_fundef comment changed
+ *
  * Revision 1.88  2000/07/31 10:49:31  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -988,6 +991,9 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_independent  dimension-independent array function
  *          ST_generic      generic function derived from dimension-
  *                          independent array function
+ *          ST_gen_remove   generic function that has been specialized and will be
+ *                          removed before typechecking
+ *
  *  whlie/after multithreading:
  *  ATTRIB: ST_call_any       default_flag
  *                            (will be installed before using ATTRIB in mt-phases,
