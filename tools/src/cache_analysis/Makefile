@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.6  2001/11/20 10:18:15  sacbase
+# missing dep for $(LIBS) added.
+#
 # Revision 1.5  2001/11/20 10:17:20  sacbase
 # rule for $(LIBS) added.
 #
@@ -34,7 +37,7 @@ bits.o: bits.c bits.h
 %.o: %.c
 	$(CC) $(CCFLAGS) $(INCS) -c $<
 
-$(TOOLS)/bin/ctest: $(TOOLS)/bin accesstime.o ctest.o verbose.o l1.o l2.o bits.o
+$(TOOLS)/bin/ctest: $(TOOLS)/bin accesstime.o ctest.o verbose.o l1.o l2.o bits.o $(LIBS)
 	$(CC) $(CCFLAGS) -o $@ $(LIBS) accesstime.o ctest.o verbose.o l1.o l2.o bits.o
 
 $(TOOLS)/bin:
