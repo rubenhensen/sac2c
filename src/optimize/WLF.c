@@ -1,8 +1,14 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.8  1998/05/07 16:12:39  srs
+ * added more transformation functions,
+ * fixed a bug in IntersectGrids(),
+ * added range check for transformed constant generator bounds
+ * fixed bug in WLFNwith()
+ *
  * Revision 1.7  1998/04/29 15:17:43  srs
- * WLF and linear transformations (without grids) working now
+ * WLF and linear transformations (without grids) are working now
  *
  * Revision 1.6  1998/04/24 18:57:48  srs
  * added creation of types for N_array node
@@ -69,8 +75,8 @@
      nodes are collected in new_codes until they are inserted into the syntax
      tree in WLFNwith(). While a code is in new_codes, ID_WL of every Id inside
      the code points to it's original Id (this is the Id which was copied by
-     DupTree()). DupTree() sets this pointer and, if the argument of DupTRee()
-     is a code inside new_codes, too, copies ID_WL of this code (which is a
+     DupTree()). DupTree() sets this pointer and, if the argument of DupTree()
+     is a code inside new_codes, copies ID_WL of this code (which is a
      pointer to the original).
 
  ******************************************************************************/
@@ -80,6 +86,7 @@
 
 #include "tree.h"
 #include "types.h"
+#include "limits.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "print.h"
@@ -91,6 +98,7 @@
 #include "traverse.h"
 #include "optimize.h"
 #include "ConstantFolding.h"
+#include "tree_compound.h"
 #include "WithloopFolding.h"
 #include "WLF.h"
 
@@ -384,41 +392,6 @@ FreeCC (code_constr_type *cc)
 /******************************************************************************
  *
  * function:
- *   int KgV(int a, int b)
- *
- * description:
- *   calculates the smalest common multiple
- *
- *
- ******************************************************************************/
-
-int
-KgV (int a, int b)
-{
-    int c, m;
-
-    DBUG_ENTER ("KgV");
-
-    if (b > a) {
-        c = b;
-        b = a;
-        a = c;
-    }
-
-    m = a * b;
-
-    while (b) { /* euklid */
-        c = a % b;
-        a = b;
-        b = c;
-    }
-
-    DBUG_RETURN (m / a);
-}
-
-/******************************************************************************
- *
- * function:
  *   intern_gen *LinearTransformationsHelp(intern_gen *ig, int dim, prf prf, int arg_no,
  *int const)
  *
@@ -612,6 +585,96 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 /******************************************************************************
  *
  * function:
+ *   intern_gen *FinalTransformations(intern_gen *ig, index_info *transformations, int
+ *target_dim);
+ *
+ * description:
+ *   transforms list of ig into cuboids of dimension target_dim.
+ *
+ *
+ ******************************************************************************/
+
+intern_gen *
+FinalTransformations (intern_gen *substig, index_info *transformations, int target_dim)
+{
+    intern_gen *tmpig, *newig, *rootig;
+    int ok, i, *help;
+
+    DBUG_ENTER ("FinalTransformations");
+    DBUG_ASSERT (transformations->vector == substig->shape, ("wrong parameters"));
+
+    /* create array to speed up later transformations.
+       help[i] is
+       - 0 if the ith index scalar is not used to index the subst array
+       - d if the ith index scalar addresses the dth component of the subst array.
+
+       Example:
+       iv=[i,j,k]
+       subst array A[42,i,k]
+       help: [2,0,3] */
+    i = sizeof (int) * target_dim;
+    help = Malloc (i);
+    help = memset (help, 0, i);
+    for (i = 0; i < transformations->vector; i++)
+        if (transformations->permutation[i])
+            help[transformations->permutation[i] - 1] = i + 1;
+
+    /* now process all substig and create new ig list rootig */
+    tmpig = substig;
+    newig = rootig = NULL;
+
+    while (tmpig) {
+        /* Check whether constants in *transformations disqualify this tmpig */
+        ok = 1;
+        for (i = 0; i < tmpig->shape && ok; i++)
+            ok = (transformations->permutation[i] ||                /* not a constant */
+                  ((tmpig->l[i] <= transformations->const_arg[i] && /* in range */
+                    transformations->const_arg[i] < tmpig->u[i])
+                   && (!tmpig->step || /* and no grid */
+                       (transformations->const_arg[i] - tmpig->l[i])
+                           % /* or in this grid */
+                           tmpig->step[i]
+                         < tmpig->width[i])));
+
+        if (ok) {
+            /* start transformations */
+            newig = CreateInternGen (target_dim, NULL != tmpig->step);
+            for (i = 0; i < target_dim; i++)
+                if (help[i]) {
+                    newig->l[i] = tmpig->l[help[i] - 1];
+                    newig->u[i] = tmpig->u[help[i] - 1];
+                    if (tmpig->step) {
+                        newig->step[i] = tmpig->step[help[i] - 1];
+                        newig->width[i] = tmpig->width[help[i] - 1];
+                    }
+                } else {
+                    newig->l[i] = 0;
+                    newig->u[i] = INT_MAX;
+                    if (tmpig->step) {
+                        newig->step[i] = 1;
+                        newig->width[i] = 1;
+                    }
+                }
+            DBUG_ASSERT (0 == NormalizeInternGen (newig), ("Error while normalizing ig"));
+
+            newig->code = tmpig->code;
+            newig->next = rootig;
+            rootig = newig;
+        }
+
+        /* go to next substig */
+        tmpig = tmpig->next;
+    }
+
+    FREE (help);
+    FreeInternGenChain (substig);
+
+    DBUG_RETURN (rootig);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *CreateCode(node *target, node *subst)
  *
  * description:
@@ -702,46 +765,49 @@ IntersectGrids (int dim)
             last = dc;
 
             if (dim < intersect_grids_baseig->shape - 1) {
-                /* process inner dimensions */
-                intersect_grids_baseig->l[dim] += first;
-                intersect_grids_baseig->width[dim] = last - first;
-                IntersectGrids (dim + 1);
-                intersect_grids_baseig->l[dim] -= first; /* restore old value */
+                /* process inner dimensions if lower bound is less then upper bound. */
+                if (intersect_grids_baseig->l[dim] + first
+                    < intersect_grids_baseig->u[dim]) {
+                    intersect_grids_baseig->l[dim] += first;
+                    intersect_grids_baseig->width[dim] = last - first;
+                    IntersectGrids (dim + 1);
+                    intersect_grids_baseig->l[dim] -= first; /* restore old value */
+                } else
+                    dc = intersect_grids_baseig->step[dim]; /* stop further search */
             } else {
-                /* create new ig and add it to structures */
-                ig = CreateInternGen (intersect_grids_baseig->shape, 1);
-                for (d = 0; d < intersect_grids_baseig->shape; d++) {
-                    ig->l[d] = intersect_grids_baseig->l[d];
-                    ig->u[d] = intersect_grids_baseig->u[d];
-                    ig->step[d] = intersect_grids_baseig->step[d];
-                    ig->width[d] = intersect_grids_baseig->width[d];
-                }
-                ig->l[d - 1] += first;
-                ig->width[d - 1] = last - first;
+                /* create new ig and add it to structures
+                   if lower bound is less then upper bound. */
+                if (intersect_grids_baseig->l[dim] + first
+                    < intersect_grids_baseig->u[dim]) {
+                    ig = CreateInternGen (intersect_grids_baseig->shape, 1);
+                    for (d = 0; d < intersect_grids_baseig->shape; d++) {
+                        ig->l[d] = intersect_grids_baseig->l[d];
+                        ig->u[d] = intersect_grids_baseig->u[d];
+                        ig->step[d] = intersect_grids_baseig->step[d];
+                        ig->width[d] = intersect_grids_baseig->width[d];
+                    }
+                    ig->l[dim] += first;
+                    ig->width[dim] = last - first;
 
-                /* add craetes code to code_constr list and to new_codes. */
-                cc = SearchCC (intersect_grids_tig->code, intersect_grids_sig->code);
-                if (cc)
-                    ig->code = cc->new;
-                else {
-                    coden
-                      = CreateCode (intersect_grids_tig->code, intersect_grids_sig->code);
-                    ig->code = coden;
-                    AddCC (intersect_grids_tig->code, intersect_grids_sig->code, coden);
-                    NCODE_NEXT (coden) = new_codes;
-                    new_codes = coden;
-                }
+                    /* add craetes code to code_constr list and to new_codes. */
+                    cc = SearchCC (intersect_grids_tig->code, intersect_grids_sig->code);
+                    if (cc)
+                        ig->code = cc->new;
+                    else {
+                        coden = CreateCode (intersect_grids_tig->code,
+                                            intersect_grids_sig->code);
+                        ig->code = coden;
+                        AddCC (intersect_grids_tig->code, intersect_grids_sig->code,
+                               coden);
+                        NCODE_NEXT (coden) = new_codes;
+                        new_codes = coden;
+                    }
 
-                /*         printf("--------------------\n"); */
-                /*         DbugInternGen(intersect_grids_tig); */
-                /*         printf("\n"); */
-                /*         DbugInternGen(intersect_grids_sig); */
-                /*         printf("\n"); */
-                /*         DbugInternGen(ig); */
-
-                /* add new generator to intersect_intern_gen list. */
-                ig->next = intersect_intern_gen;
-                intersect_intern_gen = ig;
+                    /* add new generator to intersect_intern_gen list. */
+                    ig->next = intersect_intern_gen;
+                    intersect_intern_gen = ig;
+                } else
+                    dc = intersect_grids_baseig->step[dim]; /* stop further search */
             }
         }
 
@@ -825,7 +891,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                             new_gen->step[d] = target_ig->step[d];
                     else
                         for (d = 0; d < max_dim; d++)
-                            new_gen->step[d] = KgV (target_ig->step[d], sig->step[d]);
+                            new_gen->step[d] = lcm (target_ig->step[d], sig->step[d]);
 
                     /* compute offsets */
                     if (target_ig->step)
@@ -880,6 +946,150 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
 
 /******************************************************************************
  *
+ * function:
+ *   intern_gen *RemoveDoubleIndexVectors(intern_gen *subst_ig, index_info
+ **transformations)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+intern_gen *
+RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
+{
+    int *found, i, act_dim, dim, fdim;
+    intern_gen *act_ig;
+
+    DBUG_ENTER ("RemoveDoubleIndexVectors");
+
+    i = sizeof (int) * transformations->vector;
+    found = Malloc (i);
+    found = memset (found, 0, i);
+
+    for (act_dim = 0; act_dim < transformations->vector; act_dim++)
+        if (transformations->permutation[act_dim] != 0) {
+            dim = transformations->permutation[act_dim] - 1;
+            if (found[dim] != 0) {
+                /* dimensions found[dim] and act_dim of subst_ig both are based on
+                   the dim-th index scalar. */
+                act_ig = subst_ig;
+                fdim = found[dim] - 1;
+                transformations->vector--;
+                while (act_ig) {
+                    /* fold both dimensions fdim and act_dim to fdim ... */
+                    act_ig->l[fdim] = MAX (act_ig->l[fdim], act_ig->l[act_dim]);
+                    act_ig->u[fdim] = MIN (act_ig->u[fdim], act_ig->u[act_dim]);
+                    act_ig->shape--;
+                    /* ...and remove unused dim act_dim. */
+                    for (i = act_dim; i < transformations->vector; i++) {
+                        act_ig->l[i] = act_ig->l[i + 1];
+                        act_ig->u[i] = act_ig->u[i + 1];
+                        if (act_ig->step) {
+                            act_ig->step[i] = act_ig->step[i + 1];
+                            act_ig->width[i] = act_ig->width[i + 1];
+                        }
+                        transformations->permutation[i]
+                          = transformations->permutation[i + 1];
+                        transformations->last[i] = transformations->last[i + 1];
+                        transformations->const_arg[i] = transformations->const_arg[i + 1];
+                    }
+                    act_ig = act_ig->next;
+                }
+                act_dim--;
+            } else
+                found[dim] = act_dim + 1;
+        }
+
+    FREE (found);
+
+    DBUG_RETURN (subst_ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   TransformationRangeCheck( )
+ *
+ * description:
+ *
+ *    if the psi-operation we process right now indexes the subst WL in a way
+ *    so that invalid elements are chosen, the resulting partition will not
+ *    specify a full partition.
+ *
+ *    Example: A = WL([0] <= i1 < [10) ...
+ *             B = WL([0] <= i2 < [10])
+ *               genarray(., A[i2+3])
+ *             Here for i2 = 10..12 A[i2] is not defined.
+ *
+ *    We can detect these errors by transforming the minimal and maximal
+ *    bounds of the subst WL and check if this new cuboid covers all
+ *    cuboids of target_ig.
+ *    If yes, the resulting intersection will cover the same set as target_ig.
+ *    Else we return the number of the first dimension in which such a
+ *    range violation was detected.
+ *
+ *
+ ******************************************************************************/
+
+int
+TransformationRangeCheck (index_info *transformations, node *substwln,
+                          intern_gen *target_ig)
+{
+    int result, dim, i;
+    node *tmpn;
+    intern_gen *whole_ig;
+
+    DBUG_ENTER ("TransformationRangeCheck");
+
+    /* create bounds of substwln in whole_ig */
+    dim = transformations->vector;
+    whole_ig = CreateInternGen (dim, 0);
+    switch (NWITH_TYPE (substwln)) {
+    case WO_genarray:
+        tmpn = ARRAY_AELEMS (NWITHOP_SHAPE (NWITH_WITHOP (substwln)));
+        for (i = 0; i < dim; i++) {
+            whole_ig->l[i] = 0;
+            whole_ig->u[i] = NUM_VAL (EXPRS_EXPR (tmpn));
+            tmpn = EXPRS_NEXT (tmpn);
+        }
+        break;
+
+    case WO_modarray:
+        for (i = 0; i < dim; i++) {
+            whole_ig->l[i] = 0;
+            whole_ig->u[i] = ID_SHAPE (NWITHOP_ARRAY (NWITH_WITHOP (substwln)), i);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT (0, ("TransformationRangeCheck called with fold-op"));
+    }
+
+    /* transform whole_ig */
+    whole_ig = LinearTransformationsVector (whole_ig, transformations);
+#ifndef TRANSF_TRUE_PERMUTATIONS
+    whole_ig = RemoveDoubleIndexVectors (whole_ig, transformations);
+#endif
+    whole_ig = FinalTransformations (whole_ig, transformations, target_ig->shape);
+
+    /* whole_ig has to cover all igs in target_ig. */
+    result = 0;
+    dim = target_ig->shape;
+    while (!result && target_ig) {
+        for (i = dim - 1; i >= 0; i--)
+            if (target_ig->l[i] < whole_ig->l[i] || target_ig->u[i] > whole_ig->u[i])
+                result = i + 1;
+
+        target_ig = target_ig->next;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
  * Function:
  *   void Fold(node *idn, index_info *transformation, node *targetwln, node *substwln)
  *
@@ -895,12 +1105,15 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     intern_gen *target_ig; /* transformed igs of target WL */
     intern_gen *subst_ig;  /* transformed igs of subst WL */
     intern_gen *ig, *tmpig, *intersect_ig;
+    int error;
+    index_info *transf2;
 
     DBUG_ENTER ("Fold");
 
     code_constr = NULL;
 
     /* create target_ig */
+    /* srs: optimize dup from new_ig to target_ig!! */
     target_ig = NULL;
     ig = new_ig;
     while (ig) {
@@ -916,10 +1129,30 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
        intern gens which represents the same set of index elements as the
        'old' list. */
     new_ig = FreeInternGenChain (new_ig);
-    subst_ig = Tree2InternGen (substwln, NULL);
 
-    /* transform substitution generators */
+    /* check if array access in in range. Don't use the original *transformations
+       because RemoveDoubleIndexVectors() modifies it.
+      */
+
+    transf2 = DuplicateIndexInfo (transformations);
+    error = TransformationRangeCheck (transf2, substwln, target_ig);
+    FREE_INDEX (transf2);
+    if (error)
+        ABORT (NODE_LINE (idn),
+               ("array access to %s out of range in dimension %i", ID_NAME (idn), error));
+
+    /* create subst_ig */
+    subst_ig = Tree2InternGen (substwln, NULL);
     subst_ig = LinearTransformationsVector (subst_ig, transformations);
+    /* We can use the original *transformations here because we don't need it
+       anymore. */
+#ifndef TRANSF_TRUE_PERMUTATIONS
+    subst_ig = RemoveDoubleIndexVectors (subst_ig, transformations);
+#endif
+    subst_ig = FinalTransformations (subst_ig, transformations, target_ig->shape);
+
+    if (!subst_ig)
+        ABORT (NODE_LINE (idn), ("constants of index vector out of range"));
 
     /* intersect target_ig and subst_ig
        and create new code blocks */
@@ -967,7 +1200,7 @@ FoldDecision (node *target_wl, node *subst_wl)
     result
       = (NWITH_PARTS (target_wl) > 0 && NWITH_PARTS (subst_wl) > 0
          && NWITH_REFERENCED (subst_wl) == NWITH_REFERENCED_FOLD (subst_wl)
-         && (WO_genarray != NWITH_TYPE (subst_wl) || WO_modarray != NWITH_TYPE (subst_wl))
+         && (WO_genarray == NWITH_TYPE (subst_wl) || WO_modarray == NWITH_TYPE (subst_wl))
          && !NWITH_NO_CHANCE (subst_wl));
 
     DBUG_RETURN (result);
@@ -1047,6 +1280,12 @@ Modarray2Genarray (node *wln)
 
 /******************************************************************************
  *
+ * Functions for node_info.mac (traversal mechanism)
+ *
+ ******************************************************************************/
+
+/******************************************************************************
+ *
  * function:
  *   node *WLFfundef(node *arg_node, node *arg_info)
  *
@@ -1069,7 +1308,6 @@ WLFfundef (node *arg_node, node *arg_info)
     INFO_VARNO = FUNDEF_VARNO (arg_node);
 
     wlf_mode = wlfm_search_WL;
-
     arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1122,25 +1360,8 @@ WLFassign (node *arg_node, node *arg_info)
             tmpn = ASSIGN_INSTR (ASSIGN_NEXT (tmpn));
             LET_EXPR (tmpn) = FreeTree (LET_EXPR (tmpn));
             LET_EXPR (tmpn) = INFO_WLI_NEW_ID (arg_info);
-        } else {
-            if (ASSIGN_NEXT (arg_node))
-                ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-
-            /* Now we returned from processing the following assign nodes.
-               If new code has been inserted, we find N_assign nodes at the
-               ASSIGN_INSTR sons. These have to be inserted correctly into the
-               assign chain. */
-            /*       if (N_assign == NODE_TYPE(ASSIGN_INSTR(arg_node))) { */
-            /*         last_assign = ASSIGN_NEXT(arg_node); */
-            /*         ASSIGN_NEXT(arg_node) = ASSIGN_INSTR(arg_node); */
-            /*         tmpn = arg_node; */
-            /*         while (N_assign == NODE_TYPE(ASSIGN_NEXT(tmpn))) */
-            /*           tmpn = ASSIGN_NEXT(tmpn); */
-            /*         ASSIGN_INSTR(arg_node) = ASSIGN_NEXT(tmpn); */
-            /*         ASSIGN_NEXT(tmpn) = last_assign; */
-            /*       } */
-        }
-
+        } else if (ASSIGN_NEXT (arg_node))
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         break;
 
     default:
@@ -1163,6 +1384,10 @@ WLFassign (node *arg_node, node *arg_info)
  *   node *WLFid(node *arg_node, node *arg_info)
  *
  * description:
+ *  In wlfm_replace phase insert variable definitions of index vector
+ *  and index scalars. Remove psi operation and replace it with the
+ *  body of the subst WL.
+ *   In wlfm_rename phase detect name clashes and solve them.
  *
  ******************************************************************************/
 
@@ -1308,8 +1533,8 @@ WLFid (node *arg_node, node *arg_info)
  *   node *WLFlet(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
+ *   If in wlfm_search_ref mode, initiate folding.
+ *   In wlfm_rename phase detect name clashes and solve them.
  *
  ******************************************************************************/
 
@@ -1397,15 +1622,17 @@ WLFlet (node *arg_node, node *arg_info)
  *   node *WLFNwith(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
+ *   First, traverse all bodies to fold WLs inside. Afterwards traverse
+ *   codes again to find foldable assignments. If folding was successful,
+ *   replace old generators with new ones, delete superflous code blocks and
+ *   transform any modarray into gerarray.
  *
  ******************************************************************************/
 
 node *
 WLFNwith (node *arg_node, node *arg_info)
 {
-    node *tmpn;
+    node *tmpn, *substwln;
 
     DBUG_ENTER ("WLFNwith");
 
@@ -1424,6 +1651,11 @@ WLFNwith (node *arg_node, node *arg_info)
 
         INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
 
+        /* if WO_modarray, save referenced WL to transform modarray into
+           genarray later. */
+        if (WO_modarray == NWITH_TYPE (arg_node))
+            substwln = ID_WL (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)));
+
         /* It's faster to
            1. traverse into bodies to find WL within and fold them first
            2. and then try to fold references to other WLs.
@@ -1440,9 +1672,9 @@ WLFNwith (node *arg_node, node *arg_info)
             new_codes = NULL;
 
             intersect_grids_ot
-              = Malloc (sizeof (int) * IDS_SHAPE (NPART_VEC (NWITH_PART (arg_node)), 0));
+              = Malloc (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
             intersect_grids_os
-              = Malloc (sizeof (int) * IDS_SHAPE (NPART_VEC (NWITH_PART (arg_node)), 0));
+              = Malloc (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
 
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
@@ -1463,10 +1695,11 @@ WLFNwith (node *arg_node, node *arg_info)
                 all_new_ig = FreeInternGenChain (all_new_ig);
                 arg_node = CheckForSuperfluousCodes (arg_node);
 
-                /* After successful folding every modarray-WL has to be transformed
-                   into a genarray-WL. DCR has no chance to remove the subst WL with
-                   references from N_Nwithop nodes to it. */
-                if (WO_modarray == NWITH_TYPE (arg_node))
+                /* After successful folding every modarray-WL which references a folded
+                   array has to be transformed into a genarray-WL. Else DCR would
+                   not remove the subst WL. */
+                if (WO_modarray == NWITH_TYPE (arg_node)
+                    && FoldDecision (arg_node, substwln))
                     arg_node = Modarray2Genarray (arg_node);
             }
 
@@ -1505,8 +1738,8 @@ WLFNwith (node *arg_node, node *arg_info)
  *   node *WLFNcode(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
+ *   If in wlfm_search_ref phase, create list new_ig of gererators which
+ *   point to the current code.
  *
  ******************************************************************************/
 
