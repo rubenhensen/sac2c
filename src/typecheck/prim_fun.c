@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/10/20 15:27:54  dkr
+ * macro GET_DIM replaced by function GetDim()
+ *
  * Revision 2.17  2000/08/08 11:50:07  dkr
  * definition of TT1, TT2, TT3 moved
  *
@@ -627,7 +630,7 @@ Shp (types *array)
          * shape( A:int[s0, ..., sn-1]) : int[ n] !
          */
         ret_type = MakeType (T_int, 1, MakeShpseg (NULL), NULL, NULL);
-        GET_DIM (dim, array);
+        dim = GetDim (array);
         TYPES_SHAPE (ret_type, 0) = dim;
     } else {
         DBUG_ASSERT (0, "unknown dimension of type");
