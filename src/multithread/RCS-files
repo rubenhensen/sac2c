@@ -25,3 +25,4 @@ repfuns_init.c
 repfuns_init.h
 schedule_init.c
 schedule_init.h
+assignments_rearrange.c
