@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2001/12/10 15:36:46  dkr
+ * some modifications for TAGGED_ARRAYS done
+ *
  * Revision 3.68  2001/11/21 10:25:28  dkr
  * some cosmetical changes done
  *
@@ -770,12 +773,19 @@ PrintIds (ids *arg, node *arg_info)
             fprintf (outfile, "%s:", IDS_MOD (arg));
         }
 
-        DBUG_EXECUTE ("PRINT_NT", if (IDS_VARDEC (arg) != NULL) {
-            PrintNT (outfile, IDS_NAME (arg), IDS_TYPE (arg));
-            print_nt = TRUE;
-        });
+#if TAGGED_ARRAYS
+        if (IDS_VARDEC (arg) != NULL) {
+            DBUG_EXECUTE ("PRINT_NT", print_nt = TRUE;);
 
-        if (!print_nt) {
+            if (compiler_phase >= PH_compile) {
+                print_nt = TRUE;
+            }
+        }
+#endif
+
+        if (print_nt) {
+            PrintNT (outfile, IDS_NAME (arg), IDS_TYPE (arg));
+        } else {
             fprintf (outfile, "%s", IDS_NAME (arg));
         }
 
@@ -1472,11 +1482,17 @@ PrintArg (node *arg_node, node *arg_info)
 
     if ((!INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
 
-        DBUG_EXECUTE ("PRINT_NT",
-                      PrintNT (outfile, ARG_NAME (arg_node), ARG_TYPE (arg_node));
-                      print_nt = TRUE;);
+#if TAGGED_ARRAYS
+        DBUG_EXECUTE ("PRINT_NT", print_nt = TRUE;);
 
-        if (!print_nt) {
+        if (compiler_phase >= PH_compile) {
+            print_nt = TRUE;
+        }
+#endif
+
+        if (print_nt) {
+            PrintNT (outfile, ARG_NAME (arg_node), ARG_TYPE (arg_node));
+        } else {
             fprintf (outfile, " %s", ARG_NAME (arg_node));
         }
     }
@@ -1525,11 +1541,17 @@ PrintVardec (node *arg_node, node *arg_info)
         fprintf (outfile, "%s ", type_str);
         type_str = Free (type_str);
 
-        DBUG_EXECUTE ("PRINT_NT",
-                      PrintNT (outfile, VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node));
-                      print_nt = TRUE;);
+#if TAGGED_ARRAYS
+        DBUG_EXECUTE ("PRINT_NT", print_nt = TRUE;);
 
-        if (!print_nt) {
+        if (compiler_phase >= PH_compile) {
+            print_nt = TRUE;
+        }
+#endif
+
+        if (print_nt) {
+            PrintNT (outfile, VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node));
+        } else {
             fprintf (outfile, "%s", VARDEC_NAME (arg_node));
         }
 
@@ -2128,12 +2150,19 @@ PrintId (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
 
-    DBUG_EXECUTE ("PRINT_NT", if (ID_VARDEC (arg_node) != NULL) {
-        PrintNT (outfile, ID_NAME (arg_node), ID_TYPE (arg_node));
-        print_nt = TRUE;
-    });
+#if TAGGED_ARRAYS
+    if (ID_VARDEC (arg_node) != NULL) {
+        DBUG_EXECUTE ("PRINT_NT", print_nt = TRUE;);
 
-    if (!print_nt) {
+        if (compiler_phase >= PH_compile) {
+            print_nt = TRUE;
+        }
+    }
+#endif
+
+    if (print_nt) {
+        PrintNT (outfile, ID_NAME (arg_node), ID_TYPE (arg_node));
+    } else {
         fprintf (outfile, "%s", ID_NAME (arg_node));
     }
 
