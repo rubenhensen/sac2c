@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.64  2000/03/21 16:04:14  dkr
+ * indentation of ICMs corrected
+ *
  * Revision 2.63  2000/03/21 15:52:04  jhs
  * Prints some masks for DFA now.
  *
@@ -591,6 +594,7 @@ PrintAssign (node *arg_node, node *arg_info)
                            DbugIndexInfo (ASSIGN_INDEX (arg_node)););
 
     if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+        INDENT;
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
         fprintf (outfile, "\n");
         if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -2072,7 +2076,7 @@ PrintMT (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintMT");
 
-    /* PrintAssign alredy indents */
+    /* PrintAssign already indents */
     fprintf (outfile, "/*** begin of mt region ***/\n");
 
     if (MT_USEMASK (arg_node) != NULL) {
@@ -2112,7 +2116,7 @@ PrintST (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintST");
 
-    /* PrintAssign alredy indents */
+    /* PrintAssign already indents */
     fprintf (outfile, "/*** begin of st region ***/\n");
 
     if (ST_USEMASK (arg_node) != NULL) {
