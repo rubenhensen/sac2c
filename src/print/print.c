@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.99  1995/12/21 15:03:36  cg
+ * Revision 1.100  1995/12/29 10:35:33  cg
+ * modified printing of pragmas which can now be printed within
+ * or outside comments. With-loops will now be printed in the new syntax
+ *
+ * Revision 1.99  1995/12/21  15:03:36  cg
  * bugs fixed in printing of pragmas
  *
  * Revision 1.98  1995/12/20  08:18:14  cg
@@ -311,6 +315,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
 #include "print.h"
 #include "my_debug.h"
 #include "dbug.h"
@@ -421,7 +429,11 @@ PrintAssign (node *arg_node, node *arg_info)
         INDENT;
         Trav (arg_node->node[0], arg_info);
         if (2 == arg_node->nnode) {
-            fprintf (outfile, "\n");
+            if (!((NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_return)
+                  && (RETURN_EXPRS (ASSIGN_NEXT (arg_node)) == NULL))) {
+                fprintf (outfile, "\n");
+            }
+
             Trav (arg_node->node[1], arg_info);
         }
     }
@@ -584,7 +596,7 @@ PrintTypedef (node *arg_node, node *arg_info)
     fprintf (outfile, "%s;\n", arg_node->info.types->id);
 
     if (TYPEDEF_PRAGMA (arg_node) != NULL)
-        Trav (TYPEDEF_PRAGMA (arg_node), arg_info);
+        Trav (TYPEDEF_PRAGMA (arg_node), NULL);
 
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
@@ -622,7 +634,7 @@ PrintObjdef (node *arg_node, node *arg_info)
         }
 
         if (OBJDEF_PRAGMA (arg_node) != NULL) {
-            Trav (OBJDEF_PRAGMA (arg_node), arg_info);
+            Trav (OBJDEF_PRAGMA (arg_node), NULL);
         }
     }
 
@@ -700,7 +712,7 @@ PrintFundef (node *arg_node, node *arg_info)
             Trav (arg_node->node[0], new_info); /* traverse functionbody */
 
             if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+                Trav (FUNDEF_PRAGMA (arg_node), NULL);
             }
         }
     } else {
@@ -722,7 +734,7 @@ PrintFundef (node *arg_node, node *arg_info)
             fprintf (outfile, ";\n");
 
             if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+                Trav (FUNDEF_PRAGMA (arg_node), NULL);
             }
         }
     }
@@ -880,7 +892,7 @@ PrintReturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintReturn");
 
-    if (arg_node->node[0] != NULL) {
+    if ((arg_node->node[0] != NULL) && (!RETURN_INWITH (arg_node))) {
         fprintf (outfile, "return( ");
         Trav (arg_node->node[0], arg_info);
         fprintf (outfile, " );");
@@ -1102,7 +1114,7 @@ PrintWith (node *arg_node, node *arg_info)
                   PrintMasks (arg_node->node[0], arg_info););
     fprintf (outfile, "with (");
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, ")\n");
+    fprintf (outfile, ") ");
 
     DBUG_EXECUTE ("MASK", char *text;
                   text = PrintMask (arg_node->node[1]->mask[1], VARNO);
@@ -1133,43 +1145,103 @@ PrintGenator (node *arg_node, node *arg_info)
 }
 
 node *
-PrintConexpr (node *arg_node, node *arg_info)
+PrintGenarray (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintConexpr");
+    DBUG_ENTER ("PrintGenarray");
 
     INDENT;
 
-    if (N_genarray == arg_node->nodetype) {
-        fprintf (outfile, "genarray( ");
-    } else {
-        fprintf (outfile, "modarray( ");
+    if (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)))
+        != GENARRAY_RETURN (arg_node)) {
+        fprintf (outfile, "\n");
+        Trav (GENARRAY_BODY (arg_node), arg_info);
+        INDENT;
     }
-    Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, " )\n");
-    Trav (arg_node->node[1], arg_info);
+
+    fprintf (outfile, "genarray( ");
+    Trav (GENARRAY_ARRAY (arg_node), arg_info);
+    fprintf (outfile, ", ");
+    Trav (RETURN_EXPRS (GENARRAY_RETURN (arg_node)), arg_info);
+    fprintf (outfile, ")");
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-PrintFold (node *arg_node, node *arg_info)
+PrintModarray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintModarray");
+
+    INDENT;
+
+    if (ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)))
+        != MODARRAY_RETURN (arg_node)) {
+        fprintf (outfile, "\n");
+        Trav (MODARRAY_BODY (arg_node), arg_info);
+        INDENT;
+    }
+
+    fprintf (outfile, "modarray( ");
+    Trav (MODARRAY_ARRAY (arg_node), arg_info);
+    fprintf (outfile, ", %s, ", MODARRAY_ID (arg_node));
+    Trav (RETURN_EXPRS (MODARRAY_RETURN (arg_node)), arg_info);
+    fprintf (outfile, ")");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintFoldfun (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintFold");
 
     INDENT;
-    if (N_foldprf == arg_node->nodetype)
-        fprintf (outfile, "fold( %s )\n", prf_string[arg_node->info.prf]);
-    else {
-        if (NULL != arg_node->info.fun_name.id_mod)
-            fprintf (outfile, "fold( %s%s%s, ", arg_node->info.fun_name.id_mod,
-                     mod_name_con, arg_node->info.fun_name.id);
-        else
-            fprintf (outfile, "fold( %s, ", arg_node->info.fun_name.id);
-        Trav (arg_node->node[1], arg_info);
-        fprintf (outfile, " )\n");
+
+    if (ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)))
+        != FOLDFUN_RETURN (arg_node)) {
+        fprintf (outfile, "\n");
+        Trav (FOLDFUN_BODY (arg_node), arg_info);
+        INDENT;
     }
 
-    Trav (arg_node->node[0], arg_info);
+    if (NULL != FOLDFUN_MOD (arg_node)) {
+        fprintf (outfile, "fold( %s%s%s, ", FOLDFUN_MOD (arg_node), mod_name_con,
+                 FOLDFUN_NAME (arg_node));
+    } else {
+        fprintf (outfile, "fold( %s, ", FOLDFUN_NAME (arg_node));
+    }
+
+    Trav (FOLDFUN_NEUTRAL (arg_node), arg_info);
+    fprintf (outfile, ", ");
+    Trav (RETURN_EXPRS (FOLDFUN_RETURN (arg_node)), arg_info);
+    fprintf (outfile, " )");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintFoldprf (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintFold");
+
+    INDENT;
+
+    if (ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)))
+        != FOLDPRF_RETURN (arg_node)) {
+        fprintf (outfile, "\n");
+        Trav (FOLDPRF_BODY (arg_node), arg_info);
+        INDENT;
+    }
+
+    fprintf (outfile, "fold( %s, ", prf_string[FOLDPRF_PRF (arg_node)]);
+
+    if (FOLDPRF_NEUTRAL (arg_node) != NULL) {
+        Trav (FOLDPRF_NEUTRAL (arg_node), arg_info);
+        fprintf (outfile, ", ");
+    }
+
+    Trav (RETURN_EXPRS (FOLDPRF_RETURN (arg_node)), arg_info);
+    fprintf (outfile, " )");
 
     DBUG_RETURN (arg_node);
 }
@@ -1301,6 +1373,12 @@ PrintIcm (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *  arg_info is used as a flag:
+ *    arg_info==NULL :  print pragmas in comments
+ *    arg_info!=NULL :  print pragmas without comments (for SIBs)
+ */
+
 node *
 PrintPragma (node *arg_node, node *arg_info)
 {
@@ -1308,14 +1386,19 @@ PrintPragma (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintPragma");
 
-    fprintf (outfile, "\n/*\n");
+    if (arg_info == NULL)
+        fprintf (outfile, "\n/*\n");
 
     if (PRAGMA_LINKNAME (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma linkname %s\n", PRAGMA_LINKNAME (arg_node));
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma linkname %s\n", PRAGMA_LINKNAME (arg_node));
     }
 
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma linksign [%d", PRAGMA_LS (arg_node, 0));
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma linksign [%d", PRAGMA_LS (arg_node, 0));
 
         for (i = 1; i < PRAGMA_NUMPARAMS (arg_node); i++) {
             fprintf (outfile, ", %d", PRAGMA_LS (arg_node, i));
@@ -1325,7 +1408,9 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma refcounting [");
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma refcounting [");
         first = 1;
 
         for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
@@ -1343,7 +1428,9 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_READONLY (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma readonly [");
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma readonly [");
         first = 1;
 
         for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
@@ -1361,26 +1448,38 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_EFFECT (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma effect ");
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma effect ");
         PrintIds (PRAGMA_EFFECT (arg_node));
         fprintf (outfile, "\n");
     }
 
     if (PRAGMA_TOUCH (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma touch ");
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma touch ");
         PrintIds (PRAGMA_TOUCH (arg_node));
         fprintf (outfile, "\n");
     }
 
     if (PRAGMA_COPYFUN (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma copyfun %s\n", PRAGMA_COPYFUN (arg_node));
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma copyfun %s\n", PRAGMA_COPYFUN (arg_node));
     }
 
     if (PRAGMA_FREEFUN (arg_node) != NULL) {
-        fprintf (outfile, " *  #pragma freefun %s\n", PRAGMA_FREEFUN (arg_node));
+        if (arg_info == NULL)
+            fprintf (outfile, " *  ");
+        fprintf (outfile, "#pragma freefun %s\n", PRAGMA_FREEFUN (arg_node));
     }
 
-    fprintf (outfile, " */\n\n");
+    if (arg_info == NULL) {
+        fprintf (outfile, " */\n\n");
+    } else {
+        fprintf (outfile, "\n");
+    }
 
     DBUG_RETURN (arg_node);
 }
