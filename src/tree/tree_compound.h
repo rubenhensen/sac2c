@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.154  2004/11/25 20:56:01  ktr
+ * added TCmakeIdCopyString, TCmakeIdCopyStringNt
+ *
  * Revision 3.153  2004/11/25 20:47:51  khf
  * additional macros inserted
  *
@@ -1491,6 +1494,9 @@ extern node *TCmakeVinfoDollar (node *next);
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
 
 #define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
+
+extern node *TCmakeIdCopyString (char *str);
+extern node *TCmakeIdCopyStringNt (char *str, types *type);
 
 extern node *TCmakeIdFromIds (node *idss);
 
