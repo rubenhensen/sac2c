@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/03/31 12:19:14  srs
+ * fixed bug in ArrayPrf(), F_mordarray
+ *
  * Revision 2.7  1999/03/19 10:03:44  bs
  * Function IsConst modified.
  *
@@ -2281,10 +2284,12 @@ ArrayPrf (node *arg_node, node *arg_info)
         tmpn = NULL;
         while (base_array && N_id == NODE_TYPE (base_array)) {
             if (!tmpn)
+                /* access current MRD-masks */
                 base_array = MRD (ID_VARNO (base_array));
             else {
                 DBUG_ASSERT (ASSIGN_MRDMASK (tmpn),
                              ("MRDMASKs are NULL, ArrayPrf, modarray"));
+                /* access older MRD-masks */
                 base_array = (node *)ASSIGN_MRDMASK (tmpn)[ID_VARNO (base_array)];
             }
 
@@ -2294,8 +2299,6 @@ ArrayPrf (node *arg_node, node *arg_info)
                 N_assign == NODE_TYPE (base_array)
                 && N_let == NODE_TYPE (ASSIGN_INSTR (base_array))) {
                 base_array = LET_EXPR (ASSIGN_INSTR (base_array));
-                if (N_prf == NODE_TYPE (base_array) && F_modarray == PRF_PRF (base_array))
-                    base_array = PRF_ARG1 (base_array);
             }
         }
 
