@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.154  1998/03/16 18:45:27  dkr
+ * changed output of ops in PrintNwith2()
+ *
  * Revision 1.153  1998/03/16 15:08:20  dkr
  * changed the output in PrintCond
  *
@@ -2202,7 +2205,9 @@ PrintNwith2 (node *arg_node, node *arg_info)
     do {
         INDENT
         fprintf (outfile, "op_%d =", NCODE_NO (code));
+        indent++;
         code = Trav (code, arg_info);
+        indent--;
         code = NCODE_NEXT (code);
 
         if (code != NULL) {
