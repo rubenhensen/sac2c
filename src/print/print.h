@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/10/15 15:01:43  sah
+ * added support for new module system nodes
+ *
  * Revision 3.26  2004/08/12 12:39:28  skt
  * PrintDataflowgraph & PrintDataflownode added
  *
@@ -189,5 +192,14 @@ extern node *PrintWLgridx (node *arg_node, info *arg_info);
 /* pre- and post-processing during traversal */
 extern node *PrintTravPre (node *arg_node, info *arg_info);
 extern node *PrintTravPost (node *arg_node, info *arg_info);
+
+#ifdef NEW_AST
+/* new module system */
+extern node *PrintImport (node *arg_node, info *arg_info);
+extern node *PrintExport (node *arg_node, info *arg_info);
+extern node *PrintUse (node *arg_node, info *arg_info);
+extern node *PrintProvide (node *arg_node, info *arg_info);
+extern node *PrintSymbol (node *arg_node, info *arg_info);
+#endif /* NEW_AST */
 
 #endif /* _sac_print_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.173  2004/10/15 15:01:43  sah
+ * added support for new module system nodes
+ *
  * Revision 3.172  2004/10/15 12:05:32  sah
  * disabled printing of Impllist in new ast mode
  * (non existent in new ast)
@@ -5928,3 +5931,118 @@ PrintDataflownode (node *arg_node, info *arg_info)
     return (arg_node);
 #endif /* NEW_AST */
 }
+
+#ifdef NEW_AST
+
+node *
+PrintImport (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PrintImport");
+
+    fprintf (outfile, "import %s : ", IMPORT_MOD (arg_node));
+
+    if (IMPORT_ALL (arg_node)) {
+        fprintf (outfile, "all");
+    } else {
+        fprintf (outfile, "{ ");
+        IMPORT_SYMBOL (arg_node) = Trav (IMPORT_SYMBOL (arg_node), arg_info);
+        fprintf (outfile, "}");
+    }
+
+    fprintf (outfile, ";\n");
+
+    if (IMPORT_NEXT (arg_node) != NULL) {
+        IMPORT_NEXT (arg_node) = Trav (IMPORT_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintExport (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PrintExport");
+
+    fprintf (outfile, "export ");
+
+    if (EXPORT_ALL (arg_node)) {
+        fprintf (outfile, "all");
+    } else {
+        fprintf (outfile, "{ ");
+        EXPORT_SYMBOL (arg_node) = Trav (EXPORT_SYMBOL (arg_node), arg_info);
+        fprintf (outfile, "}");
+    }
+
+    fprintf (outfile, ";\n");
+
+    if (EXPORT_NEXT (arg_node) != NULL) {
+        EXPORT_NEXT (arg_node) = Trav (EXPORT_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintUse (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PrintUse");
+
+    fprintf (outfile, "use %s : ", USE_MOD (arg_node));
+
+    if (USE_ALL (arg_node)) {
+        fprintf (outfile, "all");
+    } else {
+        fprintf (outfile, "{ ");
+        USE_SYMBOL (arg_node) = Trav (USE_SYMBOL (arg_node), arg_info);
+        fprintf (outfile, "}");
+    }
+
+    fprintf (outfile, ";\n");
+
+    if (USE_NEXT (arg_node) != NULL) {
+        USE_NEXT (arg_node) = Trav (USE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintProvide (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PrintProvide");
+
+    fprintf (outfile, "provide ");
+
+    if (PROVIDE_ALL (arg_node)) {
+        fprintf (outfile, "all");
+    } else {
+        fprintf (outfile, "{ ");
+        PROVIDE_SYMBOL (arg_node) = Trav (PROVIDE_SYMBOL (arg_node), arg_info);
+        fprintf (outfile, "}");
+    }
+
+    fprintf (outfile, ";\n");
+
+    if (PROVIDE_NEXT (arg_node) != NULL) {
+        PROVIDE_NEXT (arg_node) = Trav (PROVIDE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintSymbol (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PrintSymbol");
+
+    fprintf (outfile, "%s", SYMBOL_ID (arg_node));
+
+    if (SYMBOL_NEXT (arg_node) != NULL) {
+        fprintf (outfile, ", ");
+        SYMBOL_NEXT (arg_node) = Trav (SYMBOL_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+#endif /* NEW_AST */
