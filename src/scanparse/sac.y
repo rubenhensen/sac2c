@@ -1,4 +1,14 @@
 %{
+
+/*
+ *
+ * $Log$
+ * Revision 1.6  1994/11/10 15:19:42  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>

@@ -1,3 +1,10 @@
+#
+# $Log$
+# Revision 1.2  1994/11/10 15:22:47  sbs
+# RCS-header inserted
+#
+#
+
 CC=gcc -ansi -g 
 LEX=lex
 YACC=yacc -dv
