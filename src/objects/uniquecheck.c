@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2005/01/11 12:35:07  cg
+ * Removed superfluous include of Error.h
+ *
  * Revision 3.7  2004/11/26 20:27:30  jhb
  * ccompile
  *
@@ -84,7 +87,6 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "internal_lib.h"
-#include "Error.h"
 #include "free.h"
 
 #ifndef OBJUC_DEACTIVATED

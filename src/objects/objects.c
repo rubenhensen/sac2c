@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2005/01/11 12:35:07  cg
+ * Removed superfluous include of Error.h
+ *
  * Revision 3.16  2005/01/07 19:50:35  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -171,7 +174,6 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "internal_lib.h"
-#include "Error.h"
 #include "DupTree.h"
 #include "ToNewTypes.h"
 
