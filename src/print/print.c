@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.170  1998/03/24 13:42:01  cg
+ * The generation of C code for the declaration and initialization of
+ * the runtime system is extracted and moved to gen_startup_code.c
+ *
  * Revision 1.169  1998/03/22 15:47:47  dkr
  * N_WLblock: BLOCKING -> STEP
  *
@@ -577,6 +581,7 @@
 #include "profile.h"
 #include "filemgr.h"
 #include "globals.h"
+#include "gen_startup_code.h"
 
 int indent = 0;
 
@@ -609,59 +614,67 @@ char *prf_string[] = {
 
 #undef PRF_IF
 
-void
-PrintFileHeader ()
+#if 0
+The following functionality is moved to gen_startup_code.c
+
+void PrintFileHeader()
 {
-    DBUG_ENTER ("PrintFileHeader");
+  DBUG_ENTER("PrintFileHeader");
+    
+  if(show_icm == 0)
+  {
+    if(traceflag != 0 ) 
+    {
+      if(traceflag & TRACE_MEM) {
+        fprintf(outfile,"#define TRACE_MEM\n");
+      }
 
-    if (show_icm == 0) {
-        if (traceflag != 0) {
-            if (traceflag & TRACE_MEM) {
-                fprintf (outfile, "#define TRACE_MEM\n");
-            }
+      if(traceflag & TRACE_REF) {
+        fprintf(outfile,"#define TRACE_REF\n");
+      }
 
-            if (traceflag & TRACE_REF) {
-                fprintf (outfile, "#define TRACE_REF\n");
-            }
+      if(traceflag & TRACE_PRF) { 
+        fprintf(outfile,"#define TRACE_PRF\n");
+      }
+    }
+    if(profileflag !=0)
+    {
+      fprintf(outfile,"#define PROFILE\n");
+      if(profileflag & PROFILE_FUN) {
+        fprintf(outfile,"#define PROFILE_FUN\n");
+      }
 
-            if (traceflag & TRACE_PRF) {
-                fprintf (outfile, "#define TRACE_PRF\n");
-            }
-        }
-        if (profileflag != 0) {
-            fprintf (outfile, "#define PROFILE\n");
-            if (profileflag & PROFILE_FUN) {
-                fprintf (outfile, "#define PROFILE_FUN\n");
-            }
+      if(profileflag & PROFILE_LIB) {
+        fprintf(outfile,"#define PROFILE_LIB\n");
+      }
 
-            if (profileflag & PROFILE_LIB) {
-                fprintf (outfile, "#define PROFILE_LIB\n");
-            }
+      if(profileflag & PROFILE_INL) {
+        fprintf(outfile,"#define PROFILE_INL\n");
+      }
 
-            if (profileflag & PROFILE_INL) {
-                fprintf (outfile, "#define PROFILE_INL\n");
-            }
-
-            if (profileflag & PROFILE_WITH) {
-                fprintf (outfile, "#define PROFILE_WITH\n");
-            }
-        }
-
-        if (check_malloc) {
-            fprintf (outfile, "#define CHECK_MALLOC\n");
-        }
-
-        if (profileflag != 0) {
-            fprintf (outfile, "#include <sys/time.h>\n");
-            fprintf (outfile, "#include <sys/resource.h>\n");
-            fprintf (outfile, "extern int getrusage(int who, struct rusage *rusage);\n");
-        }
-        fprintf (outfile, "#include \"libsac.h\"\n");
-        fprintf (outfile, "#include \"icm2c.h\"\n");
+      if(profileflag & PROFILE_WITH) {
+        fprintf(outfile,"#define PROFILE_WITH\n");
+      }
+    }
+    
+    if (check_malloc)
+    {
+      fprintf(outfile, "#define CHECK_MALLOC\n");
     }
 
-    DBUG_VOID_RETURN;
+    if(profileflag !=0)
+    {
+      fprintf(outfile,"#include <sys/time.h>\n");
+      fprintf(outfile,"#include <sys/resource.h>\n");
+      fprintf(outfile,"extern int getrusage(int who, struct rusage *rusage);\n");
+    }
+    fprintf(outfile,"#include \"libsac.h\"\n");
+    fprintf(outfile,"#include \"icm2c.h\"\n");
+  }
+
+  DBUG_VOID_RETURN;
 }
+#endif /* 0 */
 
 /*
  * prints ids-information to outfile
@@ -746,7 +759,12 @@ PrintAssign (node *arg_node, node *arg_info)
 node *
 PrintBlock (node *arg_node, node *arg_info)
 {
-    static profile_setup_flag = 0;
+    static int not_yet_done_print_main_begin = 1;
+    /*
+     * This static variable assures that only once for the outer block of
+     * the main() function initialization code is generated, but not for
+     * subsequent blocks of perhaps loops or conditionals.
+     */
 
     DBUG_ENTER ("PrintBlock");
 
@@ -761,12 +779,12 @@ PrintBlock (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
-    if ((INFO_FUNDEF (arg_info) != NULL)
+    if (not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
+        && (INFO_FUNDEF (arg_info) != NULL)
         && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
-        && (profile_setup_flag == 0)) {
-        profile_setup_flag = 1;
-        INDENT;
-        fprintf (outfile, "PROFILE_SETUP( %d );\n", PFfuncntr);
+        && (compiler_phase == PH_genccode)) {
+        GSCPrintMainBegin ();
+        not_yet_done_print_main_begin = 0;
     }
 
     if (BLOCK_INSTR (arg_node)) {
@@ -843,7 +861,7 @@ PrintModul (node *arg_node, node *arg_info)
 
     if (print_separate) {
         outfile = WriteOpen ("%s/header.h", tmp_dirname);
-        PrintFileHeader ();
+        GSCPrintFileHeader ();
 
         if (NULL != arg_node->node[1]) {
             fprintf (outfile, "\n\n");
@@ -1198,14 +1216,11 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dim:
     case F_rotate:
     case F_not:
-    case F_abs:
     case F_ftoi:
     case F_ftoi_A:
     case F_ftod:
     case F_ftod_A:
     case F_itof:
-    case F_min:
-    case F_max:
     case F_itof_A:
     case F_itod:
     case F_itod_A:
@@ -1350,11 +1365,13 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if (RETURN_EXPRS (arg_node) && (!RETURN_INWITH (arg_node))) {
-        if ((INFO_FUNDEF (arg_info) != NULL)
-            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
-            fprintf (outfile, "PROFILE_PRINT();\n");
+        if ((NODE_TYPE (arg_info) = N_info) && (INFO_FUNDEF (arg_info) != NULL)
+            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+            && (compiler_phase == PH_genccode)) {
+            GSCPrintMainEnd ();
             INDENT;
         }
+
         fprintf (outfile, "return( ");
         Trav (arg_node->node[0], arg_info);
         fprintf (outfile, " );");
@@ -1819,12 +1836,12 @@ PrintIcm (node *arg_node, node *arg_info)
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
-            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
+            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+            && (compiler_phase == PH_genccode)) {
+            GSCPrintMainEnd ();
             INDENT;
-            fprintf (outfile, "PROFILE_PRINT();\n");
         }
 
-        INDENT;
         fprintf (outfile, "%s(", ICM_NAME (arg_node));
         if (NULL != arg_node->node[0])
             Trav (arg_node->node[0], arg_info);
@@ -2471,54 +2488,54 @@ Print (node *arg_node)
     mod_name_con = mod_name_con_1;
     indent = 0;
 
-    if ((linkstyle > 1) && (break_after == PH_final)) {
-        print_separate = 1;
-        arg_node = Trav (arg_node, NULL);
+    if (compiler_phase == PH_genccode) {
+        switch (linkstyle) {
+        case 0:
+            /*
+             * The current file is a SAC program.
+             * Therefore, the C file is generated within the target directory.
+             */
 
-        /*
-         * If a full compilation is performed, the object of the compilation
-         * is a module/class implementation and the link style is 1 or 2,
-         * then all functions are printed into separate files into the
-         * tmp directory tmp_dirname.
-         * In this case no C-file is generated in the current directory.
-         */
-    } else {
-        print_separate = 0;
-
-        if (break_after < PH_genccode) {
-            outfile = stdout;
-            fprintf (outfile, "\n-----------------------------------------------\n");
-        } else {
-            if (linkstyle == 1) {
-                /*
-                 * The current file is a module/class implementation, but the functions
-                 * are nevertheless not compiled separatly to the archive.
-                 * Therefore, the C file is generated within the temprorary directory.
-                 */
-
-                outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
-            } else {
-                /*
-                 * The current file is a SAC program.
-                 * Therefore, the C file is generated within the target directory.
-                 */
-
-                outfile = WriteOpen ("%s%s", targetdir, cfilename);
-            }
-
+            outfile = WriteOpen ("%s%s", targetdir, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
-        }
-
-        PrintFileHeader ();
-        PFprintInitGlobals ();
-
-        arg_node = Trav (arg_node, NULL);
-
-        if (outfile == stdout) {
-            fprintf (outfile, "\n------------------------------------------------\n");
-        } else {
+            GSCPrintFileHeader ();
+            arg_node = Trav (arg_node, NULL);
             fclose (outfile);
+            break;
+
+        case 1:
+            /*
+             * The current file is a module/class implementation, but the functions
+             * are nevertheless not compiled separatly to the archive.
+             * Therefore, the C file is generated within the temprorary directory.
+             */
+
+            outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
+            NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
+            GSCPrintFileHeader ();
+            arg_node = Trav (arg_node, NULL);
+            fclose (outfile);
+            break;
+
+        case 2:
+            /*
+             * The current file is a module/class implementation. The functions and
+             * global objects are all printed to separate files allowing for separate
+             * compilation and the building of an archive. An additional header file
+             * is generated for global variable and type declarations as well as
+             * function prototypes.
+             */
+            print_separate = 1;
+            arg_node = Trav (arg_node, NULL);
+            break;
         }
+    }
+
+    else {
+        outfile = stdout;
+        fprintf (outfile, "\n-----------------------------------------------\n");
+        arg_node = Trav (arg_node, NULL);
+        fprintf (outfile, "\n-----------------------------------------------\n");
     }
 
     DBUG_RETURN (arg_node);
