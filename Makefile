@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.88  1998/07/16 17:44:06  dkr
+# eleminated MAKEPROD reference in dummy-rule
+#
 # Revision 1.87  1998/06/29 09:16:04  cg
 # The SAC runtime library is now compiled with optimizations.
 #
@@ -361,7 +364,7 @@ dummy:
 	(cd src/concurrent; $(MAKE) )
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
-	(cd src/runtime; $(MAKEPROD) )
+	(cd src/runtime; $(MAKE) )
 	(cd lib/src; $(MAKE) )
 
 prod:
