@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/05/26 13:31:57  sbs
+ * moved traversal of N_arg nodes from TypeCheckFunctionBody to NTCmodul.
+ * Reason: correct N_avis nodes for args are in some situations needed for
+ * dispatching fundefs, which may occur prior to type chekcing that very
+ * function.
+ *
  * Revision 3.27  2003/04/07 14:29:22  sbs
  * signature of TEMakeInfo extended ; scalar constants yield AKV types now 8-)
  *
@@ -287,13 +293,14 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
                         FUNDEF_NAME (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
 
-    /*
-     * First, we convert the old argument types into ntype nodes and attach
-     * these to the AVIS_TYPE fields of the N_arg nodes:
+    /**
+     * One might think, that we first have to
+     * convert the old argument types into ntype nodes and attach
+     * these to the AVIS_TYPE fields of the N_arg nodes.
+     * However, this has been done prior to type checking individual
+     * function bodies, as the function dispatch requires these nodes
+     * in some situations to be present (cf. comment in NTCmodul)
      */
-    if (NULL != FUNDEF_ARGS (fundef)) {
-        FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
-    }
 
     /*
      * Then, we infer the type of the body:
@@ -468,10 +475,26 @@ NTCmodul (node *arg_node, node *arg_info)
 
     ignore = SPECResetSpecChain ();
 
+    /**
+     * Before starting the type checking mechanism, we first mark all
+     * non-wrapper functions as NTC_not_checked,   AND
+     * we do have to run NTC on all argument nodes of user defined
+     * functions. One might think that this could be done when
+     * "TypeCheckFunctionBody" is run ( and in fact this was our first
+     * attempt [see comment in that function] 8-), BUT,
+     * the problem here is that TYDispatchFuntype
+     * in some rare cases (for detecting some function shadowing...)
+     * wants to inspect the new type nodes behind the argument N_avis's.
+     * So these have to be present even if the function has not yet been
+     * type checked.
+     */
     fundef = MODUL_FUNS (arg_node);
     while (fundef != NULL) {
         if (FUNDEF_STATUS (fundef) != ST_wrapperfun) {
             FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+            if (!FUNDEF_IS_LACFUN (fundef) && (NULL != FUNDEF_ARGS (fundef))) {
+                FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
+            }
         } else {
             FUNDEF_TCSTAT (fundef) = NTC_checked;
         }
