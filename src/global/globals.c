@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/08/19 17:20:41  ktr
+ * SelectionPropagation os now activated by default.
+ *
  * Revision 3.36  2003/08/16 08:38:03  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -432,7 +435,7 @@ unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_M
                         & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP);
 #else /* PRODUCTION */
 unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_BLIR) & (~OPT_SP);
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_BLIR);
 
 #endif /* PRODUCTION */
 
