@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/04/11 15:10:55  hw
+ * Revision 1.7  1995/04/28 17:24:50  hw
+ * added RCgen
+ *
+ * Revision 1.6  1995/04/11  15:10:55  hw
  * changed args of functio IsArray
  *
  * Revision 1.5  1995/03/29  12:03:45  hw
@@ -36,6 +39,7 @@ extern node *RCfundef (node *arg_node, node *arg_info);
 extern node *RCwith (node *arg_node, node *arg_info);
 extern node *RCcon (node *arg_node, node *arg_info);
 extern node *Refcount (node *arg_node);
+extern node *RCgen (node *arg_node, node *arg_info);
 extern int IsArray (types *type);
 
 #endif /* _refcount_h */

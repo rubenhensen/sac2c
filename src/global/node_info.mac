@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.62  1995/04/28 11:36:44  hw
- * added FltnMod
+ * Revision 1.63  1995/04/28 17:23:58  hw
+ * added RCgen
  *
+;; Revision 1.62  1995/04/28  11:36:44  hw
+;; added FltnMod
+;;
 ;; Revision 1.61  1995/04/24  18:06:14  hw
 ;; - renamed CompWhile to CompLoop
 ;; - added CompLoop in comp_tab[N_do]
@@ -283,7 +286,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, CFwith, RCwith, CompWith, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_generator, "N_generator", DummyFun, FltnGen, PrintGenator, DummyFun, DummyFun,
-       DummyFun, DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, FreeInfoId, DummyFun, RCgen, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_genarray, "N_genarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, RCcon, DummyFun, DummyFun, DummyFun,
