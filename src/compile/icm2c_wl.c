@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/10/05 17:26:53  khf
+ * added INDENT in WL_OFFSET
+ *
  * Revision 3.39  2004/08/13 16:38:37  khf
  * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
  * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
@@ -426,6 +429,7 @@ ICMCompileWL_OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
     fprintf (outfile, "int SAC_WL_OFFSET( %s);\n", to_NT);
 
     for (i = 0; i < dims; i++) {
+        INDENT;
         fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, i);
     }
 
