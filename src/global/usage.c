@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/03/24 16:36:52  sbs
+ * cppI added
+ *
  * Revision 3.42  2003/03/13 17:18:30  dkr
  * -minarrayrep activated for TAGGED_ARRAYS only
  *
@@ -217,6 +220,7 @@ usage ()
 
             "    -D <var>        Set preprocessor variable <var>.\n"
             "    -D <var>=<val>  Set preprocessor variable <var> to <val>.\n"
+            "    -cppI <path>    Specify path for preprocessor includes.\n"
             "\n"
             "    -I <path>       Specify additional module/class declaration file path.\n"
             "    -L <path>       Specify additional SAC library file path.\n"

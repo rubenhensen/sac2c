@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/03/24 16:36:52  sbs
+ * cppI added
+ *
  * Revision 3.38  2003/03/20 14:02:29  sbs
  * config.h included; DISABLE_MT and DISABLE_PHM used.
  *
@@ -427,6 +430,8 @@ AnalyseCommandline (int argc, char *argv[])
 #endif
 
     ARGS_FLAG ("copyright", copyright (); exit (0));
+
+    ARGS_OPTION ("cppI", cppincs[num_cpp_incs++] = ARG);
 
     ARGS_OPTION ("csdefaults", {
         ARG_FLAGMASK_BEGIN ();
