@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/12/12 12:44:44  dkr
+ * function MakeId_Copy_NT added
+ *
  * Revision 3.43  2001/07/17 16:17:13  cg
  * Bug fixed: whenever functions like MakeFundef are called with
  * NULL types specification, subsequent write operations to fields
@@ -49,103 +52,13 @@
  * Revision 3.30  2001/04/24 09:16:09  dkr
  * P_FORMAT replaced by F_PTR
  *
- * Revision 3.29  2001/04/02 15:06:37  dkr
- * MakeFundef modified
- *
- * Revision 3.28  2001/03/29 09:15:07  nmw
- * tabs2spaces done
- *
- * Revision 3.27  2001/03/27 21:47:54  dkr
- * MakeWLseg() modified: MALLOC_INIT_VECT used
- *
- * Revision 3.25  2001/03/27 18:25:39  dkr
- * argument of MakeBool() is of type 'bool' now
- *
- * Revision 3.24  2001/03/22 13:15:31  dkr
- * MakeIds(): IDS_AVIS initialized
- *
- * Revision 3.23  2001/03/21 11:05:13  dkr
- * superfluous include of scnprs.h removed
- *
- * Revision 3.22  2001/03/19 16:44:07  dkr
- * WLSEG_HOMSV removed (WLSEG_SV used instead)
- *
- * Revision 3.21  2001/03/16 11:56:29  nmw
- * AVIS_SSAPHITRAGET type changed
- *
- * Revision 3.20  2001/03/15 10:57:22  nmw
- * missing init added
- *
- * Revision 3.19  2001/03/15 10:54:29  nmw
- * AVIS_SSAUNDOFLAG added
- *
- * Revision 3.18  2001/02/20 15:51:27  nmw
- * minor changes in INFO_SSA nodes
- *
- * Revision 3.17  2001/02/16 08:41:50  nmw
- * SSASTACK_INUSE added
- *
- * Revision 3.16  2001/02/15 16:59:03  nmw
- * node N_ssastack added
- *
- * Revision 3.15  2001/02/14 15:05:35  dkr
- * ATTRIB/STATUS are always initialized now.
- * Pre-processor flag NAMES_IN_TYPES added:
- * In MakeTypedef(), MakeObjdef(), MakeFundef(), MakeArg(), MakeVardec()
- * some arguments are mapped to the same physical position in the AST
- * (TYPEDEF_TYPE and TYPEDEF_NAME for example).
- * In order to prevent a memory leak redundant information is freed in
- * these cases.
- *
- * Revision 3.14  2001/02/12 17:05:11  nmw
- * N_avis node added, MakeVardec/MakeArg alloc N_avis node
- *
- * Revision 3.13  2001/02/12 10:54:12  nmw
- * N_ssacnt and N_cseinfo added, N_arg and N_vardec modified
- * to store information for ssa. N_block holds chain of SSA counters.
- *
- * Revision 3.12  2001/02/07 20:17:07  dkr
- * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
- *
- * Revision 3.11  2001/02/06 01:45:05  dkr
- * signature of MakeWLgrid() and MakeWLgridVar() modified.
- * MakeIcm simplified.
- *
- * Revision 3.10  2001/01/29 18:33:25  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.8  2001/01/24 23:33:46  dkr
- * MakeId_Num() added
- * signature of MakeWLgrid() and MakeWLgridVar() modified
- * signature of MakeWLseg() and MakeWLsegVar() modified
- *
- * Revision 3.7  2001/01/10 14:03:52  dkr
- * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
- *
- * Revision 3.6  2001/01/09 17:28:52  dkr
- * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.5  2001/01/09 16:40:12  dkr
- * tree_compound.h included
- *
- * Revision 3.4  2001/01/08 17:13:47  dkr
- * MakeIcm simplified
- *
- * Revision 3.3  2000/12/29 14:22:48  cg
- * Added support for new ICM MT_DECL_MYTHREAD.
- *
- * Revision 3.2  2000/12/12 12:25:35  dkr
- * nodes N_pre, N_post, N_inc, N_dec removed
- *
- * Revision 3.1  2000/11/20 18:03:32  sacbase
- * new release made
- *
  * [...]
  *
  */
 
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -1163,6 +1076,23 @@ MakeId_Copy (char *str)
     DBUG_ENTER ("MakeId_Copy");
 
     result = MakeId (StringCopy (str), NULL, ST_regular);
+
+    DBUG_RETURN (result);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeId_Copy_NT (node *vardec)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeId_Copy");
+
+    DBUG_ASSERT ((vardec != NULL), "no vardec found!");
+
+    result = MakeId_Copy (VARDEC_OR_ARG_NAME (vardec));
+    ID_NT_TAG (result) = vardec;
 
     DBUG_RETURN (result);
 }

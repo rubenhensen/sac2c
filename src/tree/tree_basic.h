@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2001/12/12 12:44:55  dkr
+ * function MakeId_Copy_NT added
+ *
  * Revision 3.104  2001/12/11 12:59:50  dkr
  * ID_NT_TAG added
  *
@@ -63,218 +66,6 @@
  *
  * Revision 3.85  2001/04/24 18:36:50  dkr
  * comment about FUNDEF_USED modified
- *
- * Revision 3.84  2001/04/20 11:52:45  dkr
- * INFO_INFDFMS_DEFINED removed
- *
- * Revision 3.83  2001/04/20 11:19:22  nmw
- * macros INFO_SSALUR_XXX added
- *
- * Revision 3.82  2001/04/19 16:33:31  nmw
- * INFO_SSALIR_INSLIST and INFO_SSALIR_MAXDEPTH added
- *
- * Revision 3.80  2001/04/18 12:59:46  nmw
- * SSAap, CAVap for single functions traversals added
- *
- * Revision 3.79  2001/04/12 12:39:23  nmw
- * AVIS_EXPRESULT added
- *
- * Revision 3.78  2001/04/10 15:19:20  nmw
- * INFO_SSALIR_TOPBLOCK and INFO_SSALIR_FLAG separated
- *
- * Revision 3.77  2001/04/09 15:55:28  nmw
- * macros INFO_SSALIR added, LET_LIRFLAG added
- *
- * Revision 3.76  2001/04/05 16:10:31  nmw
- * AVIS_LIRMOVE macro for SSALIR traversal added
- *
- * Revision 3.75  2001/04/05 01:38:17  dkr
- * INFO_COMP_MERGE added
- *
- * Revision 3.74  2001/04/04 22:20:49  dkr
- * INFO_COMP_FOLDFUNS added
- *
- * Revision 3.72  2001/04/04 13:21:53  dkr
- * INFO_COMP_TABSIZE added
- *
- * Revision 3.71  2001/04/04 13:10:51  nmw
- * INFO_SSALIR_marcos added
- *
- * Revision 3.70  2001/04/04 09:57:59  nmw
- * INFO_INL macros added
- *
- * Revision 3.67  2001/04/02 11:16:58  nmw
- * INFO_xxx macros for MODUL, ASSIGN added for optimizations
- *
- * Revision 3.66  2001/03/30 13:10:07  dkr
- * N_fundef definition modified, FUNDEF_USED added
- *
- * Revision 3.65  2001/03/29 16:30:03  nmw
- * INFO_DUP_ macros added, comments for scheduling modified
- *
- * Revision 3.64  2001/03/28 14:56:11  dkr
- * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX modified
- *
- * Revision 3.63  2001/03/27 20:51:49  dkr
- * macros INFO_F2L_... added
- *
- * Revision 3.61  2001/03/27 09:09:46  nmw
- * INFO_SSALIR_ macros added
- *
- * Revision 3.59  2001/03/26 10:46:03  nmw
- * INFO_SSACF_ macros added
- *
- * Revision 3.58  2001/03/23 18:04:11  dkr
- * INFO_INL_NAIVE added
- * INFO_DUP_ALL removed
- *
- * Revision 3.56  2001/03/21 17:49:33  dkr
- * macros INFO_INL_... modified
- *
- * Revision 3.55  2001/03/21 14:08:06  nmw
- * INFO_SSACF_ macros added
- *
- * Revision 3.53  2001/03/19 16:43:46  dkr
- * WLSEG_HOMSV removed (WLSEG_SV used instead)
- *
- * Revision 3.52  2001/03/19 14:24:27  nmw
- * AVIS_ASSIGN2, INFO_USSA_ macros added
- *
- * Revision 3.51  2001/03/16 11:56:39  nmw
- * AVIS_SSAPHITRAGET type changed and AVIS macros changed. too
- *
- * Revision 3.49  2001/03/15 13:57:26  dkr
- * definition of INFO_PREC2_OBJINITFUNDEF modified
- *
- * Revision 3.48  2001/03/15 13:29:09  nmw
- * INFO_SSA_ASSIGN added
- *
- * Revision 3.46  2001/03/15 10:54:29  nmw
- * AVIS_SSAUNDOFLAG added
- *
- * Revision 3.45  2001/03/12 13:41:08  nmw
- * macros for INFO_USSA_ modified
- *
- * Revision 3.44  2001/03/09 11:50:28  sbs
- * INFO_PF_FUNDEF added.
- *
- * Revision 3.43  2001/03/07 14:06:22  nmw
- * AVIS_SSASTACK changed
- *
- * Revision 3.42  2001/03/06 13:18:19  nmw
- * INFO_CMPT_ marcros added
- *
- * Revision 3.40  2001/03/05 16:19:04  nmw
- * INFO_SSACSE macros added
- *
- * Revision 3.38  2001/03/05 15:01:18  dkr
- * some comments added
- * NCODE_NO renamed into NCODE_ID
- * INFO_PREC1_CEXPR added
- *
- * Revision 3.37  2001/03/05 13:39:15  nmw
- * AVIS_SUBST added
- *
- * Revision 3.36  2001/03/02 16:11:06  dkr
- * INFO_PREC_... macros modifed
- *
- * Revision 3.35  2001/03/02 12:03:49  nmw
- * INFO_SSADCR_ASSIGN added (for restoring FUNDEF_EXT_ASSIGN)
- *
- * Revision 3.34  2001/02/28 16:01:48  nmw
- * INFO_SSADCR_LET added
- *
- * Revision 3.33  2001/02/27 16:05:01  nmw
- * INFO_SSADCR macros added
- *
- * Revision 3.32  2001/02/22 12:44:54  nmw
- * VARDEC_UNDOAVIS added
- *
- * Revision 3.31  2001/02/20 15:51:27  nmw
- * minor changes in INFO_SSA nodes
- *
- * Revision 3.30  2001/02/16 08:41:50  nmw
- * SSASTACK_INUSE added
- *
- * Revision 3.29  2001/02/15 16:59:03  nmw
- * node N_ssastack added
- *
- * Revision 3.28  2001/02/14 17:51:49  dkr
- * redundant VARDEC_TYPEDEF removed
- *
- * Revision 3.27  2001/02/14 16:31:55  nmw
- * INFO_SSA macros added
- *
- * Revision 3.26  2001/02/14 14:40:44  dkr
- * INFO_PREC_CNT_ARTIFICIAL removed
- *
- * Revision 3.25  2001/02/12 21:23:19  dkr
- * some macros for lac2fun() and InferDFMs() added
- *
- * Revision 3.24  2001/02/12 17:05:11  nmw
- * N_avis node added, MakeVardec/MakeArg alloc N_avis node
- *
- * Revision 3.23  2001/02/12 10:54:12  nmw
- * N_ssacnt and N_cseinfo added, N_arg and N_vardec modified
- * to store information for ssa. N_block holds chain of SSA counters.
- *
- * Revision 3.22  2001/02/12 09:56:40  dkr
- * FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN added
- *
- * Revision 3.21  2001/02/07 20:17:02  dkr
- * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
- *
- * Revision 3.20  2001/02/06 01:45:24  dkr
- * attribute NOOP for N_WL... nodes added
- *
- * Revision 3.19  2001/02/02 10:46:53  dkr
- * some comments for WL nodes updated
- *
- * Revision 3.18  2001/01/29 18:32:18  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.17  2001/01/24 23:34:01  dkr
- * signature of MakeWLgrid() and MakeWLgridVar() modified
- * signature of MakeWLseg() and MakeWLsegVar() modified
- * WLGRIDX_FITTED added
- *
- * Revision 3.16  2001/01/19 11:56:10  dkr
- * NWITH2_OFFSET_NEEDED added
- *
- * Revision 3.15  2001/01/17 17:38:11  dkr
- * NPART_PADDED removed (superfluous)
- *
- * Revision 3.14  2001/01/10 14:27:09  dkr
- * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
- *
- * Revision 3.13  2001/01/10 11:26:21  dkr
- * WLXBLOCK_... macros added
- *
- * Revision 3.12  2001/01/09 18:14:25  dkr
- * INFO_WL_SHPSEG replaced by INFO_WL_TYPES
- *
- * Revision 3.11  2001/01/09 17:26:37  dkr
- * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.8  2000/12/16 10:42:06  cg
- * Added new attribute ID_NUM for typecheck constant propagation.
- *
- * Revision 3.7  2000/12/15 10:42:20  dkr
- * INFO_INFDFMS_HIDELOC added
- *
- * Revision 3.5  2000/12/06 20:13:13  dkr
- * INFO_LAC2FUN_... renamed into INFO_L2F_... or
- * INFO_INFDFMS_... respectively
- *
- * Revision 3.4  2000/12/06 18:26:04  cg
- * Added some new macros for typecheck constant propagation.
- *
- * Revision 3.3  2000/12/06 09:04:50  cg
- * Added INFO_TC_TCCP
- *
- * Revision 3.2  2000/11/27 21:11:20  cg
- * Added new attribute PRAGMA for Nwith2 nodes.
- * Added new attribute APL for N_pragma nodes.
  *
  * [...]
  *
@@ -1846,6 +1637,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
 extern node *MakeId (char *name, char *mod, statustype status);
 
 extern node *MakeId_Copy (char *str);
+
+extern node *MakeId_Copy_NT (node *vardec);
 
 extern node *MakeId_Num (int val);
 
