@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/08/21 13:33:35  sah
+ * dot elimination enabled again;)
+ *
  * Revision 3.10  2002/08/13 14:54:07  dkr
  * stephan's dot elimination completely disabled now ;-)
  *
  * Revision 3.9  2002/08/13 14:45:59  sbs
- * Stefan's dot elimination disabled due to scrambled code on several examples
+ * Stephan's dot elimination disabled due to scrambled code on several examples
  * ... 8-(
  *
  * Revision 3.7  2002/07/09 12:52:35  sbs
@@ -253,9 +256,7 @@ ScanParse ()
         goto DONE;
     }
 
-#if 0
-  syntax_tree = EliminateSelDots( syntax_tree);
-#endif
+    syntax_tree = EliminateSelDots (syntax_tree);
 
 DONE:
     DBUG_RETURN (syntax_tree);
@@ -335,9 +336,7 @@ ScanParse ()
         goto DONE;
     }
 
-#if 0
-  syntax_tree = EliminateSelDots( syntax_tree);
-#endif
+    syntax_tree = EliminateSelDots (syntax_tree);
 
 DONE:
     DBUG_RETURN (syntax_tree);
