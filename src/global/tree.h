@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/06/01 10:09:55  cg
+ * Revision 1.40  1995/06/02 10:02:52  sbs
+ * use-node in ids and info.use inserted
+ *
+ * Revision 1.39  1995/06/01  10:09:55  cg
  * statustype added and status in struct types inserted.
  *
  * Revision 1.38  1995/05/30  12:14:39  cg
@@ -155,6 +158,7 @@ typedef enum { L_for, L_do, L_while } looptype;
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 typedef enum { C_gen, C_mod } contype;
 typedef enum { ST_regular, ST_hidden, ST_unique, ST_artificial } statustype;
+typedef enum { VECT, IDX } useflag;
 
 typedef char id;
 
@@ -171,6 +175,8 @@ typedef struct IDS {
                            /* (loop invariant/not loop invariant , ...) */
     struct NODE *node;     /* ptr. to decleration */
     struct NCHAIN *nchain; /* ptr. to definition(s) resp. usage(s) */
+    struct NODE *use;      /* ptr. to usage chain (used only if the var */
+                           /* is a one dimensional array! */
     struct IDS *next;
 } ids;
 
@@ -232,6 +238,7 @@ typedef struct NODE {
         float cfloat;      /* Float-Wert                         */
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
+        useflag use;       /* used in N_vect_info nodes          */
         struct {
             int tag;             /* tag for return type */
             int tc;              /* type class */
