@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/04/29 08:53:51  srs
+ * patched ArrayPrf() to call it from typecheck.c
+ *
  * Revision 1.63  1998/04/20 08:55:51  srs
  * added incrementations of cf_expr
  *
@@ -1861,7 +1864,9 @@ ArrayPrf (node *arg_node, node *arg_info)
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
             SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types,
                            INFO_CF_TYPE (arg_info));
-            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+            /* TC uses folding of shape() and has no masks present. */
+            if (arg_info->mask[1])
+                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             FreeTree (arg_node);
             arg_node = tmp;
             cf_expr++;
