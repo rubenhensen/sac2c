@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/01 14:36:50  sbs
+ * warnings eliminated.
+ *
  * Revision 3.1  2000/11/20 18:00:26  sacbase
  * new release made
  *
@@ -1348,7 +1351,7 @@ node *
 DupPartialArray (int start, int length, node *array, node *arg_info)
 {
     node *new_node;
-    node *expr0, *expr1;
+    node *expr0, *expr1 = NULL;
     int i;
     int *tmp_ivec;
     float *tmp_fvec;
@@ -1814,6 +1817,7 @@ FetchElem (int pos, node *array)
             elem = MakeBool (((int *)ARRAY_CONSTVEC (array))[pos]);
             break;
         default:
+            elem = NULL; /* just to please the compiler 8-) */
             DBUG_ASSERT ((0), "fetched element has wrong type");
         }
     }

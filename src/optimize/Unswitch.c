@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/01 14:37:26  sbs
+ * warnings eliminated.
+ *
  * Revision 3.2  2000/11/23 16:41:42  sbs
  * Unswitch.c:139: warning: unused variable `mem_uns_expr' eliminated
  *
@@ -312,6 +315,13 @@ DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
             rest = (cond_info->test_num / loop_info->start_num) % loop_info->mod_num;
             break;
         default:
+            /*
+             * to please the compiler, the following line is inserted. To make sure that
+             * it doesn't harm, a DBUG_ASSERT follows!!
+             */
+            rest = 0;
+            DBUG_ASSERT ((0),
+                         "the variable rest will be referred to without initialization!");
             break;
         }
 
