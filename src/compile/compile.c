@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.187  1998/08/11 00:08:12  dkr
+ * *** empty log message ***
+ *
  * Revision 1.186  1998/08/10 17:45:32  cg
  * Bug fixed in generation of ICM MT_ADJUST_SCHEDULER
- *
- * Revision 1.185  1998/08/10 15:01:07  dkr
- * *** empty log message ***
  *
  * Revision 1.184  1998/08/07 19:46:47  dkr
  * fixed a bug with generation of WL_ADJUST_OFFSET
@@ -1000,90 +1000,6 @@ GetIndexIds (ids *index_ids, int dim)
     }
 
     DBUG_RETURN (index_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *InlineFoldCode(node *let_node, node *ap_node)
- *
- * description:
- *   not yet implemented
- *
- ******************************************************************************/
-
-node *
-InlineFoldCode (node *let_node, node *ap_node)
-{
-    node *inl_nodes;
-
-    DBUG_ENTER ("InlineFoldCode");
-
-#if 0
-  /*
-   * Generate new variables
-   */
-  args = FUNDEF_ARGS( AP_FUNDEF(ap_node));
-  while (args != NULL) {
-    new_name = RenameInlinedVar( ARG_NAME( args));
-
-    new_type = DuplicateTypes(ARG_TYPE(arg_node), 1);
-    INFO_INL_TYPES(arg_info) = MakeVardec(new_name, new_type, INFO_INL_TYPES(arg_info));
-
-    args = ARG_NEXT( args);
-  }
-
-  /*
-   * Make header for inlined function
-   */
-  var_node = FUNDEF_ARGS( AP_FUNDEF( ap_node));
-  expr_node = AP_ARGS( ap_node);
-
-  DUPTYPE = DUP_NORMAL;
-
-  while (var_node && expr_node) {
-    new_name = RenameInlinedVar(ARG_NAME(var_node));
-    vardec_node = SearchDecl(new_name, INFO_INL_TYPES(arg_info));
-    new_expr = DupTree(EXPRS_EXPR(expr_node), arg_info);
-    inl_nodes = MakeAssignLet(new_name, vardec_node, new_expr);      
-    header_nodes = AppendNodeChain(1, inl_nodes, header_nodes);
-    var_node = VARDEC_NEXT(var_node);
-    expr_node = EXPRS_NEXT(expr_node);
-  }
-
-  /*
-   * Make bottom for inlined function
-   */
-  ids_node = LET_IDS(let_node);
-  expr_node = RETURN_EXPRS(FUNDEF_RETURN(AP_FUNDEF(ap_node)));
-
-  DUPTYPE = DUP_INLINE;
-
-  while (ids_node && expr_node) {
-    new_name = StringCopy(IDS_NAME(ids_node));
-    new_expr = DupTree(EXPRS_EXPR(expr_node), arg_info);
-    inl_nodes = MakeAssignLet(new_name, IDS_VARDEC(ids_node), new_expr);
-    bottom_nodes = AppendNodeChain(1, inl_nodes, bottom_nodes);
-    ids_node = IDS_NEXT(ids_node);
-    expr_node = EXPRS_NEXT(expr_node);
-  }
-
-  /*
-   * Duplicate function (with variable renameing)
-   */
-  DUPTYPE = DUP_INLINE;
-  inl_nodes=DupTree(BLOCK_INSTR(FUNDEF_BODY(AP_FUNDEF(ap_node))), arg_info);
-
-  /*
-   * Link it together
-   */
-  inl_nodes=AppendNodeChain(1, inl_nodes, bottom_nodes);
-  inl_nodes=AppendNodeChain(1, header_nodes, inl_nodes);
-
-#endif
-    inl_nodes = NULL;
-
-    DBUG_RETURN (inl_nodes);
 }
 
 /******************************************************************************
@@ -7593,8 +7509,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
                 /*
                  * Inlining of the fold-pseudo-fun.
                  */
-                fold_code = InlineFoldCode (ASSIGN_INSTR (fold_code),
-                                            INFO_COMP_FUNDEF (arg_info));
+                fold_code = InlineSingleApplication (ASSIGN_INSTR (fold_code),
+                                                     INFO_COMP_FUNDEF (arg_info));
 #endif
 
                 /*
