@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/29 17:34:54  sah
+ * fixed a mini bug
+ *
  * Revision 1.7  2004/11/29 17:29:49  sah
  * fixed a traversal bug
  *
@@ -307,7 +310,7 @@ RIDobjInitFunctionName (bool before_rename)
         strcpy (new_name, name);
     } else {
         new_name = ILIBmalloc (strlen (name) + strlen (MAIN_MOD_NAME) + 8);
-        sprintf (new_name, "SASf_%s__%s", MAIN_MOD_NAME, name);
+        sprintf (new_name, "SACf_%s__%s", MAIN_MOD_NAME, name);
     }
 
     DBUG_RETURN (new_name);
