@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.10  2004/10/21 17:21:34  sah
+ * ElimSubDiv is limited on types that do support
+ * the optimisation. Now, ElimSubDiv optimises only
+ * those functions it really can optimise ;)
+ *
  * Revision 1.9  2004/10/19 15:29:12  sah
  * the negative One in GF(2) is 1 ;)
  *
@@ -509,7 +514,11 @@ ESDprf (node *arg_node, info *arg_info)
     if ((NODE_TYPE (PRF_ARGS (arg_node)) == N_exprs)
         && (INFO_ESD_COUNTER (arg_info) < 20000)) {
 
-        if (PRF_PRF (arg_node) == F_sub_SxS) {
+        if ((PRF_PRF (arg_node) == F_sub_SxS)
+            && ((TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_double)
+                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float)
+                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_int)
+                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool))) {
 
             PRF_PRF (arg_node) = F_add_SxS;
             CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
@@ -523,7 +532,8 @@ ESDprf (node *arg_node, info *arg_info)
 
         if ((PRF_PRF (arg_node) == F_div_SxS)
             && (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_id)
-            && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
+            && ((TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_double)
+                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float))) {
 
             PRF_PRF (arg_node) = F_mul_SxS;
             CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
