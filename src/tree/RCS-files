@@ -40,3 +40,5 @@ tree_basic.h
 tree_compound.c
 tree_compound.h
 type_info.mac
+wl_bounds.c
+wl_bounds.h
