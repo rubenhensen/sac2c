@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/24 09:34:42  dkr
+ * CHECK_NULL renamed into STR_OR_EMPTY
+ * STR_OR_NULL moved from my_debug.h to internal_lib.h
+ *
  * Revision 3.8  2001/04/10 09:36:46  dkr
  * macro F_PTR added
  *
@@ -119,7 +123,8 @@ extern void ComputeMallocAlignStep (void);
 #define F_PTR "%p"
 #endif
 
-#define CHECK_NULL(a) ((NULL == a) ? "" : a)
+#define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
+#define STR_OR_EMPTY(str) STR_OR_NULL (str, "")
 
 /*
  * swapping two pointers
