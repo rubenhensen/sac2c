@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/07/05 17:22:22  sbs
+ * some DBUG_PRINTs added.
+ *
  * Revision 1.1  2004/01/28 17:01:32  skt
  * Initial revision
  *
@@ -99,6 +102,10 @@ static ids *CAVids (ids *arg_ids, node *arg_info);
 node *
 CAVarg (node *arg_node, node *arg_info)
 {
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
     DBUG_ENTER ("CAVarg");
 
     if (ARG_AVIS (arg_node) == NULL) {
@@ -120,6 +127,12 @@ CAVarg (node *arg_node, node *arg_info)
         } else {
             /* TYOldType2Type() can not handle T_dots yet... 8-(( */
         }
+    } else {
+        DBUG_EXECUTE ("CAV", tmp_str = TYType2String (AVIS_TYPE (ARG_AVIS (arg_node)),
+                                                      FALSE, 0););
+
+        DBUG_PRINT ("CAV", ("reusing ntype %s of arg %s", tmp_str, ARG_NAME (arg_node)));
+        DBUG_EXECUTE ("CAV", tmp_str = Free (tmp_str););
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -142,6 +155,10 @@ CAVarg (node *arg_node, node *arg_info)
 node *
 CAVvardec (node *arg_node, node *arg_info)
 {
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
     DBUG_ENTER ("CAVvardec");
 
     if (VARDEC_AVIS (arg_node) == NULL) {
@@ -160,6 +177,13 @@ CAVvardec (node *arg_node, node *arg_info)
         DBUG_PRINT ("CAV", ("missing ntype in vardec %s added.", VARDEC_NAME (arg_node)));
         DBUG_ASSERT ((VARDEC_TYPE (arg_node) != NULL), "old type in vardec missing");
         AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYOldType2Type (VARDEC_TYPE (arg_node));
+    } else {
+        DBUG_EXECUTE ("CAV", tmp_str = TYType2String (AVIS_TYPE (VARDEC_AVIS (arg_node)),
+                                                      FALSE, 0););
+
+        DBUG_PRINT ("CAV",
+                    ("reusing ntype %s of vardec %s", tmp_str, VARDEC_NAME (arg_node)));
+        DBUG_EXECUTE ("CAV", tmp_str = Free (tmp_str););
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
