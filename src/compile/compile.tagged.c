@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2002/08/06 20:02:21  dkr
+ * some variables initialized to please the cc (prod version)
+ *
  * Revision 1.37  2002/08/05 20:41:14  dkr
  * shape computation for AKD with-loops added
  *
@@ -4064,10 +4067,12 @@ COMP2Prf (node *arg_node, node *arg_info)
     case F_rotate:
         DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                           " Use array.lib instead!");
+        ret_node = NULL;
         break;
 
     default:
         DBUG_ASSERT ((0), "unknown prf found!");
+        ret_node = NULL;
         break;
     }
 
