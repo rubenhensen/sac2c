@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.6  2000/05/29 14:33:34  dkr
+ * new traversal function AIwithid() added
+ * new abstractions RenameIds(), RenameId() added
+ *
  * Revision 1.5  2000/05/25 23:02:16  dkr
  * added reference to Precompile() in header
  *
@@ -69,16 +73,55 @@
 
 /******************************************************************************
  *
- * function:
+ * Function:
+ *   ids *RenameIds( ids *ids_chain)
  *
- *
- * description:
- *
- *
- *
+ * Description:
  *
  *
  ******************************************************************************/
+
+static ids *
+RenameIds (ids *ids_chain)
+{
+    ids *tmp;
+
+    DBUG_ENTER ("RenameIds");
+
+    tmp = ids_chain;
+    while (tmp != NULL) {
+        DBUG_ASSERT ((IDS_VARDEC (tmp) != NULL),
+                     "Missing back reference for identifier.");
+
+        FREE (IDS_NAME (tmp));
+        IDS_NAME (tmp) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (tmp)));
+
+        tmp = IDS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (ids_chain);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *RenameId( node *id_node)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+RenameId (node *id_node)
+{
+    DBUG_ENTER ("RenameId");
+
+    FREE (ID_NAME (id_node));
+    ID_NAME (id_node) = StringCopy (VARDEC_OR_ARG_NAME (ID_VARDEC (id_node)));
+
+    DBUG_RETURN (id_node);
+}
 
 /******************************************************************************
  *
@@ -131,13 +174,12 @@ node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg)
 
   DBUG_RETURN(vardec);
 }
-
 #endif /*  0  */
 
 /******************************************************************************
  *
  * function:
- *
+ *   ids *AIids(ids *arg_ids, node *arg_info)
  *
  * description:
  *
@@ -201,7 +243,7 @@ AIids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIassign(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -254,7 +296,7 @@ AIassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIexprs(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -289,7 +331,7 @@ AIexprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIreturn(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -318,7 +360,7 @@ AIreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIap(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -355,7 +397,7 @@ AIap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIid(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -376,8 +418,7 @@ AIid (node *arg_node, node *arg_info)
     DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL),
                  "Missing back reference for identifier.");
 
-    FREE (ID_NAME (arg_node));
-    ID_NAME (arg_node) = StringCopy (VARDEC_OR_ARG_NAME (ID_VARDEC (arg_node)));
+    arg_node = RenameId (arg_node);
 
     if (INFO_AI_IDS (arg_info) != NULL) {
         /*
@@ -458,7 +499,28 @@ AIid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *AIwithid( node *arg_node, node *arg_info)
  *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+AIwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("AIwithid");
+
+    NWITHID_VEC (arg_node) = RenameIds (NWITHID_VEC (arg_node));
+    NWITHID_IDS (arg_node) = RenameIds (NWITHID_IDS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AIlet(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -471,21 +533,9 @@ AIid (node *arg_node, node *arg_info)
 node *
 AIlet (node *arg_node, node *arg_info)
 {
-    ids *var;
-
     DBUG_ENTER ("AIlet");
 
-    var = LET_IDS (arg_node);
-
-    while (var != NULL) {
-        DBUG_ASSERT ((IDS_VARDEC (var) != NULL),
-                     "Missing back reference for identifier.");
-
-        FREE (IDS_NAME (var));
-        IDS_NAME (var) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (var)));
-
-        var = IDS_NEXT (var);
-    }
+    LET_IDS (arg_node) = RenameIds (LET_IDS (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -500,7 +550,7 @@ AIlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIvardec(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -529,7 +579,7 @@ AIvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIarg(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -563,7 +613,7 @@ AIarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIblock(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -590,7 +640,7 @@ AIblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AIfundef(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -627,7 +677,7 @@ AIfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *AdjustIdentifiers(node *fundef, node *let)
  *
  * description:
  *
