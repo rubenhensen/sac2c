@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/21 17:52:53  jhs
+ * Test on N_aps done, some code left ...
+ *
  * Revision 1.6  2000/02/11 16:21:01  jhs
  * Expanded traversals ...
  *
@@ -43,6 +46,7 @@
 #include "DupTree.h"
 #include "generatemasks.h"
 #include "globals.h"
+#include "my_debug.h"
 
 #include "internal_lib.h"
 
@@ -63,7 +67,7 @@ BlocksInit (node *arg_node, node *arg_info)
     DBUG_ENTER ("BlocksInit");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "ScheduleInit expects a N_fundef as arg_node");
+                 "BlocksInit expects a N_fundef as arg_node");
 
     old_tab = act_tab;
     act_tab = blkin_tab;
@@ -122,6 +126,60 @@ CheckLHSforBigArrays (node *let, int max_small_size)
     DBUG_RETURN (result);
 }
 
+static int
+CheckLHSforHeavyTypes (node *let)
+{
+    ids *letids;
+    node *vardec;
+    types *type;
+
+    DBUG_ENTER ("CheckLHSforHeavyTypes");
+
+    letids = LET_IDS (let);
+    while (letids != NULL) {
+        vardec = IDS_VARDEC (letids);
+        type = VARDEC_TYPE (vardec);
+
+        DBUG_PRINT ("BLKIN", ("type: %s %i %i", mdb_type[TYPES_BASETYPE (type)],
+                              type->attrib, type->status));
+        if ((type->attrib) == ST_was_reference) {
+            DBUG_PRINT ("BLKIN", ("wrf"));
+        }
+
+        letids = IDS_NEXT (letids);
+    }
+
+    DBUG_RETURN (FALSE);
+}
+
+static int
+testfun (node *fun)
+{
+    node *arg;
+    types *type;
+
+    DBUG_ENTER ("testfun");
+
+    arg = FUNDEF_ARGS (fun);
+    while (arg != NULL) {
+        type = ARG_TYPE (arg);
+        DBUG_PRINT ("BLKIN",
+                    ("a %s type: %s %i %i", FUNDEF_NAME (fun),
+                     mdb_type[TYPES_BASETYPE (type)], type->attrib, type->status));
+        arg = ARG_NEXT (arg);
+    }
+
+    type = FUNDEF_TYPES (fun);
+    while (type != NULL) {
+        DBUG_PRINT ("BLKIN",
+                    ("r %s type: %s %i %i", FUNDEF_NAME (fun),
+                     mdb_type[TYPES_BASETYPE (type)], type->attrib, type->status));
+        type = TYPES_NEXT (type);
+    }
+
+    DBUG_RETURN (FALSE);
+}
+
 /******************************************************************************
  *
  * function:
@@ -151,7 +209,17 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
              *  it is a function with unknown body,
              *  is any array-result > threshold?
              */
-            result = CheckLHSforBigArrays (instr, max_replication_size);
+            result = testfun (AP_FUNDEF (LET_EXPR (instr)));
+
+            result = CheckLHSforHeavyTypes (instr)
+                     && CheckLHSforBigArrays (instr, max_replication_size);
+        } else if ((NODE_TYPE (LET_EXPR (instr)) == N_ap)) {
+
+            /* #### */
+
+            result = testfun (AP_FUNDEF (LET_EXPR (instr)));
+
+            result = CheckLHSforHeavyTypes (instr);
         } else if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
             /*
              *  it is a primitive function with no body
