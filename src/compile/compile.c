@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.106  1997/11/27 10:41:06  dkr
+ * removed old access-macros
+ *
  * Revision 1.105  1997/11/25 10:33:42  dkr
  * rudimental CompNWith added
  *
@@ -454,55 +457,6 @@ int basetype_size[] = {
 
 #undef TYP_IF
 
-/*
- *  The following macros are originally from access_macros.h
- *  They are copied to allow their incremtal replacement by the new
- *  macros from tree_basic.h and tree_compound.h
- *  If there's no occurrence of one or the other old macro left
- *  within this file it should be removed.
- */
-
-/* to avoid warnings in connection with new virtual syntax tree */
-#undef IDS_DEF
-#undef ID_MOD
-#undef IDS_VARNO
-
-/* macros for access to elements of struct info.types */
-#define TYPES info.types
-#define SIMPLETYPE TYPES->simpletype
-#define DIM TYPES->dim
-#define ID TYPES->id
-#define ID_MOD TYPES->id_mod
-#define SHP TYPES->shpseg->shp
-#define NAME TYPES->name
-#define NAME_MOD TYPES->name_mod
-#define ATTRIB TYPES->attrib
-#define STATUS TYPES->status
-
-/* macros used for N_ap nodes to get the function's name */
-#define FUN_NAME info.fun_name.id
-#define FUN_MOD_NAME info.fun_name.id_mod
-
-/* macros for access to elements of struct info.ids */
-#define IDS info.ids
-#define IDS_ID IDS->id
-#define IDS_NODE IDS->node
-#define IDS_DEF IDS->def
-#define IDS_VARNO IDS->node->varno
-/* #define IDS_REFCNT IDS->refcnt */
-/* #define IDS_NEXT   IDS->next   */
-#define IDS_ATTR IDS->attrib
-#define IDS_STAT IDS->status
-
-/* macros for access arguments of a ap or prf - node */
-#define ARG1 node[0]->node[0]
-#define ARG2 node[0]->node[1]->node[0]
-#define ARG3 node[0]->node[1]->node[1]->node[0]
-
-/*
- *  end of old macros from access_macros.h
- */
-
 #define DUMMY_NAME "__OUT_"
 #define LABEL_NAME "__Label" /* basic-name for goto label */
 
@@ -716,11 +670,11 @@ int basetype_size[] = {
     }
 
 #define ELIMINATE_CAST(exprs)                                                            \
-    if (N_cast == exprs->node[0]->nodetype) {                                            \
-        tmp = exprs->node[0]->node[0];                                                   \
-        FREE_TYPE (exprs->node[0]->TYPES);                                               \
-        FREE (exprs->node[0]);                                                           \
-        exprs->node[0] = tmp;                                                            \
+    if (N_cast == NODE_TYPE (EXPRS_EXPR (exprs))) {                                      \
+        tmp = CAST_EXPR (EXPRS_EXPR (exprs));                                            \
+        FREE_TYPE (CAST_TYPE (EXPRS_EXPR (exprs)));                                      \
+        FREE (EXPRS_EXPR (exprs));                                                       \
+        EXPRS_EXPR (exprs) = tmp;                                                        \
     }
 
 #ifndef NEWTREE
@@ -778,7 +732,7 @@ int basetype_size[] = {
     FREE (a)
 
 #define FREE_VARDEC(a)                                                                   \
-    FREE_TYPE (a->TYPES)                                                                 \
+    FREE_TYPE (VARDEC_TYPE (a))                                                          \
     FREE (a)
 
 #define FREE_TREE(a) FreeTree (a)
@@ -2277,7 +2231,7 @@ RenameReturn (node *return_node, node *arg_info)
 
     DBUG_ENTER ("RenameReturn");
 
-    exprs = return_node->node[0];
+    exprs = RETURN_EXPRS (return_node);
     next_assign = MakeNode (N_assign);
     next_assign->node[0] = return_node;
     ;
@@ -2287,13 +2241,13 @@ RenameReturn (node *return_node, node *arg_info)
     vardec = arg_info->node[3];
 
     while (NULL != exprs) {
-        tmp_exprs = exprs->node[1];
+        tmp_exprs = EXPRS_NEXT (exprs);
         i = 1;
         ELIMINATE_CAST (exprs);
-        old_id = exprs->node[0]->IDS_ID;
+        old_id = ID_NAME (EXPRS_EXPR (exprs));
         while (NULL != tmp_exprs) {
             ELIMINATE_CAST (tmp_exprs);
-            if (0 == strcmp (tmp_exprs->node[0]->IDS_ID, old_id)) {
+            if (0 == strcmp (ID_NAME (EXPRS_EXPR (tmp_exprs)), old_id)) {
                 /* generates new nodes */
                 new_id = RenameVar (old_id, i);
                 let = MakeLet (MakeId (ID_NAME (EXPRS_EXPR (tmp_exprs)), NULL, 0),
@@ -2306,7 +2260,7 @@ RenameReturn (node *return_node, node *arg_info)
                 ID_NAME (EXPRS_EXPR (tmp_exprs)) = StringCopy (new_id);
             }
             tmp_exprs = EXPRS_NEXT (tmp_exprs);
-            i += 1;
+            i++;
         }
         exprs = exprs->node[1];
     }
@@ -2414,45 +2368,52 @@ ShapeToArray (node *vardec_node)
     int i;
 
     DBUG_ENTER ("ShapeToArray");
-    if (T_user != vardec_node->SIMPLETYPE) {
+    if (T_user != TYPES_BASETYPE (VARDEC_TYPE (vardec_node))) {
         ret_node = MakeNode (N_exprs);
-        MAKENODE_NUM (ret_node->node[0], vardec_node->SHP[0]);
+        MAKENODE_NUM (ret_node->node[0],
+                      SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), 0));
         tmp = ret_node;
-        for (i = 1; i < vardec_node->DIM; i++) {
+        for (i = 1; i < TYPES_DIM (VARDEC_TYPE (vardec_node)); i++) {
 #ifndef NEWTREE
             tmp->nnode = 2;
 #endif
             tmp->node[1] = MakeNode (N_exprs);
-            MAKENODE_NUM (tmp->node[1]->node[0], vardec_node->SHP[i]);
+            MAKENODE_NUM (tmp->node[1]->node[0],
+                          SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), i));
 #ifndef NEWTREE
             tmp->node[1]->nnode = 1;
 #endif
             tmp = tmp->node[1];
         }
     } else {
-        basic_type_node = LookupType (vardec_node->NAME, vardec_node->NAME_MOD,
+        basic_type_node = LookupType (TYPES_NAME (VARDEC_TYPE (vardec_node)),
+                                      TYPES_MOD (VARDEC_TYPE (vardec_node)),
                                       042); /* 042 is dummy argument */
-        if (1 <= vardec_node->DIM) {
+        if (1 <= TYPES_DIM (VARDEC_TYPE (vardec_node))) {
             ret_node = MakeNode (N_exprs);
-            MAKENODE_NUM (ret_node->node[0], vardec_node->SHP[0]);
+            MAKENODE_NUM (ret_node->node[0],
+                          SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), 0));
             tmp = ret_node;
-            for (i = 1; i < vardec_node->DIM; i++) {
+            for (i = 1; i < TYPES_DIM (VARDEC_TYPE (vardec_node)); i++) {
 #ifndef NEWTREE
                 tmp->nnode = 2;
 #endif
                 tmp->node[1] = MakeNode (N_exprs);
-                MAKENODE_NUM (tmp->node[1]->node[0], vardec_node->SHP[i]);
+                MAKENODE_NUM (tmp->node[1]->node[0],
+                              SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), i));
 #ifndef NEWTREE
                 tmp->node[1]->nnode = 1;
 #endif
                 tmp = tmp->node[1];
             }
-            for (i = 0; i < basic_type_node->DIM; i++) {
+            for (i = 0; i < TYPES_DIM (VARDEC_TYPE (basic_type_node)); i++) {
 #ifndef NEWTREE
                 tmp->nnode = 2;
 #endif
                 tmp->node[1] = MakeNode (N_exprs);
-                MAKENODE_NUM (tmp->node[1]->node[0], basic_type_node->SHP[i]);
+                MAKENODE_NUM (tmp->node[1]->node[0],
+                              SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (basic_type_node)),
+                                            i));
 #ifndef NEWTREE
                 tmp->node[1]->nnode = 1;
 #endif
@@ -2460,14 +2421,17 @@ ShapeToArray (node *vardec_node)
             }
         } else {
             ret_node = MakeNode (N_exprs);
-            MAKENODE_NUM (ret_node->node[0], basic_type_node->SHP[0]);
+            MAKENODE_NUM (ret_node->node[0],
+                          SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (basic_type_node)), 0));
             tmp = ret_node;
-            for (i = 1; i < basic_type_node->DIM; i++) {
+            for (i = 1; i < TYPES_DIM (VARDEC_TYPE (basic_type_node)); i++) {
 #ifndef NEWTREE
                 tmp->nnode = 2;
 #endif
                 tmp->node[1] = MakeNode (N_exprs);
-                MAKENODE_NUM (tmp->node[1]->node[0], basic_type_node->SHP[i]);
+                MAKENODE_NUM (tmp->node[1]->node[0],
+                              SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (basic_type_node)),
+                                            i));
 #ifndef NEWTREE
                 tmp->node[1]->nnode = 1;
 #endif
@@ -2612,7 +2576,7 @@ CompFundef (node *arg_node, node *arg_info)
         } else {
             DBUG_ASSERT (N_id == return_node->node[0]->nodetype,
                          "wrong nodetype != N_id");
-            MAKENODE_ID_REUSE_IDS (var_name_node, return_node->node[0]->IDS);
+            MAKENODE_ID_REUSE_IDS (var_name_node, LET_IDS (EXPRS_EXPR (return_node)));
             if (return_node->node[1] != NULL)
                 /* put return_node to next N_exprs where a function return_value
                  * is behind
@@ -2853,7 +2817,7 @@ CompVardec (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CompVardec");
 
-    GET_BASIC_TYPE (full_type, arg_node->TYPES, 0);
+    GET_BASIC_TYPE (full_type, VARDEC_TYPE (arg_node), 0);
 
     if (TYPES_DIM (full_type) > SCALAR) {
         /*
@@ -2862,7 +2826,7 @@ CompVardec (node *arg_node, node *arg_info)
 
         MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
         /* declared type */
-        MAKENODE_ID (id_node, arg_node->ID); /* name of variable */
+        MAKENODE_ID (id_node, VARDEC_NAME (arg_node)); /* name of variable */
         MAKENODE_NUM (n_dim, full_type->dim);
 
         /* now create N_icm */
@@ -2884,7 +2848,7 @@ CompVardec (node *arg_node, node *arg_info)
         }
 
         /* now free some nodes */
-        if (T_user == arg_node->SIMPLETYPE) {
+        if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
             FREE_TYPE (full_type);
         }
 
@@ -2907,7 +2871,7 @@ CompVardec (node *arg_node, node *arg_info)
 
         MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
         /* declared type */
-        MAKENODE_ID (id_node, arg_node->ID); /* name of variable */
+        MAKENODE_ID (id_node, VARDEC_NAME (arg_node)); /* name of variable */
 
         /* now create N_icm */
         MAKE_ICM (assign);
@@ -2921,7 +2885,7 @@ CompVardec (node *arg_node, node *arg_info)
         MAKE_NEXT_ICM_ARG (icm_arg, id_node);
 
         /* now free some nodes */
-        if (T_user == arg_node->SIMPLETYPE) {
+        if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
             FREE_TYPE (full_type);
         }
 
@@ -2944,7 +2908,7 @@ CompVardec (node *arg_node, node *arg_info)
 
         MAKENODE_ID (id_type, type_string[TYPES_BASETYPE (full_type)]);
         /* declared type */
-        MAKENODE_ID (id_node, arg_node->ID); /* name of variable */
+        MAKENODE_ID (id_node, VARDEC_NAME (arg_node)); /* name of variable */
         MAKENODE_NUM (n_dim, KNOWN_DIM_OFFSET - full_type->dim);
 
         /* now create N_icm */
@@ -2960,7 +2924,7 @@ CompVardec (node *arg_node, node *arg_info)
         MAKE_NEXT_ICM_ARG (icm_arg, n_dim);
 
         /* now free some nodes */
-        if (T_user == arg_node->SIMPLETYPE) {
+        if (T_user == TYPES_BASETYPE (VARDEC_TYPE (arg_node))) {
             FREE_TYPE (full_type);
         }
 
@@ -2998,7 +2962,7 @@ CompVardec (node *arg_node, node *arg_info)
             FREE_VARDEC (arg_node);
             arg_node = assign;
         } else {
-            if (arg_node->DIM < 0) {
+            if (TYPES_DIM (VARDEC_TYPE (arg_node)) < 0) {
                 /* current vardec-node has unknown shape and will be removed */
                 node *tmp;
                 tmp = arg_node;
@@ -3064,14 +3028,14 @@ CompPrfModarray (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CompPrfModarray");
 
-    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+    MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
 
     /* compute basic_type of result */
-    GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+    GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (LET_VARDEC (arg_info)));
     MAKENODE_ID (type_id_node, type_string[s_type]);
 
     /* store dimension of result */
-    GET_DIM (dim, arg_info->IDS_NODE->TYPES);
+    GET_DIM (dim, VARDEC_TYPE (LET_VARDEC (arg_info)));
     MAKENODE_NUM (dim_res, dim);
 
     /* store refcount of res as N_num */
@@ -3088,7 +3052,8 @@ CompPrfModarray (node *arg_node, node *arg_info)
             COUNT_ELEMS (n, ARRAY_AELEMS (arg2));
             MAKENODE_NUM (length, n);
 
-            if ((N_id == NODE_TYPE (arg3)) && (1 == IsArray (arg3->IDS_NODE->TYPES))) {
+            if ((N_id == NODE_TYPE (arg3))
+                && (1 == IsArray (VARDEC_TYPE (ID_VARDEC (arg3))))) {
                 char *icm_name;
 
                 if (1 == arg1->refcnt)
@@ -3147,7 +3112,7 @@ CompPrfModarray (node *arg_node, node *arg_info)
 
             length = MakeNum (TYPES_SHAPE (ID_TYPE (arg2), 0));
 
-            if ((N_id == NODE_TYPE (arg3)) ? (1 == IsArray (ID_TYPE (arg3))) : 0) {
+            if ((N_id == NODE_TYPE (arg3)) && (1 == IsArray (ID_TYPE (arg3)))) {
                 char *icm_name;
 
                 if (1 == arg1->refcnt)
@@ -3223,10 +3188,10 @@ CompIdxModarray (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CompIdxModarray");
 
-    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+    MAKENODE_ID_REUSE_IDS (res, INFO_LASTIDS (arg_info));
 
     /* compute basic_type of result */
-    GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+    GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (LET_VARDEC (arg_info)));
     MAKENODE_ID (type_id_node, type_string[s_type]);
 
     /* store refcount of res as N_num */
@@ -3246,7 +3211,7 @@ CompIdxModarray (node *arg_node, node *arg_info)
                       && (TYPES_BASETYPE (ID_TYPE (arg2)) == T_int)),
                      "indexing var of wrong type as 2nd arg of modarray!");
 
-        if ((N_id == NODE_TYPE (arg3)) ? (1 == IsArray (ID_TYPE (arg3))) : 0) {
+        if ((N_id == NODE_TYPE (arg3)) && (1 == IsArray (ID_TYPE (arg3)))) {
             char *icm_name;
 
             if (1 == arg1->refcnt)
@@ -3333,9 +3298,9 @@ CompConvert (node *arg_node, node *arg_info)
         simpletype s_type;
 
         arg1 = PRF_ARG1 (arg_node);
-        MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+        MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
         /* compute basic type */
-        GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+        GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (LET_VARDEC (arg_info)));
         MAKENODE_ID (type_id_node, type_string[s_type]);
         MAKENODE_NUM (res_rc, IDS_REFCNT (INFO_LASTIDS (arg_info)));
         BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
@@ -3363,23 +3328,23 @@ CompConvert (node *arg_node, node *arg_info)
             DEC_OR_FREE_RC_ND (arg1, n_node);
             INSERT_ASSIGN;
         } else {
-            DBUG_ASSERT (N_array == arg1->nodetype, "wrong node != N_array");
-            DBUG_ASSERT (NULL != arg1->TYPES, " info.types is NULL");
-            COUNT_ELEMS (length, arg1->node[0]);
+            DBUG_ASSERT (N_array == NODE_TYPE (arg1), "wrong node != N_array");
+            DBUG_ASSERT (NULL != ARRAY_TYPE (arg1), " info.types is NULL");
+            COUNT_ELEMS (length, ARRAY_AELEMS (arg1));
             MAKENODE_NUM (n_node, length);
-            if (1 < arg1->DIM) {
+            if (1 < TYPES_DIM (ARRAY_TYPE (arg1))) {
                 node *dummy;
                 /* it is an array of arrays, so we have to use
                  * ND_CREATE_CONST_ARRAY_A
                  */
-                DBUG_ASSERT (N_id == arg1->node[0]->node[0]->nodetype,
+                DBUG_ASSERT (N_id == NODE_TYPE (arg1->node[0]->node[0]),
                              "wrong node != N_id");
-                GET_LENGTH (length, arg1->node[0]->node[0]->IDS_NODE->TYPES);
+                GET_LENGTH (length, VARDEC_TYPE (ID_VARDEC (arg1->node[0]->node[0])));
                 MAKENODE_NUM (n_length, length);
 
                 CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, n_length,
                                   n_node);
-                icm_arg->node[1] = arg1->node[0];
+                icm_arg->node[1] = ARRAY_AELEMS (arg1);
 #ifndef NEWTREE
                 icm_arg->nnode = 2;
 #endif
@@ -3462,7 +3427,7 @@ CompPrf (node *arg_node, node *arg_info)
      *         arrays as arguments.
      */
     if (arg_node->info.prf > F_neq) {
-        ids *let_ids = arg_info->IDS;
+        ids *let_ids = LET_IDS (arg_info);
         node *new_name, *new_assign, *old_name;
         int insert_assign = 0;
 
@@ -3473,10 +3438,10 @@ CompPrf (node *arg_node, node *arg_info)
          * (e.g: A=A+1 => __A=A; A=__A+1; )
          */
         while (NULL != exprs) {
-            if (N_id == exprs->node[0]->nodetype)
-                if (0 == strcmp (let_ids->id, exprs->node[0]->IDS_ID)) {
+            if (N_id == NODE_TYPE (EXPRS_EXPR (exprs)))
+                if (0 == strcmp (IDS_NAME (let_ids), ID_NAME (EXPRS_EXPR (exprs)))) {
                     if (0 == insert_assign) {
-                        MAKENODE_ID (new_name, RenameVar (let_ids->id, 0));
+                        MAKENODE_ID (new_name, RenameVar (IDS_NAME (let_ids), 0));
                         MAKENODE_ID_REUSE_IDS (old_name, let_ids);
                         CREATE_2_ARY_ICM (new_assign, "ND_KS_ASSIGN_ARRAY", old_name,
                                           new_name);
@@ -3492,17 +3457,17 @@ CompPrf (node *arg_node, node *arg_info)
                         insert_assign = 1;
 
                         /* now insert vardec if necessary */
-                        arg_info->node[3]
-                          = AddVardec (arg_info->node[3], IDS_VARDEC_TYPE (let_ids),
-                                       ID_NAME (new_name));
+                        arg_info->node[3] = AddVardec (arg_info->node[3],
+                                                       VARDEC_TYPE (IDS_VARDEC (let_ids)),
+                                                       ID_NAME (new_name));
                     }
 
                     /* now rename N_id */
-                    FREE (exprs->node[0]->IDS_ID);
-                    exprs->node[0]->IDS_ID = RenameVar (let_ids->id, 0);
+                    FREE (ID_NAME (EXPRS_EXPR (exprs)));
+                    ID_NAME (EXPRS_EXPR (exprs)) = RenameVar (let_ids->id, 0);
                 }
 
-            exprs = exprs->node[1];
+            exprs = EXPRS_NEXT (exprs);
         }
         switch (arg_node->info.prf) {
         case F_modarray:
@@ -3534,19 +3499,19 @@ CompPrf (node *arg_node, node *arg_info)
                 GET_BASIC_SIMPLETYPE_OF_NODE (array_stype, array);
                 scalar = arg_node->node[0]->node[0];
             }
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
 
             /* store prf as N_id */
             MAKENODE_ID (prf_id_node, prf_string[arg_node->info.prf]);
 
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
 
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
 
-            if (N_id == array->nodetype) {
+            if (N_id == NODE_TYPE (array)) {
                 last_assign = NEXT_ASSIGN (arg_info);
 
                 CHECK_REUSE__ALLOC_ARRAY_ND (res, res_stype, array, array_stype);
@@ -3561,7 +3526,7 @@ CompPrf (node *arg_node, node *arg_info)
                 /* count number of elements */
                 tmp = array->node[0];
                 while (NULL != tmp) {
-                    n_elems += 1;
+                    n_elems++;
                     tmp = tmp->node[1];
                 }
 
@@ -3624,13 +3589,13 @@ CompPrf (node *arg_node, node *arg_info)
 
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
 
             /* store prf as N_id */
             MAKENODE_ID (prf_id_node, prf_string[arg_node->info.prf]);
 
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
 
             /* compute basic_type of arg1 and arg2 */
@@ -3659,9 +3624,6 @@ CompPrf (node *arg_node, node *arg_info)
                 } else {
                     node *num;
 
-#if 0
-	      first_assign=LAST_ASSIGN(arg_info);
-#else
                     MAKENODE_NUM (num, 0);
                     TRI_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res,
                                    num);
@@ -3670,7 +3632,6 @@ CompPrf (node *arg_node, node *arg_info)
                     last_assign = NEXT_ASSIGN (arg_info);
                     arg_node = arg_info->node[1]->node[0];
 
-#endif
                     DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
                                   || (opt_rco == 0)),
                                  "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
@@ -3756,7 +3717,7 @@ CompPrf (node *arg_node, node *arg_info)
             node *num;
 
             /* store arguments and result (res contains refcount and pointer to
-             * vardec ( don't free arg_info->IDS !!! )
+             * vardec ( don't free LET_IDS(arg_info) !!! )
              *
              * if first argument of prf is a scalar (N_um), it will be compiled
              * like an vector (array) with one element
@@ -3766,10 +3727,10 @@ CompPrf (node *arg_node, node *arg_info)
             DBUG_ASSERT (((N_array == arg1->nodetype) || (N_num == arg1->nodetype)),
                          "first argument of take/drop isn't an array or scalar");
 
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
 
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
 
             /* store refcount of res as N_num */
@@ -3777,7 +3738,7 @@ CompPrf (node *arg_node, node *arg_info)
 
             MAKENODE_NUM (num, 0);
             if (N_id == arg2->nodetype) {
-                GET_DIM (dim, arg2->IDS_NODE->TYPES);
+                GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (arg2)));
                 MAKENODE_NUM (dim_node, dim); /* store dimension of argument-array */
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, num);
@@ -3835,12 +3796,12 @@ CompPrf (node *arg_node, node *arg_info)
             arg2 = arg_node->node[0]->node[1]->node[0];
             FREE_TREE (arg1);
             FREE (arg_node->node[0]);
-            if (N_array == arg2->nodetype) {
+            if (N_array == NODE_TYPE (arg2)) {
                 arg_node = CompArray (arg2, arg_info);
             } else {
-                DBUG_ASSERT ((N_id == arg2->nodetype), "wrong nodetype");
-                if (0 == strcmp (arg2->IDS_ID, arg_info->IDS_ID)) {
-                    FREE_IDS (arg2->IDS);
+                DBUG_ASSERT ((N_id == NODE_TYPE (arg2)), "wrong nodetype");
+                if (0 == strcmp (ID_NAME (arg2), ID_NAME (arg_info))) {
+                    FREE_IDS (LET_IDS (arg2));
                     FREE (arg2);
                     FREE (arg_node->node[0]->node[1]);
                     arg_node = NULL;
@@ -3853,12 +3814,12 @@ CompPrf (node *arg_node, node *arg_info)
                       arg_info->node[1]->node[i] = NULL;
                     */
 #endif
-                    /* don't free  arg_info->node[1]->IDS, because ..->IDS_ID
-                       is shared with vardec  FREE_IDS(arg_info->node[1]->IDS);
-                       */
+                    /* don't free  LET_IDS(arg_info->node[1]), because it is shared with
+                     * vardec ! FREE_IDS(LET_IDS(arg_info->node[1]));
+                     */
                     MAKE_ICM_NAME (arg_info->node[1], "NOOP");
                 } else {
-                    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+                    MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
                     BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg2, res);
                     SET_VARS_FOR_MORE_ICMS;
                     if (ID_REFCNT (res) > 1) {
@@ -3877,24 +3838,24 @@ CompPrf (node *arg_node, node *arg_info)
         }
         case F_psi: {
             /* store arguments and result (res contains refcount and pointer to
-             * vardec ( don't free arg_info->IDS !!! )
+             * vardec ( don't free LET_IDS(arg_info) !!! )
              */
             node *line, *arg1_length;
 
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
             MAKENODE_NUM (line, arg_node->lineno);
 
             last_assign = NEXT_ASSIGN (arg_info);
 
             /* compute basic type */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
 
             /* compute length of arg1 */
-            if (N_id == arg1->nodetype) {
-                GET_LENGTH (n_elems, arg1->IDS_NODE->TYPES);
+            if (N_id == NODE_TYPE (arg1)) {
+                GET_LENGTH (n_elems, VARDEC_TYPE (ID_VARDEC (arg1)));
                 MAKENODE_NUM (arg1_length, n_elems);
             } else {
                 n_elems = 0;
@@ -3906,7 +3867,7 @@ CompPrf (node *arg_node, node *arg_info)
                 MAKENODE_NUM (arg1_length, n_elems);
             }
 
-            if (0 == IsArray (res->IDS_NODE->TYPES)) {
+            if (0 == IsArray (VARDEC_TYPE (ID_VARDEC (res)))) {
                 if (N_id == arg2->nodetype) {
                     if (N_id == arg1->nodetype) {
                         BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_VxA_S", line, arg2);
@@ -3962,8 +3923,8 @@ CompPrf (node *arg_node, node *arg_info)
             } else {
                 node *num;
 
-                DBUG_ASSERT ((N_id == arg2->nodetype), "arg2 != N_id");
-                GET_DIM (dim, arg2->IDS_NODE->TYPES);
+                DBUG_ASSERT ((N_id == NODE_TYPE (arg2)), "arg2 != N_id");
+                GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (arg2)));
                 MAKENODE_NUM (dim_node, dim);
                 /* store refcount of res as N_num */
                 MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
@@ -4008,23 +3969,23 @@ CompPrf (node *arg_node, node *arg_info)
 #ifdef OLD_IDX_PSI
             /* reuse last N_let node */
             arg_info->node[1]->nodetype = N_icm;
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
-            if (1 == IsArray (arg_info->IDS_NODE->TYPES)) {
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
+            if (1 == IsArray (VARDEC_TYPE (ID_VARDEC (arg_info)))) {
                 /*
                    types *b_type;
                    int length, i;
                    node *next_icm_arg;
 
-                   if( T_user == arg_info->IDS_NODE->SIMPLETYPE)
+                   if (T_user == TYPES_BASETYPE(VARDEC_TYPE(ID_VARDEC(arg_info))))
                    {
-                     GET_BASIC_TYPE(b_type,arg_info->IDS_NODE->TYPES, 0);
+                     GET_BASIC_TYPE(b_type, VARDEC_TYPE(ID_VARDEC(arg_info)), 0);
                    }
                    else
-                     b_type=arg_info->IDS_NODE->TYPES;
+                     b_type=VARDEC_TYPE(ID_VARDEC(arg_info));
 
                    length=1;
-                   for(i=0; i< b_type->dim; i++)
-                     length*=b_type->shpseg->shp[i];
+                   for (i=0; i < b_type->dim; i++)
+                     length *= b_type->shpseg->shp[i];
                    MAKENODE_NUM(n_node, length);
                 */
                 MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI_A");
@@ -4051,10 +4012,10 @@ CompPrf (node *arg_node, node *arg_info)
             break;
 #endif
             MAKENODE_NUM (arg2_ref, 1);
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
-            if (1 == IsArray (arg_info->IDS_NODE->TYPES)) {
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
+            if (1 == IsArray (VARDEC_TYPE (ID_VARDEC (arg_info)))) {
                 MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
-                GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+                GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
                 MAKENODE_ID (type_id_node, type_string[s_type]);
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 SET_VARS_FOR_MORE_ICMS;
@@ -4078,11 +4039,11 @@ CompPrf (node *arg_node, node *arg_info)
             else {
                 node *id_node;
 
-                GET_DIM (arg_node->info.cint, arg1->IDS_NODE->TYPES);
+                GET_DIM (arg_node->info.cint, VARDEC_TYPE (ID_VARDEC (arg1)));
                 first_assign = LAST_ASSIGN (arg_info);
                 last_assign = NEXT_ASSIGN (arg_info);
                 MAKENODE_NUM (n_node, 1);
-                MAKENODE_ID (id_node, arg1->IDS_ID);
+                MAKENODE_ID (id_node, ID_NAME (arg1));
                 ID_REFCNT (id_node) = ID_REFCNT (arg1);
                 DEC_OR_FREE_RC_ND (id_node, n_node);
                 INSERT_ASSIGN;
@@ -4096,18 +4057,18 @@ CompPrf (node *arg_node, node *arg_info)
         case F_shape: {
             int dim;
             arg1 = arg_node->node[0]->node[0];
-            MAKENODE_ID (type_id_node, "int");          /* store type of new array */
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS); /* store name of new array */
+            MAKENODE_ID (type_id_node, "int");               /* store type of new array */
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info)); /* store name of new array */
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
             BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
             MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
             SET_VARS_FOR_MORE_ICMS;
             if (N_id == arg1->nodetype) {
-                GET_DIM (dim, arg1->IDS_NODE->TYPES);
-                tmp_array1 = ShapeToArray (arg1->IDS_NODE);
+                GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (arg1)));
+                tmp_array1 = ShapeToArray (ID_VARDEC (arg1));
             } else {
-                DBUG_ASSERT ((N_array == arg1->nodetype), "wrong nodetype");
+                DBUG_ASSERT ((N_array == NODE_TYPE (arg1)), "wrong nodetype");
                 COUNT_ELEMS (n_elems, arg1->node[0]);
                 tmp_array1 = MakeNode (N_exprs);
                 MAKENODE_NUM (tmp_array1->node[0], n_elems);
@@ -4126,7 +4087,7 @@ CompPrf (node *arg_node, node *arg_info)
             if (N_id == arg1->nodetype) {
                 node *id_node;
                 MAKENODE_NUM (n_node, 1);
-                MAKENODE_ID (id_node, arg1->IDS_ID);
+                MAKENODE_ID (id_node, ID_NAME (arg1));
                 ID_REFCNT (id_node) = ID_REFCNT (arg1);
 
                 DEC_OR_FREE_RC_ND (id_node, n_node);
@@ -4139,15 +4100,15 @@ CompPrf (node *arg_node, node *arg_info)
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
             arg3 = arg_node->node[0]->node[1]->node[1]->node[0];
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
 
             if ((N_id == arg2->nodetype) && (N_id == arg3->nodetype)) {
-                GET_DIM (dim, arg2->IDS_NODE->TYPES);
+                GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (arg2)));
                 MAKENODE_NUM (dim_node, dim);
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
@@ -4165,9 +4126,9 @@ CompPrf (node *arg_node, node *arg_info)
                 arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
                 old_arg_node = arg_node;
                 MAKENODE_NUM (tmp_rc, 0);
-                if ((N_array == arg2->nodetype) && (N_array == arg3->nodetype)) {
+                if ((N_array == NODE_TYPE (arg2)) && (N_array == NODE_TYPE (arg3))) {
                     array_is_const = 3;
-                    GET_DIM (dim, arg2->TYPES);
+                    GET_DIM (dim, ARRAY_TYPE (arg2));
                     DECL_ARRAY (first_assign, arg2->node[0], "__TMP1", tmp_array1);
                     arg_node = first_assign; /* set new arg_node */
                     DECL_ARRAY (next_assign, arg3->node[0], "__TMP2", tmp_array2);
@@ -4178,7 +4139,7 @@ CompPrf (node *arg_node, node *arg_info)
                     arg3 = tmp_array2;
                 } else if (N_array == arg2->nodetype) {
                     array_is_const = 1;
-                    GET_DIM (dim, arg2->TYPES);
+                    GET_DIM (dim, ARRAY_TYPE (arg2));
                     DECL_ARRAY (first_assign, arg2->node[0], "__TMP1", tmp_array1);
                     arg_node = first_assign;
                     CREATE_CONST_ARRAY (arg2, tmp_array1, type_id_node, tmp_rc);
@@ -4186,7 +4147,7 @@ CompPrf (node *arg_node, node *arg_info)
                     arg2 = tmp_array1;
                 } else {
                     array_is_const = 2;
-                    GET_DIM (dim, arg3->TYPES);
+                    GET_DIM (dim, ARRAY_TYPE (arg3));
                     DECL_ARRAY (first_assign, arg3->node[0], "__TMP2", tmp_array2);
                     arg_node = first_assign;
                     CREATE_CONST_ARRAY (arg3, tmp_array2, type_id_node, tmp_rc);
@@ -4229,16 +4190,17 @@ CompPrf (node *arg_node, node *arg_info)
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
             arg3 = arg_node->node[0]->node[1]->node[1]->node[0];
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
             /* compute basic_type of result */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
             /* store refcount of res as N_num */
             MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
             MAKENODE_NUM (n_node, 1);
 
             if (N_id == arg3->nodetype) {
-                GET_DIM (dim, arg3->IDS_NODE->TYPES); /* dim will be used later */
+                GET_DIM (dim,
+                         VARDEC_TYPE (ID_VARDEC (arg3))); /* dim will be used later */
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
                 SET_VARS_FOR_MORE_ICMS;
@@ -4246,7 +4208,7 @@ CompPrf (node *arg_node, node *arg_info)
                 array_is_const = 1;
                 arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
                 old_arg_node = arg_node;
-                GET_DIM (dim, arg3->TYPES); /* dim will be used later */
+                GET_DIM (dim, ARRAY_TYPE (arg3)); /* dim will be used later */
                 DECL_ARRAY (first_assign, arg3->node[0], "__TMP1", tmp_array1);
                 arg_node = first_assign;
                 CREATE_CONST_ARRAY (arg3, tmp_array1, type_id_node, n_node);
@@ -4291,9 +4253,9 @@ CompPrf (node *arg_node, node *arg_info)
             node *res_rc, *n_length;
 
             arg1 = arg_node->node[0]->node[0];
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
             /* compute basic type */
-            GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
             MAKENODE_ID (type_id_node, type_string[s_type]);
             MAKENODE_NUM (res_rc, IDS_REFCNT (INFO_LASTIDS (arg_info)));
             BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
@@ -4331,17 +4293,18 @@ CompPrf (node *arg_node, node *arg_info)
                 INSERT_ASSIGN;
             } else {
                 DBUG_ASSERT (N_array == arg1->nodetype, "wrong node != N_array");
-                DBUG_ASSERT (NULL != arg1->TYPES, " info.types is NULL");
+                DBUG_ASSERT (NULL != ARRAY_TYPE (arg1), " info.types is NULL");
                 COUNT_ELEMS (length, arg1->node[0]);
                 MAKENODE_NUM (n_node, length);
-                if (1 < arg1->DIM) {
+                if (1 < TYPES_DIM (ARRAY_TYPE (arg1))) {
                     node *dummy;
                     /* it is an array of arrays, so we have to use
                      * ND_CREATE_CONST_ARRAY_A
                      */
-                    DBUG_ASSERT (N_id == arg1->node[0]->node[0]->nodetype,
+                    DBUG_ASSERT (N_id == NODE_TYPE (ARRAY_AELEMS (ARRAY_AELEMS (arg1))),
                                  "wrong node != N_id");
-                    GET_LENGTH (length, arg1->node[0]->node[0]->IDS_NODE->TYPES);
+                    GET_LENGTH (length, VARDEC_TYPE (ID_VARDEC (
+                                          ARRAY_AELEMS (ARRAY_AELEMS (arg1)))));
                     MAKENODE_NUM (n_length, length);
 
                     CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res,
@@ -4440,11 +4403,11 @@ CompArray (node *arg_node, node *arg_info)
     last_assign = NEXT_ASSIGN (arg_info);
 
     /* compute basic_type of result */
-    GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+    GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
     MAKENODE_ID (type_id_node, type_string[s_type]);
 
     /* store result as N_id */
-    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+    MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
 
     /* store refcount of res as N_num */
     MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
@@ -4466,21 +4429,21 @@ CompArray (node *arg_node, node *arg_info)
     DBUG_ASSERT (NULL != old_arg_node->node[0], " NULL pointer ");
 
     if (N_id == old_arg_node->node[0]->node[0]->nodetype) {
-        if (1 == IsArray (old_arg_node->node[0]->node[0]->IDS_NODE->TYPES)) {
+        if (1 == IsArray (VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])))) {
             node *length;
             int len;
-            GET_LENGTH (len, old_arg_node->node[0]->node[0]->IDS_NODE->TYPES);
+            GET_LENGTH (len, VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])));
             MAKENODE_NUM (length, len);
             CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, length,
                               n_node);
             icm_created = 1;
         } else {
-            if (IsNonUniqueHidden (old_arg_node->node[0]->node[0]->IDS_NODE->TYPES)) {
+            if (IsNonUniqueHidden (
+                  VARDEC_TYPE (ID_VARDEC (old_arg_node->node[0]->node[0])))) {
                 CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_H", res,
-                                  MAKE_IDNODE (
-                                    StringCopy (GenericFun (0, old_arg_node->node[0]
-                                                                 ->node[0]
-                                                                 ->IDS_NODE->TYPES))),
+                                  MAKE_IDNODE (StringCopy (
+                                    GenericFun (0, VARDEC_TYPE (ID_VARDEC (
+                                                     old_arg_node->node[0]->node[0]))))),
                                   n_node);
                 icm_created = 1;
             }
@@ -4530,7 +4493,7 @@ CompId (node *arg_node, node *arg_info)
 
     if (MUST_REFCOUNT (ID, arg_node)) {
         if (NULL != arg_info) {
-            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
 
             if (ID_MAKEUNIQUE (arg_node)) {
                 if (ID_REFCNT (arg_node) == 1) {
@@ -5083,7 +5046,7 @@ CompWithReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("CompWithReturn");
 
     exprs = arg_node->node[0];
-    is_array = IsArray (exprs->node[0]->IDS_NODE->TYPES);
+    is_array = IsArray (VARDEC_TYPE (ID_VARDEC ((exprs->node[0]))));
     switch (arg_info->node[2]->info.id[9]) {
     case 'F':
         con_type = FOLD;
@@ -5178,17 +5141,17 @@ CompWithReturn (node *arg_node, node *arg_info)
          * is stored (as N_prf or as N_ap)
          */
         let->node[0] = arg_info->node[2]->node[2];
-        LET_IDS (let) = MakeIds (res->IDS_ID, NULL, ST_regular);
+        LET_IDS (let) = MakeIds (ID_NAME (res), NULL, ST_regular);
         IDS_REFCNT (LET_IDS (let)) = ID_REFCNT (res) == -1 ? -1 : 1;
-        let->IDS_NODE = res->IDS_NODE;
+        ID_VARDEC (let) = ID_VARDEC (res);
 /*            IDS_REFCNT(LET_IDS(let))=1; */
 #ifndef NEWTREE
         let->nnode = 1;
 #endif
         exprs1 = MakeNode (N_exprs);
-        MAKENODE_ID (tmp_res, StringCopy (res->IDS_ID));
+        MAKENODE_ID (tmp_res, StringCopy (ID_NAME (res)));
         ID_REFCNT (tmp_res) = ID_REFCNT (res);
-        tmp_res->IDS_NODE = res->IDS_NODE;
+        ID_VARDEC (tmp_res) = ID_VARDEC (res);
         exprs1->node[0] = tmp_res;
         exprs2 = MakeNode (N_exprs);
         exprs2->node[0] = ret_val;
@@ -5203,7 +5166,7 @@ CompWithReturn (node *arg_node, node *arg_info)
 #ifndef NEWTREE
         let->node[0]->nnode = 1;
 #endif
-        arg_info->IDS = let->IDS;
+        LET_IDS (arg_info) = LET_IDS (let);
         arg_info->node[1] = let;
         let->node[0] = Trav (let->node[0], arg_info);
 
@@ -5248,10 +5211,9 @@ CompWithReturn (node *arg_node, node *arg_info)
         DEC_RC_FREE_ND (mod_array, n_node);
     }
     while (NULL != dec_rc) {
-        if ((0 != strcmp (index_node->IDS_ID, dec_rc->IDS_ID))
+        if ((0 != strcmp (ID_NAME (index_node), ID_NAME (dec_rc)))
             && ((NULL == mod_array)
-                  ? 1
-                  : (0 != strcmp (mod_array->IDS_ID, dec_rc->IDS_ID)))) {
+                || (0 != strcmp (ID_NAME (mod_array), ID_NAME (dec_rc))))) {
             DEC_RC_FREE_ND (dec_rc, n_node);
         }
         dec_rc = dec_rc->node[0];
@@ -5468,29 +5430,31 @@ CompWith (node *arg_node, node *arg_info)
     old_info2 = arg_info->node[2];
 
     /* store res as N_id */
-    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
-    ID_REFCNT (res) = IDS_REFCNT (arg_info->IDS);
+    MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
+    ID_REFCNT (res) = IDS_REFCNT (LET_IDS (arg_info));
 
     /* store refcount of res as N_num */
     MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
 
     /* compute basic_type of result */
-    GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+    GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (ID_VARDEC (arg_info)));
     MAKENODE_ID (type_id_node, type_string[s_type]);
 
     /* compute dimension of res */
-    GET_DIM (res_dim, arg_info->IDS_NODE->TYPES);
+    GET_DIM (res_dim, VARDEC_TYPE (ID_VARDEC (arg_info)));
     MAKENODE_NUM (res_dim_node, res_dim);
 
     /* compute size of res */
-    GET_LENGTH (res_size, arg_info->IDS_NODE->TYPES);
+    GET_LENGTH (res_size, VARDEC_TYPE (ID_VARDEC (arg_info)));
     MAKENODE_NUM (res_size_node, res_size);
 
     /* store index_vector as N_id */
-    MAKENODE_ID_REUSE_IDS (index, arg_node->node[0]->IDS);
+    MAKENODE_ID_REUSE_IDS (index, LET_IDS (WITH_GEN (arg_node)));
 
     /* store length of index-vector */
-    MAKENODE_NUM (indexlen, arg_node->node[0]->IDS_NODE->SHP[0]);
+    MAKENODE_NUM (indexlen, SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (
+                                            GEN_VARDEC (WITH_GEN (arg_node)))),
+                                          0));
 
     /* set 'from' to left range of index-vector */
     from = arg_node->node[0]->node[0];
@@ -5546,14 +5510,14 @@ CompWith (node *arg_node, node *arg_info)
          */
         arg_info->node[2]->node[3] = old_arg_node->node[2];
         APPEND_ASSIGNS (first_assign, next_assign);
-    } else if (N_foldprf == old_arg_node->node[1]->nodetype) {
+    } else if (N_foldprf == NODE_TYPE (old_arg_node->node[1])) {
         fun_node = MakeNode (N_prf);
         fun_node->info.prf = old_arg_node->node[1]->info.prf;
         is_foldprf = 1;
-    } else if (N_foldfun == old_arg_node->node[1]->nodetype) {
+    } else if (N_foldfun == NODE_TYPE (old_arg_node->node[1])) {
         fun_node = MakeNode (N_ap);
-        fun_node->FUN_NAME = old_arg_node->node[1]->FUN_NAME;
-        fun_node->FUN_MOD_NAME = old_arg_node->node[1]->FUN_MOD_NAME;
+        AP_NAME (fun_node) = AP_NAME (old_arg_node->node[1]);
+        AP_MOD (fun_node) = AP_MOD (old_arg_node->node[1]);
         fun_node->node[1] = old_arg_node->node[1]->node[2];
         DBUG_ASSERT (N_fundef == fun_node->node[1]->nodetype,
                      "wrong nodetype != N_fundef ");
@@ -5903,7 +5867,7 @@ CompLoop (node *arg_node, node *arg_info)
             v1_tmp = v1;
             found = 0;
             while ((0 == found) && (NULL != v1_tmp))
-                if (0 == strcmp (v1_tmp->IDS_ID, v2->IDS_ID))
+                if (0 == strcmp (ID_NAME (v1_tmp), ID_NAME (v2)))
                     found = 1;
                 else
                     v1_tmp = v1_tmp->node[0];
@@ -5959,7 +5923,7 @@ CompLoop (node *arg_node, node *arg_info)
                 v2_tmp = v2;
                 found = 0;
                 while ((0 == found) && (NULL != v2_tmp))
-                    if (0 == strcmp (v1->IDS_ID, v2_tmp->IDS_ID))
+                    if (0 == strcmp (ID_NAME (v1), ID_NAME (v2_tmp)))
                         found = 1;
                     else
                         v2_tmp = v2_tmp->node[0];
@@ -6066,7 +6030,7 @@ CompCond (node *arg_node, node *arg_info)
             first_assign = dummy_assign;
             do {
                 MAKENODE_NUM (n_node, id_node->refcnt);
-                DBUG_PRINT ("COMP", ("%d:create DEC_RC(%s, %d)", i, id_node->IDS_ID,
+                DBUG_PRINT ("COMP", ("%d:create DEC_RC(%s, %d)", i, ID_NAME (id_node),
                                      id_node->refcnt));
                 DEC_OR_FREE_RC_ND (id_node, n_node);
                 id_node = id_node->node[0];
@@ -6105,14 +6069,14 @@ CompTypedef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CompTypedef");
 
-    if (0 != arg_node->DIM) {
+    if (0 != TYPES_DIM (TYPEDEF_TYPE (arg_node))) {
         char *typename, *new_typename;
         node *type1, *type2, *icm_arg;
 
-        typename = type_string[arg_node->SIMPLETYPE];
+        typename = type_string[TYPES_BASETYPE (VARDEC_TYPE (arg_node))];
 
-        new_typename = StringCopy (arg_node->ID);
-        FREE_TYPE (arg_node->TYPES);
+        new_typename = StringCopy (VARDEC_NAME (arg_node));
+        FREE_TYPE (ARRAY_TYPE (arg_node));
         arg_node->nodetype = N_icm;
         MAKE_ICM_NAME (arg_node, "ND_TYPEDEF_ARRAY");
 #ifndef NEWTREE
