@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.15  2004/07/14 14:17:36  sah
+ * added SSADbugIndexInfo as a replacement for DebugIndexInfo
+ * from old WithloopFolding, as that will be gone soon
+ *
  * Revision 1.14  2004/02/25 15:53:06  cg
  * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
  * now provide access to SSA transformations on a per function
@@ -199,6 +203,73 @@ SSAValidLocalId (node *idn)
     }
 
     DBUG_RETURN (iinfo);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SSADbugIndexInfo(index info *iinfo)
+ *
+ * description:
+ *   prints history of iinfo.
+ *
+ *
+ ******************************************************************************/
+
+void
+SSADbugIndexInfo (index_info *iinfo)
+{
+    int i, sel;
+    index_info *tmpii;
+
+    DBUG_ENTER ("SSADbugIndexInfo");
+
+    printf (
+      "\n|-------------------------INDEX-INFO----------------------------------------\n");
+    if (!iinfo)
+        printf ("|NULL\n");
+    else if (iinfo->vector) {
+        printf ("|VECTOR shape [%d]:\n", iinfo->vector);
+        for (i = 0; i < iinfo->vector; i++) {
+            printf ("|---%d---\n", i);
+
+            if (!iinfo->permutation[i]) { /* constant */
+                printf ("|  constant %d\n", iinfo->const_arg[i]);
+                continue;
+            }
+
+            printf ("|  base %d\n", iinfo->permutation[i]);
+            tmpii = iinfo;
+            while (tmpii) {
+                sel = tmpii->vector ? i : 0;
+                if (tmpii->arg_no) {
+                    if (1 == tmpii->arg_no)
+                        printf ("|   %d%s. ", tmpii->const_arg[sel], mdb_prf[tmpii->prf]);
+                    else
+                        printf ("|   .%s%d ", mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
+                } else
+                    printf ("|   no prf ");
+                printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
+                tmpii = tmpii->last[sel];
+            }
+        }
+    } else {
+        printf ("|SCALAR:\n");
+        printf ("|  base %d\n", iinfo->permutation[0]);
+        tmpii = iinfo;
+        sel = 0;
+        if (tmpii->arg_no) {
+            if (1 == tmpii->arg_no)
+                printf ("|   %d%s. ", tmpii->const_arg[sel], mdb_prf[tmpii->prf]);
+            else
+                printf ("|   %s%d. ", mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
+            printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
+        }
+    }
+    printf (
+      "|---------------------------------------------------------------------------\n");
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

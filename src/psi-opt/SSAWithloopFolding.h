@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2004/07/14 14:17:36  sah
+ * added SSADbugIndexInfo as a replacement for DebugIndexInfo
+ * from old WithloopFolding, as that will be gone soon
+ *
  * Revision 1.4  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -38,8 +42,7 @@ extern void SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
 extern index_info *SSACreateIndex (int vector);
 extern index_info *SSADuplicateIndexInfo (index_info *iinfo);
 extern index_info *SSAValidLocalId (node *idn);
-/* extern void        DbugIndexInfo      (index_info *iinfo);
-   is implemented in WithloopFolding.c ! (old code) */
+extern void SSADbugIndexInfo (index_info *iinfo);
 
 /* intern_gen related functions */
 extern intern_gen *SSATree2InternGen (node *wln, node *filter);
