@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/10/18 16:54:30  dkr
+ * interpretation of OBJDEF_MOD modified and corrected
+ *
  * Revision 3.2  2002/02/20 14:54:28  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -242,10 +245,11 @@ OIobjdef (node *arg_node, node *arg_info)
         } else {
             new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
 
-            if (OBJDEF_MOD (arg_node) == NULL) {
-                strcpy (new_fun_name, "create_");
-            } else {
+            if (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
+                || ((sbs == 0) && (OBJDEF_MOD (arg_node) != NULL))) {
                 strcpy (new_fun_name, "CREATE__");
+            } else {
+                strcpy (new_fun_name, "create_");
             }
 
             strcat (new_fun_name, OBJDEF_NAME (arg_node));
