@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/15 17:11:40  sbs
+ * changed malloc.h into stdlib.h because some systems do not provide
+ * free in the former (e.g. the alpha)!.
+ *
  * Revision 3.3  2000/12/15 17:08:11  sbs
  * include "malloc.h" changed into include <malloc.h> for
  * the alpha to find it!
@@ -23,7 +27,7 @@
 
 #define _sac_free_h
 
-#include <malloc.h>
+#include <stdlib.h>
 #include "dbug.h"
 #include "my_debug.h"
 #include "globals.h"
