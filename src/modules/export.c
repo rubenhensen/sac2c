@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/26 09:33:29  sah
+ * uses EXPORTED/PROVIDED flag now
+ *
  * Revision 1.1  2004/10/17 14:51:07  sah
  * Initial revision
  *
@@ -182,7 +185,8 @@ EXPFundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPFundef");
 
-    if ((FUNDEF_STATUS (arg_node) == ST_regular)
+    if (((FUNDEF_STATUS (arg_node) == ST_regular)
+         || (FUNDEF_STATUS (arg_node) == ST_wrapperfun))
         && (!strcmp (FUNDEF_MOD (arg_node), INFO_EXP_MODNAME (arg_info)))) {
         INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
         INFO_EXP_EXPORTED (arg_info) = FALSE;
@@ -190,9 +194,19 @@ EXPFundef (node *arg_node, info *arg_info)
 
         INFO_EXP_INTERFACE (arg_info) = Trav (INFO_EXP_INTERFACE (arg_info), arg_info);
 
-        if (INFO_EXP_EXPORTED (arg_info) || INFO_EXP_PROVIDED (arg_info)) {
-            FUNDEF_STATUS (arg_node) = ST_exported;
+        if (INFO_EXP_EXPORTED (arg_info)) {
+            SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, TRUE);
+            SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, TRUE);
+        } else if (INFO_EXP_PROVIDED (arg_info)) {
+            SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
+            SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, TRUE);
+        } else {
+            SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
+            SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
         }
+    } else {
+        SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
