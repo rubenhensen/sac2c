@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.27  1998/05/28 14:51:50  sbs
+# line for gen_pseudo_fun.c inserted.
+# -DNEWTREE flag inserted!
+#
 # Revision 1.26  1998/05/03 14:04:27  dkr
 # make deps done
 #
@@ -87,18 +91,21 @@
 
 CC        := gcc
 CCFLAGS   := -ansi -Wall -g
-CFLAGS    := -D__EXTENSIONS__
+CFLAGS    := -D__EXTENSIONS__ -DNEWTREE
 
 RM=rm -f
 INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
 
-all: typecheck.o prim_fun.o typecheck_WL.o
+all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o
 
 typecheck.o: typecheck.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck.o -c typecheck.c $(INCS)
 
 prim_fun.o: prim_fun.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o prim_fun.o -c prim_fun.c $(INCS)
+
+gen_pseudo_fun.o: gen_pseudo_fun.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o gen_pseudo_fun.o -c gen_pseudo_fun.c $(INCS)
 
 typecheck_WL.o: typecheck_WL.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck_WL.o -c typecheck_WL.c $(INCS)
