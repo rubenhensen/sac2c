@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/23 15:11:36  cg
+ * *** empty log message ***
+ *
  * Revision 1.5  2004/11/23 15:08:11  cg
  * more SacDevCamp.
  *
@@ -50,8 +53,8 @@
 #define GLOBALdelim
 #endif
 
-#define GLOBAL(type, id, init)                                                           \
-    GLOBALtype (type) GLOBALid (id) GLOBALinit (init) GLOBALdelim
+#define GLOBAL(type, name, init)                                                         \
+    GLOBALtype (type) GLOBALname (name) GLOBALinit (init) GLOBALdelim
 
 /*
  *  Version control
