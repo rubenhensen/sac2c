@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.20  2003/04/16 14:42:25  sbs
+dnl -traditional-cpp added for mac RCCCFLAGS.
+dnl
 dnl Revision 1.19  2003/04/16 11:58:16  sah
 dnl added macos specific cppfile flags
 dnl
@@ -358,7 +361,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -traditional-cpp -Wno-unused -fno-builtin"])
   AC_SUBST(MKCCFLAGS, ["-g"])
   AC_SUBST(PDCCFLAGS, ["-g3"])
   AC_SUBST(DEPSFLAG, ["-M"])
