@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/03/14 18:27:33  dkr
+ * some fixes for non-TAGGED_ARRAYS-backend done
+ *
  * Revision 3.28  2003/03/14 13:22:42  dkr
  * all arguments of WL-ICMs are tagged now
  *
@@ -106,6 +109,7 @@ PrintTraceICM (char *to_nt, char *idx_vec_nt, int dims, char **idxa_scl_nt,
         fprintf (outfile, " (== offset %%d) -- offset %%d");
     }
     fprintf (outfile, " -- %s", operation);
+#ifdef TAGGED_ARRAYS
     fprintf (outfile, "\", SAC_ND_READ( %s, 0)", idxa_scl_nt[0]);
     for (i = 1; i < dims; i++) {
         fprintf (outfile, ", SAC_ND_READ( %s, 0)", idxa_scl_nt[i]);
@@ -121,6 +125,23 @@ PrintTraceICM (char *to_nt, char *idx_vec_nt, int dims, char **idxa_scl_nt,
         }
         fprintf (outfile, ", SAC_WL_OFFSET( %s)", to_nt);
     }
+#else
+    fprintf (outfile, "\", %s", idxa_scl_nt[0]);
+    for (i = 1; i < dims; i++) {
+        fprintf (outfile, ", %s", idxa_scl_nt[i]);
+    }
+    if (print_offset) {
+        fprintf (outfile, ", ");
+        for (i = dims - 1; i > 0; i--) {
+            fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", to_nt, i);
+        }
+        fprintf (outfile, "%s ", idxa_scl_nt[0]);
+        for (i = 1; i < dims; i++) {
+            fprintf (outfile, "+ %s )", idxa_scl_nt[i]);
+        }
+        fprintf (outfile, ", SAC_WL_OFFSET( %s)", to_nt);
+    }
+#endif
     fprintf (outfile, "));\n");
 
     DBUG_VOID_RETURN;
@@ -1032,12 +1053,20 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_nt, int to_sdim,
     for (i = dims - 1; i > 0; i--) {
         fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", to_nt, i);
     }
-    fprintf (outfile, "SAC_ND_READ( %s, 0) \n", idxa_scl_nt[0]);
+#ifdef TAGGED_ARRAYS
+    fprintf (outfile, "SAC_ND_READ( %s, 0)\n", idxa_scl_nt[0]);
+#else
+    fprintf (outfile, "%s\n", idxa_scl_nt[0]);
+#endif
 
     INDENT;
     for (i = 1; i < dims; i++) {
         if (i <= dim) {
+#ifdef TAGGED_ARRAYS
             fprintf (outfile, "+ SAC_ND_READ( %s, 0) )", idxa_scl_nt[i]);
+#else
+            fprintf (outfile, "+ %s )", idxa_scl_nt[i]);
+#endif
         } else {
             if (i <= first_block_dim) {
                 /*
