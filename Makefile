@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.41  2001/11/15 14:43:16  sbs
+# PROJECT_ROOT added
+#
 # Revision 3.40  2001/11/14 13:19:06  sbs
 # TARGET clean added for avoiding deps mechanism on clean.
 #
@@ -108,7 +111,8 @@
 # include general setup:
 #
 
-include Makefile.Config
+PROJECT_ROOT := ./
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 LIB          :=lib/dbug.o lib/main_args.o
