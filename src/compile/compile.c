@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.158  1998/05/19 08:54:21  cg
+ * new functions for retrieving variables from masks provided by
+ * DataFlowMask.c utilized.
+ *
  * Revision 1.157  1998/05/18 23:53:34  dkr
  * WL_NOOP renamed to WL_FOLD_NOOP
  *
@@ -6194,6 +6198,7 @@ COMPSpmd (node *arg_node, node *arg_info)
      */
     icm_args = NULL;
     num_args = 0;
+#if 00
     FOREACH_VARDEC_AND_ARG (
       fundef, vardec,
       if (DFMTestMaskEntry (SPMD_IN (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
@@ -6215,15 +6220,41 @@ COMPSpmd (node *arg_node, node *arg_info)
                                                            NULL))));
           num_args++;
       }) /* FOREACH_VARDEC_AND_ARG */
+#else    /* 0 */
+    vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
+    while (vardec != NULL) {
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            tag = "in_rc";
+        } else {
+            tag = "in";
+        }
+        icm_args
+          = AppendExpr (icm_args,
+                        MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                                   MakeExprs (MakeId (MakeTypeString (
+                                                        VARDEC_OR_ARG_TYPE (vardec)),
+                                                      NULL, ST_regular),
+                                              MakeExprs (MakeId (StringCopy (
+                                                                   VARDEC_OR_ARG_NAME (
+                                                                     vardec)),
+                                                                 NULL, ST_regular),
+                                                         NULL))));
+        num_args++;
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+#endif /* 0 */
 
     /*
      * inout-params
      */
     my_ids = SPMD_INOUT_IDS (arg_node);
     while (my_ids != NULL) {
-        if (DFMTestMaskEntry (SPMD_INOUT (arg_node), IDS_NAME (my_ids))) {
-            tag = (char *)Malloc (10 * sizeof (char));
-            sprintf (tag, "inout%d", IDS_REFCNT (my_ids));
+        if (DFMTestMaskEntry (SPMD_INOUT (arg_node), IDS_NAME (my_ids),
+                              IDS_VARDEC (my_ids))) {
+            tag = (char *)Malloc (16 * sizeof (char));
+            sprintf (tag, "inout_rc%d", IDS_REFCNT (my_ids));
             icm_args
               = AppendExpr (icm_args,
                             MakeExprs (MakeId (tag, NULL, ST_regular),
@@ -6242,6 +6273,7 @@ COMPSpmd (node *arg_node, node *arg_info)
     /*
      * out-params
      */
+#if 00
     FOREACH_VARDEC_AND_ARG (
       fundef, vardec,
       if (DFMTestMaskEntry (SPMD_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
@@ -6263,12 +6295,37 @@ COMPSpmd (node *arg_node, node *arg_info)
                                                            NULL))));
           num_args++;
       }) /* FOREACH_VARDEC_AND_ARG */
+#else
+    vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
+    while (vardec != NULL) {
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            tag = "out_rc";
+        } else {
+            tag = "out";
+        }
+        icm_args
+          = AppendExpr (icm_args,
+                        MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                                   MakeExprs (MakeId (MakeTypeString (
+                                                        VARDEC_OR_ARG_TYPE (vardec)),
+                                                      NULL, ST_regular),
+                                              MakeExprs (MakeId (StringCopy (
+                                                                   VARDEC_OR_ARG_NAME (
+                                                                     vardec)),
+                                                                 NULL, ST_regular),
+                                                         NULL))));
+        num_args++;
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+#endif
 
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
     icm_args = MakeExprs (MakeId (StringCopy (SPMD_FUNNAME (arg_node)), NULL, ST_regular),
                           icm_args);
 
-#if 00
+#if 1
     SPMD_ICM (arg_node) = MakeIcm ("MT_SPMD_BLOCK", icm_args, NULL);
 #endif
 
@@ -6303,8 +6360,11 @@ COMPSync (node *arg_node, node *arg_info)
     /*
      * build the arguments for the ICMs
      */
-    icm_args1 = icm_args2 = NULL;
+    icm_args1 = NULL;
+    icm_args2 = NULL;
     num_folds = 0;
+
+#if 00
     FOREACH_VARDEC_AND_ARG (
       INFO_COMP_FUNDEF (arg_info), vardec,
       if (DFMTestMaskEntry (SYNC_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
@@ -6335,6 +6395,39 @@ COMPSync (node *arg_node, node *arg_info)
 
           num_folds++;
       }) /* FOREACH_VARDEC_AND_ARG */
+#else
+    vardec = DFMGetMaskEntryDeclSet (SYNC_OUT (arg_node));
+    while (vardec != NULL) {
+        GET_BASIC_SIMPLETYPE (s_type, VARDEC_OR_ARG_TYPE (vardec));
+        icm_args = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
+                              MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                 NULL, ST_regular),
+                                         NULL));
+
+        /*
+         * build args for MT_CONTINUE
+         */
+        icm_args1 = AppendExpr (icm_args1, icm_args);
+
+        /*
+         * build args for MT_SYNC_...
+         */
+        icm_args2
+          = AppendExpr (icm_args2,
+                        AppendExpr (DupTree (icm_args, NULL),
+                                    MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
+                                                       ST_regular),
+                                               MakeExprs (MakeId (StringCopy (
+                                                                    "?fold_op?"),
+                                                                  NULL, ST_regular),
+                                                          NULL))));
+
+        num_folds++;
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+#endif
 
     /*
      * compile the sync-region
@@ -6347,7 +6440,8 @@ COMPSync (node *arg_node, node *arg_info)
      * (they must be moved into the sync-barrier!)
      */
 
-    prolog_icms = epilog_icms = NULL;
+    prolog_icms = NULL;
+    epilog_icms = NULL;
 
     assign = BLOCK_INSTR (SYNC_REGION (arg_node));
     last_assign = NULL;
@@ -6370,9 +6464,9 @@ COMPSync (node *arg_node, node *arg_info)
             }
 
             if (prolog != -1) {
-                if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name)
-                    || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name)
-                    || DFMTestMaskEntry (SYNC_OUT (arg_node), var_name)) {
+                if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
+                    || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name, NULL)
+                    || DFMTestMaskEntry (SYNC_OUT (arg_node), var_name, NULL)) {
                     new_icm = DupNode (assign);
 
                     if (last_assign == NULL) {

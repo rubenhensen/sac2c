@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/05/19 08:54:21  cg
+ * new functions for retrieving variables from masks provided by
+ * DataFlowMask.c utilized.
+ *
  * Revision 1.54  1998/05/15 15:17:36  dkr
  * fixed a bug in RCNwith
  *
@@ -892,7 +896,7 @@ RCassign (node *arg_node, node *arg_info)
         DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "more than one let-ids found");
 
         ids_mask = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
-        DFMSetMaskEntrySet (ids_mask, IDS_NAME (let_ids));
+        DFMSetMaskEntrySet (ids_mask, IDS_NAME (let_ids), IDS_VARDEC (let_ids));
 
         if ((NWITH_TYPE (with) == WO_genarray) || (NWITH_TYPE (with) == WO_modarray)) {
             NWITH_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
@@ -912,8 +916,8 @@ RCassign (node *arg_node, node *arg_info)
         NWITH_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         for (i = 0; i < varno; i++) {
             if ((ASSIGN_MASK (arg_node, 0))[i] > 0) {
-                DFMSetMaskEntrySet (NWITH_LOCAL (with),
-                                    VARDEC_OR_ARG_NAME (FindVardec (i, fundef_node)));
+                DFMSetMaskEntrySet (NWITH_LOCAL (with), NULL,
+                                    FindVardec (i, fundef_node));
             }
         }
         DFMSetMaskMinus (NWITH_LOCAL (with), ids_mask);
@@ -928,8 +932,7 @@ RCassign (node *arg_node, node *arg_info)
         NWITH_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         for (i = 0; i < varno; i++) {
             if ((ASSIGN_MASK (arg_node, 1))[i] > 0) {
-                DFMSetMaskEntrySet (NWITH_IN (with),
-                                    VARDEC_OR_ARG_NAME (FindVardec (i, fundef_node)));
+                DFMSetMaskEntrySet (NWITH_IN (with), NULL, FindVardec (i, fundef_node));
             }
         }
         DFMSetMaskMinus (NWITH_IN (with), NWITH_LOCAL (with));
@@ -1614,6 +1617,7 @@ RCNwith (node *arg_node, node *arg_info)
     /*
      * now we set up 'INFO_RC_RCDUMP( arg_info)' (needed in RCNcode)
      */
+#if 00
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (DFMTestMaskEntry (NWITH_IN (arg_node),
                                                   VARDEC_OR_ARG_NAME (vardec))
@@ -1633,6 +1637,29 @@ RCNwith (node *arg_node, node *arg_info)
                                     }
                                 }
                             }) /* FOREACH_VARDEC_AND_ARG */
+#else
+    vardec = DFMGetMaskEntryDeclSet (NWITH_IN (arg_node));
+    while (vardec != NULL) {
+        if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            if (NODE_TYPE (vardec) == N_arg) {
+                ARG_REFCNT (vardec) = 1;
+            } else {
+                VARDEC_REFCNT (vardec) = 1;
+            }
+        }
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    vardec = DFMVar2Decl (NWITH_IN (arg_node), IDS_NAME (NWITH_VEC (arg_node)));
+    if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+        if (NODE_TYPE (vardec) == N_arg) {
+            ARG_REFCNT (vardec) = 1;
+        } else {
+            VARDEC_REFCNT (vardec) = 1;
+        }
+    }
+#endif /* 0 */
+
     tmp_rcdump = INFO_RC_RCDUMP (arg_info);
     INFO_RC_RCDUMP (arg_info) = StoreRC ();
 
@@ -1672,12 +1699,14 @@ RCNwith (node *arg_node, node *arg_info)
      *      when RCO is active, we only count the last occur of IN-vars.
      *
      * CAUTION: we must initialize NCODE_DEC_RC_IDS because some subtrees
-     *          (e.g. bodies of while-loops) are traversed two times!!!
+     *          (e.g. bodies of while-loops) are traversed twice!!!
      */
 
     if (NWITH_DEC_RC_IDS (arg_node) != NULL) {
         NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
     }
+
+#if 00
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (DFMTestMaskEntry (NWITH_IN (arg_node),
                                                   VARDEC_OR_ARG_NAME (vardec))) {
@@ -1703,6 +1732,31 @@ RCNwith (node *arg_node, node *arg_info)
                                     last_ids = new_ids;
                                 }
                             }) /* FOREACH_VARDEC_AND_ARG */
+#else
+    vardec = DFMGetMaskEntryDeclSet (NWITH_IN (arg_node));
+    while (vardec != NULL) {
+        if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
+            && ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!opt_rco))) {
+            if (NODE_TYPE (vardec) == N_arg) {
+                ARG_REFCNT (vardec)++;
+            } else {
+                VARDEC_REFCNT (vardec)++;
+            }
+
+            new_ids
+              = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
+            IDS_VARDEC (new_ids) = vardec;
+            IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec);
+            if (NWITH_DEC_RC_IDS (arg_node) == NULL) {
+                NWITH_DEC_RC_IDS (arg_node) = new_ids;
+            } else {
+                IDS_NEXT (last_ids) = new_ids;
+            }
+            last_ids = new_ids;
+        }
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+#endif /* 0 */
 
     /*
      * we leave the with-loop -> reset 'INFO_RC_...( arg_info)'.
