@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/09/23 21:12:55  sah
+ * added NWith (temporarily)
+ *
  * Revision 1.5  2004/08/29 18:10:05  sah
  * general improvements
  *
@@ -60,6 +63,7 @@
 #define MakeMop(a, b, c) MakeMop (b, c, a)
 #define MakeNWith2(a, b, c, d, e) MakeNWith2 (e, a, b, d, c)
 #define MakeSSAstack(a, b) MakeSSAstack (b, a)
+#define MakeNWith(a, b, c) MakeNWith (b, a, c)
 
 #define NWITHOP_ARRAY(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
 #define NWITHOP_SHAPE(n) NWITHOP_SHAPEARRAYNEUTRAL (n)
@@ -99,6 +103,7 @@
 #undef MakeSSAstack
 #undef MakeNGenerator
 #undef MakeNPart
+#undef MakeNWith
 
 #undef NGEN_BOUND1
 #undef NGEN_BOUND2
