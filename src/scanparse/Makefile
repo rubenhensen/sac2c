@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1994/12/14 13:56:58  sbs
+# Revision 1.6  1994/12/30 17:28:08  sbs
+# *** empty log message ***
+#
+# Revision 1.5  1994/12/14  13:56:58  sbs
 # YYDEBUG set for y.tab.c
 #
 # Revision 1.4  1994/11/23  12:42:42  sbs
@@ -15,7 +18,7 @@
 #
 
 CC=gcc -ansi -g 
-CCL=gcc -ansi -g 
+CCL=gcc ansi -g 
 LEX=lex
 YACC=yacc -dv
 LIBS=-ly -ll
