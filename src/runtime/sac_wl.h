@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/14 21:37:20  dkr
+ * removed WL_NOOP
+ *
  * Revision 1.4  1998/05/12 22:46:54  dkr
  * added SAC_WL_NOOP
  *
@@ -56,8 +59,6 @@
 #define VAR(type, level, idx_scalar) __##type##level##_##idx_scalar
 
 #define MIN(x, y) SAC_ND_MIN (x, y)
-
-#define SAC_WL_NOOP() /* noop */
 
 #define SAC_WL_BLOCK_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,    \
                                  bound2, step)                                           \
