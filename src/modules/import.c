@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/10/18 13:38:34  sbs
+ * interfacing between the external module name convention
+ * of the old type checker, i.e., mod == NULL, and the new
+ * convention for the new type checker, i.e., mod -> _EXT  made
+ *
  * Revision 3.12  2002/02/21 17:27:24  dkr
  * error in ImportSymbol() corrected
  *
@@ -329,7 +334,7 @@ InsertClassType (node *classdec)
 
     tmp = MakeTypedef (StringCopy (CLASSDEC_NAME (classdec)),
                        CLASSDEC_ISEXTERNAL (classdec)
-                         ? NULL
+                         ? ((sbs == 1) ? "_EXT" : NULL)
                          : StringCopy (CLASSDEC_NAME (classdec)),
                        MakeTypes1 (T_hidden), ST_unique, NULL);
     TYPEDEF_STATUS (tmp) = ST_imported_class;
@@ -636,7 +641,8 @@ IMtypedef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of type %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (TYPEDEF_MOD (arg_node) != NULL) {
+        if (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), "_EXT") != 0))
+            || ((sbs == 0) && (TYPEDEF_MOD (arg_node) != NULL))) {
             /*
              *  typedef from SAC-module/class
              */
@@ -702,7 +708,9 @@ IMtypedef (node *arg_node, node *arg_info)
         }
     }
 
-    if ((TYPEDEF_BASETYPE (arg_node) == T_hidden) && (TYPEDEF_MOD (arg_node) == NULL)) {
+    if ((TYPEDEF_BASETYPE (arg_node) == T_hidden)
+        && (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), "_EXT") == 0))
+            || ((sbs == 0) && (TYPEDEF_MOD (arg_node) == NULL)))) {
         InitGenericFuns (arg_node, pragma);
     }
 
@@ -745,7 +753,8 @@ IMfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of function %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (FUNDEF_MOD (arg_node) != NULL) {
+        if (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), "_EXT") != 0))
+            || ((sbs == 0) && (FUNDEF_MOD (arg_node) != NULL))) {
             /*
              *  fundef from SAC-module/class
              */
@@ -852,7 +861,8 @@ IMobjdef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of object %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (OBJDEF_MOD (arg_node) != NULL) {
+        if (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), "_EXT") != 0))
+            || ((sbs == 0) && (OBJDEF_MOD (arg_node) != NULL))) {
             /*
              *  fundef from SAC-module/class
              */
