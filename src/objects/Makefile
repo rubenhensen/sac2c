@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1996/01/04 18:11:12  cg
+# Revision 1.8  1996/01/25 18:45:52  cg
+# added new include directories
+#
+# Revision 1.7  1996/01/04  18:11:12  cg
 # make deps done
 #
 # Revision 1.6  1995/12/15  10:41:14  cg
@@ -29,7 +32,7 @@ MAKE=make
 CC=gcc -ansi -g
 RM=rm -f
 
-INCS=-I../global -I../../inc 
+INCS=-I../global -I../../inc -I../typecheck -I../modules
 
 all: objinit.o objects.o uniquecheck.o rmvoidfun.o
 
