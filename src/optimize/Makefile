@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/02/13 15:54:04  nmw
+# include for lac2fun.h added
+#
 # Revision 3.4  2001/02/02 10:39:01  dkr
 # make deps done
 #
@@ -74,7 +77,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
-     -I../compile -I../concurrent -I../tree
+     -I../compile -I../concurrent -I../tree -I../flatten
 
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
@@ -218,10 +221,11 @@ optimize.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
 optimize.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 optimize.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
 optimize.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-optimize.o: ../tree/traverse.h ../print/print.h ../print/convert.h optimize.h
-optimize.o: generatemasks.h freemasks.h ConstantFolding.h DeadCodeRemoval.h
-optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
-optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
+optimize.o: ../tree/traverse.h ../print/print.h ../print/convert.h
+optimize.o: ../tree/CheckAvis.h ../tree/SSATransform.h ../flatten/lac2fun.h
+optimize.o: optimize.h generatemasks.h freemasks.h ConstantFolding.h
+optimize.o: DeadCodeRemoval.h DeadFunctionRemoval.h LoopInvariantRemoval.h
+optimize.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
 optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
 optimize.o: ../psi-opt/pad.h
