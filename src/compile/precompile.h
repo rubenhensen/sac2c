@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/06/03 14:53:41  cg
+ * Now, all identifiers including local ones are systematically renamed.
+ *
  * Revision 1.16  1998/04/29 17:20:09  dkr
  * with-loop transformation moved to wltransform.[ch]
  *
@@ -64,16 +67,25 @@
 
 extern node *precompile (node *syntax_tree);
 
-extern node *PRECModul (node *arg_node, node *arg_info);
-extern node *PRECObjdef (node *arg_node, node *arg_info);
-extern node *PRECFundef (node *arg_node, node *arg_info);
-extern node *PRECArg (node *arg_node, node *arg_info);
-extern node *PRECLet (node *arg_node, node *arg_info);
-extern node *PRECAp (node *arg_node, node *arg_info);
-extern node *PRECAssign (node *arg_node, node *arg_info);
-extern node *PRECReturn (node *arg_node, node *arg_info);
-extern node *PRECId (node *arg_node, node *arg_info);
-extern node *PRECVardec (node *arg_node, node *arg_info);
-extern node *PRECTypedef (node *arg_node, node *arg_info);
+extern node *PRECmodul (node *arg_node, node *arg_info);
+extern node *PRECobjdef (node *arg_node, node *arg_info);
+extern node *PRECfundef (node *arg_node, node *arg_info);
+extern node *PRECarg (node *arg_node, node *arg_info);
+extern node *PREClet (node *arg_node, node *arg_info);
+extern node *PRECap (node *arg_node, node *arg_info);
+extern node *PRECassign (node *arg_node, node *arg_info);
+extern node *PRECreturn (node *arg_node, node *arg_info);
+extern node *PRECid (node *arg_node, node *arg_info);
+extern node *PRECvardec (node *arg_node, node *arg_info);
+extern node *PRECtypedef (node *arg_node, node *arg_info);
+extern node *PRECgenerator (node *arg_node, node *arg_info);
+extern node *PRECNwithid (node *arg_node, node *arg_info);
+extern node *PRECdo (node *arg_node, node *arg_info);
+extern node *PRECwhile (node *arg_node, node *arg_info);
+extern node *PRECcond (node *arg_node, node *arg_info);
+extern node *PRECwith (node *arg_node, node *arg_info);
+extern node *PRECNwith (node *arg_node, node *arg_info);
+extern node *PRECNwith2 (node *arg_node, node *arg_info);
+extern node *PRECNcode (node *arg_node, node *arg_info);
 
 #endif /* _sac_precompile_h */
