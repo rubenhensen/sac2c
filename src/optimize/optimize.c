@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/05/15 08:02:29  nmw
+ * call of SSAWithloopFoldingWLT added
+ *
  * Revision 3.24  2001/05/09 12:29:40  nmw
  * removed all unused SSATransform operations between the several
  * optimizations
@@ -277,6 +280,7 @@
 #include "SSALIR.h"
 #include "while2do.h"
 #include "SSALUR.h"
+#include "SSAWithloopFolding.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -822,15 +826,16 @@ OPTfundef (node *arg_node, node *arg_info)
         NOTE ((" %s( %s): ...", FUNDEF_NAME (arg_node), argtype_buffer));
 
         if (optimize & OPT_AE) {
-            /*
-             * AE needs mask for MRD generation now.
-             */
-            arg_node = GenerateMasks (arg_node, NULL);
-
-            arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
             if (use_ssaform) {
+                arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
                 arg_node = CheckAvisOneFunction (arg_node);
                 arg_node = SSATransformOneFunction (arg_node);
+            } else {
+                /*
+                 * AE needs mask for MRD generation now.
+                 */
+                arg_node = GenerateMasks (arg_node, NULL);
+                arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
             }
         }
 
@@ -843,7 +848,9 @@ OPTfundef (node *arg_node, node *arg_info)
          * necessary after AE (which does not care about masks while introducing
          * new variables:
          */
-        arg_node = GenerateMasks (arg_node, NULL);
+        if (!use_ssaform) {
+            arg_node = GenerateMasks (arg_node, NULL);
+        }
 
         if (optimize & OPT_DCR) {
             if (use_ssaform) {
@@ -922,9 +929,12 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_WLT) {
-                arg_node = GenerateMasks (arg_node, NULL);
-                arg_node = WithloopFoldingWLT (arg_node); /* wlt */
-                arg_node = GenerateMasks (arg_node, NULL);
+                if (use_ssaform) {
+                    arg_node = SSAWithloopFoldingWLT (arg_node);
+                } else {
+                    arg_node = GenerateMasks (arg_node, NULL);
+                    arg_node = WithloopFoldingWLT (arg_node); /* wlt */
+                }
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -933,6 +943,7 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_WLF) {
+                arg_node = GenerateMasks (arg_node, NULL);
                 arg_node = WithloopFolding (arg_node, loop1); /* wli, wlf */
                 /*
                  * rebuild mask which is necessary because of WL-body-substitutions
@@ -947,7 +958,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
-            if (use_ssaform && (((optimize & OPT_WLF) || (optimize & OPT_WLT)))) {
+            if (use_ssaform && (optimize & OPT_WLF)) {
                 arg_node = CheckAvisOneFunction (arg_node);
                 arg_node = SSATransformOneFunction (arg_node);
             }
@@ -1029,7 +1040,6 @@ OPTfundef (node *arg_node, node *arg_info)
                 && (0 == strcmp (break_specifier, "lir"))) {
                 goto INFO;
             }
-
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
                   || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                   || (dead_fun + dead_var + dead_expr != old_dcr_expr)
@@ -1064,10 +1074,10 @@ OPTfundef (node *arg_node, node *arg_info)
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
                 } else {
                     arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                    /* srs: CF does not handle the USE mask correctly. */
+                    /* quick fix: always rebuild masks after CF */
+                    arg_node = GenerateMasks (arg_node, NULL);
                 }
-                /* srs: CF does not handle the USE mask correctly. */
-                /* quick fix: always rebuild masks after CF */
-                arg_node = GenerateMasks (arg_node, NULL);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
@@ -1079,10 +1089,10 @@ OPTfundef (node *arg_node, node *arg_info)
              * This is needed to transform more index vectors in scalars or vice versa.
              */
             if (optimize & OPT_WLT) {
-                arg_node = WithloopFoldingWLT (arg_node); /* wlt */
                 if (use_ssaform) {
-                    arg_node = CheckAvisOneFunction (arg_node);
-                    arg_node = SSATransformOneFunction (arg_node);
+                    arg_node = SSAWithloopFoldingWLT (arg_node);
+                } else {
+                    arg_node = WithloopFoldingWLT (arg_node); /* wlt */
                 }
             }
 
