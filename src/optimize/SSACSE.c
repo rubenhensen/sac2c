@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/05/17 11:54:47  nmw
+ * inter procedural copy propagation implemented
+ *
  * Revision 1.14  2001/05/09 12:21:55  nmw
  * cse checks expressions for their used shape before substituting them
  *
@@ -85,6 +88,7 @@ static ids *SetSubstAttributes (ids *subst, ids *with);
 static node *FindCSE (node *cselist, node *let);
 static bool ForbiddenSubstitution (ids *chain);
 static bool CmpIdsTypes (ids *ichain1, ids *ichain2);
+static node *SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
 
 /******************************************************************************
  *
@@ -318,6 +322,109 @@ ForbiddenSubstitution (ids *chain)
 /******************************************************************************
  *
  * function:
+ *   node *SSACSEPropagateSubst2Args(node *fun_args,
+ *                                   node *ap_args,
+ *                                   node *fundef)
+ *
+ * description:
+ *   propagates substitution information into the called special fundef.
+ *   this allows to continue the copy propagation in the called fundef
+ *   and reduces the number of variables that have to be transfered
+ *   into a special fundef as arg (inter-procedural copy propagation).
+ *   this is possible for all args in cond-funs and loop invariant args
+ *   of loop-funs.
+ *
+ * example:
+ *   a = expr;                   int f_cond(int a, int b)
+ *   b = a;                      {
+ *   x = f_cond(a, b);              ...
+ *   ...                            return (a + b);
+ *                               }
+ *
+ * will be transformed to
+ *   a = expr;                   int f_cond(int a, int b)
+ *   b = a;                      {
+ *   x = f_cond(a, a);              ...
+ *   ...                            return (a + a);
+ *                               }
+ *
+ *   unused code will be removed later by DeadCodeRemoval!
+ *
+ * implementation:
+ *    set the AVIS_SUBST attribute for the args in the called fundef to matching
+ *    identical arg in signature or NULL otherwise.
+ *
+ ******************************************************************************/
+static node *
+SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
+{
+    node *act_fun_arg;
+    node *act_ap_arg;
+    node *ext_ap_avis;
+    node *search_fun_arg;
+    node *search_ap_arg;
+    bool found_match;
+
+    DBUG_ENTER ("SSACSEPropagateSubst2Args");
+
+    act_fun_arg = fun_args;
+    act_ap_arg = ap_args;
+    while (act_fun_arg != NULL) {
+        /* process all arguments */
+        DBUG_ASSERT ((act_ap_arg != NULL), "to few arguments in function application");
+
+        /* init AVIS_SUBST attribute (means no substitution) */
+        AVIS_SUBST (ARG_AVIS (act_fun_arg)) = NULL;
+
+        /* get external identifier in function application (here we use it avis) */
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_ap_arg)) == N_id),
+                     "non N_id node as arg in special function application");
+        ext_ap_avis = ID_AVIS (EXPRS_EXPR (act_ap_arg));
+
+        /*
+         * now search the application args for identical id to substitute it.
+         * this is possible only for args of cond-funs and loopinvariant args
+         * of loop-funs.
+         */
+        if ((FUNDEF_IS_CONDFUN (fundef))
+            || ((FUNDEF_IS_LOOPFUN (fundef))
+                && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
+            found_match = FALSE;
+
+            search_fun_arg = fun_args;
+            search_ap_arg = ap_args;
+            while ((search_fun_arg != act_fun_arg) && (found_match == FALSE)) {
+                /* compare identifiers via their avis pointers */
+                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_ap_arg)) == N_id),
+                             "non N_id node as arg in special function application");
+                if (ID_AVIS (EXPRS_EXPR (search_ap_arg)) == ext_ap_avis) {
+                    /*
+                     * if we find a matching identical id in application, we mark it
+                     * for being substituted with the one we found and stop the
+                     * further searching.
+                     */
+                    found_match = TRUE;
+                    AVIS_SUBST (ARG_AVIS (act_fun_arg)) = ARG_AVIS (search_fun_arg);
+                }
+
+                /* parallel traversal to next arg in ap and fundef */
+                search_fun_arg = ARG_NEXT (search_fun_arg);
+                search_ap_arg = EXPRS_NEXT (search_ap_arg);
+            }
+        }
+
+        /* parallel traversal to next arg in ap and fundef */
+        act_fun_arg = ARG_NEXT (act_fun_arg);
+        act_ap_arg = EXPRS_NEXT (act_ap_arg);
+    }
+    DBUG_ASSERT ((act_ap_arg == NULL), "to many arguments in function application");
+
+    DBUG_RETURN (fun_args);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SSACSEfundef(node *arg_node, node *arg_info)
  *
  * description:
@@ -334,8 +441,13 @@ SSACSEfundef (node *arg_node, node *arg_info)
 
     INFO_SSACSE_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        /* traverse args of fundef */
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (!(FUNDEF_IS_LACFUN (arg_node)))) {
+        /*
+         * traverse args of fundef to init the AVIS_SUBST attribute. this is done
+         * here only for normal fundefs. in special fundefs that are traversed via
+         * SSACSEap() and we do a substitution information propagation (see
+         * SSACSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST attribute.
+         */
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
@@ -646,12 +758,17 @@ SSACSEap (node *arg_node, node *arg_info)
         INFO_SSACSE_CSE (new_arg_info) = NULL;
         INFO_SSACSE_MODUL (new_arg_info) = INFO_SSACSE_MODUL (arg_info);
 
+        /* propagate id substitutions into called */
+        FUNDEF_ARGS (AP_FUNDEF (arg_node))
+          = SSACSEPropagateSubst2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                                       AP_ARGS (arg_node), AP_FUNDEF (arg_node));
+
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
         DBUG_PRINT ("SSACSE", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
 
     } else {
         DBUG_PRINT ("SSACSE", ("do not traverse in normal fundef %s",
@@ -781,7 +898,7 @@ SSACSEids (ids *arg_ids, node *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        FREE (IDS_NAME (arg_ids));
+        IDS_NAME (arg_ids) = Free (IDS_NAME (arg_ids));
         IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
 #endif
     }
@@ -855,7 +972,7 @@ SSACSE (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);
