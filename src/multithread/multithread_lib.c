@@ -1,10 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/22 15:48:50  jhs
+ * Adapted NODE_TEXT.
+ *
  * Revision 1.1  2000/02/21 17:48:22  jhs
  * Initial revision
- *
- *
  *
  */
 
@@ -43,8 +44,9 @@ MUTHAssertSimpleBlock (node *block)
 {
     DBUG_ENTER ("MUTHAssertBlock");
 
-    DBUG_PRINT ("MUTH", ("%s", mdb_nodetype[NODE_TYPE (block)]));
-    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE, not a N_block");
+    DBUG_PRINT ("MUTH", ("%s", NODE_TEXT (block)));
+    DBUG_ASSERT (NODE_TYPE (block) == N_block,
+                 "Wrong NODE_TYPE, not a N_block (watch MUTH)");
 
     DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
     DBUG_ASSERT (BLOCK_NEEDFUNS (block) == NULL, "BLOCK_NEEDFUNS not NULL");
