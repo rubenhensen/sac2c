@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2004/12/01 15:30:00  ktr
+ * Old types are no longer mandatory
+ *
  * Revision 3.126  2004/11/27 00:45:29  mwe
  * interface changes
  *
@@ -1422,9 +1425,9 @@ DUPassign (node *arg_node, info *arg_info)
 
                 vardec = TBmakeVardec (IDS_AVIS (newids), NULL);
 
-                VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
-
-                AVIS_DECL (IDS_AVIS (newids)) = vardec;
+                if (IDS_TYPE (oldids) != NULL) {
+                    VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
+                }
 
                 INFO_DUP_FUNDEFSSA (arg_info)
                   = TCaddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
@@ -2072,9 +2075,9 @@ DUPwith (node *arg_node, info *arg_info)
 
         vardec = TBmakeVardec (IDS_AVIS (newvec), NULL);
 
-        VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldvec));
-
-        AVIS_DECL (IDS_AVIS (newvec)) = vardec;
+        if (IDS_TYPE (oldvec) != NULL) {
+            VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldvec));
+        }
 
         INFO_DUP_FUNDEFSSA (arg_info)
           = TCaddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
@@ -2099,9 +2102,9 @@ DUPwith (node *arg_node, info *arg_info)
 
             vardec = TBmakeVardec (IDS_AVIS (newids), NULL);
 
-            VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
-
-            AVIS_DECL (IDS_AVIS (newids)) = vardec;
+            if (IDS_TYPE (oldids) != NULL) {
+                VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
+            }
 
             INFO_DUP_FUNDEFSSA (arg_info)
               = TCaddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
