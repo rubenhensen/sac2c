@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/12/29 10:29:45  cg
+ * Revision 1.13  1996/01/02 15:51:33  cg
+ * function MakeType now initializes new struct entries tdef and id_cmod
+ * of struct types
+ *
+ * Revision 1.12  1995/12/29  10:29:45  cg
  * modified MakeNodelist and MakeSib, added MakeInfo
  *
  * Revision 1.11  1995/12/21  10:07:33  cg
@@ -158,9 +162,11 @@ MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
 
     tmp->id = NULL;
     tmp->id_mod = NULL;
+    tmp->id_cmod = NULL;
 
     tmp->status = ST_regular;
     tmp->attrib = ST_regular;
+    tmp->tdef = NULL;
 
     DBUG_RETURN (tmp);
 }
