@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/11/30 12:18:37  sbs
+ * if RANLIB is set, <file>.a files created by -genlib c are converted
+ * by RANLIB as well now 8-)) (essential on MAC)
+ *
  * Revision 3.5  2001/11/29 13:31:13  sbs
  * config.ldflags inserted.
  *
@@ -653,6 +657,12 @@ CreateLibrary ()
         /* move generated library to output */
         SystemCall ("%s %s/SAC_full.archive %s/lib%s.a", config.move, tmp_dirname,
                     targetdir, modulename);
+        /*
+         * if RANLIB is set, run it on the archive created!
+         */
+        if (config.ranlib[0] != '\0') {
+            SystemCall ("%s %s/lib%s.a", config.ranlib, targetdir, modulename);
+        }
     }
 
     DBUG_VOID_RETURN;
