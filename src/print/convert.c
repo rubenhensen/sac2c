@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1996/02/08 18:04:05  hw
+ * Revision 1.17  1996/02/16 09:38:51  sbs
+ * floor used for recognizing whole numbers in Double2Str and Float2Str
+ *
+ * Revision 1.16  1996/02/08  18:04:05  hw
  * changed Type2String ( [.,.] will be printed now ;-)
  *
  * Revision 1.15  1996/02/06  16:10:20  sbs
@@ -60,6 +63,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "tree.h"
 #include "dbug.h"
@@ -107,7 +111,7 @@ Float2String (float val)
     DBUG_ENTER ("Float2String");
 
     tmp_string = (char *)malloc (sizeof (char) * 256);
-    if (val == (int)val)
+    if (val == floor (val))
         sprintf (tmp_string, "%.256g.0f", val);
     else
         sprintf (tmp_string, "%.256gf", val);
@@ -137,7 +141,7 @@ Double2String (double val)
     DBUG_ENTER ("Double2String");
 
     tmp_string = (char *)malloc (sizeof (char) * 256);
-    if (val == (int)val)
+    if (val == floor (val))
         sprintf (tmp_string, "%.256g.0", val);
     else
         sprintf (tmp_string, "%.256g", val);
