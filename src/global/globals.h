@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/06/07 11:08:26  nmw
+ * added global variable generatelibrary and defines for the types
+ *
  * Revision 2.29  2000/05/26 14:21:45  sbs
  * OPT_AP added.
  *
@@ -227,6 +230,10 @@ extern unsigned int intrinsics;
 #define INTRINSIC_CAT 0x0100
 #define INTRINSIC_PSI 0x0200
 #define INTRINSIC_MODA 0x0400
+
+extern unsigned int generatelibrary;
+#define GENERATELIBRARY_SAC 0x0001 /* generate SAC library from module */
+#define GENERATELIBRARY_C 0x0002   /* generate C library and headerfile from module */
 
 extern int PFfuncntr;
 extern char *PFfunnme[PF_MAXFUN];
