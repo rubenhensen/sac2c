@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/20 16:55:06  jhs
+ * Added comments.
+ * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer setuped.
+ * Changed signature of MT_SYNC_FOLD, added barrier_id.
+ *
  * Revision 2.4  1999/06/30 16:00:11  jhs
  * Expanded backend, so compilation of fold-with-loops is now possible
  * during SPMD-Blocks containing more than one SYNC-Block.
@@ -200,6 +205,8 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
         INDENT;
         fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
                  vararg[i + 2]);
+        DBUG_PRINT ("ICMCompile", ("SAC_MT_SPMD_PARAM_%s( %s, %s)", vararg[i],
+                                   vararg[i + 1], vararg[i + 2]));
     }
 
     DBUG_VOID_RETURN;
@@ -325,12 +332,12 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SYNC_FOLD(int narg, char **vararg)
+ *   void ICMCompileMT_SYNC_FOLD(int barrier_id, int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD( narg [, foldtype, accu_var, tmp_var, foldop]*)
+ *   MT_SYNC_FOLD( barrier_id, narg [, foldtype, accu_var, tmp_var, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops but no genarray/modarray
@@ -345,8 +352,12 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
+ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 {
+    node **foldcodes;
+    char *foldop;
+    int i;
+
     DBUG_ENTER ("ICMCompileMT_SYNC_FOLD");
 
 #define MT_SYNC_FOLD
@@ -354,6 +365,81 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 #include "icm_trace.c"
 #undef MT_SYNC_FOLD
 
+    /*
+     *  fetch code-elements for all fold-operations
+     */
+    foldcodes = (node **)malloc (narg * sizeof (node *));
+    for (i = 0; i < narg; i++) {
+        foldop = vararg[(i * 4) + 3];
+        DBUG_PRINT ("COMPi", ("%i %s", i, foldop));
+        foldcodes[i] = SearchFoldImplementation (foldop);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1A( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                 i + 1, vararg[(i * 4)], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1B( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(SAC_MT_son_id, %i, %s);\n",
+                 vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
+        INDENT;
+        fprintf (outfile, "{\n");
+        indent++;
+        Trav (foldcodes[i], NULL);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2A( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                 i + 1, vararg[(i * 4)], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2B( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(SAC_MT_son_id, %i, %s);\n",
+                 vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
+        INDENT;
+        fprintf (outfile, "{\n");
+        indent++;
+        Trav (foldcodes[i], NULL);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3A( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n",
+                 i + 1, vararg[(i * 4)], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3B( %d)\n", barrier_id);
+
+    fprintf (outfile, "}\n");
+
+    free (foldcodes);
     DBUG_VOID_RETURN;
 }
 
@@ -932,6 +1018,16 @@ ICM no longer used !!
  *
  *   MT_SPMD_SETUP( name, narg [, tag, type, arg]*)
  *
+ *   the arguments handed over could have the tags:
+ *     in, in_rc, out, out_rc, shared and shared_rc.
+ *   One needs to set the in variables to the spmd-region, that is normal.
+ *   One also needs to set the adresses ot the out-variables, so the
+ *   spmd-region can put the values there automatically.
+ *   One does *not* need to set the shared variables here (they are only used
+ *   within the spmd-region), so they ar ignored here!
+ *   Because this icm is also used to determine the spmd-frame, one needs
+ *   to have the shared-variabels here (until this ic changed in someway).
+ *
  ******************************************************************************/
 
 void
@@ -947,9 +1043,12 @@ ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg)
 #undef MT_SPMD_SETUP
 
     for (i = 0; i < 3 * narg; i += 3) {
-        INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n", vararg[i], name,
-                 vararg[i + 2]);
+        if ((strcmp (vararg[i], "in") == 0) || (strcmp (vararg[i], "in_rc") == 0)
+            || (strcmp (vararg[i], "out") == 0) || (strcmp (vararg[i], "out_rc") == 0)) {
+            INDENT;
+            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n", vararg[i], name,
+                     vararg[i + 2]);
+        }
     }
 
     DBUG_VOID_RETURN;

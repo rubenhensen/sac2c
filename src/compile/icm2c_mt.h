@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/20 16:55:06  jhs
+ * Added comments.
+ * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer setuped.
+ * Changed signature of MT_SYNC_FOLD, added barrier_id.
+ *
  * Revision 2.3  1999/06/30 16:00:11  jhs
  * Expanded backend, so compilation of fold-with-loops is now possible
  * during SPMD-Blocks containing more than one SYNC-Block.
@@ -64,7 +69,7 @@
 extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg);
 extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg);
-extern void ICMCompileMT_SYNC_FOLD (int narg, char **vararg);
+extern void ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg);
 extern void ICMCompileMT_SYNC_NONFOLD (int barrier_id);
 extern void ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var,
                                        char *tmp_var, char *foldop);
