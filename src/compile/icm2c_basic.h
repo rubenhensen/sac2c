@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/07/02 13:05:00  dkr
+ * global var 'print_comment' added
+ *
  * Revision 3.2  2002/07/02 09:02:17  dkr
  * no changes done
  *
@@ -32,6 +35,8 @@
 
 #ifndef _icm2c_basic_h
 #define _icm2c_basic_h
+
+extern int print_comment; /* bool */
 
 #define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY( %s, %i)", v, i)
 
