@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.13  1999/06/11 12:57:59  cg
+ * Cache simulation via memory access trace file implemented.
+ * Added help screen for CacheSimAnalyser as well as application
+ * programs compiled for cache simulation.
+ *
  * Revision 2.12  1999/06/10 09:52:13  cg
  * Added piped cache simulation on remote host machine.
  *
@@ -105,6 +110,8 @@ static void RegisterArray (void *baseaddress, int size /* in byte */);
 static void UnregisterArray (void *baseaddress);
 static void Start (char *tag);
 static void Stop (void);
+
+static void File_Finalize (void);
 
 static void Piped_Finalize (void);
 static void Piped_RegisterArray (void *baseaddress, int size /* in byte */);
@@ -281,6 +288,175 @@ ProfilingLevelShortName (tProfilingLevel level)
     }
 } /* ProfilingLevelShortName */
 
+static char *
+GetPureProgName (char *prog)
+{
+    char *purename;
+    char *last_slash;
+
+    last_slash = strrchr (prog, '/');
+
+    if (last_slash == NULL) {
+        purename = prog;
+    } else {
+        purename = last_slash + 1;
+    }
+
+    return (purename);
+}
+
+void
+Usage (int is_analyser, char *pureprogname, int cachesim, int cs_global, char *cshost,
+       char *csfile, char *csdir, ULINT cachesize1, int cachelinesize1,
+       int associativity1, tWritePolicy writepolicy1, ULINT cachesize2,
+       int cachelinesize2, int associativity2, tWritePolicy writepolicy2,
+       ULINT cachesize3, int cachelinesize3, int associativity3,
+       tWritePolicy writepolicy3)
+{
+    char *csim;
+
+    if (is_analyser) {
+        csim = "";
+    } else {
+        csim = " (cache simulation) ";
+    }
+
+    printf ("\nNAME:     \t%s\n"
+            "\nDESCRIPTION:\n\n",
+            pureprogname);
+
+    if (is_analyser) {
+        printf ("\tSAC cache simulation analysis tool.\n\n"
+                "\tThis tool reads memory access trace files from stdin\n"
+                "\tand simulates the corresponding cache behavior.\n");
+    } else {
+        printf ("\tSAC application program compiled for cache simulation.\n");
+    }
+
+    printf ("\n\nOPTIONS%s:\n\n", csim);
+
+    printf ("\t-h\t\t This help screen.\n\n"
+            "\t-cs [%s]+ \tset parameters for cache simulation.\n"
+            "\t\t  s: simple cache simulation.\n"
+            "\t\t  a: advanced cache simulation.\n"
+            "\t\t  g: global cache simulation.\n"
+            "\t\t  b: cache simulation on selected blocks.\n",
+            is_analyser ? "sagb" : "sagbifp");
+
+    if (!is_analyser) {
+        printf ("\t\t  i: immediate analysis of memory accesses.\n"
+                "\t\t  f: storage of memory accesses in file.\n"
+                "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
+                "\n"
+                "\t\tThe default settings are \"%c%c%c\"\n",
+                cachesim & CACHESIM_ADVANCED ? 'a' : 's',
+                cachesim & CACHESIM_BLOCK ? 'b' : 'g',
+                cachesim & CACHESIM_FILE ? 'f' : cachesim & CACHESIM_PIPE ? 'p' : 'i');
+    }
+
+    printf ("\n"
+            "\tSimple cache simulation only counts cache hits and cache misses while\n"
+            "\tadvanced cache simulation additionally classifies cache misses into\n"
+            "\tcold start, cross interference, self interference, and invalidation\n"
+            "\tmisses.\n"
+            "\n"
+            "\tSimulation results may be presented for the entire program run or more\n"
+            "\tspecifically for any code block marked by the following pragma:\n"
+            "\t\t#pragma cachesim [tag]\n"
+            "\tThe optional tag allows to distinguish between the simulation results\n"
+            "\tfor various code blocks. The tag must be a string.\n");
+
+    if (!is_analyser) {
+        printf (
+          "\n"
+          "\tMemory accesses may be evaluated with respect to their cache behavior\n"
+          "\teither immediately within the application process, stored in a file,\n"
+          "\tor they may be piped to a concurrently running analyser process.\n"
+          "\tWhile immediate analysis usually is the fastest alternative,\n"
+          "\tresults, in particular for advanced analysis, are often inaccurate due to\n"
+          "\tchanges in the memory layout caused by the analyser. If you choose to\n"
+          "\twrite memory accesses to a file, beware that even for small programs to\n"
+          "\tbe analysed the amount of data may be quite large. However, once a\n"
+          "\tmemory trace file exists, it can be used to simulate different cache\n"
+          "\tconfigurations without repeatedly running the application program\n"
+          "\titself. The simulation tool for memory access trace files is called\n"
+          "\t\tCacheSimAnalyser\n"
+          "\tand may be found in the directory\n"
+          "\t\t$SACBASE/runtime\n"
+          "\tas part of your SAC installation.\n");
+    }
+
+    printf ("\n"
+            "\t-cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
+            "\n"
+            "\t\tspecifies the parameters of up to 3 levels of caches.\n"
+            "\t\tThe cache size must be given in KB, the cache line size in\n"
+            "\t\tBytes. A cache size of 0 KB disables the corresponding cache level\n"
+            "\t\tcompletely regardless of any other setting.\n"
+            "\t\tWrite miss policies are specified by a single letter:\n"
+            "\t\td: default (fetch on write)\n"
+            "\t\tf: fetch on write\n"
+            "\t\tv: write validate\n"
+            "\t\ta: write around\n");
+
+    if (!is_analyser) {
+        printf ("\n"
+                "\t\tDefault: -cs1 %lu/%d/%d/%s -cs2 %lu/%d/%d/%s -cs3 %lu/%d/%d/%s\n",
+                cachesize1, cachelinesize1, associativity1,
+                WritePolicyShortName (writepolicy1), cachesize2, cachelinesize2,
+                associativity2, WritePolicyShortName (writepolicy2), cachesize3,
+                cachelinesize3, associativity3, WritePolicyShortName (writepolicy3));
+    }
+
+    if (!is_analyser) {
+        printf ("\n"
+                "\t-cshost <name> \tallows the specification of a specific host to\n"
+                "\t\t\trun the additional analyser process on when doing piped cache\n"
+                "\t\t\tsimulation. This is very useful for single processor machines\n"
+                "\t\t\tbecause the rather limited buffer size of the pipe determines\n"
+                "\t\t\tthe synchronisation distance of the two processes, i.e. the\n"
+                "\t\t\tapplication process and the analysis process. This results in\n"
+                "\t\t\tvery frequent context switches when both processes are run on "
+                "the\n"
+                "\t\t\tsame processor, and consequently, degrades the performance by\n"
+                "\t\t\torders of magnitude. So, when doing piped cache simulation "
+                "always\n"
+                "\t\t\tbe sure to do so either on a multiprocessor or specify a "
+                "different\n"
+                "\t\t\tmachine to run the analyser process on.\n"
+                "\n"
+                "\t\t\tDefault: %s %s\n"
+                "\n"
+                "\t-csfile <name> \tallows the specification of a default file where to\n"
+                "\t\t\twrite the memory access trace when performing cache simulation\n"
+                "\t\t\tvia a file.\n"
+                "\n"
+                "\t\t\tDefault: -csfile %s\n"
+                "\n"
+                "\t-csdir <name> \tallows the specification of a default directory where "
+                "to\n"
+                "\t\t\twrite the memory access trace file when performing cache "
+                "simulation\n"
+                "\t\t\tvia a file.\n"
+                "\n"
+                "\t\t\tDefault: -csdir %s\n",
+                cshost[0] == '\0' ? "<none>  (current host)" : "-cshost", cshost, csfile,
+                csdir);
+    }
+
+    printf ("\n\nAUTHORS%s:\n\n"
+            "\tHelge Ernst\n"
+            "\tSven-Bodo Scholz\n"
+            "\tClemens Grelck\n"
+
+            "\n\nCONTACT%s:\n\n"
+
+            "\tWorld Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
+            "\tE-Mail: sacbase@informatik.uni-kiel.de\n"
+            "\n",
+            csim, csim);
+}
+
 static void
 ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
                  int *associativity, tWritePolicy *writepolicy)
@@ -342,15 +518,17 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
 
 void
 SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
-                       int *cs_global, char **cshost, unsigned long int *cachesize1,
-                       int *cachelinesize1, int *associativity1,
-                       tWritePolicy *writepolicy1, unsigned long int *cachesize2,
-                       int *cachelinesize2, int *associativity2,
-                       tWritePolicy *writepolicy2, unsigned long int *cachesize3,
-                       int *cachelinesize3, int *associativity3,
-                       tWritePolicy *writepolicy3)
+                       int *cs_global, char **cshost, char **csfile, char **csdir,
+                       unsigned long int *cachesize1, int *cachelinesize1,
+                       int *associativity1, tWritePolicy *writepolicy1,
+                       unsigned long int *cachesize2, int *cachelinesize2,
+                       int *associativity2, tWritePolicy *writepolicy2,
+                       unsigned long int *cachesize3, int *cachelinesize3,
+                       int *associativity3, tWritePolicy *writepolicy3)
 {
     unsigned int cachesim = CACHESIM_NO;
+    int is_analyser;
+    char *pureprogname;
 
     switch (*profilinglevel) {
     case SAC_CS_simple:
@@ -369,12 +547,36 @@ SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
         cachesim |= CACHESIM_FILE;
         break;
     case SAC_CS_none:
-        break;
+        cachesim |= CACHESIM_IMMEDIATE;
     default:
         break;
     }
 
+    pureprogname = GetPureProgName (argv[0]);
+
+    if (0 == strcmp ("CacheSimAnalyser", pureprogname)) {
+        is_analyser = 1;
+    } else {
+        is_analyser = 0;
+    }
+
     ARGS_BEGIN (argc, argv);
+
+    ARGS_FLAG ("h", {
+        Usage (is_analyser, pureprogname, cachesim, *cs_global, *cshost, *csfile, *csdir,
+               *cachesize1, *cachelinesize1, *associativity1, *writepolicy1, *cachesize2,
+               *cachelinesize2, *associativity2, *writepolicy2, *cachesize3,
+               *cachelinesize3, *associativity3, *writepolicy3);
+        exit (0);
+    });
+
+    ARGS_FLAG ("help", {
+        Usage (is_analyser, pureprogname, cachesim, *cs_global, *cshost, *csfile, *csdir,
+               *cachesize1, *cachelinesize1, *associativity1, *writepolicy1, *cachesize2,
+               *cachelinesize2, *associativity2, *writepolicy2, *cachesize3,
+               *cachelinesize3, *associativity3, *writepolicy3);
+        exit (0);
+    });
 
     ARGS_OPTION ("cs1", {
         ResetCacheParms (ARG, cachesize1, cachelinesize1, associativity1, writepolicy1);
@@ -388,7 +590,14 @@ SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
         ResetCacheParms (ARG, cachesize3, cachelinesize3, associativity3, writepolicy3);
     });
 
-    ARGS_OPTION ("cshost", { *cshost = ARG; });
+    if (!is_analyser) {
+
+        ARGS_OPTION ("cshost", { *cshost = ARG; });
+
+        ARGS_OPTION ("csfile", { *csfile = ARG; });
+
+        ARGS_OPTION ("csdir", { *csdir = ARG; });
+    }
 
     ARGS_OPTION ("cs", {
         ARG_FLAGMASK_BEGIN ();
@@ -575,10 +784,11 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
 
 void
 SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
-                   char *cshost, ULINT cachesize1, int cachelinesize1, int associativity1,
-                   tWritePolicy writepolicy1, ULINT cachesize2, int cachelinesize2,
-                   int associativity2, tWritePolicy writepolicy2, ULINT cachesize3,
-                   int cachelinesize3, int associativity3, tWritePolicy writepolicy3)
+                   char *cshost, char *csfile, char *csdir, ULINT cachesize1,
+                   int cachelinesize1, int associativity1, tWritePolicy writepolicy1,
+                   ULINT cachesize2, int cachelinesize2, int associativity2,
+                   tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
+                   int associativity3, tWritePolicy writepolicy3)
 {
     char filename[1024];
 
@@ -592,20 +802,18 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
         SAC_RuntimeError ("Cache simulation does not support multi-threaded execution.");
     }
 
-    if ((cachesize3 != 0) && ((cachesize1 == 0) || (cachesize2 == 0))) {
-        SAC_RuntimeError ("L3 cache specified but L1 or L2 cache missing.");
-    }
+    if (profilinglevel != SAC_CS_file) {
+        if ((cachesize3 != 0) && ((cachesize1 == 0) || (cachesize2 == 0))) {
+            SAC_RuntimeError ("L3 cache specified but L1 or L2 cache missing.");
+        }
 
-    if ((cachesize2 != 0) && (cachesize1 == 0)) {
-        SAC_RuntimeError ("L2 cache specified but L1 cache missing.");
-    }
+        if ((cachesize2 != 0) && (cachesize1 == 0)) {
+            SAC_RuntimeError ("L2 cache specified but L1 cache missing.");
+        }
 
-    if (cachesize1 == 0) {
-        SAC_RuntimeError ("No caches specified for cache simulation.");
-    }
-
-    if (profilinglevel == SAC_CS_file) {
-        SAC_RuntimeError ("Sorry, cache simulation via file not yet implemented.");
+        if (cachesize1 == 0) {
+            SAC_RuntimeError ("No caches specified for cache simulation.");
+        }
     }
 
     /*
@@ -671,74 +879,103 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
         SAC_CS_WriteAccess = &Piped_WriteAccess;
         SAC_CS_Start = &Piped_Start;
         SAC_CS_Stop = &Piped_Stop;
+
     } else { /* if (piped) */
+        if (profilinglevel == SAC_CS_file) {
+            sprintf (filename, "%s/%s", csdir, csfile);
 
-        InitializeOneCacheLevel (1, nr_of_cpu, profilinglevel, cachesize1, cachelinesize1,
-                                 associativity1, writepolicy1);
+            SAC_CS_pipehandle = fopen (filename, "w");
 
-        InitializeOneCacheLevel (2, nr_of_cpu, profilinglevel, cachesize2, cachelinesize2,
-                                 associativity2, writepolicy2);
+            if (SAC_CS_pipehandle == NULL) {
+                SAC_RuntimeError ("Unable to open file for memory access trace: %s",
+                                  csfile);
+            }
 
-        InitializeOneCacheLevel (3, nr_of_cpu, profilinglevel, cachesize3, cachelinesize3,
-                                 associativity3, writepolicy3);
+            /*
+             * set all other function-variables to the piped version
+             * which are also suitable for writing to a file.
+             */
+            SAC_CS_Finalize = &File_Finalize;
+            SAC_CS_RegisterArray = &Piped_RegisterArray;
+            SAC_CS_UnregisterArray = &Piped_UnregisterArray;
+            SAC_CS_ReadAccess = &Piped_ReadAccess;
+            SAC_CS_WriteAccess = &Piped_WriteAccess;
+            SAC_CS_Start = &Piped_Start;
+            SAC_CS_Stop = &Piped_Stop;
 
-        /* the 4th level in memory hierachy is the MainMemory
-         */
-        SAC_CS_read_access_table[4] = &SAC_CS_Access_MM;
-        SAC_CS_write_access_table[4] = &SAC_CS_Access_MM;
-
-        /* set the userfunctions ReadAccess and WriteAccess to the right
-         * tableentry (1st cachelevel)
-         */
-        SAC_CS_ReadAccess = SAC_CS_read_access_table[1];
-        SAC_CS_WriteAccess = SAC_CS_write_access_table[1];
-        /* set all other function-variables to the unpiped/direct version
-         */
-        SAC_CS_Finalize = &Finalize;
-        SAC_CS_RegisterArray = &RegisterArray;
-        SAC_CS_UnregisterArray = &UnregisterArray;
-        SAC_CS_Start = &Start;
-        SAC_CS_Stop = &Stop;
-
-        fprintf (stderr,
-                 "%s"
-                 "SAC program running with %s cache simulation enabled.\n"
-                 "This might delay program execution significantly !!\n"
-                 "%s"
-                 "L1 cache:  cache size        : %lu KByte\n"
-                 "           cache line size   : %d Byte\n"
-                 "           associativity     : %d\n"
-                 "           write miss policy : %s\n",
-                 SAC_CS_separator, ProfilingLevelName (profiling_level), SAC_CS_separator,
-                 cachesize1, cachelinesize1, associativity1,
-                 WritePolicyName (writepolicy1));
-
-        if (cachesize2 > 0) {
-            fprintf (stderr,
-                     "%s\n"
-                     "L2 cache:  cache size        : %lu KByte\n"
-                     "           cache line size   : %d Byte\n"
-                     "           associativity     : %d\n"
-                     "           write miss policy : %s\n",
-                     SAC_CS_separator, cachesize2, cachelinesize2, associativity2,
-                     WritePolicyName (writepolicy2));
-        }
-
-        if (cachesize3 > 0) {
             fprintf (stderr,
                      "%s"
-                     "L3 cache:  cache size        : %lu KByte\n"
+                     "SAC program running with memory access tracing for post mortem\n"
+                     "cache simulation enabled.\n"
+                     "This might delay program execution significantly !!\n"
+                     "%s",
+                     SAC_CS_separator, SAC_CS_separator);
+        } else {
+            InitializeOneCacheLevel (1, nr_of_cpu, profilinglevel, cachesize1,
+                                     cachelinesize1, associativity1, writepolicy1);
+
+            InitializeOneCacheLevel (2, nr_of_cpu, profilinglevel, cachesize2,
+                                     cachelinesize2, associativity2, writepolicy2);
+
+            InitializeOneCacheLevel (3, nr_of_cpu, profilinglevel, cachesize3,
+                                     cachelinesize3, associativity3, writepolicy3);
+
+            /* the 4th level in memory hierachy is the MainMemory
+             */
+            SAC_CS_read_access_table[4] = &SAC_CS_Access_MM;
+            SAC_CS_write_access_table[4] = &SAC_CS_Access_MM;
+
+            /* set the userfunctions ReadAccess and WriteAccess to the right
+             * tableentry (1st cachelevel)
+             */
+            SAC_CS_ReadAccess = SAC_CS_read_access_table[1];
+            SAC_CS_WriteAccess = SAC_CS_write_access_table[1];
+            /* set all other function-variables to the unpiped/direct version
+             */
+            SAC_CS_Finalize = &Finalize;
+            SAC_CS_RegisterArray = &RegisterArray;
+            SAC_CS_UnregisterArray = &UnregisterArray;
+            SAC_CS_Start = &Start;
+            SAC_CS_Stop = &Stop;
+
+            fprintf (stderr,
+                     "%s"
+                     "SAC program running with %s cache simulation enabled.\n"
+                     "This might delay program execution significantly !!\n"
+                     "%s"
+                     "L1 cache:  cache size        : %lu KByte\n"
                      "           cache line size   : %d Byte\n"
                      "           associativity     : %d\n"
                      "           write miss policy : %s\n",
-                     SAC_CS_separator, cachesize3, cachelinesize3, associativity3,
-                     WritePolicyName (writepolicy3));
+                     SAC_CS_separator, ProfilingLevelName (profiling_level),
+                     SAC_CS_separator, cachesize1, cachelinesize1, associativity1,
+                     WritePolicyName (writepolicy1));
+
+            if (cachesize2 > 0) {
+                fprintf (stderr,
+                         "%s\n"
+                         "L2 cache:  cache size        : %lu KByte\n"
+                         "           cache line size   : %d Byte\n"
+                         "           associativity     : %d\n"
+                         "           write miss policy : %s\n",
+                         SAC_CS_separator, cachesize2, cachelinesize2, associativity2,
+                         WritePolicyName (writepolicy2));
+            }
+
+            if (cachesize3 > 0) {
+                fprintf (stderr,
+                         "%s"
+                         "L3 cache:  cache size        : %lu KByte\n"
+                         "           cache line size   : %d Byte\n"
+                         "           associativity     : %d\n"
+                         "           write miss policy : %s\n",
+                         SAC_CS_separator, cachesize3, cachelinesize3, associativity3,
+                         WritePolicyName (writepolicy3));
+            }
+
+            printf ("%s", SAC_CS_separator);
         }
-
-        printf ("%s", SAC_CS_separator);
-
-    } /* if-else (piped) */
-
+    }
 } /* SAC_CS_Initialize */
 
 static void
@@ -918,11 +1155,11 @@ SAC_CS_ShowResults (void)
                 SAC_CS_cross[i] -= both;
 
                 fprintf (stderr,
-                         "  misses:  cold start:          %*lu  (%5.1f%%)\n"
-                         "           cross interference:  %*lu  (%5.1f%%)\n"
-                         "           self interference:   %*lu  (%5.1f%%)\n"
-                         "           self & cross int.:   %*lu  (%5.1f%%)\n"
-                         "           invalidation:        %*lu  (%5.1f%%)\n",
+                         "  misses:  cold start:                  %*lu  (%5.1f%%)\n"
+                         "           cross interference:          %*lu  (%5.1f%%)\n"
+                         "           self interference:           %*lu  (%5.1f%%)\n"
+                         "           self & cross interference:   %*lu  (%5.1f%%)\n"
+                         "           invalidation:                %*lu  (%5.1f%%)\n",
                          digits, SAC_CS_cold[i],
                          ((float)SAC_CS_cold[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
                          SAC_CS_cross[i],
@@ -981,9 +1218,27 @@ Stop (void)
     }
 } /* Stop  */
 
-/* The following functions are the piped versions of the static functions
+/*
+ * The following functions are the piped versions of the static functions
  * above
  */
+
+static void
+File_Finalize (void)
+{
+    /*
+     * We do need a special Finalize implementation here in order to use
+     * fclose() instead of pclose().
+     */
+    fprintf (SAC_CS_pipehandle, "F\n");
+    if (ferror (SAC_CS_pipehandle)) {
+        SAC_RuntimeError ("An error has occurred while creating memory access trace!\n"
+                          "Probably, your disk is full or your quota is exceeded.");
+    }
+
+    fflush (SAC_CS_pipehandle);
+    fclose (SAC_CS_pipehandle);
+} /* Piped_Finalize */
 
 static void
 Piped_Finalize (void)

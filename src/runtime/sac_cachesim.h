@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.13  1999/06/11 12:57:59  cg
+ * Cache simulation via memory access trace file implemented.
+ * Added help screen for CacheSimAnalyser as well as application
+ * programs compiled for cache simulation.
+ *
  * Revision 2.12  1999/06/10 09:52:13  cg
  * Added piped cache simulation on remote host machine.
  *
@@ -104,12 +109,15 @@ typedef enum eProfilingLevel {
  *   the application was compiled.
  *
  ******************************************************************************/
-extern void SAC_CS_CheckArguments (
-  int argc, char *argv[], tProfilingLevel *profilinglevel, int *cs_global, char **cshost,
-  unsigned long int *cachesize1, int *cachelinesize1, int *associativity1,
-  tWritePolicy *writepolicy1, unsigned long int *cachesize2, int *cachelinesize2,
-  int *associativity2, tWritePolicy *writepolicy2, unsigned long int *cachesize3,
-  int *cachelinesize3, int *associativity3, tWritePolicy *writepolicy3);
+extern void SAC_CS_CheckArguments (int argc, char *argv[],
+                                   tProfilingLevel *profilinglevel, int *cs_global,
+                                   char **cshost, char **csfile, char **csdir,
+                                   unsigned long int *cachesize1, int *cachelinesize1,
+                                   int *associativity1, tWritePolicy *writepolicy1,
+                                   unsigned long int *cachesize2, int *cachelinesize2,
+                                   int *associativity2, tWritePolicy *writepolicy2,
+                                   unsigned long int *cachesize3, int *cachelinesize3,
+                                   int *associativity3, tWritePolicy *writepolicy3);
 
 /******************************************************************************
  *
@@ -131,13 +139,13 @@ extern void SAC_CS_CheckArguments (
  *
  *****************************************************************************/
 extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
-                               int cs_global, char *cshost, unsigned long int cachesize1,
-                               int cachelinesize1, int associativity1,
-                               tWritePolicy writepolicy1, unsigned long int cachesize2,
-                               int cachelinesize2, int associativity2,
-                               tWritePolicy writepolicy2, unsigned long int cachesize3,
-                               int cachelinesize3, int associativity3,
-                               tWritePolicy writepolicy3);
+                               int cs_global, char *cshost, char *csfile, char *csdir,
+                               unsigned long int cachesize1, int cachelinesize1,
+                               int associativity1, tWritePolicy writepolicy1,
+                               unsigned long int cachesize2, int cachelinesize2,
+                               int associativity2, tWritePolicy writepolicy2,
+                               unsigned long int cachesize3, int cachelinesize3,
+                               int associativity3, tWritePolicy writepolicy3);
 
 /******************************************************************************
  *
@@ -269,6 +277,8 @@ extern void (*SAC_CS_Stop) (void);
         tProfilingLevel profilinglevel = SAC_CS_LEVEL;                                   \
         int cs_global = SAC_DO_CACHESIM_GLOBAL;                                          \
         char *cshost = SAC_SET_CACHESIM_HOST;                                            \
+        char *csfile = SAC_SET_CACHESIM_FILE;                                            \
+        char *csdir = SAC_SET_CACHESIM_DIR;                                              \
                                                                                          \
         unsigned long int cachesize1 = SAC_SET_CACHE_1_SIZE;                             \
         int cachelinesize1 = SAC_SET_CACHE_1_LINE;                                       \
@@ -286,15 +296,17 @@ extern void (*SAC_CS_Stop) (void);
         tWritePolicy writepolicy3 = SAC_SET_CACHE_3_WRITEPOL;                            \
                                                                                          \
         SAC_CS_CheckArguments (__argc, __argv, &profilinglevel, &cs_global, &cshost,     \
-                               &cachesize1, &cachelinesize1, &associativity1,            \
-                               &writepolicy1, &cachesize2, &cachelinesize2,              \
-                               &associativity2, &writepolicy2, &cachesize3,              \
-                               &cachelinesize3, &associativity3, &writepolicy3);         \
+                               &csfile, &csdir, &cachesize1, &cachelinesize1,            \
+                               &associativity1, &writepolicy1, &cachesize2,              \
+                               &cachelinesize2, &associativity2, &writepolicy2,          \
+                               &cachesize3, &cachelinesize3, &associativity3,            \
+                               &writepolicy3);                                           \
                                                                                          \
-        SAC_CS_Initialize (SAC_MT_THREADS (), profilinglevel, cs_global, cshost,         \
-                           cachesize1, cachelinesize1, associativity1, writepolicy1,     \
-                           cachesize2, cachelinesize2, associativity2, writepolicy2,     \
-                           cachesize3, cachelinesize3, associativity3, writepolicy3);    \
+        SAC_CS_Initialize (SAC_MT_THREADS (), profilinglevel, cs_global, cshost, csfile, \
+                           csdir, cachesize1, cachelinesize1, associativity1,            \
+                           writepolicy1, cachesize2, cachelinesize2, associativity2,     \
+                           writepolicy2, cachesize3, cachelinesize3, associativity3,     \
+                           writepolicy3);                                                \
                                                                                          \
         SAC_CS_START ("#");                                                              \
     }
