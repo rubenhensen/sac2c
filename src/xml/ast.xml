@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.79  2004/11/25 19:09:29  mwe
+  InferDFMs added
+
   Revision 1.78  2004/11/25 18:47:48  sbs
   OBJDEF_NAME added
 
@@ -236,6 +239,24 @@
           <node name="Vardec" />
           <node name="Ids" />
           <node name="With" />
+	</travuser>
+      </traversal>
+      <traversal id="INFDFMS" name="Infer DataFlowMask Traversal" default="sons" include="InferDFMs.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Do" />
+	  <node name="Fundef" />
+	  <node name="Let" />
+	  <node name="Arg" />
+	  <node name="Code" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Cond" />
+          <node name="Icm" />
+          <node name="Withid" />
+          <node name="Cond" />
 	</travuser>
       </traversal>
     </general>
