@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/10/18 14:31:38  sbs
+ * CRTWRPid added
+ *
  * Revision 1.7  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -41,6 +44,7 @@ extern node *CRTWRPmodul (node *arg_node, node *arg_info);
 extern node *CRTWRPfundef (node *arg_node, node *arg_info);
 extern node *CRTWRPlet (node *arg_node, node *arg_info);
 extern node *CRTWRPap (node *arg_node, node *arg_info);
+extern node *CRTWRPid (node *arg_node, node *arg_info);
 extern node *CRTWRPNwithop (node *arg_node, node *arg_info);
 
 #endif /* _create_wrappers_h */
