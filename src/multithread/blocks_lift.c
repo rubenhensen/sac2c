@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/30 15:11:29  jhs
+ * fixed lifting
+ * .,
+ *
  * Revision 1.2  2000/03/29 16:08:51  jhs
  * Duplication of lifted function added.
  *
@@ -258,6 +262,7 @@ BLKLImt (node *arg_node, node *arg_info)
 
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
     FUNDEF_ATTRIB (new_fundef) = ST_call_mtlift;
+    FUNDEF_LIFTEDFROM (new_fundef) = fundef;
     FUNDEF_VARNO (new_fundef) = FUNDEF_VARNO (fundef); /* ####???? */
 
     FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
@@ -269,27 +274,7 @@ BLKLImt (node *arg_node, node *arg_info)
     FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
     FUNDEF_NEXT (fundef) = new_fundef;
 
-    MT_MASTERFUN (arg_node) = new_fundef;
-
-    /*
-     *  A comment in tree_basic.h says, that FUNDEF_NEEDOBJS is not needed here
-     *  anymore, so FUNDEF_LIFTEDFROM reuses the slot in the node-structure,
-     *  but DupTree does not know that, so it tries to copy the objs ... *<:[
-     *  While cursing the node-structure, we work around that too ...
-     *
-     *  ... we set LIFTEDFROM to NULL for the copyaction ...
-     */
-    FUNDEF_LIFTEDFROM (arg_node) = NULL;
-    new_fundef = DupNode (new_fundef);
-
-    FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
-    FUNDEF_NEXT (fundef) = new_fundef;
-
-    MT_WORKERFUN (arg_node) = new_fundef;
-
-    /* ... and finally we set LIFTEDFROM to the value needed. */
-    FUNDEF_LIFTEDFROM (MT_WORKERFUN (arg_node)) = fundef;
-    FUNDEF_LIFTEDFROM (MT_MASTERFUN (arg_node)) = fundef;
+    MT_FUNDEF (arg_node) = new_fundef;
 
     DBUG_PRINT ("BLKLI", ("end"));
     DBUG_RETURN (arg_node);
