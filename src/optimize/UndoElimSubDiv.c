@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.10  2005/02/16 14:11:09  mwe
+ * some doxygen comments added
+ *
  * Revision 1.9  2005/02/15 18:43:40  mwe
  * completely new implementation
  *
@@ -35,6 +38,15 @@
  * revision 1.1
  * date: 2003/04/26 20:58:44;  author: mwe;  state: Exp;
  * Initial revision
+ */
+
+/**
+ *
+ * @file UndoElimSubDiv.c
+ *
+ * @brief Replaces all occurences of primitive negation and reciprocal operators
+ *        introduced by ElimSubDiv with substraction and division.
+ *
  */
 
 #include <stdio.h>
@@ -103,6 +115,19 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn static node *CheckId(node *id, prf op)
+ *
+ * @brief checks if definiton of argument fullfils special conditions
+ *        (is an assignment with  primitive of type esd_rec or esd_neg)
+ *
+ * @param id argument of primitive operation
+ * @param op current prf
+ *
+ * @return
+ *
+ ************************************************************************/
 static node *
 CheckId (node *id, prf op)
 {
@@ -148,6 +173,17 @@ CheckId (node *id, prf op)
     DBUG_RETURN (result);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn static prf TogglePrf(prf op)
+ *
+ * @brief returns opposite primitive operator of op
+ *
+ * @param op primitive operator
+ *
+ * @return opposite primitive operator of op
+ *
+ ************************************************************************/
 static prf
 TogglePrf (prf op)
 {
@@ -183,6 +219,17 @@ TogglePrf (prf op)
     DBUG_RETURN (result);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn node *UESDdoUndoElimSubDiv(node *fundef)
+ *
+ * @brief startimng function of UndoElimSubDiv
+ *
+ * @param fundef
+ *
+ * @return
+ *
+ ************************************************************************/
 node *
 UESDdoUndoElimSubDiv (node *fundef)
 {
@@ -208,6 +255,18 @@ UESDdoUndoElimSubDiv (node *fundef)
     DBUG_RETURN (fundef);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn UESDblock(node *arg_node, info *arg_info)
+ *
+ * @brief traverses in instructions
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ ************************************************************************/
 node *
 UESDblock (node *arg_node, info *arg_info)
 {
@@ -220,6 +279,18 @@ UESDblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn UESDassign(node *arg_node, info *arg_info)
+ *
+ * @brief traverse in instruction and insert new assignments
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ ************************************************************************/
 node *
 UESDassign (node *arg_node, info *arg_info)
 {
@@ -254,6 +325,18 @@ UESDassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn UESDlet(node *arg_node, info *arg_info)
+ *
+ * @brief traverse in expr
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ ************************************************************************/
 node *
 UESDlet (node *arg_node, info *arg_info)
 {
@@ -268,6 +351,18 @@ UESDlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--****************************************************************-->
+ *
+ * @fn UESDprf(node *arg_node, info *arg_info)
+ *
+ * @brief replace negation and reciprocal operator
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ ************************************************************************/
 node *
 UESDprf (node *arg_node, info *arg_info)
 {

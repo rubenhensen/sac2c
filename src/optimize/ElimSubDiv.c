@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.14  2005/02/16 14:11:09  mwe
+ * some doxygen comments added
+ *
  * Revision 1.13  2005/02/15 18:42:59  mwe
  * complete new implementation
  *
@@ -52,6 +55,16 @@
  *revision 1.1
  *date: 2003/04/26 20:54:17;  author: mwe;  state: Exp;
  *Initial revision
+ */
+
+/**
+ *
+ * @file ElimSubDiv.c
+ *
+ * @brief replaces substration and division by introducing special
+ * primitive negation and reciprocal operator (F_esd_neg, F_esd_rec)
+ *
+ *
  */
 
 #include <stdio.h>
@@ -116,6 +129,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/**<!--**************************************************************-->
+ *
+ * @fn static prf TogglePrf(prf op)
+ *
+ * @brief returns opposite primitive operator of op
+ *
+ * @param op primitive operator
+ *
+ * @return opposite primitive operator of op
+ *
+ **********************************************************************/
 static prf
 TogglePrf (prf op)
 {
@@ -150,6 +174,17 @@ TogglePrf (prf op)
     DBUG_RETURN (result);
 }
 
+/**<!--*************************************************************-->
+ *
+ * @fn static ntype *GetTypeOfExpr(node *expr)
+ *
+ * @brief returns the type of param expr
+ *
+ * @param expr N_expr node
+ *
+ * @return type of param expr
+ *
+ **********************************************************************/
 static ntype *
 GetTypeOfExpr (node *expr)
 {
@@ -220,6 +255,17 @@ GetTypeOfExpr (node *expr)
     DBUG_RETURN (type);
 }
 
+/**<!--**************************************************************-->
+ *
+ * @fn node *ESDdoElimSubDiv(node *fundef)
+ *
+ * @brief start function for traversal
+ *
+ * @param fundef fundef node
+ *
+ * @return
+ *
+ **********************************************************************/
 node *
 ESDdoElimSubDiv (node *fundef)
 {
@@ -245,6 +291,18 @@ ESDdoElimSubDiv (node *fundef)
     DBUG_RETURN (fundef);
 }
 
+/**<!--***************************************************************-->
+ *
+ * @fn ESDblock(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ **********************************************************************/
 node *
 ESDblock (node *arg_node, info *arg_info)
 {
@@ -259,6 +317,18 @@ ESDblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***************************************************************-->
+ *
+ * @fn ESDassign(node *arg_node, info *arg_info)
+ *
+ * @brief traverses in instructions and inserts new assignments
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ **********************************************************************/
 node *
 ESDassign (node *arg_node, info *arg_info)
 {
@@ -287,6 +357,18 @@ ESDassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--*************************************************************-->
+ *
+ * @fn ESDlet(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ **********************************************************************/
 node *
 ESDlet (node *arg_node, info *arg_info)
 {
@@ -299,6 +381,19 @@ ESDlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--**************************************************************-->
+ *
+ * @fn ESDprf(node *arg_node, info *arg_info)
+ *
+ * @brief removes substartion and division, introduces negation
+ *        and reciprocal instead
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ **********************************************************************/
 node *
 ESDprf (node *arg_node, info *arg_info)
 {
