@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/26 01:48:03  dkr
+ * - reference counting for functions (FUNDEF_USED) works correctly now
+ * - FreeFundef never removes the fundef node but create a zombie now
+ * - FreeZombie(), RemoveAllZombies() added
+ *
  * Revision 3.20  2001/04/24 14:12:18  dkr
  * fixed a bug with FreeNode: inner NEXT-sons are freed now :-/
  *
@@ -94,7 +99,9 @@
  * For the time being modulnames are shared in the AST
  *  -> no free!
  */
-#undef FREE_MODNAMES
+#define FREE_MODNAMES 0
+
+#define NAMES_IN_TYPES 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -220,7 +227,7 @@ FreeOneTypes (types *fr)
         tmp = fr;
         fr = TYPES_NEXT (fr);
         if (TYPES_DIM (tmp) > 0) {
-            FreeShpseg (TYPES_SHPSEG (tmp));
+            TYPES_SHPSEG (tmp) = FreeShpseg (TYPES_SHPSEG (tmp));
         }
         FREE (TYPES_NAME (tmp));
         /*
@@ -335,7 +342,7 @@ FreeOneDeps (deps *fr)
         FREE (DEPS_NAME (tmp));
         FREE (DEPS_DECNAME (tmp));
         FREE (DEPS_LIBNAME (tmp));
-        FreeAllDeps (DEPS_SUB (tmp));
+        DEPS_SUB (tmp) = FreeAllDeps (DEPS_SUB (tmp));
 
         FREE (tmp);
     }
@@ -403,7 +410,7 @@ FreeAllStrings (strings *fr)
 nodelist *
 FreeNodelist (nodelist *list)
 {
-    nodelist *tmp;
+    nodelist *tmp = NULL;
 
     DBUG_ENTER ("FreeNodelist");
 
@@ -412,8 +419,6 @@ FreeNodelist (nodelist *list)
         list = NODELIST_NEXT (list);
         FREE (tmp);
     }
-
-    tmp = NULL;
 
     DBUG_RETURN (tmp);
 }
@@ -496,17 +501,19 @@ FreeAllAccess (access_t *fr)
 /*  General free-functions for node structures                              */
 /*--------------------------------------------------------------------------*/
 
-/*
- *  There are two general free functions for node structures:
+/******************************************************************************
  *
- *  FreeNode removes the given node and returns a pointer to the next
- *  node structure in a list of node structures.
- *  This function is suitable for all node types which form chained lists,
- *  e.g. fundef, objdef, typedef. For other node types a NULL is returned.
+ * Function:
+ *   node *FreeNode( node *free_node)
  *
- *  FreeTree removes the whole sub tree behind the given pointer.
+ * Description:
+ *   - if 'free_node' is not a N_fundef node:
+ *        Removes the given node and returns a pointer to the NEXT node if it
+ *        exists, NULL otherwise.
+ *   - if 'free_node' is a N_fundef node:
+ *        Transforms the given fundef into a zombie and returns it.
  *
- */
+ ******************************************************************************/
 
 node *
 FreeNode (node *free_node)
@@ -532,7 +539,18 @@ FreeNode (node *free_node)
     DBUG_RETURN (free_node);
 }
 
-/*--------------------------------------------------------------------------*/
+/******************************************************************************
+ *
+ * Function:
+ *   node *FreeTree( node *free_node)
+ *
+ * Description:
+ *   - if 'free_node' is not a N_fundef node:
+ *        Removes the whole sub tree behind the given pointer.
+ *   - if 'free_node' is a N_fundef node:
+ *        Transforms the whole fundef chain into zombies and returns it.
+ *
+ ******************************************************************************/
 
 node *
 FreeTree (node *free_node)
@@ -556,6 +574,110 @@ FreeTree (node *free_node)
     act_tab = store_tab;
 
     DBUG_RETURN ((node *)NULL);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FreeZombie( node *fundef)
+ *
+ * Description:
+ *   - if head of 'fundef' is a zombie:
+ *       Removes the head and returns the tail.
+ *   - if head if 'fundef' is not a zombie:
+ *       Returns 'fundef' in unmodified form.
+ *
+ ******************************************************************************/
+
+node *
+FreeZombie (node *fundef)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FreeZombie");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "FreeZombie() is suitable for N_fundef nodes only!");
+
+    if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
+        if (FUNDEF_USED (fundef) == USED_INACTIVE) {
+            DBUG_PRINT ("FREE", ("Removing N_fundef zombie"
+                                 " (FUNDEF_USED inactive) ..."));
+        } else {
+            DBUG_PRINT ("FREE", ("Removing N_fundef zombie"
+                                 " (FUNDEF_USED == %i) ...",
+                                 FUNDEF_USED (fundef)));
+
+            DBUG_ASSERT ((FUNDEF_USED (fundef) == 0), "N_fundef zombie is still in use!");
+        }
+
+        /*
+         * remove all the zombie data
+         */
+#if NAMES_IN_TYPES
+        if (FUNDEF_TYPES (fundef) != NULL) {
+#endif
+            FREE (FUNDEF_NAME (fundef));
+#if FREE_MODNAMES
+            FREE (FUNDEF_MOD (fundef));
+            FREE (FUNDEF_LINKMOD (fundef));
+#endif
+
+            FUNDEF_TYPES (fundef) = FreeOneTypes (FUNDEF_TYPES (fundef));
+#if NAMES_IN_TYPES
+        }
+#endif
+
+        tmp = fundef;
+        fundef = FUNDEF_NEXT (fundef);
+        FREE (tmp);
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *RemoveAllZombies( node *arg_node)
+ *
+ * Description:
+ *   Removes all zombies found the given N_modul node or N_fundef chain
+ *
+ ******************************************************************************/
+
+node *
+RemoveAllZombies (node *arg_node)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("RemoveAllZombies");
+
+    DBUG_ASSERT ((arg_node != NULL), "RemoveAllZombies called with argument NULL");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_modul:
+        if (MODUL_FUNS (arg_node) != NULL) {
+            MODUL_FUNS (arg_node) = RemoveAllZombies (MODUL_FUNS (arg_node));
+        }
+        ret_node = arg_node;
+        break;
+
+    case N_fundef:
+        if (MODUL_FUNS (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = RemoveAllZombies (FUNDEF_NEXT (arg_node));
+        }
+        ret_node = FreeZombie (arg_node);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "RemoveAllZombies() is suitable for N_modul and"
+                          " N_fundef nodes only!");
+        ret_node = NULL;
+        break;
+    }
+
+    DBUG_RETURN (ret_node);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -596,11 +718,13 @@ FreeModul (node *arg_node, node *arg_info)
     FREETRAV (MODUL_FOLDFUNS (arg_node));
     FREETRAV (MODUL_STORE_IMPORTS (arg_node));
 
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
     FREE (MODUL_NAME (arg_node));
 #endif
 
     DBUG_PRINT ("FREE", ("Removing N_modul node ..."));
+
+    arg_node = RemoveAllZombies (arg_node);
 
     FREE (arg_node);
 
@@ -622,7 +746,7 @@ FreeModdec (node *arg_node, node *arg_info)
     FREETRAV (MODDEC_OWN (arg_node));
 
     FREE (MODDEC_NAME (arg_node));
-    FreeAllDeps (MODDEC_LINKWITH (arg_node));
+    MODDEC_LINKWITH (arg_node) = FreeAllDeps (MODDEC_LINKWITH (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_moddec node ..."));
 
@@ -646,7 +770,7 @@ FreeClassdec (node *arg_node, node *arg_info)
     FREETRAV (CLASSDEC_OWN (arg_node));
 
     FREE (CLASSDEC_NAME (arg_node));
-    FreeAllDeps (CLASSDEC_LINKWITH (arg_node));
+    CLASSDEC_LINKWITH (arg_node) = FreeAllDeps (CLASSDEC_LINKWITH (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_classdec node ..."));
 
@@ -671,7 +795,7 @@ FreeSib (node *arg_node, node *arg_info)
     FREETRAV (SIB_FUNS (arg_node));
 
     FREE (SIB_NAME (arg_node));
-    FreeAllDeps (SIB_LINKWITH (arg_node));
+    SIB_LINKWITH (arg_node) = FreeAllDeps (SIB_LINKWITH (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_sib node ..."));
 
@@ -695,10 +819,10 @@ FreeImplist (node *arg_node, node *arg_info)
     tmp = FREECONT (IMPLIST_NEXT (arg_node));
 
     FREE (IMPLIST_NAME (arg_node));
-    FreeAllIds (IMPLIST_ITYPES (arg_node));
-    FreeAllIds (IMPLIST_ETYPES (arg_node));
-    FreeAllIds (IMPLIST_OBJS (arg_node));
-    FreeAllIds (IMPLIST_FUNS (arg_node));
+    IMPLIST_ITYPES (arg_node) = FreeAllIds (IMPLIST_ITYPES (arg_node));
+    IMPLIST_ETYPES (arg_node) = FreeAllIds (IMPLIST_ETYPES (arg_node));
+    IMPLIST_OBJS (arg_node) = FreeAllIds (IMPLIST_OBJS (arg_node));
+    IMPLIST_FUNS (arg_node) = FreeAllIds (IMPLIST_FUNS (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_implist node ..."));
 
@@ -745,10 +869,10 @@ FreeTypedef (node *arg_node, node *arg_info)
     tmp = FREECONT (TYPEDEF_NEXT (arg_node));
 
     FREE (TYPEDEF_NAME (arg_node));
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
     FREE (TYPEDEF_MOD (arg_node));
 #endif
-    FreeAllTypes (TYPEDEF_TYPE (arg_node));
+    TYPEDEF_TYPE (arg_node) = FreeAllTypes (TYPEDEF_TYPE (arg_node));
     FREE (TYPEDEF_COPYFUN (arg_node));
     FREE (TYPEDEF_FREEFUN (arg_node));
 
@@ -777,18 +901,18 @@ FreeObjdef (node *arg_node, node *arg_info)
     FREETRAV (OBJDEF_PRAGMA (arg_node));
 
     FREE (OBJDEF_NAME (arg_node));
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
     FREE (OBJDEF_MOD (arg_node));
     FREE (OBJDEF_LINKMOD (arg_node));
 #endif
     FREE (OBJDEF_VARNAME (arg_node));
-    FreeOneTypes (OBJDEF_TYPE (arg_node));
+    OBJDEF_TYPE (arg_node) = FreeOneTypes (OBJDEF_TYPE (arg_node));
 
     /*
      * The nodes contained in OBJDEF_NEEDOBJS are all(?) shared.
      * Therefore, please do not free this list!
      *
-     * FreeNodelist( OBJDEF_NEEDOBJS( arg_node));
+     * OBJDEF_NEEDOBJS( arg_node) = FreeNodelist( OBJDEF_NEEDOBJS( arg_node));
      */
 
     DBUG_PRINT ("FREE", ("Removing N_objdef node ..."));
@@ -803,52 +927,87 @@ FreeObjdef (node *arg_node, node *arg_info)
 node *
 FreeFundef (node *arg_node, node *arg_info)
 {
-    node *tmp = NULL;
-
     DBUG_ENTER ("FreeFundef");
 
     DBUG_PRINT ("FREE",
                 ("Removing contents of N_fundef node %s ...", ItemName (arg_node)));
 
-    tmp = FREECONT (FUNDEF_NEXT (arg_node));
+    FUNDEF_NEXT (arg_node) = FREECONT (FUNDEF_NEXT (arg_node));
 
-    if (FUNDEF_ICM (arg_node) != NULL)
-        if (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm) {
-            /*
-             *  FUNDEF_ICM may not be freed without precondition, because it's
-             *  stored on the same real son node as FUNDEF_RETURN.
-             */
-            FREETRAV (FUNDEF_ICM (arg_node));
-        }
-
-    FREETRAV (FUNDEF_BODY (arg_node));
-    FREETRAV (FUNDEF_ARGS (arg_node));
-
-    if (FUNDEF_PRAGMA (arg_node) != NULL) {
-        FREETRAV (FUNDEF_PRAGMA (arg_node));
-    }
-
-    FREE (FUNDEF_NAME (arg_node));
-#ifdef FREE_MODNAMES
-    FREE (FUNDEF_MOD (arg_node));
-    FREE (FUNDEF_LINKMOD (arg_node));
+#if NAMES_IN_TYPES
+    /*
+     * CAUTION: FUNDEF_STATUS is part of FUNDEF_TYPES  8-((
+     */
+    DBUG_ASSERT ((FUNDEF_TYPES (arg_node) != NULL), "FUNDEF_TYPES not found!");
 #endif
 
-    if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
-        FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
+    if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
+        DBUG_PRINT ("FREE", ("N_fundef node is already a zombie"
+                             " (FUNDEF_USED == %i) ...",
+                             FUNDEF_USED (arg_node)));
+    } else {
+
+        if (FUNDEF_ICM (arg_node) != NULL) {
+            if (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm) {
+                /*
+                 *  FUNDEF_ICM may not be freed without precondition, because it's
+                 *  stored on the same real son node as FUNDEF_RETURN.
+                 */
+                FREETRAV (FUNDEF_ICM (arg_node));
+            }
+        }
+
+        FREETRAV (FUNDEF_BODY (arg_node));
+        FREETRAV (FUNDEF_ARGS (arg_node));
+
+        if (FUNDEF_PRAGMA (arg_node) != NULL) {
+            FREETRAV (FUNDEF_PRAGMA (arg_node));
+        }
+
+        FREEMASK (FUNDEF_MASK);
+
+        if (FUNDEF_DFM_BASE (arg_node) != NULL) {
+            FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+        }
+
+        if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
+            FUNDEF_NEEDOBJS (arg_node) = FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
+        }
+
+        /*
+         * If  ((FUNDEF_USED > 0) || (FUNDEF_USED == USED_INACTIVE))  is hold the
+         * fundef node may still be referenced somewhere in the AST by a N_ap node.
+         * When removing this N_ap node via FreeAp() a legal AP_FUNDEF pointer is
+         * needed for checking the reference counter of the function.
+         * Therefore, the fundef must be left in the AST as zombie!
+         *
+         * For consistency reasons the fundef is *never* removed but always left in
+         * the AST as zombie, even if  (FUNDEF_USED == 0)  is hold.
+         *
+         * For removing zombies one of the (top-level) functions
+         *   FreeZombie():
+         *     removes the head of a given N_fundef chain if it is a zombie
+         *   RemoveAllZombies():
+         *     removes all zombies found the given N_modul node or N_fundef chain
+         * should be used.
+         *
+         * The following data is left for the zombie:
+         *   FUNDEF_TYPES (needed for FUNDEF_NAME !!!!)
+         *   FUNDEF_NAME, FUNDEF_MOD, FUNDEF_LINKMOD
+         */
+        if (FUNDEF_USED (arg_node) == USED_INACTIVE) {
+            DBUG_PRINT ("FREE", ("Leaving N_fundef node as a zombie in the AST"
+                                 " (FUNDEF_USED inactive) ..."));
+        } else {
+            DBUG_PRINT ("FREE", ("Leaving N_fundef node as a zombie in the AST"
+                                 " (FUNDEF_USED == %i) ...",
+                                 FUNDEF_USED (arg_node)));
+        }
+
+        FUNDEF_STATUS (arg_node) = ST_zombiefun;
     }
 
-    FREEMASK (FUNDEF_MASK);
-
-    if (FUNDEF_DFM_BASE (arg_node) != NULL) {
-        FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
-    }
-
-    DBUG_PRINT ("FREE", ("Removing N_fundef node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (arg_node);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -868,7 +1027,7 @@ FreeArg (node *arg_node, node *arg_info)
 
     FREE (ARG_NAME (arg_node));
     FREETRAV (ARG_AVIS (arg_node));
-    FreeOneTypes (ARG_TYPE (arg_node));
+    ARG_TYPE (arg_node) = FreeOneTypes (ARG_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_arg node ..."));
 
@@ -890,8 +1049,8 @@ FreeBlock (node *arg_node, node *arg_info)
 
     FREETRAV (BLOCK_INSTR (arg_node));
     FREETRAV (BLOCK_VARDEC (arg_node));
-    FreeNodelist (BLOCK_NEEDFUNS (arg_node));
-    FreeNodelist (BLOCK_NEEDTYPES (arg_node));
+    BLOCK_NEEDFUNS (arg_node) = FreeNodelist (BLOCK_NEEDFUNS (arg_node));
+    BLOCK_NEEDTYPES (arg_node) = FreeNodelist (BLOCK_NEEDTYPES (arg_node));
     FREEMASK (BLOCK_MASK);
     FREE (BLOCK_CACHESIM (arg_node));
     FREETRAV (BLOCK_SSACOUNTER (arg_node));
@@ -919,7 +1078,7 @@ FreeVardec (node *arg_node, node *arg_info)
 
     FREE (VARDEC_NAME (arg_node));
     FREETRAV (VARDEC_AVIS (arg_node));
-    FreeOneTypes (VARDEC_TYPE (arg_node));
+    VARDEC_TYPE (arg_node) = FreeOneTypes (VARDEC_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_vardec node ..."));
 
@@ -971,7 +1130,7 @@ FreeLet (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_let node ..."));
 
     FREETRAV (LET_EXPR (arg_node));
-    FreeAllIds (LET_IDS (arg_node));
+    LET_IDS (arg_node) = FreeAllIds (LET_IDS (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_let node ..."));
 
@@ -992,7 +1151,7 @@ FreeCast (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_cast node ..."));
 
     FREETRAV (CAST_EXPR (arg_node));
-    FreeOneTypes (CAST_TYPE (arg_node));
+    CAST_TYPE (arg_node) = FreeOneTypes (CAST_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_cast node ..."));
 
@@ -1036,8 +1195,8 @@ FreeCond (node *arg_node, node *arg_info)
     FREETRAV (COND_THEN (arg_node));
     FREETRAV (COND_ELSE (arg_node));
 
-    FreeAllIds (COND_THENVARS (arg_node));
-    FreeAllIds (COND_ELSEVARS (arg_node));
+    COND_THENVARS (arg_node) = FreeAllIds (COND_THENVARS (arg_node));
+    COND_ELSEVARS (arg_node) = FreeAllIds (COND_ELSEVARS (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_cond node ..."));
 
@@ -1060,8 +1219,8 @@ FreeDo (node *arg_node, node *arg_info)
     FREETRAV (DO_BODY (arg_node));
     FREETRAV (DO_COND (arg_node));
 
-    FreeAllIds (DO_USEVARS (arg_node));
-    FreeAllIds (DO_DEFVARS (arg_node));
+    DO_USEVARS (arg_node) = FreeAllIds (DO_USEVARS (arg_node));
+    DO_DEFVARS (arg_node) = FreeAllIds (DO_DEFVARS (arg_node));
 
     FREEMASK (DO_MASK);
 
@@ -1086,8 +1245,8 @@ FreeWhile (node *arg_node, node *arg_info)
     FREETRAV (WHILE_BODY (arg_node));
     FREETRAV (WHILE_COND (arg_node));
 
-    FreeAllIds (WHILE_USEVARS (arg_node));
-    FreeAllIds (WHILE_DEFVARS (arg_node));
+    WHILE_USEVARS (arg_node) = FreeAllIds (WHILE_USEVARS (arg_node));
+    WHILE_DEFVARS (arg_node) = FreeAllIds (WHILE_DEFVARS (arg_node));
 
     FREEMASK (WHILE_MASK);
 
@@ -1103,6 +1262,7 @@ FreeWhile (node *arg_node, node *arg_info)
 node *
 FreeAp (node *arg_node, node *arg_info)
 {
+    node *fundef;
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeAp");
@@ -1111,28 +1271,61 @@ FreeAp (node *arg_node, node *arg_info)
 
     FREETRAV (AP_ARGS (arg_node));
     FREE (AP_NAME (arg_node));
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
     FREE (AP_MOD (arg_node));
 #endif
 
+    fundef = AP_FUNDEF (arg_node);
+
     /* decrement used counter */
-    if ((AP_FUNDEF (arg_node) != NULL)
-        && (FUNDEF_USED (AP_FUNDEF (arg_node)) != USED_INACTIVE)) {
-        (FUNDEF_USED (AP_FUNDEF (arg_node)))--;
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) >= 0),
-                     "FUNDEF_USED dropped below 0");
+    if (fundef != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                     "illegal value in AP_FUNDEF found!");
 
-        if (compiler_phase < PH_precompile) {
-            /* remove assignment from external assignment list) */
-            DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
-                         "missing assignment node when freeing ap node");
+        DBUG_ASSERT (((!FUNDEF_IS_LACFUN (fundef))
+                      || (FUNDEF_USED (fundef) != USED_INACTIVE)),
+                     "FUNDEF_USED must be active for LaC functions!");
 
-            FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node))
-              = NodeListDelete (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node)),
-                                INFO_FREE_ASSIGN (arg_info), FALSE);
+        /*
+         * A recursive call in the body of a special function is *not*
+         * counted in FUNDEF_USED !!!
+         */
+        if (FUNDEF_IS_LOOPFUN (fundef) &&
+            /* caution: INT_ASSIGN may be NULL already!!! */
+            (FUNDEF_INT_ASSIGN (fundef) != NULL)
+            && (arg_node == ASSIGN_RHS (FUNDEF_INT_ASSIGN (fundef)))) {
+            FUNDEF_INT_ASSIGN (fundef) = NULL;
+        } else if (FUNDEF_USED (fundef) != USED_INACTIVE) {
+            (FUNDEF_USED (fundef))--;
 
-            DBUG_PRINT ("FREE", ("decrementing used counter to %d",
-                                 FUNDEF_USED (AP_FUNDEF (arg_node))));
+            DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0");
+
+            DBUG_PRINT ("FREE",
+                        ("decrementing used counter to %d", FUNDEF_USED (fundef)));
+
+            if (FUNDEF_IS_LACFUN (fundef)) {
+                /* remove assignment from external assignment list */
+                DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
+                             "INFO_FREE_ASSIGN is needed when removing an"
+                             " application of a special loop-function!");
+
+                DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef),
+                                            INFO_FREE_ASSIGN (arg_info))
+                              != NULL),
+                             "Assignment not found in FUNDEF_EXT_ASSIGNS!");
+
+                FUNDEF_EXT_ASSIGNS (fundef)
+                  = NodeListDelete (FUNDEF_EXT_ASSIGNS (fundef),
+                                    INFO_FREE_ASSIGN (arg_info), FALSE);
+            }
+
+            if (FUNDEF_USED (fundef) == 0) {
+                /*
+                 * referenced fundef no longer used
+                 *  -> transform it into a zombie
+                 */
+                fundef = FreeNode (fundef);
+            }
         }
     }
 
@@ -1179,7 +1372,7 @@ FreeArray (node *arg_node, node *arg_info)
     FREETRAV (ARRAY_AELEMS (arg_node));
 
     if (ARRAY_TYPE (arg_node) != NULL) {
-        FreeOneTypes (ARRAY_TYPE (arg_node));
+        ARRAY_TYPE (arg_node) = FreeOneTypes (ARRAY_TYPE (arg_node));
     }
 
     if (ARRAY_ISCONST (arg_node) && ARRAY_VECLEN (arg_node) > 0)
@@ -1224,7 +1417,7 @@ FreeId (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_id node %s ...", ID_NAME (arg_node)));
 
     FREE (ID_NAME (arg_node));
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
     FREE (ID_MOD (arg_node));
 #endif
 
@@ -1415,8 +1608,8 @@ FreePragma (node *arg_node, node *arg_info)
     FREE (PRAGMA_LINKSIGN (arg_node));
     FREE (PRAGMA_READONLY (arg_node));
     FREE (PRAGMA_REFCOUNTING (arg_node));
-    FreeAllIds (PRAGMA_EFFECT (arg_node));
-    FreeAllIds (PRAGMA_TOUCH (arg_node));
+    PRAGMA_EFFECT (arg_node) = FreeAllIds (PRAGMA_EFFECT (arg_node));
+    PRAGMA_TOUCH (arg_node) = FreeAllIds (PRAGMA_TOUCH (arg_node));
     FREE (PRAGMA_LINKNAME (arg_node));
     FREE (PRAGMA_COPYFUN (arg_node));
     FREE (PRAGMA_FREEFUN (arg_node));
@@ -1424,10 +1617,10 @@ FreePragma (node *arg_node, node *arg_info)
 
     FREETRAV (PRAGMA_WLCOMP_APS (arg_node));
 
-    /*
-    FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
-    FREETRAV(PRAGMA_NEEDFUNS(arg_node));
-    */
+#if 0
+  PRAGMA_NEEDTYPES(arg_node) = FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
+  FREETRAV(PRAGMA_NEEDFUNS(arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_pragma node ..."));
 
@@ -1646,8 +1839,8 @@ FreeNWithID (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeNWithID");
     DBUG_PRINT ("FREE", ("Removing N_Nwithid node ..."));
 
-    FreeAllIds (NWITHID_IDS (arg_node));
-    FreeAllIds (NWITHID_VEC (arg_node));
+    NWITHID_IDS (arg_node) = FreeAllIds (NWITHID_IDS (arg_node));
+    NWITHID_VEC (arg_node) = FreeAllIds (NWITHID_VEC (arg_node));
 
     FREE (arg_node);
 
@@ -1694,7 +1887,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
      */
     if (WO_foldfun == NWITHOP_TYPE (arg_node)) {
         FREE (NWITHOP_FUN (arg_node));
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
         FREE (NWITHOP_MOD (arg_node));
 #endif
     }
@@ -1725,7 +1918,7 @@ FreeNCode (node *arg_node, node *arg_info)
 
     if (NCODE_WLAA_INFO (arg_node) != NULL) {
         NCODE_WLAA_ACCESS (arg_node) = FreeAllAccess (NCODE_WLAA_ACCESS (arg_node));
-        FreeNode (NCODE_WLAA_INFO (arg_node));
+        NCODE_WLAA_INFO (arg_node) = FreeNode (NCODE_WLAA_INFO (arg_node));
     }
 
     FREE (arg_node);
@@ -1985,11 +2178,11 @@ FreeCWrapper (node *arg_node, node *arg_info)
     tmp = FREECONT (CWRAPPER_NEXT (arg_node));
 
     FREE (CWRAPPER_NAME (arg_node));
-#ifdef FREE_MODNAMES
+#if FREE_MODNAMES
     FREE (CWRAPPER_MOD (arg_node));
 #endif
 
-    FreeNodelist (CWRAPPER_FUNS (arg_node));
+    CWRAPPER_FUNS (arg_node) = FreeNodelist (CWRAPPER_FUNS (arg_node));
 
     FREE (arg_node);
 
@@ -2029,7 +2222,7 @@ FreeCSEinfo (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing contents of N_cseinfo node ..."));
 
-    FREECONT (CSEINFO_NEXT (arg_node));
+    tmp = FREECONT (CSEINFO_NEXT (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_cseinfo node ..."));
 
@@ -2091,7 +2284,7 @@ FreeAvis (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_avis node ..."));
 
     if (AVIS_SSACONST (arg_node) != NULL) {
-        COFreeConstant (AVIS_SSACONST (arg_node));
+        AVIS_SSACONST (arg_node) = COFreeConstant (AVIS_SSACONST (arg_node));
     }
 
     if (AVIS_SSASTACK (arg_node) != NULL) {
@@ -2138,8 +2331,9 @@ FreePrf2 (node *arg_node, int arg_no)
     tmp1 = arg_node->node[0];
     i = 0;
     while (NULL != tmp1) {
-        if (i != arg_no)
-            FreeTree (tmp1->node[0]);
+        if (i != arg_no) {
+            tmp1->node[0] = FreeTree (tmp1->node[0]);
+        }
         tmp2 = tmp1;
         tmp1 = tmp1->node[1];
         FREE (tmp2);
