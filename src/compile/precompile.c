@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/04/20 00:06:34  dkr
+ * changed PrecLet, PrecSPMD:
+ *   used INFO_PREC_LETIDS to build let vars for SPMD_AP_LET
+ *
  * Revision 1.53  1998/04/17 19:21:36  dkr
  * lifting of spmd-fun is performed here now
  *
@@ -487,50 +491,6 @@ SpmdFunName (char *name)
 /******************************************************************************
  *
  * function:
- *   node *FindVardec(int varno, node *fundef)
- *
- * description:
- *   returns the vardec of var number 'varno' (called by 'PrecSPMD')
- *
- ******************************************************************************/
-
-node *
-FindVardec (int varno, node *fundef)
-{
-    node *tmp, *result = NULL;
-
-    DBUG_ENTER ("FindVardec");
-
-    if (result == NULL) {
-        tmp = FUNDEF_ARGS (fundef);
-        while (tmp != NULL) {
-            if (ARG_VARNO (tmp) == varno) {
-                result = tmp;
-                break;
-            } else {
-                tmp = ARG_NEXT (tmp);
-            }
-        }
-    }
-
-    if (result == NULL) {
-        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
-        while (tmp != NULL) {
-            if (VARDEC_VARNO (tmp) == varno) {
-                result = tmp;
-                break;
-            } else {
-                tmp = VARDEC_NEXT (tmp);
-            }
-        }
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *PrecModul(node *arg_node, node *arg_info)
  *
  * description:
@@ -686,7 +646,6 @@ PrecFundef (node *arg_node, node *arg_info)
     /*
      *  The body of an imported inline function is removed.
      */
-
     if ((FUNDEF_STATUS (arg_node) == ST_imported)
         && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
         FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
@@ -696,14 +655,12 @@ PrecFundef (node *arg_node, node *arg_info)
     /*
      *  The inline flag is set to 0
      */
-
     FUNDEF_INLINE (arg_node) = 0;
 
     /*
      *  The function body is traversed in order to remove artificial return
      *  values and parameters of function applications.
      */
-
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_ASSERT ((FUNDEF_RETURN (arg_node) != NULL)
                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_return),
@@ -714,7 +671,6 @@ PrecFundef (node *arg_node, node *arg_info)
          * precompiler. This is done to check consistency of the syntax
          * tree for further compilation steps.
          */
-
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -723,7 +679,6 @@ PrecFundef (node *arg_node, node *arg_info)
      *  All function bodies must be traversed before arguments and
      *  return values of functions are modified.
      */
-
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -733,7 +688,6 @@ PrecFundef (node *arg_node, node *arg_info)
      *  and the number of reference parameters (including global objects)
      *  is counted and stored in 'cnt_artificial'
      */
-
     INFO_PREC_CNT_ARTIFICIAL (arg_info) = 0;
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
@@ -746,7 +700,6 @@ PrecFundef (node *arg_node, node *arg_info)
      *  structure and not as part of the fundef node as in the virtual
      *  syntax tree.
      */
-
     if (INFO_PREC_CNT_ARTIFICIAL (arg_info) > 0) {
         keep_name = FUNDEF_NAME (arg_node);
         keep_mod = FUNDEF_MOD (arg_node);
@@ -778,7 +731,6 @@ PrecFundef (node *arg_node, node *arg_info)
      *  All other functions are renamed in order to have separate name
      *  spaces for different modules.
      */
-
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
         FUNDEF_BODY (arg_node) = InsertObjInits (FUNDEF_BODY (arg_node),
                                                  MODUL_OBJS (INFO_PREC_MODUL (arg_info)));
@@ -916,21 +868,18 @@ PrecAssign (node *arg_node, node *arg_info)
  *  arguments     : 1) N_let node
  *                  2) arg_info unused
  *  description   : removes all artificial identifiers on the left hand
- *                  side of a let.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : FreeOneIds, Trav
- *  macros        : TREE, DBUG
- *
- *  remarks       :
+ *                   side of a let.
+ *                  collects the remaining let ids in INFO_PREC_LETIDS(arg_info)
+ *                   if lied within a SPMD-region.
+ *  remarks       : this let lies within a SPMD-region if and only if
+ *                   (INFO_PREC_LETIDS(arg_info) != NULL).
  *
  */
 
 node *
 PrecLet (node *arg_node, node *arg_info)
 {
-    ids *let_ids;
-    node *expr;
+    ids *let_ids, *new_let_ids, *tmp;
 
     DBUG_ENTER ("PrecLet");
 
@@ -942,11 +891,20 @@ PrecLet (node *arg_node, node *arg_info)
 
     LET_IDS (arg_node) = let_ids;
 
-    expr = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    LET_EXPR (arg_node) = expr;
-    if (expr == NULL) {
+    if (LET_EXPR (arg_node) == NULL) {
         arg_node = FreeTree (arg_node);
+    } else {
+        if ((let_ids != NULL) && (INFO_PREC_LETIDS (arg_info) != NULL)) {
+            /* insert let ids at head of INFO_PREC_LETIDS(arg_info) */
+            tmp = new_let_ids = DupIds (let_ids, NULL);
+            while (IDS_NEXT (tmp) != NULL) {
+                tmp = IDS_NEXT (tmp);
+            }
+            IDS_NEXT (tmp) = INFO_PREC_LETIDS (arg_info);
+            INFO_PREC_LETIDS (arg_info) = new_let_ids;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1183,7 +1141,8 @@ PrecId (node *arg_node, node *arg_info)
  *   node *PrecSPMD(node *arg_node, node *arg_info)
  *
  * description:
- *   precompile of a N_spmd node: just traverses the son
+ *   precompiles a N_spmd node:
+ *     computes SPMD_FUNDEC, SPMD_VARDEC, SPMD_AP_LET
  *
  ******************************************************************************/
 
@@ -1198,11 +1157,17 @@ PrecSPMD (node *arg_node, node *arg_info)
     node *retexprs, *retexpr, *last_retexpr;
     types *rettypes, *rettype, *last_rettype;
     node *ret, *fundec, *ap;
-    char *name;
+    char *name, *let_name;
+    ids *curr_let;
     int varno, i;
 
     DBUG_ENTER ("PrecSPMD");
 
+    DBUG_ASSERT ((INFO_PREC_LETIDS (arg_info) == NULL), "useless LETIDS info found");
+    INFO_PREC_LETIDS (arg_info) = (ids *)arg_node; /* != NULL */
+    /*
+     * precompile SPMD-region / compute INFO_PREC_LETIDS(arg_info)
+     */
     SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
 
     /*
@@ -1271,13 +1236,15 @@ PrecSPMD (node *arg_node, node *arg_info)
         }
 
         if ((SPMD_DEFVARS (arg_node))[i] > 0) {
+            DBUG_ASSERT ((SPMD_USEDVARS (arg_node)[i] == 0),
+                         "possibly data dependence in SPMD-region found");
+            DBUG_ASSERT ((SPMD_DEFVARS (arg_node)[i] == 1),
+                         "possibly data dependence in SPMD-region found");
 
             old_vardec = FindVardec (i, fundefs);
 
             if (NODE_TYPE (old_vardec) == N_vardec) {
-                let = MakeIds (StringCopy (VARDEC_NAME (old_vardec)), NULL,
-                               VARDEC_STATUS (old_vardec));
-                IDS_ATTRIB (let) = VARDEC_ATTRIB (old_vardec);
+                let_name = VARDEC_NAME (old_vardec);
 
                 if ((SPMD_USEDVARS (arg_node))[i] > 0) {
                     /* the current var is an arg of the conregion-fun */
@@ -1293,9 +1260,7 @@ PrecSPMD (node *arg_node, node *arg_info)
 
                 rettype = DuplicateTypes (VARDEC_TYPE (old_vardec), 1);
             } else {
-                let = MakeIds (StringCopy (ARG_NAME (old_vardec)), NULL,
-                               ARG_STATUS (old_vardec));
-                IDS_ATTRIB (let) = ARG_ATTRIB (old_vardec);
+                let_name = ARG_NAME (old_vardec);
 
                 if ((SPMD_USEDVARS (arg_node))[i] > 0) {
                     /* the current var is an arg of the conregion-fun */
@@ -1316,9 +1281,30 @@ PrecSPMD (node *arg_node, node *arg_info)
                 rettype = DuplicateTypes (ARG_TYPE (old_vardec), 1);
             }
 
-            IDS_VARDEC (let) = old_vardec;
-            /* dummy value --- do not change rc after aplication: */
-            IDS_REFCNT (let) = GET_ZERO_REFCNT (old_vardec) + 1;
+            /*
+             * find let-ids with name 'let_name' in 'INFO_PREC_LETIDS(arg_info)'
+             *  and extract it from the chain.
+             */
+            curr_let = INFO_PREC_LETIDS (arg_info);
+            DBUG_ASSERT (((curr_let != NULL) && (curr_let != (ids *)arg_node)),
+                         "let ids not found");
+            if (strcmp (IDS_NAME (curr_let), let_name) == 0) {
+                INFO_PREC_LETIDS (arg_info) = IDS_NEXT (curr_let);
+                let = curr_let;
+            } else {
+                DBUG_ASSERT (((IDS_NEXT (curr_let) != NULL)
+                              && (IDS_NEXT (curr_let) != (ids *)arg_node)),
+                             "let ids not found");
+                while (strcmp (IDS_NAME (IDS_NEXT (curr_let)), let_name) != 0) {
+                    curr_let = IDS_NEXT (curr_let);
+                    DBUG_ASSERT (((IDS_NEXT (curr_let) != NULL)
+                                  && (IDS_NEXT (curr_let) != (ids *)arg_node)),
+                                 "let ids not found");
+                }
+                let = IDS_NEXT (curr_let);
+                IDS_NEXT (curr_let) = IDS_NEXT (IDS_NEXT (curr_let));
+            }
+            IDS_NEXT (let) = NULL;
 
             if (localvar != NULL) {
                 VARDEC_TYPEDEF (localvar) = NULL;
@@ -1360,6 +1346,14 @@ PrecSPMD (node *arg_node, node *arg_info)
             }
         }
     }
+
+    /*
+     * remove remaining let vars in INFO_PREC_LETIDS(arg_info)
+     */
+    while (INFO_PREC_LETIDS (arg_info) != (ids *)arg_node) {
+        INFO_PREC_LETIDS (arg_info) = FreeOneIds (INFO_PREC_LETIDS (arg_info));
+    }
+    INFO_PREC_LETIDS (arg_info) = NULL;
 
     ret = MakeReturn (retexprs);
     RETURN_INWITH (ret) = 0;
