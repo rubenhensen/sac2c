@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/01/05 11:51:25  sbs
+ * Revision 1.8  1995/01/05 12:44:39  sbs
+ * TIF macro inserted
+ *
+ * Revision 1.7  1995/01/05  11:51:25  sbs
  * MOD_NAME_CON macro inserted for mod-name generation for
  * types and functions.
  *
@@ -37,7 +40,14 @@
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
-char *type_string[] = {"int", "float", "bool", "void *"}; /* strings for primitve types */
+/* strings for primitve types */
+#define TYP_IF(n, d, p) p
+
+char *type_string[] = {
+#include "type_info.mac"
+};
+
+#undef TYP_IF
 
 /*
  *
