@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.37  2004/11/24 11:18:53  sah
+  added rsp
+
   Revision 1.36  2004/11/24 10:51:07  mwe
   DistributiveLaw added
 
@@ -204,6 +207,15 @@
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
       <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
     </general>
+    <phase id="scanparse" name="Parsing input file">
+      <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolve_pragma.h">
+        <user>
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Ret" />
+	</user>
+      </traversal>
+    </phase>
     <phase id="typecheck" name="Running type inference system">
     </phase>
     <phase id="export" name="Exporting symbols">
