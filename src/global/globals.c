@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/09/27 10:13:09  ktr
+ * Reactivated WLS
+ *
  * Revision 3.63  2004/09/21 12:39:16  sah
  * version identifier now contains newast
  * if NEW_AST flag set.
@@ -549,29 +552,26 @@ bool patch_with = FALSE;
  * enumeration type or bit-field as soon as possible!!
  */
 #ifdef PRODUCTION
-unsigned int optimize
-  = OPT_ALL
-    /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
-                       /* See comment above !! */
-    /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
-                       /* See comment above !! */
-    & (~OPT_MTI)       /* MT2-based optimization, does not work. */
-    & (~OPT_APL)       /* Only rudimentary implementation exists. */
-    & (~OPT_TSI)       /* Bugs to be fixed. */
-    & (~OPT_WLFS)      /* Not yet full operational */
-    & (~OPT_WLS);      /* Temporarily switched off until bug #41 is fixed. */
-#else                  /* PRODUCTION */
-unsigned int optimize
-  = OPT_ALL
-    /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
-                       /* See comment above !! */
-    /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
-                       /* See comment above !! */
-    & (~OPT_MTI)       /* MT2-based optimization, does not work. */
-    & (~OPT_APL)       /* Only rudimentary implementation exists. */
-    & (~OPT_TSI)       /* Bugs to be fixed. */
-    & (~OPT_WLFS)      /* Not yet full operational */
-    & (~OPT_WLS);      /* Temporarily switched off until bug #41 is fixed. */
+unsigned int optimize = OPT_ALL
+                        /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
+                                           /* See comment above !! */
+                        /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
+                                           /* See comment above !! */
+                        & (~OPT_MTI)       /* MT2-based optimization, does not work. */
+                        & (~OPT_APL)       /* Only rudimentary implementation exists. */
+                        & (~OPT_TSI)       /* Bugs to be fixed. */
+                        & (~OPT_WLFS);     /* Not yet full operational */
+
+#else /* PRODUCTION */
+unsigned int optimize = OPT_ALL
+                        /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
+                                           /* See comment above !! */
+                        /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
+                                           /* See comment above !! */
+                        & (~OPT_MTI)       /* MT2-based optimization, does not work. */
+                        & (~OPT_APL)       /* Only rudimentary implementation exists. */
+                        & (~OPT_TSI)       /* Bugs to be fixed. */
+                        & (~OPT_WLFS);     /* Not yet full operational */
 
 #endif /* PRODUCTION */
 
