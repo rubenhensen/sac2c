@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/13 11:26:34  hw
+ * Revision 1.6  1994/12/20 14:01:14  hw
+ * bug fixed in ERROR1
+ *
+ * Revision 1.5  1994/12/13  11:26:34  hw
  * changed macros WARN1, NOTE
  * changed macro ERROR to ERROR1
  * inserted macro ERROR2
@@ -32,14 +35,14 @@
         DoPrint s;
 #define WARN1(s)                                                                         \
     if (!silent) {                                                                       \
-        warnings = +1;                                                                   \
+        warnings += 1;                                                                   \
         DoPrint s;                                                                       \
     }
 #define ERROR1(s)                                                                        \
     {                                                                                    \
-        fprintf (stderr, "/n");                                                          \
+        fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
-        errors = +1;                                                                     \
+        errors += 1;                                                                     \
     }
 
 #define ERROR2(n, s)                                                                     \
