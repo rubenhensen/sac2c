@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/04/12 15:15:34  sbs
- * ND_KD_ROT_SxSxA_A commented out
+ * Revision 1.9  1995/04/13 09:12:59  sbs
+ * ND_KD_ROT_SxSxA_A inserted
  *
+# Revision 1.8  1995/04/12  15:15:34  sbs
+# ND_KD_ROT_SxSxA_A commented out
+#
 # Revision 1.7  1995/04/12  15:14:00  sbs
 # cat & rot inserted.
 #
@@ -154,7 +157,6 @@ ICM_DEF( ND_KD_ROT_CxSxA_A)
 ICM_END( ND_KD_ROT_CxSxA_A )
 #endif
 
-/*
 #if defined(ND_KD_ROT_SxSxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_ROT_SxSxA_A)
   ICM_VAR( 1, rotdimstr)
@@ -164,5 +166,4 @@ ICM_DEF( ND_KD_ROT_SxSxA_A)
   ICM_STR(res)
 ICM_END( ND_KD_ROT_SxSxA_A )
 #endif
-*/
 
