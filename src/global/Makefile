@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.23  1995/06/02 09:27:06  sbs
+# Revision 1.24  1995/06/02 10:08:21  sbs
+# make deps done
+#
+# Revision 1.23  1995/06/02  09:27:06  sbs
 # psi-opt instead of psi_opt !!!
 #
 # Revision 1.22  1995/06/02  09:25:48  sbs
@@ -139,6 +142,7 @@ main.o: usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
 main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
 main.o: ../scanparse/y.tab.h ../compile/trace.h ../compile/compile.h
+main.o: ../psi-opt/psi-opt.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
