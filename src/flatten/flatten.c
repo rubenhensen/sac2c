@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/11/12 08:33:46  sbs
+ * With-loop default expression flattened out in case of -sbs
+ *
  * Revision 3.23  2003/02/10 17:51:49  dkr
  * flattening of nested arrays even for undefined TAGGED_ARRAYS now
  *
@@ -1810,6 +1813,15 @@ FltnNwithop (node *arg_node, node *arg_info)
 
             if (NODE_TYPE (expr) != N_id) {
                 NWITHOP_SHAPE (arg_node) = Abstract (expr, arg_info);
+                expr2 = Trav (expr, arg_info);
+                DBUG_ASSERT ((expr == expr2), "return-node differs from arg_node while "
+                                              "flattening an expr!");
+            }
+
+            expr = NWITHOP_DEFAULT (arg_node);
+
+            if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
+                NWITHOP_DEFAULT (arg_node) = Abstract (expr, arg_info);
                 expr2 = Trav (expr, arg_info);
                 DBUG_ASSERT ((expr == expr2), "return-node differs from arg_node while "
                                               "flattening an expr!");
