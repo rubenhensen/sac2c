@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/08/26 18:12:47  sbs
+ * INFO_CWC_WITH added, CWCwith added,
+ * CorrectFundefPointer signature changed (arg_types instead of args)
+ * in order to be able to select the CORRECT version of foldfuns
+ * => bug 48.
+ *
  * Revision 1.20  2004/07/30 17:29:21  sbs
  * switch to new INFO structure
  * PHASE I
@@ -94,6 +100,7 @@ struct INFO {
     int travno;
     LUT_t wrapperfuns;
     node *modul;
+    node *nwith;
 };
 
 /**
@@ -102,6 +109,7 @@ struct INFO {
 #define INFO_CWC_TRAVNO(n) ((n)->travno)
 #define INFO_CWC_WRAPPERFUNS(n) ((n)->wrapperfuns)
 #define INFO_CWC_MODUL(n) ((n)->modul)
+#define INFO_CWC_WITH(n) ((n)->nwith)
 
 /**
  * INFO functions
@@ -118,6 +126,7 @@ MakeInfo ()
     INFO_CWC_TRAVNO (result) = 0;
     INFO_CWC_WRAPPERFUNS (result) = NULL;
     INFO_CWC_MODUL (result) = NULL;
+    INFO_CWC_WITH (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -464,7 +473,7 @@ SignatureMatches (node *formal, ntype *actual_prod_type)
 /******************************************************************************
  *
  * Function:
- *   node *CorrectFundefPointer( node *fundef, char *funname, node *args)
+ *   node *CorrectFundefPointer( node *fundef, char *funname, ntype *arg_types)
  *
  * Description:
  *
@@ -472,9 +481,8 @@ SignatureMatches (node *formal, ntype *actual_prod_type)
  ******************************************************************************/
 
 node *
-CorrectFundefPointer (node *fundef, char *funname, node *args)
+CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
 {
-    ntype *arg_types;
     DFT_res *dft_res;
 
     DBUG_ENTER ("CorrectFundefPointer");
@@ -489,14 +497,13 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
          */
         DBUG_PRINT ("CWC", ("correcting fundef for %s", funname));
 
-        arg_types = ActualArgs2Ntype (args);
-
         /*
          * try to dispatch the function application statically
          */
         dft_res = NTCFUNDispatchFunType (fundef, arg_types);
         if (dft_res == NULL) {
-            DBUG_ASSERT ((args == NULL), "illegal dispatch result found!");
+            DBUG_ASSERT ((TYGetProductSize (arg_types) == 0),
+                         "illegal dispatch result found!");
             /*
              * no args found -> static dispatch possible
              *
@@ -553,8 +560,6 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
 
             DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "no wrapper code found!");
         }
-
-        arg_types = TYFreeType (arg_types);
     }
 
     DBUG_RETURN (fundef);
@@ -699,14 +704,42 @@ CWCfundef (node *arg_node, info *arg_info)
 node *
 CWCap (node *arg_node, info *arg_info)
 {
+    ntype *arg_types;
+
     DBUG_ENTER ("CWCap");
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
 
-    AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NAME (arg_node),
-                                                 AP_ARGS (arg_node));
+    arg_types = ActualArgs2Ntype (AP_ARGS (arg_node));
+    AP_FUNDEF (arg_node)
+      = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NAME (arg_node), arg_types);
+    arg_types = TYFreeType (arg_types);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *CWCwith( node *arg_node, info *arg_info)
+ *
+ * @brief inserts actual with node into the info structure
+ *
+ ******************************************************************************/
+
+node *
+CWCwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CWCwith");
+
+    INFO_CWC_WITH (arg_info) = arg_node;
+
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    INFO_CWC_WITH (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -724,7 +757,8 @@ CWCap (node *arg_node, info *arg_info)
 node *
 CWCwithop (node *arg_node, info *arg_info)
 {
-    node *args;
+    ntype *neutr_type, *body_type;
+    ntype *arg_type, *arg_types;
 
     DBUG_ENTER ("CWCwithop");
 
@@ -743,13 +777,21 @@ CWCwithop (node *arg_node, info *arg_info)
     case WO_foldfun:
         NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
 
-        args = MakeExprs (DupNode (NWITHOP_NEUTRAL (arg_node)), NULL);
-        EXPRS_NEXT (args) = DupNode (args);
+        neutr_type
+          = TYFixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (NWITHOP_NEUTRAL (arg_node))));
+        body_type = TYFixAndEliminateAlpha (
+          AVIS_TYPE (ID_AVIS (NWITH_CEXPR (INFO_CWC_WITH (arg_info)))));
 
-        NWITHOP_FUNDEF (arg_node) = CorrectFundefPointer (NWITHOP_FUNDEF (arg_node),
-                                                          NWITHOP_FUN (arg_node), args);
+        arg_type = TYLubOfTypes (neutr_type, body_type);
+        arg_types = TYMakeProductType (2, arg_type, TYCopyType (arg_type));
 
-        args = FreeTree (args);
+        NWITHOP_FUNDEF (arg_node)
+          = CorrectFundefPointer (NWITHOP_FUNDEF (arg_node), NWITHOP_FUN (arg_node),
+                                  arg_types);
+        arg_types = TYFreeType (arg_types);
+        body_type = TYFreeType (body_type);
+        neutr_type = TYFreeType (neutr_type);
+
         break;
 
     case WO_foldprf:
