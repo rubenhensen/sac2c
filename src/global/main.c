@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.90  1997/03/11 16:32:44  cg
+ * Revision 1.91  1997/03/19 13:36:19  cg
+ * Now, the syntax tree is removed before the gcc is started
+ *
+ * Revision 1.90  1997/03/11  16:32:44  cg
  * compiler option -deps replaced by -M
  *
  * Revision 1.89  1996/09/11  06:15:08  cg
@@ -365,6 +368,9 @@ char ccflagsstr[MAX_FILE_NAME] = "";
 char commandline[MAX_PATH_LEN] = "";
 /* command line, used for diagnostic output (status report)  */
 
+file_type filetype;
+/* kind of file: F_PROG, F_MODIMP or F_CLASSIMP */
+
 int Ccodeonly = 0;
 int break_compilation = 0;
 
@@ -413,6 +419,15 @@ int function_counter = 1;
  *  class are written to separate files.
  */
 
+deps *dependencies = NULL;
+/*
+ *  This global variable is used to store dependencies during the
+ *  whole compilation process.
+ *
+ *  The dependency table is built by import.c and readsib.c and used
+ *  for several purposes, such as generating makefiles or link lists.
+ */
+
 /*
  *  And now, the main function which triggers the whole compilation.
  */
@@ -452,12 +467,12 @@ MAIN
 
     OPT ARG 'I' : PARM
     {
-        AppendPath (MODDEC_PATH, *argv);
+        AppendPath (MODDEC_PATH, AbsolutePathname (*argv));
     }
     NEXTOPT
     ARG 'L' : PARM
     {
-        AppendPath (MODIMP_PATH, *argv);
+        AppendPath (MODIMP_PATH, AbsolutePathname (*argv));
     }
     NEXTOPT
     ARG 'O' : PARM
@@ -813,9 +828,6 @@ MAIN
         case '2':
             linkstyle = 2;
             break;
-        case '3':
-            linkstyle = 3;
-            break;
         default:
             if (!strncmp (*argv, "ibstat", 6))
                 libstat = 1;
@@ -837,6 +849,15 @@ MAIN
     /*
      * Now, we set our search paths for the source program, module declarations,
      * and module implementations...
+     *
+     * The original search path is ".".
+     * Then, additional paths specified by the respective compiler options are
+     * appended after having been transformed into absolute paths.
+     * If this has happened, the current directory is moved to the end of the
+     * path list because those paths specified on the command line are intended
+     * to have a higher priority.
+     * At last, the paths specified by environment variables are appended.
+     * These have the lowest priority.
      */
 
     RearrangePaths ();
@@ -851,6 +872,17 @@ MAIN
         SYSABORT (("MAX_PATH_LEN too low"));
 
     /*
+     * Now, we create tmp directories for files generated during the
+     * compilation process.
+     *
+     * Actually, only one temp directory is created whose name may be
+     * accessed trough the global variable tmp_dirname
+     * which is defined in filemgr.c.
+     */
+
+    CreateTmpDirectories ();
+
+    /*
      * If sac2c was started with the option -libstat,
      * then the library status is printed to stdout and the
      * compilation process is terminated immediately.
@@ -858,15 +890,10 @@ MAIN
 
     if (libstat) {
         PrintLibStat ();
+        CleanUp ();
+
         exit (0);
     }
-
-    /*
-     * Now, we create tmp directories for files generated during the
-     * compilation process.
-     */
-
-    CreateTmpDirectories ();
 
     ABORT_ON_ERROR;
     compiler_phase++;
@@ -899,7 +926,7 @@ MAIN
         }
         compiler_phase++;
 
-        if (!breakimport && !makedeps) {
+        if (!breakimport) {
             if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
                 NOTE_COMPILER_PHASE;
                 syntax_tree = ReadSib (syntax_tree);
@@ -907,7 +934,7 @@ MAIN
             }
             compiler_phase++;
 
-            if (!breakreadsib) {
+            if (!breakreadsib && !makedeps) {
                 NOTE_COMPILER_PHASE;
                 syntax_tree = objinit (syntax_tree);
                 ABORT_ON_ERROR;
@@ -1014,17 +1041,6 @@ MAIN
                                                                             syntax_tree);
                                                                         ABORT_ON_ERROR;
                                                                         compiler_phase++;
-
-                                                                        if (
-                                                                          (!Ccodeonly)
-                                                                          && (!breakcompile)) {
-                                                                            NOTE_COMPILER_PHASE;
-                                                                            syntax_tree
-                                                                              = PrepareLinking (
-                                                                                syntax_tree);
-                                                                            ABORT_ON_ERROR;
-                                                                            compiler_phase++;
-                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -1044,9 +1060,9 @@ MAIN
     }
 
     if (makedeps) {
-        compiler_phase = 24;
+        compiler_phase = 23;
         NOTE_COMPILER_PHASE;
-        PrintDependencies (syntax_tree);
+        PrintDependencies (dependencies);
         ABORT_ON_ERROR;
     } else {
         if (!break_compilation) {
@@ -1058,16 +1074,21 @@ MAIN
             Print (syntax_tree);
         }
 
+        /*
+         *  After the C file has been written, the syntax tree may be released.
+         */
+
+        FreeTree (syntax_tree);
+
         if (!Ccodeonly) {
             NOTE_COMPILER_PHASE;
-            InvokeCC (syntax_tree);
+            InvokeCC ();
             ABORT_ON_ERROR;
             compiler_phase++;
 
-            if ((MODUL_FILETYPE (syntax_tree) == F_modimp)
-                || (MODUL_FILETYPE (syntax_tree) == F_classimp)) {
+            if (filetype != F_prog) {
                 NOTE_COMPILER_PHASE;
-                CreateLibrary (syntax_tree);
+                CreateLibrary ();
                 ABORT_ON_ERROR;
             }
             compiler_phase++;
@@ -1079,8 +1100,6 @@ MAIN
      */
 
     CleanUp ();
-
-    FreeTree (syntax_tree);
 
     /*
      *  After all, a success message is displayed.
