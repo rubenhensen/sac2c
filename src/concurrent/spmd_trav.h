@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/21 23:01:01  ktr
+ * ISMOP 2004!!!!!!!
+ *
  * Revision 3.4  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -41,15 +44,29 @@
  *
  */
 
-#ifndef _spmd_trav_h
-#define _spmd_trav_h
+#ifndef _SAC_SPMD_TRAV_H_
+#define _SAC_SPMD_TRAV_H_
 
-#include "DataFlowMask.h"
+#include "types.h"
 
-extern node *DeleteNested (node *arg_node);
+/******************************************************************************
+ *
+ * SPMD delete nested traversal( spmddn_tab)
+ *
+ * Prefix: SPMDDN
+ *
+ *****************************************************************************/
+extern node *SPMDDNdoDeleteNested (node *arg_node);
 extern node *SPMDDNspmd (node *arg_node, info *arg_info);
 
-extern void ProduceMasks (node *arg_node, node *spmd, node *fundef);
+/******************************************************************************
+ *
+ * SPMD produce masks traversal( spmdpm_tab)
+ *
+ * Prefix: SPMDPM
+ *
+ *****************************************************************************/
+extern void SPMDPMdoProduceMasks (node *arg_node, node *spmd, node *fundef);
 extern node *SPMDPMassign (node *arg_node, info *arg_info);
 
-#endif /* _spmd_trav_h */
+#endif /* _SAC_SPMD_TRAV_H_ */

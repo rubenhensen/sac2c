@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/21 23:01:01  ktr
+ * ISMOP 2004!!!!!!!
+ *
  * Revision 3.2  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -16,24 +19,18 @@
  *
  */
 
-/*****************************************************************************
- *
- * file:   spmd_init.h
- *
- * prefix: SPMDI
- *
- * description:
- *
- *   header file for spmd_init.c
- *
- *****************************************************************************/
-
-#ifndef SPMD_INIT_H
-
-#define SPMD_INIT_H
+#ifndef _SAC_SPMD_INIT_H_
+#define _SAC_SPMD_INIT_H_
 
 #include "types.h"
 
+/*****************************************************************************
+ *
+ * SPMD Init traversal (spmdinit_tab)
+ *
+ * prefix: SPMDI
+ *
+ *****************************************************************************/
 extern node *SPMDIassign (node *arg_node, info *arg_info);
 
-#endif /* SPMD_INIT_H */
+#endif /* _SAC_SPMD_INIT_H_ */

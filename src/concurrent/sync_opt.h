@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/21 23:01:01  ktr
+ * ISMOP 2004!!!!!!!
+ *
  * Revision 3.3  2004/11/21 17:54:54  skt
  * moved functions from concurrent_lib into sync_opt to remove concurrent_lib
  *
@@ -21,28 +24,19 @@
  *
  *
  */
-
-/*****************************************************************************
- *
- * file:   sync_opt.h
- *
- * prefix: SYNCO
- *
- * description:
- *
- *   header file for sync_opt.c
- *
- *****************************************************************************/
-
-#ifndef SYNC_OPT_H
-
-#define SYNC_OPT_H
+#ifndef _SAC_SYNC_OPT_H_
+#define _SAC_SYNC_OPT_H_
 
 #include "types.h"
 
-extern node *SYNCOsync (node *arg_node, info *arg_info);
+/******************************************************************************
+ *
+ * SYNC optimization traversal ( synco_tab)
+ *
+ * Prefix: SYNCO
+ *
+ *****************************************************************************/
 extern node *SYNCOassign (node *arg_node, info *arg_info);
+extern node *SYNCOsync (node *arg_node, info *arg_info);
 
-node *MeltSYNCs (node *first_sync, node *second_sync);
-
-#endif /* SYNC_OPT_H */
+#endif /* _SAC_SYNC_OPT_H_ */

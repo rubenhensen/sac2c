@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/21 23:01:01  ktr
+ * ISMOP 2004!!!!!!!
+ *
  * Revision 3.2  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -16,24 +19,18 @@
  *
  */
 
-/*****************************************************************************
- *
- * file:   sync_init.h
- *
- * prefix: SPMDL
- *
- * description:
- *
- *   header file for sync_init.c
- *
- *****************************************************************************/
-
-#ifndef SYNC_INIT_H
-
-#define SYNC_INIT_H
+#ifndef _SAC_SYNC_INIT_H_
+#define _SAC_SYNC_INIT_H_
 
 #include "types.h"
 
+/******************************************************************************
+ *
+ * SYNC-Block init traversal ( syncinit_tab)
+ *
+ * Prefix: SYNCI
+ *
+ *****************************************************************************/
 extern node *SYNCIassign (node *arg_node, info *arg_info);
 
-#endif /* SYNC_INIT_H */
+#endif /* _SAC_SYNC_INIT_H_ */

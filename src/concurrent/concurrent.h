@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/21 23:01:01  ktr
+ * ISMOP 2004!!!!!!!
+ *
  * Revision 3.2  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -16,30 +19,21 @@
  *
  */
 
-/*****************************************************************************
- *
- * file:   concurrent.h
- *
- * prefix: CONC
- *
- * description:
- *
- *   header file for concurrent.c
- *
- *
- *
- *
- *****************************************************************************/
-
-#ifndef CONCURRENT_H
-
-#define CONCURRENT_H
+#ifndef _SAC_CONCURRENT_H_
+#define _SAC_CONCURRENT_H_
 
 #include "types.h"
 
-extern node *BuildSpmdRegions (node *syntax_tree);
+/*****************************************************************************
+ *
+ * Concurrent traversal (conc_tab)
+ *
+ * prefix: CONC
+ *
+ *****************************************************************************/
+extern node *CONCdoBuildSpmdRegions (node *syntax_tree);
 
-extern node *CONCmodul (node *arg_node, info *arg_info);
+extern node *CONCmodule (node *arg_node, info *arg_info);
 extern node *CONCfundef (node *arg_node, info *arg_info);
 
-#endif /* CONCURRENT_H */
+#endif /* _SAC_CONCURRENT_H_ */

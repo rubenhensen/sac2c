@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/21 23:01:01  ktr
+ * ISMOP 2004!!!!!!!
+ *
  * Revision 3.1  2000/11/20 18:02:27  sacbase
  * new release made
  *
@@ -16,27 +19,21 @@
  *
  */
 
-/*****************************************************************************
- *
- * file:   schedule.h
- *
- * prefix: SCHED
- *
- * description:
- *
- *   header file for schedule.c
- *
- *****************************************************************************/
-
-#ifndef SCHEDULE_H
-
-#define SCHEDULE_H
+#ifndef _SAC_SCHEDULE_H_
+#define _SAC_SCHEDULE_H_
 
 #include "types.h"
 
+/*****************************************************************************
+ *
+ * Schedule travesal (sched_tab)
+ *
+ * prefix: SCHED
+ *
+ *****************************************************************************/
 extern node *SCHEDwlseg (node *arg_node, node *arg_info);
-extern node *SCHEDwlsegVar (node *arg_node, node *arg_info);
+extern node *SCHEDwlsegvar (node *arg_node, node *arg_info);
 extern node *SCHEDsync (node *arg_node, node *arg_info);
-extern node *SCHEDnwith2 (node *arg_node, node *arg_info);
+extern node *SCHEDwith2 (node *arg_node, node *arg_info);
 
-#endif /* SCHEDULE_H */
+#endif /* _SAC_SCHEDULE_H_ */
