@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.170  2004/11/26 14:11:47  skt
+ * made it compilable during SACDevCampDK 2k4
+ *
  * Revision 3.169  2004/11/26 12:32:40  skt
  * changed header of TCSearchObjectdef - added const
  *
@@ -1554,7 +1557,7 @@ extern node *TCmakeIdsCopyString (const char *str, node *next);
  *
  ****************************************************************************/
 
-extern bool PHisPhiFun (node *id);
+extern bool TCisPhiFun (node *id);
 
 /*--------------------------------------------------------------------------*/
 

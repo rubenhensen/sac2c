@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2004/11/26 14:11:47  skt
+ * made it compilable during SACDevCampDK 2k4
+ *
  * Revision 3.112  2004/11/26 02:17:26  sah
  * fixed a comment
  *
@@ -53,16 +56,17 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "DupTree.h"
-
+#include "shape.h"
 #include "dbug.h"
 #include "my_debug.h"
 #include "free.h"
 #include "new_types.h"
-
+#include "Error.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"
 #include "globals.h"
 #include "NameTuplesUtils.h"
+#include "type_utils.h"
 
 /*****************************************************************************/
 /**
@@ -453,24 +457,27 @@ TCgetTypesLine (types *type, int line)
         if (line > 0) {
             if (tdef == NULL) {
                 ABORT (line, ("type '%s' is unknown",
-                              ModName (TYPES_MOD (type), TYPES_NAME (type))));
+                              ERRmodName (TYPES_MOD (type), TYPES_NAME (type))));
             }
         } else {
             DBUG_ASSERT ((tdef != NULL), "typedef not found!");
         }
 
-        DBUG_ASSERT ((TYPEDEF_BASETYPE (tdef) != T_user),
-                     "unresolved nested user-defined type found");
+#if 0 /* TODO - macros for old types */
+    DBUG_ASSERT( (TYPEDEF_BASETYPE( tdef) != T_user),
+                 "unresolved nested user-defined type found");
 
-        if (TYPEDEF_BASETYPE (tdef) == T_hidden) {
-            /*
-             * Basic type is hidden therefore we have to use the original type
-             * structure and rely on the belonging typedef!!
-             */
-            res_type = type;
-        } else {
-            res_type = TYPEDEF_TYPE (tdef);
-        }
+    if (TYPEDEF_BASETYPE( tdef) == T_hidden) {
+      /*
+       * Basic type is hidden therefore we have to use the original type
+       * structure and rely on the belonging typedef!!
+       */
+      res_type = type;
+    }
+    else {
+      res_type = TYPEDEF_TYPE( tdef);
+    }
+#endif
     } else {
         res_type = type;
     }
@@ -525,7 +532,7 @@ TCgetShapeDim (types *type)
 
     base_dim = TYPES_DIM (type);
 
-    impl_type = GetTypes (type);
+    impl_type = TCgetTypes (type);
 
     if (impl_type != type) {
         /*
@@ -594,7 +601,7 @@ TCgetDim (types *type)
 /******************************************************************************
  *
  * Function:
- *   simpletype GetBasetype( types* type)
+ *   simpletype TCgetBasetype( types* type)
  *
  * Description:
  *
@@ -602,13 +609,13 @@ TCgetDim (types *type)
  ******************************************************************************/
 
 simpletype
-GetBasetype (types *type)
+TCgetBasetype (types *type)
 {
     simpletype res;
 
-    DBUG_ENTER ("GetBasetype");
+    DBUG_ENTER ("TCgetBasetype");
 
-    res = TYPES_BASETYPE (GetTypes (type));
+    res = TYPES_BASETYPE (TCgetTypes (type));
 
     DBUG_RETURN (res);
 }
@@ -616,7 +623,7 @@ GetBasetype (types *type)
 /******************************************************************************
  *
  * Function:
- *   int GetBasetypeSize(types *type)
+ *   int TCgetBasetypeSize(types *type)
  *
  * Description:
  *
@@ -624,13 +631,13 @@ GetBasetype (types *type)
  ******************************************************************************/
 
 int
-GetBasetypeSize (types *type)
+TCgetBasetypeSize (types *type)
 {
     int size;
 
-    DBUG_ENTER ("GetBasetypeSize");
+    DBUG_ENTER ("TCgetBasetypeSize");
 
-    size = basetype_size[GetBasetype (type)];
+    size = global.basetype_size[TCgetBasetype (type)];
 
     DBUG_RETURN (size);
 }
@@ -638,7 +645,7 @@ GetBasetypeSize (types *type)
 /******************************************************************************
  *
  * Function:
- *   int CompareTypesImplementation( types *t1, types *t2)
+ *   int TCcompareTypesImplementation( types *t1, types *t2)
  *
  * Description:
  *   compares two types for having the equal implementation types (resolving
@@ -653,34 +660,34 @@ GetBasetypeSize (types *type)
  ******************************************************************************/
 
 int
-CompareTypesImplementation (types *t1, types *t2)
+TCcompareTypesImplementation (types *t1, types *t2)
 {
     int res;
     shpseg *shpseg1, *shpseg2;
     int shpdim1, shpdim2;
     int dim;
 
-    DBUG_ENTER ("CompareTypesImplementation");
+    DBUG_ENTER ("TCcompareTypesImplementation");
 
     DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)),
-                 "CompareTypesImplementation() called with NULL type");
+                 "TCcompareTypesImplementation() called with NULL type");
 
-    if (GetBasetype (t1) == GetBasetype (t2)) {
-        shpdim1 = GetShapeDim (t1);
-        shpdim2 = GetShapeDim (t2);
+    if (TCgetBasetype (t1) == TCgetBasetype (t2)) {
+        shpdim1 = TCgetShapeDim (t1);
+        shpdim2 = TCgetShapeDim (t2);
 
         if (shpdim1 == shpdim2) {
             if (KNOWN_SHAPE (shpdim1)) { /* -> KNOWN_SHAPE( shpdim2) */
-                shpseg1 = Type2Shpseg (t1, &dim);
-                shpseg2 = Type2Shpseg (t2, NULL);
+                shpseg1 = TCtype2Shpseg (t1, &dim);
+                shpseg2 = TCtype2Shpseg (t2, NULL);
 
-                res = (EqualShpseg (dim, shpseg1, shpseg2)) ? 0 : 2;
+                res = (TCequalShpseg (dim, shpseg1, shpseg2)) ? 0 : 2;
 
                 if (shpseg1 != NULL) {
-                    shpseg1 = FreeShpseg (shpseg1);
+                    shpseg1 = FREEfreeShpseg (shpseg1);
                 }
                 if (shpseg2 != NULL) {
-                    shpseg2 = FreeShpseg (shpseg2);
+                    shpseg2 = FREEfreeShpseg (shpseg2);
                 }
             } else {
                 res = 0;
@@ -720,19 +727,19 @@ CompareTypesImplementation (types *t1, types *t2)
  ******************************************************************************/
 
 int
-GetTypesLength (types *type)
+TCgetTypesLength (types *type)
 {
     shpseg *shape;
     int dim, length;
 
-    DBUG_ENTER ("GetTypesLength");
+    DBUG_ENTER ("TCgetTypesLength");
 
-    shape = Type2Shpseg (type, &dim);
+    shape = TCtype2Shpseg (type, &dim);
 
-    length = GetShpsegLength (dim, shape);
+    length = TCgetShpsegLength (dim, shape);
 
     if (shape != NULL) {
-        shape = FreeShpseg (shape);
+        shape = FREEfreeShpseg (shape);
     }
 
     DBUG_RETURN (length);
@@ -741,7 +748,7 @@ GetTypesLength (types *type)
 /******************************************************************************
  *
  * Function:
- *   shpseg *Type2Shpseg( types *type, int *ret_dim)
+ *   shpseg *TCtype2Shpseg( types *type, int *ret_dim)
  *
  * Description:
  *
@@ -749,21 +756,21 @@ GetTypesLength (types *type)
  ******************************************************************************/
 
 shpseg *
-Type2Shpseg (types *type, int *ret_dim)
+TCtype2Shpseg (types *type, int *ret_dim)
 {
     int dim, base_dim, i;
     types *impl_type;
     shpseg *new_shpseg = NULL;
 
-    DBUG_ENTER ("Type2Shpseg");
+    DBUG_ENTER ("TCtype2Shpseg");
 
-    dim = GetShapeDim (type);
+    dim = TCgetShapeDim (type);
 
     DBUG_ASSERT ((dim < SHP_SEG_SIZE), "shape is out of range");
 
     if (dim > SCALAR) {
-        new_shpseg = MakeShpseg (NULL);
-        impl_type = GetTypes (type);
+        new_shpseg = TBmakeShpseg (NULL);
+        impl_type = TCgetTypes (type);
 
         base_dim = TYPES_DIM (type);
         for (i = 0; i < base_dim; i++) {
@@ -792,7 +799,7 @@ Type2Shpseg (types *type, int *ret_dim)
 /******************************************************************************
  *
  * Function:
- *   shape *Type2Shape( types *type)
+ *   shape *TCtype2Shape( types *type)
  *
  * Description:
  *
@@ -800,20 +807,20 @@ Type2Shpseg (types *type, int *ret_dim)
  ******************************************************************************/
 
 shape *
-Type2Shape (types *type)
+TCtype2Shape (types *type)
 {
     shape *shp = NULL;
     shpseg *new_shpseg = NULL;
     int dim;
 
-    DBUG_ENTER ("Type2Shape");
+    DBUG_ENTER ("TCtype2Shape");
 
-    dim = GetShapeDim (type);
-    new_shpseg = Type2Shpseg (type, NULL);
+    dim = TCgetShapeDim (type);
+    new_shpseg = TCtype2Shpseg (type, NULL);
 
     if (new_shpseg != NULL) {
-        shp = SHOldShpseg2Shape (dim, new_shpseg);
-        new_shpseg = Free (new_shpseg);
+        shp = SHoldShpseg2Shape (dim, new_shpseg);
+        new_shpseg = ILIBfree (new_shpseg);
     } else {
         DBUG_ASSERT (dim <= 0, "shape inconsistency");
     }
@@ -824,7 +831,7 @@ Type2Shape (types *type)
 /******************************************************************************
  *
  * Function:
- *   node *Type2Exprs( types *type)
+ *   node *TCtype2Exprs( types *type)
  *
  * Description:
  *   Computes the shape of corresponding type and stores it as N_exprs chain.
@@ -832,26 +839,26 @@ Type2Shape (types *type)
  ******************************************************************************/
 
 node *
-Type2Exprs (types *type)
+TCtype2Exprs (types *type)
 {
     node *tmp;
     types *impl_type;
     int dim, i;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("Type2Exprs");
+    DBUG_ENTER ("TCtype2Exprs");
 
     /* create a dummy node to append the shape items to */
-    ret_node = MakeExprs (NULL, NULL);
+    ret_node = TBmakeExprs (NULL, NULL);
 
-    dim = GetShapeDim (type);
+    dim = TCgetShapeDim (type);
 
     if (dim > SCALAR) {
         tmp = ret_node;
-        impl_type = GetTypes (type);
+        impl_type = TCgetTypes (type);
 
         for (i = 0; i < TYPES_DIM (type); i++) {
-            EXPRS_NEXT (tmp) = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), NULL);
+            EXPRS_NEXT (tmp) = TBmakeExprs (TBmakeNum (TYPES_SHAPE (type, i)), NULL);
             tmp = EXPRS_NEXT (tmp);
         }
 
@@ -860,14 +867,15 @@ Type2Exprs (types *type)
              * user-defined type
              */
             for (i = 0; i < TYPES_DIM (impl_type); i++) {
-                EXPRS_NEXT (tmp) = MakeExprs (MakeNum (TYPES_SHAPE (impl_type, i)), NULL);
+                EXPRS_NEXT (tmp)
+                  = TBmakeExprs (TBmakeNum (TYPES_SHAPE (impl_type, i)), NULL);
                 tmp = EXPRS_NEXT (tmp);
             }
         }
     }
 
     /* remove dummy node at head of chain */
-    ret_node = FreeNode (ret_node);
+    ret_node = FREEdoFreeNode (ret_node);
 
     DBUG_RETURN (ret_node);
 }
@@ -875,7 +883,7 @@ Type2Exprs (types *type)
 /******************************************************************************
  *
  * Function:
- *   node *CreateZeroFromType( types *type, bool unroll, node *fundef)
+ *   node *TCcreateZeroFromType( types *type, bool unroll, node *fundef)
  *
  * Description:
  *   Creates an array of zeros.
@@ -883,7 +891,7 @@ Type2Exprs (types *type)
  ******************************************************************************/
 
 node *
-CreateZeroFromType (types *type, bool unroll, node *fundef)
+TCcreateZeroFromType (types *type, bool unroll, node *fundef)
 {
     node *zero;
     shpseg *shape;
@@ -892,11 +900,11 @@ CreateZeroFromType (types *type, bool unroll, node *fundef)
 
     DBUG_ENTER ("CreateZeroFromType");
 
-    shape = Type2Shpseg (type, &dim);
-    btype = GetBasetype (type);
-    zero = CreateZero (dim, shape, btype, unroll, fundef);
+    shape = TCtype2Shpseg (type, &dim);
+    btype = TCgetBasetype (type);
+    zero = TCcreateZero (dim, shape, btype, unroll, fundef);
     if (shape != NULL) {
-        shape = FreeShpseg (shape);
+        shape = FREEfreeShpseg (shape);
     }
 
     DBUG_RETURN (zero);
@@ -918,10 +926,10 @@ CreateZeroFromType (types *type, bool unroll, node *fundef)
  ******************************************************************************/
 
 /*
- * IsArray := Is not a (static) scalar
+ * TCisArray := Is not a (static) scalar
  */
 bool
-IsArray (types *type)
+TCisArray (types *type)
 {
     node *tdef;
     bool ret = FALSE;
@@ -934,16 +942,18 @@ IsArray (types *type)
         tdef = TYPES_TDEF (type);
         DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-        if (TYPEDEF_DIM (tdef) != SCALAR) {
-            ret = TRUE;
-        }
+#if 0 /* TODO - macro for old types */
+    if (TYPEDEF_DIM( tdef) != SCALAR) {
+      ret = TRUE;
+    }
+#endif
     }
 
     DBUG_RETURN (ret);
 }
 
 bool
-IsHidden (types *type)
+TCisHidden (types *type)
 {
     node *tdef;
     bool ret = FALSE;
@@ -956,54 +966,50 @@ IsHidden (types *type)
         tdef = TYPES_TDEF (type);
         DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-        if (TYPEDEF_BASETYPE (tdef) == T_hidden) {
-            ret = TRUE;
-        }
+#if 0 /* TODO - macros for old types */
+    if (TYPEDEF_BASETYPE( tdef) == T_hidden) {
+      ret = TRUE;
+    }
+#endif
     }
 
     DBUG_RETURN (ret);
 }
 
 bool
-IsUnique (types *type)
+TCisUnique (types *type)
 {
-    node *tdef;
     bool ret = FALSE;
 
-    DBUG_ENTER ("IsUnique");
+    DBUG_ENTER ("TCisUnique");
 
     if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
-
-        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
-            ret = TRUE;
-        }
+        ret = TUisUniqueUserType (TYoldType2Type (type));
     }
 
     DBUG_RETURN (ret);
 }
 
 bool
-IsNonUniqueHidden (types *type)
+TCisNonUniqueHidden (types *type)
 {
     bool ret;
 
     DBUG_ENTER ("IsNonUniqueHidden");
 
-    ret = (IsHidden (type) && (!IsUnique (type)));
+    ret = (TCisHidden (type) && (!TCisUnique (type)));
 
     DBUG_RETURN (ret);
 }
 
 bool
-IsBoxed (types *type)
+TCisBoxed (types *type)
 {
     bool ret;
 
     DBUG_ENTER ("IsBoxed");
 
-    ret = (IsHidden (type) || IsArray (type));
+    ret = (TCisHidden (type) || TCisArray (type));
 
     DBUG_RETURN (ret);
 }
@@ -1014,22 +1020,22 @@ IsBoxed (types *type)
  ***  IDS :
  ***/
 
-ids *
-AppendIds (ids *chain, ids *item)
+node *
+TCappendIds (node *chain, node *item)
 {
-    ids *ret;
+    node *ret;
 
-    DBUG_ENTER ("AppendIds");
+    DBUG_ENTER ("TCappendIds");
 
-    APPEND (ret, ids *, IDS, chain, item);
+    APPEND (ret, node *, IDS, chain, item);
 
     DBUG_RETURN (ret);
 }
 
-ids *
-LookupIds (char *name, ids *ids_chain)
+node *
+TClookupIds (const char *name, node *ids_chain)
 {
-    DBUG_ENTER ("LookupIds");
+    DBUG_ENTER ("TClookupIds");
 
     while ((ids_chain != NULL) && (0 != strcmp (name, IDS_NAME (ids_chain)))) {
         ids_chain = IDS_NEXT (ids_chain);
@@ -1039,11 +1045,11 @@ LookupIds (char *name, ids *ids_chain)
 }
 
 int
-CountIds (ids *ids_arg)
+TCcountIds (node *ids_arg)
 {
     int count = 0;
 
-    DBUG_ENTER ("CountIds");
+    DBUG_ENTER ("TCcountIds");
 
     while (ids_arg != NULL) {
         count++;
@@ -1079,7 +1085,7 @@ TCcountNums (node *nums)
 
     while (nums != NULL) {
         cnt++;
-        nums = NUMS_NEXT (nums->next);
+        nums = NUMS_NEXT (nums);
     }
 
     DBUG_RETURN (cnt);
@@ -1299,8 +1305,8 @@ TCannotateIdWithConstVec (node *expr, node *id)
         ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
         if (ID_ISCONST (id)) {
             ID_CONSTVEC (id)
-              = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
-                              ARRAY_CONSTVEC (behind_casts));
+              = TCcopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
+                                ARRAY_CONSTVEC (behind_casts));
         }
     } else if (NODE_TYPE (behind_casts) == N_id) {
         ID_ISCONST (id) = ID_ISCONST (behind_casts);
@@ -1308,8 +1314,8 @@ TCannotateIdWithConstVec (node *expr, node *id)
         ID_VECLEN (id) = ID_VECLEN (behind_casts);
         if (ID_ISCONST (id)) {
             ID_CONSTVEC (id)
-              = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
-                              ID_CONSTVEC (behind_casts));
+              = TCcopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
+                                ID_CONSTVEC (behind_casts));
         }
     }
 
@@ -1460,7 +1466,7 @@ TCnodeListFree (nodelist *nl, bool free_attrib)
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
             NODELIST_ATTRIB2 (nl) = ILIBfree (NODELIST_ATTRIB2 (nl));
         }
-        nl = TBfreeNodelistNode (nl);
+        nl = FREEfreeNodelistNode (nl);
     }
 
     DBUG_RETURN (nl);
@@ -1696,8 +1702,8 @@ TCcountFunctionParams (node *fundef)
 
     DBUG_ENTER ("TCcountFunctionParams");
 
-    count = CountTypes (FUNDEF_TYPES (fundef));
-    count += CountArgs (FUNDEF_ARGS (fundef));
+    count = TCcountTypes (FUNDEF_TYPES (fundef));
+    count += TCcountArgs (FUNDEF_ARGS (fundef));
 
     DBUG_RETURN (count);
 }
@@ -1849,7 +1855,7 @@ TCmakeVardecFromArg (node *arg_node)
 
     VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
 
-    AVIS_VARDEC (VARDEC_AVIS (new_vardec)) = new_vardec;
+    AVIS_DECL (VARDEC_AVIS (new_vardec)) = new_vardec;
 
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
@@ -1878,27 +1884,24 @@ node *
 TCmakeArgFromVardec (node *vardec_node)
 {
     node *new_arg;
+    node *new_avis;
 
     DBUG_ENTER ("TCmakeArgFromVardec");
 
-    new_arg = MakeArg (StringCopy (VARDEC_NAME (vardec_node)),
-                       DupAllTypes (VARDEC_TYPE (vardec_node)),
-                       VARDEC_STATUS (vardec_node), ST_undef, NULL);
-
-    new_arg = (DUPdoDupNode (VARDEC_AVIS (vardec_node)), NULL);
-
-    if (VARDEC_TYPE (vardec_node) != NULL) {
-        ARG_TYPE (new_arg) = VARDEC_TYPE (vardec_node);
-    }
-    ARG_TDEF (new_arg) = VARDEC_TDEF (vardec_node);
-
-    AVIS_ARG (ARG_AVIS (new_arg)) = new_arg;
+    new_avis = DUPdoDupNode (VARDEC_AVIS (vardec_node));
 
     /* delete wrong data in copied AVIS node */
-    AVIS_SSAASSIGN (ARG_AVIS (new_arg)) = NULL;
-    AVIS_SSAASSIGN2 (ARG_AVIS (new_arg)) = NULL;
-    AVIS_SSALPINV (ARG_AVIS (new_arg)) = FALSE;
-    AVIS_SSASTACK_TOP (ARG_AVIS (new_arg)) = NULL;
+    AVIS_SSAASSIGN (new_avis) = NULL;
+    AVIS_SSAASSIGN2 (new_avis) = NULL;
+    AVIS_SSALPINV (new_avis) = FALSE;
+    AVIS_SSASTACK_TOP (new_avis) = NULL;
+
+    new_arg = TBmakeArg (new_avis, NULL);
+    ARG_TYPE (new_arg) = DUPdupAllTypes (VARDEC_TYPE (vardec_node));
+
+    ARG_TDEF (new_arg) = VARDEC_TDEF (vardec_node);
+
+    AVIS_DECL (ARG_AVIS (new_arg)) = new_arg;
 
     DBUG_RETURN (new_arg);
 }
@@ -1943,7 +1946,7 @@ TCadjustAvisData (node *new_vardec, node *fundef)
     avis_node = VARDEC_AVIS (new_vardec);
 
     /* SSACOUNTER operations are only necessary when operating on ssa form */
-    if (valid_ssaform) {
+    if (global.valid_ssaform) {
         DBUG_ASSERT ((AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL),
                      "corrupted ssa form found - unknown baseid");
 
@@ -1975,8 +1978,8 @@ TCadjustAvisData (node *new_vardec, node *fundef)
                                 VARDEC_NAME (new_vardec)));
 
             BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
-              = TBmakeSsacnt (ILIBstringCopy (base_id),
-                              BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)), 0);
+              = TBmakeSsacnt (0, ILIBstringCopy (base_id),
+                              BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)));
 
             AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
         }
@@ -2030,13 +2033,13 @@ TCcountArgs (node *args)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_rets :
+ ***  N_ret :
  ***/
 
 /******************************************************************************
  *
  * function:
- *   node *TCappendRets( node *exprs1, node *exprs2)
+ *   node *TCappendRet( node *exprs1, node *exprs2)
  *
  * description:
  *   This function concatenates two N_ret chains of nodes.
@@ -2044,16 +2047,16 @@ TCcountArgs (node *args)
  ******************************************************************************/
 
 node *
-TCappendRets (node *ret_chain, node *item)
+TCappendRet (node *ret_chain, node *item)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendRets");
+    DBUG_ENTER ("TCappendRet");
 
     DBUG_ASSERT (((ret_chain == NULL) || (NODE_TYPE (ret_chain) == N_ret)),
-                 ("First argument of TCappendRets() has wrong node type."));
+                 ("First argument of TCappendRet() has wrong node type."));
     DBUG_ASSERT (((item == NULL) || (NODE_TYPE (item) == N_ret)),
-                 ("Second argument of TCappendRets() has wrong node type."));
+                 ("Second argument of TCappendRet() has wrong node type."));
 
     APPEND (ret, node *, RET, ret_chain, item);
 
@@ -2368,7 +2371,7 @@ TCmakeAssignIcm0 (char *name, node *next)
 
     DBUG_ENTER ("TCmakeAssignIcm0");
 
-    assigns = TCmakeAssign (TCmakeIcm0 (name), next);
+    assigns = TBmakeAssign (TCmakeIcm0 (name), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2380,7 +2383,7 @@ TCmakeAssignIcm1 (char *name, node *arg1, node *next)
 
     DBUG_ENTER ("TCmakeAssignIcm1");
 
-    assigns = TCmakeAssign (TCmakeIcm1 (name, arg1), next);
+    assigns = TBmakeAssign (TCmakeIcm1 (name, arg1), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2392,7 +2395,7 @@ TCmakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next)
 
     DBUG_ENTER ("TCmakeAssignIcm2");
 
-    assigns = TCmakeAssign (TCmakeIcm2 (name, arg1, arg2), next);
+    assigns = TBmakeAssign (TCmakeIcm2 (name, arg1, arg2), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2404,7 +2407,7 @@ TCmakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next)
 
     DBUG_ENTER ("TCmakeAssignIcm3");
 
-    assigns = TCmakeAssign (TCmakeIcm3 (name, arg1, arg2, arg3), next);
+    assigns = TBmakeAssign (TCmakeIcm3 (name, arg1, arg2, arg3), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2416,7 +2419,7 @@ TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 
     DBUG_ENTER ("TCmakeAssignIcm4");
 
-    assigns = TCmakeAssign (TCmakeIcm4 (name, arg1, arg2, arg3, arg4), next);
+    assigns = TBmakeAssign (TCmakeIcm4 (name, arg1, arg2, arg3, arg4), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2429,7 +2432,7 @@ TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 
     DBUG_ENTER ("TCmakeAssignIcm5");
 
-    assigns = TCmakeAssign (TCmakeIcm5 (name, arg1, arg2, arg3, arg4, arg5), next);
+    assigns = TBmakeAssign (TCmakeIcm5 (name, arg1, arg2, arg3, arg4, arg5), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2442,7 +2445,7 @@ TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 
     DBUG_ENTER ("TCmakeAssignIcm6");
 
-    assigns = TCmakeAssign (TCmakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), next);
+    assigns = TBmakeAssign (TCmakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2456,7 +2459,7 @@ TCmakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
     DBUG_ENTER ("TCmakeAssignIcm7");
 
     assigns
-      = TCmakeAssign (TCmakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), next);
+      = TBmakeAssign (TCmakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), next);
 
     DBUG_RETURN (assigns);
 }
@@ -2496,7 +2499,7 @@ TCgetCompoundNode (node *arg_node)
         while (N_cast == NODE_TYPE (arg_node)) {
             arg_node = CAST_EXPR (arg_node);
         }
-        if (N_Nwith == NODE_TYPE (arg_node)) {
+        if (N_with == NODE_TYPE (arg_node)) {
             compound_node = arg_node;
         } else {
             compound_node = NULL;
@@ -2740,7 +2743,7 @@ TCnodeBehindCast (node *arg_node)
 {
     DBUG_ENTER ("TCnodeBehindCast");
     while (N_cast == NODE_TYPE (arg_node)) {
-        arg_node = arg_node->node[0];
+        arg_node = CAST_EXPR (arg_node);
     }
     DBUG_RETURN (arg_node);
 }
@@ -2862,9 +2865,9 @@ TCadjustVectorShape (node *array)
     DBUG_ASSERT (array != NULL, "TCadjustVectorShape called with NULL argument!");
 
     if (ARRAY_SHAPE (array) != NULL)
-        SHFreeShape (ARRAY_SHAPE (array));
+        SHfreeShape (ARRAY_SHAPE (array));
 
-    ARRAY_SHAPE (array) = SHCreateShape (1, TCcountExprs (ARRAY_AELEMS (array)));
+    ARRAY_SHAPE (array) = SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (array)));
 
     DBUG_RETURN (array);
 }
@@ -2922,7 +2925,7 @@ TCcreateZeroVector (int length, simpletype btype)
     }
 
     /* nums struct is freed inside of MakeShpseg() */
-    shpseg = MakeShpseg (TBmakeNums (length, NULL));
+    shpseg = TBmakeShpseg (TBmakeNums (length, NULL));
     ARRAY_TYPE (ret_node) = TBmakeTypes (btype, 1, shpseg, NULL, NULL);
 
     DBUG_RETURN (ret_node);
@@ -2949,15 +2952,15 @@ TCconcatVecs (node *vec1, node *vec2)
     DBUG_ENTER ("TCconcatVecs");
 
     DBUG_ASSERT (((NODE_TYPE (vec1) == N_array) && (NODE_TYPE (vec2) == N_array)
-                  && (SHGetDim (ARRAY_SHAPE (vec1)) == 1)
-                  && (SHGetDim (ARRAY_SHAPE (vec2)) == 1)
+                  && (SHgetDim (ARRAY_SHAPE (vec1)) == 1)
+                  && (SHgetDim (ARRAY_SHAPE (vec2)) == 1)
                   && (ARRAY_BASETYPE (vec1) == ARRAY_BASETYPE (vec2))),
                  "ConcatVecs called with not N_array nodes in vector form");
 
     res = TCmakeFlatArray (TCcombineExprs (DUPdoDupTree (ARRAY_AELEMS (vec1)),
                                            DUPdoDupTree (ARRAY_AELEMS (vec2))));
 
-    shpseg = SHShape2OldShpseg (ARRAY_SHAPE (res));
+    shpseg = SHshape2OldShpseg (ARRAY_SHAPE (res));
 
     ARRAY_TYPE (res) = TBmakeTypes (ARRAY_BASETYPE (vec1), 1, shpseg, NULL, NULL);
 
@@ -3049,7 +3052,7 @@ TCids2Exprs (node *ids_arg)
     DBUG_ENTER ("TCids2Exprs");
 
     if (ids_arg != NULL) {
-        exprs = MakeExprs (DUPdupIdsId (ids_arg), TCids2Exprs (IDS_NEXT (ids_arg)));
+        exprs = TBmakeExprs (DUPdupIdsId (ids_arg), TCids2Exprs (IDS_NEXT (ids_arg)));
     } else {
         exprs = NULL;
     }
@@ -3087,7 +3090,7 @@ TCids2Array (node *ids_arg)
 
     ARRAY_ISCONST (array) = FALSE;
 
-    array_type = DUPDupOneTypes (IDS_TYPE (ids_arg));
+    array_type = DUPdupOneTypes (IDS_TYPE (ids_arg));
     if (TYPES_SHPSEG (array_type) == NULL) {
         TYPES_SHPSEG (array_type) = TBmakeShpseg (NULL);
     }
@@ -3331,7 +3334,7 @@ TCmakeVinfoDollar (node *next)
 
     DBUG_ENTER ("TCmakeVinfoDollar");
 
-    vinfo = TCmakeVinfo (DOLLAR, NULL, next, NULL);
+    vinfo = TBmakeVinfo (DOLLAR, NULL, NULL, next);
     VINFO_DOLLAR (vinfo) = vinfo;
 
     DBUG_RETURN (vinfo);
@@ -3350,13 +3353,13 @@ TCmakeIdCopyString (const char *str)
     node *result;
     DBUG_ENTER ("TCmakeIdCopyString");
 
-    if (name == NULL) {
-        name = "";
+    if (str == NULL) {
+        str = "";
     }
 
     result = TBmakeId (NULL);
 
-    ID_SPNAME (result) = ILIBstringCopy (name);
+    ID_SPNAME (result) = ILIBstringCopy (str);
 
     DBUG_RETURN (result);
 }
@@ -3368,8 +3371,8 @@ TCmakeIdCopyStringNt (const char *str, types *type)
 
     DBUG_ENTER ("TCmakeIdCopyStringNt");
 
-    result = TCmakeIdCopyString (name);
-    ID_NT_TAG (result) = NTUcreateNtTag (name, type);
+    result = TCmakeIdCopyString (str);
+    ID_NT_TAG (result) = NTUcreateNtTag (str, type);
 
     DBUG_RETURN (result);
 }
@@ -3387,13 +3390,13 @@ TCmakeIdsCopyString (const char *str, node *next)
     node *result;
     DBUG_ENTER ("TCmakeIdsCopyString");
 
-    if (name == NULL) {
-        name = "";
+    if (str == NULL) {
+        str = "";
     }
 
     result = TBmakeIds (NULL, next);
 
-    IDS_SPNAME (result) = ILIBstringCopy (name);
+    IDS_SPNAME (result) = ILIBstringCopy (str);
 
     DBUG_RETURN (result);
 }
@@ -3580,7 +3583,7 @@ TCliftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assi
             new_type = ID_TYPE (arg);
         }
     } else {
-        new_name = TmpVar ();
+        new_name = ILIBtmpVar ();
         DBUG_ASSERT ((new_type != NULL), "no type found!");
     }
 
@@ -3596,14 +3599,13 @@ TCliftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assi
      *   __A:1 = A:n;
      *   ... = fun( __A:1, ...);
      */
-    new_ids = TBmakeAvis (new_name, NULL)
+    new_ids = TBmakeIds (TBmakeAvis (new_name, NULL), NULL);
 
-      IDS_VARDEC (new_ids)
-      = new_vardec;
+    IDS_DECL (new_ids) = new_vardec;
 
-    (*new_assigns) = MakeAssign (MakeLet (arg, new_ids), (*new_assigns));
+    (*new_assigns) = TBmakeAssign (TBmakeLet (arg, new_ids), (*new_assigns));
 
-    new_arg = DUPDupIdsId (new_ids);
+    new_arg = DUPdupIdsId (new_ids);
 
     if (do_rc) {
         switch (NODE_TYPE (arg)) {
@@ -3617,7 +3619,7 @@ TCliftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assi
               = TBmakeAssign (TBmakeLet (TBmakePrf3 (F_alloc, TBmakeNum (1),
                                                      TBmakeNum (0),
                                                      TCcreateZeroVector (0, T_int)),
-                                         DUPDupIds (new_ids)),
+                                         DUPdoDupNode (new_ids)),
                               (*new_assigns));
             DBUG_ASSERT ((0), "There should be constants here, anyways!");
             break;
@@ -3693,7 +3695,7 @@ TCmakeIcm2 (char *name, node *arg1, node *arg2)
 
     DBUG_ENTER ("TCmakeIcm2");
 
-    icm = TBmakeIcm (name, TcCombineExprs (arg1, TCcombineExprs (arg2, NULL)));
+    icm = TBmakeIcm (name, TCcombineExprs (arg1, TCcombineExprs (arg2, NULL)));
 
     DBUG_RETURN (icm);
 }
@@ -3705,7 +3707,7 @@ TCmakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
 
     DBUG_ENTER ("TCmakeIcm3");
 
-    arg1 = CombineExprs (arg1, CombineExprs (arg2, CombineExprs (arg3, NULL)));
+    arg1 = TCcombineExprs (arg1, TCcombineExprs (arg2, TCcombineExprs (arg3, NULL)));
     icm = TBmakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
@@ -3718,10 +3720,10 @@ TCmakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
 
     DBUG_ENTER ("TCmakeIcm4");
 
-    arg4 = CombineExprs (arg4, NULL);
-    arg3 = CombineExprs (arg3, arg4);
-    arg2 = CombineExprs (arg2, arg3);
-    arg1 = CombineExprs (arg1, arg2);
+    arg4 = TCcombineExprs (arg4, NULL);
+    arg3 = TCcombineExprs (arg3, arg4);
+    arg2 = TCcombineExprs (arg2, arg3);
+    arg1 = TCcombineExprs (arg1, arg2);
     icm = TBmakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
@@ -3734,11 +3736,11 @@ TCmakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 
     DBUG_ENTER ("TCmakeIcm5");
 
-    arg5 = CombineExprs (arg5, NULL);
-    arg4 = CombineExprs (arg4, arg5);
-    arg3 = CombineExprs (arg3, arg4);
-    arg2 = CombineExprs (arg2, arg3);
-    arg1 = CombineExprs (arg1, arg2);
+    arg5 = TCcombineExprs (arg5, NULL);
+    arg4 = TCcombineExprs (arg4, arg5);
+    arg3 = TCcombineExprs (arg3, arg4);
+    arg2 = TCcombineExprs (arg2, arg3);
+    arg1 = TCcombineExprs (arg1, arg2);
     icm = TBmakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
@@ -3752,12 +3754,12 @@ TCmakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 
     DBUG_ENTER ("TCmakeIcm6");
 
-    arg6 = CombineExprs (arg6, NULL);
-    arg5 = CombineExprs (arg5, arg6);
-    arg4 = CombineExprs (arg4, arg5);
-    arg3 = CombineExprs (arg3, arg4);
-    arg2 = CombineExprs (arg2, arg3);
-    arg1 = CombineExprs (arg1, arg2);
+    arg6 = TCcombineExprs (arg6, NULL);
+    arg5 = TCcombineExprs (arg5, arg6);
+    arg4 = TCcombineExprs (arg4, arg5);
+    arg3 = TCcombineExprs (arg3, arg4);
+    arg2 = TCcombineExprs (arg2, arg3);
+    arg1 = TCcombineExprs (arg1, arg2);
     icm = TBmakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
@@ -3771,13 +3773,13 @@ TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 
     DBUG_ENTER ("TCmakeIcm7");
 
-    arg7 = CombineExprs (arg7, NULL);
-    arg6 = CombineExprs (arg6, arg7);
-    arg5 = CombineExprs (arg5, arg6);
-    arg4 = CombineExprs (arg4, arg5);
-    arg3 = CombineExprs (arg3, arg4);
-    arg2 = CombineExprs (arg2, arg3);
-    arg1 = CombineExprs (arg1, arg2);
+    arg7 = TCcombineExprs (arg7, NULL);
+    arg6 = TCcombineExprs (arg6, arg7);
+    arg5 = TCcombineExprs (arg5, arg6);
+    arg4 = TCcombineExprs (arg4, arg5);
+    arg3 = TCcombineExprs (arg3, arg4);
+    arg2 = TCcombineExprs (arg2, arg3);
+    arg1 = TCcombineExprs (arg1, arg2);
     icm = TBmakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
@@ -3798,7 +3800,7 @@ TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith :
+ ***  N_with :
  ***/
 
 /******************************************************************************
@@ -3828,7 +3830,7 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
     DBUG_ASSERT ((dim >= 0), "TCcreateScalarWith() used with unknown shape!");
 
     new_avis = TBmakeAvis (ILIBtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (1, dim)));
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim)));
     vardecs = TBmakeVardec (new_avis, vardecs);
     VARDEC_TYPE (vardecs) = TYtype2OldType (AVIS_TYPE (new_avis));
     vec_ids = TBmakeIds (new_avis, NULL);
@@ -3843,7 +3845,7 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
 
     new_avis
       = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-    id = TBmakeID (new_avis);
+    id = TBmakeId (new_avis);
     vardecs = TBmakeVardec (new_avis, vardecs);
     VARDEC_TYPE (vardecs) = TYtype2OldType (AVIS_TYPE (new_avis));
 
@@ -3856,9 +3858,9 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
                                                   NULL)),
                      TBmakeCode (TBmakeBlock (TCmakeAssignLet (new_avis, expr), NULL),
                                  TBmakeExprs (id, NULL)),
-                     TBmakeGenarray (Shpseg2Array (shape, dim), NULL));
-    NCODE_USED (WITH_CODE (wl))++;
-    NPART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
+                     TBmakeGenarray (TCshpseg2Array (shape, dim), NULL));
+    CODE_USED (WITH_CODE (wl))++;
+    PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
     WITH_PARTS (wl) = 1;
 
     fundef = TCaddVardecs (fundef, vardecs);
@@ -3893,11 +3895,12 @@ TCcreateZero (int dim, shpseg *shape, simpletype btype, bool no_wl, node *fundef
         zero = TCcreateZeroVector (length, btype);
     } else {
         if (no_wl) {
-            DBUG_ASSERT ((length <= wlunrnum), "CreateZero(): Vector is too long!");
+            DBUG_ASSERT ((length <= global.wlunrnum),
+                         "CreateZero(): Vector is too long!");
 
             zero
               = TBmakePrf (F_reshape,
-                           TBmakeExprs (Shpseg2Array (shape, dim),
+                           TBmakeExprs (TCshpseg2Array (shape, dim),
                                         TBmakeExprs (TCcreateZeroVector (length, btype),
                                                      NULL)));
         } else {
@@ -3925,7 +3928,7 @@ TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl, node *fu
 {
     node *sel;
     int len_index, dim_array;
-    node *new_index, *id, *vardec, *ass;
+    node *new_index, *id, *vardec, *ass, *new_avis;
     node *tmp_ids;
     shpseg *shape, *shape2;
     simpletype btype;
@@ -3946,7 +3949,7 @@ TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl, node *fu
         sel = NULL;
     } else if ((len_index == dim_array) || no_wl) {
         sel
-          = TBmakePrf (F_sel, TBmakeExprs (DUPdoDupIdsId (sel_vec),
+          = TBmakePrf (F_sel, TBmakeExprs (DUPdoDupNode (sel_vec),
                                            TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */
 
@@ -3976,32 +3979,36 @@ TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl, node *fu
         while (IDS_NEXT (tmp_ids) != NULL) {
             tmp_ids = IDS_NEXT (tmp_ids);
         }
-        IDS_NEXT (tmp_ids) = NWITH_IDS (sel); /* concat ids chains */
+        IDS_NEXT (tmp_ids) = WITH_IDS (sel); /* concat ids chains */
         new_index = TCids2Array (sel_ids);
         IDS_NEXT (tmp_ids) = NULL; /* restore ids chains */
-        /*HERE*/
+
         /*
          * create new id
          */
-        id = MakeId (TmpVar (), NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (ID_NAME (id)),
-                             DupOneTypes (ARRAY_TYPE (new_index)), NULL);
-        ID_VARDEC (id) = vardec;
-        ID_AVIS (id) = VARDEC_AVIS (vardec);
-        fundef = AddVardecs (fundef, vardec);
+
+        new_avis = TBmakeAvis (ILIBtmpVar (),
+                               TYoldType2Type (DUPdupOneTypes (ARRAY_TYPE (new_index))));
+        id = TBmakeId (new_avis);
+        vardec = TBmakeVardec (new_avis, NULL);
+        VARDEC_TYPE (vardec) = TYtype2OldType (AVIS_TYPE (new_avis));
+
+        fundef = TCaddVardecs (fundef, vardec);
 
         /*
          * create expression 'sel( tmp, A)' and insert it into WL
          */
-        ASSIGN_RHS (BLOCK_INSTR (NWITH_CBLOCK (sel)))
-          = TBmakePrf (F_sel, TBmakeExprs (id, TBmakeExprs (DupNode (sel_array), NULL)));
+        ASSIGN_RHS (BLOCK_INSTR (WITH_CBLOCK (sel)))
+          = TBmakePrf (F_sel,
+                       TBmakeExprs (id, TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
 
         /*
          * create assignment 'tmp = [...];' and insert it into WL
          */
-        ass = TCmakeAssignLet (StringCopy (ID_NAME (id)), vardec, new_index);
-        ASSIGN_NEXT (ass) = BLOCK_INSTR (NWITH_CBLOCK (sel));
-        BLOCK_INSTR (NWITH_CBLOCK (sel)) = ass;
+        ass
+          = TCmakeAssignLet (TBmakeAvis (ILIBstringCopy (ID_NAME (id)), NULL), new_index);
+        ASSIGN_NEXT (ass) = BLOCK_INSTR (WITH_CBLOCK (sel));
+        BLOCK_INSTR (WITH_CBLOCK (sel)) = ass;
     }
 
     DBUG_RETURN (sel);
@@ -4010,7 +4017,7 @@ TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl, node *fu
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Npart:
+ ***  N_part:
  ***/
 
 /** <!--********************************************************************-->
@@ -4042,37 +4049,37 @@ TCcountParts (node *parts)
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Ncode :
+ ***  N_code :
  ***/
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwithop :
+ ***  N_withop :
  ***/
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith2 :
+ ***  N_with2 :
  ***/
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith :  *and*  N_Nwith2 :
+ ***  N_with :  *and*  N_with2 :
  ***/
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_WLseg :  *and*  N_WLsegVar :
+ ***  N_wlseg :  *and*  N_wlsegVar :
  ***/
 
 /******************************************************************************
  *
  * Function:
- *   node *MakeWLsegX( int dims, node *contents, node *next)
+ *   node *TCmakeWLsegX( int dims, node *contents, node *next)
  *
  * Description:
  *
@@ -4080,16 +4087,16 @@ TCcountParts (node *parts)
  ******************************************************************************/
 
 node *
-MakeWLsegX (int dims, node *contents, node *next)
+TCmakeWlSegX (int dims, node *contents, node *next)
 {
     node *new_node;
 
-    DBUG_ENTER ("MakeWLsegX");
+    DBUG_ENTER ("TCmakeWlSegX");
 
-    if (AllStridesAreConstant (contents, TRUE, TRUE)) {
-        new_node = MakeWLseg (dims, contents, next);
+    if (WLTRAallStridesAreConstant (contents, TRUE, TRUE)) {
+        new_node = TBmakeWlseg (dims, contents, next);
     } else {
-        new_node = MakeWLsegVar (dims, contents, next);
+        new_node = TBmakeWlsegvar (dims, contents, next);
     }
 
     DBUG_RETURN (new_node);
@@ -4102,19 +4109,11 @@ MakeWLsegX (int dims, node *contents, node *next)
  ***/
 
 node *
-MakeStr_Copy (char *str)
+TCmakeStrCopy (const char *str)
 {
-    node *result;
+    DBUG_ENTER ("TCmakeStrCopy");
 
-    DBUG_ENTER ("MakeStr_Copy");
-
-    if (str == NULL) {
-        str = "";
-    }
-
-    result = MakeStr (StringCopy (str));
-
-    DBUG_RETURN (result);
+    DBUG_RETURN (TBmakeStr (ILIBstringCopy (str)));
 }
 
 /*--------------------------------------------------------------------------*/
@@ -4123,40 +4122,38 @@ MakeStr_Copy (char *str)
  *** N_linklist
  ***/
 
-#ifdef NEW_AST
-
 int
-AddLinkToLinks (node **links, node *link)
+TCaddLinkToLinks (node **links, node *link)
 {
     int result = 0;
 
-    DBUG_ENTER ("AddLinkToLinks");
+    DBUG_ENTER ("TCaddLinkToLinks");
 
     if (*links == NULL) {
         /*
          * it has not been found so far, so append it
          */
-        *links = MakeLinklist (link, NULL);
+        *links = TBmakeLinklist (link, NULL);
         result = 1;
     } else if (LINKLIST_LINK (*links) != link) {
         /*
          * its not the current one, so go on
          */
-        result = AddLinkToLinks (&LINKLIST_NEXT (*links), link);
+        result = TCaddLinkToLinks (&LINKLIST_NEXT (*links), link);
     }
 
     DBUG_RETURN (result);
 }
 
 int
-AddLinksToLinks (node **links, node *add)
+TCaddLinksToLinks (node **links, node *add)
 {
     int result = 0;
 
-    DBUG_ENTER ("AddLinksToLinks");
+    DBUG_ENTER ("TCaddLinksToLinks");
 
     while (add != NULL) {
-        result += AddLinkToLinks (links, LINKLIST_LINK (add));
+        result += TCaddLinkToLinks (links, LINKLIST_LINK (add));
         add = LINKLIST_NEXT (add);
     }
 
@@ -4164,15 +4161,15 @@ AddLinksToLinks (node **links, node *add)
 }
 
 bool
-LinklistContains (node *set, node *link)
+TClinklistContains (node *set, node *link)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("LinklistContains");
+    DBUG_ENTER ("TClinklistContains");
 
     while ((set != NULL) && (!result)) {
         DBUG_ASSERT ((NODE_TYPE (set) == N_linklist),
-                     "called LinklistContains with non N_linklist node!");
+                     "called TClinklistContains with non N_linklist node!");
 
         result = (LINKLIST_LINK (set) == link);
 
@@ -4183,22 +4180,20 @@ LinklistContains (node *set, node *link)
 }
 
 bool
-LinklistTCisSubset (node *super, node *sub)
+TClinklistTCisSubset (node *super, node *sub)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("LinklistTCisSubset");
+    DBUG_ENTER ("TClinklistTCisSubset");
 
     while ((sub != NULL) && result) {
         DBUG_ASSERT ((NODE_TYPE (sub) == N_linklist),
-                     "called LinklistTCisSubset with non N_linklist node!");
+                     "called TClinklistTCisSubset with non N_linklist node!");
 
-        result = result && LinklistContains (super, LINKLIST_LINK (sub));
+        result = result && TClinklistContains (super, LINKLIST_LINK (sub));
 
         sub = LINKLIST_NEXT (sub);
     }
 
     DBUG_RETURN (result);
 }
-
-#endif
