@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/11/06 09:23:57  cg
+ * Revision 1.4  1995/11/06 14:21:13  cg
+ * first working revision
+ *
+ * Revision 1.3  1995/11/06  09:23:57  cg
  * first compilable revision
  *
  * Revision 1.2  1995/11/03  16:40:41  cg
@@ -66,20 +69,6 @@ typedef struct UNQSTATELIST {
 #define UNQ_STATE(l) (l->state)
 #define UNQ_HISTORY(l) (l->history)
 #define UNQ_NEXT(l) (l->next)
-
-/************************************************************************
- *  local error macros
- ************************************************************************/
-
-#define UNQ_WARN(line, history, message)                                                 \
-                                                                                         \
-    WARN (line, message);                                                                \
-    PrintHistory (history);
-
-#define UNQ_ERROR(line, history, message)                                                \
-                                                                                         \
-    ERROR (line, message);                                                               \
-    PrintHistory (history);
 
 /************************************************************************
  *  more local macro definitions
@@ -550,9 +539,8 @@ CheckDefined (ids *var, int line)
 
     while (tmp != NULL) {
         if ((UNQ_STATE (tmp)[varno] == 1) && not_yet_warned) {
-            UNQ_WARN (line, UNQ_HISTORY (tmp),
-                      ("Object '%s` already created and still existing", IDS_NAME (var)));
-
+            ERROR (line, ("Object '%s` already existing", IDS_NAME (var)));
+            PrintHistory (UNQ_HISTORY (tmp));
             not_yet_warned = 0;
         } else {
             UNQ_STATE (tmp)[varno] = 1;
@@ -596,11 +584,11 @@ CheckApplied (node *var)
     if (attrib != ST_readonly_reference) {
         while (tmp != NULL) {
             if ((UNQ_STATE (tmp)[varno] == 0) && not_yet_errored) {
-                UNQ_ERROR (NODE_LINE (var), UNQ_HISTORY (tmp),
-                           ("Object '%s` already deleted and no longer existing\n\t"
-                            " -> Uniqueness Violation",
-                            ID_NAME (var)));
+                ERROR (NODE_LINE (var),
+                       ("Object '%s` already deleted (Uniqueness Violation)",
+                        ID_NAME (var)));
 
+                PrintHistory (UNQ_HISTORY (tmp));
                 not_yet_errored = 0;
             } else {
                 UNQ_STATE (tmp)[varno] = 0;
