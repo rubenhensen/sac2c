@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/10/03 16:10:54  khf
+ * debugging of intersection
+ *
  * Revision 1.12  2004/09/30 17:02:22  khf
  * added intersection of generators with steps and width
  *
@@ -91,6 +94,36 @@ struct INFO {
     node *assigns2shift;
 };
 
+/**
+ * GRIDINFO structure
+ */
+typedef struct GRIDINFO {
+    node *new_lb;
+    node *new_ub;
+    node *new_step;
+    node *new_width;
+    int max_dim;
+    node *nlb;
+    node *nub;
+    node *nstep;
+    node *nwidth;
+    node *off_1;
+    node *off_2;
+    node *stp_1;
+    node *stp_2;
+    node *wth_1;
+    node *wth_2;
+    int dim;
+    node *withid_1;
+    node *withid_2;
+    node *ncode_1;
+    node *ncode_2;
+    node *npart_1;
+    node *npart_2;
+    node *nparts_1;
+    node *nparts_2;
+} gridinfo;
+
 /* usage of arg_info: */
 #define INFO_WLFS_WL(n) (n->wl)
 #define INFO_WLFS_FUNDEF(n) (n->fundef)
@@ -112,7 +145,43 @@ struct INFO {
 #define INFO_WLFS_FWL_SHAPE(n) (n->fwl_shape)
 #define INFO_WLFS_ASSIGNS2SHIFT(n) (n->assigns2shift)
 
-#define MAX_NEWGENS 20
+/* usage of arg_gridinfo: */
+#define GRIDINFO_NEW_LB(n) (n->new_lb)
+#define GRIDINFO_NEW_UB(n) (n->new_ub)
+#define GRIDINFO_NEW_STEP(n) (n->new_step)
+#define GRIDINFO_NEW_WIDTH(n) (n->new_width)
+#define GRIDINFO_MAX_DIM(n) (n->max_dim)
+#define GRIDINFO_NEW_LB_AELEMS(n) (n->nlb)
+#define GRIDINFO_NEW_LB_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->nlb)))
+#define GRIDINFO_NEW_UB_AELEMS(n) (n->nub)
+#define GRIDINFO_NEW_UB_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->nub)))
+#define GRIDINFO_NEW_STEP_AELEMS(n) (n->nstep)
+#define GRIDINFO_NEW_STEP_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->nstep)))
+#define GRIDINFO_NEW_WIDTH_AELEMS(n) (n->nwidth)
+#define GRIDINFO_NEW_WIDTH_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->nwidth)))
+#define GRIDINFO_OFFSET_1_AELEMS(n) (n->off_1)
+#define GRIDINFO_OFFSET_1_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->off_1)))
+#define GRIDINFO_OFFSET_2_AELEMS(n) (n->off_2)
+#define GRIDINFO_OFFSET_2_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->off_2)))
+#define GRIDINFO_STEP_1_AELEMS(n) (n->stp_1)
+#define GRIDINFO_STEP_1_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->stp_1)))
+#define GRIDINFO_STEP_2_AELEMS(n) (n->stp_2)
+#define GRIDINFO_STEP_2_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->stp_2)))
+#define GRIDINFO_WIDTH_1_AELEMS(n) (n->wth_1)
+#define GRIDINFO_WIDTH_1_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->wth_1)))
+#define GRIDINFO_WIDTH_2_AELEMS(n) (n->wth_2)
+#define GRIDINFO_WIDTH_2_ELEM(n) (NUM_VAL (EXPRS_EXPR (n->wth_2)))
+#define GRIDINFO_CURRENT_DIM(n) (n->dim)
+#define GRIDINFO_WITHID_1(n) (n->withid_1)
+#define GRIDINFO_WITHID_2(n) (n->withid_2)
+#define GRIDINFO_NCODE_1(n) (n->ncode_1)
+#define GRIDINFO_NCODE_2(n) (n->ncode_2)
+#define GRIDINFO_NPART_1(n) (n->npart_1)
+#define GRIDINFO_NPART_2(n) (n->npart_2)
+#define GRIDINFO_NPARTS_1(n) (n->nparts_1)
+#define GRIDINFO_NPARTS_2(n) (n->nparts_2)
+
+#define MAX_NEWGENS 50
 
 typedef enum { WOT_gen_mod, WOT_fold, WOT_gen_mod_fold, WOT_unknown } wo_type_t;
 
@@ -178,6 +247,162 @@ FreeInfo (info *info)
     info = Free (info);
 
     DBUG_RETURN (info);
+}
+
+/**
+ * GRIDINFO functions
+ */
+static gridinfo *
+MakeGridInfo ()
+{
+    gridinfo *result;
+
+    DBUG_ENTER ("MakeGridInfo");
+
+    result = Malloc (sizeof (gridinfo));
+
+    GRIDINFO_NEW_LB (result) = NULL;
+    GRIDINFO_NEW_UB (result) = NULL;
+    GRIDINFO_NEW_STEP (result) = NULL;
+    GRIDINFO_NEW_WIDTH (result) = NULL;
+    GRIDINFO_MAX_DIM (result) = 0;
+    GRIDINFO_NEW_LB_AELEMS (result) = NULL;
+    GRIDINFO_NEW_UB_AELEMS (result) = NULL;
+    GRIDINFO_NEW_STEP_AELEMS (result) = NULL;
+    GRIDINFO_NEW_WIDTH_AELEMS (result) = NULL;
+    GRIDINFO_OFFSET_1_AELEMS (result) = NULL;
+    GRIDINFO_OFFSET_2_AELEMS (result) = NULL;
+    GRIDINFO_STEP_1_AELEMS (result) = NULL;
+    GRIDINFO_STEP_2_AELEMS (result) = NULL;
+    GRIDINFO_WIDTH_1_AELEMS (result) = NULL;
+    GRIDINFO_WIDTH_2_AELEMS (result) = NULL;
+    GRIDINFO_CURRENT_DIM (result) = 0;
+    GRIDINFO_WITHID_1 (result) = NULL;
+    GRIDINFO_WITHID_2 (result) = NULL;
+    GRIDINFO_NCODE_1 (result) = NULL;
+    GRIDINFO_NCODE_2 (result) = NULL;
+    GRIDINFO_NPART_1 (result) = NULL;
+    GRIDINFO_NPART_2 (result) = NULL;
+    GRIDINFO_NPARTS_1 (result) = NULL;
+    GRIDINFO_NPARTS_2 (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static gridinfo *
+FillGridInfo (gridinfo *arg_gridinfo, node *new_array_lb, node *new_array_ub,
+              node *new_step, node *new_width, node *offset_1, node *offset_2,
+              int max_dim, node *withid_1, node *withid_2, node *ncode_1, node *ncode_2)
+{
+    DBUG_ENTER ("FillGridInfo");
+
+    GRIDINFO_NEW_LB (arg_gridinfo) = new_array_lb;
+    GRIDINFO_NEW_UB (arg_gridinfo) = new_array_ub;
+    GRIDINFO_NEW_LB_AELEMS (arg_gridinfo) = ARRAY_AELEMS (new_array_lb);
+    GRIDINFO_NEW_UB_AELEMS (arg_gridinfo) = ARRAY_AELEMS (new_array_ub);
+    GRIDINFO_NEW_STEP (arg_gridinfo) = new_step;
+    GRIDINFO_NEW_STEP_AELEMS (arg_gridinfo) = ARRAY_AELEMS (new_step);
+    GRIDINFO_NEW_WIDTH (arg_gridinfo) = new_width;
+    GRIDINFO_NEW_WIDTH_AELEMS (arg_gridinfo) = ARRAY_AELEMS (new_width);
+    GRIDINFO_OFFSET_1_AELEMS (arg_gridinfo) = ARRAY_AELEMS (offset_1);
+    GRIDINFO_OFFSET_2_AELEMS (arg_gridinfo) = ARRAY_AELEMS (offset_2);
+    GRIDINFO_MAX_DIM (arg_gridinfo) = max_dim;
+    GRIDINFO_WITHID_1 (arg_gridinfo) = withid_1;
+    GRIDINFO_WITHID_2 (arg_gridinfo) = withid_2;
+    GRIDINFO_NCODE_1 (arg_gridinfo) = ncode_1;
+    GRIDINFO_NCODE_2 (arg_gridinfo) = ncode_2;
+
+    DBUG_RETURN (arg_gridinfo);
+}
+
+static gridinfo *
+DupGridInfo (gridinfo *info)
+{
+    gridinfo *result;
+
+    DBUG_ENTER ("DupGridInfo");
+
+    result = MakeGridInfo ();
+
+    GRIDINFO_NEW_LB (result) = GRIDINFO_NEW_LB (info);
+    GRIDINFO_NEW_UB (result) = GRIDINFO_NEW_UB (info);
+    GRIDINFO_NEW_STEP (result) = GRIDINFO_NEW_STEP (info);
+    GRIDINFO_NEW_WIDTH (result) = GRIDINFO_NEW_WIDTH (info);
+    GRIDINFO_MAX_DIM (result) = GRIDINFO_MAX_DIM (info);
+    GRIDINFO_NEW_LB_AELEMS (result) = GRIDINFO_NEW_LB_AELEMS (info);
+    GRIDINFO_NEW_UB_AELEMS (result) = GRIDINFO_NEW_UB_AELEMS (info);
+    GRIDINFO_NEW_STEP_AELEMS (result) = GRIDINFO_NEW_STEP_AELEMS (info);
+    GRIDINFO_NEW_WIDTH_AELEMS (result) = GRIDINFO_NEW_WIDTH_AELEMS (info);
+    GRIDINFO_OFFSET_1_AELEMS (result) = GRIDINFO_OFFSET_1_AELEMS (info);
+    GRIDINFO_OFFSET_2_AELEMS (result) = GRIDINFO_OFFSET_2_AELEMS (info);
+    GRIDINFO_STEP_1_AELEMS (result) = GRIDINFO_STEP_1_AELEMS (info);
+    GRIDINFO_STEP_2_AELEMS (result) = GRIDINFO_STEP_2_AELEMS (info);
+    GRIDINFO_WIDTH_1_AELEMS (result) = GRIDINFO_WIDTH_1_AELEMS (info);
+    GRIDINFO_WIDTH_2_AELEMS (result) = GRIDINFO_WIDTH_2_AELEMS (info);
+    GRIDINFO_CURRENT_DIM (result) = GRIDINFO_CURRENT_DIM (info);
+    GRIDINFO_WITHID_1 (result) = GRIDINFO_WITHID_1 (info);
+    GRIDINFO_WITHID_2 (result) = GRIDINFO_WITHID_2 (info);
+    GRIDINFO_NCODE_1 (result) = GRIDINFO_NCODE_1 (info);
+    GRIDINFO_NCODE_2 (result) = GRIDINFO_NCODE_2 (info);
+    GRIDINFO_NPART_1 (result) = GRIDINFO_NPART_1 (info);
+    GRIDINFO_NPART_2 (result) = GRIDINFO_NPART_2 (info);
+    GRIDINFO_NPARTS_1 (result) = GRIDINFO_NPARTS_1 (info);
+    GRIDINFO_NPARTS_2 (result) = GRIDINFO_NPARTS_2 (info);
+
+    DBUG_RETURN (result);
+}
+
+static gridinfo *
+GridInfoStep (gridinfo *gridinfo)
+{
+    DBUG_ENTER ("GridInfoStep");
+
+    GRIDINFO_NEW_LB_AELEMS (gridinfo) = EXPRS_NEXT (GRIDINFO_NEW_LB_AELEMS (gridinfo));
+    GRIDINFO_NEW_UB_AELEMS (gridinfo) = EXPRS_NEXT (GRIDINFO_NEW_UB_AELEMS (gridinfo));
+    GRIDINFO_NEW_STEP_AELEMS (gridinfo)
+      = EXPRS_NEXT (GRIDINFO_NEW_STEP_AELEMS (gridinfo));
+    GRIDINFO_NEW_WIDTH_AELEMS (gridinfo)
+      = EXPRS_NEXT (GRIDINFO_NEW_WIDTH_AELEMS (gridinfo));
+    GRIDINFO_OFFSET_1_AELEMS (gridinfo)
+      = EXPRS_NEXT (GRIDINFO_OFFSET_1_AELEMS (gridinfo));
+    GRIDINFO_OFFSET_2_AELEMS (gridinfo)
+      = EXPRS_NEXT (GRIDINFO_OFFSET_2_AELEMS (gridinfo));
+    GRIDINFO_STEP_1_AELEMS (gridinfo) = EXPRS_NEXT (GRIDINFO_STEP_1_AELEMS (gridinfo));
+    GRIDINFO_STEP_2_AELEMS (gridinfo) = EXPRS_NEXT (GRIDINFO_STEP_2_AELEMS (gridinfo));
+    GRIDINFO_WIDTH_1_AELEMS (gridinfo) = EXPRS_NEXT (GRIDINFO_WIDTH_1_AELEMS (gridinfo));
+    GRIDINFO_WIDTH_2_AELEMS (gridinfo) = EXPRS_NEXT (GRIDINFO_WIDTH_2_AELEMS (gridinfo));
+    GRIDINFO_CURRENT_DIM (gridinfo)++;
+
+    DBUG_RETURN (gridinfo);
+}
+
+static gridinfo *
+GridInfoUpdate (gridinfo *arg_gridinfo, gridinfo *new_gridinfo)
+{
+    DBUG_ENTER ("GridInfoUpdate");
+
+    if (GRIDINFO_NPARTS_1 (arg_gridinfo) == NULL) {
+        GRIDINFO_NPARTS_1 (arg_gridinfo) = GRIDINFO_NPARTS_1 (new_gridinfo);
+        GRIDINFO_NPARTS_2 (arg_gridinfo) = GRIDINFO_NPARTS_2 (new_gridinfo);
+
+        GRIDINFO_NPART_1 (arg_gridinfo) = GRIDINFO_NPART_1 (new_gridinfo);
+        GRIDINFO_NPART_2 (arg_gridinfo) = GRIDINFO_NPART_2 (new_gridinfo);
+    } else {
+        GRIDINFO_NPART_1 (arg_gridinfo) = GRIDINFO_NPART_1 (new_gridinfo);
+        GRIDINFO_NPART_2 (arg_gridinfo) = GRIDINFO_NPART_2 (new_gridinfo);
+    }
+
+    DBUG_RETURN (arg_gridinfo);
+}
+
+static gridinfo *
+FreeGridInfo (gridinfo *gridinfo)
+{
+    DBUG_ENTER ("FreeGridInfo");
+
+    gridinfo = Free (gridinfo);
+
+    DBUG_RETURN (gridinfo);
 }
 
 /*
@@ -706,103 +931,141 @@ CreateEntryFlatArray (int entry, int number)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IntersectGrids( node *new_step, node *offset_1, node *offset_2,
- *                           node *new_lb, node *new_ub, node *part_1,
- *                           node *part_2, int dim_max, node **nparts_2)
+ * @fn bool Match( int position, gridinfo *arg_gridinfo)
+ *
+ *   @brief verifies if current position in the new grid
+ *          is covered by both old grids
+ *
+ *   @param  int position           : indicates the current position
+ *                                    in new grid
+ *           gridinfo *arg_gridinfo : gridinfo structure
+ *   @return bool                   : TRUE iff both old grids covers current
+ *                                    position of new grid
+ ******************************************************************************/
+static bool
+Match (int position, gridinfo *arg_gridinfo)
+{
+    bool matches = FALSE;
+
+    DBUG_ENTER ("Match");
+
+    if ((((position + GRIDINFO_OFFSET_1_ELEM (arg_gridinfo))
+          % GRIDINFO_STEP_1_ELEM (arg_gridinfo))
+         < GRIDINFO_WIDTH_1_ELEM (arg_gridinfo))
+        && (((position + GRIDINFO_OFFSET_2_ELEM (arg_gridinfo))
+             % GRIDINFO_STEP_2_ELEM (arg_gridinfo))
+            < GRIDINFO_WIDTH_2_ELEM (arg_gridinfo))) {
+        matches = TRUE;
+    }
+
+    DBUG_RETURN (matches);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn gridinfo *IntersectGrids( gridinfo *arg_gridinfo)
  *
  *   @brief intersect two grids
  *
- *   @param  node *new_step    : step of new generators
- *           node *offset_1/2  : offsets of both grids to new_array_lb
- *           node *new_lb/ub   : lower and upper bounds of new generators
- *           node *part_1/2    : N_Parts
- *           int  dim_max      : max. number of dimensions
- *           node **new_part_2 : new N_Part for WL with parts2
- *   @return node *            : new N_Part for WL with parts1
+ *   @param  gridinfo *arg:gridinfo : gridinfo structure
+ *   @return gridinfo *             : modified gridinfo structure
  ******************************************************************************/
-static node *
-IntersectGrids (node *new_step, node *offset_1, node *offset_2, node *new_lb,
-                node *new_ub, node *parts_1, node *parts_2, int dim_max,
-                node **new_part_2)
+static gridinfo *
+IntersectGrids (gridinfo *arg_gridinfo)
 {
-    node *npart_1, *npart_2, *new_width, *nstep, *nwidth, *nlb, *nub, *off_1, *off_2,
-      *stp_1, *stp_2, *wth_1, *wth_2, *genn;
-    int counter, first, last, dim;
+    node *genn;
+    gridinfo *new_gridinfo;
+    int position, first, last;
 
     DBUG_ENTER ("IntersectGrids");
 
-    npart_1 = npart_2 = NULL;
-    new_width = CreateEntryFlatArray (0, dim);
+    position = first = last = 0;
+    while (position < GRIDINFO_NEW_STEP_ELEM (arg_gridinfo)) {
 
-    nstep = ARRAY_AELEMS (new_step);
-    nwidth = ARRAY_AELEMS (new_width);
-    nlb = ARRAY_AELEMS (new_lb);
-    nub = ARRAY_AELEMS (new_ub);
-    off_1 = ARRAY_AELEMS (offset_1);
-    off_2 = ARRAY_AELEMS (offset_2);
-    stp_1 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
-    stp_2 = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
-    wth_1 = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_1)));
-    wth_2 = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_2)));
+        if (Match (position, arg_gridinfo)) {
+            first = position;
+            do {
+                position++;
+            } while (Match (position, arg_gridinfo)
+                     && (position < GRIDINFO_NEW_STEP_ELEM (arg_gridinfo)));
+            last = position;
 
-    for (dim = 0; dim < dim_max - 1; dim++) {
+            GRIDINFO_NEW_WIDTH_ELEM (arg_gridinfo) = last - first;
 
-        counter = first = last = 0;
-        while (counter < (NUM_VAL (EXPRS_EXPR (nstep)))) {
+            if (GRIDINFO_CURRENT_DIM (arg_gridinfo)
+                < (GRIDINFO_MAX_DIM (arg_gridinfo) - 1)) {
+                /* compute inner dimensions if lower bound is less then upper bound */
+                if ((GRIDINFO_NEW_LB_ELEM (arg_gridinfo) + first)
+                    < GRIDINFO_NEW_UB_ELEM (arg_gridinfo)) {
+                    GRIDINFO_NEW_LB_ELEM (arg_gridinfo) += first;
 
-            if ((((counter + NUM_VAL (EXPRS_EXPR (off_1))) % NUM_VAL (EXPRS_EXPR (stp_1)))
-                 < NUM_VAL (EXPRS_EXPR (wth_1)))
-                && (((counter + NUM_VAL (EXPRS_EXPR (off_2)))
-                     % NUM_VAL (EXPRS_EXPR (stp_2)))
-                    < NUM_VAL (EXPRS_EXPR (wth_2)))) {
-                first = counter;
-                do {
-                    counter++;
-                } while (((((counter + NUM_VAL (EXPRS_EXPR (off_1)))
-                            % NUM_VAL (EXPRS_EXPR (stp_1)))
-                           < NUM_VAL (EXPRS_EXPR (wth_1)))
-                          && (((counter + NUM_VAL (EXPRS_EXPR (off_2)))
-                               % NUM_VAL (EXPRS_EXPR (stp_2)))
-                              < NUM_VAL (EXPRS_EXPR (wth_2))))
-                         || counter == (NUM_VAL (EXPRS_EXPR (nstep))));
-                last = counter;
-                NUM_VAL (EXPRS_EXPR (nwidth)) = last - first;
+                    new_gridinfo = DupGridInfo (arg_gridinfo);
+                    new_gridinfo = GridInfoStep (new_gridinfo);
 
-                if (NUM_VAL (EXPRS_EXPR (nlb)) + first < NUM_VAL (EXPRS_EXPR (nub))) {
-                    NUM_VAL (EXPRS_EXPR (nlb)) = NUM_VAL (EXPRS_EXPR (nlb)) + first;
-                } else
-                    goto DONE;
+                    new_gridinfo = IntersectGrids (new_gridinfo);
+
+                    arg_gridinfo = GridInfoUpdate (arg_gridinfo, new_gridinfo);
+                    new_gridinfo = FreeGridInfo (new_gridinfo);
+
+                    GRIDINFO_NEW_LB_ELEM (arg_gridinfo) -= first;
+                } else {
+                    /* stop further search */
+                    position = GRIDINFO_NEW_STEP_ELEM (arg_gridinfo);
+                }
+            } else {
+                /*
+                 * create new N_Parts and add it to structure
+                 * if lower bound is less then upper bound
+                 */
+                if ((GRIDINFO_NEW_LB_ELEM (arg_gridinfo) + first)
+                    < GRIDINFO_NEW_UB_ELEM (arg_gridinfo)) {
+                    GRIDINFO_NEW_LB_ELEM (arg_gridinfo) += first;
+                    genn
+                      = MakeNGenerator (DupNode (GRIDINFO_NEW_LB (arg_gridinfo)),
+                                        DupNode (GRIDINFO_NEW_UB (arg_gridinfo)), F_le,
+                                        F_lt, DupNode (GRIDINFO_NEW_STEP (arg_gridinfo)),
+                                        DupNode (GRIDINFO_NEW_WIDTH (arg_gridinfo)));
+                    GRIDINFO_NEW_LB_ELEM (arg_gridinfo) -= first;
+
+                    if (GRIDINFO_NPARTS_1 (arg_gridinfo) != NULL) {
+
+                        NPART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo))
+                          = MakeNPart (DupNode (GRIDINFO_WITHID_1 (arg_gridinfo)), genn,
+                                       GRIDINFO_NCODE_1 (arg_gridinfo));
+
+                        GRIDINFO_NPART_1 (arg_gridinfo)
+                          = NPART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo));
+
+                        NPART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo))
+                          = MakeNPart (DupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
+                                       DupNode (genn), GRIDINFO_NCODE_2 (arg_gridinfo));
+
+                        GRIDINFO_NPART_2 (arg_gridinfo)
+                          = NPART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo));
+                    } else {
+                        GRIDINFO_NPART_1 (arg_gridinfo)
+                          = MakeNPart (DupNode (GRIDINFO_WITHID_1 (arg_gridinfo)), genn,
+                                       GRIDINFO_NCODE_1 (arg_gridinfo));
+
+                        GRIDINFO_NPART_2 (arg_gridinfo)
+                          = MakeNPart (DupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
+                                       DupNode (genn), GRIDINFO_NCODE_2 (arg_gridinfo));
+
+                        GRIDINFO_NPARTS_1 (arg_gridinfo)
+                          = GRIDINFO_NPART_1 (arg_gridinfo);
+                        GRIDINFO_NPARTS_2 (arg_gridinfo)
+                          = GRIDINFO_NPART_2 (arg_gridinfo);
+                    }
+                } else {
+                    /* stop further search */
+                    position = GRIDINFO_NEW_STEP_ELEM (arg_gridinfo);
+                }
             }
-            counter++;
         }
-
-        nstep = EXPRS_NEXT (nstep);
-        nwidth = EXPRS_NEXT (nwidth);
-        nlb = EXPRS_NEXT (nlb);
-        nub = EXPRS_NEXT (nub);
-        off_1 = EXPRS_NEXT (off_1);
-        off_2 = EXPRS_NEXT (off_2);
-        stp_1 = EXPRS_NEXT (stp_1);
-        stp_2 = EXPRS_NEXT (stp_2);
-        wth_1 = EXPRS_NEXT (wth_1);
-        wth_2 = EXPRS_NEXT (wth_2);
+        position++;
     }
 
-    /* create new parts*/
-    genn = MakeNGenerator (new_lb, new_ub, F_le, F_lt, new_step, new_width);
-
-    npart_1 = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn, NPART_CODE (parts_1));
-
-    npart_2 = MakeNPart (DupNode (NPART_WITHID (parts_2)), genn, NPART_CODE (parts_2));
-
-DONE:
-    if (npart_1 == NULL) {
-        new_width = FreeNode (new_width);
-        new_step = FreeNode (new_step);
-    }
-
-    (*new_part_2) = npart_2;
-    DBUG_RETURN (npart_1);
+    DBUG_RETURN (arg_gridinfo);
 }
 
 /** <!--********************************************************************-->
@@ -823,7 +1086,9 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
 {
     node *nparts_1, *nparts_2, *npart_1, *npart_2, *parts_2_tmp, *genn, *lb_1, *ub_1,
       *lb_2, *ub_2, *new_array_lb, *new_array_ub, *lb_new, *ub_new, *new_step, *nstep,
-      *step_1, *step_2, *offset, *offset_1, *offset_2;
+      *step_1, *step_2, *dummy_step, *new_width, *dummy_width, *offset, *offset_1,
+      *offset_2;
+    gridinfo *arg_gridinfo;
     int dim, d, lb, ub, gen_counter = 0;
     bool create_step;
 
@@ -833,9 +1098,10 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
     nparts_1 = nparts_2 = NULL;
     npart_1 = npart_2 = NULL;
 
-    new_step = NULL;
     offset_1 = NULL;
     offset_2 = NULL;
+    dummy_step = NULL;
+    dummy_width = NULL;
 
     parts_2_tmp = parts_2;
     while (parts_1 != NULL) {
@@ -877,11 +1143,9 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
 
                     /* compute lowest-common-multiplier between both steps */
                     if (NGEN_STEP (NPART_GEN (parts_1)) == NULL)
-                        new_step
-                          = DupNode (ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2))));
+                        new_step = DupNode (NGEN_STEP (NPART_GEN (parts_2)));
                     else if (NGEN_STEP (NPART_GEN (parts_2)) == NULL)
-                        new_step
-                          = DupNode (ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1))));
+                        new_step = DupNode (NGEN_STEP (NPART_GEN (parts_1)));
                     else {
                         new_step = CreateEntryFlatArray (0, dim);
                         nstep = ARRAY_AELEMS (new_step);
@@ -915,6 +1179,16 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                             lb_1 = EXPRS_NEXT (lb_1);
                             step_1 = EXPRS_NEXT (step_1);
                         }
+                    } else {
+                        if (offset_1 == NULL)
+                            offset_1 = CreateEntryFlatArray (0, dim);
+                        else {
+                            offset = ARRAY_AELEMS (offset_1);
+                            for (d = 0; d < dim; d++) {
+                                NUM_VAL (EXPRS_EXPR (offset)) = 0;
+                                offset = EXPRS_NEXT (offset);
+                            }
+                        }
                     }
 
                     if (NGEN_STEP (NPART_GEN (parts_2)) != NULL) {
@@ -934,41 +1208,99 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                             lb_2 = EXPRS_NEXT (lb_2);
                             step_2 = EXPRS_NEXT (step_2);
                         }
+                    } else {
+                        if (offset_2 == NULL)
+                            offset_2 = CreateEntryFlatArray (0, dim);
+                        else {
+                            offset = ARRAY_AELEMS (offset_2);
+                            for (d = 0; d < dim; d++) {
+                                NUM_VAL (EXPRS_EXPR (offset)) = 0;
+                                offset = EXPRS_NEXT (offset);
+                            }
+                        }
                     }
 
-                    if (nparts_1) {
-                        NPART_NEXT (npart_1)
-                          = IntersectGrids (new_step, offset_1, offset_2, new_array_lb,
-                                            new_array_ub, parts_1, parts_2, dim,
-                                            &(NPART_NEXT (npart_2)));
+                    new_width = CreateEntryFlatArray (0, dim);
 
-                        if (NPART_NEXT (npart_1) != NULL) {
-                            npart_1 = NPART_NEXT (npart_1);
-                            npart_2 = NPART_NEXT (npart_2);
-                            gen_counter++;
-                        } else {
-                            new_array_lb = FreeNode (new_array_lb);
-                            new_array_ub = FreeNode (new_array_ub);
-                        }
+                    arg_gridinfo = MakeGridInfo ();
 
+                    /* get step and with of both parts, or create dummies */
+                    if (NGEN_STEP (NPART_GEN (parts_1)) != NULL) {
+                        GRIDINFO_STEP_1_AELEMS (arg_gridinfo)
+                          = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_1)));
+                        GRIDINFO_WIDTH_1_AELEMS (arg_gridinfo)
+                          = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_1)));
                     } else {
-                        npart_1 = IntersectGrids (new_step, offset_1, offset_2,
-                                                  new_array_lb, new_array_ub, parts_1,
-                                                  parts_2, dim, &(npart_2));
+                        if (dummy_step == NULL) {
+                            dummy_step = CreateEntryFlatArray (1, dim);
+                            dummy_width = CreateEntryFlatArray (1, dim);
+                        }
+                        GRIDINFO_STEP_1_AELEMS (arg_gridinfo) = ARRAY_AELEMS (dummy_step);
+                        GRIDINFO_WIDTH_1_AELEMS (arg_gridinfo)
+                          = ARRAY_AELEMS (dummy_width);
+                    }
 
-                        if (npart_1 != NULL) {
+                    if (NGEN_STEP (NPART_GEN (parts_2)) != NULL) {
+                        GRIDINFO_STEP_2_AELEMS (arg_gridinfo)
+                          = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (parts_2)));
+                        GRIDINFO_WIDTH_2_AELEMS (arg_gridinfo)
+                          = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (parts_2)));
+                    } else {
+                        if (dummy_step == NULL) {
+                            dummy_step = CreateEntryFlatArray (1, dim);
+                            dummy_width = CreateEntryFlatArray (1, dim);
+                        }
+                        GRIDINFO_STEP_2_AELEMS (arg_gridinfo) = ARRAY_AELEMS (dummy_step);
+                        GRIDINFO_WIDTH_2_AELEMS (arg_gridinfo)
+                          = ARRAY_AELEMS (dummy_width);
+                    }
+
+                    arg_gridinfo
+                      = FillGridInfo (arg_gridinfo, new_array_lb, new_array_ub, new_step,
+                                      new_width, offset_1, offset_2, dim,
+                                      NPART_WITHID (parts_1), NPART_WITHID (parts_2),
+                                      NPART_CODE (parts_1), NPART_CODE (parts_2));
+
+                    arg_gridinfo = IntersectGrids (arg_gridinfo);
+
+                    if (GRIDINFO_NPARTS_1 (arg_gridinfo) != NULL) {
+                        if (nparts_1) {
+                            NPART_NEXT (npart_1) = GRIDINFO_NPARTS_1 (arg_gridinfo);
+                            NPART_NEXT (npart_2) = GRIDINFO_NPARTS_2 (arg_gridinfo);
+                        } else {
+                            npart_1 = GRIDINFO_NPARTS_1 (arg_gridinfo);
+                            npart_2 = GRIDINFO_NPARTS_2 (arg_gridinfo);
                             nparts_1 = npart_1;
                             nparts_2 = npart_2;
+                            /* at least one new N_PART */
+                            gen_counter++;
+                        }
 
+                        while (NPART_NEXT (npart_1) != NULL) {
                             npart_1 = NPART_NEXT (npart_1);
                             npart_2 = NPART_NEXT (npart_2);
                             gen_counter++;
-                        } else {
-                            new_array_lb = FreeNode (new_array_lb);
-                            new_array_ub = FreeNode (new_array_ub);
                         }
                     }
 
+                    /* all new generators uses duplicates */
+                    new_array_lb = FreeNode (new_array_lb);
+                    new_array_ub = FreeNode (new_array_ub);
+                    new_width = FreeNode (new_width);
+                    new_step = FreeNode (new_step);
+                    arg_gridinfo = FreeGridInfo (arg_gridinfo);
+
+                    if (gen_counter > MAX_NEWGENS) {
+                        /*
+                         * Max. numbers of new generators is exceeded.
+                         * Remove all new generators.
+                         */
+                        DBUG_PRINT ("WLFS", ("number of new generators is exceeded -> "
+                                             "roll back"));
+                        nparts_1 = FreeTree (nparts_1);
+                        nparts_2 = FreeTree (nparts_2);
+                        goto DONE;
+                    }
                 } else {
                     genn = MakeNGenerator (new_array_lb, new_array_ub, F_le, F_lt, NULL,
                                            NULL);
@@ -1006,6 +1338,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                 new_array_ub = FreeNode (new_array_ub);
                 goto DONE;
             } else {
+                /* empty generator */
                 new_array_lb = FreeNode (new_array_lb);
                 new_array_ub = FreeNode (new_array_ub);
             }
@@ -1020,6 +1353,10 @@ DONE:
         offset_1 = FreeNode (offset_1);
     if (offset_2)
         offset_2 = FreeNode (offset_2);
+    if (dummy_step)
+        dummy_step = FreeNode (dummy_step);
+    if (dummy_width)
+        dummy_width = FreeNode (dummy_width);
 
     DBUG_ASSERT (((*new_parts_2) == NULL), "new_parts_2 had to be empty");
     (*new_parts_2) = nparts_2;
@@ -1057,6 +1394,8 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
             number_parts++;
             tmp = NPART_NEXT (tmp);
         }
+
+        DBUG_PRINT ("WLFS", ("%d new generators created", number_parts));
 
         NWITH_PART (fusionable_wl) = FreeTree (NWITH_PART (fusionable_wl));
         NWITH_PART (fusionable_wl) = new_parts_fwl;
@@ -1097,8 +1436,8 @@ AskFusionOracle (info *arg_info)
 
         if (INFO_WLFS_GENPROPERTY (arg_info) == GEN_constant
             && !INFO_WLFS_WO_CONTAINS_FOLD (arg_info)
-            && !INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
-            && INFO_WLFS_NO_STEP_WIDTH (arg_info)) {
+            && !INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)) {
+            /* INFO_WLFS_NO_STEP_WIDTH( arg_info)){ */
 
             /* is the size of both wl iteration spaces equal? */
             if (CheckIterationSpace (arg_info)) {
@@ -1106,6 +1445,7 @@ AskFusionOracle (info *arg_info)
                  * build new generators
                  * -> INFO_WLFS_GENPROPERTY(arg_info) = GEN_equal
                  */
+                DBUG_PRINT ("WLFS", ("build new generators"));
                 is_build = BuildNewGens (wl, fwl);
                 if (is_build) {
                     INFO_WLFS_GENPROPERTY (arg_info) = GEN_equal;
