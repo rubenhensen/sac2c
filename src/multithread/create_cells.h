@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/22 14:59:51  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.7  2004/08/16 18:15:26  skt
  * implementation finished
  *
@@ -34,16 +37,15 @@
  *
  *****************************************************************************/
 
-#ifndef CREATE_CELLS_H
+#ifndef _SAC_CREATE_CELLS_H
+#define _SAC_CREATE_CELLS_H
 
-#define CREATE_CELLS_H
+#include "types.h"
 
-extern node *CreateCells (node *arg_node);
+extern node *CRECEdoCreateCells (node *arg_node);
 
 extern node *CRECEblock (node *arg_node, info *arg_info);
 
 extern node *CRECEassign (node *arg_node, info *arg_info);
 
-node *CRECEInsertCell (node *act_assign);
-
-#endif /* CREATE_CELLS_H */
+#endif /* _SAC_CREATE_CELLS_H */

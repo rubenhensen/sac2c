@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2004/11/22 14:59:51  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.15  2004/08/26 17:05:04  skt
  * handling of MUTH_MULTI_SPECIALIZED added
  *
@@ -74,7 +77,6 @@
 
 #include "dbug.h"
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -127,13 +129,12 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/* TODO: TravNone in node_info.mac for:
- *                nwith2, N_let, N_return, N_ex, N_st, N_mt
- */
+/* some declaration */
+static node *InsertCell (node *act_assign);
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateCells(node *arg_node)
+ * @fn node *CRECEdoCreateCells(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -143,22 +144,22 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-CreateCells (node *arg_node)
+CRECEdoCreateCells (node *arg_node)
 {
     funtab *old_tab;
     info *arg_info;
-    DBUG_ENTER ("CreateCells");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "CreateCells expects a N_modul as arg_node");
+    DBUG_ENTER ("CRECEdoCreateCells");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "CRECEdoCreateCells expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
     /* push info ... */
     old_tab = act_tab;
     act_tab = crece_tab;
 
-    DBUG_PRINT ("CRECE", ("trav into modul-funs"));
-    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("CRECE", ("trav from modul-funs"));
+    DBUG_PRINT ("CRECE", ("trav into module-funs"));
+    MODUL_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    DBUG_PRINT ("CRECE", ("trav from module-funs"));
 
     /* pop info ... */
     act_tab = old_tab;
@@ -201,7 +202,7 @@ node *
 CRECEassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CRECEassign");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is no a N_assign");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is not a N_assign");
 
     /* traverse into the instruction - it could be a conditional */
     if (ASSIGN_INSTR (arg_node) != NULL) {
@@ -216,12 +217,12 @@ CRECEassign (node *arg_node, info *arg_info)
          * nisation */
         if (MUTH_SPLITPHASE_ENABLED == TRUE) {
             if (ASSIGN_EXECMODE (arg_node) != INFO_CRECE_LASTEXECMODE (arg_info)) {
-                arg_node = CRECEInsertCell (arg_node);
+                arg_node = InsertCell (arg_node);
                 INFO_CRECE_LASTEXECMODE (arg_info) = ASSIGN_EXECMODE (arg_node);
             }
         } else {
             if (ASSIGN_CELLID (arg_node) != INFO_CRECE_LASTCELLID (arg_info)) {
-                arg_node = CRECEInsertCell (arg_node);
+                arg_node = InsertCell (arg_node);
                 INFO_CRECE_LASTCELLID (arg_info) = ASSIGN_CELLID (arg_node);
             }
         }
@@ -235,11 +236,11 @@ CRECEassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-node *
-CRECEInsertCell (node *act_assign)
+static node *
+InsertCell (node *act_assign)
 {
     node *new_assign;
-    DBUG_ENTER ("MUTHInsertCell");
+    DBUG_ENTER ("InsertCell");
     DBUG_ASSERT ((NODE_TYPE (act_assign) == N_assign), "N_assign expected");
 
     new_assign = NULL;
