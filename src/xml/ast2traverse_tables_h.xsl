@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!--
+  $Log$
+  Revision 1.1  2004/11/23 22:18:57  sah
+  Initial revision
+
+
+
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  
+  <xsl:import href="common-key-tables.xsl"/>
+  <xsl:import href="common-travfun.xsl"/>
+  <xsl:import href="common-name-to-nodeenum.xsl"/>
+
+  <xsl:output method="text" indent="no"/>
+  <xsl:strip-space elements="*"/>
+
+  <!-- starting template -->
+  <xsl:template match="/">
+    <xsl:call-template name="travfun-file">
+      <xsl:with-param name="file">
+        <xsl:value-of select="'traverse_tables.h'"/>
+      </xsl:with-param>
+      <xsl:with-param name="desc">
+        <xsl:value-of select="'This file defines the function tables for traversal.'"/>
+      </xsl:with-param>
+      <xsl:with-param name="xslt">
+        <xsl:value-of select="'$Id$'"/>
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:text>
+#ifndef _SAC_TRAVERSE_TABLES_H_
+#define _SAC_TRAVERSE_TABLES_H_
+
+#include "types.h"
+
+typedef node *(*travfun_p)(node *, info *);
+
+typedef travfun_p travfunarray_t [ </xsl:text><xsl:value-of select="count(//syntaxtree/node)+1" /><xsl:text>] ;
+
+typedef travfunarray_t travtables_t [</xsl:text><xsl:value-of select="count(//traversal)+1" /><xsl:text>] ;
+
+extern travtables_t travtables;
+
+#endif /* _SAC_TRAVERSE_TABLES_H_ */
+    </xsl:text>
+  </xsl:template>
+
+</xsl:stylesheet>
