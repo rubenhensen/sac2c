@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.60  1997/11/27 10:45:29  dkr
+# added target lib/dbug.o
+#
 # Revision 1.59  1997/11/24 15:54:56  dkr
 # target "clean" now erase sac2c.efence, too
 #
@@ -269,6 +272,7 @@ dummy:
 	(cd src/refcount; $(MAKE) )       
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
+	(cd lib/src; $(MAKE) )
 
 prod:
 	(cd src/scanparse; $(MAKEPROD) )
@@ -282,6 +286,7 @@ prod:
 	(cd src/refcount; $(MAKEPROD) )       
 	(cd src/compile; $(MAKEPROD) )
 	(cd src/psi-opt; $(MAKEPROD) )
+	(cd lib/src; $(MAKEPROD) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -301,6 +306,7 @@ deps:
 	(cd src/refcount; $(MAKE) deps)
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
+	(cd lib/src; $(MAKE) deps)
 
 clean:
 	(cd src/scanparse; $(MAKE) clean)
@@ -314,6 +320,7 @@ clean:
 	(cd src/refcount; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
+	(cd lib/src; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
 
