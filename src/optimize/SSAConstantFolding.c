@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  2004/03/02 09:17:07  khf
+ * setting of AVIS_SSACONST in SSACFlet modified
+ *
  * Revision 1.52  2004/02/06 14:19:33  mwe
  * remove usage of PHIASSIGN and ASSIGN2
  * implement usage of primitive phi function instead
@@ -1841,8 +1844,9 @@ SSACFreturn (node *arg_node, node *arg_info)
 node *
 SSACFlet (node *arg_node, node *arg_info)
 {
-    constant *new_co;
     ntype *computed_type, *inferred_type;
+    constant *new_co;
+    ids *ids;
 
     DBUG_ENTER ("SSACFlet");
 
@@ -1855,6 +1859,7 @@ SSACFlet (node *arg_node, node *arg_info)
      * so this conditions holds here, too. for a general function
      * application there is no constant propagation allowed.
      */
+
     if ((LET_IDS (arg_node) != NULL)
         && (AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) == NULL)) {
 
@@ -1896,22 +1901,13 @@ SSACFlet (node *arg_node, node *arg_info)
 
         } else {
             /* set AVIS_SSACONST attributes */
-            ids *ids;
+            ids = LET_IDS (arg_node);
 
             /*
-             * F_type_error has multiple return values!
+             * Only ids nodes with one entry are considered.
+             * Tuple of constants are not provided/supported in SaC until now.
              */
-            ids = LET_IDS (arg_node);
-            while (ids != NULL) {
-
-                /*
-                 * do not set SSACONST in phi target variables due to two different
-                 * definitions of this variable in one conditional.
-                 * the phi-copy-target definition in loop then parts are never constant
-                 * because they are defined as result of the recursive call.
-                 * the assignments in the else part of a tail-end recursive loop can be
-                 * used without any problems.
-                 */
+            if (IDS_NEXT (ids) == NULL) {
 
                 new_co = COAST2Constant (LET_EXPR (arg_node));
 
@@ -1945,10 +1941,9 @@ SSACFlet (node *arg_node, node *arg_info)
                                 ("identifier %s is not constant",
                                  VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (ids)))));
                 }
-
-                ids = IDS_NEXT (ids);
             }
         }
+
     } else {
         /* left side is already maked as constant - no further processing needed */
     }
