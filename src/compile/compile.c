@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/04/07 10:01:29  hw
+ * Revision 1.9  1995/04/07 11:30:18  hw
+ * changed N_icm name ND_KS_ASSIGN -> ND_KS_ASSIGN_ARRAY
+ *
+ * Revision 1.8  1995/04/07  10:01:29  hw
  * - added one argument to N_icm of primitive functions take, drop and psi
  * - changed compilation of primitive function reshape
  *
@@ -824,7 +827,7 @@ CompPrf (node *arg_node, node *arg_info)
                     MAKE_ICM_NAME (arg_info->node[1], "NOOP");
                 } else {
                     MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
-                    BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN", arg2, res);
+                    BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg2, res);
                     old_arg_node = arg_node;
                     arg_node = arg_info->node[1]->node[0];
                     FREE (old_arg_node);
