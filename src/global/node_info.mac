@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.172  1998/04/03 12:20:26  srs
- * *** empty log message ***
+ * Revision 1.173  1998/04/03 19:26:49  dkr
+ * corrected nnode for N_conc
  *
  * Revision 1.171  1998/04/03 11:24:56  dkr
  * concregs renamed to concregions
@@ -796,11 +796,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
-  NIF (N_conc, "N_conc", TravSons, TravSons, PrintConc, TravSons, TravSons, TravSons,
+  NIF (N_conc, "N_conc", TravSons, TravSons, PrintConc, TravSons, OPTconc, TravSons,
        TravSons, FreeConc, TravSons, TravSons, CompConc, TravSons, DupConc, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECconc,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   /*
    *
