@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/02/12 10:54:12  nmw
+ * N_ssacnt and N_cseinfo added, N_arg and N_vardec modified
+ * to store information for ssa. N_block holds chain of SSA counters.
+ *
  * Revision 3.12  2001/02/07 20:17:07  dkr
  * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
  *
@@ -631,6 +635,8 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     ARG_NEXT (tmp) = next;
     ARG_ACTCHN (tmp) = NULL;
     ARG_COLCHN (tmp) = NULL;
+    ARG_SSAPHITARGET (tmp) = FALSE;
+    ARG_SSALPINV (tmp) = FALSE;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -674,6 +680,8 @@ MakeVardec (char *name, types *type, node *next)
     VARDEC_TYPE (tmp) = type;
     VARDEC_NAME (tmp) = name;
     VARDEC_NEXT (tmp) = next;
+    VARDEC_SSAPHITARGET (tmp) = FALSE;
+    VARDEC_SSALPINV (tmp) = FALSE;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -1209,6 +1217,46 @@ MakePragma ()
     tmp = CreateCleanNode (N_pragma);
 
     PRAGMA_NUMPARAMS (tmp) = 0;
+
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeCSEinfo (node *next, node *layer, node *let)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeCSEinfo");
+
+    tmp = CreateCleanNode (N_cseinfo);
+    CSEINFO_NEXT (tmp) = next;
+    CSEINFO_LAYER (tmp) = layer;
+    CSEINFO_LET (tmp) = let;
+
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+extern node *
+MakeSSAcnt (node *next, int count, char *baseid)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeSSAcnt");
+
+    tmp = CreateCleanNode (N_ssacnt);
+    SSACNT_NEXT (tmp) = next;
+    SSACNT_COUNT (tmp) = count;
+    SSACNT_BASEID (tmp) = baseid;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));

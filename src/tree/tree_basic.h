@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/02/12 10:54:12  nmw
+ * N_ssacnt and N_cseinfo added, N_arg and N_vardec modified
+ * to store information for ssa. N_block holds chain of SSA counters.
+ *
  * Revision 3.22  2001/02/12 09:56:40  dkr
  * FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN added
  *
@@ -948,6 +952,11 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       FUNDEF     (O)  (N_fundef)   (psi-optimize -> )
+ ***    node*       SSACOUNT        (N_ssacnt)   (ssaform -> optimize !!)
+ ***    node*       SSAASSIGN       (N_assign)   (ssaform -> optimize !!)
+ ***    constant*   SSACONST (0)                 (cf -> optimize !!)
+ ***    bool        SSAPHITARGET (0)             (ssaform -> optimize !!)
+ ***    bool        SSALPINV (0)                 (lir -> optimize !!)
  ***/
 
 /*
@@ -985,6 +994,11 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ACTCHN(n) (n->node[3])
 #define ARG_COLCHN(n) (n->node[4])
 #define ARG_FUNDEF(n) (n->node[5])
+#define ARG_SSACOUNT(n) ((node *)(n->dfmask[0]))
+#define ARG_SSAASSIGN(n) ((node *)(n->dfmask[1]))
+#define ARG_SSACONST(n) ((constant *)(n->info2))
+#define ARG_SSAPHITARGET(n) ((bool)(n->counter))
+#define ARG_SSALPINV(n) ((bool)(n->refcnt))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1012,6 +1026,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***    node*      SPMD_PROLOG_ICMS (O)   (N_fundef)  (compile !!)
  ***    node*      SPMD_SETUP_ARGS (O)    (N_fundef)  (compile !!)
+ ***    node*      SSACOUNTER (0) (N_ssacnt) ( ssaform -> optimize !!)
  ***/
 
 /*
@@ -1032,6 +1047,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[3])
 #define BLOCK_SPMD_SETUP_ARGS(n) (n->node[4])
 #define BLOCK_CACHESIM(n) (n->info.id)
+#define BLOCK_SSACOUNTER(n) (n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1061,6 +1077,11 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         FLAG                       (ael -> dcr2 !!)
  ***    bool        PADDED                     (ap -> )
  ***    node*       ICM      (O)  (N_icm)      (compile -> )
+ ***    node*       SSACOUNT        (N_ssacnt)   (ssaform -> optimize !!)
+ ***    node*       SSAASSIGN       (N_assign)   (ssaform -> optimize !!)
+ ***    constant*   SSACONST (0)                 (cf -> optimize !!)
+ ***    bool        SSAPHITARGET (0)             (ssaform -> optimize !!)
+ ***    bool        SSALPINV (0)                 (lir -> optimize !!)
  ***/
 
 /*
@@ -1098,6 +1119,11 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_OBJDEF(n) (n->node[4])
 #define VARDEC_ICM(n) (n->node[5])
+#define VARDEC_SSACOUNT(n) ((node *)(n->dfmask[0]))
+#define VARDEC_SSAASSIGN(n) ((node *)(n->dfmask[1]))
+#define VARDEC_SSACONST(n) ((constant *)(n->info2))
+#define VARDEC_SSAPHITARGET(n) ((bool)(n->counter))
+#define VARDEC_SSALPINV(n) ((bool)(n->refcnt))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1822,6 +1848,63 @@ extern node *MakePragma ();
 #define PRAGMA_TOUCH(n) ((ids *)(n->mask[4]))
 #define PRAGMA_COPYFUN(n) ((char *)(n->mask[5]))
 #define PRAGMA_FREEFUN(n) ((char *)(n->mask[6]))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_cseinfo :
+ ***
+ ***  sons:
+ ***
+ ***    node*    NEXT     (O)  (N_cseinfo)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*    LAYER         (N_cseinfo)
+ ***    node*    LET           (N_let)
+ ***/
+
+/*
+ * chained list of available expressions (N_let nodes) used for
+ * common subexpression elimination. The lists are organized
+ * in layers.
+ * These N_cseinfo nodes are not located in the AST, they are
+ * only used internally by CSE
+ */
+
+extern node *MakeCSEinfo (node *next, node *layer, node *let);
+
+#define CSEINFO_NEXT(n) (n->node[0])
+#define CSEINFO_LAYER(n) (n->node[1])
+#define CSEINFO_LET(n) (n->node[2])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_ssacnt :
+ ***
+ ***  sons:
+ ***
+ ***    node*    NEXT     (O)  (N_ssacnt)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      COUNT                    counter of renamed instances
+ ***    char*    BASEID                   basename to extend with __ssa<count>
+ ***/
+
+/*
+ * ssacnt stores for each base identifier the actual rename
+ * counter when transforming code in SSA-form. The set of
+ * N_ssacnt nodes is located in the main-block of the
+ * function using these variables to be renamed.
+ */
+
+extern node *MakeSSAcnt (node *next, int count, char *baseid);
+
+#define SSACNT_NEXT(n) (n->node[0])
+#define SSACNT_COUNT(n) (n->counter)
+#define SSACNT_BASEID(n) ((char *)(n->info2))
 
 /*--------------------------------------------------------------------------*/
 
