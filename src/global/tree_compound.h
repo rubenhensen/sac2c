@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/09/27 15:13:12  cg
+ * Revision 1.2  1995/10/01 13:04:32  cg
+ * added external declarations for SearchTypedef, CountNums, CopyShpseg, MergeShpseg
+ * added new compound macros for Shape-Access.
+ *
+ * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
  *
  *
@@ -20,6 +24,12 @@ These are sorted towards the structures they are used for similar to
 tree_basic.h. Please observe that all macros in this file and all functions
 in tree_compound.c should exclusively use the new virtual syntax tree.
 They must not (!!) contain direct accesses to the underlying data structure.
+
+All comments in relation to the outward behaviour of functions should be
+given in the usual form in this (!) file, not in tree_compound.c.
+The reason is to give a quick overview of the provided facilities
+(macros and functions) in a single file. Of course, comments to the
+specific implementation of a function should remain with the source code.
 
 ============================================================================*/
 
@@ -47,11 +57,87 @@ They must not (!!) contain direct accesses to the underlying data structure.
 #define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
 #define MOD_NAME(a) MOD (a), MOD_CON (a)
 
+/*
+ *
+ *  macro name    : CMP_MOD(a,b)
+ *  arg types     : 1) char*
+ *                  2) char*
+ *  result type   : int
+ *  description   : compares two module names (name maybe NULL)
+ *                  result: 1 - equal, 0 - not equal
+ *  global vars   : ---
+ *  funs          : ---
+ *
+ *  remarks       :
+ *
+ */
+
+#define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
+
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
-/*  compound macros for non-node structures                                 */
+/*  macros and functions for non-node structures                            */
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
+
+/***
+ ***  SHAPES :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  SHPSEG :
+ ***/
+
+/*
+ *
+ *  functionname  : CopyShpseg
+ *  arguments     : 1) pointer to old shpseg
+ *  description   : returns a copy of the given shpseg
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       : returns NULL if old shpseg is NULL
+ *
+ */
+
+extern shpseg *CopyShpseg (shpseg *old);
+
+/*
+ *
+ *  functionname  : MergeShpseg
+ *  arguments     : 1) pointer to first shpseg
+ *                  2) dimension of first shpseg
+ *                  3) pointer to second shpseg
+ *                  4) dimension of second shpseg
+ *  description   : returns a new shpseg that starts with the shapes of
+ *                  the first shpseg and ends with the shapes of the
+ *                  second shpseg
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
+extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  TYPES :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
 
 /*
  *
@@ -76,26 +162,49 @@ They must not (!!) contain direct accesses to the underlying data structure.
                                   : ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))          \
                                      && (!strcmp (TYPES_MOD (a), TYPES_MOD (b))))))
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  IDS :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  NUMS :
+ ***/
+
 /*
  *
- *  macro name    : CMP_MOD(a,b)
- *  arg types     : 1) char*
- *                  2) char*
- *  result type   : int
- *  description   : compares two module names (name maybe NULL)
- *                  result: 1 - equal, 0 - not equal
+ *  functionname  : CountNums
+ *  arguments     : pointer to nums-chain (chained list of integers)
+ *  description   : returns the length of th chained list
  *  global vars   : ---
- *  funs          : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
  *
  *  remarks       :
  *
  */
 
-#define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
+extern int CountNums (nums *numsp);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  STRINGS :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  OTHERS :
+ ***/
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
-/*  compound macros for node structures                                     */
+/*  macros and functions for node structures                                */
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
@@ -161,11 +270,30 @@ They must not (!!) contain direct accesses to the underlying data structure.
  *  compound access macros
  */
 
-#define TYPEDEF_BASETYPE(n) TYPES_BASETYPE (TYPEDEF_TYPE (n))
-#define TYPEDEF_DIM(n) TYPES_DIM (TYPEDEF_TYPE (n))
-#define TYPEDEF_SHAPE(n, x) TYPES_SHAPE (TYPEDEF_TYPE (n), x)
-#define TYPEDEF_TNAME(n) TYPES_NAME (TYPEDEF_TYPE (n))
-#define TYPEDEF_TMOD(n) TYPES_MOD (TYPEDEF_TYPE (n))
+#define TYPEDEF_BASETYPE(n) (TYPES_BASETYPE (TYPEDEF_TYPE (n)))
+#define TYPEDEF_DIM(n) (TYPES_DIM (TYPEDEF_TYPE (n)))
+#define TYPEDEF_SHAPE(n, x) (TYPES_SHAPE (TYPEDEF_TYPE (n), x))
+#define TYPEDEF_SHPSEG(n) (TYPES_SHPSEG (TYPEDEF_TYPE (n)))
+#define TYPEDEF_TNAME(n) (TYPES_NAME (TYPEDEF_TYPE (n)))
+#define TYPEDEF_TMOD(n) (TYPES_MOD (TYPEDEF_TYPE (n)))
+
+/*
+ *
+ *  functionname  : SearchTypedef
+ *  arguments     : 1) type name to be searched for
+ *                  2) module name of type to be searched for
+ *                  3) list of type implementations (typedef nodes)
+ *  description   : looks for a certain typedef in list of typedefs
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : CMP_TYPE_TYPEDEF
+ *
+ *  remarks       :
+ *
+ */
+
+extern node *SearchTypedef (char *name, char *mod, node *implementations);
 
 /*
  *
@@ -191,6 +319,27 @@ They must not (!!) contain direct accesses to the underlying data structure.
             : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
                && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
 
+/*
+ *
+ *  macro name    : CMP_TYPE_TYPEDEF(name, mod, typedef)
+ *  arg types     : 1) char*
+ *                  2) char*
+ *                  3) node*  (N_typedef)
+ *  result type   : int
+ *  description   : compares name and module name of a type with the
+ *                  defined name and module name of a typedef
+ *                  result: 1 - equal, 0 - not equal
+ *  global vars   : ---
+ *  funs          : ---
+ *
+ *  remarks       :
+ *
+ */
+
+#define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
+    ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
+     && (!strcmp (MOD (mod), MOD (TYPEDEF_MOD (tdef)))))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -201,11 +350,12 @@ They must not (!!) contain direct accesses to the underlying data structure.
  *  compound access macros
  */
 
-#define OBJDEF_BASETYPE(n) TYPES_BASETYPE (OBJDEF_TYPE (n))
-#define OBJDEF_DIM(n) TYPES_DIM (OBJDEF_TYPE (n))
-#define OBJDEF_SHAPE(n, x) TYPES_SHAPE (OBJDEF_TYPE (n), x)
-#define OBJDEF_TNAME(n) TYPES_NAME (OBJDEF_TYPE (n))
-#define OBJDEF_TMOD(n) TYPES_MOD (OBJDEF_TYPE (n))
+#define OBJDEF_BASETYPE(n) (TYPES_BASETYPE (OBJDEF_TYPE (n)))
+#define OBJDEF_DIM(n) (TYPES_DIM (OBJDEF_TYPE (n)))
+#define OBJDEF_SHAPE(n, x) (TYPES_SHAPE (OBJDEF_TYPE (n), x))
+#define OBJDEF_SHPSEG(n) (TYPES_SHPSEG (OBJDEF_TYPE (n)))
+#define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
+#define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
 
 /*
  *
@@ -240,17 +390,47 @@ They must not (!!) contain direct accesses to the underlying data structure.
  *  compound access macros
  */
 
-#define FUNDEF_BASETYPE(n) TYPES_BASETYPE (FUNDEF_TYPES (n))
-#define FUNDEF_DIM(n) TYPES_DIM (FUNDEF_TYPES (n))
-#define FUNDEF_SHAPE(n, x) TYPES_SHAPE (FUNDEF_TYPES (n), x)
-#define FUNDEF_TNAME(n) TYPES_NAME (FUNDEF_TYPES (n))
-#define FUNDEF_TMOD(n) TYPES_MOD (FUNDEF_TYPES (n))
+#define FUNDEF_BASETYPE(n) (TYPES_BASETYPE (FUNDEF_TYPES (n)))
+#define FUNDEF_DIM(n) (TYPES_DIM (FUNDEF_TYPES (n)))
+#define FUNDEF_SHAPE(n, x) (TYPES_SHAPE (FUNDEF_TYPES (n), x))
+#define FUNDEF_SHPSEG(n) (TYPES_SHPSEG (FUNDEF_TYPES (n)))
+#define FUNDEF_TNAME(n) (TYPES_NAME (FUNDEF_TYPES (n)))
+#define FUNDEF_TMOD(n) (TYPES_MOD (FUNDEF_TYPES (n)))
 
 /*
- *  function declarations
+ *
+ *  functionname  : CmpDomain
+ *  arguments     : 1) N_arg node of one function
+ *                  2) N_arg node of another function
+ *  description   : checks whether the functions have equal domain
+ *                  returns 1 if domain is equal, 0 else
+ *  global vars   : ----
+ *  internal funs : ----
+ *  external funs : ----
+ *  macros        : DBUG..., NULL, DIM, TYPES, CMP_TYPE_ID, SIMPLETYPE
+ *
+ *  remarks       : similar to function CmpFunParams of typechecker.
+ *                  some minor changes to fix appearing segmentation
+ *                  faults.
+ *
  */
 
 extern int CmpDomain (node *args1, node *args2);
+
+/*
+ *
+ *  functionname  : ObjList2ArgList
+ *  arguments     : 1) pointer to chain of objdef nodes
+ *  description   : makes an argument list from an objdef chain
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+
 extern void ObjList2ArgList (node *objdef);
 
 /*
@@ -305,11 +485,12 @@ extern void ObjList2ArgList (node *objdef);
  *  compound access macros
  */
 
-#define ARG_BASETYPE(n) TYPES_BASETYPE (ARG_TYPE (n))
-#define ARG_DIM(n) TYPES_DIM (ARG_TYPE (n))
-#define ARG_SHAPE(n, x) TYPES_SHAPE (ARG_TYPE (n), x)
-#define ARG_TNAME(n) TYPES_NAME (ARG_TYPE (n))
-#define ARG_TMOD(n) TYPES_MOD (ARG_TYPE (n))
+#define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
+#define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
+#define ARG_SHAPE(n, x) (TYPES_SHAPE (ARG_TYPE (n), x))
+#define ARG_SHPSEG(n) (TYPES_SHPSEG (ARG_TYPE (n)))
+#define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
+#define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -327,11 +508,12 @@ extern void ObjList2ArgList (node *objdef);
  *  compound access macros
  */
 
-#define VARDEC_BASETYPE(n) TYPES_BASETYPE (VARDEC_TYPE (n))
-#define VARDEC_DIM(n) TYPES_DIM (VARDEC_TYPE (n))
-#define VARDEC_SHAPE(n, x) TYPES_SHAPE (VARDEC_TYPE (n), x)
-#define VARDEC_TNAME(n) TYPES_NAME (VARDEC_TYPE (n))
-#define VARDEC_TMOD(n) TYPES_MOD (VARDEC_TYPE (n))
+#define VARDEC_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (n)))
+#define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
+#define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
+#define VARDEC_SHPSEG(n) (TYPES_SHPSEG (VARDEC_TYPE (n)))
+#define VARDEC_TNAME(n) (TYPES_NAME (VARDEC_TYPE (n)))
+#define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -355,11 +537,12 @@ extern void ObjList2ArgList (node *objdef);
  *  compound access macros
  */
 
-#define CAST_BASETYPE(n) TYPES_BASETYPE (CAST_TYPE (n))
-#define CAST_DIM(n) TYPES_DIM (CAST_TYPE (n))
-#define CAST_SHAPE(n, x) TYPES_SHAPE (CAST_TYPE (n), x)
-#define CAST_TNAME(n) TYPES_NAME (CAST_TYPE (n))
-#define CAST_TMOD(n) TYPES_MOD (CAST_TYPE (n))
+#define CAST_BASETYPE(n) (TYPES_BASETYPE (CAST_TYPE (n)))
+#define CAST_DIM(n) (TYPES_DIM (CAST_TYPE (n)))
+#define CAST_SHAPE(n, x) (TYPES_SHAPE (CAST_TYPE (n), x))
+#define CAST_SHPSEG(n) (TYPES_SHPSEG (CAST_TYPE (n)))
+#define CAST_TNAME(n) (TYPES_NAME (CAST_TYPE (n)))
+#define CAST_TMOD(n) (TYPES_MOD (CAST_TYPE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -451,11 +634,12 @@ extern void ObjList2ArgList (node *objdef);
  *  compound access macros
  */
 
-#define ARRAY_BASETYPE(n) TYPES_BASETYPE (ARRAY_TYPE (n))
-#define ARRAY_DIM(n) TYPES_DIM (ARRAY_TYPE (n))
-#define ARRAY_SHAPE(n, x) TYPES_SHAPE (ARRAY_TYPE (n), x)
-#define ARRAY_TNAME(n) TYPES_NAME (ARRAY_TYPE (n))
-#define ARRAY_TMOD(n) TYPES_MOD (ARRAY_TYPE (n))
+#define ARRAY_BASETYPE(n) (TYPES_BASETYPE (ARRAY_TYPE (n)))
+#define ARRAY_DIM(n) (TYPES_DIM (ARRAY_TYPE (n)))
+#define ARRAY_SHAPE(n, x) (TYPES_SHAPE (ARRAY_TYPE (n), x))
+#define ARRAY_SHPSEG(n) (TYPES_SHPSEG (ARRAY_TYPE (n)))
+#define ARRAY_TNAME(n) (TYPES_NAME (ARRAY_TYPE (n)))
+#define ARRAY_TMOD(n) (TYPES_MOD (ARRAY_TYPE (n)))
 
 /*
  *  function declarations
@@ -502,6 +686,20 @@ node *Shape2Array (shapes *shp);
  *  description   :
  *  global vars   :
  *  funs          :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
  *
  *  remarks       :
  *
