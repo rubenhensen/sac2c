@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/04/30 12:29:15  nmw
+ * GetDataVec() added
+ *
  * Revision 1.5  2001/04/19 07:49:26  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -386,6 +389,7 @@ COMakeConstantFromArray (node *a)
  *    simpletype COGetType( constant *a)
  *    int COGetDim( constant *a)
  *    shape *COGetShape( constant *a)
+ *    void **GetDataVec( constant *a)
  *
  * description:
  *    several functions for extracting info from constants.
@@ -411,6 +415,13 @@ COGetShape (constant *a)
 {
     DBUG_ENTER ("COGetShape");
     DBUG_RETURN (CONSTANT_SHAPE (a));
+}
+
+void **
+COGetDataVec (constant *a)
+{
+    DBUG_ENTER ("COGetDataVec");
+    DBUG_RETURN (CONSTANT_ELEMS (a));
 }
 
 /******************************************************************************
