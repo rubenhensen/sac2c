@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/19 14:45:26  jhs
+ * updated duplication of N_sync (SYNC_[FIRST|LAST are duplicated correctly).
+ * Changed signature of MakeSync by the way.
+ *
  * Revision 2.12  1999/07/07 15:04:25  sbs
  * DupVinfo added; it implicitly generates consistent VINFO_DOLLAR
  * pointers!!!
@@ -981,7 +985,10 @@ DupSync (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupSync");
 
-    new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)), SYNC_FIRST (arg_node));
+    new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)));
+
+    SYNC_FIRST (new_node) = SYNC_FIRST (arg_node);
+    SYNC_LAST (new_node) = SYNC_LAST (arg_node);
 
     if (SYNC_IN (arg_node) != NULL) {
         SYNC_IN (new_node) = DFMGenMaskCopy (SYNC_IN (arg_node));
