@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/05/05 20:23:31  ktr
+ * Home -> ISP
+ *
  * Revision 1.9  2004/05/05 19:18:44  ktr
  * C functions should now be correctly refcounted.
  *
@@ -67,7 +70,7 @@ typedef struct RC_COUNTER {
 #define INFO_SSARC_INCLIST(n) ((rc_list_struct *)(n->node[1]))
 #define INFO_SSARC_FUNDEF(n) (n->node[2])
 #define INFO_SSARC_WITHID(n) (n->node[3])
-#define INFO_SSARC_LHS_COUNT(n) (n->counter)
+#define INFO_SSARC_LHS_COUNT(n) (n->refcnt)
 #define INFO_SSARC_FUNAP(n) (n->node[4])
 
 #define AVIS_SSARC_COUNTED(n) ((bool)(n->info.cint))
@@ -366,6 +369,8 @@ SSARCfundef (node *fundef, node *arg_info)
 
         DBUG_RETURN (fundef);
     }
+
+    PrintNode (fundef);
 
     INFO_SSARC_FUNDEF (arg_info) = fundef;
     INFO_SSARC_DEPTH (arg_info) = 0;
