@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.4  1997/12/04 15:28:30  srs
+# removed generation of debug information for dbug.c
+#
 # Revision 1.3  1997/12/02 18:47:53  dkr
 # now uses his own CFLAGS!!
 #
@@ -13,7 +16,8 @@
 #
 
 CC        := gcc
-MYFLAGS   := -g
+#MYFLAGS   := -g
+MYFLAGS   := 
 
 
 INCS=
