@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.247  1998/08/11 00:04:04  dkr
+ * PrintNodeTree extended
+ *
  * Revision 1.246  1998/08/07 14:38:20  dkr
  * PrintWLsegVar added
  *
@@ -3400,6 +3403,13 @@ PrintNodeTree (node *node)
                 PrintNodeTreeIds (NWITHID_IDS (node));
             } else {
                 fprintf (outfile, "?");
+            }
+            fprintf (outfile, " )\n");
+            break;
+        case N_Nwithop:
+            fprintf (outfile, "( ");
+            if (NWITHOP_FUNDEF (node) != NULL) {
+                fprintf (outfile, "%s", FUNDEF_NAME (NWITHOP_FUNDEF (node)));
             }
             fprintf (outfile, " )\n");
             break;
