@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.15  2000/06/23 16:02:56  dkr
+ * ICMs for old with-loop removed
+ *
  * Revision 2.14  2000/02/09 12:03:46  dkr
  * superfluous space in output of ND_FUN_DEC removed
  *
@@ -33,19 +35,7 @@
  * These are intended to eventually supplant the extant
  * ARRAY macros.
  *
- * Revision 2.5  1999/05/19 18:58:59  dkr
- * added missing {s in BeginFold
- *
- * Revision 2.4  1999/05/12 16:38:22  cg
- * include main.h removed
- *
- * Revision 2.3  1999/05/05 09:12:55  jhs
- * ICMCompileND_KD_ROT_CxSxA_A changed, it can handle empty arrays now.
- *
- * Revision 2.2  1999/04/12 09:37:48  cg
- * All accesses to C arrays are now performed through the new ICMs
- * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
- * of cache simulation as well as boundary checking.
+ * [...]
  *
  * Revision 2.1  1999/02/23 12:42:41  sacbase
  * new release made
@@ -53,47 +43,12 @@
  * Revision 1.13  1999/01/22 14:32:25  sbs
  * ND_PRF_MODARRAY_AxVxA_CHECK_REUSE and
  * ND_PRF_MODARRAY_AxVxA
- *
  * added.
  *
- * Revision 1.12  1998/08/07 18:10:00  sbs
- * changed PROFILE_BEGIN_WITH -> SAC_PF_BEGIN_WITH
- * and     PROFILE_END_WITH   -> SAC_PF_END_WITH
- *
- * Revision 1.11  1998/08/06 17:20:05  dkr
- * changed ICM ND_KS_VECT2OFFSET
- *
- * Revision 1.10  1998/06/25 08:03:45  cg
- * ND_FUN_DEC ICM modified.
- *
- * Revision 1.9  1998/06/23 12:52:28  cg
- * Parantheses removed from macro name in #undef statement
- *
- * Revision 1.8  1998/06/06 15:58:41  dkr
- * fixed a bug with new variable names
- *
- * Revision 1.7  1998/06/06 13:55:59  dkr
- * fixed a bug with new variable names in ND_KS_VECT2OFFSET
- *
- * Revision 1.6  1998/06/05 19:41:43  dkr
- * added some INDENTs
- *
- * Revision 1.5  1998/06/04 17:03:29  cg
- * switched to new variable names.
- *
- * Revision 1.4  1998/05/12 09:03:42  cg
- * The new macro SAC_MT_CURRENT_FUN() is now set before each function definition.
- *
- * Revision 1.3  1998/05/07 10:13:53  dkr
- * some routines are moved to icm2c_basic.h
- *
- * Revision 1.2  1998/05/07 08:10:02  cg
- * C implemented ICMs converted to new naming conventions.
+ * [...]
  *
  * Revision 1.1  1998/04/25 16:19:58  sbs
  * Initial revision
- *
- *
  */
 
 #include <malloc.h>
@@ -105,7 +60,7 @@
 
 #ifdef TAGGED_ARRAYS
 #include "icm2c_utils.h"
-#endif
+#endif /* TAGGED_ARRAYS */
 
 #include "dbug.h"
 #include "my_debug.h"
@@ -114,178 +69,8 @@
 #include "print.h"
 #include "gen_startup_code.h"
 
-#define RetWithScal(res, val)                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %s__destptr) = %s;\n", res, res, val[0]);  \
-    INDENT;                                                                              \
-    fprintf (outfile, "%s__destptr++;\n", res);
-
-#define RetWithArray(res, a)                                                             \
-    INDENT;                                                                              \
-    fprintf (outfile, "{ int SAC_i;\n\n");                                               \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++) {\n", a);         \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile,                                                                    \
-             "SAC_ND_WRITE_ARRAY(%s, %s__destptr)"                                       \
-             " = SAC_ND_READ_ARRAY(%s, SAC_i);\n",                                       \
-             res, res, a);                                                               \
-    INDENT;                                                                              \
-    fprintf (outfile, "%s__destptr++;\n", res);                                          \
-    indent--;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "}\n");                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_DEC_RC_FREE_ARRAY( %s, 1);\n", a);                         \
-    indent--;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "}\n")
-
-#define BeginWith(res, dimres, from, to, idx, idxlen, fillstr, withkind)                 \
-    INDENT;                                                                              \
-    fprintf (outfile, "{\n");                                                            \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "int %s__destptr=0;\n", res);                                      \
-                                                                                         \
-    {                                                                                    \
-        int i, j;                                                                        \
-        for (i = 0; i < idxlen; i++) {                                                   \
-            INDENT;                                                                      \
-            fprintf (outfile, "int SAC_lim_%d;\n", i);                                   \
-            INDENT;                                                                      \
-            fprintf (outfile, "int %s__offset%d_left=", res, i);                         \
-            fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %d)", from, i);                     \
-            for (j = (i + 1); j < dimres; j++)                                           \
-                fprintf (outfile, " *SAC_ND_KD_A_SHAPE(%s, %d)", res, j);                \
-            fprintf (outfile, ";\n");                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "int %s__offset%d_right=", res, i);                        \
-            fprintf (outfile,                                                            \
-                     "(SAC_ND_KD_A_SHAPE(%s, %d)"                                        \
-                     " - SAC_ND_READ_ARRAY(%s, %d) - 1)",                                \
-                     res, i, to, i);                                                     \
-            for (j = (i + 1); j < dimres; j++)                                           \
-                fprintf (outfile, " *SAC_ND_KD_A_SHAPE(%s, %d)", res, j);                \
-            fprintf (outfile, ";\n");                                                    \
-        }                                                                                \
-        fprintf (outfile, "\n");                                                         \
-        INDENT;                                                                          \
-        fprintf (outfile, "SAC_PF_BEGIN_WITH( " withkind " )\n");                        \
-        {                                                                                \
-            int i;                                                                       \
-            for (i = 0; i < idxlen; i++) {                                               \
-                INDENT;                                                                  \
-                fprintf (outfile, "SAC_lim_%d=%s__destptr+%s__offset%d_left;\n", i, res, \
-                         res, i);                                                        \
-                INDENT;                                                                  \
-                fprintf (outfile, "for(; %s__destptr<SAC_lim_%d; %s__destptr++) {\n",    \
-                         res, i, res);                                                   \
-                indent++;                                                                \
-                INDENT;                                                                  \
-                fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %s__destptr) = ", res, res);   \
-                fillstr;                                                                 \
-                fprintf (outfile, ";\n");                                                \
-                indent--;                                                                \
-                INDENT;                                                                  \
-                fprintf (outfile, "}\n");                                                \
-                                                                                         \
-                INDENT;                                                                  \
-                fprintf (outfile,                                                        \
-                         "for( SAC_ND_WRITE_ARRAY(%s, %d)=SAC_ND_READ_ARRAY(%s, %d); "   \
-                         "SAC_ND_READ_ARRAY(%s,%d)<=SAC_ND_READ_ARRAY(%s,%d); "          \
-                         "SAC_ND_WRITE_ARRAY(%s,%d)=SAC_ND_READ_ARRAY(%s,%d)+1) {\n",    \
-                         idx, i, from, i, idx, i, to, i, idx, i, idx, i);                \
-                indent++;                                                                \
-            }                                                                            \
-        }                                                                                \
-        fprintf (outfile, "\n");                                                         \
-    }
-
-#define BeginFoldWith(res, sizeres, form, to, idx, idixlen, n_neutral, neutral)          \
-    INDENT;                                                                              \
-    fprintf (outfile, "{ SAC_PF_BEGIN_WITH( fold )\n");                                  \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    if (0 < sizeres) {                                                                   \
-        indent++;                                                                        \
-        INDENT;                                                                          \
-        {                                                                                \
-            int i, j;                                                                    \
-            if (sizeres == n_neutral)                                                    \
-                for (i = 0; i < n_neutral; i += 1)                                       \
-                    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %d) = %s;\n", res, i,      \
-                             neutral[i]);                                                \
-            else                                                                         \
-                for (i = 0, j = 0; i < n_neutral; i += 1, j = i / n_neutral)             \
-                    fprintf (outfile,                                                    \
-                             " SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, "      \
-                             "%d);\n",                                                   \
-                             res, i, neutral[j], i - n_neutral * j);                     \
-        }                                                                                \
-    } else                                                                               \
-        fprintf (outfile, " %s=%s;\n", res, neutral[0]);                                 \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = 0; i < idxlen; i++) {                                                   \
-            INDENT;                                                                      \
-            fprintf (outfile,                                                            \
-                     "for( SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d); "     \
-                     "SAC_ND_READ_ARRAY(%s, %d)<=SAC_ND_READ_ARRAY(%s, %d); "            \
-                     "SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d) + 1) {\n",  \
-                     idx, i, from, i, idx, i, to, i, idx, i, idx, i);                    \
-            indent++;                                                                    \
-        }                                                                                \
-    }                                                                                    \
-    fprintf (outfile, "\n")
-
-#define EndWith(res, dimres, idxlen, fillstr, withkind)                                  \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = idxlen - 1; i >= 0; i--) {                                              \
-            indent--;                                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "}\n");                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "SAC_lim_%d=%s__destptr+%s__offset%d_right;\n", i, res,    \
-                     res, i);                                                            \
-            INDENT;                                                                      \
-            fprintf (outfile, "for(; %s__destptr<SAC_lim_%d; %s__destptr++) {\n", res,   \
-                     i, res);                                                            \
-            indent++;                                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %s__destptr) = ", res, res);       \
-            fillstr;                                                                     \
-            fprintf (outfile, ";\n");                                                    \
-            indent--;                                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "}\n");                                                    \
-        }                                                                                \
-    }                                                                                    \
-    INDENT;                                                                              \
-    fprintf (outfile, "SAC_PF_END_WITH( " withkind " )\n");                              \
-    indent--;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "}\n\n")
-
-#define EndFoldWith(idxlen)                                                              \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = 0; i < idxlen; i++) {                                                   \
-            indent--;                                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "}\n");                                                    \
-        }                                                                                \
-    }                                                                                    \
-    INDENT;                                                                              \
-    fprintf (outfile, "SAC_PF_END_WITH( fold )\n");                                      \
-    indent--;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "}\n\n")
-
 #ifdef TAGGED_ARRAYS
+
 int
 FindArg (char *str)
 {
@@ -298,6 +83,7 @@ FindArg (char *str)
     DBUG_ASSERT ((i < 8), "FindArg was passed illegal str argument");
     return (i);
 }
+
 #define ScanArglist2(arg, n, baction, sepstr)                                            \
     {                                                                                    \
         int i = 0;                                                                       \
@@ -312,7 +98,8 @@ FindArg (char *str)
             baction (loc);                                                               \
         }                                                                                \
     }
-#endif TAGGED_ARRAYS
+
+#endif /* TAGGED_ARRAYS */
 
 #define ScanArglist(arg, n, bin, bout, binout, bupd, bupdbox, binrc, boutrc, binoutrc,   \
                     sepstr)                                                              \
@@ -1241,6 +1028,7 @@ ICMCompileND_KD_PSI_VxA_A (int line, int dima, char *a, char *res, int dimv, cha
 
     DBUG_VOID_RETURN;
 }
+
 /******************************************************************************
  *
  * function:
@@ -1947,271 +1735,6 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (int line, char *res_type, int dimre
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_BEGIN_GENARRAY( char *res, int dimres, char *from, char *to,
- *                                     char *idx, int idxlen)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_BEGIN_GENARRAY( res, dimres, from, to, idx, idxlen)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_BEGIN_GENARRAY (char *res, int dimres, char *from, char *to, char *idx,
-                             int idxlen)
-{
-    DBUG_ENTER ("ICMCompileND_BEGIN_GENARRAY");
-
-#define ND_BEGIN_GENARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_BEGIN_GENARRAY
-
-    BeginWith (res, dimres, from, to, idx, idxlen, fprintf (outfile, "0"), "genarray");
-
-#ifdef TEST_BACKEND
-    indent -= idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_BEGIN_MODARRAY( char *res, int dimres, char *a,
- *                                     char *from, char *to,
- *                                     char *idx, int idxlen)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_BEGIN_MODARRAY( res, dimres, a, from, to, idx, idxlen)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_BEGIN_MODARRAY (char *res, int dimres, char *a, char *from, char *to,
-                             char *idx, int idxlen)
-{
-    DBUG_ENTER ("ICMCompileND_BEGIN_MODARRAY");
-
-#define ND_BEGIN_MODARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_BEGIN_MODARRAY
-
-    BeginWith (res, dimres, from, to, idx, idxlen,
-               fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %s__destptr)", a, res),
-               "modarray");
-
-#ifdef TEST_BACKEND
-    indent -= idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_BEGIN_FOLDPRF( char *res, int dimres, char *from, char *to,
- *                                    char *idx, int idxlen, int n_neutral, char
- ***neutral)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_BEGIN_FOLDPRF( res, dimres, a, from, to, idx, idxlen, n_neutral, neutral)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_BEGIN_FOLDPRF (char *res, int dimres, char *from, char *to, char *idx,
-                            int idxlen, int n_neutral, char **neutral)
-{
-    DBUG_ENTER ("ICMCompileND_BEGIN_FOLDPRF");
-
-#define ND_BEGIN_FOLDPRF
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_BEGIN_FOLDPRF
-
-    BeginFoldWith (res, dimres, from, to, idx, idxlen, n_neutral, neutral);
-
-#ifdef TEST_BACKEND
-    indent -= idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_BEGIN_FOLDFUN( char *res, int dimres, char *from, char *to,
- *                                    char *idx, int idxlen, int n_neutral, char
- ***neutral)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_BEGIN_FOLDFUN( res, dimres, a, from, to, idx, idxlen, n_neutral, neutral)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_BEGIN_FOLDFUN (char *res, int dimres, char *from, char *to, char *idx,
-                            int idxlen, int n_neutral, char **neutral)
-{
-    DBUG_ENTER ("ICMCompileND_BEGIN_FOLDFUN");
-
-#define ND_BEGIN_FOLDFUN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_BEGIN_FOLDFUN
-
-    BeginFoldWith (res, dimres, from, to, idx, idxlen, n_neutral, neutral);
-
-#ifdef TEST_BACKEND
-    indent -= idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_END_GENARRAY_S( char *res, int dimres, char **valstr)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_END_GENARRAY_S( res, dimres, valstr)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_END_GENARRAY_S (char *res, int dimres, char **valstr)
-{
-    DBUG_ENTER ("ICMCompileND_END_GENARRAY_S");
-
-#define ND_END_GENARRAY_S
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_END_GENARRAY_S
-
-#ifdef TEST_BACKEND
-    indent += dimres + 1;
-#endif /* TEST_BACKEND */
-
-    RetWithScal (res, valstr);
-    EndWith (res, dimres, dimres, fprintf (outfile, "0"), "genarray");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_END_GENARRAY_A( char *res, int dimres, char *reta, int idxlen)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_END_GENARRAY_A( res, dimres, reta, idxlen)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_END_GENARRAY_A (char *res, int dimres, char *reta, int idxlen)
-{
-    DBUG_ENTER ("ICMCompileND_END_GENARRAY_A");
-
-#define ND_END_GENARRAY_A
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_END_GENARRAY_A
-
-#ifdef TEST_BACKEND
-    indent += idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    RetWithArray (res, reta);
-    EndWith (res, dimres, idxlen, fprintf (outfile, "0"), "genarray");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_END_MODARRAY_S( char *res, int dimres, char *a, char **valstr)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_END_MODARRAY_S( res, dimres, a, valstr)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_END_MODARRAY_S (char *res, int dimres, char *a, char **valstr)
-{
-    DBUG_ENTER ("ICMCompileND_END_MODARRAY_S");
-
-#define ND_END_MODARRAY_S
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_END_MODARRAY_S
-
-#ifdef TEST_BACKEND
-    indent += dimres + 1;
-#endif /* TEST_BACKEND */
-
-    RetWithScal (res, valstr);
-    EndWith (res, dimres, dimres,
-             fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %s__destptr)", a, res), "modarray");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_END_FOLD( int idxlen)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_END_FOLD( idxlen )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_END_FOLD (int idxlen)
-{
-    DBUG_ENTER ("ICMCompileND_END_FOLD");
-
-#define ND_END_FOLD
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_END_FOLD
-
-#ifdef TEST_BACKEND
-    indent += idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    EndFoldWith (idxlen);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   void ICMCompileND_KS_VECT2OFFSET( char *off_name, char *arr_name,
  *                                     int dim, int dims, char **s)
  *
@@ -2242,40 +1765,6 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims, 
     fprintf (outfile, ";\n");
     INDENT;
     fprintf (outfile, "SAC_ND_DEC_RC_FREE_ARRAY( %s, 1)\n", arr_name);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_END_MODARRAY_A( char *res, int dimres, char *a, char *reta,
- *                                     int idxlen)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_END_MODARRAY_A( res, dimres, a, reta, idxlen)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_END_MODARRAY_A (char *res, int dimres, char *a, char *reta, int idxlen)
-{
-    DBUG_ENTER ("ICMCompileND_END_MODARRAY_A");
-
-#define ND_END_MODARRAY_A
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_END_MODARRAY_A
-
-#ifdef TEST_BACKEND
-    indent += idxlen + 1;
-#endif /* TEST_BACKEND */
-
-    RetWithArray (res, reta);
-    EndWith (res, dimres, idxlen,
-             fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %s__destptr)", a, res), "modarray");
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.9  2000/06/23 16:03:17  dkr
+ * ICMs for old with-loop removed
+ *
  * Revision 2.8  2000/01/17 16:25:58  cg
  * Removed static and dynamic versions of the ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
@@ -23,8 +25,7 @@
  * Revision 2.3  1999/06/03 13:19:00  jhs
  * Changed parameters for MT_CONTINUE.
  *
- * Revision 2.2  1999/05/12 14:39:05  cg
- * NO_TRACE renamed to TRACE_NONE
+ * ... [eliminated] ...
  *
  * Revision 2.1  1999/02/23 12:42:34  sacbase
  * new release made
@@ -32,62 +33,16 @@
  * Revision 1.53  1999/01/22 14:32:25  sbs
  * ND_PRF_MODARRAY_AxVxA_CHECK_REUSE and
  * ND_PRF_MODARRAY_AxVxA
- *
  * added.
- *
- * Revision 1.52  1998/10/29 20:37:29  dkr
- * signature of ICM WL_FOLD_NOOP changed
- *
- * Revision 1.51  1998/08/27 14:48:45  cg
- * ICM ADJUST_SCHEDULER now gets also upper bound of respective block.
- *
- * Revision 1.50  1998/08/07 16:07:33  dkr
- * some WL-ICMs changed
- *
- * Revision 1.49  1998/08/07 12:30:57  dkr
- * fixed signature of MT_ADJUST_SCHEDULER
- *
- * Revision 1.48  1998/08/06 17:19:34  dkr
- * changed signature of ICM ND_KS_VECT2OFFSET
- *
- * Revision 1.47  1998/08/03 10:50:52  cg
- * added implementation of new ICM MT_ADJUST_SCHEDULER
- *
- * Revision 1.46  1998/07/03 10:18:15  cg
- * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
- * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
- * MT_SPMD_SETUP and MT_SPMD_EXECUTE
- *
- * Revision 1.45  1998/06/29 08:55:51  cg
- * added new multi-threaded versions of new with-loop begin/end ICMs
- * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
- *
- * Revision 1.44  1998/06/24 10:36:59  dkr
- * WL_(NON)FOLD_BEGIN/END are now h-icms
- *
- * Revision 1.43  1998/06/23 12:49:48  cg
- * added implementations of scheduling ICMs
- * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
- *
- * Revision 1.42  1998/06/19 18:29:21  dkr
- * added WL_NONFOLD_END, WL_FOLD_END
- *
- * Revision 1.41  1998/06/09 16:46:19  dkr
- * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
- *
- * Revision 1.40  1998/05/24 00:43:08  dkr
- * changed signature of some WL-ICMs
  *
  * ... [eliminated] ...
  *
  * Revision 1.1  1995/03/10  17:26:51  sbs
  * Initial revision
- *
- *
  */
 
+
 /*
- *
  * ATTENTION!! same variable names within different ICM-argument
  *   specifications should be of the same type even if they are in
  *   different ICM-specifications!!!!
@@ -395,98 +350,6 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
 ICM_END( ND_PRF_MODARRAY_AxVxA, (line,res_type,dimres,res,old,val,dim,v) )
 #endif
 
-#if defined(ND_BEGIN_GENARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_GENARRAY, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( from)
-  ICM_STR( to)
-  ICM_STR( idx)
-  ICM_INT( idxlen)
-ICM_END( ND_BEGIN_GENARRAY, (res, dimres, from, to, idx, idxlen) )
-#endif
-
-#if defined(ND_END_GENARRAY_S) || defined(ICM_ALL)
-ICM_DEF( ND_END_GENARRAY_S, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_VAR( 1, valstr)
-ICM_END( ND_END_GENARRAY_S, (res, dimres, valstr) )
-#endif
-
-#if defined(ND_END_GENARRAY_A) || defined(ICM_ALL)
-ICM_DEF( ND_END_GENARRAY_A, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( reta)
-  ICM_INT(idxlen)
-ICM_END( ND_END_GENARRAY_A, (res, dimres, reta, idxlen) )
-#endif
-
-#if defined(ND_BEGIN_MODARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_MODARRAY, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( a)
-  ICM_STR( from)
-  ICM_STR( to)
-  ICM_STR( idx)
-  ICM_INT( idxlen)
-ICM_END( ND_BEGIN_MODARRAY, (res, dimres, a, from, to, idx, idxlen) )
-#endif
-
-#if defined(ND_END_MODARRAY_S) || defined(ICM_ALL)
-ICM_DEF( ND_END_MODARRAY_S, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( a)
-  ICM_VAR( 1, valstr)
-ICM_END( ND_END_MODARRAY_S, (res, dimres, a, valstr) )
-#endif
-
-#if defined(ND_END_MODARRAY_A) || defined(ICM_ALL)
-ICM_DEF( ND_END_MODARRAY_A, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( a)
-  ICM_STR( reta)
-  ICM_INT(idxlen)
-ICM_END( ND_END_MODARRAY_A, (res, dimres, a, reta, idxlen) )
-#endif
-
-#if defined(ND_BEGIN_FOLDPRF) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_FOLDPRF, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( from)
-  ICM_STR( to)
-  ICM_STR( idx)
-  ICM_INT( idxlen)
-  ICM_INT( n_neutral)
-  ICM_VAR( n_neutral, neutral)
-ICM_END( ND_BEGIN_FOLDPRF, (res, dimres, from, to, idx, idxlen, n_neutral, neutral) )
-#endif
-
-
-#if defined(ND_END_FOLD) || defined(ICM_ALL)
-ICM_DEF( ND_END_FOLD, TRACE_NONE)
-   ICM_INT( idxlen)
-ICM_END( ND_END_FOLD, (idxlen))
-#endif
-
-#if defined(ND_BEGIN_FOLDFUN) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_FOLDFUN, TRACE_NONE)
-  ICM_STR( res)
-  ICM_INT(dimres)
-  ICM_STR( from)
-  ICM_STR( to)
-  ICM_STR( idx)
-  ICM_INT( idxlen)
-  ICM_INT( n_neutral)
-  ICM_VAR( n_neutral, neutral)
-ICM_END( ND_BEGIN_FOLDFUN, (res, dimres, from, to, idx, idxlen, n_neutral, neutral) )
-#endif
-
 #if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
 ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_STR( off_name)
@@ -496,7 +359,6 @@ ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_VAR( dims, s)
 ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, s))
 #endif
-
 
 
 /*
