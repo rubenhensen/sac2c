@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.82  2003/09/25 19:05:08  dkr
+ * new argument 'copyfun' added to some ICMs
+ *
  * Revision 1.81  2003/09/25 13:42:58  dkr
  * new argument 'copyfun' added to some ICMs
  *
@@ -3758,7 +3761,8 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_TAKE__SHAPE", icm_args);
 
-    ret_node = MakeAssignIcm1 ("ND_PRF_TAKE__DATA", DupTree (icm_args), NULL);
+    ret_node = MakeAssignIcm2 ("ND_PRF_TAKE__DATA", DupTree (icm_args),
+                               MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3808,7 +3812,8 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_DROP__SHAPE", icm_args);
 
-    ret_node = MakeAssignIcm1 ("ND_PRF_DROP__DATA", DupTree (icm_args), NULL);
+    ret_node = MakeAssignIcm2 ("ND_PRF_DROP__DATA", DupTree (icm_args),
+                               MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3835,6 +3840,7 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     node *arg1, *arg2;
     ids *let_ids;
     node *icm_args;
+    char *copyfun1, *copyfun2;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfCat");
@@ -3843,8 +3849,8 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cat_SxV is no N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cat_SxV is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cat_VxV is no N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cat_VxV is no N_id!");
 
     (*check_reuse1) = NULL;
     (*check_reuse2) = NULL;
@@ -3859,7 +3865,14 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_CAT__SHAPE", icm_args);
 
-    ret_node = MakeAssignIcm1 ("ND_PRF_CAT__DATA", DupTree (icm_args), NULL);
+    copyfun1 = GenericFun (0, ID_TYPE (arg1));
+    copyfun2 = GenericFun (0, ID_TYPE (arg2));
+    DBUG_ASSERT ((((copyfun1 == NULL) && (copyfun2 == NULL))
+                  || (strcmp (copyfun1, copyfun2) == 0)),
+                 "F_cat_VxV: different copyfuns found!");
+
+    ret_node = MakeAssignIcm2 ("ND_PRF_CAT__DATA", DupTree (icm_args),
+                               MakeId_Copy (copyfun1), NULL);
 
     DBUG_RETURN (ret_node);
 }
