@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.167  2004/11/26 12:05:50  sbs
+ * *** empty log message ***
+ *
  * Revision 3.166  2004/11/26 12:03:34  sbs
  * *** empty log message ***
  *
@@ -2143,8 +2146,8 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
 #define WLGRIDX_CODE(n)                                                                  \
     ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_CODE (n) : WLGRIDVAR_CODE (n))
 
-#define WLGRIDX_ISNOOP(                                                                  \
-  n((NODE_TYPE(n) == N_wlgrid) ? WLGRID_ISNOOP(n) : WLGRIDVAR_ISNOOP(n))
+#define WLGRIDX_ISNOOP(n)                                                                \
+    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISNOOP (n) : WLGRIDVAR_ISNOOP (n))
 
 #define WLGRIDX_CBLOCK(n) (CODE_CBLOCK (WLGRIDX_CODE (n)))
 #define WLGRIDX_CEXPR(n) (CODE_CEXPR (WLGRIDX_CODE (n)))
