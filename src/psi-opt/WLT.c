@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/06 01:19:04  dkr
+ * include of print.h removed
+ *
  * Revision 3.2  2000/12/06 12:32:57  sbs
  * warnings eliminated.
  *
@@ -176,7 +179,6 @@
 #include "types.h"
 #include "internal_lib.h"
 #include "free.h"
-#include "print.h"
 #include "DupTree.h"
 #include "globals.h"
 #include "Error.h"

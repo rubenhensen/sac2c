@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/06 01:18:58  dkr
+ * include of print.h removed
+ *
  * Revision 3.3  2000/12/13 14:51:39  sbs
  * changed initialization of feature_t vars from NULL into 0 !
  *
@@ -126,7 +129,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
-#include "print.h" /* WLAAprintAccesses */
 #include "Error.h"
 #include "wl_access_analyze.h"
 
