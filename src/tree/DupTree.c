@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/10 14:03:37  dkr
+ * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
+ *
  * Revision 3.4  2001/01/09 17:26:01  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -1730,8 +1733,9 @@ DupWLseg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupWLseg");
 
-    new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
-                          DUPCONT (WLSEG_NEXT (arg_node)));
+    new_node
+      = MakeWLseg (WLSEG_DIMS (arg_node), WLSEG_FULL_RANGE (arg_node),
+                   DUPTRAV (WLSEG_CONTENTS (arg_node)), DUPCONT (WLSEG_NEXT (arg_node)));
 
     DUPVECT (WLSEG_IDX_MIN (new_node), WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (new_node),
              int);
@@ -1753,6 +1757,45 @@ DupWLseg (node *arg_node, node *arg_info)
     }
     WLSEG_MAXHOMDIM (new_node) = WLSEG_MAXHOMDIM (arg_node);
     DUPVECT (WLSEG_HOMSV (new_node), WLSEG_HOMSV (arg_node), WLSEG_DIMS (new_node), int);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLsegVar (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupWLsegVar");
+
+    new_node = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), WLSEGVAR_FULL_RANGE (arg_node),
+                             DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
+                             DUPCONT (WLSEGVAR_NEXT (arg_node)));
+
+    DUPVECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
+             WLSEGVAR_DIMS (new_node), int);
+    DUPVECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
+             WLSEGVAR_DIMS (new_node), int);
+
+    WLSEGVAR_BLOCKS (new_node) = WLSEGVAR_BLOCKS (arg_node);
+
+    for (i = 0; i < WLSEGVAR_BLOCKS (new_node); i++) {
+        DUPVECT (WLSEGVAR_BV (new_node, i), WLSEGVAR_BV (arg_node, i),
+                 WLSEGVAR_DIMS (new_node), int);
+    }
+
+    DUPVECT (WLSEGVAR_UBV (new_node), WLSEGVAR_UBV (arg_node), WLSEGVAR_DIMS (new_node),
+             int);
+    DUPVECT (WLSEGVAR_SV (new_node), WLSEGVAR_SV (arg_node), WLSEGVAR_DIMS (new_node),
+             int);
+
+    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+        WLSEGVAR_SCHEDULING (new_node)
+          = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -1818,6 +1861,25 @@ DupWLstride (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
+DupWLstrideVar (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupWLstrideVar");
+
+    new_node = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (arg_node), WLSTRIDEVAR_DIM (arg_node),
+                                DUPTRAV (WLSTRIDEVAR_BOUND1 (arg_node)),
+                                DUPTRAV (WLSTRIDEVAR_BOUND2 (arg_node)),
+                                DUPTRAV (WLSTRIDEVAR_STEP (arg_node)),
+                                DUPTRAV (WLSTRIDEVAR_CONTENTS (arg_node)),
+                                DUPCONT (WLSTRIDEVAR_NEXT (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DupWLgrid (node *arg_node, node *arg_info)
 {
     node *new_node;
@@ -1835,64 +1897,6 @@ DupWLgrid (node *arg_node, node *arg_info)
      * duplicated grids are not modified yet ;)
      */
     WLGRID_MODIFIED (new_node) = NULL;
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupWLsegVar (node *arg_node, node *arg_info)
-{
-    node *new_node;
-    int i;
-
-    DBUG_ENTER ("DupWLsegVar");
-
-    new_node
-      = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
-                      DUPCONT (WLSEGVAR_NEXT (arg_node)));
-
-    DUPVECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
-             WLSEGVAR_DIMS (new_node), int);
-    DUPVECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
-             WLSEGVAR_DIMS (new_node), int);
-
-    WLSEGVAR_BLOCKS (new_node) = WLSEGVAR_BLOCKS (arg_node);
-
-    for (i = 0; i < WLSEGVAR_BLOCKS (new_node); i++) {
-        DUPVECT (WLSEGVAR_BV (new_node, i), WLSEGVAR_BV (arg_node, i),
-                 WLSEGVAR_DIMS (new_node), int);
-    }
-
-    DUPVECT (WLSEGVAR_UBV (new_node), WLSEGVAR_UBV (arg_node), WLSEGVAR_DIMS (new_node),
-             int);
-    DUPVECT (WLSEGVAR_SV (new_node), WLSEGVAR_SV (arg_node), WLSEGVAR_DIMS (new_node),
-             int);
-
-    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-        WLSEGVAR_SCHEDULING (new_node)
-          = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
-    }
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupWLstrideVar (node *arg_node, node *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DupWLstrideVar");
-
-    new_node = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (arg_node), WLSTRIDEVAR_DIM (arg_node),
-                                DUPTRAV (WLSTRIDEVAR_BOUND1 (arg_node)),
-                                DUPTRAV (WLSTRIDEVAR_BOUND2 (arg_node)),
-                                DUPTRAV (WLSTRIDEVAR_STEP (arg_node)),
-                                DUPTRAV (WLSTRIDEVAR_CONTENTS (arg_node)),
-                                DUPCONT (WLSTRIDEVAR_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }

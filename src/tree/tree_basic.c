@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/10 14:03:52  dkr
+ * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
+ *
  * Revision 3.6  2001/01/09 17:28:52  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -78,45 +81,6 @@
  * Revision 1.14  2000/06/13 13:41:27  dkr
  * Make...() functions for old with-loop removed
  *
- * Revision 1.13  2000/03/23 14:03:33  jhs
- * Added macros for DFMfoldmask_t (DFMFM) ann MakeDFMfoldmask.
- *
- * Revision 1.12  2000/03/22 17:37:28  jhs
- * Added N_MTsignal, N_MTalloc, N_MTsync macros.
- *
- * Revision 1.11  2000/03/21 15:45:18  dkr
- * MakeIcm brushed
- *
- * Revision 1.10  2000/03/15 15:03:31  dkr
- * MakeWLseg, MakeWLsegVar changed
- * WLSEG_HOMSV added
- * WL..._INNERSTEP removed
- *
- * Revision 1.9  2000/03/01 19:02:15  dkr
- * WLSTRIVAR_INNERSTEP removed
- *
- * Revision 1.8  2000/02/22 15:45:58  jhs
- * Fixed misspelling.
- *
- * Revision 1.7  2000/02/22 11:58:36  jhs
- * Added and adapted NODE_TEXT.
- *
- * [...]
- *
- * Revision 1.1  2000/01/21 15:38:37  dkr
- * Initial revision
- *
- * Revision 2.12  2000/01/21 12:42:43  dkr
- * function MakeIds1 added
- *
- * [...]
- *
- * Revision 2.1  1999/02/23 12:39:53  sacbase
- * new release made
- *
- * Revision 1.84  1999/02/06 12:53:01  srs
- * added MakeNodelistNode()
- *
  * [...]
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
@@ -126,7 +90,6 @@
 
 #include "types.h"
 #include "tree_basic.h"
-#include "tree_compound.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -1607,7 +1570,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLseg (int dims, node *contents, node *next)
+MakeWLseg (int dims, int full_range, node *contents, node *next)
 {
     node *new_node;
     int b;
@@ -1617,6 +1580,7 @@ MakeWLseg (int dims, node *contents, node *next)
     new_node = CreateCleanNode (N_WLseg);
 
     WLSEG_DIMS (new_node) = dims;
+    WLSEG_FULL_RANGE (new_node) = full_range;
 
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
@@ -1638,6 +1602,38 @@ MakeWLseg (int dims, node *contents, node *next)
      */
     WLSEG_MAXHOMDIM (new_node) = -1;
     WLSEG_HOMSV (new_node) = NULL;
+
+    DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLsegVar (int dims, int full_range, node *contents, node *next)
+{
+    node *new_node;
+    int b;
+
+    DBUG_ENTER ("MakeWLsegVar");
+
+    new_node = CreateCleanNode (N_WLsegVar);
+
+    WLSEGVAR_DIMS (new_node) = dims;
+    WLSEGVAR_FULL_RANGE (new_node) = full_range;
+
+    WLSEGVAR_CONTENTS (new_node) = contents;
+    WLSEGVAR_NEXT (new_node) = next;
+
+    WLSEGVAR_IDX_MIN (new_node) = NULL;
+    WLSEGVAR_IDX_MAX (new_node) = NULL;
+
+    WLSEGVAR_BLOCKS (new_node) = 0;
+    for (b = 0; b < WLSEGVAR_BLOCKS (new_node); b++) {
+        WLSEGVAR_BV (new_node, b) = NULL;
+    }
+    WLSEGVAR_UBV (new_node) = NULL;
+
+    WLSEGVAR_SV (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
@@ -1713,6 +1709,29 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, bool unrolli
 /*--------------------------------------------------------------------------*/
 
 node *
+MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
+                 node *contents, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLstrideVar");
+
+    new_node = CreateCleanNode (N_WLstrideVar);
+
+    WLSTRIDEVAR_LEVEL (new_node) = level;
+    WLSTRIDEVAR_DIM (new_node) = dim;
+    WLSTRIDEVAR_BOUND1 (new_node) = bound1;
+    WLSTRIDEVAR_BOUND2 (new_node) = bound2;
+    WLSTRIDEVAR_STEP (new_node) = step;
+    WLSTRIDEVAR_CONTENTS (new_node) = contents;
+    WLSTRIDEVAR_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
 MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *nextdim,
             node *next, node *code)
 {
@@ -1736,60 +1755,6 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *ne
     WLGRID_CODE (new_node) = code;
 
     WLGRID_MODIFIED (new_node) = NULL;
-
-    DBUG_RETURN (new_node);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeWLsegVar (int dims, node *contents, node *next)
-{
-    node *new_node;
-    int b;
-
-    DBUG_ENTER ("MakeWLsegVar");
-
-    new_node = CreateCleanNode (N_WLsegVar);
-
-    WLSEGVAR_DIMS (new_node) = dims;
-
-    WLSEGVAR_CONTENTS (new_node) = contents;
-    WLSEGVAR_NEXT (new_node) = next;
-
-    WLSEGVAR_IDX_MIN (new_node) = NULL;
-    WLSEGVAR_IDX_MAX (new_node) = NULL;
-
-    WLSEGVAR_BLOCKS (new_node) = 0;
-    for (b = 0; b < WLSEGVAR_BLOCKS (new_node); b++) {
-        WLSEGVAR_BV (new_node, b) = NULL;
-    }
-    WLSEGVAR_UBV (new_node) = NULL;
-
-    WLSEGVAR_SV (new_node) = NULL;
-
-    DBUG_RETURN (new_node);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
-                 node *contents, node *next)
-{
-    node *new_node;
-
-    DBUG_ENTER ("MakeWLstrideVar");
-
-    new_node = CreateCleanNode (N_WLstrideVar);
-
-    WLSTRIDEVAR_LEVEL (new_node) = level;
-    WLSTRIDEVAR_DIM (new_node) = dim;
-    WLSTRIDEVAR_BOUND1 (new_node) = bound1;
-    WLSTRIDEVAR_BOUND2 (new_node) = bound2;
-    WLSTRIDEVAR_STEP (new_node) = step;
-    WLSTRIDEVAR_CONTENTS (new_node) = contents;
-    WLSTRIDEVAR_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
 }
