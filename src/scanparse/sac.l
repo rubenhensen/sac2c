@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/02/27 16:30:05  cg
+ * added lexical analysis for sac2crc files
+ *
  * Revision 1.50  1997/11/24 18:06:40  sbs
  * new_with inserted as NWITH token!
  *
@@ -160,10 +163,10 @@
 
 #include <stdlib.h>
 #include "tree.h"
+#include "resource.h"
 #include "y.tab.h"
 #include "Error.h"
 #include "internal_lib.h"
-
 
 
 #define FILTER(token) if (0==commlevel)  return(token)
@@ -224,6 +227,56 @@
                          return(token); }
 
 
+#define FILTER12(token)						\
+ if (0==commlevel) {						\
+   if (compiler_phase==PH_setup) {					\
+     return(token);						\
+   }								\
+   yylval.id=(char *)Malloc(sizeof(char)*(strlen(yytext)+1));	\
+   strcpy(yylval.id, yytext);					\
+   if (yylval.id[0]=='_') return(PRIVATEID);			\
+   else return(ID);						\
+ }
+
+
+#define FILTER13(token)						\
+ if (0==commlevel) {						\
+   int i;							\
+   if (compiler_phase==PH_setup) {					\
+     yylval.id=(char *)Malloc(sizeof(char)*(strlen(yytext)+1));	\
+     strcpy(yylval.id, yytext);					\
+     return(token);						\
+   }								\
+   switch (yytext[0]) {						\
+   case '-':							\
+     for (i=strlen(yytext)-1; i>0; i--) unput(yytext[i]);		\
+     FILTER7(MINUS, prf_name_str[F_sub]);			\
+     break;							\
+   case '/':							\
+     for (i=strlen(yytext)-1; i>0; i--) unput(yytext[i]);		\
+     FILTER7(DIV, prf_name_str[F_div]);				\
+     break;							\
+   case '_':							\
+     FILTER2(PRIVATEID);					\
+     break;							\
+   default:							\
+     FILTER2(ID);						\
+   }								\
+ }
+ 
+
+#define FILTER14(token)						\
+ if (0==commlevel) {						\
+   if (compiler_phase!=PH_setup) {				\
+     return(token);						\
+   }								\
+   yylval.id=(char *)Malloc(sizeof(char)*(strlen(yytext)+1));	\
+   strcpy(yylval.id, yytext);					\
+   return(ID);							\
+ }
+
+
+
 extern int indent;
 extern int i;
 
@@ -235,7 +288,7 @@ int start_token;
 
 %}
 
-%p 5000 /* set positions to 5000 */
+%p 6000 /* set positions to 6000 */
 %e 1100 /* set nodes to 1100 */
 
 %%
@@ -373,11 +426,16 @@ int start_token;
 "union"                         {FILTER( C_KEYWORD);}
 "volatile"                      {FILTER( C_KEYWORD);}
 "case"                          {FILTER( C_KEYWORD);}
-"default"                       {FILTER( C_KEYWORD);}
 "switch"                        {FILTER( C_KEYWORD);}
 "goto"                          {FILTER( C_KEYWORD);}
 "continue"                      {FILTER( C_KEYWORD);}
 "break"                         {FILTER( C_KEYWORD);}
+
+"target"                        {FILTER12( TARGET );}
+"default"                       {FILTER14( C_KEYWORD);}
+":="                            {FILTER( EQUALS );}
+
+[-/][_A-Za-z0-9]*               {FILTER13( OPTION );}
 
 
 \"([^"\n]|(\\\"))*\"		{FILTER9( STR );}
