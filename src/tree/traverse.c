@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2005/03/04 21:21:42  cg
+ * Whenever the traversal reaches an N_module node, the
+ * situation is considered save to add silently duplicated
+ * LaC functions and to remove zombified functions from the
+ * fundef chain. This is done once here and reliefs all other
+ * compiler modules from caring about the issue.
+ *
  * Revision 3.120  2004/12/01 15:23:53  sah
  * fixed pre/posttables
  *
@@ -63,6 +70,17 @@ TRAVdo (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((travstack != NULL), "no traversal on stack!");
 
+    if ((NODE_TYPE (arg_node) == N_module) && (NULL != DUPgetCopiedSpecialFundefs ())) {
+        DBUG_ASSERT (FALSE, "Unresolved copies of special functions at beginning"
+                            " of new traversal. Maybe a previous traversal is not"
+                            " organized properly in the sense that it has a traversal"
+                            " function for the N_module node.");
+        /*
+         * This assertion is written in this special style to allow for setting
+         * breakpoints in debuggers.
+         */
+    }
+
     /*
      * Make sure the line-number will be set
      * correctly in case MakeXxx is called.
@@ -87,6 +105,21 @@ TRAVdo (node *arg_node, info *arg_info)
 
     global.linenum = old_linenum;
     global.filename = old_filename;
+
+    if ((arg_node != NULL) && (NODE_TYPE (arg_node) == N_module)) {
+        /*
+         * arg_node may have become NULL during traversal.
+         */
+        MODULE_FUNS (arg_node)
+          = TCappendFundef (DUPgetCopiedSpecialFundefs (), MODULE_FUNS (arg_node));
+        if (MODULE_FUNS (arg_node) != NULL) {
+            MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
+        }
+
+        if (MODULE_FUNDECS (arg_node) != NULL) {
+            MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
