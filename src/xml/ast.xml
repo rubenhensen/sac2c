@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.78  2004/11/25 18:47:48  sbs
+  OBJDEF_NAME added
+
   Revision 1.77  2004/11/25 18:13:01  sah
   added arg/rets LINKSIGN and HASLINKSIGNINFO
 
@@ -1373,6 +1376,12 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="yes">
+          <type name="String" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="Name" mandatory="yes">
           <type name="String" />
           <phases>
             <all />
