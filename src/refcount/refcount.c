@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/06/07 14:26:49  asi
+ * Revision 1.16  1995/06/26 08:12:35  asi
+ * parameter for GenerateMasks changed
+ *
+ * Revision 1.15  1995/06/07  14:26:49  asi
  * inserted call of function GenerateMasks in function Refcount
  *
  * Revision 1.14  1995/05/19  13:29:59  hw
@@ -90,7 +93,7 @@
 
 #define FREE(a) free (a)
 
-extern node *GenerateMasks (node *arg_node); /* from optimize.c */
+extern node *GenerateMasks (node *arg_node, node *arg_info); /* from optimize.c */
 
 static int varno;         /* used to store the number of known variables in a
                              sac-function (used for mask[])
@@ -349,7 +352,7 @@ Refcount (node *arg_node)
     /*
      * generate masks
      */
-    arg_node = GenerateMasks (arg_node);
+    arg_node = GenerateMasks (arg_node, NULL);
 
     act_tab = refcnt_tab;
 
