@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/07/29 07:35:41  cg
+ * Two new performance related features added to SAC private heap
+ * management:
+ *   - pre-splitting for arenas with fixed size chunks.
+ *   - deferred coalascing for arenas with variable chunk sizes.
+ *
  * Revision 1.2  1999/07/16 09:41:16  cg
  * Added facilities for heap management diagnostics.
  *
@@ -25,8 +31,8 @@
  *
  *****************************************************************************/
 
-#ifndef LIBSAC_HEAPMGR_H
-#define LIBSAC_HEAPMGR_H
+#ifndef HEAPMGR_H
+#define HEAPMGR_H
 
 #define SAC_DO_PHM 1
 #include "sac_heapmgr.h"
@@ -121,4 +127,4 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 #endif /* DIAG */
 
-#endif /* LIBSAC_HEAPMGR_H */
+#endif /* HEAPMGR_H */

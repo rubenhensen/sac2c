@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/07/29 07:35:41  cg
+ * Two new performance related features added to SAC private heap
+ * management:
+ *   - pre-splitting for arenas with fixed size chunks.
+ *   - deferred coalascing for arenas with variable chunk sizes.
+ *
  * Revision 1.2  1999/07/16 09:41:16  cg
  * Added facilities for heap management diagnostics.
  *
@@ -39,9 +45,9 @@ malloc (size_byte_t size)
         if (size <= ARENA_2_MAXCS_BYTES) {
             /* Now, it's arena 1 or 2. */
             if (size <= ARENA_1_MAXCS_BYTES) {
-                return (SAC_HM_MallocSmallChunk (2, &(SAC_HM_arenas[1])));
+                return (SAC_HM_MallocSmallChunkPresplit (2, &(SAC_HM_arenas[1]), 16));
             } else {
-                return (SAC_HM_MallocSmallChunk (4, &(SAC_HM_arenas[2])));
+                return (SAC_HM_MallocSmallChunkPresplit (4, &(SAC_HM_arenas[2]), 16));
             }
         } else {
             /* Now, it's arena 3 or 4. */
@@ -57,16 +63,17 @@ malloc (size_byte_t size)
         if (units < ARENA_7_MINCS) {
             /* Now, it's arena 5 or 6. */
             if (units < ARENA_6_MINCS) {
-                return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[5])));
+                return (SAC_HM_MallocLargeChunkNoCoalasce (units, &(SAC_HM_arenas[5])));
             } else {
-                return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[6])));
+                return (SAC_HM_MallocLargeChunkNoCoalasce (units, &(SAC_HM_arenas[6])));
             }
         } else {
             /* Now, it's arena 7 or 8. */
             if (units < ARENA_8_MINCS) {
-                return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[7])));
+                return (SAC_HM_MallocLargeChunkNoCoalasce (units, &(SAC_HM_arenas[7])));
             } else {
-                return (SAC_HM_MallocTopArena (units, &(SAC_HM_arenas[8])));
+                return (
+                  SAC_HM_MallocTopArenaDeferredCoalasce (units, &(SAC_HM_arenas[8])));
             }
         }
     }

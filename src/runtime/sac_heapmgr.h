@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/07/29 07:35:41  cg
+ * Two new performance related features added to SAC private heap
+ * management:
+ *   - pre-splitting for arenas with fixed size chunks.
+ *   - deferred coalascing for arenas with variable chunk sizes.
+ *
  * Revision 1.3  1999/07/16 09:39:55  cg
  * Minor beautifications
  *
@@ -167,15 +173,25 @@ extern void SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
                           size_byte_t initial_top_arena_size);
 
 extern void *SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena);
+extern void *SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t *arena,
+                                              int presplit);
 extern void *SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena);
+extern void *SAC_HM_MallocLargeChunkNoCoalasce (size_unit_t units, SAC_HM_arena_t *arena);
+extern void *SAC_HM_MallocLargeChunkDeferredCoalasce (size_unit_t units,
+                                                      SAC_HM_arena_t *arena);
 extern void *SAC_HM_MallocTopArena (size_unit_t units, SAC_HM_arena_t *arena);
+extern void *SAC_HM_MallocTopArenaDeferredCoalasce (size_unit_t units,
+                                                    SAC_HM_arena_t *arena);
 
 extern void SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 extern void SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
+extern void SAC_HM_FreeLargeChunkNoCoalasce (SAC_HM_header_t *addr,
+                                             SAC_HM_arena_t *arena);
 extern void SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 
 #if SAC_DO_CHECK_HEAP
 extern void SAC_HM_ShowDiagnostics ();
+extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 #endif
 
 /*
@@ -205,23 +221,27 @@ extern void SAC_HM_ShowDiagnostics ();
 
 #define SAC_HM_UNITS(size) ((((size)-1) / UNIT_SIZE) + 3)
 
-#if 1
+#if 0
 #define SAC_HM_MALLOC_FIXED_SIZE(size)                                                   \
     (((size) <= ARENA_4_MAXCS_BYTES)                                                     \
        ? (((size) <= ARENA_2_MAXCS_BYTES)                                                \
             ? (((size) <= ARENA_1_MAXCS_BYTES)                                           \
-                 ? (SAC_HM_MallocSmallChunk (2, &(SAC_HM_arenas[1])))                    \
-                 : (SAC_HM_MallocSmallChunk (4, &(SAC_HM_arenas[2]))))                   \
+                 ? (SAC_HM_MallocSmallChunkPresplit (2, &(SAC_HM_arenas[1]), 16))        \
+                 : (SAC_HM_MallocSmallChunkPresplit (4, &(SAC_HM_arenas[2]), 16)))       \
             : (((size) <= ARENA_3_MAXCS_BYTES)                                           \
                  ? (SAC_HM_MallocSmallChunk (8, &(SAC_HM_arenas[3])))                    \
                  : (SAC_HM_MallocSmallChunk (16, &(SAC_HM_arenas[4])))))                 \
        : ((SAC_HM_UNITS (size) < ARENA_7_MINCS)                                          \
             ? ((SAC_HM_UNITS (size) < ARENA_6_MINCS)                                     \
-                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[5])))  \
-                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[6])))) \
+                 ? (SAC_HM_MallocLargeChunkNoCoalasce (SAC_HM_UNITS (size),              \
+                                                       &(SAC_HM_arenas[5])))             \
+                 : (SAC_HM_MallocLargeChunkNoCoalasce (SAC_HM_UNITS (size),              \
+                                                       &(SAC_HM_arenas[6]))))            \
             : ((SAC_HM_UNITS (size) < ARENA_8_MINCS)                                     \
-                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[7])))  \
-                 : (SAC_HM_MallocTopArena (SAC_HM_UNITS (size), &(SAC_HM_arenas[8]))))))
+                 ? (SAC_HM_MallocLargeChunkNoCoalasce (SAC_HM_UNITS (size),              \
+                                                       &(SAC_HM_arenas[7])))             \
+                 : (SAC_HM_MallocTopArenaDeferredCoalasce (SAC_HM_UNITS (size),          \
+                                                           &(SAC_HM_arenas[8]))))))
 #else
 #define SAC_HM_MALLOC_FIXED_SIZE(size) SAC_HM_MALLOC (size)
 #endif
@@ -234,8 +254,8 @@ extern void SAC_HM_ShowDiagnostics ();
 #define SAC_HM_FREE(addr)                                                                \
     {                                                                                    \
         SAC_HM_arena_t *arena;                                                           \
-        SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr) arena                   \
-          = SAC_HM_ADDR_2_ARENA (addr);                                                  \
+        SAC_HM_CheckAllocPatternAnyChunk ((SAC_HM_header_t *)addr);                      \
+        arena = SAC_HM_ADDR_2_ARENA (addr);                                              \
         arena->freefun ((SAC_HM_header_t *)addr, arena);                                 \
     }
 #else
@@ -271,18 +291,19 @@ extern void SAC_HM_ShowDiagnostics ();
         } else {                                                                         \
             if (SAC_HM_UNITS (size) < ARENA_7_MINCS) {                                   \
                 if (SAC_HM_UNITS (size) < ARENA_6_MINCS) {                               \
-                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
-                                           &(SAC_HM_arenas[5]));                         \
+                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
+                                                     &(SAC_HM_arenas[5]));               \
                 } else {                                                                 \
-                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
-                                           &(SAC_HM_arenas[6]));                         \
+                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
+                                                     &(SAC_HM_arenas[6]));               \
                 }                                                                        \
             } else {                                                                     \
                 if (SAC_HM_UNITS (size) < ARENA_8_MINCS) {                               \
-                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
-                                           &(SAC_HM_arenas[7]));                         \
+                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
+                                                     &(SAC_HM_arenas[7]));               \
                 } else {                                                                 \
-                    SAC_HM_FreeTopArena ((SAC_HM_header_t *)addr, &(SAC_HM_arenas[8]));  \
+                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
+                                                     &(SAC_HM_arenas[8]));               \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
