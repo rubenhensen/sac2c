@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/19 08:53:26  cg
+ * added strtok() like functions for retrieving variables from masks
+ *
  * Revision 1.5  1998/05/07 15:36:04  cg
  * mechanism added that allows general updates of data flow masks,
  * i.e. with newly introduced identifiers as well as old ones removed.
@@ -75,7 +78,27 @@
  *
  *   The functions DFMSetMaskEntry() and DFMClearMaskEntry() respectively set or
  *   clear the data flow mask bit assigned to a particular identifier whereas
- *   DFMTestMaskEntry() tests whether this bit is set or not.
+ *   DFMTestMaskEntry() tests whether this bit is set or not. The identifier
+ *   to be set, cleared, or tested may either be specified directly or as a
+ *   pointer to its declaration (N_arg or N_vardec node). The latter option
+ *   provides more efficiency in accessing the data flow masks. The unused
+ *   argument has to be NULL.
+ *
+ *   The functions DFMGetMaskEntryXXXXSet() and DFMGetMaskEntryXXXXClear() provide
+ *   access to local identifiers depending on their state in the data flow
+ *   mask specified. These functions work similarly to the C library function
+ *   strtok(). When calling one of these functions for the first time, a data
+ *   flow mask has to be specified. The first local identifier whose bit is
+ *   set or cleared respectively is returned by DFMGetMaskEntryNameSet() or
+ *   DFMGetMaskEntryNameSet(). A pointer to the respective declaration node
+ *   is returned by DFMGetMaskEntryDeclSet() or DFMGetMaskEntryDeclClear().
+ *   On subsequent calls the value
+ *   NULL can be given as an argument to extract further identifiers from
+ *   the mask. The mask itself as well as the state of its traversal are
+ *   stored internally by these functions.
+ *
+ *   The data flow masks may also be used to get a reference to a variable's
+ *   declaration, using the function DFMVar2Decl().
  *
  *****************************************************************************/
 
@@ -126,8 +149,15 @@ extern DFMmask_t DFMRemoveMask (DFMmask_t mask);
 
 extern void DFMPrintMask (FILE *handle, const char *format, DFMmask_t mask);
 
-extern void DFMSetMaskEntryClear (DFMmask_t mask, char *id);
-extern void DFMSetMaskEntrySet (DFMmask_t mask, char *id);
-extern int DFMTestMaskEntry (DFMmask_t mask, char *id);
+extern void DFMSetMaskEntryClear (DFMmask_t mask, char *id, node *decl);
+extern void DFMSetMaskEntrySet (DFMmask_t mask, char *id, node *decl);
+extern int DFMTestMaskEntry (DFMmask_t mask, char *id, node *decl);
+
+extern char *DFMGetMaskEntryNameSet (DFMmask_t mask);
+extern char *DFMGetMaskEntryNameClear (DFMmask_t mask);
+extern node *DFMGetMaskEntryDeclSet (DFMmask_t mask);
+extern node *DFMGetMaskEntryDeclClear (DFMmask_t mask);
+
+extern node *DFMVar2Decl (DFMmask_t mask, char *var);
 
 #endif /* DATAFLOWMASK_H */

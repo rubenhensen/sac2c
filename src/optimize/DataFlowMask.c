@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/19 08:53:26  cg
+ * added strtok() like functions for retrieving variables from masks
+ *
  * Revision 1.7  1998/05/14 15:49:11  cg
  * bug fixed in function PrintMask
  *
@@ -79,6 +82,7 @@ typedef struct {
     int num_ids;
     int num_bitfields;
     char **ids;
+    node **decls;
 } mask_base_t;
 
 typedef struct {
@@ -181,6 +185,8 @@ DFMGenMaskBase (node *arguments, node *vardecs)
 
     base->ids = (char **)Malloc (cnt * sizeof (char *));
 
+    base->decls = (node **)Malloc (cnt * sizeof (node *));
+
     base->num_ids = cnt;
 
     base->num_bitfields = (cnt / (sizeof (unsigned int) * 8)) + 1;
@@ -193,6 +199,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     cnt = 0;
 
     while (tmp != NULL) {
+        base->decls[cnt] = tmp;
         base->ids[cnt] = ARG_NAME (tmp);
         cnt += 1;
         tmp = ARG_NEXT (tmp);
@@ -201,6 +208,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     tmp = vardecs;
 
     while (tmp != NULL) {
+        base->decls[cnt] = tmp;
         base->ids[cnt] = VARDEC_NAME (tmp);
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
@@ -209,117 +217,12 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     DBUG_RETURN (base);
 }
 
-#if 0
-mask_base_t *DFMExtendMaskBase( mask_base_t *mask_base,
-                                node *arguments,
-                                node *vardecs)
-{
-  int cnt, old_num_ids, i;
-  node *tmp;
-  char **old_ids;
-  
-  DBUG_ENTER("DFMExtendMaskBase");
-
-
-  /*
-   * The new number of local identifiers is counted.
-   */
-  
-  tmp=arguments;
-  cnt=0;
-
-  while (tmp!=NULL) {
-    cnt+=1;
-    tmp=ARG_NEXT(tmp);
-  }
-  
-  tmp=vardecs;
-
-  while (tmp!=NULL) {
-    cnt+=1;
-    tmp=VARDEC_NEXT(tmp);
-  }
-
-  DBUG_ASSERT((cnt>=mask_base->num_ids), "Number of local identifiers decreased");
-  
-
-  /*
-   * The mask data base is updated with the new values and a new identifier
-   * table is allocated.
-   */
-
-  old_ids=mask_base->ids;
-  
-  mask_base->ids = (char **)Malloc(cnt*sizeof(char*));
-
-  old_num_ids=mask_base->num_ids;
-  
-  mask_base->num_ids=cnt;
-  
-  mask_base->num_bitfields=(cnt/(sizeof(unsigned int)*8))+1;
-  
-  
-  /*
-   * The old identifier table is copied to the newly allocated one and
-   * its space is de-allocated afterwards.
-   */
-
-  for (i=0; i<mask_base->num_ids; i++) {
-    mask_base->ids[i]=old_ids[i];
-  }
-  
-  FREE(old_ids);
-  
-
-  /*
-   * New local identifiers are appended to the identifier table.
-   */
-
-  tmp=arguments;
-  cnt=mask_base->num_ids;
-  
-  while (tmp!=NULL) {
-    
-    for (i=0; i<old_num_ids; i++) {
-      if (0==strcmp(mask_base->ids[i], ARG_NAME(tmp))) {
-        goto arg_found;
-      }
-    }
-    
-    mask_base->ids[cnt]=ARG_NAME(tmp);
-    cnt+=1;
-
-    arg_found:
-    tmp=ARG_NEXT(tmp);
-  }
-  
-  tmp=vardecs;
-
-  while (tmp!=NULL) {
-    
-    for (i=0; i<old_num_ids; i++) {
-      if (0==strcmp(mask_base->ids[i], VARDEC_NAME(tmp))) {
-        goto vardec_found;
-      }
-    }
-    
-    mask_base->ids[cnt]=VARDEC_NAME(tmp);
-    cnt+=1;
-
-    vardec_found:
-    tmp=ARG_NEXT(tmp);
-    }
-  
-  DBUG_RETURN(mask_base);
-}
-#endif
-
 mask_base_t *
 DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
     int cnt, old_num_ids, i;
     node *tmp;
-    char **old_ids;
+    node **old_decls;
 
     DBUG_ENTER ("DFMUpdateMaskBase");
 
@@ -333,10 +236,10 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      * the respective bits in the data flow masks are not going to be reused.
      */
 
-    old_ids = (char **)Malloc (mask_base->num_ids * sizeof (char *));
+    old_decls = (node **)Malloc (mask_base->num_ids * sizeof (node *));
 
     for (i = 0; i < mask_base->num_ids; i++) {
-        old_ids[i] = NULL;
+        old_decls[i] = NULL;
     }
 
     tmp = arguments;
@@ -345,8 +248,9 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     while (tmp != NULL) {
 
         for (i = 0; i < mask_base->num_ids; i++) {
-            if (mask_base->ids[i] == ARG_NAME (tmp)) {
-                old_ids[i] = mask_base->ids[i];
+            if ((tmp == mask_base->decls[i])
+                && (0 == strcmp (ARG_NAME (tmp), mask_base->ids[i]))) {
+                old_decls[i] = mask_base->decls[i];
                 goto old_arg_found;
             }
         }
@@ -362,8 +266,9 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     while (tmp != NULL) {
 
         for (i = 0; i < mask_base->num_ids; i++) {
-            if (mask_base->ids[i] == VARDEC_NAME (tmp)) {
-                old_ids[i] = mask_base->ids[i];
+            if ((tmp == mask_base->decls[i])
+                && (0 == strcmp (VARDEC_NAME (tmp), mask_base->ids[i]))) {
+                old_decls[i] = mask_base->decls[i];
                 goto old_vardec_found;
             }
         }
@@ -382,6 +287,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      */
 
     FREE (mask_base->ids);
+    FREE (mask_base->decls);
 
     old_num_ids = mask_base->num_ids;
 
@@ -390,6 +296,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
 
     mask_base->ids = (char **)Malloc ((mask_base->num_ids) * sizeof (char *));
+    mask_base->decls = (node **)Malloc ((mask_base->num_ids) * sizeof (node *));
 
     /*
      * The temporary identifier table is copied to the newly allocated one and
@@ -397,10 +304,14 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      */
 
     for (i = 0; i < old_num_ids; i++) {
-        mask_base->ids[i] = old_ids[i];
+        mask_base->decls[i] = old_decls[i];
+        mask_base->ids[i] = (old_decls[i] == NULL) ? NULL
+                                                   : (NODE_TYPE (old_decls[i]) == N_arg
+                                                        ? ARG_NAME (old_decls[i])
+                                                        : VARDEC_NAME (old_decls[i]));
     }
 
-    FREE (old_ids);
+    FREE (old_decls);
 
     /*
      * New local identifiers are appended to the identifier table.
@@ -412,11 +323,12 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     while (tmp != NULL) {
 
         for (i = 0; i < old_num_ids; i++) {
-            if (mask_base->ids[i] == ARG_NAME (tmp)) {
+            if (mask_base->decls[i] == tmp) {
                 goto arg_found;
             }
         }
 
+        mask_base->decls[cnt] = tmp;
         mask_base->ids[cnt] = ARG_NAME (tmp);
         cnt += 1;
 
@@ -429,11 +341,12 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     while (tmp != NULL) {
 
         for (i = 0; i < old_num_ids; i++) {
-            if (mask_base->ids[i] == VARDEC_NAME (tmp)) {
+            if (mask_base->decls[i] == tmp) {
                 goto vardec_found;
             }
         }
 
+        mask_base->decls[cnt] = tmp;
         mask_base->ids[cnt] = VARDEC_NAME (tmp);
         cnt += 1;
 
@@ -450,6 +363,7 @@ DFMRemoveMaskBase (mask_base_t *mask_base)
     DBUG_ENTER ("DFMRemoveMaskBase");
 
     FREE (mask_base->ids);
+    FREE (mask_base->decls);
     FREE (mask_base);
 
     DBUG_RETURN ((mask_base_t *)NULL);
@@ -903,18 +817,29 @@ DFMPrintMask (FILE *handle, const char *format, mask_t *mask)
  */
 
 void
-DFMSetMaskEntryClear (mask_t *mask, char *id)
+DFMSetMaskEntryClear (mask_t *mask, char *id, node *decl)
 {
     int i;
 
     DBUG_ENTER ("DFMSetMaskEntryClear");
 
+    DBUG_ASSERT (((id != NULL) || (decl != NULL)),
+                 "Neither name nor declaration provided to call to DFMSetMaskEntryClear");
+
     CHECK_MASK (mask);
 
-    for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if ((mask->mask_base->ids[i] != NULL)
-            && (0 == strcmp (mask->mask_base->ids[i], id))) {
-            break;
+    if (decl == NULL) {
+        for (i = 0; i < mask->mask_base->num_ids; i++) {
+            if ((mask->mask_base->ids[i] != NULL)
+                && (0 == strcmp (mask->mask_base->ids[i], id))) {
+                break;
+            }
+        }
+    } else {
+        for (i = 0; i < mask->mask_base->num_ids; i++) {
+            if (mask->mask_base->decls[i] == decl) {
+                break;
+            }
         }
     }
 
@@ -927,18 +852,29 @@ DFMSetMaskEntryClear (mask_t *mask, char *id)
 }
 
 void
-DFMSetMaskEntrySet (mask_t *mask, char *id)
+DFMSetMaskEntrySet (mask_t *mask, char *id, node *decl)
 {
     int i;
 
     DBUG_ENTER ("DFMSetMaskEntrySet");
 
+    DBUG_ASSERT (((id != NULL) || (decl != NULL)),
+                 "Neither name nor declaration provided to call to DFMSetMaskEntrySet");
+
     CHECK_MASK (mask);
 
-    for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if ((mask->mask_base->ids[i] != NULL)
-            && (0 == strcmp (mask->mask_base->ids[i], id))) {
-            break;
+    if (decl == NULL) {
+        for (i = 0; i < mask->mask_base->num_ids; i++) {
+            if ((mask->mask_base->ids[i] != NULL)
+                && (0 == strcmp (mask->mask_base->ids[i], id))) {
+                break;
+            }
+        }
+    } else {
+        for (i = 0; i < mask->mask_base->num_ids; i++) {
+            if (mask->mask_base->decls[i] == decl) {
+                break;
+            }
         }
     }
 
@@ -951,18 +887,29 @@ DFMSetMaskEntrySet (mask_t *mask, char *id)
 }
 
 int
-DFMTestMaskEntry (mask_t *mask, char *id)
+DFMTestMaskEntry (mask_t *mask, char *id, node *decl)
 {
     int i, res;
 
-    DBUG_ENTER ("FMTestMaskEntry");
+    DBUG_ENTER ("DFMTestMaskEntry");
+
+    DBUG_ASSERT (((id != NULL) || (decl != NULL)),
+                 "Neither name nor declaration provided to call to DFMTestMaskEntry");
 
     CHECK_MASK (mask);
 
-    for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if ((mask->mask_base->ids[i] != NULL)
-            && (0 == strcmp (mask->mask_base->ids[i], id))) {
-            break;
+    if (decl == NULL) {
+        for (i = 0; i < mask->mask_base->num_ids; i++) {
+            if ((mask->mask_base->ids[i] != NULL)
+                && (0 == strcmp (mask->mask_base->ids[i], id))) {
+                break;
+            }
+        }
+    } else {
+        for (i = 0; i < mask->mask_base->num_ids; i++) {
+            if (mask->mask_base->decls[i] == decl) {
+                break;
+            }
         }
     }
 
@@ -972,4 +919,132 @@ DFMTestMaskEntry (mask_t *mask, char *id)
           & access_mask_table[i % (8 * sizeof (unsigned int))];
 
     DBUG_RETURN (res);
+}
+
+char *
+DFMGetMaskEntryNameClear (mask_t *mask)
+{
+    char *ret;
+
+    static mask_t *store_mask;
+    static int i;
+
+    DBUG_ENTER ("DFMGetMaskEntryNameClear");
+
+    if (mask != NULL) {
+        CHECK_MASK (mask);
+        store_mask = mask;
+        i = 0;
+    }
+
+    while ((i < store_mask->mask_base->num_ids)
+           && (store_mask->bitfield[i / (8 * sizeof (unsigned int))]
+               & access_mask_table[i % (8 * sizeof (unsigned int))])) {
+        i++;
+    }
+
+    ret = (i == store_mask->mask_base->num_ids) ? NULL : store_mask->mask_base->ids[i++];
+
+    DBUG_RETURN (ret);
+}
+
+char *
+DFMGetMaskEntryNameSet (mask_t *mask)
+{
+    char *ret;
+
+    static mask_t *store_mask;
+    static int i;
+
+    DBUG_ENTER ("DFMGetMaskEntryNameClear");
+
+    if (mask != NULL) {
+        CHECK_MASK (mask);
+        store_mask = mask;
+        i = 0;
+    }
+
+    while ((i < store_mask->mask_base->num_ids)
+           && (!(store_mask->bitfield[i / (8 * sizeof (unsigned int))]
+                 & access_mask_table[i % (8 * sizeof (unsigned int))]))) {
+        i++;
+    }
+
+    ret = (i == store_mask->mask_base->num_ids) ? NULL : store_mask->mask_base->ids[i++];
+
+    DBUG_RETURN (ret);
+}
+
+node *
+DFMGetMaskEntryDeclClear (mask_t *mask)
+{
+    node *ret;
+
+    static mask_t *store_mask;
+    static int i;
+
+    DBUG_ENTER ("DFMGetMaskEntryDeclClear");
+
+    if (mask != NULL) {
+        CHECK_MASK (mask);
+        store_mask = mask;
+        i = 0;
+    }
+
+    while ((i < store_mask->mask_base->num_ids)
+           && (store_mask->bitfield[i / (8 * sizeof (unsigned int))]
+               & access_mask_table[i % (8 * sizeof (unsigned int))])) {
+        i++;
+    }
+
+    ret
+      = (i == store_mask->mask_base->num_ids) ? NULL : store_mask->mask_base->decls[i++];
+
+    DBUG_RETURN (ret);
+}
+
+node *
+DFMGetMaskEntryDeclSet (mask_t *mask)
+{
+    node *ret;
+
+    static mask_t *store_mask;
+    static int i;
+
+    DBUG_ENTER ("DFMGetMaskEntryDeclClear");
+
+    if (mask != NULL) {
+        CHECK_MASK (mask);
+        store_mask = mask;
+        i = 0;
+    }
+
+    while ((i < store_mask->mask_base->num_ids)
+           && (!(store_mask->bitfield[i / (8 * sizeof (unsigned int))]
+                 & access_mask_table[i % (8 * sizeof (unsigned int))]))) {
+        i++;
+    }
+
+    ret
+      = (i == store_mask->mask_base->num_ids) ? NULL : store_mask->mask_base->decls[i++];
+
+    DBUG_RETURN (ret);
+}
+
+node *
+DFMVar2Decl (mask_t *mask, char *var)
+{
+    node *ret = NULL;
+    int i;
+
+    DBUG_ENTER ("DFMVar2Decl");
+
+    for (i = 0; i < mask->mask_base->num_ids; i++) {
+        if (0 == strcmp (mask->mask_base->ids[i], var)) {
+            ret = mask->mask_base->decls[i];
+            break;
+        }
+    }
+
+    DBUG_RETURN (ret);
 }
