@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2000/11/02 14:52:01  dkr
+ * explicit path for #include removed
+ *
  * Revision 1.12  2000/08/02 09:19:44  nmw
  * order of init function calls for interface and module changed
  *
@@ -61,7 +64,7 @@
 /* Typenames used internally */
 typedef enum {
 #define TYP_IFname(name) name
-#include "../tree/type_info.mac"
+#include "type_info.mac"
 } SAC_ARG_simpletype_names;
 
 /* global vars */
