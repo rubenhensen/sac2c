@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/11/24 20:55:18  skt
+ * some namechanging
+ *
  * Revision 3.23  2004/11/24 19:40:47  skt
  * SACDevCampDK 2k4
  *
@@ -92,7 +95,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MUTHdoBuildMultiThread( node *syntax_tree)
+ * @fn node *MUTHdoMultiThread( node *syntax_tree)
  *
  *   This function starts the process of building the *new* support for
  *   multithread. Throughout this process arg_info points to an N_info which
@@ -104,13 +107,13 @@ FreeInfo (info *info)
  *         application
  *****************************************************************************/
 node *
-MUTHdoBuildMultiThread (node *syntax_tree)
+MUTHdoMultiThread (node *syntax_tree)
 {
     trav_t traversaltable;
 
     info *arg_info;
 
-    DBUG_ENTER ("BuildMultiThread");
+    DBUG_ENTER ("MUTHdoMultiThread");
 
     arg_info = MakeInfo ();
 

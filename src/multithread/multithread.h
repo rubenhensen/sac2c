@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/11/24 20:55:18  skt
+ * some namechanging
+ *
  * Revision 3.15  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -73,7 +76,7 @@
 
 #include "types.h"
 
-extern node *MUTHdoBuildMultiThread (node *syntax_tree);
+extern node *MUTHdoMultiThread (node *syntax_tree);
 
 extern node *MUTHmodule (node *arg_node, info *arg_info);
 
