@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/18 12:13:21  dkr
+ * SAC_HM_MALLOC_WITH_DESC removed (DAO is applicable for FIXED_SIZE
+ * only!!)
+ *
  * Revision 1.3  2003/09/17 20:11:29  dkr
  * APS and DAO not implemented correctly yet :(
  *
@@ -610,32 +614,15 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 /*
  * dkr: how must this macro be defined???
  */
-#define SAC_HM_MALLOC_WITH_DESC(var, var_desc, size, dim)                                \
-    {                                                                                    \
-        SAC_HM_MALLOC (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));                          \
-        var_desc                                                                         \
-          = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
-        SAC_HM_ADDR_ARENA (var_desc) = NULL;                                             \
-    }
-
-/*
- * dkr: how must this macro be defined???
- */
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));               \
-        var_desc                                                                         \
-          = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
+        var_desc = (SAC_array_descriptor_t) (((SAC_HM_header_t *)var)                    \
+                                             + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
         SAC_HM_ADDR_ARENA (var_desc) = NULL;                                             \
     }
 
 #else /* SAC_DO_DAO */
-
-#define SAC_HM_MALLOC_WITH_DESC(var, var_desc, size, dim)                                \
-    {                                                                                    \
-        SAC_HM_MALLOC (var, size);                                                       \
-        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
-    }
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
@@ -654,8 +641,8 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_APS
 
 /*
- * Note, that due to DAO the size of the allocated chunk might be 2 units
- * larger than actually required by the size of the data object to be stored.
+ * Note, that due to DAO the size of the allocated chunk might be larger than
+ * actually required by the size of the data object to be stored.
  *
  * dkr: how must this macro be defined???
  */
@@ -796,12 +783,6 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 #define SAC_HM_FREE(addr) free (addr);
 
 #define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
-
-#define SAC_HM_MALLOC_WITH_DESC(var, var_desc, size, dim)                                \
-    {                                                                                    \
-        SAC_HM_MALLOC (var, size);                                                       \
-        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
-    }
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
