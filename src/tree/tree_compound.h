@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/06/27 13:31:47  dkr
+ * Ids2Array() added
+ *
  * Revision 3.61  2002/06/27 12:51:29  dkr
  * signature of CreateSel() modified
  *
@@ -1608,7 +1611,6 @@ extern int CountExprs (node *exprs);
  */
 
 extern node *CreateZeroScalar (simpletype btype);
-
 extern node *CreateZeroVector (int length, simpletype btype);
 
 /******************************************************************************
@@ -1627,6 +1629,8 @@ extern node *CreateZeroVector (int length, simpletype btype);
  ******************************************************************************/
 
 extern int IsConstArray (node *array);
+
+extern node *Ids2Array (ids *ids_arg);
 
 /******************************************************************************
  *
