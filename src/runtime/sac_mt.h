@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/01 13:05:00  jhs
+ * Added macros SAC_MT_[MASTER|WORKER]_[BEGIN|END] and SAC_MT_RESTART being
+ * part of the new values exchange ICMseries between SYNC-BLOCKS.
+ * Done the beautification on the fly.
+ *
  * Revision 2.5  1999/06/25 15:40:55  jhs
  * Just to provide compilabilty.
  *
@@ -203,7 +208,6 @@ typedef union {
 #define SAC_MT_BLOCK_FRAME_DUMMY() int dummy;
 
 #define I_POST(arg) arg
-#define dddI_POST(arg) CAT (arg, _in)
 #define O_POST(arg) CAT (arg, _out)
 #define S_POST(arg) CAT (arg, _shared)
 
@@ -225,7 +229,7 @@ typedef union {
     type S_POST (name);                                                                  \
     int SAC_ND_A_RC (S_POST (name));
 
-/* out of order */
+/* #### out of order */
 #define SAC_MT_SPMD_ARG_inout_rcXXX(type, name)                                          \
     type name;                                                                           \
     int SAC_ND_A_RC (name);
@@ -355,7 +359,7 @@ typedef union {
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ()
 
 #define SAC_MT_SPMD_PARAM_in(type, param)                                                \
-    type param = SAC_MT_CURRENT_FRAME ().I_POST (param);
+    type param = SAC_MT_SPMD_CURRENT_FRAME.I_POST (param);
 
 #define SAC_MT_SPMD_PARAM_in_rc(type, param)                                             \
     type I_POST (param) = SAC_MT_SPMD_CURRENT_FRAME.I_POST (param);                      \
@@ -381,7 +385,7 @@ typedef union {
     SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_RCP (I_POST (arg)) = SAC_ND_A_RCP (arg);
 
 #define SAC_MT_SPMD_SETARG_out(spmdname, arg)                                            \
-    SAC_MT_SPECIAL_FRAME (spmdname).O_POST (arg) = &arg;
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (arg) = &arg;
 
 #define SAC_MT_SPMD_SETARG_out_rc(spmdname, arg)                                         \
     SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (arg) = &arg;                            \
@@ -421,6 +425,26 @@ typedef union {
 
 /* out of order  #### */
 #define SAC_MT_SPMD_RET_inout_rcXXX(param)
+
+/*
+ *  Macros for body of value exchange parts
+ */
+
+#define SAC_MT_MASTER_BEGIN(nlabel)                                                      \
+    {                                                                                    \
+        label_master_continue_##nlabel:
+
+#define SAC_MT_MASTER_END(nlabel)                                                        \
+    goto label_continue_##nlabel;                                                        \
+    }
+
+#define SAC_MT_WORKER_BEGIN(nlabel)                                                      \
+    {                                                                                    \
+        label_worker_continue_##nlabel:
+
+#define SAC_MT_WORKER_END(nlabel) }
+
+#define SAC_MT_RESTART(nlabel) label_continue_##nlabel:
 
 /*
  *  Definition of macro implemented ICMs for synchronisation
