@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1994/12/05 15:07:25  hw
+# Revision 1.7  1994/12/09 10:42:25  sbs
+# optimize inserted
+#
+# Revision 1.6  1994/12/05  15:07:25  hw
 # added path tp convert.o to PRINT
 #
 # Revision 1.5  1994/12/01  17:32:02  hw
@@ -28,7 +31,8 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o 
-OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK)
+OPTIMIZE= src/optimize/optimize.o
+OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE)
 
 all: dummy sac2c
 
@@ -38,6 +42,7 @@ dummy:
 	(cd src/print; $(MAKE) )
 	(cd src/flatten; $(MAKE) )
 	(cd src/typecheck; $(MAKE) )
+	(cd src/optimize; $(MAKE) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -48,6 +53,7 @@ deps:
 	(cd src/print; $(MAKE) deps)
 	(cd src/flatten; $(MAKE) deps)
 	(cd src/typecheck; $(MAKE) deps)
+	(cd src/optimize; $(MAKE) deps)
         
 clean:
 	(cd src/global; $(MAKE) clean)
@@ -55,4 +61,5 @@ clean:
 	(cd src/print; $(MAKE) clean)
 	(cd src/flatten; $(MAKE) clean)
 	(cd src/typecheck; $(MAKE) clean)
+	(cd src/optimize; $(MAKE) clean)
 	$(RM) sac2c

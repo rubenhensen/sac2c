@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1994/12/05 13:00:58  hw
+# Revision 1.6  1994/12/09 10:43:42  sbs
+# optimize inserted
+#
+# Revision 1.5  1994/12/05  13:00:58  hw
 # called  'make deps'
 # ,.
 #
@@ -18,7 +21,7 @@
 MAKE=make
 CC=gcc -ansi -g 
 
-INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck
+INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck -I../optimize
 
 all: main.o Error.o traverse.o usage.o my_debug.o
 
@@ -48,13 +51,13 @@ clean:
 Error.o: Error.h /usr/include/stdio.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h tree.h
 main.o: node_info.mac prf_node_info.mac Error.h usage.h ../flatten/flatten.h
-main.o: ../print/print.h ../typecheck/typecheck.h ../scanparse/scnprs.h
-main.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
-main.o: /usr/include/string.h
+main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
+main.o: ../scanparse/scnprs.h /usr/include/stdlib.h
+main.o: /usr/include/sys/stdtypes.h /usr/include/string.h
 my_debug.o: tree.h node_info.mac prf_node_info.mac ../print/convert.h
 traverse.o: /usr/include/stdio.h /usr/include/stdlib.h
 traverse.o: /usr/include/sys/stdtypes.h tree.h node_info.mac
 traverse.o: prf_node_info.mac Error.h ../../inc/dbug.h my_debug.h
 traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
-traverse.o: traverse.h
+traverse.o: ../optimize/optimize.h traverse.h
 usage.o: usage.h /usr/include/stdio.h ../../inc/dbug.h
