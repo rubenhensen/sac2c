@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/03/16 14:54:30  dkr
+ * WLSEGX_BV and WLSEGX_UBV are now initialized correctly
+ *
  * Revision 2.3  2000/03/15 15:05:17  dkr
  * CalcSV and ComputeMinMaxIndex moved to wltransform.c
  *
@@ -281,8 +284,6 @@ Array2Bv (node *array, int *bv, int dims, int line)
 node *
 All (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    int i;
-
     DBUG_ENTER ("All");
 
     if (parms != NULL) {
@@ -296,26 +297,8 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (NODE_TYPE (cubes) == N_WLstride) {
         segs = MakeWLseg (dims, DupTree (cubes, NULL), NULL);
-
-        /*
-         * initialize temporary attributes
-         */
-        WLSEG_BLOCKS (segs) = 3; /* three blocking levels */
-        for (i = 0; i < WLSEG_BLOCKS (segs); i++) {
-            WLSEG_BV (segs, i) = (int *)MALLOC (sizeof (int) * dims);
-        }
-        WLSEG_UBV (segs) = (int *)MALLOC (sizeof (int) * dims);
     } else {
         segs = MakeWLsegVar (dims, DupTree (cubes, NULL), NULL);
-
-        /*
-         * initialize temporary attributes
-         */
-        WLSEGVAR_BLOCKS (segs) = 3; /* three blocking levels */
-        for (i = 0; i < WLSEGVAR_BLOCKS (segs); i++) {
-            WLSEGVAR_BV (segs, i) = (int *)MALLOC (sizeof (int) * dims);
-        }
-        WLSEGVAR_UBV (segs) = (int *)MALLOC (sizeof (int) * dims);
     }
 
     segs = NoBlocking (segs, parms, cubes, dims, line);
@@ -469,10 +452,12 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
     }
 
     while (seg != NULL) {
-
         /*
          * set ubv
          */
+        if (WLSEGX_UBV (seg) == NULL) {
+            WLSEGX_UBV (seg) = (int *)MALLOC (sizeof (int) * dims);
+        }
         for (d = 0; d < dims; d++) {
             (WLSEGX_UBV (seg))[d] = 1;
         }
@@ -480,7 +465,11 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * set bv[]
          */
+        WLSEGX_BLOCKS (seg) = 3; /* three blocking levels */
         for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
+            if (WLSEGX_BV (seg, b) == NULL) {
+                WLSEGX_BV (seg, b) = (int *)MALLOC (sizeof (int) * dims);
+            }
             for (d = 0; d < dims; d++) {
                 (WLSEGX_BV (seg, b))[d] = 1;
             }
@@ -551,7 +540,6 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
         }
 
         while (seg != NULL) {
-
             if (level < WLSEGX_BLOCKS (seg)) {
                 WLSEGX_BV (seg, level)
                   = Array2Bv (EXPRS_EXPR (parms), WLSEGX_BV (seg, level), dims, line);
