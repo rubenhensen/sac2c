@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/05/18 13:36:43  ktr
+ * removed printing of new variable name in TmpVarName.
+ *
  * Revision 3.35  2003/05/14 20:00:39  ktr
  * TmpVarName now avoids to prepend the same prefix twice.
  *
@@ -1028,8 +1031,6 @@ TmpVarName (char *postfix)
     result = (char *)Malloc ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
     sprintf (result, "%s_%s", tmp, postfix);
     tmp = Free (tmp);
-
-    printf ("%s\n", result);
 
     DBUG_RETURN (result);
 }
