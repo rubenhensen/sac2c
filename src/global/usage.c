@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/09 14:40:09  nmw
+ * ssa switch documentation added
+ *
  * Revision 3.7  2001/02/05 15:55:42  dkr
  * break specifier for -b16 updated
  *
@@ -245,7 +248,7 @@ usage ()
             "\t -b17:adjca        stop after adjusted calls\n");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
-
+            "\t -ssa\tuse optimizations based on ssa-form.\n"
             "\t -no <opt>\tdisable optimization technique <opt>\n"
             "\t -do <opt>\tenable optimization technique <opt>\n"
             "\n"
