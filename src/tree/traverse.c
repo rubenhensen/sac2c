@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/03/02 13:05:38  jhs
+ * Added blkco_tab, added functiobns for BLKCO and MTFIN.
+ *
  * Revision 1.10  2000/02/23 23:03:26  dkr
  * second traversal table for LAC2FUN added
  *
@@ -201,6 +204,8 @@
 #include "blocks_init.h"
 #include "blocks_expand.h"
 #include "repfuns_init.h"
+#include "mtfuns_init.h"
+#include "blocks_cons.h"
 
 #include "traverse.h"
 
@@ -972,6 +977,17 @@ static funtab l2f_lift_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *l2f_lift_tab = &l2f_lift_tab_rec;
+
+/*
+ *  (71) blkco_tab
+ */
+static funtab blkco_tab_rec = {{
+#define NIFblkco(it_blkco) it_blkco
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *blkco_tab = &blkco_tab_rec;
 
 /*
  *  nnode

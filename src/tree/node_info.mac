@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/03/02 13:05:38  jhs
+ * Added blkco_tab, added functiobns for BLKCO and MTFIN.
+ *
  * Revision 1.20  2000/02/24 15:55:09  dkr
  * RC and Print functions for old with-loop removed
  *
@@ -210,7 +213,7 @@
  *
  *   muth_tab        schin_tab       blkin_tab       rfin_tab
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
- *   l2f_lift_tab    unused_tab2     unused_tab3     unused_tab4
+ *   l2f_lift_tab    blkco_tab       unused_tab3     unused_tab4
  *
  *   nnode
  *
@@ -485,6 +488,10 @@
 #define NIFl2f_lift(it_l2f_lift)
 #endif
 
+#ifndef NIFblkco
+#define NIFblkco(it_blkco)
+#endif
+
 #ifndef NIFnnode
 #define NIFnnode(nnode)
 #endif
@@ -510,7 +517,7 @@
   it_spmdpm, it_spmdco, it_ntc, it_l2f_infer,                                            \
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
-  it_l2f_lift, it_unused2, it_unused3, it_unused4, it_unused5, it_unused6, it_unused7,   \
+  it_l2f_lift, it_blkco, it_unused3, it_unused4, it_unused5, it_unused6, it_unused7,     \
   it_unused8, it_unused9, it_unusedA, it_unusedB, it_unusedC,                            \
                                                                                          \
   nnode)                                                                                 \
@@ -548,8 +555,9 @@
                                                     NIFblkex (it_blkex)                  \
                                                       NIFmtfin (it_mtfin)                \
                                                         NIFl2f_lift (it_l2f_lift)        \
+                                                          NIFblkco (it_blkco)            \
                                                                                          \
-                                                          NIFnnode (nnode)
+                                                            NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -823,7 +831,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, L2F_INFERfundef,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
-       TravSons, L2F_LIFTfundef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        3),
@@ -883,7 +891,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, DupMt, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -894,14 +902,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
+       TravSons, BLKCOxt, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
 
   NIF (N_st, "N_st", TravSons, TravSons, PrintST, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, DupSt, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -912,8 +920,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
+       TravSons, BLKCOxt, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -932,7 +940,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, SPMDPMassign, SPMDCOassign, TravSons, L2F_INFERassign,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, BLKCOassign, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        2),
@@ -1039,7 +1047,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAlet, TravSons, SPMDRMlet, SPMDROlet, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERlet,
 
-       TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, TravSons,
+       TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1890,6 +1898,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFmtfin
 
 #undef NIFl2f_lift
+#undef NIFblkco
 
 #undef NIFnnode
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/03/02 13:05:38  jhs
+ * Added blkco_tab, added functiobns for BLKCO and MTFIN.
+ *
  * Revision 1.8  2000/02/23 23:03:44  dkr
  * second traversal table for LAC2FUN added
  *
@@ -135,6 +138,7 @@ extern funtab *blkex_tab;
 extern funtab *mtfin_tab;
 extern funtab *l2f_infer_tab;
 extern funtab *l2f_lift_tab;
+extern funtab *blkco_tab;
 
 extern int nnode[];
 
