@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/11/18 17:37:23  dkr
+ * ANAnwithop(): call of TravSons() added
+ *
  * Revision 3.5  2002/10/18 13:37:37  sbs
  * access to ID_ATTRIB replaced by FLAG inspection.
  *
@@ -324,6 +327,8 @@ ANAnwithop (node *arg_node, node *arg_info)
     if (NWITHOP_IS_FOLD (arg_node)) {
         StoreNeededNode (NWITHOP_FUNDEF (arg_node), arg_info, ST_regular);
     }
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
