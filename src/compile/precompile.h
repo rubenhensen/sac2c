@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/12/04 17:00:04  cg
+ * Revision 1.4  1995/12/18 16:31:38  cg
+ * declaration of PRECexprs removed
+ *
+ * Revision 1.3  1995/12/04  17:00:04  cg
  * added function PRECcast
  * All casts are now eliminated by the precompiler
  *
@@ -28,7 +31,6 @@ extern node *PRECarg (node *arg_node, node *arg_info);
 extern node *PREClet (node *arg_node, node *arg_info);
 extern node *PRECap (node *arg_node, node *arg_info);
 extern node *PRECreturn (node *arg_node, node *arg_info);
-extern node *PRECexprs (node *arg_node, node *arg_info);
 extern node *PRECid (node *arg_node, node *arg_info);
 extern node *PRECvardec (node *arg_node, node *arg_info);
 extern node *PRECtypedef (node *arg_node, node *arg_info);
