@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/03/02 10:36:15  dkr
+# /home/dkr/sac/BASE/sac2c/src/print/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.3  2001/01/17 10:13:01  dkr
 # make deps done
 #
@@ -95,10 +98,10 @@ all: print.o convert.o
 # recognize the dependency between *.[ch] and the .mac files!
 #
 convert.c: ../tree/type_info.mac
-	touch convert.c
+	touch $@
 
 print.c: ../tree/prf_node_info.mac
-	touch print.c
+	touch $@
 
 
 %.o: %.c
