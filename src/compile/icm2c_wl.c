@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/08/07 19:47:30  dkr
+ * WL_ADJUST_OFFSET changed
+ *
  * Revision 1.24  1998/08/07 16:01:58  dkr
  * WL_MT_...FOLD_BEGIN, WL_MT_...FOLD_END removed
  * WL_MT_SCHEDULER_SET_OFFSET renamed to WL_INIT_OFFSET
@@ -640,7 +643,7 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target, char 
         if (i <= dim) {
             fprintf (outfile, " + %s )", idx_scalars[i]);
         } else {
-            if (i < first_block_dim) {
+            if (i <= first_block_dim) {
                 fprintf (outfile, " + SAC_WL_MT_SCHEDULE_START( %d) )", i);
             } else {
                 fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
