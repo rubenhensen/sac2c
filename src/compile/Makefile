@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.32  2000/07/14 15:01:20  nmw
+# *** empty log message ***
+#
 # Revision 2.31  2000/07/14 14:43:59  nmw
 # make deps made
 #
@@ -230,6 +233,7 @@ gen_startup_code.o: /usr/include/malloc.h /usr/include/sys/types.h
 gen_startup_code.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 gen_startup_code.o: /usr/include/sys/select.h /usr/include/sys/time.h
 gen_startup_code.o: /usr/include/sys/time.h ../global/internal_lib.h
+gen_startup_code.o: precompile.h
 icm2c.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 icm2c.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 icm2c.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
