@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/06/20 11:33:59  ben
+ * StrTok implemented
+ *
  * Revision 3.12  2001/05/17 13:29:29  cg
  * Moved de-allocation function Free() from free.c to internal_lib.c
  *
@@ -328,6 +331,46 @@ StringConcat (char *first, char *second)
     strcat (result, second);
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *StrTok(char *first, char *sep)
+ *
+ * description
+ *    Implements a version of the c-strtok, which can operate on static strings,
+ *    too. It returns the string always till the next occurence off the string sep
+ *    in first. If there are no more tokens in first a null pointer will be
+ *    returned.
+ *    On first call the string first will be copied, and on last call the
+ *    allocated memory of the copy will be freeed.
+ *    To get more than one token from one string, call StrTok with NULL
+ *    as first parameter, just like c-strtok
+ *
+ ******************************************************************************/
+
+char *
+StrTok (char *first, char *sep)
+{
+    static char *act_string = NULL;
+    char *new_string = NULL;
+    char *ret;
+
+    DBUG_ENTER ("StrTok");
+
+    if (act_string == NULL) {
+        new_string = StringCopy (first);
+        act_string = new_string;
+    }
+
+    ret = strtok (new_string, sep);
+
+    if (ret == NULL) {
+        act_string = Free (act_string);
+    }
+
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/06/20 11:34:19  ben
+ * StrTok implemented
+ *
  * Revision 3.15  2001/05/18 11:51:01  dkr
  * macro FREE_VECT added
  *
@@ -116,6 +119,7 @@ extern void *Free (void *address);
 
 extern char *StringCopy (char *source);
 extern char *StringConcat (char *first, char *second);
+extern char *StrTok (char *first, char *sep);
 
 extern int lcm (int x, int y);
 extern char *itoa (long number);
