@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 1.4  1998/06/02 17:09:17  sbs
+ * some comments added
+ *
  * Revision 1.3  1998/05/30 19:44:46  dkr
  * fixed a bug in CreateFold:
  *   funname is no longer shared
@@ -536,13 +539,15 @@ DoUnrollGenarray (node *wln, node *arg_info)
     }
 
     /* finally add arrayname = reshape(...,[0,...,0]) */
-    /* attention: the above reshape() is correct. But it seems that it
-       is not necessary anymore after the TC. reshape() is ignored in
-       compile phase.
-       If WLT is deactivated, not all elements of the WL are rewritten by
-       prf modarray. CF cannot handle prf reshape() so unrolling might fail
-       here. If we drop the reshape, further compilation should(!!!)
-       work without problems and CF can fold all elements. */
+    /*
+     * attention: the above reshape() is correct. But it seems that it
+     * is not necessary anymore after the TC. reshape() is ignored in
+     * compile phase.
+     * If WLT is deactivated, not all elements of the WL are rewritten by
+     * prf modarray. CF cannot handle prf reshape() so unrolling might fail
+     * here. If we drop the reshape, further compilation should(!!!)
+     * work without problems and CF can fold all elements.
+     */
     args = DupTree (NWITHOP_SHAPE (NWITH_WITHOP (wln)), NULL);
     tmpn = ARRAY_AELEMS (args);
     elements = 1;
