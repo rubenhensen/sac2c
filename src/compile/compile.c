@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2004/07/28 09:33:49  ktr
+ * even loops work with emm now.
+ *
  * Revision 3.113  2004/07/28 08:47:59  ktr
  * NULL pointer problem in COMPPrfReshape resolved
  *
@@ -5378,39 +5381,38 @@ COMPLoop (node *arg_node, info *arg_info)
     cond = DO_COND (arg_node);
     body = DO_BODY (arg_node);
     ret_node = MakeAssign (MakeDo (cond, body), NULL);
-    DO_SKIP (ASSIGN_INSTR (ret_node)) = DO_SKIP (arg_node);
 
+    /*
+     * Build icm's and insert them *before* the first instruction in the loop.
+     * The following parts are done:
+     *   (1) Build DEC_RC-icms
+     *   (2) Build ND-label-icm (do-loop only)
+     *   (3) Build INC_RC-icms
+     *   (4) Insert all icms at beginning of inner instructions.
+     */
+    /* create a dummy node to append ICMs to */
+    first_node = MakeAssign (NULL, NULL);
+    last_node = first_node;
+    /*
+     * Before (1) - Build DEC_RC-icms.
+     *
+     * All variables defined but not used in the loop where counted during
+     * refcounting with 1 (for while-loops) resp. with 0 (for do-loops).
+     *
+     * The variables inspected are defined in the loop (used after it) but not
+     * used in the loop itself. In context of a while-loop this means the
+     * variable has been set before the loop, otherwise, any usage after the
+     * loop isn't inferable if the loop is not executed. The do-loop hos no
+     * such problem.
+     *
+     * Such a defined but not used variable will be "overwritten" in another
+     * following pass of the loop body, therefore the variables refcounters have
+     * to be decremented before each pass.i Thats is what the icms here are
+     * produced for. Because the first-pass of a do-loop does not involve any
+     * predefined variables, it is necessary to jump around this part in such a
+     * pass (therefore this obscure goto-label-construct.
+     */
     if (!emm) {
-        /*
-         * Build icm's and insert them *before* the first instruction in the loop.
-         * The following parts are done:
-         *   (1) Build DEC_RC-icms
-         *   (2) Build ND-label-icm (do-loop only)
-         *   (3) Build INC_RC-icms
-         *   (4) Insert all icms at beginning of inner instructions.
-         */
-        /* create a dummy node to append ICMs to */
-        first_node = MakeAssign (NULL, NULL);
-        last_node = first_node;
-        /*
-         * Before (1) - Build DEC_RC-icms.
-         *
-         * All variables defined but not used in the loop where counted during
-         * refcounting with 1 (for while-loops) resp. with 0 (for do-loops).
-         *
-         * The variables inspected are defined in the loop (used after it) but not
-         * used in the loop itself. In context of a while-loop this means the
-         * variable has been set before the loop, otherwise, any usage after the
-         * loop isn't inferable if the loop is not executed. The do-loop hos no
-         * such problem.
-         *
-         * Such a defined but not used variable will be "overwritten" in another
-         * following pass of the loop body, therefore the variables refcounters have
-         * to be decremented before each pass.i Thats is what the icms here are
-         * produced for. Because the first-pass of a do-loop does not involve any
-         * predefined variables, it is necessary to jump around this part in such a
-         * pass (therefore this obscure goto-label-construct.
-         */
         defvar = DO_OR_WHILE_DEFVARS (arg_node);
         while (defvar != NULL) {
             /*
@@ -5437,17 +5439,33 @@ COMPLoop (node *arg_node, info *arg_info)
 
             defvar = IDS_NEXT (defvar);
         }
-        /*
-         * Before (2) - Build ND-label-icm (do-loop-only).
-         *
-         * Needed to avoid the above DEC_RC's in the first pass of a do_loop.
-         * See explanations above.
-         */
-        if (NODE_TYPE (arg_node) == N_do) {
-            label_str = TmpVarName (LABEL_POSTFIX);
-            icm_node = MakeAssignIcm1 ("ND_LABEL", MakeId_Copy (label_str), NULL);
-            last_node = ASSIGN_NEXT (last_node) = icm_node;
+    } else {
+        last_node = AppendAssign (last_node, BLOCK_INSTR (DO_SKIP (arg_node)));
+        BLOCK_INSTR (DO_SKIP (arg_node)) = NULL;
+
+        while (ASSIGN_NEXT (last_node) != NULL) {
+            last_node = ASSIGN_NEXT (last_node);
         }
+    }
+
+    /*
+     * Before (2) - Build ND-label-icm (do-loop-only).
+     *
+     * Needed to avoid the above DEC_RC's in the first pass of a do_loop.
+     * See explanations above.
+     */
+    if (NODE_TYPE (arg_node) == N_do) {
+        if (DO_LABEL (arg_node) == 0) {
+            label_str = TmpVarName (LABEL_POSTFIX);
+        } else {
+            label_str = DO_LABEL (arg_node);
+            DO_LABEL (arg_node) = NULL;
+        }
+        icm_node = MakeAssignIcm1 ("ND_LABEL", MakeId_Copy (label_str), NULL);
+        last_node = ASSIGN_NEXT (last_node) = icm_node;
+    }
+
+    if (!emm) {
         /*
          * Before (3) - Build INC_RC-icms.
          *
@@ -5469,28 +5487,31 @@ COMPLoop (node *arg_node, info *arg_info)
 
             usevar = IDS_NEXT (usevar);
         }
-        /*
-         * Before (4) - Insert icms at beginning of loop instructions.
-         */
-        if (ASSIGN_NEXT (first_node) != NULL) {
-            ASSIGN_NEXT (last_node) = BLOCK_INSTR (body);
-            BLOCK_INSTR (body) = ASSIGN_NEXT (first_node);
-            ASSIGN_NEXT (first_node) = NULL;
-        }
+    }
 
-        /*
-         * Build icm's and insert them *after* the loop-assignment.
-         * The following parts are done:
-         *   (1) Build DEC_RC-icms
-         *   (2) Build INC_RC-icms
-         *   (3) Insert all icms after the loop-assignment
-         *   (4) Insert GOTO (do-loop only)
-         */
-        last_node = first_node;
+    /*
+     * Before (4) - Insert icms at beginning of loop instructions.
+     */
+    if (ASSIGN_NEXT (first_node) != NULL) {
+        ASSIGN_NEXT (last_node) = BLOCK_INSTR (body);
+        BLOCK_INSTR (body) = ASSIGN_NEXT (first_node);
+        ASSIGN_NEXT (first_node) = NULL;
+    }
 
-        /*
-         * After (1) - Build DEC_RC-icms.
-         */
+    /*
+     * Build icm's and insert them *after* the loop-assignment.
+     * The following parts are done:
+     *   (1) Build DEC_RC-icms
+     *   (2) Build INC_RC-icms
+     *   (3) Insert all icms after the loop-assignment
+     *   (4) Insert GOTO (do-loop only)
+     */
+    last_node = first_node;
+
+    /*
+     * After (1) - Build DEC_RC-icms.
+     */
+    if (!emm) {
         usevar = DO_OR_WHILE_USEVARS (arg_node);
         while (usevar != NULL) {
             /*
@@ -5530,23 +5551,22 @@ COMPLoop (node *arg_node, info *arg_info)
 
             defvar = IDS_NEXT (defvar);
         }
+    }
+    /*
+     * After (3) - Insert icms after end of loop-assigment
+     *             (before next instruction).
+     */
+    ASSIGN_NEXT (ret_node) = ASSIGN_NEXT (first_node);
+    /* remove first dummy node */
+    first_node = FreeNode (first_node);
+    first_node = NULL;
 
-        /*
-         * After (3) - Insert icms after end of loop-assigment
-         *             (before next instruction).
-         */
-        ASSIGN_NEXT (ret_node) = ASSIGN_NEXT (first_node);
-        /* remove first dummy node */
-        first_node = FreeNode (first_node);
-        first_node = NULL;
-
-        /*
-         * After (4) - Insert GOTO before do-loop (do-loop only).
-         */
-        if (NODE_TYPE (arg_node) == N_do) {
-            /* put N_icm 'ND_GOTO', in front of N_do node */
-            ret_node = MakeAssignIcm1 ("ND_GOTO", MakeId_Copy (label_str), ret_node);
-        }
+    /*
+     * After (4) - Insert GOTO before do-loop (do-loop only).
+     */
+    if (NODE_TYPE (arg_node) == N_do) {
+        /* put N_icm 'ND_GOTO', in front of N_do node */
+        ret_node = MakeAssignIcm1 ("ND_GOTO", MakeId_Copy (label_str), ret_node);
     }
 
     /*
