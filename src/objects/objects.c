@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1997/11/25 08:41:27  cg
+ * bug fixed in OBJlet.
+ * OBJlet can now handle cast expressions in front of with-loops
+ * or function applications.
+ *
  * Revision 1.16  1997/11/07 14:46:17  dkr
  * eliminated another nnode
  *
@@ -691,7 +696,7 @@ OBJid (node *arg_node, node *arg_info)
 node *
 OBJlet (node *arg_node, node *arg_info)
 {
-    node *args, *params;
+    node *args, *params, *let_expr;
     ids *new_ids = NULL, *last_ids, *old_ids;
     char *new_ids_name;
 
@@ -702,10 +707,18 @@ OBJlet (node *arg_node, node *arg_info)
             LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
         }
     } else {
+        let_expr = LET_EXPR (arg_node);
+        while (NODE_TYPE (let_expr) == N_cast) {
+            let_expr = CAST_EXPR (let_expr);
+        }
 
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-            args = AP_ARGS (LET_EXPR (arg_node));
-            params = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
+        if (NODE_TYPE (let_expr) != N_ap) {
+            if (NODE_TYPE (let_expr) == N_with) {
+                let_expr = Trav (let_expr, arg_info);
+            }
+        } else {
+            args = AP_ARGS (let_expr);
+            params = FUNDEF_ARGS (AP_FUNDEF (let_expr));
 
             while ((params != NULL) && (ARG_BASETYPE (params) != T_dots)) {
                 if (ARG_ATTRIB (params) == ST_was_reference) {
@@ -754,11 +767,6 @@ OBJlet (node *arg_node, node *arg_info)
             }
 
             LET_IDS (arg_node) = AppendIdsChain (new_ids, LET_IDS (arg_node));
-
-        } else {
-            if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
-                LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-            }
         }
     }
 
