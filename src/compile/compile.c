@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.53  1995/06/26 14:05:51  hw
+ * Revision 1.54  1995/06/26 14:23:47  hw
+ * - deleted some unused variables
+ * - remove #if 0 .. #endif parts
+ *
+ * Revision 1.53  1995/06/26  14:05:51  hw
  * moved some macros to compile.h and tree.h
  *
  * Revision 1.52  1995/06/26  12:01:37  hw
@@ -848,7 +852,7 @@ Compile (node *arg_node)
 node *
 CompVardec (node *arg_node, node *arg_info)
 {
-    node *exprs, *tmp, *type_node, *assign, *id_node, *n_node;
+    node *exprs, *type_node, *assign, *id_node, *n_node;
     int i, dim;
 
     DBUG_ENTER ("CompVardec");
@@ -885,36 +889,20 @@ CompVardec (node *arg_node, node *arg_info)
         /* store name of variable */
         MAKENODE_ID (id_node, arg_node->ID);
         MAKE_NEXT_ICM_ARG (exprs, id_node);
-#if 0
-      MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_id));
-      tmp->node[0]->info.ids=MakeIds(arg_node->ID);
-#endif
 
         /* store dimension */
         MAKENODE_NUM (n_node, dim);
         MAKE_NEXT_ICM_ARG (exprs, n_node);
-#if 0
-      MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_num));
-      tmp->node[0]->info.cint=dim;
-#endif
 
         /* store shape infomation */
         for (i = 0; i < arg_node->DIM; i++) {
             MAKENODE_NUM (n_node, dim);
             MAKE_NEXT_ICM_ARG (exprs, n_node);
-#if 0
-         MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_num));
-         tmp->node[0]->info.cint=arg_node->SHP[i];
-#endif
         }
         if (T_user == arg_node->SIMPLETYPE)
             for (i = 0; i < type_node->DIM; i++) {
                 MAKENODE_NUM (n_node, dim);
                 MAKE_NEXT_ICM_ARG (exprs, n_node);
-#if 0
-            MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_num));
-            tmp->node[0]->info.cint=type_node->SHP[i];
-#endif
             }
 
         /* now transform current node to one of type N_icm */
@@ -1224,12 +1212,6 @@ CompPrf (node *arg_node, node *arg_info)
             case 0:
                 CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", res, res_ref);
                 APPEND_ASSIGNS (first_assign, next_assign);
-#if 0
-            CREATE_2_ARY_ICM(next_assign, "ND_DEC_RC", arg1, n_node);
-            APPEND_ASSIGNS(first_assign, next_assign);
-            CREATE_2_ARY_ICM(next_assign, "ND_DEC_RC", arg2, n_node);
-            APPEND_ASSIGNS(first_assign, next_assign);
-#endif
                 DEC_OR_FREE_RC_ND (arg2, n_node);
                 DEC_OR_FREE_RC_ND (arg1, n_node);
                 break;
@@ -1296,10 +1278,6 @@ CompPrf (node *arg_node, node *arg_info)
 
                 MAKENODE_NUM (dim_node, 1); /* store dimension of argument-array */
                 CREATE_TMP_CONST_ARRAY (arg2, res_ref);
-#if 0
-            CREATE_2_ARY_ICM(next_assign, "ND_REUSE", arg2, res);
-            APPEND_ASSIGNS(first_assign, next_assign);
-#endif
             }
 
             if (N_array == arg1->nodetype) {
@@ -1411,15 +1389,8 @@ CompPrf (node *arg_node, node *arg_info)
             if (0 == IsArray (res->IDS_NODE->TYPES)) {
                 if (N_id == arg2->nodetype) {
                     if (N_id == arg1->nodetype) {
-#if 0
-                  GET_DIM(dim, arg2->IDS_NODE->TYPES);
-                  MAKENODE_NUM(dim_node, dim); /* store dimension of array */
-#endif
                         BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_VxA_S", line, arg2);
                         MAKE_NEXT_ICM_ARG (icm_arg, res);
-#if 0
-                  MAKE_NEXT_ICM_ARG(icm_arg, dim_node);
-#endif
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1_length);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                     } else {
@@ -1443,9 +1414,6 @@ CompPrf (node *arg_node, node *arg_info)
 
                     FREE (old_arg_node);
                 } else {
-#if 0
-               MAKENODE_NUM(dim_node, 1);
-#endif
                     /* arg2 is a constant array */
                     DBUG_ASSERT ((N_array == arg2->nodetype), "nodetype != N_array");
                     MAKENODE_NUM (tmp_rc, 0);
@@ -1828,7 +1796,7 @@ CompLet (node *arg_node, node *arg_info)
 node *
 CompArray (node *arg_node, node *arg_info)
 {
-    node *tmp, *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
+    node *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
       *icm_arg, *n_node, *res_ref, *last_assign;
     simpletype s_type;
     int n_elems = 0, icm_created = 0;
@@ -1906,7 +1874,7 @@ CompArray (node *arg_node, node *arg_info)
 node *
 CompId (node *arg_node, node *arg_info)
 {
-    node *first_assign, *next_assign, *tmp, *last_assign, *old_arg_node, *icm_arg, *res,
+    node *first_assign, *next_assign, *last_assign, *old_arg_node, *icm_arg, *res,
       *n_node, *icm_node;
 
     DBUG_ENTER ("CompId");
@@ -2055,10 +2023,6 @@ CompAp (node *arg_node, node *arg_info)
 
     /* put function_name in front */
     exprs = MakeNode (N_exprs);
-#if 0
-   MAKENODE_ID(id_node, GenFunName(arg_node->FUN_NAME, 
-                                   arg_node->FUN_MOD_NAME) );
-#endif
     MAKENODE_ID (id_node, arg_node->node[1]->ID);
     exprs->node[0] = id_node;
     exprs->node[1] = outs;
@@ -2221,10 +2185,6 @@ CompReturn (node *arg_node, node *arg_info)
             MAKE_NEXT_ICM_ARG (icm_arg, res_dim);
             /* N_return belongs to a 'modarray' with-loop */
             /* add name of modified array */
-#if 0
-         with_icm_arg=with_icm_arg->node[1];
-         MAKE_NEXT_ICM_ARG(icm_arg, with_icm_arg->node[0]);
-#endif
             MAKE_NEXT_ICM_ARG (icm_arg, mod_array);
             /* add name of return value */
             MAKE_NEXT_ICM_ARG (icm_arg, ret_val);
@@ -2354,8 +2314,8 @@ CompReturn (node *arg_node, node *arg_info)
 node *
 CompWith (node *arg_node, node *arg_info)
 {
-    node *old_info2, *first_assign, *next_assign, *tmp, *n_node, *inc_rc, *icm_arg, *from,
-      *to, *type_id_node, *arg, *res, *res_ref, *res_dim_node, *index, *indexlen,
+    node *old_info2, *first_assign, *next_assign, *n_node, *inc_rc, *icm_arg, *from, *to,
+      *type_id_node, *arg, *res, *res_ref, *res_dim_node, *index, *indexlen,
       *old_arg_node, *last_assign;
     int res_dim;
     simpletype s_type;
@@ -2566,8 +2526,8 @@ CompWith (node *arg_node, node *arg_info)
 node *
 CompArg (node *arg_node, node *arg_info)
 {
-    node *icm_arg, *id_node, *tmp, *type_id_node, *refcnt_node, *new_assign, *next_arg,
-      *exprs, *type_node;
+    node *icm_arg, *id_node, *type_id_node, *refcnt_node, *new_assign, *next_arg, *exprs,
+      *type_node;
     simpletype s_type;
     int dim = 0;
 
@@ -2775,7 +2735,7 @@ CompFundef (node *arg_node, node *arg_info)
 node *
 CompLoop (node *arg_node, node *arg_info)
 {
-    node *first_assign, *next_assign, *icm_arg, *n_node, *tmp, *v1, *v2, *label,
+    node *first_assign, *next_assign, *icm_arg, *n_node, *v1, *v2, *label,
       *dummy_assign = NULL, *V1, *V2, *loop_assign;
     int found;
 
@@ -2939,8 +2899,7 @@ CompLoop (node *arg_node, node *arg_info)
 node *
 CompCond (node *arg_node, node *arg_info)
 {
-    node *first_assign, *next_assign, *icm_arg, *n_node, *tmp, *id_node,
-      *dummy_assign = NULL;
+    node *first_assign, *next_assign, *icm_arg, *n_node, *id_node, *dummy_assign = NULL;
     int i;
 
     DBUG_ENTER ("CompCond");
@@ -2985,8 +2944,6 @@ CompCond (node *arg_node, node *arg_info)
  *                  arg_info->node[0] contains pointer to node before last
  *                    assign_node (use macro LAST_ASSIGN or NEXT_ASSIGN to
  *                     get these nodes)
- *                  arg_node->node[0] will be set to arg_node while traversing
- *                  the body of the block
  *
  */
 node *
@@ -2999,13 +2956,6 @@ CompBlock (node *arg_node, node *arg_info)
     arg_info->node[0] = arg_node;
     Trav (arg_node->node[0], arg_info);
     arg_info->node[0] = old_info;
-#if 0
-   if(NULL != arg_info->node[3])
-   {
-      arg_node->node[1]=Trav(arg_info->node[3], arg_info);
-      arg_node->nnode=2;
-   }
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -3058,7 +3008,7 @@ CompTypedef (node *arg_node, node *arg_info)
 
     if (1 <= arg_node->DIM) {
         char *typename, *new_typename;
-        node *type1, *type2, *icm_arg, *tmp /* used in ICM-macros */;
+        node *type1, *type2, *icm_arg;
 
         if (NULL != arg_node->NAME_MOD) {
             typename = (char *)Malloc (sizeof (char)
