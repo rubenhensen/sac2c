@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.134  2004/11/24 14:12:35  sah
+ * added ID_DECL
+ *
  * Revision 3.133  2004/11/24 14:04:53  skt
  * ID_VARDEC added
  *
@@ -1445,15 +1448,15 @@ extern node *TCmakeVinfoDollar (node *next);
  *  compound access macros
  */
 
-#define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_VARDEC (n))
+#define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_DECL (n))
 #define ID_NAME(n) AVIS_NAME (ID_AVIS (n))
 #define ID_NTYPE(n) AVIS_TYPE (ID_AVIS (n))
-#define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
-#define ID_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n)))
+#define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_DECL (n))
+#define ID_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_DECL (n)))
 #define ID_SHAPE(n, x) SHPSEG_SHAPE (ID_SHPSEG (n), x)
-#define ID_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
-#define ID_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
-#define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
+#define ID_DECL_NAME(n) VARDEC_OR_ARG_NAME (ID_DECL (n))
+#define ID_DECL_NEXT(n) VARDEC_OR_ARG_NEXT (ID_DECL (n))
+#define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_DECL (n))
 
 #define ID_TYPE(n)                                                                       \
     ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_vardec)                                   \
@@ -1467,7 +1470,7 @@ extern node *TCmakeVinfoDollar (node *next);
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
 
-#define ID_VARDEC(n) (AVIS_DECL (ID_AVIS (n)))
+#define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 
 extern node *TCmakeId_Copy_NT (char *str, types *type);
 
