@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/02/17 16:19:35  cg
+ * File now includes DupTree.h instead of typecheck.h in order
+ * to use function DuplicateTypes().
+ *
  * Revision 2.1  1999/02/23 12:43:23  sacbase
  * new release made
  *
@@ -62,7 +66,7 @@
 #include "internal_lib.h"
 #include "free.h"
 
-#include "typecheck.h"
+#include "DupTree.h"
 #include "filemgr.h"
 
 /*
