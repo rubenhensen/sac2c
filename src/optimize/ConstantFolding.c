@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1997/11/07 10:24:13  dkr
+ * with defined NEWTREE node.nnode is not used anymore
+ *
  * Revision 1.53  1997/10/09 13:56:59  srs
  * modified SkalarPrf to fold F_min and F_max
  *
@@ -895,7 +898,12 @@ ArraySize (node *array)
     DBUG_ENTER ("ArraySize");
     size = 1;
     array = array->node[0];
-    while (2 == array->nnode) {
+#ifndef NEWTREE
+    while (2 == array->nnode)
+#else
+    while (array->node[1] != NULL)
+#endif
+    {
         array = array->node[1];
         size++;
     }
@@ -944,7 +952,9 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
         expr->node[0] = DupTree (array->node[0], NULL);
         if (N_id == expr->node[0]->nodetype)
             DEC_VAR (arg_info->mask[1], expr->node[0]->info.ids->node->varno);
+#ifndef NEWTREE
         expr->nnode = 1;
+#endif
         array = array->node[1];
         r_expr = expr;
 
@@ -952,13 +962,17 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
          * Duplicate rest of array till length reached
          */
         for (i = 1; i < length; i++) {
+#ifndef NEWTREE
             expr->nnode++;
+#endif
             expr->node[1] = MakeNode (N_exprs);
             expr = expr->node[1];
             expr->node[0] = DupTree (array->node[0], NULL);
             if (N_id == expr->node[0]->nodetype)
                 DEC_VAR (arg_info->mask[1], expr->node[0]->info.ids->node->varno);
+#ifndef NEWTREE
             expr->nnode = 1;
+#endif
             array = array->node[1];
         }
     }
@@ -1440,7 +1454,9 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
             res_node = FetchNum (start, array);
         } else {
             res_node = MakeNode (N_array);
+#ifndef NEWTREE
             res_node->nnode = 1;
+#endif
             res_node->node[0] = DupPartialArray (start, length, array, arg_info);
         }
     } else {
@@ -1675,8 +1691,10 @@ ArrayPrf (node *arg_node, node *arg_info)
              */
             if (NULL != arg[0]->node[0]->node[1])
                 FreeTree (arg[0]->node[0]->node[1]);
+#ifndef NEWTREE
             arg[0]->node[0]->nnode = 0;
-            arg[0]->node[0]->node[1] = NULL;
+#endif
+            arg[0]->node[0]->node[1] = NULL; /* ??? */
             FREE (arg_node);
 
             /*
@@ -1723,8 +1741,12 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Free argument of prim function
              */
             FreeTree (arg_node->node[0]);
-            arg_node->node[0] = NULL;
+#ifndef NEWTREE
+            /*
+            arg_node->node[0]=NULL;
+            */
             arg_node->nnode = 0;
+#endif
 
             cf_expr++;
             break;
@@ -1741,8 +1763,12 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Free argument of prim function
              */
             FreeTree (arg_node->node[0]);
-            arg_node->node[0] = NULL;
+#ifndef NEWTREE
+            /*
+            arg_node->node[0]=NULL;
+            */
             arg_node->nnode = 0;
+#endif
 
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             cf_expr++;
