@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  2003/11/25 14:30:23  sbs
+ * type improvement after CF (newTC only) added.
+ *
  * Revision 1.49  2003/11/06 15:24:10  ktr
  * SSACFStructOpWrapper now annotates correct shape information
  *
@@ -1832,6 +1835,7 @@ node *
 SSACFlet (node *arg_node, node *arg_info)
 {
     constant *new_co;
+    ntype *computed_type, *inferred_type;
 
     DBUG_ENTER ("SSACFlet");
 
@@ -1919,6 +1923,23 @@ SSACFlet (node *arg_node, node *arg_info)
                     DBUG_PRINT ("SSACF",
                                 ("identifier %s marked as constant",
                                  VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (ids)))));
+                    /**
+                     * No we might have to update the type of the LHS var as well:
+                     */
+                    if (sbs == 1) {
+                        computed_type = TYMakeAKS (TYMakeSimpleType (COGetType (new_co)),
+                                                   SHCopyShape (COGetShape (new_co)));
+                        inferred_type = TYOldType2Type (IDS_TYPE (ids));
+
+                        DBUG_ASSERT (TYLeTypes (computed_type, inferred_type),
+                                     "CF lead to a result type that is not a proper "
+                                     "subtype of the inferred type!");
+
+                        IDS_TYPE (ids) = FreeOneTypes (IDS_TYPE (ids));
+                        IDS_TYPE (ids) = TYType2OldType (computed_type);
+                        computed_type = TYFreeType (computed_type);
+                        inferred_type = TYFreeType (inferred_type);
+                    }
                 } else {
                     /* expression is not constant */
                     DBUG_PRINT ("SSACF",
