@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2004/08/08 14:02:08  sbs
+ * some doxygenic added
+ *
  * Revision 1.17  2004/08/07 16:01:43  sbs
  * SSAwith2 added for N_Nwith2 support
  *
@@ -78,11 +81,15 @@
  *
  */
 
-/*****************************************************************************
+/**
  *
- * file:   SSATRansform.c
+ * @defgroup ssatransform SSATransform
+ * @ingroup ssa
  *
- * prefix: SSA
+ * @brief  SSATransform makes all LHS within a single function unique.
+ *
+ *******************************************************************************
+ * <pre>
  *
  * description:
  *    1) Basics:
@@ -210,6 +217,8 @@
  *    that e.g. removes copy assignments and renamings of global objects.
  *    Furthermore, all SSACNT nodes and SSASTACK nodes are eliminated as well.
  *
+ * </pre>
+ * @{
  *****************************************************************************/
 
 #define NEW_INFO
@@ -1845,3 +1854,5 @@ SSATransformOneFundef (node *fundef)
     DBUG_RETURN (fundef);
 }
 /*@}*/
+
+/*@}*/ /* defgroup ssatransform */
