@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.32  2005/02/01 17:50:32  mwe
+ * some changes in creation of fungroups
+ *
  * Revision 1.31  2005/01/27 16:37:30  mwe
  * no fungroups for lacfuns are created now
  *
@@ -689,7 +692,8 @@ InitializeFungroup (node *arg_node, info *arg_info)
     node *tmp, *fg;
     DBUG_ENTER ("InitializeFungroup");
 
-    if ((!FUNDEF_ISDOFUN (arg_node)) && (!FUNDEF_ISCONDFUN (arg_node))) {
+    if ((!FUNDEF_ISDOFUN (arg_node)) && (!FUNDEF_ISCONDFUN (arg_node))
+        && (FUNDEF_FUNGROUP (arg_node) == NULL)) {
         tmp = INFO_SSA_FUNGROUP (arg_info);
 
         /*
