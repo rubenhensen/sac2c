@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/09/24 20:18:13  sah
+ * made RenameFunName static again
+ * made ReplaceSpecialCharacters externally available
+ *
  * Revision 3.21  2004/09/24 16:13:45  sbs
  * RenameFunName made externally available.
  *
@@ -159,6 +163,6 @@ extern node *PREC4WLsegx (node *arg_node, info *arg_info);
 extern char *ObjInitFunctionName (bool before_rename);
 
 extern char *RenameLocalIdentifier (char *id);
-extern char *RenameFunName (char *mod, char *name, statustype status, node *args);
+extern char *ReplaceSpecialCharacters (char *name);
 
 #endif /* _sac_precompile_h */
