@@ -4,3 +4,4 @@ ast2free_attribs_h.xsl
 ast2free_node_c.xsl
 ast2free_node_h.xsl
 ast2html.xsl
+ast2node_basic_c.xsl
