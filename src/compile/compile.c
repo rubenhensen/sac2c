@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.107  1998/02/10 14:57:54  dkr
+ * macro WITH_USEDVARS is used
+ *
  * Revision 1.106  1997/11/27 10:41:06  dkr
  * removed old access-macros
  *
@@ -5497,7 +5500,7 @@ CompWith (node *arg_node, node *arg_info)
         /* store pointer to variables that have to be increased in
          * in arg_info->node[2]->node[3] ( it will be used in CompReturn )
          */
-        arg_info->node[2]->node[3] = old_arg_node->node[2];
+        arg_info->node[2]->node[3] = WITH_USEDVARS (old_arg_node);
 
         APPEND_ASSIGNS (first_assign, next_assign);
     } else if (N_genarray == old_arg_node->node[1]->nodetype) {
@@ -5508,7 +5511,7 @@ CompWith (node *arg_node, node *arg_info)
         /* store pointer to variables that have to be increased in
          * in arg_info->node[2]->node[3] ( it will be used in CompReturn )
          */
-        arg_info->node[2]->node[3] = old_arg_node->node[2];
+        arg_info->node[2]->node[3] = WITH_USEDVARS (old_arg_node);
         APPEND_ASSIGNS (first_assign, next_assign);
     } else if (N_foldprf == NODE_TYPE (old_arg_node->node[1])) {
         fun_node = MakeNode (N_prf);
@@ -5569,7 +5572,7 @@ CompWith (node *arg_node, node *arg_info)
         /* store pointer to variables that have to be increased in
          * in arg_info->node[2]->node[3] ( it will be used in CompReturn )
          */
-        arg_info->node[2]->node[3] = old_arg_node->node[2];
+        arg_info->node[2]->node[3] = WITH_USEDVARS (old_arg_node);
 
         /* Store  N_prf or N_ap  in node[2] of current N_icm.
          * It will be used in CompReturn and than eliminated.
@@ -5579,9 +5582,9 @@ CompWith (node *arg_node, node *arg_info)
     }
 
     /* now add some INC_RC's */
-    inc_rc = old_arg_node->node[2]->node[0];
+    inc_rc = WITH_USEDVARS (old_arg_node)->node[0];
     while (NULL != inc_rc) {
-        MAKENODE_NUM (n_node, inc_rc->refcnt);
+        MAKENODE_NUM (n_node, ID_REFCNT (inc_rc));
         INC_RC_ND (inc_rc, n_node);
         inc_rc = inc_rc->node[0];
     }
