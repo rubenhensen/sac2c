@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/08/31 11:56:05  skt
+ * CRWIWBuildReplication removed
+ *
  * Revision 1.2  2004/08/26 17:05:04  skt
  * implementation finished
  *
@@ -29,5 +32,4 @@ extern node *CRWIWassign (node *arg_node, info *arg_info);
 
 extern node *CRWIWap (node *arg_node, info *arg_info);
 
-node *CRWIWBuildReplication (node *fundef, info *arg_info);
 #endif /* CREATE_WITHINWITH_H */
