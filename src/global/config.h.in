@@ -1,4 +1,4 @@
-/* ./src/global/config.h.in.  Generated from configure.ac by autoheader.  */
+
 
 /* set to the architecture */
 #undef ARCH
@@ -90,3 +90,26 @@
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER
+
+
+/*
+ * Further sac2c settings.
+ */
+
+#define MAIN_MOD_NAME   "_MAIN"
+#define EXTERN_MOD_NAME "_EXT"
+
+#define MAX_PATH_LEN 1024
+#define MAX_FILE_NAME 256
+
+#define MAX_CPP_VARS 128
+#define MAX_CPP_INCS 128
+
+#define PF_MAXFUN        100
+#define PF_MAXFUNAP      100
+#define PF_MAXFUNNAMELEN 100
+
+#define MAX_BREAK_SPECIFIER 32
+
+#define MAX_ERROR_MESSAGE_LENGTH 2000
+#define MAX_LINE_LENGTH 77
