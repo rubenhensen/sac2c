@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/04/22 16:35:57  srs
+ * fixed bug in DupNcode()
+ *
  * Revision 1.65  1998/04/20 00:45:19  dkr
  * added DupOneIds
  *
@@ -912,7 +915,7 @@ DupNcode (node *arg_node, node *arg_info)
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
     LEVEL--;
 
-    NCODE_USED (new_node) = NCODE_USED (arg_node);
+    NCODE_USED (new_node) = 0; /* incremented in DupNpart() */
     NCODE_COPY (arg_node) = new_node;
 
     DBUG_RETURN (new_node);
