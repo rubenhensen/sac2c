@@ -214,7 +214,7 @@ ReadCode (FILE *infile)
 node *
 BuildNpart (FILE *infile, node *arg_node)
 {
-    node *new_parts, *new_part, *last_part, *withid, *gen, *code;
+    node *new_parts, *new_part, *last_part, *withid, *gen, *code, *tmp;
     types *type;
 
     DBUG_ENTER ("BuildNpart");
@@ -225,7 +225,11 @@ BuildNpart (FILE *infile, node *arg_node)
     do {
         last_part = new_part;
 
-        type = VARDEC_TYPE (ID_VARDEC (NGEN_BOUND1 (NPART_GEN (arg_node))));
+        tmp = NGEN_BOUND1 (NPART_GEN (arg_node));
+        DBUG_ASSERT (((NODE_TYPE (tmp) == N_id) || (NODE_TYPE (tmp) == N_array)),
+                     "wrong node type found");
+        type
+          = (NODE_TYPE (tmp) == N_id) ? VARDEC_TYPE (ID_VARDEC (tmp)) : ARRAY_TYPE (tmp);
 
         withid = DupTree (NPART_WITHID (arg_node), NULL);
         gen = DupTree (NPART_GEN (arg_node), NULL);
