@@ -1,8 +1,12 @@
 /*
  *  $Log$
- *  Revision 1.13  1996/02/06 13:45:04  hw
- *  added entries for F_toi_A, F_tod_A, F_tof_A, F_ftoi_A, etc
+ *  Revision 1.14  1996/02/06 16:15:26  hw
+ *  - added overloading of primitive functions  eq, neq, gt,.. with 'chars'
+ *    (CxC_B)
  *
+;; Revision 1.13  1996/02/06  13:45:04  hw
+;; added entries for F_toi_A, F_tod_A, F_tof_A, F_ftoi_A, etc
+;;
 ;; Revision 1.12  1995/12/06  17:04:34  hw
 ;; added typecheck of primitive function 'genarray'
 ;;
@@ -76,12 +80,18 @@ FT (F_div_AxS, AxS_F, F_div_AxS)
 FT (F_div_SxA, SxA_F, F_div_SxA)
 FT (F_eq, BxB_B, F_eq)
 FT (F_eq, SxS_B, F_eq)
+FT (F_eq, CxC_B, F_eq)
 FT (F_neq, BxB_B, F_neq)
 FT (F_neq, SxS_B, F_neq)
+FT (F_neq, CxC_B, F_neq)
 FT (F_le, SxS_B, F_le)
+FT (F_le, CxC_B, F_le)
 FT (F_lt, SxS_B, F_lt)
+FT (F_lt, CxC_B, F_lt)
 FT (F_ge, SxS_B, F_ge)
+FT (F_ge, CxC_B, F_gt)
 FT (F_gt, SxS_B, F_gt)
+FT (F_gt, CxC_B, F_gt)
 FT (F_drop, VxA_Ad, F_drop)
 FT (F_drop, SxA_Ad, F_drop)
 FT (F_take, VxA_At, F_take)
