@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.207  2004/08/05 11:37:55  ktr
+ * New flag NWITHID_VECNEEDED indicates in EMM whether the index vector
+ * must be maintained throughout the with-loop
+ *
  * Revision 3.206  2004/08/05 11:09:24  sah
  * the N_Nxxx nodes are now called N_nxxx, until the leading
  * n will be completly removed.
@@ -2601,6 +2605,11 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    int         SELPROP (0)                       (SelectionPropagation!!)
  ***
  ***
+ ***    the following attributes are only used in refcounting.c (EMM)
+ ***    int         DEFLEVEL                          (refcounting!!)
+ ***    rc_counter *COUNTER                           (refcounting!!)
+ ***    rc_counter *COUNTER2                          (refcounting!!)
+ ***
  ***/
 
 /*
@@ -2637,6 +2646,10 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_EXPRESULT(n) ((bool)(n->info.cint))
 /* used only in SelectionPropagation */
 #define AVIS_SELPROP(n) (n->varno)
+/* used only in refounting (EMM) */
+#define AVIS_EMRC_DEFLEVEL(n) (n->int_data)
+#define AVIS_EMRC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
+#define AVIS_EMRC_COUNTER2(n) ((rc_counter *)(n->dfmask[1]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3839,6 +3852,9 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
  ***    ids*         VEC
  ***    ids*         IDS
  ***
+ ***  temporary attributes:
+ ***    bool         VECNEEDED  (refcounting->compile)
+ ***
  ***  remarks:
  ***
  ***    If VEC is missing, it is generated during the flattening phase.
@@ -3847,12 +3863,17 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
  ***    Even for N_Nwith-nodes with multiple parts all with-ids must have
  ***    identical names before the transformation N_Nwith -> N_Nwith2
  ***    (wltransform.[ch]) can be applied!!!
+ ***
+ ***    VECNEEDED holds information about whether the indec vector is
+ ***    actually used somewhere in the with-loop.
+ ***    If not, it does not need to be maintained throughout the with-loop.
  ***/
 
 extern node *MakeNWithid (ids *vec, ids *scalars);
 
 #define NWITHID_VEC(n) ((n)->info.ids)
 #define NWITHID_IDS(n) ((ids *)((n)->info2))
+#define NWITHID_VECNEEDED(n) ((n)->flag)
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/08/05 11:37:55  ktr
+ * New flag NWITHID_VECNEEDED indicates in EMM whether the index vector
+ * must be maintained throughout the with-loop
+ *
  * Revision 3.96  2004/07/31 13:51:14  sah
  * switch to new INFO structure
  * PHASE I
@@ -2152,6 +2156,7 @@ DupNwithid (node *arg_node, info *arg_info)
     new_node = MakeNWithid (DupIds_ (NWITHID_VEC (arg_node), arg_info),
                             DupIds_ (NWITHID_IDS (arg_node), arg_info));
 
+    NWITHID_VECNEEDED (new_node) = NWITHID_VECNEEDED (arg_node);
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/08/05 11:37:55  ktr
+ * New flag NWITHID_VECNEEDED indicates in EMM whether the index vector
+ * must be maintained throughout the with-loop
+ *
  * Revision 3.89  2004/08/02 19:30:43  sah
  * moved MakeStr_Copy to tree_compound
  *
@@ -1891,9 +1895,11 @@ MakeNWithid (ids *vec, ids *scalars)
 
     NWITHID_VEC (tmp) = vec;
     NWITHID_IDS (tmp) = scalars;
+    NWITHID_VECNEEDED (tmp) = TRUE;
 
-    if ((vec) && (IDS_AVIS (vec) != NULL))
+    if ((vec != NULL) && (IDS_AVIS (vec) != NULL)) {
         AVIS_WITHID (IDS_AVIS (vec)) = tmp;
+    }
 
     while (scalars != NULL) {
         if (IDS_AVIS (scalars) != NULL)
