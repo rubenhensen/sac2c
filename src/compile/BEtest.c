@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/16 17:06:13  rob
+ * Add hash-include "../runtime/sac.h".
+ * Add include for icm2c_utils.h
+ *
  * Revision 2.3  1999/05/20 07:59:16  cg
  * removed command line argument to enable boundary check
  * because this no longer affects the definition of ICMs.
@@ -35,6 +39,7 @@
 
 #include "globals.h"
 
+#include "icm2c_utils.h"
 #include "icm2c_std.h"
 #include "icm2c_wl.h"
 #include "icm2c_mt.h"
@@ -86,6 +91,7 @@ main (int argc, char *argv[])
     print_objdef_for_header_file = 0;
     indent = 0;
 
+    printf ("#include \"../runtime/sac.h\"\n");
     scanf_res = scanf ("%s", buffer);
     while (scanf_res > 0) {
         if (buffer[strlen (buffer) - 1] == '(') {
