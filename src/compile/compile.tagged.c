@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2002/07/16 11:57:27  dkr
+ * MT_ADJUST_SCHEDULER__OFFSET(): first argument is NT now
+ *
  * Revision 1.29  2002/07/15 19:00:51  dkr
  * minor changes done
  *
@@ -4526,7 +4529,7 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
           = MakeAssignIcm6 ((NWITH2_OFFSET_NEEDED (wlnode))
                               ? "MT_ADJUST_SCHEDULER__OFFSET"
                               : "MT_ADJUST_SCHEDULER",
-                            DupIds_Id (wlids), MakeNum (WLSEGX_DIMS (wlseg)),
+                            DupIds_Id_NT (wlids), MakeNum (WLSEGX_DIMS (wlseg)),
                             MakeNum (dim),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, BOUND1),
