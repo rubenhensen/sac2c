@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.17  1995/07/14 12:03:49  hw
+ * Revision 1.18  1995/07/14 16:39:26  hw
+ * macro SHAPE_2_ARRAY inserted
+ *
+ * Revision 1.17  1995/07/14  12:03:49  hw
  * macro GET_BASIC_SIMPLETYPE_OF_NODE( stype, Node) inserted
  *
  * Revision 1.16  1995/07/13  15:43:05  hw
@@ -146,6 +149,62 @@ extern types *DuplicateTypes (types *source, int share);
                 length *= type->shpseg->shp[i];                                          \
         else                                                                             \
             length = 0;                                                                  \
+    }
+/* creates and computes the basic-shape out of a types struct as N_array
+ * computed N_array-node is stored in Shape_array
+ * NOTE: if the type is not the type of an array, NULL will be returned
+ */
+#define SHAPE_2_ARRAY(Shape_array, Type)                                                 \
+    {                                                                                    \
+        int i;                                                                           \
+        if (T_user == Type->simpletype) {                                                \
+            types *b_type = LookupType (Type->name, Type->name_mod, 042)->TYPES;         \
+            if (0 < b_type->dim + Type->dim) {                                           \
+                node *dummy = MakeNode (N_exprs);                                        \
+                Shape_array = MakeNode (N_array);                                        \
+                Shape_array->node[0] = dummy;                                            \
+                Shape_array->nnode = 1;                                                  \
+                for (i = 0; i < Type->dim - 1; i++) {                                    \
+                    MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                 \
+                    dummy->node[1] = MakeNode (N_exprs);                                 \
+                    dummy->nnode = 2;                                                    \
+                    dummy = dummy->node[1];                                              \
+                }                                                                        \
+                if (0 < Type->dim) {                                                     \
+                    MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                 \
+                    dummy->nnode = 1;                                                    \
+                    if (0 < b_type->dim) {                                               \
+                        dummy->node[1] = MakeNode (N_exprs);                             \
+                        dummy->nnode = 2;                                                \
+                        dummy = dummy->node[1];                                          \
+                    }                                                                    \
+                }                                                                        \
+                for (i = 0; i < b_type->dim - 1; i++) {                                  \
+                    MAKENODE_NUM (dummy->node[0], b_type->shpseg->shp[i]);               \
+                    dummy->node[1] = MakeNode (N_exprs);                                 \
+                    dummy->nnode = 2;                                                    \
+                    dummy = dummy->node[1];                                              \
+                }                                                                        \
+                if (0 < b_type->dim) {                                                   \
+                    MAKENODE_NUM (dummy->node[0], b_type->shpseg->shp[i]);               \
+                    dummy->nnode = 1;                                                    \
+                }                                                                        \
+            }                                                                            \
+        } else if (0 < Type->dim) {                                                      \
+            node *dummy = MakeNode (N_exprs);                                            \
+            Shape_array = MakeNode (N_array);                                            \
+            Shape_array->node[0] = dummy;                                                \
+            Shape_array->nnode = 1;                                                      \
+            for (i = 0; i < Type->dim - 1; i++) {                                        \
+                MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                     \
+                dummy->node[1] = MakeNode (N_exprs);                                     \
+                dummy->nnode = 2;                                                        \
+                dummy = dummy->node[1];                                                  \
+            }                                                                            \
+            MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                         \
+            dummy->nnode = 1;                                                            \
+        } else                                                                           \
+            Shape_array = NULL;                                                          \
     }
 
 #endif /* _typecheck_h */
