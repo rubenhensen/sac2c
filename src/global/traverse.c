@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1997/11/05 09:55:19  dkr
+ * fixed a bug with nnode[]
+ *
  * Revision 1.47  1997/11/05 09:35:00  dkr
  * usage of NIF-macro has changed
  * uses the new array nnode[]: TravSons traverses the sons 0 .. nnode[node->type]
@@ -748,7 +751,7 @@ TravSons (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else
-    for (i = 0; i < nnode[arg_node->type]; i++)
+    for (i = 0; i < nnode[arg_node->nodetype]; i++)
 #endif
     {
         if (arg_node->node[i] != NULL) {
