@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/26 15:51:44  dkr
+ * rmvoidfun removed from TmpVar()
+ *
  * Revision 3.6  2001/04/24 09:14:00  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -486,8 +489,6 @@ TmpVar ()
         s = "wdec";
     } else if (act_tab == unique_tab) {
         s = "uniq";
-    } else if (act_tab == rmvoid_tab) {
-        s = "rmvoid";
     } else if (act_tab == precomp1_tab) {
         s = "pcomp";
     } else if (act_tab == precomp2_tab) {
