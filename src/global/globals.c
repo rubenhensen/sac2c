@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/20 14:05:14  cg
+ * bug fixed in intialization of variable cachesim.
+ *
  * Revision 2.4  1999/05/12 14:31:16  cg
  * some global variables associated with options renamed.
  * Optimizations are now triggered by bit field optimize instead
@@ -335,7 +338,7 @@ unsigned int traceflag = TRACE_NONE;
 unsigned int profileflag = PROFILE_NONE;
 unsigned int runtimecheck = RUNTIMECHECK_NONE;
 unsigned int intrinsics = INTRINSIC_NONE;
-unsigned int cachesim = CACHESIM_NO & CACHESIM_PIPE;
+unsigned int cachesim = CACHESIM_NO | CACHESIM_PIPE;
 
 /*
  * Profiling information storage facilities
