@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/03/14 15:41:35  dkr
+ * sac_wl.tagged.h added
+ *
  * Revision 3.4  2002/10/29 20:29:45  dkr
  * include of stdlib.h removed again...
  *
@@ -90,15 +93,16 @@
 
 #ifdef TAGGED_ARRAYS
 #include "sac_std.tagged.h"
+#include "sac_wl.tagged.h"
 #else /* TAGGED_ARRAYS */
 #include "sac_std.h"
+#include "sac_wl.h"
 #endif /* TAGGED_ARRAYS */
 
 #include "sac_idx.h"
 #include "sac_prf.h"
 #include "sac_mt.h"
 #include "sac_heapmgr.h"
-#include "sac_wl.h"
 #include "sac_trace.h"
 #include "sac_profile.h"
 #include "sac_cachesim.h"
