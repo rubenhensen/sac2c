@@ -1,27 +1,29 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/25 22:16:31  sah
+ * COMPILES
+ *
  * Revision 1.1  2004/11/23 22:40:28  sah
  * Initial revision
- *
- * Revision 1.9  2004/11/21 12:48:08  sah
- *
  */
 
 #define NEW_INFO
 
 #include "deserialize.h"
-#include <strings.h>
+#include "serialize.h"
 #include "internal_lib.h"
-#include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "traverse.h"
-#include "symboltable.h"
-#include "serialize.h"
-#include "new2old.h"
 #include "user_types.h"
+#include "new_types.h"
 #include "new_typecheck.h"
+#include "symboltable.h"
+#include "modulemanager.h"
+#include "new2old.h"
+#include "traverse.h"
+
+#include <string.h>
 
 /*
  * INFO structure
@@ -61,7 +63,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_DS_RETURN (result) = NULL;
     INFO_DS_SSACOUNTER (result) = NULL;
@@ -81,7 +83,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -104,48 +106,48 @@ InsertIntoState (node *item)
         /*
          * The fundef is neither local, nor is it provided/exported
          */
-        SET_FLAG (FUNDEF, item, IS_LOCAL, FALSE);
-        SET_FLAG (FUNDEF, item, IS_EXPORTED, FALSE);
-        SET_FLAG (FUNDEF, item, IS_PROVIDED, FALSE);
+        FUNDEF_ISLOCAL (item) = FALSE;
+        FUNDEF_ISEXPORTED (item) = FALSE;
+        FUNDEF_ISPROVIDED (item) = FALSE;
 
-        if (FUNDEF_STATUS (item) == ST_Cfun) {
-            INFO_DS_FUNDECS (DSstate) = AppendFundef (INFO_DS_FUNDECS (DSstate), item);
+        if (FUNDEF_ISEXTERN (item)) {
+            INFO_DS_FUNDECS (DSstate) = TCappendFundef (INFO_DS_FUNDECS (DSstate), item);
         } else {
-            INFO_DS_FUNDEFS (DSstate) = AppendFundef (INFO_DS_FUNDEFS (DSstate), item);
+            INFO_DS_FUNDEFS (DSstate) = TCappendFundef (INFO_DS_FUNDEFS (DSstate), item);
         }
         break;
     case N_typedef:
         /*
          * reset the flags of the typedef
          */
-        SET_FLAG (TYPEDEF, item, IS_LOCAL, FALSE);
-        SET_FLAG (TYPEDEF, item, IS_PROVIDED, FALSE);
-        SET_FLAG (TYPEDEF, item, IS_EXPORTED, FALSE);
+        TYPEDEF_ISLOCAL (item) = FALSE;
+        TYPEDEF_ISPROVIDED (item) = FALSE;
+        TYPEDEF_ISEXPORTED (item) = FALSE;
 
         /*
          * first add the type to the UDT repository
          */
-        udt = UTAddUserType (TYPEDEF_NAME (item), TYPEDEF_MOD (item),
+        udt = UTaddUserType (TYPEDEF_NAME (item), TYPEDEF_MOD (item),
                              TYPEDEF_NTYPE (item), NULL, NODE_LINE (item), item);
         /*
          * now compute the basetype
          */
-        CheckUdtAndSetBaseType (udt, NULL);
+        NTCcheckUdtAndSetBaseType (udt, NULL);
 
-        INFO_DS_TYPEDEFS (DSstate) = AppendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
+        INFO_DS_TYPEDEFS (DSstate) = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
         break;
     case N_objdef:
         /*
          * reset the flags of the objdef
          */
-        SET_FLAG (OBJDEF, item, IS_LOCAL, FALSE);
-        SET_FLAG (OBJDEF, item, IS_PROVIDED, FALSE);
-        SET_FLAG (OBJDEF, item, IS_EXPORTED, FALSE);
+        OBJDEF_ISLOCAL (item) = FALSE;
+        OBJDEF_ISPROVIDED (item) = FALSE;
+        OBJDEF_ISEXPORTED (item) = FALSE;
 
         /*
          * now insert it
          */
-        INFO_DS_OBJDEFS (DSstate) = AppendObjdef (INFO_DS_OBJDEFS (DSstate), item);
+        INFO_DS_OBJDEFS (DSstate) = TCappendObjdef (INFO_DS_OBJDEFS (DSstate), item);
         break;
     default:
         DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
@@ -156,9 +158,9 @@ InsertIntoState (node *item)
 }
 
 void
-InitDeserialize (node *module)
+DSinitDeserialize (node *module)
 {
-    DBUG_ENTER ("InitDeserialize");
+    DBUG_ENTER ("DSinitDeserialize");
 
     DBUG_ASSERT ((DSstate == NULL),
                  "InitDeserialize called before last run was finished!");
@@ -171,17 +173,18 @@ InitDeserialize (node *module)
 }
 
 void
-FinishDeserialize (node *module)
+DSfinishDeserialize (node *module)
 {
-    DBUG_ENTER ("FinishDeserialize");
+    DBUG_ENTER ("DSfinishDeserialize");
 
-    MODUL_FUNS (module) = AppendFundef (MODUL_FUNS (module), INFO_DS_FUNDEFS (DSstate));
+    MODULE_FUNS (module)
+      = TCappendFundef (MODULE_FUNS (module), INFO_DS_FUNDEFS (DSstate));
 
-    MODUL_FUNDECS (module)
-      = AppendFundef (MODUL_FUNDECS (module), INFO_DS_FUNDECS (DSstate));
+    MODULE_FUNDECS (module)
+      = TCappendFundef (MODULE_FUNDECS (module), INFO_DS_FUNDECS (DSstate));
 
-    MODUL_TYPES (module)
-      = AppendTypedef (MODUL_TYPES (module), INFO_DS_TYPEDEFS (DSstate));
+    MODULE_TYPES (module)
+      = TCappendTypedef (MODULE_TYPES (module), INFO_DS_TYPEDEFS (DSstate));
 
     DSstate = FreeInfo (DSstate);
 
@@ -201,7 +204,7 @@ FindSymbolInFundefChain (const char *symbol, node *fundefs)
 
     while ((result == NULL) && (fundefs != NULL)) {
         if (FUNDEF_SYMBOLNAME (fundefs) != NULL) {
-            if (!strcmp (FUNDEF_SYMBOLNAME (fundefs), symbol)) {
+            if (ILIBstringCompare (FUNDEF_SYMBOLNAME (fundefs), symbol)) {
                 result = fundefs;
             }
         }
@@ -220,7 +223,7 @@ FindSymbolInTypedefChain (const char *symbol, node *typedefs)
 
     while ((result == NULL) && (typedefs != NULL)) {
         if (TYPEDEF_SYMBOLNAME (typedefs) != NULL) {
-            if (!strcmp (TYPEDEF_SYMBOLNAME (typedefs), symbol)) {
+            if (ILIBstringCompare (TYPEDEF_SYMBOLNAME (typedefs), symbol)) {
                 result = typedefs;
             }
         }
@@ -244,12 +247,12 @@ FindSymbolInAst (const char *symbol)
     }
 
     if (result == NULL) {
-        result = FindSymbolInFundefChain (symbol, MODUL_FUNS (INFO_DS_MODULE (DSstate)));
+        result = FindSymbolInFundefChain (symbol, MODULE_FUNS (INFO_DS_MODULE (DSstate)));
     }
 
     if (result == NULL) {
         result
-          = FindSymbolInFundefChain (symbol, MODUL_FUNDECS (INFO_DS_MODULE (DSstate)));
+          = FindSymbolInFundefChain (symbol, MODULE_FUNDECS (INFO_DS_MODULE (DSstate)));
     }
 
     if (result == NULL) {
@@ -258,7 +261,7 @@ FindSymbolInAst (const char *symbol)
 
     if (result == NULL) {
         result
-          = FindSymbolInTypedefChain (symbol, MODUL_TYPES (INFO_DS_MODULE (DSstate)));
+          = FindSymbolInTypedefChain (symbol, MODULE_TYPES (INFO_DS_MODULE (DSstate)));
     }
 
     DBUG_RETURN (result);
@@ -269,16 +272,16 @@ FindSymbolInAst (const char *symbol)
  */
 
 static node *
-AddEntryToAst (STentry_t *entry, STentrytype_t type, module_t *module)
+AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
 {
     node *entryp = NULL;
     serfun_p serfun;
 
     DBUG_ENTER ("AddEntryToAst");
 
-    if (STEntryType (entry) == type) {
+    if (STentryType (entry) == type) {
 
-        switch (STEntryType (entry)) {
+        switch (STentryType (entry)) {
         case SET_funbody:
         case SET_wrapperbody:
             /* these are ignored. All function bodies are loaded on
@@ -290,11 +293,11 @@ AddEntryToAst (STentry_t *entry, STentrytype_t type, module_t *module)
         case SET_typedef:
         case SET_objdef:
             /* first check, whether it is already available */
-            if (FindSymbolInAst (STEntryName (entry)) == NULL) {
-                serfun = GetDeSerializeFunction (STEntryName (entry), module);
+            if (FindSymbolInAst (STentryName (entry)) == NULL) {
+                serfun = MODMgetDeSerializeFunction (STentryName (entry), module);
                 entryp = serfun (DSstate);
                 /* add old types */
-                entryp = NT2OTTransform (entryp);
+                entryp = NT2OTdoTransform (entryp);
                 /* add to ast */
                 InsertIntoState (entryp);
             }
@@ -309,58 +312,58 @@ AddEntryToAst (STentry_t *entry, STentrytype_t type, module_t *module)
 }
 
 node *
-AddSymbolByName (const char *symbol, STentrytype_t type, const char *module)
+SERaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
 {
     node *result = NULL;
     module_t *mod;
-    STtable_t *table;
-    STentryiterator_t *it;
+    sttable_t *table;
+    stentryiterator_t *it;
 
-    DBUG_ENTER ("AddSymbolByName");
+    DBUG_ENTER ("SERaddSymbolByName");
 
     DBUG_ASSERT ((DSstate != NULL),
                  "AddSymbolByName called without calling InitDeserialize.");
 
-    mod = LoadModule (module);
+    mod = MODMloadModule (module);
 
-    table = GetSymbolTable (mod);
-    it = STEntryIteratorGet (symbol, table);
+    table = MODMgetSymbolTable (mod);
+    it = STentryIteratorGet (symbol, table);
 
-    while (STEntryIteratorHasMore (it)) {
-        node *tmp = AddEntryToAst (STEntryIteratorNext (it), type, mod);
+    while (STentryIteratorHasMore (it)) {
+        node *tmp = AddEntryToAst (STentryIteratorNext (it), type, mod);
         if (tmp != NULL) {
             result = tmp;
         }
     }
 
-    it = STEntryIteratorRelease (it);
-    table = STDestroy (table);
-    mod = UnLoadModule (mod);
+    it = STentryIteratorRelease (it);
+    table = STdestroy (table);
+    mod = MODMunLoadModule (mod);
 
     DBUG_RETURN (result);
 }
 
 node *
-AddSymbolById (const char *symbid, const char *module)
+SERaddSymbolById (const char *symbid, const char *module)
 {
     module_t *mod;
     serfun_p fun;
     node *entryp;
 
-    DBUG_ENTER ("AddSymbolById");
+    DBUG_ENTER ("SERaddSymbolById");
 
-    mod = LoadModule (module);
+    mod = MODMloadModule (module);
 
-    fun = GetDeSerializeFunction (symbid, mod);
+    fun = MODMgetDeSerializeFunction (symbid, mod);
 
     entryp = fun ();
 
     /* add old types */
-    entryp = NT2OTTransform (entryp);
+    entryp = NT2OTdoTransform (entryp);
     /* add to ast */
     InsertIntoState (entryp);
 
-    mod = UnLoadModule (mod);
+    mod = MODMunLoadModule (mod);
 
     DBUG_RETURN (entryp);
 }
@@ -370,45 +373,45 @@ AddSymbolById (const char *symbid, const char *module)
  */
 
 ntype *
-DeserializeLoadUserType (const char *name, const char *mod)
+DSloadUserType (const char *name, const char *mod)
 {
     ntype *result;
     node *tdef;
     usertype udt;
 
-    DBUG_ENTER ("DeserializeLoadUserType");
+    DBUG_ENTER ("DSloadUserType");
 
-    tdef = AddSymbolByName (name, SET_typedef, mod);
+    tdef = SERaddSymbolByName (name, SET_typedef, mod);
 
     DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
 
-    udt = UTFindUserType (name, mod);
+    udt = UTfindUserType (name, mod);
 
     DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
 
-    result = TYMakeUserType (udt);
+    result = TYmakeUserType (udt);
 
     DBUG_RETURN (result);
 }
 
 ntype *
-DeserializeLoadSymbolType (const char *mod, const char *name)
+DSloadSymbolType (const char *mod, const char *name)
 {
     ntype *result;
 
-    DBUG_ENTER ("DeserializeLoadSymbolType");
+    DBUG_ENTER ("DSloadSymbolType");
 
     DBUG_RETURN (result);
 }
 
 node *
-DeserializeLookupFunction (const char *module, const char *symbol)
+DSlookupFunction (const char *module, const char *symbol)
 {
     node *result = NULL;
     serfun_p serfun;
     module_t *mod;
 
-    DBUG_ENTER ("DeserializeLookupFunction");
+    DBUG_ENTER ("DSlookupFunction");
 
     DBUG_PRINT ("DS", ("Looking up function `%s:%s' in ast.", module, symbol));
 
@@ -417,12 +420,13 @@ DeserializeLookupFunction (const char *module, const char *symbol)
     if (result == NULL) {
         DBUG_PRINT ("DS", ("Looking up function `%s' in `%s'.", symbol, module));
 
-        mod = LoadModule (module);
-        serfun = GetDeSerializeFunction (symbol, mod);
+        mod = MODMloadModule (module);
+        serfun = MODMgetDeSerializeFunction (symbol, mod);
         result = serfun ();
+        mod = MODMunLoadModule (mod);
 
         /* generate the old types */
-        result = NT2OTTransform (result);
+        result = NT2OTdoTransform (result);
 
         InsertIntoState (result);
     }
@@ -439,7 +443,7 @@ LoadFunctionBody (node *fundef)
 {
     node *result = NULL;
     module_t *module;
-    STtable_t *table;
+    sttable_t *table;
     serfun_p serfun;
     const char *serfunname;
 
@@ -448,31 +452,30 @@ LoadFunctionBody (node *fundef)
     DBUG_ASSERT ((DSstate != NULL),
                  "LoadFunctionBody called without calling InitDeserialize");
 
-    module = LoadModule (FUNDEF_MOD (fundef));
-    table = GetSymbolTable (module);
+    module = MODMloadModule (FUNDEF_MOD (fundef));
+    table = MODMgetSymbolTable (module);
 
-    serfunname = GenerateSerFunName (SET_funbody, fundef);
+    serfunname = SERgenerateSerFunName (SET_funbody, fundef);
 
-    if (STContainsEntry (serfunname, table)) {
+    if (STcontainsEntry (serfunname, table)) {
 
-        serfun = GetDeSerializeFunction (serfunname, module);
+        serfun = MODMgetDeSerializeFunction (serfunname, module);
 
         result = serfun (DSstate);
     }
 
-    table = STDestroy (table);
-    module = UnLoadModule (module);
+    table = STdestroy (table);
+    module = MODMunLoadModule (module);
 
     DBUG_RETURN (result);
 }
 
 node *
-AddFunctionBodyToHead (node *fundef)
+DSdoDeserialize (node *fundef)
 {
-    funtab *store_tab;
     node *body;
 
-    DBUG_ENTER ("AddFunctionBodyToHead");
+    DBUG_ENTER ("DSdoDeserialize");
 
     DBUG_ASSERT ((DSstate != NULL),
                  "AddFunctionBodyToHead called without calling InitDeserialize");
@@ -484,18 +487,17 @@ AddFunctionBodyToHead (node *fundef)
 
     FUNDEF_BODY (fundef) = body;
 
-    store_tab = act_tab;
-    act_tab = ds_tab;
+    TRAVpush (TR_ds);
 
-    Trav (fundef, DSstate);
+    TRAVdo (fundef, DSstate);
 
-    act_tab = store_tab;
+    TRAVpop ();
 
     /* finaly, we have to do e new2old, as the old types are not
      * serialized.
      */
 
-    fundef = NT2OTTransform (fundef);
+    fundef = NT2OTdoTransform (fundef);
 
     DBUG_RETURN (fundef);
 }
@@ -522,24 +524,12 @@ LookUpSSACounter (node *cntchain, node *arg)
 }
 
 static node *
-LookUpVardec (ids *ids, node *vardecs)
-{
-    DBUG_ENTER ("LookUpVardec");
-
-    while ((vardecs != NULL) && (strcmp (VARDEC_NAME (vardecs), IDS_NAME (ids)))) {
-        vardecs = VARDEC_NEXT (vardecs);
-    }
-
-    DBUG_RETURN (vardecs);
-}
-
-static node *
-LookUpArg (ids *ids, node *args)
+LookUpArg (const char *name, node *args)
 {
     DBUG_ENTER ("LookUpArg");
 
     while ((args != NULL) && (ARG_NAME (args) != NULL)
-           && (strcmp (ARG_NAME (args), IDS_NAME (ids)))) {
+           && (strcmp (ARG_NAME (args), name))) {
         args = ARG_NEXT (args);
     }
 
@@ -550,46 +540,44 @@ LookUpArg (ids *ids, node *args)
  * traversal functions
  */
 
-static ids *
-DSIds (ids *arg_ids, info *arg_info)
+node *
+DSids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSIds");
+    DBUG_ENTER ("DSids");
 
-    DBUG_PRINT ("DS", ("Restoring ids `%s'", IDS_NAME (arg_ids)));
+    DBUG_PRINT ("DS", ("Restoring ids `%s'", IDS_NAME (arg_node)));
 
-    /* First try the vardecs */
-    if (IDS_VARDEC (arg_ids) == NULL) {
-        IDS_VARDEC (arg_ids) = LookUpVardec (arg_ids, INFO_DS_VARDECS (arg_info));
-    }
+    /*
+     * if there is no vardec for this node, it must have been
+     * linked to an arg prior to deserialization!
+     */
+    if (IDS_VARDEC (arg_node) == NULL) {
+        IDS_VARDEC (arg_node) = LookUpArg (IDS_NAME (arg_node), INFO_DS_ARGS (arg_info));
 
-    /* Second try the args */
-    if (IDS_VARDEC (arg_ids) == NULL) {
-        IDS_VARDEC (arg_ids) = LookUpArg (arg_ids, INFO_DS_ARGS (arg_info));
-    }
+        DBUG_ASSERT ((IDS_VARDEC (arg_node) != NULL),
+                     "Cannot find vardec or arg for ids!");
 
-    DBUG_ASSERT ((IDS_VARDEC (arg_ids) != NULL), "Cannot find vardec or arg for ids!");
-
-    /* now update the avis link of the ids node to the vardecs avis */
-    if (IDS_AVIS (arg_ids) == NULL) {
-        IDS_AVIS (arg_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
+        /* now update the avis link of the ids node to the args avis */
+        if (IDS_AVIS (arg_node) == NULL) {
+            IDS_AVIS (arg_node) = ARG_AVIS (IDS_VARDEC (arg_node));
+        }
     }
 
     /* Finally make sure, that the backref avis->vardec is correct */
-    DBUG_ASSERT ((AVIS_VARDECORARG (VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids)))
-                  == IDS_VARDEC (arg_ids)),
+    DBUG_ASSERT ((AVIS_DECL (DECL_AVIS (IDS_VARDEC (arg_node))) == IDS_VARDEC (arg_node)),
                  "backref from avis to vardec is wrong!");
 
-    DBUG_RETURN (arg_ids);
+    DBUG_RETURN (arg_node);
 }
 
 node *
-DSFundef (node *arg_node, info *arg_info)
+DSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSFundef");
+    DBUG_ENTER ("DSfundef");
 
     INFO_DS_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
-    arg_node = TravSons (arg_node, arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     FUNDEF_RETURN (arg_node) = INFO_DS_RETURN (arg_info);
 
@@ -597,21 +585,21 @@ DSFundef (node *arg_node, info *arg_info)
 }
 
 node *
-DSReturn (node *arg_node, info *arg_info)
+DSreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSReturn");
+    DBUG_ENTER ("DSreturn");
 
     INFO_DS_RETURN (arg_info) = arg_node;
 
-    arg_node = TravSons (arg_node, arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-DSBlock (node *arg_node, info *arg_info)
+DSblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSBlock");
+    DBUG_ENTER ("DSblock");
 
     if (INFO_DS_SSACOUNTER (arg_info) == NULL) {
         /* we are the first block underneath the Fundef node */
@@ -623,72 +611,20 @@ DSBlock (node *arg_node, info *arg_info)
         INFO_DS_VARDECS (arg_info) = BLOCK_VARDEC (arg_node);
     }
 
-    arg_node = TravSons (arg_node, arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-DSArg (node *arg_node, info *arg_info)
+DSarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSArg");
+    DBUG_ENTER ("DSarg");
 
     AVIS_SSACOUNT (ARG_AVIS (arg_node))
       = LookUpSSACounter (INFO_DS_SSACOUNTER (arg_info), arg_node);
 
-    arg_node = TravSons (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSVardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSVardec");
-
-    /* nothing to be done here */
-
-    arg_node = TravSons (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSId (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSId");
-
-    /* Trav into Ids */
-    ID_IDS (arg_node) = DSIds (ID_IDS (arg_node), arg_info);
-
-    arg_node = TravSons (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSLet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSLet");
-
-    /* Trav into Ids */
-    LET_IDS (arg_node) = DSIds (LET_IDS (arg_node), arg_info);
-
-    arg_node = TravSons (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSNWithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSNWithid");
-
-    /* Trav into Ids */
-    NWITHID_IDS (arg_node) = DSIds (NWITHID_IDS (arg_node), arg_info);
-    NWITHID_VEC (arg_node) = DSIds (NWITHID_VEC (arg_node), arg_info);
-
-    arg_node = TravSons (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
