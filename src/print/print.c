@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/03/01 16:04:41  asi
+ * Revision 1.36  1995/03/01 16:29:50  hw
+ * changed PrintGenerator ( name of index-vector is in info->ids)
+ *
+ * Revision 1.35  1995/03/01  16:04:41  asi
  * debug-output for with loops added
  *
  * Revision 1.34  1995/02/28  18:26:12  asi
@@ -659,7 +662,7 @@ PrintGenator (node *arg_node, node *arg_info)
                   free (text););
 
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, " <= %s <= ", arg_node->info.id);
+    fprintf (outfile, " <= %s <= ", arg_node->info.ids->id);
     Trav (arg_node->node[1], arg_info);
 
     DBUG_RETURN (arg_node);
