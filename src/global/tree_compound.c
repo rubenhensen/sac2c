@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/05/12 12:19:48  dkr
+ * added AppendAssign, AppendExpr
+ *
  * Revision 1.37  1998/03/12 12:45:56  srs
  * fixed IsConstArray()
  *
@@ -692,6 +695,67 @@ GetCompoundNode (node *arg_node)
         compound_node = NULL;
     }
     DBUG_RETURN (compound_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendAssign( node *assigns, node *assign)
+ *
+ * description:
+ *   appends 'assign' to the N_assign-chain 'assings' and returns the new
+ *    chain.
+ *
+ ******************************************************************************/
+
+node *
+AppendAssign (node *assigns, node *assign)
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendAssign");
+
+    if (assigns != NULL) {
+        tmp = assigns;
+        while (ASSIGN_NEXT (tmp) != NULL) {
+            tmp = ASSIGN_NEXT (tmp);
+        }
+        ASSIGN_NEXT (tmp) = assign;
+    } else {
+        assigns = assign;
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendExpr( node *exprs, node *expr)
+ *
+ * description:
+ *   appends 'expr' to the N_exprs-chain 'assings' and returns the new chain.
+ *
+ ******************************************************************************/
+
+node *
+AppendExpr (node *exprs, node *expr)
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendExpr");
+
+    if (exprs != NULL) {
+        tmp = exprs;
+        while (EXPRS_NEXT (tmp) != NULL) {
+            tmp = EXPRS_NEXT (tmp);
+        }
+        EXPRS_NEXT (tmp) = expr;
+    } else {
+        exprs = expr;
+    }
+
+    DBUG_RETURN (exprs);
 }
 
 /***

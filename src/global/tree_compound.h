@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/05/12 12:20:19  dkr
+ * added AppendAssign, AppendExpr
+ *
  * Revision 1.68  1998/05/07 21:38:46  dkr
  * added VARDEC_OR_ARG_TYPE
  *
@@ -1149,40 +1152,68 @@ extern void ObjList2ArgList (node *objdef);
 #define ASSIGN_MRDMASK(n) (ASSIGN_MASK (n, 2))
 #define ASSIGN_INSTRTYPE(n) (NODE_TYPE (ASSIGN_INSTR (n)))
 
-/*
+/******************************************************************************
  *
- *  functionname  : MakeAssignLet
- *  arguments     : 1) name of the variable
- *                  2) vardec-node
- *                  3) let-expression
- *                  R) assign-node with complete let-subtree
- *  description   : returns a assign-node with let-node : var_name = expr;
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeIds, MakeLet, MakeAssign
- *  macros        : IDS_VARDEC, NULL
+ * function:
+ *   node *MakeAssignLet(char *var_name, node *vardec_node, node* let_expr);
  *
- *  remarks       : the nnode's will get the new value !!!
- *                  ASSIGN_NEXT is set to NULL
+ * arguments: 1) name of the variable
+ *            2) vardec-node
+ *            3) let-expression
+ *            R) assign-node with complete let-subtree
  *
- */
+ * description:
+ *   returns a assign-node with let-node: var_name = expr;
+ *
+ * remarks:
+ *   ASSIGN_NEXT is set to NULL
+ *
+ ******************************************************************************/
+
 extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
 
-/*
+/******************************************************************************
  *
- *  functionname  : GetCompoundNode
- *  arguments     : 1) assign-node
- *                  R) compund_node attached to the assign-node
- *  description   : returns the compund_node that is attached to the assign-node
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ASSIGN_INSTR, LET_EXPR, NODE_TYPE, CAST_EXPR
+ * function:
+ *   node *GetCompoundNode(node* arg_node);
  *
- *  remarks       : ---
+ * description:
+ *   returns the compund_node that is attached to the assign-node
  *
- */
+ ******************************************************************************/
+
 extern node *GetCompoundNode (node *arg_node);
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendAssign( node *assigns, node *assign)
+ *
+ * description:
+ *   appends 'assign' to the N_assign-chain 'assings' and returns the new
+ *    chain.
+ *
+ ******************************************************************************/
+
+extern node *AppendAssign (node *assigns, node *assign);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_exprs :
+ ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendExpr( node *exprs, node *expr)
+ *
+ * description:
+ *   appends 'expr' to the N_exprs-chain 'assings' and returns the new chain.
+ *
+ ******************************************************************************/
+
+extern node *AppendExpr (node *exprs, node *expr);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1383,12 +1414,6 @@ extern node *GetCompoundNode (node *arg_node);
  ***/
 
 /* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_exprs :
- ***/
 
 /*--------------------------------------------------------------------------*/
 
