@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1996/01/07 16:55:09  cg
+ * Revision 1.25  1996/02/21 10:56:08  cg
+ * function CmpDomain now handles negative dimensions of arrays
+ *
+ * Revision 1.24  1996/01/07  16:55:09  cg
  * function CountFunctionParams now counts return type void
  *
  * Revision 1.23  1996/01/05  18:20:22  asi
@@ -197,12 +200,17 @@ CmpDomain (node *arg1, node *arg2)
                 }
             }
             if (ARG_DIM (arg1) == ARG_DIM (arg2)) {
-                for (i = 0; i < ARG_DIM (arg1); i++)
-                    if (ARG_SHAPE (arg1, i) != ARG_SHAPE (arg2, i))
+                if (ARG_DIM (arg1) > 0) {
+                    for (i = 0; i < ARG_DIM (arg1); i++)
+                        if (ARG_SHAPE (arg1, i) != ARG_SHAPE (arg2, i))
+                            break;
+                    if (i != ARG_DIM (arg1))
                         break;
-                if (i != ARG_DIM (arg1))
-                    break;
-                else {
+                    else {
+                        arg1 = ARG_NEXT (arg1);
+                        arg2 = ARG_NEXT (arg2);
+                    }
+                } else {
                     arg1 = ARG_NEXT (arg1);
                     arg2 = ARG_NEXT (arg2);
                 }
