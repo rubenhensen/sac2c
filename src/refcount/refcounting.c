@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/08/13 09:21:43  ktr
+ * Members of INFO structure are now properly initialized.
+ *
  * Revision 1.14  2004/08/11 13:14:27  ktr
  * Superfluous reuse candidates are removed by EMRC now.
  *
@@ -211,6 +214,10 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
+    INFO_EMRC_MODE (result) = rc_default;
+    INFO_EMRC_DEPTH (result) = 0;
+    INFO_EMRC_COUNTMODE (result) = rc_unknown;
+    INFO_EMRC_COND (result) = FALSE;
     INFO_EMRC_USELIST (result) = NULL;
     INFO_EMRC_DEFLIST (result) = NULL;
     INFO_EMRC_FUNDEF (result) = NULL;
