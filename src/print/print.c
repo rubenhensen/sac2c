@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.229  1998/05/17 00:09:34  dkr
+ * changed PrintWLgrid, PrintWLgridVar:
+ *   WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
+ *
  * Revision 1.228  1998/05/15 23:53:15  dkr
  * added a comment
  *
@@ -2865,28 +2869,24 @@ PrintWLgrid (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         WLGRID_NEXTDIM (arg_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
     } else {
-        if (WLGRID_CODE (arg_node) != NULL) {
+        DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "no code found");
+        if (WLGRID_CODE_TEMPLATE (arg_node) == 0) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
         } else {
             switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
             case WO_genarray:
-                fprintf (outfile, "init");
+                fprintf (outfile, "init\n");
                 break;
             case WO_modarray:
-                fprintf (outfile, "copy");
+                fprintf (outfile, "copy\n");
                 break;
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                fprintf (outfile, "noop");
+                fprintf (outfile, "noop\n");
                 break;
             default:
                 DBUG_ASSERT ((0), "wrong with-loop type found");
-            }
-            if (WLGRID_CEXPR_TEMPLATE (arg_node) != NULL) {
-                fprintf (outfile, "\n");
-            } else {
-                fprintf (outfile, "?\n");
             }
         }
     }
@@ -3003,7 +3003,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         WLGRIDVAR_NEXTDIM (arg_node) = Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
     } else {
-        if (WLGRIDVAR_CODE (arg_node) != NULL) {
+        if (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
         } else {
             switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
@@ -3020,11 +3020,6 @@ PrintWLgridVar (node *arg_node, node *arg_info)
                 break;
             default:
                 DBUG_ASSERT ((0), "wrong with-loop type found");
-            }
-            if (WLGRIDVAR_CEXPR_TEMPLATE (arg_node) != NULL) {
-                fprintf (outfile, "\n");
-            } else {
-                fprintf (outfile, "?\n");
             }
         }
     }
@@ -3208,11 +3203,10 @@ PrintNodeTree (node *node)
         case N_WLgrid:
             fprintf (outfile, "(%d->%d [%d])", WLUBLOCK_BOUND1 (node),
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_DIM (node));
-            if ((WLGRID_NEXTDIM (node) == NULL) && (WLGRID_CODE (node) == NULL)
-                && (WLGRID_CEXPR_TEMPLATE (node) == NULL)) {
-                fprintf (outfile, "?\n");
+            if (WLGRID_CODE_TEMPLATE (node) == 0) {
+                fprintf (outfile, ": op\n");
             } else {
-                fprintf (outfile, "\n");
+                fprintf (outfile, ": ..\n");
             }
             break;
         case N_WLstriVar:
