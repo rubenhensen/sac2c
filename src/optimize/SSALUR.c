@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/05/09 12:26:01  nmw
+ * debug prints for WLUnroll calls added
+ *
  * Revision 1.6  2001/05/07 09:03:00  nmw
  * withloop unrolling by WLUnroll integrated in traversal
  *
@@ -1261,6 +1264,8 @@ SSALURNwith (node *arg_node, node *arg_info)
             if (CheckUnrollModarray (arg_node)) {
                 wlunr_expr++;
 
+                DBUG_PRINT ("SSALUR", ("starting DoUnrollModarry()"));
+
                 /* unroll withloop - returns list of assignments */
                 tmpn = DoUnrollModarray (arg_node, arg_info);
 
@@ -1273,6 +1278,8 @@ SSALURNwith (node *arg_node, node *arg_info)
             if (CheckUnrollGenarray (arg_node, arg_info)) {
                 wlunr_expr++;
 
+                DBUG_PRINT ("SSALUR", ("starting DoUnrollMGenarry()"));
+
                 /* unroll withloop - returns list of assignments */
                 tmpn = DoUnrollGenarray (arg_node, arg_info);
 
@@ -1284,6 +1291,8 @@ SSALURNwith (node *arg_node, node *arg_info)
         default:
             if (CheckUnrollFold (arg_node)) {
                 wlunr_expr++;
+
+                DBUG_PRINT ("SSALUR", ("starting DoUnrollFold()"));
 
                 /* unroll withloop - returns list of assignments */
                 tmpn = DoUnrollFold (arg_node, arg_info);
