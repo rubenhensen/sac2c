@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/28 12:58:32  dkr
+ * ICM_UNDEF, ICM_NOOP, ICM_NOTHING added
+ *
  * Revision 3.2  2002/04/30 08:39:34  dkr
  * no changes done
  *
@@ -36,6 +39,17 @@
 
 #ifndef _SAC_MISC_H
 #define _SAC_MISC_H
+
+/*
+ * Handling of undefined ICMs
+ */
+
+#define ICM_UNDEF                                                                        \
+    ICM_IS_UNDEFINED /* CC will report a undefined symbol ICM_IS_UNDEFINED */
+
+#define ICM_NOOP /* noop */;
+
+#define ICM_NOTHING
 
 extern void SAC_String2Array (char *array, const char *string);
 
