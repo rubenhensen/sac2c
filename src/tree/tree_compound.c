@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/11/24 17:24:46  ktr
+ * Added TCcountParts
+ *
  * Revision 3.107  2004/11/24 16:41:56  skt
  * FindVardec_Name deleted
  *
@@ -4282,6 +4285,32 @@ CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl, node *fundef
 /***
  ***  N_Npart:
  ***/
+
+/** <!--********************************************************************-->
+ *
+ * @fn int TCcountParts( node *parts)
+ *
+ * @brief Counts the number of parts in a given chain of parts
+ *
+ * @param parts
+ *
+ * @return number of parts
+ *
+ *****************************************************************************/
+int
+TCcountParts (node *parts)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("TCcountParts");
+
+    while (parts != NULL) {
+        counter += 1;
+        parts = PART_NEXT (parts);
+    }
+
+    DBUG_RETURN (counter);
+}
 
 /*--------------------------------------------------------------------------*/
 

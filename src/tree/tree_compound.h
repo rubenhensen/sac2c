@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.137  2004/11/24 17:24:46  ktr
+ * Added TCcountParts
+ *
  * Revision 3.136  2004/11/24 16:48:09  skt
  * VARDEC_OR_ARG_NAME patched & some brushing
  *
@@ -1727,6 +1730,8 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 
 #define PART_CEXPRS(n) (CODE_CEXPRS (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
+
+extern int TCcountParts (node *parts);
 
 /*--------------------------------------------------------------------------*/
 
