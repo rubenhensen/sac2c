@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/07 18:08:26  sah
+ * disabled LINKMOD in NEW_AST mode
+ *
  * Revision 1.9  2002/02/22 14:28:54  dkr
  * CSAddResult: workaround for FUNDEF_NAME as a part of TYPES is no
  * longer needed :-)
@@ -149,7 +152,10 @@ CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
 node *
 CSRemoveResult (node *fundef, int position, nodelist *letlist)
 {
-    char *keep_name, *keep_mod, *keep_cmod;
+    char *keep_name, *keep_mod;
+#ifndef NEW_AST
+    char *keep_cmod;
+#endif
     statustype keep_status, keep_attrib;
 
     DBUG_ENTER ("CSRemoveResult");
@@ -179,7 +185,9 @@ CSRemoveResult (node *fundef, int position, nodelist *letlist)
         /* remove corresponding types entry - first save fundef information */
         keep_name = FUNDEF_NAME (fundef);
         keep_mod = FUNDEF_MOD (fundef);
+#ifndef NEW_AST
         keep_cmod = FUNDEF_LINKMOD (fundef);
+#endif
         keep_status = FUNDEF_STATUS (fundef);
         keep_attrib = FUNDEF_ATTRIB (fundef);
 
@@ -192,7 +200,9 @@ CSRemoveResult (node *fundef, int position, nodelist *letlist)
         /* restore fundef information */
         FUNDEF_NAME (fundef) = keep_name;
         FUNDEF_MOD (fundef) = keep_mod;
+#ifndef NEW_AST
         FUNDEF_LINKMOD (fundef) = keep_cmod;
+#endif
         FUNDEF_STATUS (fundef) = keep_status;
         FUNDEF_ATTRIB (fundef) = keep_attrib;
     }
