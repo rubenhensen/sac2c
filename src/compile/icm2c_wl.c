@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/08/06 12:08:09  dkr
+ * some cosmetical changes done
+ *
  * Revision 3.19  2002/08/06 08:58:30  dkr
  * works also without TAGGED_ARRAYS, now
  *
@@ -462,11 +465,8 @@ ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
 #undef WL_BEGIN__OFFSET
 
     INDENT;
-    fprintf (outfile, "{\n");
+    fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n");
     indent++;
-
-    INDENT;
-    fprintf (outfile, "int SAC_WL_OFFSET( %s);\n", to_nt);
 
     for (i = 0; i < dims; i++) {
         INDENT;
@@ -605,11 +605,8 @@ ICMCompileWL_ASSIGN (int val_dim, char *val_nt, int to_dim, char *to_nt, char *i
 
     if (val_dim > 0) {
         INDENT;
-        fprintf (outfile, "{\n");
+        fprintf (outfile, "{ int SAC_i;\n");
         indent++;
-
-        INDENT;
-        fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
         fprintf (outfile,
@@ -687,11 +684,8 @@ ICMCompileWL_ASSIGN__INIT (int to_dim, char *to_nt, char *idx_vec_nt, int dims,
 
     if (to_dim > dims) {
         INDENT;
-        fprintf (outfile, "{\n");
+        fprintf (outfile, "{ int SAC_i;\n");
         indent++;
-
-        INDENT;
-        fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
         fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", to_nt, dims);
@@ -754,11 +748,8 @@ ICMCompileWL_ASSIGN__COPY (char *from_nt, int to_dim, char *to_nt, char *idx_vec
 
     if (to_dim > dims) {
         INDENT;
-        fprintf (outfile, "{\n");
+        fprintf (outfile, "{ int SAC_i;\n");
         indent++;
-
-        INDENT;
-        fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
         fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", to_nt, dims);
