@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/03/17 16:34:28  dkr
+ * some superfluous local vars eliminated
+ *
  * Revision 1.15  2000/03/17 16:00:49  dkr
  * include of cleanup_decls.h added
  *
@@ -162,7 +165,7 @@ DefinedVar (node *decl, DFMmask_t needed, DFMmask_t in, DFMmask_t out, DFMmask_t
 /******************************************************************************
  *
  * function:
- *   void DefinedIds( ids *ids_, node *arg_info)
+ *   void DefinedIds( ids *_ids, node *arg_info)
  *
  * description:
  *   Calls 'DefinedVar()' for each ids of the given ids-chain.
@@ -619,12 +622,9 @@ L2F_INFERassign (node *arg_node, node *arg_info)
 node *
 L2F_INFERlet (node *arg_node, node *arg_info)
 {
-    ids *_ids;
-
     DBUG_ENTER ("L2F_INFERlet");
 
-    _ids = LET_IDS (arg_node);
-    DefinedIds (_ids, arg_info);
+    DefinedIds (LET_IDS (arg_node), arg_info);
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -667,14 +667,10 @@ L2F_INFERid (node *arg_node, node *arg_info)
 node *
 L2F_INFERwithid (node *arg_node, node *arg_info)
 {
-    ids *_ids;
-
     DBUG_ENTER ("L2F_INFERwithid");
 
-    _ids = NWITHID_VEC (arg_node);
-    DefinedIds (_ids, arg_info);
-    _ids = NWITHID_IDS (arg_node);
-    DefinedIds (_ids, arg_info);
+    DefinedIds (NWITHID_VEC (arg_node), arg_info);
+    DefinedIds (NWITHID_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
