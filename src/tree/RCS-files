@@ -39,3 +39,4 @@ free_info.h
 serialize_info.h
 serialize_helper.h
 serialize.c
+serialize.h
