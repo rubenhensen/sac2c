@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.42  1999/01/25 14:04:44  sbs
+ * some minor beautifications...
+ *
  * Revision 1.41  1999/01/19 14:40:21  sbs
  * some "might be used uninitialized" warnings eliminated.
  *
@@ -1180,11 +1183,10 @@ DropV (node *vec, types *vec_type, types *array)
     GET_BASIC_TYPE (array_btype, array, vec->lineno);
 
     if (SAC_PRG == kind_of_file) {
-        if (N_array != vec->nodetype)
+        if (N_array != NODE_TYPE (vec))
             ERROR2 (3, ("%s, %d: 1.argument of function `drop` "
                         " should be a constant vector",
                         filename, vec->lineno));
-        DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
     }
 
     if (N_array == NODE_TYPE (vec)) {
@@ -1194,13 +1196,14 @@ DropV (node *vec, types *vec_type, types *array)
             /* array has known shape */
 
             /* check weather the entries in 1) are ok */
-            while ((NULL != tmp) && (1 == ok) && (dim2 < TYPES_DIM (array_btype)))
+            while ((NULL != tmp) && (1 == ok) && (dim2 < TYPES_DIM (array_btype))) {
                 if ((NUM_VAL (EXPRS_EXPR (tmp)) < TYPES_SHAPE (array_btype, dim2))
                     && (0 <= NUM_VAL (EXPRS_EXPR (tmp)))) {
                     dim2++;
                     tmp = EXPRS_NEXT (tmp);
                 } else
                     ok = 0;
+            }
 
             if ((0 == ok) || ((NULL != tmp) && (dim2 == TYPES_DIM (array_btype)))) {
                 GEN_TYPE_NODE (ret_type, T_unknown);
@@ -1397,7 +1400,6 @@ TakeDropS (node *s_node, types *array, int tag)
                         "is not a constant",
                         filename, NODE_LINE (s_node)));
 
-        DBUG_ASSERT (N_num == NODE_TYPE (s_node), "not N_num");
         if (1 <= TYPES_DIM (array)) {
             if (((1 == tag) ? (s_node->info.cint < array->shpseg->shp[0])
                             : (s_node->info.cint <= array->shpseg->shp[0]))
