@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/11/27 01:25:32  khf
+ * adjusted name of start function
+ *
  * Revision 1.25  2004/11/24 17:42:48  sbs
  * not yet
  *
@@ -184,7 +187,7 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTTransform( node *arg_node)
+ *   node *NT2OTdoTransform( node *arg_node)
  *
  * description:
  *   adjusts all old vardec types according to the attached ntypes!
@@ -192,11 +195,11 @@ FreeInfo (info *info)
  ******************************************************************************/
 
 node *
-NT2OTTransform (node *arg_node)
+NT2OTdoTransform (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("NT2OTTransform");
+    DBUG_ENTER ("NT2OTdoTransform");
 
     TRAVpush (TR_nt2ot);
 
