@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/10/18 13:28:16  sbs
+ * ID_ATTRIB replaced by accesses to the FLAGS of N_id
+ *
  * Revision 3.7  2002/08/15 11:47:33  dkr
  * type LUT_t* replaced by LUT_t
  *
@@ -258,7 +261,8 @@ SPMDLspmd (node *arg_node, node *arg_info)
             new_retexpr
               = MakeExprs (MakeId (StringCopy (ARG_NAME (vardec)), NULL, ST_regular),
                            retexprs);
-            ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_GLOBAL, FALSE);
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_REFERENCE, FALSE);
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (ARG, vardec);
         } else {
             new_rettype = DupAllTypes (VARDEC_TYPE (vardec));
@@ -266,7 +270,8 @@ SPMDLspmd (node *arg_node, node *arg_info)
             new_retexpr
               = MakeExprs (MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular),
                            retexprs);
-            ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_GLOBAL, FALSE);
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_REFERENCE, FALSE);
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (VARDEC, vardec);
         }
 

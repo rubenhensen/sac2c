@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/10/18 13:29:17  sbs
+ * ID_ATTRIB replaced by accesses to the FLAGS of N_id
+ *
  * Revision 3.3  2002/02/20 14:59:31  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -297,7 +300,9 @@ BLKLImt (node *arg_node, node *arg_info)
             new_retexpr
               = MakeExprs (MakeId (StringCopy (ARG_NAME (vardec)), NULL, ST_regular),
                            retexprs);
-            ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_GLOBAL, FALSE);
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_REFERENCE, FALSE);
+
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (ARG, vardec);
             ID_VARDEC (EXPRS_EXPR (new_retexpr)) = vardec;
         } else {
@@ -306,7 +311,8 @@ BLKLImt (node *arg_node, node *arg_info)
             new_retexpr
               = MakeExprs (MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular),
                            retexprs);
-            ID_ATTRIB (EXPRS_EXPR (new_retexpr)) = ST_regular;
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_GLOBAL, FALSE);
+            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_REFERENCE, FALSE);
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (VARDEC, vardec);
             ID_VARDEC (EXPRS_EXPR (new_retexpr)) = vardec;
         }

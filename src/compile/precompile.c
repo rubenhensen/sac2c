@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/10/18 13:30:04  sbs
+ * ID_ATTRIB replaced by accesses to the FLAGS of N_id
+ *
  * Revision 3.61  2002/10/08 01:50:33  dkr
  * ReplaceSpecialCharacters() modified
  *
@@ -490,7 +493,7 @@ InsertObjInit (node *block, node *objdef)
 
     new_id = MakeId_Copy (OBJDEF_NAME (objdef));
     ID_VARDEC (new_id) = objdef;
-    ID_ATTRIB (new_id) = ST_global;
+    SET_FLAG (ID, new_id, IS_GLOBAL, TRUE);
 
     BLOCK_INSTR (block)
       = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN", new_id,
@@ -871,7 +874,8 @@ PREC1exprs_ap (node *current, node *formal)
             current = FreeNode (current);
         } else {
             if (ARG_ATTRIB (formal) == ST_was_reference) {
-                ID_ATTRIB (expr) = ST_reference;
+                SET_FLAG (ID, expr, IS_REFERENCE, TRUE);
+                SET_FLAG (ID, expr, IS_READ_ONLY, FALSE);
             }
 
             if ((VARDEC_OR_ARG_STATUS (ID_VARDEC (expr)) == ST_artificial)) {
