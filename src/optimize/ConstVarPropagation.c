@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/02/14 16:10:10  mwe
+ * propagate only constant scalar return values
+ *
  * Revision 1.16  2005/02/14 15:51:48  mwe
  * CVPids added (moved from CFids), propagate constant return values
  *
@@ -1100,7 +1103,8 @@ CVPids (node *arg_ids, info *arg_info)
     DBUG_ENTER ("CVPids");
 
     if (IDS_NEXT (arg_ids) != NULL) {
-        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
+        if ((TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids))))
+            && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_ids))))) {
             new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
 
             DBUG_PRINT ("CVP", ("identifier %s marked as constant",
@@ -1134,7 +1138,8 @@ CVPids (node *arg_ids, info *arg_info)
         IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
     } else {
 
-        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
+        if ((TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids))))
+            && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_ids))))) {
             new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
 
             LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (arg_ids))))
