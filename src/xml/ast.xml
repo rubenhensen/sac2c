@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/23 13:02:38  sah
+  signature fixes
+
   Revision 1.5  2004/11/23 12:59:02  sah
   oldtype of vardec is NULL by default now
 
@@ -1371,13 +1374,13 @@
     <node name="Id">
       <sons></sons>
       <attributes>
-        <attribute name="Name" mandatory="no">
+        <attribute name="SPName" default="NULL" mandatory="no">
 	  <type name="String" />
 	  <phases>
 	    <range from="scanparse" to="typecheck" />
 	  </phases>
 	</attribute>
-        <attribute name="Mod" mandatory="no">
+        <attribute name="SPMod" default="NULL" mandatory="no">
 	  <type name="String" />
 	  <phases>
 	    <range from="scanparse" to="typecheck" />
@@ -3430,13 +3433,13 @@
 	</son>
       </sons>
       <attributes>
-        <attribute name="Name" default="NULL" mandatory="no" >
+        <attribute name="SPName" default="NULL" mandatory="no" >
 	  <type name="String" />
 	  <phases>
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="Mod" default="NULL" mandatory="no" >
+	<attribute name="SPMod" default="NULL" mandatory="no" >
 	  <type name="String" />
 	  <phases>
 	    <all />
