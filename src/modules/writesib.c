@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/02 16:10:01  cg
+ * Revision 1.5  1996/01/02 17:49:05  cg
+ * Typedefs in SIBs which are again based on user-defined types are now resolved.
+ *
+ * Revision 1.4  1996/01/02  16:10:01  cg
  * types of implicitly used global objects are now written to the SIB
  *
  * Revision 1.3  1995/12/29  10:43:13  cg
@@ -287,9 +290,9 @@ AddImplicitItems (node *info, node *all_types)
         tdef = NODELIST_NODE (tmp);
 
         if (((TYPEDEF_BASETYPE (tdef) == T_user) || (TYPEDEF_BASETYPE (tdef) == T_hidden))
-            && (TYPEDEF_NAME (tdef) != NULL)) {
+            && (TYPEDEF_TNAME (tdef) != NULL)) {
             impl_tdef
-              = SearchTypedef (TYPEDEF_NAME (tdef), TYPEDEF_MOD (tdef), all_types);
+              = SearchTypedef (TYPEDEF_TNAME (tdef), TYPEDEF_TMOD (tdef), all_types);
             StoreExportNode (impl_tdef, info);
         }
 
@@ -550,7 +553,12 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname)
             fprintf (sibfile, "class ");
         }
 
-        fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
+        if ((TYPEDEF_BASETYPE (tdef) == T_hidden) && (TYPEDEF_TNAME (tdef) == NULL)) {
+            fprintf (sibfile, "typedef implicit ");
+        } else {
+            fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
+        }
+
         PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
         fprintf (sibfile, ";\n");
 

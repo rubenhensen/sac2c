@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/02 16:09:21  cg
+ * Revision 1.4  1996/01/02 17:48:07  cg
+ * Typedefs in SIBs which are again based on user-defined types are now resolved.
+ *
+ * Revision 1.3  1996/01/02  16:09:21  cg
  * some bugs fixed
  *
  * Revision 1.2  1995/12/29  10:41:52  cg
@@ -550,6 +553,17 @@ EnsureExistTypes (ids *type, node *modul, node *sib)
             }
 
             /* new symbol is added to mod_tab if it's a sac-symbol */
+
+            if (TYPEDEF_BASETYPE (find) == T_user) {
+                EnsureExistTypes (MakeIds (TYPEDEF_TNAME (find), TYPEDEF_TMOD (find),
+                                           ST_regular),
+                                  modul, sib);
+            }
+
+            /*
+             *  If the definition of the type is again user-defined, its existence
+             *  must be guaranteed, too.
+             */
 
             DBUG_PRINT ("READSIB",
                         ("Implicitly used type %s inserted.", ItemName (find)));
