@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/01/20 16:39:15  cg
+ * Bug fixed in DupAssign: data flow masks are only copied
+ * when a new node is actually created.
+ *
  * Revision 2.15  1999/09/01 17:11:01  jhs
  * Fixed Duplicating of masks in DupAssign.
  *
@@ -697,19 +701,19 @@ DupAssign (node *arg_node, node *arg_info)
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
                                DUPCONT (ASSIGN_NEXT (arg_node)));
         DUP (arg_node, new_node);
-        break;
-    }
 
-    if (INFO_DUP_ALL (arg_info)) {
-        if (ASSIGN_DEFMASK (arg_node) != NULL) {
-            ASSIGN_DEFMASK (new_node) = DupMask (ASSIGN_DEFMASK (arg_node), 400);
+        if (INFO_DUP_ALL (arg_info)) {
+            if (ASSIGN_DEFMASK (arg_node) != NULL) {
+                ASSIGN_DEFMASK (new_node) = DupMask (ASSIGN_DEFMASK (arg_node), 400);
+            }
+            if (ASSIGN_USEMASK (arg_node) != NULL) {
+                ASSIGN_USEMASK (new_node) = DupMask (ASSIGN_USEMASK (arg_node), 400);
+            }
+            if (ASSIGN_MRDMASK (arg_node) != NULL) {
+                ASSIGN_MRDMASK (new_node) = DupMask (ASSIGN_MRDMASK (arg_node), 400);
+            }
         }
-        if (ASSIGN_USEMASK (arg_node) != NULL) {
-            ASSIGN_USEMASK (new_node) = DupMask (ASSIGN_USEMASK (arg_node), 400);
-        }
-        if (ASSIGN_MRDMASK (arg_node) != NULL) {
-            ASSIGN_MRDMASK (new_node) = DupMask (ASSIGN_MRDMASK (arg_node), 400);
-        }
+        break;
     }
 
     DBUG_RETURN (new_node);
