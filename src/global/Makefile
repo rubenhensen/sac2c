@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.14  2002/05/31 17:22:47  dkr
+# NameTuplesUtils.o added
+#
 # Revision 3.13  2002/03/01 02:43:00  dkr
 # file argtag_info.mac added
 #
@@ -68,7 +71,7 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
      -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile
 
 all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types.h \
-     build.o interrupt.o options.o NameTuples.o
+     build.o interrupt.o options.o NameTuples.o NameTuplesUtils.o
 
 #
 # the *.[ch] objects are to fool makedepend which does not
