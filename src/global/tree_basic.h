@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/01/22 14:04:50  asi
+ * Revision 1.43  1996/01/22 14:37:45  cg
+ * modified some macros for N_objdef nodes
+ *
+ * Revision 1.42  1996/01/22  14:04:50  asi
  * added MakeId2
  *
  * Revision 1.41  1996/01/22  09:03:48  cg
@@ -671,6 +674,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***    char*       MOD     (O)
  ***    char*       LINKMOD (O)
  ***    types*      TYPE
+ ***    statustype  ATTRIB
  ***    statustype  STATUS
  ***
  ***  temporary attributes:
@@ -680,16 +684,18 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***    node*       PRAGMA    (O)  (N_pragma)  (import -> readsib ->
  ***                                            precompile -> )
  ***    node*       ARG       (O)  (obj-handling !!)
- ***    node*       INIT      (O)  (precompile !!)
  ***    node*       ICM       (O)  (compile ->)
  ***    node*       SIB       (O)  (readsib !!)
- ***    node*       CREATE    (O)  (objinit -> analysis -> precompile -> )
- ***    nodelist*   NEEDOBJS  (O)  (import -> analysis -> )
+ ***    nodelist*   NEEDOBJS  (O)  (import -> analysis -> objects -> )
  ***/
 
 /*
  *  The STATUS indicates whether an object is defined or imported.
  *  Possible values: ST_regular | ST_imported
+ *
+ *  ATTRIB : ST_regular | ST_resolved
+ *  used in objects.c to distinguish between already initialized and
+ *  not yet initialized global objects.
  *
  *  The VARNAME is a combination of NAME and MOD. It's used as parameter
  *  name when making global objects local.
@@ -697,12 +703,6 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *  ARG is a pointer to the additional argument which is added to a function's
  *  parameter list for this global object. ARG changes while traversing
  *  the functions !!
- *
- *  INIT is a pointer to an N_let node containing an application of the
- *  init function (SAC objects only).
- *
- *  CREATE is a reference to the N_fundef node of the generic
- *  initialization function.
  *
  *  ICM contains a pointer to the respective icm if the global object
  *  is an array (ND_KS_DECL_ARRAY_GLOBAL or ND_KD_DECL_ARRAY_EXTERN)
@@ -724,16 +724,13 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_STATUS(n) (n->info.types->status)
+#define OBJDEF_ATTRIB(n) (n->info.types->attrib)
 #define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
 #define OBJDEF_ARG(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
-#define OBJDEF_INIT(n) (n->node[3])
 #define OBJDEF_ICM(n) (n->node[3])
 #define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
 #define OBJDEF_SIB(n) (n->node[3])
-#define OBJDEF_CREATE(n) ((node *)n->mask[0])
-
-#define OBJDEF_LINKNAME(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
