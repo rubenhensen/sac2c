@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/11/15 14:42:30  sbs
+ * initialization of yy_init deleted on ALPHA since flex 2.5.4 is available
+ * on that machine now!
+ *
  * Revision 2.18  2000/11/14 10:53:57  sbs
  * changed OSF_ALPHA into SAC_FOR_OSF_ALPHA
  *
@@ -172,7 +176,7 @@ int charpos = 0;
 /* the next few lines allow for smuggling in a start_token! */
      if (start_token) {
        int mem=start_token;
-#ifdef SAC_FOR_OSF_ALPHA
+#ifdef OLD_VERSION_OF_LEX  /* (previously needed on ALPHA) */
        yy_init = 1;  /* force new initialization of lex! */
 #endif
        start_token = 0;
