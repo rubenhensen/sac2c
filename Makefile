@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.48  2000/07/21 08:23:23  nmw
+# import_specialization.o added
+#
 # Revision 2.47  2000/07/11 15:54:33  dkr
 # psi-opt.o removed
 #
@@ -293,7 +296,8 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
           src/compile/PatchWith.o
 
-CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o
+CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
+            src/c-interface/import_specialization.o
 
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
