@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.13  2001/02/02 10:49:09  dkr
- * no changes done
+ * Revision 3.14  2001/02/06 01:48:06  dkr
+ * WLBLOCKSTR_GET_ADDR added
  *
  * Revision 3.12  2001/01/29 16:08:19  dkr
  * WL_GET_ADDRESS replaced by WLNODE_GET_ADDR, WLSTRIDEX_GET_ADDR,
@@ -37,40 +37,6 @@
  *
  * Revision 3.1  2000/11/20 18:03:37  sacbase
  * new release made
- *
- * Revision 1.47  2000/10/31 23:31:47  dkr
- * signature of Type2Shpseg, Array2Shpseg modified
- *
- * Revision 1.46  2000/10/27 00:06:00  dkr
- * Type2Shpseg and Type2Exprs added,
- * some code brushing done.
- *
- * Revision 1.45  2000/10/26 13:57:45  dkr
- * CopyShpseg replaced by DupShpseg (DupTree.[ch])
- *
- * Revision 1.44  2000/10/24 14:29:23  dkr
- * some append functions added
- *
- * Revision 1.43  2000/10/24 10:06:08  dkr
- * GetBasetypeSize() added
- *
- * Revision 1.42  2000/10/24 09:43:59  dkr
- * GetSimpletype renamed into GetBasetype
- *
- * Revision 1.41  2000/10/23 18:04:22  dkr
- * syntax error in ICM_EXPRS1 corrected :-(
- *
- * Revision 1.39  2000/10/23 16:38:43  dkr
- * ICM_ARG5, ICM_ARG6 added
- *
- * Revision 1.38  2000/10/20 15:38:40  dkr
- * some functions on types added
- *
- * Revision 1.37  2000/10/17 13:02:13  dkr
- * macro EXPRS_LENGTH added
- *
- * Revision 1.36  2000/10/16 16:01:03  dkr
- * VARDEC_OR_ARG_OBJDEF added
  *
  * [...]
  *
@@ -1781,6 +1747,23 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
     (NODE_TYPE (node) == N_WLgrid)                                                       \
       ? (void *)&(WLGRID_##field (node))                                                 \
       : ((NODE_TYPE (node) == N_WLgridVar) ? (void *)&(WLGRIDVAR_##field (node)) : NULL)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLblock :   *and*  N_WLublock :     *and*
+ ***  N_WLstride :  *and*  N_WLstrideVar :
+ ***/
+
+#define WLBLOCKSTR_GET_ADDR(node, field)                                                 \
+    (NODE_TYPE (node) == N_WLstride)                                                     \
+      ? (void *)&(WLSTRIDE_##field (node))                                               \
+      : ((NODE_TYPE (node) == N_WLstrideVar)                                             \
+           ? (void *)&(WLSTRIDEVAR_##field (node))                                       \
+           : ((NODE_TYPE (node) == N_WLblock)                                            \
+                ? (void *)&(WLBLOCK_##field (node))                                      \
+                : ((NODE_TYPE (node) == N_WLublock) ? (void *)&(WLUBLOCK_##field (node)) \
+                                                    : NULL)))
 
 /*--------------------------------------------------------------------------*/
 
