@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2001/05/10 15:00:17  cg
+ * Added arg_info attributes used in compile.c :
+ * SCHEDULER_INIT and SCHEDULER_NUM
+ * Renamed SEGID into SCHEDULERID.
+ *
  * Revision 3.94  2001/05/09 15:23:13  cg
  * Added two new atrributes to info node used in compile.c:
  * INFO_COMP_SEGID(n) and INFO_COMP_SCHEDULERINIT(n).
@@ -1227,8 +1232,11 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***    long*      MASK[x]                (optimize -> )
  ***    int        VARNO                  (optimize -> )
  ***
- ***    node*      SPMD_PROLOG_ICMS (O)   (N_fundef)  (compile !!)
- ***    node*      SPMD_SETUP_ARGS (O)    (N_fundef)  (compile !!)
+ ***    node*      SPMD_PROLOG_ICMS  (O)  (N_fundef)  (compile !!)
+ ***    node*      SPMD_SETUP_ARGS   (O)  (N_fundef)  (compile !!)
+ ***    node*      SCHEDULER_INIT    (O)  (N_assign)  (compile !!)
+ ***    node*      SCHEDULER_NUM     (O)  (N_assign)  (compile !!)
+ ***
  ***    node*      SSACOUNTER (0) (N_ssacnt) ( ssaform -> optimize !!)
  ***/
 
@@ -1249,6 +1257,8 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->dfmask[1]))
 #define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[3])
 #define BLOCK_SPMD_SETUP_ARGS(n) (n->node[4])
+#define BLOCK_SCHEDULER_INIT(n) (n->info2)
+#define BLOCK_SCHEDULER_NUM(n) (n->counter)
 #define BLOCK_CACHESIM(n) (n->info.id)
 #define BLOCK_SSACOUNTER(n) (n->node[5])
 
@@ -2275,7 +2285,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node**     ICMTAB        (O)
  ***    types**    TYPETAB       (O)
  ***
- ***    int        SEGID         (O)
+ ***    int        SCHEDULERID   (O)
  ***    node*      SCHEDULERINIT (O)  (N_assign)
  ***
  ***  when used in optimize.c :
@@ -2810,7 +2820,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
 #define INFO_COMP_TABSIZE(n) (n->flag)
 #define INFO_COMP_ASSIGN(n) (n->node[5])
-#define INFO_COMP_SEGID(n) (n->counter)
+#define INFO_COMP_SCHEDULERID(n) (n->counter)
 #define INFO_COMP_SCHEDULERINIT(n) (n->info2)
 
 /* reuse */
