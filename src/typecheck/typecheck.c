@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/02 12:54:53  dkr
+ * no changes done
+ *
  * Revision 3.15  2001/02/23 16:41:42  sbs
  * TO made external
  *
@@ -1904,7 +1907,6 @@ TypecheckFunctionDeclarations (node *fundef)
     fun = fundef;
 
     while (fun != NULL) {
-
         if ((FUNDEF_BODY (fun) == NULL) || (FUNDEF_STATUS (fun) == ST_foldfun)) {
             /*
              * Pseudo-fold-functions don't have back references to N_typedef nodes
@@ -7070,9 +7072,10 @@ TI_Nwith (node *arg_node, node *arg_info)
     tos = old_tos;
 
     if ((SAC_PRG == kind_of_file) && (SCALAR > TYPES_DIM (base_array_type))
-        && (dynamic_shapes == 0))
+        && (dynamic_shapes == 0)) {
         /* SCALAR == TYPES_DIM() possible in case of fold. */
         ABORT (NODE_LINE (arg_node), ("No constant type for withloop inferable"));
+    }
 
     if ((SAC_PRG == kind_of_file) && (TYPES_DIM (base_array_type) >= SCALAR)) {
         /*  exchange withloops on empty array iv with their shortcut pendant. (jhs)
