@@ -112,18 +112,11 @@
       <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
       <traversal id="TNT" name="ToNewTypes Traversal" default="sons" include="ToNewTypes.h" >
 	<travuser>
+	  <node name="Fundef" />
 	  <node name="Arg" />
 	  <node name="Vardec" />
-	  <node name="Objdef" />
-	  <node name="Id" />
-	  <node name="Ids" />
-	  <node name="Let" />
-	  <node name="Fundef" />
 	  <node name="Block" />
-	  <node name="Withid" />
 	  <node name="Ap" />
-	  <node name="Cast" />
-	  <node name="Typedef" />
 	</travuser>
       </traversal>
       <traversal id="TOT" name="ToOldTypes Traversal" default="sons" include="ToOldTypes.h" >
