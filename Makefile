@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.53  1997/10/28 19:20:13  srs
+# now make can have a macro definition CFALGS which adds
+# parameters to the call of the c-compiler:
+# e.g. gmake CFLAGS=-Dshow_malloc
+#
 # Revision 1.52  1997/09/05 13:44:22  cg
 # The compiler flag -D__EXTENSIONS__ is now set to avoid warnings
 # upon non-ANSI-compliant functions (popen, pclose, tempnam, strdup).
@@ -167,7 +172,7 @@
 # Currently, these are popen(), pclose(), tempnam(), and strdup().
 #
 
-CC=gcc -ansi -Wall -g -D__EXTENSIONS__
+CC=gcc -ansi -Wall -g -D__EXTENSIONS__ $(CFLAGS)
 CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3 -D__EXTENSIONS__
 MAKE=make CC="$(CC)"
 MAKEPROD=make CC="$(CCPROD)"
