@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/09/06 15:16:40  sbs
+ * FUNDEF_RETURN now set properly?!
+ *
  * Revision 1.7  2002/08/15 18:47:11  dkr
  * uses LUT now
  *
@@ -222,7 +225,7 @@ CreateWrapperFor (node *fundef)
      * It is used when dispatching such functions (cf. new_types.c)!!
      */
     if (FUNDEF_ARGS (wrapper) == NULL) {
-        FUNDEF_RETURN (wrapper) = fundef;
+        FUNDEF_IMPL (wrapper) = fundef;
     }
 
     DBUG_RETURN (wrapper);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/09/06 15:16:40  sbs
+ * FUNDEF_RETURN now set properly?!
+ *
  * Revision 1.2  2002/09/03 14:41:45  sbs
  * DupTree machanism for duplicating condi funs established
  *
@@ -192,11 +195,11 @@ NTCFUN_udf (te_info *info, ntype *args)
         if (dft_res == NULL) {
             /*
              * this is a 0-ary function!!
-             * Therefore, the fundef we are looking for must be behind FUNDEF_RETURN
+             * Therefore, the fundef we are looking for must be behind FUNDEF_IMPL
              * of the wrapper function (cf. create_wrappers.c)!!!
              * Trigger its type check, and pick its return type:
              */
-            fundef = FUNDEF_RETURN (fundef);
+            fundef = FUNDEF_IMPL (fundef);
             fundef = NTCTriggerTypeCheck (fundef);
             res = TYCopyType (FUNDEF_RET_TYPE (fundef));
 

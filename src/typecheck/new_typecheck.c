@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/06 15:16:40  sbs
+ * FUNDEF_RETURN now set properly?!
+ *
  * Revision 3.18  2002/09/05 12:05:23  dkr
  * -b7:n2o added
  *
@@ -124,6 +127,7 @@
 #define INFO_NTC_GEN_TYPE(n) ((ntype *)(n->dfmask[1]))
 #define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->flag)
 #define INFO_NTC_LAST_ASSIGN(n) (n->node[0])
+#define INFO_NTC_RETURN(n) (n->node[1])
 
 typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
@@ -243,8 +247,16 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
         FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
 
         /*
-         * The inferred result type is now available in INFO_NTC_TYPE( arg_info).
-         * Iff legal, we insert it into the specified result type:
+         * A pointer to the return node is available in INFO_NTC_RETURN( arg_info)
+         * now (cf. NTCreturn).
+         */
+
+        FUNDEF_RETURN (fundef) = INFO_NTC_RETURN (arg_info);
+        INFO_NTC_RETURN (arg_info) = NULL;
+
+        /*
+         * Furthermore, the inferred result type is now available in INFO_NTC_TYPE(
+         * arg_info). Iff legal, we insert it into the specified result type.
          */
 
         inf_type = INFO_NTC_TYPE (arg_info);
@@ -854,6 +866,13 @@ NTCreturn (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
                  "NTCexprs did not create a product type");
+
+    /*
+     * Finally, we send the return node back to the fundef to fill FUNDEF_RETURN
+     * properly !! We use INFO_NTC_RETURN( arg_info) for this purpose.
+     */
+
+    INFO_NTC_RETURN (arg_info) = arg_node;
 
     DBUG_RETURN (arg_node);
 }

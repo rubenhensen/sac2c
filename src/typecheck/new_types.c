@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/06 15:16:40  sbs
+ * FUNDEF_RETURN now set properly?!
+ *
  * Revision 3.25  2002/09/05 16:51:57  sbs
  * 2 bugs eliminated:
  * 1) TYLUB now computes correctly if scalars are involved
@@ -4658,10 +4661,10 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
         if (TYGetConstr (type) == TC_prod) {
             /*
              * pure TC_prod type (function with no arguments)!!
-             *   -> fundef can be found in FUNDEF_RETURN (dirty hack!)
+             *   -> fundef can be found in FUNDEF_IMPL (dirty hack!)
              */
-            assigns = BuildApAssign (FUNDEF_RETURN (fundef), FUNDEF_ARGS (fundef),
-                                     vardecs, new_vardecs);
+            assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
+                                     new_vardecs);
         } else {
             assigns = CreateWrapperCode (type, NULL, 0, FUNDEF_ARGS (fundef),
                                          FUNDEF_ARGS (fundef), vardecs, new_vardecs);
