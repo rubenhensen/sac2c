@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.242  2005/01/19 12:52:20  jhb
+ * added the attribute ERROR with the nodetype error
+ *
  * Revision 3.241  2004/12/11 17:39:12  ktr
  * sons/attribs are structs iff CLEANMEM is set.
  *
@@ -48,6 +51,7 @@
 #define NODE_TYPE(n) ((n)->nodetype)
 #define NODE_LINE(n) ((n)->lineno)
 #define NODE_FILE(n) ((n)->src_file)
+#define NODE_ERROR(n) ((n)->error)
 
 #define NODE_TEXT(n) (global.mdb_nodetype[NODE_TYPE (n)])
 
@@ -241,6 +245,7 @@ struct NODE {
     nodetype nodetype; /* type of node */
     int lineno;        /* line number in source code */
     char *src_file;    /* pointer to filename or source code */
+    char *errmessage;
 #ifdef CLEANMEM
     struct SONUNION sons;       /* the sons */
     struct ATTRIBUNION attribs; /* the nodes attributes */
