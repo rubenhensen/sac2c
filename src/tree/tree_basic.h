@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.82  2000/07/21 14:47:01  nmw
+ * macros for INFO_IMPSPEC_ added
+ *
  * Revision 1.81  2000/07/21 11:30:35  jhs
  * Added FUNDEF_MT2USE, FUNDEF_MT2DEF and FUNDEF_IDENTIFIER.
  *
@@ -2253,12 +2256,12 @@ extern node *MakePragma ();
  ***
  ***
  ***  when used in print_interface.c
- ***    int        INFO_PIH_FLAG     (switch between comment and prototype)
- ***    int        INFO_PIH_COMMA    (flag, comma neede between outputs)
- ***    int        INFO_PIH_COUNTER  (arg or type position)
- ***    int        INFO_PIW_FLAG     (switch between different formats)
- ***    int        INFO_PIW_COMMA
- ***    int        INFO_PIW_COUNTER
+ ***    int        PIH_FLAG     (switch between comment and prototype)
+ ***    int        PIH_COMMA    (flag, comma neede between outputs)
+ ***    int        PIH_COUNTER  (arg or type position)
+ ***    int        PIW_FLAG     (switch between different formats)
+ ***    int        PIW_COMMA
+ ***    int        PIW_COUNTER
  ***
  ***  when used in map_wrapper.c
  ***    node*      MODUL             (access to module node)
@@ -2269,6 +2272,12 @@ extern node *MakePragma ();
  ***  when used in pad_transform.c
  ***
  ***    bool       EXPRESSION_PADDED
+ ***
+ ***  when used in import_specializations.c
+ ***    node*      SPECS             (chain of specialized fundefs)
+ ***    node*      FUNDEF            (actual working fundef)
+ ***
+ ***
  ***
  ***
  ***
@@ -2646,6 +2655,11 @@ extern node *MakeInfo ();
 #define INFO_APT_WITH(n) (n->node[0])
 #define INFO_APT_FUNDEF(n) (n->node[1])
 #define INFO_APT_ASSIGNMENTS(n) (n->node[2])
+
+/* when used in import_specialization.c */
+#define INFO_IMPSPEC_SPECS(n) (n->node[0])
+#define INFO_IMPSPEC_FUNDEF(n) (n->node[1])
+#define INFO_IMPSPEC_MODUL(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
