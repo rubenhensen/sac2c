@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/07/08 11:05:32  dkr
+ * FltnPrf(): N_array arguments of F_reshape are not flattened (for
+ * TAGGED_ARRAYS only)
+ *
  * Revision 3.9  2002/07/02 15:26:30  sah
  * added support for N_dot nodes in WL generators
  *
@@ -1143,12 +1147,13 @@ FltnAp (node *arg_node, node *arg_info)
  *  node *FltnPrf(node *arg_node, node *arg_info)
  *
  * description:
- *  - If the application has some arguments, set the context-flag of
- *  arg_info either to CT_ap or to CT_normal, traverse the arguments, and
- *  finally restore the old context-flag.
- *  - The context-flag is set to CT_normal iff we want arrays NOT to be abstracted
- *  out!!! This is needed only for the typechecker when he wants to infer the
- *  exact shapes for applications of functions such as TAKE, etc.
+ *  - If the application has some arguments, set the context-flag of arg_info
+ *    either to CT_ap or to CT_normal, traverse the arguments, and finally
+ *    restore the old context-flag.
+ *  - The context-flag is set to CT_normal iff we want arrays NOT to be
+ *    abstracted out!!! This is needed only for the typechecker when he wants
+ *    to infer the exact shapes for applications of functions such as TAKE,
+ *    etc.
  *
  ******************************************************************************/
 
@@ -1164,7 +1169,15 @@ FltnPrf (node *arg_node, node *arg_info)
 
     if (PRF_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+#ifdef TAGGED_ARRAYS
+        if (PRF_PRF (arg_node) == F_reshape) {
+            INFO_FLTN_CONTEXT (arg_info) = CT_normal;
+        } else {
+            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
+        }
+#else
         INFO_FLTN_CONTEXT (arg_info) = CT_ap;
+#endif
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
@@ -1207,7 +1220,7 @@ FltnReturn (node *arg_node, node *arg_info)
  *  node *FltnExprs(node *arg_node, node *arg_info)
  *
  * description:
- *  - flattens all the exprs depending on the context INFO_FLTN_CONTEXT( arg_info)
+ *  - flattens all the exprs depending on the context INFO_FLTN_CONTEXT
  *  - collecting constant integer elements
  *
  ******************************************************************************/
@@ -1233,8 +1246,8 @@ FltnExprs (node *arg_node, node *arg_info)
 #ifdef TAGGED_ARRAYS
         /* here is no break missing! */
 #else
-        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith)
+        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
                     || (NODE_TYPE (expr) == N_cast));
         break;
 #endif
