@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2004/11/26 16:10:35  sah
+# #da
+#
 # Revision 3.26  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -105,10 +108,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
-       -I../typecheck -I../compile -I../constants -I../optimize -I.
-
-OBJS := filemgr.o symboltable.o stringset.o \
+OBJS := symboltable.o stringset.o \
         libmanager.o modulemanager.o libstat.o export.o \
         ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
         usesymbols.o prepareinline.o dependencies.o
