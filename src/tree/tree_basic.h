@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/08 16:11:13  dkr
+ * NWITH2_NAIVE_COMP added
+ *
  * Revision 3.8  2000/12/16 10:42:06  cg
  * Added new attribute ID_NUM for typecheck constant propagation.
  *
@@ -2290,7 +2293,6 @@ extern node *MakePragma ();
  ***    node*      WITH_RET
  ***    node*      NWITH2
  ***    node*      ACCESS
- ***    int        PRAGMA_WLCOMP
  ***    int        SIB
  ***    int        OMIT_FORMAL_PARAMS
  ***    int        VARNO
@@ -3214,14 +3216,16 @@ extern node *MakeNCode (node *block, node *expr);
  ***    DFMmask_t  OUT_MASK                 (infer_dfms -> lac2fun -> refcount -> )
  ***    DFMmask_t  LOCAL_MASK               (infer_dfms -> lac2fun -> refcount -> )
  ***
- ***    ids*       DEC_RC_IDS               (wltransform -> compile)
- ***
- ***    bool       ISSCHEDULED              (new_mt -> ...)
- ***                            [Signals whether any segment is scheduled or not]
- ***
  ***    DFMmask_t  REUSE                    (ReuseWithArrays -> compile !!)
  ***
- ***    SCHsched_t SCHEDULING   (O)         (wltransform -> compile)
+ ***    ids*       DEC_RC_IDS               (wltransform -> compile )
+ ***
+ ***    bool       NAIVE_COMP               (wltransform -> compile )
+ ***                            [do naive compilation or not?]
+ ***
+ ***    SCHsched_t SCHEDULING   (O)         (wltransform -> compile )
+ ***    bool       ISSCHEDULED              (new_mt -> ...)
+ ***                            [Signals whether any segment is scheduled or not]
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims);
@@ -3233,9 +3237,11 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_CODE(n) ((n)->node[2])
 #define NWITH2_WITHOP(n) ((n)->node[3])
 #define NWITH2_PRAGMA(n) ((n)->node[4])
-#define NWITH2_SCHEDULING(n) ((SCHsched_t) ((n)->info2))
+
+#define NWITH2_DEC_RC_IDS(n) ((ids *)(n)->node[5])
+#define NWITH2_NAIVE_COMP(n) ((bool)(n)->varno)
+#define NWITH2_SCHEDULING(n) ((SCHsched_t) (n)->info2)
 #define NWITH2_ISSCHEDULED(n) ((n)->int_data)
-#define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
 
 #define NWITH2_IN_MASK(n) ((DFMmask_t) ((n)->dfmask[0]))
 #define NWITH2_OUT_MASK(n) ((DFMmask_t) ((n)->dfmask[1]))
@@ -3283,9 +3289,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
 #define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 #define WLSEGX_BLOCKS(n) ((n)->flag)
-#define WLSEGX_SV(n) ((int *)((n)->mask[0]))
-#define WLSEGX_BV(n, level) ((int *)((n)->mask[level + 2]))
-#define WLSEGX_UBV(n) ((int *)((n)->mask[1]))
+#define WLSEGX_SV(n) ((int *)(n)->mask[0])
+#define WLSEGX_BV(n, level) ((int *)(n)->mask[level + 2])
+#define WLSEGX_UBV(n) ((int *)(n)->mask[1])
 #define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
 
 /*
