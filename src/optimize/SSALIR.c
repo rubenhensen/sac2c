@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/02/06 14:19:33  mwe
+ * remove usage of PHIASSIGN and ASSIGN2
+ * implement usage of primitive phi function instead
+ *
  * Revision 1.29  2002/09/13 19:04:07  dkr
  * %p replaced by F_PTR in format strings
  *
@@ -423,7 +427,6 @@ CreateNewResult (node *avis, node *arg_info)
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
     new_pct_vardec = SSANewVardec (AVIS_VARDECORARG (avis));
-    AVIS_SSAPHITARGET (VARDEC_AVIS (new_pct_vardec)) = PHIT_DO;
     BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
       = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
                       new_pct_vardec);
@@ -468,12 +471,10 @@ CreateNewResult (node *avis, node *arg_info)
     ID_AVIS (right_id) = VARDEC_AVIS (new_int_vardec);
 
     /* create one let assign for then part */
-    assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (new_pct_vardec)),
-                                new_pct_vardec, right_id);
+    assign_let
+      = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (new_pct_vardec)), new_pct_vardec,
+                       MakePrf (F_phi, MakeExprs (right_id, NULL)));
 
-    /* append new copy assignment to then-part block */
-    BLOCK_INSTR (COND_THEN (cond))
-      = AppendAssign (BLOCK_INSTR (COND_THEN (cond)), assign_let);
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = assign_let;
 
     /*  insert copy assignment in else block (the given result identifier) */
@@ -482,14 +483,12 @@ CreateNewResult (node *avis, node *arg_info)
     ID_VARDEC (right_id) = AVIS_VARDECORARG (avis);
     ID_AVIS (right_id) = avis;
 
-    /* create one let assign for else part */
-    assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (new_pct_vardec)),
-                                new_pct_vardec, right_id);
+    /* create one exprs for else part */
+    EXPRS_NEXT (PRF_ARGS (ASSIGN_RHS (assign_let))) = MakeExprs (right_id, NULL);
 
-    /* append new copy assignment to else-part block */
-    BLOCK_INSTR (COND_ELSE (cond))
-      = AppendAssign (BLOCK_INSTR (COND_ELSE (cond)), assign_let);
-    AVIS_SSAASSIGN2 (VARDEC_AVIS (new_pct_vardec)) = assign_let;
+    /* append new phi function behind cond block */
+    ASSIGN_NEXT (assign_let) = ASSIGN_NEXT (tmp);
+    ASSIGN_NEXT (tmp) = assign_let;
 
     DBUG_RETURN (arg_info);
 }
@@ -1327,21 +1326,25 @@ SSALIRid (node *arg_node, node *arg_info)
         break;
 
     case SSALIR_INRETURN:
-        if (AVIS_SSAPHITARGET (ID_AVIS (arg_node))) {
-            DBUG_ASSERT ((AVIS_SSAASSIGN2 (ID_AVIS (arg_node)) != NULL),
-                         "missing definition assignment in else-part");
+        if (isPhiFun (arg_node)) {
+            DBUG_ASSERT ((EXPRS_NEXT (
+                            PRF_ARGS (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
+                          != NULL),
+                         "missing definition assignment in else part");
 
-            DBUG_ASSERT ((NODE_TYPE (
-                            ASSIGN_INSTR (AVIS_SSAASSIGN2 ((ID_AVIS (arg_node)))))
+            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN ((ID_AVIS (arg_node)))))
                           == N_let),
                          "non let assignment node");
 
-            if ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (arg_node)))) == N_id)) {
+            if ((NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (
+                   PRF_ARGS (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))))
+                 == N_id)) {
                 /*
                  * this is the identifier in the loop, that is returned via the
                  * ssa-phicopy assignment
                  */
-                id = ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (arg_node)));
+                id = EXPRS_EXPR (EXPRS_NEXT (
+                  PRF_ARGS (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))))));
 
                 /*
                  * look for the corresponding result ids in the let_node of

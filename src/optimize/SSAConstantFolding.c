@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.52  2004/02/06 14:19:33  mwe
+ * remove usage of PHIASSIGN and ASSIGN2
+ * implement usage of primitive phi function instead
+ *
  * Revision 1.51  2003/11/28 10:25:21  sbs
  * L_VARDEC_OR_ARG_TYPE(IDS_VARDEC( ids), expr) used instead of IDS_TYPE( ids) = expr
  *
@@ -234,7 +238,7 @@ static ids *SSACFSetSSAASSIGN (ids *chain, node *assign);
 static node **SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args);
 static shape *SSACFGetShapeOfExpr (node *expr);
-static node *RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart);
+static node *RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info);
 
 /*
  * primitive functions for non full-constant expressions like:
@@ -683,17 +687,13 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
 
     if (chain != NULL) {
         /* set current assign as defining assignement */
-        if (AVIS_SSAPHITARGET (IDS_AVIS (chain)) == PHIT_NONE) {
-            AVIS_SSAASSIGN (IDS_AVIS (chain)) = assign;
-        }
+        AVIS_SSAASSIGN (IDS_AVIS (chain)) = assign;
 
         /* check correct setting of SSAASSIGN() attribute */
         if (AVIS_SSAASSIGN (IDS_AVIS (chain)) != assign) {
             DBUG_PRINT ("WARN",
-                        ("mismatch SSAASSIGN link for %s (phit: %d) - 1:%p, 2:%p - %p",
-                         IDS_NAME (chain), AVIS_SSAPHITARGET (IDS_AVIS (chain)),
-                         AVIS_SSAASSIGN (IDS_AVIS (chain)),
-                         AVIS_SSAASSIGN2 (IDS_AVIS (chain)), assign));
+                        ("mismatch SSAASSIGN link for %s - 1:%p - %p", IDS_NAME (chain),
+                         AVIS_SSAASSIGN (IDS_AVIS (chain)), assign));
         }
 
         /* traverse to next ids */
@@ -1479,42 +1479,49 @@ SSACFSel (node *idx_expr, node *array_expr)
 /******************************************************************************
  *
  * function:
- *   node *RemovePhiCopyTargetAttributes(node* vardecs, bool thenpart)
+ *   node *RemovePhiCopyTargetAttributes(bool thenpart, node *arg_info)
  *
  * description:
- *   removes all phi copy target attributes from all vardecs and set
- *   the SSAASSIGN(2) atrtribute to the correct assign in thenpart (== TRUE)
+ *   update all phi functions to the correct assign in thenpart (== TRUE)
  *   or elsepart (== FALSE)
  *
  *****************************************************************************/
 
 static node *
-RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart)
+RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info)
 {
-    node *act_vardec;
+    node *phifun, *tmp, *del;
 
     DBUG_ENTER ("RemovePhiCopyTargetAttributes");
 
-    act_vardec = vardecs;
-    while (act_vardec != NULL) {
+    /* pointer to first assign node behind conditional */
+    phifun = ASSIGN_NEXT (INFO_SSACF_ASSIGN (arg_info));
 
-        if (AVIS_SSAPHITARGET (VARDEC_AVIS (act_vardec)) != PHIT_NONE) {
-            if (thenpart) {
-                /* AVIS_SSAASSIGN() is correct */
-                AVIS_SSAASSIGN2 (VARDEC_AVIS (act_vardec)) = NULL;
-            } else {
-                AVIS_SSAASSIGN (VARDEC_AVIS (act_vardec))
-                  = AVIS_SSAASSIGN2 (VARDEC_AVIS (act_vardec));
-                AVIS_SSAASSIGN2 (VARDEC_AVIS (act_vardec)) = NULL;
-            }
+    /* update all phi functions */
+    while (NODE_TYPE (ASSIGN_INSTR (phifun)) != N_return) {
 
-            /* vardec is no longer phi-copy target */
-            AVIS_SSAPHITARGET (VARDEC_AVIS (act_vardec)) = PHIT_NONE;
+        tmp = ASSIGN_INSTR (phifun);
+        del = LET_EXPR (tmp);
+
+        if (thenpart) {
+            /* append then argument to assignment */
+            LET_EXPR (tmp) = EXPRS_EXPR (PRF_ARGS (LET_EXPR (tmp)));
+            EXPRS_EXPR (PRF_ARGS (del)) = NULL;
+
+        } else {
+            /* append else argument to assignment */
+            LET_EXPR (tmp) = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (tmp))));
+            EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (del))) = NULL;
         }
-        act_vardec = VARDEC_NEXT (act_vardec);
+
+        /* delete obsolete argument */
+        FreeTree (del);
+
+        /* next assignment node */
+        phifun = ASSIGN_NEXT (phifun);
     }
 
-    DBUG_RETURN (vardecs);
+    DBUG_RETURN (arg_info);
 }
 
 /*
@@ -1766,17 +1773,14 @@ SSACFcond (node *arg_node, node *arg_info)
             /* ex special function cannot be inlined and is now a regular one */
             FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_regular;
             FUNDEF_USED (INFO_SSACF_FUNDEF (arg_info)) = USED_INACTIVE;
-            FUNDEF_VARDEC (INFO_SSACF_FUNDEF (arg_info))
-              = RemovePhiCopyTargetAttributes (FUNDEF_VARDEC (
-                                                 INFO_SSACF_FUNDEF (arg_info)),
-                                               TRUE);
+            /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
+            arg_info = RemovePhiCopyTargetAttributes (TRUE, arg_info);
         } else {
             /* ex special function can be simply inlined in calling context */
             INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
-            FUNDEF_VARDEC (INFO_SSACF_FUNDEF (arg_info))
-              = RemovePhiCopyTargetAttributes (FUNDEF_VARDEC (
-                                                 INFO_SSACF_FUNDEF (arg_info)),
-                                               BOOL_VAL (COND_COND (arg_node)));
+            /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
+            arg_info
+              = RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
         }
 
     } else {
@@ -1844,13 +1848,6 @@ SSACFlet (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
 
-    /* remove tag SSAPHITARGET if conditional has been removed */
-    if ((INFO_SSACF_INLFUNDEF (arg_info) == TRUE)
-        && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) != PHIT_NONE)) {
-        /* phi-copy-target is now normal identifier */
-        AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) = PHIT_NONE;
-    }
-
     /*
      * left side is not marked as constant -> compute expression
      * if there is a special function application with multiple results
@@ -1915,11 +1912,8 @@ SSACFlet (node *arg_node, node *arg_info)
                  * the assignments in the else part of a tail-end recursive loop can be
                  * used without any problems.
                  */
-                if (AVIS_SSAPHITARGET (IDS_AVIS (ids)) == PHIT_COND) {
-                    new_co = NULL;
-                } else {
-                    new_co = COAST2Constant (LET_EXPR (arg_node));
-                }
+
+                new_co = COAST2Constant (LET_EXPR (arg_node));
 
                 if (new_co != NULL) {
                     AVIS_SSACONST (IDS_AVIS (ids)) = new_co;

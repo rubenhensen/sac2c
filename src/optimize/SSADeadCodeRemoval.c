@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/02/06 14:19:33  mwe
+ * remove usage of PHIASSIGN and ASSIGN2
+ * implement usage of primitive phi function instead
+ *
  * Revision 1.18  2001/05/31 11:33:30  nmw
  * blocks with NULL assignment chain will get an N_empty node instead
  *
@@ -532,7 +536,7 @@ SSADCRcond (node *arg_node, node *arg_info)
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     }
 
-    if (SSADCRCondIsEmpty (arg_node)) {
+    if ((SSADCRCondIsEmpty (arg_node)) && (COND_COND (arg_node) == NULL)) {
         /* remove whole conditional */
 
         arg_node = FreeNode (arg_node);
@@ -862,14 +866,9 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
              * application that is not removed but where are some unused results.
              * in this case the vardecs of the unused identifiers must not removed,
              * because the hole application will stay in the programm.
-             * only if this identifier is a phi copy target, we can remove the
-             * vardec, because phi-copy-assignments contains only ONE assigned
-             * identifier.
              */
-            if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
-                AVIS_NEEDCOUNT (IDS_AVIS (arg_ids))
-                  = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
-            }
+
+            AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
 
             /* traverse next ids as usual */
             if (IDS_NEXT (arg_ids) != NULL) {

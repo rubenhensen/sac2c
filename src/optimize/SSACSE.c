@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2004/02/06 14:19:33  mwe
+ * remove usage of PHIASSIGN and ASSIGN2
+ * implement usage of primitive phi function instead
+ *
  * Revision 1.32  2004/01/05 01:49:38  dkrHH
  * comment corrected
  *
@@ -721,17 +725,18 @@ SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain)
              * already an subst entry (set by the arg-result bypassing) we do
              * not need to set the AVIS_SUBST attribute again.
              */
+
             if ((AVIS_SUBST (IDS_AVIS (act_result)) == NULL)
-                && (NODE_TYPE (
-                      ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (act_exprs)))))
+                && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs))))))))
                     == N_id)
-                && (NODE_TYPE (
-                      ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (search_exprs)))))
+                && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ASSIGN_RHS (
+                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs))))))))
                     == N_id)
-                && (ID_AVIS (
-                      ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (act_exprs)))))
-                    == ID_AVIS (ASSIGN_RHS (
-                         AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (search_exprs))))))) {
+                && (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs))))))))
+                    == ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ASSIGN_RHS (
+                         AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs)))))))))) {
                 /* stop further searching */
                 found_match = TRUE;
                 AVIS_SUBST (IDS_AVIS (act_result)) = IDS_AVIS (search_result);
@@ -756,10 +761,10 @@ SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain)
  *   node *GetResultArgAvis(node *id, condpart cp)
  *
  * description:
- *   get the avis of a function argument, that is a result via a phi-copy
+ *   get the avis of a function argument, that is a result via a phi function
  *   assignment. condpart selects the phi definition in then or else part.
  *
- *   if id is no phi copy target or points to no arg, a NULL is returned.
+ *   if id is no phi function or points to no arg, a NULL is returned.
  *
  *****************************************************************************/
 static node *
@@ -774,22 +779,24 @@ GetResultArgAvis (node *id, condpart cp)
 
     DBUG_ASSERT ((NODE_TYPE (id) == N_id), "GetResultArgAvis called for non id node");
 
-    if (AVIS_SSAPHITARGET (ID_AVIS (id)) != PHIT_NONE) {
-        /* get the selected definition of phi copy target id */
+    if (isPhiFun (id)) {
+
+        defassign = AVIS_SSAASSIGN (ID_AVIS (id));
+
+        defassign = PRF_ARGS (ASSIGN_RHS (defassign));
+
         if (cp == THENPART) {
-            defassign = AVIS_SSAASSIGN (ID_AVIS (id));
+            defassign = EXPRS_EXPR (defassign);
         } else {
-            defassign = AVIS_SSAASSIGN2 (ID_AVIS (id));
+            defassign = EXPRS_EXPR (EXPRS_NEXT (defassign));
         }
 
         /* check if id is defined as arg */
-        if ((NODE_TYPE (ASSIGN_RHS (defassign)) == N_id)
-            && (NODE_TYPE (AVIS_VARDECORARG (ID_AVIS (ASSIGN_RHS (defassign))))
-                == N_arg)) {
-            result = ID_AVIS (ASSIGN_RHS (defassign));
+        if ((NODE_TYPE (defassign) == N_id)
+            && (NODE_TYPE (AVIS_VARDECORARG (ID_AVIS (defassign))) == N_arg)) {
+            result = ID_AVIS (defassign);
         }
     }
-
     DBUG_RETURN (result);
 }
 
@@ -1135,7 +1142,6 @@ SSACSElet (node *arg_node, node *arg_info)
      * do the necessary substitution.
      */
     if ((match != NULL)
-        && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenSubstitution (LET_IDS (arg_node)))
 #endif
@@ -1151,7 +1157,6 @@ SSACSElet (node *arg_node, node *arg_info)
         INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
 
     } else if ((nt_expr == N_id)
-               && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
 #ifndef CREATE_UNIQUE_BY_HEAP
                && (!ForbiddenSubstitution (LET_IDS (arg_node)))
 #endif
