@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1994/12/21 13:38:41  sbs
+ * Revision 1.17  1995/01/03 15:00:47  asi
+ * No optimization if errors occures while typechecking
+ *
+ * Revision 1.16  1994/12/21  13:38:41  sbs
  * some category IV work done...
  *
  * Revision 1.15  1994/12/20  14:11:51  hw
@@ -160,7 +163,7 @@ MAIN
                 NOTE (("Typechecking: ..."));
                 Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
-                if (!breaktype) {
+                if (!breaktype && (errors = 0)) {
                     NOTE (("Optimizing: ...\n"));
                     syntax_tree = Optimize (syntax_tree);
                     /*  GenCCode(); */
