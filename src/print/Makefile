@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/05/08 13:29:30  dkr
+# make deps done
+#
 # Revision 3.7  2001/05/08 12:24:18  dkr
 # INCS modified
 #
@@ -146,4 +149,4 @@ print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
 print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
 print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
 print.o: ../global/NameTuples.h ../compile/wltransform.h ../tree/wl_bounds.h
-print.o: ../compile/icm.data ../tree/prf_node_info.mac
+print.o: ../refcount/refcount.h ../compile/icm.data ../tree/prf_node_info.mac

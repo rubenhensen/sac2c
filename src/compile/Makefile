@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2001/05/08 13:29:35  dkr
+# make deps done
+#
 # Revision 3.10  2001/04/26 21:09:47  dkr
 # make deps done
 #
@@ -251,8 +254,9 @@ precompile.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 precompile.o: ../global/internal_lib.h ../tree/prf.h ../tree/free.h
 precompile.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
 precompile.o: ../tree/traverse.h ../print/convert.h ../tree/DataFlowMask.h
-precompile.o: ../tree/adjust_ids.h ../c-interface/map_cwrapper.h
-precompile.o: ../tree/scheduling.h compile.h precompile.h
+precompile.o: ../tree/adjust_ids.h ../refcount/refcount.h
+precompile.o: ../c-interface/map_cwrapper.h ../tree/scheduling.h compile.h
+precompile.o: precompile.h
 wlpragma_funs.o: ../global/types.h ../tree/tree_basic.h
 wlpragma_funs.o: ../tree/tree_compound.h ../global/Error.h
 wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h

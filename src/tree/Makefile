@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2001/05/08 13:29:45  dkr
+# make deps done
+#
 # Revision 3.20  2001/04/26 21:09:57  dkr
 # make deps done
 #
@@ -190,7 +193,7 @@ adjust_ids.o: /usr/include/stdio_impl.h ../global/types.h tree_basic.h
 adjust_ids.o: tree_compound.h ../global/Error.h /usr/include/string.h
 adjust_ids.o: /usr/include/stdlib.h ../global/globals.h
 adjust_ids.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
-adjust_ids.o: DupTree.h LookUpTable.h ../print/print.h
+adjust_ids.o: DupTree.h LookUpTable.h ../refcount/refcount.h ../print/print.h
 change_signature.o: ../global/types.h tree_basic.h tree_compound.h
 change_signature.o: ../global/Error.h /usr/include/stdio.h
 change_signature.o: /usr/include/sys/feature_tests.h
@@ -225,13 +228,6 @@ free.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
 free.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 free.o: traverse.h DataFlowMask.h scheduling.h ../constants/constants.h
 free.o: ../constants/shape.h free.h
-rmcasts.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
-rmcasts.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-rmcasts.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-rmcasts.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-rmcasts.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-rmcasts.o: ../../inc/dbug.h traverse.h ../global/internal_lib.h free.h
-rmcasts.o: ../global/my_debug.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -301,7 +297,8 @@ tree_basic.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 tree_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 tree_basic.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 tree_basic.o: ../../inc/dbug.h ../global/my_debug.h free.h
-tree_basic.o: ../global/internal_lib.h prf_node_info.mac
+tree_basic.o: ../global/internal_lib.h ../refcount/refcount.h
+tree_basic.o: prf_node_info.mac
 tree_compound.o: ../global/types.h tree_basic.h tree_compound.h
 tree_compound.o: ../global/Error.h /usr/include/stdio.h
 tree_compound.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2001/05/08 13:29:33  dkr
+# make deps done
+#
 # Revision 3.17  2001/04/26 21:09:44  dkr
 # make deps done
 #
@@ -215,7 +218,8 @@ SSAConstantFolding.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 SSAConstantFolding.o: ../tree/DupTree.h ../tree/LookUpTable.h
 SSAConstantFolding.o: SSAConstantFolding.h ../constants/constants.h
 SSAConstantFolding.o: ../constants/shape.h optimize.h ../tree/SSATransform.h
-SSAConstantFolding.o: Inline.h ../tree/prf_node_info.mac
+SSAConstantFolding.o: Inline.h ../tree/compare_tree.h
+SSAConstantFolding.o: ../tree/prf_node_info.mac
 SSADeadCodeRemoval.o: ../global/types.h ../tree/tree_basic.h
 SSADeadCodeRemoval.o: ../tree/tree_compound.h ../global/Error.h
 SSADeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -246,7 +250,7 @@ SSALUR.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
 SSALUR.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
 SSALUR.o: SSALUR.h optimize.h ../constants/constants.h ../constants/shape.h
 SSALUR.o: /usr/include/math.h ../tree/SSATransform.h ../tree/CheckAvis.h
-SSALUR.o: Unroll.h generatemasks.h ../tree/prf_node_info.mac
+SSALUR.o: WLUnroll.h Unroll.h generatemasks.h ../tree/prf_node_info.mac
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

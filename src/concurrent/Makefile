@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/05/08 13:29:40  dkr
+# make deps done
+#
 # Revision 3.7  2001/04/26 21:09:52  dkr
 # make deps done
 #
@@ -136,7 +139,8 @@ spmd_cons.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 spmd_cons.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 spmd_cons.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
 spmd_cons.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
-spmd_cons.o: ../typecheck/typecheck.h concurrent_lib.h spmd_cons.h
+spmd_cons.o: ../typecheck/typecheck.h concurrent_lib.h ../refcount/refcount.h
+spmd_cons.o: spmd_cons.h
 spmd_init.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -153,7 +157,8 @@ spmd_lift.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
 spmd_lift.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 spmd_lift.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 spmd_lift.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-spmd_lift.o: ../global/internal_lib.h concurrent_lib.h ../tree/InferDFMs.h
+spmd_lift.o: ../global/internal_lib.h concurrent_lib.h ../refcount/refcount.h
+spmd_lift.o: ../tree/InferDFMs.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -161,7 +166,7 @@ spmd_opt.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
 spmd_opt.o: ../tree/traverse.h ../tree/free.h /usr/include/stdlib.h
 spmd_opt.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
 spmd_opt.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-spmd_opt.o: spmd_trav.h concurrent_lib.h spmd_opt.h
+spmd_opt.o: spmd_trav.h concurrent_lib.h ../refcount/refcount.h spmd_opt.h
 spmd_trav.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 spmd_trav.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 spmd_trav.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -169,7 +174,7 @@ spmd_trav.o: ../../inc/dbug.h ../tree/DataFlowMask.h ../global/types.h
 spmd_trav.o: ../tree/traverse.h ../global/internal_lib.h ../tree/tree_basic.h
 spmd_trav.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 spmd_trav.o: /usr/include/stdlib.h ../global/globals.h ../tree/free.h
-spmd_trav.o: ../global/my_debug.h spmd_trav.h
+spmd_trav.o: ../global/my_debug.h ../refcount/refcount.h spmd_trav.h
 sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -186,4 +191,4 @@ sync_opt.o: ../tree/traverse.h ../tree/free.h /usr/include/stdlib.h
 sync_opt.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
 sync_opt.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
 sync_opt.o: spmd_trav.h ../global/Error.h /usr/include/string.h
-sync_opt.o: concurrent_lib.h sync_opt.h
+sync_opt.o: concurrent_lib.h ../refcount/refcount.h sync_opt.h
