@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.22  2003/04/25 14:00:35  sbs
+dnl MUST_REFERENCE_YYLABELS disabled for all platforms now.
+dnl However, left the flag as it may re-appear some day somewhere....
+dnl
 dnl Revision 1.21  2003/04/16 15:34:47  sah
 dnl phm is now disabled on macos aka darwin
 dnl by default
@@ -319,7 +323,7 @@ rmdir .ar_magic_file_test
 
 dnl when not using bison, we need to
 dnl reference YYLABELS
-if test "$YACC" = "yacc"; then
+if test "$YACC" = "obsolete_yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
 fi
 
