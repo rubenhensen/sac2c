@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/11/22 16:26:45  sbs
+ * imported from pad_info.h
+ *
  * Revision 3.49  2004/11/22 16:23:58  ktr
  * moved typedefs from libmanager.c
  *
@@ -944,5 +947,53 @@ typedef enum { PK_path, PK_moddec_path, PK_modimp_path, PK_systemlib_path } path
  */
 typedef void *dynlib_t;
 typedef void *dynfun_t;
+
+/*******************************************************************************
+ *
+ * moved from pad_info.h
+ */
+
+/* structure for storing access patterns */
+typedef struct PATTERN_T {
+    shpseg *pattern;
+    struct PATTERN_T *next;
+} pattern_t;
+
+/* structure for grouping access patterns by conflict groups */
+typedef struct CONFLICT_GROUP_T {
+    shpseg *group;
+    accessdir_t direction;
+    pattern_t *patterns;
+    struct CONFLICT_GROUP_T *next;
+} conflict_group_t;
+
+/* strcture for grouping conflict groups by array types */
+typedef struct ARRAY_TYPE_T {
+    simpletype type;
+    int dim;
+    shpseg *shape;
+    conflict_group_t *groups;
+    struct ARRAY_TYPE_T *next;
+} array_type_t;
+
+/* structure containing shapes of unsupported operations */
+typedef struct UNSUPPORTED_SHAPE_T {
+    simpletype type;
+    int dim;
+    shpseg *shape;
+    struct UNSUPPORTED_SHAPE_T *next;
+} unsupported_shape_t;
+
+/* structure containing old and infered array shape */
+typedef struct PAD_INFO_T {
+    simpletype type;
+    int dim;
+    shpseg *old_shape;
+    shpseg *new_shape;
+    shpseg *padding;
+    node *fundef_pad;
+    node *fundef_unpad;
+    struct PAD_INFO_T *next;
+} pad_info_t;
 
 #endif /* _SAC_TYPES_H_ */
