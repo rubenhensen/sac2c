@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/10/11 16:27:41  dkr
+ * bug in Parts2Strides fixed
+ *
  * Revision 3.65  2002/10/08 15:43:16  dkr
  * EmptyParts2StridesOrExpr(): default brance in switch contruct added in
  * order to please the cc.
@@ -2743,6 +2746,11 @@ Parts2Strides (node *parts, int dims, int *shape)
     parts_stride = NULL;
     while (parts != NULL) {
         code = NPART_CODE (parts);
+        /*
+         * the N_Ncode node is reused for the new with-loop representation
+         * therefore we have to remove it from 'parts'
+         */
+        NPART_CODE (parts) = NULL;
 
         stride = NULL;
 
