@@ -3,6 +3,8 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc
 
+all: flatten.o
+
 flatten.o: flatten.c
 	$(CC) -o flatten.o -c flatten.c $(INCS)
 

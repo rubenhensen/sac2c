@@ -2,6 +2,8 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc
 
+all: print.o
+
 print.o: print.c
 	$(CC) -o print.o -c print.c $(INCS)
 
