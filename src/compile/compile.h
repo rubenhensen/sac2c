@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/04/24 18:07:54  hw
+ * Revision 1.6  1995/05/08 15:45:13  hw
+ * added CompBlock
+ *
+ * Revision 1.5  1995/04/24  18:07:54  hw
  * - renamed CompWhile to CompLoop
  *
  * Revision 1.4  1995/04/24  14:18:20  hw
@@ -37,4 +40,6 @@ extern node *CompArg (node *arg_node, node *arg_info);
 extern node *CompFundef (node *arg_node, node *arg_info);
 extern node *CompLoop (node *arg_node, node *arg_info);
 extern node *CompCond (node *arg_node, node *arg_info);
+extern node *CompBlock (node *arg_node, node *arg_info);
+
 #endif /* _compile_h */

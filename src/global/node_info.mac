@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.65  1995/05/03 16:25:48  asi
- * CFap added
+ * Revision 1.66  1995/05/08 15:45:38  hw
+ * added CompBlock
  *
+;; Revision 1.65  1995/05/03  16:25:48  asi
+;; CFap added
+;;
 ;; Revision 1.64  1995/05/02  08:47:49  asi
 ;; added functions for DupTree
 ;;
@@ -253,7 +256,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DEADblock,
-       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, CompBlock, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, FltnArgs, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
        FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun, DummyFun, DummyFun, DummyFun,
