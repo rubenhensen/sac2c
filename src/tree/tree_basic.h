@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2001/05/03 17:32:16  dkr
+ * WLSEG_MAXHOMDIM replaced by WLSEG_HOMSV
+ *
  * Revision 3.90  2001/04/30 12:27:23  nmw
  * INFO_AE_FUNDEF, INFO_GNM_FUDNEF added
  *
@@ -3691,8 +3694,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***  temporary attributes:
  ***
  ***    int*       SV         [step vector]            (wltransform -> )
+ ***    int*       HOMSV      [hom. step vector]       (wltransform -> )
  ***
- ***    int        MAXHOMDIM  [last homog. dimension]  (wltransform -> compile )
  ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
  ***
  ***  remarks:
@@ -3701,8 +3704,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    - UBV, BV[.], SV, IDX_MIN, IDX_MAX are vectors of size DIMS.
  ***    - SV is the least common multiple of all stride-, ublock- and block-
  ***      steps found in the segment.
- ***    - MAXHOMDIM is element of the set {-1, 0, 1, ..., DIMS-1}.
- ***      -1 is the default value (= no homogeneous dimensions).
+ ***    - HOMSV[d] equals SV[d] iff the segment is homogeneous in dimension 'd'.
+ ***      HOMSV[d] equals 0 iff the segment is inhomogeneous in dimension 'd'.
  ***/
 
 extern node *MakeWLseg (int dims, node *contents, node *next);
@@ -3711,15 +3714,15 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_CONTENTS(n) (WLSEGX_CONTENTS (n))
 #define WLSEG_NEXT(n) (WLSEGX_NEXT (n))
 
-#define WLSEG_UBV(n) ((int *)((n)->mask[1]))
+#define WLSEG_UBV(n) ((int *)((n)->dfmask[0]))
 #define WLSEG_BLOCKS(n) ((n)->flag)
-#define WLSEG_BV(n, level) ((int *)((n)->mask[level + 2]))
+#define WLSEG_BV(n, level) ((int *)((n)->dfmask[level + 1]))
 
 #define WLSEG_SV(n) ((int *)((n)->mask[0]))
+#define WLSEG_HOMSV(n) ((int *)((n)->mask[1]))
 #define WLSEG_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
 #define WLSEG_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 
-#define WLSEG_MAXHOMDIM(n) ((n)->varno)
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 
 /*--------------------------------------------------------------------------*/
