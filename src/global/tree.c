@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/02/22 10:48:08  hw
+ * Revision 1.8  1995/03/08 10:39:40  hw
+ * - added initialization of refcnt in MakeNode
+ *
+ * Revision 1.7  1995/02/22  10:48:08  hw
  * bug fixed in MakeTypes (shpseg is set to NULL)
  *
  * Revision 1.6  1995/01/18  17:39:17  asi
@@ -99,6 +102,7 @@ MakeNode (nodetype nodetype)
     tmp->nnode = 0;
     tmp->info.id = NULL;
     tmp->lineno = linenum;
+    tmp->refcnt = 0;
     for (i = 0; i < MAX_MASK; i++)
         tmp->mask[i] = NULL;
 
