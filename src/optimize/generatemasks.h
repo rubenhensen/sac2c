@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/11/15 18:07:26  dkr
+ * some macros changed, replaced or modified (VARNO, MRD, ...)
+ *
  * Revision 2.5  1999/10/29 16:44:55  dkr
  * ExpandMRDL() added
  *
@@ -29,7 +32,6 @@
  */
 
 #ifndef _generatemasks_h
-
 #define _generatemasks_h
 
 typedef struct STELM {
@@ -63,6 +65,7 @@ extern stack *mrdl_stack;
      || cse_tab == act_tab || ae_tab == act_tab || wli_tab == act_tab                    \
      || wlt_tab == act_tab)
 #define MRD_LIST (long *)MRD_TOS.varlist
+#define MRD_VLEN MRD_TOS.vl_len
 #define MRD(i) MRD_TOS.varlist[i]
 
 extern node *MrdGet (int i, int varno, int outside_block);
@@ -77,16 +80,14 @@ extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkde
 extern void PushMRDL (long NumVar);
 extern void PushDupMRDL ();
 extern void PopMRDL ();
-extern void ExpandMRDL (int num);
+extern void ExpandMRDL (int new_num);
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
 
-#define VARNO arg_info->varno
 #define DEF arg_node->mask[0]
 #define USE arg_node->mask[1]
 
-#define INFO_VARNO arg_info->varno /* number of variables in currenent function */
 #define INFO_DEF arg_info->mask[0] /* added or removed variable declarations    */
 #define INFO_USE arg_info->mask[1] /* added or removed variable useages         */
 
