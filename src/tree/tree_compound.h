@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.164  2004/11/26 11:52:38  sbs
+ * changed IDS_VARDEC into IDS_DECL
+ *
  * Revision 3.163  2004/11/26 11:30:53  sbs
  * ID_DECL_NAME eliminated
  *
@@ -292,12 +295,12 @@ extern bool TCisNonUniqueHidden (types *type);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  IDS :
+ ***  N_ids :
  ***/
 
 #define IDS_NAME(n) AVIS_NAME (IDS_AVIS (n))
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
-#define IDS_VARDEC(n) AVIS_DECL (IDS_AVIS (n))
+#define IDS_DECL(n) AVIS_DECL (IDS_AVIS (n))
 #define IDS_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
