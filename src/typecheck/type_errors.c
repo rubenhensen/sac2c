@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2002/09/04 12:59:46  sbs
+ * TEArrayElem2Obj and TEAssureSameScalarType added.
+ *
  * Revision 1.4  2002/09/03 14:41:45  sbs
  * DupTree machanism for duplicating condi funs established
  *
@@ -224,6 +227,29 @@ TEArg2Obj (int pos)
 }
 
 /******************************************************************************
+ *
+ * function:
+ *    char *TEArrayElem2Obj( int pos )
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+char *
+TEArrayElem2Obj (int pos)
+{
+    static char buffer[64];
+    char *tmp = &buffer[0];
+
+    DBUG_ENTER ("TEArrayElem2Obj");
+
+    tmp += sprintf (tmp, "array element #%d", pos);
+
+    DBUG_RETURN (&buffer[0]);
+}
+
+/******************************************************************************
  ***
  ***          assertion functions:
  ***          --------------------
@@ -410,6 +436,31 @@ TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
     DBUG_ENTER ("TEAssureSameSimpleType");
 
     if (TYGetSimpleType (TYGetScalar (type1)) != TYGetSimpleType (TYGetScalar (type2))) {
+        ABORT (linenum, ("element types of %s and %s should be identical;"
+                         " types found: %s  and  %s",
+                         obj1, obj2, TYType2String (type1, FALSE, 0),
+                         TYType2String (type2, FALSE, 0)));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEAssureSameScalarType( char *obj1, ntype *type1,
+ *                                 char *obj2, ntype *type2)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+void
+TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    DBUG_ENTER ("TEAssureSameScalarType");
+
+    if (!TYEqTypes (TYGetScalar (type1), TYGetScalar (type2))) {
         ABORT (linenum, ("element types of %s and %s should be identical;"
                          " types found: %s  and  %s",
                          obj1, obj2, TYType2String (type1, FALSE, 0),

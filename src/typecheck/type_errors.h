@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2002/09/04 12:59:46  sbs
+ * TEArrayElem2Obj and TEAssureSameScalarType added.
+ *
  * Revision 1.3  2002/09/03 14:41:45  sbs
  * DupTree machanism for duplicating condi funs established
  *
@@ -22,6 +25,7 @@ typedef struct TE_INFO te_info;
 
 extern char *TEPrfArg2Obj (char *prf_str, int pos);
 extern char *TEArg2Obj (int pos);
+extern char *TEArrayElem2Obj (int pos);
 
 extern void TEAssureScalar (char *obj, ntype *type);
 extern void TEAssureBoolS (char *obj, ntype *type);
@@ -31,6 +35,7 @@ extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);
 extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
 extern te_info *TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper,
