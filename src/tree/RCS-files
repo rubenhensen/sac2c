@@ -4,6 +4,8 @@ DataFlowMaskUtils.c
 DataFlowMaskUtils.h
 DupTree.c
 DupTree.h
+LookUpTable.c
+LookUpTable.h
 Makefile
 access_macros.h
 free.c
