@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/10/04 17:17:51  sah
+ * updated wltransform to use the new L_WLNODE and
+ * WLNODE macros
+ *
  * Revision 3.96  2004/09/28 12:49:45  khf
  * fixed bug #63
  *
@@ -1730,7 +1734,7 @@ InsertWLnodes (node *nodes, node *insert_nodes)
             /* insert current element of 'insert_nodes' at head of 'nodes' */
             tmp = insert_nodes;
             insert_nodes = WLNODE_NEXT (insert_nodes);
-            WLNODE_NEXT (tmp) = nodes;
+            L_WLNODE_NEXT (tmp, nodes);
             nodes = tmp;
         } else {
             /* search for insert-position in 'nodes' */
@@ -1750,8 +1754,8 @@ InsertWLnodes (node *nodes, node *insert_nodes)
                 /* insert current element of 'insert_nodes' after the found position */
                 tmp = insert_nodes;
                 insert_nodes = WLNODE_NEXT (insert_nodes);
-                WLNODE_NEXT (tmp) = WLNODE_NEXT (insert_here);
-                WLNODE_NEXT (insert_here) = tmp;
+                L_WLNODE_NEXT (tmp, WLNODE_NEXT (insert_here));
+                L_WLNODE_NEXT (insert_here, tmp);
             }
         }
     }
@@ -1851,8 +1855,8 @@ CompareWLnode (node *node1, node *node2, int outline)
             result = 2;
         } else {
             /* compare the bounds first */
-            COMP_BEGIN (WLNODE_BOUND1 (node1), WLNODE_BOUND1 (node2), result, 2)
-            COMP_BEGIN (WLNODE_BOUND2 (node1), WLNODE_BOUND2 (node2), result, 2)
+            COMP_BEGIN (WLNODE_BOUND1_INT (node1), WLNODE_BOUND1_INT (node2), result, 2)
+            COMP_BEGIN (WLNODE_BOUND2_INT (node1), WLNODE_BOUND2_INT (node2), result, 2)
 
             switch (NODE_TYPE (node1)) {
             case N_WLblock:
@@ -2255,7 +2259,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
             /*
              * we have found a node with unrolling information
              */
-            unroll = lcm (unroll, WLNODE_STEP (nodes));
+            unroll = lcm (unroll, WLNODE_STEP_INT (nodes));
         } else {
             /*
              * search in whole tree for nodes with unrolling information
@@ -2443,7 +2447,7 @@ FillGapPred (node **new_node, /* a return value!! */
     gap_node = GenerateNodeForGap (wlnode, nt1, pnode1, nt2, pnode2, is_noop);
 
     if (gap_node != NULL) {
-        WLNODE_NEXT (gap_node) = wlnode;
+        L_WLNODE_NEXT (gap_node, wlnode);
         wlnode = gap_node;
     }
 
@@ -2482,8 +2486,8 @@ FillGapSucc (node **new_node, /* a return value!! */
     gap_node = GenerateNodeForGap (wlnode, nt1, pnode1, nt2, pnode2, is_noop);
 
     if (gap_node != NULL) {
-        WLNODE_NEXT (gap_node) = WLNODE_NEXT (wlnode);
-        WLNODE_NEXT (wlnode) = gap_node;
+        L_WLNODE_NEXT (gap_node, WLNODE_NEXT (wlnode));
+        L_WLNODE_NEXT (wlnode, gap_node);
     }
 
     if (new_node != NULL) {
@@ -6054,11 +6058,12 @@ MergeWL (node *nodes)
         case N_WLublock:
             /* here is no break missing! */
         case N_WLgrid:
-            while ((WLNODE_NEXT (node1) != NULL)
-                   && (WLNODE_BOUND1 (node1) == WLNODE_BOUND1 (WLNODE_NEXT (node1)))) {
+            while (
+              (WLNODE_NEXT (node1) != NULL)
+              && (WLNODE_BOUND1_INT (node1) == WLNODE_BOUND1_INT (WLNODE_NEXT (node1)))) {
 
-                DBUG_ASSERT ((WLNODE_BOUND2 (node1)
-                              == WLNODE_BOUND2 (WLNODE_NEXT (node1))),
+                DBUG_ASSERT ((WLNODE_BOUND2_INT (node1)
+                              == WLNODE_BOUND2_INT (WLNODE_NEXT (node1))),
                              "overlapping nodes with different upper bounds found");
                 DBUG_ASSERT ((WLNODE_NEXTDIM (node1) != NULL), "dim not found");
                 DBUG_ASSERT ((WLNODE_NEXTDIM (WLNODE_NEXT (node1)) != NULL),
@@ -6067,17 +6072,17 @@ MergeWL (node *nodes)
                 /*
                  * merge 'node1' with his successor
                  */
-                WLNODE_NEXTDIM (node1)
-                  = InsertWLnodes (WLNODE_NEXTDIM (node1),
-                                   WLNODE_NEXTDIM (WLNODE_NEXT (node1)));
+                L_WLNODE_NEXTDIM (node1,
+                                  InsertWLnodes (WLNODE_NEXTDIM (node1),
+                                                 WLNODE_NEXTDIM (WLNODE_NEXT (node1))));
 
                 /* the remaining block node is useless now */
-                WLNODE_NEXTDIM (WLNODE_NEXT (node1)) = NULL;
-                WLNODE_NEXT (node1) = FreeNode (WLNODE_NEXT (node1));
+                L_WLNODE_NEXTDIM (WLNODE_NEXT (node1), NULL);
+                L_WLNODE_NEXT (node1, FreeNode (WLNODE_NEXT (node1)));
                 /* 'WLNODE_NEXT( node1)' points to his successor now */
 
                 /* merge next dimension */
-                WLNODE_NEXTDIM (node1) = MergeWL (WLNODE_NEXTDIM (node1));
+                L_WLNODE_NEXTDIM (node1, MergeWL (WLNODE_NEXTDIM (node1)));
             }
             break;
 
@@ -6250,9 +6255,9 @@ CompareWLtrees (node *tree1, node *tree2)
             /*
              * compare type-independent data
              */
-            if ((WLNODE_BOUND1 (tmp1) == WLNODE_BOUND1 (tmp2))
-                && (WLNODE_BOUND2 (tmp1) == WLNODE_BOUND2 (tmp2))
-                && (WLNODE_STEP (tmp1) == WLNODE_STEP (tmp2))) {
+            if ((WLNODE_BOUND1_INT (tmp1) == WLNODE_BOUND1_INT (tmp2))
+                && (WLNODE_BOUND2_INT (tmp1) == WLNODE_BOUND2_INT (tmp2))
+                && (WLNODE_STEP_INT (tmp1) == WLNODE_STEP_INT (tmp2))) {
 
                 /*
                  * compare type-specific data
@@ -6346,7 +6351,8 @@ OptWL (node *nodes)
         /*
          * optimize the next node
          */
-        next = WLNODE_NEXT (nodes) = OptWL (WLNODE_NEXT (nodes));
+        L_WLNODE_NEXT (nodes, OptWL (WLNODE_NEXT (nodes)));
+        next = WLNODE_NEXT (nodes);
         cont2 = nextdim2 = NULL;
 
         /*
@@ -6409,7 +6415,7 @@ OptWL (node *nodes)
          *   we can concate 'nodes' and 'next'
          */
         if (next != NULL) {
-            if ((WLNODE_STEP (nodes) == WLNODE_STEP (next))
+            if ((WLNODE_STEP_INT (nodes) == WLNODE_STEP_INT (next))
                 && ((NODE_TYPE (nodes) != N_WLstride) ||
                     /*
                      * For strides we must check whether the grids are compatible or not.
@@ -6437,18 +6443,18 @@ OptWL (node *nodes)
                      *            1->2: R1
                      *            2->3: R2
                      */
-                    (((WLNODE_BOUND2 (nodes) - WLNODE_BOUND1 (nodes))
-                      % WLNODE_STEP (nodes))
+                    (((WLNODE_BOUND2_INT (nodes) - WLNODE_BOUND1_INT (nodes))
+                      % WLNODE_STEP_INT (nodes))
                      == 0))
-                && (WLNODE_BOUND2 (nodes) == WLNODE_BOUND1 (next))) {
+                && (WLNODE_BOUND2_INT (nodes) == WLNODE_BOUND1_INT (next))) {
                 if ((((cont1 != NULL) && (NODE_TYPE (cont1) != N_Ncode))
                        ? CompareWLtrees (cont1, cont2)
                        : (cont1 == cont2))
                     && (CompareWLtrees (nextdim1, nextdim2))) {
                     /* concate 'nodes' and 'next' */
-                    WLNODE_BOUND2 (nodes) = WLNODE_BOUND2 (next);
+                    L_WLNODE_BOUND2_INT (nodes, WLNODE_BOUND2_INT (next));
                     /* free useless data in 'next' */
-                    WLNODE_NEXT (nodes) = FreeNode (WLNODE_NEXT (nodes));
+                    L_WLNODE_NEXT (nodes, FreeNode (WLNODE_NEXT (nodes)));
                 }
             }
         }
@@ -6550,11 +6556,11 @@ FitNode (node *wlnode, int unroll)
                               && (NODE_TYPE (wlnode) != N_WLgridVar)),
                              "illegal node found!");
 
-                WLNODE_BOUND2 (wlnode) = WLNODE_BOUND1 (new_wlnode)
-                  = WLNODE_BOUND2 (wlnode) - remain;
+                L_WLNODE_BOUND1_INT (new_wlnode, WLNODE_BOUND2_INT (wlnode) - remain);
+                L_WLNODE_BOUND2_INT (wlnode, WLNODE_BOUND1_INT (new_wlnode));
 
-                WLNODE_NEXT (new_wlnode) = WLNODE_NEXT (wlnode);
-                WLNODE_NEXT (wlnode) = new_wlnode;
+                L_WLNODE_NEXT (new_wlnode, WLNODE_NEXT (wlnode));
+                L_WLNODE_NEXT (wlnode, new_wlnode);
             }
         }
     }
@@ -6683,14 +6689,15 @@ FitWL (node *wlnode)
                  * whose block size had been adjusted
                  *   -> we must fathom this adjustment here!
                  */
-                DBUG_ASSERT ((WLNODE_BOUND1 (wlnode) == 0),
+                DBUG_ASSERT ((WLNODE_BOUND1_INT (wlnode) == 0),
                              "lower bound of inner node is != 0");
-                WLNODE_BOUND2 (wlnode)
-                  = AdjustBlockSize (WLNODE_BOUND2 (wlnode), WLNODE_STEP (wlnode), FALSE);
+                L_WLNODE_BOUND2_INT (wlnode,
+                                     AdjustBlockSize (WLNODE_BOUND2_INT (wlnode),
+                                                      WLNODE_STEP_INT (wlnode), FALSE));
             }
         }
 
-        WLNODE_NEXT (wlnode) = FitWL (WLNODE_NEXT (wlnode));
+        L_WLNODE_NEXT (wlnode, FitWL (WLNODE_NEXT (wlnode)));
     }
 
     DBUG_RETURN (wlnode);
@@ -6773,15 +6780,17 @@ DoNormalize (node *nodes, int *width)
             /*
              * adjust upper bound
              */
-            DBUG_ASSERT ((WLNODE_BOUND1 (node) < curr_width), "lower bound out of range");
-            WLNODE_BOUND2 (node) = MIN (WLNODE_BOUND2 (node), curr_width);
+            DBUG_ASSERT ((WLNODE_BOUND1_INT (node) < curr_width),
+                         "lower bound out of range");
+
+            L_WLNODE_BOUND2_INT (node, MIN (WLNODE_BOUND2_INT (node), curr_width));
 
             /*
              * remove nodes whose index ranges lies outside the current block
              */
             while ((WLNODE_NEXT (node) != NULL)
-                   && (WLNODE_BOUND1 (WLNODE_NEXT (node)) >= curr_width)) {
-                WLNODE_NEXT (node) = FreeNode (WLNODE_NEXT (node));
+                   && (WLNODE_BOUND1_INT (WLNODE_NEXT (node)) >= curr_width)) {
+                L_WLNODE_NEXT (node, FreeNode (WLNODE_NEXT (node)));
             }
 
             /*
@@ -6789,9 +6798,10 @@ DoNormalize (node *nodes, int *width)
              * the extent is not a multiple of the step.
              */
             if ((NODE_TYPE (node) == N_WLstride)
-                && ((WLNODE_BOUND2 (node) - WLNODE_BOUND1 (node)) % WLNODE_STEP (node)
+                && ((WLNODE_BOUND2_INT (node) - WLNODE_BOUND1_INT (node))
+                      % WLNODE_STEP_INT (node)
                     != 0)) {
-                node = FitNode (node, WLNODE_STEP (node));
+                node = FitNode (node, WLNODE_STEP_INT (node));
             }
 
             /* take next node */
@@ -6803,8 +6813,15 @@ DoNormalize (node *nodes, int *width)
             /*
              * save width of current index range; adjust step
              */
-            width[WLNODE_DIM (node)] = WLNODE_BOUND2 (node) - WLNODE_BOUND1 (node);
-            WLNODE_STEP (node) = MIN (WLNODE_STEP (node), width[WLNODE_DIM (node)]);
+            width[WLNODE_DIM (node)]
+              = WLNODE_BOUND2_INT (node) - WLNODE_BOUND1_INT (node);
+
+            /* WLgrids do not have a STEP value, so it cannot be set here */
+
+            if (NODE_TYPE (node) != N_WLgrid) {
+                L_WLNODE_STEP_INT (node, MIN (WLNODE_STEP_INT (node),
+                                              width[WLNODE_DIM (node)]));
+            }
 
             /*
              * normalize the type-specific sons
@@ -7351,7 +7368,7 @@ IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
             /*
              * we have found a relevant node
              */
-            ishom &= ((WLNODE_BOUND2 (nodes) - WLNODE_BOUND1 (nodes)) % sv == 0);
+            ishom &= ((WLNODE_BOUND2_INT (nodes) - WLNODE_BOUND1_INT (nodes)) % sv == 0);
         } else {
             /*
              * search in whole tree for relevant nodes
@@ -7477,7 +7494,7 @@ InferFitted (node *wlnode)
     DBUG_ENTER ("InferFitted");
 
     if (wlnode != NULL) {
-        WLNODE_NEXT (wlnode) = InferFitted (WLNODE_NEXT (wlnode));
+        L_WLNODE_NEXT (wlnode, InferFitted (WLNODE_NEXT (wlnode)));
 
         switch (NODE_TYPE (wlnode)) {
         case N_WLblock:
