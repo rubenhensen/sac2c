@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/07/24 11:49:46  asi
+ * Revision 1.10  1995/12/21 13:27:48  asi
+ * New algorithm implemented
+ *
+ * Revision 1.9  1995/07/24  11:49:46  asi
  * DEADvardec realizes now, if variable is never used because of array elimination
  *
  * Revision 1.8  1995/06/09  09:17:12  asi
@@ -37,6 +40,8 @@
 #include <stdlib.h>
 
 #include "tree.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
@@ -46,7 +51,13 @@
 #include "optimize.h"
 #include "DeadCodeRemoval.h"
 
-#define TRAV_1 arg_info->lineno
+#define INFO_ACT arg_info->mask[2]   /* active variables */
+#define INFO_NEWACT arg_info->lineno /* is there any new active assignment in loop ? */
+#define INFO_TRAVTYPE NODE_TYPE (arg_info)
+#define TRUE 1
+#define FALSE 0
+
+typedef enum { active, redundant } assignstatus;
 
 /*
  *
@@ -54,7 +65,7 @@
  *  arguments     : 1) ptr to root of the syntaxtree
  *                  R) ptr to root of the optimized syntaxtree
  *  description   : Dead Code Removal
- *  global vars   : syntax_tree, dead_tab
+ *  global vars   : syntax_tree, dcr_tab, active_tab
  *  internal funs : ---
  *  external funs : Trav, MakeNode
  *  macros        : DBUG...
@@ -62,12 +73,18 @@
  *  remarks       :
  *
  *
+ A
  */
 node *
 DeadCodeRemoval (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("DeadCodeRemoval");
-    act_tab = dead_tab;
+    act_tab = active_tab;
+    info_node = MakeNode (N_info);
+    arg_node = Trav (arg_node, info_node);
+    FREE (info_node);
+
+    act_tab = dcr_tab;
     info_node = MakeNode (N_info);
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
@@ -76,522 +93,571 @@ DeadCodeRemoval (node *arg_node, node *info_node)
 
 /*
  *
- *  functionname  : DEADfundef
- *  arguments     : 1) ptr to fundef-node
- *                  2) ptr to info_node
- *                  R) ptr to fundef-node 1) with removed dead code and dead local
- *                     variable removal in its subtrees.
- *  description   : first call Trav to collect informations about used vaiables in the
- *                  further controll flow, then call Trav to remove dead code from the
- *                  syntax tree. Last but not least remove local variables, which not
- *                  used yet.
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav, GenMask
- *  macros        : DBUG...
+ *  functionname  : DCRfundef
+ *  arguments     : 1) N_fundef - node
+ *                  2) N_info - node
+ *                  R) N_fundef - node
+ *  description   : Traverses instruction-, declaration- and function-chain
+ *                  in this sequence.
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
+ *  macros        : VARNO, FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_VARDEC,
+ *                  FUNDEF_NEXT, FUNDEF_VARNO, FREE, INFO_DEF, INFO_USE, INFO_ACT,
  *
- *  remarks       :
+ *  remarks       : --
  *
  */
 node *
-DEADfundef (node *arg_node, node *arg_info)
+DCRfundef (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("DEADfundef");
-    DBUG_PRINT ("DEAD", ("Optimizing function: %s", arg_node->info.types->id));
-    VARNO = arg_node->varno;
-    arg_info->nodetype = N_fundef;
-    if (arg_node->node[0] != NULL) {
-        TRAV_1 = 1; /* used as flag for the two differnt passes */
-        arg_info->mask[0] = GenMask (VARNO); /* defined-mask */
-        arg_info->mask[1] = GenMask (VARNO); /* used-mask */
-        arg_info->mask[4] = GenMask (VARNO); /* later-used-mask (LU-mask) */
-        arg_node->node[0]
-          = Trav (arg_node->node[0], arg_info); /* Trav body of function */
-        FREE (arg_info->mask[0]);               /* Gathering loop infos */
-        FREE (arg_info->mask[1]);
-        FREE (arg_info->mask[4]);
+    DBUG_ENTER ("DCRfundef");
+    DBUG_PRINT ("DCR", ("Dead Code Removal in function: %s", FUNDEF_NAME (arg_node)));
+    INFO_VARNO = FUNDEF_VARNO (arg_node);
 
-        TRAV_1 = 0;
-        arg_info->mask[0] = GenMask (VARNO);
-        arg_info->mask[1] = GenMask (VARNO);
-        arg_info->mask[4] = GenMask (VARNO);
-        arg_node->node[0]
-          = Trav (arg_node->node[0], arg_info); /* Trav body of function */
-        MinusMask (arg_node->mask[0], arg_info->mask[0],
-                   VARNO); /* with Dead-Code-Removal */
-        MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-        FREE (arg_info->mask[0]);
-        FREE (arg_info->mask[1]);
-        FREE (arg_info->mask[4]);
+    if (NULL != FUNDEF_BODY (arg_node))
+        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
-        if (arg_node->node[0]->node[1] != NULL) /* Dead-Variable-Removal */
-        {
-            arg_info->mask[0] = arg_node->mask[0];
-            arg_info->mask[1] = arg_node->mask[1];
-            arg_node->node[0]->node[1] = Trav (arg_node->node[0]->node[1], arg_info);
-            if (arg_node->node[0]->node[1] == NULL)
-                arg_node->node[0]->nnode--;
-            arg_info->mask[0] = NULL;
-            arg_info->mask[1] = NULL;
-        }
-    }
-    if (NULL != arg_node->node[1]) /* next function */
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    INFO_DEF = FUNDEF_DEFMASK (arg_node);
+    INFO_USE = FUNDEF_USEMASK (arg_node);
+    if (NULL != FUNDEF_BODY (arg_node))
+        FUNDEF_VARDEC (arg_node) = OPTTrav (FUNDEF_VARDEC (arg_node), arg_info, arg_node);
+    INFO_DEF = NULL;
+    INFO_USE = NULL;
+
+    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  : DEADvardec
- *  arguments     : 1) ptr to vardec-node
- *                  2) ptr to info_nodei
- *                  R) ptr to current node if variable is used in function
- *                     or ptr to next vardec-node if not used.
- *  description   : removes variable decleration if not used
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
+ *  functionname  : ACTfundef
+ *  arguments     : 1) N_fundef - node
+ *                  2) N_info - node
+ *                  R) N_fundef - node
+ *  description   : Traverses instruction- and function-chain
+ *                  in this sequence.
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : Trav    (traverse.h) - higher order traverse function
+ *                  GenMask (optimize.h) - claims mem for a mask and initialize it with 0
+ *  macros        : FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_VARDEC, FUNDEF_NEXT,
+ *                  INFO_VARNO, INFO_ACT
  *
- *  remarks       :
+ *  remarks       : --
  *
  */
 node *
-DEADvardec (node *arg_node, node *arg_info)
+ACTfundef (node *arg_node, node *arg_info)
 {
-    node *return_node;
+    DBUG_ENTER ("ACTfundef");
+    DBUG_PRINT ("DCR",
+                ("Active Asssignment Search in function: %s", FUNDEF_NAME (arg_node)));
+    INFO_VARNO = FUNDEF_VARNO (arg_node);
 
-    DBUG_ENTER ("DEADvardec");
-    return_node = arg_node;
-    if (NULL != arg_node->node[0]) {
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-        if (arg_node->node[0] == NULL)
-            arg_node->nnode--;
+    NODE_TYPE (arg_info) = N_assign;
+    INFO_ACT = GenMask (VARNO);
+    if (NULL != FUNDEF_BODY (arg_node) && NULL != FUNDEF_INSTR (arg_node))
+        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+    FREE (INFO_ACT);
+
+    if (NULL != FUNDEF_NEXT (arg_node))
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : DCRvardec
+ *  arguments     : 1) N_vardec - node
+ *                  2) N_info - node
+ *                  R) N_vardec - node
+ *  description   : removes declerations if variable not used and defined
+ *                  in this function
+ *  global vars   : elim_arrays, dead_var
+ *  internal funs : --
+ *  external funs : Trav     (traverse.h) - higher order traverse function
+ *                  FreeNode (free.h)     - removes the given node and returns a pointer
+ *                                          to the next note in a list of node structures
+ *  macros        : VARDEC_NEXT, VARDEC_VARNO, VARDEC_FLAG, VARDEC_NAME,
+ *                  INFO_DEF, INFO_USE
+ *  remarks       : --
+ *
+ */
+node *
+DCRvardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DCRvardec");
+    if (NULL != VARDEC_NEXT (arg_node)) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
+        if (NULL == VARDEC_NEXT (arg_node))
+            arg_node->nnode = 0;
+#endif
+        /*-----------------------------------------------------------------------------------*/
     }
-    if ((arg_info->mask[0][arg_node->varno] == 0)
-        && (arg_info->mask[1][arg_node->varno] == 0)) {
-        if (arg_node->flag)
+    if ((0 == INFO_DEF[VARDEC_VARNO (arg_node)])
+        && (0 == INFO_USE[VARDEC_VARNO (arg_node)])) {
+        if (VARDEC_FLAG (arg_node))
             elim_arrays++;
-        else
-            dead_var++;
-        DBUG_PRINT ("DEAD",
-                    ("Variable decleration %s removed", arg_node->info.types->id));
-        return_node = arg_node->node[0];
+        dead_var++;
+        DBUG_PRINT ("DCR",
+                    ("Variable decleration for `%s' removed", VARDEC_NAME (arg_node)));
+        arg_node = FreeNode (arg_node);
     }
-    DBUG_RETURN (return_node);
+    DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  : DEADassign
- *  arguments     : 1) ptr to assign-node
- *                  2) ptr to info_node
- *                  R) modified assign_node 1) or next assign-node if whole assign is
- *                     not important for sac-programm.
- *  description   : if TRAV_1 == 1 this function gathers informations about
- *                  used variables in the further controll flow,
- *                  otherwise the function performs dead code removal with this
- * assignment. global vars   : syntax_tree, info_node, dead_expr internal funs : ---
- *  external funs : Trav, PlusMask, OrMask, MinusMask, DupMask, GenMask, CheckMask,
- *                  If3_2Mask
- *  macros        : DBUG...
+ *  functionname  : DCRassign
+ *  arguments     : 1) N_assign - node
+ *                  2) N_info - node
+ *                  R) N_assign - node
+ *  description   : removes all redundat marked nodes
+ *  global vars   : dead_expr
+ *  internal funs : --
+ *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
+ *                  FreeNode (free.h)     - removes the given node and returns a pointer
+ *                                          to the next note in a list of node structures
+ *  macros        : ASSIGN_NEXT, ASSIGN_STATUS, NODE_LINE
  *
- *  remarks       :
+ *  remarks       : --
  *
  */
 node *
-DEADassign (node *arg_node, node *arg_info)
+DCRassign (node *arg_node, node *arg_info)
 {
-    node *return_node;
-    long *oldmask[2];
-    nodetype olditype;
+    node *tmp;
 
-    DBUG_ENTER ("DEADassign");
-    olditype = arg_info->nodetype;
-    return_node = arg_node;
-    if (NULL != arg_node->node[1]) {
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav next assign */
-        if (arg_node->node[1] == NULL)
-            arg_node->nnode = 1;
-    }
-
-    switch (arg_node->node[0]->nodetype) {
-    case N_return:
-        if (TRAV_1)
-            arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-        OrMask (arg_info->mask[4], arg_node->mask[1], VARNO);
-        break;
-    case N_do:
-    case N_while:
-        if (!TRAV_1) {
-            if (CheckMask (arg_info->mask[4], arg_node->mask[0], VARNO)) {
-                DBUG_PRINT ("DEAD", ("Removed node: %08x in line %d", arg_node,
-                                     arg_node->lineno));
-                PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-                PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
-                if (olditype != N_fundef)
-                    MinusMask (arg_info->mask[4], arg_node->mask[1], VARNO);
-                return_node = arg_node->node[1]; /* remove this assignment */
-                arg_node->node[1] = NULL;
-                arg_node->nnode = 1;
-                FreeTree (arg_node);
-                dead_expr++;
-            } else {
-                olditype = arg_node->node[0]->nodetype;
-                oldmask[2] = DupMask (arg_info->mask[4], VARNO);
-                oldmask[0] = arg_info->mask[0]; /* Save old dead def. variables */
-                arg_info->mask[0] = GenMask (VARNO);
-                oldmask[1] = arg_info->mask[1]; /* Save old dead used variables */
-                arg_info->mask[1] = GenMask (VARNO);
-                OrMask (arg_info->mask[4], arg_node->mask[4], VARNO);
-                if ((N_do == olditype) || (N_while == olditype))
-                    OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
-                arg_node->node[0]->node[1]->mask[4] = DupMask (arg_info->mask[4], VARNO);
-
-                arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-                /* consider removed definitions in current and previous def_mask */
-                MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-                PlusMask (arg_info->mask[0], oldmask[0], VARNO);
-                FREE (oldmask[0]);
-                /* consider removed usages in current and previous used_mask */
-                MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-                PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-                FREE (oldmask[1]);
-                if (olditype != N_do)
-                    OrMask (arg_info->mask[4], oldmask[2], VARNO);
-                if (olditype == N_while)
-                    OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
-                oldmask[1] = DupMask (arg_node->mask[4], VARNO);
-                FREE (arg_node->mask[4]);
-                arg_node->mask[4] = NULL;
-                arg_node->mask[4] = oldmask[1];
+    DBUG_ENTER ("DCRassign");
+    ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
+    if (NULL == ASSIGN_NEXT (arg_node))
+        arg_node->nnode = 1;
+#endif
+    /*-----------------------------------------------------------------------------------*/
+    if (redundant == ASSIGN_STATUS (arg_node)) {
+        DBUG_PRINT ("DCR", ("Assignment removed in line %d", NODE_LINE (arg_node)));
+        if (NULL != (tmp = GetCompoundNode (arg_node))) {
+            switch (NODE_TYPE (tmp)) {
+            case N_cond:
+                WARN (NODE_LINE (tmp), ("Conditional removed"));
+                break;
+            case N_with:
+                WARN (NODE_LINE (tmp), ("With-expression removed"));
+                break;
+            case N_do:
+            case N_while:
+                WARN (NODE_LINE (tmp), ("Loop removed"));
+                break;
+            default:
+                break;
             }
-        } else {
-            int i;
-            int needed = 0;
+        }
+        arg_node = FreeNode (arg_node);
+        dead_expr++;
+    } else {
+        ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
+    }
+    DBUG_RETURN (arg_node);
+}
 
-            oldmask[2] = DupMask (arg_info->mask[4], VARNO); /* save  LU-mask */
+/*
+ *
+ *  functionname  : ACTassign
+ *  arguments     : 1) N_assign - node
+ *                  2) N_info - node
+ *                  R) N_assign - node
+ *  description   : assign-node will be marked redundant or active
+ *                  if assign-node is active traverses subtree
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : Trav     (traverse.h) - higher order traverse function
+ *  macros        : ASSIGN_NEXT, ASSIGN_INSTRTYPE, ASSIGN_STATUS, NODE_LINE
+ *                  ASSIGN_DEFMASK, ASSIGN_USEMASK, INFO_ACT
+ *
+ *  remarks       : --
+ *
+ */
+node *
+ACTassign (node *arg_node, node *arg_info)
+{
+    int i;
+    node *tmp;
+
+    DBUG_ENTER ("ACTassign");
+    if (N_assign == INFO_TRAVTYPE)
+        ASSIGN_STATUS (arg_node) = redundant;
+
+    if (NULL != ASSIGN_NEXT (arg_node))
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+
+    if (redundant == ASSIGN_STATUS (arg_node)) {
+        if (N_return == ASSIGN_INSTRTYPE (arg_node))
+            ASSIGN_STATUS (arg_node) = active;
+        else {
             for (i = 0; i < VARNO; i++) {
-                if (CheckMask (arg_info->mask[4], arg_node->mask[0], VARNO))
-                    needed = 1;
-            }
-            if (needed)
-                OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* gen new LU-mask */
-            OrMask (arg_info->mask[4], oldmask[2], VARNO);
-            arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-        }
-        break;
-    case N_cond:
-        if (CheckMask (arg_info->mask[4], arg_node->mask[0], VARNO) && !TRAV_1) {
-            DBUG_PRINT ("DEAD",
-                        ("Removed node: %08x in line %d", arg_node, arg_node->lineno));
-            PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-            PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
-            if (olditype != N_fundef)
-                MinusMask (arg_info->mask[4], arg_node->mask[1], VARNO);
-            return_node = arg_node->node[1]; /* remove this assignment */
-            arg_node->node[1] = NULL;
-            arg_node->nnode = 1;
-            FreeTree (arg_node);
-            dead_expr++;
-        } else {
-            if (!TRAV_1)
-                arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-            if (!TRAV_1) {
-                MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-                MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-            }
-        }
-        break;
-    case N_let:
-        if (arg_node->node[0]->node[0]->nodetype == N_with) {
-            if (CheckMask (arg_info->mask[4], arg_node->mask[0], VARNO) && !TRAV_1) {
-                DBUG_PRINT ("DEAD", ("Removed node: %08x in line %d", arg_node,
-                                     arg_node->lineno));
-                PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-                PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
-                if (olditype != N_fundef)
-                    MinusMask (arg_info->mask[4], arg_node->mask[1], VARNO);
-                return_node = arg_node->node[1]; /* remove this assignment */
-                arg_node->node[1] = NULL;
-                arg_node->nnode = 1;
-                FreeTree (arg_node);
-                dead_expr++;
-            } else {
-                if (TRAV_1) {
-                    arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-                }
-                arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-                if (!TRAV_1) {
-                    MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-                    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+                if (0 != ASSIGN_DEFMASK (arg_node)[i] && INFO_ACT[i]) {
+                    ASSIGN_STATUS (arg_node) = active;
+                    INFO_NEWACT = TRUE;
+                    DBUG_PRINT ("DCR", ("Assignment marked active in line %d",
+                                        NODE_LINE (arg_node)));
                 }
             }
-            break;
-        }
-    default:
-        if (CheckMask (arg_info->mask[4], arg_node->mask[0], VARNO) && !TRAV_1) {
-            DBUG_PRINT ("DEAD",
-                        ("Removed node: %08x in line %d", arg_node, arg_node->lineno));
-            PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
-            PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
-            if (olditype != N_fundef)
-                MinusMask (arg_info->mask[4], arg_node->mask[1], VARNO);
-            return_node = arg_node->node[1]; /* remove this assignment */
-            arg_node->node[1] = NULL;
-            arg_node->nnode = 1;
-            FreeTree (arg_node);
-            dead_expr++;
-        } else {
-            if (!TRAV_1)
-                arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-            If3_2Mask (arg_info->mask[4], arg_node->mask[1], arg_node->mask[0], VARNO);
         }
     }
-    DBUG_RETURN (return_node);
-}
 
-/*
- *
- *  functionname  : DEADloop
- *  arguments     : 1) ptr to while-node
- *                  2) ptr to info_node
- *                  R) not modified 1)
- *  description   : traverse only body of loop.
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *
-DEADloop (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("DEADloop");
-    DBUG_ASSERT ((arg_node->node[1] != NULL), "While-expr. without body.");
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : DEADcond
- *  arguments     : 1) ptr to cond-node
- *                  2) ptr to info_node
- *                  R) node 1) without dead code in subtrees then and else.
- *  description   : if TRAV_1 == 1 information gathering phase, see DEADassign.
- *                  otherwise delete whole then- or else- subtrees or traverse into it.
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav, PlusMask, GenMask
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *
-DEADcond (node *arg_node, node *arg_info)
-{
-    long *oldmask[4];
-    long *tmp;
-
-    DBUG_ENTER ("DEADcond");
-    if (TRAV_1) {
-        oldmask[2] = DupMask (arg_info->mask[4], VARNO); /* save LU-mask */
-
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav then-subtree */
-
-        tmp = DupMask (oldmask[2], VARNO);
-        OrMask (oldmask[2], arg_info->mask[4], VARNO); /* update old LU-mask */
-        arg_info->mask[4] = tmp;                       /* restore old LU-mask */
-
-        arg_node->node[2] = Trav (arg_node->node[2], arg_info); /* Trav else-subtree */
-
-        OrMask (arg_info->mask[4], oldmask[2], VARNO); /* calculate new LU-MASK */
-        FREE (oldmask[2]);
-        OrMask (arg_info->mask[4], arg_node->mask[1],
-                VARNO); /* consider used variables */
-    }                   /* in the condition        */
-    else {
-        oldmask[3] = DupMask (arg_info->mask[4], VARNO);
-        if (arg_node->node[1] != NULL) {
-            if (MaskIsNotZero (arg_node->node[1]->mask[0], VARNO)
-                && CheckMask (arg_info->mask[4], arg_node->node[1]->mask[0], VARNO)) {
-                FreeTree (arg_node->node[1]->node[0]);
-                arg_node->node[1]->node[0] = MakeNode (N_empty);
-                PlusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
-                PlusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
-                MinusMask (arg_node->node[1]->mask[0], arg_node->node[1]->mask[0], VARNO);
-                MinusMask (arg_node->node[1]->mask[1], arg_node->node[1]->mask[1], VARNO);
-                arg_node->node[1]->mask[4] = DupMask (oldmask[3], VARNO);
-                dead_expr++;
-            } else {
-                /* store later used variables in node */
-                arg_node->node[1]->mask[4] = DupMask (oldmask[3], VARNO);
-                /* save old dead def. variables */
-                oldmask[0] = arg_info->mask[0];
-                /* and gather a new set */
-                arg_info->mask[0] = GenMask (VARNO);
-                /* save old dead used variables */
-                oldmask[1] = arg_info->mask[1];
-                /* and gather a new set */
-                arg_info->mask[1] = GenMask (VARNO);
-
-                arg_node->node[1]
-                  = Trav (arg_node->node[1], arg_info); /* Trav then-subtree */
-
-                /* consider removed definitions in current and lokal def_mask */
-                MinusMask (arg_node->node[1]->mask[0], arg_info->mask[0], VARNO);
-                PlusMask (arg_info->mask[0], oldmask[0], VARNO);
-                FREE (oldmask[0]);
-                /* consider removed usages in current and lokal used_mask */
-                MinusMask (arg_node->node[1]->mask[1], arg_info->mask[1], VARNO);
-                PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-                FREE (oldmask[1]);
-                /* save later used variables for then part of the condition */
-                oldmask[2] = arg_info->mask[4];
+    if (active == ASSIGN_STATUS (arg_node)) {
+        if (NULL != (tmp = GetCompoundNode (arg_node))) {
+            switch (NODE_TYPE (tmp)) {
+            case N_cond:
+            case N_while:
+            case N_do:
+                ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+                break;
+            case N_with:
+                ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+                i = VARDEC_VARNO (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (arg_node))));
+                INFO_ACT[i] = FALSE;
+                break;
+            default:
+                DBUG_ASSERT ((FALSE), "Compound-node not implemented for DCR");
+                break;
+            }
+        } else {
+            for (i = 0; i < VARNO; i++) {
+                if (0 != ASSIGN_DEFMASK (arg_node)[i])
+                    INFO_ACT[i] = FALSE;
+                if (0 != ASSIGN_USEMASK (arg_node)[i])
+                    INFO_ACT[i] = TRUE;
             }
         }
-        if (arg_node->node[2] != NULL) {
-            /* later used vaiables are the same in the else- as in the then-subtree */
-            arg_info->mask[4] = DupMask (oldmask[3], VARNO);
-            if (MaskIsNotZero (arg_node->node[2]->mask[0], VARNO)
-                && CheckMask (arg_info->mask[4], arg_node->node[2]->mask[0], VARNO)) {
-                FreeTree (arg_node->node[2]->node[0]);
-                arg_node->node[2]->node[0] = MakeNode (N_empty);
-                PlusMask (arg_info->mask[0], arg_node->node[2]->mask[0], VARNO);
-                PlusMask (arg_info->mask[1], arg_node->node[2]->mask[1], VARNO);
-                MinusMask (arg_node->node[2]->mask[0], arg_node->node[2]->mask[0], VARNO);
-                MinusMask (arg_node->node[2]->mask[1], arg_node->node[2]->mask[1], VARNO);
-                arg_node->node[2]->mask[4] = DupMask (oldmask[3], VARNO);
-                dead_expr++;
-            } else {
-                /* store later used variables in node */
-                arg_node->node[2]->mask[4] = DupMask (oldmask[3], VARNO);
-                /* Save old dead def. variables */
-                oldmask[0] = arg_info->mask[0];
-                /* and gather a new set */
-                arg_info->mask[0] = GenMask (VARNO);
-                /* Save old dead used variables */
-                oldmask[1] = arg_info->mask[1];
-                /* and gather a new set */
-                arg_info->mask[1] = GenMask (VARNO);
-
-                arg_node->node[2]
-                  = Trav (arg_node->node[2], arg_info); /* Trav else-subtree */
-
-                /* consider removed definitions in current and previous def_mask */
-                MinusMask (arg_node->node[2]->mask[0], arg_info->mask[0], VARNO);
-                PlusMask (arg_info->mask[0], oldmask[0], VARNO);
-                FREE (oldmask[0]);
-                /* consider removed usages in current and previous used_mask */
-                MinusMask (arg_node->node[2]->mask[1], arg_info->mask[1], VARNO);
-                PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-                FREE (oldmask[1]);
-            }
-        }
-        if (arg_node->node[1] != NULL) {
-            OrMask (arg_info->mask[4], oldmask[2], VARNO);
-            FREE (oldmask[2]);
-        }
-        arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-        OrMask (arg_info->mask[4], arg_node->mask[1], VARNO);
-        OrMask (arg_info->mask[4], oldmask[3], VARNO);
-        FREE (oldmask[3]);
     }
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  : DEADblock
- *  arguments     : 1) ptr to block-node
- *                  2) ptr to info-node
- *                  R) not modified 1)
- *  description   : Only traverse body of the block
- *  global vars   : syntax_tree, info_node
+ *  functionname  : ACTcond
+ *  arguments     : 1) N_cond - node
+ *                  2) N_info - node
+ *                  R) N_cond - node
+ *  description   : determines active variables in then and else subtrees
+ *  global vars   : ---
  *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
+ *  external funs : Trav     (traverse.h) - higher order traverse function
+ *  macros        : INFO_ACT, INFO_VARNO, COND_THEN, COND_ELSE, FREE
+ *                  COND_THENDEFMASK, COND_ELSEDEFMASK, COND_CONDUSEMASK
  *
- *  remarks       :
+ *  remarks       : --
  *
  */
 node *
-DEADblock (node *arg_node, node *arg_info)
+ACTcond (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("OPTblock");
-    if (arg_node->node[0] != NULL)
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Dead-Code-Removal */
+    long *old_INFO_ACT, *then_ACT, *else_ACT;
+    int i;
+
+    DBUG_ENTER ("ACTcond");
+    old_INFO_ACT = DupMask (INFO_ACT, INFO_VARNO);
+    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    then_ACT = INFO_ACT;
+    INFO_ACT = DupMask (old_INFO_ACT, INFO_VARNO);
+    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    else_ACT = INFO_ACT;
+    INFO_ACT = old_INFO_ACT;
+
+    for (i = 0; i < VARNO; i++) {
+        INFO_ACT[i]
+          = ((INFO_ACT[i]
+              && !(COND_THENDEFMASK (arg_node)[i] || COND_ELSEDEFMASK (arg_node)[i]))
+             || then_ACT[i] || else_ACT[i] || COND_CONDUSEMASK (arg_node)[i]);
+    }
+
+    FREE (then_ACT);
+    FREE (else_ACT);
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  : DEADwith
- *  arguments     : 1) ptr to with-node
- *                  2) ptr to info-node
- *                  R) modified 1)
+ *  functionname  : DCRcond
+ *  arguments     : 1) N_cond - node
+ *                  2) N_info - node
+ *                  R) N_cond - node
+ *  description   : then and else subrees will be traversed and mask's will be updated
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
+ *  macros        : COND_THENINSTR, COND_ELSEINSTR
+ *
+ *  remarks       : --
+ *
+ */
+node *
+DCRcond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DCRcond");
+    COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
+    COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : ACTdo
+ *  arguments     : 1) N_do - node
+ *                  2) N_info - node
+ *                  R) N_do - node
+ *  description   : determines active assign-node in do-body
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : Trav     (traverse.h) - higher order traverse function
+ *  macros        : INFO_VARNO, DO_TERMMASK, INFO_ACT, TRUE, FALSE, INFO_NEWACT,
+ *                  INFO_TRAVTYPE, DO_INSTR
+ *
+ *  remarks       : --
+ *
+ */
+node *
+ACTdo (node *arg_node, node *arg_info)
+{
+    int i;
+    int old_newact;
+    nodetype old_nodetype;
+
+    DBUG_ENTER ("ACTdo");
+    for (i = 0; i < INFO_VARNO; i++) {
+        if (0 < DO_TERMMASK (arg_node)[i])
+            INFO_ACT[i] = TRUE;
+    }
+
+    old_newact = INFO_NEWACT;
+    old_nodetype = INFO_TRAVTYPE;
+    INFO_TRAVTYPE = N_assign;
+    do {
+        INFO_NEWACT = FALSE;
+
+        DBUG_PRINT ("DCR", ("Travers do-body"));
+        DO_INSTR (arg_node) = Trav (DO_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("DCR", ("Travers do-body END"));
+
+        if (INFO_NEWACT)
+            old_newact = TRUE;
+        INFO_TRAVTYPE = N_do;
+    } while (INFO_NEWACT);
+
+    INFO_TRAVTYPE = old_nodetype;
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : DCRdo
+ *  arguments     : 1) N_do - node
+ *                  2) N_info - node
+ *                  R) N_do - node
+ *  description   : assignment-block will be traversed and mask's will be updated
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
+ *  macros        : DO_INSTR
+ *
+ *  remarks       : ---
+ *
+ */
+node *
+DCRdo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DCRdo");
+    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : ACTwhile
+ *  arguments     : 1) N_while - node
+ *                  2) N_info - node
+ *                  R) N_while - node
+ *  description   : determines active assign-node in while-body and
+ *                  calculates active variables for next assign-node
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav     (traverse.h) - higher order traverse function
+ *  macros        : INFO_ACT, INFO_VARNO, WHILE_TERMMASK, TRUE, INFO_NEWACT,
+                    INFO_TRAVTYPE, FALSE, WHILE_INSTR, FREE
+ *
+ *  remarks       : ---
+ *
+ */
+node *
+ACTwhile (node *arg_node, node *arg_info)
+{
+    int i;
+    int old_newact;
+    nodetype old_nodetype;
+    long *old_INFOACT;
+
+    DBUG_ENTER ("ACTwhile");
+    old_INFOACT = DupMask (INFO_ACT, INFO_VARNO);
+
+    for (i = 0; i < INFO_VARNO; i++) {
+        if (0 < WHILE_TERMMASK (arg_node)[i])
+            INFO_ACT[i] = TRUE;
+    }
+
+    old_newact = INFO_NEWACT;
+    old_nodetype = INFO_TRAVTYPE;
+    INFO_TRAVTYPE = N_assign;
+    do {
+        INFO_NEWACT = FALSE;
+
+        DBUG_PRINT ("DCR", ("Travers while-body"));
+        WHILE_INSTR (arg_node) = Trav (WHILE_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("DCR", ("Travers while-body END"));
+
+        if (INFO_NEWACT)
+            old_newact = TRUE;
+        INFO_TRAVTYPE = N_while;
+    } while (INFO_NEWACT);
+
+    for (i = 0; i < INFO_VARNO; i++)
+        INFO_ACT[i] = INFO_ACT[i] || WHILE_TERMMASK (arg_node)[i] || old_INFOACT[i];
+
+    FREE (old_INFOACT);
+    INFO_TRAVTYPE = old_nodetype;
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : DCRwhile
+ *  arguments     : 1) N_while - node
+ *                  2) N_info - node
+ *                  R) N_while - node
+ *  description   : assignment-block will be traversed and mask's will be updated
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
+ *  macros        : WHILE_INSTR
+ *
+ *  remarks       : --
+ *
+ */
+node *
+DCRwhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DCRwhile");
+    WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : ACTwith
+ *  arguments     : 1) N_with - node
+ *                  2) N_info - node
+ *                  R) N_with - node
+ *  arguments     :
  *  description   :
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav     (traverse.h) - higher order traverse function
+ *  macros        :
  *
  *  remarks       :
  *
  */
 node *
-DEADwith (node *arg_node, node *arg_info)
+ACTwith (node *arg_node, node *arg_info)
 {
-    long *oldmask[3];
+    int i;
+    long *old_INFOACT;
 
-    DBUG_ENTER ("OPTwith");
-    if (TRAV_1) {                                        /* first pass */
-        oldmask[2] = DupMask (arg_info->mask[4], VARNO); /* save LU-mask */
+    DBUG_ENTER ("ACTwith");
+    old_INFOACT = INFO_ACT;
+    INFO_ACT = GenMask (INFO_VARNO);
 
-        if ((arg_node->node[1]->nodetype == N_genarray)
-            || (arg_node->node[1]->nodetype == N_modarray))
-            arg_node->node[1]->node[1]
-              = Trav (arg_node->node[1]->node[1], arg_info); /* Trav body */
-        else
-            arg_node->node[1]->node[0]
-              = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = Trav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = Trav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = Trav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = Trav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info);
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
+        break;
+    }
 
-        OrMask (arg_info->mask[4], oldmask[2], VARNO); /* calculate new LU-MASK */
-        FREE (oldmask[2]);                             /* consider used variables in */
-        OrMask (arg_info->mask[4], arg_node->node[0]->mask[1],
-                VARNO); /* generator expr. */
-        OrMask (arg_info->mask[4], arg_node->node[1]->mask[1],
-                VARNO); /* gen-mod-fold expr. */
-    } else {            /* second pass */
-        arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
-        oldmask[0] = arg_info->mask[0];
-        oldmask[1] = arg_info->mask[1];
-        arg_info->mask[0] = GenMask (VARNO);
-        arg_info->mask[1] = GenMask (VARNO);
+    for (i = 0; i < INFO_VARNO; i++) {
+        INFO_ACT[i] = INFO_ACT[i] || (old_INFOACT[i] && !(WITH_GENDEFMASK (arg_node)[i]))
+                      || WITH_GENUSEMASK (arg_node)[i]
+                      || WITH_OPERATORUSEMASK (arg_node)[i];
+    }
 
-        if ((arg_node->node[1]->nodetype == N_genarray)
-            || (arg_node->node[1]->nodetype == N_modarray))
-            arg_node->node[1]->node[1]
-              = Trav (arg_node->node[1]->node[1], arg_info); /* Trav body */
-        else
-            arg_node->node[1]->node[0]
-              = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
+    FREE (old_INFOACT);
+    DBUG_RETURN (arg_node);
+}
 
-        MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-        MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-        PlusMask (arg_info->mask[0], oldmask[0], VARNO);
-        PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-        FREE (oldmask[0]);
-        FREE (oldmask[1]);
-        OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
-        OrMask (arg_info->mask[4], arg_node->node[1]->mask[1], VARNO);
+/*
+ *
+ *  functionname  : DCRwith
+ *  arguments     : 1) N_with - node
+ *                  2) N_info - node
+ *                  R) N_with - node
+ *  description   : with-block will be traversed and mask's will be updated
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
+ *  macros        : NODE_TYPE, WITH_OPERATOR, WITH_OPERATOR, BLOCK_INSTR,
+ *                  GENARRAY_BODY, MODARRAY_BODY, FOLDPRF_BODY, FOLDFUN_BODY
+ *
+ *  remarks       : ---
+ *
+ */
+node *
+DCRwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DCRwith");
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
+        break;
     }
     DBUG_RETURN (arg_node);
 }
