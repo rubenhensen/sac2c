@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2002/08/09 13:16:43  dkr
+ * cwc_tab and CWCmodul, CWCfundef added
+ *
  * Revision 3.85  2002/08/07 13:49:37  dkr
  * COMP2With added
  *
@@ -190,7 +193,7 @@
  *
  *   ssaili_tab      comp2_tab       precomp2_tab    insvd_tab
  *   crtwrp_tab      wls_tab         precomp4_tab    al_tab4
- *   hd_tab          nt2ot_tab       unused_tab7     unused_tab8
+ *   hd_tab          nt2ot_tab       cwc_tab         unused_tab8
  *   unused_tab9     unused_tab10    unused_tab11    unused_tab12
  *   unused_tab13    unused_tab14    unused_tab15    unused_tab16
  *
@@ -599,8 +602,8 @@
 #ifndef NIFnt2ot
 #define NIFnt2ot(it_nt2ot)
 #endif
-#ifndef NIFunused7
-#define NIFunused7(it_unused7)
+#ifndef NIFcwc
+#define NIFcwc(it_cwc)
 #endif
 #ifndef NIFunused8
 #define NIFunused8(it_unused8)
@@ -669,7 +672,7 @@
   it_ssalur, it_ssawlt, it_ssawli, it_ssawlf,                                             \
                                                                                           \
   it_ssaili, it_comp2, it_precomp2, it_insvd, it_crtwrp, it_wls, it_precomp4, it_al,      \
-  it_hd, it_nt2ot, it_unused7, it_unused8, it_unused9, it_unused10, it_unused11,          \
+  it_hd, it_nt2ot, it_cwc, it_unused8, it_unused9, it_unused10, it_unused11,              \
   it_unused12, it_unused13, it_unused14, it_unused15, it_unused16,                        \
                                                                                           \
   nnode)                                                                                  \
@@ -729,9 +732,9 @@
                                                       it_crtwrp) NIFwls (it_wls)          \
                                                       NIFprecomp4 (it_precomp4) NIFal (   \
                                                         it_al) NIFhd (it_hd)              \
-                                                        NIFnt2ot (it_nt2ot) NIFunused7 (  \
-                                                          it_unused7)                     \
-                                                          NIFunused8 (it_unused8)         \
+                                                        NIFnt2ot (it_nt2ot)               \
+                                                          NIFcwc (it_cwc) NIFunused8 (    \
+                                                            it_unused8)                   \
                                                             NIFunused9 (it_unused9)       \
                                                               NIFunused10 (it_unused10)   \
                                                                 NIFunused11 (             \
@@ -993,7 +996,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, COMP2Modul, PREC2modul, TravSons, CRTWRPmodul, TravSons, PREC4modul,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, CWCmodul, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 5),
 
   NIF (N_typedef, "N_typedef", IMtypedef, TravSons, PrintTypedef, TravSons, TravSons,
@@ -1116,7 +1119,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLFfundef,
 
        SSAILIfundef, COMP2Fundef, PREC2fundef, INSVDfundef, CRTWRPfundef, WLSfundef,
-       PREC4fundef, TravSons, TravSons, NT2OTfundef, TravSons, TravSons, TravSons,
+       PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
@@ -2561,7 +2564,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFhd
 #undef NIFnt2ot
-#undef NIFunused7
+#undef NIFcwc
 #undef NIFunused8
 
 #undef NIFunused9
