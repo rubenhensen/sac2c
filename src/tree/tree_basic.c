@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 1.28  2000/10/24 14:47:31  dkr
+ * MakeTypes1 added
+ * MakeType renamed into MakeTypes
+ *
  * Revision 1.27  2000/10/23 10:40:23  dkr
  * MakeId2 removed
  * MakeId1 renamed into MakeId_Copy
@@ -168,7 +173,9 @@ CreateCleanNode (nodetype nt)
 /*  Make-functions for non-node structures                                  */
 /*--------------------------------------------------------------------------*/
 
-/* attention: the given parameter chain of nums structs is set free here!!!  */
+/*
+ * attention: the given parameter chain of nums structs is set free here!!!
+ */
 shpseg *
 MakeShpseg (nums *numsp)
 {
@@ -182,8 +189,10 @@ MakeShpseg (nums *numsp)
 
     tmp->next = NULL;
 
-    /*   for (i=0;i<SHP_SEG_SIZE;i++) */
-    /*     SHPSEG_SHAPE(tmp,i)=-1; */
+#if 0
+  for (i=0;i<SHP_SEG_SIZE;i++)
+    SHPSEG_SHAPE(tmp,i)=-1;
+#endif
 
     i = 0;
     while (numsp != NULL) {
@@ -206,22 +215,37 @@ MakeShpseg (nums *numsp)
 /*--------------------------------------------------------------------------*/
 
 types *
-MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
+MakeTypes1 (simpletype btype)
 {
     types *tmp;
 
-    DBUG_ENTER ("MakeType");
+    DBUG_ENTER ("MakeTypes");
+
+    tmp = MakeTypes (btype, 0, NULL, NULL, NULL);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+types *
+MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
+{
+    types *tmp;
+
+    DBUG_ENTER ("MakeTypes2");
 
     tmp = ALLOCATE (types);
 
-    tmp->simpletype = basetype;
-    tmp->name = name;
-    tmp->name_mod = mod;
-    tmp->shpseg = shpseg;
-    tmp->dim = dim;
-    tmp->type_status = ST_regular;
+    TYPES_BASETYPE (tmp) = btype;
+    TYPES_NAME (tmp) = name;
+    TYPES_MOD (tmp) = mod;
+    TYPES_SHPSEG (tmp) = shpseg;
+    TYPES_DIM (tmp) = dim;
+    TYPES_STATUS (tmp) = ST_regular;
 
-    tmp->next = NULL;
+    TYPES_TDEF (tmp) = NULL;
+    TYPES_NEXT (tmp) = NULL;
 
     tmp->id = NULL;
     tmp->id_mod = NULL;
@@ -229,7 +253,6 @@ MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
 
     tmp->status = ST_regular;
     tmp->attrib = ST_regular;
-    tmp->tdef = NULL;
 
     DBUG_RETURN (tmp);
 }
