@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/09/02 17:48:32  skt
+ * added warning for use of DFR with SSA-form
+ *
  * Revision 3.11  2004/08/09 08:31:47  ktr
  * Fold functions are no longer removed in EMM as they are used by MT.
  *
@@ -234,9 +237,18 @@ DFRfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("DFRfundef");
 
     if (INFO_DFR_SPINE (arg_info)) {
-
         DBUG_PRINT ("DFR",
                     ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
+
+        /* a warning for using DFR with SSA */
+        if ((FUNDEF_STATUS (arg_node) == ST_dofun)
+            || (FUNDEF_STATUS (arg_node) == ST_whilefun)
+            || (FUNDEF_STATUS (arg_node) == ST_condfun)) {
+            if (FUNDEF_USED (arg_node) > 1) {
+                SYSWARN (("Lac-functions, which are used more than once aren't handled "
+                          "correctly by DeadFunctionRemoval"));
+            }
+        }
 
         /* remark: main is always tagged as ST_exported! */
         if ((FUNDEF_STATUS (arg_node) == ST_exported)
