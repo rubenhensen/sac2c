@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/11/22 14:01:39  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.36  2004/11/21 21:30:33  ktr
  * moved some typedefs from NameTuples.h to types.h
  *
@@ -691,5 +694,56 @@ typedef enum {
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
 } unique_class_t;
+
+/*
+ * moved from shape.h
+ */
+
+typedef struct SHAPE shape;
+
+/*
+ * moved from constant.h
+ */
+
+typedef struct CONSTANT constant;
+typedef constant *(*monCF) (constant *);
+typedef constant *(*binCF) (constant *, constant *);
+typedef constant *(*triCF) (constant *, constant *, constant *);
+
+/*
+ * moved from basecv.h
+ */
+
+typedef constant *(*basecvfunptr) (shape *shp);
+
+/*
+ * moved from cv2cv.h
+ */
+
+typedef void (*cv2cvfunptr) (void *, int, int, void *, int);
+
+/*
+ * moved from cv2scalar.h
+ */
+
+typedef node *(*cv2scalarfunptr) (void *, int);
+
+/*
+ * moved from cv2str.h
+ */
+
+typedef char *(*cv2strfunptr) (void *, int, int, int);
+
+/*
+ * moved from zipcv.h
+ */
+
+typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
+
+/*
+ * moved from internal_lib.h
+ */
+typedef struct STR_BUF str_buf;
+typedef struct PTR_BUF ptr_buf;
 
 #endif /* _SAC_TYPES_H_ */
