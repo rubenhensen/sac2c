@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.180  2004/02/20 08:22:18  mwe
+ * MODUL_FUNDECS macro added
+ * added FUNDECS argument to MakeModul
+ *
  * Revision 3.179  2004/02/13 17:40:18  mwe
  * MODUL_FUNDECS added, moved other MODUL macros to dfmask[1,2,3]
  *
@@ -784,7 +788,7 @@ extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
  */
 
 extern node *MakeModul (char *name, file_type filetype, node *imports, node *types,
-                        node *objs, node *funs);
+                        node *objs, node *funs, node *fundecs);
 
 #define MODUL_NAME(n) (n->info.id)
 #define MODUL_FILETYPE(n) ((file_type) (n->varno))
