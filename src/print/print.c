@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.174  1998/03/26 18:37:41  srs
+ * modified WLI DBUG output in PrintNwith
+ *
  * Revision 1.173  1998/03/26 14:01:35  dkr
  * PrintNodeTree now supports the WL... nodes
  *
@@ -1927,10 +1930,11 @@ PrintNwith (node *arg_node, node *arg_info)
     DBUG_ASSERT (arg_info, "arg_info is NULL");
     buffer = arg_info->node[2];
 
-    DBUG_EXECUTE ("WLI", fprintf (outfile, "\n** WLI N_Nwith : (%d,%d,%d,%d,%d)\n",
-                                  NWITH_PARTS (arg_node), NWITH_REFERENCED (arg_node),
-                                  NWITH_REFERENCED_FOLD (arg_node),
-                                  NWITH_COMPLEX (arg_node), NWITH_FOLDABLE (arg_node)););
+    DBUG_EXECUTE ("WLI",
+                  fprintf (outfile, "\n** WLI N_Nwith : (%d,%d,%d,%d,%d,%d)\n",
+                           NWITH_PARTS (arg_node), NWITH_REFERENCED (arg_node),
+                           NWITH_REFERENCED_FOLD (arg_node), NWITH_COMPLEX (arg_node),
+                           NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
 
     /* check wether to use output format 1 (multiple
        NParts) or 2 (only one NPart) and use
