@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.39  2000/10/27 00:09:53  dkr
+ * Pfffff... typo corrected. I should go to bed now 8-(((
+ *
  * Revision 1.38  2000/10/27 00:04:37  dkr
  * Ups ... changes of revision 1.35 are missing in the current revision.
  * This is fixed now.
@@ -552,7 +555,7 @@ DupNodelist_ (nodelist *nl, node *arg_info)
     } else {
         new_nl = MakeNodelist (SearchInLUT (INFO_DUP_LUT (arg_info), NODELIST_NODE (nl)),
                                NODELIST_STATUS (nl),
-                               DupNodelist (NODELIST_NEXT (nl), arg_info));
+                               DupNodelist_ (NODELIST_NEXT (nl), arg_info));
         NODELIST_ATTRIB (new_nl) = NODELIST_ATTRIB (nl);
     }
 
