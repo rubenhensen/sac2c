@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/05/05 12:33:03  srs
+ * inserted opt_wlt
+ *
  * Revision 1.12  1998/04/29 17:11:22  dkr
  * added new compiler phases
  *
@@ -182,8 +185,11 @@ int opt_cse = 1;
 int opt_dfr = 1;
 /* enable/disable dead function removal */
 
+int opt_wlt = 1;
+/* enable/disable withloop transformations */
+
 int opt_wlf = 1;
-/* enable/disable with loop folding */
+/* enable/disable withloop folding */
 
 int opt_ive = 1;
 /* enable/disable index vector elimination  */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/05/05 12:32:27  srs
+ * inserted opt_wlt
+ *
  * Revision 1.24  1998/04/25 12:36:44  sbs
  * sorry, I wrote level instead of indent 8-(
  *
@@ -135,6 +138,7 @@ extern int opt_inl;
 extern int opt_unr;
 extern int opt_uns;
 extern int opt_cse;
+extern int opt_wlt;
 extern int opt_wlf;
 extern int opt_ae;
 extern int opt_ive;
