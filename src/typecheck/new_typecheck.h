@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/08/30 16:36:45  dkr
+ * NewTypeCheck_Expr() added
+ *
  * Revision 3.4  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -28,6 +31,8 @@
 #include "internal_lib.h"
 
 extern node *NewTypeCheck (node *arg_node);
+extern ntype *NewTypeCheck_Expr (node *arg_node);
+
 extern node *NTCtypedef (node *arg_node, node *arg_info);
 extern node *NTCmodul (node *arg_node, node *arg_info);
 extern node *NTCfundef (node *arg_node, node *arg_info);
