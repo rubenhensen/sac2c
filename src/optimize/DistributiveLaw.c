@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.8  2003/04/23 19:53:44  mwe
+ * support for F_add_AxA,... and F_mul_AxA,... added
+ *
  * Revision 1.7  2003/04/10 21:26:06  mwe
  * bug in RemoveMostFrequentNode removed
  *
@@ -363,7 +366,8 @@ GetNeutralElement (node *op, node *arg_info)
     if (NODE_TYPE (op) == N_prf) {
 
         /* is 'op' a supported operator? */
-        if (PRF_PRF (op) == F_add_SxS) {
+        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_AxS)
+            || (PRF_PRF (op) == F_add_SxA) || (PRF_PRF (op) == F_add_AxA)) {
 
             /* choose correct basetype of the neutral element */
             if (TYPES_BASETYPE (INFO_DL_TYPE (arg_info)) == T_int) {
@@ -383,7 +387,8 @@ GetNeutralElement (node *op, node *arg_info)
         }
 
         /* is 'op' a supported operator? */
-        else if (PRF_PRF (op) == F_mul_SxS) {
+        else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_AxS)
+                 || (PRF_PRF (op) == F_mul_SxA) || (PRF_PRF (op) == F_mul_AxA)) {
 
             /* choose correct basetype of the neutral element */
             if (TYPES_BASETYPE (INFO_DL_TYPE (arg_info)) == T_int) {
@@ -448,11 +453,13 @@ ExistKnownNeutralElement (node *op)
 
     if (NODE_TYPE (op) == N_prf) {
 
-        if (PRF_PRF (op) == F_add_SxS) {
+        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_AxS)
+            || (PRF_PRF (op) == F_add_SxA) || (PRF_PRF (op) == F_add_AxA)) {
 
             ret = TRUE;
 
-        } else if (PRF_PRF (op) == F_mul_SxS) {
+        } else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_SxA)
+                   || (PRF_PRF (op) == F_mul_AxS) || (PRF_PRF (op) == F_mul_AxA)) {
 
             ret = TRUE;
 
@@ -540,7 +547,13 @@ CheckOperator (node *operator, node *arg_info )
 
         switch (PRF_PRF (operator)) {
         case F_add_SxS:
+        case F_add_AxS:
+        case F_add_SxA:
+        case F_add_AxA:
         case F_mul_SxS:
+        case F_mul_AxS:
+        case F_mul_SxA:
+        case F_mul_AxA:
         case F_and:
         case F_or:
         case F_max:
@@ -628,9 +641,15 @@ GetPriority (node *operator)
 
         switch (PRF_PRF (operator)) {
         case F_add_SxS:
+        case F_add_AxS:
+        case F_add_AxA:
+        case F_add_SxA:
             priority = 6;
             break;
         case F_mul_SxS:
+        case F_mul_AxS:
+        case F_mul_AxA:
+        case F_mul_SxA:
             priority = 7;
             break;
         case F_min:
@@ -772,9 +791,42 @@ IsSameOperator (node *firstop, node *secondop)
 
         if (NODE_TYPE (firstop) == N_prf) {
 
-            if (PRF_PRF (firstop) == PRF_PRF (secondop))
-                is_same = TRUE;
-
+            switch (PRF_PRF (firstop)) {
+            case F_add_SxS:
+            case F_add_AxS:
+            case F_add_SxA:
+            case F_add_AxA: {
+                switch (PRF_PRF (secondop)) {
+                case F_add_SxS:
+                case F_add_AxS:
+                case F_add_SxA:
+                case F_add_AxA: {
+                    is_same = TRUE;
+                } break;
+                default:
+                    is_same = FALSE;
+                }
+            } break;
+            case F_mul_SxS:
+            case F_mul_AxS:
+            case F_mul_SxA:
+            case F_mul_AxA: {
+                switch (PRF_PRF (secondop)) {
+                case F_mul_SxS:
+                case F_mul_AxS:
+                case F_mul_SxA:
+                case F_mul_AxA: {
+                    is_same = TRUE;
+                } break;
+                default:
+                    is_same = FALSE;
+                }
+            } break;
+            default: {
+                if (PRF_PRF (firstop) == PRF_PRF (secondop))
+                    is_same = TRUE;
+            }
+            }
         } else if (NODE_TYPE (firstop) == N_ap) {
 
             if (AP_FUNDEF (firstop) == AP_FUNDEF (secondop))
@@ -959,7 +1011,7 @@ RegisterMultipleUsableNodes (node *arg_info)
     while (currentlist != NULL) {
 
         /*
-         * compare operator in COUNTLIST withe MAINOPERATOR
+         * compare operator in COUNTLIST with MAINOPERATOR
          */
         if (IsSameOperator (INFO_DL_MAINOPERATOR (arg_info),
                             DL_NODELIST_OPERATOR (currentlist))) {
@@ -1033,6 +1085,30 @@ AddNodeToOptimizedNodes (node *arg, node *arg_info)
     DBUG_RETURN (arg_info);
 }
 
+static bool
+IsAnArray (node *expr, node *arg_info)
+{
+
+    bool result;
+
+    DBUG_ENTER ("IsAnArray");
+
+    result = TRUE;
+
+    if (IsConstant (expr, arg_info))
+        result = FALSE;
+    else if (N_id == NODE_TYPE (expr)) {
+
+        if (!(TYPES_DIM (VARDEC_TYPE (ID_VARDEC (expr))) > 0))
+            result = FALSE;
+
+    } else {
+        DBUG_ASSERT ((FALSE), "Unexpected EXPRS_EXPR node!");
+    }
+
+    DBUG_RETURN (result);
+}
+
 /*****************************************************************************
  *
  * function:
@@ -1041,11 +1117,16 @@ AddNodeToOptimizedNodes (node *arg, node *arg_info)
  * description:
  *   This function creates and returns a new prf or ap node with the operator
  *   'op' and with exprs as the arguments.
+ *   'optype' shows which operands are scalar or arrays!
+ *   If 'optype' is 3: AxA
+ *   If 'optype' is 2: AxS
+ *   If 'optype' is 1: SxA
+ *   If 'optype' is 0: SxS
  *
  ****************************************************************************/
 
 static node *
-MakeOperatorNode (node *exprs, node *op)
+MakeOperatorNode (node *exprs, node *op, int optype)
 {
 
     node *new_op_node;
@@ -1057,7 +1138,30 @@ MakeOperatorNode (node *exprs, node *op)
 
     if (NODE_TYPE (op) == N_prf) {
 
-        new_op_node = MakePrf (PRF_PRF (op), exprs);
+        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_SxA)
+            || (PRF_PRF (op) == F_add_AxS) || (PRF_PRF (op) == F_add_AxA)) {
+
+            if (optype == 0)
+                new_op_node = MakePrf (F_add_SxS, exprs);
+            if (optype == 1)
+                new_op_node = MakePrf (F_add_SxA, exprs);
+            if (optype == 2)
+                new_op_node = MakePrf (F_add_AxS, exprs);
+            if (optype == 3)
+                new_op_node = MakePrf (F_add_AxA, exprs);
+        } else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_SxA)
+                   || (PRF_PRF (op) == F_mul_AxS) || (PRF_PRF (op) == F_mul_AxA)) {
+
+            if (optype == 0)
+                new_op_node = MakePrf (F_mul_SxS, exprs);
+            if (optype == 1)
+                new_op_node = MakePrf (F_mul_SxA, exprs);
+            if (optype == 2)
+                new_op_node = MakePrf (F_mul_AxS, exprs);
+            if (optype == 3)
+                new_op_node = MakePrf (F_mul_AxA, exprs);
+        } else
+            new_op_node = MakePrf (PRF_PRF (op), exprs);
 
     } else if (NODE_TYPE (op) == N_ap) {
 
@@ -1152,21 +1256,36 @@ MakeExprsNodeFromAssignNode (node *elem1)
  *   This function create a new assign-node with the newnode as an
  *   argument. The correct vardec-root-node is provided
  *   by the arg_info-node.
+ *   If 'flag' is 0: newnode contains scalar values
+ *   If 'flag' is 1: newnode contains an array
  *
  ****************************************************************************/
 
 static node *
-MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info)
+MakeAssignLetNodeFromCurrentNode (node *newnode, node *arg_info, int flag)
 {
 
     node *newvardec;
     types *type;
     char *newname1, *newname2;
+    shpseg *shp;
+    node *shpnode;
+    int shpint;
 
     DBUG_ENTER ("MakeAssignNodeFromExprsNode");
 
-    type = MakeTypes (TYPES_BASETYPE ((INFO_DL_TYPE (arg_info))),
-                      TYPES_DIM ((INFO_DL_TYPE (arg_info))), NULL, NULL, NULL);
+    if (flag == 0)
+        type
+          = MakeTypes (TYPES_BASETYPE ((INFO_DL_TYPE (arg_info))), 0, NULL, NULL, NULL);
+    else {
+
+        shpint = TYPES_DIM ((INFO_DL_TYPE (arg_info)));
+        shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_DL_TYPE (arg_info)), shpint);
+        shp = Array2Shpseg (shpnode, &shpint);
+
+        type = MakeTypes (TYPES_BASETYPE ((INFO_DL_TYPE (arg_info))),
+                          TYPES_DIM ((INFO_DL_TYPE (arg_info))), shp, NULL, NULL);
+    }
 
     newname1 = TmpVar ();
 
@@ -1215,7 +1334,11 @@ MakeAllNodelistnodesToAssignNodes (nodelist *list, node *arg_info)
                          "Unexpected node! No supported EXPR_EXPRS result");
 
             newnode = DupTree (node1);
-            newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info);
+
+            if (IsAnArray (newnode, arg_info))
+                newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+            else
+                newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
 
             NODELIST_NODE (list) = newnode;
         }
@@ -1351,8 +1474,30 @@ CommitAssignNodes (nodelist *list, node *arg_info)
             tmpnode = MakeExprsNodeFromAssignNode (node1);
             newnode = MakeExprsNodeFromAssignNode (node2);
             EXPRS_NEXT (newnode) = tmpnode;
-            newnode = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info));
-            newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info);
+
+            if (IsAnArray (EXPRS_EXPR (newnode), arg_info))
+                if (IsAnArray (EXPRS_EXPR (tmpnode), arg_info)) {
+
+                    newnode
+                      = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 3);
+                    newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+
+                } else {
+
+                    newnode
+                      = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 2);
+                    newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+                }
+            else if (IsAnArray (EXPRS_EXPR (tmpnode), arg_info)) {
+
+                newnode = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 1);
+                newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+
+            } else {
+
+                newnode = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 0);
+                newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
+            }
 
             /*
              * add used arguments to OPTIMIZEDNODES
@@ -1415,9 +1560,29 @@ IncludeMostFrequentNode (node *arg_info)
     node2 = MakeExprsNodeFromAssignNode (tmpnode);
     EXPRS_NEXT (node2) = node1;
 
-    newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info));
-    newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info);
+    if (IsAnArray (EXPRS_EXPR (node1), arg_info))
+        if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
 
+            newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 3);
+            newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+
+        } else {
+
+            newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 1);
+            newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+        }
+    else
+
+      if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
+
+        newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 2);
+        newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+
+    } else {
+
+        newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 0);
+        newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
+    }
     arg_info = AddNodeToOptimizedNodes (tmpnode, arg_info);
 
     NODELIST_NODE (INFO_DL_OPTLIST (arg_info)) = newnode;
@@ -1483,9 +1648,45 @@ IntegrateResults (node *arg_info)
         EXPRS_NEXT (new_optnode) = new_nonoptnode;
         if (NODE_TYPE (original) == N_ap)
             AP_ARGS (original) = new_optnode;
-        else
+        else {
             PRF_ARGS (original) = new_optnode;
 
+            if (IsAnArray (EXPRS_EXPR (new_optnode), arg_info))
+                if (IsAnArray (EXPRS_EXPR (new_nonoptnode), arg_info)) {
+                    if ((PRF_PRF (original) == F_add_SxS)
+                        || (PRF_PRF (original) == F_add_AxS)
+                        || (PRF_PRF (original) == F_add_SxA))
+                        PRF_PRF (original) = F_add_AxA;
+                    if ((PRF_PRF (original) == F_mul_SxS)
+                        || (PRF_PRF (original) == F_mul_AxS)
+                        || (PRF_PRF (original) == F_mul_SxA))
+                        PRF_PRF (original) = F_mul_AxA;
+                } else {
+                    if ((PRF_PRF (original) == F_add_SxS)
+                        || (PRF_PRF (original) == F_add_AxA)
+                        || (PRF_PRF (original) == F_add_SxA))
+                        PRF_PRF (original) = F_add_AxS;
+                    if ((PRF_PRF (original) == F_mul_SxS)
+                        || (PRF_PRF (original) == F_mul_AxA)
+                        || (PRF_PRF (original) == F_mul_SxA))
+                        PRF_PRF (original) = F_mul_AxS;
+                }
+            else if (IsAnArray (EXPRS_EXPR (new_nonoptnode), arg_info)) {
+                if ((PRF_PRF (original) == F_add_SxS) || (PRF_PRF (original) == F_add_AxS)
+                    || (PRF_PRF (original) == F_add_AxA))
+                    PRF_PRF (original) = F_add_SxA;
+                if ((PRF_PRF (original) == F_mul_SxS) || (PRF_PRF (original) == F_mul_AxS)
+                    || (PRF_PRF (original) == F_mul_AxA))
+                    PRF_PRF (original) = F_mul_SxA;
+            } else {
+                if ((PRF_PRF (original) == F_add_AxA) || (PRF_PRF (original) == F_add_AxA)
+                    || (PRF_PRF (original) == F_add_SxA))
+                    PRF_PRF (original) = F_add_SxS;
+                if ((PRF_PRF (original) == F_mul_AxA) || (PRF_PRF (original) == F_mul_AxA)
+                    || (PRF_PRF (original) == F_mul_SxA))
+                    PRF_PRF (original) = F_mul_SxS;
+            }
+        }
     } else {
 
         /*
@@ -1616,7 +1817,7 @@ RemoveMostFrequentNode (node *arg_info)
              */
 
             new_son = GetNeutralElement (INFO_DL_SECONDOPERATOR (arg_info), arg_info);
-            new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info);
+            new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 0);
 
             DL_EXPRS_FLAG (top_elem) = 0;
 
@@ -1635,7 +1836,11 @@ RemoveMostFrequentNode (node *arg_info)
             if (IsIdenticalNode (first_arg, INFO_DL_MOSTFREQUENTNODE (arg_info))) {
 
                 new_son = DupTree (second_arg);
-                new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info);
+
+                if (IsAnArray (EXPRS_EXPR (EXPRS_NEXT (top_elem)), arg_info))
+                    new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 1);
+                else
+                    new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 0);
 
             }
             /*
@@ -1644,7 +1849,11 @@ RemoveMostFrequentNode (node *arg_info)
             else if (IsIdenticalNode (second_arg, INFO_DL_MOSTFREQUENTNODE (arg_info))) {
 
                 new_son = DupTree (first_arg);
-                new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info);
+
+                if (IsAnArray (EXPRS_EXPR (top_elem), arg_info))
+                    new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 1);
+                else
+                    new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 0);
 
             } else {
                 DBUG_ASSERT (0 == 1, "No MOSTFREQUENTNODE found, invalid construction of "
@@ -1746,9 +1955,37 @@ RemoveMostFrequentNode (node *arg_info)
                  * create prf/ap-node and then assign-node
                  */
 
-                new_parent
-                  = MakeOperatorNode (new_parent, INFO_DL_SECONDOPERATOR (arg_info));
-                new_parent = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info);
+                if (IsAnArray (EXPRS_EXPR (new_parent), arg_info))
+                    if (IsAnArray (EXPRS_EXPR (EXPRS_NEXT (new_parent)), arg_info)) {
+
+                        new_parent
+                          = MakeOperatorNode (new_parent,
+                                              INFO_DL_SECONDOPERATOR (arg_info), 3);
+                        new_parent
+                          = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 1);
+
+                    } else {
+
+                        new_parent
+                          = MakeOperatorNode (new_parent,
+                                              INFO_DL_SECONDOPERATOR (arg_info), 2);
+                        new_parent
+                          = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 1);
+                    }
+                else if (IsAnArray (EXPRS_EXPR (EXPRS_NEXT (new_parent)), arg_info)) {
+
+                    new_parent = MakeOperatorNode (new_parent,
+                                                   INFO_DL_SECONDOPERATOR (arg_info), 1);
+                    new_parent
+                      = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 1);
+
+                } else {
+
+                    new_parent = MakeOperatorNode (new_parent,
+                                                   INFO_DL_SECONDOPERATOR (arg_info), 0);
+                    new_parent
+                      = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 0);
+                }
 
                 /*
                  * prepare for new loop-cycle
@@ -1912,8 +2149,31 @@ OptTravElems (node *arg_node, node *arg_info)
             newnode = node1;
             EXPRS_NEXT (newnode) = node2;
 
-            newnode = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info));
-            newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info);
+            if (IsAnArray (EXPRS_EXPR (node1), arg_info))
+                if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
+
+                    newnode
+                      = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 3);
+                    newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+
+                } else {
+
+                    newnode
+                      = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 2);
+                    newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+                }
+            else if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
+
+                newnode
+                  = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 1);
+                newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
+
+            } else {
+
+                newnode
+                  = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 0);
+                newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
+            }
 
             newlist = MakeNodelistNode (newnode, NULL);
 
@@ -2064,13 +2324,16 @@ FindNodeInList (nodelist *list, node *arg_node, node *operator)
                 /*
                  * are both operation the same?
                  */
-                if ((NODE_TYPE (operator) == N_prf)
-                    && (PRF_PRF (operator) == PRF_PRF (current_operator)))
-                    equal_op = TRUE;
 
-                if ((NODE_TYPE (operator) == N_ap)
-                    && (AP_FUNDEF (operator) == AP_FUNDEF (current_operator)))
-                    equal_op = TRUE;
+                /*	if ( (NODE_TYPE(operator) == N_prf) &&
+                 *   (PRF_PRF(operator) == PRF_PRF(current_operator)) )
+                 *equal_op = TRUE;
+                 *
+                 *if ( (NODE_TYPE(operator) == N_ap) &&
+                 *   (AP_FUNDEF(operator) == AP_FUNDEF(current_operator)) )
+                 *equal_op = TRUE;
+                 */
+                equal_op = IsSameOperator (operator, current_operator );
 
                 if (equal_op) {
 
@@ -2421,9 +2684,9 @@ DLassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DLassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
+    ASSIGN_STATUS (arg_node) = 1;
 
-        ASSIGN_STATUS (arg_node) = 1;
+    if (ASSIGN_NEXT (arg_node) != NULL) {
 
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -2466,12 +2729,12 @@ DLassign (node *arg_node, node *arg_info)
         /*
          * traverse in N_let-node
          */
-
-        if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_STATUS (arg_node) == 1)) {
-
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        }
     }
+    if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_STATUS (arg_node) == 1)) {
+
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
