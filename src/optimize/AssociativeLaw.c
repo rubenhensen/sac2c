@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/10/14 16:15:43  mwe
+ * F_add_AxA changed to F_add_SxS
+ *
  * Revision 1.8  2002/10/14 12:10:30  mwe
  * al_expr-counter activated
  *
@@ -311,8 +314,8 @@ IsAssociativeAndCommutative (node *arg_node)
 {
     DBUG_ENTER ("IsAssociativeAndCommutative");
     switch (PRF_PRF (arg_node)) {
-    case F_add_AxA:
-    case F_mul_AxA:
+    case F_add_SxS:
+    case F_mul_SxS:
     case F_max:
     case F_min:
     case F_and:
