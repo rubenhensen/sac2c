@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 2.10  2000/03/15 15:54:56  dkr
+ * VARDEC_OR_ARG_ACTCHN on left hand side is replaced by
+ * L_VARDEC_OR_ARG_ACTCHN
+ *
  * Revision 2.9  2000/02/08 16:23:33  dkr
  * fixed a bug in IdxNcode: declaration of index vector variable might
  * be a N_arg node!!
@@ -2255,7 +2259,7 @@ IdxNcode (node *arg_node, node *arg_info)
     idx_decl = IDS_VARDEC (NWITH_VEC (with));
     vinfo = VARDEC_OR_ARG_ACTCHN (idx_decl);
     NCODE_USE (arg_node) = vinfo;
-    VARDEC_OR_ARG_ACTCHN (idx_decl) = MakeVinfoDollar (CutVinfoChn (vinfo));
+    L_VARDEC_OR_ARG_ACTCHN (idx_decl, MakeVinfoDollar (CutVinfoChn (vinfo)));
 
     if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
         while (VINFO_FLAG (vinfo) != DOLLAR) {
