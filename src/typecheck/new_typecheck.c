@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/03/05 12:10:14  sbs
+ * changed the phi handling; changed the conditionals
+ * (now, SDs may be created here as well....)
+ *
  * Revision 3.36  2003/11/26 13:53:19  sbs
  * default value of new genarray WLs now is checked as well.
  *
@@ -33,103 +37,7 @@
  * (see comments in NTCcond!) but it is a good enough work-around
  * for the time being!
  *
- * Revision 3.28  2003/05/26 13:31:57  sbs
- * moved traversal of N_arg nodes from TypeCheckFunctionBody to NTCmodul.
- * Reason: correct N_avis nodes for args are in some situations needed for
- * dispatching fundefs, which may occur prior to type chekcing that very
- * function.
- *
- * Revision 3.27  2003/04/07 14:29:22  sbs
- * signature of TEMakeInfo extended ; scalar constants yield AKV types now 8-)
- *
- * Revision 3.26  2003/03/28 16:53:45  sbs
- * started doxygenizing...
- *
- * Revision 3.25  2002/10/30 12:12:51  sbs
- * NTCvardec added for converting old vardecs in ntype ones.
- *
- * Revision 3.24  2002/10/28 16:06:32  sbs
- * bug in NTCcast eliminated.
- *
- * Revision 3.23  2002/10/28 14:04:37  sbs
- * NTCcast added.
- *
- * Revision 3.22  2002/10/18 14:36:52  sbs
- * several additions made .
- * In particular, NTCobjdef added which generates ntypes for all
- * objdef nodes!
- *
- * Revision 3.21  2002/09/11 23:16:48  dkr
- * prf_name_string replaced by prf_string
- *
- * Revision 3.20  2002/09/09 19:39:15  dkr
- * prf_name_str renamed into prf_name_string
- *
- * Revision 3.19  2002/09/06 15:16:40  sbs
- * FUNDEF_RETURN now set properly?!
- *
- * Revision 3.18  2002/09/05 12:05:23  dkr
- * -b7:n2o added
- *
- * Revision 3.17  2002/09/05 09:44:09  dkr
- * NewTypeCheck_Expr() modified
- *
- * Revision 3.16  2002/09/04 12:59:46  sbs
- * type checking of arrays changed; now sig deps will be created as well.
- *
- * Revision 3.15  2002/09/03 14:41:45  sbs
- * DupTree machanism for duplicating condi funs established
- *
- * Revision 3.14  2002/08/31 04:57:09  dkr
- * NewTypeCheck_Expr() added
- *
- * Revision 3.13  2002/08/15 20:59:24  dkr
- * Lac2Fun(), CheckAvis() added for wrapper code
- *
- * Revision 3.12  2002/08/14 16:22:21  dkr
- * SSATransform() after CreateWrapperCode() added
- *
- * Revision 3.11  2002/08/09 13:00:43  dkr
- * call of CreateWrapperCode() added
- *
- * Revision 3.10  2002/08/06 08:26:49  sbs
- * some vars initialized to please gcc for the product version.
- *
- * Revision 3.9  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker !!
- *
- * Revision 3.8  2002/05/31 14:51:54  sbs
- * intermediate version to ensure compilable overall state.
- *
- * Revision 3.7  2002/03/12 15:15:24  sbs
- * wrapepr creation inserted.
- *
- * Revision 3.6  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.5  2001/05/17 11:34:07  sbs
- * return value of Free now used ...
- *
- * Revision 3.4  2001/05/17 09:20:42  sbs
- * MALLOC FREE aliminated
- *
- * Revision 3.3  2001/03/22 21:01:29  dkr
- * no changes done
- *
- * Revision 3.2  2001/03/22 20:39:02  dkr
- * include of tree.h eliminated
- *
- * Revision 3.1  2000/11/20 18:00:07  sacbase
- * new release made
- *
- * Revision 1.5  2000/06/23 13:58:57  dkr
- * functions for old with-loop removed (IdxGen, IdxWith)
- *
- * Revision 1.4  2000/03/15 15:59:08  dkr
- * SET_VARDEC_OR_ARG_COLCHN renamed to L_VARDEC_OR_ARG_COLCHN
- *
- * Revision 1.3  2000/01/26 17:28:10  dkr
- * type of traverse-function-table changed.
+ * ... [eliminated] ....
  *
  * Revision 1.1  1999/10/20 12:51:11  sbs
  * Initial revision
@@ -315,16 +223,25 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
     bool ok;
 #ifndef DBUG_OFF
     char *tmp_str;
+    node *arg;
 #endif
 
     DBUG_ENTER ("TypeCheckFunctionBody");
 
     FUNDEF_TCSTAT (fundef) = NTC_checking;
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (FUNDEF_RET_TYPE (fundef), FALSE, 0););
-    DBUG_PRINT ("NTC", ("type checking function \"%s\" return type %s",
-                        FUNDEF_NAME (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+    DBUG_PRINT ("NTC", ("type checking function \"%s\" with", FUNDEF_NAME (fundef)));
+    DBUG_EXECUTE (
+      "NTC", arg = FUNDEF_ARGS (fundef);
+
+      while (arg != NULL) {
+          tmp_str = TYType2String (AVIS_TYPE (ARG_AVIS (arg)), FALSE, 0);
+          DBUG_PRINT ("NTC", ("  -> argument type: %s", tmp_str));
+          tmp_str = Free (tmp_str);
+          arg = ARG_NEXT (arg);
+      } tmp_str
+      = TYType2String (FUNDEF_RET_TYPE (fundef), FALSE, 0);
+      DBUG_PRINT ("NTC", ("  -> return type %s", tmp_str)); tmp_str = Free (tmp_str););
 
     /**
      * One might think, that we first have to
@@ -396,7 +313,7 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
     DBUG_RETURN (fundef);
 }
 
-/* @ */
+/* @} */
 
 /**
  *
@@ -917,7 +834,8 @@ NTCvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("NTCvardec");
 
     if (TYPES_BASETYPE (VARDEC_TYPE (arg_node)) != T_unknown) {
-        AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYOldType2Type (VARDEC_TYPE (arg_node));
+        AVIS_TYPE (VARDEC_AVIS (arg_node))
+          = TYMakeAlphaType (TYOldType2Type (VARDEC_TYPE (arg_node)));
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -972,20 +890,135 @@ NTCassign (node *arg_node, node *arg_info)
 node *
 NTCcond (node *arg_node, node *arg_info)
 {
+    ntype *args;
+    ntype *res;
+    node *context_info;
+    te_info *info;
+
     DBUG_ENTER ("NTCcond");
 
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    args = TYMakeProductType (1, INFO_NTC_TYPE (arg_info));
+
+    context_info = MakeInfo ();
+    INFO_NTC_LAST_ASSIGN (context_info) = INFO_NTC_LAST_ASSIGN (arg_info);
+
+    info = TEMakeInfo (linenum, "cond", "", arg_node, context_info, NULL, NULL);
+
+    res = NTCCTComputeType (NTCCond, info, args);
+
+    args = TYFreeType (args);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCfcond(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCfcond (node *arg_node, node *arg_info)
+{
+    ids *lhs;
+    node *avis, *rhs1, *rhs2;
+    ntype *rhs1_type, *rhs2_type;
+    bool ok;
+
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp2_str;
+#endif
+
+    DBUG_ENTER ("NTCfcond");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let)
+                   && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+                   && (PRF_PRF (LET_EXPR (arg_node)) == F_phi),
+                 "illegal call of NTCfcond!");
+
+    lhs = LET_IDS (arg_node);
+    avis = IDS_AVIS (lhs);
+    rhs1 = PRF_ARG1 (LET_EXPR (arg_node));
+    rhs2 = PRF_ARG2 (LET_EXPR (arg_node));
 
     /**
-     * this is still buggy here:
-     * the predicate may be a not yet fixed alpha!
-     * In this case we have to create a signature-dependency
-     * => all this has to move into the ct_xxx section....
+     * collect the first phi-type => rhs1_type!
+     *
+     * Since this usually is a variable that is defined within a conditional
+     * (might be constant due to const propagation though) it may not have been
+     * assigned a proper type yet. Therefore, we cannot simply traverse the rhs,
+     * but we may have to insert a type variable instead. However, this may have
+     * happened due to a vardec already...
      */
-    TEAssureBoolS ("predicate", TYEliminateAlpha (INFO_NTC_TYPE (arg_info)));
+    if (NODE_TYPE (rhs1) == N_id) {
+        rhs1_type = AVIS_TYPE (ID_AVIS (rhs1));
+        if (rhs1_type == NULL) {
+            rhs1_type = TYMakeAlphaType (NULL);
+            AVIS_TYPE (ID_AVIS (rhs1)) = rhs1_type;
+        }
+    } else {
+        PRF_ARG1 (LET_EXPR (arg_node)) = Trav (rhs1, arg_info);
+        rhs1_type = INFO_NTC_TYPE (arg_info);
+    }
 
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    /**
+     * collect the second phi-type => rhs2_type!
+     */
+    if (NODE_TYPE (rhs2) == N_id) {
+        rhs2_type = AVIS_TYPE (ID_AVIS (rhs2));
+        if (rhs2_type == NULL) {
+            rhs2_type = TYMakeAlphaType (NULL);
+            AVIS_TYPE (ID_AVIS (rhs2)) = rhs2_type;
+        }
+    } else {
+        PRF_ARG1 (LET_EXPR (arg_node)) = Trav (rhs2, arg_info);
+        rhs2_type = INFO_NTC_TYPE (arg_info);
+    }
+
+    /**
+     * Now, we make the LHS a type var:
+     */
+    if (AVIS_TYPE (avis) == NULL) {
+        AVIS_TYPE (avis) = TYMakeAlphaType (NULL);
+
+        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+        DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+    }
+
+    /**
+     * introduce the following constraint:
+     *   rhs1_type <= lhs_type
+     */
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+    DBUG_EXECUTE ("NTC", tmp2_str = TYType2String (rhs1_type, FALSE, 0););
+    DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp2_str = Free (tmp_str););
+
+    ok = SSINewTypeRel (rhs1_type, AVIS_TYPE (avis));
+
+    /**
+     * introduce the following constraint:
+     *   rhs2_type <= lhs_type
+     */
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+    DBUG_EXECUTE ("NTC", tmp2_str = TYType2String (rhs2_type, FALSE, 0););
+    DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp2_str = Free (tmp_str););
+
+    ok = ok && SSINewTypeRel (rhs2_type, AVIS_TYPE (avis));
+
+    if (!ok) {
+        ABORT (linenum, ("nasty type error"));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1004,99 +1037,121 @@ NTCcond (node *arg_node, node *arg_info)
 node *
 NTClet (node *arg_node, node *arg_info)
 {
-    ntype *rhs_type;
-    node *avis;
+    ntype *rhs_type, *existing_type, *inferred_type;
     ids *lhs;
     int i;
     bool ok;
+
 #ifndef DBUG_OFF
-    char *tmp_str, *tmp2_str;
+    char *tmp_str;
 #endif
 
     DBUG_ENTER ("NTClet");
 
-    /*
-     * Infer the RHS type :
-     */
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-    rhs_type = INFO_NTC_TYPE (arg_info);
-
-    /*
-     * attach the RHS type(s) to the var(s) on the LHS:
-     */
-    lhs = LET_IDS (arg_node);
-
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
-        || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-            DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
-                         "fun ap yields more return values  than lhs vars available!");
-        } else {
-            if (CountIds (lhs) != 1) {
-                ABORT (linenum,
-                       ("%s yields 1 instead of %d return values",
-                        prf_string[PRF_PRF (LET_EXPR (arg_node))], CountIds (lhs)));
-            }
-        }
-        i = 0;
-        while (lhs) {
-            if (i < TYGetProductSize (rhs_type)) {
-
-                AVIS_TYPE (IDS_AVIS (lhs)) = TYGetProductMember (rhs_type, i);
-
-                DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)),
-                                                              FALSE, 0););
-                DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-                DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-            } else {
-                WARN (linenum,
-                      ("cannot infer type of \"%s\" as it corresponds to \"...\" "
-                       "return type -- relying on type declaration",
-                       IDS_NAME (lhs)));
-            }
-
-            i++;
-            lhs = IDS_NEXT (lhs);
-        }
-        TYFreeTypeConstructor (rhs_type);
-    } else {
-        /* lhs must be one ids only since rhs is not a function application! */
-        DBUG_ASSERT ((CountIds (lhs) == 1),
-                     "more than one lhs var without a function call on the rhs");
-        avis = IDS_AVIS (lhs);
+    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+        && (PRF_PRF (LET_EXPR (arg_node)) == F_phi)) {
         /*
-         * Now, we must check whether we do have a pseudo PHI function here
+         * we are dealing with a PHI target here:
          */
-        if (AVIS_SSAPHITARGET (avis) == PHIT_NONE) {
-            AVIS_TYPE (avis) = rhs_type;
+        arg_node = NTCfcond (arg_node, arg_info);
 
-            DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+    } else {
+
+        /*
+         * Infer the RHS type :
+         */
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        rhs_type = INFO_NTC_TYPE (arg_info);
+
+        /**
+         * attach the RHS type(s) to the var(s) on the LHS:
+         *
+         * However, the LHS may have a type already. This can be due to
+         * a) a vardec
+         * b) an fcond node that combines this var with another one in another
+         *    branch of a conditional!
+         * In both cases, we add the RHS type as a new <= constraint!
+         */
+        lhs = LET_IDS (arg_node);
+
+        if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
+            || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
+            if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+                DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
+                             "fun ap yields more return values  than lhs vars "
+                             "available!");
+            } else {
+                if (CountIds (lhs) != 1) {
+                    ABORT (linenum,
+                           ("%s yields 1 instead of %d return values",
+                            prf_string[PRF_PRF (LET_EXPR (arg_node))], CountIds (lhs)));
+                }
+            }
+            i = 0;
+            while (lhs) {
+                if (i < TYGetProductSize (rhs_type)) {
+
+                    existing_type = AVIS_TYPE (IDS_AVIS (lhs));
+                    inferred_type = TYGetProductMember (rhs_type, i);
+
+                    if (existing_type == NULL) {
+                        AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
+                    } else {
+                        DBUG_ASSERT (TYIsAlpha (existing_type),
+                                     "non-alpha type for LHS found!");
+                        ok = SSINewTypeRel (inferred_type, existing_type);
+                        if (!ok) {
+                            ABORT (NODE_LINE (arg_node),
+                                   ("component #%d of inferred RHS type (%s) does not "
+                                    "match %s",
+                                    i, TYType2String (inferred_type, FALSE, 0),
+                                    TYType2String (existing_type, FALSE, 0)));
+                        }
+                    }
+
+                    DBUG_EXECUTE ("NTC",
+                                  tmp_str = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)),
+                                                           FALSE, 0););
+                    DBUG_PRINT ("NTC",
+                                ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+                    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+                } else {
+                    WARN (linenum,
+                          ("cannot infer type of \"%s\" as it corresponds to \"...\" "
+                           "return type -- relying on type declaration",
+                           IDS_NAME (lhs)));
+                }
+
+                i++;
+                lhs = IDS_NEXT (lhs);
+            }
+            TYFreeTypeConstructor (rhs_type);
+        } else {
+
+            /* lhs must be one ids only since rhs is not a function application! */
+            DBUG_ASSERT ((CountIds (lhs) == 1),
+                         "more than one lhs var without a function call on the rhs");
+
+            existing_type = AVIS_TYPE (IDS_AVIS (lhs));
+            inferred_type = rhs_type;
+
+            if (existing_type == NULL) {
+                AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
+            } else {
+                DBUG_ASSERT (TYIsAlpha (existing_type), "non-alpha type for LHS found!");
+                ok = SSINewTypeRel (inferred_type, existing_type);
+                if (!ok) {
+                    ABORT (NODE_LINE (arg_node),
+                           ("component #%d of inferred RHS type (%s) does not match %s",
+                            i, TYType2String (inferred_type, FALSE, 0),
+                            TYType2String (existing_type, FALSE, 0)));
+                }
+            }
+
+            DBUG_EXECUTE ("NTC", tmp_str
+                                 = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
             DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
             DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-
-        } else {
-            /*
-             * we are dealing with a PHI target here:
-             */
-            if (AVIS_TYPE (avis) == NULL) {
-                AVIS_TYPE (avis) = TYMakeAlphaType (NULL);
-
-                DBUG_EXECUTE ("NTC",
-                              tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
-                DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-                DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-            }
-
-            DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
-            DBUG_EXECUTE ("NTC", tmp2_str = TYType2String (rhs_type, FALSE, 0););
-            DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
-            DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-            DBUG_EXECUTE ("NTC", tmp2_str = Free (tmp_str););
-
-            ok = SSINewTypeRel (rhs_type, AVIS_TYPE (avis));
-            if (!ok) {
-                ABORT (linenum, ("nasty type error"));
-            }
         }
     }
 
@@ -1185,6 +1240,7 @@ NTCap (node *arg_node, node *arg_info)
     old_info_chn = act_info_chn;
     act_info_chn = TEMakeInfo (linenum, "udf", FUNDEF_NAME (wrapper), wrapper,
                                INFO_NTC_LAST_ASSIGN (arg_info), NULL, act_info_chn);
+    DBUG_PRINT ("TEINFO", ("TE info %p created for udf ap %p", act_info_chn, arg_node));
     res = NTCCTComputeType (NTCFUN_udf, act_info_chn, args);
 
     act_info_chn = old_info_chn;
@@ -1214,6 +1270,8 @@ NTCprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NTCprf");
 
+    prf = PRF_PRF (arg_node);
+
     /*
      * First we collect the argument types. NTCexprs puts them into a product type
      * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
@@ -1233,7 +1291,6 @@ NTCprf (node *arg_node, node *arg_info)
     args = INFO_NTC_TYPE (arg_info);
     INFO_NTC_TYPE (arg_info) = NULL;
 
-    prf = PRF_PRF (arg_node);
     info = TEMakeInfo (linenum, "prf", prf_string[prf], NULL, NULL, NTCPRF_cffuntab[prf],
                        NULL);
     res = NTCCTComputeType (NTCPRF_funtab[prf], info, args);
@@ -1371,8 +1428,9 @@ NTCid (node *arg_node, node *arg_info)
 
     if (type == NULL) {
         /*
-         * There has been no assignment, so we have to look for
-         * a potential object definition:
+         * There has been no assignment, so we have to check
+         * a) whether this is a global object
+         * b) whether we are dealing with a _phi_ argument here
          */
         if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
             objdef = ID_OBJDEF (arg_node);
