@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2003/04/09 15:38:14  sbs
+ * CONeg added.
+ *
  * Revision 1.5  2001/05/17 14:16:21  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -633,5 +636,27 @@ COAbs (constant *a)
     DBUG_ENTER ("COAbs");
     res = COZipUnary (zipcv_abs, a, T_unknown);
     DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("COAbs", a, res););
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn constant *CONeg( constant *a)
+ *
+ *   @brief  negates all elements of a
+ *
+ *   @param a   array whose elements are to be negated
+ *   @return    the result of the negation
+ *
+ ******************************************************************************/
+
+constant *
+CONeg (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("CONeg");
+    res = COZipUnary (zipcv_neg, a, T_unknown);
+    DBUG_EXECUTE ("COOPS", DbugPrintUnaryOp ("CONeg", a, res););
     DBUG_RETURN (res);
 }

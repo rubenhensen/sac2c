@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2003/04/09 15:37:35  sbs
+ * CONeg added.
+ *
  * Revision 1.14  2003/04/08 12:27:09  sbs
  * new typedefs monCF and triCF added.
  *
@@ -188,5 +191,6 @@ extern constant *COToi (constant *a);
 extern constant *COTof (constant *a);
 extern constant *COTod (constant *a);
 extern constant *COAbs (constant *a);
+extern constant *CONeg (constant *a);
 
 #endif /* _constants_h */
