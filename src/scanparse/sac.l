@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/12/08 17:45:58  sbs
+ * Revision 1.7  1994/12/14 10:08:40  sbs
+ * typedef inserted
+ *
+ * Revision 1.6  1994/12/08  17:45:58  sbs
  * modules inserted
  *
  * Revision 1.5  1994/11/23  09:44:03  hw
@@ -88,6 +91,7 @@ int commlevel=0;
 "cat"                           {FILTER( CAT );}
 "psi"                           {FILTER( PSI );}
 
+"typedef"			{FILTER( TYPEDEF );}
 "main"				{FILTER( MAIN );}
 "return"			{FILTER( RETURN );}
 "if"				{FILTER( IF );}
