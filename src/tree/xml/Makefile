@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.5  2004/08/07 17:59:36  sah
+# added ast2check_node_h.xsl and
+# ast2check_node_c.xsl
+#
 # Revision 1.4  2004/08/07 16:23:07  sah
 # added some files
 #
@@ -33,7 +37,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
-          ../free_node.h ../free_attribs.h
+          ../free_node.h ../free_attribs.h \
+          ../check_node.h ../check_node.c
 
 all: $(TARGETS)
 
@@ -70,6 +75,14 @@ all: $(TARGETS)
 
 ../free_attribs.h: ast.xml ast2free_attribs_h.xsl
 	$(XSLTENGINE) ast2free_attribs_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../check_node.h: ast.xml ast2check_node_h.xsl
+	$(XSLTENGINE) ast2check_node_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../check_node.c: ast.xml ast2check_node_c.xsl
+	$(XSLTENGINE) ast2check_node_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
