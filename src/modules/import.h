@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1996/01/02 16:03:38  cg
+ * Revision 1.20  1996/01/05 12:34:42  cg
+ * added extern declarations for Nums2BoolArray and Nums2IntArray
+ *
+ * Revision 1.19  1996/01/02  16:03:38  cg
  * removed declarations of GenLinkerList() and GenExtmodlistList()
  *
  * Revision 1.18  1995/12/29  10:41:25  cg
@@ -111,5 +114,8 @@ extern node *Import (node *);
 
 extern void InsertClassType (node *);
 extern void AddSymbol (char *name, char *module, int symbkind);
+
+extern int *Nums2IntArray (int line, int size, nums *numsp);
+extern int *Nums2BoolArray (int line, int size, nums *numsp);
 
 #endif /* _sac_import_h */
