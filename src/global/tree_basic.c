@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/04/26 21:51:43  dkr
+ * MakeSPMD renamed to MakeSpmd
+ *
  * Revision 1.64  1998/04/25 12:36:03  dkr
  * NCODE_COPY is now initialized in MakeNCode
  *
@@ -1422,11 +1425,11 @@ MakeInfo ()
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeSPMD (node *region)
+MakeSpmd (node *region)
 {
     node *tmp;
 
-    DBUG_ENTER ("MakeSPMD");
+    DBUG_ENTER ("MakeSpmd");
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_spmd;
@@ -1438,7 +1441,7 @@ MakeSPMD (node *region)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeSync (node *region)
+MakeSync (node *region, int first)
 {
     node *tmp;
 
@@ -1447,6 +1450,7 @@ MakeSync (node *region)
 
     NODE_TYPE (tmp) = N_sync;
     SYNC_REGION (tmp) = region;
+    SYNC_FIRST (tmp) = first;
 
     DBUG_RETURN (tmp);
 }
