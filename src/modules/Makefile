@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1995/10/08 11:29:54  sbs
+# Revision 1.11  1995/10/20 09:28:12  cg
+# added analysis.c
+#
+# Revision 1.10  1995/10/08  11:29:54  sbs
 # make deps done
 #
 # Revision 1.9  1995/10/05  16:14:11  cg
@@ -38,7 +41,7 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../scanparse -I../print
 
-all: filemgr.o import.o sib.o implicittypes.o
+all: filemgr.o import.o sib.o implicittypes.o analysis.o
 
 filemgr.o: filemgr.c
 	$(CC) -o filemgr.o -c filemgr.c $(INCS)
@@ -52,33 +55,41 @@ sib.o: sib.c
 implicittypes.o: implicittypes.c
 	$(CC) -o implicittypes.o -c implicittypes.c $(INCS)
 
+analysis.o: analysis.c
+	$(CC) -o analysis.o -c analysis.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) filemgr.o import.o sib.o implicittypes.o *.bak
+	$(RM) filemgr.o import.o sib.o implicittypes.o analysis.o *.bak
+
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+analysis.o: ../../inc/dbug.h /usr/include/stdio.h ../global/types.h
+analysis.o: ../global/tree_basic.h ../global/tree_compound.h
+analysis.o: ../global/Error.h ../global/traverse.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
 filemgr.o: filemgr.h
 implicittypes.o: /usr/include/malloc.h ../global/types.h
 implicittypes.o: ../global/tree_basic.h ../global/tree_compound.h
-implicittypes.o: ../print/convert.h ../global/free.h ../global/Error.h
-implicittypes.o: /usr/include/stdio.h ../../inc/dbug.h ../global/my_debug.h
+implicittypes.o: ../global/Error.h /usr/include/stdio.h ../print/convert.h
+implicittypes.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 implicittypes.o: ../global/traverse.h
-import.o: /usr/include/malloc.h /usr/include/string.h
-import.o: /usr/include/sys/stdtypes.h /usr/include/limits.h ../global/tree.h
+import.o: /usr/include/string.h /usr/include/sys/stdtypes.h
+import.o: /usr/include/limits.h /usr/include/malloc.h ../global/tree.h
 import.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-import.o: ../global/free.h ../global/Error.h /usr/include/stdio.h
-import.o: ../../inc/dbug.h ../global/my_debug.h ../scanparse/scnprs.h
-import.o: ../scanparse/y.tab.h ../global/traverse.h ../global/access_macros.h
-import.o: filemgr.h import.h
+import.o: ../global/Error.h /usr/include/stdio.h ../global/free.h
+import.o: ../../inc/dbug.h ../global/my_debug.h ../global/internal_lib.h
+import.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
+import.o: ../global/access_macros.h filemgr.h import.h
 sib.o: /usr/include/malloc.h /usr/include/string.h
 sib.o: /usr/include/sys/stdtypes.h ../global/types.h ../global/tree_basic.h
-sib.o: ../global/tree_compound.h ../global/free.h ../global/Error.h
-sib.o: /usr/include/stdio.h ../../inc/dbug.h ../global/my_debug.h
+sib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+sib.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 sib.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
 sib.o: filemgr.h import.h ../print/print.h ../global/tree.h
 sib.o: ../print/convert.h sib.h
