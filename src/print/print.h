@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/03/08 14:40:10  sbs
+ * Revision 1.9  1995/03/28 12:37:39  hw
+ * char *prf_string[] inserted
+ *
+ * Revision 1.8  1995/03/08  14:40:10  sbs
  * include "tree.h" moved from tree.c to tree.h
  *
  * Revision 1.7  1995/03/08  14:03:00  sbs
@@ -39,6 +42,7 @@ extern int indent;
         for (j = 0; j < indent; j++)                                                     \
             fprintf (outfile, "  ");                                                     \
     }
+extern char *prf_string[];
 
 extern node *PrintAssign (node *, node *);
 extern node *PrintBlock (node *, node *);
