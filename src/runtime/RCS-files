@@ -1,3 +1,4 @@
+CacheSimAnalyser.c
 CacheSimTest.c
 Makefile
 libsac_boundcheck.c
