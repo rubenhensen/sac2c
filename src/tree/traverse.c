@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/03/17 16:31:41  dkr
+ * include of cleanup_decls.h added
+ *
  * Revision 1.13  2000/03/17 15:57:37  dkr
  * cudecls_tab added
  *
@@ -204,6 +207,7 @@
 #include "new_typecheck.h"
 #include "multithread.h"
 #include "lac2fun.h"
+#include "cleanup_decls.h"
 #include "fun2lac.h"
 #include "adjust_ids.h"
 #include "schedule_init.h"
