@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/01/26 13:45:35  jhs
+ * problem for eliminating withloops with empty shape fixed:
+ * -iv is set to []
+ * -does not break if the WL is the first assignment within its block.
+ *
  * Revision 2.30  1999/10/19 17:08:02  sbs
  * new secret -sbs switch integrated 8-)
  *
@@ -6149,6 +6154,10 @@ TCblock (node *arg_node, node *arg_info)
     old_current_assign = INFO_TC_CURRENTASSIGN (arg_info);
     old_next_assign = INFO_TC_NEXTASSIGN (arg_info);
 
+    /*
+     *  LASSIGN must be set here, because the next assignment (the first one
+     *  of the block, does not know it's parent block.
+     */
     INFO_TC_LASSIGN (arg_info) = arg_node;
     /* For the traversal of the assignments I have to
      * ignore the return-value, since TI_ap in some cases
@@ -6237,7 +6246,8 @@ TCassign (node *arg_node, node *arg_info)
     DBUG_ENTER ("TCassign");
     DBUG_ASSERT (N_assign == NODE_TYPE (arg_node), "wrong nodetype");
 
-    /*  secure last, current and next assign, so this routine can be called reentrant
+    /*
+     *  secure last, current and next assign, so this routine can be called reentrant
      *  without deleting the context of calling functions. (jhs)
      *
      *  an older comment on this was:
@@ -6263,8 +6273,9 @@ TCassign (node *arg_node, node *arg_info)
              */
             Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
-    } else
+    } else {
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    }
 
     /* restore the xxxASSIGN of arg_info, see comment while storing */
     INFO_TC_LASSIGN (arg_info) = old_last_assign;
@@ -7184,6 +7195,7 @@ TI_Nwith (node *arg_node, node *arg_info)
     stack_elem *old_tos;
     types *generator_type, *base_array_type, *body_type, *neutral_type;
     node *tmpn, *withop, *new_fundef, *new_expr, *new_shp;
+    node *tmpass;
     ids *mem_lhs;
     int i;
 
@@ -7440,7 +7452,7 @@ TI_Nwith (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
                       == N_let),
-                     "current assign is not let!");
+                     "current assign is not a let!");
 
         /* if last assign is NULL, code for this case has to be added */
         DBUG_ASSERT ((INFO_TC_LASSIGN (arg_info) != NULL), "last assign is NULL");
@@ -7467,16 +7479,26 @@ TI_Nwith (node *arg_node, node *arg_info)
                      *    "b"
                      */
 
+                    tmpass
+                      = MakeAssign (MakeLet (MakeCast (MakeArray (NULL),
+                                                       MakeType (T_int, UNKNOWN_SHAPE,
+                                                                 NULL, NULL, NULL)),
+                                             DupIds (NWITH_VEC (arg_node), NULL)),
+                                    BLOCK_INSTR (
+                                      NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node)))));
+
                     /*  insert block into assignments, if block is
-                     *  empty it will be replaced by CEXPR.          */
-                    ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info))
-                      = BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node))));
+                     *  empty it will be replaced by CEXPR.
+                     */
+                    L_BLOCK_INSTR_OR_ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info), tmpass);
+                    /* BLOCK_INSTR(NCODE_CBLOCK(NPART_CODE(NWITH_PART(arg_node))))); */
                     /*  step to last assigment in chain and look forward,
                      *  concat end of block with current assignment  */
                     assignment = INFO_TC_LASSIGN (arg_info);
-                    while ((ASSIGN_NEXT (assignment) != NULL)
-                           && (NODE_TYPE (ASSIGN_NEXT (assignment)) != N_empty)) {
-                        assignment = ASSIGN_NEXT (assignment);
+                    while ((BLOCK_INSTR_OR_ASSIGN_NEXT (assignment) != NULL)
+                           && (NODE_TYPE (BLOCK_INSTR_OR_ASSIGN_NEXT (assignment))
+                               != N_empty)) {
+                        assignment = BLOCK_INSTR_OR_ASSIGN_NEXT (assignment);
                     } /* while */
                     ASSIGN_NEXT (assignment) = INFO_TC_CURRENTASSIGN (arg_info);
                     /* place CEXPR instead of withloop */
