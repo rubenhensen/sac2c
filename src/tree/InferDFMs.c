@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2001/04/19 16:33:55  dkr
+ * RemoveAllButGlobalObjects() added but not finished yet
+ *
  * Revision 1.10  2001/04/19 15:37:36  dkr
  * fixed some bugs:
  *  - fixpoint iteration works correctly now
@@ -382,6 +385,38 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
 /******************************************************************************
  *
  * Function:
+ *   DFMmask_t RemoveAllButGlobalObjects( DFMmask_t needed)
+ *
+ * Description:
+ *   Clears all entries of 'needed', that do not represent global objects.
+ *
+ ******************************************************************************/
+
+static DFMmask_t
+RemoveAllButGlobalObjects (DFMmask_t needed)
+{
+    node *decl;
+
+    DBUG_ENTER ("RemoveAllButGlobalObjects");
+
+    decl = DFMGetMaskEntryDeclSet (needed);
+    while (decl != NULL) {
+        /*
+         * no global object -> clear entry in mask
+         */
+        if (/* VARDEC_OR_ARG_ */ 0) {
+            DFMSetMaskEntrySet (needed, NULL, decl);
+        }
+
+        decl = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    DBUG_RETURN (needed);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *InferMasksWith( node *arg_node, node *arg_info)
  *
  * Description:
@@ -534,9 +569,8 @@ InferMasksWhile (node *arg_node, node *arg_info)
      * a = 1;
      * b = 1;
      * c = 1;
-     * while (...)     <---   in: a,b   out: a,b   local: c,d
-     * {               <--1   in: a     out: b     local: b,c,d   (needed: b)
-     *                 <--2   in: a     out: a,b   local: b,c,d   (needed: a,b)
+     * while (...)     <--   in: a,b   out: b   local: c,d
+     * {               <--   in: a     out: b   local: b,c,d   needed: b
      *   ... a ...
      *   a = 2;
      *   b = 2;
@@ -546,14 +580,6 @@ InferMasksWhile (node *arg_node, node *arg_info)
      * }
      * ... b ...
      */
-
-    /*
-     * All vars that are in-vars of the loop body must be marked as needed
-     * in order to detect all out-vars.
-     *   -> 'a' in the example
-     */
-    /* needed' = needed u in */
-    DFMSetMaskOr (INFO_INFDFMS_NEEDED (arg_info), INFO_INFDFMS_IN (arg_info));
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
     WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
@@ -597,9 +623,8 @@ InferMasksDo (node *arg_node, node *arg_info)
      * a = 1;
      * b = 1;
      * c = 1;
-     * do              <---   in: a   out: a,b   local: b,c,d
-     * {               <--1   in: a   out: b     local: b,c,d   (needed: b)
-     *                 <--2   in: a   out: a,b   local: b,c,d   (needed: a,b)
+     * do              <--   in: a   out: b   local: b,c,d
+     * {               <--   in: a   out: b   local: b,c,d   needed: b
      *   ... a ...
      *   a = 2;
      *   b = 2;
@@ -609,14 +634,6 @@ InferMasksDo (node *arg_node, node *arg_info)
      * } while (...)
      * ... b ...
      */
-
-    /*
-     * All vars that are in-vars of the loop body must be temporaryly marked as
-     * needed in order to detect all out-vars.
-     *   -> 'a' in the example
-     */
-    /* needed' = needed u in */
-    DFMSetMaskOr (INFO_INFDFMS_NEEDED (arg_info), INFO_INFDFMS_IN (arg_info));
 
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
@@ -756,6 +773,21 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
  *   account.
  *   The body is traversed until the signature of the contained conditions and
  *   loops remains unchanged (fixpoint iteration).
+ *
+ * remark:
+ *   Fixpoint iteration is needed for nested loops:
+ *
+ *     a = 1;
+ *     do {         <- loop1
+ *       b = a;
+ *       do {       <- loop2
+ *         a = 2;
+ *       }
+ *     }
+ *     ... b ...
+ *
+ *   To determine the signature of loop1 the signature of loop2 is needed
+ *   and vise versa!!!
  *
  ******************************************************************************/
 
@@ -1052,16 +1084,11 @@ INFDFMSwithx (node *arg_node, node *arg_info)
      *   genarray( ...)
      *   ... val ...         <---  here, 'val' still contains the value 1
      *
-     * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
-     * here in order to detect OUT- (global-) vars :-)
+     * Because of that, we can leave all global objects in the
+     * INFO_INFDFMS_NEEDED mask here in order to detect OUT-global-vars :-)
      */
-#if 0
-  INFO_INFDFMS_NEEDED( arg_info)
-    = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
-  INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
-#else
-
-#endif
+    INFO_INFDFMS_NEEDED (arg_info)
+      = RemoveAllButGlobalObjects (INFO_INFDFMS_NEEDED (arg_info));
 
     arg_node
       = InferMasks (&(NWITH_OR_NWITH2_IN_MASK (arg_node)),
