@@ -3,9 +3,11 @@ boundcheck.c
 cachesim.h
 cachesim_access.c
 cachesim_basic.c
+cinterface.c
 message.c
 misc.c
 mt.c
 nophm.c
 profile.c
+sac_arg.c
 trace.c
