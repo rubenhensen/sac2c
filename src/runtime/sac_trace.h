@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/10/14 14:50:05  cg
+ * SAC_TR_MT_PRINT_FOLD_RESULT__AKS prints first array elements now
+ * SAC_TR_REF_PRINT_RC prints addr of data vector now
+ *
  * Revision 3.9  2003/09/17 17:47:42  dkr
  * SAC_TR_MT_PRINT_FOLD_RESULT redefined for TAGGED_ARRAYS
  *
@@ -83,6 +87,9 @@
 
 #if SAC_DO_TRACE
 
+#include <stdio.h>
+#include <string.h>
+
 extern int SAC_TR_hidden_memcnt;
 extern int SAC_TR_array_memcnt;
 
@@ -129,8 +136,9 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #define SAC_TR_REF_PRINT(msg) SAC_TR_PRINT (msg);
 
-#define SAC_TR_REF_PRINT_RC(name)                                                        \
-    SAC_TR_REF_PRINT (("refcnt of %s: %d", #name, SAC_ND_A_RC (name)))
+#define SAC_TR_REF_PRINT_RC(var_NT)                                                      \
+    SAC_TR_REF_PRINT (("refcnt of %s at address %p: %d", #var_NT,                        \
+                       SAC_ND_A_FIELD (var_NT), SAC_ND_A_RC (var_NT)))
 
 #else /* SAC_DO_TRACE_REF */
 
@@ -176,12 +184,12 @@ typedef enum {
 #define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg);
 
 #ifdef TAGGED_ARRAYS
-#define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_NT, msg)                                  \
+#define SAC_TR_MT_PRINT_FOLD_RESULT(basetype, accu_NT, msg)                              \
     CAT13 (SAC_TR_MT_PRINT_FOLD_RESULT__,                                                \
-           NT_SHP (accu_NT) BuildArgs3 (type, accu_NT, msg))
-#define SAC_TR_MT_PRINT_FOLD_RESULT__SCL(type, accu_NT, msg)                             \
+           NT_SHP (accu_NT) BuildArgs3 (basetype, accu_NT, msg))
+#define SAC_TR_MT_PRINT_FOLD_RESULT__SCL(basetype, accu_NT, msg)                         \
     {                                                                                    \
-        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##type;                   \
+        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##basetype;               \
         switch (SAC_TR_foldres) {                                                        \
         case SAC_TR_foldres_int:                                                         \
             SAC_TR_MT_PRINT ((msg " (int) %d", SAC_ND_A_FIELD (accu_NT)));               \
@@ -197,18 +205,47 @@ typedef enum {
             break;                                                                       \
         }                                                                                \
     }
-#define SAC_TR_MT_PRINT_FOLD_RESULT__AKS(type, accu_NT, msg)                             \
+#define SAC_TR_MT_PRINT_FOLD_RESULT__AKS(basetype, accu_NT, msg)                         \
     {                                                                                    \
-        SAC_TR_MT_PRINT ((msg " (array) %p", SAC_ND_A_FIELD (accu_NT)));                 \
+        int SAC_i;                                                                       \
+        char SAC_tmp[19];                                                                \
+        char *SAC_s;                                                                     \
+        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##basetype;               \
+        SAC_s = (char *)SAC_MALLOC (200 * sizeof (char));                                \
+        SAC_s[0] = '\0';                                                                 \
+        strcat (SAC_s, "[ ");                                                            \
+        for (SAC_i = 0; SAC_i < SAC_MIN (SAC_ND_A_SIZE (accu_NT), 10); SAC_i++) {        \
+            switch (SAC_TR_foldres) {                                                    \
+            case SAC_TR_foldres_int:                                                     \
+                snprintf (SAC_tmp, 19, "%d ", SAC_ND_READ (accu_NT, SAC_i));             \
+                break;                                                                   \
+            case SAC_TR_foldres_float:                                                   \
+                snprintf (SAC_tmp, 19, "%g ", SAC_ND_READ (accu_NT, SAC_i));             \
+                break;                                                                   \
+            case SAC_TR_foldres_double:                                                  \
+                snprintf (SAC_tmp, 19, "%g ", SAC_ND_READ (accu_NT, SAC_i));             \
+                break;                                                                   \
+            case SAC_TR_foldres_hidden:                                                  \
+                snprintf (SAC_tmp, 19, ". ");                                            \
+                break;                                                                   \
+            }                                                                            \
+            strcat (SAC_s, SAC_tmp);                                                     \
+        }                                                                                \
+        if (SAC_ND_A_SIZE (accu_NT) > 10) {                                              \
+            strcat (SAC_s, "... ");                                                      \
+        }                                                                                \
+        strcat (SAC_s, "]");                                                             \
+        SAC_TR_MT_PRINT (                                                                \
+          (msg " (%s array) %p = %s", #basetype, SAC_ND_A_FIELD (accu_NT), SAC_s));      \
     }
-#define SAC_TR_MT_PRINT_FOLD_RESULT__AKD(type, accu_NT, msg)                             \
-    SAC_TR_MT_PRINT_FOLD_RESULT__AKS (type, accu_NT, msg)
-#define SAC_TR_MT_PRINT_FOLD_RESULT__AUD(type, accu_NT, msg)                             \
-    SAC_TR_MT_PRINT_FOLD_RESULT__AKS (type, accu_NT, msg)
+#define SAC_TR_MT_PRINT_FOLD_RESULT__AKD(basetype, accu_NT, msg)                         \
+    SAC_TR_MT_PRINT_FOLD_RESULT__AKS (basetype, accu_NT, msg)
+#define SAC_TR_MT_PRINT_FOLD_RESULT__AUD(basetype, accu_NT, msg)                         \
+    SAC_TR_MT_PRINT_FOLD_RESULT__AKS (basetype, accu_NT, msg)
 #else /* TAGGED_ARRAYS */
-#define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)                                 \
+#define SAC_TR_MT_PRINT_FOLD_RESULT(basetype, accu_var, msg)                             \
     {                                                                                    \
-        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##type;                   \
+        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##basetype;               \
         switch (SAC_TR_foldres) {                                                        \
         case SAC_TR_foldres_int:                                                         \
             SAC_TR_MT_PRINT ((msg " (int) %d", accu_var));                               \
@@ -235,7 +272,7 @@ typedef enum {
 #else /* SAC_DO_TRACE_MT */
 
 #define SAC_TR_MT_PRINT(msg)
-#define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)
+#define SAC_TR_MT_PRINT_FOLD_RESULT(basetype, accu_var, msg)
 
 #endif /* SAC_DO_TRACE_MT */
 
