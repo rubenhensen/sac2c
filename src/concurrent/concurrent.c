@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/28 13:03:35  jhs
+ * Added seventh phase: spmd-constraining.
+ *
  * Revision 2.4  1999/07/21 16:30:27  jhs
  * needed_sync_fold introduced, max_sync_fold_adjusted.
  *
@@ -42,13 +45,14 @@
  *
  *   This file initiates and guides the compilation process of building
  *   SPMD regions within the compiled SAC code. This entire process consists
- *   of 6 consecutive steps:
+ *   of 7 consecutive steps:
  *    - building spmd-blocks
  *    - optimizing/enlarging spmd-blocks
  *    - lifting spmd-blocks to spmd-functions
  *    - building synchronisation blocks
  *    - optimizing/enlarging synchronisation blocks
  *    - scheduling synchronisation blocks and with-loop segments
+ *    - constraining spmd-blocks/spmd-functions
  *
  *   This process may be interruppted after each step by using one of the
  *   break specifiers "spmdinit", "spmdopt", "spmdlift", "syncinit", or
@@ -124,7 +128,7 @@ CONCmodul (node *arg_node, node *arg_info)
       } else {
         NOTE(("  maximum folds per sync needed is %i", needed_sync_fold));
       }
-      cannot evaluate this!!!
+      cannot evaluate this!!! ####
       because one does not melt all the sync-blocks if limited!!!
     */
     if (max_sync_fold == -1) {
@@ -145,13 +149,14 @@ CONCmodul (node *arg_node, node *arg_info)
  *   conc_tab traversal function for N_fundef node.
  *
  *   This function traverses the function definitions and controls the
- *   entire 6 step process of exploiting concurrency:
+ *   entire 7 step process of exploiting concurrency:
  *    - building spmd-blocks
  *    - optimizing/enlarging spmd-blocks
  *    - lifting spmd-blocks to spmd-functions
  *    - building synchronisation blocks
  *    - optimizing/enlarging synchronisation blocks
  *    - scheduling synchronisation blocks and with-loop segments
+ *    - constraining spmd-blocks/spmd-functions
  *
  ******************************************************************************/
 
@@ -287,6 +292,41 @@ CONCfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     *  On the back direction of the recursion we do some extra work:
+     */
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
+
+        if ((break_after == PH_spmdregions)
+            && ((0 == strcmp ("spmdinit", break_specifier))
+                || (0 == strcmp ("spmdopt", break_specifier))
+                || (0 == strcmp ("spmdlift", break_specifier))
+                || (0 == strcmp ("syncinit", break_specifier))
+                || (0 == strcmp ("syncopt", break_specifier))
+                || (0 == strcmp ("scheduling", break_specifier)))) {
+            goto cont2;
+        }
+
+        if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
+            /*
+             *  Seventh, each spmd-block and the belonging spmd-function get
+             *  additional in-parameters, to be able to pass values from extracted
+             *  prolog icms to thespmd-function.
+             */
+            act_tab = spmdcons_tab;
+            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+            if ((break_after == PH_spmdregions)
+                && (0 == strcmp ("spmdcons", break_specifier))) {
+                goto cont2;
+            }
+        }
+
+    cont2:
+
+        act_tab = conc_tab;
     }
 
     /*
