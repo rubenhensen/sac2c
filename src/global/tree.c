@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/01/16 11:10:25  asi
+ * Revision 1.6  1995/01/18 17:39:17  asi
+ * MAX_MASK inserted
+ *
+ * Revision 1.5  1995/01/16  11:10:25  asi
  * masks initial set to NULL in MakeNode
  *
  * Revision 1.4  1994/12/31  14:09:37  sbs
@@ -25,6 +28,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "scnprs.h"
+#include "optimize.h"
 
 /*
  *
@@ -70,7 +74,7 @@ MakeTypes (simpletype simple)
  *  global vars   : linenum
  *  internal funs :
  *  external funs :
- *  macros        : DBUG..., GEN_NODE
+ *  macros        : DBUG..., GEN_NODE, MAX_MASK
  *
  *  remarks       :
  *
@@ -91,8 +95,8 @@ MakeNode (nodetype nodetype)
     tmp->nnode = 0;
     tmp->info.id = NULL;
     tmp->lineno = linenum;
-    for (i = 0; i < 3; i++)
-        tmp->mask[1] = NULL;
+    for (i = 0; i < MAX_MASK; i++)
+        tmp->mask[i] = NULL;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d nodetype: %s " P_FORMAT, tmp->lineno, mdb_nodetype[nodetype], tmp));

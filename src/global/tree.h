@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/01/05 12:37:02  sbs
+ * Revision 1.21  1995/01/18 17:39:17  asi
+ * MAX_MASK inserted
+ *
+ * Revision 1.20  1995/01/05  12:37:02  sbs
  * third component for type_info.mac inserted
  *
  * Revision 1.19  1995/01/02  11:20:44  asi
@@ -146,6 +149,8 @@ typedef enum {
 
 #undef PRF_IF
 
+#define MAX_MASK 3
+
 typedef struct NODE {
     nodetype nodetype;
     union {
@@ -157,7 +162,7 @@ typedef struct NODE {
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
     } info;                /* fu"r spezielle Informationen */
-    long *mask[3];         /* special informations for optimization */
+    long *mask[MAX_MASK];  /* special informations for optimization */
     int nnode;             /* Anzahl der benutzten Knoten */
     int lineno;            /* Zeilennummer in der ein Befehl steht */
                            /* later used for variable number while optimizing */
