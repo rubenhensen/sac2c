@@ -1,3 +1,7 @@
+ConstantFolding.c
+ConstantFolding.h
+DeadCodeRemoval.c
+DeadCodeRemoval.h
 Makefile
 optimize.c
 optimize.h
