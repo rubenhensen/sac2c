@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/01/31 19:35:21  bs
+ * Function CalcTSOuterDims modified.
+ *
  * Revision 2.13  2000/01/26 17:26:12  dkr
  * type of traverse-function-table changed.
  *
@@ -65,7 +68,7 @@
  *      INFO_TSI_ACCESSCNT(n)             (n->counter)
  *      INFO_TSI_ARRAYDIM(n)              (n->varno)
  *      INFO_TSI_ARRAYSHP(n)    ((shpseg*)(n->node[0]))
- *      INFO_TSI_TILESHP(n)    ((shpseg*)(n->node[1]))
+ *      INFO_TSI_TILESHP(n)     ((shpseg*)(n->node[1]))
  *      INFO_TSI_CACHEPAR(n)       ((int*)(n->node[2]))
  *      INFO_TSI_WLARRAY(n)               (n->node[3])
  *
@@ -90,6 +93,8 @@
 static int dtype_size[] = {
 #include "type_info.mac"
 };
+
+#define MINTILE 20
 
 typedef struct ENH_ACCESS {
     int vaddr;
@@ -140,7 +145,7 @@ InsortByCLine (void *element, list_t *list)
 /*****************************************************************************
  *
  * function:
- *    int MinDistance(list_t* acc_list, int tilesize, node* arg_info)
+ *    int MinDistance(list_t* acc_list, int mindist, node* arg_info)
  *
  * description:
  *
@@ -148,7 +153,7 @@ InsortByCLine (void *element, list_t *list)
  *****************************************************************************/
 
 static int
-MinDistance (list_t *acc_list, int tilesize, node *arg_info)
+MinDistance (list_t *acc_list, int mindist, node *arg_info)
 {
     int cLine, cInst, NumLines, cSize, lSize, dType, NumElems, *cacheparam;
     list_t *a_list = acc_list;
@@ -163,7 +168,7 @@ MinDistance (list_t *acc_list, int tilesize, node *arg_info)
     NumLines = cSize / lSize;
     NumElems = lSize / dType;
 
-    if (tilesize > 0) {
+    if (mindist > 0) {
         access = a_list->element;
         cLine = access->cline;
         cInst = access->cinst;
@@ -171,7 +176,7 @@ MinDistance (list_t *acc_list, int tilesize, node *arg_info)
         while (a_list != NULL) {
             access = a_list->element;
             if (cInst != access->cinst) {
-                tilesize = MIN (tilesize, NumElems * (access->cline - cLine));
+                mindist = MIN (mindist, NumElems * (access->cline - cLine));
                 cInst = access->cinst;
             }
             cLine = access->cline;
@@ -180,11 +185,11 @@ MinDistance (list_t *acc_list, int tilesize, node *arg_info)
         cInst++;
         access = acc_list->element;
         if (cInst != access->cinst) {
-            tilesize = MIN (tilesize, NumElems * (NumLines - cLine + access->cline));
+            mindist = MIN (mindist, NumElems * (NumLines - cLine + access->cline));
         }
     }
 
-    DBUG_RETURN (tilesize);
+    DBUG_RETURN (mindist);
 }
 
 /*****************************************************************************
@@ -350,13 +355,27 @@ CalcTSInnerDim (list_t *acc_list, node *arg_info)
     tilesize = MinDistance (acc_list, maxsize, arg_info);
 
     for (i = 0; i < (maxline - minline); i++) {
-        fprintf (stderr, "*** tilesizing ... %d\n", tilesize);
+
+        DBUG_EXECUTE ("PRINT_TSI",
+                      fprintf (stderr, "*** tilesizing ... %d\n", tilesize););
+
         acc_list = RecreateEnhAccesslist (acc_list, arg_info);
         tilesize = MinDistance (acc_list, tilesize, arg_info);
     }
-    if (tilesize >= maxsize)
+    if ((tilesize >= maxsize) || (tilesize <= lSize)) {
         tilesize = 1;
-    fprintf (stderr, "*** tilesize found: %d\n", tilesize);
+    } else if ((maxsize != tilesize) && ((maxsize - tilesize) < MINTILE)) {
+        if ((maxsize % lSize) == 0) {
+            tilesize = maxsize / 2;
+        } else {
+            tilesize = (maxsize + lSize - (maxsize % lSize)) / 2;
+        }
+    }
+    if (tilesize < MINTILE) {
+        tilesize = 1;
+    }
+
+    DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesize found: %d\n", tilesize););
 
     DBUG_RETURN (tilesize);
 }
@@ -374,8 +393,8 @@ CalcTSInnerDim (list_t *acc_list, node *arg_info)
 static int
 CalcTSOuterDims (list_t *acc_list, int index, node *arg_info)
 {
-    int tilesize, dim;
-    shpseg *shape;
+    int tilesize, dim, maxsize;
+    shpseg *Tshape, *Ashape;
 
     DBUG_ENTER ("CalcTSOuterDims");
 
@@ -383,8 +402,13 @@ CalcTSOuterDims (list_t *acc_list, int index, node *arg_info)
     /*
      *  shape = INFO_TSI_ARRAYSHP(arg_info);
      */
-    shape = INFO_TSI_TILESHP (arg_info);
-    tilesize = SHPSEG_SHAPE (shape, index + 1);
+    Ashape = INFO_TSI_ARRAYSHP (arg_info);
+    Tshape = INFO_TSI_TILESHP (arg_info);
+    maxsize = SHPSEG_SHAPE (Ashape, index);
+    tilesize = MIN (SHPSEG_SHAPE (Tshape, index + 1), maxsize);
+    if ((maxsize - tilesize) < MINTILE) {
+        tilesize = maxsize;
+    }
 
     DBUG_RETURN (tilesize);
 }
@@ -448,7 +472,7 @@ CalcTilesize (access_t *accesses, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node* MakePragmaWLComp(node* aelems, node* arg_info)
+ *   node* TSIMakePragmaWLComp(node* aelems, node* arg_info)
  *
  * description:
  *
@@ -456,17 +480,15 @@ CalcTilesize (access_t *accesses, node *arg_info)
  *****************************************************************************/
 
 static node *
-MakePragmaWLComp (int tilesize, node *arg_info)
+TSIMakePragmaWLComp (int tilesize, node *arg_info)
 {
     node *pragma, *aelems;
     char *ap_name;
-    shpseg *tileshp;
     int i, dim;
 
-    DBUG_ENTER ("MakePragmaWLComp");
+    DBUG_ENTER ("TSIMakePragmaWLComp");
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
-    tileshp = INFO_TSI_TILESHP (arg_info);
     aelems = NULL;
 
     if (tilesize > 0) {
@@ -633,25 +655,27 @@ TSInwith (node *arg_node, node *arg_info)
 
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-        pragma = MakePragmaWLComp (INFO_TSI_WLCOMP (arg_info), arg_info);
+        pragma = TSIMakePragmaWLComp (INFO_TSI_WLCOMP (arg_info), arg_info);
 
         if (NWITH_PRAGMA (arg_node) != NULL) {
-            printf ("*** Tiling, manually set:");
-            Print (NWITH_PRAGMA (arg_node));
-            printf ("*** Tiling, tsi-proposal:");
+            DBUG_EXECUTE ("PRINT_TSI", printf ("*** Tiling, manually set:"););
+            DBUG_EXECUTE ("PRINT_TSI", Print (NWITH_PRAGMA (arg_node)););
+            DBUG_EXECUTE ("PRINT_TSI", printf ("*** Tiling, tsi-proposal:"););
             if (pragma != NULL) {
-                Print (pragma);
+                DBUG_EXECUTE ("PRINT_TSI", Print (pragma););
                 FreePragma (pragma, NULL);
             } else {
-                printf ("\n*** #pragma wlcomp already existing.\n\n");
+                DBUG_EXECUTE ("PRINT_TSI",
+                              printf ("\n*** #pragma wlcomp already existing.\n\n"););
             }
         } else {
             NWITH_PRAGMA (arg_node) = pragma;
-            printf ("*** Tiling, tsi-proposal:");
+            DBUG_EXECUTE ("PRINT_TSI", printf ("*** Tiling, tsi-proposal:"););
             if (pragma != NULL) {
-                Print (pragma);
+                DBUG_EXECUTE ("PRINT_TSI", Print (pragma););
             } else {
-                printf ("\n*** No tsi-proposal possible.\n\n");
+                DBUG_EXECUTE ("PRINT_TSI",
+                              printf ("\n*** No tsi-proposal possible.\n\n"););
             }
         }
     }
@@ -674,6 +698,7 @@ TSInwith (node *arg_node, node *arg_info)
 node *
 TSIncode (node *arg_node, node *arg_info)
 {
+    node *pragma;
     int *cacheparam;
 
     DBUG_ENTER ("TSIncode");
@@ -695,11 +720,18 @@ TSIncode (node *arg_node, node *arg_info)
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
-    if (INFO_TSI_FEATURE (arg_info) == FEATURE_NONE) {
+    if ((INFO_TSI_FEATURE (arg_info) == FEATURE_NONE)
+        && (INFO_TSI_ACCESSCNT (arg_info) > 2)) {
+        /*
+         *  If the number of accesses is less than 3, then there can only be one or
+         *  no read-access. In this case tiling cannot rise performance.
+         */
         INFO_TSI_WLCOMP (arg_info)
           = CalcTilesize (NCODE_WLAA_ACCESS (arg_node), arg_info);
+        NCODE_TSI_TILESHP (arg_node) = INFO_TSI_TILESHP (arg_info);
     } else {
         INFO_TSI_WLCOMP (arg_info) = 0;
+        NCODE_TSI_TILESHP (arg_node) = NULL;
     }
 
     if (NCODE_NEXT (arg_node) != NULL) {
