@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.28  1996/04/02 19:35:10  cg
+ * Revision 1.29  1997/04/25 13:02:06  sacbase
+ * DBUG_PRINT in SearchObjdef and SearchTypedef :
+ * mod -> MOD(mod) (mod may be NULL!!)
+ *
+ * Revision 1.28  1996/04/02  19:35:10  cg
  * function string2array moved to sac.y
  *
  * Revision 1.27  1996/03/21  18:00:20  cg
@@ -336,7 +340,7 @@ SearchTypedef (char *name, char *mod, node *implementations)
 
     DBUG_ENTER ("SearchTypedef");
 
-    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", mod, name));
+    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", MOD (mod), name));
 
     tmp = implementations;
     while ((tmp != NULL) && (CMP_TYPE_TYPEDEF (name, mod, tmp) == 0)) {
@@ -357,7 +361,7 @@ SearchObjdef (char *name, char *mod, node *implementations)
 
     DBUG_ENTER ("SearchObjdef");
 
-    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", mod, name));
+    DBUG_PRINT ("CHECKDEC", ("Searching type %s:%s", MOD (mod), name));
 
     tmp = implementations;
     while ((tmp != NULL) && (CMP_OBJ_OBJDEF (name, mod, tmp) == 0)) {
