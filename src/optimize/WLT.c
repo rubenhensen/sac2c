@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.9  1998/04/24 17:30:20  srs
+ * invalid bounds are transformed now
+ *
  * Revision 1.8  1998/04/20 08:58:56  srs
  * fixed bug in CheckOptimizePsi()
  *
@@ -53,6 +56,9 @@
  - node[1]: WL    : reference to base node of current WL (N_Nwith)
  - node[2]: ASSIGN: always the last N_assign node
  - node[3]: FUNDEF: pointer to last fundef node. needed to access vardecs.
+ - node[4]: LET   : pointer to N_let node of current WL.
+                    LET_EXPR(ID) == INFO_WLI_WL.
+ - node[5]: REPLACE: if != NULL, replave WL with this node.
  - varno  : number of variables in this function, see optimize.c
  - mask[0]: DEF mask, see optimize.c
  - mask[1]: USE mask, see optimize.c
@@ -691,38 +697,51 @@ WLTNwith (node *arg_node, node *arg_info)
 
     /* initialize WL traversal */
     INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
+    INFO_WLI_LET (arg_info) = ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info));
+    INFO_WLI_REPLACE (arg_info) = NULL;
+
     tmpn = NWITH_CODE (arg_node);
     while (tmpn) { /* reset traversal flag for each code */
         NCODE_FLAG (tmpn) = 0;
         tmpn = NCODE_NEXT (tmpn);
     }
+
     NWITH_FOLDABLE (arg_node) = 1;
-
-    old_assignn = INFO_WLI_ASSIGN (arg_info);
-
-    /* traverse N_Nwithop */
-    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
 
     /* traverse all parts (and implicitely bodies).
        It is not possible that WLTNpart calls the NPART_NEXT node because
        the superior OPTTrav mechanism has to finish before calling the
-       next part. Else modified USE and DEF masks will case errors. */
+       next part. Else modified USE and DEF masks will cause errors. */
+    old_assignn = INFO_WLI_ASSIGN (arg_info);
     tmpn = NWITH_PART (arg_node);
     while (tmpn) {
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NPART_NEXT (tmpn);
     }
-
     INFO_WLI_ASSIGN (arg_info) = old_assignn;
 
-    /* generate full partition (genarray, modarray). */
-    if (NWITH_FOLDABLE (arg_node)
-        && (WO_genarray == NWITH_TYPE (arg_node) || WO_modarray == NWITH_TYPE (arg_node)))
-        arg_node = CreateFullPartition (arg_node, arg_info);
+    if (INFO_WLI_REPLACE (arg_info)) {
+        /* This WL has to be removed. Replace it by INFO_WLI_REPLACE(). */
+        FreeTree (arg_node);
+        arg_node = INFO_WLI_REPLACE (arg_info);
+        /* arg_node can only be an N_id, an N_array or a scalar (-node). */
+        if (N_id == NODE_TYPE (arg_node))
+            INFO_USE[ID_VARNO (arg_node)]++;
+    } else {
+        /* traverse N_Nwithop */
+        NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
 
-    /* If withop if fold, we cannot create additional N_Npart nodes (based on what?) */
-    if (WO_foldfun == NWITH_TYPE (arg_node) || WO_foldprf == NWITH_TYPE (arg_node))
-        NWITH_PARTS (arg_node) = 1;
+        /* generate full partition (genarray, modarray). */
+        if (NWITH_FOLDABLE (arg_node)
+            && (WO_genarray == NWITH_TYPE (arg_node)
+                || WO_modarray == NWITH_TYPE (arg_node)))
+            arg_node = CreateFullPartition (arg_node, arg_info);
+
+        /* If withop if fold, we cannot create additional N_Npart nodes (based on what?)
+         */
+        if (WO_foldfun == NWITH_TYPE (arg_node) || WO_foldprf == NWITH_TYPE (arg_node))
+            NWITH_PARTS (arg_node) = 1;
+    }
 
     /* restore arg_info */
     tmpn = arg_info;
@@ -756,8 +775,9 @@ WLTNpart (node *arg_node, node *arg_info)
     /* traverse code. But do this only once, even if there are more than
        one referencing generators.
        This is just a cross reference, so just traverse, do not assign the
-       resulting node.*/
-    if (!NCODE_FLAG (NPART_CODE (arg_node)))
+       resulting node.
+       Only enter in case of !INFO_WLI_REPLACE() because of USE mask. */
+    if (!NCODE_FLAG (NPART_CODE (arg_node)) && !INFO_WLI_REPLACE (arg_info))
         OPTTrav (NPART_CODE (arg_node), arg_info, INFO_WLI_WL (arg_info));
 
     DBUG_RETURN (arg_node);
@@ -772,48 +792,159 @@ WLTNpart (node *arg_node, node *arg_info)
  *   constant bounds, step and width vectors are substituted into the
  *   generator. If any son is not a constant vector the N_Nwith attribut
  *   FOLDABLE is set to 0.
+ *   Generators that surmount the array bounds (like [-5,3] or [11,10] >
+ *   [maxdim1,maxdim2] = [10,10]) are changed to fitting gens.
  *
  ******************************************************************************/
 
 node *
 WLTNgenerator (node *arg_node, node *arg_info)
 {
-    node *tmpn, **bound;
-    int i;
+    node *tmpn, **bound, *lbound, *ubound, *assignn, *blockn, *wln;
+    int i, check_bounds, empty, warning;
+    int lnum, unum, tnum, dim;
+    ids *_ids;
 
     DBUG_ENTER ("WLTNgenerator");
 
-    /* try to propagate a constant in all 4 sons */
-    for (i = 1; i <= 4; i++) {
-        switch (i) {
-        case 1:
-            bound = &NGEN_BOUND1 (arg_node);
-            break;
-        case 2:
-            bound = &NGEN_BOUND2 (arg_node);
-            break;
-        case 3:
-            bound = &NGEN_STEP (arg_node);
-            break;
-        case 4:
-            bound = &NGEN_WIDTH (arg_node);
-            break;
+    /* All this work has only to be done once for every WL:
+       - inserting constant bounds (done here),
+       - check bounds (done here),
+       - creating full partition (WLTNwith).
+       If only one of these points was not successful, another call of WLT
+       will try it again (NWITH_PARTS == -1).
+
+       (OptimizePsi() and OptimizeArray() have to be called multiple
+       times!) */
+
+    wln = INFO_WLI_WL (arg_info);
+    if (-1 == NWITH_PARTS (wln)) {
+        /* try to propagate a constant in all 4 sons */
+        check_bounds = 1;
+        for (i = 1; i <= 4; i++) {
+            switch (i) {
+            case 1:
+                bound = &NGEN_BOUND1 (arg_node);
+                break;
+            case 2:
+                bound = &NGEN_BOUND2 (arg_node);
+                break;
+            case 3:
+                bound = &NGEN_STEP (arg_node);
+                break;
+            case 4:
+                bound = &NGEN_WIDTH (arg_node);
+                break;
+            }
+
+            if (*bound && N_id == NODE_TYPE ((*bound))) {
+                MRD_GETDATA (tmpn, ID_VARNO ((*bound)), INFO_VARNO);
+                if (IsConstantArray (tmpn, N_num)) {
+                    /* this bound references a constant array, which can be substituted.
+                     */
+                    INFO_USE[ID_VARNO ((*bound))]--;
+                    FreeTree (*bound);
+                    /* copy const array to *bound */
+                    *bound = DupTree (tmpn, NULL);
+                } else { /* not all sons are constant */
+                    if (i < 3)
+                        check_bounds = 0;
+                    NWITH_FOLDABLE (wln) = 0;
+                }
+            }
         }
 
-        if (*bound && N_id == NODE_TYPE ((*bound))) {
-            MRD_GETDATA (tmpn, ID_VARNO ((*bound)), INFO_VARNO);
-            if (IsConstantArray (tmpn, N_num)) {
-                /* this bound references a constant array, which can be substituted. */
-                INFO_USE[ID_VARNO ((*bound))]--;
-                FreeTree (*bound);
-                /* copy const array to *bound */
-                *bound = DupTree (tmpn, NULL);
-            } else /* not all sons are constant */
-                NWITH_FOLDABLE (INFO_WLI_WL (arg_info)) = 0;
-        }
+        /* check bound ranges */
+        if (check_bounds) {
+            dim = 0;
+            empty = 0;
+            warning = 0;
+            lbound = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
+            ubound = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
+
+            _ids = LET_IDS (INFO_WLI_LET (arg_info));
+            while (lbound) {
+                lnum = NUM_VAL (EXPRS_EXPR (lbound));
+                unum = NUM_VAL (EXPRS_EXPR (ubound));
+
+                if (WO_modarray == NWITH_TYPE (wln) || WO_genarray == NWITH_TYPE (wln)) {
+                    tnum = IDS_SHAPE (_ids, dim);
+                    if (lnum < 0) {
+                        warning = 1;
+                        NUM_VAL (EXPRS_EXPR (lbound)) = 0;
+                        lnum = 0;
+                    }
+                    if (unum > tnum) {
+                        warning = 1;
+                        NUM_VAL (EXPRS_EXPR (ubound)) = tnum;
+                        unum = tnum;
+                    }
+                }
+
+                if (unum <= lnum) {
+                    /* empty set of indices */
+                    empty = 1;
+                    break;
+                }
+
+                dim++;
+                lbound = EXPRS_NEXT (lbound);
+                ubound = EXPRS_NEXT (ubound);
+            }
+
+            if (warning)
+                WARN (NODE_LINE (arg_node), ("Withloop generator out of range"));
+
+            /* the one and only N_Npart is empty. Trandform WL. */
+            if (empty)
+                if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
+                    /* change generator: full scope.  */
+                    dim = TYPES_DIM (IDS_TYPE (_ids));
+                    lbound = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
+                    ubound = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
+
+                    for (i = 0; i < dim; i++) {
+                        NUM_VAL (EXPRS_EXPR (lbound)) = 0;
+                        NUM_VAL (EXPRS_EXPR (ubound)) = IDS_SHAPE (_ids, i);
+                        lbound = EXPRS_NEXT (lbound);
+                        ubound = EXPRS_NEXT (ubound);
+                    }
+
+                    if (NGEN_STEP (arg_node))
+                        NGEN_STEP (arg_node) = FreeTree (NGEN_STEP (arg_node));
+                    if (NGEN_WIDTH (arg_node))
+                        NGEN_WIDTH (arg_node) = FreeTree (NGEN_WIDTH (arg_node));
+
+                    /* now modify the code. Only one N_Npart/N_Ncode exists.
+                       All elements have to be 0. */
+                    blockn
+                      = NCODE_CBLOCK (NPART_CODE (NWITH_PART (INFO_WLI_WL (arg_info))));
+                    tmpn = BLOCK_INSTR (blockn);
+                    /* search last assignment and make it the only one in the block. */
+                    while (ASSIGN_NEXT (tmpn))
+                        tmpn = ASSIGN_NEXT (tmpn);
+                    assignn = DupTree (tmpn, NULL);
+                    FreeTree (BLOCK_INSTR (blockn));
+                    FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+                    BLOCK_INSTR (blockn) = assignn;
+                    LET_EXPR (ASSIGN_INSTR (assignn))
+                      = MakeNullVec (TYPES_DIM (IDS_TYPE (_ids))
+                                     - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
+                                                      INFO_WLI_WL (arg_info))),
+                                                    0));
+                    ASSIGN_MASK (assignn, 0) = GenMask (VARNO);
+                    ASSIGN_MASK (assignn, 1) = GenMask (VARNO);
+                } else {
+                    /* replace WL with the base array (modarray). */
+                    /* replace WL with neutral element (fold). */
+                    tmpn = NWITHOP_NEUTRAL (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                    INFO_WLI_REPLACE (arg_info) = DupTree (tmpn, NULL);
+                }
+        } /* check_bounds */
+
+        arg_node = TravSons (arg_node, arg_info);
     }
 
-    arg_node = TravSons (arg_node, arg_info);
     DBUG_RETURN (arg_node);
 }
 
