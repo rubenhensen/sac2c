@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  1999/07/06 16:16:33  jhs
+ * Removed ABORT in isBoundEmpty and inserted a DBUG_ASSERT instead.
+ *
  * Revision 2.24  1999/06/24 15:40:28  sbs
  * non-scalar predicate-types for conditionals will no longer be accepted!
  *
@@ -7111,6 +7114,10 @@ isBoundEmpty (node *arg_node, node *bound_node)
     int i, elements;
     types *ltypes;
 
+    DBUG_ASSERT (((NODE_TYPE (bound_node) == N_id) || (NODE_TYPE (bound_node) == N_array)
+                  || (NODE_TYPE (bound_node) == N_cast)),
+                 ("bound_node is neither N_id, N_array nor N_cast"));
+
     if (NODE_TYPE (bound_node) == N_id) {
         /* N_id node => elements are eventually annotated */
         if (ID_ISCONST (bound_node) && (ID_VECLEN (bound_node) == 0)) {
@@ -7143,7 +7150,7 @@ isBoundEmpty (node *arg_node, node *bound_node)
          * type of another, we can tell something about. */
         return (isBoundEmpty (arg_node, CAST_EXPR (bound_node)));
     } else {
-        ABORT (NODE_LINE (arg_node), ("Wrong type of bound node!"));
+        return (FALSE);
     }
 }
 
