@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/10/16 13:00:38  cg
+ * Revision 1.7  1995/10/19 10:06:42  cg
+ * new slots for VARDEC nodes: VARDEC_STATUS and VARDEC_TYPEDEF
+ *
+ * Revision 1.6  1995/10/16  13:00:38  cg
  * new macro OBJDEF_VARNAME added.
  *
  * Revision 1.5  1995/10/12  13:45:15  cg
@@ -194,13 +197,16 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***
  ***    int         REFCNT       (refcount -> )
  ***    node*       DECL         (typecheck -> )
- ***    node*       DEF          (typecheck -> )
- ***    node*       USE          (typecheck -> )
+ ***    node*       DEF          (optimize -> )
+ ***    node*       USE          (optimize -> )
  ***    statustype  STATUS       (obj-handling -> compile !!)
  ***/
 
 /*
- *  Possible values for ATTRIB: ST_local | ST_global
+ *  ATTRIB: ST_local      :  local variable or function parameter
+ *          ST_global     :  reference to global object
+ *  STATUS: ST_regular    :  from original source code
+ *          ST_artificial :  added by obj-handling
  */
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
@@ -630,18 +636,29 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***
  ***  sons:
  ***
- ***    node*   NEXT     (O)  (N_vardec)
+ ***    node*       NEXT     (O)  (N_vardec)
  ***
  ***  permanent attributes:
  ***
- ***    char*   NAME
- ***    types*  TYPE
+ ***    char*       NAME
+ ***    types*      TYPE
+ ***    statustype  STATUS
  ***
  ***  temporary attributes:
  ***
- ***    int     REFCNT                   (refcount -> compile -> )
- ***    int     VARNO                    (optimize -> )
+ ***    node        TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
+ ***    int         REFCNT                     (refcount -> compile -> )
+ ***    int         VARNO                      (optimize -> )
  ***/
+
+/*
+ * STATUS : ST_regular :  original vardec in source code
+ *          ST_used    :  after typecheck detected necessity of vardec
+ *
+ * TYPEDEF is a reference to the respective typedef node if the type of
+ * the declared variable is user-defined.
+ *
+ */
 
 extern node *MakeVardec (char *name, types *type, node *next);
 
@@ -650,6 +667,8 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_NEXT(n) (n->node[0])
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
+#define VARDEC_STATUS(n) (n->info.types->status)
+#define VARDEC_TYPEDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
