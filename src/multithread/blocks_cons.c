@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/15 15:52:44  dkr
+ * fixed a bug:
+ *   MT_OR_ST_REGION on left hand side is replaced by L_MT_OR_ST_REGION
+ *
  * Revision 1.2  2000/03/02 14:13:58  jhs
  * Using mdb_statustype now.
  *
@@ -109,7 +113,7 @@ BLKCOxt (node *arg_node, node *arg_info)
             DBUG_ASSERT (0, ("this cannot be ..."));
         }
 
-        MT_OR_ST_REGION (arg_node) = Trav (MT_OR_ST_REGION (arg_node), arg_info);
+        L_MT_OR_ST_REGION (arg_node, Trav (MT_OR_ST_REGION (arg_node), arg_info));
 
         INFO_BLKCO_CURRENTATTRIB (arg_info) = old_attrib;
     }

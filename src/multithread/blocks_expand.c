@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/03/15 15:50:19  dkr
+ * fixed a bug:
+ *   MT_OR_ST_REGION on left hand side is replaced by L_MT_OR_ST_REGION
+ *
  * Revision 1.5  2000/03/02 12:56:37  jhs
  * Added comments.
  *
@@ -157,7 +161,7 @@ BLKEXassign (node *arg_node, node *arg_info)
                 L_MT_OR_ST_REGION (this_instr,
                                    MUTHMeltBlocks (MT_OR_ST_REGION (this_instr),
                                                    MT_OR_ST_REGION (next_instr)));
-                MT_OR_ST_REGION (next_instr) = NULL;
+                L_MT_OR_ST_REGION (next_instr, NULL);
                 FreeTree (next_instr);
 
                 ASSIGN_NEXT (this) = ASSIGN_NEXT (next);
