@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2001/06/27 14:31:38  ben
+ * now uses SCHCompileSchedulingWithTasksel
+ *
  * Revision 3.60  2001/05/31 09:16:52  sbs
  * corrected error in COMPIcm; DECRCFree's were always
  * created and subsequently eliminated again...
@@ -6152,18 +6155,19 @@ COMPWLsegx (node *arg_node, node *arg_info)
     /*
      * Insert scheduling specific ICMs.
      */
+    assigns = AppendAssign (assigns,
+                            MakeAssign (SCHCompileSchedulingWithTaskselEnd (
+                                          INFO_COMP_SCHEDULERID (arg_info),
+                                          IDS_NAME (wlids), WLSEGX_SCHEDULING (arg_node),
+                                          WLSEGX_TASKSEL (arg_node), arg_node),
+                                        NULL));
     assigns
-      = AppendAssign (assigns,
-                      MakeAssign (SCHCompileSchedulingEnd (INFO_COMP_SCHEDULERID (
-                                                             arg_info),
-                                                           IDS_NAME (wlids),
-                                                           WLSEGX_SCHEDULING (arg_node),
-                                                           arg_node),
-                                  NULL));
-    assigns
-      = MakeAssign (SCHCompileSchedulingBegin (INFO_COMP_SCHEDULERID (arg_info),
-                                               IDS_NAME (wlids),
-                                               WLSEGX_SCHEDULING (arg_node), arg_node),
+      = MakeAssign (SCHCompileSchedulingWithTaskselBegin (INFO_COMP_SCHEDULERID (
+                                                            arg_info),
+                                                          IDS_NAME (wlids),
+                                                          WLSEGX_SCHEDULING (arg_node),
+                                                          WLSEGX_TASKSEL (arg_node),
+                                                          arg_node),
                     assigns);
 
     /*
@@ -6174,9 +6178,12 @@ COMPWLsegx (node *arg_node, node *arg_info)
     if (WLSEGX_SCHEDULING (arg_node) != NULL) {
 
         INFO_COMP_SCHEDULERINIT (arg_info)
-          = MakeAssign (SCHCompileSchedulingInit (INFO_COMP_SCHEDULERID (arg_info),
-                                                  IDS_NAME (wlids),
-                                                  WLSEGX_SCHEDULING (arg_node), arg_node),
+          = MakeAssign (SCHCompileSchedulingWithTaskselInit (INFO_COMP_SCHEDULERID (
+                                                               arg_info),
+                                                             IDS_NAME (wlids),
+                                                             WLSEGX_SCHEDULING (arg_node),
+                                                             WLSEGX_TASKSEL (arg_node),
+                                                             arg_node),
                         INFO_COMP_SCHEDULERINIT (arg_info));
 
         INFO_COMP_SCHEDULERID (arg_info) += 1;
