@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/08/01 14:02:26  nmw
+ * sac_free_interface_handler.h
+ * removed
+ *
  * Revision 2.9  2000/07/20 12:46:07  dkr
  * include of sac_free_interface_handler.h added
  *
@@ -66,8 +70,6 @@
 #ifdef TAGGED_ARRAYS
 #include "sac_icm.h"
 #endif /* TAGGED_ARRAYS */
-
-#include "sac_free_interface_handler.h"
 
 #include "sac_boundcheck.h"
 #include "sac_misc.h"
