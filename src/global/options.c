@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2005/02/11 14:40:30  jhb
+ * added options for treecheck
+ *
  * Revision 3.81  2005/01/29 21:40:38  mwe
  * sigspec compiler switch added
  *
@@ -334,6 +337,7 @@ OPTanalyseCommandline (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("d")
     {
         ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("treecheck", global.treecheck = TRUE);
         ARG_CHOICE ("efence", global.use_efence = TRUE);
         ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
         ARG_CHOICE ("syscall", global.show_syscall = TRUE);
