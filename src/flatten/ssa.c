@@ -1,17 +1,25 @@
 /*
  * $Log$
+ * Revision 1.2  2004/02/04 12:32:28  skt
+ * some comments added
+ *
  * Revision 1.1  2004/02/02 15:47:38  skt
  * Initial revision
  *
  */
 
 /**
- * @brief Tool package to create resp. to reverse the ssa-form
+ * @defgroup ssa Static Single Assignment
+ *
+ * This group contains all those files/ modules that deal with administrative
+ * tasks of the SSA-form
+ * @{
  */
 
 /**
  *
  * @file ssa.c
+ * @brief Tool package to create resp. to reverse the ssa-form
  *
  * Till now we need to call several functions to create the ssa-form,
  * e.g. TansformWhile2Do, Lac2Fun, SSATransform.
@@ -102,7 +110,7 @@ DONE:
  *   @param syntax_tree  nomen est omen
  *   @return the whole syntax_tree, no longer in ssa-form
  *
- ******************************************************************************/
+ *****************************************************************************/
 extern node *
 UndoSSA (node *syntax_tree)
 {
@@ -121,3 +129,7 @@ UndoSSA (node *syntax_tree)
 DONE:
     DBUG_RETURN (syntax_tree);
 }
+
+/**
+ * @}
+ */
