@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/26 20:59:26  jhb
+ * compile
+ *
  * Revision 3.3  2004/11/22 17:53:27  ktr
  * SacDevCamp 2004 Get Ready for Rumble!
  *
@@ -41,6 +44,8 @@
  *****************************************************************************/
 extern node *OBJdoHandleObjects (node *syntax_tree);
 
+#ifndef OBJ_DEACTIVATED
+
 extern node *OBJmodule (node *arg_node, info *arg_info);
 extern node *OBJfundef (node *arg_node, info *arg_info);
 extern node *OBJobjdef (node *arg_node, info *arg_info);
@@ -49,4 +54,5 @@ extern node *OBJap (node *arg_node, info *arg_info);
 extern node *OBJid (node *arg_node, info *arg_info);
 extern node *OBJlet (node *arg_node, info *arg_info);
 
+#endif /* OBJ_DEACTIVATED */
 #endif /* _SAC_OBJECTS_H_ */

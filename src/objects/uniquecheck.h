@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2004/11/26 21:00:59  jhb
+ * compile
+ *
  * Revision 3.4  2004/11/22 17:53:27  ktr
  * SacDevCamp 2004 Get Ready for Rumble!
  *
@@ -44,6 +47,8 @@
  *****************************************************************************/
 extern node *UNQdoUniquenessCheck (node *syntax_tree);
 
+#ifndef OBJUC_DEACTIVATED
+
 extern node *UNQmodule (node *arg_node, info *arg_info);
 extern node *UNQfundef (node *arg_node, info *arg_info);
 extern node *UNQblock (node *arg_node, info *arg_info);
@@ -55,4 +60,5 @@ extern node *UNQdo (node *arg_node, info *arg_info);
 extern node *UNQcond (node *arg_node, info *arg_info);
 extern node *UNQwith (node *arg_node, info *arg_info);
 
+#endif /*  OBJUC_DEACTIVATED   */
 #endif /* _SAC_UNIQUECHECK_H_  */

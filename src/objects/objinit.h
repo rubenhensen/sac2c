@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/26 21:00:35  jhb
+ * compile
+ *
  * Revision 3.3  2004/11/22 17:53:27  ktr
  * SacDevCamp 2004 Get Ready for Rumble!
  *
@@ -38,7 +41,10 @@
  *****************************************************************************/
 extern node *OIdoObjInit (node *syntax_tree);
 
+#ifndef OBJI_DEACTIVATED
+
 extern node *OImodule (node *arg_node, info *arg_info);
 extern node *OIobjdef (node *arg_node, info *arg_info);
 
+#endif /* OBJI_DEACTIVATED */
 #endif /* _SAC_OBJINIT_H_  */
