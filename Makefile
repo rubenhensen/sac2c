@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.32  1995/10/20 09:21:38  cg
+# Revision 1.33  1995/10/22 17:24:56  cg
+# added checkdec.o
+#
+# Revision 1.32  1995/10/20  09:21:38  cg
 # added compilation of 'analyse.c`
 #
 # Revision 1.31  1995/10/16  11:59:58  cg
@@ -115,11 +118,13 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
-	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/Unswitch.o \
+	  src/optimize/Inline.o src/optimize/Unroll.o \
+          src/optimize/Unswitch.o \
 	  src/psi-opt/ArrayElimination.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
-         src/modules/implicittypes.o src/modules/analysis.o
+         src/modules/implicittypes.o src/modules/analysis.o \
+         src/modules/checkdec.o
 OBJECTS= src/objects/objinit.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
