@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.22  1995/07/11 09:22:17  cg
- * objects now implemented.
+ * Revision 1.23  1995/07/17 14:14:14  hw
+ * information about N_fundef updated
  *
+# Revision 1.22  1995/07/11  09:22:17  cg
+# objects now implemented.
+#
 # Revision 1.21  1995/07/06  17:30:30  cg
 # Constants removed, statustype modified.
 #
@@ -211,6 +214,9 @@ N_fundef:
 node[0]	   : functionbody (N_block)
 node[1]    : next function (N_fundef), if there is one
 node[2]    : arguments of function (N_arg), if there are some
+node[5]    : alternative name for function( casted to( char *))
+             only used for 'extern' userdefined primitive functions
+                !! not yet implemented !!
 
 info.types : first types structure contains the functions name (info.types->id,
              info.types->id_mod) and the first part of the functions type. 
@@ -222,6 +228,9 @@ node[3]    : pointer to corresponding N_return
 node[4]    : casted to (ids *) !!! list of global object identifiers
              needed by this function 
               !! not yet implemented !!
+
+- after compilation(creation of ICMs ) -
+node[3]    : N_icm: ND_FUNDEC
 
 -Created before optimizing:
 varno      : lenght of the masks in this function
