@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1995/05/29 10:04:18  asi
+ * Revision 1.45  1995/06/02 09:53:31  sbs
+ * -bs, -nopsiopt, -noIDE and PsiOpt call inserted
+ *
+ * Revision 1.44  1995/05/29  10:04:18  asi
  * shortcuts -noCF -noDCR -noPDCR -noLIR -noINL -nnUNR added
  *
  * Revision 1.43  1995/05/26  14:23:42  asi
@@ -160,6 +163,7 @@
 #include "scnprs.h"
 #include "trace.h"
 #include "compile.h"
+#include "psi-opt.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -167,9 +171,14 @@ extern int malloc_debug (int level);
 
 FILE *outfile;
 char filename[MAX_FILE_NAME];
-int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
+
 int optimize = 1;
+int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
 int optvar = 50;
+
+int psi_optimize = 1;
+int psi_opt_ive = 1;
+
 int show_refcnt = 0;
 int show_icm = 0;
 int traceflag = 0;
@@ -179,7 +188,7 @@ MAIN
     int set_outfile = 0;
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakref = 0;
+        breakpsiopt = 0, breakref = 0;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
     char cfilename[MAX_FILE_NAME];
@@ -240,6 +249,9 @@ MAIN
             break;
         case 'o':
             breakopt = 1;
+            break;
+        case 's':
+            breakpsiopt = 1;
             break;
         case 'r':
             breakref = 1;
@@ -324,6 +336,14 @@ MAIN
             opt_unr = 0;
         if (!strncmp (*argv, "ounroll_loops", 13))
             opt_unr = 0;
+        if (!strncmp (*argv, "oPSIOPT", 7))
+            psi_optimize = 0;
+        if (!strncmp (*argv, "opsiopt", 7))
+            psi_optimize = 0;
+        if (!strncmp (*argv, "oindex_vect_elimination", 23))
+            psi_opt_ive = 0;
+        if (!strncmp (*argv, "oIVE", 3))
+            psi_opt_ive = 0;
     }
     NEXTOPT
     ARG 'v' : PARM
@@ -396,11 +416,14 @@ MAIN
                 if ((!breaktype) && (errors == 0)) {
                     syntax_tree = Optimize (syntax_tree);
                     if (!breakopt) {
-                        NOTE (("Refcounting: ...\n"));
-                        syntax_tree = Refcount (syntax_tree);
-                        if (!breakref) {
-                            NOTE (("Compiling: ...\n"));
-                            syntax_tree = Compile (syntax_tree);
+                        syntax_tree = PsiOpt (syntax_tree);
+                        if (!breakpsiopt) {
+                            NOTE (("Refcounting: ...\n"));
+                            syntax_tree = Refcount (syntax_tree);
+                            if (!breakref) {
+                                NOTE (("Compiling: ...\n"));
+                                syntax_tree = Compile (syntax_tree);
+                            }
                         }
                     }
                 }
