@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1996/01/21 14:11:49  cg
+ * Revision 1.33  1996/01/21 14:52:31  cg
+ * bug fixed in creating arrays of type void*
+ *
+ * Revision 1.32  1996/01/21  14:11:49  cg
  * added new icms for refcounting external implicit types
  *
  * Revision 1.31  1995/12/18  16:27:17  cg
@@ -804,7 +807,7 @@ DBUG_VOID_RETURN;
     int i;
     for (i = 0; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "ND_PREPARE_UPDATE_HIDDEN(%s, %s[%d], %s);\n", A[i], name, i,
+        fprintf (outfile, "ND_CHECK_REUSE_HIDDEN(%s, %s[%d], %s);\n", A[i], name, i,
                  copyfun);
     }
 }

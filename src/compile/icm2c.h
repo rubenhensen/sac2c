@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1996/01/21 14:11:49  cg
+ * Revision 1.30  1996/01/21 14:52:31  cg
+ * bug fixed in creating arrays of type void*
+ *
+ * Revision 1.29  1996/01/21  14:11:49  cg
  * added new icms for refcounting external implicit types
  *
  * Revision 1.28  1995/12/18  16:27:39  cg
@@ -393,10 +396,8 @@
         ND_REUSE_RC (old, new);                                                          \
     } else
 
-/*
-#define ND_CHECK_REUSE_HIDDEN(name, copyfun)   \
-  (ND_A_RC(name)==1?name:copyfun(name))
-*/
+#define ND_CHECK_REUSE_HIDDEN(old, new, copyfun)                                         \
+    new = ND_A_RC (old) == 1 ? old : copyfun (old);
 
 #define ND_PREPARE_UPDATE_HIDDEN(old, new, copyfun)                                      \
     PRINT_TRACEHEADER (("ND_PREPARE_UPDATE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));  \
