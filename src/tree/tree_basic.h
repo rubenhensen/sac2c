@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.91  2000/08/07 13:41:23  dkr
+ * ST_independent replaced by ST_shp_indep and ST_dim_indep
+ *
  * Revision 1.90  2000/08/04 17:11:56  dkr
  * removed NEWTREE
  *
@@ -984,12 +987,13 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_repfun       function replicated for multithreaded execution
  *
  *  before multithreading:
- *  ATTRIB: ST_regular      dimension-dependent or non-array function
- *          ST_independent  dimension-independent array function
- *          ST_generic      generic function derived from dimension-
- *                          independent array function
- *          ST_gen_remove   generic function that has been specialized and will be
- *                          removed before typechecking
+ *  ATTRIB: ST_regular      shape-dependent or non-array function
+ *          ST_shp_indep    shape-independent but dim.-dependent array function
+ *          ST_dim_indep    dimension-independent array function
+ *          ST_generic      generic function derived from shape-independent
+ *                          array function
+ *          ST_gen_remove   generic function that has been specialized and will
+ *                          be removed before typechecking
  *
  *  whlie/after multithreading:
  *  ATTRIB: ST_call_any       default_flag

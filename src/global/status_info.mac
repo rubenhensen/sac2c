@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/08/07 13:40:57  dkr
+ * ST_independent replaced by ST_shp_indep and ST_dim_indep
+ *
  * Revision 1.6  2000/08/03 10:20:47  nmw
  * ST_gen_remove added
  *
@@ -29,7 +32,7 @@
 #define SELECTtext(it_text)
 #endif
 
-/* the commnt is not to be selected anywhere ... */
+/* the comment is selected nowhere yet ... */
 
 #define SELECT(it_element, it_text, it_comment)                                          \
     SELECTelement (it_element) SELECTtext (it_text)
@@ -58,8 +61,11 @@ SELECT (ST_regular, "ST_regular",
   SELECT (ST_artificial, "ST_artificial",
           /* unique type inserted during signature expansion */),
 
-  SELECT (ST_independent, "ST_independent",
-          /* dimension-independent function                  */),
+  SELECT (ST_shp_indep, "ST_shp_indep",
+          /* shape-independent but dimension-dependent function  */),
+
+  SELECT (ST_dim_indep, "ST_dim_indep",
+          /* dimension-independent function                      */),
 
   SELECT (ST_generic, "ST_generic",
           /* generic function derived from dimension-independent function */),
