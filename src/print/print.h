@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/06/06 14:04:15  cg
+ * Revision 1.13  1995/07/04 08:38:17  hw
+ * PrintDouble inserted
+ *
+ * Revision 1.12  1995/06/06  14:04:15  cg
  * PrintConstdef and PrintObjdef added.
  *
  * Revision 1.11  1995/06/02  16:53:33  sbs
@@ -66,6 +69,7 @@ extern node *PrintPrf (node *, node *);
 extern node *PrintId (node *, node *);
 extern node *PrintNum (node *, node *);
 extern node *PrintFloat (node *, node *);
+extern node *PrintDouble (node *, node *);
 extern node *PrintBool (node *, node *);
 extern node *PrintReturn (node *, node *);
 extern node *PrintAp (node *, node *);
