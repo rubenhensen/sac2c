@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.140  1997/12/02 18:48:06  srs
+ * enhanced output of PrintNodeTree
+ *
  * Revision 1.139  1997/11/29 15:49:53  srs
  * the print routine for the new WLs prints the 'user-syntax'
  * if only one Npart node is present. Else an internal syntax
@@ -2098,15 +2101,45 @@ void
 PrintNodeTree (node *node)
 {
     int i;
+    ids *_ids;
+
     outfile = stdout;
 
     if (node) {
-        INDENT;
-        fprintf (outfile, "%s\n", mdb_nodetype[NODE_TYPE (node)]);
+        /* print node name */
+        fprintf (outfile, "%s  ", mdb_nodetype[NODE_TYPE (node)]);
+
+        /* print additional information to nodes */
+        switch (NODE_TYPE (node)) {
+        case N_let:
+            _ids = LET_IDS (node);
+            fprintf (outfile, "(");
+            while (_ids) {
+                fprintf (outfile, "%s ", IDS_NAME (_ids));
+                _ids = IDS_NEXT (_ids);
+            }
+            fprintf (outfile, ")\n");
+            break;
+        case N_id:
+            fprintf (outfile, "(%s)\n", ID_NAME (node));
+            break;
+        case N_num:
+            fprintf (outfile, "(%i)\n", NUM_VAL (node));
+            break;
+        case N_prf:
+            fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (node)]);
+            break;
+        default:
+            fprintf (outfile, "\n");
+        }
+
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
-            if (node->node[i])
+            if (node->node[i]) {
+                INDENT;
+                fprintf (outfile, "%i|", i);
                 PrintNodeTree (node->node[i]);
+            }
         indent--;
     } else
         fprintf (outfile, "NULL\n");
