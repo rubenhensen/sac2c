@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2002/10/09 21:58:22  dkr
+ * optimization for 'reshape(shape(a),a)' added
+ *
  * Revision 1.38  2002/10/09 12:44:04  dkr
  * structural constants exported now
  * (someone should move this stuff to constants.[ch] ...)
@@ -568,7 +571,7 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
 /******************************************************************************
  *
  * function:
- *   node **SSACFGetPrfArgs(node **array, node *prf_arg_chain, int max_args)
+ *   node **SSACFGetPrfArgs( node **array, node *prf_arg_chain, int max_args)
  *
  * description:
  *   fills an pointer array of len max_args with the args from an exprs chain
@@ -2297,6 +2300,17 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         else if ((arg_co[0] != NULL) && (arg_expr[1] != NULL)) {
             /* for some non constant expression and constant index vector */
             new_node = SSACFStructOpWrapper (F_reshape, arg_co[0], arg_expr[1]);
+            if ((new_node == NULL) && (NODE_TYPE (arg_expr[1]) == N_id)) {
+                /* reshape( shp, a)  ->  a    iff (shp == shape(a)) */
+                shape *shp = SHOldTypes2Shape (ID_TYPE (arg_expr[1]));
+                if (shp != NULL) {
+                    if (SHCompareWithCArray (shp, COGetDataVec (arg_co[0]),
+                                             SHGetExtent (COGetShape (arg_co[0]), 0))) {
+                        new_node = DupNode (arg_expr[1]);
+                    }
+                    shp = SHFreeShape (shp);
+                }
+            }
         }
         break;
 
