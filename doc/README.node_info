@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.5  1994/12/16 09:35:53  sbs
- * N_modul, N_implist, N_typedef & N_cast inserted
+ * Revision 1.6  1994/12/16 14:50:49  sbs
+ * N_moduldec, N_classdec & N_explist inserted
  *
+# Revision 1.5  1994/12/16  09:35:53  sbs
+# N_modul, N_implist, N_typedef & N_cast inserted
+#
 # Revision 1.4  1994/12/08  14:13:13  hw
 # changed information about N_fundef
 #
@@ -37,6 +40,18 @@ typedef struct NODE
    int          lineno;   /* commands linenumber */
    struct NODE *node[4];  /* children nodes */
 } node;                   
+
+N_moduldec, N_classdec:
+=======================
+node[0]    : export-list (N_explist)
+node[1]    : import_list (N_implist) if present...
+info.id    : name of the modul/class
+
+N_explist:
+==========
+node[0]    : explicit types (N_typedef) if present...
+node[1]    : function declarations (N_fundef with NULL-body) if present...
+info.ids   : implicit types if present...
 
 N_modul:
 ========
