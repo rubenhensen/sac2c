@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.47  2000/03/21 15:46:03  dkr
+ * ICM_INDENT explicitly set to 0 if MakeNode is used instead of MakeIcm
+ *
  * Revision 2.46  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -1308,6 +1311,7 @@ CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
 
     NODE_TYPE (icm) = N_icm;
     ICM_NAME (icm) = "ND_FUN_AP";
+    ICM_INDENT (icm) = 0;
 
     /* put function_name at beginning of ICM_ARGS */
 
@@ -3775,16 +3779,19 @@ COMPPrf (node *arg_node, node *arg_info)
         case F_min:
             NODE_TYPE (arg_node) = N_icm;
             ICM_NAME (arg_node) = "ND_MIN";
+            ICM_INDENT (arg_node) = 0;
             break;
 
         case F_max:
             NODE_TYPE (arg_node) = N_icm;
             ICM_NAME (arg_node) = "ND_MAX";
+            ICM_INDENT (arg_node) = 0;
             break;
 
         case F_abs:
             NODE_TYPE (arg_node) = N_icm;
             ICM_NAME (arg_node) = "ND_ABS";
+            ICM_INDENT (arg_node) = 0;
             break;
 
         default:
@@ -4081,9 +4088,7 @@ COMPId (node *arg_node, node *arg_info)
         } else {
             DBUG_ASSERT ((arg_info != NULL), "corrupted arg-info");
 
-            icm_node = MakeNode (N_icm);
-            ICM_NAME (icm_node) = "ND_KS_RET_ARRAY";
-            ICM_ARGS (icm_node) = MakeExprs (arg_node, NULL);
+            icm_node = MakeIcm ("ND_KS_RET_ARRAY", MakeExprs (arg_node, NULL), NULL);
             arg_node = icm_node;
         }
     }
@@ -4537,6 +4542,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
     DBUG_PRINT ("COMP", ("Handling counterparts of reference parameters finished"));
 
     NODE_TYPE (arg_node) = N_icm;
+    ICM_INDENT (arg_node) = 0;
 
     if (arg_node->node[1] == NULL) {
         ICM_NAME (arg_node) = "NOOP";
@@ -5191,7 +5197,7 @@ COMPObjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPObjdef");
 
     if (IsArray (OBJDEF_TYPE (arg_node))) {
-        icm = MakeNode (N_icm);
+        icm = MakeIcm (NULL, NULL, NULL);
 
         GET_BASIC_TYPE (full_type, OBJDEF_TYPE (arg_node), 042);
 
