@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/28 14:45:09  nmw
+ * changes to support T_user types in SAC_args
+ *
  * Revision 1.7  2000/07/13 09:53:36  nmw
  * comments added
  *
@@ -47,7 +50,8 @@ static in_use_directory_T *in_use_directory;
 /******************************************************************************
  *
  * function:
- *   SAC_arg SAC_NewSACArg(SAC_ARG_simpletype basetype, int dim, int *shpvec)
+ *   SAC_arg SAC_NewSACArg(SAC_ARG_simpletype basetype,char *tname,
+ *                         int dim, int *shpvec)
  *
  * description:
  *   creates a SAC_arg data type of basetype and dimension with the specified
@@ -59,7 +63,7 @@ static in_use_directory_T *in_use_directory;
  ******************************************************************************/
 
 SAC_arg
-SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpvec)
+SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, int *shpvec)
 {
     SAC_arg result;
 
@@ -74,6 +78,7 @@ SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpvec)
     SAC_ARG_ELEMS (result) = NULL;
     SAC_ARG_TYPE (result) = basetype;
     SAC_ARG_DIM (result) = dim;
+    SAC_ARG_TNAME (result) = tname;
 
     if (dim == 0) {
         /* create simple type */
@@ -89,7 +94,7 @@ SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpvec)
 /******************************************************************************
  *
  * function:
- *   SAC_arg SAC_CreateSACArg(simpletype basetype, int dim, ...)
+ *   SAC_arg SAC_CreateSACArg(simpletype basetype, char *tname, int dim, ...)
  *
  * description:
  *   creates a SAC_arg data type of basetype and dimension with the specified
@@ -101,7 +106,7 @@ SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpvec)
  ******************************************************************************/
 
 SAC_arg
-SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...)
+SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, ...)
 {
     va_list Argp;
     int *shpvec;
@@ -119,13 +124,14 @@ SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...)
         }
     }
 
-    return (SAC_CI_NewSACArg (basetype, dim, shpvec));
+    return (SAC_CI_NewSACArg (basetype, tname, dim, shpvec));
 }
 
 /******************************************************************************
  *
  * function:
- *   bool SAC_CmpSACArgType(SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...)
+ *   bool SAC_CmpSACArgType(SAC_arg sa, SAC_ARG_simpletype basetype,
+ *                          char *tname, int dim, ...)
  *
  * description:
  *   compares SAC_arg argument with given basetype, dimension and shape
@@ -133,18 +139,25 @@ SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...)
  ******************************************************************************/
 
 bool
-SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...)
+SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname, int dim, ...)
 {
     va_list Argp;
     bool res = true;
     int i;
 
-    if ((SAC_ARG_TYPE (sa) == basetype) && (SAC_ARG_DIM (sa) == dim)) {
-        /* check shape */
-        va_start (Argp, dim);
-        for (i = 0; i < dim; i++) {
-            if ((SAC_ARG_SHPVEC (sa))[i] != va_arg (Argp, int))
-                res = false;
+    /* check if equal user types or no user types at all */
+    if (((SAC_ARG_TNAME (sa) == NULL) && (tname == 0))
+        || ((SAC_ARG_TNAME (sa) != NULL) && (tname != NULL)
+            && (strcmp (SAC_ARG_TNAME (sa), tname) == 0))) {
+        if ((SAC_ARG_TYPE (sa) == basetype) && (SAC_ARG_DIM (sa) == dim)) {
+            /* check shape */
+            va_start (Argp, dim);
+            for (i = 0; i < dim; i++) {
+                if ((SAC_ARG_SHPVEC (sa))[i] != va_arg (Argp, int))
+                    res = false;
+            }
+        } else {
+            res = false;
         }
     } else {
         res = false;
@@ -215,8 +228,8 @@ SAC_CI_InitRefcounter (SAC_arg sa, int initvalue)
 /******************************************************************************
  *
  * function:
- *   void SAC_CI_ExitOnInvalidArg(SAC_arg sa,
- *                                SAC_ARG_simpletype basetype, int arg_mode)
+ *   void SAC_CI_ExitOnInvalidArg(SAC_arg sa, SAC_ARG_simpletype basetype,
+ *                                char *tname int arg_mode)
  *
  * description:
  *   checks SAC_arg for valid content
@@ -225,19 +238,26 @@ SAC_CI_InitRefcounter (SAC_arg sa, int initvalue)
  ******************************************************************************/
 
 void
-SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, int flag)
+SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname, int flag)
 {
     if (SAC_ARG_LRC (sa) > 0) {
-        /* check basetype */
-        if (SAC_ARG_TYPE (sa) == basetype) {
-            if (flag == SAC_CI_SIMPLETYPE && SAC_ARG_DIM (sa) != 0) {
-                SAC_RuntimeError ("SAC_Sac2XXX: access to array as simple type!\n");
-            }
-            if (flag == SAC_CI_ARRAYTYPE && SAC_ARG_DIM (sa) < 1) {
-                SAC_RuntimeError ("SAC_Sac2XXX: access to simple type as array!\n");
+        /* no usertype checks */
+        if (((SAC_ARG_TNAME (sa) == NULL) && (tname == 0))
+            || ((SAC_ARG_TNAME (sa) != NULL) && (tname != NULL)
+                && (strcmp (SAC_ARG_TNAME (sa), tname) == 0))) {
+            /* check basetype */
+            if (SAC_ARG_TYPE (sa) == basetype) {
+                if (flag == SAC_CI_SIMPLETYPE && SAC_ARG_DIM (sa) != 0) {
+                    SAC_RuntimeError ("SAC_Sac2XXX: access to array as simple type!\n");
+                }
+                if (flag == SAC_CI_ARRAYTYPE && SAC_ARG_DIM (sa) < 1) {
+                    SAC_RuntimeError ("SAC_Sac2XXX: access to simple type as array!\n");
+                }
+            } else {
+                SAC_RuntimeError ("SAC_Sac2XXX: access to wrong basetype!\n");
             }
         } else {
-            SAC_RuntimeError ("SAC_Sac2XXX: access to wrong basetype!\n");
+            SAC_RuntimeError ("SAC_Sac2XXX: access to user defined type!\n");
         }
     } else {
         SAC_RuntimeError ("SAC_Sac2XXX: access to invalid SAC_arg data,\n"
