@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2002/10/30 11:47:04  ktr
+ * Fixed a bug that made the new wl have a wrong shape when the inner wl
+ * was a modarray-wl.
+ *
  * Revision 1.20  2002/10/24 13:10:22  ktr
  * level of aggresiveness now controlled by flag -wls_aggressive
  *
@@ -8,8 +12,8 @@
  * ASSIGN_INDENT is now increased by the number of dimensions of the inner with loop.
  *
  * Revision 1.18  2002/10/20 13:23:59  ktr
- * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n) to N_assign
- * node which is increased on every indentation performed by WLS.
+ * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n)
+ * to N_assign node which is increased on every indentation performed by WLS.
  *
  * Revision 1.17  2002/10/18 17:14:11  ktr
  * Fixed a bug which made probePart crash when a part's CEXPR is the index vector.
@@ -1339,9 +1343,12 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
             tmp_node2 = ASSIGN_NEXT (tmp_node2);
         }
         if (NODE_TYPE (tmp_node) != N_empty) {
+            FreeTree (ASSIGN_NEXT (tmp_node2));
             ASSIGN_NEXT (tmp_node2) = tmp_node;
-        } else
+        } else {
+            FreeTree (ASSIGN_NEXT (tmp_node2));
             ASSIGN_NEXT (tmp_node2) = NULL;
+        }
     }
 
     /* Here we prepend definitions of the two old WITHVECs */
@@ -1580,7 +1587,7 @@ WLSNwith (node *arg_node, node *arg_info)
     INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
 
     /* First of all, the Withloop must be a MG-WL */
-    INFO_WLS_POSSIBLE (arg_info) = INFO_WLS_PARTS (arg_info) > 0;
+    INFO_WLS_POSSIBLE (arg_info) = (INFO_WLS_PARTS (arg_info) > 0);
 
     if (INFO_WLS_POSSIBLE (arg_info)) {
         WLS_PHASE (arg_info) = wls_probe;
@@ -1674,10 +1681,17 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /* The new shape is the concatenation of both old shapes */
 
-        if (NWITHOP_TYPE (INFO_WLS_WITHOP (arg_info)) == WO_genarray)
+        if (NWITHOP_TYPE (INFO_WLS_WITHOP (arg_info)) == WO_genarray) {
             NWITH_SHAPE (arg_node)
               = ConcatVecs (NWITH_SHAPE (arg_node),
-                            NWITH_SHAPE (NPART_LETEXPR (NWITH_PART (arg_node))));
+                            NWITH_TYPE (NPART_LETEXPR (NWITH_PART (arg_node)))
+                                == WO_genarray
+                              ? NWITH_SHAPE (NPART_LETEXPR (NWITH_PART (arg_node)))
+                              : Shpseg2Array (ID_SHPSEG (NWITH_ARRAY (
+                                                NPART_LETEXPR (NWITH_PART (arg_node)))),
+                                              ID_DIM (NWITH_ARRAY (
+                                                NPART_LETEXPR (NWITH_PART (arg_node))))));
+        }
 
         /* traverse all PARTS  */
 
