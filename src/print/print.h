@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/22 19:26:25  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.10  2001/03/15 17:02:49  dkr
  * no changes done
  *
@@ -65,7 +68,10 @@
 #ifndef _sac_print_h
 #define _sac_print_h
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "globals.h"
 
 #define INDENT_STR "  "

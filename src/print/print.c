@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/03/22 19:26:15  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.34  2001/03/22 14:07:35  sbs
  * F_abs now printed prefix rather than infix 8-)
  *
@@ -137,8 +140,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
-
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "print.h"
 #include "print_interface.h"
 #include "my_debug.h"

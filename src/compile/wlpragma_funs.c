@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/22 19:19:16  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.14  2001/03/20 19:04:53  dkr
  * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
  * Scheduling()
@@ -51,8 +54,11 @@
  *
  */
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "free.h"
 #include "DupTree.h"
 #include "resource.h"

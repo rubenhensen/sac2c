@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/22 19:26:49  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.6  2001/03/09 11:15:55  sbs
  * call to ProfileFunctions added after type checking.
  *
@@ -109,11 +112,7 @@
  * Revision 2.1  1999/02/23 12:39:28  sacbase
  * new release made
  *
- *
  * ... [eliminated]
- *
- * Revision 1.2  1994/11/10  15:44:34  sbs
- * RCS-header inserted
  *
  */
 
@@ -121,7 +120,10 @@
  *  this file contains the main function of the SAC->C compiler!
  */
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "my_debug.h"
 #include "globals.h"
@@ -153,7 +155,6 @@
 #include "annotate_fun_calls.h"
 #include "cccall.h"
 #include "PatchWith.h"
-#include "internal_lib.h"
 #include "resource.h"
 #include "interrupt.h"
 #include "options.h"

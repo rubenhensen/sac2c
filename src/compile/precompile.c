@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/22 19:16:20  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.13  2001/03/15 16:12:38  dkr
  * RemoveArtificialIds() added (extracted from RenameIds())
  *
@@ -124,14 +127,15 @@
 
 #include <string.h>
 
-#include "dbug.h"
 #include "types.h"
-#include "tree.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
+#include "dbug.h"
 #include "DupTree.h"
 #include "free.h"
 #include "prf.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "convert.h"
 #include "DataFlowMask.h"
 #include "typecheck.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/22 19:21:19  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.12  2001/02/28 15:44:16  nmw
  * L2Fassign included in traversal to set correct FUNDEF_EXT_ASSIGN
  *
@@ -145,7 +148,10 @@
  *
  *****************************************************************************/
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"

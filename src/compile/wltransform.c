@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/03/22 19:19:02  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.37  2001/03/20 15:32:20  ben
  * prefix WLCOMP_ for wlcomp-functions added
  *
@@ -132,11 +135,13 @@
  *
  ******************************************************************************/
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"

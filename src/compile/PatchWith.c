@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.3  2001/03/22 19:16:33  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.2  2000/12/01 18:18:55  dkr
  * no cc warning '... might be used uninitialized' anymore
  *
@@ -66,7 +70,10 @@
  * representation is performed.
  */
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "typecheck.h"
 #include "free.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/22 19:16:44  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.1  2000/11/20 18:01:14  sacbase
  * new release made
  *
@@ -19,10 +22,12 @@
  * Revision 1.54  1998/04/25 16:25:20  sbs
  *  new icm2c / BEtest mechanism implemented!
  *
- *
  */
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
 #include "globals.h"
 #include "convert.h"
