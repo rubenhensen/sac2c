@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.80  1998/05/06 12:24:17  dkr
+ * insert access macros
+ *
  * Revision 1.79  1998/04/30 12:38:34  dkr
  * changed DupNwith2: duplicates masks
  *
@@ -729,9 +732,9 @@ DupFundef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
 
-    new_node = MakeNode (arg_node->nodetype);
+    new_node = MakeNode (NODE_TYPE (arg_node));
 
-    new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    FUNDEF_TYPES (new_node) = DuplicateTypes (FUNDEF_TYPES (arg_node), 1);
     DUP (arg_node, new_node);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -746,7 +749,7 @@ DupFundef (node *arg_node, node *arg_info)
 
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
 
-    DBUG_RETURN (new_node);
+  DBUG_RETURN new_node);
 }
 
 /******************************************************************************/
@@ -791,7 +794,7 @@ DupInfo (node *arg_node, node *arg_info)
     FreeTree(arg_node);
   }
   else {  /* make new node in new_node */
-    new_node = MakeNode(N_info);
+    new_node = MakeInfo();
     new_node->flag = arg_node->flag;
   }
 #endif
