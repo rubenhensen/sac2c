@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.178  1998/07/03 10:18:15  cg
+ * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
+ * MT_SPMD_SETUP and MT_SPMD_EXECUTE
+ *
  * Revision 1.177  1998/07/02 09:24:18  cg
  * bug fixed in generation MT_SYNC_ONEFOLD ICM
  *
@@ -574,6 +579,8 @@
 #include <limits.h> /* MAX_INT */
 
 #include "tree.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 
 #include "print.h"
 #include "dbug.h"
@@ -2313,12 +2320,16 @@ COMPModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("COMPModul");
 
+    INFO_COMP_MODUL (arg_info) = arg_node;
+
     if (MODUL_OBJS (arg_node) != NULL) {
         MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
     }
+
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
+
     if (MODUL_TYPES (arg_node) != NULL) {
         MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
     }
@@ -2527,6 +2538,25 @@ COMPFundef (node *arg_node, node *arg_info)
      */
     if (FUNDEF_PRAGMA (arg_node) != NULL) {
         FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
+    }
+
+    /*
+     * Remove fold-function from list of functions.
+     * However, it cannot be freed since it is still needed by several ICM
+     * implementations. Therefore, all fold-functions are stored in a special
+     * fundef-chain fixed to the N_modul node. So, they still exist, but
+     * won't be printed.
+     */
+
+    if (FUNDEF_STATUS (arg_node) == ST_foldfun) {
+        node *tmp;
+
+        tmp = FUNDEF_NEXT (arg_node);
+
+        FUNDEF_NEXT (arg_node) = MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info));
+        MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info)) = arg_node;
+
+        arg_node = tmp;
     }
 
     DBUG_RETURN (arg_node);
@@ -5996,26 +6026,74 @@ COMPWith (node *arg_node, node *arg_info)
 node *
 COMPSpmd (node *arg_node, node *arg_info)
 {
-    node *fundef, *vardec, *icm_args;
+    node *fundef, *vardec, *icm_args, *assigns;
     char *tag;
-    ids *my_ids;
     int num_args;
 
     DBUG_ENTER ("COMPSpmd");
 
-    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+    /*
+     * Compile original code within spmd-block in order to produce sequential
+     * code version.
+     */
+    SPMD_ICM_SEQUENTIAL (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
 
-    /****************************************************************************
+    /*
      * build ICM for SPMD-region
+     */
+
+    if (SPMD_STATIC (arg_node)) {
+        SPMD_ICM_BEGIN (arg_node)
+          = MakeIcm1 ("MT_SPMD_STATIC_MODE_BEGIN",
+                      MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                              ST_regular));
+        SPMD_ICM_ALTSEQ (arg_node)
+          = MakeIcm1 ("MT_SPMD_STATIC_MODE_ALTSEQ",
+                      MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                              ST_regular));
+        SPMD_ICM_END (arg_node)
+          = MakeIcm1 ("MT_SPMD_STATIC_MODE_END",
+                      MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                              ST_regular));
+    } else {
+        SPMD_ICM_BEGIN (arg_node)
+          = MakeIcm1 ("MT_SPMD_DYNAMIC_MODE_BEGIN",
+                      MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                              ST_regular));
+        SPMD_ICM_ALTSEQ (arg_node)
+          = MakeIcm1 ("MT_SPMD_DYNAMIC_MODE_ALTSEQ",
+                      MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                              ST_regular));
+        SPMD_ICM_END (arg_node)
+          = MakeIcm1 ("MT_SPMD_DYNAMIC_MODE_END",
+                      MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
+                              ST_regular));
+    }
+
+    /*
+     * Now, build up the ICMs of the parallel block.
      */
 
     fundef = INFO_COMP_FUNDEF (arg_info);
 
+    assigns = NULL;
+
+    assigns
+      = MakeAssign (MakeIcm1 ("MT_SPMD_EXECUTE",
+                              MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))),
+                                      NULL, ST_regular)),
+                    assigns);
+
+    /*
+     * Now, build up the arguments for MT_SPMD_SETUP ICM.
+     */
+
+    icm_args = NULL;
+    num_args = 0;
+
     /*
      * in-params
      */
-    icm_args = NULL;
-    num_args = 0;
     vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
     while (vardec != NULL) {
         if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
@@ -6023,17 +6101,14 @@ COMPSpmd (node *arg_node, node *arg_info)
         } else {
             tag = "in";
         }
-        icm_args
-          = AppendExpr (icm_args,
-                        MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                                   MakeExprs (MakeId (MakeTypeString (
-                                                        VARDEC_OR_ARG_TYPE (vardec)),
-                                                      NULL, ST_regular),
-                                              MakeExprs (MakeId (StringCopy (
-                                                                   VARDEC_OR_ARG_NAME (
-                                                                     vardec)),
-                                                                 NULL, ST_regular),
-                                                         NULL))));
+        icm_args = MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                      ST_regular),
+                              icm_args);
+        icm_args = MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)), NULL,
+                                      ST_regular),
+                              icm_args);
+        icm_args = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular), icm_args);
+
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6042,25 +6117,24 @@ COMPSpmd (node *arg_node, node *arg_info)
     /*
      * inout-params
      */
-    my_ids = SPMD_INOUT_IDS (arg_node);
-    while (my_ids != NULL) {
-        if (DFMTestMaskEntry (SPMD_INOUT (arg_node), IDS_NAME (my_ids),
-                              IDS_VARDEC (my_ids))) {
-            tag = (char *)Malloc (16 * sizeof (char));
-            sprintf (tag, "inout_rc%d", IDS_REFCNT (my_ids));
-            icm_args
-              = AppendExpr (icm_args,
-                            MakeExprs (MakeId (tag, NULL, ST_regular),
-                                       MakeExprs (MakeId (MakeTypeString (
-                                                            IDS_TYPE (my_ids)),
-                                                          NULL, ST_regular),
-                                                  MakeExprs (MakeId (StringCopy (
-                                                                       IDS_NAME (my_ids)),
-                                                                     NULL, ST_regular),
-                                                             NULL))));
-            num_args++;
+
+    vardec = DFMGetMaskEntryDeclSet (SPMD_INOUT (arg_node));
+    while (vardec != NULL) {
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            tag = "inout_rc";
+        } else {
+            tag = "inout";
         }
-        my_ids = IDS_NEXT (my_ids);
+        icm_args = MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                      ST_regular),
+                              icm_args);
+        icm_args = MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)), NULL,
+                                      ST_regular),
+                              icm_args);
+        icm_args = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular), icm_args);
+        num_args++;
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
     /*
@@ -6073,17 +6147,13 @@ COMPSpmd (node *arg_node, node *arg_info)
         } else {
             tag = "out";
         }
-        icm_args
-          = AppendExpr (icm_args,
-                        MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                                   MakeExprs (MakeId (MakeTypeString (
-                                                        VARDEC_OR_ARG_TYPE (vardec)),
-                                                      NULL, ST_regular),
-                                              MakeExprs (MakeId (StringCopy (
-                                                                   VARDEC_OR_ARG_NAME (
-                                                                     vardec)),
-                                                                 NULL, ST_regular),
-                                                         NULL))));
+        icm_args = MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                      ST_regular),
+                              icm_args);
+        icm_args = MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)), NULL,
+                                      ST_regular),
+                              icm_args);
+        icm_args = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular), icm_args);
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6094,11 +6164,12 @@ COMPSpmd (node *arg_node, node *arg_info)
                                   ST_regular),
                           icm_args);
 
-    SPMD_ICM (arg_node) = MakeIcm ("MT_SPMD_BLOCK", icm_args, NULL);
+    assigns = MakeAssign (MakeIcm ("MT_SPMD_SETUP", icm_args, NULL), assigns);
 
-    /*
-     * build ICM for SPMD-region
-     ****************************************************************************/
+    assigns = AppendAssign (BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (SPMD_FUNDEF (arg_node))),
+                            assigns);
+
+    SPMD_ICM_PARALLEL (arg_node) = MakeBlock (assigns, NULL);
 
     DBUG_RETURN (arg_node);
 }
@@ -6146,16 +6217,16 @@ COMPSync (node *arg_node, node *arg_info)
             tag = "in";
         }
         icm_args3
-          = AppendExpr (icm_args3,
-                        MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
-                                   MakeExprs (MakeId (MakeTypeString (
-                                                        VARDEC_OR_ARG_TYPE (vardec)),
-                                                      NULL, ST_regular),
-                                              MakeExprs (MakeId (StringCopy (
-                                                                   VARDEC_OR_ARG_NAME (
-                                                                     vardec)),
-                                                                 NULL, ST_regular),
-                                                         NULL))));
+          = AppendExprs (icm_args3,
+                         MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                                    MakeExprs (MakeId (MakeTypeString (
+                                                         VARDEC_OR_ARG_TYPE (vardec)),
+                                                       NULL, ST_regular),
+                                               MakeExprs (MakeId (StringCopy (
+                                                                    VARDEC_OR_ARG_NAME (
+                                                                      vardec)),
+                                                                  NULL, ST_regular),
+                                                          NULL))));
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6193,8 +6264,8 @@ COMPSync (node *arg_node, node *arg_info)
                                                      NULL, ST_regular),
                                              NULL));
 
-            icm_args1 = AppendExpr (icm_args1, icm_args);
-            icm_args2 = AppendExpr (icm_args2, DupTree (icm_args, NULL));
+            icm_args1 = AppendExprs (icm_args1, icm_args);
+            icm_args2 = AppendExprs (icm_args2, DupTree (icm_args, NULL));
 
             /*
              * <tmp_var>, <fold_op>
@@ -6202,15 +6273,15 @@ COMPSync (node *arg_node, node *arg_info)
             DBUG_ASSERT ((NWITHOP_FUNDEF (NWITH2_WITHOP (with)) != NULL),
                          "no fundef found");
             icm_args2
-              = AppendExpr (icm_args2,
-                            MakeExprs (MakeId (StringCopy (ID_NAME (
-                                                 NCODE_CEXPR (NWITH2_CODE (with)))),
-                                               NULL, ST_regular),
-                                       MakeExprs (MakeId (StringCopy (
-                                                            FUNDEF_NAME (NWITHOP_FUNDEF (
-                                                              NWITH2_WITHOP (with)))),
-                                                          NULL, ST_regular),
-                                                  NULL)));
+              = AppendExprs (icm_args2,
+                             MakeExprs (MakeId (StringCopy (ID_NAME (
+                                                  NCODE_CEXPR (NWITH2_CODE (with)))),
+                                                NULL, ST_regular),
+                                        MakeExprs (MakeId (StringCopy (
+                                                             FUNDEF_NAME (NWITHOP_FUNDEF (
+                                                               NWITH2_WITHOP (with)))),
+                                                           NULL, ST_regular),
+                                                   NULL)));
         }
 
         /*
@@ -6357,15 +6428,15 @@ COMPSync (node *arg_node, node *arg_info)
     } else {
         /*
          * this sync-region is the first one of the current SPMD-region.
-         *  -> remove prolog-ICMs because they have already been inserted by the
-         *     'MT_SPMD_BLOCK'-ICM.
+         *  -> remove already built arguments for ICM MT_CONTINUE.
+         *  -> store prolog ICMs for subsequent compilation of corresponding
+         *     spmd-block.
          */
         if (icm_args1 != NULL) {
             icm_args1 = FreeTree (icm_args1);
         }
-        if (prolog_icms != NULL) {
-            prolog_icms = FreeTree (prolog_icms);
-        }
+
+        BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = prolog_icms;
     }
 
     /*
@@ -7155,8 +7226,9 @@ COMPWLgrid (node *arg_node, node *arg_info)
     num_args = 0;
     withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
     while (withid_ids != NULL) {
-        icm_args2 = AppendExpr (icm_args2,
-                                MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
+        icm_args2
+          = AppendExprs (icm_args2,
+                         MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
         num_args++;
         withid_ids = IDS_NEXT (withid_ids);
     }
@@ -7330,12 +7402,12 @@ COMPWLgrid (node *arg_node, node *arg_info)
                  *  ('COMPWLgridVar').
                  */
                 icm_args2
-                  = AppendExpr (icm_args2,
-                                MakeExprs (MakeNum (2),
-                                           MakeExprs (MakeNum (WLGRID_BOUND1 (arg_node)),
-                                                      MakeExprs (MakeNum (WLGRID_BOUND2 (
-                                                                   arg_node)),
-                                                                 NULL))));
+                  = AppendExprs (icm_args2,
+                                 MakeExprs (MakeNum (2),
+                                            MakeExprs (MakeNum (WLGRID_BOUND1 (arg_node)),
+                                                       MakeExprs (MakeNum (WLGRID_BOUND2 (
+                                                                    arg_node)),
+                                                                  NULL))));
 
                 icm_name = "WL_FOLD_NOOP";
                 break;
@@ -7542,8 +7614,8 @@ COMPWLgridVar (node *arg_node, node *arg_info)
         withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
         while (withid_ids != NULL) {
             icm_args2
-              = AppendExpr (icm_args2,
-                            MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
+              = AppendExprs (icm_args2,
+                             MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
             num_args++;
             withid_ids = IDS_NEXT (withid_ids);
         }
@@ -7654,14 +7726,14 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                  *  ('COMPWLgridVar').
                  */
                 icm_args2
-                  = AppendExpr (icm_args2,
-                                MakeExprs (MakeNum (2),
-                                           MakeExprs (DupNode (
-                                                        WLGRIDVAR_BOUND1 (arg_node)),
-                                                      MakeExprs (DupNode (
-                                                                   WLGRIDVAR_BOUND2 (
-                                                                     arg_node)),
-                                                                 NULL))));
+                  = AppendExprs (icm_args2,
+                                 MakeExprs (MakeNum (2),
+                                            MakeExprs (DupNode (
+                                                         WLGRIDVAR_BOUND1 (arg_node)),
+                                                       MakeExprs (DupNode (
+                                                                    WLGRIDVAR_BOUND2 (
+                                                                      arg_node)),
+                                                                  NULL))));
 
                 icm_name = "WL_FOLD_NOOP";
                 break;

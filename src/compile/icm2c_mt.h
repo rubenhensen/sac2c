@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/07/03 10:18:15  cg
+ * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
+ * MT_SPMD_SETUP and MT_SPMD_EXECUTE
+ *
  * Revision 1.4  1998/06/23 12:49:48  cg
  * added implementations of scheduling ICMs
  * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
@@ -47,8 +52,15 @@ extern void ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var,
                                                char *tmp_var, char *foldop);
 extern void ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg);
 extern void ICMCompileMT_CONTINUE (int narg, char **vararg);
-extern void ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg);
+extern void ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg);
+
+extern void ICMCompileMT_SPMD_STATIC_MODE_BEGIN (char *name);
+extern void ICMCompileMT_SPMD_STATIC_MODE_ALTSEQ (char *name);
+extern void ICMCompileMT_SPMD_STATIC_MODE_END (char *name);
+extern void ICMCompileMT_SPMD_DYNAMIC_MODE_BEGIN (char *name);
+extern void ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ (char *name);
+extern void ICMCompileMT_SPMD_DYNAMIC_MODE_END (char *name);
 
 extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *vararg);
 extern void ICMCompileMT_SCHEDULER_Block_END (int dim, int *vararg);

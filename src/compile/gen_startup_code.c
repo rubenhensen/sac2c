@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/07/03 10:18:15  cg
+ * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
+ * MT_SPMD_SETUP and MT_SPMD_EXECUTE
+ *
  * Revision 1.10  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
@@ -366,7 +371,7 @@ GSCicm (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("GSCicm");
 
-    if (0 == strcmp (ICM_NAME (arg_node), "MT_SPMD_BLOCK")) {
+    if (0 == strcmp (ICM_NAME (arg_node), "MT_SPMD_SETUP")) {
 
         DBUG_ASSERT ((ICM_ARGS (arg_node) != NULL),
                      "ICM MT_SPMD_BLOCK has wrong format (args missing)");
@@ -385,10 +390,6 @@ GSCicm (node *arg_node, node *arg_info)
                          "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
 
             tag = ID_NAME (EXPRS_EXPR (icm_arg));
-
-            if (0 == strncmp (tag, "inout_rc", 8)) {
-                tag = "inout_rc";
-            }
 
             DBUG_ASSERT ((EXPRS_NEXT (icm_arg) != NULL),
                          "ICM MT_SPMD_BLOCK has wrong format (type missing)");
@@ -442,8 +443,12 @@ GSCspmd (node *arg_node, node *arg_info)
     fprintf (outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n",
              FUNDEF_NAME (SPMD_FUNDEF (arg_node)));
 
-    if (SPMD_ICM (arg_node) != NULL) {
-        Trav (SPMD_ICM (arg_node), arg_info);
+    /*
+     * The layout of the SPMD-frame is derived from the MT_SPMD_SETUP ICM.
+     * Therefore, we have to traverse the respective block.
+     */
+    if (SPMD_ICM_PARALLEL (arg_node) != NULL) {
+        Trav (SPMD_ICM_PARALLEL (arg_node), arg_info);
     }
 
     fprintf (outfile, "      })     \\\n");

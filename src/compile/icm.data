@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/07/03 10:18:15  cg
+ * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
+ * MT_SPMD_SETUP and MT_SPMD_EXECUTE
+ *
  * Revision 1.45  1998/06/29 08:55:51  cg
  * added new multi-threaded versions of new with-loop begin/end ICMs
  * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
@@ -692,12 +697,49 @@ ICM_DEF( MT_CONTINUE, NO_TRACE)
 ICM_END( MT_CONTINUE, (narg, vararg))
 #endif
 
-#if defined(MT_SPMD_BLOCK) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_BLOCK, NO_TRACE)
+#if defined(MT_SPMD_STATIC_MODE_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_STATIC_MODE_BEGIN, NO_TRACE)
+  ICM_STR(name)
+ICM_END( MT_SPMD_STATIC_MODE_BEGIN, (name))
+#endif
+
+#if defined(MT_SPMD_STATIC_MODE_ALTSEQ) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_STATIC_MODE_ALTSEQ, NO_TRACE)
+  ICM_STR(name)
+ICM_END( MT_SPMD_STATIC_MODE_ALTSEQ, (name))
+#endif
+
+#if defined(MT_SPMD_STATIC_MODE_END) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_STATIC_MODE_END, NO_TRACE)
+  ICM_STR(name)
+ICM_END( MT_SPMD_STATIC_MODE_END, (name))
+#endif
+
+#if defined(MT_SPMD_DYNAMIC_MODE_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_DYNAMIC_MODE_BEGIN, NO_TRACE)
+  ICM_STR(name)
+ICM_END( MT_SPMD_DYNAMIC_MODE_BEGIN, (name))
+#endif
+
+#if defined(MT_SPMD_DYNAMIC_MODE_ALTSEQ) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_DYNAMIC_MODE_ALTSEQ, NO_TRACE)
+  ICM_STR(name)
+ICM_END( MT_SPMD_DYNAMIC_MODE_ALTSEQ, (name))
+#endif
+
+#if defined(MT_SPMD_DYNAMIC_MODE_END) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_DYNAMIC_MODE_END, NO_TRACE)
+  ICM_STR(name)
+ICM_END( MT_SPMD_DYNAMIC_MODE_END, (name))
+#endif
+
+
+#if defined(MT_SPMD_SETUP) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_SETUP, NO_TRACE)
   ICM_STR(name)
   ICM_INT(narg)
   ICM_VAR((3*narg), vararg)
-ICM_END( MT_SPMD_BLOCK, (name, narg, vararg))
+ICM_END( MT_SPMD_SETUP, (name, narg, vararg))
 #endif
 
 #if defined(MT_SPMD_PRESET) || defined(ICM_ALL)
