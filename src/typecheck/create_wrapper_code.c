@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/04/05 10:14:13  sah
+ * fixed traversal while splitting wrappers
+ *
  * Revision 1.32  2005/03/04 21:21:42  cg
  * Wrapper functions are no longer marked 'inline' since they
  * are no longer intended to be inlined.
@@ -653,6 +656,13 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
         DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
                      "body of generic wrapper function has not been kept empty");
         FUNDEF_NEXT (arg_node) = new_fundefs;
+    } else {
+        /*
+         * if this is no wrapper function, just skip to the next function
+         */
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
     DBUG_RETURN (arg_node);
 }
