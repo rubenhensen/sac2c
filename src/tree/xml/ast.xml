@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.10  2004/09/23 21:17:29  sah
+  changed order of NPart and NCode
+  in NWith (temporary)
+  fixed Avis node beeing a Link
+
   Revision 1.9  2004/09/20 10:29:02  sah
   fixed typo
 
@@ -795,7 +800,7 @@
           </phases>
         </attribute>
         <attribute name="Impl" mandatory="no">
-          <type name="Link">
+          <type name="ApLink">
             <target>
               <node name="Fundef" />
             </target>
@@ -966,7 +971,7 @@
         </attribute>
         <attribute name="Avis" default="MakeAvis( this)"
         mandatory="yes">
-          <type name="Link">
+          <type name="Node">
             <target>
               <node name="Avis" />
             </target>
@@ -1132,7 +1137,7 @@
           </phases>
         </attribute>
         <attribute name="SSACounter" mandatory="yes">
-          <type name="Link">
+          <type name="Node">
             <target>
               <node name="SSAcnt" />
             </target>
@@ -2886,14 +2891,14 @@
     </node>
     <node name="NWith">
       <sons>
-        <son name="Part" mandatory="yes">
-          <target>
-            <node name="NPart" />
-          </target>
-        </son>
         <son name="Code" mandatory="yes">
           <target>
             <node name="NCode" />
+          </target>
+        </son>
+        <son name="Part" mandatory="yes">
+          <target>
+            <node name="NPart" />
           </target>
         </son>
         <son name="WithOp" mandatory="yes">
