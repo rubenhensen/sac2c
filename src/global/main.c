@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/09/17 12:56:24  sbs
+ * call to PrintTypeStatistics added.
+ *
  * Revision 3.27  2003/06/24 21:23:40  dkr
  * revision 3.25 restored:
  * current implementation of RC uses GenerateMasks which is not implemented
@@ -121,6 +124,7 @@
 #include "flatten.h"
 #include "print.h"
 #include "typecheck.h"
+#include "type_statistics.h"
 #include "optimize.h"
 #include "filemgr.h"
 #include "import.h"
@@ -446,6 +450,8 @@ main (int argc, char *argv[])
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
+
+    syntax_tree = PrintTypeStatistics (syntax_tree);
 
     if (break_after == PH_sacopt)
         goto BREAK;
