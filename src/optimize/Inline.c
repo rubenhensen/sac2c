@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/22 13:33:44  dkr
+ * CreateInlineName is static now.
+ * Renaming of identifiers via DupTree is triggered by LUT now :-)
+ *
  * Revision 3.5  2001/03/21 18:09:33  dkr
  * bug fixed
  *
@@ -98,6 +102,34 @@ static int inline_nr = 0;
 /******************************************************************************
  *
  * Function:
+ *   char *CreateInlineName( char *old_name)
+ *
+ * Description:
+ *   Renames the given variable.
+ *   Example:
+ *     a  ->  _inl100_a     if (inline_nr == 100) and (INLINE_PREFIX == "_inl")
+ *
+ ******************************************************************************/
+
+static char *
+CreateInlineName (char *old_name)
+{
+    char *new_name;
+
+    DBUG_ENTER ("CreateInlineName");
+
+    new_name = (char *)MALLOC (sizeof (char)
+                               * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
+                                  NumberOfDigits (inline_nr) + 1)); /* '\0' */
+
+    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void ResetInlineNo( node *module)
  *
  * Description:
@@ -163,10 +195,17 @@ InlineArg (node *arg_node, node *arg_info)
     INFO_INL_VARDECS (arg_info) = new_vardec;
 
     /*
-     * insert ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+
+    /*
+     * insert names of ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     */
+    INFO_INL_LUT (arg_info)
+      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), ARG_NAME (arg_node),
+                         VARDEC_NAME (new_vardec));
 
     /*
      * insert assignment
@@ -221,10 +260,17 @@ InlineVardec (node *arg_node, node *arg_info)
     INFO_INL_VARDECS (arg_info) = new_vardec;
 
     /*
-     * insert ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+
+    /*
+     * insert names of ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     */
+    INFO_INL_LUT (arg_info)
+      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), VARDEC_NAME (arg_node),
+                         VARDEC_NAME (new_vardec));
 
     if (VARDEC_NEXT (arg_node)) {
         VARDEC_NEXT (arg_node) = InlineVardec (VARDEC_NEXT (arg_node), arg_info);
@@ -475,34 +521,6 @@ INLassign (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   char *CreateInlineName( char *old_name)
- *
- * Description:
- *   Renames the given variable.
- *   Example:
- *     a  ->  _inl100_a     if (inline_nr == 100) and (INLINE_PREFIX == "_inl")
- *
- ******************************************************************************/
-
-char *
-CreateInlineName (char *old_name)
-{
-    char *new_name;
-
-    DBUG_ENTER ("CreateInlineName");
-
-    new_name = (char *)MALLOC (sizeof (char)
-                               * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
-                                  NumberOfDigits (inline_nr) + 1)); /* '\0' */
-
-    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
-
-    DBUG_RETURN (new_name);
 }
 
 /******************************************************************************
