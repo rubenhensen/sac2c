@@ -1,12 +1,12 @@
 #
 # $Log$
+# Revision 2.7  2000/01/21 12:02:30  dkr
+# lac2fun.o added
+#
 # Revision 2.6  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.5  1999/12/13 11:28:00  dkr
-# *** empty log message ***
 #
 # Revision 2.4  1999/05/12 15:13:21  cg
 # make deps done
@@ -62,9 +62,6 @@
 # Revision 1.5  1995/04/04  11:03:44  sbs
 # make deps done
 #
-# Revision 1.4  1994/12/09  10:43:16  sbs
-# *** empty log message ***
-#
 # Revision 1.3  1994/11/10  15:39:42  sbs
 # RCS-header inserted
 #
@@ -87,18 +84,21 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../optimize
+INCS=-I../global -I../../inc -I../tree
 
-all: flatten.o
+all: flatten.o lac2fun.o
 
 flatten.o: flatten.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o flatten.o -c flatten.c $(INCS)
+
+lac2fun.o: lac2fun.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o lac2fun.o -c lac2fun.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) flatten.o *.bak
+	$(RM) flatten.o lac2fun.o *.bak
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
@@ -112,4 +112,15 @@ flatten.o: ../global/my_debug.h ../global/internal_lib.h
 flatten.o: ../global/tree_basic.h ../global/tree_compound.h
 flatten.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
 flatten.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-flatten.o: /usr/include/sys/int_types.h ../optimize/DupTree.h flatten.h
+flatten.o: /usr/include/sys/int_types.h ../tree/DupTree.h flatten.h
+lac2fun.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+lac2fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+lac2fun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+lac2fun.o: /usr/include/stdio_impl.h /usr/include/string.h
+lac2fun.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
+lac2fun.o: ../global/traverse.h ../global/free.h ../../inc/dbug.h
+lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
+lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
+lac2fun.o: ../tree/DataFlowMask.h
