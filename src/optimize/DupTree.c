@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/01/05 14:36:35  cg
+ * Revision 1.19  1996/02/21 15:07:02  cg
+ * function DupFundef reimplemented. Internal information will now be copied as well.
+ * added new function DupPragma
+ *
+ * Revision 1.18  1996/01/05  14:36:35  cg
  * added DupId for copying sons and info.id
  *
  * Revision 1.17  1995/12/20  08:19:06  cg
@@ -327,16 +331,36 @@ node *
 DupFundef (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DupFundef");
+
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
     new_node = MakeNode (arg_node->nodetype);
+
     new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
     DUP (arg_node, new_node);
-    for (i = 0; i < MAX_SONS; i++)
-        if (NULL != arg_node->node[i])
-            new_node->node[i] = Trav (arg_node->node[i], arg_info);
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (new_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_NEEDFUNS (new_node) = CopyNodelist (FUNDEF_NEEDFUNS (arg_node));
+        FUNDEF_NEEDTYPES (new_node) = CopyNodelist (FUNDEF_NEEDTYPES (arg_node));
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (new_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (new_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+        FUNDEF_PRAGMA (new_node) = Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+    }
+
+    FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
+
     DBUG_RETURN (new_node);
 }
 
@@ -377,5 +401,42 @@ DupInfo (node *arg_node, node *arg_info)
         new_node = MakeNode (N_info);
         new_node->flag = arg_node->flag;
     }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupPragma (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupPragma");
+
+    new_node = MakePragma ();
+
+    if (PRAGMA_LINKNAME (arg_node) != NULL) {
+        PRAGMA_LINKNAME (new_node) = StringCopy (PRAGMA_LINKNAME (arg_node));
+    }
+
+    PRAGMA_NUMPARAMS (new_node) = PRAGMA_NUMPARAMS (arg_node);
+
+    if (PRAGMA_LINKSIGN (arg_node) != NULL) {
+        PRAGMA_LINKSIGN (new_node)
+          = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
+
+        for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
+            PRAGMA_LINKSIGN (new_node)[i] = PRAGMA_LINKSIGN (arg_node)[i];
+        }
+    }
+
+    if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
+        PRAGMA_REFCOUNTING (new_node)
+          = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
+
+        for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
+            PRAGMA_REFCOUNTING (new_node)[i] = PRAGMA_REFCOUNTING (arg_node)[i];
+        }
+    }
+
     DBUG_RETURN (new_node);
 }

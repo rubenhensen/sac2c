@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/01/05 14:36:35  cg
+ * Revision 1.11  1996/02/21 15:07:02  cg
+ * function DupFundef reimplemented. Internal information will now be copied as well.
+ * added new function DupPragma
+ *
+ * Revision 1.10  1996/01/05  14:36:35  cg
  * added DupId for copying sons and info.id
  *
  * Revision 1.9  1995/12/20  08:19:06  cg
@@ -70,5 +74,6 @@ extern node *DupFun (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
+extern node *DupPragma (node *arg_node, node *arg_info);
 
 #endif /* _DupTree_h */
