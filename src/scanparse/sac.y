@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2003/12/23 11:00:21  khf
+ * Old syntax for withloops in Print.c removed. Now only multigenerator syntax available.
+ * Therefore new genarray pattern with only one expression (without default) added.
+ *
  * Revision 3.89  2003/11/24 16:07:10  sbs
  * eliminated all commata in the first part to be better yacc compliant 8-)
  * i.e., bison v1.75 on bunasera now should be happy 8-))
@@ -1518,6 +1522,10 @@ wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
 nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_genarray, $3);
            NWITHOP_DEFAULT( $$) = $5;
+         }
+       | GENARRAY BRACKET_L expr BRACKET_R
+         { $$ = MakeNWithOp( WO_genarray, $3);
+           NWITHOP_DEFAULT( $$) = NULL;
          }
        | MODARRAY BRACKET_L expr BRACKET_R
          { $$ = MakeNWithOp( WO_modarray, $3);
