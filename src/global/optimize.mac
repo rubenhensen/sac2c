@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/02/02 18:09:50  mwe
+ * sisi added
+ *
  * Revision 1.7  2004/12/16 14:36:40  ktr
  * added ipc and dr
  *
@@ -86,6 +89,7 @@ OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
 OPTIMIZE ("tup", tup, FALSE, FALSE, "type upgrade")
+OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
