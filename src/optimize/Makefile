@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2001/05/22 14:52:18  nmw
+# rmcasts.o added
+#
 # Revision 3.18  2001/05/08 13:29:33  dkr
 # make deps done
 #
@@ -121,7 +124,8 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
-     SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o
+     SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
+     rmcasts.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
@@ -205,7 +209,7 @@ SSACSE.o: /usr/include/stdio_impl.h /usr/include/string.h
 SSACSE.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 SSACSE.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
 SSACSE.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
-SSACSE.o: SSACSE.h ../tree/compare_tree.h optimize.h
+SSACSE.o: SSACSE.h ../tree/compare_tree.h optimize.h ../typecheck/typecheck.h
 SSAConstantFolding.o: ../../inc/dbug.h /usr/include/stdio.h
 SSAConstantFolding.o: /usr/include/sys/feature_tests.h
 SSAConstantFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -322,5 +326,13 @@ optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
 optimize.o: ../psi-opt/tile_size_inference.h ../psi-opt/index.h
 optimize.o: ../psi-opt/pad.h ../tree/CheckAvis.h ../tree/SSATransform.h
 optimize.o: ../tree/UndoSSATransform.h ../flatten/lac2fun.h
-optimize.o: SSADeadCodeRemoval.h SSACSE.h SSAConstantFolding.h SSALIR.h
-optimize.o: ../flatten/while2do.h SSALUR.h
+optimize.o: ../flatten/fun2lac.h SSADeadCodeRemoval.h SSACSE.h
+optimize.o: SSAConstantFolding.h SSALIR.h ../flatten/while2do.h SSALUR.h
+optimize.o: ../psi-opt/SSAWithloopFolding.h rmcasts.h
+rmcasts.o: ../../inc/dbug.h /usr/include/stdio.h
+rmcasts.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+rmcasts.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+rmcasts.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
+rmcasts.o: ../tree/traverse.h ../tree/free.h /usr/include/stdlib.h
+rmcasts.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
+rmcasts.o: rmcasts.h

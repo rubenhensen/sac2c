@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.32  2001/05/22 14:51:57  nmw
+# rmcasts.o added
+#
 # Revision 3.31  2001/05/15 16:38:01  nmw
 # SSAWLI.o and SSAWLF.o in src/psi-opt added
 #
@@ -246,7 +249,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/CSE.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
-          src/optimize/SSALUR.o
+          src/optimize/SSALUR.o src/optimize/rmcasts.o
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
