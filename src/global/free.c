@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/04/10 02:21:57  dkr
+ * changed FreeWLseg
+ *
  * Revision 1.45  1998/04/02 17:40:48  dkr
  * added FreeConc
  *
@@ -1728,6 +1731,7 @@ FreeNwith2 (node *arg_node, node *arg_info)
 node *
 FreeWLseg (node *arg_node, node *arg_info)
 {
+    int b;
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLseg");
@@ -1735,6 +1739,19 @@ FreeWLseg (node *arg_node, node *arg_info)
 
     FREETRAV (WLSEG_CONTENTS (arg_node));
     tmp = FREECONT (WLSEG_NEXT (arg_node));
+
+    for (b = 0; b < WLSEG_BLOCKS (arg_node); b++) {
+        if (WLSEG_BV (arg_node, b) != NULL) {
+            FREE (WLSEG_BV (arg_node, b));
+        }
+    }
+    if (WLSEG_UBV (arg_node) != NULL) {
+        FREE (WLSEG_UBV (arg_node));
+    }
+    IF (WLSEG_SV (arg_node) != NULL)
+    {
+        FREE (WLSEG_SV (arg_node));
+    }
 
     FREE (arg_node);
 
