@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.70  2004/11/25 13:53:03  mwe
+  SSATransform added
+
   Revision 1.69  2004/11/25 13:05:06  sbs
   REUSE added.
 
@@ -156,6 +159,29 @@
 	  <node name="Cond" />
 	</travuser>
       </traversal>
+      <traversal id="SSAT" name="SSA Transform Traversal" default="sons" include="SSATransform.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Ap" />
+	  <node name="Fundef" />
+	  <node name="Cond" />
+          <node name="Block" />
+          <node name="Code" />
+          <node name="Let" />
+          <node name="Icm" />
+          <node name="Arg" />
+          <node name="Vardec" />
+          <node name="Id" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Part" />
+          <node name="Withid" />
+          <node name="Funcond" />
+          <node name="Return" />
+          <node name="Ids" />
+	</travuser>
+      </traversal>
+
       <traversal id="CUD" name="Cleanup Declarations" default="sons" include="cleanup_decls.h" >
 	<travuser>
 	  <node name="Block" />
