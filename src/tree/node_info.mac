@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.225  2004/10/25 14:41:02  sah
+ * added DSFundefd
+ *
  * Revision 3.224  2004/10/25 11:59:14  sah
  * added SEL traversal
  *
@@ -1540,7 +1543,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
   NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, SBTFundef,
        TravSons, TravSons, FreeFundef, TravSons, EMACFfundef, EMRCfundef, RIfundef,
-       DupFundef, INLfundef, SETFundef, TravSons, IdxFundef, SERFundef, TravSons,
+       DupFundef, INLfundef, SETFundef, TravSons, IdxFundef, SERFundef, DSFundef,
        AEfundef,
 
        WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef, WDECfundef,
