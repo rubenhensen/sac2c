@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.63  2002/10/07 04:49:39  dkr
- * several bugs fixed
+ * Revision 3.64  2002/10/07 23:35:29  dkr
+ * some bugs fixed
  *
  * Revision 3.62  2002/08/15 11:58:23  dkr
  * EmptyParts2Expr(): no cc warning anymore
@@ -2849,59 +2849,7 @@ Parts2Strides (node *parts, int dims, int *shape)
 /******************************************************************************
  *
  * Function:
- *   node *ConvertWith( node *wl, int dims)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-ConvertWith (node *wl, int dims)
-{
-    node *new_node;
-
-    DBUG_ENTER ("ConvertWith");
-
-    new_node
-      = MakeNWith2 (NWITH_WITHID (wl), NULL, NWITH_CODE (wl), NWITH_WITHOP (wl), dims);
-
-    /* extract array-placement pragmas */
-    NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (wl), line);
-    if ((NWITH2_PRAGMA (new_node) != NULL) && (NWITH_IS_FOLD (wl))) {
-        /* no array placement for fold with-loops */
-        NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
-    }
-
-    NWITH2_OFFSET_NEEDED (new_node)
-      = ((NWITH_TYPE (wl) == WO_genarray) || (NWITH_TYPE (wl) == WO_modarray));
-
-    NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (wl);
-    NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (wl);
-    NWITH2_OUT_MASK (new_node) = NWITH_OUT_MASK (wl);
-    NWITH2_LOCAL_MASK (new_node) = NWITH_LOCAL_MASK (wl);
-
-    /*
-     * withid, code, withop and IN/INOUT/OUT/LOCAL are reused for the
-     *  Nwith2-tree.
-     * Because of that, these parts are cut off from the old nwith-tree,
-     *  before freeing it.
-     */
-    NPART_WITHID (NWITH_PART (wl)) = NULL;
-    NWITH_CODE (wl) = NULL;
-    NWITH_WITHOP (wl) = NULL;
-    NWITH_DEC_RC_IDS (wl) = NULL;
-    NWITH_IN_MASK (wl) = NULL;
-    NWITH_OUT_MASK (wl) = NULL;
-    NWITH_LOCAL_MASK (wl) = NULL;
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *EmptyParts2Expr( node *wl, int dims, int *shape)
+ *   node *EmptyParts2StridesOrExpr( node **wl, int dims, int *shape)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
@@ -2909,13 +2857,14 @@ ConvertWith (node *wl, int dims)
  ******************************************************************************/
 
 static node *
-EmptyParts2Expr (node *wl, int dims, int *shape)
+EmptyParts2StridesOrExpr (node **wl, int dims, int *shape)
 {
-    node *new_node = NULL;
+    node *strides;
+    node *tmp;
 
-    DBUG_ENTER ("EmptyParts2Expr");
+    DBUG_ENTER ("EmptyParts2StridesOrExpr");
 
-    switch (NWITH_TYPE (wl)) {
+    switch (NWITH2_TYPE ((*wl))) {
     case WO_genarray:
 #if 0
       /*
@@ -2934,10 +2883,7 @@ EmptyParts2Expr (node *wl, int dims, int *shape)
              * result array of genarray-with-loop is non-empty
              *  -> generate a single stride over the whole domain
              */
-            new_node = ConvertWith (wl, dims);
-            NWITH2_SEGS (new_node)
-              = WLCOMP_All (NULL, NULL, GenerateShapeStrides (0, dims, shape), dims,
-                            line);
+            strides = GenerateShapeStrides (0, dims, shape);
         } else {
             /*
              * result array of genarray-with-loop is empty
@@ -2946,28 +2892,51 @@ EmptyParts2Expr (node *wl, int dims, int *shape)
             node *cexpr;
             simpletype btype;
 
-            cexpr = NWITH_CEXPR (wl);
+            tmp = *wl;
+
+            cexpr = NWITH2_CEXPR ((*wl));
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
             btype = TYPES_BASETYPE (ID_TYPE (cexpr));
             DBUG_ASSERT ((btype != T_user), "Array elements of genarray-with-loop have a "
                                             "user-defined type!");
-            new_node = CreateZeroVector (0, btype);
+            *wl = CreateZeroVector (0, btype);
+            strides = NULL;
+
+            tmp = FreeNode (tmp);
         }
 #endif
         break;
 
     case WO_modarray:
-        new_node = DupNode (NWITH_ARRAY (wl));
+        tmp = *wl;
+
+        /*
+         * replace '*wl'
+         */
+        *wl = NWITH2_ARRAY ((*wl));
+        strides = NULL;
+
+        NWITH2_ARRAY (tmp) = NULL;
+        tmp = FreeNode (tmp);
         break;
 
     case WO_foldfun:
         /* here is no break missing! */
     case WO_foldprf:
-        new_node = DupNode (NWITH_NEUTRAL (wl));
+        tmp = *wl;
+
+        /*
+         * replace '*wl'
+         */
+        *wl = NWITH2_NEUTRAL ((*wl));
+        strides = NULL;
+
+        NWITH2_NEUTRAL (tmp) = NULL;
+        tmp = FreeNode (tmp);
         break;
     }
 
-    DBUG_RETURN (new_node);
+    DBUG_RETURN (strides);
 }
 
 #ifndef DBUG_OFF
@@ -6914,6 +6883,58 @@ ProcessSegments (node *segs, int dims, int *shape, bool do_naive_comp,
 /******************************************************************************
  *
  * Function:
+ *   node *ConvertWith( node *wl, int dims)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ConvertWith (node *wl, int dims)
+{
+    node *new_node;
+
+    DBUG_ENTER ("ConvertWith");
+
+    new_node
+      = MakeNWith2 (NWITH_WITHID (wl), NULL, NWITH_CODE (wl), NWITH_WITHOP (wl), dims);
+
+    /* extract array-placement pragmas */
+    NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (wl), line);
+    if ((NWITH2_PRAGMA (new_node) != NULL) && (NWITH_IS_FOLD (wl))) {
+        /* no array placement for fold with-loops */
+        NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
+    }
+
+    NWITH2_OFFSET_NEEDED (new_node)
+      = ((NWITH_TYPE (wl) == WO_genarray) || (NWITH_TYPE (wl) == WO_modarray));
+
+    NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (wl);
+    NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (wl);
+    NWITH2_OUT_MASK (new_node) = NWITH_OUT_MASK (wl);
+    NWITH2_LOCAL_MASK (new_node) = NWITH_LOCAL_MASK (wl);
+
+    /*
+     * withid, code, withop and IN/INOUT/OUT/LOCAL are reused for the
+     *  Nwith2-tree.
+     * Because of that, these parts are cut off from the old nwith-tree,
+     *  before freeing it.
+     */
+    NPART_WITHID (NWITH_PART (wl)) = NULL;
+    NWITH_CODE (wl) = NULL;
+    NWITH_WITHOP (wl) = NULL;
+    NWITH_DEC_RC_IDS (wl) = NULL;
+    NWITH_IN_MASK (wl) = NULL;
+    NWITH_OUT_MASK (wl) = NULL;
+    NWITH_LOCAL_MASK (wl) = NULL;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   wl_bs_t AnalyzeBreakSpecifier( void)
  *
  * Description:
@@ -7038,15 +7059,17 @@ WLTRAwith (node *arg_node, node *arg_info)
                      " Not all strides are pairwise disjoint!\n"
                      "This is probably due to an error during with-loop-folding.");
 
+        new_node = ConvertWith (arg_node, idx_size);
+
         if (strides == NULL) {
-            /* all parts are empty  ->  set 'new_node' */
-            new_node = EmptyParts2Expr (arg_node, idx_size, wl_shp);
-        } else {
+            /* all parts are empty  ->  set 'strides' or 'new_node' */
+            strides = EmptyParts2StridesOrExpr (&new_node, idx_size, wl_shp);
+        }
+
+        if (strides != NULL) {
             node *cubes = NULL;
             node *segs = NULL;
             bool do_naive_comp = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
-
-            new_node = ConvertWith (arg_node, idx_size);
 
             if (wl_break_after <= WL_PH_conv) {
                 goto DONE;
@@ -7101,9 +7124,6 @@ WLTRAwith (node *arg_node, node *arg_info)
         }
 
         /* old WL-representation is no longer needed */
-        if (NWITH_PRAGMA (arg_node) != NULL) {
-            NWITH_PRAGMA (arg_node) = FreeTree (NWITH_PRAGMA (arg_node));
-        }
         arg_node = FreeTree (arg_node);
     }
 
