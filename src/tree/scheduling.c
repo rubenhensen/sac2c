@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/14 10:17:57  ben
+ * BlockVar values in scheduler_table adjusted
+ *
  * Revision 3.3  2001/01/29 18:32:54  dkr
  * some superfluous attributes of N_WLsegVar removed
  * CompileVarSegSchedulingArgs() modified
@@ -195,7 +198,7 @@ static struct {
     char *arg_spec;
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args    */
-  {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 0, 0, 0, ""},
+  {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
   {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
 
