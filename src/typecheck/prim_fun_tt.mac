@@ -1,0 +1,16 @@
+/*
+ *  $Log$
+ *  Revision 1.1  1995/02/03 07:46:01  hw
+ *  Initial revision
+ * $
+ */
+
+TT2 (0, ARI, INT, INT, MakeTypes (T_int))
+TT2 (1, ARI, INT, FLOAT, MakeTypes (T_float))
+TT2 (2, ARI, FLOAT, INT, MakeTypes (T_float))
+TT2 (3, ARI, FLOAT, FLOAT, MakeTypes (T_float))
+TT2 (4, B, BOOL, BOOL, MakeTypes (T_bool))
+TT2 (5, ARI_B, INT, INT, MakeTypes (T_bool))
+TT2 (6, ARI_B, INT, FLOAT, MakeTypes (T_bool))
+TT2 (7, ARI_B, FLOAT, INT, MakeTypes (T_bool))
+TT2 (8, ARI_B, FLOAT, FLOAT, MakeTypes (T_bool))

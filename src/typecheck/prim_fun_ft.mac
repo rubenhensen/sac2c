@@ -1,0 +1,18 @@
+/*
+ *  $Log$
+ *  Revision 1.1  1995/02/03 07:45:32  hw
+ *  Initial revision
+ * $
+ */
+
+FT (F_add, ARI, F_add)
+FT (F_sub, ARI, F_sub)
+FT (F_mul, ARI, F_mul)
+FT (F_eq, B, F_eq)
+FT (F_eq, ARI_B, F_eq)
+FT (F_neq, B, F_neq)
+FT (F_neq, ARI_B, F_neq)
+FT (F_le, ARI_B, F_le)
+FT (F_lt, ARI_B, F_lt)
+FT (F_ge, ARI_B, F_ge)
+FT (F_gt, ARI_B, F_gt)
