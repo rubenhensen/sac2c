@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.138  2004/11/09 22:18:44  ktr
+# added src/refcount/explicitcopy.o
+#
 # Revision 3.137  2004/11/09 17:42:36  sah
 # added LDDYNFLAG
 #
@@ -443,7 +446,7 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
           src/refcount/staticreuse.o src/refcount/reuseelimination.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
-          src/refcount/datareuse.o
+          src/refcount/datareuse.o src/refcount/explicitcopy.o
 REFCOUNT_OLD=
 
 CONCURRENT=
