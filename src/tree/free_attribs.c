@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/01/08 09:54:58  ktr
+ * Fixed some issues related to loops.
+ *
  * Revision 1.22  2004/12/19 18:09:33  sah
  * post dk fixes
  *
@@ -255,7 +258,7 @@ FREEattribExtLink (node *attr, node *parent)
 
                 /* check whether this function is use-counted */
                 if ((FUNDEF_USED (attr) != USED_INACTIVE)
-                    && ((!FUNDEF_ISDOFUN (attr))
+                    && ((!FUNDEF_ISDOFUN (attr)) || (FUNDEF_INT_ASSIGN (attr) == NULL)
                         || (parent != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr))))) {
                     /*
                      * if the function is no dofun or

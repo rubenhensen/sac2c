@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/01/08 09:54:07  ktr
+ * Fixed some issues related to loops.
+ *
  * Revision 1.6  2004/12/13 18:54:49  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -237,7 +240,7 @@ EMLRap (node *arg_node, info *arg_info)
                  * Ex: a_mem
                  */
                 memavis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldarg)),
-                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (oldavis))));
+                                      TYeliminateAKV (AVIS_TYPE (oldavis)));
 
                 FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info)));

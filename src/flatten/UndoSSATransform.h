@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2005/01/08 09:52:35  ktr
+ * Fixed some issues related to loops.
+ *
  * Revision 1.5  2004/11/25 12:50:53  khf
  * removed USSATid, USSATcode
  *
@@ -56,6 +59,7 @@ extern node *USSATdoUndoSsaTransform (node *syntax_tree);
 
 extern node *USSATarg (node *arg_node, info *arg_info);
 extern node *USSATvardec (node *arg_node, info *arg_info);
+extern node *USSATid (node *arg_node, info *arg_info);
 extern node *USSATids (node *arg_node, info *arg_info);
 extern node *USSATlet (node *arg_node, info *arg_info);
 extern node *USSATassign (node *arg_node, info *arg_info);

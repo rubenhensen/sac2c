@@ -186,6 +186,7 @@
 	  <node name="Arg" />
 	  <node name="Block" />
           <node name="Vardec" />
+          <node name="Id" />
           <node name="Ids" />
           <node name="With" />
 	</travuser>
@@ -938,6 +939,7 @@
           <node name="Prf" />
         </travuser>
         <travsons>
+          <node name="Exprs" />
           <node name="Module" />
           <node name="Let" />
           <node name="Assign" />
@@ -1484,6 +1486,7 @@
         <travuser>
           <node name="Block" />
           <node name="Code" />
+          <node name="Do" />
           <node name="Fold" />
           <node name="Fundef" />
           <node name="Genarray" />

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2005/01/08 09:55:24  ktr
+  Fixed some issues related to loops.
+
   Revision 1.4  2004/12/09 18:53:05  sah
   extended signature of free functions for
   attributes so that they contain a link
@@ -165,10 +168,16 @@ version="1.0">
   <xsl:value-of select="' = TRUE;'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
-  <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL and TYPES --> 
-  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;]"/>
+  <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL, INT_ASSIGN and TYPES
+    INT_ASSIGN cannot be freed here because it is still required in 
+    FreeAttribExtLink which is called for the recursive application of a
+    do-loop inside the body of a do-function.
+    --> 
+  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;][@name != &quot;Int_Assign&quot;]"/>
   <!-- call free for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
+  <!-- call free for INT_ASSIGN -->
+  <xsl:apply-templates select="attributes/attribute[@name = &quot;Int_Assign&quot;]"/>
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/01/08 09:54:07  ktr
+ * Fixed some issues related to loops.
+ *
  * Revision 1.16  2004/12/16 14:37:30  ktr
  * added InplaceComputation
  *
@@ -304,9 +307,9 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
                                                        SHmakeShape (0))),
                                 cfargs);
 
-            condfun
-              = TBmakeFundef (L2FgetLacFunName ("ReuseCond"), FUNDEF_MOD (fundef), cfrets,
-                              cfargs, TBmakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
+            condfun = TBmakeFundef (L2FgetLacFunName ("ReuseCond"),
+                                    ILIBstringCopy (FUNDEF_MOD (fundef)), cfrets, cfargs,
+                                    TBmakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
 
             FUNDEF_TYPES (condfun) = cftypes;
 

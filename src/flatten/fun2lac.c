@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2005/01/08 09:52:10  ktr
+ * Fixed some issues related to loops.
+ *
  * Revision 3.30  2004/11/26 12:50:08  mwe
  * changes according to changes in tree_compound.h
  *
@@ -760,6 +763,7 @@ TransformIntoDoLoop (node *fundef)
         ASSIGN_NEXT (cond_assign) = epilogue;
 
         FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
+        FUNDEF_INT_ASSIGN (fundef) = NULL;
     }
 
     DBUG_RETURN (fundef);

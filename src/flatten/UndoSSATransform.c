@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2005/01/08 09:52:35  ktr
+ * Fixed some issues related to loops.
+ *
  * Revision 1.16  2004/12/12 07:55:02  ktr
  * Corrected node usage.
  *
@@ -549,6 +552,33 @@ USSATvardec (node *arg_node, info *arg_info)
      * be removed in USSAblock()
      */
     AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *USSATid(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   re-renames artificial vardecs to their original name
+ *
+ *****************************************************************************/
+node *
+USSATid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSATid");
+
+    if (AVIS_SUBSTUSSA (ID_AVIS (arg_node)) != NULL) {
+        DBUG_PRINT ("USSA", ("rename id %s(" F_PTR ") in %s(" F_PTR ")",
+                             AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
+                             AVIS_NAME (AVIS_SUBSTUSSA (ID_AVIS (arg_node))),
+                             AVIS_SUBSTUSSA (ID_AVIS (arg_node))));
+
+        /* restore rename back to undo vardec */
+        ID_AVIS (arg_node) = AVIS_SUBSTUSSA (ID_AVIS (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
