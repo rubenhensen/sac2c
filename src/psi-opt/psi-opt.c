@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/14 12:10:47  sbs
+ * N_info node allocated for IVE!
+ *
  * Revision 2.2  1999/05/12 14:35:16  cg
  * Optimizations are now triggered by bit field optimize instead
  * of single individual int variables.
@@ -34,6 +37,7 @@
 #include <stdlib.h>
 
 #include "tree.h"
+#include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -59,6 +63,9 @@ int ive_expr, ive_op;
 node *
 PsiOpt (node *arg_node)
 {
+    funptr *tmp_tab;
+    node *info_node;
+
     DBUG_ENTER ("PsiOpt");
 
     NOTE (("Optimizing arrays: ...\n"));
@@ -67,8 +74,14 @@ PsiOpt (node *arg_node)
         ive_expr = 0;
         ive_op = 0;
 
+        tmp_tab = act_tab;
         act_tab = idx_tab;
-        arg_node = Trav (arg_node, NULL);
+
+        info_node = MakeNode (N_info);
+        arg_node = Trav (arg_node, info_node);
+
+        FreeNode (info_node);
+        act_tab = tmp_tab;
 
         NOTE (("  %d index-vector(s) eliminated", ive_expr));
         NOTE (("  %d index-vector-operation(s) eliminated", ive_op));
