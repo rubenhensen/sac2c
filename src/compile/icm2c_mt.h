@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/11/24 23:07:48  jhb
+ * removed include types.h
+ *
  * Revision 3.22  2003/10/20 15:34:42  dkr
  * MT_SYNCBLOCK_CLEANUP
  *
@@ -145,6 +148,8 @@
 
 #ifndef _SAC_ICM2C_MT_H_
 #define _SAC_ICM2C_MT_H_
+
+#include "types.h"
 
 extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int vararg_cnt,
                                        char **vararg);

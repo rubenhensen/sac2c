@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/11/24 23:05:28  jhb
+ * removed include types.h
+ *
  * Revision 3.23  2004/11/24 18:25:33  jhb
  * added include "types.h"
  *
@@ -77,8 +80,6 @@
 
 #ifndef _ICM2C_BASIC_H_
 #define _ICM2C_BASIC_H_
-
-#include "types.h"
 
 extern int print_comment; /* bool */
 
