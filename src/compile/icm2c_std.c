@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/10/28 09:24:28  dkr
+ * some \n for output added
+ *
  * Revision 3.38  2002/10/24 16:03:22  dkr
  * some comments added,
  * bug in ND_ASSIGN__DESC fixed: dimension for scalars is 0 rather than 1
@@ -875,7 +878,9 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_nt, i);
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+            INDENT;
+            fprintf (outfile, "          = ");
             ReadScalar (shp_any[i], NULL, 0);
             fprintf (outfile, ";\n");
         }
@@ -898,7 +903,9 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
             INDENT;
             fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
             INDENT;
-            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d) = ", to_nt, i);
+            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d)\n", to_nt, i);
+            INDENT;
+            fprintf (outfile, "          = ");
             ReadScalar (shp_any[i], NULL, 0);
             fprintf (outfile, ";\n");
         }
@@ -2148,7 +2155,9 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
                  to_nt);
         indent++;
         INDENT;
-        fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i) = ", to_nt);
+        fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)\n", to_nt);
+        INDENT;
+        fprintf (outfile, "          = ");
         shp_read_fun (shp, "SAC_i", -1);
         fprintf (outfile, ";\n");
         indent--;
@@ -2173,7 +2182,9 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
             INDENT;
             fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
             INDENT;
-            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d) = ", to_nt, i);
+            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d)\n", to_nt, i);
+            INDENT;
+            fprintf (outfile, "          = ");
             shp_read_fun (shp, NULL, i);
             fprintf (outfile, ";\n");
         }
@@ -3259,8 +3270,9 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *basetype, char *name, int dim, char **s
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", name);
         fprintf (outfile, "%s", s[0]);
-        for (i = 1; i < dim; i++)
+        for (i = 1; i < dim; i++) {
             fprintf (outfile, "*%s", s[i]);
+        }
         fprintf (outfile, ";\n");
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", name, dim);
