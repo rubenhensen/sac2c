@@ -17,3 +17,4 @@ aliasanalysis.c
 aliasanalysis.h
 staticreuse.c
 staticreuse.h
+reuseelimination.c
