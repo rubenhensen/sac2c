@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/21 17:58:41  jhs
+ * Fixed Bug in MT_OTR_ST_REGION
+ *
  * Revision 1.5  2000/02/14 14:48:54  dkr
  * The Macro IDS_IS_UNIQUE is already defined in uniquecheck.c and designed
  * specificly for this compiler phase. Therefore it is removed from
@@ -1684,7 +1687,7 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  ***  N_mt :   N_st :
  ***/
 
-#define MT_OR_ST_REGION(n) ((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n)
+#define MT_OR_ST_REGION(n) (((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n))
 
 #define L_MT_OR_ST_REGION(n, region)                                                     \
     if (NODE_TYPE (n) == N_mt) {                                                         \
