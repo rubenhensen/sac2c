@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.79  2003/09/20 14:23:57  dkr
+ * signature of some prf ICMs modified
+ *
  * Revision 1.78  2003/09/19 15:37:58  dkr
  * some missing PRFs added
  *
@@ -3836,9 +3839,9 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
     (*get_dim) = MakeNum (1);
 
-    icm_args
-      = MakeExprs (DupIds_Id_NT (let_ids),
-                   MakeExprs (DupId_NT (arg2), MakeExprs (DupNode_NT (arg1), NULL)));
+    icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                             MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                           FALSE, MakeExprs (DupNode_NT (arg1), NULL)));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_TAKE__SHAPE", icm_args);
 
@@ -3886,9 +3889,9 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
     (*get_dim) = MakeNum (1);
 
-    icm_args
-      = MakeExprs (DupIds_Id_NT (let_ids),
-                   MakeExprs (DupId_NT (arg2), MakeExprs (DupNode_NT (arg1), NULL)));
+    icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                             MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                           FALSE, MakeExprs (DupNode_NT (arg1), NULL)));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_DROP__SHAPE", icm_args);
 
@@ -3935,8 +3938,11 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
     (*get_dim) = MakeNum (1);
 
-    icm_args = MakeExprs (DupIds_Id_NT (let_ids),
-                          MakeExprs (DupId_NT (arg1), MakeExprs (DupId_NT (arg2), NULL)));
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
+                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                  TRUE, FALSE, NULL)));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_CAT__SHAPE", icm_args);
 
@@ -4348,14 +4354,17 @@ COMP2Prf (node *arg_node, node *arg_info)
         case F_cat_VxV:
             ret_node = COMPPrfCat (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                    &get_dim, &set_shape_icm);
+            break;
 
         case F_take_SxV:
             ret_node = COMPPrfTake (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                     &get_dim, &set_shape_icm);
+            break;
 
         case F_drop_SxV:
             ret_node = COMPPrfDrop (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                     &get_dim, &set_shape_icm);
+            break;
 
             /*
              *  array operations (non-intrinsics)
