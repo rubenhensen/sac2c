@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/20 07:59:16  cg
+ * removed command line argument to enable boundary check
+ * because this no longer affects the definition of ICMs.
+ *
  * Revision 2.2  1999/05/12 14:39:05  cg
  * NO_TRACE renamed to TRACE_NONE
  *
@@ -28,7 +32,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include "dbug.h"
-#include "main.h"
+
 #include "globals.h"
 
 #include "icm2c_std.h"
@@ -68,38 +72,26 @@ GSCPrintMainEnd ()
 
 /******************************************************************************/
 
-MAIN
+int
+main (int argc, char *argv[])
 {
-
     char buffer[1024];
     int scanf_res;
+    char c;
 
     /*
-     * preset the globals used for the compilation of ICM's
+     * preset some globals used for the compilation of ICM's
      */
-    check_boundary = 0;
     outfile = stdout;
-    traceflag = TRACE_NONE;
     print_objdef_for_header_file = 0;
     indent = 0;
 
-    /*
-     * processing parameters:
-     */
-    OPT ARG 'b':
-    {
-        check_boundary = 1;
-    }
-    OTHER
-    {
-        fprintf (stderr, "unknown option \"%c\"\n", **argv);
-    }
-    ENDOPT
-
     scanf_res = scanf ("%s", buffer);
     while (scanf_res > 0) {
-        if (buffer[strlen (buffer) - 1] == '(')
+        if (buffer[strlen (buffer) - 1] == '(') {
             buffer[strlen (buffer) - 1] = '\0';
+        }
+
         DBUG_PRINT ("BEtest", ("icm found: %s\n", buffer));
 
 #define ICM_ALL
@@ -109,6 +101,14 @@ MAIN
             indent = 0;
         } else {
             printf ("icm %s not defined!\n", buffer);
+
+            /*
+             * Now, we have to consume the rest of the line.
+             */
+            do {
+                c = getchar ();
+            } while (c != '\n');
+            ungetc ((int)c, stdin);
         }
 
         scanf ("%s\n", buffer);
@@ -117,5 +117,3 @@ MAIN
 
     return (0);
 }
-
-ÿ
