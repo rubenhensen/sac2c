@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2005/01/07 17:58:45  cg
+ * Changed usage of ctinfo.
+ *
  * Revision 3.9  2005/01/07 17:02:50  cg
  * Converted compile time output from Errro.h to ctinfo.c
  *
@@ -317,7 +320,7 @@ PIWarg (node *arg_node, node *arg_info)
     case PIW_SWITCH_ARGS:
         /* print check statement for argument */
         if (TYPES_DIM (argtype) < 0) {
-            CTIsyserror ("Unknown shapes cannot be exported");
+            CTIerror ("Unknown shapes cannot be exported");
         }
 
         fprintf (outfile, "SAC_CI_CmpSACArgType(in%d, %d, %s%s%s, %d",
@@ -385,7 +388,7 @@ PIWarg (node *arg_node, node *arg_info)
         break;
 
     default:
-        CTIsyserror ("undefined case in PIWarg");
+        CTIerror ("undefined case in PIWarg");
     }
 
     /*traverse to next argument */
@@ -505,7 +508,7 @@ PIWtypes (types *arg_type, node *arg_info)
             break;
 
         default:
-            CTIsyserror ("undefined case in PIWtypes");
+            CTIerror ("undefined case in PIWtypes");
         }
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2005/01/07 17:58:45  cg
+ * Changed usage of ctinfo.
+ *
  * Revision 3.9  2005/01/07 17:02:50  cg
  * Converted compile time output from Errro.h to ctinfo.c
  *
@@ -317,7 +320,7 @@ PIHarg (node *arg_node, node *arg_info)
         break;
 
     default:
-        CTIsyserror ("undefined case in PIWtypes");
+        CTIerror ("undefined case in PIWtypes");
         break;
     }
 
@@ -368,7 +371,7 @@ PIHtypes (types *arg_type, node *arg_info)
         break;
 
     default:
-        CTIsyserror ("undefined case in PIWtypes");
+        CTIerror ("undefined case in PIWtypes");
         break;
     }
 

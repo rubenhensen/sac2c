@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2005/01/07 17:58:45  cg
+ * Changed usage of ctinfo.
+ *
  * Revision 3.13  2005/01/07 17:02:50  cg
  * Converted compile time output from Errro.h to ctinfo.c
  *
@@ -463,7 +466,7 @@ ScanParseSpecializationFile (char *modname)
 
     if ((strcmp (MODSPEC_NAME (spec_tree), MODUL_NAME (syntax_tree)) != 0)
         || (NODE_TYPE (spec_tree) != N_modspec)) {
-        CTIsysabort ("File \"%s\" provides wrong specialization data", filename);
+        CTIabort ("File \"%s\" provides wrong specialization data", filename);
     }
     spec = spec_tree;
     }
