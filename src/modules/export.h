@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/25 21:14:38  sah
+ * COMPILES
+ *
  * Revision 1.3  2004/11/22 16:57:41  ktr
  * SACDevCamp 04 Ismop
  *
@@ -45,6 +48,6 @@ extern node *EXPsymbol (node *arg_node, info *arg_info);
 extern node *EXPfundef (node *arg_node, info *arg_info);
 extern node *EXPtypedef (node *arg_node, info *arg_info);
 extern node *EXPobjdef (node *arg_node, info *arg_info);
-extern node *EXPmodul (node *arg_node, info *arg_info);
+extern node *EXPmodule (node *arg_node, info *arg_info);
 
 #endif /* _SAC_EXPORT_H_ */

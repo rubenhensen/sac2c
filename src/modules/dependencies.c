@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/25 21:19:24  sah
+ * COMPILES
+ *
  * Revision 1.1  2004/11/08 19:04:54  sah
  * Initial revision
  *
@@ -15,20 +18,20 @@
 #include "dbug.h"
 
 static void *
-BuildDepClosFoldFun (const char *entry, SStype_t kind, void *rest)
+BuildDepClosFoldFun (const char *entry, strstype_t kind, void *rest)
 {
     stringset_t *result = NULL;
     module_t *module;
 
     DBUG_ENTER ("BuildDepClosFoldFun");
 
-    if (kind == SS_saclib) {
-        module = LoadModule (entry);
-        result = GetDependencyTable (module);
-        module = UnLoadModule (module);
+    if (kind == STRS_saclib) {
+        module = MODMloadModule (entry);
+        result = MODMgetDependencyTable (module);
+        module = MODMunLoadModule (module);
     }
 
-    result = SSJoin ((stringset_t *)rest, result);
+    result = STRSjoin ((stringset_t *)rest, result);
 
     DBUG_RETURN ((void *)result);
 }
@@ -40,20 +43,20 @@ BuildDependencyClosure (stringset_t *deps)
 
     DBUG_ENTER ("BuildDependencyClosure");
 
-    result = SSFold (&BuildDepClosFoldFun, deps, NULL);
+    result = STRSfold (&BuildDepClosFoldFun, deps, NULL);
 
-    result = SSJoin (result, deps);
+    result = STRSjoin (result, deps);
 
     DBUG_RETURN (result);
 }
 
-void
-DoResolveDependencies (node *syntax_tree)
+node *
+DEPdoResolveDependencies (node *syntax_tree)
 {
-    DBUG_ENTER ("ResolveDependencies");
+    DBUG_ENTER ("DEPdesolveDependencies");
 
-    MODUL_DEPENDENCIES (syntax_tree)
-      = BuildDependencyClosure (MODUL_DEPENDENCIES (syntax_tree));
+    MODULE_DEPENDENCIES (syntax_tree)
+      = BuildDependencyClosure (MODULE_DEPENDENCIES (syntax_tree));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (syntax_tree);
 }

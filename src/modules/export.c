@@ -1,23 +1,9 @@
 /*
  *
  * $Log$
- * Revision 1.7  2004/11/19 10:17:57  sah
- * added object handling
+ * Revision 1.8  2004/11/25 21:14:38  sah
+ * COMPILES
  *
- * Revision 1.6  2004/11/17 19:48:18  sah
- * added visibility checking
- *
- * Revision 1.5  2004/11/14 15:23:04  sah
- * extended traversal to typedefs
- *
- * Revision 1.4  2004/11/08 14:20:10  sah
- * added dbug prints and FUNDEC traversal
- *
- * Revision 1.3  2004/10/27 08:41:20  sah
- * main is always provided now
- *
- * Revision 1.2  2004/10/26 09:33:29  sah
- * uses EXPORTED/PROVIDED flag now
  *
  * Revision 1.1  2004/10/17 14:51:07  sah
  * Initial revision
@@ -25,8 +11,6 @@
  *
  *
  */
-
-#define NEW_INFO
 
 #include "export.h"
 #include "DeadFunctionRemoval.h"
@@ -73,7 +57,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_EXP_SYMBOL (result) = NULL;
     INFO_EXP_EXPORTED (result) = FALSE;
@@ -94,7 +78,7 @@ FreeInfo (info *info)
     INFO_EXP_SYMBOL (info) = NULL;
     INFO_EXP_INTERFACE (info) = NULL;
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -111,7 +95,7 @@ CheckExport (bool all, node *symbol, info *arg_info)
     INFO_EXP_RESULT (arg_info) = FALSE;
 
     if (symbol != NULL) {
-        symbol = Trav (symbol, arg_info);
+        symbol = TRAVdo (symbol, arg_info);
     }
 
     if (all) {
@@ -129,36 +113,36 @@ CheckExport (bool all, node *symbol, info *arg_info)
  */
 
 node *
-EXPUse (node *arg_node, info *arg_info)
+EXPuse (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPUse");
+    DBUG_ENTER ("EXPuse");
 
     if (USE_NEXT (arg_node) != NULL) {
-        USE_NEXT (arg_node) = Trav (USE_NEXT (arg_node), arg_info);
+        USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPImport (node *arg_node, info *arg_info)
+EXPimport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPImport");
+    DBUG_ENTER ("EXPimport");
 
     if (IMPORT_NEXT (arg_node) != NULL) {
-        IMPORT_NEXT (arg_node) = Trav (IMPORT_NEXT (arg_node), arg_info);
+        IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPProvide (node *arg_node, info *arg_info)
+EXPprovide (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPProvide");
+    DBUG_ENTER ("EXPprovide");
 
     if (PROVIDE_NEXT (arg_node) != NULL) {
-        PROVIDE_NEXT (arg_node) = Trav (PROVIDE_NEXT (arg_node), arg_info);
+        PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
     }
 
     if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
@@ -168,19 +152,19 @@ EXPProvide (node *arg_node, info *arg_info)
     } else {
         WARN (NODE_LINE (arg_node), ("provide is only allowed in modules."));
 
-        arg_node = FreeNode (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPExport (node *arg_node, info *arg_info)
+EXPexport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPExport");
+    DBUG_ENTER ("EXPexport");
 
     if (EXPORT_NEXT (arg_node) != NULL) {
-        EXPORT_NEXT (arg_node) = Trav (EXPORT_NEXT (arg_node), arg_info);
+        EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
     }
 
     if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
@@ -190,54 +174,52 @@ EXPExport (node *arg_node, info *arg_info)
     } else {
         WARN (NODE_LINE (arg_node), ("export is only allowed in modules."));
 
-        arg_node = FreeNode (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPSymbol (node *arg_node, info *arg_info)
+EXPsymbol (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPSymbol");
+    DBUG_ENTER ("EXPsymbol");
 
     if (!strcmp (INFO_EXP_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
         INFO_EXP_RESULT (arg_info) = TRUE;
     }
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
-        SYMBOL_NEXT (arg_node) = Trav (SYMBOL_NEXT (arg_node), arg_info);
+        SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPFundef (node *arg_node, info *arg_info)
+EXPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPFundef");
+    DBUG_ENTER ("EXPfundef");
 
-    if (((FUNDEF_STATUS (arg_node) == ST_regular) || (FUNDEF_STATUS (arg_node) == ST_Cfun)
-         || (FUNDEF_STATUS (arg_node) == ST_wrapperfun))
-        && (!strcmp (FUNDEF_MOD (arg_node), INFO_EXP_MODNAME (arg_info)))) {
+    if (FUNDEF_ISLOCAL (arg_node)) {
         INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
         INFO_EXP_EXPORTED (arg_info) = FALSE;
         INFO_EXP_PROVIDED (arg_info) = FALSE;
 
         if (INFO_EXP_INTERFACE (arg_info) != NULL) {
             INFO_EXP_INTERFACE (arg_info)
-              = Trav (INFO_EXP_INTERFACE (arg_info), arg_info);
+              = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
         }
 
         if (INFO_EXP_EXPORTED (arg_info)) {
-            SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, TRUE);
-            SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, TRUE);
+            FUNDEF_ISEXPORTED (arg_node) = TRUE;
+            FUNDEF_ISPROVIDED (arg_node) = TRUE;
         } else if (INFO_EXP_PROVIDED (arg_info)) {
-            SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
-            SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, TRUE);
+            FUNDEF_ISEXPORTED (arg_node) = FALSE;
+            FUNDEF_ISPROVIDED (arg_node) = TRUE;
         } else {
-            SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
-            SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
+            FUNDEF_ISEXPORTED (arg_node) = FALSE;
+            FUNDEF_ISPROVIDED (arg_node) = FALSE;
         }
 
         /* override exports/provide for function main in a
@@ -245,65 +227,64 @@ EXPFundef (node *arg_node, info *arg_info)
          */
         if (INFO_EXP_FILETYPE (arg_info) == F_prog) {
             if (!strcmp (FUNDEF_NAME (arg_node), "main")) {
-                SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
-                SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, TRUE);
+                FUNDEF_ISEXPORTED (arg_node) = FALSE;
+                FUNDEF_ISPROVIDED (arg_node) = TRUE;
             }
         }
-    } else if (FUNDEF_STATUS (arg_node) == ST_objinitfun) {
-        /* init functions of objects are always local, as there is
-         * no need for them to be used outside the module
-         */
-        SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
-    } else if (FUNDEF_STATUS (arg_node) == ST_classfun) {
-        /* classfuns are not exported as well, as that would
-         * break the encapsulation
-         */
-        SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
-    } else {
-        SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
+        /* TODO: adapt to new object handling */
+#if 0
+  } else if ( FUNDEF_STATUS( arg_node) == ST_objinitfun ) {
+    /* init functions of objects are always local, as there is
+     * no need for them to be used outside the module
+     */
+    SET_FLAG( FUNDEF, arg_node, IS_EXPORTED, FALSE);
+    SET_FLAG( FUNDEF, arg_node, IS_PROVIDED, FALSE);
+  } else if ( FUNDEF_STATUS( arg_node) == ST_classfun ) {
+    /* classfuns are not exported as well, as that would
+     * break the encapsulation
+     */
+    SET_FLAG( FUNDEF, arg_node, IS_EXPORTED, FALSE);
+    SET_FLAG( FUNDEF, arg_node, IS_PROVIDED, FALSE);
+#endif
     }
 
-    DBUG_PRINT ("EXP",
-                ("Fundef %s:%s has status %d/%d [PROVIDE/EXPORT].", FUNDEF_MOD (arg_node),
-                 FUNDEF_NAME (arg_node), GET_FLAG (FUNDEF, arg_node, IS_PROVIDED),
-                 GET_FLAG (FUNDEF, arg_node, IS_EXPORTED)));
+    DBUG_PRINT ("EXP", ("Fundef %s:%s has status %d/%d [PROVIDE/EXPORT].",
+                        FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
+                        FUNDEF_ISPROVIDED (arg_node), FUNDEF_ISEXPORTED (arg_node)));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPTypedef (node *arg_node, info *arg_info)
+EXPtypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPTypedef");
+    DBUG_ENTER ("EXPtypedef");
 
     INFO_EXP_SYMBOL (arg_info) = TYPEDEF_NAME (arg_node);
     INFO_EXP_EXPORTED (arg_info) = FALSE;
     INFO_EXP_PROVIDED (arg_info) = FALSE;
 
     if (INFO_EXP_INTERFACE (arg_info) != NULL) {
-        INFO_EXP_INTERFACE (arg_info) = Trav (INFO_EXP_INTERFACE (arg_info), arg_info);
+        INFO_EXP_INTERFACE (arg_info) = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
     }
 
     if (INFO_EXP_EXPORTED (arg_info)) {
-        SET_FLAG (TYPEDEF, arg_node, IS_EXPORTED, TRUE);
-        SET_FLAG (TYPEDEF, arg_node, IS_PROVIDED, TRUE);
+        TYPEDEF_ISEXPORTED (arg_node) = TRUE;
+        TYPEDEF_ISPROVIDED (arg_node) = TRUE;
     } else if (INFO_EXP_PROVIDED (arg_info)) {
-        SET_FLAG (TYPEDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (TYPEDEF, arg_node, IS_PROVIDED, TRUE);
+        TYPEDEF_ISEXPORTED (arg_node) = FALSE;
+        TYPEDEF_ISPROVIDED (arg_node) = TRUE;
     } else {
-        SET_FLAG (TYPEDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (TYPEDEF, arg_node, IS_PROVIDED, FALSE);
+        TYPEDEF_ISEXPORTED (arg_node) = FALSE;
+        TYPEDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -319,53 +300,53 @@ EXPObjdef (node *arg_node, info *arg_info)
     INFO_EXP_PROVIDED (arg_info) = FALSE;
 
     if (INFO_EXP_INTERFACE (arg_info) != NULL) {
-        INFO_EXP_INTERFACE (arg_info) = Trav (INFO_EXP_INTERFACE (arg_info), arg_info);
+        INFO_EXP_INTERFACE (arg_info) = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
     }
 
     if (INFO_EXP_EXPORTED (arg_info)) {
-        SET_FLAG (OBJDEF, arg_node, IS_EXPORTED, TRUE);
-        SET_FLAG (OBJDEF, arg_node, IS_PROVIDED, TRUE);
+        OBJDEF_ISEXPORTED (arg_node) = TRUE;
+        OBJDEF_ISPROVIDED (arg_node) = TRUE;
     } else if (INFO_EXP_PROVIDED (arg_info)) {
-        SET_FLAG (OBJDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (OBJDEF, arg_node, IS_PROVIDED, TRUE);
+        OBJDEF_ISEXPORTED (arg_node) = FALSE;
+        OBJDEF_ISPROVIDED (arg_node) = TRUE;
     } else {
-        SET_FLAG (OBJDEF, arg_node, IS_EXPORTED, FALSE);
-        SET_FLAG (OBJDEF, arg_node, IS_PROVIDED, FALSE);
+        OBJDEF_ISEXPORTED (arg_node) = FALSE;
+        OBJDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-EXPModul (node *arg_node, info *arg_info)
+EXPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPModul");
+    DBUG_ENTER ("EXPmodule");
 
-    INFO_EXP_INTERFACE (arg_info) = MODUL_IMPORTS (arg_node);
-    INFO_EXP_MODNAME (arg_info) = MODUL_NAME (arg_node);
-    INFO_EXP_FILETYPE (arg_info) = MODUL_FILETYPE (arg_node);
+    INFO_EXP_INTERFACE (arg_info) = MODULE_IMPORTS (arg_node);
+    INFO_EXP_MODNAME (arg_info) = MODULE_NAME (arg_node);
+    INFO_EXP_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    if (MODUL_FUNDECS (arg_node) != NULL) {
-        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
-    if (MODUL_TYPES (arg_node) != NULL) {
-        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    if (MODULE_TYPES (arg_node) != NULL) {
+        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
 
-    if (MODUL_OBJS (arg_node) != NULL) {
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    if (MODULE_OBJS (arg_node) != NULL) {
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
-    MODUL_IMPORTS (arg_node) = INFO_EXP_INTERFACE (arg_info);
+    MODULE_IMPORTS (arg_node) = INFO_EXP_INTERFACE (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -377,19 +358,17 @@ EXPModul (node *arg_node, info *arg_info)
 static node *
 StartExpTraversal (node *modul)
 {
-    funtab *store_tab;
     info *info;
 
     DBUG_ENTER ("StartExpTraversal");
 
     info = MakeInfo ();
 
-    store_tab = act_tab;
-    act_tab = exp_tab;
+    TRAVpush (TR_exp);
 
-    modul = Trav (modul, info);
+    modul = TRAVdo (modul, info);
 
-    act_tab = store_tab;
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -403,10 +382,10 @@ DoExport (node *syntax_tree)
 
     syntax_tree = StartExpTraversal (syntax_tree);
 
-    syntax_tree = DeadFunctionRemoval (syntax_tree);
+    syntax_tree = DFRdoDeadFunctionRemoval (syntax_tree);
 
-    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-        SerializeModule (syntax_tree);
+    if (MODULE_FILETYPE (syntax_tree) != F_prog) {
+        SERdoSerialize (syntax_tree);
     }
 
     DBUG_VOID_RETURN;
