@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.92  2004/11/26 12:17:02  khf
+  completed CMPT
+
   Revision 1.91  2004/11/26 11:39:31  khf
   incomplete CPMT traversal added
 
@@ -297,7 +300,7 @@
           <node name="Cond" />
 	</travuser>
       </traversal>
-      <traversal id="CMPT" name="Compare Tree Traversal" default="unknown" include="compare_tree.h" >
+      <traversal id="CMPT" name="Compare Tree Traversal" default="CMPTunknown" prefun="CMPTnodeType" include="compare_tree.h" >
 	<travuser>
           <node name="Num" />
           <node name="Char" />
@@ -314,6 +317,16 @@
 	  <node name="Code" />
           <node name="Withid" />
           <node name="Fold" />
+          <node name="Globobj" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Return" />
+          <node name="Cond" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Do" />
+          <node name="Exprs" />
+          <node name="Empty" />
 	</travuser>
       </traversal>
     </general>
