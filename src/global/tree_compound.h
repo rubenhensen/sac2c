@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/12/15 14:13:56  asi
+ * Revision 1.23  1995/12/18 14:41:51  asi
+ * added DO_DEFMASK, DO_USEMASK, DO_TERMMASK, DO_INSTR,
+ *       WHILE_DEFMASK, WHILE_USEMASK, WHILE_TERMMASK, WHILE_INSTR
+ *
+ * Revision 1.22  1995/12/15  14:13:56  asi
  * added GetCompoundNode
  *
  * Revision 1.21  1995/12/15  13:22:12  asi
@@ -975,8 +979,10 @@ extern node *GetCompoundNode (node *arg_node);
  *  compound access macros
  */
 
-#define DO_DEFMASK(n) (DO_MASK (n, 0))
-#define DO_USEMASK(n) (DO_MASK (n, 1))
+#define DO_DEFMASK(n) (BLOCK_DEFMASK (DO_BODY (n)))
+#define DO_USEMASK(n) (BLOCK_USEMASK (DO_BODY (n)))
+#define DO_TERMMASK(n) (DO_MASK (n, 1))
+#define DO_INSTR(n) (BLOCK_INSTR (DO_BODY (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -988,8 +994,10 @@ extern node *GetCompoundNode (node *arg_node);
  *  compound access macros
  */
 
-#define WHILE_DEFMASK(n) (WHILE_MASK (n, 0))
-#define WHILE_USEMASK(n) (WHILE_MASK (n, 1))
+#define WHILE_DEFMASK(n) (BLOCK_DEFMASK (WHILE_BODY (n)))
+#define WHILE_USEMASK(n) (BLOCK_USEMASK (WHILE_BODY (n)))
+#define WHILE_TERMMASK(n) (WHILE_MASK (n, 1))
+#define WHILE_INSTR(n) (BLOCK_INSTR (WHILE_BODY (n)))
 
 /*--------------------------------------------------------------------------*/
 
