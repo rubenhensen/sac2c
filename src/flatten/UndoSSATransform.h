@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/25 12:50:53  khf
+ * removed USSATid, USSATcode
+ *
  * Revision 1.4  2004/11/24 19:16:24  mwe
  * changing function names according to naming conventions
  *
@@ -53,13 +56,11 @@ extern node *USSATdoUndoSsaTransform (node *syntax_tree);
 
 extern node *USSATarg (node *arg_node, info *arg_info);
 extern node *USSATvardec (node *arg_node, info *arg_info);
-extern node *USSATid (node *arg_node, info *arg_info);
+extern node *USSATids (node *arg_node, info *arg_info);
 extern node *USSATlet (node *arg_node, info *arg_info);
 extern node *USSATassign (node *arg_node, info *arg_info);
 extern node *USSATfundef (node *arg_node, info *arg_info);
 extern node *USSATblock (node *arg_node, info *arg_info);
-extern node *USSATwithid (node *arg_node, info *arg_info);
-extern node *USSATcode (node *arg_node, info *arg_info);
 extern node *USSATwith (node *arg_node, info *arg_info);
 
 #endif /* _SAC_UNDOSSATRANSFORM_H_ */
