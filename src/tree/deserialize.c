@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/07 18:11:04  sah
+ * brushed the code
+ *
  * Revision 1.5  2004/11/01 21:52:40  sah
  * NWITHID_VEC ids are processed now as well
  *
@@ -51,6 +54,7 @@ MakeInfo ()
     INFO_DS_SSACOUNTER (result) = NULL;
     INFO_DS_MODULE (result) = NULL;
     INFO_DS_FUNDEFS (result) = NULL;
+    INFO_DS_FUNDECS (result) = NULL;
     INFO_DS_VARDECS (result) = NULL;
     INFO_DS_ARGS (result) = NULL;
 
@@ -69,6 +73,26 @@ FreeInfo (info *info)
 
 static info *DSstate = NULL;
 
+static void
+InsertIntoState (node *item)
+{
+    DBUG_ENTER ("InsertIntoState");
+
+    switch (NODE_TYPE (item)) {
+    case N_fundef:
+        if (FUNDEF_STATUS (item) == ST_Cfun) {
+            INFO_DS_FUNDECS (DSstate) = AppendFundef (item, INFO_DS_FUNDECS (DSstate));
+        } else {
+            INFO_DS_FUNDEFS (DSstate) = AppendFundef (item, INFO_DS_FUNDEFS (DSstate));
+        }
+        break;
+    default:
+        DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
 void
 InitDeserialize (node *module)
 {
@@ -90,6 +114,9 @@ FinishDeserialize (node *module)
     DBUG_ENTER ("FinishDeserialize");
 
     MODUL_FUNS (module) = AppendFundef (MODUL_FUNS (module), INFO_DS_FUNDEFS (DSstate));
+
+    MODUL_FUNDECS (module)
+      = AppendFundef (MODUL_FUNDECS (module), INFO_DS_FUNDECS (DSstate));
 
     DSstate = FreeInfo (DSstate);
 
@@ -148,6 +175,10 @@ FindSymbolInAst (const char *symbol)
     result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
 
     if (result == NULL) {
+        result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDECS (DSstate));
+    }
+
+    if (result == NULL) {
         result = FindSymbolInFundefChain (symbol, MODUL_FUNS (INFO_DS_MODULE (DSstate)));
     }
 
@@ -186,7 +217,7 @@ AddEntryToAst (STentry_t *entry, module_t *module)
             entryp = NT2OTTransform (entryp);
 
             /* add to fundefs */
-            INFO_DS_FUNDEFS (DSstate) = AppendFundef (INFO_DS_FUNDEFS (DSstate), entryp);
+            InsertIntoState (entryp);
         }
         break;
     default:
@@ -243,7 +274,7 @@ DeserializeLookupFunction (const char *module, const char *symbol, info *info)
         /* generate the old types */
         result = NT2OTTransform (result);
 
-        INFO_DS_FUNDEFS (DSstate) = AppendFundef (INFO_DS_FUNDEFS (DSstate), result);
+        InsertIntoState (result);
     }
 
     DBUG_RETURN (result);
