@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/01 21:52:15  sah
+ * added SerialiyezeDownLinkAttrib
+ *
  * Revision 1.11  2004/10/26 09:35:55  sah
  * added serialization of links
  *
@@ -334,7 +337,7 @@ SerializeLinkAttrib (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeApLinkAttrib
+ * @fn SerializeExtLinkAttrib
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -345,11 +348,37 @@ SerializeLinkAttrib (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeApLinkAttrib (info *info, node *attr, node *parent)
+SerializeExtLinkAttrib (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeApLinkAttrib");
+    DBUG_ENTER ("SerializeExtinkAttrib");
 
-    SerializeFundefLink (attr, INFO_SER_FILE (info));
+    if (attr != NULL) {
+        if (NODE_TYPE (attr) == N_fundef) {
+            SerializeFundefLink (attr, INFO_SER_FILE (info));
+        }
+    } else {
+        fprintf (INFO_SER_FILE (info), "NULL");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SerializeDownLinkAttrib
+ *
+ * @brief generates code to de-serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SerializeDownLinkAttrib (info *info, node *attr, node *parent)
+{
+    DBUG_ENTER ("SerializeDownLinkAttrib");
 
     DBUG_VOID_RETURN;
 }
@@ -856,6 +885,9 @@ void
 SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
 {
     DBUG_ENTER ("SerializeConstVecPointerAttrib");
+
+    DBUG_ASSERT ((NODE_TYPE (parent) == N_array),
+                 "Found ConstVecPointer as attribute of a node different to N_array!");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
