@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.84  1999/02/12 18:47:15  bs
+ * fixed a bug in FltnExprs
+ *
  * Revision 1.83  1999/02/12 12:36:21  bs
  * Function FltnId modified. -> propagation of constant int arrays.
  *
@@ -1315,7 +1318,8 @@ FltnExprs (node *arg_node, node *arg_info)
      * Last but not least remaining exprs have to be done:
      */
     if (EXPRS_NEXT (arg_node) == NULL) {
-        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array) && (info_fltn_array_index >= 0)) {
+        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array)
+            && (INFO_FLTN_ARRAYLENGTH (arg_info) > 0)) {
             info_fltn_intarray = MALLOC (INFO_FLTN_ARRAYLENGTH (arg_info) * sizeof (int));
             /*
              * collect the array element if it's a constant integer
@@ -1325,7 +1329,8 @@ FltnExprs (node *arg_node, node *arg_info)
         }
     } else {
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
-        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array) && (info_fltn_array_index >= 0)) {
+        if ((INFO_FLTN_CONTEXT (arg_info) == CT_array)
+            && (INFO_FLTN_ARRAYLENGTH (arg_info) > 0)) {
             /*
              * collect the array element if it's a constant integer
              */
