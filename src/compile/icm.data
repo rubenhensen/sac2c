@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/05/14 21:36:35  dkr
+ * changed some WL-ICMs
+ *
  * Revision 1.34  1998/05/13 14:48:03  cg
  * added ICM MT_SYNC_ONEFOLD
  *
@@ -514,22 +517,45 @@ ICM_END( WL_END, (target, idx_vec, dims, args))
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN, TRACE_UDF)
-  ICM_STR(expr)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalar)
-ICM_END( WL_ASSIGN, (expr, target, idx_vec, dims, idx_scalar))
+  ICM_VAR(dims, idx_scalars)
+  ICM_INT(dim_expr)
+  ICM_STR(expr)
+ICM_END( WL_ASSIGN, (target, idx_vec, dims, idx_scalars, dim_expr, expr))
+#endif
+
+#if defined(WL_ASSIGN_GEN) || defined(ICM_ALL)
+ICM_DEF( WL_ASSIGN_GEN, TRACE_UDF)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR(dims, idx_scalars)
+  ICM_STR(templ)
+ICM_END( WL_ASSIGN_GEN, (target, idx_vec, dims, idx_scalars, templ))
+#endif
+
+#if defined(WL_ASSIGN_MOD) || defined(ICM_ALL)
+ICM_DEF( WL_ASSIGN_MOD, TRACE_UDF)
+  ICM_STR(source)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR(dims, idx_scalars)
+  ICM_STR(templ)
+ICM_END( WL_ASSIGN_MOD, (source, target, idx_vec, dims, idx_scalars, templ))
 #endif
 
 #if defined(WL_FOLD) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD, TRACE_UDF)
-  ICM_STR(expr)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
-  ICM_VAR(dims, idx_scalar)
-ICM_END( WL_FOLD, (expr, target, idx_vec, dims, idx_scalar))
+  ICM_VAR(dims, idx_scalars)
+  ICM_INT(dim_expr)
+  ICM_STR(expr)
+ICM_END( WL_FOLD, (target, idx_vec, dims, idx_scalars, dim_expr, expr))
 #endif
 
 
