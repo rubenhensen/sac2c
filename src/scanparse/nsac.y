@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.27  2004/12/02 15:13:20  sah
+* fixed mopsification
+*
 * Revision 1.26  2004/11/29 20:44:49  sah
 * post-DK bugfixing
 *
@@ -2071,7 +2074,7 @@ node *Expr2Mop( node *expr)
   if( (NODE_TYPE( expr) == N_mop) && ! MOP_ISFIXED( expr) ) {
     res = expr;
   } else {
-    res = TBmakeMop( TBmakeExprs( expr, NULL), NULL);
+    res = TBmakeMop( NULL, TBmakeExprs( expr, NULL));
   }
 
   DBUG_RETURN( res);
@@ -2103,12 +2106,21 @@ node *ConstructMop( node *expr1, node *fun_id, node *expr2)
 
   IDS_NEXT( fun_ids) = MOP_OPS( rmop);
 
-  res = TBmakeMop( TCappendExprs( MOP_EXPRS( lmop),
-                                  MOP_EXPRS( rmop)),
-                   TCappendIds( MOP_OPS( lmop),
-                                fun_ids));
-  lmop = FREEdoFreeNode( lmop);  /* only the top constructor N_mop is to be freed!!!! */
-  rmop = FREEdoFreeNode( rmop);  /* only the top constructor N_mop is to be freed!!!! */
+  res = TBmakeMop( TCappendIds( MOP_OPS( lmop),
+                                fun_ids),
+                   TCappendExprs( MOP_EXPRS( lmop),
+                                  MOP_EXPRS( rmop)));
+  /*
+   * now we free the topmost node. Therefore we have to set the OPS and EXPRS
+   * attributes to NULL, so that they do not get freed!
+   */
+  MOP_EXPRS( lmop) = NULL;
+  MOP_OPS( lmop) = NULL;
+  MOP_EXPRS( rmop) = NULL;
+  MOP_OPS( rmop) = NULL;
+
+  lmop = FREEdoFreeNode( lmop); 
+  rmop = FREEdoFreeNode( rmop);
 
   DBUG_RETURN( res);
 }
