@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/11/26 12:22:23  mwe
+ * moved some macros from .c to .h file (needed by external functions)
+ *
  * Revision 3.37  2004/11/24 17:44:26  mwe
  * support for N_symbol added
  *
@@ -116,6 +119,15 @@
 #define _SAC_DUPTREE_H_
 
 #include "types.h"
+
+/*
+ * following macros are also needed by external functions
+ */
+
+#define DUP_NORMAL 0
+#define DUP_INLINE 1
+#define DUP_WLF 2
+#define DUP_SSA 3
 
 /* initializing */
 extern void DUPinitDupTree ();

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2004/11/26 12:22:23  mwe
+ * moved some macros from .c to .h file (needed by external functions)
+ *
  * Revision 3.122  2004/11/26 10:58:25  mwe
  * changes according to changes in ast.xml
  *
@@ -314,11 +317,6 @@
 #include "LookUpTable.h"
 #include "scheduling.h"
 #include "constants.h"
-
-#define DUP_NORMAL 0
-#define DUP_INLINE 1
-#define DUP_WLF 2
-#define DUP_SSA 3
 
 /*
  * INFO structure
