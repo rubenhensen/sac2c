@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/06/18 14:18:46  cg
+ * file no longer required for sac2c
+ *
  * Revision 1.30  1998/06/06 18:30:59  dkr
  * added SYNC_WITH_PTRS
  *
@@ -546,7 +549,7 @@ SPMDLiftNwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /*
-     * gnerate new DFMasks
+     * generate new DFMasks
      */
 
     in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
