@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2003/09/20 14:23:41  dkr
+ * several ICMs for prfs added
+ *
  * Revision 3.62  2003/09/19 15:33:31  dkr
  * postfix _nt of varnames renamed into _NT
  *
@@ -522,6 +525,58 @@ ICM_DEF( ND_PRF_IDX_MODARRAY__DATA, TRACE_NONE)
   ICM_ID( copyfun)
 ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_NT, to_sdim, from_NT, from_sdim,
                                      idx_ANY, val_ANY, copyfun))
+#endif
+
+#if defined(ND_PRF_TAKE__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_TAKE__SHAPE, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ANY( cnt_ANY)
+ICM_END( ND_PRF_TAKE__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+#endif
+
+#if defined(ND_PRF_TAKE__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_TAKE__DATA, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ANY( cnt_ANY)
+ICM_END( ND_PRF_TAKE__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+#endif
+
+#if defined(ND_PRF_DROP__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_DROP__SHAPE, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ANY( cnt_ANY)
+ICM_END( ND_PRF_DROP__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+#endif
+
+#if defined(ND_PRF_DROP__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_DROP__DATA, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_ANY( cnt_ANY)
+ICM_END( ND_PRF_DROP__DATA, (to_NT, to_sdim, from_NT, from_sdim, cnt_ANY))
+#endif
+
+#if defined(ND_PRF_CAT__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_CAT__SHAPE, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from1_NT)
+  ICM_INT( from1_sdim)
+  ICM_NT( from2_NT)
+  ICM_INT( from2_sdim)
+ICM_END( ND_PRF_CAT__SHAPE, (to_NT, to_sdim,
+                             from1_NT, from1_sdim, from2_NT, from2_sdim))
 #endif
 
 
