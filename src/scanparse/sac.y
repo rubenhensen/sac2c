@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.154  1998/03/24 10:55:59  srs
+ * changed parameters of MakeNPart in rule Ngenerator
+ *
  * Revision 1.153  1998/03/17 13:37:14  cg
  * *** empty log message ***
  *
@@ -2000,10 +2003,9 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          ;
 
 
-Ngenerator: exprORdot Ngenop Ngenidx Ngenop exprORdot
-            Nsteps Nwidth
-            { $$=MakeNPart( $3, 
-                   MakeNGenerator($1, $5, $2,  $4, $6, $7 ));
+Ngenerator: exprORdot Ngenop Ngenidx Ngenop exprORdot Nsteps Nwidth
+            { 
+              $$=MakeNPart( $3, MakeNGenerator($1, $5, $2,  $4, $6, $7 ), NULL);
             }
           ;
 
