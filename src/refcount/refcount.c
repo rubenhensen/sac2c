@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/09 13:35:59  dkr
+ * RCicm modified: arguments of VECT2OFFSET are refcounted correctly now
+ *
  * Revision 3.10  2001/02/06 15:19:35  dkr
  * fixed a bug in RCNwith() and RCNwith2():
  * works correctly now even with INFO_RC_ONLYNAIVE set :-)
@@ -1280,25 +1283,29 @@ RCicm (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCicm");
 
     name = ICM_NAME (arg_node);
-
     if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
-         * VECT2OFFSET decrements the RC of its array argument
-         *  -> no RCO!!
-         *  -> set INFO_RC_PRF to NULL
+         * VECT2OFFSET( var, iv, ...) needs RC on all but the first argument.
+         * It is expanded to    var = ... iv ...    , where 'var' is a scalar
+         * variable (no reference-counted object).
+         *  -> do not traverse the first argument (although it would not do any
+         *     harm for the time being to traverse all arguments, because the
+         *     first one is not reference-counted anyway ...)
+         *  -> handle ICM like a prf (RCO)
          */
+        INFO_RC_PRF (arg_info) = arg_node;
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
         INFO_RC_PRF (arg_info) = NULL;
-        ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
     } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET does no reference counting
-         *  -> do not traverse the arguments
+         * USE_GENVAR_OFFSET( var, arr) does *not* consume its arguments!
+         * It is expanded to    var = arr__off    , where 'var' is a scalar
+         * and 'arr_off' an internal variable (no reference-counted objects)!
+         *   -> do not traverse the arguments
          */
         INFO_RC_PRF (arg_info) = NULL;
     } else {
-        INFO_RC_PRF (arg_info) = arg_node;
-        ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
-        INFO_RC_PRF (arg_info) = NULL;
+        DBUG_ASSERT ((0), "unknown ICM found during RC");
     }
 
     DBUG_RETURN (arg_node);
