@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.76  2000/07/12 17:22:57  dkr
+ * comments for N_typedef added
+ *
  * Revision 1.75  2000/07/12 15:20:14  dkr
  * INFO_DUP_BASEFUNDEF and INFO_DUP_DFMBASE removed
  *
@@ -341,10 +344,10 @@ extern shpseg *MakeShpseg (nums *num);
 
 /*
  *  STATUS is usually ST_regular, but
- *  ST_artificial marks artificial return types due to the resolution of
- *  reference parameters and global objects and
- *  ST_crettype marks that return type of a function that is compiled
- *  to the actual return type of the resulting C function.
+ *    ST_artificial marks artificial return types due to the resolution of
+ *      reference parameters and global objects and
+ *    ST_crettype marks that return type of a function that is compiled
+ *      to the actual return type of the resulting C function.
  *
  *  TDEF is a reference to the defining N_typedef node of a user-defined
  *  type.
@@ -762,6 +765,9 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***/
 
 /*
+ *  The ATTRIB indicates whether a type is unique or not.
+ *  Possible values: ST_regular | ST_unique
+ *
  *  The STATUS indicates whether a type is defined or imported.
  *  Possible values: ST_regular | ST_imported
  *
