@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1999/01/18 08:15:18  sbs
+ * changed SAC_MT_SETUP_PTHREAD:
+ * Errorchecking plus non-NULL first arg for pthread_create
+ *
  * Revision 1.15  1998/12/10 12:39:05  cg
  * Bug fixed in definition of _MIT_POSIX_THREADS.
  *
@@ -223,12 +227,22 @@ typedef union {
 
 #define SAC_MT_SETUP_PTHREAD()                                                           \
     if (SAC_MT_THREADS () > 1) {                                                         \
-        pthread_attr_init (&SAC_MT_thread_attribs);                                      \
-        pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM);            \
-        pthread_attr_setdetachstate (&SAC_MT_thread_attribs, PTHREAD_CREATE_DETACHED);   \
+        pthread_t tmp;                                                                   \
+        if (0 != pthread_attr_init (&SAC_MT_thread_attribs))                             \
+            SAC_RuntimeError ("Multi Thread Error: could not initialize attributes");    \
+        if (0 != pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM))   \
+            SAC_RuntimeError (                                                           \
+              "Multi Thread Error: could not set scope to PTHREAD_SCOPE_SYSTEM");        \
+        if (0                                                                            \
+            != pthread_attr_setdetachstate (&SAC_MT_thread_attribs,                      \
+                                            PTHREAD_CREATE_DETACHED))                    \
+            SAC_RuntimeError ("Multi Thread Error: could not set detachstate to "        \
+                              "PTHREAD_CREATE_DETACHED");                                \
         SAC_TR_MT_PRINT (("Creating worker thread #1 of class 0"));                      \
-        pthread_create (NULL, &SAC_MT_thread_attribs,                                    \
-                        (void *(*)(void *))THREAD_CONTROL (), NULL);                     \
+        if (0                                                                            \
+            != pthread_create (&tmp, &SAC_MT_thread_attribs,                             \
+                               (void *(*)(void *))THREAD_CONTROL (), NULL))              \
+            SAC_RuntimeError ("Multi Thread Error: could not create worker thread #1");  \
     }
 
 #if SAC_DO_TRACE_MT
