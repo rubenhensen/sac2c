@@ -1,45 +1,28 @@
 /*
  *
  * $Log$
- * Revision 1.8  2004/07/16 14:41:34  sah
- * switch to new INFO structure
- * PHASE I
+ * Revision 1.9  2004/11/25 22:26:47  sah
+ * COMPILES!
  *
- * Revision 1.7  2003/12/10 16:00:15  sah
- * added HDid
- *
- * Revision 1.6  2003/11/12 14:32:30  sbs
- * HDpart inserted.
- *
- * Revision 1.5  2002/09/06 11:45:32  sah
- * added support for N_selwl.
- *
- * Revision 1.4  2002/09/05 12:48:21  sah
- * added HDassign
- *
- * Revision 1.3  2002/08/13 09:54:52  sah
- * added several traversalfunctions.
- *
- * Revision 1.2  2002/07/19 13:24:49  sah
- * added functions for traversal.
  *
  * Revision 1.1  2002/07/09 12:54:26  sbs
  * Initial revision
  *
- *
  */
 
-#ifndef _handle_dots_h
-#define _handle_dots_h
+#ifndef _HANDLE_DOTS_H_
+#define _HANDLE_DOTS_H_
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 
-extern node *EliminateSelDots (node *arg_node);
+extern node *HDdoEliminateSelDots (node *arg_node);
 extern node *HDwith (node *arg_node, info *arg_info);
-extern node *HDwithop (node *arg_node, info *arg_info);
+extern node *HDgenarray (node *arg_node, info *arg_info);
+extern node *HDmodarray (node *arg_node, info *arg_info);
+extern node *HDfold (node *arg_node, info *arg_info);
 extern node *HDpart (node *arg_node, info *arg_info);
 extern node *HDgenerator (node *arg_node, info *arg_info);
 extern node *HDdot (node *arg_node, info *arg_info);
@@ -49,4 +32,4 @@ extern node *HDassign (node *arg_node, info *arg_info);
 extern node *HDsetwl (node *arg_node, info *arg_info);
 extern node *HDid (node *arg_node, info *arg_info);
 
-#endif /* _handle_dots_h */
+#endif /* _HANDLE_DOTS_H_ */
