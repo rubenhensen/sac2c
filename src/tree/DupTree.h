@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/12/12 11:14:14  dkr
+ * functions DupIds_Id_NT, DupId_NT added
+ *
  * Revision 3.15  2001/05/17 11:39:20  dkr
  * InitDupTree() added
  *
@@ -113,18 +116,24 @@ extern node *DupNodeLUT_Type (node *arg_node, LUT_t lut, int type);
 /*
  * Functions for duplicating non-node parts of the AST
  */
-extern ids *DupOneIds (ids *old_ids);
-extern ids *DupAllIds (ids *old_ids);
-extern shpseg *DupShpseg (shpseg *old_shpseg);
-extern types *DupTypes (types *old_types);
+extern ids *DupOneIds (ids *arg_ids);
+extern ids *DupAllIds (ids *arg_ids);
+extern shpseg *DupShpseg (shpseg *arg_shpseg);
+extern types *DupTypes (types *arg_types);
 extern void DupTypesOnly (types **target, types *source);
-extern nodelist *DupNodelist (nodelist *old_nl);
+extern nodelist *DupNodelist (nodelist *arg_nl);
 
 /*
  * Functions for duplicating N_id/ids and converting into ids/N_id
  */
-extern node *DupIds_Id (ids *old_ids);
-extern ids *DupId_Ids (node *old_id);
+extern node *DupIds_Id (ids *arg_ids);
+extern ids *DupId_Ids (node *arg_id);
+
+/*
+ * Functions for duplicating N_id/ids and enabling NT_TAG
+ */
+extern node *DupIds_Id_NT (ids *arg_ids);
+extern node *DupId_NT (node *arg_id);
 
 /*
  * Functions for internal use during AST traversal only!

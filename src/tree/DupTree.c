@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2001/12/12 11:14:39  dkr
+ * functions DupIds_Id_NT, DupId_NT added
+ *
  * Revision 3.52  2001/06/27 12:38:37  ben
  * SCHCopyTasksel inserted
  *
@@ -43,159 +46,6 @@
  * - The LUT is no longer allocated and removed for each call of
  *   DupTree/DupNode. Instead, we generate *once* a single LUT and
  *   reuse it for further calls.
- *
- * Revision 3.40  2001/04/06 14:54:33  dkr
- * DupVardec,DupArg: call of DupAvis() replaced by DUPTRAV()
- *
- * Revision 3.39  2001/04/04 13:11:42  nmw
- * AVIS_SSACOUNT is now set via look-up-table
- *
- * Revision 3.38  2001/04/04 09:56:45  nmw
- * DupFundef modified to duplicate ssacnt node in correct order
- * DupSSAcnt added
- *
- * Revision 3.37  2001/04/03 14:26:26  nmw
- * set correct avis attribute in DupIds
- *
- * Revision 3.36  2001/04/02 15:21:14  dkr
- * ups, typo corrected ...
- *
- * Revision 3.35  2001/04/02 15:17:53  dkr
- * macros FUNDEF_IS_... used
- *
- * Revision 3.34  2001/04/02 11:59:18  nmw
- * set AP_FUNDEF link according to AP_NAME attribute
- *
- * Revision 3.33  2001/04/02 11:10:17  nmw
- * DupAp increments used counter of special fundefs and adds external
- * assignment to FUNDEF_EXT_ASSIGNS list
- *
- * Revision 3.32  2001/03/29 12:53:22  dkr
- * bug in DupWLsegVar fixed
- *
- * Revision 3.31  2001/03/28 17:06:50  dkr
- * comment added
- *
- * Revision 3.30  2001/03/27 21:39:47  dkr
- * macro DUPVECT renamed into DUP_VECT and moved to internal_lib.h
- *
- * Revision 3.29  2001/03/27 20:49:38  dkr
- * minor changes in DupFundef() done
- *
- * Revision 3.28  2001/03/27 10:52:13  dkr
- * minor changes done
- *
- * Revision 3.27  2001/03/27 09:50:04  dkr
- * DBUG-ASSERT in DupBlock added
- *
- * Revision 3.26  2001/03/23 15:37:22  dkr
- * INFO_DUP_ALL removed
- *
- * Revision 3.25  2001/03/22 20:01:08  dkr
- * include of tree.h eliminated
- *
- * Revision 3.24  2001/03/22 13:29:03  dkr
- * InsertIntoLUT renamed into InsertIntoLUT_P
- * SearchInLUT renamed into SearchInLUT_P
- *
- * Revision 3.22  2001/03/21 18:17:00  dkr
- * functions Dup..._Type added
- * function DupTreeInfo removed
- *
- * Revision 3.21  2001/03/19 16:45:05  dkr
- * WLSEG_HOMSV removed (WLSEG_SV used instead)
- *
- * Revision 3.20  2001/03/19 14:22:45  nmw
- * AVIS_ASSIGN2 added
- *
- * Revision 3.19  2001/03/16 11:54:16  nmw
- * DupAvis for new macros modified
- *
- * Revision 3.18  2001/03/05 14:42:53  dkr
- * NCODE_NO removed
- *
- * Revision 3.17  2001/03/02 15:47:25  dkr
- * bug in DupAssign fixed
- *
- * Revision 3.16  2001/03/02 12:24:05  dkr
- * DupFundef, DupAssign modified: FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN
- * set correctly now
- *
- * Revision 3.15  2001/02/20 15:52:18  nmw
- * handling of Avis nodes improved
- *
- * Revision 3.14  2001/02/16 08:41:29  nmw
- * SSASTACK_INUSE added
- *
- * Revision 3.13  2001/02/15 16:56:58  nmw
- * DupSSAstack added, DupID and DupIds are now aware of the AVIS
- * attribte.
- *
- * Revision 3.12  2001/02/14 14:59:05  dkr
- * parts of the (physical) types-structure which are not part of the
- * (virtual) TPYES-structure are initialized in DupTypes() now, but
- * *not* in DupTypes_().
- *
- * Revision 3.11  2001/02/12 17:03:03  nmw
- * N_avis node added
- *
- * Revision 3.10  2001/02/12 10:56:41  nmw
- * handling for SSA arguments in N_arg and N_vardec added
- *
- * Revision 3.9  2001/02/07 20:16:49  dkr
- * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
- *
- * Revision 3.8  2001/02/06 01:45:32  dkr
- * attribute NOOP for N_WL... nodes added
- *
- * Revision 3.7  2001/01/29 18:32:34  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.6  2001/01/24 23:35:13  dkr
- * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
- * modified
- *
- * Revision 3.5  2001/01/10 14:03:37  dkr
- * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
- *
- * Revision 3.4  2001/01/09 17:26:01  dkr
- * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.3  2000/12/12 12:07:53  dkr
- * NWITH_IN renamed into NWITH_IN_MASK, ...
- *
- * Revision 3.2  2000/12/06 19:26:53  dkr
- * DupTreePre renamed into DupTreeTravPre
- * DupTreePost renamed into DupTreeTravPost
- *
- * Revision 3.1  2000/11/20 18:03:19  sacbase
- * new release made
- *
- * Revision 1.41  2000/11/14 13:19:19  dkr
- * no '... might be used uninitialized' warnings anymore
- *
- * Revision 1.40  2000/11/05 13:39:18  dkr
- * bug in DupIds_Id fixed:
- * NAME and MOD are copied now ...
- *
- * Revision 1.39  2000/10/27 00:09:53  dkr
- * Pfffff... typo corrected. I should go to bed now 8-(((
- *
- * Revision 1.38  2000/10/27 00:04:37  dkr
- * Ups ... changes of revision 1.35 are missing in the current revision.
- * This is fixed now.
- *
- * Revision 1.37  2000/10/26 14:32:01  dkr
- * DupShpseg modified
- * All top-level functions no longer have an arg_info as argument :-))
- *
- * Revision 1.36  2000/10/23 10:40:05  dkr
- * DupIds_Id added
- *
- * Revision 1.35  2000/10/09 17:07:31  dkr
- * DupNodelist():
- *   wrong DBUG_ASSERT in DupNodelist removed.
- *   NODELIST_ATTRIB is duplicated now, too.
  *
  * [ ... ]
  *
@@ -2702,7 +2552,7 @@ DupIds_Id (ids *arg_ids)
  *   ids *DupId_Ids( node *old_id)
  *
  * Description:
- *   Duplicates an IDS and returns a *N_id* node.
+ *   Duplicates a N_id node and returns an *IDS*.
  *
  ******************************************************************************/
 
@@ -2727,6 +2577,58 @@ DupId_Ids (node *old_id)
 #endif
 
     DBUG_RETURN (new_ids);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DupIds_Id_NT( ids *arg_ids)
+ *
+ * Description:
+ *   Duplicates an IDS and returns a *N_id* node.
+ *   Sets ID_NT_TAG.
+ *
+ ******************************************************************************/
+
+node *
+DupIds_Id_NT (ids *arg_ids)
+{
+    node *new_id;
+
+    DBUG_ENTER ("DupIds_Id_NT");
+
+    new_id = DupIds_Id (arg_ids);
+
+    DBUG_ASSERT ((IDS_VARDEC (arg_ids) != NULL), "NT_TAG: no vardec found!");
+    ID_NT_TAG (new_id) = IDS_VARDEC (arg_ids);
+
+    DBUG_RETURN (new_id);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DupId_NT( node *arg_id)
+ *
+ * Description:
+ *   Duplicates a N_id node.
+ *   Sets ID_NT_TAG.
+ *
+ ******************************************************************************/
+
+node *
+DupId_NT (node *arg_id)
+{
+    node *new_id;
+
+    DBUG_ENTER ("DupId_NT");
+
+    new_id = DupNode (arg_id);
+
+    DBUG_ASSERT ((ID_VARDEC (arg_id) != NULL), "NT_TAG: no vardec found!");
+    ID_NT_TAG (new_id) = ID_VARDEC (arg_id);
+
+    DBUG_RETURN (new_id);
 }
 
 /******************************************************************************
