@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/23 12:49:02  nmw
+ * CODim/COShape implemented
+ *
  * Revision 1.3  2001/03/22 14:24:37  nmw
  * primitove ari ops implemented
  *
@@ -96,8 +99,10 @@ extern constant *COReshape (constant *idx, constant *a);
 extern constant *COPsi (constant *idx, constant *a);
 extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
+extern constant *CODim (constant *a);
+extern constant *COShape (constant *a);
 
-/* missing: dim, shape, modarray, cat, rotate */
+/* missing: modarray, cat, rotate */
 
 /***
  ***

@@ -1,12 +1,15 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/23 12:49:53  nmw
+ * CODim/COShape implemented
+ *
  * Revision 1.1  2001/03/02 14:32:58  sbs
  * Initial revision
  *
  */
 
 #include <stdlib.h>
-
+#include "internal_lib.h"
 #include "dbug.h"
 
 #include "constants.h"
@@ -483,6 +486,58 @@ CODrop (constant *idx, constant *a)
     }
 
     DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CODrop", idx, a, res););
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *CODim( constant *a)
+ *
+ * description:
+ *    returns the dimension of a (or 0 if a is a scalar)
+ *
+ ******************************************************************************/
+constant *
+CODim (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("CODim");
+
+    res = COMakeConstantFromInt (CONSTANT_DIM (a));
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COShape( constant *a)
+ *
+ * description:
+ *    returns the shape of a (int vector with dim elements).
+ *    if called for a scalar constant COShape will return NULL.
+ *
+ ******************************************************************************/
+constant *
+COShape (constant *a)
+{
+    int *shape_vec;
+    constant *res;
+    int i;
+
+    DBUG_ENTER ("COShape");
+
+    if (CONSTANT_DIM (a) > 0) {
+        shape_vec = (int *)MALLOC (CONSTANT_DIM (a) * sizeof (int));
+        for (i = 0; i < CONSTANT_DIM (a); i++)
+            shape_vec[i] = SHGetExtent (CONSTANT_SHAPE (a), i);
+        res = COMakeConstant (T_int, SHCreateShape (1, CONSTANT_DIM (a)), shape_vec);
+    } else {
+        res = NULL;
+    }
 
     DBUG_RETURN (res);
 }
