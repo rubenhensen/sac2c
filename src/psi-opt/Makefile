@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2004/08/26 15:02:08  khf
+# detectdependencies.o and tagdependencies.o added
+#
 # Revision 3.21  2004/07/14 23:23:37  sah
 # removed all old ssa optimizations and the use_ssaform flag
 #
@@ -76,7 +79,8 @@ INCS = -I../global -I../../inc -I../tree -I../compile -I../typecheck -I../module
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
-     WithloopScalarization.o WithloopFusion.o
+     WithloopScalarization.o WithloopFusion.o detectdependencies.o \
+     tagdependencies.o
 
 
 #
