@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/10/21 17:19:26  sah
+ * added rsa (resolve all) traversal
+ *
  * Revision 3.94  2004/10/21 16:20:39  ktr
  * Added emsr_tab
  *
@@ -419,6 +422,7 @@
 #include "deserialize.h"
 #include "serialize_buildstack.h"
 #include "export.h"
+#include "resolveall.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "staticreuse.h"
@@ -648,7 +652,7 @@ static funtab idx_tab_rec = {{
 funtab *idx_tab = &idx_tab_rec;
 
 /*
- *  (18) unused_tab24
+ *  (18) ser_tab
  */
 static funtab ser_tab_rec = {{
 #ifdef NEW_AST
@@ -802,15 +806,15 @@ static funtab precomp2_tab_rec = {{
 funtab *precomp2_tab = &precomp2_tab_rec;
 
 /*
- *  (31) unused_tab22
+ *  (31) rsa_tab
  */
-static funtab unused_tab22_rec = {{
-#define NIFunused_22(it_unused_22) it_unused_22
+static funtab rsa_tab_rec = {{
+#define NIFrsa(it_rsa) it_rsa
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab22 = &unused_tab22_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *rsa_tab = &rsa_tab_rec;
 #ifndef NEW_AST
 /*
  *  (32) readsib_tab

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/10/21 17:19:26  sah
+ * added rsa (resolve all) traversal
+ *
  * Revision 3.72  2004/10/21 16:20:39  ktr
  * Added emsr_tab
  *
@@ -470,6 +473,7 @@ extern funtab *unused_tab17;
 extern funtab *unused_tab18;
 extern funtab *unused_tab19;
 extern funtab *unused_tab20;
+extern funtab *rsa_tab;
 
 extern int nnode[];
 

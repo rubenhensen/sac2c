@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.218  2004/10/21 17:19:26  sah
+ * added rsa (resolve all) traversal
+ *
  * Revision 3.217  2004/10/21 16:20:39  ktr
  * Added emsr_tab
  *
@@ -444,7 +447,7 @@
  *
  *   writesib_tab    obj_tab         impltype_tab    objinit_tab
  *   analy_tab       checkdec_tab    writedec_tab    unique_tab
- *   rmcasts_tab     precomp1_tab    unused_tab22    readsib_tab
+ *   rmcasts_tab     precomp1_tab    rsa_tab         readsib_tab
  *   unused_tab39    ea_tab          dfr_tab         tcwl_tab
  *   spmdinit_tab    unused_tab42    spmdlift_tab    syncinit_tab
  *
@@ -623,8 +626,8 @@
 #ifndef NIFprecomp1
 #define NIFprecomp1(it_precomp1)
 #endif
-#ifndef NIFunused_22
-#define NIFunused_22(it_unused_22)
+#ifndef NIFrsa
+#define NIFrsa(it_rsa)
 #endif
 #ifndef NIFreadsib
 #define NIFreadsib(it_readsib)
@@ -1002,8 +1005,8 @@
   it_set, it_cegro, it_idx, it_ser, it_ds, it_ae,                                                            \
                                                                                                              \
   it_writesib, it_obj, it_impltype, it_objinit, it_analy, it_checkdec, it_writedec,                          \
-  it_unique, it_rmcasts, it_precomp1, it_unused_22, it_readsib, it_unused_39, it_ea,                         \
-  it_dfr, it_tcwl, it_spmdinit, it_unused_42, it_spmdlift, it_syncinit,                                      \
+  it_unique, it_rmcasts, it_precomp1, it_rsa, it_readsib, it_unused_39, it_ea, it_dfr,                       \
+  it_tcwl, it_spmdinit, it_unused_42, it_spmdlift, it_syncinit,                                              \
                                                                                                              \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_patchwith, it_sched, it_conc, it_opt,                         \
   it_wlaa, it_mmv, it_unused_43, it_unused_44, it_unused_45, it_tsi, it_unused_46,                           \
@@ -1040,7 +1043,7 @@
               it_impltype) NIFobjinit (it_objinit) NIFanaly (it_analy)                                       \
               NIFcheckdec (it_checkdec) NIFwritedec (it_writedec) NIFunique (                                \
                 it_unique) NIFrmcasts (it_rmcasts) NIFprecomp1 (it_precomp1)                                 \
-                NIFunused_22 (it_unused_22) NIFreadsib (it_readsib) NIFunused_39 (                           \
+                NIFrsa (it_rsa) NIFreadsib (it_readsib) NIFunused_39 (                                       \
                   it_unused_39) NIFea (it_ea) NIFdfr (it_dfr) NIFtcwl (it_tcwl)                              \
                   NIFspmdinit (it_spmdinit) NIFunused_42 (it_unused_42) NIFspmdlift (                        \
                     it_spmdlift) NIFsyncinit (it_syncinit)                                                   \
@@ -1382,7 +1385,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        SETModul, TravSons, IdxModul, TravSons, TravSons, TravSons,
 
        WSIBmodul, OBJmodul, IMPLmodul, OImodul, ANAmodul, TravSons, WDECmodul, UNQmodul,
-       TravSons, PREC1modul, TravSons, RSIBmodul, TravSons, EAmodul, DFRmodul, TravSons,
+       TravSons, PREC1modul, RSAModul, RSIBmodul, TravSons, EAmodul, DFRmodul, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, CONCmodul, OPTmodul,
@@ -3201,7 +3204,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, SETImport, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, RSAImport, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -3229,7 +3232,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, SETExport, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, RSAExport, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -3257,7 +3260,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, RSAUse, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -3285,7 +3288,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, SETProvide, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, RSAProvide, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -3421,7 +3424,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
 #undef NIFrmcasts
 #undef NIFprecomp1
-#undef NIFunused_22
+#undef NIFrsa
 #undef NIFreadsib
 
 #undef NIFunused_39
