@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/02/21 13:43:00  dkr
+ * access macros used
+ *
  * Revision 3.15  2002/02/20 14:55:46  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -115,12 +118,6 @@ ArrayElimination (node *arg_node, node *info_node)
  *  functionname  : CorrectArraySize
  *  arguments     :
  *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 int
@@ -138,7 +135,7 @@ CorrectArraySize (ids *ids_node)
 
     if ((length <= minarray) && (0 != length) && (1 == dim)) {
         DBUG_PRINT ("AE", ("array %s with length %d to eliminated found",
-                           ids_node->node->info.types->id, length));
+                           VARDEC_NAME (IDS_VARDEC (ids_node)), length));
         answer = TRUE;
     }
     DBUG_RETURN (answer);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/02/21 13:41:15  dkr
+ * access macros used
+ *
  * Revision 3.9  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -207,7 +210,7 @@ UNSfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSfundef");
 
-    DBUG_PRINT ("UNS", ("Unswitch in function: %s", arg_node->info.types->id));
+    DBUG_PRINT ("UNS", ("Unswitch in function: %s", FUNDEF_NAME (arg_node)));
     LEVEL = 1;
 
     if (NULL != FUNDEF_BODY (arg_node)) {

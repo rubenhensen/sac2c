@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/02/21 13:39:25  dkr
+ * access macros used
+ *
  * Revision 3.13  2002/02/20 14:52:30  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -252,13 +255,6 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
  *  arguments     : 1) fundef-node
  *                  2) info-node
  *                  R) fundef-node with loop invariants moved in body of function
- *  description   :
- *  global vars   : syntax_tree
- *  internal funs :
- *  external funs : OptTrav
- *  macros        : DBUG...
- *
- *  remarks       : -)
  *
  */
 node *
@@ -267,7 +263,7 @@ LIRfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("LIRfundef");
 
     DBUG_PRINT ("LIR",
-                ("Loop invariant removal in function: %s", arg_node->info.types->id));
+                ("Loop invariant removal in function: %s", FUNDEF_NAME (arg_node)));
 
     lir_expr_no = 0;
     LOOP_TYPE = N_fundef;

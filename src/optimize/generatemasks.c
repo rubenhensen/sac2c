@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/02/21 13:41:23  dkr
+ * access macros used
+ *
  * Revision 3.13  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -1742,7 +1745,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
                 arg_info->mask[0] = Free (arg_info->mask[0]);
                 arg_info->mask[1] = Free (arg_info->mask[1]);
                 DBUG_PRINT ("TRAV",
-                            ("Travers function %s - body END", arg_node->info.types->id));
+                            ("Travers function %s - body END", FUNDEF_NAME (arg_node)));
             }
             break;
 
@@ -1755,7 +1758,7 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
         case 2: /* Trav arguments */
 
             DBUG_PRINT ("TRAV",
-                        ("Travers function %s - arguments", arg_node->info.types->id));
+                        ("Travers function %s - arguments", FUNDEF_NAME (arg_node)));
             if (FUNDEF_ARGS (arg_node))
                 arg_node->node[2] = Trav (arg_node->node[2], arg_info);
             break;
@@ -2071,7 +2074,7 @@ node *
 GNMfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMfundef");
-    DBUG_PRINT ("GET", ("GetInfo function: %s", arg_node->info.types->id));
+    DBUG_PRINT ("GET", ("GetInfo function: %s", FUNDEF_NAME (arg_node)));
     INFO_VARNO (arg_info) = 0;
 
     INFO_GNM_FUNDEF (arg_info) = arg_node;
@@ -2116,8 +2119,8 @@ GNMarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMarg");
 
-    DBUG_PRINT ("VAR", ("Arg. %s is number %d", arg_node->info.types->id,
-                        INFO_VARNO (arg_info)));
+    DBUG_PRINT ("VAR",
+                ("Arg. %s is number %d", ARG_NAME (arg_node), INFO_VARNO (arg_info)));
     arg_node->varno = INFO_VARNO (arg_info);
 
     INFO_VARNO (arg_info)++;
@@ -2143,7 +2146,7 @@ GNMvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMvardec");
 
-    DBUG_PRINT ("VAR", ("Variable %s is number %d", arg_node->info.types->id,
+    DBUG_PRINT ("VAR", ("Variable %s is number %d", VARDEC_NAME (arg_node),
                         INFO_VARNO (arg_info)));
 
     VARDEC_VARNO (arg_node) = INFO_VARNO (arg_info);
