@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/03/21 16:47:53  dkr
+ * INLvardec, INLarg removed
+ *
  * Revision 3.34  2001/03/20 16:15:18  nmw
  * SSACF Constant Folding on ssa from added
  *
@@ -1115,7 +1118,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons,
-       DupVardec, INLvardec, TravSons, TravSons, IdxVardec, TravSons, TravSons, TravSons,
+       DupVardec, TravSons, TravSons, TravSons, IdxVardec, TravSons, TravSons, TravSons,
 
        PrintVardec, TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons,
        UNQvardec, TravSons, PREC2vardec, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1154,7 +1157,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
-       FreeArg, TravSons, RCarg, COMPArg, TravSons, DupArg, INLarg, TravSons, TravSons,
+       FreeArg, TravSons, RCarg, COMPArg, TravSons, DupArg, TravSons, TravSons, TravSons,
        IdxArg, TravSons, TravSons, TravSons,
 
        PrintArg, OBJarg, TravSons, TravSons, TravSons, TravSons, WDECarg, UNQarg,
