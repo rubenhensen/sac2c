@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/02/20 14:35:49  dkr
+ * function DupTypesOnly() renamed into DupAllTypesOnly()
+ *
  * Revision 3.15  2001/12/11 15:54:30  dkr
  * GetDim() replaced GetShapeDim()
  *
@@ -974,7 +977,8 @@ CFid (node *arg_node, node *arg_info)
 	VARDEC_DIM(ID_VARDEC(mrd)) = VARDEC_DIM(ID_VARDEC(arg_node));
 	VARDEC_SHPSEG(ID_VARDEC(mrd)) = DupShpseg(VARDEC_SHPSEG(ID_VARDEC(arg_node)));
 #else
-                DupTypesOnly (&(ID_TYPE (mrd)), ID_TYPE (arg_node));
+                ID_TYPE (mrd) = FreeAllTypes (ID_TYPE (mrd));
+                ID_TYPE (mrd) = DupAllTypesOnly (ID_TYPE (arg_node));
 #endif
             }
 
