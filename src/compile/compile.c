@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.58  2000/05/26 21:58:15  dkr
+ * signature of GetAdjustedFoldCode() changed
+ *
  * Revision 2.57  2000/05/26 11:32:57  dkr
  * Function GetFoldCode() renamed into GetUnadjustedFoldCode()
  * Function GetAdjustedFoldCode() added
@@ -650,28 +653,34 @@ GetUnadjustedFoldCode (node *fundef)
  *
  * function:
  *   node *GetAdjustedFoldCode( node *fundef,
- *                              ids *acc, char *funname, node *cexpr)
+ *                              ids *acc, node *cexpr)
  *
  * description:
- *   Returns the given fold-fun definition 'fundef' with adjusted var-names:
+ *   Returns the foldop-code of the pseudo fold-fun 'fundef' with adjusted
+ *   var-names: returns-value and the first formal argument of the fold-fun
+ *   are renamed according to 'acc', the second formal argument is renamed
+ *   according to 'cexpr'.
  *
- *   ...
+ * note:
+ *   Besides the renaming of variables the fold-fun code is simply extracted
+ *   from the definition. All back-references (e.g. vardecs) are NOT adjusted.
+ *   Therefore this routine should NOT be used in a compiler phase before
+ *   the pre-compilation (especially NOT during with-loop-folding) !!!
  *
  * parameters:
  *   'acc' is the accumulator variable.
- *   'funname' is the name of the artificially introduced fold-fun.
  *   'cexpr' is the expression in the operation part.
  *
  ******************************************************************************/
 
 node *
-GetAdjustedFoldCode (node *fundef, ids *acc, char *funname, node *cexpr)
+GetAdjustedFoldCode (node *fundef, ids *acc, node *cexpr)
 {
     node *fold_code;
 
     DBUG_ENTER ("GetAdjustedFoldCode");
 
-    fundef = AdjustFoldFundef (fundef, acc, funname, cexpr);
+    fundef = AdjustFoldFundef (fundef, acc, cexpr);
     fold_code = GetUnadjustedFoldCode (fundef);
 
     DBUG_RETURN (fold_code);
@@ -988,15 +997,14 @@ AddVardec (node *vardec, types *type, char *name, node *fundef)
     /* look if there is already a matching vardec */
     if (NULL != tmp) {
         while ((NULL != VARDEC_NEXT (tmp)) && (1 == insert)) {
-            if (!strcmp (VARDEC_NAME (tmp), name)) {
+            if (!strcmp (VARDEC_NAME (tmp), name))
                 insert = 0;
-            }
             tmp = VARDEC_NEXT (tmp);
         }
     }
 
     /* now insert new vardec node */
-    if (insert && (tmp != NULL) && strcmp (VARDEC_NAME (tmp), name)) {
+    if ((1 == insert) ? ((NULL != tmp) ? strcmp (VARDEC_NAME (tmp), name) : 1) : 0) {
         types *new_type = DuplicateTypes (type, 0);
         node *new_vardec = MakeVardec (StringCopy (name), new_type, NULL);
 
