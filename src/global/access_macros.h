@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1997/11/28 13:14:04  srs
+ * removed unused IDS* macros
+ *
  * Revision 1.10  1995/12/29 15:24:45  asi
  * new #undef IDS_VARNO avoids many warnings due to macro redefining
  *
@@ -38,12 +41,7 @@
 
 #define _access_macros_h
 
-/* to avoid warnings in connection with new virtual syntax tree */
-#undef IDS_DEF
-#undef IDS_REFCNT
-#undef IDS_NEXT
 #undef ID_MOD
-#undef IDS_VARNO
 
 /* macros for access to elements of struct info.types */
 #define TYPES info.types
@@ -60,17 +58,6 @@
 /* macros used for N_ap nodes to get the function's name */
 #define FUN_NAME info.fun_name.id
 #define FUN_MOD_NAME info.fun_name.id_mod
-
-/* macros for access to elements of struct info.ids */
-#define IDS info.ids
-#define IDS_ID IDS->id
-#define IDS_NODE IDS->node
-#define IDS_DEF IDS->def
-#define IDS_VARNO IDS->node->varno
-#define IDS_REFCNT IDS->refcnt
-#define IDS_NEXT IDS->next
-#define IDS_ATTR IDS->attrib
-#define IDS_STAT IDS->status
 
 /* macros for access arguments of a ap or prf - node */
 #define ARG1 node[0]->node[0]
