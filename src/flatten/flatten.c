@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1997/12/19 16:08:30  srs
+ * changed some functions headers to new style
+ *
  * Revision 1.52  1997/12/10 18:37:24  srs
  * - fixed bug in foldprf of old WLs
  * - changed flattening of new WLs
@@ -1515,15 +1518,16 @@ FltnCon (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**
- ** functions to flatten the new WLs
- **/
-
-/* -------------------------------------------------------------------------- *
- * task: flattens node N_Nwith
+/******************************************************************************
  *
- * remarks: increments with_level and saves local stack only.
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *FltnNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   flattens node N_Nwith
+ *   increments with_level and saves local stack only.
+ *
+ ******************************************************************************/
 node *
 FltnNwith (node *arg_node, node *arg_info)
 {
@@ -1541,13 +1545,17 @@ FltnNwith (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-/* ========================================================================== */
 
-/* -------------------------------------------------------------------------- *
- * task: flattens all N_Npart nodes
+/******************************************************************************
  *
- * remarks:
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *FltnNpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   flattens all N_Npart nodes
+ *
+ *
+ ******************************************************************************/
 node *
 FltnNpart (node *arg_node, node *arg_info)
 {
@@ -1580,21 +1588,25 @@ FltnNpart (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-/* ========================================================================== */
 
-/* -------------------------------------------------------------------------- *
- * task: flattens N_Ngenerator
+/******************************************************************************
  *
- * remarks: all non-N_ID-nodes are removed and the operators are changed
- * to <= and < if possible (bounds != NULL).
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *FltnNgenerator(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   flattens N_Ngenerator
+ *   all non-N_ID-nodes are removed and the operators are changed
+ *   to <= and < if possible (bounds != NULL).
+ *
+ ******************************************************************************/
+
 node *
 FltnNgenerator (node *arg_node, node *arg_info)
 {
     node **akt_son, *let_node, *tmp_node;
     char *new_id;
     int i;
-
     DBUG_ENTER ("FltnNgenerator");
 
     /* if bound1/2 are explicitly specified (not "."), the operators are
@@ -1647,21 +1659,26 @@ FltnNgenerator (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-/* ========================================================================== */
 
-/* -------------------------------------------------------------------------- *
- * task: falltens N_Nwithop
+/******************************************************************************
  *
- * remarks: - genarray: at the moment shape is limited to a constant array
- * - modarray: the array has to be an id or is flattened otherwise.
- * - fold: the neutral element has to be an id or a constant scalar
- *         or is flattened otherwise.
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *FltnNwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   flattens N_Nwithop
+ *   - genarray: at the moment shape is limited to a constant array
+ *   - modarray: the array has to be an id or is flattened otherwise.
+ *   - fold: the neutral element has to be an id or a constant scalar
+ *           or is flattened otherwise.
+ *
+ ******************************************************************************/
 node *
 FltnNwithop (node *arg_node, node *arg_info)
 {
     node *exprs;
     int old_tag;
+    DBUG_ENTER ("FltnNwithop");
 
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
@@ -1693,21 +1710,25 @@ FltnNwithop (node *arg_node, node *arg_info)
     }
     }
 
-    return (arg_node);
+    DBUG_RETURN (arg_node);
 }
-/* ========================================================================== */
 
-/* -------------------------------------------------------------------------- *
- * task: flattens the Ncode nodes.
+/******************************************************************************
  *
- * remarks: it's important to have Npart flattened before to avoid name
- * clashes.
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *FltnNcode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   flattens the Ncode nodes.
+ *   it's important to have Npart flattened before to avoid name clashes.
+ *
+ ******************************************************************************/
 node *
 FltnNcode (node *arg_node, node *arg_info)
 {
     node *info_node, *tmp, *assign_node, *let_node;
     char *name;
+    DBUG_ENTER ("FltnNcode");
 
     /* if CEXPR is not an Id we have to flatten the expression in the context
        of the body */
@@ -1757,6 +1778,5 @@ FltnNcode (node *arg_node, node *arg_info)
     }
 
     /* there is only one Ncode node at this time so we can ignore NCODE_NEXT(). */
-    return (arg_node);
+    DBUG_RETURN (arg_node);
 }
-/* ========================================================================== */
