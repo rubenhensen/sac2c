@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1995/03/10 13:10:01  hw
+ * Revision 1.42  1995/03/13 16:44:07  asi
+ * changed PrintId
+ *
+ * Revision 1.41  1995/03/10  13:10:01  hw
  * - changed PrintId , PrintIds ( now refcounts can be printed)
  *
  * Revision 1.40  1995/03/08  14:40:10  sbs
@@ -387,9 +390,11 @@ PrintId (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintId");
 
     if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
-        fprintf (outfile, "%s", arg_node->info.id);
-    else
-        fprintf (outfile, "%s:%d", arg_node->info.id, arg_node->refcnt);
+        PrintIds (arg_node->info.ids);
+    else {
+        PrintIds (arg_node->info.ids);
+        fprintf (outfile, ":%d", arg_node->refcnt);
+    }
 
     DBUG_RETURN (arg_node);
 }
