@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/02 10:37:27  dkr
+ * access_macros.h inlined (this file is redundant now :-)
+ *
  * Revision 3.10  2001/01/23 18:18:51  cg
  * Added support for propagating scalar integer constants in a similar way
  * as constant vectors.
@@ -213,7 +216,6 @@
 #include "prim_fun.h"
 #include "free.h"
 #include "internal_lib.h"
-#include "access_macros.h"
 #include "DupTree.h"
 #include "globals.h"
 #include "typecheck_WL.h"
@@ -222,10 +224,28 @@
 
 #include "new_typecheck.h"
 
-static node *pseudo_fold_fundefs;
-#if 0
-static node * syntax_tree;
-#endif
+/*************
+ * ugly macros from access_macros.h included here ...
+ */
+
+#undef ID_MOD
+
+/* macros for access to elements of struct info.types */
+#define TYPES info.types
+#define DIM TYPES->dim
+#define ID TYPES->id
+#define ID_MOD TYPES->id_mod
+#define SHP TYPES->shpseg->shp
+#define NAME TYPES->name
+#define NAME_MOD TYPES->name_mod
+
+/* macros used for N_ap nodes to get the function's name */
+#define FUN_NAME info.fun_name.id
+#define FUN_MOD_NAME info.fun_name.id_mod
+
+/*
+ * ugly macros from access_macros.h included here ...
+ *************/
 
 #define LOCAL_STACK_SIZE 1000 /* used for scope stack */
 #define MAX_ARG_TYPE_LENGTH                                                              \
@@ -458,6 +478,8 @@ typedef struct FUN_TAB_ELEM {
     int n_dub;                 /* number of remaining dublications */
     struct FUN_TAB_ELEM *next; /* next fun_tab_elem node */
 } fun_tab_elem;
+
+static node *pseudo_fold_fundefs;
 
 /*
  *  forward declarations
