@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/06/08 12:12:48  jhs
+ * Fixed comment.
+ *
  * Revision 2.29  2000/06/07 11:42:27  nmw
  * init of generatelibrary changed
  *
@@ -212,11 +215,10 @@ int dynamic_shapes = 0; /* Dynamic shapes are disabled by default */
 
 int gen_mt_code = GEN_MT_NONE;
 /*
- * will be set to GEN_MT_OLD iff one of the following options is set:
- * -mt
- *
- * will be set to GEN_MT_NEW iff one of the following options is set:
- * -mtn
+ *  will be set to
+ *  GEN_MT_OLD   iff one of the following options is set: -mt
+ *  GEN_MT_NEW   iff one of the following options is set: -mtn
+ *  GEN_MT_NONE  otherwise
  */
 
 int num_threads = 1;
