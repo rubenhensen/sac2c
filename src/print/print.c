@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.207  2005/03/20 00:20:49  sbs
+ * AUD required proper printing of default partitions
+ *
  * Revision 3.206  2005/03/04 21:21:42  cg
  * Added printing of EXT-/INT-ASSIGN of LaC-functions.
  * Adjusted zombification of fundefs.
@@ -3351,7 +3354,13 @@ PRTpart (node *arg_node, info *arg_info)
 
     /* print generator */
     INDENT; /* each gen in a new line. */
-    TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    if (NODE_TYPE (PART_GENERATOR (arg_node)) == N_empty) {
+        fprintf (global.outfile, "default partition( ");
+        TRAVdo (PART_WITHID (arg_node), arg_info);
+        fprintf (global.outfile, " ):\n");
+    } else {
+        TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    }
 
     DBUG_ASSERT ((PART_CODE (arg_node) != NULL),
                  "part within WL without pointer to N_code");
