@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/10/18 16:08:04  dkr
+ * some DBUG_ASSERTs added
+ *
  * Revision 3.63  2002/10/18 15:52:20  dkr
  * support for (..._MOD == EXTERN_MOD_NAME) added
  *
@@ -1993,6 +1996,8 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
 
     DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
+    DBUG_ASSERT ((acc != NULL), "no ids found!");
+    DBUG_ASSERT ((cexpr != NULL), "no cexpr found!");
 
     /*
      * first, we create a let-expression of the form
@@ -2326,6 +2331,7 @@ PREC3withop (node *arg_node, node *arg_info)
         old_name = FUNDEF_NAME (new_foldfun);
         FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
         old_name = Free (old_name);
+        DBUG_ASSERT ((NWITH2_CEXPR (let_expr) != NULL), "NWITH2_CEXPR not found!");
 
         new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
                                         /*
