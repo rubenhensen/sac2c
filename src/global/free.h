@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/08/07 14:36:48  dkr
+ * FreeWLsegVar added
+ *
  * Revision 1.23  1998/04/26 21:51:28  dkr
  * FreeSPMD renamed to FreeSpmd
  *
@@ -198,6 +201,7 @@ extern node *FreeWLblock (node *arg_node, node *arg_info);
 extern node *FreeWLublock (node *arg_node, node *arg_info);
 extern node *FreeWLstride (node *arg_node, node *arg_info);
 extern node *FreeWLgrid (node *arg_node, node *arg_info);
+extern node *FreeWLsegVar (node *arg_node, node *arg_info);
 extern node *FreeWLstriVar (node *arg_node, node *arg_info);
 extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
