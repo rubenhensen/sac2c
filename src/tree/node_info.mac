@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2002/04/26 14:56:33  sbs
+ * CRTWRPlet added .
+ *
  * Revision 3.70  2002/04/16 18:39:42  dkr
  * functions PREC4... added
  *
@@ -1480,7 +1483,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSADCRlet, SSACSElet, CMPTlet, TravSons, SSACFlet, SSALIRlet, LIRMOVlet, TravSons,
        TravSons, SSAWLTlet, SSAWLIlet, SSAWLFlet,
 
-       TravSons, COMP2Let, PREC2let, INSVDlet, TravSons, TravSons, PREC4let, TravSons,
+       TravSons, COMP2Let, PREC2let, INSVDlet, CRTWRPlet, TravSons, PREC4let, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
