@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/27 01:21:40  ktr
+ * ILIBreplaceSpecialCharacters.
+ *
  * Revision 1.3  2004/11/26 21:18:50  sah
  * pour Bodo *<8-)
  *
@@ -26,7 +29,6 @@
 #include "tree_basic.h"
 #include "filemgr.h"
 #include "convert.h"
-#include "precompile.h"
 #include <string.h>
 
 #define MAX_FUN_NAME_LEN 255
@@ -355,7 +357,7 @@ GenerateSerFunName (stentrytype_t type, node *node)
 
     DBUG_PRINT ("SER", ("Generated new function name: %s", result));
 
-    tmp = PRECreplaceSpecialCharacters (result);
+    tmp = ILIBreplaceSpecialCharacters (result);
     strcpy (result, tmp);
 
     tmp = ILIBfree (tmp);
