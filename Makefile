@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.129  2004/10/26 11:28:38  sah
+# moved some newast .o files
+#
 # Revision 3.128  2004/10/26 11:16:01  ktr
 # added interfaceanalysis.o
 #
@@ -317,7 +320,8 @@ ifeq ($(NEWAST),yes)
                src/modules/export.o src/modules/ccmanager.o \
                src/modules/libbuilder.o src/tree/serialize_helper.o \
                src/modules/resolveall.o src/modules/annotatenamespace.o \
-               src/modules/usesymbols.o src/tree/serialize_link.o
+               src/modules/usesymbols.o src/tree/serialize_link.o \
+               src/tree/serialize.o src/tree/serialize_stack.o 
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
@@ -333,8 +337,7 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
       src/tree/InferDFMs.o src/tree/cleanup_decls.o src/tree/adjust_ids.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
-      src/tree/scheduling.o src/tree/wl_bounds.o \
-      src/tree/serialize.o src/tree/serialize_stack.o 
+      src/tree/scheduling.o src/tree/wl_bounds.o
 TREE_OLD=
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
