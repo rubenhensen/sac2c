@@ -1,9 +1,12 @@
 /*
  * $Log$
- * Revision 1.9  1994/12/21 13:22:34  hw
- * removed N_addon etc
- * changed information about N_typedef
+ * Revision 1.10  1994/12/31 15:14:17  sbs
+ * N_explist updated
  *
+# Revision 1.9  1994/12/21  13:22:34  hw
+# removed N_addon etc
+# changed information about N_typedef
+#
 # Revision 1.8  1994/12/20  14:46:25  hw
 # added information about references to the variable declaration
 #
@@ -59,9 +62,9 @@ info.id    : name of the modul/class
 
 N_explist:
 ==========
-node[0]    : explicit types (N_typedef) if present...
-node[1]    : function declarations (N_fundef with NULL-body) if present...
-info.ids   : implicit types if present...
+node[0]    : implicit types (N_typedef) if present...
+node[1]    : explicit types (N_typedef) if present...
+node[2]    : function declarations (N_fundef with NULL-body) if present...
 
 N_modul:
 ========
@@ -75,8 +78,8 @@ N_implist:
 ==========
 nnode=0/1 !!!
 node[0]    : subsequent imports if present...
-node[1]    : casted to (ids *) !!! list of explicit type names!
-node[2]    : casted to (ids *) !!! list of implicit type names!
+node[1]    : casted to (ids *) !!! list of implicit type names!
+node[2]    : casted to (ids *) !!! list of explicit type names!
 node[3]    : casted to (ids *) !!! list of function names!
 info.id    : name of import-file.
 
