@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/03/20 14:24:04  nmw
+ * CMPTarray added in compare tree traversal
+ *
  * Revision 3.32  2001/03/19 14:24:06  nmw
  * USSAassign added
  *
@@ -1480,7 +1483,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCarray, APTarray,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTTravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CMPTarray, TravSons, TravSons, TravSons, TravSons, TravSons,
        1),
 
   NIF (N_info, "N_info", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
