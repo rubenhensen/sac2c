@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/22 19:44:52  dkr
+ * precompile.h now include once
+ *
  * Revision 3.14  2001/03/22 19:16:20  dkr
  * include of tree.h eliminated
  *
@@ -141,7 +144,6 @@
 #include "typecheck.h"
 #include "scheduling.h"
 #include "adjust_ids.h"
-#include "precompile.h"
 #include "map_cwrapper.h"
 #include "refcount.h"
 #include "compile.h"
