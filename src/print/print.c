@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/03/17 22:22:22  bs
+ * DbugPrintArray modified. Printing of character- and boolean arrays possible.
+ *
  * Revision 2.5  1999/03/17 15:37:09  bs
  * DbugPrintArray modified.
  *
@@ -223,6 +226,7 @@ static void
 DbugPrintArray (node *arg_node)
 {
     int *intptr, length, i;
+    char *chrptr;
     float *fltptr;
     double *dblptr;
 
@@ -257,6 +261,35 @@ DbugPrintArray (node *arg_node)
                 fprintf (outfile, ":[%f", dblptr[0]);
                 for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
                     fprintf (outfile, ",%f", dblptr[i]);
+            }
+            break;
+        case T_bool:
+            intptr = ARRAY_INTVEC (arg_node);
+            if ((intptr == NULL) || (length < 1))
+                return;
+            else {
+                fprintf (outfile, ":[%s", ((intptr[0] == 0) ? ("false") : ("true")));
+                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+                    fprintf (outfile, ",%s", ((intptr[i] == 0) ? ("false") : ("true")));
+            }
+            break;
+        case T_char:
+            chrptr = ARRAY_CHARVEC (arg_node);
+            if ((chrptr == NULL) || (length < 1))
+                return;
+            else {
+                fprintf (outfile, ":[");
+                if ((chrptr[0] >= ' ') && (chrptr[0] <= '~') && (chrptr[0] != '\'')) {
+                    fprintf (outfile, ",'%c'", chrptr[0]);
+                } else {
+                    fprintf (outfile, ",'\\%o'", chrptr[0]);
+                }
+                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+                    if ((chrptr[i] >= ' ') && (chrptr[i] <= '~') && (chrptr[i] != '\'')) {
+                        fprintf (outfile, ",'%c'", chrptr[i]);
+                    } else {
+                        fprintf (outfile, ",'\\%o'", chrptr[i]);
+                    }
             }
             break;
         default:
