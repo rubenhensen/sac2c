@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.4  1998/05/05 11:18:59  srs
+ * moved definition of TRANSF_TRUE_PERMUTATIONS to WithloopFolding.h
+ *
  * Revision 1.3  1998/04/07 08:19:36  srs
  * inserted wli_phase
  *
@@ -14,10 +17,6 @@
 
 #ifndef _WLI_h
 #define _WLI_h
-
-/* if not defined, indexes with more than one occurence of an
-   index scalar are allowed to be valid transformations, e.g. [i,i,j] */
-#define TRANSF_TRUE_PERMUTATIONS
 
 extern node *WLIfundef (node *, node *);
 extern node *WLIid (node *, node *);
