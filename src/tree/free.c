@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2002/10/29 21:19:55  dkr
+ * DBUG_ASSERT in FreeOneTypes() added
+ *
  * Revision 3.47  2002/10/29 20:45:53  dkr
  * FreeOneTypes() modified
  *
@@ -309,7 +312,9 @@ FreeOneTypes (types *fr)
         tmp = fr;
         fr = TYPES_NEXT (fr);
 
-        if (TYPES_SHPSEG (tmp) != NULL) {
+        if (TYPES_DIM (tmp) > 0) {
+            DBUG_ASSERT ((TYPES_SHPSEG (tmp) != NULL),
+                         "SHPSEG not found although DIM is greater 0");
             TYPES_SHPSEG (tmp) = FreeShpseg (TYPES_SHPSEG (tmp));
         }
         TYPES_NAME (tmp) = Free (TYPES_NAME (tmp));
