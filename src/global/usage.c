@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/08/13 10:51:44  sbs
+ * break specifiers for flatten and typecheck (new type checker)
+ * added.
+ *
  * Revision 3.24  2002/07/15 19:05:07  dkr
  * -intrinsic flag modified for TAGGED_ARRAYS
  *
@@ -240,6 +244,23 @@ usage ()
             "\tCurrently supported:\n\n");
 
     PRINT_BREAK_SPEC (PH_scanparse, "yacc", "stop after parsing (yacc)");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_flatten, "mop",
+                      "stop after resolving (multiple) applications of infix operations");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_typecheck, "ivd", "stop after inserting vardecs");
+    PRINT_BREAK_SPEC (PH_typecheck, "cwr", "stop after creating wrappers");
+    PRINT_BREAK_SPEC (PH_typecheck, "l2f",
+                      "stop after converting loops and conditionals into functions");
+    PRINT_BREAK_SPEC (PH_typecheck, "cha", "stop after checking avis consistency");
+    PRINT_BREAK_SPEC (PH_typecheck, "ssa", "stop after converting into SSA form");
+    PRINT_BREAK_SPEC (PH_typecheck, "ntc", "stop after infering all types");
+    PRINT_BREAK_SPEC (PH_typecheck, "cwc",
+                      "stop after creating SAC code for the wrapper functions");
 
     printf ("\n");
 
