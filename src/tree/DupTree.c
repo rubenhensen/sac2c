@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.143  2005/01/20 14:16:06  ktr
+ * some bugfixing
+ *
  * Revision 3.142  2005/01/19 14:18:12  jhb
  * chande chk in error
  *
@@ -656,6 +659,7 @@ CopyCommonNodeData (node *new_node, node *old_node)
 
     NODE_LINE (new_node) = NODE_LINE (old_node);
     NODE_FILE (new_node) = NODE_FILE (old_node);
+    NODE_ERROR (new_node) = DUPdoDupNode (NODE_ERROR (old_node));
 
     new_node = DupFlags (new_node, old_node);
 
@@ -1462,10 +1466,6 @@ DUPassign (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *stacked_assign;
-    node *vardec;
-    node *oldids, *newids;
-    char *nvarname;
-    node *newavis;
 
     DBUG_ENTER ("DUPassign");
 
@@ -2185,8 +2185,7 @@ DUPsync (node *arg_node, info *arg_info)
 node *
 DUPwith (node *arg_node, info *arg_info)
 {
-    node *new_node, *partn, *coden, *withopn, *vardec, *oldvec, *newvec, *oldids, *newids;
-    char *nvarname;
+    node *new_node, *partn, *coden, *withopn, *vardec, *oldids;
     node *newavis;
 
     DBUG_ENTER ("DUPwith");
@@ -2878,7 +2877,7 @@ DUPerror (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPerror");
 
-    new_node = TBmakeError ();
+    new_node = TBmakeError (ILIBstringCopy (ERROR_MESSAGE (arg_node)));
 
     DBUG_RETURN (new_node);
 }

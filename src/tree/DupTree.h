@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2005/01/20 14:16:06  ktr
+ * some bugfixing
+ *
  * Revision 3.43  2005/01/11 15:19:49  mwe
  * support for N_fungroup added
  *
@@ -256,7 +259,7 @@ extern node *DUPlinklist (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
-extern node *DUPchk (node *arg_node, info *arg_info);
+extern node *DUPerror (node *arg_node, info *arg_info);
 extern node *DUPfungroup (node *arg_node, info *arg_info);
 
 /* frontend with-loop */

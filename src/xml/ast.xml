@@ -102,7 +102,7 @@
           <node name="Linklist" />
           <node name="Nums" />
           <node name="CWrapper" />
-          <node name="Chk" />
+          <node name="Error" />
           <node name="Fungroup" />
         </travsons>
       </traversal>
@@ -5486,11 +5486,11 @@
     <node name="Error">
       <sons></sons>
       <attributes>
-       <attribute name="message" mandatory="no">
-         <type name="String" />
-         <phases>
-	       <all />
-	     </phases>
+        <attribute name="message" mandatory="yes">
+          <type name="String" />
+          <phases>
+            <all />
+          </phases>
         </attribute>
       </attributes>
       <flags></flags>
@@ -5533,3 +5533,20 @@
     </node>
   </syntaxtree>
 </definition>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.243  2005/01/20 14:16:06  ktr
+ * some bugfixing
+ *
  * Revision 3.242  2005/01/19 12:52:20  jhb
  * added the attribute ERROR with the nodetype error
  *
@@ -245,7 +248,7 @@ struct NODE {
     nodetype nodetype; /* type of node */
     int lineno;        /* line number in source code */
     char *src_file;    /* pointer to filename or source code */
-    char *errmessage;
+    node *error;       /* error node */
 #ifdef CLEANMEM
     struct SONUNION sons;       /* the sons */
     struct ATTRIBUNION attribs; /* the nodes attributes */
