@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/06/25 08:07:56  cg
+ * various small syntactic bugs fixed
+ *
  * Revision 1.6  1998/06/23 12:54:42  cg
  * various bug fixes but state of development is still preliminary.
  *
@@ -216,12 +219,12 @@ typedef union {
  *  Definition of macro implemented ICMs for handling of spmd-function
  */
 
-#define SAC_MT_START_SPMD(name)
-{
-    SAC_MT_spmd_function = name;
-    SAC_MT_START_WORKERS ();
-    name (0, SAC_MT_MASTERCLASS (), 0);
-}
+#define SAC_MT_START_SPMD(name)                                                          \
+    {                                                                                    \
+        SAC_MT_spmd_function = &name;                                                    \
+        SAC_MT_START_WORKERS ();                                                         \
+        name (0, SAC_MT_MASTERCLASS (), 0);                                              \
+    }
 
 #define SAC_MT_START_WORKERS() SAC_MT_master_flag = 1 - SAC_MT_master_flag;
 
@@ -238,7 +241,7 @@ typedef union {
 
 #define SAC_MT_SPMD_FUN_REAL_RETURN() return (SAC_MT_worker_flag);
 
-#define SAC_MT_SPMD_FUN_REAL_RETTYPE() static unsigned int
+#define SAC_MT_SPMD_FUN_REAL_RETTYPE() static volatile unsigned int
 
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
 
@@ -391,15 +394,15 @@ typedef union {
         const int iterations_rest = iterations % SAC_MT_THREADS ();                      \
                                                                                          \
         if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
-            SAC_WL_SCHEDULE_START (idx, 0)                                               \
+            SAC_WL_SCHEDULE_START (0)                                                    \
               = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + 1);                \
-            SAC_WL_SCHEDULE_STOP (idx, 0)                                                \
-              = SAC_WL_SCHEDULE_START (idx, 0) + (iterations_per_thread + 1);            \
+            SAC_WL_SCHEDULE_STOP (0)                                                     \
+              = SAC_WL_SCHEDULE_START (0) + (iterations_per_thread + 1);                 \
         } else {                                                                         \
-            SAC_WL_SCHEDULE_START (idx, 0)                                               \
+            SAC_WL_SCHEDULE_START (0)                                                    \
               = (lower + iterations_rest) + SAC_MT_MYTHREAD () * iterations_per_thread;  \
-            SAC_WL_SCHEDULE_STOP (idx, 0)                                                \
-              = SAC_WL_SCHEDULE_START (idx, 0) + iterations_per_thread;                  \
+            SAC_WL_SCHEDULE_STOP (0)                                                     \
+              = SAC_WL_SCHEDULE_START (0) + iterations_per_thread;                       \
         }                                                                                \
     }
 
@@ -429,8 +432,8 @@ extern unsigned int SAC_MT_masterclass;
 
 extern unsigned int SAC_MT_threads;
 
-extern volatile unsigned int(SAC_MT_spmd_function) (unsigned int, unsigned int,
-                                                    unsigned int);
+extern volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int,
+                                                      const unsigned int, unsigned int);
 
 extern void SAC_MT_ThreadControl (void *arg);
 
