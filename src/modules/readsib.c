@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/09/11 06:25:57  cg
+ * Revision 1.12  1997/03/19 13:51:15  cg
+ * Now, all required libraries are checked at this stage of the compilation.
+ * Linkwith information is retrieved form SIBs.
+ *
+ * Revision 1.11  1996/09/11  06:25:57  cg
  * Converted to new lib-file format.
  *
  * Revision 1.10  1996/04/02  15:44:50  cg
@@ -57,19 +61,23 @@
 #include "import.h"
 #include "scnprs.h"
 #include "filemgr.h"
+#include "cccall.h" /* for function AddToLinklist */
 
 /*
  *  global variables :
  */
 
-static node *sibs = NULL; /* start of list of N_sib nodes storing parsed
-                             SAC Information Blocks    */
+static node *sib_tab = NULL; /* start of list of N_sib nodes storing parsed
+                                SAC Information Blocks    */
 
 /*
  *  forward declarations
  */
 
 extern nodelist *EnsureExistTypes (ids *type, node *modul, node *sib);
+extern strings *CheckLibraries (deps *depends, strings *done, char *required_by,
+                                int level);
+extern deps *AddOwnDecToDependencies (node *arg_node, deps *depends);
 
 /*
  *
@@ -91,6 +99,12 @@ ReadSib (node *syntax_tree)
 {
     DBUG_ENTER ("ReadSib");
 
+    CheckLibraries (dependencies, NULL, NULL, 1);
+
+    dependencies = AddOwnDecToDependencies (syntax_tree, dependencies);
+
+    ABORT_ON_ERROR;
+
     act_tab = readsib_tab;
 
     DBUG_RETURN (Trav (syntax_tree, NULL));
@@ -98,90 +112,274 @@ ReadSib (node *syntax_tree)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-#if 0
-
-/*
- *
- *  functionname  : CreateArchive
- *  arguments     : 1) module/class name
- *  description   : opens archive file in storedir and copies yyin to it.
- *  global vars   : yyin, storedirname
+ *  functionname  : AddOwnDecToDependencies
+ *  arguments     : 1) N_modul node of syntax tree
+ *                  2) list of dependencies
+ *  description   : When compiling a module or class implementation, the
+ *                  module's or class's own declaration is searched for
+ *                  and added to the list of dependencies
+ *  global vars   : ---
  *  internal funs : ---
- *  external funs : WriteOpen, fscanf, fprintf, fclose, feof, SystemCall
- *  macros        : 
+ *  external funs : MakeDeps, AbsolutePathname, FindFile, strcpy, strcat,
+ *                  StringCopy
+ *  macros        :
  *
- *  remarks       : is called in sac.y when parsing end of SIB
+ *  remarks       :
  *
  */
 
-void CreateArchive(char *name)
+deps *
+AddOwnDecToDependencies (node *arg_node, deps *depends)
 {
-  char tmp;
-  FILE *archive;
-  
-  DBUG_ENTER("CreateArchive");
-  
-  archive=WriteOpen("%s%s.a", store_dirname, name);
+    static char buffer[MAX_FILE_NAME];
+    char *pathname;
 
-  while (!feof(yyin))
-  {
-    fscanf(yyin, "%c", &tmp);
-    fprintf(archive, "%c", tmp);
-  }
-  
-  fclose(archive);
+    DBUG_ENTER ("AddOwnDecToDependencies");
 
-  SystemCall("ranlib %s%s.a", store_dirname, name);
-  
-  /*
-   *  ranlib must be rerun here because otherwise the date of the 
-   *  archive's symbol table is older than the archive file itself
-   *  which causes error messages by the C-compiler.
-   */
+    if (MODUL_FILETYPE (arg_node) != F_prog) {
+        strcpy (buffer, MODUL_NAME (arg_node));
+        strcat (buffer, ".dec");
 
-  DBUG_VOID_RETURN;
+        pathname = FindFile (MODDEC_PATH, buffer);
+
+        if (pathname != NULL) {
+            depends
+              = MakeDeps (StringCopy (buffer), StringCopy (AbsolutePathname (pathname)),
+                          NULL, ST_own, NULL, depends);
+        }
+    }
+
+    DBUG_RETURN (depends);
 }
 
-#endif
+/*
+ *
+ *  functionname  : CheckLibraries
+ *  arguments     : 1) list od dependencies
+ *                  2) list of strings to store those modules/classes that
+ *                     have already been checked.
+ *                  3) module/class by which these dependencies are required
+ *                  4) recursion level
+ *  description   : searches for all libraries on which the currently compiled
+ *                  code relies. In the case of an external library (".a")
+ *                  dependent system libraries (due to pragma linkwith)
+ *                  are searched for as well.
+ *                  SAC libraries are opened and the archive as well as the
+ *                  SIB file are extracted to the temporary directory.
+ *                  The SIB is read, parsed, and stored in the SIB table.
+ *                  The pragma linkwith from a SIB is evaluated and added to
+ *                  list of dependencies as a sub tree.
+ *                  Each required library is only searched for once.
+ *                  Sub trees are traversed by recursion.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : strcmp, strcpy, strcat, FindFile, AbsolutePathname,
+ *                  MakeStrings, StringCopy, SystemCall2, fopen, yyparse
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+strings *
+CheckLibraries (deps *depends, strings *done, char *required_by, int level)
+{
+    deps *tmp;
+    static char buffer[MAX_PATH_LEN], libpath_buffer[MAX_PATH_LEN];
+    char *pathname, *abspathname, *libtype;
+    int success;
+    strings *tmp_done;
+    FILE *libpath;
+
+    DBUG_ENTER ("CheckLibraries");
+
+    tmp = depends;
+
+    while (tmp != NULL) {
+        tmp_done = done;
+
+        while ((tmp_done != NULL)
+               && (0 != strcmp (DEPS_NAME (tmp), STRINGS_STRING (tmp_done)))) {
+            tmp_done = STRINGS_NEXT (tmp_done);
+        }
+
+        if (tmp_done == NULL) {
+            done = MakeStrings (DEPS_NAME (tmp), done);
+
+            strcpy (buffer, DEPS_NAME (tmp));
+
+            switch (DEPS_STATUS (tmp)) {
+            case ST_sac:
+                strcat (buffer, ".lib");
+                libtype = "SAC";
+                break;
+            case ST_external:
+                strcat (buffer, ".a");
+                libtype = "external";
+                break;
+            case ST_system:
+                strcat (buffer, ".a");
+                libtype = "system";
+                break;
+            default:
+            }
+
+            NOTE (("Searching for %s library \"%s\" ...", libtype, buffer));
+
+            if (required_by != NULL) {
+                NOTE (("  Required by module/class '%s` !", required_by));
+            }
+
+            if ((DEPS_STATUS (tmp) == ST_system)
+                && (0 == strncmp (DEPS_NAME (tmp), "lib", 3))) {
+                /*
+                 *  Here, we exploit the gcc command line option '-print-file-name=...'
+                 *  This causes gcc to write the path name of the file it would use
+                 *  to link to stdout from where it is redirected to the file
+                 *  'libpath' in the temporary directory. This file is read afterwards.
+                 *  If gcc does not find an appropriate file, it returns simply the
+                 *  file name. This is checked and either this path name is taken
+                 *  for further processing or the standard path MODIMP_PATH is searched
+                 *  using FindFile().
+                 *
+                 *  This feature allows to use implicit gcc search paths for system
+                 *  libraries without explicitly specifying them as MODIMP_PATH.
+                 */
+
+                sprintf (libpath_buffer, "%s/libpath", tmp_dirname);
+
+                SystemCall ("gcc -print-file-name=%s > %s", buffer, libpath_buffer);
+                libpath = fopen (libpath_buffer, "r");
+                DBUG_ASSERT (libpath != NULL, "Unable to open libpath file");
+                fscanf (libpath, "%s", libpath_buffer);
+                fclose (libpath);
+
+                if (libpath_buffer[0] == '/') {
+                    pathname = libpath_buffer;
+                } else {
+                    pathname = FindFile (MODIMP_PATH, buffer);
+                }
+            } else {
+                pathname = FindFile (MODIMP_PATH, buffer);
+            }
+
+            if (pathname == NULL) {
+                SYSERROR (("Unable to find %s library \"%s\"", libtype, buffer));
+            } else {
+                abspathname = AbsolutePathname (pathname);
+
+                NOTE (("  Found \"%s\" !", abspathname));
+
+                DEPS_LIBNAME (tmp) = StringCopy (abspathname);
+
+                if (DEPS_STATUS (tmp) == ST_sac) {
+                    if (level == 1) {
+                        success = SystemCall2 ("cd %s; tar xf %s %s.a %s.sib "
+                                               ">/dev/null 2>&1",
+                                               tmp_dirname, abspathname, DEPS_NAME (tmp),
+                                               DEPS_NAME (tmp));
+
+                        if (success != 0) {
+                            SYSERROR (
+                              ("Corrupted library file format: \"%s\"", abspathname));
+                        } else {
+                            /*
+                             * Now, the SIB is read and parsed.
+                             */
+
+                            strcpy (buffer, tmp_dirname);
+                            strcat (buffer, "/");
+                            strcat (buffer, DEPS_NAME (tmp));
+                            strcat (buffer, ".sib");
+
+                            yyin = fopen (buffer, "r");
+                            DBUG_ASSERT (yyin != NULL, "Failure while opening SIB");
+
+                            linenum = 1;
+                            start_token = PARSE_SIB;
+
+                            yyparse ();
+
+                            fclose (yyin);
+
+                            SIB_NEXT (sib_tree) = sib_tab;
+                            sib_tab = sib_tree;
+
+                            DEPS_SUB (tmp) = SIB_LINKWITH (sib_tree);
+                            SIB_LINKWITH (sib_tree) = NULL;
+                        }
+                    } else {
+                        success = SystemCall2 ("cd %s; tar xf %s %s.a "
+                                               ">/dev/null 2>&1",
+                                               tmp_dirname, abspathname, DEPS_NAME (tmp));
+
+                        if (success != 0) {
+                            SYSERROR (
+                              ("Corrupted library file format: \"%s\"", abspathname));
+                        }
+                    }
+                }
+            }
+        }
+
+        tmp = DEPS_NEXT (tmp);
+    }
+
+    tmp = depends;
+
+    while (tmp != NULL) {
+        if (DEPS_SUB (tmp) != NULL) {
+            done = CheckLibraries (DEPS_SUB (tmp), done, DEPS_NAME (tmp), level + 1);
+        }
+
+        tmp = DEPS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (done);
+}
+
+/*
+ *
+ *  functionname  : PrintDependencies
+ *  arguments     : 1) list of dependencies
+ *  description   : prints a list of dependencies in a Makefile-like style
+ *                  to stdout. All declaration files of imported modules
+ *                  and classes are printed including the own declaration
+ *                  when compiling a module/class implementation.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : printf
+ *  macros        :
+ *
+ *  remarks       : This function corresponds to the -M compiler option.
+ *
+ */
+
+void
+PrintDependencies (deps *depends)
+{
+    DBUG_ENTER ("PrintDependencies");
+
+    printf ("%s: ", outfilename);
+
+    while (depends != NULL) {
+        printf ("  \\\n  %s", DEPS_DECNAME (depends));
+        depends = DEPS_NEXT (depends);
+    }
+    printf ("\n");
+
+    DBUG_VOID_RETURN;
+}
 
 /*
  *
  *  functionname  : FindSib
  *  arguments     : 1) name of module/class
- *  description   : checks in the list of sibs if this sib has already been
- *                  read. In this case, a pointer to the N_sib node is
- *                  returned. Otherwise the sib is parsed, added to the list
- *                  of sibs and a pointer to the new N_sib node is
- *                  returned.
- *  global vars   : sibs
+ *  description   : looks for the SIB of the given module/class in the
+ *                  SIB table
+ *  global vars   : sib_tab
  *  internal funs : ---
- *  external funs : strcmp, strcpy, strcat, fopen, fclose
+ *  external funs : strcmp
  *  macros        :
  *
  *  remarks       :
@@ -191,61 +389,19 @@ void CreateArchive(char *name)
 node *
 FindSib (char *name)
 {
-    static char buffer[MAX_PATH_LEN];
     node *tmp;
-    char *pathname, *abspathname;
-    int success;
 
     DBUG_ENTER ("FindSib");
 
     DBUG_ASSERT (name != NULL, "called FindSib with name==NULL");
 
-    tmp = sibs;
+    tmp = sib_tab;
 
     while ((tmp != NULL) && (0 != strcmp (name, SIB_NAME (tmp)))) {
         tmp = SIB_NEXT (tmp);
     }
 
-    if (tmp == NULL) {
-        strcpy (buffer, name);
-        strcat (buffer, ".lib");
-
-        NOTE (("Searching for implementation of SAC module/class '%s` ...", name));
-
-        pathname = FindFile (MODIMP_PATH, buffer);
-
-        if (pathname == NULL) {
-            SYSABORT (("Unable to find implementation of SAC module/class '%s`", name));
-        }
-
-        NOTE (("  Evaluating SAC library \"%s\" !", pathname));
-
-        abspathname = AbsolutePathname (pathname);
-
-        success
-          = SystemCall2 ("cd %s; tar xf %s >/dev/null 2>&1", store_dirname, abspathname);
-
-        if (success != 0) {
-            SYSABORT (("Corrupted library file format: \"%s\"", pathname));
-        }
-
-        strcpy (buffer, store_dirname);
-        strcat (buffer, name);
-        strcat (buffer, ".sib");
-
-        yyin = fopen (buffer, "r");
-        linenum = 1;
-        start_token = PARSE_SIB;
-
-        yyparse ();
-
-        fclose (yyin);
-
-        SIB_NEXT (sib_tree) = sibs;
-        sibs = sib_tree;
-
-        tmp = sibs;
-    }
+    DBUG_ASSERT (tmp != NULL, "Required SIB not found in SIB table");
 
     DBUG_RETURN (tmp);
 }
@@ -955,7 +1111,7 @@ RSIBmodul (node *arg_node, node *arg_info)
 
     /*
      *  The objects must be traversed in order to guarantee that all
-     *  relevant module/class implementations are copied to store_dirname.
+     *  relevant module/class implementations are copied to tmp_dirname.
      */
 
     if (MODUL_OBJS (arg_node) != NULL) {
