@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.129  1997/08/29 12:03:59  sbs
+ * missing }
+ *
  * Revision 1.128  1997/08/29 10:12:27  sbs
  * output of #define TRACE_PRF included.
  * It is needed for printing prf's that are implemented via macros only,
@@ -476,1184 +479,1211 @@ PrintFileHeader ()
 
             if (traceflag & TRACE_REF) {
                 fprintf (outfile, "#define TRACE_REF\n");
-
-                if (traceflag & TRACE_PRF) {
-                    fprintf (outfile, "#define TRACE_PRF\n");
-                }
-            }
-            if (profileflag != 0) {
-                fprintf (outfile, "#define PROFILE\n");
-                if (profileflag & PROFILE_FUN) {
-                    fprintf (outfile, "#define PROFILE_FUN\n");
-                }
-
-                if (profileflag & PROFILE_LIB) {
-                    fprintf (outfile, "#define PROFILE_LIB\n");
-                }
-
-                if (profileflag & PROFILE_INL) {
-                    fprintf (outfile, "#define PROFILE_INL\n");
-                }
-
-                if (profileflag & PROFILE_WITH) {
-                    fprintf (outfile, "#define PROFILE_WITH\n");
-                }
             }
 
-            if (check_malloc) {
-                fprintf (outfile, "#define CHECK_MALLOC\n");
+            if (traceflag & TRACE_PRF) {
+                fprintf (outfile, "#define TRACE_PRF\n");
             }
-
-            if (profileflag != 0) {
-                fprintf (outfile, "#include <sys/time.h>\n");
-                fprintf (outfile, "#include <sys/resource.h>\n");
-                fprintf (outfile,
-                         "extern int getrusage(int who, struct rusage *rusage);\n");
-            }
-            fprintf (outfile, "#include \"libsac.h\"\n");
-            fprintf (outfile, "#include \"icm2c.h\"\n");
         }
-
-        DBUG_VOID_RETURN;
-    }
-
-    /*
-     * prints ids-information to outfile
-     *
-     */
-    void PrintIds (ids * arg)
-    {
-        DBUG_ENTER ("PrintIds");
-
-        do {
-            DBUG_PRINT ("PRINT", ("%s", arg->id));
-
-            if (arg->mod != NULL)
-                fprintf (outfile, "%s:", arg->mod);
-            fprintf (outfile, "%s", arg->id);
-            if ((arg->refcnt != -1) && show_refcnt)
-                fprintf (outfile, ":%d", arg->refcnt);
-            if (show_idx && arg->use)
-                Trav (arg->use, NULL);
-            if (NULL != arg->next)
-                fprintf (outfile, ", ");
-            arg = arg->next;
-        } while (NULL != arg);
-
-        DBUG_VOID_RETURN;
-    }
-
-    void PrintNums (nums * n)
-    {
-        DBUG_ENTER ("PrintNums");
-
-        while (n != NULL) {
-            fprintf (outfile, "%d", NUMS_NUM (n));
-
-            if (NUMS_NEXT (n) != NULL) {
-                fprintf (outfile, ", ");
+        if (profileflag != 0) {
+            fprintf (outfile, "#define PROFILE\n");
+            if (profileflag & PROFILE_FUN) {
+                fprintf (outfile, "#define PROFILE_FUN\n");
             }
 
-            n = NUMS_NEXT (n);
-        }
-
-        DBUG_VOID_RETURN;
-    }
-
-    node *PrintAssign (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintAssign");
-
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - assign : %s\n",
-                                       mdb_nodetype[arg_node->node[0]->nodetype]);
-                      PrintMasks (arg_node, arg_info););
-
-        DBUG_PRINT ("FLAG", ("\nflag = %d", arg_node->flag));
-
-        if (N_icm == arg_node->node[0]->nodetype) {
-            PrintIcm (arg_node->node[0], arg_info);
-            fprintf (outfile, "\n");
-            if (2 == arg_node->nnode)
-                Trav (arg_node->node[1], arg_info);
-        } else {
-            DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
-
-            if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
-                || (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) != NULL)) {
-                INDENT;
-                Trav (arg_node->node[0], arg_info);
-                fprintf (outfile, "\n");
+            if (profileflag & PROFILE_LIB) {
+                fprintf (outfile, "#define PROFILE_LIB\n");
             }
 
-            if (2 == arg_node->nnode) {
-                Trav (ASSIGN_NEXT (arg_node), arg_info);
+            if (profileflag & PROFILE_INL) {
+                fprintf (outfile, "#define PROFILE_INL\n");
+            }
+
+            if (profileflag & PROFILE_WITH) {
+                fprintf (outfile, "#define PROFILE_WITH\n");
             }
         }
 
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintBlock (node * arg_node, node * arg_info)
-    {
-        static profile_setup_flag = 0;
-
-        DBUG_ENTER ("PrintBlock");
-
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-
-        INDENT;
-        fprintf (outfile, "{ \n");
-        indent++;
-
-        if (BLOCK_VARDEC (arg_node) != NULL) {
-            Trav (BLOCK_VARDEC (arg_node), arg_info);
-            fprintf (outfile, "\n");
+        if (check_malloc) {
+            fprintf (outfile, "#define CHECK_MALLOC\n");
         }
 
-        if ((INFO_FUNDEF (arg_info) != NULL)
-            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
-            && (profile_setup_flag == 0)) {
-            profile_setup_flag = 1;
+        if (profileflag != 0) {
+            fprintf (outfile, "#include <sys/time.h>\n");
+            fprintf (outfile, "#include <sys/resource.h>\n");
+            fprintf (outfile, "extern int getrusage(int who, struct rusage *rusage);\n");
+        }
+        fprintf (outfile, "#include \"libsac.h\"\n");
+        fprintf (outfile, "#include \"icm2c.h\"\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ * prints ids-information to outfile
+ *
+ */
+void
+PrintIds (ids *arg)
+{
+    DBUG_ENTER ("PrintIds");
+
+    do {
+        DBUG_PRINT ("PRINT", ("%s", arg->id));
+
+        if (arg->mod != NULL)
+            fprintf (outfile, "%s:", arg->mod);
+        fprintf (outfile, "%s", arg->id);
+        if ((arg->refcnt != -1) && show_refcnt)
+            fprintf (outfile, ":%d", arg->refcnt);
+        if (show_idx && arg->use)
+            Trav (arg->use, NULL);
+        if (NULL != arg->next)
+            fprintf (outfile, ", ");
+        arg = arg->next;
+    } while (NULL != arg);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+PrintNums (nums *n)
+{
+    DBUG_ENTER ("PrintNums");
+
+    while (n != NULL) {
+        fprintf (outfile, "%d", NUMS_NUM (n));
+
+        if (NUMS_NEXT (n) != NULL) {
+            fprintf (outfile, ", ");
+        }
+
+        n = NUMS_NEXT (n);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+node *
+PrintAssign (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintAssign");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - assign : %s\n",
+                                   mdb_nodetype[arg_node->node[0]->nodetype]);
+                  PrintMasks (arg_node, arg_info););
+
+    DBUG_PRINT ("FLAG", ("\nflag = %d", arg_node->flag));
+
+    if (N_icm == arg_node->node[0]->nodetype) {
+        PrintIcm (arg_node->node[0], arg_info);
+        fprintf (outfile, "\n");
+        if (2 == arg_node->nnode)
+            Trav (arg_node->node[1], arg_info);
+    } else {
+        DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
+
+        if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
+            || (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) != NULL)) {
             INDENT;
-            fprintf (outfile, "PROFILE_SETUP( %d );\n", PFfuncntr);
+            Trav (arg_node->node[0], arg_info);
+            fprintf (outfile, "\n");
         }
 
-        if (BLOCK_INSTR (arg_node) != NULL) {
-            Trav (BLOCK_INSTR (arg_node), arg_info);
+        if (2 == arg_node->nnode) {
+            Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
+    }
 
-        indent--;
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintBlock (node *arg_node, node *arg_info)
+{
+    static profile_setup_flag = 0;
+
+    DBUG_ENTER ("PrintBlock");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    INDENT;
+    fprintf (outfile, "{ \n");
+    indent++;
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        Trav (BLOCK_VARDEC (arg_node), arg_info);
+        fprintf (outfile, "\n");
+    }
+
+    if ((INFO_FUNDEF (arg_info) != NULL)
+        && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+        && (profile_setup_flag == 0)) {
+        profile_setup_flag = 1;
         INDENT;
-        fprintf (outfile, "}\n");
-
-        DBUG_RETURN (arg_node);
+        fprintf (outfile, "PROFILE_SETUP( %d );\n", PFfuncntr);
     }
 
-    node *PrintLet (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintLet");
-
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-
-        if (arg_node->info.ids != NULL) {
-            PrintIds (arg_node->info.ids);
-            fprintf (outfile, " = ");
-        }
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, "; ");
-
-        DBUG_RETURN (arg_node);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
-    node *PrintAnnotate (node * arg_node, node * arg_info)
-    {
-        static char strbuffer1[256];
-        static char strbuffer2[256];
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
 
-        DBUG_ENTER ("PrintAnnotate");
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+node *
+PrintLet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintLet");
 
-        if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
-            sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d ,%d )",
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    if (arg_node->info.ids != NULL) {
+        PrintIds (arg_node->info.ids);
+        fprintf (outfile, " = ");
+    }
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, "; ");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintAnnotate (node *arg_node, node *arg_info)
+{
+    static char strbuffer1[256];
+    static char strbuffer2[256];
+
+    DBUG_ENTER ("PrintAnnotate");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
+        sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d ,%d )", ANNOTATE_FUNNUMBER (arg_node),
+                 ANNOTATE_FUNAPNUMBER (arg_node));
+    } else {
+        if (ANNOTATE_TAG (arg_node) & RETURN_FROM_FUN) {
+            sprintf (strbuffer1, "PROFILE_END_UDF( %d ,%d )",
                      ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
-            if (ANNOTATE_TAG (arg_node) & RETURN_FROM_FUN) {
-                sprintf (strbuffer1, "PROFILE_END_UDF( %d ,%d )",
-                         ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
-            } else {
-                DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
-            }
+            DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
         }
-
-        if (ANNOTATE_TAG (arg_node) & INL_FUN)
-            sprintf (strbuffer2, "PROFILE_INLINE( %s )", strbuffer1);
-        else
-            strcpy (strbuffer2, strbuffer1);
-
-        if (ANNOTATE_TAG (arg_node) & LIB_FUN)
-            sprintf (strbuffer1, "PROFILE_LIBRARY( %s )", strbuffer2);
-        else
-            strcpy (strbuffer1, strbuffer2);
-
-        fprintf (outfile, "%s;", strbuffer1);
-
-        DBUG_RETURN (arg_node);
     }
 
-    node *PrintModul (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintModul");
+    if (ANNOTATE_TAG (arg_node) & INL_FUN)
+        sprintf (strbuffer2, "PROFILE_INLINE( %s )", strbuffer1);
+    else
+        strcpy (strbuffer2, strbuffer1);
 
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+    if (ANNOTATE_TAG (arg_node) & LIB_FUN)
+        sprintf (strbuffer1, "PROFILE_LIBRARY( %s )", strbuffer2);
+    else
+        strcpy (strbuffer1, strbuffer2);
 
-        if (print_separate) {
-            outfile = WriteOpen ("%s/header.h", tmp_dirname);
-            PrintFileHeader ();
+    fprintf (outfile, "%s;", strbuffer1);
 
-            if (NULL != arg_node->node[1]) {
-                fprintf (outfile, "\n\n");
-                Trav (arg_node->node[1], arg_info); /* print typedefs */
-            }
+    DBUG_RETURN (arg_node);
+}
 
-            if (NULL != arg_node->node[2]) {
-                fprintf (outfile, "\n\n");
-                Trav (arg_node->node[2], arg_node); /* print function declarations */
-            }
+node *
+PrintModul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintModul");
 
-            if (NULL != arg_node->node[3]) {
-                fprintf (outfile, "\n\n");
-                print_objdef_for_header_file = 1;
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-                Trav (arg_node->node[3], arg_info); /* print object declarations */
-            }
+    if (print_separate) {
+        outfile = WriteOpen ("%s/header.h", tmp_dirname);
+        PrintFileHeader ();
 
-            fclose (outfile);
-
-            outfile = WriteOpen ("%s/globals.c", tmp_dirname);
-            fprintf (outfile, "#include \"header.h\"\n\n");
-            fprintf (outfile, "int __dummy_value_which_is_completely_useless=0;\n\n");
-
-            /*
-             *  Maybe there's nothing to compile in this module because all functions
-             *  deal with shape-independent arrays which are removed after writing
-             *  the SIB.
-             *
-             *  Unfortunately, things are not as easy as they should be.
-             *  If there is no symbol declared in this file then gcc creates an
-             *  object file which does not contain any objects. This causes ranlib
-             *  not (!!) to produce an empty symbol table, but to produce no symbol
-             *  table at all. Finding no symbol table lets the linker give some
-             *  nasty warnings. These are suppressed by the above dummy symbol.
-             */
-
-            if (NULL != arg_node->node[3]) {
-                fprintf (outfile, "\n\n");
-                print_objdef_for_header_file = 0;
-
-                Trav (arg_node->node[3], arg_info); /* print object definitions */
-            }
-
-            fclose (outfile);
-
-            if (NULL != arg_node->node[2]) {
-                fprintf (outfile, "\n\n");
-                Trav (arg_node->node[2], NULL); /* print function definitions */
-            }
-        } else {
-            switch (MODUL_FILETYPE (arg_node)) {
-            case F_modimp:
-                fprintf (outfile, "\n/*\n *  Module %s :\n */\n", arg_node->info.id);
-                break;
-            case F_classimp:
-                fprintf (outfile, "\n/*\n *  Class %s :\n", arg_node->info.id);
-                if (MODUL_CLASSTYPE (arg_node) != NULL) {
-                    fprintf (outfile, " *  classtype %s;\n",
-                             Type2String (MODUL_CLASSTYPE (arg_node), 0));
-                }
-                fprintf (outfile, " */\n");
-                break;
-            case F_prog:
-                fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", filename);
-                break;
-            default:;
-            }
-
-            if (NULL != arg_node->node[0]) {
-                fprintf (outfile, "\n");
-                Trav (arg_node->node[0], arg_info); /* print import-list */
-            }
-
-            if (NULL != arg_node->node[1]) {
-                fprintf (outfile, "\n\n");
-                fprintf (outfile, "/*\n");
-                fprintf (outfile, " *  type definitions\n");
-                fprintf (outfile, " */\n\n");
-                Trav (arg_node->node[1], arg_info); /* print typedefs */
-            }
-
-            if (NULL != arg_node->node[2]) {
-                fprintf (outfile, "\n\n");
-                fprintf (outfile, "/*\n");
-                fprintf (outfile, " *  function declarations\n");
-                fprintf (outfile, " */\n\n");
-                Trav (arg_node->node[2], arg_node); /* print functions */
-            }
-
-            if (NULL != arg_node->node[3]) {
-                fprintf (outfile, "\n\n");
-                fprintf (outfile, "/*\n");
-                fprintf (outfile, " *  global objects\n");
-                fprintf (outfile, " */\n\n");
-                Trav (arg_node->node[3], arg_info); /* print objdefs */
-            }
-
-            if (NULL != arg_node->node[2]) {
-                fprintf (outfile, "\n\n");
-                fprintf (outfile, "/*\n");
-                fprintf (outfile, " *  function definitions\n");
-                fprintf (outfile, " */\n");
-                Trav (arg_node->node[2], NULL); /* print functions */
-            }
+        if (NULL != arg_node->node[1]) {
+            fprintf (outfile, "\n\n");
+            Trav (arg_node->node[1], arg_info); /* print typedefs */
         }
 
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintImplist (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintImplist");
-
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-
-        fprintf (outfile, "import %s: ", arg_node->info.id);
-
-        if ((arg_node->node[1] == NULL) && (arg_node->node[2] == NULL)
-            && (arg_node->node[3] == NULL) && (arg_node->node[4] == NULL))
-            fprintf (outfile, "all;\n");
-        else {
-            fprintf (outfile, "{");
-            if (arg_node->node[1] != NULL) {
-                fprintf (outfile, "\n  implicit types: ");
-                PrintIds ((ids *)arg_node->node[1]); /* dirty trick for keeping ids */
-                fprintf (outfile, ";");
-            }
-            if (arg_node->node[2] != NULL) {
-                fprintf (outfile, "\n  explicit types: ");
-                PrintIds ((ids *)arg_node->node[2]); /* dirty trick for keeping ids */
-                fprintf (outfile, ";");
-            }
-            if (arg_node->node[4] != NULL) {
-                fprintf (outfile, "\n  global objects: ");
-                PrintIds ((ids *)arg_node->node[4]); /* dirty trick for keeping ids */
-                fprintf (outfile, ";");
-            }
-            if (arg_node->node[3] != NULL) {
-                fprintf (outfile, "\n  funs: ");
-                PrintIds ((ids *)arg_node->node[3]); /* dirty trick for keeping ids */
-                fprintf (outfile, ";");
-            }
-            fprintf (outfile, "\n}\n");
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            Trav (arg_node->node[2], arg_node); /* print function declarations */
         }
 
-        if (1 == arg_node->nnode)
-            Trav (arg_node->node[0], arg_info); /* print further imports */
+        if (NULL != arg_node->node[3]) {
+            fprintf (outfile, "\n\n");
+            print_objdef_for_header_file = 1;
 
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintTypedef (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintTypedef");
-
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-
-        fprintf (outfile, "typedef %s ", Type2String (arg_node->info.types, 0));
-        if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
-        fprintf (outfile, "%s;\n", arg_node->info.types->id);
-
-        if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-            fprintf (outfile, "\nextern void *%s(void *);\n", TYPEDEF_COPYFUN (arg_node));
-            fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
+            Trav (arg_node->node[3], arg_info); /* print object declarations */
         }
 
-        if (1 == arg_node->nnode)
-            Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
+        fclose (outfile);
 
-        DBUG_RETURN (arg_node);
-    }
+        outfile = WriteOpen ("%s/globals.c", tmp_dirname);
+        fprintf (outfile, "#include \"header.h\"\n\n");
+        fprintf (outfile, "int __dummy_value_which_is_completely_useless=0;\n\n");
 
-    node *PrintObjdef (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintObjdef");
+        /*
+         *  Maybe there's nothing to compile in this module because all functions
+         *  deal with shape-independent arrays which are removed after writing
+         *  the SIB.
+         *
+         *  Unfortunately, things are not as easy as they should be.
+         *  If there is no symbol declared in this file then gcc creates an
+         *  object file which does not contain any objects. This causes ranlib
+         *  not (!!) to produce an empty symbol table, but to produce no symbol
+         *  table at all. Finding no symbol table lets the linker give some
+         *  nasty warnings. These are suppressed by the above dummy symbol.
+         */
 
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+        if (NULL != arg_node->node[3]) {
+            fprintf (outfile, "\n\n");
+            print_objdef_for_header_file = 0;
 
-        if ((OBJDEF_ICM (arg_node) != NULL)
-            && (NODE_TYPE (OBJDEF_ICM (arg_node)) == N_icm)) {
-            Trav (OBJDEF_ICM (arg_node), arg_info);
+            Trav (arg_node->node[3], arg_info); /* print object definitions */
+        }
+
+        fclose (outfile);
+
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            Trav (arg_node->node[2], NULL); /* print function definitions */
+        }
+    } else {
+        switch (MODUL_FILETYPE (arg_node)) {
+        case F_modimp:
+            fprintf (outfile, "\n/*\n *  Module %s :\n */\n", arg_node->info.id);
+            break;
+        case F_classimp:
+            fprintf (outfile, "\n/*\n *  Class %s :\n", arg_node->info.id);
+            if (MODUL_CLASSTYPE (arg_node) != NULL) {
+                fprintf (outfile, " *  classtype %s;\n",
+                         Type2String (MODUL_CLASSTYPE (arg_node), 0));
+            }
+            fprintf (outfile, " */\n");
+            break;
+        case F_prog:
+            fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", filename);
+            break;
+        default:;
+        }
+
+        if (NULL != arg_node->node[0]) {
             fprintf (outfile, "\n");
-        } else {
-            if ((arg_node->info.types->status == ST_imported)
-                || print_objdef_for_header_file) {
-                fprintf (outfile, "extern ");
+            Trav (arg_node->node[0], arg_info); /* print import-list */
+        }
+
+        if (NULL != arg_node->node[1]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  type definitions\n");
+            fprintf (outfile, " */\n\n");
+            Trav (arg_node->node[1], arg_info); /* print typedefs */
+        }
+
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  function declarations\n");
+            fprintf (outfile, " */\n\n");
+            Trav (arg_node->node[2], arg_node); /* print functions */
+        }
+
+        if (NULL != arg_node->node[3]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  global objects\n");
+            fprintf (outfile, " */\n\n");
+            Trav (arg_node->node[3], arg_info); /* print objdefs */
+        }
+
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  function definitions\n");
+            fprintf (outfile, " */\n");
+            Trav (arg_node->node[2], NULL); /* print functions */
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintImplist (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintImplist");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    fprintf (outfile, "import %s: ", arg_node->info.id);
+
+    if ((arg_node->node[1] == NULL) && (arg_node->node[2] == NULL)
+        && (arg_node->node[3] == NULL) && (arg_node->node[4] == NULL))
+        fprintf (outfile, "all;\n");
+    else {
+        fprintf (outfile, "{");
+        if (arg_node->node[1] != NULL) {
+            fprintf (outfile, "\n  implicit types: ");
+            PrintIds ((ids *)arg_node->node[1]); /* dirty trick for keeping ids */
+            fprintf (outfile, ";");
+        }
+        if (arg_node->node[2] != NULL) {
+            fprintf (outfile, "\n  explicit types: ");
+            PrintIds ((ids *)arg_node->node[2]); /* dirty trick for keeping ids */
+            fprintf (outfile, ";");
+        }
+        if (arg_node->node[4] != NULL) {
+            fprintf (outfile, "\n  global objects: ");
+            PrintIds ((ids *)arg_node->node[4]); /* dirty trick for keeping ids */
+            fprintf (outfile, ";");
+        }
+        if (arg_node->node[3] != NULL) {
+            fprintf (outfile, "\n  funs: ");
+            PrintIds ((ids *)arg_node->node[3]); /* dirty trick for keeping ids */
+            fprintf (outfile, ";");
+        }
+        fprintf (outfile, "\n}\n");
+    }
+
+    if (1 == arg_node->nnode)
+        Trav (arg_node->node[0], arg_info); /* print further imports */
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintTypedef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintTypedef");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    fprintf (outfile, "typedef %s ", Type2String (arg_node->info.types, 0));
+    if (arg_node->info.types->id_mod != NULL)
+        fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+    fprintf (outfile, "%s;\n", arg_node->info.types->id);
+
+    if (TYPEDEF_COPYFUN (arg_node) != NULL) {
+        fprintf (outfile, "\nextern void *%s(void *);\n", TYPEDEF_COPYFUN (arg_node));
+        fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
+    }
+
+    if (1 == arg_node->nnode)
+        Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintObjdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintObjdef");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    if ((OBJDEF_ICM (arg_node) != NULL) && (NODE_TYPE (OBJDEF_ICM (arg_node)) == N_icm)) {
+        Trav (OBJDEF_ICM (arg_node), arg_info);
+        fprintf (outfile, "\n");
+    } else {
+        if ((arg_node->info.types->status == ST_imported)
+            || print_objdef_for_header_file) {
+            fprintf (outfile, "extern ");
+        }
+
+        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+
+        if (arg_node->info.types->id_mod != NULL) {
+            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+        }
+
+        fprintf (outfile, "%s", arg_node->info.types->id);
+
+        if (arg_node->node[1] != NULL) {
+            fprintf (outfile, " = ");
+            Trav (arg_node->node[1], arg_info);
+        }
+
+        fprintf (outfile, ";\n");
+
+        if (OBJDEF_PRAGMA (arg_node) != NULL) {
+            Trav (OBJDEF_PRAGMA (arg_node), arg_info);
+        }
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        Trav (arg_node->node[0], arg_info); /* traverse next objdef */
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+void
+PrintFunctionHeader (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintFunctionHeader");
+
+    if (0 != arg_node->flag)
+        fprintf (outfile, "inline ");
+
+    fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+
+    if (arg_node->info.types->id_mod != NULL)
+        fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+
+    fprintf (outfile, "%s(", arg_node->info.types->id);
+
+    if (arg_node->node[2] != NULL)
+        Trav (arg_node->node[2], arg_info); /* print args of function */
+
+    fprintf (outfile, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ * Remark for PrintFundef:
+ *
+ *  arg_info is used as flag :
+ *  arg_info==NULL : print function definitions (with body)
+ *  arg_info!=NULL : print function declarations (without body)
+ *
+ *  If C-code is to be generated, which means that an N_icm node already
+ *  hangs on node[3], additional extern declarations for function
+ *  definitions are printed.
+ */
+
+node *
+PrintFundef (node *arg_node, node *arg_info)
+{
+    node *new_info;
+
+    DBUG_ENTER ("PrintFundef");
+
+    DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+
+    new_info = MakeNode (N_info);
+    new_info->varno = arg_node->varno;
+    INFO_FUNDEF (new_info) = arg_node; /* needed for the introduction
+                                        * of PROFILE_... MACROS in the
+                                        * function body
+                                        */
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
+                  PrintMasks (arg_node, new_info););
+
+    if (arg_info == NULL) {
+        /*
+         *  print function definition
+         */
+
+        if (arg_node->node[0] != NULL) {
+            if (print_separate) {
+                outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
+
+                fprintf (outfile, "#include \"header.h\"\n");
             }
 
-            fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+            fprintf (outfile, "\n");
 
-            if (arg_node->info.types->id_mod != NULL) {
-                fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+            if ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)) {
+                Trav (arg_node->node[3], new_info); /* print N_icm ND_FUN_DEC */
+            } else {
+                PrintFunctionHeader (arg_node, new_info);
             }
 
-            fprintf (outfile, "%s", arg_node->info.types->id);
+            fprintf (outfile, "\n");
+            Trav (arg_node->node[0], new_info); /* traverse function body */
 
-            if (arg_node->node[1] != NULL) {
-                fprintf (outfile, " = ");
-                Trav (arg_node->node[1], arg_info);
+            if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                Trav (FUNDEF_PRAGMA (arg_node), NULL);
+            }
+
+            if (print_separate) {
+                fclose (outfile);
+                function_counter += 1;
+            }
+        }
+    } else {
+        /*
+         *  print function declaration
+         */
+
+        if ((arg_node->node[0] == NULL)
+            || ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)
+                && (strcmp (arg_node->info.types->id, "main") != 0))) {
+            fprintf (outfile, "extern ");
+
+            if ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)) {
+                Trav (arg_node->node[3], new_info); /* print N_icm ND_FUN_DEC */
+            } else {
+                PrintFunctionHeader (arg_node, new_info);
             }
 
             fprintf (outfile, ";\n");
 
-            if (OBJDEF_PRAGMA (arg_node) != NULL) {
-                Trav (OBJDEF_PRAGMA (arg_node), arg_info);
+            if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                Trav (FUNDEF_PRAGMA (arg_node), NULL);
             }
         }
-
-        if (OBJDEF_NEXT (arg_node) != NULL) {
-            Trav (arg_node->node[0], arg_info); /* traverse next objdef */
-        }
-
-        DBUG_RETURN (arg_node);
     }
 
-    void PrintFunctionHeader (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintFunctionHeader");
+    FREE (new_info);
 
-        if (0 != arg_node->flag)
-            fprintf (outfile, "inline ");
+    if (arg_node->node[1] != NULL)
+        Trav (arg_node->node[1], arg_info); /* traverse next function */
 
-        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+    DBUG_RETURN (arg_node);
+}
 
-        if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+node *
+PrintPrf (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintPrf");
 
-        fprintf (outfile, "%s(", arg_node->info.types->id);
+    DBUG_PRINT ("PRINT", ("%s (%s)" P_FORMAT, mdb_nodetype[arg_node->nodetype],
+                          mdb_prf[arg_node->info.prf], arg_node));
 
-        if (arg_node->node[2] != NULL)
-            Trav (arg_node->node[2], arg_info); /* print args of function */
-
+    switch (arg_node->info.prf) {
+    case F_take:
+    case F_drop:
+    case F_psi:
+    case F_shape:
+    case F_reshape:
+    case F_cat:
+    case F_dim:
+    case F_rotate:
+    case F_not:
+    case F_ftoi:
+    case F_ftoi_A:
+    case F_ftod:
+    case F_ftod_A:
+    case F_itof:
+    case F_itof_A:
+    case F_itod:
+    case F_itod_A:
+    case F_dtoi:
+    case F_dtof:
+    case F_dtof_A:
+    case F_toi:
+    case F_toi_A:
+    case F_tof:
+    case F_tof_A:
+    case F_tod:
+    case F_tod_A:
+    case F_idx_psi:
+    case F_modarray:
+    case F_genarray:
+    case F_idx_modarray: {
+        /* primitive functions that are printed as function application */
+        fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
+        Trav (arg_node->node[0], arg_info);
+        fprintf (outfile, " )");
+        break;
+    }
+    default: {
+        /* primitive functions in infix notation */
+        fprintf (outfile, "(");
+        Trav (arg_node->node[0]->node[0], arg_info);
+        fprintf (outfile, " %s ", prf_string[arg_node->info.prf]);
+        if (NULL != arg_node->node[0]->node[1])
+            Trav (arg_node->node[0]->node[1]->node[0], arg_info);
         fprintf (outfile, ")");
-
-        DBUG_VOID_RETURN;
+        break;
+    }
     }
 
-    /*
-     * Remark for PrintFundef:
-     *
-     *  arg_info is used as flag :
-     *  arg_info==NULL : print function definitions (with body)
-     *  arg_info!=NULL : print function declarations (without body)
-     *
-     *  If C-code is to be generated, which means that an N_icm node already
-     *  hangs on node[3], additional extern declarations for function
-     *  definitions are printed.
-     */
+    DBUG_RETURN (arg_node);
+}
 
-    node *PrintFundef (node * arg_node, node * arg_info)
-    {
-        node *new_info;
+node *
+PrintStr (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintStr");
 
-        DBUG_ENTER ("PrintFundef");
+    fprintf (outfile, "\"%s\"", STR_STRING (arg_node));
 
-        DBUG_PRINT ("PRINT",
-                    ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
+    DBUG_RETURN (arg_node);
+}
 
-        new_info = MakeNode (N_info);
-        new_info->varno = arg_node->varno;
-        INFO_FUNDEF (new_info) = arg_node; /* needed for the introduction
-                                            * of PROFILE_... MACROS in the
-                                            * function body
-                                            */
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
-                      PrintMasks (arg_node, new_info););
+node *
+PrintId (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintId");
 
-        if (arg_info == NULL) {
-            /*
-             *  print function definition
-             */
+    DBUG_ASSERT ((N_id == arg_node->nodetype) || (N_str == arg_node->nodetype),
+                 "wrong arg_node->nodetype ");
 
-            if (arg_node->node[0] != NULL) {
-                if (print_separate) {
-                    outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
-
-                    fprintf (outfile, "#include \"header.h\"\n");
-                }
-
-                fprintf (outfile, "\n");
-
-                if ((NULL != arg_node->node[3])
-                    && (N_icm == arg_node->node[3]->nodetype)) {
-                    Trav (arg_node->node[3], new_info); /* print N_icm ND_FUN_DEC */
-                } else {
-                    PrintFunctionHeader (arg_node, new_info);
-                }
-
-                fprintf (outfile, "\n");
-                Trav (arg_node->node[0], new_info); /* traverse function body */
-
-                if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                    Trav (FUNDEF_PRAGMA (arg_node), NULL);
-                }
-
-                if (print_separate) {
-                    fclose (outfile);
-                    function_counter += 1;
-                }
-            }
-        } else {
-            /*
-             *  print function declaration
-             */
-
-            if ((arg_node->node[0] == NULL)
-                || ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)
-                    && (strcmp (arg_node->info.types->id, "main") != 0))) {
-                fprintf (outfile, "extern ");
-
-                if ((NULL != arg_node->node[3])
-                    && (N_icm == arg_node->node[3]->nodetype)) {
-                    Trav (arg_node->node[3], new_info); /* print N_icm ND_FUN_DEC */
-                } else {
-                    PrintFunctionHeader (arg_node, new_info);
-                }
-
-                fprintf (outfile, ";\n");
-
-                if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                    Trav (FUNDEF_PRAGMA (arg_node), NULL);
-                }
-            }
+    if (N_id == arg_node->nodetype) {
+        if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
+            fprintf (outfile, "%s:", ID_MOD (arg_node));
         }
 
-        FREE (new_info);
-
-        if (arg_node->node[1] != NULL)
-            Trav (arg_node->node[1], arg_info); /* traverse next function */
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintPrf (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintPrf");
-
-        DBUG_PRINT ("PRINT", ("%s (%s)" P_FORMAT, mdb_nodetype[arg_node->nodetype],
-                              mdb_prf[arg_node->info.prf], arg_node));
-
-        switch (arg_node->info.prf) {
-        case F_take:
-        case F_drop:
-        case F_psi:
-        case F_shape:
-        case F_reshape:
-        case F_cat:
-        case F_dim:
-        case F_rotate:
-        case F_not:
-        case F_ftoi:
-        case F_ftoi_A:
-        case F_ftod:
-        case F_ftod_A:
-        case F_itof:
-        case F_itof_A:
-        case F_itod:
-        case F_itod_A:
-        case F_dtoi:
-        case F_dtof:
-        case F_dtof_A:
-        case F_toi:
-        case F_toi_A:
-        case F_tof:
-        case F_tof_A:
-        case F_tod:
-        case F_tod_A:
-        case F_idx_psi:
-        case F_modarray:
-        case F_genarray:
-        case F_idx_modarray: {
-            /* primitive functions that are printed as function application */
-            fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
-            Trav (arg_node->node[0], arg_info);
-            fprintf (outfile, " )");
-            break;
-        }
-        default: {
-            /* primitive functions in infix notation */
-            fprintf (outfile, "(");
-            Trav (arg_node->node[0]->node[0], arg_info);
-            fprintf (outfile, " %s ", prf_string[arg_node->info.prf]);
-            if (NULL != arg_node->node[0]->node[1])
-                Trav (arg_node->node[0]->node[1]->node[0], arg_info);
-            fprintf (outfile, ")");
-            break;
-        }
-        }
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintStr (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintStr");
-
-        fprintf (outfile, "\"%s\"", STR_STRING (arg_node));
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintId (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintId");
-
-        DBUG_ASSERT ((N_id == arg_node->nodetype) || (N_str == arg_node->nodetype),
-                     "wrong arg_node->nodetype ");
-
-        if (N_id == arg_node->nodetype) {
-            if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
-                fprintf (outfile, "%s:", ID_MOD (arg_node));
-            }
-
-            if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
-                fprintf (outfile, "%s", arg_node->info.ids->id);
-            else
-                fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
-        } else if (N_str == arg_node->nodetype)
-            fprintf (outfile, "%s", arg_node->info.id);
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintNum (node * arg_node, node * arg_info)
-    {
-
-        DBUG_ENTER ("PrintNum");
-
-        fprintf (outfile, "%d", arg_node->info.cint);
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintChar (node * arg_node, node * arg_info)
-    {
-
-        DBUG_ENTER ("PrintChar");
-
-        if ((arg_node->info.cchar >= ' ') && (arg_node->info.cchar <= '~')
-            && (arg_node->info.cchar != '\'')) {
-            fprintf (outfile, "'%c'", arg_node->info.cchar);
-        } else {
-            fprintf (outfile, "'\\%o'", arg_node->info.cchar);
-        }
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintFloat (node * arg_node, node * arg_info)
-    {
-        char *tmp_string;
-
-        DBUG_ENTER ("PrintFloat");
-
-        tmp_string = Float2String (arg_node->info.cfloat);
-        fprintf (outfile, "%s", tmp_string);
-        free (tmp_string);
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintDouble (node * arg_node, node * arg_info)
-    {
-
-        char *tmp_string;
-
-        DBUG_ENTER ("PrintDouble");
-
-        tmp_string = Double2String (arg_node->info.cdbl);
-        fprintf (outfile, "%s", tmp_string);
-        free (tmp_string);
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintBool (node * arg_node, node * arg_info)
-    {
-
-        DBUG_ENTER ("PrintBool");
-
-        if (0 == arg_node->info.cint)
-            fprintf (outfile, "false");
+        if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
+            fprintf (outfile, "%s", arg_node->info.ids->id);
         else
-            fprintf (outfile, "true");
+            fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
+    } else if (N_str == arg_node->nodetype)
+        fprintf (outfile, "%s", arg_node->info.id);
 
-        DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintNum (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("PrintNum");
+
+    fprintf (outfile, "%d", arg_node->info.cint);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintChar (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("PrintChar");
+
+    if ((arg_node->info.cchar >= ' ') && (arg_node->info.cchar <= '~')
+        && (arg_node->info.cchar != '\'')) {
+        fprintf (outfile, "'%c'", arg_node->info.cchar);
+    } else {
+        fprintf (outfile, "'\\%o'", arg_node->info.cchar);
     }
 
-    node *PrintReturn (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintReturn");
+    DBUG_RETURN (arg_node);
+}
 
-        if ((arg_node->node[0] != NULL) && (!RETURN_INWITH (arg_node))) {
-            if ((INFO_FUNDEF (arg_info) != NULL)
-                && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
-                INDENT;
-                fprintf (outfile, "PROFILE_PRINT();\n");
-            }
-            fprintf (outfile, "return( ");
-            Trav (arg_node->node[0], arg_info);
-            fprintf (outfile, " );");
+node *
+PrintFloat (node *arg_node, node *arg_info)
+{
+    char *tmp_string;
+
+    DBUG_ENTER ("PrintFloat");
+
+    tmp_string = Float2String (arg_node->info.cfloat);
+    fprintf (outfile, "%s", tmp_string);
+    free (tmp_string);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintDouble (node *arg_node, node *arg_info)
+{
+
+    char *tmp_string;
+
+    DBUG_ENTER ("PrintDouble");
+
+    tmp_string = Double2String (arg_node->info.cdbl);
+    fprintf (outfile, "%s", tmp_string);
+    free (tmp_string);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintBool (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("PrintBool");
+
+    if (0 == arg_node->info.cint)
+        fprintf (outfile, "false");
+    else
+        fprintf (outfile, "true");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintReturn (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintReturn");
+
+    if ((arg_node->node[0] != NULL) && (!RETURN_INWITH (arg_node))) {
+        if ((INFO_FUNDEF (arg_info) != NULL)
+            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
+            INDENT;
+            fprintf (outfile, "PROFILE_PRINT();\n");
         }
-
-        if (RETURN_INWITH (arg_node)) {
-            arg_info->node[0] = arg_node;
-        }
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintAp (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintAp");
-
-        if (arg_node->info.fun_name.id_mod != NULL)
-            fprintf (outfile, "%s%s", arg_node->info.fun_name.id_mod, mod_name_con);
-        fprintf (outfile, "%s(", arg_node->info.fun_name.id);
-        if (arg_node->node[0])
-            Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, ")");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintCast (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintCast");
-
-        fprintf (outfile, "(: %s) ", Type2String (arg_node->info.types, 0));
+        fprintf (outfile, "return( ");
         Trav (arg_node->node[0], arg_info);
-
-        DBUG_RETURN (arg_node);
+        fprintf (outfile, " );");
     }
 
-    node *PrintExprs (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintExprs");
+    if (RETURN_INWITH (arg_node)) {
+        arg_info->node[0] = arg_node;
+    }
 
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintAp (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintAp");
+
+    if (arg_node->info.fun_name.id_mod != NULL)
+        fprintf (outfile, "%s%s", arg_node->info.fun_name.id_mod, mod_name_con);
+    fprintf (outfile, "%s(", arg_node->info.fun_name.id);
+    if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ")");
 
-        if (2 == arg_node->nnode) {
-            fprintf (outfile, ", ");
-            Trav (arg_node->node[1], arg_info);
-        }
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_RETURN (arg_node);
-    }
+node *
+PrintCast (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintCast");
 
-    node *PrintArg (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintArg");
+    fprintf (outfile, "(: %s) ", Type2String (arg_node->info.types, 0));
+    Trav (arg_node->node[0], arg_info);
 
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**Number %d -> ", arg_node->varno););
+    DBUG_RETURN (arg_node);
+}
 
-        fprintf (outfile, "%s",
-                 Type2String (arg_node->info.types, (arg_info == NULL) ? 0 : 1));
+node *
+PrintExprs (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintExprs");
 
-        if ((1 == show_refcnt) && (-1 != ARG_REFCNT (arg_node))) {
-            fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
-        }
+    Trav (arg_node->node[0], arg_info);
 
-        if (ARG_COLCHN (arg_node) && show_idx) {
-            Trav (ARG_COLCHN (arg_node), arg_info);
-        }
-
-        if (1 == arg_node->nnode) {
-            fprintf (outfile, ", ");
-            Trav (arg_node->node[0], arg_info);
-        }
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintVardec (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintVardec");
-
-        INDENT;
-
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", arg_node->varno););
-
-        fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
-        if (VARDEC_COLCHN (arg_node) && show_idx)
-            Trav (VARDEC_COLCHN (arg_node), arg_info);
-        fprintf (outfile, ";\n");
-        if (1 == arg_node->nnode)
-            Trav (arg_node->node[0], arg_info);
-        else
-            fprintf (outfile, "\n");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintDo (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintDo");
-
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - do body\n");
-                      PrintMasks (arg_node->node[1], arg_info););
-
-        fprintf (outfile, "do\n");
-        if (NULL != arg_node->node[1]) {
-            indent++;
-            Trav (arg_node->node[1], arg_info); /* traverse body of loop */
-            indent--;
-        }
-
-        DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                      fprintf (outfile, "**Used Variables (do-cnd) : %s\n", text);
-                      free (text););
-
-        INDENT;
-        fprintf (outfile, "while( ");
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, " );\n");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintEmpty (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintEmpty");
-
-        INDENT;
-        fprintf (outfile, "\t;\n");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintWhile (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintWhile");
-
-        DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                      fprintf (outfile, "**Used Variables (while-cnd) : %s\n", text);
-                      free (text););
-
-        fprintf (outfile, "while( ");
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, " )\n");
-
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - while body\n");
-                      PrintMasks (arg_node->node[1], arg_info););
-
-        Trav (arg_node->node[1], arg_info); /* traverse body of loop */
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintLeton (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintAddon");
-
-        switch (arg_node->nodetype) {
-        case N_addon:
-            fprintf (outfile, " %s += ", arg_node->info.ids->id);
-            break;
-        case N_subon:
-            fprintf (outfile, " %s -= ", arg_node->info.ids->id);
-            break;
-        case N_mulon:
-            fprintf (outfile, " %s *= ", arg_node->info.ids->id);
-            break;
-        case N_divon:
-            fprintf (outfile, " %s /= ", arg_node->info.ids->id);
-            break;
-        default:
-            Error ("wrong nodetype in PrintLeton", 1);
-            break;
-        }
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, ";");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintCond (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintCond");
-
-        fprintf (outfile, "if (");
-        indent++;
-
-        DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                      fprintf (outfile, "**Used Variables (Cond) : %s\n", text);
-                      free (text););
-
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, ")\n");
-
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - then\n");
-                      PrintMasks (arg_node->node[1], arg_info););
-
+    if (2 == arg_node->nnode) {
+        fprintf (outfile, ", ");
         Trav (arg_node->node[1], arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintArg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintArg");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**Number %d -> ", arg_node->varno););
+
+    fprintf (outfile, "%s",
+             Type2String (arg_node->info.types, (arg_info == NULL) ? 0 : 1));
+
+    if ((1 == show_refcnt) && (-1 != ARG_REFCNT (arg_node))) {
+        fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
+    }
+
+    if (ARG_COLCHN (arg_node) && show_idx) {
+        Trav (ARG_COLCHN (arg_node), arg_info);
+    }
+
+    if (1 == arg_node->nnode) {
+        fprintf (outfile, ", ");
+        Trav (arg_node->node[0], arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintVardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintVardec");
+
+    INDENT;
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", arg_node->varno););
+
+    fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
+    if (VARDEC_COLCHN (arg_node) && show_idx)
+        Trav (VARDEC_COLCHN (arg_node), arg_info);
+    fprintf (outfile, ";\n");
+    if (1 == arg_node->nnode)
+        Trav (arg_node->node[0], arg_info);
+    else
         fprintf (outfile, "\n");
-        indent--;
 
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - else\n");
-                      PrintMasks (arg_node->node[2], arg_info););
+    DBUG_RETURN (arg_node);
+}
 
-        INDENT;
-        fprintf (outfile, "else\n");
+node *
+PrintDo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintDo");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - do body\n");
+                  PrintMasks (arg_node->node[1], arg_info););
+
+    fprintf (outfile, "do\n");
+    if (NULL != arg_node->node[1]) {
         indent++;
-        Trav (arg_node->node[2], arg_info);
+        Trav (arg_node->node[1], arg_info); /* traverse body of loop */
         indent--;
-
-        DBUG_RETURN (arg_node);
     }
 
-    node *PrintWith (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintWith");
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  fprintf (outfile, "**Used Variables (do-cnd) : %s\n", text);
+                  free (text););
 
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - generator\n");
-                      PrintMasks (arg_node->node[0], arg_info););
-        fprintf (outfile, "with (");
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, ") ");
+    INDENT;
+    fprintf (outfile, "while( ");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, " );\n");
 
-        DBUG_EXECUTE ("MASK", char *text;
-                      text = PrintMask (arg_node->node[1]->mask[1], VARNO);
-                      fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
-                      free (text););
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - with body\n");
-                      PrintMasks (arg_node, arg_info););
-        Trav (arg_node->node[1], arg_info);
+node *
+PrintEmpty (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintEmpty");
 
-        DBUG_RETURN (arg_node);
+    INDENT;
+    fprintf (outfile, "\t;\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintWhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWhile");
+
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  fprintf (outfile, "**Used Variables (while-cnd) : %s\n", text);
+                  free (text););
+
+    fprintf (outfile, "while( ");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, " )\n");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - while body\n");
+                  PrintMasks (arg_node->node[1], arg_info););
+
+    Trav (arg_node->node[1], arg_info); /* traverse body of loop */
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintLeton (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintAddon");
+
+    switch (arg_node->nodetype) {
+    case N_addon:
+        fprintf (outfile, " %s += ", arg_node->info.ids->id);
+        break;
+    case N_subon:
+        fprintf (outfile, " %s -= ", arg_node->info.ids->id);
+        break;
+    case N_mulon:
+        fprintf (outfile, " %s *= ", arg_node->info.ids->id);
+        break;
+    case N_divon:
+        fprintf (outfile, " %s /= ", arg_node->info.ids->id);
+        break;
+    default:
+        Error ("wrong nodetype in PrintLeton", 1);
+        break;
     }
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ";");
 
-    node *PrintGenator (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintGenator");
+    DBUG_RETURN (arg_node);
+}
 
-        Trav (arg_node->node[0], arg_info);
-        if ((-1 == arg_node->info.ids->refcnt) || (0 == show_refcnt))
-            fprintf (outfile, " <= %s <= ", arg_node->info.ids->id);
-        else
-            fprintf (outfile, " <= %s:%d <= ", arg_node->info.ids->id,
-                     arg_node->info.ids->refcnt);
-        Trav (arg_node->node[1], arg_info);
+node *
+PrintCond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintCond");
 
-        DBUG_RETURN (arg_node);
-    }
+    fprintf (outfile, "if (");
+    indent++;
 
-    node *PrintGenarray (node * arg_node, node * arg_info)
-    {
-        node *ret_node;
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  fprintf (outfile, "**Used Variables (Cond) : %s\n", text);
+                  free (text););
 
-        DBUG_ENTER ("PrintGenarray");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ")\n");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - then\n");
+                  PrintMasks (arg_node->node[1], arg_info););
+
+    Trav (arg_node->node[1], arg_info);
+    fprintf (outfile, "\n");
+    indent--;
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - else\n");
+                  PrintMasks (arg_node->node[2], arg_info););
+
+    INDENT;
+    fprintf (outfile, "else\n");
+    indent++;
+    Trav (arg_node->node[2], arg_info);
+    indent--;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintWith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWith");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - generator\n");
+                  PrintMasks (arg_node->node[0], arg_info););
+    fprintf (outfile, "with (");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ") ");
+
+    DBUG_EXECUTE ("MASK", char *text;
+                  text = PrintMask (arg_node->node[1]->mask[1], VARNO);
+                  fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
+                  free (text););
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - with body\n");
+                  PrintMasks (arg_node, arg_info););
+    Trav (arg_node->node[1], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintGenator (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintGenator");
+
+    Trav (arg_node->node[0], arg_info);
+    if ((-1 == arg_node->info.ids->refcnt) || (0 == show_refcnt))
+        fprintf (outfile, " <= %s <= ", arg_node->info.ids->id);
+    else
+        fprintf (outfile, " <= %s:%d <= ", arg_node->info.ids->id,
+                 arg_node->info.ids->refcnt);
+    Trav (arg_node->node[1], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintGenarray (node *arg_node, node *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("PrintGenarray");
+
+    INDENT;
+
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)))) != N_return) {
+        fprintf (outfile, "\n");
+        Trav (GENARRAY_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
 
         INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)));
+    }
 
-        if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node))))
-            != N_return) {
-            fprintf (outfile, "\n");
-            Trav (GENARRAY_BODY (arg_node), arg_info);
-            ret_node = arg_info->node[0];
+    DBUG_ASSERT (ret_node != NULL, "genarray without return-statement");
 
-            INDENT;
-        } else {
-            ret_node = ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)));
-        }
+    fprintf (outfile, "genarray( ");
+    Trav (GENARRAY_ARRAY (arg_node), arg_info);
+    fprintf (outfile, ", ");
+    Trav (RETURN_EXPRS (ret_node), arg_info);
+    fprintf (outfile, ")");
 
-        DBUG_ASSERT (ret_node != NULL, "genarray without return-statement");
+    DBUG_RETURN (arg_node);
+}
 
-        fprintf (outfile, "genarray( ");
-        Trav (GENARRAY_ARRAY (arg_node), arg_info);
+node *
+PrintModarray (node *arg_node, node *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("PrintModarray");
+
+    INDENT;
+
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)))) != N_return) {
+        fprintf (outfile, "\n");
+        Trav (MODARRAY_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
+        INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)));
+    }
+
+    DBUG_ASSERT (ret_node != NULL, "modarray without return-statement");
+
+    fprintf (outfile, "modarray( ");
+    Trav (MODARRAY_ARRAY (arg_node), arg_info);
+    fprintf (outfile, ", %s, ", MODARRAY_ID (arg_node));
+    Trav (RETURN_EXPRS (ret_node), arg_info);
+    fprintf (outfile, ")");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintFoldfun (node *arg_node, node *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("PrintFold");
+
+    INDENT;
+
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)))) != N_return) {
+        fprintf (outfile, "\n");
+        Trav (FOLDFUN_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
+        INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)));
+    }
+
+    DBUG_ASSERT (ret_node != NULL, "foldfun without return-statement");
+
+    if (NULL != FOLDFUN_MOD (arg_node)) {
+        fprintf (outfile, "fold( %s%s%s, ", FOLDFUN_MOD (arg_node), mod_name_con,
+                 FOLDFUN_NAME (arg_node));
+    } else {
+        fprintf (outfile, "fold( %s, ", FOLDFUN_NAME (arg_node));
+    }
+
+    Trav (FOLDFUN_NEUTRAL (arg_node), arg_info);
+    fprintf (outfile, ", ");
+    Trav (RETURN_EXPRS (ret_node), arg_info);
+    fprintf (outfile, " )");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintFoldprf (node *arg_node, node *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("PrintFold");
+
+    INDENT;
+
+    if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)))) != N_return) {
+        fprintf (outfile, "\n");
+        Trav (FOLDPRF_BODY (arg_node), arg_info);
+        ret_node = arg_info->node[0];
+
+        INDENT;
+    } else {
+        ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)));
+    }
+
+    DBUG_ASSERT (ret_node != NULL, "foldprf without return-statement");
+
+    fprintf (outfile, "fold( %s, ", prf_string[FOLDPRF_PRF (arg_node)]);
+
+    if (FOLDPRF_NEUTRAL (arg_node) != NULL) {
+        Trav (FOLDPRF_NEUTRAL (arg_node), arg_info);
         fprintf (outfile, ", ");
-        Trav (RETURN_EXPRS (ret_node), arg_info);
-        fprintf (outfile, ")");
-
-        DBUG_RETURN (arg_node);
     }
 
-    node *PrintModarray (node * arg_node, node * arg_info)
-    {
-        node *ret_node;
+    Trav (RETURN_EXPRS (ret_node), arg_info);
+    fprintf (outfile, " )");
 
-        DBUG_ENTER ("PrintModarray");
+    DBUG_RETURN (arg_node);
+}
 
-        INDENT;
+node *
+PrintArray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintArray");
 
-        if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node))))
-            != N_return) {
-            fprintf (outfile, "\n");
-            Trav (MODARRAY_BODY (arg_node), arg_info);
-            ret_node = arg_info->node[0];
+    fprintf (outfile, "[ ");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, " ]");
 
-            INDENT;
-        } else {
-            ret_node = ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)));
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintDec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintDec");
+
+    fprintf (outfile, "--");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintInc (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintInc");
+
+    fprintf (outfile, "++");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintPost (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintPost");
+
+    PrintIds (arg_node->info.ids);
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ";");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintPre (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintPre");
+
+    Trav (arg_node->node[0], arg_info);
+    PrintIds (arg_node->info.ids);
+    fprintf (outfile, ";");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintVectInfo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintVectInfo");
+    if (show_idx) {
+        if (arg_node->info.use == VECT)
+            fprintf (outfile, ":VECT");
+        else {
+            fprintf (outfile, ":IDX(%s)", Type2String ((types *)arg_node->node[1], 0));
         }
-
-        DBUG_ASSERT (ret_node != NULL, "modarray without return-statement");
-
-        fprintf (outfile, "modarray( ");
-        Trav (MODARRAY_ARRAY (arg_node), arg_info);
-        fprintf (outfile, ", %s, ", MODARRAY_ID (arg_node));
-        Trav (RETURN_EXPRS (ret_node), arg_info);
-        fprintf (outfile, ")");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintFoldfun (node * arg_node, node * arg_info)
-    {
-        node *ret_node;
-
-        DBUG_ENTER ("PrintFold");
-
-        INDENT;
-
-        if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node))))
-            != N_return) {
-            fprintf (outfile, "\n");
-            Trav (FOLDFUN_BODY (arg_node), arg_info);
-            ret_node = arg_info->node[0];
-
-            INDENT;
-        } else {
-            ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)));
+        if (arg_node->node[0]) {
+            Trav (arg_node->node[0], arg_info);
         }
-
-        DBUG_ASSERT (ret_node != NULL, "foldfun without return-statement");
-
-        if (NULL != FOLDFUN_MOD (arg_node)) {
-            fprintf (outfile, "fold( %s%s%s, ", FOLDFUN_MOD (arg_node), mod_name_con,
-                     FOLDFUN_NAME (arg_node));
-        } else {
-            fprintf (outfile, "fold( %s, ", FOLDFUN_NAME (arg_node));
-        }
-
-        Trav (FOLDFUN_NEUTRAL (arg_node), arg_info);
-        fprintf (outfile, ", ");
-        Trav (RETURN_EXPRS (ret_node), arg_info);
-        fprintf (outfile, " )");
-
-        DBUG_RETURN (arg_node);
+        fprintf (outfile, " ");
     }
+    DBUG_RETURN (arg_node);
+}
 
-    node *PrintFoldprf (node * arg_node, node * arg_info)
-    {
-        node *ret_node;
+node *
+PrintIcm (node *arg_node, node *arg_info)
+{
+    int compiled_icm = 0;
+    DBUG_ENTER ("PrintIcm");
+    DBUG_PRINT ("PRINT", ("icm-node %s\n", arg_node->info.fun_name.id));
 
-        DBUG_ENTER ("PrintFold");
-
-        INDENT;
-
-        if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node))))
-            != N_return) {
-            fprintf (outfile, "\n");
-            Trav (FOLDPRF_BODY (arg_node), arg_info);
-            ret_node = arg_info->node[0];
-
-            INDENT;
-        } else {
-            ret_node = ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)));
-        }
-
-        DBUG_ASSERT (ret_node != NULL, "foldprf without return-statement");
-
-        fprintf (outfile, "fold( %s, ", prf_string[FOLDPRF_PRF (arg_node)]);
-
-        if (FOLDPRF_NEUTRAL (arg_node) != NULL) {
-            Trav (FOLDPRF_NEUTRAL (arg_node), arg_info);
-            fprintf (outfile, ", ");
-        }
-
-        Trav (RETURN_EXPRS (ret_node), arg_info);
-        fprintf (outfile, " )");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintArray (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintArray");
-
-        fprintf (outfile, "[ ");
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, " ]");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintDec (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintDec");
-
-        fprintf (outfile, "--");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintInc (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintInc");
-
-        fprintf (outfile, "++");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintPost (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintPost");
-
-        PrintIds (arg_node->info.ids);
-        Trav (arg_node->node[0], arg_info);
-        fprintf (outfile, ";");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintPre (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintPre");
-
-        Trav (arg_node->node[0], arg_info);
-        PrintIds (arg_node->info.ids);
-        fprintf (outfile, ";");
-
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintVectInfo (node * arg_node, node * arg_info)
-    {
-        DBUG_ENTER ("PrintVectInfo");
-        if (show_idx) {
-            if (arg_node->info.use == VECT)
-                fprintf (outfile, ":VECT");
-            else {
-                fprintf (outfile, ":IDX(%s)",
-                         Type2String ((types *)arg_node->node[1], 0));
-            }
-            if (arg_node->node[0]) {
-                Trav (arg_node->node[0], arg_info);
-            }
-            fprintf (outfile, " ");
-        }
-        DBUG_RETURN (arg_node);
-    }
-
-    node *PrintIcm (node * arg_node, node * arg_info)
-    {
-        int compiled_icm = 0;
-        DBUG_ENTER ("PrintIcm");
-        DBUG_PRINT ("PRINT", ("icm-node %s\n", arg_node->info.fun_name.id));
-
-        if (show_icm == 0)
+    if (show_icm == 0)
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (arg_node->info.fun_name.id, #prf) == 0) {                                \
@@ -1671,165 +1701,167 @@ PrintFileHeader ()
 #undef ICM_VAR
 #undef ICM_END
 #undef ICM_ALL
-            if (strcmp (ICM_NAME (arg_node), "NOOP") == 0)
-                compiled_icm = 1;
+        if (strcmp (ICM_NAME (arg_node), "NOOP") == 0)
+            compiled_icm = 1;
 
-        if ((show_icm == 1) || (compiled_icm == 0)) {
-            if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
-                && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
-                INDENT;
-                fprintf (outfile, "PROFILE_PRINT();\n");
-            }
-
+    if ((show_icm == 1) || (compiled_icm == 0)) {
+        if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
+            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
             INDENT;
-            fprintf (outfile, "%s(", ICM_NAME (arg_node));
-            if (NULL != arg_node->node[0])
-                Trav (arg_node->node[0], arg_info);
-            fprintf (outfile, ")");
+            fprintf (outfile, "PROFILE_PRINT();\n");
         }
 
-        if (NULL != arg_node->node[1]) {
-            if ((1 == show_icm) || (0 == compiled_icm)) {
-                if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
-                    fprintf (outfile, "\n");
-                    INDENT;
+        INDENT;
+        fprintf (outfile, "%s(", ICM_NAME (arg_node));
+        if (NULL != arg_node->node[0])
+            Trav (arg_node->node[0], arg_info);
+        fprintf (outfile, ")");
+    }
+
+    if (NULL != arg_node->node[1]) {
+        if ((1 == show_icm) || (0 == compiled_icm)) {
+            if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
+                fprintf (outfile, "\n");
+                INDENT;
+            } else {
+                fprintf (outfile, ", ");
+            }
+
+            Trav (arg_node->node[1], arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintPragma (node *arg_node, node *arg_info)
+{
+    int i, first;
+
+    DBUG_ENTER ("PrintPragma");
+
+    if (PRAGMA_LINKNAME (arg_node) != NULL) {
+        fprintf (outfile, "#pragma linkname \"%s\"\n", PRAGMA_LINKNAME (arg_node));
+    }
+
+    if (PRAGMA_LINKSIGN (arg_node) != NULL) {
+        fprintf (outfile, "#pragma linksign [%d", PRAGMA_LS (arg_node, 0));
+
+        for (i = 1; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+            fprintf (outfile, ", %d", PRAGMA_LS (arg_node, i));
+        }
+
+        fprintf (outfile, "]\n");
+    }
+
+    if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
+        fprintf (outfile, "#pragma refcounting [");
+        first = 1;
+
+        for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+            if (PRAGMA_RC (arg_node, i)) {
+                if (first) {
+                    fprintf (outfile, "%d", i);
+                    first = 0;
                 } else {
-                    fprintf (outfile, ", ");
+                    fprintf (outfile, ", %d", i);
                 }
-
-                Trav (arg_node->node[1], arg_info);
             }
         }
 
-        DBUG_RETURN (arg_node);
+        fprintf (outfile, "]\n");
     }
 
-    node *PrintPragma (node * arg_node, node * arg_info)
-    {
-        int i, first;
+    if (PRAGMA_READONLY (arg_node) != NULL) {
+        fprintf (outfile, "#pragma readonly [");
+        first = 1;
 
-        DBUG_ENTER ("PrintPragma");
-
-        if (PRAGMA_LINKNAME (arg_node) != NULL) {
-            fprintf (outfile, "#pragma linkname \"%s\"\n", PRAGMA_LINKNAME (arg_node));
-        }
-
-        if (PRAGMA_LINKSIGN (arg_node) != NULL) {
-            fprintf (outfile, "#pragma linksign [%d", PRAGMA_LS (arg_node, 0));
-
-            for (i = 1; i < PRAGMA_NUMPARAMS (arg_node); i++) {
-                fprintf (outfile, ", %d", PRAGMA_LS (arg_node, i));
-            }
-
-            fprintf (outfile, "]\n");
-        }
-
-        if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
-            fprintf (outfile, "#pragma refcounting [");
-            first = 1;
-
-            for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
-                if (PRAGMA_RC (arg_node, i)) {
-                    if (first) {
-                        fprintf (outfile, "%d", i);
-                        first = 0;
-                    } else {
-                        fprintf (outfile, ", %d", i);
-                    }
+        for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+            if (PRAGMA_RO (arg_node, i)) {
+                if (first) {
+                    fprintf (outfile, "%d", i);
+                    first = 0;
+                } else {
+                    fprintf (outfile, ", %d", i);
                 }
             }
-
-            fprintf (outfile, "]\n");
         }
 
-        if (PRAGMA_READONLY (arg_node) != NULL) {
-            fprintf (outfile, "#pragma readonly [");
-            first = 1;
+        fprintf (outfile, "]\n");
+    }
 
-            for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
-                if (PRAGMA_RO (arg_node, i)) {
-                    if (first) {
-                        fprintf (outfile, "%d", i);
-                        first = 0;
-                    } else {
-                        fprintf (outfile, ", %d", i);
-                    }
-                }
-            }
-
-            fprintf (outfile, "]\n");
-        }
-
-        if (PRAGMA_EFFECT (arg_node) != NULL) {
-            fprintf (outfile, "#pragma effect ");
-            PrintIds (PRAGMA_EFFECT (arg_node));
-            fprintf (outfile, "\n");
-        }
-
-        if (PRAGMA_TOUCH (arg_node) != NULL) {
-            fprintf (outfile, "#pragma touch ");
-            PrintIds (PRAGMA_TOUCH (arg_node));
-            fprintf (outfile, "\n");
-        }
-
-        if (PRAGMA_COPYFUN (arg_node) != NULL) {
-            fprintf (outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN (arg_node));
-        }
-
-        if (PRAGMA_FREEFUN (arg_node) != NULL) {
-            fprintf (outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN (arg_node));
-        }
-
-        if (PRAGMA_INITFUN (arg_node) != NULL) {
-            fprintf (outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN (arg_node));
-        }
-
+    if (PRAGMA_EFFECT (arg_node) != NULL) {
+        fprintf (outfile, "#pragma effect ");
+        PrintIds (PRAGMA_EFFECT (arg_node));
         fprintf (outfile, "\n");
-
-        DBUG_RETURN (arg_node);
     }
 
-    node *Print (node * arg_node)
-    {
-        DBUG_ENTER ("Print");
+    if (PRAGMA_TOUCH (arg_node) != NULL) {
+        fprintf (outfile, "#pragma touch ");
+        PrintIds (PRAGMA_TOUCH (arg_node));
+        fprintf (outfile, "\n");
+    }
 
-        act_tab = print_tab;
-        mod_name_con = mod_name_con_1;
-        indent = 0;
+    if (PRAGMA_COPYFUN (arg_node) != NULL) {
+        fprintf (outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN (arg_node));
+    }
 
-        if ((linkstyle > 1) && (!break_compilation) && (!Ccodeonly)) {
-            print_separate = 1;
-            arg_node = Trav (arg_node, NULL);
+    if (PRAGMA_FREEFUN (arg_node) != NULL) {
+        fprintf (outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN (arg_node));
+    }
 
-            /*
-             * If a full compilation is performed, the object of the compilation
-             * is a module/class implementation and the link style is 1 or 2,
-             * then all functions are printed into separate files into the
-             * tmp directory tmp_dirname.
-             * In this case no C-file is generated in the current directory.
-             */
+    if (PRAGMA_INITFUN (arg_node) != NULL) {
+        fprintf (outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN (arg_node));
+    }
+
+    fprintf (outfile, "\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+Print (node *arg_node)
+{
+    DBUG_ENTER ("Print");
+
+    act_tab = print_tab;
+    mod_name_con = mod_name_con_1;
+    indent = 0;
+
+    if ((linkstyle > 1) && (!break_compilation) && (!Ccodeonly)) {
+        print_separate = 1;
+        arg_node = Trav (arg_node, NULL);
+
+        /*
+         * If a full compilation is performed, the object of the compilation
+         * is a module/class implementation and the link style is 1 or 2,
+         * then all functions are printed into separate files into the
+         * tmp directory tmp_dirname.
+         * In this case no C-file is generated in the current directory.
+         */
+    } else {
+        print_separate = 0;
+
+        if (break_compilation) {
+            outfile = stdout;
+            fprintf (outfile, "\n-----------------------------------------------\n");
         } else {
-            print_separate = 0;
-
-            if (break_compilation) {
-                outfile = stdout;
-                fprintf (outfile, "\n-----------------------------------------------\n");
-            } else {
-                outfile = WriteOpen ("%s%s", targetdir, cfilename);
-                NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
-            }
-
-            PrintFileHeader ();
-            PFprintInitGlobals ();
-
-            arg_node = Trav (arg_node, NULL);
-
-            if (outfile == stdout) {
-                fprintf (outfile, "\n------------------------------------------------\n");
-            } else {
-                fclose (outfile);
-            }
+            outfile = WriteOpen ("%s%s", targetdir, cfilename);
+            NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
         }
 
-        DBUG_RETURN (arg_node);
+        PrintFileHeader ();
+        PFprintInitGlobals ();
+
+        arg_node = Trav (arg_node, NULL);
+
+        if (outfile == stdout) {
+            fprintf (outfile, "\n------------------------------------------------\n");
+        } else {
+            fclose (outfile);
+        }
     }
+
+    DBUG_RETURN (arg_node);
+}
