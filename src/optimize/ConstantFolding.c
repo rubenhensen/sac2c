@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1996/02/09 17:34:07  asi
+ * Revision 1.40  1996/02/12 16:08:56  asi
+ * argument res_type added to macro SHAPE_2_ARRAY
+ *
+ * Revision 1.39  1996/02/09  17:34:07  asi
  * Bug fixed in function IsConst
  *
  * Revision 1.38  1996/01/17  14:21:59  asi
@@ -1444,7 +1447,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types);
+            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types, res_type);
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             FreeTree (arg_node);
             arg_node = tmp;
