@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/03/15 18:40:35  asi
+ * Revision 1.31  1995/04/06 11:38:26  asi
+ * MAX_MASK set to 6
+ *
+ * Revision 1.30  1995/03/15  18:40:35  asi
  * added refcnt to struct nchain
  *
  * Revision 1.29  1995/03/14  14:12:42  asi
@@ -186,7 +189,7 @@ typedef enum {
 
 #undef PRF_IF
 
-#define MAX_MASK 5
+#define MAX_MASK 6
 
 typedef struct NODE {
     nodetype nodetype;
