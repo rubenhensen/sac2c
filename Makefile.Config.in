@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.12  2004/07/03 15:20:20  sah
+# added dummy XSLTENGINE for old ast mode
+#
 # Revision 1.11  2004/07/03 15:09:35  sah
 # added the new node representation into the source code.
 # the new ast can be enabled by make newast int the
@@ -75,6 +78,8 @@ ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
   CCDEPS_FLAGS := $(CCDEPS_FLAGS) -DNEW_AST
   CCPROD_FLAGS := $(CCPROD_FLAGS) -DNEW_AST
   XSLTENGINE := sabcmd
+else
+  XSLTENGINE := true
 endif
 
 MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
