@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.157  2005/01/07 16:47:26  cg
+# added linking of ctinfo.o
+#
 # Revision 3.156  2004/12/16 14:36:16  ktr
 # added src/refcount/inplacecomp.o
 #
@@ -91,7 +94,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
         src/global/options.o src/global/NameTuplesUtils.o\
-        src/global/filemgr.o
+        src/global/filemgr.o src/global/ctinfo.o
 
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
