@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/31 15:35:52  dkr
+ * some more CAT?? macros added
+ *
  * Revision 3.5  2002/07/23 16:14:13  dkr
  * more CAT? macros added
  *
@@ -162,6 +165,27 @@
 
 #define CAT9(x, y) xCAT9 (x, y)
 #define xCAT9(x, y) x##y
+
+#define CAT10(x, y) xCAT10 (x, y)
+#define xCAT10(x, y) x##y
+
+#define CAT11(x, y) xCAT11 (x, y)
+#define xCAT11(x, y) x##y
+
+#define CAT12(x, y) xCAT12 (x, y)
+#define xCAT12(x, y) x##y
+
+#define CAT13(x, y) xCAT13 (x, y)
+#define xCAT13(x, y) x##y
+
+#define CAT14(x, y) xCAT14 (x, y)
+#define xCAT14(x, y) x##y
+
+#define CAT15(x, y) xCAT15 (x, y)
+#define xCAT15(x, y) x##y
+
+#define CAT16(x, y) xCAT16 (x, y)
+#define xCAT16(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (##a##)
