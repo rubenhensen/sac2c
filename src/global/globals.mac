@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/11/24 22:52:37  cg
+ * *** empty log message ***
+ *
  * Revision 1.12  2004/11/24 16:00:09  cg
  * some renamings.
  *
@@ -75,6 +78,12 @@
     GLOBALtype (type) GLOBALname (name) GLOBALinit (init) GLOBALdelim
 
 /*
+ * Syntax tree root
+ */
+
+GLOBAL (node *, syntax_tree, NULL)
+
+/*
  *  Version control
  */
 
@@ -107,22 +116,22 @@ GLOBAL (char *, puresacfilename, NULL)
  * sacfilename without path specification
  */
 
-GLOBAL (char *, outfilename, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, outfilename, NULL)
 /*
  * name of executable
  */
 
-GLOBAL (char *, modulename, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, modulename, NULL)
 /*
  * name of module/class which is compiled
  */
 
-GLOBAL (char *, cfilename, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, cfilename, NULL)
 /*
  * name of C source code file
  */
 
-GLOBAL (char *, targetdir, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, targetdir, NULL)
 /*
  * name of C source code file
  */
@@ -740,12 +749,6 @@ GLOBAL (configuration_t, config, config_init)
  * This global variable permanently stores the desired configuration
  * which is read from the sac2crc file.
  */
-
-/*
- * Syntax tree root
- */
-
-GLOBAL (node *, syntax_tree, NULL)
 
 #undef GLOBALtype
 #undef GLOBALname
