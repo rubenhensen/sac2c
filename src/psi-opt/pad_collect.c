@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.11  2003/11/18 17:49:13  dkr
+ * no changes done
+ *
  * Revision 3.10  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -640,7 +643,7 @@ APClet (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCwithop(node *arg_node, node *arg_info)
+ *   node *APCwithop( node *arg_node, node *arg_info)
  *
  * description:
  *   marks array as unsupported, if modarray-withloop has non-scalar code-result
@@ -660,7 +663,6 @@ APCwithop (node *arg_node, node *arg_info)
     DBUG_PRINT ("APC", ("withop-node detected"));
 
     switch (NWITHOP_TYPE (arg_node)) {
-
     case WO_genarray:
         DBUG_PRINT ("APC", (" genarray-loop"));
         if (INFO_APC_UNSUPPORTED (arg_info)) {
@@ -677,7 +679,6 @@ APCwithop (node *arg_node, node *arg_info)
     case WO_modarray:
         DBUG_PRINT ("APC", (" modarray-loop"));
         if (INFO_APC_UNSUPPORTED (arg_info)) {
-
             arg_info = AddUnsupported (arg_info, ID_TYPE (NWITHOP_ARRAY (arg_node)));
         }
         break;
