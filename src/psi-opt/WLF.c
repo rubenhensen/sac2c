@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 14:09:32  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.9  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -398,7 +401,7 @@ FreeRen (void)
     while (renaming) {
         ren = renaming;
         renaming = renaming->next;
-        FREE (ren);
+        ren = Free (ren);
     }
 
     DBUG_RETURN (renaming);
@@ -529,7 +532,7 @@ FreeCC (code_constr_type *cc)
     while (cc) {
         tmpcc = cc;
         cc = cc->next;
-        FREE (tmpcc);
+        tmpcc = Free (tmpcc);
     }
 
     DBUG_VOID_RETURN;
@@ -927,7 +930,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
         tmpig = tmpig->next;
     }
 
-    FREE (help);
+    help = Free (help);
     FreeInternGenChain (substig);
 
     DBUG_RETURN (rootig);
@@ -1283,7 +1286,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
             }
         }
 
-    FREE (found);
+    found = Free (found);
 
     DBUG_RETURN (subst_ig);
 }
@@ -1944,7 +1947,7 @@ WLFid (node *arg_node, node *arg_info)
                               arg_info, 1);
             }
             /* replace old name now. */
-            FREE (ID_NAME (arg_node));
+            ID_NAME (arg_node) = Free (ID_NAME (arg_node));
             ID_NAME (arg_node) = new_name;
             ID_VARDEC (arg_node) = ren->vardec;
         }
@@ -2118,8 +2121,8 @@ WLFNwith (node *arg_node, node *arg_info)
                                 NODE_LINE (arg_node)));
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-            FREE (intersect_grids_ot);
-            FREE (intersect_grids_os);
+            intersect_grids_ot = Free (intersect_grids_ot);
+            intersect_grids_os = Free (intersect_grids_os);
 
             /* all codes have been traversed. Now append new_codes to WL and
                exchange old generators with all_new_ig. */
@@ -2161,7 +2164,7 @@ WLFNwith (node *arg_node, node *arg_info)
         arg_info = INFO_WLI_NEXT (arg_info);
         INFO_DEF = tmpn->mask[0];
         INFO_USE = tmpn->mask[1];
-        FREE (tmpn);
+        tmpn = FreeTree (tmpn);
         break;
 
     case wlfm_replace:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/05/17 14:09:32  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.5  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -243,7 +246,7 @@ FreeRen (void)
     while (renaming) {
         ren = renaming;
         renaming = renaming->next;
-        FREE (ren);
+        ren = Free (ren);
     }
 
     DBUG_RETURN (renaming);
@@ -373,7 +376,7 @@ FreeCC (code_constr_type *cc)
     while (cc) {
         tmpcc = cc;
         cc = cc->next;
-        FREE (tmpcc);
+        tmpcc = Free (tmpcc);
     }
 
     DBUG_VOID_RETURN;
@@ -772,7 +775,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
         tmpig = tmpig->next;
     }
 
-    FREE (help);
+    help = Free (help);
     SSAFreeInternGenChain (substig);
 
     DBUG_RETURN (rootig);
@@ -1128,7 +1131,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
             }
         }
 
-    FREE (found);
+    found = Free (found);
 
     DBUG_RETURN (subst_ig);
 }
@@ -1813,7 +1816,7 @@ SSAWLFid (node *arg_node, node *arg_info)
                      ID_TYPE(arg_node), arg_info, 1);
       }
       /* replace old name now. */
-      FREE(ID_NAME(arg_node));
+      ID_NAME(arg_node) = Free(ID_NAME(arg_node));
       ID_NAME(arg_node) = new_name;
       ID_VARDEC(arg_node) = ren->vardec;
     }
@@ -1989,8 +1992,8 @@ SSAWLFNwith (node *arg_node, node *arg_info)
                                 NODE_LINE (arg_node)));
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-            FREE (intersect_grids_ot);
-            FREE (intersect_grids_os);
+            intersect_grids_ot = Free (intersect_grids_ot);
+            intersect_grids_os = Free (intersect_grids_os);
 
             /* all codes have been traversed. Now append new_codes to WL and
                exchange old generators with all_new_ig. */
@@ -2030,7 +2033,7 @@ SSAWLFNwith (node *arg_node, node *arg_info)
         /* restore arg_info */
         tmpn = arg_info;
         arg_info = INFO_WLI_NEXT (arg_info);
-        FREE (tmpn);
+        tmpn = FreeTree (tmpn);
         break;
 
     case wlfm_replace:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/17 14:09:32  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.7  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -307,9 +310,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     }
 
     if (!ok) {
-        FREE (iinfo);
+        iinfo = Free (iinfo);
     }
-    FREE (valid_permutation);
+    valid_permutation = Free (valid_permutation);
 
     DBUG_RETURN (iinfo);
 }
@@ -566,9 +569,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     cf_node
                       = FoldPrfScalars (PRF_PRF (prfn), args, type, 2 == iinfo->arg_no);
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    FREE (type);
-                    FREE (args[0]); /* *cf_node == *args[0] */
-                    FREE (args[1]);
+                    type = FreeOneTypes (type);
+                    args[0] = FreeTree (args[0]); /* *cf_node == *args[0] */
+                    args[1] = FreeTree (args[1]);
                 }
             }
         } /* this Id is valid. */
@@ -608,9 +611,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     cf_node
                       = FoldPrfScalars (PRF_PRF (prfn), args, type, 2 == iinfo->arg_no);
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    FREE (type);
-                    FREE (args[0]); /* *cf_node == *args[0] */
-                    FREE (args[1]);
+                    type = FreeOneTypes (type);
+                    args[0] = FreeTree (args[0]); /* *cf_node == *args[0] */
+                    args[1] = FreeTree (args[1]);
                 } else {
                     iinfo->const_arg[i] = val;
                 }
@@ -818,7 +821,7 @@ WLIap (node *arg_node, node *arg_info)
 
         wli_phase = old_wli_phase;
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1042,7 +1045,7 @@ WLINwith (node *arg_node, node *arg_info)
     INFO_DEF = tmpn->mask[0];
     INFO_USE = tmpn->mask[1];
     INFO_VARNO (arg_info) = tmpn->varno;
-    FREE (tmpn);
+    tmpn = FreeTree (tmpn);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/05/17 14:09:32  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.5  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -234,9 +237,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     }
 
     if (!ok) {
-        FREE (iinfo);
+        iinfo = Free (iinfo);
     }
-    FREE (valid_permutation);
+    valid_permutation = Free (valid_permutation);
 
     DBUG_RETURN (iinfo);
 }
@@ -492,9 +495,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    FREE (args[0]);
-                    FREE (args[1]);
-                    FREE (cf_node);
+                    args[0] = FreeTree (args[0]);
+                    args[1] = FreeTree (args[1]);
+                    cf_node = FreeTree (cf_node);
                 }
             }
         } /* this Id is valid. */
@@ -535,9 +538,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    FREE (args[0]);
-                    FREE (args[1]);
-                    FREE (cf_node);
+                    args[0] = Free (args[0]);
+                    args[1] = Free (args[1]);
+                    cf_node = Free (cf_node);
                 } else {
                     iinfo->const_arg[i] = val;
                 }
@@ -669,7 +672,7 @@ SSAWLIap (node *arg_node, node *arg_info)
 
         act_tab = tmp_tab;
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -875,7 +878,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
     /* restore arg_info */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
-    FREE (tmpn);
+    tmpn = FreeTree (tmpn);
 
     DBUG_RETURN (arg_node);
 }

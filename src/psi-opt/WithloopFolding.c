@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/17 14:09:32  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.7  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -669,8 +672,8 @@ NormalizeInternGen (intern_gen *ig)
 
         /* if both vectors are 1 this is equivalent to no grid. */
         if (!error && is_1) {
-            FREE (ig->step);
-            FREE (ig->width);
+            ig->step = Free (ig->step);
+            ig->width = Free (ig->width);
         }
     }
 
@@ -865,7 +868,7 @@ InternGen2Tree (node *wln, intern_gen *ig)
 
     NWITH_PARTS (wln) = no_parts;
 
-    FREE (withidn);
+    withidn = FreeTree (withidn);
     FreeOneTypes (type);
 
     DBUG_RETURN (wln);
@@ -890,14 +893,14 @@ FreeInternGen (intern_gen *tmp)
 
     DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
 
-    Free (tmp->l);
-    Free (tmp->u);
-    Free (tmp->step);
-    Free (tmp->width);
+    tmp->l = Free (tmp->l);
+    tmp->u = Free (tmp->u);
+    tmp->step = Free (tmp->step);
+    tmp->width = Free (tmp->width);
 
-    Free (tmp);
+    tmp = Free (tmp);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (tmp);
 }
 
 /******************************************************************************

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/05/17 14:09:32  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.5  2001/05/17 13:29:29  cg
  * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
  * converted to functions.
@@ -380,8 +383,8 @@ SSANormalizeInternGen (intern_gen *ig)
 
         /* if both vectors are 1 this is equivalent to no grid. */
         if (!error && is_1) {
-            FREE (ig->step);
-            FREE (ig->width);
+            ig->step = Free (ig->step);
+            ig->width = Free (ig->width);
         }
     }
 
@@ -601,14 +604,14 @@ SSAFreeInternGen (intern_gen *tmp)
 
     DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
 
-    Free (tmp->l);
-    Free (tmp->u);
-    Free (tmp->step);
-    Free (tmp->width);
+    tmp->l = Free (tmp->l);
+    tmp->u = Free (tmp->u);
+    tmp->step = Free (tmp->step);
+    tmp->width = Free (tmp->width);
 
-    Free (tmp);
+    tmp = Free (tmp);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (tmp);
 }
 
 /******************************************************************************
