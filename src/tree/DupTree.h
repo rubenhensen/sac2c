@@ -1,11 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.5  2001/02/02 09:23:13  dkr
+ * Revision 3.6  2001/02/06 01:46:16  dkr
  * no changes done
- *
- * Revision 3.4  2001/01/10 13:37:35  dkr
- * nothing changed
  *
  * Revision 3.3  2001/01/09 17:26:31  dkr
  * N_WLstriVar renamed into N_WLstrideVar
@@ -53,51 +50,6 @@
  *
  * Revision 1.8  2000/03/15 12:58:46  dkr
  * macro DUPVECT added
- *
- * Revision 1.7  2000/03/02 13:06:30  jhs
- * Added DupSt and DupMt.
- *
- * Revision 1.6  2000/02/17 16:18:37  cg
- * Function DuplicateTypes() moved from typecheck.c.
- * New function DupTypes() added.
- *
- * Revision 1.5  2000/02/03 17:30:52  dkr
- * DupTreeLUT and DupNodeLUT added
- *
- * Revision 1.4  2000/01/31 13:28:52  dkr
- * Some Functions renamed or specialized
- *
- * Revision 1.3  2000/01/26 23:26:12  dkr
- * DupTreePre() and DupTreePost() added.
- * Some code brushing done.
- *
- * Revision 1.2  2000/01/26 17:27:53  dkr
- * type of traverse-function-table changed.
- *
- * Revision 1.1  2000/01/21 11:16:27  dkr
- * Initial revision
- *
- * Revision 2.6  1999/09/01 17:11:01  jhs
- * Fixed Duplicating of masks in DupAssign.
- *
- * Revision 2.5  1999/07/07 15:04:25  sbs
- * DupVinfo added; it implicitly generates consistent VINFO_DOLLAR
- * pointers!!!
- *
- * Revision 2.4  1999/04/13 14:01:48  cg
- * added function DupBlock for duplication of N_block nodes.
- *
- * Revision 2.3  1999/03/17 16:16:31  bs
- * Macro DUP(s,d) modified. Now s->counter will also be duplicated.
- *
- * Revision 2.2  1999/02/25 10:58:18  bs
- * DupArray added
- *
- * Revision 2.1  1999/02/23 12:41:18  sacbase
- * new release made
- *
- * Revision 1.34  1998/08/07 14:37:06  dkr
- * DupWLsegVar added
  *
  * [ ... ]
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/06 01:46:34  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:01:22  sacbase
  * new release made
  *
@@ -34,7 +37,6 @@
  *
  * Revision 1.1  1995/03/10  17:26:51  sbs
  * Initial revision
- *
  *
  */
 
@@ -70,6 +72,7 @@
             sep = 1;                                                                     \
         }                                                                                \
     }
+
 #define ICM_VARINT(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
