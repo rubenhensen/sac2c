@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2002/08/02 20:49:44  dkr
+ * - ..__DIM.. icms added
+ * - support for descriptors with dynamic dimension added
+ *
  * Revision 1.34  2002/07/31 16:36:05  dkr
  * - tags reorganized: HID/NHD are seperate classes now
  * - support for arrays of hidden added
@@ -548,7 +552,8 @@ DupExprs_AddReadIcms (node *exprs)
 /******************************************************************************
  *
  * Function:
- *   node *MakeAllocDescIcm( char *name, types *type, int rc, node *assigns)
+ *   node *MakeAllocDescIcm( char *name, types *type, int rc,
+ *                           node *assigns)
  *
  * Description:
  *   Builds a ND_ALLOC__DESC( name) icm if needed.
@@ -556,14 +561,25 @@ DupExprs_AddReadIcms (node *exprs)
  ******************************************************************************/
 
 static node *
-MakeAllocDescIcm (char *name, types *type, int rc, node *assigns)
+MakeAllocDescIcm (char *name, types *type, int rc, int line, node *assigns)
 {
     DBUG_ENTER ("MakeAllocDescIcm");
 
     DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
 
     if (RC_IS_ACTIVE (rc)) {
-        assigns = MakeAssignIcm1 ("ND_ALLOC__DESC", MakeId_Copy_NT (name, type), assigns);
+        int dim = GetDim (type);
+
+        if (dim < 0) {
+#if 0
+      DBUG_ASSERT( (0), "array with unknown shape/dimension found!");
+#else
+            WARN (line, ("Array with unknown shape/dimension found"));
+#endif
+        }
+
+        assigns = MakeAssignIcm2 ("ND_ALLOC__DESC", MakeId_Copy_NT (name, type),
+                                  MakeNum (dim), assigns);
     }
 
     DBUG_RETURN (assigns);
@@ -761,7 +777,8 @@ Ids2DecRcIcms (ids *ids_chain, node *assigns)
  *
  * Function:
  *   node *MakeAllocIcm( char *name, types *type, int rc,
- *                       node *set_shape_icm, node *pragma, node *assign)
+ *                       node *get_dim, node *set_shape_icm,
+ *                       node *pragma, node *assign)
  *
  * Description:
  *   Builds a ND_ALLOC icm.
@@ -770,12 +787,13 @@ Ids2DecRcIcms (ids *ids_chain, node *assigns)
  ******************************************************************************/
 
 static node *
-MakeAllocIcm (char *name, types *type, int rc, node *set_shape_icm, node *pragma,
-              node *assigns)
+MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_icm,
+              node *pragma, node *assigns)
 {
     DBUG_ENTER ("MakeAllocIcm");
 
     DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+    DBUG_ASSERT ((get_dim != NULL), "no dimension found!");
     DBUG_ASSERT (((set_shape_icm != NULL) && (NODE_TYPE (set_shape_icm) == N_icm)),
                  "no N_icm node found!");
 
@@ -783,15 +801,16 @@ MakeAllocIcm (char *name, types *type, int rc, node *set_shape_icm, node *pragma
         if (pragma == NULL) {
 #if 1
             assigns
-              = MakeAssignIcm2 ("ND_ALLOC_BEGIN", MakeId_Copy_NT (name, type),
-                                MakeNum (rc),
+              = MakeAssignIcm3 ("ND_ALLOC_BEGIN", MakeId_Copy_NT (name, type),
+                                MakeNum (rc), get_dim,
                                 MakeAssign (set_shape_icm,
-                                            MakeAssignIcm2 ("ND_ALLOC_END",
+                                            MakeAssignIcm3 ("ND_ALLOC_END",
                                                             MakeId_Copy_NT (name, type),
-                                                            MakeNum (rc), assigns)));
+                                                            MakeNum (rc),
+                                                            DupTree (get_dim), assigns)));
 #else
             assigns = MakeAssignIcm3 ("ND_ALLOC", MakeId_Copy_NT (name, type),
-                                      MakeNum (rc), set_shape_icm, assigns);
+                                      MakeNum (rc), get_dim, set_shape_icm, assigns);
 #endif
         } else {
             assigns
@@ -811,7 +830,8 @@ MakeAllocIcm (char *name, types *type, int rc, node *set_shape_icm, node *pragma
  *
  * Function:
  *   node *MakeAllocIcm_IncRc( char *name, types *type, int rc,
- *                             node *set_shape_icm, node *pragma, node *assigns)
+ *                             node *get_dim, node *set_shape_icm,
+ *                             node *pragma, node *assigns)
  *
  * Description:
  *   Builds a ND_ALLOC and a ND_INC_RC icm.
@@ -822,8 +842,8 @@ MakeAllocIcm (char *name, types *type, int rc, node *set_shape_icm, node *pragma
  ******************************************************************************/
 
 static node *
-MakeAllocIcm_IncRc (char *name, types *type, int rc, node *set_shape_icm, node *pragma,
-                    node *assigns)
+MakeAllocIcm_IncRc (char *name, types *type, int rc, node *get_dim, node *set_shape_icm,
+                    node *pragma, node *assigns)
 {
     node *new_assigns;
 
@@ -831,7 +851,7 @@ MakeAllocIcm_IncRc (char *name, types *type, int rc, node *set_shape_icm, node *
 
     DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
 
-    new_assigns = MakeAllocIcm (name, type, 0, set_shape_icm, pragma, NULL);
+    new_assigns = MakeAllocIcm (name, type, 0, get_dim, set_shape_icm, pragma, NULL);
 
     if (new_assigns != NULL) {
         DBUG_ASSERT ((RC_IS_VITAL (rc)), "INC_RC(rc) with (rc <= 0) found!");
@@ -847,7 +867,8 @@ MakeAllocIcm_IncRc (char *name, types *type, int rc, node *set_shape_icm, node *
  *
  * Function:
  *   node *MakeAllocIcm_CheckReuse( char *name, types *type, int rc,
- *                                  node *set_shape_icm, node *pragma,
+ *                                  node *get_dim, node *set_shape_icm,
+ *                                  node *pragma,
  *                                  node *reuse_id1, node *reuse_id2,
  *                                  node *assigns)
  *
@@ -860,8 +881,9 @@ MakeAllocIcm_IncRc (char *name, types *type, int rc, node *set_shape_icm, node *
  ******************************************************************************/
 
 static node *
-MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
-                         node *pragma, node *reuse_id1, node *reuse_id2, node *assigns)
+MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
+                         node *set_shape_icm, node *pragma, node *reuse_id1,
+                         node *reuse_id2, node *assigns)
 {
     bool reuse1, reuse2;
 
@@ -876,7 +898,8 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
                   && (ID_REFCNT (reuse_id2) == 1));
 
         if (reuse1 || reuse2) {
-            assigns = MakeAllocIcm_IncRc (name, type, rc, set_shape_icm, pragma, assigns);
+            assigns = MakeAllocIcm_IncRc (name, type, rc, get_dim, set_shape_icm, pragma,
+                                          assigns);
 
             if (reuse2) {
                 assigns
@@ -902,7 +925,8 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
                                     assigns);
             }
         } else {
-            assigns = MakeAllocIcm (name, type, rc, set_shape_icm, pragma, assigns);
+            assigns
+              = MakeAllocIcm (name, type, rc, get_dim, set_shape_icm, pragma, assigns);
         }
     }
 
@@ -913,8 +937,9 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
  *
  * Function:
  *   node *DFM2AllocIcm_CheckReuse( char *name, types *type, int rc,
- *                                  node *set_shape_icm, node *pragma,
- *                                  node *reuse_id1, node *reuse_id2,
+ *                                  node *get_dim, node *set_shape_icm,
+ *                                  node *pragma,
+ *                                  DFMmask_t *reuse_dfm,
  *                                  node *assigns)
  *
  * Description:
@@ -926,8 +951,9 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
  ******************************************************************************/
 
 static node *
-DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
-                         node *pragma, DFMmask_t *reuse_dfm, node *assigns)
+DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
+                         node *set_shape_icm, node *pragma, DFMmask_t *reuse_dfm,
+                         node *assigns)
 {
     node *vardec;
 
@@ -943,7 +969,8 @@ DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
         }
 
         if (vardec != NULL) {
-            assigns = MakeAllocIcm_IncRc (name, type, rc, set_shape_icm, pragma, assigns);
+            assigns = MakeAllocIcm_IncRc (name, type, rc, get_dim, set_shape_icm, pragma,
+                                          assigns);
 
             while (vardec != NULL) {
                 assigns = MakeAssignIcm2 ("ND_CHECK_REUSE",
@@ -961,7 +988,8 @@ DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
                 vardec = DFMGetMaskEntryDeclSet (NULL);
             }
         } else {
-            assigns = MakeAllocIcm (name, type, rc, set_shape_icm, pragma, assigns);
+            assigns
+              = MakeAllocIcm (name, type, rc, get_dim, set_shape_icm, pragma, assigns);
         }
     }
 
@@ -2594,21 +2622,24 @@ COMPApIds (node *ap, node *arg_info)
 
                 if (!ATG_has_shp[tag]) {
                     /* function sets no shape information */
-#if 1
                     shape_class_t sc
                       = GetShapeClassFromTypes (IDS_TYPE (((ids *)argtab->ptr_out[i])));
                     DBUG_ASSERT ((sc != C_unknowns), "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
-                        WARN (NODE_LINE (ap),
-                              ("Return value with unknown shape/dimension found"));
-                    }
+#if 0
+            DBUG_ASSERT( (0),
+                         "return value with unknown shape/dimension found!");
+            WARN( NODE_LINE( ap),
+                  ("Return value with unknown shape/dimension found"));
 #endif
+                    }
                 }
 
                 if (!ATG_has_desc[tag]) {
                     /* function uses no descriptor at all */
-                    ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 IDS_REFCNT (let_ids), ret_node);
+                    ret_node
+                      = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                          IDS_REFCNT (let_ids), NODE_LINE (ap), ret_node);
                 }
             }
         }
@@ -3036,7 +3067,7 @@ COMP2Scalar (node *arg_node, node *arg_info)
 
     ret_node
       = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                      RC_INIT (IDS_REFCNT (let_ids)),
+                      RC_INIT (IDS_REFCNT (let_ids)), MakeNum (0),
                       MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0)),
                       NULL,
                       MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
@@ -3094,7 +3125,7 @@ COMP2Array (node *arg_node, node *arg_info)
         /* array is a string */
         ret_node
           = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                          RC_INIT (IDS_REFCNT (let_ids)),
+                          RC_INIT (IDS_REFCNT (let_ids)), MakeNum (1),
                           MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
                                     MakeNum (num_elems)),
                           NULL,
@@ -3105,16 +3136,21 @@ COMP2Array (node *arg_node, node *arg_info)
     } else {
         node *icm_args;
 
-        icm_args
-          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                          MakeExprs (MakeNum (num_elems),
-                                     DupExprs_NT (ARRAY_AELEMS (arg_node))));
+        icm_args = MakeExprs (MakeNum (num_elems), DupExprs_NT (ARRAY_AELEMS (arg_node)));
 
         ret_node
           = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                           RC_INIT (IDS_REFCNT (let_ids)),
-                          MakeIcm1 ("ND_CREATE__VECT__SHAPE", icm_args), NULL,
-                          MakeAssignIcm2 ("ND_CREATE__VECT__DATA", DupTree (icm_args),
+                          MakeIcm1 ("ND_CREATE__VECT__DIM", icm_args),
+                          MakeIcm1 ("ND_CREATE__VECT__SHAPE",
+                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                  FALSE, TRUE, FALSE,
+                                                  DupTree (icm_args))),
+                          NULL,
+                          MakeAssignIcm2 ("ND_CREATE__VECT__DATA",
+                                          MakeTypeArgs (IDS_NAME (let_ids),
+                                                        IDS_TYPE (let_ids), FALSE, TRUE,
+                                                        FALSE, DupTree (icm_args)),
                                           MakeId_Copy (
                                             GenericFun (0, IDS_TYPE (let_ids))),
                                           ret_node));
@@ -3128,7 +3164,7 @@ COMP2Array (node *arg_node, node *arg_info)
  * Function:
  *   node *COMPPrfDim( node *arg_node, node *arg_info,
  *                     node **check_reuse1, node **check_reuse2,
- *                     node **set_shape_icm)
+ *                     node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_dim.
@@ -3142,7 +3178,7 @@ COMP2Array (node *arg_node, node *arg_info)
 
 static node *
 COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-            node **set_shape_icm)
+            node **get_dim, node **set_shape_icm)
 {
     ids *let_ids;
     node *arg;
@@ -3156,6 +3192,8 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_dim is no N_id!");
 
     (*check_reuse1) = (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeNum (0);
 
     (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
 
@@ -3174,7 +3212,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  * Function:
  *   node *COMPPrfShape( node *arg_node, node *arg_info,
  *                       node **check_reuse1, node **check_reuse2,
- *                       node **set_shape_icm)
+ *                       node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_shape.
@@ -3188,7 +3226,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
 static node *
 COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-              node **set_shape_icm)
+              node **get_dim, node **set_shape_icm)
 {
     node *arg;
     ids *let_ids;
@@ -3202,6 +3240,8 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_shape is no N_id!");
 
     (*check_reuse1) = (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeNum (1);
 
     (*set_shape_icm) = MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
                                  MakeIcm1 ("ND_A_DIM", DupId_NT (arg)));
@@ -3221,7 +3261,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
  * Function:
  *   node *COMPPrfReshape( node *arg_node, node *arg_info,
  *                         node **check_reuse1, node **check_reuse2,
- *                         node **set_shape_icm)
+ *                         node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_reshape.
@@ -3235,7 +3275,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
 
 static node *
 COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-                node **set_shape_icm)
+                node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
     ids *let_ids;
@@ -3250,19 +3290,27 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
     (*check_reuse1) = (*check_reuse2) = NULL;
 
     if (NODE_TYPE (arg1) == N_id) {
+        (*get_dim) = MakeIcm1 ("ND_A_SIZE", DupId_NT (arg1));
+
         (*set_shape_icm)
           = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_id",
                       MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                     FALSE, MakeExprs (DupId_NT (arg1), NULL)));
     } else {
+        int cnt_aelems;
+
         DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
                      "1st arg of F_reshape is neither N_id nor N_array!");
+
+        cnt_aelems = CountExprs (ARRAY_AELEMS (arg1));
+
+        (*get_dim) = MakeNum (cnt_aelems);
 
         (*set_shape_icm)
           = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_arr",
                       MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                     FALSE,
-                                    MakeExprs (MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
+                                    MakeExprs (MakeNum (cnt_aelems),
                                                DupExprs_NT (ARRAY_AELEMS (arg1)))));
     }
 
@@ -3294,7 +3342,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
  * Function:
  *   node *COMPPrfSel( node *arg_node, node *arg_info,
  *                     node **check_reuse1, node **check_reuse2,
- *                     node **set_shape_icm)
+ *                     node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_sel.
@@ -3308,7 +3356,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
 
 static node *
 COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-            node **set_shape_icm)
+            node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
     ids *let_ids;
@@ -3326,35 +3374,41 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     (*check_reuse1) = (*check_reuse2) = NULL;
 
     if (NODE_TYPE (arg1) == N_id) {
-        icm_args
-          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
-                                        FALSE,
-                                        MakeExprs (MakeNum (
-                                                     GetTypesLength (ID_TYPE (arg1))),
-                                                   MakeExprs (DupNode_NT (arg1), NULL))));
+        icm_args = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                                 MakeExprs (MakeNum (GetTypesLength (ID_TYPE (arg1))),
+                                            MakeExprs (DupNode_NT (arg1), NULL)));
 
-        (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE_id", icm_args);
+        (*get_dim) = MakeIcm1 ("ND_PRF_SEL__DIM_id", icm_args);
 
-        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_id", DupTree (icm_args),
+        (*set_shape_icm)
+          = MakeIcm1 ("ND_PRF_SEL__SHAPE_id",
+                      MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                    FALSE, DupTree (icm_args)));
+
+        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_id",
+                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 FALSE, TRUE, FALSE, DupTree (icm_args)),
                                    MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
                      "1st arg of F_sel is neither N_id nor N_array!");
 
         icm_args
-          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
-                                        FALSE,
-                                        MakeExprs (MakeNum (
-                                                     CountExprs (ARRAY_AELEMS (arg1))),
-                                                   AppendExprs (DupExprs_NT (
-                                                                  ARRAY_AELEMS (arg1)),
-                                                                NULL))));
+          = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                          MakeExprs (MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
+                                     AppendExprs (DupExprs_NT (ARRAY_AELEMS (arg1)),
+                                                  NULL)));
 
-        (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", icm_args);
+        (*get_dim) = MakeIcm1 ("ND_PRF_SEL__DIM_arr", icm_args);
 
-        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_arr", DupTree (icm_args),
+        (*set_shape_icm)
+          = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr",
+                      MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                    FALSE, DupTree (icm_args)));
+
+        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_arr",
+                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 FALSE, TRUE, FALSE, DupTree (icm_args)),
                                    MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
     }
 
@@ -3366,7 +3420,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  * Function:
  *   node *COMPPrfModarray( node *arg_node, node *arg_info,
  *                          node **check_reuse1, node **check_reuse2,
- *                          node **set_shape_icm)
+ *                          node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_modarray.
@@ -3380,7 +3434,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
 static node *
 COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-                 node **set_shape_icm)
+                 node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2, *arg3;
     ids *let_ids;
@@ -3398,6 +3452,8 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
     (*check_reuse1) = PRF_ARG1 (arg_node);
     (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeIcm1 ("ND_A_DIM", DupId_NT (arg1));
 
     (*set_shape_icm)
       = MakeIcm1 ("ND_COPY__SHAPE",
@@ -3440,7 +3496,7 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
  * Function:
  *   node *COMPPrfIdxSel( node *arg_node, node *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
- *                        node **set_shape_icm)
+ *                        node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_idx_sel.
@@ -3454,10 +3510,11 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
 static node *
 COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-               node **set_shape_icm)
+               node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
     ids *let_ids;
+    int dim;
     node *icm_args;
     node *ret_node;
 
@@ -3476,15 +3533,23 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
                  "1st arg of F_idx_sel is neither N_id nor N_num, N_prf!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_sel is no N_id!");
 
-    icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                             MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
-                                           FALSE, MakeExprs (DupNode_NT (arg1), NULL)));
+    icm_args = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                             MakeExprs (DupNode_NT (arg1), NULL));
 
     (*check_reuse1) = (*check_reuse2) = NULL;
 
-    (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE", icm_args);
+    /* idx_sel() works only for arrays with known dimension!!! */
+    dim = GetDim (IDS_TYPE (let_ids));
+    DBUG_ASSERT ((dim >= 0), "unknown dimension found!");
+    (*get_dim) = MakeNum (dim);
 
-    ret_node = MakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA", DupTree (icm_args),
+    (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE, DupTree (icm_args)));
+
+    ret_node = MakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
+                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             FALSE, TRUE, FALSE, DupTree (icm_args)),
                                MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
 
     DBUG_RETURN (ret_node);
@@ -3495,7 +3560,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
  * Function:
  *   node *COMPPrfIdxModarray( node *arg_node, node *arg_info,
  *                             node **check_reuse1, node **check_reuse2,
- *                             node **set_shape_icm)
+ *                             node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_idx_modarray.
@@ -3509,7 +3574,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
 
 static node *
 COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
-                    node **check_reuse2, node **set_shape_icm)
+                    node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2, *arg3;
     ids *let_ids;
@@ -3538,6 +3603,8 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
     (*check_reuse1) = PRF_ARG1 (arg_node);
     (*check_reuse2) = NULL;
 
+    (*get_dim) = MakeIcm1 ("ND_A_DIM", DupId_NT (arg1));
+
     (*set_shape_icm)
       = MakeIcm1 ("ND_COPY__SHAPE",
                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
@@ -3561,7 +3628,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
  * Function:
  *   node *COMPPrfConvertScalar( node *arg_node, node *arg_info,
  *                               node **check_reuse1, node **check_reuse2,
- *                               node **set_shape_icm)
+ *                               node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_toi, F_tod, F_tof:
@@ -3571,7 +3638,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
 
 static node *
 COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
-                      node **check_reuse2, node **set_shape_icm)
+                      node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg;
     ids *let_ids;
@@ -3583,6 +3650,8 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
     arg = PRF_ARG1 (arg_node);
 
     (*check_reuse1) = (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeNum (0);
 
     (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
 
@@ -3602,7 +3671,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
  * Function:
  *   node *COMPPrfConvertArray( node *arg_node, node *arg_info,
  *                              node **check_reuse1, node **check_reuse2,
- *                              node **set_shape_icm)
+ *                              node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles N_prf node of type F_toi_A, F_tod_A, F_tof_A.
@@ -3611,7 +3680,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
 
 static node *
 COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
-                     node **check_reuse2, node **set_shape_icm)
+                     node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg;
     ids *let_ids;
@@ -3625,6 +3694,8 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_to?_A is no N_id!");
 
     (*check_reuse1) = (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeIcm1 ("ND_A_DIM", DupId_NT (arg));
 
     (*set_shape_icm) = MakeIcm1 ("ND_COPY__SHAPE",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -3647,7 +3718,7 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
  *   node *COMPPrfScalar( int args_cnt,
  *                        node *arg_node, node *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
- *                        node **set_shape_icm)
+ *                        node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles a N_prf node into a ND_CREATE__SCALAR__DATA-icm.
@@ -3661,7 +3732,7 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
 
 static node *
 COMPPrfScalar (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
-               node **check_reuse2, node **set_shape_icm)
+               node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     ids *let_ids;
     node *ret_node;
@@ -3674,6 +3745,8 @@ COMPPrfScalar (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1
 
     (*check_reuse1) = PRF_ARG1 (arg_node);
     (*check_reuse2) = (args_cnt == 2) ? PRF_ARG2 (arg_node) : NULL;
+
+    (*get_dim) = MakeNum (0);
 
     (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
 
@@ -3694,7 +3767,7 @@ COMPPrfScalar (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1
  *   node *COMPPrfScalarIcm( char *icm_name, int args_cnt,
  *                           node *arg_node, node *arg_info,
  *                           node **check_reuse1, node **check_reuse2,
- *                           node **set_shape_icm)
+ *                           node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles a N_prf node into a ND_CREATE__SCALAR__DATA-icm.
@@ -3708,7 +3781,8 @@ COMPPrfScalar (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1
 
 static node *
 COMPPrfScalarIcm (char *icm_name, int args_cnt, node *arg_node, node *arg_info,
-                  node **check_reuse1, node **check_reuse2, node **set_shape_icm)
+                  node **check_reuse1, node **check_reuse2, node **get_dim,
+                  node **set_shape_icm)
 {
     ids *let_ids;
     node *ret_node;
@@ -3721,6 +3795,8 @@ COMPPrfScalarIcm (char *icm_name, int args_cnt, node *arg_node, node *arg_info,
 
     (*check_reuse1) = PRF_ARG1 (arg_node);
     (*check_reuse2) = (args_cnt == 2) ? PRF_ARG2 (arg_node) : NULL;
+
+    (*get_dim) = MakeNum (0);
 
     (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
 
@@ -3741,7 +3817,7 @@ COMPPrfScalarIcm (char *icm_name, int args_cnt, node *arg_node, node *arg_info,
  *   node *COMPPrfArray( int args_cnt,
  *                       node *arg_node, node *arg_info,
  *                       node **check_reuse1, node **check_reuse2,
- *                       node **set_shape_icm)
+ *                       node **get_dim, node **set_shape_icm)
  *
  * Description:
  *   Compiles a N_prf node into a ND_PRF_ARRAY2__DATA-icm.
@@ -3755,7 +3831,7 @@ COMPPrfScalarIcm (char *icm_name, int args_cnt, node *arg_node, node *arg_info,
 
 static node *
 COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
-              node **check_reuse2, node **set_shape_icm)
+              node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2, *arg;
     ids *let_ids;
@@ -3807,6 +3883,8 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
         icm_name = NULL;
     }
 
+    (*get_dim) = MakeIcm1 ("ND_A_DIM", DupId_NT (arg));
+
     (*set_shape_icm) = MakeIcm1 ("ND_COPY__SHAPE",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE,
@@ -3839,6 +3917,7 @@ COMP2Prf (node *arg_node, node *arg_info)
     node *args, *arg;
     node *check_reuse1, *check_reuse2;
     node *ret_node, *ret_node2;
+    node *get_dim = NULL;
     node *set_shape_icm = NULL;
 
     DBUG_ENTER ("COMPPrf");
@@ -3859,27 +3938,27 @@ COMP2Prf (node *arg_node, node *arg_info)
     case F_tof:
     case F_tod:
         ret_node = COMPPrfConvertScalar (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                         &set_shape_icm);
+                                         &get_dim, &set_shape_icm);
         break;
 
     case F_abs:
         ret_node = COMPPrfScalarIcm ("ND_ABS", 1, arg_node, arg_info, &check_reuse1,
-                                     &check_reuse2, &set_shape_icm);
+                                     &check_reuse2, &get_dim, &set_shape_icm);
         break;
 
     case F_not:
         ret_node = COMPPrfScalar (1, arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                  &set_shape_icm);
+                                  &get_dim, &set_shape_icm);
         break;
 
     case F_min:
         ret_node = COMPPrfScalarIcm ("ND_MIN", 2, arg_node, arg_info, &check_reuse1,
-                                     &check_reuse2, &set_shape_icm);
+                                     &check_reuse2, &get_dim, &set_shape_icm);
         break;
 
     case F_max:
         ret_node = COMPPrfScalarIcm ("ND_MAX", 2, arg_node, arg_info, &check_reuse1,
-                                     &check_reuse2, &set_shape_icm);
+                                     &check_reuse2, &get_dim, &set_shape_icm);
         break;
 
     case F_add:
@@ -3898,7 +3977,7 @@ COMP2Prf (node *arg_node, node *arg_info)
     case F_ge:
     case F_gt:
         ret_node = COMPPrfScalar (2, arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                  &set_shape_icm);
+                                  &get_dim, &set_shape_icm);
         break;
 
         /*
@@ -3906,38 +3985,38 @@ COMP2Prf (node *arg_node, node *arg_info)
          */
 
     case F_dim:
-        ret_node
-          = COMPPrfDim (arg_node, arg_info, &check_reuse1, &check_reuse2, &set_shape_icm);
+        ret_node = COMPPrfDim (arg_node, arg_info, &check_reuse1, &check_reuse2, &get_dim,
+                               &set_shape_icm);
         break;
 
     case F_shape:
         ret_node = COMPPrfShape (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                 &set_shape_icm);
+                                 &get_dim, &set_shape_icm);
         break;
 
     case F_reshape:
         ret_node = COMPPrfReshape (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                   &set_shape_icm);
+                                   &get_dim, &set_shape_icm);
         break;
 
     case F_idx_sel:
         ret_node = COMPPrfIdxSel (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                  &set_shape_icm);
+                                  &get_dim, &set_shape_icm);
         break;
 
     case F_idx_modarray:
         ret_node = COMPPrfIdxModarray (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                       &set_shape_icm);
+                                       &get_dim, &set_shape_icm);
         break;
 
     case F_sel:
-        ret_node
-          = COMPPrfSel (arg_node, arg_info, &check_reuse1, &check_reuse2, &set_shape_icm);
+        ret_node = COMPPrfSel (arg_node, arg_info, &check_reuse1, &check_reuse2, &get_dim,
+                               &set_shape_icm);
         break;
 
     case F_modarray:
         ret_node = COMPPrfModarray (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                    &set_shape_icm);
+                                    &get_dim, &set_shape_icm);
         break;
 
     case F_add_SxA:
@@ -3953,7 +4032,7 @@ COMP2Prf (node *arg_node, node *arg_info)
     case F_div_AxS:
     case F_div_AxA:
         ret_node = COMPPrfArray (2, arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                 &set_shape_icm);
+                                 &get_dim, &set_shape_icm);
         break;
 
         /*
@@ -3964,7 +4043,7 @@ COMP2Prf (node *arg_node, node *arg_info)
     case F_tof_A:
     case F_tod_A:
         ret_node = COMPPrfConvertArray (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                        &set_shape_icm);
+                                        &get_dim, &set_shape_icm);
         break;
 
     case F_take:
@@ -4001,8 +4080,8 @@ COMP2Prf (node *arg_node, node *arg_info)
     }
 
     ret_node = MakeAllocIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                        RC_INIT (IDS_REFCNT (let_ids)), set_shape_icm,
-                                        NULL, check_reuse1, check_reuse2,
+                                        RC_INIT (IDS_REFCNT (let_ids)), get_dim,
+                                        set_shape_icm, NULL, check_reuse1, check_reuse2,
                                         /* concat 'ret_node' and 'ret_node2' */
                                         AppendAssign (ret_node, ret_node2));
 
@@ -4339,9 +4418,10 @@ COMP2Icm (node *arg_node, node *arg_info)
         DBUG_ASSERT ((RC_IS_INACTIVE (ID_REFCNT (arg)) || RC_IS_VITAL (ID_REFCNT (arg))),
                      "1st arg of VECT2OFFSET-icm has illegal RC!");
 
-        arg_node = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
-                                 MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)),
-                                 NULL, MakeAssign (arg_node, new_assigns));
+        arg_node
+          = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
+                          MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
+                          MakeAssign (arg_node, new_assigns));
     } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
          * USE_GENVAR_OFFSET( off_nt, wl_nt)
@@ -4358,9 +4438,10 @@ COMP2Icm (node *arg_node, node *arg_info)
         DBUG_ASSERT ((RC_IS_INACTIVE (ID_REFCNT (arg)) || RC_IS_VITAL (ID_REFCNT (arg))),
                      "1st arg of VECT2OFFSET-icm has illegal RC!");
 
-        arg_node = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
-                                 MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)),
-                                 NULL, MakeAssign (arg_node, NULL));
+        arg_node
+          = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
+                          MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
+                          MakeAssign (arg_node, NULL));
     } else {
         DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));
     }
@@ -4821,7 +4902,7 @@ COMP2With2 (node *arg_node, node *arg_info)
       = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids), IDS_REFCNT (vec_ids),
 #if 1
                       /* is correct for AKS only :-( */
-                      MakeIcm0 ("NOOP"),
+                      MakeNum (GetDim (IDS_TYPE (wlids))), MakeIcm0 ("NOOP"),
 #endif
                       NULL, alloc_icms);
 
@@ -4848,6 +4929,7 @@ COMP2With2 (node *arg_node, node *arg_info)
         alloc_icms = DFM2AllocIcm_CheckReuse (IDS_NAME (wlids), IDS_TYPE (wlids),
                                               RC_INIT (IDS_REFCNT (wlids)),
 #if 1
+                                              MakeNum (GetDim (IDS_TYPE (wlids))),
                                               /* is correct for AKS only :-( */
                                               MakeIcm0 ("NOOP"),
 #endif
