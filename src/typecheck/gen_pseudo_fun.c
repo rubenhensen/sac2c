@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  1998/12/03 09:40:28  sbs
+ * DBUG_ASSERT inserted.
+ *
  * Revision 1.3  1998/06/04 09:10:15  sbs
  * indenting adjusted
  *
@@ -65,6 +68,8 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
         application = MakeAp (StringCopy (fold_fun), NULL, args);
         pseudo_fold_fun = TmpVarName (fold_fun);
     } else {
+        DBUG_ASSERT (((fold_prf >= F_toi) && (fold_prf <= F_genarray)),
+                     "fold_prf is out of range!");
         application = MakePrf (fold_prf, args);
         pseudo_fold_fun = TmpVarName (prf_name_str[fold_prf]);
     }
