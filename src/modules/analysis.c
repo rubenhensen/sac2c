@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1999/01/07 10:50:49  cg
+ * Added function ANAnwithop() and ANAfoldfun() which infer the dependence
+ * of a function on its fold operations both for the old and for the new
+ * with-loop.
+ *
  * Revision 1.9  1998/12/02 16:32:42  cg
  * Now, generic object creation functions for imported global objects
  * have status ST_objinitfun rather than ST_imported. As a consequence,
@@ -311,42 +316,56 @@ ANAap (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : ANAnwithop
+ *  arguments     : 1) N_Nwithop node
+ *                  2) fundef node which contains this with-loop
+ *  description   : The flattened fold-operation is always required
+ *                  by the function containing a fold with-loop
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : StoreNeededNode
+ *  macros        : ---
  *
  *  remarks       :
  *
  */
 
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+node *
+ANAnwithop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("ANAnwithop");
+
+    if ((NWITHOP_TYPE (arg_node) == WO_foldfun)
+        || (NWITHOP_TYPE (arg_node) == WO_foldprf)) {
+        StoreNeededNode (NWITHOP_FUNDEF (arg_node), arg_info, ST_regular);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : ANAfoldfun
+ *  arguments     : 1) N_foldfun node
+ *                  2) fundef node which contains this with-loop
+ *  description   : The fold-operation is always required
+ *                  by the function containing a fold with-loop
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : StoreNeededNode
+ *  macros        : ---
  *
- *  remarks       :
+ *  remarks       : This function is only required to maintain compatibility
+ *                  with old with-loop.
  *
  */
+
+node *
+ANAfoldfun (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("ANAfoldfun");
+
+    StoreNeededNode (FOLDFUN_FUNDEF (arg_node), arg_info, ST_regular);
+
+    DBUG_RETURN (arg_node);
+}
