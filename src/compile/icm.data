@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/16 17:10:15  rob
+ * add new C macros for TAGGED_ARRAYS.
+ *
  * Revision 2.3  1999/06/03 13:19:00  jhs
  * Changed parameters for MT_CONTINUE.
  *
@@ -134,6 +137,36 @@ ICM_DEF( ND_CREATE_CONST_ARRAY_A, TRACE_NONE)
 ICM_END( ND_CREATE_CONST_ARRAY_A, (name, length, dim, A))
 #endif
 
+#ifdef TAGGED_ARRAYS 
+#if defined(ND_DECL_DATA) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_DATA, TRACE_NONE)
+  ICM_STR(type)
+  ICM_STR(nt)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END( ND_DECL_DATA, (type, nt, dim, s) )
+#endif
+
+#if defined(ND_DECL_DATA_AKS_NUQ) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_DATA_AKS_NUQ, TRACE_NONE)
+  ICM_STR(type)
+  ICM_STR(nt)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END( ND_DECL_DATA_AKS_NUQ, (type, nt, dim, s) )
+#endif
+
+#if defined(ND_DECL_DATA_AKS_UNQ) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_DATA_AKS_UNQ, TRACE_NONE)
+  ICM_STR(type)
+  ICM_STR(nt)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END( ND_DECL_DATA_AKS_UNQ, (type, nt, dim, s) )
+#endif
+
+#else  /* TAGGED_ARRAYS */
+
 #if defined(ND_KS_DECL_ARRAY) || defined(ICM_ALL)
 ICM_DEF( ND_KS_DECL_ARRAY, TRACE_NONE)
   ICM_STR(type)
@@ -142,6 +175,8 @@ ICM_DEF( ND_KS_DECL_ARRAY, TRACE_NONE)
   ICM_VAR( dim, s)
 ICM_END( ND_KS_DECL_ARRAY, (type, name, dim, s) )
 #endif
+
+#endif /* TAGGED_ARRAYS */
 
 #if defined(ND_KS_DECL_GLOBAL_ARRAY) || defined(ICM_ALL)
 ICM_DEF( ND_KS_DECL_GLOBAL_ARRAY, TRACE_NONE)
