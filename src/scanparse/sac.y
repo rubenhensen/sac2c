@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/20 22:19:42  dkr
+ * syntax for wlcomp-pragmas corrected. all shift/reduce conflicts
+ * eliminated
+ *
  * Revision 3.8  2001/03/20 15:33:02  ben
  * args of wlcomp-pragmas might be applications
  *
@@ -161,7 +165,7 @@ types *GenComplexType( types *types, nums *numsp);
              objdefs, objdef, exprblock, exprblock2,
              assign, assigns, assignblock, letassign, 
              selassign, forassign, assignsOPTret, wlassignblock, optelse,
-             exprsNOar, /* exprNOdot */, exprORdot, exprNOar, 
+             exprsNOar, exprORdot, exprNOar, 
              expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
              moddec, modspec, expdesc, expdesc2, expdesc3, expdesc4,
@@ -172,7 +176,8 @@ types *GenComplexType( types *types, nums *numsp);
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
              sibargs, sibarg, sibfunlist, sibfunlistentry,
-             wlcomp_args, wlcomp_expr, wlcomp_pragma_local, wlcomp_pragma_global
+             wlcomp_arg, wlcomp_args, wlcomp_conf,
+             wlcomp_pragma_local, wlcomp_pragma_global
 %type <target_list_t> targets
 %type <resource_list_t> resources
 
@@ -187,10 +192,9 @@ types *GenComplexType( types *types, nums *numsp);
 %left SQBR_L
 %right CAST
 %right NOT
-%nonassoc UMINUS
+%right ELSE
+%nonassoc SIGN
 %nonassoc GENERATOR
-%nonassoc LOWER_THAN_ELSE
-%nonassoc ELSE
 
 
 %start file
@@ -205,12 +209,12 @@ types *GenComplexType( types *types, nums *numsp);
 %}
 %%
 
-file:   PARSE_PRG prg {syntax_tree=$2;} eof
-      | PARSE_PRG modimp {syntax_tree=$2;} eof
-      | PARSE_DEC moddec {decl_tree=$2;} eof
-      | PARSE_SIB sib {sib_tree=$2;} eof
-      | PARSE_RC  targets {target_list=RSCAddTargetList($2, target_list);} eof
-      | PARSE_SPEC modspec {spec_tree=$2;} eof
+file:   PARSE_PRG prg { syntax_tree = $2; } eof
+      | PARSE_PRG modimp { syntax_tree = $2; } eof
+      | PARSE_DEC moddec { decl_tree = $2; } eof
+      | PARSE_SIB sib { sib_tree = $2; } eof
+      | PARSE_RC  targets { target_list = RSCAddTargetList( $2, target_list); } eof
+      | PARSE_SPEC modspec { spec_tree = $2; } eof
       ;
 
 eof:
@@ -234,7 +238,7 @@ eof:
 
 id: ID
       {
-        $$=$1;
+        $$ = $1;
       }
   | PRIVATEID
       {
@@ -242,7 +246,7 @@ id: ID
           ABORT( linenum, ("Identifier name '%s` illegal", $1));
         }
         else {
-          $$=$1;
+          $$ = $1;
         }
       }
   ;
@@ -266,21 +270,21 @@ moddec: modheader evimport OWN COLON expdesc
           if ($$->node[1] != NULL) {
              DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
                         $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0]) ],
+                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
                         $$->node[0],
-                        mdb_nodetype[ NODE_TYPE( $$->node[1]) ],
+                        mdb_nodetype[ NODE_TYPE( $$->node[1])],
                         $$->node[1]));
           }
           else {
              DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
                         $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0]) ],
+                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
                         $$->node[0]));
           }
         }
@@ -292,21 +296,21 @@ moddec: modheader evimport OWN COLON expdesc
           if ($$->node[1] != NULL) {
              DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
                         $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0]) ],
+                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
                         $$->node[0],
-                        mdb_nodetype[ NODE_TYPE( $$->node[1]) ],
+                        mdb_nodetype[ NODE_TYPE( $$->node[1])],
                         $$->node[1]));
           }
           else {
              DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
                         $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0]) ],
+                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
                         $$->node[0]));
           }
         }
@@ -319,10 +323,10 @@ modspec:  modheader OWN COLON expdesc
           $$->node[1] = NULL;
 	  DBUG_PRINT("GENTREE",
 		     ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
-		      mdb_nodetype[ NODE_TYPE( $$) ],
+		      mdb_nodetype[ NODE_TYPE( $$)],
                       $$,
                       $$->info.fun_name.id,
-		      mdb_nodetype[ NODE_TYPE( $$->node[0]) ],
+		      mdb_nodetype[ NODE_TYPE( $$->node[0])],
                       $$->node[0]));
 	  };
 
@@ -331,18 +335,16 @@ modheader: modclass evextern id COLON linkwith
              $$ = MakeNode( $1);
              link_mod_name = $3;
 
-            if ($2)
-             {
-               mod_name=NULL;
+             if ($2) {
+               mod_name = NULL;
              }
-             else
-             {
-               mod_name=link_mod_name;
+             else {
+               mod_name = link_mod_name;
              }
 
-             MODDEC_NAME($$)=$3;
-             MODDEC_LINKWITH($$)=$5;
-             MODDEC_ISEXTERNAL($$)=$2;
+             MODDEC_NAME( $$) = $3;
+             MODDEC_LINKWITH( $$) = $5;
+             MODDEC_ISEXTERNAL( $$) = $2;
            }
          ;                 
 
@@ -354,38 +356,38 @@ modclass: MODDEC   { $$ = N_moddec;   file_kind = F_moddec;   }
 evextern: EXTERN 
           {
             file_kind++;
-            $$=1;
+            $$ = 1;
           }
         |
           {
-            $$=0;
+            $$ = 0;
           }
         ;
 
 linkwith: PRAGMA LINKWITH linklist
-            { $$=$3; }
-        |   { $$=NULL; }
+            { $$ = $3; }
+        |   { $$ = NULL; }
         ;
 
 linklist: string COMMA linklist 
            {
-             $$=MakeDeps($1, NULL, NULL, ST_system, LOC_stdlib, NULL, $3);
+             $$ = MakeDeps( $1, NULL, NULL, ST_system, LOC_stdlib, NULL, $3);
            }
         | string
            {
-             $$=MakeDeps($1, NULL, NULL, ST_system, LOC_stdlib, NULL, NULL);
+             $$ = MakeDeps( $1, NULL, NULL, ST_system, LOC_stdlib, NULL, NULL);
            }
         ;
 
-evimport: imports {$$=$1;}
-          | {$$=NULL;}
+evimport: imports { $$ = $1; }
+          | { $$ = NULL; }
           ;
 
 imports: import imports { $$ = $1;
                           $$->node[0] = $2;
                         }
 
-       | import { $$=$1; }
+       | import { $$ = $1; }
        ;
 
 import: IMPORT id COLON impdesc { $$ = $4; $$->info.id = $2; }
@@ -396,7 +398,7 @@ impdesc: ALL SEMIC
 
              DBUG_PRINT("GENTREE",
                         ("%s:"P_FORMAT,
-                         mdb_nodetype[ NODE_TYPE( $$) ],
+                         mdb_nodetype[ NODE_TYPE( $$)],
                          $$));
            }
        | BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
@@ -406,7 +408,7 @@ impdesc: ALL SEMIC
        | BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
            { $$ = $6;
            }
-       | BRACE_L impdesc2 { $$=$2; }
+       | BRACE_L impdesc2 { $$ = $2; }
        ;
 
 impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
@@ -434,7 +436,7 @@ impdesc4: FUNS COLON funids SEMIC BRACE_R
 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( $$) ],
+                          mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
             }
         | FUNS COLON SEMIC BRACE_R
@@ -442,7 +444,7 @@ impdesc4: FUNS COLON funids SEMIC BRACE_R
 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( $$) ],
+                          mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
             }
         | BRACE_R
@@ -450,7 +452,7 @@ impdesc4: FUNS COLON funids SEMIC BRACE_R
 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( $$) ],
+                          mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
             }
         ;
@@ -490,7 +492,7 @@ expdesc4: FUNS COLON fundecs BRACE_R
 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( $$) ],
+                          mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
             }
         | FUNS COLON BRACE_R
@@ -498,7 +500,7 @@ expdesc4: FUNS COLON fundecs BRACE_R
 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( $$) ],
+                          mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
             }
         | BRACE_R
@@ -506,7 +508,7 @@ expdesc4: FUNS COLON fundecs BRACE_R
          
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( $$) ],
+                          mdb_nodetype[ NODE_TYPE( $$)],
                           $$));
             }
         ;
@@ -535,7 +537,7 @@ imptype: id SEMIC pragmas
 
              DBUG_PRINT("GENTREE",
                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                       mdb_nodetype[ NODE_TYPE( $$) ],
+                       mdb_nodetype[ NODE_TYPE( $$)],
                        $$,
                        $$->info.types,
                        $$->info.types->id));
@@ -558,7 +560,7 @@ exptype: id LET type SEMIC pragmas
 
              DBUG_PRINT("GENTREE",
                         ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                         mdb_nodetype[ NODE_TYPE( $$) ],
+                         mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
                          $$->info.types,
                          $$->info.types->id));
@@ -577,11 +579,11 @@ objdec: type id SEMIC pragmas
             OBJDEF_LINKMOD( $$) = link_mod_name; /* external module name */
             OBJDEF_STATUS( $$) = (file_kind == F_moddec)
                                    ? ST_imported_mod : ST_imported_class;
-            OBJDEF_PRAGMA($$)=$4;
+            OBJDEF_PRAGMA( $$) = $4;
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
                         $$->info.types,
                         $$->info.types->id));
@@ -610,12 +612,12 @@ fundec: varreturntypes id BRACKET_L fundec2
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
                         $$->info.types->id,
                         mdb_nodetype[ ($$->node[2]==NULL)
                                         ? T_void
-                                        : (NODE_TYPE( $$->node[2])) ],
+                                        : (NODE_TYPE( $$->node[2]))],
                         $$->node[2]));
           }         
       | returntypes prf_name BRACKET_L fundec3
@@ -632,13 +634,13 @@ fundec: varreturntypes id BRACKET_L fundec2
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s"P_FORMAT", NULL body,  %s"
                         P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
                         $$->info.types->id,
                         $$->info.types->id,
                         mdb_nodetype[ ($$->node[2]==NULL)
                                         ? T_void 
-                                        : (NODE_TYPE( $$->node[2])) ],
+                                        : (NODE_TYPE( $$->node[2]))],
                         $$->node[2]));
           }
       ;
@@ -716,63 +718,63 @@ pragma: PRAGMA LINKNAME string
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_LINKNAME(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'linkname`"))
-            PRAGMA_LINKNAME(store_pragma)=$3;
+            PRAGMA_LINKNAME(store_pragma) = $3;
           }
       | PRAGMA LINKSIGN SQBR_L nums SQBR_R
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_LINKSIGNNUMS(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'linksign`"))
-            PRAGMA_LINKSIGNNUMS(store_pragma)=$4;
+            PRAGMA_LINKSIGNNUMS(store_pragma) = $4;
           }
       | PRAGMA REFCOUNTING SQBR_L nums SQBR_R
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_REFCOUNTINGNUMS(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'refcounting`"))
-            PRAGMA_REFCOUNTINGNUMS(store_pragma)=$4;
+            PRAGMA_REFCOUNTINGNUMS(store_pragma) = $4;
           }
       | PRAGMA READONLY SQBR_L nums SQBR_R
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_READONLYNUMS(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'readonly`"))
-            PRAGMA_READONLYNUMS(store_pragma)=$4;
+            PRAGMA_READONLYNUMS(store_pragma) = $4;
           }
       | PRAGMA EFFECT modnames
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_EFFECT(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'effect`"))
-            PRAGMA_EFFECT(store_pragma)=$3;
+            PRAGMA_EFFECT(store_pragma) = $3;
           }
       | PRAGMA TOUCH modnames
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_TOUCH(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'touch`"))
-            PRAGMA_TOUCH(store_pragma)=$3;
+            PRAGMA_TOUCH(store_pragma) = $3;
           }
       | PRAGMA COPYFUN string
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_COPYFUN(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"))
-            PRAGMA_COPYFUN(store_pragma)=$3;
+            PRAGMA_COPYFUN(store_pragma) = $3;
           }
       | PRAGMA FREEFUN string
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_FREEFUN(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'freefun`"))
-            PRAGMA_FREEFUN(store_pragma)=$3;
+            PRAGMA_FREEFUN(store_pragma) = $3;
           }
       | PRAGMA INITFUN string
           {
             if (store_pragma==NULL) store_pragma=MakePragma();
             if (PRAGMA_INITFUN(store_pragma)!=NULL)
               WARN(linenum, ("Conflicting definitions of pragma 'initfun`"))
-            PRAGMA_INITFUN(store_pragma)=$3;
+            PRAGMA_INITFUN(store_pragma) = $3;
           }
       ;
 
@@ -838,9 +840,9 @@ def4: fundefs
 
           DBUG_PRINT("GENTREE",
                      ("%s:"P_FORMAT"  %s"P_FORMAT,
-                      mdb_nodetype[ NODE_TYPE( $$) ],
+                      mdb_nodetype[ NODE_TYPE( $$)],
                       $$, 
-                      mdb_nodetype[ NODE_TYPE(  $$->node[2]) ],
+                      mdb_nodetype[ NODE_TYPE(  $$->node[2])],
                       $$->node[2]));
         }
     |   { $$ = MakeNode( N_modul);  /* module impl with no functions */
@@ -849,7 +851,7 @@ def4: fundefs
 
           DBUG_PRINT("GENTREE",
                      ("%s:"P_FORMAT,
-                      mdb_nodetype[ NODE_TYPE( $$) ],
+                      mdb_nodetype[ NODE_TYPE( $$)],
                       $$));
         }
     ;
@@ -864,7 +866,7 @@ modimp: module
           }
       ;
 
-module: MODIMP { file_kind=F_modimp; } id { mod_name=$3; } COLON defs
+module: MODIMP { file_kind=F_modimp; } id { mod_name = $3; } COLON defs
           {
             $$ = $6;
             MODUL_NAME( $$) = mod_name;
@@ -872,7 +874,7 @@ module: MODIMP { file_kind=F_modimp; } id { mod_name=$3; } COLON defs
           }
         ;
 
-class: CLASSIMP { file_kind=F_classimp; } id { mod_name=$3; } COLON 
+class: CLASSIMP { file_kind=F_classimp; } id { mod_name = $3; } COLON 
        CLASSTYPE type SEMIC defs
          { 
            $$ = $9;
@@ -902,7 +904,7 @@ typedef: TYPEDEF type id SEMIC
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
                         $$->info.types,
                         $$->info.types->id));
@@ -921,7 +923,7 @@ objdef: OBJDEF type id LET expr SEMIC
             
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
                         $$->info.types,
                         $$->info.types->id));
@@ -932,7 +934,7 @@ objdef: OBJDEF type id LET expr SEMIC
 
 fundefs: wlcomp_pragma_global fundef fundefs
            { $$ = $2;
-             FUNDEF_NEXT($$) = $3;
+             FUNDEF_NEXT( $$) = $3;
            }
        | wlcomp_pragma_global main
            { $$ = $2;
@@ -954,7 +956,7 @@ fundef: returntypes fun_name BRACKET_L fundef2
 
             DBUG_PRINT("GENTREE",
                        ("%s: %s:%s "P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$->info.types->id_mod,
                         $$->info.types->id,
                         $$->info.types->id));
@@ -972,7 +974,7 @@ fundef: returntypes fun_name BRACKET_L fundef2
 
             DBUG_PRINT("GENTREE",
                         ("%s: %s:%s "P_FORMAT,
-                        mdb_nodetype[ NODE_TYPE( $$) ],
+                        mdb_nodetype[ NODE_TYPE( $$)],
                         $$->info.types->id_mod,
                         $$->info.types->id,
                         $$->info.types->id));
@@ -988,11 +990,11 @@ fundef2: args BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
          
              DBUG_PRINT("GENTREE",
                         ("%s:"P_FORMAT", Id: %s"P_FORMAT" %s," P_FORMAT,
-                         mdb_nodetype[ NODE_TYPE( $$) ],
+                         mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
-                         mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$)) ],
+                         mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
                          FUNDEF_BODY( $$),
-                         mdb_nodetype[ NODE_TYPE( FUNDEF_ARGS( $$)) ],
+                         mdb_nodetype[ NODE_TYPE( FUNDEF_ARGS( $$))],
                          FUNDEF_ARGS( $$)));
            }
 
@@ -1003,9 +1005,9 @@ fundef2: args BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
          
              DBUG_PRINT("GENTREE",
                         ("%s:"P_FORMAT" %s"P_FORMAT,
-                         mdb_nodetype[ NODE_TYPE( $$) ],
+                         mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
-                         mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$)) ],
+                         mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
                          FUNDEF_BODY( $$)));
            }
        ;
@@ -1039,7 +1041,7 @@ varargs: arg COMMA varargs
 
                DBUG_PRINT("GENTREE",
                           ("%s: "P_FORMAT", Id: ..., Attrib: %d  ",
-                           mdb_nodetype[ NODE_TYPE( $$) ],
+                           mdb_nodetype[ NODE_TYPE( $$)],
                            $$, 
                            $$->info.types->attrib));
              } 
@@ -1055,7 +1057,7 @@ arg: type id
 
          DBUG_PRINT("GENTREE",
                     ("%s: "P_FORMAT", Id: %s, Attrib: %d  ",
-                     mdb_nodetype[ NODE_TYPE( $$) ],
+                     mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
                      $$->info.types->id,
                      $$->info.types->attrib));
@@ -1065,7 +1067,7 @@ arg: type id
 
          DBUG_PRINT("GENTREE",
                     ("%s: "P_FORMAT", Id: %s, Attrib: %d ",
-                     mdb_nodetype[ NODE_TYPE( $$) ],
+                     mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
                      $$->info.types->id,
                      $$->info.types->attrib));
@@ -1097,7 +1099,7 @@ varargtypes: argtype COMMA varargtypes
                  }
                  else
                  {
-                   $$=$1;
+                   $$ = $1;
                    ARG_NEXT( $$) = MakeArg( NULL,
                                             MakeTypes1( T_dots),
                                             ST_regular, ST_regular,
@@ -1105,7 +1107,7 @@ varargtypes: argtype COMMA varargtypes
 
                    DBUG_PRINT("GENTREE",
                               ("%s: "P_FORMAT", Attrib: %d  ",
-                               mdb_nodetype[ NODE_TYPE( $$) ],
+                               mdb_nodetype[ NODE_TYPE( $$)],
                                $$, 
                                $$->info.types->attrib));
 
@@ -1120,7 +1122,7 @@ argtype: type
 
              DBUG_PRINT("GENTREE",
                         ("%s: "P_FORMAT", Attrib: %d  ",
-                         mdb_nodetype[ NODE_TYPE( $$) ],
+                         mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
                          $$->info.types->attrib));
            }
@@ -1129,7 +1131,7 @@ argtype: type
                      
              DBUG_PRINT("GENTREE",
                         ("%s: "P_FORMAT", Attrib: %d ",
-                         mdb_nodetype[ NODE_TYPE( $$) ],
+                         mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
                          $$->info.types->attrib));
            }
@@ -1141,37 +1143,37 @@ fun_name : id
              { $$ = $1; }
          ;
 
-prf_name : AND        { $$=StringCopy(prf_name_str[F_and]); }
-         | OR         { $$=StringCopy(prf_name_str[F_or]); }
-         | EQ         { $$=StringCopy(prf_name_str[F_eq]); }
-         | NEQ        { $$=StringCopy(prf_name_str[F_neq]); }
-         | NOT        { $$=StringCopy(prf_name_str[F_not]); }
-         | LE         { $$=StringCopy(prf_name_str[F_le]); }
-         | LT         { $$=StringCopy(prf_name_str[F_lt]); }
-         | GE         { $$=StringCopy(prf_name_str[F_ge]); }
-         | GT         { $$=StringCopy(prf_name_str[F_gt]); }
-         | ABS        { $$=StringCopy(prf_name_str[F_abs]); }
-         | PLUS       { $$=StringCopy(prf_name_str[F_add]); }
-         | MINUS      { $$=StringCopy(prf_name_str[F_sub]); }
-         | DIV        { $$=StringCopy(prf_name_str[F_div]); }
-         | MUL        { $$=StringCopy(prf_name_str[F_mul]); }
-         | PRF_MOD    { $$=StringCopy(prf_name_str[F_mod]); }
-         | RESHAPE    { $$=StringCopy(prf_name_str[F_reshape]); }
-         | SHAPE      { $$=StringCopy(prf_name_str[F_shape]); }
-         | TAKE       { $$=StringCopy(prf_name_str[F_take]); }
-         | DROP       { $$=StringCopy(prf_name_str[F_drop]); }
-         | DIM        { $$=StringCopy(prf_name_str[F_dim]); }
-         | ROTATE     { $$=StringCopy(prf_name_str[F_rotate]); }
-         | CAT        { $$=StringCopy(prf_name_str[F_cat]); }
-         | PSI        { $$=StringCopy(prf_name_str[F_psi]); }
-         | GENARRAY   { $$=StringCopy(prf_name_str[F_genarray]); }
-         | MODARRAY   { $$=StringCopy(prf_name_str[F_modarray]); }
-         | TOI        { $$=StringCopy(prf_name_str[F_toi]); }
-         | TOF        { $$=StringCopy(prf_name_str[F_tof]); }
-         | TOD        { $$=StringCopy(prf_name_str[F_tod]); }
-         | PRF_MIN    { $$=StringCopy(prf_name_str[F_min]); }
-         | PRF_MAX    { $$=StringCopy(prf_name_str[F_max]); }
-         | ALL        { $$=StringCopy("all");
+prf_name : AND        { $$ = StringCopy(prf_name_str[F_and]); }
+         | OR         { $$ = StringCopy(prf_name_str[F_or]); }
+         | EQ         { $$ = StringCopy(prf_name_str[F_eq]); }
+         | NEQ        { $$ = StringCopy(prf_name_str[F_neq]); }
+         | NOT        { $$ = StringCopy(prf_name_str[F_not]); }
+         | LE         { $$ = StringCopy(prf_name_str[F_le]); }
+         | LT         { $$ = StringCopy(prf_name_str[F_lt]); }
+         | GE         { $$ = StringCopy(prf_name_str[F_ge]); }
+         | GT         { $$ = StringCopy(prf_name_str[F_gt]); }
+         | ABS        { $$ = StringCopy(prf_name_str[F_abs]); }
+         | PLUS       { $$ = StringCopy(prf_name_str[F_add]); }
+         | MINUS      { $$ = StringCopy(prf_name_str[F_sub]); }
+         | DIV        { $$ = StringCopy(prf_name_str[F_div]); }
+         | MUL        { $$ = StringCopy(prf_name_str[F_mul]); }
+         | PRF_MOD    { $$ = StringCopy(prf_name_str[F_mod]); }
+         | RESHAPE    { $$ = StringCopy(prf_name_str[F_reshape]); }
+         | SHAPE      { $$ = StringCopy(prf_name_str[F_shape]); }
+         | TAKE       { $$ = StringCopy(prf_name_str[F_take]); }
+         | DROP       { $$ = StringCopy(prf_name_str[F_drop]); }
+         | DIM        { $$ = StringCopy(prf_name_str[F_dim]); }
+         | ROTATE     { $$ = StringCopy(prf_name_str[F_rotate]); }
+         | CAT        { $$ = StringCopy(prf_name_str[F_cat]); }
+         | PSI        { $$ = StringCopy(prf_name_str[F_psi]); }
+         | GENARRAY   { $$ = StringCopy(prf_name_str[F_genarray]); }
+         | MODARRAY   { $$ = StringCopy(prf_name_str[F_modarray]); }
+         | TOI        { $$ = StringCopy(prf_name_str[F_toi]); }
+         | TOF        { $$ = StringCopy(prf_name_str[F_tof]); }
+         | TOD        { $$ = StringCopy(prf_name_str[F_tod]); }
+         | PRF_MIN    { $$ = StringCopy(prf_name_str[F_min]); }
+         | PRF_MAX    { $$ = StringCopy(prf_name_str[F_max]); }
+         | ALL        { $$ = StringCopy("all");
            /* necessary because function 'all()' from array library conflicts 
               with key word. */}
         ;
@@ -1188,7 +1190,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
 
           DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main "P_FORMAT
                                 "  %s (" P_FORMAT ") ",
-                                mdb_nodetype[ NODE_TYPE( $$) ],
+                                mdb_nodetype[ NODE_TYPE( $$)],
                                 $$, 
                                 $$->info.types->id,
                                 mdb_nodetype[ NODE_TYPE( $$->node[0])], 
@@ -1197,16 +1199,16 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
     ;
 
 
-wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
+wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
                         {
                           if (store_wlcomp_pragma_global != NULL) {
                             /* remove old global pragma */
                             store_wlcomp_pragma_global
-                              = FreeTree(store_wlcomp_pragma_global);
+                              = FreeTree( store_wlcomp_pragma_global);
                           }
                           if ($3 != NULL) {
                             store_wlcomp_pragma_global = MakePragma();
-                            PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global) = $3;
+                            PRAGMA_WLCOMP_APS( store_wlcomp_pragma_global) = $3;
                           }
                           else {
                             store_wlcomp_pragma_global = NULL;
@@ -1217,7 +1219,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
                         }
                     ;
 
-wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
+wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
                        {
                          if ($3 != NULL) {
                            $$ = MakePragma();
@@ -1231,7 +1233,7 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                        { if (store_wlcomp_pragma_global != NULL) {
                            $$ = MakePragma();
                            PRAGMA_WLCOMP_APS( $$)
-                             = DupTree(PRAGMA_WLCOMP_APS( store_wlcomp_pragma_global));
+                             = DupTree( PRAGMA_WLCOMP_APS( store_wlcomp_pragma_global));
                          }
                          else {
                            $$ = NULL;
@@ -1239,56 +1241,58 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                        }
                    ;
 
-wlcomp_expr: DEFAULT
+wlcomp_conf: DEFAULT
                {
                  $$ = NULL;
                }
-           | id BRACKET_L wlcomp_args wlcomp_expr BRACKET_R
+           | ID BRACKET_L wlcomp_args wlcomp_conf BRACKET_R
                {
-                 node *tmp = $4;
-
-                 if ((!(optimize & OPT_TSP)) &&
-                     ((0 == strcmp( $1, "BvL0")) ||
-                      (0 == strcmp( $1, "BvL1")) ||
-                      (0 == strcmp( $1, "BvL2")))) {
+                 if ((! (optimize & OPT_TSP)) &&
+                     (! strncmp( $1, "Bv", 2))) {
                    $$ = $4;
                  }
                  else {
                    if ((! (optimize & OPT_APL)) &&
-                       (0 == strcmp( $1, "APL"))) {
+                       (! strcmp( $1, "APL"))) {
                      $$ = $4;
                    }
                    else {
-                     $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
-                     /* append $$ to $4 */
-                     if (tmp != NULL) {
-                       while (EXPRS_NEXT(tmp) != NULL) {
-                         tmp = EXPRS_NEXT(tmp);
-                       }
-                       EXPRS_NEXT(tmp) = $$;
-                       $$ = $4;
-                     }
+                     $$ = ExprsConcat( $4,
+                                       MakeExprs( MakeAp( $1, NULL, $3), NULL));
                    }
                  }
                }
            ;
 
-wlcomp_args: expr_ap COMMA wlcomp_args
-               { $$ = MakeExprs( $1, $3);
+wlcomp_args: wlcomp_arg COMMA wlcomp_args
+               {
+                 $$ = MakeExprs( $1, $3);
                }
-           | expr_ar COMMA wlcomp_args
-               { $$ = MakeExprs( $1, $3);
-               }
-           | expr_num COMMA wlcomp_args
-               { $$ = MakeExprs( $1, $3);
-               }
-           | STR COMMA wlcomp_args
-               { $$ = MakeExprs( MakeId( $1, NULL, ST_regular), $3);
-               }
-           |
-               { $$ = NULL;
+           | /* empty */
+               {
+                 $$ = NULL;
                }
            ;
+
+wlcomp_arg:
+  /*
+   * The first token of this rule must *not* equal ID in order to avoid an
+   * unsolvable shift/reduce conflict:
+   *   wlcomp_args  ->  wlcomp_arg COMMA . wlcomp_args
+   *     ID       shift
+   *     default  reduce (wlcomp_args)
+   * Is the look-ahead 'ID' the first token of the next wlcomp_arg (shift) or
+   * the first token of 'wlcomp_conf' (reduce) ???
+   *
+   * Therefore, the intended rule
+   *    expr_ap { $$ = $1; }
+   * is not possible here :-(
+   */
+            BRACE_L expr_ap BRACE_R { $$ = $2; }
+          | expr_ar                 { $$ = $1; }
+          | expr_num                { $$ = $1; }
+          | string                  { $$ = MakeId( $1, NULL, ST_regular); }
+          ;
 
 
 /* BRUSH BEGIN */
@@ -1332,10 +1336,10 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
                * it's own N_vardec node with it's own copy of the
                * types-structure from $1!
                */
-              while (IDS_NEXT($2) != NULL) {  /* at least 2 vardecs! */
-                vardec_ptr=MakeVardec( IDS_NAME($2),
-                                       DupTypes( $1),
-                                       vardec_ptr);
+              while (IDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
+                vardec_ptr = MakeVardec( IDS_NAME( $2),
+                                         DupTypes( $1),
+                                         vardec_ptr);
                 /* 
                  * Now, we want to "push" $2 one IDS further
                  * and we want to FREE the current IDS structure.
@@ -1345,24 +1349,23 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
                  * Therefore, we introduce a temporary ids_ptr, which holds
                  * the ptr to the "next $2" and manually free the current $2.
                  */
-                ids_ptr=IDS_NEXT( $2);
+                ids_ptr = IDS_NEXT( $2);
                 FREE( $2);
-                $2=ids_ptr;
+                $2 = ids_ptr;
               }
               /*
                * When we reach this point, all but one vardec is constructed!
                * Therefore, we can recycle the types node from $1 instead of
                * duplicating it as done in the loop above!
                */
-              $$=$4;
-              BLOCK_VARDEC($$)=MakeVardec(
-                                 IDS_NAME($2),
-                                   $1,
-                                     vardec_ptr);
+              $$ = $4;
+              BLOCK_VARDEC( $$) = MakeVardec( IDS_NAME( $2),
+                                              $1,
+                                              vardec_ptr);
               FREE( $2); /* Finally, we free the last IDS-node! */
 
             }
-          | assignsOPTret BRACE_R { $$=MakeBlock( $1, NULL); }
+          | assignsOPTret BRACE_R { $$ = MakeBlock( $1, NULL); }
           ;
 
 
@@ -1384,7 +1387,7 @@ wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
 assignblock: SEMIC     
              { $$ = MAKE_EMPTY_BLOCK();
              }
-           | BRACE_L {$<cint>$ = linenum;} pragmacachesim assigns BRACE_R 
+           | BRACE_L { $<cint>$ = linenum; } pragmacachesim assigns BRACE_R 
              { if ($4 == NULL) {
                  $$ = MAKE_EMPTY_BLOCK();
                }
@@ -1443,7 +1446,7 @@ assignsOPTret: /*
                     *      \
                     *     NULL
                     */
-                   DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT($1))) == N_while)
+                   DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
                                  && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
                                 "corrupted node returned for \"assign\"!");
                    $$ = $1;
@@ -1471,8 +1474,8 @@ assigns: /* empty */
               *      \
               *     NULL
               */
-             DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT($1)))==N_while)
-                           && (ASSIGN_NEXT( ASSIGN_NEXT($1))==NULL),
+             DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
+                           && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
                           "corrupted node returned for \"assign\"!");
              $$ = $1;
              ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $2;
@@ -1492,16 +1495,16 @@ letassign: ids LET { $<cint>$ = linenum; } expr
            { $$ = MakeLet( $4, $1);
              NODE_LINE( $$) = $<cint>3;
            }
-         | id SQBR_L expr SQBR_R LET {$<cint>$=linenum;} expr
+         | id SQBR_L expr SQBR_R LET { $<cint>$ = linenum; } expr
            { $$ = MakeLet( MakePrf( F_modarray,
                              MakeExprs( MakeId( $1, NULL, ST_regular) ,
                                MakeExprs( $3,
-                                 MakeExprs($7,
+                                 MakeExprs( $7,
                                    NULL)))),
                            MakeIds( StringCopy( $1), NULL, ST_regular));
              NODE_LINE( $$) = $<cint>6;
            }
-         | id SQBR_L expr COMMA exprs SQBR_R LET {$<cint>$=linenum;} expr
+         | id SQBR_L expr COMMA exprs SQBR_R LET { $<cint>$ = linenum; } expr
            { $$ = MakeLet( MakePrf( F_modarray,
                              MakeExprs( MakeId( $1, NULL, ST_regular) ,
                                         MakeExprs( MakeArray( MakeExprs( $3, $5)),
@@ -1510,7 +1513,7 @@ letassign: ids LET { $<cint>$ = linenum; } expr
                          MakeIds( StringCopy( $1), NULL, ST_regular));
              NODE_LINE( $$) = $<cint>8;
            }
-         | expr_ap 
+         | expr_ap
            { $$ = MakeLet( $1, NULL);
            }
 
@@ -1519,7 +1522,6 @@ letassign: ids LET { $<cint>$ = linenum; } expr
          | INC id { $$ = MAKE_INCDEC_LET( $2, F_add); }
          | id DEC { $$ = MAKE_INCDEC_LET( $1, F_sub); }
          | DEC id { $$ = MAKE_INCDEC_LET( $2, F_sub); }
-
 /* left for later BRUSHING END */
 
          | id ADDON expr { $$ = MAKE_OPON_LET( $1, $3, F_add); }
@@ -1536,201 +1538,193 @@ selassign: IF { $<cint>$ = linenum; } BRACKET_L exprNOar BRACKET_R assignblock
            }
          ;
 
-optelse: ELSE assignblock                  { $$ = $2;                 }
-       | /* empty*/  %prec LOWER_THAN_ELSE { $$ = MAKE_EMPTY_BLOCK(); } 
+optelse: ELSE assignblock        { $$ = $2;                 }
+       | /* empty */  %prec ELSE { $$ = MAKE_EMPTY_BLOCK(); } 
        ;
 
-forassign: DO {$<cint>$=linenum;} assignblock
+forassign: DO { $<cint>$ = linenum; } assignblock
            WHILE BRACKET_L exprNOar BRACKET_R SEMIC
-           { $$=MakeDo( $6, $3);
-             NODE_LINE($$)=$<cint>2;
+           { $$ = MakeDo( $6, $3);
+             NODE_LINE( $$) = $<cint>2;
            }
-         | WHILE {$<cint>$=linenum;} BRACKET_L exprNOar BRACKET_R assignblock 
-           { $$=MakeWhile( $4, $6);
-             NODE_LINE($$)=$<cint>2;
+         | WHILE { $<cint>$ = linenum; } BRACKET_L exprNOar BRACKET_R assignblock 
+           { $$ = MakeWhile( $4, $6);
+             NODE_LINE( $$) = $<cint>2;
            }
-         | FOR {$<cint>$=linenum;} BRACKET_L assign exprNOar SEMIC 
+         | FOR { $<cint>$ = linenum; } BRACKET_L assign exprNOar SEMIC 
            letassign BRACKET_R assignblock
            { /*
               * for( x=e1; e2; y=e3) AssBlock
               * is transformed into
               * x=e1;
-              * while( e2) { AssBlock; y=e3;}
+              * while( e2) { AssBlock; y=e3; }
               */
-             $$=MakeAssign($4, MakeAssign( MakeWhile( $5, Append($9,$7)), NULL)); 
-             NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT($$)))=$<cint>2;
+             $$ = MakeAssign( $4, MakeAssign( MakeWhile( $5, Append( $9, $7)), NULL)); 
+             NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
            } 
          ;
 
-exprs: expr COMMA exprs { $$=MakeExprs($1, $3);   }
-     | expr             { $$=MakeExprs($1, NULL); }
+exprs: expr COMMA exprs { $$ = MakeExprs( $1, $3);   }
+     | expr             { $$ = MakeExprs( $1, NULL); }
      ;
 
-exprsNOar: exprNOar COMMA exprsNOar { $$=MakeExprs($1, $3);   }
-         | exprNOar                 { $$=MakeExprs($1, NULL); }
+exprsNOar: exprNOar COMMA exprsNOar { $$ = MakeExprs( $1, $3);   }
+         | exprNOar                 { $$ = MakeExprs( $1, NULL); }
          ;
 
-/*
- * not needed anymore
- *
-exprNOdot: expr %prec GENERATOR { $$ = $1; }
-         ;
- */
-
-exprORdot: expr %prec GENERATOR { $$ = $1;   }
-         | DOT                  { $$ = NULL; }
+exprORdot: expr  %prec GENERATOR { $$ = $1;   }
+         | DOT                   { $$ = NULL; }
          ;
 
-exprNOar: expr_main {$$ = $1;}
-        | expr_ap   {$$ = $1;}
-        | expr_num  {$$ = $1;}
+exprNOar: expr_main { $$ = $1; }
+        | expr_ap   { $$ = $1; }
+        | expr_num  { $$ = $1; }
         ;
- 
-expr: expr_main {$$ = $1;}
-    | expr_ar   {$$ = $1;}
-    | expr_ap   {$$ = $1;}
-    | expr_num  {$$ = $1;}
+
+expr: expr_main { $$ = $1; }
+    | expr_ar   { $$ = $1; }
+    | expr_ap   { $$ = $1; }
+    | expr_num  { $$ = $1; }
     ;
- 
-expr_num: NUM {$$=MakeNum( $1);}
+
+expr_num: NUM { $$ = MakeNum( $1); }
         ;
 
-expr_ar: SQBR_L {$<cint>$=linenum;} exprsNOar SQBR_R
-         { $$=MakeArray( $3);
-           NODE_LINE($$)=$<cint>2;
+expr_ar: SQBR_L { $<cint>$ = linenum; } exprsNOar SQBR_R
+         { $$ = MakeArray( $3);
+           NODE_LINE( $$) = $<cint>2;
          }
-       | SQBR_L {$<cint>$=linenum;} SQBR_R
-         { $$=MakeArray (NULL);
-           NODE_LINE($$) = $<cint>2;
+       | SQBR_L { $<cint>$ = linenum; } SQBR_R
+         { $$ = MakeArray( NULL);
+           NODE_LINE( $$) = $<cint>2;
          }
        ;       
 
-expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
-         { $$=MakeAp( $1, NULL, $4);
-           NODE_LINE($$)=$<cint>3;
+expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+         { $$ = MakeAp( $1, NULL, $4);
+           NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON id  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
-          { $$=MakeAp( $3, $1, $6);
-            NODE_LINE($$)=$<cint>5;
+       | id COLON id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+          { $$ = MakeAp( $3, $1, $6);
+            NODE_LINE( $$) = $<cint>5;
           }
-       | monop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+       | monop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           if (GetExprsLength($4)==1) {
-             $$=MakePrf($1, $4);
+           if (GetExprsLength( $4) == 1) {
+             $$ = MakePrf( $1, $4);
            }
            else {
-             $$=MakeAp(StringCopy(prf_name_str[$1]), NULL, $4);
+             $$ = MakeAp( StringCopy( prf_name_str[ $1]), NULL, $4);
            }
-           NODE_LINE($$)=$<cint>3;
+           NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON monop  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+       | id COLON monop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           $$=MakeAp(StringCopy(prf_name_str[$3]), $1, $6);
-           NODE_LINE($$)=$<cint>5;
+           $$ = MakeAp( StringCopy( prf_name_str[ $3]), $1, $6);
+           NODE_LINE( $$) = $<cint>5;
          }
-       | binop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+       | binop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           if (GetExprsLength($4)==2) {
-             $$=MakePrf($1, $4);
-           }
-           else {
-             $$=MakeAp(StringCopy(prf_name_str[$1]), NULL, $4);
-           }
-           NODE_LINE($$)=$<cint>3;
-         }
-       | id COLON binop  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
-         { 
-           $$=MakeAp(StringCopy(prf_name_str[$3]), $1, $6);
-           NODE_LINE($$)=$<cint>5;
-         }
-       | triop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
-         { 
-           if (GetExprsLength($4)==3) {
-             $$=MakePrf($1, $4);
+           if (GetExprsLength( $4) == 2) {
+             $$ = MakePrf( $1, $4);
            }
            else {
-             $$=MakeAp(StringCopy(prf_name_str[$1]), NULL, $4);
+             $$ = MakeAp( StringCopy( prf_name_str[ $1]), NULL, $4);
            }
-           NODE_LINE($$)=$<cint>3;
+           NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON triop  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+       | id COLON binop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           $$=MakeAp(StringCopy(prf_name_str[$3]), $1, $6);
-           NODE_LINE($$)=$<cint>5;
+           $$ = MakeAp( StringCopy( prf_name_str[ $3]), $1, $6);
+           NODE_LINE( $$) = $<cint>5;
          }
-       | ALL BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+       | triop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           $$=MakeAp(StringCopy("all"), NULL, $4);
-           NODE_LINE($$)=$<cint>3;
+           if (GetExprsLength( $4) == 3) {
+             $$ = MakePrf( $1, $4);
+           }
+           else {
+             $$ = MakeAp( StringCopy( prf_name_str[ $1]), NULL, $4);
+           }
+           NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON ALL  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+       | id COLON triop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           $$=MakeAp(StringCopy("all"), $1, $6);
-           NODE_LINE($$)=$<cint>5;
+           $$ = MakeAp( StringCopy( prf_name_str[ $3]), $1, $6);
+           NODE_LINE( $$) = $<cint>5;
+         }
+       | ALL BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+         { 
+           $$ = MakeAp( StringCopy( "all"), NULL, $4);
+           NODE_LINE( $$) = $<cint>3;
+         }
+       | id COLON ALL BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+         { 
+           $$ = MakeAp( StringCopy( "all"), $1, $6);
+           NODE_LINE( $$) = $<cint>5;
          }
        ;
 
-opt_arguments: exprs { $$=$1; }
-             |       { $$=NULL; }
+opt_arguments: exprs { $$ = $1; }
+             |       { $$ = NULL; }
              ;
 
 expr_main: id  { $$ = MakeId( $1, NULL, ST_regular); }
          | id COLON id { $$ = MakeId( $3, $1, ST_regular); }
-         | MINUS id %prec UMINUS
+         | MINUS id  %prec SIGN
            { /*
               * substitute unary minus by multiplication
               * with -1!
               */
-             $$=MAKE_BIN_PRF( F_mul, 
-                                MakeNum( -1),
-                                  MakeId( $2, NULL, ST_regular));
+             $$ = MAKE_BIN_PRF( F_mul, 
+                                  MakeNum( -1),
+                                    MakeId( $2, NULL, ST_regular));
            }
-         | BRACKET_L COLON type BRACKET_R expr %prec CAST
-           { $$=MakeCast( $5, $3);
+         | BRACKET_L COLON type BRACKET_R expr  %prec CAST
+           { $$ = MakeCast( $5, $3);
            }
          | NOT expr
-           { $$=MakePrf( F_not,
-                         MakeExprs( $2, NULL));
+           { $$ = MakePrf( F_not, MakeExprs( $2, NULL));
            }
-         | BRACKET_L expr BRACKET_R { $$=$2; }
+         | BRACKET_L expr BRACKET_R { $$ = $2; }
          | expr SQBR_L expr SQBR_R
            { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
-             NODE_LINE($$) = NODE_LINE( $1);
+             NODE_LINE( $$) = NODE_LINE( $1);
            }
          | expr SQBR_L expr COMMA exprs SQBR_R
            { $$ = MakePrf( F_psi,
                     MakeExprs( MakeArray( MakeExprs( $3, $5)), 
                       MakeExprs( $1,
                         NULL)));
-             NODE_LINE($$) = NODE_LINE( $1);
+             NODE_LINE( $$) = NODE_LINE( $1);
            }
-         | expr AND expr     { $$=MAKE_BIN_PRF( F_and,$1,$3); }
-         | expr OR expr      { $$=MAKE_BIN_PRF( F_or ,$1,$3); }
-         | expr EQ expr      { $$=MAKE_BIN_PRF( F_eq ,$1,$3); }
-         | expr NEQ expr     { $$=MAKE_BIN_PRF( F_neq,$1,$3); }
-         | expr LE expr      { $$=MAKE_BIN_PRF( F_le ,$1,$3); }
-         | expr LT expr      { $$=MAKE_BIN_PRF( F_lt ,$1,$3); }
-         | expr GE expr      { $$=MAKE_BIN_PRF( F_ge ,$1,$3); }
-         | expr GT expr      { $$=MAKE_BIN_PRF( F_gt ,$1,$3); }
-         | expr PLUS expr    { $$=MAKE_BIN_PRF( F_add,$1,$3); }
-         | expr MINUS expr   { $$=MAKE_BIN_PRF( F_sub,$1,$3); }
-         | expr DIV expr     { $$=MAKE_BIN_PRF( F_div,$1,$3); }
-         | expr MUL expr     { $$=MAKE_BIN_PRF( F_mul,$1,$3); }
-         | expr PRF_MOD expr { $$=MAKE_BIN_PRF( F_mod,$1,$3); }
-         | MINUS NUM %prec UMINUS    { $$=MakeNum( -$2);           }
-         | PLUS  NUM %prec UMINUS    { $$=MakeNum( $2);            }
-         | CHAR                      { $$=MakeChar( $1);           }
-         | FLOAT                     { $$=MakeFloat( $1);          }
-         | MINUS FLOAT %prec UMINUS  { $$=MakeFloat( -$2);         }
-         | PLUS FLOAT %prec UMINUS   { $$=MakeFloat( $2);          }
-         | DOUBLE                    { $$=MakeDouble( $1);         }
-         | MINUS DOUBLE %prec UMINUS { $$=MakeDouble( -$2);        }
-         | PLUS DOUBLE %prec UMINUS  { $$=MakeDouble( $2);         }
-         | TRUETOKEN                 { $$=MakeBool( 1);            }
-         | FALSETOKEN                { $$=MakeBool( 0);            }
-         | string                    { $$=string2array($1);        }
+         | expr AND expr     { $$ = MAKE_BIN_PRF( F_and,$1,$3); }
+         | expr OR expr      { $$ = MAKE_BIN_PRF( F_or ,$1,$3); }
+         | expr EQ expr      { $$ = MAKE_BIN_PRF( F_eq ,$1,$3); }
+         | expr NEQ expr     { $$ = MAKE_BIN_PRF( F_neq,$1,$3); }
+         | expr LE expr      { $$ = MAKE_BIN_PRF( F_le ,$1,$3); }
+         | expr LT expr      { $$ = MAKE_BIN_PRF( F_lt ,$1,$3); }
+         | expr GE expr      { $$ = MAKE_BIN_PRF( F_ge ,$1,$3); }
+         | expr GT expr      { $$ = MAKE_BIN_PRF( F_gt ,$1,$3); }
+         | expr PLUS expr    { $$ = MAKE_BIN_PRF( F_add,$1,$3); }
+         | expr MINUS expr   { $$ = MAKE_BIN_PRF( F_sub,$1,$3); }
+         | expr DIV expr     { $$ = MAKE_BIN_PRF( F_div,$1,$3); }
+         | expr MUL expr     { $$ = MAKE_BIN_PRF( F_mul,$1,$3); }
+         | expr PRF_MOD expr { $$ = MAKE_BIN_PRF( F_mod,$1,$3); }
+         | MINUS NUM  %prec SIGN    { $$ = MakeNum( -$2);     }
+         | PLUS  NUM  %prec SIGN    { $$ = MakeNum( $2);      }
+         | CHAR                     { $$ = MakeChar( $1);     }
+         | FLOAT                    { $$ = MakeFloat( $1);    }
+         | MINUS FLOAT  %prec SIGN  { $$ = MakeFloat( -$2);   }
+         | PLUS  FLOAT  %prec SIGN  { $$ = MakeFloat( $2);    }
+         | DOUBLE                   { $$ = MakeDouble( $1);   }
+         | MINUS DOUBLE  %prec SIGN { $$ = MakeDouble( -$2);  }
+         | PLUS  DOUBLE  %prec SIGN { $$ = MakeDouble( $2);   }
+         | TRUETOKEN                { $$ = MakeBool( 1);      }
+         | FALSETOKEN               { $$ = MakeBool( 0);      }
+         | string                   { $$ = string2array( $1); }
          | wlcomp_pragma_local
-           NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
+           NWITH { $<cint>$ = linenum; } BRACKET_L Ngenerator BRACKET_R
            wlassignblock Nwithop
            { /*
               * the tricky part about this rule is that $8 (an N_Nwithop node)
@@ -1740,33 +1734,33 @@ expr_main: id  { $$ = MakeId( $1, NULL, ST_regular); }
               * from the non-terminal Nwithop would lead to a shift/reduce
               * conflict in that rule!
               */
-             $$=MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR($8)), $8);
-             NWITHOP_EXPR($8) = NULL;
-             NCODE_USED(NWITH_CODE($$))++;
-             NODE_LINE($$)= $<cint>3;
-             NWITH_PRAGMA($$) = $1;
+             $$ = MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR( $8)), $8);
+             NWITHOP_EXPR( $8) = NULL;
+             NCODE_USED( NWITH_CODE( $$))++;
+             NODE_LINE( $$)= $<cint>3;
+             NWITH_PRAGMA( $$) = $1;
 
              /*
               * Finally, we generate the connection between the 
               * (only) partition and the (only) code!
               */
-             NPART_CODE( NWITH_PART($$)) = NWITH_CODE($$);
+             NPART_CODE( NWITH_PART( $$)) = NWITH_CODE( $$);
            }
          ;
 
 
 Ngenerator: exprORdot Ngenop Ngenidx Ngenop exprORdot Nsteps Nwidth
             { 
-              $$=MakeNPart( $3, MakeNGenerator( $1, $5, $2,  $4, $6, $7), NULL);
+              $$ = MakeNPart( $3, MakeNGenerator( $1, $5, $2,  $4, $6, $7), NULL);
             }
           ;
 
 Nsteps: /* empty */ { $$ = NULL; }
-      | STEP expr   { $$ = $2;}
+      | STEP expr   { $$ = $2; }
       ;
 
 Nwidth: /* empty */ { $$ = NULL; }
-      | WIDTH expr  { $$ = $2;}
+      | WIDTH expr  { $$ = $2; }
       ;
 
 Ngenidx: id LET SQBR_L ids SQBR_R 
@@ -1777,88 +1771,88 @@ Ngenidx: id LET SQBR_L ids SQBR_R
        | SQBR_L ids SQBR_R { $$ = MakeNWithid( NULL, $2); }
        ;
 
-Ngenop:   LT {$$=F_lt;}
-        | LE {$$=F_le;}
+Ngenop:   LT { $$ = F_lt; }
+        | LE { $$ = F_le; }
         ;
 
 Nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_genarray);
-           NWITHOP_SHAPE($$) = $3;
-           NWITHOP_EXPR($$) = $5;
+           NWITHOP_SHAPE( $$) = $3;
+           NWITHOP_EXPR( $$) = $5;
          }
        | MODARRAY BRACKET_L expr COMMA id COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_modarray);
-           NWITHOP_ARRAY($$) = $3;
-           NWITHOP_EXPR($$) = $7;
+           NWITHOP_ARRAY( $$) = $3;
+           NWITHOP_EXPR( $$) = $7;
          }
        | FOLD BRACKET_L foldop COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_foldprf);
-           NWITHOP_PRF($$) = $3;
-           NWITHOP_EXPR($$) = $5;
+           NWITHOP_PRF( $$) = $3;
+           NWITHOP_EXPR( $$) = $5;
          }
        | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_foldprf);
-           NWITHOP_PRF($$) = $3;
-           NWITHOP_NEUTRAL($$) = $5;
-           NWITHOP_EXPR($$) = $7;
+           NWITHOP_PRF( $$) = $3;
+           NWITHOP_NEUTRAL( $$) = $5;
+           NWITHOP_EXPR( $$) = $7;
          }
        | FOLD BRACKET_L id COMMA expr COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_foldfun);
-           NWITHOP_FUN($$) = $3;
-           NWITHOP_NEUTRAL($$) = $5;
-           NWITHOP_EXPR($$) = $7;
+           NWITHOP_FUN( $$) = $3;
+           NWITHOP_NEUTRAL( $$) = $5;
+           NWITHOP_EXPR( $$) = $7;
          }
        | FOLD BRACKET_L id COLON id COMMA expr COMMA expr BRACKET_R
          { $$ = MakeNWithOp( WO_foldfun);
-           NWITHOP_FUN($$) = $5;
-           NWITHOP_MOD($$) = $3;
-           NWITHOP_NEUTRAL($$) = $7;
-           NWITHOP_EXPR($$) = $9;
+           NWITHOP_FUN( $$) = $5;
+           NWITHOP_MOD( $$) = $3;
+           NWITHOP_NEUTRAL( $$) = $7;
+           NWITHOP_EXPR( $$) = $9;
          }
        ;
 
-foldop: PLUS    {$$=F_add;}
-      | MUL     {$$=F_mul;}
-      | PRF_MIN {$$=F_min;}
-      | PRF_MAX {$$=F_max;}
-      | AND     {$$=F_and;}
-      | OR      {$$=F_or; }
+foldop: PLUS    { $$ = F_add; }
+      | MUL     { $$ = F_mul; }
+      | PRF_MIN { $$ = F_min; }
+      | PRF_MAX { $$ = F_max; }
+      | AND     { $$ = F_and; }
+      | OR      { $$ = F_or; }
       ;
 
-monop: ABS   { $$=F_abs;   }
-     | DIM   { $$=F_dim;   }
-     | SHAPE { $$=F_shape; }
-     | TOI   { $$=F_toi;   }
-     | TOF   { $$=F_tof;   }
-     | TOD   { $$=F_tod;   }
+monop: ABS   { $$ = F_abs;   }
+     | DIM   { $$ = F_dim;   }
+     | SHAPE { $$ = F_shape; }
+     | TOI   { $$ = F_toi;   }
+     | TOF   { $$ = F_tof;   }
+     | TOD   { $$ = F_tod;   }
      ;
 
-binop: PSI      { $$=F_psi;      }
-     | TAKE     { $$=F_take;     }
-     | DROP     { $$=F_drop;     }
-     | RESHAPE  { $$=F_reshape;  }
-     | GENARRAY { $$=F_genarray; }
-     | PRF_MIN  { $$=F_min;      }
-     | PRF_MAX  { $$=F_max;      }
-     | PLUS     { $$=F_add;      }
-     | MINUS    { $$=F_sub;      }
-     | MUL      { $$=F_mul;      }
-     | DIV      { $$=F_div;      }
-     | PRF_MOD  { $$=F_mod;      }
-     | EQ       { $$=F_eq;       }
-     | NEQ      { $$=F_neq;      }
-     | LT       { $$=F_lt;       }
-     | LE       { $$=F_le;       }
-     | GT       { $$=F_gt;       }
-     | GE       { $$=F_ge;       }
-     | AND      { $$=F_and;      }
-     | OR       { $$=F_or;       }
+binop: PSI      { $$ = F_psi;      }
+     | TAKE     { $$ = F_take;     }
+     | DROP     { $$ = F_drop;     }
+     | RESHAPE  { $$ = F_reshape;  }
+     | GENARRAY { $$ = F_genarray; }
+     | PRF_MIN  { $$ = F_min;      }
+     | PRF_MAX  { $$ = F_max;      }
+     | PLUS     { $$ = F_add;      }
+     | MINUS    { $$ = F_sub;      }
+     | MUL      { $$ = F_mul;      }
+     | DIV      { $$ = F_div;      }
+     | PRF_MOD  { $$ = F_mod;      }
+     | EQ       { $$ = F_eq;       }
+     | NEQ      { $$ = F_neq;      }
+     | LT       { $$ = F_lt;       }
+     | LE       { $$ = F_le;       }
+     | GT       { $$ = F_gt;       }
+     | GE       { $$ = F_ge;       }
+     | AND      { $$ = F_and;      }
+     | OR       { $$ = F_or;       }
      ;
 
 
-triop: ROTATE   { $$=F_rotate;   }
-     | CAT      { $$=F_cat;      }
-     | MODARRAY { $$=F_modarray; }
+triop: ROTATE   { $$ = F_rotate;   }
+     | CAT      { $$ = F_cat;      }
+     | MODARRAY { $$ = F_modarray; }
      ;
 
 ids: id COMMA ids 
@@ -1879,100 +1873,100 @@ funids: fun_name COMMA funids
         }
       ;
 
-nums: NUM COMMA nums { $$=MakeNums($1, $3);   }
-    | NUM            { $$=MakeNums($1, NULL); }
+nums: NUM COMMA nums { $$ = MakeNums( $1, $3);   }
+    | NUM            { $$ = MakeNums( $1, NULL); }
     ; 
 
-dots: DOT COMMA dots { $$=$3-1;                }
-    | DOT            { $$=KNOWN_DIM_OFFSET -1; }
+dots: DOT COMMA dots { $$ = $3 - 1;               }
+    | DOT            { $$ = KNOWN_DIM_OFFSET - 1; }
     ;
 
-returntypes: TYPE_VOID { $$=MakeTypes1(T_void); }
-           | types     { $$=$1;                 }
+returntypes: TYPE_VOID { $$ = MakeTypes1( T_void); }
+           | types     { $$ = $1;                  }
            ;
 
 types: type COMMA types
-       { $$=$1;
-         TYPES_NEXT($$)=$3; 
+       { $$ = $1;
+         TYPES_NEXT( $$) = $3; 
        }
-     | type { $$=$1; }
+     | type { $$ = $1; }
      ;
 
-varreturntypes: TYPE_VOID { $$=MakeTypes1(T_void); }
-              | vartypes  { $$=$1;                 }
+varreturntypes: TYPE_VOID { $$ = MakeTypes1( T_void); }
+              | vartypes  { $$ = $1;                  }
               ;
 
 vartypes: type COMMA vartypes 
-          { $$=$1;
-            TYPES_NEXT($$)=$3;
+          { $$ = $1;
+            TYPES_NEXT( $$) = $3;
           }
-        | type { $$=$1; }
+        | type { $$ = $1; }
         | TYPE_DOTS
           { if ((F_extmoddec != file_kind) 
                    && (F_extclassdec != file_kind)
                      && (F_sib != file_kind)) {
-              strcpy(yytext,"...");
-              yyerror("syntax error");
+              strcpy( yytext, "...");
+              yyerror( "syntax error");
             }
             else {
-              $$=MakeTypes1(T_dots);
+              $$ = MakeTypes1( T_dots);
             }
           }
         ;
 
-typeNOudt_arr: localtype_main {$$ = $1;}
+typeNOudt_arr: localtype_main { $$ = $1; }
              | id COLON localtype
-               { $$=$3;
-                 TYPES_MOD($$)=$1;
+               { $$ = $3;
+                 TYPES_MOD( $$) = $1;
                }
              ;
 
-type: localtype { $$=$1; }
+type: localtype { $$ = $1; }
       | id COLON localtype
-        { $$=$3;
-          TYPES_MOD($$)=$1;
+        { $$ = $3;
+          TYPES_MOD( $$) = $1;
         }
       ;
 
-localtype: localtype_main     {$$=$1;}
-         | local_type_udt_arr {$$=$1;}
+localtype: localtype_main     { $$ = $1; }
+         | local_type_udt_arr { $$ = $1; }
          ;
 
-localtype_main: simpletype {$$ = $1; }
+localtype_main: simpletype { $$ = $1; }
               | simpletype_main SQBR_L nums SQBR_R  
-                { $$=GenComplexType($1,$3); }
-              | simpletype_main  SQBR_L SQBR_R  
+                { $$ = GenComplexType( $1, $3); }
+              | simpletype_main SQBR_L SQBR_R  
                 { $$ = $1;
-                  TYPES_DIM($$) = UNKNOWN_SHAPE;
+                  TYPES_DIM( $$) = UNKNOWN_SHAPE;
                 }
               | simpletype_main  SQBR_L QUESTION SQBR_R  
                 { $$ = $1;
-                  TYPES_DIM($$) = ARRAY_OR_SCALAR;
+                  TYPES_DIM( $$) = ARRAY_OR_SCALAR;
                 }
               | simpletype_main SQBR_L dots SQBR_R
                 { $$ = $1;
-                  TYPES_DIM($$) = $3;
+                  TYPES_DIM( $$) = $3;
                 }
               | id SQBR_L SQBR_R
-                { $$=MakeTypes1(T_user);
-                  TYPES_NAME($$) = $1;
-                  TYPES_DIM($$)  = UNKNOWN_SHAPE;
+                { $$ = MakeTypes1( T_user);
+                  TYPES_NAME( $$) = $1;
+                  TYPES_DIM( $$) = UNKNOWN_SHAPE;
                 }
               | id SQBR_L QUESTION SQBR_R
-                { $$=MakeTypes1(T_user);
-                  TYPES_NAME($$) = $1;
-                  TYPES_DIM($$)  = ARRAY_OR_SCALAR;
+                { $$ = MakeTypes1( T_user);
+                  TYPES_NAME( $$) = $1;
+                  TYPES_DIM( $$) = ARRAY_OR_SCALAR;
                 }
               | id SQBR_L dots SQBR_R
-                { $$=MakeTypes1(T_user);
-                  TYPES_NAME($$) = $1;
-                  TYPES_DIM($$)  = $3;
+                { $$ = MakeTypes1( T_user);
+                  TYPES_NAME( $$) = $1;
+                  TYPES_DIM( $$) = $3;
                 }
               ;
 
 local_type_udt_arr: id SQBR_L nums SQBR_R
-                    { $$=MakeTypes1(T_user);
-                      TYPES_NAME($$) = $1;
+                    { $$ = MakeTypes1( T_user);
+                      TYPES_NAME( $$) = $1;
                       $$ = GenComplexType( $$, $3);
                     }
                   ;
@@ -1980,34 +1974,34 @@ local_type_udt_arr: id SQBR_L nums SQBR_R
 simpletype: simpletype_main { $$ = $1; }
           | id 
             { $$ = MakeTypes1( T_user);
-              TYPES_NAME($$) = $1;
+              TYPES_NAME( $$) = $1;
             }
           ;
 
-simpletype_main: TYPE_INT   { $$=MakeTypes1(T_int);    }
-               | TYPE_FLOAT { $$=MakeTypes1(T_float);  }
-               | TYPE_BOOL  { $$=MakeTypes1(T_bool);   }
-               | TYPE_CHAR  { $$=MakeTypes1(T_char);   }
-               | TYPE_DBL   { $$=MakeTypes1(T_double); }
+simpletype_main: TYPE_INT   { $$ = MakeTypes1( T_int);    }
+               | TYPE_FLOAT { $$ = MakeTypes1( T_float);  }
+               | TYPE_BOOL  { $$ = MakeTypes1( T_bool);   }
+               | TYPE_CHAR  { $$ = MakeTypes1( T_char);   }
+               | TYPE_DBL   { $$ = MakeTypes1( T_double); }
                ;
 
 
 string: STR
         {
-          $$=$1;
+          $$ = $1;
         }
       | STR string
         {
-          $$=(char *)MALLOC(strlen($1)+strlen($2)+1);
-          strcpy($$, $1);
-          strcat($$, $2);
-          FREE($1);
-          FREE($2);
+          $$ = (char *) MALLOC( strlen( $1) + strlen( $2) + 1);
+          strcpy( $$, $1);
+          strcat( $$, $2);
+          FREE( $1);
+          FREE( $2);
         }
       ;
 
 
-/*       BRUSH END    */
+/* BRUSH END */
 
 
 /*
@@ -2022,84 +2016,84 @@ string: STR
 sib: sibheader siblinkwith sibtypes
        {
          $$ = $3;
-         SIB_LINKSTYLE($$) = $1;
-         SIB_LINKWITH($$)  = $2;
+         SIB_LINKSTYLE( $$) = $1;
+         SIB_LINKWITH( $$) = $2;
 
          DBUG_PRINT( "GENSIB", ("%s"P_FORMAT,
-                               mdb_nodetype[ NODE_TYPE( $$) ],
+                               mdb_nodetype[ NODE_TYPE( $$)],
                                $$));
        }
    ;
 
 sibheader: LT MODIMP id GT
              {
-               mod_name=$3;
-               file_kind=F_sib;
-               sib_imported_status=ST_imported_mod;
+               mod_name = $3;
+               file_kind = F_sib;
+               sib_imported_status = ST_imported_mod;
                
-               $$=0;
+               $$ = 0;
              }
          | LT MODIMP id COLON ALL GT
              {
-               mod_name=$3;
-               file_kind=F_sib;
-               sib_imported_status=ST_imported_mod;
+               mod_name = $3;
+               file_kind = F_sib;
+               sib_imported_status = ST_imported_mod;
 
-               $$=1;
+               $$ = 1;
              }
          | LT CLASSIMP id GT
              {
-               mod_name=$3;
-               file_kind=F_sib;
-               sib_imported_status=ST_imported_class;
+               mod_name = $3;
+               file_kind = F_sib;
+               sib_imported_status = ST_imported_class;
 
-               $$=0;
+               $$ = 0;
              }
          | LT CLASSIMP id COLON ALL GT
              {
-               mod_name=$3;
-               file_kind=F_sib;
-               sib_imported_status=ST_imported_class;
+               mod_name = $3;
+               file_kind = F_sib;
+               sib_imported_status = ST_imported_class;
 
-               $$=1;
+               $$ = 1;
              }
          ;
 
-siblinkwith: LINKWITH siblinklist {$$=$2;}
-             | {$$=NULL;}
-                  ;
+siblinkwith: LINKWITH siblinklist { $$ = $2; }
+             | { $$ = NULL; }
+             ;
 
 siblinklist: siblinkliststatus string sibsublinklist COMMA siblinklist
              {
-               $$=MakeDeps($2, NULL, NULL, $1, LOC_stdlib, $3, $5);
+               $$ = MakeDeps( $2, NULL, NULL, $1, LOC_stdlib, $3, $5);
              }
            | siblinkliststatus string sibsublinklist 
              {
-               $$=MakeDeps($2, NULL, NULL, $1, LOC_stdlib, $3, NULL);
+               $$ = MakeDeps( $2, NULL, NULL, $1, LOC_stdlib, $3, NULL);
              }
            ;
 
 siblinkliststatus: EXTERN 
                    {
-                     $$=ST_external;
+                     $$ = ST_external;
                    }
                  | LINKWITH
                    {
-                     $$=ST_system;
+                     $$ = ST_system;
                    }
                  |
                    {
-                     $$=ST_sac;
+                     $$ = ST_sac;
                    }
                  ;
 
 sibsublinklist: BRACE_L siblinklist BRACE_R
                 {
-                  $$=$2;
+                  $$ = $2;
                 }
               | 
                 {
-                  $$=NULL;
+                  $$ = NULL;
                 }
               ;
 
@@ -2112,7 +2106,7 @@ sibtypes: sibtype sibtypes
             }
         | sibobjs
             {
-              $$=$1;
+              $$ = $1;
             } 
         ;
 
@@ -2124,9 +2118,8 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
-                        $$, 
-                        TYPEDEF_TYPE($$), ItemName($$)));
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
            }
        | sibevclass TYPEDEF type id COLON id SEMIC sibpragmas
            {
@@ -2136,37 +2129,34 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
-                        $$, 
-                        TYPEDEF_TYPE($$), ItemName($$)));
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
            }
        | sibevclass TYPEDEF IMPLICIT id SEMIC sibpragmas
            {
              $$ = MakeTypedef( $4, NULL,
                                MakeTypes1( T_hidden),
                                $1, NULL);
-             TYPEDEF_STATUS($$) = sib_imported_status;
-             TYPEDEF_PRAGMA($$) = $6;
+             TYPEDEF_STATUS( $$) = sib_imported_status;
+             TYPEDEF_PRAGMA( $$) = $6;
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
-                        $$, 
-                        TYPEDEF_TYPE($$), ItemName($$)));
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
            }
        | sibevclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
            {
              $$ = MakeTypedef( $6, $4,
                                MakeTypes1( T_hidden),
                                $1, NULL);
-             TYPEDEF_STATUS($$) = sib_imported_status;
-             TYPEDEF_PRAGMA($$) = $8;
+             TYPEDEF_STATUS( $$) = sib_imported_status;
+             TYPEDEF_PRAGMA( $$) = $8;
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
-                        $$, 
-                        TYPEDEF_TYPE($$), ItemName($$)));
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
            }
         ;
 
@@ -2188,35 +2178,33 @@ sibobjs: sibobj sibobjs
 
 sibobj: OBJDEF type id SEMIC sibpragmas
           {
-            $$=MakeObjdef( $3, NULL, $2, NULL, NULL);
+            $$ = MakeObjdef( $3, NULL, $2, NULL, NULL);
             OBJDEF_PRAGMA( $$) = $5;
             OBJDEF_STATUS( $$) = sib_imported_status;
             
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
-                        $$, 
-                        OBJDEF_TYPE($$), ItemName($$)));
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, OBJDEF_TYPE( $$), ItemName( $$)));
           }
       | OBJDEF type id COLON id SEMIC sibpragmas
           {
-            $$=MakeObjdef( $5, $3, $2, NULL, NULL);
+            $$ = MakeObjdef( $5, $3, $2, NULL, NULL);
             OBJDEF_PRAGMA( $$) = $7;
             OBJDEF_STATUS( $$) = sib_imported_status;
             
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$) ],
-                        $$, 
-                        OBJDEF_TYPE($$), ItemName($$)));
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, OBJDEF_TYPE( $$), ItemName( $$)));
           }
       ;
 
 sibfuns: sibfun sibfuns
          {
            $$ = $2;
-           FUNDEF_NEXT($1)=SIB_FUNS($2);
-           SIB_FUNS($$) = $1;
+           FUNDEF_NEXT( $1) = SIB_FUNS( $2);
+           SIB_FUNS( $$) = $1;
          }
        | 
          {
@@ -2245,9 +2233,8 @@ sibfun: sibevmarker varreturntypes fun_name
             FUNDEF_PRAGMA( $$) = $8;
 
            DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s",
-                               mdb_nodetype[ NODE_TYPE( $$) ],
-                               $$,
-                               ItemName($$)));
+                               mdb_nodetype[ NODE_TYPE( $$)],
+                               $$, ItemName( $$)));
           }
       | sibevmarker varreturntypes id COLON fun_name 
         BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
@@ -2255,47 +2242,46 @@ sibfun: sibevmarker varreturntypes fun_name
             $$ = MakeFundef( $5, $3, $2, $7, $9, NULL);
             switch ($1) {
               case 0:
-                FUNDEF_STATUS($$)=sib_imported_status;
-                FUNDEF_INLINE($$)=FALSE;
+                FUNDEF_STATUS( $$) = sib_imported_status;
+                FUNDEF_INLINE( $$) = FALSE;
                 break;
               case 1:
-                FUNDEF_STATUS($$)=sib_imported_status;
-                FUNDEF_INLINE($$)=TRUE;
+                FUNDEF_STATUS( $$) = sib_imported_status;
+                FUNDEF_INLINE( $$) = TRUE;
                 break;
               case 2:
-                FUNDEF_STATUS($$)=ST_classfun;
-                FUNDEF_INLINE($$)=FALSE;
+                FUNDEF_STATUS( $$) = ST_classfun;
+                FUNDEF_INLINE( $$) = FALSE;
                 break;
             }
-            FUNDEF_PRAGMA($$)=$10;
+            FUNDEF_PRAGMA( $$) = $10;
 
             DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s",
                                 mdb_nodetype[ NODE_TYPE( $$)],
-                                $$,
-                                ItemName($$)));
+                                $$, ItemName( $$)));
 
           }
         ;
 
 sibevmarker: INLINE   
-             { $$=1; } 
-           | CLASSTYPE { $$=2; }
-           | { $$=0; }
+             { $$ = 1; } 
+           | CLASSTYPE { $$ = 2; }
+           | { $$ = 0; }
            ;
 
 sibarglist: sibargs
-            { $$=$1; }
-          | { $$=NULL; }
+            { $$ = $1; }
+          | { $$ = NULL; }
           ;
 
 sibargs: sibarg COMMA sibargs
          {
-           $$=$1;
-           ARG_NEXT($$)=$3;
+           $$ = $1;
+           ARG_NEXT( $$) = $3;
          }
        | sibarg
          {
-           $$=$1;
+           $$ = $1;
          }
        ;
 
@@ -2305,9 +2291,10 @@ sibarg: type sibreference sibparam
 
           DBUG_PRINT("GENSIB",
                      ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
-                      mdb_nodetype[ NODE_TYPE( $$) ],
+                      mdb_nodetype[ NODE_TYPE( $$)],
                       $$, 
-                      CHECK_NULL( ARG_NAME($$)), ARG_ATTRIB($$), ARG_STATUS($$)));
+                      CHECK_NULL( ARG_NAME( $$)),
+                                  ARG_ATTRIB( $$), ARG_STATUS( $$)));
         }
       | TYPE_DOTS
         {
@@ -2315,56 +2302,54 @@ sibarg: type sibreference sibparam
 
           DBUG_PRINT("GENSIB",
                      ("%s: "P_FORMAT", ... , Attrib: %d, Status: %d  ",
-                      mdb_nodetype[ NODE_TYPE( $$) ],
-                      $$, 
-                      ARG_ATTRIB($$),
-                      ARG_STATUS($$)));
+                      mdb_nodetype[ NODE_TYPE( $$)],
+                      $$, ARG_ATTRIB($$), ARG_STATUS($$)));
         }
       ;
 
 sibparam: id
           {
-            $$=$1;
+            $$ = $1;
           }
         |
           {
-            $$=NULL;
+            $$ = NULL;
           }
         ;
 
 sibreference: BRACKET_L AMPERS BRACKET_R
               {
-                $$=ST_readonly_reference;
+                $$ = ST_readonly_reference;
               }
             | AMPERS
               {
-                $$=ST_reference;
+                $$ = ST_reference;
               }
             |
               {
-                $$=ST_regular;
+                $$ = ST_regular;
               }
             ;
 
 sibfunbody: exprblock
             {
-              $$=$1;
+              $$ = $1;
             }
           | SEMIC
             {
-              $$=NULL;
+              $$ = NULL;
             }
           ;
 
 
 sibpragmas: sibpragmalist
             {
-              $$=store_pragma;
-              store_pragma=NULL;
+              $$ = store_pragma;
+              store_pragma = NULL;
             }
           |
             {
-              $$=NULL;
+              $$ = NULL;
             }
           ;
 
@@ -2375,56 +2360,60 @@ sibpragmalist: sibpragmalist sibpragma
 sibpragma: pragma
          | PRAGMA TYPES modnames
            {
-             if (store_pragma==NULL) store_pragma=MakePragma();
-             PRAGMA_NEEDTYPES(store_pragma)=$3;
+             if (store_pragma == NULL) {
+               store_pragma = MakePragma();
+             }
+             PRAGMA_NEEDTYPES( store_pragma) = $3;
            }
          | PRAGMA FUNS sibfunlist
            {
-             if (store_pragma==NULL) store_pragma=MakePragma();
-             PRAGMA_NEEDFUNS(store_pragma)=$3; 
+             if (store_pragma == NULL) {
+               store_pragma = MakePragma();
+             }
+             PRAGMA_NEEDFUNS( store_pragma) = $3;
            }
          | PRAGMA EXTERN id
            {
-             if (store_pragma==NULL) store_pragma=MakePragma();
-             PRAGMA_LINKMOD(store_pragma)=$3; 
+             if (store_pragma == NULL) {
+               store_pragma = MakePragma();
+             }
+             PRAGMA_LINKMOD( store_pragma) = $3; 
            }
          ;
 
 sibfunlist: sibfunlistentry COMMA sibfunlist
             {
-              $$=$1;
-              FUNDEF_NEXT($$)=$3;
+              $$ = $1;
+              FUNDEF_NEXT( $$) = $3;
             }
           | sibfunlistentry
             {
-              $$=$1;
+              $$ = $1;
             }
           ;
 
 sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
                  {
                    $$ = MakeFundef( $1, NULL,
-                                    MakeTypes1(T_unknown),
+                                    MakeTypes1( T_unknown),
                                     $3, NULL, NULL);
                    FUNDEF_STATUS( $$) = sib_imported_status;
                    
                    DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibNeedFun %s",
                                        mdb_nodetype[ NODE_TYPE( $$)],
-                                       $$,
-                                       ItemName($$)));
+                                       $$, ItemName( $$)));
                 }
                | id COLON fun_name BRACKET_L sibarglist BRACKET_R
                  {
                    $$ = MakeFundef( $3, $1,
-                                    MakeTypes1(T_unknown),
+                                    MakeTypes1( T_unknown),
                                     $5, NULL, NULL);
 
                    FUNDEF_STATUS( $$) = sib_imported_status;
                    
                    DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibNeedFun %s",
-                                       mdb_nodetype[ NODE_TYPE( $$) ],
-                                       $$,
-                                       ItemName($$)));
+                                       mdb_nodetype[ NODE_TYPE( $$)],
+                                       $$, ItemName( $$)));
                  }
                ;
 
@@ -2456,54 +2445,53 @@ inherits: COLON ID COLON inherits
           }
         | /* empty */
           {
-            $$=NULL;
+            $$ = NULL;
           } 
         ;
 
 resources: ID COLON LET string resources
            {
-             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
+             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON string resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
+             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
-         | 
-           ID COLON LET OPTION resources
+         | ID COLON LET OPTION resources
            {
-             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
+             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON OPTION resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
+             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET ID resources
            {
-             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
+             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON ID resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
+             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET PRIVATEID resources
            {
-             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
+             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON PRIVATEID resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
+             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET NUM resources
            {
-             $$=RSCMakeResourceListEntry($1, NULL, $4, 0, $5);
+             $$ = RSCMakeResourceListEntry( $1, NULL, $4, 0, $5);
            }
          | ID ADDON NUM resources
            {
-             $$=RSCMakeResourceListEntry($1, NULL, $3, 1, $4);
+             $$ = RSCMakeResourceListEntry( $1, NULL, $3, 1, $4);
            }
          | /* empty */
            {
-             $$=NULL;
+             $$ = NULL;
            }
          ;
 
@@ -2638,6 +2626,7 @@ node *string2array(char *str)
 }
 
 
+
 /*
  *   Altes aus sac.21
  *
@@ -2666,6 +2655,7 @@ types *GenComplexType( types *types, nums *numsp)
 }
 
 
+
 /*
  *
  *  functionname  : Append
@@ -2673,22 +2663,22 @@ types *GenComplexType( types *types, nums *numsp)
  *                  2) node to append
  *  description   : appends node 2) to node 1) and creates a new N_assign node
  *                  if necessary
- *
  */
-node *Append(node *target_node, node *append_node)
+
+node *Append( node *target_node, node *append_node)
 {
   node *tmp;
    
   DBUG_ENTER("Append");
   if (N_block == NODE_TYPE( target_node)) {
-     tmp=target_node->node[0];
+     tmp = target_node->node[0];
   }
   else {
-    tmp=target_node;
+    tmp = target_node;
   }
   if (N_assign == NODE_TYPE( tmp)) {
     while (tmp->node[1]) {      /* look for last N_assign node */
-      tmp=tmp->node[1];
+      tmp = tmp->node[1];
     }
 
     if (N_assign != NODE_TYPE( append_node)) {
@@ -2698,35 +2688,33 @@ node *Append(node *target_node, node *append_node)
       tmp->node[1]=append_node;
     }
       
-    DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT" %s"P_FORMAT,
-                          mdb_nodetype[ NODE_TYPE( tmp) ],
-                          tmp,
-                          mdb_nodetype[ NODE_TYPE( tmp->node[0]) ],
-                          tmp->node[0],
-                          mdb_nodetype[ NODE_TYPE( tmp->node[1]) ],
-                          tmp->node[1]));
+    DBUG_PRINT( "GENTREE", ("%s"P_FORMAT": %s"P_FORMAT" %s"P_FORMAT,
+                            mdb_nodetype[ NODE_TYPE( tmp)],
+                            tmp,
+                            mdb_nodetype[ NODE_TYPE( tmp->node[0])],
+                            tmp->node[0],
+                            mdb_nodetype[ NODE_TYPE( tmp->node[1])],
+                            tmp->node[1]));
   }
   else {
     /* target_node has type N_empty */
-    FREE(tmp);     /* delete node of type N_empty */
+    FREE( tmp);     /* delete node of type N_empty */
     if (N_assign != NODE_TYPE( append_node)) {
       tmp = MakeAssign( append_node, NULL);
-      DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT,
-                            mdb_nodetype[ NODE_TYPE( tmp) ],
-                            tmp,
-                            mdb_nodetype[ NODE_TYPE( tmp->node[0]) ],
-                            tmp->node[0]));
+      DBUG_PRINT( "GENTREE", ("%s"P_FORMAT": %s"P_FORMAT,
+                              mdb_nodetype[ NODE_TYPE( tmp)],
+                              tmp,
+                              mdb_nodetype[ NODE_TYPE( tmp->node[0])],
+                              tmp->node[0]));
     } 
     else {
-      tmp=append_node;
+      tmp = append_node;
          
-      DBUG_PRINT("GENTREE",("%s"P_FORMAT,
-                            mdb_nodetype[ NODE_TYPE( tmp) ],
-                            tmp));
+      DBUG_PRINT( "GENTREE", ("%s"P_FORMAT,
+                              mdb_nodetype[ NODE_TYPE( tmp)],
+                              tmp));
     }
   }
 
   DBUG_RETURN( target_node);
 }
-
-
