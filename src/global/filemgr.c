@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/29 17:29:49  sah
+ * global.targetdir is now always set
+ *
  * Revision 1.3  2004/11/25 17:53:48  cg
  * SacDevCamp 04
  *
@@ -596,6 +599,9 @@ FMGRsetFileNames (node *module)
 {
     char *buffer;
 
+    /*
+     * TODO: clean up this function
+     */
     DBUG_ENTER ("FMGRsetFileNames");
 
     global.filetype = MODULE_FILETYPE (module);
@@ -607,8 +613,10 @@ FMGRsetFileNames (node *module)
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
             global.cfilename = "a.out.c";
+            global.targetdir = "./";
         } else {
             global.cfilename = ILIBstringConcat (global.outfilename, ".c");
+            global.targetdir = "";
         }
     } else {
         if (global.doprofile && global.genlib.sac) {
