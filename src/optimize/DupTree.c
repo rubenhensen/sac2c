@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.99  1998/06/09 16:45:49  dkr
+ * IDX_MIN, IDX_MAX now segment-specific
+ *
  * Revision 1.98  1998/06/08 12:37:52  cg
  * Function DupTypes now only duplicates the types structure if
  * an original one is present.
@@ -1220,7 +1223,6 @@ node *
 DupNwith2 (node *arg_node, node *arg_info)
 {
     node *new_node, *id, *segs, *code, *withop;
-    int d;
 
     DBUG_ENTER ("DupNwith2");
 
@@ -1234,19 +1236,6 @@ DupNwith2 (node *arg_node, node *arg_info)
     withop = DUPTRAV (NWITH2_WITHOP (arg_node));
 
     new_node = MakeNWith2 (id, segs, code, withop, NWITH2_DIMS (arg_node));
-
-    if (NWITH2_IDX_MIN (arg_node) != NULL) {
-        NWITH2_IDX_MIN (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < NWITH2_DIMS (new_node); d++) {
-            (NWITH2_IDX_MIN (new_node))[d] = (NWITH2_IDX_MIN (arg_node))[d];
-        }
-    }
-    if (NWITH2_IDX_MAX (arg_node) != NULL) {
-        NWITH2_IDX_MAX (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < NWITH2_DIMS (new_node); d++) {
-            (NWITH2_IDX_MAX (new_node))[d] = (NWITH2_IDX_MAX (arg_node))[d];
-        }
-    }
 
     if (NWITH2_DEC_RC_IDS (arg_node) != NULL) {
         NWITH2_DEC_RC_IDS (new_node) = DupIds (NWITH2_DEC_RC_IDS (arg_node), arg_info);
@@ -1285,11 +1274,50 @@ node *
 DupWLseg (node *arg_node, node *arg_info)
 {
     node *new_node;
+    int i, d;
 
     DBUG_ENTER ("DupWLseg");
 
     new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
                           DUPCONT (WLSEG_NEXT (arg_node)));
+
+    if (WLSEG_SV (arg_node) != NULL) {
+        WLSEG_SV (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+            (WLSEG_SV (new_node))[d] = (WLSEG_SV (arg_node))[d];
+        }
+    }
+
+    WLSEG_BLOCKS (new_node) = WLSEG_BLOCKS (arg_node);
+
+    for (i = 0; i < WLSEG_BLOCKS (new_node); i++) {
+        if (WLSEG_BV (arg_node, i) != NULL) {
+            WLSEG_BV (new_node, i) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+            for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+                (WLSEG_BV (new_node, i))[d] = (WLSEG_BV (arg_node, i))[d];
+            }
+        }
+    }
+
+    if (WLSEG_UBV (arg_node) != NULL) {
+        WLSEG_UBV (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+            (WLSEG_UBV (new_node))[d] = (WLSEG_UBV (arg_node))[d];
+        }
+    }
+
+    if (WLSEG_IDX_MIN (arg_node) != NULL) {
+        WLSEG_IDX_MIN (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+            (WLSEG_IDX_MIN (new_node))[d] = (WLSEG_IDX_MIN (arg_node))[d];
+        }
+    }
+    if (WLSEG_IDX_MAX (arg_node) != NULL) {
+        WLSEG_IDX_MAX (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+            (WLSEG_IDX_MAX (new_node))[d] = (WLSEG_IDX_MAX (arg_node))[d];
+        }
+    }
 
     DBUG_RETURN (new_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/06/09 16:45:31  dkr
+ * IDX_MIN, IDX_MAX now segment-specific
+ *
  * Revision 1.69  1998/06/08 08:57:34  cg
  * handling of attribute ARRAY_TYPE corrected.
  *
@@ -1850,9 +1853,6 @@ FreeNwith2 (node *arg_node, node *arg_info)
     FREETRAV (NWITH2_CODE (arg_node));
     FREETRAV (NWITH2_WITHOP (arg_node));
 
-    FREE (NWITH2_IDX_MIN (arg_node));
-    FREE (NWITH2_IDX_MAX (arg_node));
-
     if (NWITH2_IN (arg_node) != NULL) {
         NWITH2_IN (arg_node) = DFMRemoveMask (NWITH2_IN (arg_node));
     }
@@ -1898,6 +1898,9 @@ FreeWLseg (node *arg_node, node *arg_info)
     if (WLSEG_SV (arg_node) != NULL) {
         FREE (WLSEG_SV (arg_node));
     }
+
+    FREE (WLSEG_IDX_MIN (arg_node));
+    FREE (WLSEG_IDX_MAX (arg_node));
 
     FREE (arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.189  1998/06/09 16:46:09  dkr
+ * IDX_MIN, IDX_MAX now segment-specific
+ *
  * Revision 1.188  1998/06/08 13:48:06  dkr
  * added INFO_REUSE_DEC_RC_IDS
  *
@@ -2866,9 +2869,9 @@ extern node *MakeNCode (node *block, node *expr);
  ***    node*      CODE          (N_Ncode)
  ***    node*      WITHOP        (N_Nwithop)
  ***
- ***    int        DIMS
- ***
  ***  permanent attributes:
+ ***
+ ***    int        DIMS
  ***
  ***    DFMmask_t  IN
  ***    DFMmask_t  INOUT
@@ -2876,9 +2879,6 @@ extern node *MakeNCode (node *block, node *expr);
  ***    DFMmask_t  LOCAL
  ***
  ***  temporary attributes:
- ***
- ***    int*       IDX_MIN            (wltransform -> compile )
- ***    int*       IDX_MAX            (wltransform -> compile )
  ***
  ***    ids*       DEC_RC_IDS         (wltransform -> compile )
  ***
@@ -2898,9 +2898,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
-
-#define NWITH2_IDX_MIN(n) (*((int **)(&(n->mask[2]))))
-#define NWITH2_IDX_MAX(n) (*((int **)(&(n->mask[3]))))
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
@@ -2925,8 +2922,11 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int      BLOCKS    (number of blocking levels
  ***                         --- without unrolling-blocking)
  ***    long*    SV        (step vector)           (wltransform -> )
- ***    long*    BV        (blocking vector)       (wltransform -> )
- ***    long*    UBV       (unrolling-b. vector)   (wltransform -> )
+ ***    long*    BV        (blocking vector)       (wltransform -> compile )
+ ***    long*    UBV       (unrolling-b. vector)   (wltransform -> compile )
+ ***
+ ***    int*     IDX_MIN                           (wltransform -> compile )
+ ***    int*     IDX_MAX                           (wltransform -> compile )
  ***
  ***/
 
@@ -2941,6 +2941,9 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_SV(n) (n->mask[0])
 #define WLSEG_BV(n, level) (n->mask[level + 2])
 #define WLSEG_UBV(n) (n->mask[1])
+
+#define WLSEG_IDX_MIN(n) (*((int **)(&(n->node[2]))))
+#define WLSEG_IDX_MAX(n) (*((int **)(&(n->node[3]))))
 
 /*--------------------------------------------------------------------------*/
 
