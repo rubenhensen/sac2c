@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2004/11/19 21:03:30  sah
+ * added OAN traversal
+ *
  * Revision 3.111  2004/11/18 14:34:31  mwe
  * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
  *
@@ -477,6 +480,7 @@
 #include "serialize_link.h"
 #include "prepareinline.h"
 #include "resolvepragma.h"
+#include "objanalysis.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "interfaceanalysis.h"
@@ -1338,15 +1342,20 @@ static funtab unused_tab35_rec = {{
 funtab *unused_tab35 = &unused_tab35_rec;
 
 /*
- *  (72) unused_tab34
+ *  (72) oan_tab
  */
-static funtab unused_tab34_rec = {{
-#define NIFunused_34(it_unused_34) it_unused_34
+static funtab oan_tab_rec = {{
+#ifdef NEW_AST
+#define NIFoan(it_oan) it_oan
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab34 = &unused_tab34_rec;
+#else
+#define NIFunused_39(it_unused_39) it_unused_39
+#include "node_info.mac"
+#endif
+                             },
+                             NULL,
+                             NULL};
+funtab *oan_tab = &oan_tab_rec;
 
 /*
  *  (73) cudecls_tab

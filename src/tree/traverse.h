@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/11/19 21:03:30  sah
+ * added OAN traversal
+ *
  * Revision 3.84  2004/11/18 14:34:31  mwe
  * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
  *
@@ -439,7 +442,7 @@ extern funtab *infdfms_tab;
 extern funtab *l2f_tab;
 extern funtab *emec_tab;
 extern funtab *unused_tab35;
-extern funtab *unused_tab34;
+extern funtab *oan_tab;
 extern funtab *cudecls_tab;
 extern funtab *unused_tab29;
 extern funtab *rsp_tab;
