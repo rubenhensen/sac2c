@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.8  2000/06/30 15:22:58  mab
+ * started implementing APTwithop
+ * implemented dummy code generation for with loop
+ *
  * Revision 1.7  2000/06/29 10:23:38  mab
  * added dummy functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
  * renamed APTNwith to APTwith
@@ -125,7 +129,7 @@ PadName (char *unpadded_name)
 /*****************************************************************************
  *
  * function:
- *   node* PadIds(ids *arg, node* arg_info)
+ *   static node* PadIds(ids *arg, node* arg_info)
  *
  * description:
  *   try padding of lvalues if possible
@@ -158,6 +162,106 @@ PadIds (ids *arg, node *arg_info)
     }
 
     DBUG_RETURN (arg_info);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   static node* AddDummyCode(node* with_node)
+ *
+ * description:
+ *   add dummy assignment (_apt_#=0;) as first code block to with-node
+ *
+ *****************************************************************************/
+
+node *
+AddDummyCode (node *with_node)
+{
+
+    node *vardec_node;
+    types *newvardec_type;
+
+    node *expr_node;
+    ids *ids_attrib;
+    node *instr_node;
+    node *assign_node;
+    node *block_node;
+    node *id_node;
+    node *code_node;
+
+    DBUG_ENTER ("AddDummyCode");
+
+    /* find last vardec */
+    vardec_node = ID_VARDEC (NCODE_CEXPR (NWITH_CODE (with_node)));
+    while (VARDEC_NEXT (vardec_node) != NULL) {
+        vardec_node = VARDEC_NEXT (vardec_node);
+    }
+
+    /* append new vardec-node */
+    DBUG_ASSERT ((TYPES_NEXT (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node)))) == NULL),
+                 "single type expected");
+    newvardec_type = DupTypes (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node))));
+    TYPES_NAME (newvardec_type) = TmpVar ();
+    VARDEC_NEXT (vardec_node)
+      = MakeVardec (TYPES_NAME (newvardec_type), newvardec_type, NULL);
+    vardec_node = VARDEC_NEXT (vardec_node);
+
+    /* add dummy code */
+    expr_node = MakeNum (0);
+    ids_attrib = MakeIds (StringCopy (VARDEC_NAME (vardec_node)), NULL, ST_regular);
+    IDS_VARDEC (ids_attrib) = vardec_node;
+    instr_node = MakeLet (expr_node, ids_attrib);
+    assign_node = MakeAssign (instr_node, NULL);
+    block_node = MakeBlock (assign_node, NULL);
+    id_node = MakeId (StringCopy (VARDEC_NAME (vardec_node)), NULL, ST_regular);
+    ID_VARDEC (id_node) = vardec_node;
+    code_node = MakeNCode (block_node, id_node);
+
+    DBUG_RETURN (vardec_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   static void InsertWithLoopGenerator(types* oldtype, types* newtype, node* with_node)
+ *
+ * description:
+ *   insert new part-nodes and code-node into withloop to apply padding
+ *
+ *****************************************************************************/
+
+static void
+InsertWithLoopGenerator (types *oldtype, types *newtype, node *with_node)
+{
+
+    shpseg *shape_diff;
+    node *assignment_vardec;
+    bool different = FALSE;
+    int i;
+
+    DBUG_ENTER ("InsertWithLoopGenerator");
+
+    /* calculate shape difference */
+    shape_diff
+      = DiffShpseg (TYPES_DIM (oldtype), TYPES_SHPSEG (newtype), TYPES_SHPSEG (oldtype));
+    for (i = 0; i < TYPES_DIM (oldtype); i++) {
+        if (SHPSEG_SHAPE (shape_diff, i) > 0) {
+            different = TRUE;
+        }
+        DBUG_ASSERT ((SHPSEG_SHAPE (shape_diff, i) >= 0), "negative shape difference");
+    }
+
+    if (different) {
+
+        /* add code block */
+        assignment_vardec = AddDummyCode (with_node);
+
+        /* add nodes to part */
+
+        /* @@@ CONTINUE (insert new PART-nodes) */
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
@@ -305,6 +409,8 @@ APTwith (node *arg_node, node *arg_info)
     DBUG_PRINT ("APT", ("with-node detected"));
 
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+    INFO_APT_WITH (arg_info) = arg_node;
+
     /* check withop, if with-loop needs to be padded */
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
@@ -416,9 +522,78 @@ node *
 APTwithop (node *arg_node, node *arg_info)
 {
 
+    shpseg *shape;
+    int dim;
+    int simpletype;
+    types *oldtype;
+    types *newtype = NULL;
+
     DBUG_ENTER ("APTwithop");
 
     DBUG_PRINT ("APT", ("withop-node detected"));
+
+    INFO_APT_WITHOP_TYPE (arg_info) = NWITHOP_TYPE (arg_node);
+
+    /* set default - change it, if padding can be applied */
+    INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        shape = Array2Shpseg (NWITHOP_SHAPE (arg_node));
+        /* constant array has dim=1
+         * => number of elements is stored in shpseg[0]
+         */
+        dim = ARRAY_SHAPE ((NWITHOP_SHAPE (arg_node)), 0);
+        /* all elements have the same type
+         * => use simpletype of first code-node
+         */
+        simpletype = TYPES_BASETYPE (
+          ID_TYPE (NCODE_CEXPR (NWITH_CODE (INFO_APT_WITH (arg_info)))));
+        /* infer result of with-loop
+           Attention: only elements with scalar types are supported yet !!!
+        */
+        oldtype = MakeType (simpletype, dim, shape, NULL, NULL);
+        newtype = PIgetNewType (oldtype);
+
+        if (newtype != NULL) {
+            /* apply padding (genarray-specific)*/
+            INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
+
+            /* @@@ CONTINUE (free newtype? !oldshape is used later!)*/
+            /* pad shape of new array specified in NWITHOP_SHAPE */
+        } else {
+            /* do not apply padding */
+            FreeOneTypes (oldtype);
+        }
+        break;
+
+    case WO_modarray:
+
+        oldtype = ID_TYPE (NWITHOP_ARRAY (arg_node));
+        newtype = PIgetNewType (oldtype);
+
+        if (newtype != NULL) {
+            /* apply padding (modarray-specific)*/
+            INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
+
+            /* @@@ CONTINUE (free newtype? !oldshape is used later!)*/
+            /* pad array referenced by NWITHOP_ARRAY */
+        }
+
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "unsupported withop-type");
+        break;
+    }
+
+    /* apply WO_TYPE independend padding */
+    if (INFO_APT_EXPRESSION_PADDED (arg_info)) {
+        if (NWITH_PARTS (INFO_APT_WITH (arg_info)) > 0) {
+            /* partition complete => add parts and code */
+            InsertWithLoopGenerator (oldtype, newtype, INFO_APT_WITH (arg_info));
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
