@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2002/10/23 06:36:23  sbs
+ * NT2OTwithid added
+ *
  * Revision 3.107  2002/10/18 13:47:21  sbs
  * CRTWRPid, NTCobjdef, and CAVobjdef inseted.
  *
@@ -1955,7 +1958,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSALIRNwithid, LIRMOVNwithid, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, INSVDwithid, TravSons, TravSons, PREC4withid,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, NT2OTwithid, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, PrintNgenerator, TravSons,
