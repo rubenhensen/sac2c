@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.16  1995/07/07 16:22:48  hw
+ * Revision 1.17  1995/07/13 15:29:48  hw
+ * bug fixed in function Psi
+ *
+ * Revision 1.16  1995/07/07  16:22:48  hw
  * - changed functions AxA, TakeV, DropV, Psi( now they work with
  *   userdefined types, i hope ;-)
  *
@@ -656,6 +659,7 @@ Psi (types *vec, types *array)
 {
     int dim, i, to_drop;
     types *ret_type, *array_btype;
+    shpseg *new_shpseg;
 
     DBUG_ENTER ("Psi");
 
@@ -668,14 +672,15 @@ Psi (types *vec, types *array)
             dim = array_btype->dim - to_drop;
             ret_type->dim = dim;
             if (dim > 0) {
-                ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
+                new_shpseg = (shpseg *)Malloc (sizeof (shpseg));
                 for (i = 0; i < dim; i++)
-                    ret_type->shpseg->shp[i] = array_btype->shpseg->shp[to_drop + i];
+                    new_shpseg->shp[i] = array_btype->shpseg->shp[to_drop + i];
             } else
-                ret_type->shpseg = NULL;
+                new_shpseg = NULL;
             if (NULL != array_btype->shpseg) {
                 FREE (array_btype->shpseg);
             }
+            ret_type->shpseg = new_shpseg;
         } else {
             GEN_TYPE_NODE (ret_type, T_unknown);
             FREE_TYPES (array_btype);
