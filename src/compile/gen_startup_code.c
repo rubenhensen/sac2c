@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/08/17 10:11:23  dkr
+ * *** empty log message ***
+ *
  * Revision 2.27  2000/08/07 19:47:29  nmw
  * missing initializing at begin of main() added
  * should fix the PHM crashes in relax_fix
@@ -849,9 +852,10 @@ void
 GSCPrintMainBegin ()
 {
     char *funname;
+
     DBUG_ENTER ("GSCPrintMainBegin");
 
-    funname = PRECObjInitFunctionName ();
+    funname = ObjInitFunctionName ();
 
     /* call init function for a c library - no command line available */
     if (generatelibrary & GENERATELIBRARY_C) {
