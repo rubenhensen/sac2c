@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/05/06 14:30:07  dkr
+ * added DataFlowMasks to NODE type
+ *
  * Revision 1.35  1998/04/29 17:10:30  dkr
  * changed usage of NIF
  *
@@ -427,9 +430,10 @@ typedef struct NODE {
     int flag;                    /* the flag is used for node-status */
                                  /* (loop invariant/not loop invariant,...) */
     int counter;                 /* needed for the enumeration of fundefs!  */
-    int varno;                   /* number of variables - 1 */
+    int varno;                   /* number of variables */
     long *mask[MAX_MASK];        /* special information about variables */
                                  /* mainly used for optimizations       */
+    void *dfmask[MAX_MASK];      /* dataflow masks */
     int lineno;                  /* line number in source code */
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
