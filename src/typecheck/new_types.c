@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/10/28 16:09:51  sah
+ * removed a not needed variable
+ * andd added some DBUG_PRINTs
+ *
  * Revision 3.64  2004/10/26 11:37:40  sah
  * Serialization support now hidden outside of NEW_AST mode
  *
@@ -1726,6 +1730,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     int new_num_luts;
 #ifndef DBUG_OFF
     tvar **new_alphas;
+    char *tmpstring;
 #endif
     LUT_t *new_luts;
 
@@ -1736,6 +1741,12 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     } else if (fun2 == NULL) {
         res = fun1;
     } else {
+        DBUG_EXECUTE ("NTY", tmpstring = TYType2DebugString (fun1, TRUE, 0););
+        DBUG_PRINT ("NTY", ("fun1: %s", tmpstring));
+
+        DBUG_EXECUTE ("NTY", tmpstring = TYType2DebugString (fun2, TRUE, 0););
+        DBUG_PRINT ("NTY", ("fun2: %s", tmpstring));
+
         DBUG_ASSERT ((NTYPE_CON (fun1) == NTYPE_CON (fun2)),
                      "TYOverloadFunType called with incompatible types!");
 
@@ -3398,7 +3409,6 @@ ntype *
 TYFixAndEliminateAlpha (ntype *t1)
 {
     ntype *res;
-    int i;
 
     DBUG_ENTER ("TYFixAndEliminateAlpha");
 
@@ -6300,6 +6310,8 @@ TYDeserializeType (typeconstr con, ...)
         result = MakeNtype (TC_idim, va_arg (args, int));
 
         IDIM_DIM (result) = va_arg (args, int);
+
+        IDIM_GEN (result) = va_arg (args, ntype *);
 
         for (cnt = 0; cnt < NTYPE_ARITY (result) - 1; cnt++) {
             IDIM_ISHAPE (result, cnt) = va_arg (args, ntype *);
