@@ -4,8 +4,8 @@
 /*
  *
  * $Log$
- * Revision 3.47  2002/08/13 14:27:04  sbs
- * now, non local funids can be defined as well 8-)))
+ * Revision 3.48  2002/08/13 14:32:13  sbs
+ * fun_id in foldop allowed now
  *
  * Revision 3.46  2002/08/13 14:09:54  sbs
  * params of sel exchanged
@@ -1296,16 +1296,12 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
           NWITHOP_PRF( $$) = $3;
           NWITHOP_EXPR( $$) = $7;
         }
-      | FOLD BRACKET_L id COMMA expr COMMA expr BRACKET_R
+      | FOLD BRACKET_L fun_id COMMA expr COMMA expr BRACKET_R
         { $$ = MakeNWithOp( WO_foldfun, $5);
-          NWITHOP_FUN( $$) = $3;
+          NWITHOP_FUN( $$) = StringCopy( IDS_NAME( $3));
+          NWITHOP_MOD( $$) = IDS_MOD( $3);
           NWITHOP_EXPR( $$) = $7;
-        }
-      | FOLD BRACKET_L id COLON id COMMA expr COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_foldfun, $7);
-          NWITHOP_FUN( $$) = $5;
-          NWITHOP_MOD( $$) = $3;
-          NWITHOP_EXPR( $$) = $9;
+          $3 = FreeOneIds( $3);
         }
       ;
 
