@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.19  2000/06/08 11:06:47  mab
+# added pad_info.o
+#
 # Revision 2.18  2000/05/31 14:03:20  mab
 # lines for pad*.o completed
 #
@@ -117,7 +120,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
      -I../print -I../optimize
 
-all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o pad.o pad_collect.o pad_infer.o pad_transform.o
+all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
 
 index.o: index.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
@@ -146,16 +149,19 @@ WLI.o: WLI.c WLI.h
 WLF.o: WLF.c WLF.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
 
-pad.o: pad.c pad.h pad_collect.o pad_infer.o pad_transform.o
+pad.o: pad.c pad.h pad_info.h pad_collect.o pad_infer.o pad_transform.o
 	$(CC) $(CCFLAGS) $(CFLAGS) -o pad.o -c pad.c $(INCS)
 
-pad_collect.o: pad_collect.c pad_collect.h
+pad_info.o: pad_info.c pad_info.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_info.o -c pad_info.c $(INCS)
+
+pad_collect.o: pad_collect.c pad_collect.h pad_info.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_collect.o -c pad_collect.c $(INCS)
 
-pad_infer.o: pad_infer.c pad_infer.h
+pad_infer.o: pad_infer.c pad_infer.h pad_info.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_infer.o -c pad_infer.c $(INCS)
 
-pad_transform.o: pad_transform.c pad_transform.h
+pad_transform.o: pad_transform.c pad_transform.h pad_info.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_transform.o -c pad_transform.c $(INCS)
 
 deps:

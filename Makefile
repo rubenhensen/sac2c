@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.41  2000/06/08 11:06:13  mab
+# added pad_info.o
+#
 # Revision 2.40  2000/05/31 14:01:28  mab
 # pad*.o added
 #
@@ -239,7 +242,8 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
 	src/psi-opt/WLF.o src/psi-opt/pad.o src/psi-opt/pad_collect.o \
-	src/psi-opt/pad_infer.o  src/psi-opt/pad_transform.o
+	src/psi-opt/pad_infer.o src/psi-opt/pad_transform.o \
+	src/psi-opt/pad_info.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \
