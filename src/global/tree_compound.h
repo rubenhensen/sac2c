@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1996/01/22 17:27:50  cg
+ * Revision 1.36  1996/02/11 20:19:01  sbs
+ * some minor corrections on stuff concerning N_vinfo,
+ *
+ * Revision 1.35  1996/01/22  17:27:50  cg
  * modified OBJDEF_LINKNAME(n), OBJDEF_INITFUN(n), OBJDEF_EFFECT(n)
  *
  * Revision 1.34  1996/01/21  13:56:08  cg
@@ -1046,6 +1049,7 @@ extern node *GetCompoundNode (node *arg_node);
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 #define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
+#define LET_USE(n) (IDS_USE (LET_IDS (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1234,8 +1238,8 @@ node *Shape2Array (shapes *shp);
  *  compound access macros
  */
 
-#define VINFO_DIM(n) SHAPES_DIM (VINFO_SHP (n))
-#define VINFO_SELEMS(n) SHAPES_SELEMS (VINFO_SHP (n))
+#define VINFO_DIM(n) SHAPES_DIM (VINFO_TYPE (n))
+#define VINFO_SELEMS(n) SHAPES_SELEMS (VINFO_TYPE (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1248,6 +1252,7 @@ node *Shape2Array (shapes *shp);
  */
 
 #define ID_VARNO(n) VARDEC_VARNO (ID_VARDEC (n))
+#define ID_TYPE(n) VARDEC_TYPE (ID_VARDEC (n))
 
 /*--------------------------------------------------------------------------*/
 
