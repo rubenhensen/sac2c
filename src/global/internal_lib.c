@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/02/05 17:08:30  srs
+ * TmpVar(): wr_tab and changed fusion_tab into wlf_tab
+ *
  * Revision 1.23  1998/01/29 13:17:49  srs
  * modified TmpVar(). Now the compiler phase is inserted
  * in the variable name.
@@ -409,9 +412,6 @@ TmpVar ()
     if (act_tab == cf_tab) {
         s = "cf";
     }
-    if (act_tab == wr_tab) {
-        s = "wr";
-    }
     if (act_tab == free_tab) {
         s = "free";
     }
@@ -442,7 +442,7 @@ TmpVar ()
     if (act_tab == idx_tab) {
         s = "idx";
     }
-    if (act_tab == fusion_tab) {
+    if (act_tab == wlf_tab) {
         s = "fusion";
     }
     if (act_tab == ae_tab) {
