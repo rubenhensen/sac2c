@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/06/23 12:49:48  cg
+ * added implementations of scheduling ICMs
+ * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
+ *
  * Revision 1.3  1998/05/15 09:19:29  cg
  * added ICMs MT_SYNC_NONFOLD and MT_SYNC_ONEFOLD_NONFOLD
  *
@@ -45,5 +49,8 @@ extern void ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg);
 extern void ICMCompileMT_CONTINUE (int narg, char **vararg);
 extern void ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg);
+
+extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *vararg);
+extern void ICMCompileMT_SCHEDULER_Block_END (int dim, int *vararg);
 
 #endif /* ICM2C_MT_H */

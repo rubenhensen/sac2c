@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1998/06/23 12:49:48  cg
+ * added implementations of scheduling ICMs
+ * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
+ *
  * Revision 1.42  1998/06/19 18:29:21  dkr
  * added WL_NONFOLD_END, WL_FOLD_END
  *
@@ -683,3 +687,23 @@ ICM_DEF( MT_SPMD_PRESET, NO_TRACE)
   ICM_VAR((2*narg), vararg)
 ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 #endif
+
+
+/*
+ * ICMs for implementing scheduling strategies
+ */
+
+#if defined(MT_SCHEDULER_Block_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Block_BEGIN, NO_TRACE)
+  ICM_INT(dim)
+  ICM_VARINT((4*dim), varint)
+ICM_END( MT_SCHEDULER_Block_BEGIN, (dim, varint))
+#endif
+
+#if defined(MT_SCHEDULER_Block_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Block_END, NO_TRACE)
+  ICM_INT(dim)
+  ICM_VARINT((4*dim), varint)
+ICM_END( MT_SCHEDULER_Block_END, (dim, varint))
+#endif
+

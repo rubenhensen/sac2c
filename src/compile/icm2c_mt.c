@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/06/23 12:49:48  cg
+ * added implementations of scheduling ICMs
+ * MT_SCHEDULER_Block_BEGIN and MT_SCHEDULER_Block_END
+ *
  * Revision 1.9  1998/06/12 14:06:09  cg
  * fixed bug using function GetFoldCode()
  *
@@ -146,12 +150,12 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_DEC
 
-    fprintf (outfile, "#undef SAC_MT_CURRENT_FUN()\n");
+    fprintf (outfile, "#undef SAC_MT_CURRENT_FUN\n");
     fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", from);
 
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "#undef SAC_MT_CURRENT_SPMD()\n");
+    fprintf (outfile, "#undef SAC_MT_CURRENT_SPMD\n");
     fprintf (outfile, "#define SAC_MT_CURRENT_SPMD() %s\n", name);
 
     fprintf (outfile, "\n");
@@ -722,6 +726,86 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SPMD_PRESET
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int narg, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_END(int narg, int *vararg)
+ *
+ * description:
+ *
+ *   These two ICMs implement the scheduling for constant segments
+ *   called "Block".
+ *
+ *   This scheduling is a very simple one that partitions the iteration
+ *   space along the outermost dimension upon the available processors.
+ *   Blocking is not considered!
+ *   Unrolling is not considered!
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
+{
+    int *lower_bound = varint;
+    int *upper_bound = varint + dim;
+    /*
+     * int *blocking    = varint+2*dim;
+     * int *unrolling   = varint+3*dim;
+     */
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_BEGIN");
+
+#define MT_SCHEDULER_Block_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Block_BEGIN
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "int SAC_WL_SCHEDULE_START(%d);\n", i);
+        INDENT;
+        fprintf (outfile, "int SAC_WL_SCHEDULE_STOP(%d);\n", i);
+    }
+
+    fprintf (outfile, "\n");
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SCHEDULER_Block_DIM0(%d, %d);\n", lower_bound[0],
+             upper_bound[0]);
+
+    for (i = 1; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_WL_SCHEDULE_START(%d) = %d;\n", i, lower_bound[i]);
+        INDENT;
+        fprintf (outfile, "SAC_WL_SCHEDULE_STOP(%d) = %d;\n", i, upper_bound[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMT_SCHEDULER_Block_END (int dim, int *varint)
+{
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_END");
+
+#define MT_SCHEDULER_Block_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Block_END
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
