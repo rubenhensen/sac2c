@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/01/31 14:00:30  dkr
+ * redundant macro DUP removed
+ *
  * Revision 1.5  2000/01/31 13:28:32  dkr
  * Code brushed
  * Some Functions renamed
@@ -148,13 +151,6 @@
  *  -> traverses son 'node'.
  */
 #define DUPCONT(node) (INFO_DUP_CONT (arg_info) != arg_node) ? DUPTRAV (node) : NULL
-
-#define DUP(s, d)                                                                        \
-    d->refcnt = s->refcnt;                                                               \
-    d->flag = s->flag;                                                                   \
-    d->counter = s->counter;                                                             \
-    d->varno = s->varno;                                                                 \
-    d->lineno = s->lineno;
 
 /******************************************************************************/
 
@@ -305,6 +301,8 @@ DupOneIds (ids *old_ids, node *arg_info)
 
     DBUG_ENTER ("DupOneIds");
 
+    DBUG_ASSERT ((old_ids != NULL), "ids is NULL");
+
     if ((arg_info != NULL) && (INFO_DUP_TYPE (arg_info) == DUP_INLINE)) {
         new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
@@ -368,8 +366,9 @@ DupVinfo (node *arg_node, node *arg_info)
     if (VINFO_FLAG (arg_node) == DOLLAR) {
         new_node = MakeVinfoDollar (rest);
     } else {
-        new_node = MakeVinfo (VINFO_FLAG (arg_node), VINFO_TYPE (arg_node), rest,
-                              VINFO_DOLLAR (rest));
+        new_node
+          = MakeVinfo (VINFO_FLAG (arg_node), DuplicateTypes (VINFO_TYPE (arg_node), 1),
+                       rest, VINFO_DOLLAR (rest));
     }
     VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
@@ -574,6 +573,8 @@ DupReturn (node *arg_node, node *arg_info)
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
 
+    InsertIntoLUT (lut, arg_node, new_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -588,9 +589,7 @@ DupBlock (node *arg_node, node *arg_info)
 
     new_node
       = MakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), DUPTRAV (BLOCK_VARDEC (arg_node)));
-    if (BLOCK_CACHESIM (arg_node) != NULL) {
-        BLOCK_CACHESIM (new_node) = StringCopy (BLOCK_CACHESIM (arg_node));
-    }
+    BLOCK_CACHESIM (new_node) = StringCopy (BLOCK_CACHESIM (arg_node));
 
     BLOCK_VARNO (new_node) = BLOCK_VARNO (arg_node);
 #if 0
@@ -993,25 +992,6 @@ DupAp (node *arg_node, node *arg_info)
 
 /******************************************************************************/
 
-static node *
-GetReturn (node *instr)
-{
-    node *ret_node;
-
-    DBUG_ENTER ("GetReturn");
-
-    ret_node = instr;
-    while ((ret_node != NULL) && (ASSIGN_NEXT (ret_node) != NULL)) {
-        ret_node = ASSIGN_NEXT (ret_node);
-    }
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (ret_node)) == N_return),
-                 "return node not found");
-
-    DBUG_RETURN (ASSIGN_INSTR (ret_node));
-}
-
-/******************************************************************************/
-
 node *
 DupFundef (node *arg_node, node *arg_info)
 {
@@ -1019,27 +999,36 @@ DupFundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupFundef");
 
-    new_node = MakeNode (NODE_TYPE (arg_node));
+    new_node
+      = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
+                    StringCopy (FUNDEF_MOD (arg_node)),
+                    DuplicateTypes (FUNDEF_TYPES (arg_node), 1),
+                    DUPTRAV (FUNDEF_ARGS (arg_node)), DUPTRAV (FUNDEF_BODY (arg_node)),
+                    DUPCONT (FUNDEF_NEXT (arg_node)));
+    FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
+    FUNDEF_STATUS (new_node) = FUNDEF_STATUS (arg_node);
+    FUNDEF_ATTRIB (new_node) = FUNDEF_ATTRIB (arg_node);
+    FUNDEF_INLINE (new_node) = FUNDEF_INLINE (arg_node);
+    FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
+    FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
 
-    FUNDEF_TYPES (new_node) = DuplicateTypes (FUNDEF_TYPES (arg_node), 1);
-    DUP (arg_node, new_node);
+    FUNDEF_RETURN (new_node) = SearchInLUT (lut, FUNDEF_RETURN (arg_node));
+    FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
+    FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
+    FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
         FUNDEF_NEEDFUNS (new_node) = CopyNodelist (FUNDEF_NEEDFUNS (arg_node));
         FUNDEF_NEEDTYPES (new_node) = CopyNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
 
-    FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
-    FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
-    FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
-
-    FUNDEF_RETURN (new_node) = GetReturn (BLOCK_INSTR (FUNDEF_BODY (new_node)));
-
-    FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
-
 #if 0
+  FUNDEF_SIB( new_node) = ???;
+  FUNDEF_ICM( new_node) = ???;
   FUNDEF_MASK( new_node, ?) = ???;
+  FUNDEF_DFM_BASE( new_node) = ???;
+  FUNDEF_LIFTEDFROM( new_node) = ???;
+  FUNDEC_DEF( new_node) = ???;
 #endif
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
@@ -1062,33 +1051,42 @@ DupPragma (node *arg_node, node *arg_info)
 
     new_node = MakePragma ();
 
-    if (PRAGMA_LINKNAME (arg_node) != NULL) {
-        PRAGMA_LINKNAME (new_node) = StringCopy (PRAGMA_LINKNAME (arg_node));
-    }
-
-    PRAGMA_NUMPARAMS (new_node) = PRAGMA_NUMPARAMS (arg_node);
-
+    PRAGMA_LINKNAME (new_node) = StringCopy (PRAGMA_LINKNAME (arg_node));
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
         PRAGMA_LINKSIGN (new_node)
           = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
-
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_LINKSIGN (new_node)[i] = PRAGMA_LINKSIGN (arg_node)[i];
         }
     }
-
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
         PRAGMA_REFCOUNTING (new_node)
           = (int *)Malloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
-
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_REFCOUNTING (new_node)[i] = PRAGMA_REFCOUNTING (arg_node)[i];
         }
     }
+    PRAGMA_INITFUN (new_node) = StringCopy (PRAGMA_INITFUN (arg_node));
+    PRAGMA_WLCOMP_APS (new_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
 
-    if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
-        PRAGMA_WLCOMP_APS (new_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
+    if (PRAGMA_EFFECT (arg_node) != NULL) {
+        PRAGMA_EFFECT (new_node) = DupIds (PRAGMA_EFFECT (arg_node), arg_info);
     }
+    if (PRAGMA_TOUCH (arg_node) != NULL) {
+        PRAGMA_TOUCH (new_node) = DupIds (PRAGMA_TOUCH (arg_node), arg_info);
+    }
+    PRAGMA_COPYFUN (new_node) = StringCopy (PRAGMA_COPYFUN (arg_node));
+    PRAGMA_FREEFUN (new_node) = StringCopy (PRAGMA_FREEFUN (arg_node));
+    PRAGMA_LINKMOD (new_node) = StringCopy (PRAGMA_LINKMOD (arg_node));
+    PRAGMA_NUMPARAMS (new_node) = PRAGMA_NUMPARAMS (arg_node);
+#if 0
+  PRAGMA_READONLY( new_node) = ???;
+  PRAGMA_NEEDTYPES( new_node) = ???;
+  PRAGMA_NEEDFUNS( new_node) = ???;
+  PRAGMA_LINKSIGNNUMS( new_node) = ???;
+  PRAGMA_REFCOUNTINGNUMS( new_node) = ???;
+  PRAGMA_READONLYNUMS( new_node) = ???;
+#endif
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
