@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2002/01/24 17:59:00  sacbase
+# MAC target added
+#
 # Revision 3.6  2002/01/18 14:32:29  sacbase
 # tools.tar added.
 #
@@ -90,7 +93,8 @@ VERSION    =  0_91
 #  Settings for file and package sets
 #
 
-SYSTEMS  =  LINUX_X86 SOLARIS_SPARC-2_5 SOLARIS_SPARC-2_7 OSF_ALPHA
+
+SYSTEMS  =  SOLARIS_SPARC-2_5 SOLARIS_SPARC-2_7 LINUX_X86 OSF_ALPHA OSX_MAC
 INST_PACKAGES   =  runtime.tar stdlib.tar demo.tar
 INST_FILES      =  install_sac LICENSE README
 INST_SPECIFICS  =  sac2c sac2crc tools.tar
@@ -150,6 +154,16 @@ ALPHA_HOST  =  scalar03.rz
 ALPHA_USER  =  sunip112
 ALPHA_DIR   =  sac_distrib
 ALPHA_MAKE  =  gmake
+
+
+#
+#  Settings for system OSX_MAC
+#
+
+MAC_HOST  =  smeagol.ece.ucsb.edu
+MAC_USER  =  sac
+MAC_DIR   =  sac_distrib
+MAC_MAKE  =  make
 
 
 #
@@ -236,7 +250,7 @@ src.tar.gz:
 	ln -s $(SAC2CDIR)/$@
 
 
-sac2c.for.SOLARIS_SPARC-%:
+sac2c.for.SOLARIS_SPARC-% tools.tar.for.SOLARIS_SPARC-%:
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC-$* on host $(SOLARIS_HOST-$*)"
 	@echo "**************************************************************"
@@ -258,8 +272,8 @@ sac2c.for.SOLARIS_SPARC tools.tar.for.SOLARIS_SPARC:
 	( cd $(SOLARIS_DIR); tar xvf src.tar )
 	( cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC )
 	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
-	( cd $(SAC2CDIR)/tools/bin tar cvf tools.tar.for.SOLARIS_SPARC *)
-	cp $(SAC2CDIR)/tools/bin/tools.tar.for.SOLARIS_SPARC .
+	( cd $(SOLARIS_DIR)/tools/bin; tar cvf tools.tar.for.SOLARIS_SPARC *)
+	cp $(SOLARIS_DIR)/tools/bin/tools.tar.for.SOLARIS_SPARC .
 	( cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a ) 
 	cp $(SOLARIS_DIR)/src/runtime/libsac.tar libsac.tar.for.SOLARIS_SPARC
 	@ if [ $${?} -eq 0 ]; then                                 \
@@ -335,7 +349,7 @@ sac2c.for.OSF_ALPHA tools.tar.for.OSF_ALPHA:
 	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST)      \
             'cd $(ALPHA_DIR)/tools/bin;'           \
             'tar cvf tools.tar.for.OSF_ALPHA *;'
-	$(RCP) $(ALPHA_USER)@$(ALPHA_HOST):$(LX86_DIR)/tools/bin/tools.tar.for.OSF_ALPHA .
+	$(RCP) $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/tools/bin/tools.tar.for.OSF_ALPHA .
 	$(RSH) -l $(ALPHA_USER) $(ALPHA_HOST) \
 	    'cd $(ALPHA_DIR)/src/runtime;' \
 	    'tar cvfh libsac.tar libsac*.a'
@@ -348,6 +362,47 @@ sac2c.for.OSF_ALPHA tools.tar.for.OSF_ALPHA:
 	    echo "Unable to create OSF_ALPHA distribution !";         \
 	    exit 1;                                                   \
 	  fi
+
+sac2c.for.OSX_MAC tools.tar.for.OSX_MAC:
+	@echo "**************************************************************"
+	@echo "*  Creating sac2c for OSX_MAC"
+	@echo "**************************************************************"
+	@ ping $(MAC_HOST) >/dev/null;                      \
+          if [ $${?} -ne 0 ]; then                            \
+            echo "Host $(MAC_HOST) is down !";              \
+            echo "Unable to create OSX_MAC distribution !"; \
+            exit 1;                                           \
+          fi
+	( cd $(SAC2CDIR); $(MAKE) tar )
+	$(RSH) -l $(MAC_USER) $(MAC_HOST) \
+	    'rm -rf $(MAC_DIR); mkdir -p $(MAC_DIR)' 
+	$(RCP) $(SAC2CDIR)/src.tar.gz $(MAC_USER)@$(MAC_HOST):$(MAC_DIR)
+	$(RSH) -l $(MAC_USER) $(MAC_HOST)                               \
+	    'setenv PATH $$HOME/bin\:$$PATH\:/usr/local/bin\:/usr/bin/X11;' \
+	    'cd $(MAC_DIR);'                                           \
+	    'gunzip -f src.tar.gz;'                                      \
+	    'tar xvf src.tar;'                                           \
+	    'chmod -R u+w *;'                                            \
+	    'touch src/*/*;'                                             \
+	    '$(MAC_MAKE) distrib_product OS=OSX_MAC'
+	$(RCP) $(MAC_USER)@$(MAC_HOST):$(MAC_DIR)/sac2c sac2c.for.OSX_MAC
+	$(RSH) -l $(MAC_USER) $(MAC_HOST)      \
+            'cd $(MAC_DIR)/tools/bin;'           \
+            'tar cvf tools.tar.for.OSX_MAC *;'
+	$(RCP) $(MAC_USER)@$(MAC_HOST):$(MAC_DIR)/tools/bin/tools.tar.for.OSX_MAC .
+	$(RSH) -l $(MAC_USER) $(MAC_HOST) \
+	    'cd $(MAC_DIR)/src/runtime;' \
+	    'tar cvfh libsac.tar libsac*.a'
+	$(RCP) $(MAC_USER)@$(MAC_HOST):$(MAC_DIR)/src/runtime/libsac.tar \
+	    libsac.tar.for.OSX_MAC
+	@ if [ $${?} -eq 0 ]; then                                    \
+	    $(RSH) -l $(MAC_USER) $(MAC_HOST) 'rm -rf $(MAC_DIR)'; \
+	  else                                                        \
+	    echo "Compilation of sac2c for OSX_MAC failed!";        \
+	    echo "Unable to create OSX_MAC distribution !";         \
+	    exit 1;                                                   \
+	  fi
+
 
 
 libsac.tar.for.%:
