@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.22  2000/01/21 16:45:03  dkr
+# tree related stuff moved into directory tree
+#
 # Revision 2.21  2000/01/21 13:19:00  jhs
 # Added net mt ... Added new path ...
 #
@@ -153,12 +156,12 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,RCS-files $(she
 #
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
-        src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
-	src/global/tree_basic.o src/global/tree_compound.o \
-        src/global/free.o src/global/internal_lib.o \
-        src/global/globals.o src/global/resource.o src/global/build.o \
-	src/global/interrupt.o src/global/options.o
-TREE= src/tree/DupTree.o src/tree/DataFlowMask.o
+        src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
+        src/global/resource.o src/global/build.o src/global/interrupt.o \
+        src/global/options.o
+TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o \
+      src/tree/tree_compound.o src/tree/DupTree.o src/tree/DataFlowMask.o \
+      src/tree/DataFlowMaskUtils.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
