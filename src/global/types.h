@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/11/22 14:15:46  sbs
+ * ct_res added
+ *
  * Revision 3.40  2004/11/22 14:12:51  sbs
  * renamed DFT_res into dft_res (thanks Kai!)
  *
@@ -781,5 +784,16 @@ typedef struct dft {
     int num_deriveable_partials;
     node **deriveable_partials;
 } dft_res;
+
+/*
+ * Type-Comparison
+ */
+typedef enum {
+    TY_eq,  /* types are identical */
+    TY_lt,  /* first type is subtype of second one */
+    TY_gt,  /* first type is supertype of second one */
+    TY_hcs, /* types are unrelated but do have a common supertype */
+    TY_dis  /* types are disjoint */
+} ct_res;
 
 #endif /* _SAC_TYPES_H_ */
