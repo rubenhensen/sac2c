@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.239  1998/06/23 12:44:34  cg
+ * bug fixed in indentation mechanism for ICMs
+ *
  * Revision 1.238  1998/06/18 13:44:04  cg
  * file is now able to deal correctly with data objects of
  * the abstract data type for the representation of schedulings.
@@ -821,12 +824,14 @@ static int print_separate = 0;
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
+#define ICM_VARINT(dim, name)
 #define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
+#undef ICM_VARINT
 #undef ICM_END
 #undef ICM_ALL
 
@@ -2113,6 +2118,7 @@ PrintIcm (node *arg_node, node *arg_info)
     if (ICM_INDENT (arg_node) < 0) {
         indent += ICM_INDENT (arg_node);
     }
+
     INDENT
     if (show_icm == 0)
 #define ICM_ALL
@@ -2124,6 +2130,7 @@ PrintIcm (node *arg_node, node *arg_info)
 #define ICM_STR(name)
 #define ICM_INT(name)
 #define ICM_VAR(dim, name)
+#define ICM_VARINT(dim, name)
 #define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_ALL
@@ -2131,16 +2138,13 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
+#undef ICM_VARINT
 #undef ICM_END
         if (strcmp (ICM_NAME (arg_node), "NOOP") == 0) {
             compiled_icm = 1;
         }
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
-
-        if (ICM_INDENT (arg_node) > 0) {
-            indent += ICM_INDENT (arg_node);
-        }
 
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
@@ -2174,6 +2178,10 @@ PrintIcm (node *arg_node, node *arg_info)
 
             Trav (ICM_NEXT (arg_node), arg_info);
         }
+    }
+
+    if (ICM_INDENT (arg_node) > 0) {
+        indent += ICM_INDENT (arg_node);
     }
 
     DBUG_RETURN (arg_node);
