@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/04/28 08:50:09  jhs
+ * checkin in emergency comment to be done later
+ *
  * Revision 2.11  1999/04/21 15:37:29  jhs
  * Deleted never valid DBUG_ASSERT in DupPartialArray.
  * Not r_expr but expr0 was meant there.
@@ -1898,7 +1901,7 @@ ArrayPrf (node *arg_node, node *arg_info)
              */
             expr[0] = arg[0]->node[0];
             expr[1] = arg[1]->node[0];
-            do {
+            while ((expr[0] != NULL) && (expr[1] != NULL)) {
                 expr_arg[0] = expr[0]->node[0];
                 expr_arg[1] = expr[1]->node[0];
                 tmp = FoldPrfScalars (PRF_PRF (arg_node), expr_arg,
@@ -1908,14 +1911,14 @@ ArrayPrf (node *arg_node, node *arg_info)
                 }
                 expr[0] = expr[0]->node[1];
                 expr[1] = expr[1]->node[1];
-            } while ((NULL != expr[0]) && (NULL != expr[1]));
+            }
         } else {
             /*
              * Calculate prim-function with one array
              */
             expr[0] = ARRAY_AELEMS (arg[0]);
             expr_arg[1] = arg[1];
-            do {
+            while (expr[0] != NULL) {
                 expr_arg[0] = EXPRS_EXPR (expr[0]);
                 tmp = FoldPrfScalars (PRF_PRF (arg_node), expr_arg,
                                       INFO_CF_TYPE (arg_info), swap);
@@ -1923,7 +1926,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                     EXPRS_EXPR (expr[0]) = tmp;
                 }
                 expr[0] = EXPRS_NEXT (expr[0]);
-            } while ((NULL != expr[0]));
+            }
         }
 
         DBUG_PRINT ("CF", ("End folding of %s", prf_string[arg_node->info.prf]));
