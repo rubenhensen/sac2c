@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/01/31 10:57:29  hw
+ * Revision 1.23  1995/01/31 14:59:33  asi
+ * opt4_tab inserted and NIF macro enlarged
+ *
+ * Revision 1.22  1995/01/31  10:57:29  hw
  * added new entrie in union 'info' of struct 'node'
  *
  * Revision 1.21  1995/01/18  17:39:17  asi
@@ -136,7 +139,7 @@ typedef struct FUN_NAME {
  *
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) n
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) n
 
 typedef enum {
 #include "node_info.mac"

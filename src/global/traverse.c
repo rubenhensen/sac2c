@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/01/18 17:37:16  asi
+ * Revision 1.11  1995/01/31 14:59:33  asi
+ * opt4_tab inserted and NIF macro enlarged
+ *
+ * Revision 1.10  1995/01/18  17:37:16  asi
  * added include free.h
  *
  * Revision 1.9  1995/01/16  10:54:50  asi
@@ -62,7 +65,7 @@ funptr *act_tab;
 **
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) f
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) f
 
 funptr flat_tab[] = {
 #include "node_info.mac"
@@ -74,7 +77,7 @@ funptr flat_tab[] = {
 **  2) print_tab
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) p
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) p
 
 funptr print_tab[] = {
 #include "node_info.mac"
@@ -86,7 +89,7 @@ funptr print_tab[] = {
  * 3) type_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) t
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) t
 
 funptr type_tab[] = {
 #include "node_info.mac"
@@ -98,7 +101,7 @@ funptr type_tab[] = {
  * 4) opt1_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) o
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) o
 
 funptr opt1_tab[] = {
 #include "node_info.mac"
@@ -110,7 +113,7 @@ funptr opt1_tab[] = {
  * 5) imp_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) i
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) i
 
 funptr imp_tab[] = {
 #include "node_info.mac"
@@ -122,7 +125,7 @@ funptr imp_tab[] = {
  * 6) opt2_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) x
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) x
 
 funptr opt2_tab[] = {
 #include "node_info.mac"
@@ -134,7 +137,7 @@ funptr opt2_tab[] = {
  * 7) opt3_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) y
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) y
 
 funptr opt3_tab[] = {
 #include "node_info.mac"
@@ -146,9 +149,21 @@ funptr opt3_tab[] = {
  * 8) free_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z) z
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) z
 
 funptr free_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 9) opt4_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) a
+
+funptr opt4_tab[] = {
 #include "node_info.mac"
 };
 
