@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/09 01:14:55  sah
+ * added a break in default case
+ *
  * Revision 1.5  2004/11/07 18:05:01  sah
  * improved dependency handling
  * for external function added
@@ -73,6 +76,7 @@ AddOptimizeFlag (str_buf *buffer)
         StrBufprintf (buffer, "%s ", config.opt_O3);
         break;
     default:
+        break;
     }
 
     DBUG_VOID_RETURN;
