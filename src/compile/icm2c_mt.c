@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.14  2000/07/06 14:50:24  dkr
+ * BEtest support added
+ *
  * Revision 2.13  2000/05/26 11:35:07  dkr
  * GetFoldCode() renamed into GetUnadjustedFoldCode()
  *
@@ -98,6 +102,7 @@
  *
  * Revision 1.1  1998/05/13 07:22:57  cg
  * Initial revision
+ *
  */
 
 /*****************************************************************************
@@ -109,9 +114,6 @@
  * description:
  *
  *   This file contains the definitions of C implemented ICMs.
- *
- *
- *
  *
  *****************************************************************************/
 
@@ -378,7 +380,9 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
 void
 ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 {
+#ifndef BEtest
     node **foldcodes;
+#endif /*BEtest*/
     char *foldop;
     int i;
 
@@ -390,14 +394,16 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 #undef MT_SYNC_FOLD
 
     /*
-     *  fetch code-elements for all fold-operations
+     * fetch code-elements for all fold-operations
      */
-    foldcodes = (node **)Malloc (narg * sizeof (node *));
+#ifndef BEtest
+    foldcodes = (node **)MALLOC (narg * sizeof (node *));
     for (i = 0; i < narg; i++) {
         foldop = vararg[(i * 4) + 3];
         DBUG_PRINT ("COMPi", ("%i %s", i, foldop));
         foldcodes[i] = SearchFoldImplementation (foldop);
     }
+#endif /* BEtest */
 
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1A( %d)\n", barrier_id);
@@ -405,7 +411,8 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     for (i = 0; i < narg; i++) {
         INDENT;
         fprintf (outfile,
-                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Pure thread fold result:\");\n",
+                 "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
+                 " \"Pure thread fold result:\");\n",
                  vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
     }
 
@@ -454,6 +461,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
                      "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC(SAC_MT_son_id, %i, %s);\n",
                      vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
         }
+#ifndef BEtest
         INDENT;
         fprintf (outfile, "{\n");
         indent++;
@@ -461,6 +469,10 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
+#else  /* BEtest */
+        INDENT;
+        fprintf (outfile, "/* fold operation: %s */\n", foldop);
+#endif /* BEtest */
     }
 
     INDENT;
@@ -508,6 +520,8 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
                      "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC(SAC_MT_son_id, %i, %s);\n",
                      vararg[(i * 4) + 2], i + 1, vararg[(i * 4)]);
         }
+
+#ifndef BEtest
         INDENT;
         fprintf (outfile, "{\n");
         indent++;
@@ -515,6 +529,10 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
+#else  /* BEtest */
+        INDENT;
+        fprintf (outfile, "/* fold operation: %s */\n", foldop);
+#endif /* BEtest */
     }
 
     INDENT;
@@ -551,7 +569,13 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     INDENT;
     fprintf (outfile, "}\n");
 
+#ifndef BEtest
+    for (i = 0; i < narg; i++) {
+        foldcodes[i] = FreeTree (foldcodes[i]);
+    }
     FREE (foldcodes);
+#endif /* BEtest */
+
     DBUG_VOID_RETURN;
 }
 
@@ -601,10 +625,7 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
     fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype, accu_var,
              tmp_var, barrier_id);
 
-#ifdef BEtest
-    INDENT;
-    fprintf (outfile, "/* fold operation: %s */\n", foldop);
-#else  /* BEtest */
+#ifndef BEtest
     INDENT;
     fprintf (outfile, "{\n");
     indent++;
@@ -612,16 +633,16 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
+#else  /* BEtest */
+    INDENT;
+    fprintf (outfile, "/* fold operation: %s */\n", foldop);
 #endif /* BEtest */
 
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype, accu_var,
              tmp_var, barrier_id);
 
-#ifdef BEtest
-    INDENT;
-    fprintf (outfile, "/* fold operation: %s */\n", foldop);
-#else  /* BEtest */
+#ifndef BEtest
     INDENT;
     fprintf (outfile, "{\n");
     indent++;
@@ -629,6 +650,9 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
     indent--;
     INDENT;
     fprintf (outfile, "}\n");
+#else  /* BEtest */
+    INDENT;
+    fprintf (outfile, "/* fold operation: %s */\n", foldop);
 #endif /* BEtest */
 
     INDENT;
@@ -643,7 +667,7 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
     fprintf (outfile, "\n");
 
 #ifndef BEtest
-    FreeTree (fold_code);
+    fold_code = FreeTree (fold_code);
 #endif /* BEtest */
 
     DBUG_VOID_RETURN;
@@ -778,6 +802,7 @@ ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var
  *   complete set of macros, so the code is readable.
  *
  ******************************************************************************/
+
 void
 ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs)
 {
@@ -814,6 +839,7 @@ ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs)
  *   from the barrier instead.
  *
  ******************************************************************************/
+
 void
 ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs)
 {
@@ -850,6 +876,7 @@ ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs)
  *   The values are put in the SPMD-frame.
  *
  ******************************************************************************/
+
 void
 ICMCompileMT_MASTER_SEND_SYNCARGS (int nsyncargs, char **syncargs)
 {
@@ -885,6 +912,7 @@ ICMCompileMT_MASTER_SEND_SYNCARGS (int nsyncargs, char **syncargs)
  *   The values are fetched from the SPMD-frame.
  *
  ******************************************************************************/
+
 void
 ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
 {
@@ -909,8 +937,8 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
  * ####jhs no longer needed, but kept for references
  *
  * function:
- *   void ICMCompileMT_CONTINUE(int nfoldargs, int nsyncargs,
- *                              char **vararg, char **syncargs)
+ *   void ICMCompileMT_CONTINUE( int nfoldargs, int nsyncargs,
+ *                               char **vararg, char **syncargs)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1053,15 +1081,17 @@ void ICMCompileMT_SPMD_BLOCK(char *name, int narg, char **vararg)
       strncpy(basetype, vararg[i+1], strchr(vararg[i+1], '*') - vararg[i+1]);
       
       INDENT;
-      fprintf(outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, %s);\n",
-              basetype, vararg[i+2], vararg[i]+8);
+      fprintf( outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, %s);\n",
+                        basetype, vararg[i+2], vararg[i]+8);
       
       INDENT;
-      fprintf(outfile, "SAC_MT_SPMD_SETARG_inout_rc(%s, %s);\n", name, vararg[i+2]);
+      fprintf( outfile, "SAC_MT_SPMD_SETARG_inout_rc(%s, %s);\n",
+               name, vararg[i+2]);
     }
     else {
       INDENT;
-      fprintf(outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n", vararg[i], name, vararg[i+2]);
+      fprintf( outfile, "SAC_MT_SPMD_SETARG_%s(%s, %s);\n",
+                        vararg[i], name, vararg[i+2]);
     }
   }
   
@@ -1086,8 +1116,6 @@ void ICMCompileMT_SPMD_BLOCK(char *name, int narg, char **vararg)
   
   DBUG_VOID_RETURN;
 }
-
-ICM no longer used !!
 #endif /* 0 */
 
 /******************************************************************************
@@ -1096,7 +1124,6 @@ ICM no longer used !!
  *   void ICMCompileMT_SPMD_SETUP(char *name, int narg, char **vararg)
  *
  * description:
- *
  *   implements the compilation of the following ICM:
  *
  *   MT_SPMD_SETUP( name, narg [, tag, type, arg]*)
@@ -1145,10 +1172,7 @@ ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg)
  *   void ICMCompileMT_SPMD_END(char *name)
  *
  * description:
- *
  *   These functions implement the control flow ICMs around SPMD-blocks.
- *
- *
  *
  ******************************************************************************/
 
@@ -1303,11 +1327,10 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int up
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_BEGIN(int dim, int *vararg)
- *   void ICMCompileMT_SCHEDULER_END(int dim, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_BEGIN( int dim, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_END( int dim, int *vararg)
  *
  * description:
- *
  *   These two ICMs implement the default scheduling.
  *
  ******************************************************************************/
@@ -1358,7 +1381,6 @@ ICMCompileMT_SCHEDULER_END (int dim, int *varint)
  *   void ICMCompileMT_SCHEDULER_Block_END(int dim, int *vararg)
  *
  * description:
- *
  *   These two ICMs implement the scheduling for constant segments
  *   called "Block".
  *
@@ -1375,9 +1397,6 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
     int *lower_bound = varint;
     int *upper_bound = varint + dim;
     int *unrolling = varint + 3 * dim;
-    /*
-     * int *blocking    = varint+2*dim;
-     */
     int i;
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_BEGIN");
