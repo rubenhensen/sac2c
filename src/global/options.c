@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.41  2000/06/13 13:39:02  dkr
+ * options 'wltrans' renamed into 'wlpatch'
+ *
  * Revision 2.40  2000/06/08 09:04:03  nmw
  * added default opt. and mt. settings for generating c library
  * by default PHM and MT are disabled
@@ -657,7 +660,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_FLAG ("wlconv", Make_Old2NewWith = 1);
+    ARGS_FLAG ("wlpatch", make_patchwith = 1);
 
     ARGS_OPTION ("v", ARG_RANGE (verbose_level, 0, 3));
 
