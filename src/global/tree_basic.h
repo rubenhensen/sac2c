@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/17 21:24:09  bs
+ * Access macro ARRAY_CHARVEC added.
+ *
  * Revision 2.2  1999/03/15 13:54:23  bs
  * Renamed:
  * ID_CONSTARRAY => ID_INTVEC
@@ -1558,6 +1561,7 @@ extern node *MakeExprs (node *expr, node *next);
  ***    int*       INTVEC       (O)   (flatten -> )
  ***    float*     FLOATVEC     (O)   (flatten -> )
  ***    double*    DOUBLEVEC    (O)   (flatten -> )
+ ***    char*      CHARVEC      (O)   (flatten -> )
  ***    int        VECLEN       (O)   (flatten -> )
  ***    simpletype VECTYPE      (O)   (flatten -> )
  ***/
@@ -1568,9 +1572,12 @@ extern node *MakeExprs (node *expr, node *next);
  * This may be retrieved for C code generation.
  *
  * In the case of constant arrays, the optional permanent
- * attribute CONSTVEC holds the original definition. In that case
+ * attribute INTVEC holds the original definition. In that case
  * VECLEN holds the number of array elements.
  * This may be retrieved for tiling.
+ * For the reasen of consistancy there are also compact propagations
+ * float-, double-, boolean- and character-arrays.
+ * Boolean-arrays will be stored in INTVEC too.
  */
 
 extern node *MakeArray (node *aelems);
@@ -1581,6 +1588,7 @@ extern node *MakeArray (node *aelems);
 #define ARRAY_INTVEC(n) ((int *)(n->node[2]))
 #define ARRAY_FLOATVEC(n) ((float *)(n->node[3]))
 #define ARRAY_DOUBLEVEC(n) ((double *)(n->node[4]))
+#define ARRAY_CHARVEC(n) ((char *)(n->node[5]))
 #define ARRAY_VECLEN(n) (n->counter)
 #define ARRAY_VECTYPE(n) ((simpletype)n->varno)
 
