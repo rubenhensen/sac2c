@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1997/11/03 16:26:11  dkr
+ * new Makro RT_FREE
+ * free -> RT_FREE
+ *
  * Revision 1.44  1997/11/02 14:30:05  dkr
  * does not include memory.h anymore (redundant)
  *
@@ -255,7 +259,7 @@
 
 #define ND_FREE_HIDDEN(name, freefun)                                                    \
     freefun (name);                                                                      \
-    free (ND_A_RCP (name));                                                              \
+    RT_FREE (ND_A_RCP (name));                                                           \
     PRINT_TRACEHEADER_ALL (("ND_FREE_HIDDEN(%s, %s)", #name, #freefun));                 \
     PRINT_HIDDEN_FREE (name);                                                            \
     DEC_HIDDEN_MEMCNT (1);                                                               \
@@ -268,15 +272,15 @@
     PRINT_HIDDEN_MEM (name);
 
 #define ND_FREE_ARRAY(name)                                                              \
-    free (ND_A_FIELD (name));                                                            \
-    free (ND_A_RCP (name));                                                              \
+    RT_FREE (ND_A_FIELD (name));                                                         \
+    RT_FREE (ND_A_RCP (name));                                                           \
     PRINT_TRACEHEADER_ALL (("ND_FREE_ARRAY(%s)", #name));                                \
     PRINT_ARRAY_FREE (name);                                                             \
     DEC_ARRAY_MEMCNT (ND_A_SIZE (name));                                                 \
     PRINT_ARRAY_MEM (name);
 
 #define ND_NO_RC_FREE_ARRAY(name)                                                        \
-    free (ND_A_FIELD (name));                                                            \
+    RT_FREE (ND_A_FIELD (name));                                                         \
     PRINT_TRACEHEADER_ALL (("ND_NO_RC_FREE_ARRAY(%s)", #name));                          \
     PRINT_ARRAY_FREE (name);                                                             \
     DEC_ARRAY_MEMCNT (ND_A_SIZE (name));                                                 \
@@ -489,7 +493,7 @@
     PRINT_REF (old);                                                                     \
     if (ND_A_RC (old) == 1) {                                                            \
         ND_NO_RC_ASSIGN_HIDDEN (old, new);                                               \
-        free (ND_A_RCP (old));                                                           \
+        RT_FREE (ND_A_RCP (old));                                                        \
     } else {                                                                             \
         ND_COPY_HIDDEN (old, new, copyfun);                                              \
         ND_DEC_RC (old, 1);                                                              \
@@ -501,7 +505,7 @@
     PRINT_REF (old);                                                                     \
     if ((ND_A_RC (old)) == 1) {                                                          \
         ND_KS_NO_RC_ASSIGN_ARRAY (old, new);                                             \
-        free (ND_A_RCP (old));                                                           \
+        RT_FREE (ND_A_RCP (old));                                                        \
     } else {                                                                             \
         ND_KS_COPY_ARRAY (old, new, basetypesize);                                       \
         ND_DEC_RC (old, 1);                                                              \
