@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2002/07/12 20:45:03  dkr
+ * fixed a bug in compilation of N_ap nodes
+ *
  * Revision 1.23  2002/07/12 19:11:06  dkr
  * MakeIcm_ND_FUN_DEC(): handling of T_dots parameter corrected
  *
@@ -2506,39 +2509,31 @@ COMPApIds (node *ap, node *arg_info)
                                               FALSE, TRUE, FALSE, NULL),
                                 ret_node);
 
-            if (ATG_has_rc[tag]) {
-                /* function does refcounting */
+            if (ATG_is_out[tag]) {
+                /* it is an out- (but no inout-) parameter */
 
-                ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                            IDS_REFCNT (let_ids), ret_node);
-            }
-
-            if (!ATG_has_rc[tag]) {
-                /* function does no refcounting */
-
-                ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                         IDS_REFCNT (let_ids), ret_node);
-            }
-
-            if (!ATG_has_shp[tag]) {
-                /* function sets no shape information */
-
-#if 1
-                SYSWARN (("return value with unknown shape/dimension found"));
-#else
-                ret_node
-                  = MakeAssignIcm1 ("ND_SET_SHAPE",
-                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                  FALSE, TRUE, TRUE, NULL),
-                                    ret_node);
-#endif
-            }
-
-            if (!ATG_has_desc[tag]) {
-                /* function uses no descriptor at all */
-
-                ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                if (ATG_has_rc[tag]) {
+                    /* function does refcounting */
+                    ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                IDS_REFCNT (let_ids), ret_node);
+                } else {
+                    /* function does no refcounting */
+                    ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                              IDS_REFCNT (let_ids), ret_node);
+                }
+
+                if (!ATG_has_shp[tag]) {
+                    /* function sets no shape information */
+#if 1
+                    SYSWARN (("return value with unknown shape/dimension found"));
+#endif
+                }
+
+                if (!ATG_has_desc[tag]) {
+                    /* function uses no descriptor at all */
+                    ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 IDS_REFCNT (let_ids), ret_node);
+                }
             }
         }
     }
@@ -2579,7 +2574,7 @@ COMPApArgs (node *ap, node *arg_info)
             DBUG_ASSERT ((ATG_is_in[tag] || ATG_is_inout[tag]), "illegal tag found!");
 
 #ifdef TAGGED_ARRAYS
-            if (!ATG_has_rc[tag]) {
+            if (ATG_is_in[tag] && (!ATG_has_rc[tag])) {
                 /* function does no refcounting */
 
                 if (NODE_TYPE (arg) == N_id) {
