@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.57  2000/07/14 12:47:33  dkr
+ * DupModul and DupImplist added
+ *
  * Revision 1.56  2000/07/14 12:05:05  dkr
  * DFRblock added
  *
@@ -757,7 +760,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, GNMmodul, GNMmodul,
-       GNMmodul, FreeModul, GNMmodul, TravSons, COMPModul, GNMmodul, TravSons, INLmodul,
+       GNMmodul, FreeModul, GNMmodul, TravSons, COMPModul, GNMmodul, DupModul, INLmodul,
        GNMmodul, TravSons, IdxModul, GNMmodul, TravSons, GNMmodul,
 
        WSIBmodul, OBJmodul, IMPLmodul, OImodul, ANAmodul, TravSons, WDECmodul, UNQmodul,
@@ -829,8 +832,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_implist, "N_implist", TravSons, TravSons, PrintImplist, TravSons, TravSons,
-       TravSons, TravSons, FreeImplist, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeImplist, TravSons, TravSons, TravSons, TravSons,
+       DupImplist, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1462,21 +1465,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   /*
-   *
-   * Here comes the node information for the OLD withloops
-   * (NO LONGER SUPPORTED! PLEASE DO NOT ADD ANY NEW FUNCTIONS!)
-   *
-   */
-
-  /* eliminated :-) */
-
-  /*
-   *
-   * Here comes the node information for the NEW withloops. All identifiers
-   * use an additional N (for NEW) at the beginning to destinguish them from the
-   * old withloops.
-   * e.g. N_Nwith for the main node or RCNwith for a RC-function.
-   *
+   * Here is the node information for the NEW withloop.
    */
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMNwith, DCRNwith,
@@ -1752,6 +1741,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, 4),
+
+  /*
+   *
+   */
 
   NIF (N_cwrapper, "N_cwrapper", TravSons, TravSons, PrintCWrapper, TravSons, TravSons,
        TravSons, TravSons, FreeCWrapper, TravSons, TravSons, TravSons, TravSons, TravSons,

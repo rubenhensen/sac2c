@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2000/07/14 12:47:54  dkr
+ * DupModul and DupImplist added
+ *
  * Revision 1.15  2000/07/14 10:08:50  dkr
  * signature of DupNodelist changed
  *
@@ -138,6 +141,7 @@ extern node *DupReturn (node *arg_node, node *arg_info);
 extern node *DupBlock (node *arg_node, node *arg_info);
 extern node *DupTypedef (node *arg_node, node *arg_info);
 extern node *DupObjdef (node *arg_node, node *arg_info);
+extern node *DupImplist (node *arg_node, node *arg_info);
 extern node *DupVardec (node *arg_node, node *arg_info);
 extern node *DupArg (node *arg_node, node *arg_info);
 extern node *DupLet (node *arg_node, node *arg_info);
@@ -151,6 +155,7 @@ extern node *DupEmpty (node *arg_node, node *arg_info);
 extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupAp (node *arg_node, node *arg_info);
 extern node *DupEmpty (node *arg_node, node *arg_info);
+extern node *DupModul (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
 extern node *DupIcm (node *arg_node, node *arg_info);
