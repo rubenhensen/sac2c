@@ -2984,12 +2984,6 @@
 	    <all />
 	  </phases>
 	</attribute>
-	<attribute name="SPName" default="NULL" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="compile" to="final" />
-	  </phases>
-	</attribute>
         <attribute name="WL" mandatory="yes">
           <type name="Link">
             <target>
@@ -3018,11 +3012,23 @@
             <range from="flatten" to="final" />
           </phases>
         </attribute>
-        <attribute name="NT_Tag" mandatory="yes">
+	<attribute name="ICMtext" default="NULL" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="compile" to="final" />
+	  </phases>
+          <description>
+            Deprecated. Still used in the compiler backend until major redesign of backend node structure.
+          </description>
+	</attribute>
+        <attribute name="NT_Tag" default="NULL" mandatory="no">
           <type name="String" />
           <phases>
             <range from="compile" to="final" />
           </phases>
+          <description>
+            Deprecated. Still used in the compiler backend until major redesign of backend node structure.
+          </description>
         </attribute>
       </attributes>
       <flags>
@@ -5315,12 +5321,6 @@
 	  </type>
 	  <phases>
 	    <all />
-	  </phases>
-	</attribute>
-	<attribute name="SPName" default="NULL" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="compile" to="final" />
 	  </phases>
 	</attribute>
         <attribute name="Use" mandatory="yes" >
