@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/09/16 14:24:58  dkr
+ * Type2String() modified: some spaces in output removed
+ *
  * Revision 3.13  2002/09/09 20:36:27  dkr
  * Type2String() corrected
  *
@@ -261,10 +264,10 @@ Type2String (types *type, int flag, bool all)
                                     }
                                 } else {
                                     if (known_shape == 1) {
-                                        sprintf (int_string, "%d, ",
+                                        sprintf (int_string, "%d,",
                                                  TYPES_SHAPE (type, i));
                                     } else {
-                                        sprintf (int_string, "., ");
+                                        sprintf (int_string, ".,");
                                     }
                                 }
                                 strcat (tmp_string, int_string);
