@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/08/10 13:32:03  ktr
+ * EMM reuse inference (emri) added.
+ *
  * Revision 3.65  2004/08/06 14:38:59  sah
  * ongoing work to use new AST in sac2c
  *
@@ -248,6 +251,7 @@
 #include "refcount.h"
 #include "alloc.h"
 #include "refcounting.h"
+#include "reuse.h"
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
@@ -460,15 +464,15 @@ static funtab emrefcnt_tab_rec = {{
 funtab *emrefcnt_tab = &emrefcnt_tab_rec;
 
 /*
- *  (12) unused_tab4
+ *  (12) emri_tab
  */
-static funtab unused_tab4_rec = {{
-#define NIFunused_4(it_unused_4) it_unused_4
+static funtab emri_tab_rec = {{
+#define NIFemri(it_emri) it_emri
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab4 = &unused_tab4_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emri_tab = &emri_tab_rec;
 #endif /* NEW_AST */
 /*
  *  (13) dup_tab

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/08/10 13:32:03  ktr
+ * EMM reuse inference (emri) added.
+ *
  * Revision 3.51  2004/07/29 00:40:54  skt
  * added support for creation of dataflowgraph (mtmode 3)
  *
@@ -280,7 +283,7 @@ extern funtab *free_tab;
 extern funtab *unused_tab2;
 extern funtab *refcnt_tab;
 extern funtab *emrefcnt_tab;
-extern funtab *unused_tab4;
+extern funtab *emri_tab;
 extern funtab *unused_tab21;
 extern funtab *dup_tab;
 extern funtab *inline_tab;
