@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.175  2004/11/14 15:19:31  sah
+ * added printing of ntypes in new ast mode
+ *
  * Revision 3.174  2004/10/19 11:53:07  ktr
  * Added support for FUNDEF_RETALIAS
  *
@@ -1517,9 +1520,15 @@ PrintTypedef (node *arg_node, info *arg_info)
 
     if ((TYPEDEF_ICM (arg_node) == NULL)
         || (NODE_TYPE (TYPEDEF_ICM (arg_node)) != N_icm)) {
+#ifndef NEW_AST
         type_str = Type2String (TYPEDEF_TYPE (arg_node), 0, TRUE);
         fprintf (outfile, "typedef %s ", type_str);
         type_str = Free (type_str);
+#else
+        type_str = TYType2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
+        fprintf (outfile, "typedef %s ", type_str);
+        type_str = Free (type_str);
+#endif
 
         if (TYPEDEF_MOD (arg_node) != NULL) {
             fprintf (outfile, "%s:", TYPEDEF_MOD (arg_node));
