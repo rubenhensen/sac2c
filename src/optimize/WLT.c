@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.3  1998/04/03 12:20:13  srs
+ * *** empty log message ***
+ *
  * Revision 1.2  1998/04/01 07:44:22  srs
  * added functions to create full partition
  *
@@ -217,24 +220,26 @@ CreateFullPartition (node *wln, node *arg_info)
 
     DBUG_ENTER ("CreateFullPartition");
 
+    /* only if we do not have a full partition yet. */
+    do_create = NWITH_PARTS (wln) < 0;
+
     /* this is the shape of the index vector (generator) */
     gen_shape = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
 
     /* genarray check */
-    do_create = (WO_genarray == NWITH_TYPE (wln)
-                 && 0 == TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)))));
+    if (do_create && WO_genarray == NWITH_TYPE (wln))
+        do_create = 0 == TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln))));
+
     /* modarray check */
-    if (WO_modarray == NWITH_TYPE (wln)) {
-        base_wl = MRD (ID_VARNO (NWITHOP_ARRAY (NWITH_WITHOP (wln))));
+    if (do_create && WO_modarray == NWITH_TYPE (wln)) {
+        base_wl = StartSearchWL (NWITHOP_ARRAY (NWITH_WITHOP (wln)),
+                                 INFO_WLI_ASSIGN (arg_info), 2);
         do_create
           = (base_wl
              && N_Nwith == NODE_TYPE ((base_wl = LET_EXPR (ASSIGN_INSTR (base_wl))))
              && gen_shape == IDS_SHAPE (NPART_VEC (NWITH_PART (base_wl)), 0)
              && NWITH_FOLDABLE (base_wl));
     }
-
-    /* only if we do not have a full partition yet. */
-    do_create = do_create && (NWITH_PARTS (wln) < 0);
 
     /* start creation*/
     if (do_create) {
@@ -348,7 +353,7 @@ CheckOptimizePsi (node **psi, node *arg_info)
             if (N_id == NODE_TYPE (indexn))
                 INFO_USE[ID_VARNO (indexn)]--;
             FreeTree (*psi);
-            *psi = MakeId (IDS_NAME (_ids), NULL, ST_regular);
+            *psi = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
             ID_VARDEC ((*psi)) = IDS_VARDEC (_ids);
             INFO_USE[IDS_VARNO (_ids)]++;
             wlt_expr++;
@@ -379,6 +384,7 @@ CheckOptimizeArray (node **array, node *arg_info)
     int elts, i;
     ids *_ids;
     node *tmpn;
+    char *vec_name;
 
     DBUG_ENTER ("CheckOptimizeArray");
     DBUG_ASSERT (N_array == NODE_TYPE (*array), ("no N_array node"));
@@ -409,7 +415,8 @@ CheckOptimizeArray (node **array, node *arg_info)
 
         /* free subtree and make new id node. */
         FreeTree (*array);
-        *array = MakeId (IDS_NAME (_ids), NULL, ST_regular);
+        vec_name = StringCopy (IDS_NAME (_ids));
+        *array = MakeId (vec_name, NULL, ST_regular);
         ID_VARDEC ((*array)) = IDS_VARDEC (_ids);
         INFO_USE[IDS_VARNO (_ids)]++;
         wlt_expr++;
@@ -614,7 +621,7 @@ WLTlet (node *arg_node, node *arg_info)
         exprn = LET_EXPR (arg_node);
         if (N_prf == NODE_TYPE (exprn))
             if (F_psi == PRF_PRF (exprn)) /* 3) */
-                CheckOptimizePsi (&exprn, arg_info);
+                CheckOptimizePsi (&LET_EXPR (arg_node), arg_info);
             else {
                 if (N_array == NODE_TYPE (PRF_ARG1 (exprn))) /* 1) */
                     CheckOptimizeArray (&PRF_ARG1 (exprn), arg_info);
@@ -623,7 +630,7 @@ WLTlet (node *arg_node, node *arg_info)
             }
 
         if (N_array == NODE_TYPE (exprn)) /* 2) */
-            CheckOptimizeArray (&exprn, arg_info);
+            CheckOptimizeArray (&LET_EXPR (arg_node), arg_info);
     }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
@@ -648,7 +655,7 @@ WLTlet (node *arg_node, node *arg_info)
 node *
 WLTNwith (node *arg_node, node *arg_info)
 {
-    node *tmpn;
+    node *tmpn, *old_assignn;
 
     DBUG_ENTER ("WLTNwith");
 
@@ -659,6 +666,7 @@ WLTNwith (node *arg_node, node *arg_info)
     tmpn->mask[1] = INFO_USE; /* to be identical. */
     tmpn->varno = INFO_VARNO;
     INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
+    INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
     INFO_WLI_NEXT (tmpn) = arg_info;
     arg_info = tmpn;
 
@@ -670,6 +678,8 @@ WLTNwith (node *arg_node, node *arg_info)
         tmpn = NCODE_NEXT (tmpn);
     }
     NWITH_FOLDABLE (arg_node) = 1;
+
+    old_assignn = INFO_WLI_ASSIGN (arg_info);
 
     /* traverse N_Nwithop */
     NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
@@ -683,6 +693,8 @@ WLTNwith (node *arg_node, node *arg_info)
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NPART_NEXT (tmpn);
     }
+
+    INFO_WLI_ASSIGN (arg_info) = old_assignn;
 
     /* generate full partition (genarray, modarray) or let NWITH_PARTS be 1. */
     if (NWITH_FOLDABLE (arg_node)

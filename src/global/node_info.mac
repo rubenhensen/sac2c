@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.172  1998/04/03 12:20:26  srs
+ * *** empty log message ***
+ *
  * Revision 1.171  1998/04/03 11:24:56  dkr
  * concregs renamed to concregions
  *
@@ -892,7 +895,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeNCode, CFNcode, RCNcode, TravSons, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINcode, TravSons, PrintNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECncode,
-       ACTNcode, TravSons, WLTNcode, TravSons, TravSons, TravSons, TravSons, 3),
+       ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons, TravSons, 3),
 
   /*
    * here is the node information for the transformed (precompile) new with-loop
