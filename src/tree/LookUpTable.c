@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/05/18 11:40:11  dkr
+ * function IsEmptyLUT() added
+ *
  * Revision 3.15  2001/05/17 11:39:01  dkr
  * MALLOC FREE aliminated
  *
@@ -692,6 +695,38 @@ RemoveLUT (lut_t *lut)
     }
 
     DBUG_RETURN (lut);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool IsEmptyLUT( lut_t *lut)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+bool
+IsEmptyLUT (lut_t *lut)
+{
+    int k;
+    bool empty = TRUE;
+
+    DBUG_ENTER ("IsEmptyLUT");
+
+    if (lut != NULL) {
+        for (k = 0; k < (HASH_KEYS); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+
+            if (lut[k].size > 0) {
+                empty = FALSE;
+                break;
+            }
+        }
+    }
+
+    DBUG_RETURN (empty);
 }
 
 /******************************************************************************
