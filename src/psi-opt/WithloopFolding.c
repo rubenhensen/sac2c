@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.4  1999/03/31 10:52:26  bs
+ * Bug in MakeNullVec fixed.
+ *
  * Revision 2.3  1999/03/19 09:44:38  bs
  * Every Call of MakeArray will also create a compact vector propagation.
  *
@@ -1207,7 +1210,6 @@ MakeNullVec (int dim, simpletype type)
 {
     node *resultn, *tmpn;
     int i;
-    simpletype stype;
     shpseg *shpseg;
 
     DBUG_ENTER ("MakeNullVec");
@@ -1257,9 +1259,26 @@ MakeNullVec (int dim, simpletype type)
 
         resultn = MakeArray (tmpn);
         ARRAY_VECTYPE (resultn) = type;
-        ARRAY_INTVEC (resultn) = Array2IntVec (tmpn, NULL);
         ARRAY_VECLEN (resultn) = dim;
-
+        switch (type) {
+        case T_int:
+            ARRAY_INTVEC (resultn) = Array2IntVec (tmpn, NULL);
+            break;
+        case T_float:
+            ARRAY_FLOATVEC (resultn) = Array2FloatVec (tmpn, NULL);
+            break;
+        case T_double:
+            ARRAY_DOUBLEVEC (resultn) = Array2DblVec (tmpn, NULL);
+            break;
+        case T_bool:
+            ARRAY_INTVEC (resultn) = Array2IntVec (tmpn, NULL);
+            break;
+        case T_char:
+            ARRAY_CHARVEC (resultn) = Array2CharVec (tmpn, NULL);
+            break;
+        default:
+            DBUG_ASSERT (0, ("unkown type"));
+        }
         shpseg = MakeShpseg (
           MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */
         ARRAY_TYPE (resultn) = MakeType (type, 1, shpseg, NULL, NULL);
