@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/03/02 10:36:09  dkr
+# /home/dkr/sac/BASE/sac2c/src/libsac/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.5  2000/12/12 15:09:19  dkr
 # make deps done
 #
@@ -98,7 +101,7 @@ all: libsac.a libsac_mt.a
 # recognize the dependency between *.[ch] and the .mac files!
 #
 cinterface.c: ../tree/type_info.mac
-	touch cinterface.c
+	touch $@
 
 
 libsac.a: $(OBJS_LIBSAC)
