@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/07/23 15:23:45  ktr
+ * unnecessary comment removed.
+ *
  * Revision 1.22  2003/09/26 10:14:23  sbs
  * COIsEmptyVect added
  *
@@ -763,16 +766,6 @@ COConstant2AST (constant *a)
         ARRAY_VECTYPE (res) = CONSTANT_TYPE (a);
         ARRAY_VECLEN (res) = CONSTANT_VLEN (a);
         ARRAY_CONSTVEC (res) = Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res), NULL);
-
-        /*
-         * ktr: Support for multidimensional arrays
-
-        if ((!ktr) && (dim > 1)) {
-          res = MakePrf( F_reshape,
-                         MakeExprs( SHShape2Array( COGetShape( a)),
-                                    MakeExprs( res, NULL)));
-        }
-        */
     }
 
     DBUG_RETURN (res);
