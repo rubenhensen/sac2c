@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2003/09/29 22:51:48  dkr
+ * some icms renamed/removed/added
+ *
  * Revision 3.64  2003/09/25 13:43:05  dkr
  * new argument 'copyfun' added to some ICMs
  *
@@ -227,9 +230,9 @@ ICM_DEF( ND_DECL_EXTERN, TRACE_NONE)
 ICM_END( ND_DECL_EXTERN, (var_NT, basetype, sdim))
 #endif
 
-/* ND_DECL__DATA( ...) is a H-ICM */
-
 /* ND_DECL__DESC( ...) is a H-ICM */
+
+/* ND_DECL__DATA( ...) is a H-ICM */
 
 #if defined(ND_DECL__MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR, TRACE_NONE)
@@ -267,19 +270,27 @@ ICM_END( ND_CHECK_REUSE, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 
 /* ND_ALLOC( ...) is a H-ICM */
 
-/* ND_ALLOC__DATA( ...) is a H-ICM */
-
 /* ND_ALLOC__DESC( ...) is a H-ICM */
+
+/* ND_ALLOC__DATA( ...) is a H-ICM */
 
 
 /* ND_SET__RC( ...) is a H-ICM */
 
-#if defined(ND_SET__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_SET__SHAPE, TRACE_NONE)
+#if defined(ND_SET__SHAPE_id) || defined(ICM_ALL)
+ICM_DEF( ND_SET__SHAPE_id, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( shp_NT)
+ICM_END( ND_SET__SHAPE_id, (to_NT, to_sdim, shp_NT))
+#endif
+
+#if defined(ND_SET__SHAPE_arr) || defined(ICM_ALL)
+ICM_DEF( ND_SET__SHAPE_arr, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( dim)
   ICM_VARANY( dim, shp_ANY)
-ICM_END( ND_SET__SHAPE, (to_NT, dim, shp_ANY))
+ICM_END( ND_SET__SHAPE_arr, (to_NT, dim, shp_ANY))
 #endif
 
 
@@ -310,14 +321,23 @@ ICM_DEF( ND_ASSIGN, TRACE_NONE)
 ICM_END( ND_ASSIGN, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
-/* ASSIGN__DATA( ...) is a H-ICM */
-
 #if defined(ND_ASSIGN__DESC) || defined(ICM_ALL)
 ICM_DEF( ND_ASSIGN__DESC, TRACE_NONE)
   ICM_NT( to_NT)
   ICM_NT( from_NT)
 ICM_END( ND_ASSIGN__DESC, (to_NT, from_NT))
 #endif
+
+#if defined(ND_ASSIGN__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__SHAPE, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+ICM_END( ND_ASSIGN__SHAPE, (to_NT, to_sdim, from_NT, from_sdim))
+#endif
+
+/* ASSIGN__DATA( ...) is a H-ICM */
 
 #if defined(ND_UPDATE__DESC) || defined(ICM_ALL)
 ICM_DEF( ND_UPDATE__DESC, TRACE_NONE)
@@ -348,8 +368,6 @@ ICM_DEF( ND_COPY, TRACE_NONE)
 ICM_END( ND_COPY, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
-/* COPY__DATA( ...) is a H-ICM */
-
 #if defined(ND_COPY__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_COPY__SHAPE, TRACE_NONE)
   ICM_NT( to_NT)
@@ -358,6 +376,8 @@ ICM_DEF( ND_COPY__SHAPE, TRACE_NONE)
   ICM_INT( from_sdim)
 ICM_END( ND_COPY__SHAPE, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
+
+/* COPY__DATA( ...) is a H-ICM */
 
 #if defined(ND_MAKE_UNIQUE) || defined(ICM_ALL)
 ICM_DEF( ND_MAKE_UNIQUE, TRACE_NONE)
@@ -369,14 +389,6 @@ ICM_DEF( ND_MAKE_UNIQUE, TRACE_NONE)
 ICM_END( ND_MAKE_UNIQUE, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
-
-#if defined(ND_CREATE__ARRAY__DIM) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE__ARRAY__DIM, TRACE_NONE)
-  ICM_INT( dim)
-  ICM_INT( val_size)
-  ICM_VARANY( val_size, vals_ANY)
-ICM_END( ND_CREATE__ARRAY__DIM, (dim, val_size, vals_ANY))
-#endif
 
 #if defined(ND_CREATE__ARRAY__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__ARRAY__SHAPE, TRACE_NONE)
