@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/27 02:47:27  sbs
+ * *** empty log message ***
+ *
  * Revision 1.5  2004/11/24 18:57:29  sbs
  * compiles
  *
@@ -111,7 +114,7 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCond( te_info info, ntype *args)
+ *    ntype *NTCCTcond( te_info info, ntype *args)
  *
  * description:
  *    Here, we assume that the argument types (i.e. ONLY the predicate type!!)
@@ -120,13 +123,13 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCond (te_info *err_info, ntype *args)
+NTCCTcond (te_info *err_info, ntype *args)
 {
     ntype *pred, *res;
     node *cond;
     info *arg_info;
 
-    DBUG_ENTER ("NTCCond");
+    DBUG_ENTER ("NTCCTcond");
     DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCond called with non-fixed predicate!");
 
     pred = TYgetProductMember (args, 0);
