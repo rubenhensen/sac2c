@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/07/31 13:51:14  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.95  2004/05/17 09:37:55  mwe
  * ARRAY_NTYPE added
  *
@@ -210,13 +214,7 @@
  *
  ******************************************************************************/
 
-#define INFO_DUP_TYPE(n) (n->flag)
-#define INFO_DUP_CONT(n) (n->node[0])
-#define INFO_DUP_FUNDEF(n) (n->node[1])
-#define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[0]))
-#define INFO_DUP_INSPECIAL(n) ((bool)(n->counter))
-#define INFO_DUP_ASSIGN(n) (n->node[2])
-#define INFO_DUP_FUNDEFSSA(n) (n->node[3])
+#define NEW_INFO
 
 #include <string.h>
 
@@ -236,6 +234,63 @@
 #include "scheduling.h"
 #include "generatemasks.h"
 #include "constants.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    int type;
+    node *cont;
+    node *fundef;
+    LUT_t LUT;
+    bool inspecial;
+    node *assign;
+    node *fundefssa;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_DUP_TYPE(n) (n->type)
+#define INFO_DUP_CONT(n) (n->cont)
+#define INFO_DUP_FUNDEF(n) (n->fundef)
+#define INFO_DUP_LUT(n) (n->LUT)
+#define INFO_DUP_INSPECIAL(n) (n->inspecial)
+#define INFO_DUP_ASSIGN(n) (n->assign)
+#define INFO_DUP_FUNDEFSSA(n) (n->fundefssa)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_DUP_TYPE (result) = 0;
+    INFO_DUP_CONT (result) = NULL;
+    INFO_DUP_FUNDEF (result) = NULL;
+    INFO_DUP_LUT (result) = NULL;
+    INFO_DUP_INSPECIAL (result) = FALSE;
+    INFO_DUP_ASSIGN (result) = NULL;
+    INFO_DUP_FUNDEFSSA (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  * DFMs are *not* duplicated for several reasons:
@@ -322,7 +377,7 @@ static node *
 DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type, node *fundef)
 {
     funtab *old_tab;
-    node *arg_info;
+    info *arg_info;
     node *new_node;
 
     DBUG_ENTER ("DupTreeOrNodeLUT_Type");
@@ -380,7 +435,7 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type, node *
             dup_lut = RemoveContentLUT (dup_lut);
         }
 
-        arg_info = FreeNode (arg_info);
+        arg_info = FreeInfo (arg_info);
         act_tab = old_tab;
     } else {
         new_node = NULL;
@@ -392,7 +447,7 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type, node *
 /******************************************************************************
  *
  * function:
- *   node *DupTreeTravPre( node *arg_node, node *arg_info)
+ *   node *DupTreeTravPre( node *arg_node, info *arg_info)
  *
  * description:
  *   This function is called before the traversal of each node.
@@ -400,7 +455,7 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type, node *
  ******************************************************************************/
 
 node *
-DupTreeTravPre (node *arg_node, node *arg_info)
+DupTreeTravPre (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DupTreeTravPre");
 
@@ -412,7 +467,7 @@ DupTreeTravPre (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupTreeTravPost( node *arg_node, node *arg_info)
+ *   node *DupTreeTravPost( node *arg_node, info *arg_info)
  *
  * description:
  *   This function is called after the traversal of each node.
@@ -420,7 +475,7 @@ DupTreeTravPre (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupTreeTravPost (node *arg_node, node *arg_info)
+DupTreeTravPost (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DupTreeTravPost");
 
@@ -451,7 +506,7 @@ CopyCommonNodeData (node *new_node, node *old_node)
 /******************************************************************************
  *
  * Function:
- *   DFMmask_t DupDFMask_( DFMmask_t mask, node *arg_info)
+ *   DFMmask_t DupDFMask_( DFMmask_t mask, info *arg_info)
  *
  * Description:
  *   Duplicates the given DFMmask.
@@ -463,7 +518,7 @@ CopyCommonNodeData (node *new_node, node *old_node)
  ******************************************************************************/
 
 static DFMmask_t
-DupDFMask_ (DFMmask_t mask, node *arg_info)
+DupDFMask_ (DFMmask_t mask, info *arg_info)
 {
     DFMmask_t new_mask;
 
@@ -486,7 +541,7 @@ DupDFMask_ (DFMmask_t mask, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   ids *DupIds_( ids *arg_ids, node *arg_info)
+ *   ids *DupIds_( ids *arg_ids, info *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
@@ -495,7 +550,7 @@ DupDFMask_ (DFMmask_t mask, node *arg_info)
  ******************************************************************************/
 
 static ids *
-DupIds_ (ids *arg_ids, node *arg_info)
+DupIds_ (ids *arg_ids, info *arg_info)
 {
     ids *new_ids;
     char *new_name;
@@ -539,7 +594,7 @@ DupIds_ (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   shpseg *DupShpseg_( shpseg *arg_shpseg, node *arg_info)
+ *   shpseg *DupShpseg_( shpseg *arg_shpseg, info *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
@@ -548,7 +603,7 @@ DupIds_ (ids *arg_ids, node *arg_info)
  ******************************************************************************/
 
 static shpseg *
-DupShpseg_ (shpseg *arg_shpseg, node *arg_info)
+DupShpseg_ (shpseg *arg_shpseg, info *arg_info)
 {
     int i;
     shpseg *new_shpseg;
@@ -572,7 +627,7 @@ DupShpseg_ (shpseg *arg_shpseg, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   types *DupTypes_( types* source, node *arg_info)
+ *   types *DupTypes_( types* source, info *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
@@ -581,7 +636,7 @@ DupShpseg_ (shpseg *arg_shpseg, node *arg_info)
  ******************************************************************************/
 
 static types *
-DupTypes_ (types *arg_types, node *arg_info)
+DupTypes_ (types *arg_types, info *arg_info)
 {
     types *new_types;
 
@@ -616,7 +671,7 @@ DupTypes_ (types *arg_types, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   nodelist *DupNodelist_( nodelist *nl, node *arg_info)
+ *   nodelist *DupNodelist_( nodelist *nl, info *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
@@ -625,7 +680,7 @@ DupTypes_ (types *arg_types, node *arg_info)
  ******************************************************************************/
 
 static nodelist *
-DupNodelist_ (nodelist *nl, node *arg_info)
+DupNodelist_ (nodelist *nl, info *arg_info)
 {
     nodelist *new_nl;
 
@@ -647,7 +702,7 @@ DupNodelist_ (nodelist *nl, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   argtab_t *DupArgtab_( argtab_t *argtab, node *arg_info)
+ *   argtab_t *DupArgtab_( argtab_t *argtab, info *arg_info)
  *
  * Description:
  *
@@ -655,7 +710,7 @@ DupNodelist_ (nodelist *nl, node *arg_info)
  ******************************************************************************/
 
 static argtab_t *
-DupArgtab_ (argtab_t *argtab, node *arg_info)
+DupArgtab_ (argtab_t *argtab, info *arg_info)
 {
     argtab_t *new_argtab;
     int i;
@@ -686,7 +741,7 @@ DupArgtab_ (argtab_t *argtab, node *arg_info)
 /******************************************************************************/
 
 node *
-DupVinfo (node *arg_node, node *arg_info)
+DupVinfo (node *arg_node, info *arg_info)
 {
     node *new_node, *rest;
 
@@ -711,7 +766,7 @@ DupVinfo (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNum (node *arg_node, node *arg_info)
+DupNum (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -727,7 +782,7 @@ DupNum (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupBool (node *arg_node, node *arg_info)
+DupBool (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -743,7 +798,7 @@ DupBool (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupFloat (node *arg_node, node *arg_info)
+DupFloat (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -759,7 +814,7 @@ DupFloat (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupDouble (node *arg_node, node *arg_info)
+DupDouble (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -775,7 +830,7 @@ DupDouble (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupChar (node *arg_node, node *arg_info)
+DupChar (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -791,7 +846,7 @@ DupChar (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupStr (node *arg_node, node *arg_info)
+DupStr (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -807,7 +862,7 @@ DupStr (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupDot (node *arg_node, node *arg_info)
+DupDot (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -823,7 +878,7 @@ DupDot (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupSetWL (node *arg_node, node *arg_info)
+DupSetWL (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -840,7 +895,7 @@ DupSetWL (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupId (node *arg_node, node *arg_info)
+DupId (node *arg_node, info *arg_info)
 {
     node *new_node;
     char *new_name;
@@ -904,7 +959,7 @@ DupId (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupCast (node *arg_node, node *arg_info)
+DupCast (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -921,7 +976,7 @@ DupCast (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupModul (node *arg_node, node *arg_info)
+DupModul (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -949,7 +1004,7 @@ DupModul (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupTypedef (node *arg_node, node *arg_info)
+DupTypedef (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -981,7 +1036,7 @@ DupTypedef (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupObjdef (node *arg_node, node *arg_info)
+DupObjdef (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1028,7 +1083,7 @@ DupObjdef (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupFundef (node *arg_node, node *arg_info)
+DupFundef (node *arg_node, info *arg_info)
 {
     node *new_node, *old_fundef, *new_ssacnt;
 
@@ -1157,7 +1212,7 @@ DupFundef (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupImplist (node *arg_node, node *arg_info)
+DupImplist (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1178,7 +1233,7 @@ DupImplist (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupArg (node *arg_node, node *arg_info)
+DupArg (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1221,7 +1276,7 @@ DupArg (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupExprs (node *arg_node, node *arg_info)
+DupExprs (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1241,7 +1296,7 @@ DupExprs (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupBlock (node *arg_node, node *arg_info)
+DupBlock (node *arg_node, info *arg_info)
 {
     node *new_vardecs;
     node *new_node;
@@ -1321,7 +1376,7 @@ DupBlock (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupVardec (node *arg_node, node *arg_info)
+DupVardec (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1365,7 +1420,7 @@ DupVardec (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupReturn (node *arg_node, node *arg_info)
+DupReturn (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1392,7 +1447,7 @@ DupReturn (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupEmpty (node *arg_node, node *arg_info)
+DupEmpty (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1408,7 +1463,7 @@ DupEmpty (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupAssign (node *arg_node, node *arg_info)
+DupAssign (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *stacked_assign;
@@ -1484,7 +1539,7 @@ DupAssign (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupCond (node *arg_node, node *arg_info)
+DupCond (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1508,7 +1563,7 @@ DupCond (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupDo (node *arg_node, node *arg_info)
+DupDo (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1535,7 +1590,7 @@ DupDo (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWhile (node *arg_node, node *arg_info)
+DupWhile (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1559,7 +1614,7 @@ DupWhile (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupLet (node *arg_node, node *arg_info)
+DupLet (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1583,7 +1638,7 @@ DupLet (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupAp (node *arg_node, node *arg_info)
+DupAp (node *arg_node, info *arg_info)
 {
     node *old_fundef, *new_fundef;
     node *new_node;
@@ -1662,7 +1717,7 @@ DupAp (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupMop (node *arg_node, node *arg_info)
+DupMop (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1681,7 +1736,7 @@ DupMop (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupArray (node *arg_node, node *arg_info)
+DupArray (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1711,7 +1766,7 @@ DupArray (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupPrf (node *arg_node, node *arg_info)
+DupPrf (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1727,7 +1782,7 @@ DupPrf (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupFuncond (node *arg_node, node *arg_info)
+DupFuncond (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1745,7 +1800,7 @@ DupFuncond (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupPragma (node *arg_node, node *arg_info)
+DupPragma (node *arg_node, info *arg_info)
 {
     node *new_node;
     int i;
@@ -1797,7 +1852,7 @@ DupPragma (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupIcm (node *arg_node, node *arg_info)
+DupIcm (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *fundef;
@@ -1838,7 +1893,7 @@ DupIcm (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupSpmd (node *arg_node, node *arg_info)
+DupSpmd (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1860,7 +1915,7 @@ DupSpmd (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupSync (node *arg_node, node *arg_info)
+DupSync (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -1885,7 +1940,7 @@ DupSync (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNwith (node *arg_node, node *arg_info)
+DupNwith (node *arg_node, info *arg_info)
 {
     node *new_node, *partn, *coden, *withopn, *vardec;
     ids *oldvec, *newvec, *oldids, *newids;
@@ -1972,7 +2027,7 @@ DupNwith (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNwithop (node *arg_node, node *arg_info)
+DupNwithop (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2020,7 +2075,7 @@ DupNwithop (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNpart (node *arg_node, node *arg_info)
+DupNpart (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2045,7 +2100,7 @@ DupNpart (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNcode (node *arg_node, node *arg_info)
+DupNcode (node *arg_node, info *arg_info)
 {
     node *new_node, *new_block, *new_cexprs;
 
@@ -2058,7 +2113,7 @@ DupNcode (node *arg_node, node *arg_info)
     new_block = DUPTRAV (NCODE_CBLOCK (arg_node));
     new_cexprs = DUPTRAV (NCODE_CEXPRS (arg_node));
 
-    new_node = MakeNCodeExprs (new_block, new_cexprs);
+    new_node = MakeNCode (new_block, new_cexprs);
 
     NCODE_EPILOGUE (new_node) = DUPTRAV (NCODE_EPILOGUE (arg_node));
 
@@ -2088,7 +2143,7 @@ DupNcode (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNwithid (node *arg_node, node *arg_info)
+DupNwithid (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2105,7 +2160,7 @@ DupNwithid (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNgen (node *arg_node, node *arg_info)
+DupNgen (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2124,7 +2179,7 @@ DupNgen (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNwith2 (node *arg_node, node *arg_info)
+DupNwith2 (node *arg_node, info *arg_info)
 {
     node *new_node, *id, *segs, *code, *withop;
 
@@ -2161,7 +2216,7 @@ DupNwith2 (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLseg (node *arg_node, node *arg_info)
+DupWLseg (node *arg_node, info *arg_info)
 {
     node *new_node;
     int i;
@@ -2192,8 +2247,8 @@ DupWLseg (node *arg_node, node *arg_info)
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
 
-    if (WLSEGX_TASKSEL (arg_node) != NULL) {
-        WLSEGX_TASKSEL (new_node) = SCHCopyTasksel (WLSEGX_TASKSEL (arg_node));
+    if (WLSEG_TASKSEL (arg_node) != NULL) {
+        WLSEG_TASKSEL (new_node) = SCHCopyTasksel (WLSEG_TASKSEL (arg_node));
     }
 
     CopyCommonNodeData (new_node, arg_node);
@@ -2204,7 +2259,7 @@ DupWLseg (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLsegVar (node *arg_node, node *arg_info)
+DupWLsegVar (node *arg_node, info *arg_info)
 {
     node *new_node;
     int d;
@@ -2227,8 +2282,8 @@ DupWLsegVar (node *arg_node, node *arg_info)
           = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
     }
 
-    if (WLSEGX_TASKSEL (arg_node) != NULL) {
-        WLSEGX_TASKSEL (new_node) = SCHCopyTasksel (WLSEGX_TASKSEL (arg_node));
+    if (WLSEG_TASKSEL (arg_node) != NULL) {
+        WLSEG_TASKSEL (new_node) = SCHCopyTasksel (WLSEG_TASKSEL (arg_node));
     }
 
     CopyCommonNodeData (new_node, arg_node);
@@ -2239,7 +2294,7 @@ DupWLsegVar (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLblock (node *arg_node, node *arg_info)
+DupWLblock (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2259,7 +2314,7 @@ DupWLblock (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLublock (node *arg_node, node *arg_info)
+DupWLublock (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2280,7 +2335,7 @@ DupWLublock (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLstride (node *arg_node, node *arg_info)
+DupWLstride (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2307,7 +2362,7 @@ DupWLstride (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLstrideVar (node *arg_node, node *arg_info)
+DupWLstrideVar (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2328,7 +2383,7 @@ DupWLstrideVar (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLgrid (node *arg_node, node *arg_info)
+DupWLgrid (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2357,7 +2412,7 @@ DupWLgrid (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLgridVar (node *arg_node, node *arg_info)
+DupWLgridVar (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2382,7 +2437,7 @@ DupWLgridVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupMt( node *arg_node, node *arg_info)
+ *   node *DupMt( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_mt, especially the DFMmasks are copied.
@@ -2390,7 +2445,7 @@ DupWLgridVar (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupMt (node *arg_node, node *arg_info)
+DupMt (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2411,7 +2466,7 @@ DupMt (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupSt( node *arg_node, node *arg_info)
+ *   node *DupSt( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_st, especially the DFMmasks are copied.
@@ -2419,7 +2474,7 @@ DupMt (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupSt (node *arg_node, node *arg_info)
+DupSt (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2442,7 +2497,7 @@ DupSt (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupMTsignal( node *arg_node, node *arg_info)
+ *   node *DupMTsignal( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_MTsignal, especially the DFMmasks are copied.
@@ -2450,7 +2505,7 @@ DupSt (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupMTsignal (node *arg_node, node *arg_info)
+DupMTsignal (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2468,7 +2523,7 @@ DupMTsignal (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupMTsync( node *arg_node, node *arg_info)
+ *   node *DupMTsync( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_MTsync, especially the DFMmasks are copied.
@@ -2476,7 +2531,7 @@ DupMTsignal (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupMTsync (node *arg_node, node *arg_info)
+DupMTsync (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2496,7 +2551,7 @@ DupMTsync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupMTalloc( node *arg_node, node *arg_info)
+ *   node *DupMTalloc( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_MTalloc, especially the DFMmasks are copied.
@@ -2504,7 +2559,7 @@ DupMTsync (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupMTalloc (node *arg_node, node *arg_info)
+DupMTalloc (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2522,7 +2577,7 @@ DupMTalloc (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupAvis( node *arg_node, node *arg_info)
+ *   node *DupAvis( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_avis node. Does not set AVIS_VARDECORARG!!
@@ -2530,7 +2585,7 @@ DupMTalloc (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupAvis (node *arg_node, node *arg_info)
+DupAvis (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2574,7 +2629,7 @@ DupAvis (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupSSAstack( node *arg_node, node *arg_info)
+ *   node *DupSSAstack( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_ssastack node.
@@ -2582,7 +2637,7 @@ DupAvis (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupSSAstack (node *arg_node, node *arg_info)
+DupSSAstack (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -2599,7 +2654,7 @@ DupSSAstack (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DupSSAcnt( node *arg_node, node *arg_info)
+ *   node *DupSSAcnt( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a N_ssacnt node.
@@ -2607,7 +2662,7 @@ DupSSAstack (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-DupSSAcnt (node *arg_node, node *arg_info)
+DupSSAcnt (node *arg_node, info *arg_info)
 {
     node *new_node;
 
@@ -3056,7 +3111,7 @@ DupIds_Id_NT (ids *arg_ids)
 /******************************************************************************
  *
  * Function:
- *   node *DupId_NT( node *arg_id)
+ *   node *DupId_NT( info *arg_id)
  *
  * Description:
  *   Duplicates a N_id node.
@@ -3142,7 +3197,7 @@ DupExprs_NT (node *exprs)
 /******************************************************************************
  *
  * Function:
- *   node *CheckAndDupSpecialFundef( node *module, node* fundef, node *assign)
+ *   node *CheckAndDupSpecialFundef( node *module, node *fundef, node *assign)
  *
  * Returns:
  *   modified module node
