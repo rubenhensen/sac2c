@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/02/05 11:14:02  srs
+ * OBJlet(): added traversal of new withloop analogous to old withloops.
+ *
  * Revision 1.17  1997/11/25 08:41:27  cg
  * bug fixed in OBJlet.
  * OBJlet can now handle cast expressions in front of with-loops
@@ -713,7 +716,7 @@ OBJlet (node *arg_node, node *arg_info)
         }
 
         if (NODE_TYPE (let_expr) != N_ap) {
-            if (NODE_TYPE (let_expr) == N_with) {
+            if (NODE_TYPE (let_expr) == N_with || NODE_TYPE (let_expr) == N_Nwith) {
                 let_expr = Trav (let_expr, arg_info);
             }
         } else {
