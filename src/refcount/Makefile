@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.29  2004/11/02 14:41:43  ktr
+# added datareuse.o, loopreuseopt.o.
+#
 # Revision 3.28  2004/10/26 11:17:40  ktr
 # added interfaceanalysis.o
 #
@@ -115,7 +118,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
 
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
-     interfaceanalysis.o
+     interfaceanalysis.o loopreuseopt.o datareuse.o
 
 
 %.o: %.c
