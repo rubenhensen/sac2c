@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/04/24 12:16:11  dkr
+ * added SPMD_LOCAL
+ *
  * Revision 1.5  1998/04/24 01:15:58  dkr
  * added N_sync
  *
@@ -91,7 +94,8 @@ node *
 SpmdInitAssign (node *arg_node, node *arg_info)
 {
     ids *spmd_ids;
-    node *spmd, *sync, *spmd_let, *fundefs, *vardec, *new_in, *last_in, *new_inout;
+    node *spmd_let, *spmd, *sync, *fundefs, *vardec, *new_inout, *new_in, *last_in,
+      *new_local, *last_local;
     int varno, i;
 
     DBUG_ENTER ("SpmdInitAssign");
@@ -110,10 +114,6 @@ SpmdInitAssign (node *arg_node, node *arg_info)
         spmd = MakeSPMD (MakeBlock (MakeAssign (sync, NULL), NULL));
         ASSIGN_INSTR (arg_node) = spmd;
 
-        /****************************************************
-         * begin computation SPMD_USEDVARS, SPMD_DEFVARS
-         */
-
         /*
          * generate masks (for IN, OUT, INOUT)
          *
@@ -126,33 +126,10 @@ SpmdInitAssign (node *arg_node, node *arg_info)
         varno = FUNDEF_VARNO (fundefs);
 
         /*
-         * traverse the 'spmd_let' node to generate INFO_SPMD_LOCALUSED,
-         *  INFO_SPMD_LOCALDEF
-         */
-        INFO_SPMD_LOCALUSED (arg_info)
-          = ReGenMask (INFO_SPMD_LOCALUSED (arg_info), varno);
-        INFO_SPMD_LOCALDEF (arg_info) = ReGenMask (INFO_SPMD_LOCALDEF (arg_info), varno);
-        spmd_let = Trav (spmd_let, arg_info);
-
-        /*
-         * subtract the local vars from SPMD_...VARS
-         *  because these vars will not become args or returns of the
-         *  lifted spmd-fun.
-         */
-        MinusMask (SPMD_USEDVARS (spmd), INFO_SPMD_LOCALUSED (arg_info), varno);
-        MinusMask (SPMD_DEFVARS (spmd), INFO_SPMD_LOCALDEF (arg_info), varno);
-
-        /*
-         * end computation SPMD_USEDVARS, SPMD_DEFVARS
-         ****************************************************/
-
-        /****************************************************
-         * begin building of IN, OUT, INOUT
-         */
-
-        /*
-         * INOUT (for genarray/modarray with-loops)
-         * OUT (for fold with-loops)
+         * INOUT (for genarray/modarray with-loops),
+         * OUT (for fold with-loops):
+         *
+         * the only inout/out var is the let-id (N_ids) of the spmd-region.
          */
 
         spmd_ids = LET_IDS (spmd_let);
@@ -175,15 +152,19 @@ SpmdInitAssign (node *arg_node, node *arg_info)
         }
 
         /*
-         * IN
+         * IN:
+         *
+         * In-arguments of the spmd-region are all vars that are used in the region
+         *  (SPMD_USEDVARS), except for local vars.
+         * The smpd-region so far contains one with-loop-assignment only. Therefore
+         *  all vars that are defined in the assignment (ASSIGN_MASK(0)) are
+         *  (in)out- or local vars.
          */
 
         for (i = 0; i < varno; i++) {
-            DBUG_ASSERT ((((SPMD_USEDVARS (spmd))[i] >= 0)
-                          && ((SPMD_DEFVARS (spmd))[i] >= 0)),
-                         "wrong mask entry found");
 
-            if ((SPMD_USEDVARS (spmd))[i] > 0) {
+            if (((SPMD_USEDVARS (spmd))[i] > 0)
+                && ((ASSIGN_MASK (arg_node, 0))[i] == 0)) {
                 vardec = FindVardec (i, fundefs);
 
                 if (NODE_TYPE (vardec) == N_vardec) {
@@ -208,8 +189,37 @@ SpmdInitAssign (node *arg_node, node *arg_info)
         }
 
         /*
-         * end building of IN, OUT, INOUT
-         ****************************************************/
+         * LOCAL:
+         *
+         * All vars that are defined in the assignment (ASSIGN_MASK(0)), except
+         *  for the let-var (OUT/INOUT), are local.
+         */
+
+        for (i = 0; i < varno; i++) {
+
+            if (((ASSIGN_MASK (arg_node, 0))[i] > 0) && (ARG_VARNO (new_inout) != i)) {
+                vardec = FindVardec (i, fundefs);
+
+                if (NODE_TYPE (vardec) == N_vardec) {
+                    new_local
+                      = MakeArg (StringCopy (VARDEC_NAME (vardec)),
+                                 DuplicateTypes (VARDEC_TYPE (vardec), 1),
+                                 VARDEC_STATUS (vardec), VARDEC_ATTRIB (vardec), NULL);
+                    ARG_REFCNT (new_local) = VARDEC_REFCNT (vardec);
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg), "wrong node type");
+                    new_local = DupNode (vardec);
+                }
+                ARG_VARNO (new_local) = i;
+
+                if (SPMD_LOCAL (spmd) == NULL) {
+                    SPMD_LOCAL (spmd) = new_local;
+                } else {
+                    ARG_NEXT (last_local) = new_local;
+                }
+                last_local = new_local;
+            }
+        }
 
         /*
          * we only traverse the following assignments to prevent nested
@@ -221,77 +231,6 @@ SpmdInitAssign (node *arg_node, node *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SpmdInitNpart( node *arg_node, node *arg_info)
- *
- * description:
- *   all defined vars of the N_Npart node are local
- *    -> save them in INFO_SPMD_LOCALDEF.
- *
- ******************************************************************************/
-
-node *
-SpmdInitNpart (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SpmdInitNpart");
-
-    PlusMask (INFO_SPMD_LOCALDEF (arg_info), NPART_MASK (arg_node, 0),
-              FUNDEF_VARNO (INFO_SPMD_FUNDEF (arg_info)));
-
-    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
-    if (NPART_NEXT (arg_node) != NULL) {
-        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SpmdInitNcode( node *arg_node, node *arg_info)
- *
- * description:
- *   all defined vars of the N_Ncode node are local
- *    -> save them in INFO_SPMD_LOCALUSED, INFO_SPMD_LOCALDEF.
- *
- ******************************************************************************/
-
-node *
-SpmdInitNcode (node *arg_node, node *arg_info)
-{
-    int i;
-
-    DBUG_ENTER ("SpmdInitNcode");
-
-    for (i = 0; i < FUNDEF_VARNO (INFO_SPMD_FUNDEF (arg_info)); i++) {
-        if ((NPART_MASK (arg_node, 0))[i] > 0) {
-            /*
-             * this var is defined in the with-loop-code
-             *  -> local var -> count all defs and uses in INFO_SPMD_LOCAL...
-             */
-            (INFO_SPMD_LOCALUSED (arg_info))[i] += (NPART_MASK (arg_node, 1))[i];
-            (INFO_SPMD_LOCALDEF (arg_info))[i] += (NPART_MASK (arg_node, 0))[i];
-        }
-    }
-
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-    }
-
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
