@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.45  1999/08/05 13:34:57  jhs
+ * Added some INFO_SPMDI_... macros.
+ *
  * Revision 2.44  1999/08/04 14:30:39  bs
  * Access macros NCODE_WLAA_xxx added.
  *
@@ -2392,10 +2395,18 @@ extern node *MakeInfo ();
 #define INFO_SPMD_LAST(n) (n->int_data)
 #define INFO_SPMD_MT(n) (n->counter)
 
+#define INFO_SPMDI_LASTSPMD(n) (n->flag)
+#define INFO_SPMDI_NEXTSPMD(n) (n->counter)
+#define INFO_SPMDI_CONTEXT(n) (n->int_data)
+#define INFO_SPMDI_EXPANDCONTEXT(n) (n->varno)
+#define INFO_SPMDI_EXPANDSTEP(n) (n->refcnt)
+
 #define INFO_SPMDT_ACTUAL_FUNDEF(n) (n->node[0])
 #define INFO_SPMDT_RESULT(n) (n->dfmask[0])
 #define INFO_SPMDT_CHECK(n) (n->dfmask[1])
 #define INFO_SPMDT_COUNTERS(n) ((int *)(n->node[0]))
+#define INFO_SPMDT_APPLICATION(n) (n->int_data) /* never used together! */
+#define INFO_SPMDT_NESTED(n) (n->int_data)
 
 #define INFO_SYNCO_THISASSIGN(n) (n->node[0])
 #define INFO_SYNCO_NEXTASSIGN(n) (n->node[1])
