@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/09/22 13:34:36  dkr
+ * macro STR_OR_NULL added
+ *
  * Revision 2.2  2000/03/02 14:08:39  jhs
  * Added statustype_info.mac for statustype and mdb_statustype.
  *
@@ -31,13 +34,9 @@
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
- *
  */
 
-/* #ifndef DBUG_OFF    the following is only used with Fred Fish */
-
 #ifndef _my_debug_h
-
 #define _my_debug_h
 
 extern char *mdb_nodetype[];
@@ -50,6 +49,6 @@ extern char *mdb_statustype[];
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 
-#endif /* _my_debug_h */
+#define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
 
-/* #endif   DBUG_OFF */
+#endif /* _my_debug_h */
