@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/27 02:31:00  jhb
+ * maybe fixed the multiple FreeInfo definition
+ *
  * Revision 1.4  2004/11/27 02:15:54  sah
  * ...
  *
@@ -53,7 +56,8 @@ struct INFO {
 /*
  * INFO functions
  */
-info *
+
+static info *
 MakeInfo ()
 {
     info *result;
@@ -67,7 +71,7 @@ MakeInfo ()
     DBUG_RETURN (result);
 }
 
-info *
+static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
