@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1996/02/05 09:21:48  sbs
+ * Revision 1.34  1996/02/21 15:10:05  cg
+ * typedefs and defines moved to libsac.h
+ *
+ * Revision 1.33  1996/02/05  09:21:48  sbs
  * RuntimError => Runtime_Error
  *
  * Revision 1.32  1996/01/25  15:03:22  cg
@@ -715,10 +718,5 @@
                               " of range (size: %d, index:%d)",                          \
                               line, prf, size, idx);                                     \
     }
-
-#define true 1
-#define false 0
-
-typedef int bool;
 
 #endif /* _sac_icm2c_h */
