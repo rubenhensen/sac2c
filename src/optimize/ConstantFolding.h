@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/02/22 18:16:34  asi
+ * Revision 1.4  1995/02/28 18:34:45  asi
+ * added CFwith
+ *
+ * Revision 1.3  1995/02/22  18:16:34  asi
  * Fuctions CFfundef, CFassign, CFdo, CFwhile, CFcond, CFprf, CFid, CFlet
  * and PushVL, PushDupVL, PopVL for stack-management added
  *
@@ -29,5 +32,6 @@ extern node *CFdo (node *arg_node, node *arg_info);
 extern node *CFcond (node *arg_node, node *arg_info);
 extern node *CFvar (node *arg_node, node *arg_info);
 extern node *CFassign (node *arg_node, node *arg_info);
+extern node *CFwith (node *arg_node, node *arg_info);
 
 #endif /* _ConstantFolding_h */
