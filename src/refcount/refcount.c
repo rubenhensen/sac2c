@@ -1,10 +1,17 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/03/14 18:45:21  hw
+ * Revision 1.4  1995/03/16 14:04:51  hw
+ * changed mechanism of refcounting
+ *  - refcounts are counted in var-decs and are stored and restored
+ *    when necessary
+ *  - refcounts in loops and conditionals correctly (i hope )
+ *  - with-statements are still missing
+ *
+ * Revision 1.3  1995/03/14  18:45:21  hw
  * renamed RCwhile to RCloop
- * this version handles do- and while-loops correct.
- * conditionals are not implemented
+ * this version handles do- and while-loops correctly.
+ * conditionals are not implemente correctly
  *
  * Revision 1.2  1995/03/13  15:18:47  hw
  * RCfundef and Refcount inserted
@@ -21,6 +28,8 @@
 #include "typecheck.h" /* to use LookupType */
 #include "traverse.h"
 #include "refcount.h"
+
+extern void *Malloc (int size); /*defined in typecheck.c */
 
 #define BODY 1
 #define WHILE 2
@@ -92,7 +101,7 @@ IsArray (node *arg_node)
  *  arguments     : 1) number of variable
  *  description   : returns pointer to variabledeclaration if found
  *                  returns NULL if not found
- *  global vars   : fundef_node, arg_no
+ *  global vars   : fundef_node, args_no
  *  internal funs :
  *  external funs :
  *  macros        : DBUG...
@@ -154,14 +163,16 @@ LookupId (char *id, node *id_node)
     DBUG_PRINT ("RC", ("found %s:" P_FORMAT, id, ret_node));
     DBUG_RETURN (ret_node);
 }
-#if 0
+
 /*
  *
- *  functionname  : MaxRefs
- *  arguments     : 1) 
- *                  2) 
- *  description   : 
- *  global vars   :
+ *  functionname  : StoreAndInit
+ *  arguments     : 1) number to initialize
+ *  description   : returns an arry of int that contain the refcount of
+ *                  the variable declaration
+ *                  the refcount of variable declartion is set to 1) if
+ *                   refcount was >= 1
+ *  global vars   : fundef_node, args_no, varno
  *  internal funs :
  *  external funs :
  *  macros        : DBUG...
@@ -169,235 +180,102 @@ LookupId (char *id, node *id_node)
  *  remarks       :
  *
  */
-void MaxRefs(node *id_nodes1, node *id_nodes2, node *ref_nodes)
+int *
+StoreAndInit (int n)
 {
-   node *done1, *done2, *last1, *last2, *tmp1, *tmp2, *ref_node, 
-        *new_id_node;
-   int found;
-   
-   DBUG_ENTER("MaxRefs");
-   while(NULL != id_nodes1) 
-   {
-      found=0;
-      last2=id_nodes2;
-      tmp2=last2;
-      while((NULL !=tmp2) && (0 == found))
-         if(0==strcmp(tmp2->info.id, id_nodes1->info.id))
-         {
-            /* store max refcount */
-            if(NULL == ref_nodes)
-            {
-               id_nodes1->node[0]->ID_REF=MAX(id_nodes1->ID_REF, tmp2->ID_REF);
-               DBUG_PRINT("RC",("set refcnt of %s to %d",
-                                id_nodes1->node[0]->ID, 
-                                id_nodes1->node[0]->ID_REF));
-            }
-            else
-            {
-               ref_node=LookupId(id_nodes1->ID, ref_nodes->node[0]);
-               if(NULL == ref_node)
-               {
-                  /* make new N_id node with information of id_nodes1 */
-                  DUB_ID_NODE(new_id_node, id_nodes1); 
-                  new_id_node->ID_REF=MAX(id_nodes1->ID_REF, tmp2->ID_REF);
-                  new_id_node->node[1]=ref_nodes;
-                  ref_nodes=new_id_node;
-               }
-               else
-               {
-                  ref_node->ID_REF=MAX(id_nodes1->ID_REF, tmp2->ID_REF);
-                  DBUG_PRINT("RC",("set refcnt of %s to %d",
-                                   ref_node->ID, 
-                                   ref_node->ID_REF));
-               }
-            }
-            
-            /* displace current id_nodes1 to N_id node chain done1 */
-            tmp1=id_nodes1->node[1];
-            id_nodes1->node[1]=done1;
-            done1=id_nodes1;
-            id_nodes1=tmp1;
-            
-            /* displace tmp2 to N_id node chain done2 */
-            if(last2 != tmp2)
-            {
-               last2->node[1]=tmp2->node[1];
-               tmp2->node[1]=done2;
-               done2=tmp2;
-            }
-            else
-            {  /* displace first node of id_nodes2 to done2 */
-               DBUG_ASSERT((id_nodes2==last2)," last2 != id_nodes2");
-               id_nodes2=id_nodes2->node[1];
-               tmp2->node[1]=done2;
-               done2=tmp2;
-            }
-            
-            found=1;
-         }
-         else
-         {
-            last2=tmp2;
-            tmp2=tmp2->node[1];
-         }
-      
-      if(0 == found)
-      {
-         /* store max refcount */
-         if(NULL == ref_nodes)
-         {
-            id_nodes1->node[0]->ID_REF=id_nodes1->ID_REF;
-            DBUG_PRINT("RC",("set refcnt of %s to %d",
-                             id_nodes1->node[0]->ID, 
-                             id_nodes1->node[0]->ID_REF));
-         }
-         else
-         {
-            ref_node=LookupId(id_nodes1->info.id, ref_nodes->node[0]);
-            if(NULL == ref_node)
-            {
-               /* make new N_id node with information of id_nodes1 */
-               DUB_ID_NODE(new_id_node, id_nodes1); 
-               
-               new_id_node->ID_REF=id_nodes1->ID_REF;
-               new_id_node->node[1]=ref_nodes;
-               ref_nodes=new_id_node;
-            }
-            else
-            {
-               ref_node->ID_REF=id_nodes1->ID_REF;
-               DBUG_PRINT("RC",("set refcnt of %s to %d",
-                                ref_node->ID, 
-                                ref_node->ID_REF));
-            }
-            
-         }
-         
-         /* displace current id_nodes1 to N_id node chain done1 */
-         tmp1=id_nodes1->node[1];
-         id_nodes1->node[1]=done1;
-         done1=id_nodes1;
-         id_nodes1=tmp1;
-      }
-   }
+    int *dump, i, k;
+    node *var_dec;
 
-   while(NULL != id_nodes2) 
-   {
-      found=0;
-      last1=id_nodes1;
-      tmp1=last1;
-      while((NULL !=tmp1) && (0 == found))
-         if(0==strcmp(tmp1->info.id, id_nodes2->info.id))
-         {
-            /* store max refcount */
-            if(NULL == ref_nodes)
-            {
-               id_nodes2->node[0]->ID_REF=MAX(id_nodes2->ID_REF, tmp1->ID_REF);
-               DBUG_PRINT("RC",("set refcnt of %s to %d",
-                                id_nodes2->node[0]->ID, 
-                                id_nodes2->node[0]->ID_REF));
-            }
-            else
-            {
-               ref_node=LookupId(id_nodes2->info.id, ref_nodes->node[0]);
-               if(NULL == ref_node)
-               {
-                  /* make new N_id node with information of id_nodes1 */
-                  DUB_ID_NODE(new_id_node, id_nodes1); 
-                  new_id_node->ID_REF=MAX(id_nodes2->ID_REF, tmp1->ID_REF);
-                  new_id_node->node[1]=ref_nodes;
-                  ref_nodes=new_id_node;
-               }
-               else
-               {
-                  
-                  ref_node->ID_REF=MAX(id_nodes2->ID_REF, tmp1->ID_REF);
-                  DBUG_PRINT("RC",("set refcnt of %s to %d",
-                                   ref_node->ID, 
-                                   ref_node->ID_REF));
-               }
-            }
-            
-            /* displace current id_nodes2 to N_id node chain done2 */
-            tmp2=id_nodes2->node[1];
-            id_nodes2->node[1]=done2;
-            done2=id_nodes2;
-            id_nodes2=tmp2;
-            
-            /* displace tmp1 to N_id node chain done1 */
-            if(last1 != tmp1)
-            {
-               last1->node[1]=tmp1->node[1];
-               tmp1->node[1]=done1;
-               done1=tmp1;
-            }
-            else
-            {
-               /* displace first node of id_nodes1 to done1 */
-               DBUG_ASSERT((id_nodes1==last1)," last1 != id_nodes1");
-               id_nodes1=id_nodes1->node[1];
-               tmp1->node[1]=done1;
-               done1=tmp1;
-            }
-               
-            found=1;
-         }
-         else
-         {
-            last1=tmp1;
-            tmp1=tmp1->node[1];
-         }
-      
-      if(0 == found)
-      {
-         /* store max refcount */
-         if(NULL == ref_nodes)
-         {
-            id_nodes2->node[0]->ID_REF=id_nodes2->ID_REF;
-            DBUG_PRINT("RC",("set refcnt of %s to %d",
-                             id_nodes2->node[0]->ID, 
-                             id_nodes2->node[0]->ID_REF));
-         }
-         else
-         {
-            ref_node=LookupId(id_nodes2->info.id, ref_nodes->node[0]);
-            if(NULL == ref_node)
-            {
-               /* make new N_id node with information of id_nodes1 */
-               DUB_ID_NODE(new_id_node, id_nodes1); 
-               new_id_node->ID_REF=id_nodes2->ID_REF;
-               new_id_node->node[1]=ref_nodes;
-               ref_nodes=new_id_node;
-            }
-            else
-            {
-               ref_node->ID_REF=id_nodes2->ID_REF;
-               DBUG_PRINT("RC",("set refcnt of %s to %d",
-                                ref_node->ID, 
-                                ref_node->ID_REF));
-            }
-         }
-        
-         /* displace current id_nodes2 to N_id node chain done1 */
-         tmp2=id_nodes2->node[1];
-         id_nodes2->node[1]=done2;
-         done2=id_nodes2;
-         id_nodes2=tmp2;
-      }
-   }
-   DBUG_ASSERT((NULL == id_nodes1),"id_nodes1 isn't NULL");
-   DBUG_ASSERT((NULL == id_nodes2),"id_nodes2 isn't NULL");
-   
-   id_nodes1=done1;
-   id_nodes2=done2;
+    DBUG_ENTER ("StoreAndInit");
+    dump = (int *)Malloc (sizeof (int) * varno);
+    var_dec = fundef_node->node[2]; /* arguments of function */
+    for (i = 0; i < args_no; i++) {
+        dump[i] = var_dec->refcnt;
+        if (var_dec->refcnt > 0)
+            var_dec->refcnt = n;
+        var_dec = var_dec->node[0];
+    }
+    var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
+    for (k = i; k < varno; k++) {
+        dump[k] = var_dec->refcnt;
+        if (var_dec->refcnt > 0)
+            var_dec->refcnt = n;
+        var_dec = var_dec->node[0];
+    }
 
-   DBUG_ASSERT((NULL != id_nodes1),"id_nodes1 is NULL");
-   DBUG_ASSERT((NULL != id_nodes2),"id_nodes2 is NULL");
-   
-   
-   DBUG_VOID_RETURN;
+    DBUG_RETURN (dump);
 }
-#endif
+
+/*
+ *
+ *  functionname  : Store
+ *  arguments     :
+ *  description   : returns an arry of int that contains the refcount of
+ *                  the variable declaration
+ *  global vars   : fundef_node, args_no, varno
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+int *
+Store ()
+{
+    int *dump, i, k;
+    node *var_dec;
+
+    DBUG_ENTER ("Store");
+    dump = (int *)Malloc (sizeof (int) * varno);
+    var_dec = fundef_node->node[2]; /* arguments of function */
+    for (i = 0; i < args_no; i++) {
+        dump[i] = var_dec->refcnt;
+        var_dec = var_dec->node[0];
+    }
+    var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
+    for (k = i; k < varno; k++) {
+        dump[k] = var_dec->refcnt;
+        var_dec = var_dec->node[0];
+    }
+
+    DBUG_RETURN (dump);
+}
+
+/*
+ *
+ *  functionname  : Restore
+ *  arguments     : 1) dump
+ *  description   : copies dump-entries to refcounts of variable declaration
+ *  global vars   : args_no, fundef_node, varno
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+void
+Restore (int *dump)
+{
+    int i, k;
+    node *var_dec;
+
+    DBUG_ENTER ("Restore");
+
+    var_dec = fundef_node->node[2]; /* arguments of function */
+    for (i = 0; i < args_no; i++) {
+        var_dec->refcnt = dump[i];
+        var_dec = var_dec->node[0];
+    }
+    var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
+    for (k = i; k < varno; k++) {
+        var_dec->refcnt = dump[k];
+        var_dec = var_dec->node[0];
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*
  *
@@ -440,7 +318,7 @@ Refcount (node *arg_node)
  *  arguments     : 1) argument node
  *                  2) info node
  *  description   :
- *  global vars   :
+ *  global vars   :varno, fundef_node, args_no
  *  internal funs :
  *  external funs :
  *  macros        : DBUG...
@@ -456,9 +334,9 @@ RCfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCfundef");
 
     if (NULL != arg_node->node[0]) {
-        arg_info->CONTEXT = BODY;
-
-        /* setting some global variables to use with the 'mask' */
+        /* setting some global variables to use with the 'mask'
+         * and storage of refcounts
+         */
         varno = arg_node->varno;
         fundef_node = arg_node;
         args = arg_node->node[1];
@@ -516,168 +394,166 @@ RCassign (node *arg_node, node *arg_info)
  *  external funs :
  *  macros        : DBUG...
  *
- *  remarks       : in arg_node->node[2] some information about used variables
- *                  are stored:
- *                   - arg_node->node[2]->node[0]: chain of N_id nodes that
- *                      contain the refcounts of used variables of while-body
- *                   - arg_node->node[2]->node[1]: chain of N_id nodes that
- *                      contain the refcounts of defined variables of code
- *                      behinde while-loop
+ *  remarks       :
  *
  */
 node *
 RCloop (node *arg_node, node *arg_info)
 {
-    node *new_info, *var_dec, *id_node, *id_node2, *new_id_node;
+    node *new_info, *var_dec, *id_node;
     long *defined_mask, *used_mask;
-    int i, found_id;
+    int i, again = 0, use_old = 0;
+    int *ref_dump;
 
     DBUG_ENTER ("RCloop");
 
-    /* create new info node */
-    new_info = MakeNode (N_info);
-    if (N_while == arg_node->nodetype)
-        new_info->CONTEXT = WHILE;
-    else
-        new_info->CONTEXT = DO;
-
     /* traverse body of loop */
-    arg_node->node[1] = Trav (arg_node->node[1], new_info);
+    ref_dump = StoreAndInit (1);
 
-    /* update refcounts for variables that are defined and used in while-loop */
-    defined_mask = arg_info->node[3]->mask[0]; /* mask of defined variables */
-    used_mask = arg_info->node[3]->mask[1];    /* mask of used variables */
-    if (BODY == arg_info->CONTEXT) {
-        for (i = 0; i < varno; i++)
-            if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-                var_dec = FindVarDec (i);
-                DBUG_ASSERT ((NULL != var_dec), "variable not found");
-                if (defined_mask[i] > 0) {
-                    /* store refcount of defined variables in new_info->node[2] */
-                    VAR_DEC_2_ID_NODE (id_node, var_dec);
-                    id_node->node[0] = new_info->node[2];
-                    new_info->node[2] = id_node;
-                    DBUG_PRINT ("RC", ("store defined var %s:%d", id_node->ID,
-                                       id_node->ID_REF));
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
-                    /* set refcount of defined variables in variable declaration.
-                       this is done to emulate a function application
-                     */
-                    if (N_do == arg_node->nodetype) {
-                        /* check weather id_node 'is an argument of virtuell function'
-                         */
-                        id_node2 = LookupId (id_node->ID, new_info->node[0]);
-                        if (NULL != id_node2)
-                            if (0 == id_node2->ID_REF)
-                                var_dec->refcnt = 0;
-                            else
-                                var_dec->refcnt = 1;
-                        else
-                            var_dec->refcnt = 1;
-                    } else
-                        var_dec->refcnt = 1;
-                } else
-                    var_dec->refcnt += 1;
-            }
-    } else {
-        for (i = 0; i < varno; i++)
-            if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-                var_dec = FindVarDec (i);
-                DBUG_ASSERT ((NULL != var_dec), "variable not found");
-                id_node = LookupId (var_dec->info.types->id, arg_info->node[0]);
-                if (NULL == id_node) {
-                    VAR_DEC_2_ID_NODE (id_node, var_dec);
-                    id_node->node[0] = arg_info->node[0];
-                    arg_info->node[0] = id_node->node[0];
-                    found_id = 0; /* indicates that id_node was NULL */
-                } else
-                    found_id = 1;
-
-                /* id_node now is a N_id node of the chain behinde arg_info->node[0]
-                 */
-
-                if (defined_mask[i] > 0) {
-                    /* store refcount of defined variables in new_info->node[2] */
-                    if (1 == found_id) {
-                        DUB_ID_NODE (new_id_node, id_node);
-                        new_id_node->ID_REF = id_node->ID_REF;
-                        new_id_node->node[0] = new_info->node[2];
-                        new_info->node[2] = new_id_node;
-                        DBUG_PRINT ("RC", ("store defined var %s:%d", new_id_node->ID,
-                                           new_id_node->ID_REF));
-                    }
-
-                    /* set refcount of defined variables in surrounding context
-                     * this is done to emulate a function application
-                     */
-                    if (N_do == arg_node->nodetype) {
-                        /* check weather id_node 'is an argument of virtuell
-                         * function'
-                         */
-                        id_node2 = LookupId (id_node->ID, new_info->node[0]);
-
-                        /* change refcount of 'id_node->ID' in surrounding
-                         * context
-                         */
-
-                        if (NULL != id_node2)
-                            if (0 == id_node2->ID_REF)
-                                id_node->ID_REF = 0;
-                            else
-                                id_node->ID_REF = 1;
-                        else
-                            id_node->ID_REF = 1;
-                    } else
-                        id_node->ID_REF = 1;
-                } else
-                    id_node->ID_REF += 1;
-            }
+    if (NULL == arg_node->node[2])
+        new_info = MakeNode (N_info); /* create new info node */
+    else {
+        new_info = arg_node->node[2];
+        use_old = 1;
     }
+
+    defined_mask = arg_node->node[1]->mask[0]; /* mask of defined variables */
+    used_mask = arg_node->node[1]->mask[1];    /* mask of used variables */
+
+    /* first compute sets v1 and v2 */
+    for (i = 0; i < varno; i++)
+        if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
+            var_dec = FindVarDec (i);
+            DBUG_ASSERT ((NULL != var_dec), "variable not found");
+            if (1 == IsArray (var_dec)) {
+
+                /* first store used and defined variables (v1), (v2) */
+                if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
+                    /* store refcount of defined variables in new_info->node[1] (v2)
+                     */
+                    if (0 == use_old) {
+                        VAR_DEC_2_ID_NODE (id_node, var_dec);
+                        id_node->ID_REF = ref_dump[i];
+                        id_node->node[0] = new_info->node[1];
+                        new_info->node[1] = id_node;
+                        DBUG_PRINT ("RC", ("store defined var (v2) %s:%d", id_node->ID,
+                                           id_node->ID_REF));
+                    } else {
+                        id_node = LookupId (var_dec->info.types->id, new_info->node[1]);
+                        DBUG_ASSERT ((NULL != id_node), "var not found");
+                        id_node->ID_REF = ref_dump[i];
+                        DBUG_PRINT ("RC", ("changed defined var (v2) %s:%d", id_node->ID,
+                                           id_node->ID_REF));
+                    }
+                }
+                if ((used_mask[i] > 0) && (0 < var_dec->refcnt)) {
+                    /* store refcount of used variables in new_info->node[0] (v1)
+                     */
+                    if (0 == use_old) {
+                        VAR_DEC_2_ID_NODE (id_node, var_dec);
+                        id_node->node[0] = new_info->node[0];
+                        new_info->node[0] = id_node;
+                        DBUG_PRINT ("RC", ("store used var (v1) %s:%d", id_node->ID,
+                                           id_node->ID_REF));
+                    } else {
+                        id_node = LookupId (var_dec->info.types->id, new_info->node[0]);
+                        DBUG_ASSERT ((NULL != id_node), "var not found");
+                        id_node->ID_REF = var_dec->refcnt;
+                        DBUG_PRINT ("RC", ("changed used var (v1) %s:%d", id_node->ID,
+                                           id_node->ID_REF));
+                    }
+                }
+            }
+        }
+
+    if (NULL != new_info->node[0]) {
+        id_node = new_info->node[0];
+        while ((0 == again) && (NULL != id_node)) {
+            if ((0 < id_node->VAR_DEC->refcnt)
+                && (0 == ref_dump[id_node->VAR_DEC->varno]))
+                again = 1;
+            else
+                id_node = id_node->node[0];
+        }
+        if (1 == again) {
+            DBUG_PRINT ("RC", ("while  loop again "));
+            Restore (ref_dump);
+            ref_dump = StoreAndInit (1);
+            id_node = new_info->node[0];
+            /* init all variables that are member of v1 with refcount 1 */
+            while (NULL != id_node) {
+                id_node->VAR_DEC->refcnt = 1;
+                id_node = id_node->node[0];
+            }
+
+            /* refcount body of while loop again */
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        }
+    }
+
+    /* compute new refcounts because of 'virtuell function application' */
+    for (i = 0; i < varno; i++)
+        if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
+            var_dec = FindVarDec (i);
+            DBUG_ASSERT ((NULL != var_dec), "variable not found");
+            if (1 == IsArray (var_dec)) {
+#if 0
+            if((defined_mask[i]>0) &&( ref_dump[i] >0))
+            {
+               /* store refcount of defined variables in new_info->node[1] (v2)
+                */
+               VAR_DEC_2_ID_NODE(id_node, var_dec);
+               id_node->ID_REF=ref_dump[i];
+               id_node->node[0]=new_info->node[1];
+               new_info->node[1]=id_node;
+               DBUG_PRINT("RC",("(v2) %s:%d",
+                                id_node->ID, id_node->ID_REF));
+            }
+#endif
+                if ((used_mask[i] > 0) && (0 < var_dec->refcnt) && (1 == again)) {
+                    /* update refcount of used variables  (v1)
+                     */
+                    id_node = LookupId (var_dec->info.types->id, new_info->node[0]);
+                    DBUG_ASSERT ((NULL != id_node), "var not found");
+
+                    id_node->ID_REF = var_dec->refcnt;
+                    DBUG_PRINT ("RC", ("(v1) %s:%d", id_node->ID, id_node->ID_REF));
+                }
+                /* now compute new refcounts, because of 'virtuell function
+                 * application'
+                 */
+                if (defined_mask[i] > 0) {
+                    if (N_do == arg_node->nodetype) {
+                        /* check weather curren variable is an argument of
+                         * 'virtuell function'
+                         */
+                        if (0 == var_dec->refcnt)
+                            ref_dump[i] = 0;
+                        else
+                            ref_dump[i] = 1;
+                    } else
+                        ref_dump[i] = 1;
+                } else
+                    ref_dump[i] += 1;
+                DBUG_PRINT ("RC", ("set refcount of %s(%d) to: %d",
+                                   var_dec->info.types->id, i, ref_dump[i]));
+            }
+        }
 
     /* store new_info for use while compilation */
     arg_node->node[2] = new_info;
+
+    /* restore old vardec refcounts */
+    Restore (ref_dump);
+    FREE (ref_dump);
 
     /* traverse termination condition */
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
     DBUG_RETURN (arg_node);
 }
-
-#if 0
-/*
- *
- *  functionname  : RCdo
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : 
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *RCdo(node *arg_node, node *arg_info)
-{
-   node *new_info;
-   
-   DBUG_ENTER("RCdo");
-   
-   /* create new info node */
-   new_info=MakeNode(N_info);
-   new_info->CONTEXT=LOOP;
-
-   /* traverse body  and termination condition of loop */
-   arg_node->node[1]=Trav(arg_node->node[1], new_info);
-   arg_node->node[0]=Trav(arg_node->node[0], new_info);
-      
-   /* store new_info for use while compilation */
-   arg_node->node[2]=new_info;
-   
-   DBUG_RETURN(arg_node);
-}
-#endif
 
 /*
  *
@@ -696,60 +572,12 @@ node *RCdo(node *arg_node, node *arg_info)
 node *
 RCid (node *arg_node, node *arg_info)
 {
-    node *id_node;
 
     DBUG_ENTER ("RCid");
 
     if (1 == IsArray (arg_node->VAR_DEC)) {
-        switch (arg_info->CONTEXT) {
-        case BODY: {
-            arg_node->VAR_DEC->refcnt += 1;
-            arg_node->ID_REF = arg_node->VAR_DEC->refcnt;
-            break;
-        }
-        case COND: {
-            if (NULL == arg_info->node[0]) {
-                DUB_ID_NODE (id_node, arg_node);
-                id_node->ID_REF = arg_node->VAR_DEC->refcnt + 1;
-                arg_info->node[0] = id_node;
-            } else {
-                id_node = LookupId (arg_node->ID, arg_info->node[0]);
-                if (NULL == id_node) {
-                    DUB_ID_NODE (id_node, arg_node);
-                    id_node->ID_REF = 1;
-                    /* now put id_node in front of list of N_id */
-                    id_node->node[0] = arg_info->node[0];
-                    arg_info->node[0] = id_node;
-                } else
-                    id_node->ID_REF += 1;
-            }
-            arg_node->ID_REF = id_node->ID_REF; /*set refcount */
-            break;
-        }
-        case WHILE:
-        case DO: {
-            if (NULL == arg_info->node[0]) {
-                DUB_ID_NODE (id_node, arg_node);
-                id_node->ID_REF = 2;
-                arg_info->node[0] = id_node;
-            } else {
-                id_node = LookupId (arg_node->ID, arg_info->node[0]);
-                if (NULL == id_node) {
-                    DUB_ID_NODE (id_node, arg_node);
-                    id_node->ID_REF = 2;
-                    /* now put id_node in front of list of N_id */
-                    id_node->node[0] = arg_info->node[0];
-                    arg_info->node[0] = id_node;
-                } else
-                    id_node->ID_REF += 1;
-            }
-            arg_node->ID_REF = id_node->ID_REF;
-            break;
-        }
-        default:
-            DBUG_ASSERT (0, "unknown info tag ");
-            break;
-        }
+        arg_node->VAR_DEC->refcnt += 1;
+        arg_node->ID_REF = arg_node->VAR_DEC->refcnt;
     } else
         arg_node->ID_REF = -1; /* variable isn`t an array */
 
@@ -776,7 +604,6 @@ node *
 RClet (node *arg_node, node *arg_info)
 {
     ids *ids;
-    node *id_node;
 
     DBUG_ENTER ("RClet");
     DBUG_PRINT ("RC", ("line: %d", arg_node->lineno));
@@ -784,44 +611,8 @@ RClet (node *arg_node, node *arg_info)
     ids = arg_node->info.ids;
     while (NULL != ids) {
         if (1 == IsArray (ids->node)) {
-            switch (arg_info->CONTEXT) {
-            case BODY: {
-                ids->refcnt = ids->node->refcnt;
-                break;
-            }
-            case COND: {
-                if (NULL == arg_info->node[0])
-                    ids->refcnt = ids->node->refcnt;
-                else {
-                    id_node = LookupId (ids->id, arg_info->node[0]);
-                    if (NULL == id_node)
-                        ids->refcnt = 0;
-                    else {
-                        ids->refcnt = id_node->refcnt;
-                        id_node->refcnt = 0;
-                    }
-                }
-                break;
-            }
-            case WHILE:
-            case DO: {
-                if (NULL == arg_info->node[0])
-                    ids->refcnt = 1;
-                else {
-                    id_node = LookupId (ids->id, arg_info->node[0]);
-                    if (NULL == id_node)
-                        ids->refcnt = 1;
-                    else {
-                        ids->refcnt = id_node->refcnt;
-                        id_node->ID_REF = 0;
-                    }
-                }
-                break;
-            }
-            default:
-                DBUG_ASSERT (0, "unknown info tag ");
-                break;
-            }
+            ids->refcnt = ids->node->refcnt;
+            ids->node->refcnt = 0;
         } else
             ids->refcnt = -1;
         ids = ids->next;
@@ -848,31 +639,83 @@ RClet (node *arg_node, node *arg_info)
 node *
 RCcond (node *arg_node, node *arg_info)
 {
-    node *then_info, *else_info;
-
+    node *new_info, *var_dec, *id_node;
+    int *rest_dump, *then_dump, *else_dump, i, use_old = 0;
     DBUG_ENTER ("RCcond");
 
-    then_info = MakeNode (N_info);
-    then_info->CONTEXT = COND;
-    then_info->node[1] = arg_info->node[0];
-    arg_node->node[1] = Trav (arg_node->node[1], then_info);
+    /* store current vardec refcounts in rest_dump */
+    rest_dump = Store ();
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    /* store vardec refcounts after refcounting then part */
+    then_dump = Store ();
 
-    else_info = MakeNode (N_info);
-    else_info->CONTEXT = COND;
-    else_info->node[1] = arg_info->node[0];
-    arg_node->node[2] = Trav (arg_node->node[2], else_info);
+    /* get same refcounts as before refcounting else part */
+    Restore (rest_dump);
 
-#if 0   
-   if(BODY == arg_info->CONTEXT)
-      MaxRefs(then_info->node[0], else_info->node[0], NULL);
-   else
-      MaxRefs(then_info->node[0], else_info->node[0], arg_info);
-#endif
+    arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+    /* store vardec refcounts after refcounting else part */
+    else_dump = Store ();
+
+    /* now compute maximum of then- and else-dump and store it in vardev refcnt
+     * store differences between then- and else dump in new_info->node[x]
+     * -  x=0 if then_dump[i] < else_dump[i] (else_dump[i] - then_dump[i])
+     * -  x=1 if else_dump[i] < then_dump[i] (then_dump[i] - else_dump[i])
+     */
+    if (NULL == arg_node->node[3])
+        new_info = MakeNode (N_info);
+    else {
+        use_old = 1;
+        new_info = arg_node->node[3];
+    }
+
+    for (i = 0; i < varno; i++)
+        if (then_dump[i] < else_dump[i]) {
+            var_dec = FindVarDec (i);
+            DBUG_ASSERT ((NULL != var_dec), " var not found");
+            if (0 == use_old) {
+                VAR_DEC_2_ID_NODE (id_node, var_dec);
+                id_node->ID_REF = else_dump[i] - then_dump[i];
+                id_node->node[0] = new_info->node[0];
+                new_info->node[0] = id_node;
+                DBUG_PRINT ("RC",
+                            ("append %s :%d to then-part", id_node->ID, id_node->ID_REF));
+            } else {
+                id_node = LookupId (var_dec->info.types->id, new_info->node[0]);
+                DBUG_ASSERT ((NULL != id_node), "var not found");
+                id_node->ID_REF = else_dump[i] - then_dump[i];
+                DBUG_PRINT ("RC", ("changed %s :%d in then-part", id_node->ID,
+                                   id_node->ID_REF));
+            }
+            var_dec->refcnt = else_dump[i];
+            DBUG_PRINT ("RC", ("set refcount of %s to %d", id_node->ID, var_dec->refcnt));
+        } else if (else_dump[i] < then_dump[i]) {
+            var_dec = FindVarDec (i);
+            DBUG_ASSERT ((NULL != var_dec), " var not found");
+            if (0 == use_old) {
+                VAR_DEC_2_ID_NODE (id_node, var_dec);
+                id_node->ID_REF = then_dump[i] - else_dump[i];
+                id_node->node[0] = new_info->node[1];
+                new_info->node[1] = id_node;
+                DBUG_PRINT ("RC",
+                            ("append %s :%d to else-part", id_node->ID, id_node->ID_REF));
+            } else {
+                id_node = LookupId (var_dec->info.types->id, new_info->node[1]);
+                DBUG_ASSERT ((NULL != id_node), "var not found");
+                id_node->ID_REF = then_dump[i] - else_dump[i];
+                DBUG_PRINT ("RC", ("changed %s :%d in then-part", id_node->ID,
+                                   id_node->ID_REF));
+            }
+            var_dec->refcnt = then_dump[i];
+            DBUG_PRINT ("RC", ("set refcount of %s to %d", id_node->ID, var_dec->refcnt));
+        }
 
     /* store refcount information for use while compilation */
-    then_info->node[1] = else_info->node[0];
-    FREE (else_info);
-    arg_node->node[3] = then_info;
+    arg_node->node[3] = new_info;
+
+    /* free the dumps */
+    FREE (rest_dump);
+    FREE (then_dump);
+    FREE (else_dump);
 
     /* last but not least, traverse condition */
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
