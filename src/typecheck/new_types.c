@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/10/01 08:14:36  sah
+ * initialised var to avoid compiler warning
+ *
  * Revision 3.59  2004/09/30 17:09:57  sah
  * removed TYArgs2FunType
  * added TYArgs2FunTypeString
@@ -6111,7 +6114,7 @@ TYSerializeType (FILE *file, ntype *type)
 ntype *
 TYDeserializeType (typeconstr con, ...)
 {
-    ntype *result;
+    ntype *result = NULL;
     int cnt;
     va_list args;
 
