@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.157  1998/05/18 23:53:34  dkr
+ * WL_NOOP renamed to WL_FOLD_NOOP
+ *
  * Revision 1.156  1998/05/18 09:44:37  dkr
  * changed COMPIdxModarray:
  *   second arg of idx_modarray() possibly an N_prf added by IVE
@@ -7045,7 +7048,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                icm_name = "WL_NOOP";
+                icm_name = "WL_FOLD_NOOP";
                 break;
 
             default:
@@ -7280,7 +7283,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                icm_name = "WL_NOOP";
+                icm_name = "WL_FOLD_NOOP";
                 break;
 
             default:
