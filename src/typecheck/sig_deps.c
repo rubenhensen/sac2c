@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/09 12:31:15  sbs
+ * several bug eliminated
+ *
  * Revision 1.5  2004/12/09 00:39:01  sbs
  * wrapper reuse in CTcond improved....
  *
@@ -150,11 +153,24 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
     /*
      * First, we create the return type as it is part of the sig_dep structure:
      */
-    if ((TEgetWrapper (info) != NULL) && (NODE_TYPE (TEgetWrapper (info)) == N_fundef)) {
-        wrapper = TEgetWrapper (info);
-        num_res = TCcountRets (FUNDEF_RETS (wrapper));
-    } else {
+    if (TEgetWrapper (info) == NULL) {
+        /**
+         * we are dealing with a CTprf case here!
+         */
         num_res = 1;
+    } else {
+        if (NODE_TYPE (TEgetWrapper (info)) == N_fundef) {
+            /**
+             * we are dealing with CTudf here!
+             */
+            wrapper = TEgetWrapper (info);
+            num_res = TCcountRets (FUNDEF_RETS (wrapper));
+        } else {
+            /**
+             * we are dealing with a CTcond case here!
+             */
+            num_res = 0;
+        }
     }
     res_t = TYmakeEmptyProductType (num_res);
     for (i = 0; i < num_res; i++) {
