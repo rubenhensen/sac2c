@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2004/04/16 12:14:16  skt
+ * N_dataflow added, to support dataflow-graphs
+ *
  * Revision 3.139  2004/04/08 08:09:55  khf
  * wlfs_tab added
  *
@@ -228,7 +231,7 @@
  *   dl_tab          blir_tab        esd_tab11       uesd_tab12
  *   sp_tab          ts_tab          cvp_tab         wlfs_tab
  *
- *   nnode
+ *   number_of_sons
  *
  ***  Always (!!!) fill the tab-lines up to 4 tables by using
  ***  unused_tabX, whers X is 1 to 20.
@@ -2479,6 +2482,30 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPfuncond, TravSons, 3),
+
+  NIF (N_dataflow, "N_dataflow", TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone,
+
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone,
+
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone,
+
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone,
+
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone, TravNone,
+       TravNone, TravNone, TravNone, TravNone, 0),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
