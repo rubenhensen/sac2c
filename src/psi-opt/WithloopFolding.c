@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/09/11 23:17:17  dkr
+ * prf_string replaced by mdb_prf
+ *
  * Revision 3.9  2002/02/20 14:41:02  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -188,7 +191,6 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
-#include "print.h"
 #include "DupTree.h"
 #include "globals.h"
 #include "Error.h"
@@ -258,11 +260,9 @@ DbugIndexInfo (index_info *iinfo)
                 sel = tmpii->vector ? i : 0;
                 if (tmpii->arg_no) {
                     if (1 == tmpii->arg_no)
-                        printf ("|   %d%s. ", tmpii->const_arg[sel],
-                                prf_string[tmpii->prf]);
+                        printf ("|   %d%s. ", tmpii->const_arg[sel], mdb_prf[tmpii->prf]);
                     else
-                        printf ("|   .%s%d ", prf_string[tmpii->prf],
-                                tmpii->const_arg[sel]);
+                        printf ("|   .%s%d ", mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
                 } else
                     printf ("|   no prf ");
                 printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
@@ -276,9 +276,9 @@ DbugIndexInfo (index_info *iinfo)
         sel = 0;
         if (tmpii->arg_no) {
             if (1 == tmpii->arg_no)
-                printf ("|   %d%s. ", tmpii->const_arg[sel], prf_string[tmpii->prf]);
+                printf ("|   %d%s. ", tmpii->const_arg[sel], mdb_prf[tmpii->prf]);
             else
-                printf ("|   %s%d. ", prf_string[tmpii->prf], tmpii->const_arg[sel]);
+                printf ("|   %s%d. ", mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
             printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
         }
     }

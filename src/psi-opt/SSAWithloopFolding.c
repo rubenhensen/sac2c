@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2002/09/11 23:17:23  dkr
+ * prf_string replaced by mdb_prf
+ *
  * Revision 1.8  2002/02/20 14:40:40  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -70,7 +73,6 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
-#include "print.h"
 #include "DupTree.h"
 #include "globals.h"
 #include "Error.h"
