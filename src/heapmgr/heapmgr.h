@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/09/16 13:59:56  dkr
+ * sac_misc.h included
+ *
  * Revision 3.4  2003/03/20 13:57:28  sbs
  * config.h included; SBRK_T used.
  *
@@ -26,10 +29,10 @@
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
- *
  */
 
 /*
+ *
  * Revision 1.4  1999/09/17 14:33:34  cg
  * New version of SAC heap manager:
  *  - no special API functions for top arena.
@@ -47,7 +50,6 @@
  *
  * Revision 1.1  1999/07/08 12:28:56  cg
  * Initial revision
- *
  *
  */
 
@@ -241,6 +243,7 @@
 #define SAC_DO_MULTITHREAD 0
 #endif /*  MT  */
 
+#include "sac_misc.h"
 #include "sac_mt.h"
 
 #undef SAC_DO_MULTITHREAD
