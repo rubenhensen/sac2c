@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.139  1998/04/21 15:40:46  srs
+ * added INFO_WLI_LET and INFO_WLI_REPLACE
+ *
  * Revision 1.138  1998/04/21 13:30:27  dkr
  * NWITH2_SEG renamed to NWITH2_SEGS
  *
@@ -2191,6 +2194,8 @@ extern node *MakePragma ();
  ***    int        FLAG               (0/1)
  ***    node*      ID                 (N_id)
  ***    node*      NCA                (N_assign) (new code assignments)
+ ***    node*      LET                (N_let)
+ ***    node*      REPLACE            (N_id, N_array or N_num/float...)
  ***
  ***  when used in ConstantFolding.c :
  ***    node*      ASSIGN             (N_assign)
@@ -2262,7 +2267,9 @@ extern node *MakeInfo ();
 #define INFO_WLI_ASSIGN(n) (n->node[2])
 #define INFO_WLI_FUNDEF(n) (n->node[3])
 #define INFO_WLI_ID(n) (n->node[4])
+#define INFO_WLI_LET(n) (n->node[4])
 #define INFO_WLI_NCA(n) (n->node[5])
+#define INFO_WLI_REPLACE(n) (n->node[5])
 #define INFO_WLI_FLAG(n) (n->flag)
 
 /* CF */
