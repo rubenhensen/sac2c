@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/02/09 16:06:45  srs
+ * changed MakeNWithid
+ *
  * Revision 1.27  1998/02/09 15:41:40  sbs
  * forced check in 8-(((
  *  not yet cleaned up!
@@ -1353,15 +1356,15 @@ MakeNPart (node *withid, node *generator)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNWithid (WithIdType type, ids *_ids)
+MakeNWithid (ids *vec, ids *scalars)
 {
     node *tmp;
     DBUG_ENTER ("MakeNWithid");
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_Nwithid;
-    NWITHID_TYPE (tmp) = type;
-    NWITHID_IDS (tmp) = _ids;
+    NWITHID_VEC (tmp) = vec;
+    NWITHID_IDS (tmp) = scalars;
 
     DBUG_RETURN (tmp);
 }
