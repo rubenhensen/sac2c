@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2000/10/24 10:06:01  dkr
+ * GetBasetypeSize() added
+ *
  * Revision 1.21  2000/10/24 09:44:04  dkr
  * GetSimpletype renamed into GetBasetype
  *
@@ -353,6 +356,28 @@ GetBasetype (types *type)
     res = TYPES_BASETYPE (GetTypes (type));
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetBasetypeSize(types *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+GetBasetypeSize (types *type)
+{
+    int size;
+
+    DBUG_ENTER ("GetBasetypeSize");
+
+    size = basetype_size[GetBasetype (type)];
+
+    DBUG_RETURN (size);
 }
 
 /******************************************************************************

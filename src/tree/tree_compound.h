@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.43  2000/10/24 10:06:08  dkr
+ * GetBasetypeSize() added
+ *
  * Revision 1.42  2000/10/24 09:43:59  dkr
  * GetSimpletype renamed into GetBasetype
  *
@@ -230,6 +233,7 @@ extern types *GetTypes_Line (types *type, int line);
 extern types *GetTypes (types *type);
 extern int GetDim (types *type);
 extern simpletype GetBasetype (types *type);
+extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
 
 /******************************************************************************
