@@ -192,10 +192,12 @@ target ultra2_entr4000:
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
 CACHE1_ASSOC   :=  1
+CACHE1_MSCA    :=  25
 
 CACHE2_SIZE    :=  1024
 CACHE2_LINE    :=  64
 CACHE2_ASSOC   :=  1
+CACHE2_MSCA    :=  3
 
 
 
@@ -221,7 +223,6 @@ target blitz::ultra_entr3000:
 
 
 target picard::ultra2_entr4000:
-
 
 
 
