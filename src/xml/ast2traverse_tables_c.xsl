@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/27 02:19:28  sah
+  ..
+
   Revision 1.5  2004/11/27 01:33:56  sah
   implemented TRAVgetName
 
@@ -49,7 +52,7 @@
       <xsl:apply-templates select="/definition/phases//traversal" mode="include" />
     <xsl:text>
 
-travtables_t travtables = {
+static travtables_t travtables = {
     /* TR_undefined */
     { &amp;TRAVerror
     </xsl:text>
@@ -59,21 +62,21 @@ travtables_t travtables = {
     <xsl:text>
 };
 
-preposttable_t pretable = {
+static preposttable_t pretable = {
     NULL
     </xsl:text>
     <xsl:apply-templates select="/definition/phases//traversal" mode="pretable" />
     <xsl:text>
 };
 
-preposttable_t posttable = {
+static preposttable_t posttable = {
     NULL
     </xsl:text>
     <xsl:apply-templates select="/definition/phases//traversal" mode="posttable" />
     <xsl:text>
 };
 
-const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases//traversal) + 1"/><xsl:text>] = {
+static const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases//traversal) + 1"/><xsl:text>] = {
     "unknown"
     </xsl:text>
     <xsl:apply-templates select="/definition/phases//traversal" mode="travnames" />
