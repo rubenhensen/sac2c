@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/03/29 12:53:22  dkr
+ * bug in DupWLsegVar fixed
+ *
  * Revision 3.31  2001/03/28 17:06:50  dkr
  * comment added
  *
@@ -172,7 +175,7 @@
  *  The macro is to be used within traversal functions where arg_node and
  *  arg_info exist.
  */
-#define DUPTRAV(node) (node != NULL) ? Trav (node, arg_info) : NULL
+#define DUPTRAV(node) ((node) != NULL) ? Trav (node, arg_info) : NULL
 
 /*
  *  If INFO_DUP_CONT contains the root of syntaxtree.
@@ -873,6 +876,8 @@ DupFundef (node *arg_node, node *arg_info)
 
     FUNDEF_EXT_ASSIGN (new_node)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_EXT_ASSIGN (arg_node));
+
+    /* caution: has the body been already traversed?? */
     FUNDEF_INT_ASSIGN (new_node)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
 
@@ -1265,6 +1270,7 @@ DupAp (node *arg_node, node *arg_info)
                        DUPTRAV (AP_ARGS (arg_node)));
     AP_ATFLAG (new_node) = AP_ATFLAG (arg_node);
 
+    /* Ooops .... has the fundef node been already traversed ?? */
     AP_FUNDEF (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), AP_FUNDEF (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1721,6 +1727,7 @@ node *
 DupWLsegVar (node *arg_node, node *arg_info)
 {
     node *new_node;
+    int d;
 
     DBUG_ENTER ("DupWLsegVar");
 
@@ -1728,10 +1735,12 @@ DupWLsegVar (node *arg_node, node *arg_info)
       = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
                       DUPCONT (WLSEGVAR_NEXT (arg_node)));
 
-    DUP_VECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
-              WLSEGVAR_DIMS (new_node), int);
-    DUP_VECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
-              WLSEGVAR_DIMS (new_node), int);
+    MALLOC_VECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_DIMS (new_node), node *);
+    MALLOC_VECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_DIMS (new_node), node *);
+    for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
+        WLSEGVAR_IDX_MIN (new_node)[d] = DUPTRAV (WLSEGVAR_IDX_MIN (arg_node)[d]);
+        WLSEGVAR_IDX_MAX (new_node)[d] = DUPTRAV (WLSEGVAR_IDX_MAX (arg_node)[d]);
+    }
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (new_node)
