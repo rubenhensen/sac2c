@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.103  2000/09/25 15:11:44  dkr
+ * PrintTypedef(): TYPEDEF_NAME(arg_node) used instead of void* for
+ * argument types of TYPEDEF_COPYFUN, TYPEDEF_FREEFUN
+ *
  * Revision 2.102  2000/09/22 13:54:30  dkr
  * DoPrintAST extended
  *
@@ -1194,11 +1198,6 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-        fprintf (outfile, "\nextern void *%s(void *);\n", TYPEDEF_COPYFUN (arg_node));
-        fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
-    }
-
     if (TYPEDEF_ICM (arg_node) == NULL) {
         type_string = Type2String (TYPEDEF_TYPE (arg_node), 0);
         fprintf (outfile, "typedef %s ", type_string);
@@ -1211,6 +1210,15 @@ PrintTypedef (node *arg_node, node *arg_info)
     } else {
         Trav (TYPEDEF_ICM (arg_node), arg_info);
         fprintf (outfile, ";\n");
+    }
+
+    if (TYPEDEF_COPYFUN (arg_node) != NULL) {
+        fprintf (outfile, "\nextern %s %s( %s);\n", TYPEDEF_NAME (arg_node),
+                 TYPEDEF_COPYFUN (arg_node), TYPEDEF_NAME (arg_node));
+    }
+    if (TYPEDEF_FREEFUN (arg_node) != NULL) {
+        fprintf (outfile, "extern void %s( %s);\n\n", TYPEDEF_FREEFUN (arg_node),
+                 TYPEDEF_NAME (arg_node));
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -3860,20 +3868,33 @@ DoPrintSonAST (int num, node *arg_node, int skip_node)
 static void
 DoPrintTypesAST (types *type)
 {
+    node *tdef;
+
     DBUG_ENTER ("DoPrintTypesAST");
 
+    fprintf (outfile, "{");
     if (type != NULL) {
-        fprintf (outfile, "%s", type_string[TYPES_BASETYPE (type)]);
         if (TYPES_BASETYPE (type) == T_user) {
-            if (TYPES_TDEF (type) != NULL) {
-                fprintf (outfile, "[%p]", TYPES_TDEF (type));
+            if (TYPES_NAME (type) != NULL) {
+                fprintf (outfile, "%s ", TYPES_NAME (type));
             } else {
-                fprintf (outfile, "[NULL]");
+                fprintf (outfile, "? ");
             }
+            fprintf (outfile, "(");
+            tdef = TYPES_TDEF (type);
+            if (tdef != NULL) {
+                fprintf (outfile, "0x%p:%s", tdef, type_string[TYPEDEF_BASETYPE (tdef)]);
+            } else {
+                fprintf (outfile, "NULL");
+            }
+            fprintf (outfile, ")");
+        } else {
+            fprintf (outfile, "%s", type_string[TYPES_BASETYPE (type)]);
         }
     } else {
         fprintf (outfile, "NULL");
     }
+    fprintf (outfile, "}");
 
     DBUG_VOID_RETURN;
 }
