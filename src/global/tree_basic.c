@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/04/02 17:39:23  dkr
+ * added MakeConc
+ *
  * Revision 1.57  1998/04/02 12:11:09  srs
  * fixed bug in MakeShpseg
  *
@@ -197,6 +200,8 @@
 #include "free.h"
 #include "internal_lib.h"
 
+/*--------------------------------------------------------------------------*/
+
 #define PRF_IF(n, s, x, y) y
 
 char *prf_name_str[] = {
@@ -270,6 +275,8 @@ MakeShpseg (nums *numsp)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 types *
 MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
 {
@@ -298,6 +305,8 @@ MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 ids *
 MakeIds (char *name, char *mod, statustype status)
 {
@@ -318,6 +327,8 @@ MakeIds (char *name, char *mod, statustype status)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 nums *
 MakeNums (int num, nums *next)
 {
@@ -330,6 +341,8 @@ MakeNums (int num, nums *next)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 deps *
 MakeDeps (char *name, char *decname, char *libname, statustype status, deps *sub,
@@ -349,6 +362,8 @@ MakeDeps (char *name, char *decname, char *libname, statustype status, deps *sub
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 strings *
 MakeStrings (char *string, strings *next)
 {
@@ -361,6 +376,8 @@ MakeStrings (char *string, strings *next)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 nodelist *
 MakeNodelist (node *node, statustype status, nodelist *next)
@@ -420,6 +437,8 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exports)
 {
@@ -441,6 +460,8 @@ MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exp
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *exports)
 {
@@ -461,6 +482,8 @@ MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *e
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, node *funs)
@@ -484,6 +507,8 @@ MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, nod
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *funs, node *next)
 {
@@ -506,6 +531,8 @@ MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *funs, node *n
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
 {
@@ -525,6 +552,8 @@ MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
@@ -547,6 +576,8 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
 {
@@ -567,6 +598,8 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *next)
@@ -591,6 +624,8 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeArg (char *name, types *type, statustype status, statustype attrib, node *next)
 {
@@ -614,6 +649,8 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeBlock (node *instr, node *vardec)
 {
@@ -634,6 +671,8 @@ MakeBlock (node *instr, node *vardec)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeVardec (char *name, types *type, node *next)
 {
@@ -652,6 +691,8 @@ MakeVardec (char *name, types *type, node *next)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeAssign (node *instr, node *next)
@@ -674,6 +715,8 @@ MakeAssign (node *instr, node *next)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeLet (node *expr, ids *ids)
 {
@@ -691,6 +734,8 @@ MakeLet (node *expr, ids *ids)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeCast (node *expr, types *type)
@@ -710,6 +755,8 @@ MakeCast (node *expr, types *type)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeReturn (node *exprs)
 {
@@ -726,6 +773,8 @@ MakeReturn (node *exprs)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeCond (node *cond, node *Then, node *Else)
@@ -748,6 +797,8 @@ MakeCond (node *cond, node *Then, node *Else)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeDo (node *cond, node *body)
 {
@@ -767,6 +818,8 @@ MakeDo (node *cond, node *body)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeWhile (node *cond, node *body)
@@ -788,6 +841,8 @@ MakeWhile (node *cond, node *body)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 While2Do (node *while_node)
 {
@@ -795,6 +850,8 @@ While2Do (node *while_node)
     NODE_TYPE (while_node) = N_do;
     DBUG_RETURN (while_node);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeAnnotate (int tag, int funno, int funapno)
@@ -814,6 +871,8 @@ MakeAnnotate (int tag, int funno, int funapno)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeAp (char *name, char *mod, node *args)
@@ -896,6 +955,8 @@ MakeGenarray (node *array, node *body)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeModarray (node *array, node *body)
 {
@@ -913,6 +974,8 @@ MakeModarray (node *array, node *body)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeFoldprf (prf prf, node *body, node *neutral)
@@ -935,6 +998,8 @@ MakeFoldprf (prf prf, node *body, node *neutral)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeFoldfun (char *name, char *mod, node *body, node *neutral)
 {
@@ -955,6 +1020,8 @@ MakeFoldfun (char *name, char *mod, node *body, node *neutral)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeExprs (node *expr, node *next)
 {
@@ -973,6 +1040,8 @@ MakeExprs (node *expr, node *next)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeArray (node *aelems)
 {
@@ -989,6 +1058,8 @@ MakeArray (node *aelems)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeVinfo (useflag flag, types *type, node *next)
@@ -1010,6 +1081,8 @@ MakeVinfo (useflag flag, types *type, node *next)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeId (char *name, char *mod, statustype status)
 {
@@ -1026,6 +1099,8 @@ MakeId (char *name, char *mod, statustype status)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeId2 (ids *ids_node)
@@ -1044,6 +1119,8 @@ MakeId2 (ids *ids_node)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeNum (int val)
 {
@@ -1060,6 +1137,8 @@ MakeNum (int val)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeChar (char val)
@@ -1078,6 +1157,8 @@ MakeChar (char val)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeFloat (float val)
 {
@@ -1094,6 +1175,8 @@ MakeFloat (float val)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeDouble (double val)
@@ -1112,6 +1195,8 @@ MakeDouble (double val)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeBool (int val)
 {
@@ -1129,6 +1214,8 @@ MakeBool (int val)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeStr (char *str)
 {
@@ -1145,6 +1232,8 @@ MakeStr (char *str)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakePrf (prf prf, node *args)
@@ -1164,6 +1253,8 @@ MakePrf (prf prf, node *args)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeEmpty ()
 {
@@ -1178,6 +1269,8 @@ MakeEmpty ()
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakePost (int incdec, char *id)
@@ -1213,6 +1306,8 @@ MakePost (int incdec, char *id)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakePre (nodetype incdec, char *id)
 {
@@ -1247,6 +1342,8 @@ MakePre (nodetype incdec, char *id)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeIcm (char *name, node *args, node *next)
 {
@@ -1260,11 +1357,13 @@ MakeIcm (char *name, node *args, node *next)
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
-                             NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakePragma ()
@@ -1278,11 +1377,13 @@ MakePragma ()
 
     PRAGMA_NUMPARAMS (tmp) = 0;
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
-                             NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeInfo ()
@@ -1299,6 +1400,23 @@ MakeInfo ()
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeConc (node *region)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeConc");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_conc;
+    CONC_REGION (tmp) = region;
+
+    DBUG_RETURN (tmp);
+}
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1323,6 +1441,7 @@ MakeNWith (node *part, node *code, node *withop)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1377,6 +1496,7 @@ MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step, node *
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1394,6 +1514,7 @@ MakeNWithOp (WithOpType WithOp)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1410,6 +1531,7 @@ MakeNCode (node *block, node *expr)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1428,6 +1550,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
 
     DBUG_RETURN (tmp);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1446,6 +1569,7 @@ MakeWLseg (int dims, node *contents, node *next)
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1470,6 +1594,7 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1486,6 +1611,7 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int step, node *nextdi
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1513,6 +1639,7 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrollin
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1539,6 +1666,7 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1561,6 +1689,7 @@ MakeWLstriVar (int dim, node *bound1, node *bound2, node *step, node *contents,
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -1583,4 +1712,5 @@ MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim, node *next, n
 
     DBUG_RETURN (new_node);
 }
+
 /*--------------------------------------------------------------------------*/
