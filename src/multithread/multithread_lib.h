@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/09 18:34:47  jhs
+ * Additional features.
+ *
  * Revision 1.2  2000/03/02 13:01:02  jhs
  * Added MUTHExchangeApplication,
  * added MUTHExpandFundefName,
@@ -20,6 +23,6 @@ extern node *MUTHBlocksLastInstruction (node *block);
 extern node *MUTHMeltBlocks (node *first_block, node *second_block);
 extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
 extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
-extern node *MUTHExpandFundefName (node *fundef, char *suffix);
+extern node *MUTHExpandFundefName (node *fundef, char *prefix);
 
 #endif /* CONCURRENT_LIB_H */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/09 18:34:40  jhs
+ * Additional features.
+ *
  * Revision 1.3  2000/03/02 12:59:35  jhs
  * Added MUTHExchangeApplication,
  * added MUTHExpandFundefName,
@@ -26,6 +29,8 @@
  *****************************************************************************/
 
 #include "dbug.h"
+
+#include <string.h>
 
 #include "tree_basic.h"
 #include "free.h"
@@ -197,12 +202,12 @@ MUTHExchangeApplication (node *arg_node, node *new_fundef)
         FREE (AP_NAME (arg_node));
     }
     AP_NAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
-    DBUG_ASSERT ((AP_MOD (arg_node) != NULL), ("jhs"));
+    DBUG_ASSERT ((AP_MOD (arg_node) != NULL), ("null1!!"));
     if (AP_MOD (arg_node) != NULL) {
         /*    FREE( AP_MOD( arg_node)); */
     }
 
-    DBUG_ASSERT ((FUNDEF_MOD (new_fundef) != NULL), ("jhs2"));
+    DBUG_ASSERT ((FUNDEF_MOD (new_fundef) != NULL), ("null2!!"));
     if (FUNDEF_MOD (new_fundef) != NULL) {
         AP_MOD (arg_node) = StringCopy (FUNDEF_MOD (new_fundef));
     } else {
@@ -213,9 +218,24 @@ MUTHExchangeApplication (node *arg_node, node *new_fundef)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *MUTHExpandFundefName (node *fundef, char *prefix)
+ *
+ * description:
+ *   Changes the name of the fundef. The prefix and original will will be
+ *   concatenated to a new string n and set n is set as FUNDEF_NAME.
+ *   The original name will be set free automatically.
+ *
+ * attention:
+ *   THIS DOES NOT CHANGE THE NAMES IN N_AP.
+ *   N_ap holds a copy of the name (I don't know why, but this is the fact),
+ *   so you have to change *all* the names in corresponding N_ap.
+ *
+ ******************************************************************************/
 node *
-MUTHExpandFundefName (node *fundef, char *suffix)
+MUTHExpandFundefName (node *fundef, char *prefix)
 {
     char *old_name;
     char *new_name;
@@ -223,8 +243,8 @@ MUTHExpandFundefName (node *fundef, char *suffix)
     DBUG_ENTER ("MUTHExpandFundefName");
 
     old_name = FUNDEF_NAME (fundef);
-    new_name = Malloc (strlen (old_name) + strlen (suffix) + 1);
-    strcpy (new_name, suffix);
+    new_name = Malloc (strlen (old_name) + strlen (prefix) + 1);
+    strcpy (new_name, prefix);
     strcat (new_name, old_name);
     FUNDEF_NAME (fundef) = new_name;
     FREE (old_name);
