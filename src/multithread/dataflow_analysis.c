@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/07/13 09:35:27  jhs
+ * Added some comments.
+ * Unexported functions are static now.
+ *
  * Revision 1.9  2000/07/11 15:42:10  jhs
  * Added creation of ST_ALLOC and ST_SYNC.
  *
@@ -51,6 +55,10 @@
  *   - functions f with FUNDEF_ATTRIB( f) = ST_call_rep
  *   - functions f with FUNDEF_STATUS( f) = ST_foldfun
  *   - with-loops with schedulings (but we annotate at the first level!!)
+ *
+ * attention:
+ *   ASSIGN_INSTRs will be traversed twice first while traversing downwards
+ *   second while traversing upwards. Further informations see DFAtrav.
  *
  ******************************************************************************/
 
@@ -191,6 +199,7 @@ DFAfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static
  *   node *DFAtrav(node *arg_node, node *arg_info, funptr down, funptr up)
  *
  * description:
@@ -209,7 +218,7 @@ DFAfundef (node *arg_node, node *arg_info)
  *   INFO_DFA_HEADING is set in DFAassign.
  *
  ******************************************************************************/
-node *
+static node *
 DFAtrav (node *arg_node, node *arg_info, funptr down, funptr up)
 {
     DBUG_ENTER ("DFAtrav");
@@ -285,6 +294,7 @@ DFAassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static
  *   node *DFAreturn_dn( node *arg_node, node *arg_info)
  *
  * description:
@@ -293,7 +303,7 @@ DFAassign (node *arg_node, node *arg_info)
  *   - RETURN_DEFMAKS = {}
  *
  ******************************************************************************/
-node *
+static node *
 DFAreturn_dn (node *arg_node, node *arg_info)
 {
     node *exprs;
@@ -323,8 +333,18 @@ DFAreturn_dn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
-node *
+/******************************************************************************
+ *
+ * function:
+ *   static
+ *   node *DFAreturn_up( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   updates needchain by return variables and prepares INFO_DFA_NEEDBLOCK
+ *   for upwards traversal by setting it empty
+ *
+ ******************************************************************************/
+static node *
 DFAreturn_up (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFAreturn_up");
@@ -340,7 +360,16 @@ DFAreturn_up (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *DFAreturn( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   the real traversal function for N_return, steering via DFAtrav
+ *   the upward and downward actions.
+ *
+ ******************************************************************************/
 node *
 DFAreturn (node *arg_node, node *arg_info)
 {
@@ -356,7 +385,7 @@ DFAreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DFAlet_dn( node *arg_node, node *arg_info)
+ *   static node *DFAlet_dn( node *arg_node, node *arg_info)
  *
  * description:
  *   Annotates LET_USEMASK and LET_DEFMASK. How? See below ...
@@ -386,7 +415,7 @@ DFAreturn (node *arg_node, node *arg_info)
  *   => fail
  *
  ******************************************************************************/
-node *
+static node *
 DFAlet_dn (node *arg_node, node *arg_info)
 {
 #if 0
@@ -548,8 +577,16 @@ DFAlet_dn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
-node *
+/******************************************************************************
+ *
+ * function:
+ *   static node *DFAlet_up( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   upward part of let traversal
+ *
+ ******************************************************************************/
+static node *
 DFAlet_up (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFAlet_up");
@@ -572,7 +609,16 @@ DFAlet_up (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *DFAlet( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   the real traversal function for N_let, steering via DFAtrav
+ *   the upward and downward actions.
+ *
+ ******************************************************************************/
 node *
 DFAlet (node *arg_node, node *arg_info)
 {
@@ -585,8 +631,17 @@ DFAlet (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
-node *
+/******************************************************************************
+ *
+ * function:
+ *   static
+ *   node *DFAxt_dn( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
+static node *
 DFAxt_dn (node *arg_node, node *arg_info)
 {
     node *old_cont;
@@ -635,8 +690,17 @@ DFAxt_dn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
-node *
+/******************************************************************************
+ *
+ * function:
+ *   static
+ *   node *DFAxt_up( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
+static node *
 DFAxt_up (node *arg_node, node *arg_info)
 {
     DFMmask_t helper;
@@ -674,7 +738,16 @@ DFAxt_up (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *DFAlet( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   the real traversal function for N_xt, steering via DFAtrav
+ *   the upward and downward actions.
+ *
+ ******************************************************************************/
 node *
 DFAxt (node *arg_node, node *arg_info)
 {
@@ -685,8 +758,16 @@ DFAxt (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
-node *
+/******************************************************************************
+ *
+ * function:
+ *   static node *DFAcond_dn( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
+static node *
 DFAcond_dn (node *arg_node, node *arg_info)
 {
     node *old_cont;
@@ -719,7 +800,20 @@ DFAcond_dn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   static node *DFAcond( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   the real traversal function for N_xt, steering via DFAtrav
+ *   the upward and downward actions.
+ *
+ * attention:
+ *   there is no function for the upward-part, but DFAtrav can handle
+ *   NULL-functions.
+ *
+ ******************************************************************************/
 node *
 DFAcond (node *arg_node, node *arg_info)
 {
@@ -861,6 +955,7 @@ DFAexprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *DFAnwith2( node *arg_node, node *arg_info)
  *
  * description:
  *   ####
