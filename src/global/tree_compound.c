@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/11/12 12:41:40  dkr
+ * IsConstArray revisited: accidentaly the new version was not activated.
+ *   some comments added, some minor changes done.
+ *
  * Revision 2.15  1999/11/11 20:07:21  dkr
  * function IsConstantArray changed:
  *   new name (IsConstArray)
@@ -1109,59 +1113,61 @@ NodeListFind (nodelist *nl, node *node)
  *   int IsConstArray(node *array)
  *
  * description:
- *   returns 1 if argument is an constant array and 0 otherwise.
+ *   Returns 1 if argument is an constant array and 0 otherwise.
+ *
+ * CAUTION:
+ *   In this situation, 'constant array' means that all array elements are
+ *   constant, irrespectively whether there exists an constant representation
+ *   (ARRAY_ISCONST, ARRAY_CONSTVEC) or not!!!
  *
  ******************************************************************************/
 
 int
 IsConstArray (node *array)
 {
+    nodetype type;
     int isconst = 0;
 
     DBUG_ENTER ("IsConstArray");
 
-#if 1
-    /*
-     *   This is the function as it should work. But unfortunately some optimizer
-     * functions are destroying array informations, so it's neccessarry to modify
-     * IsConstantArray a little bit ...
-     */
-    if (NODE_TYPE (array) == N_array) {
-        isconst = ARRAY_ISCONST (array);
-    } else {
-        if (NODE_TYPE (array) == N_id) {
-            isconst = ID_ISCONST (array);
-        }
-    }
-#else
-    /*
-     *   ... and here the modified version:
-     */
     if (array != NULL) {
-        if (NODE_TYPE (array) == N_array) {
-            array = ARRAY_AELEMS (array);
-            if (array == NULL) {
+        switch (NODE_TYPE (array)) {
+        case N_array:
+            isconst = ARRAY_ISCONST (array);
+            if (!isconst) {
+                /*
+                 * Although ARRAY_ISCONST is false, the array still may be constant:
+                 *   1.) For the time being ISCONST is false for all non-int-arrays.
+                 *   2.) ISCONST may be inconsistent to this respect.
+                 *       (E.g. after some optimizations new constant arrays may occur.)
+                 */
+                array = ARRAY_AELEMS (array);
                 isconst = 1;
-            }
-            while (array != NULL) {
-                if (NODE_TYPE (EXPRS_EXPR (array)) == N_num) {
-                    /*
-                     *  This time only integer arrays have to be checked if they are
-                     * constant.
-                     */
-                    array = EXPRS_NEXT (array);
-                } else {
-                    isconst = 0;
-                    break;
+                /*
+                 * remark: array may be NULL (empty array) -> constant
+                 */
+                while (array != NULL) {
+                    type = NODE_TYPE (EXPRS_EXPR (array));
+                    if ((type == N_num) || (type == N_char) || (type == N_bool)
+                        || (type == N_float) || (type == N_double)) {
+                        array = EXPRS_NEXT (array);
+                    } else {
+                        isconst = 0;
+                        break;
+                    }
                 }
             }
-        } else {
-            if (NODE_TYPE (array) == N_id) {
-                isconst = ID_ISCONST (array);
-            }
+            break;
+        case N_id:
+            isconst = ID_ISCONST (array);
+            break;
+        default:
+            /* dkr: I think this is an error ... */
+            DBUG_ASSERT ((0), "node in array position is neither N_array nor N_id");
         }
+    } else {
+        isconst = 0;
     }
-#endif
 
     DBUG_RETURN (isconst);
 }
