@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/04/06 17:17:15  dkr
+ * CheckAp() removed by preprocessor if DBUG_OFF is set
+ *
  * Revision 3.41  2001/04/06 16:58:29  dkr
  * CreateFundefIcm: no warning about uninitialized variable anymore
  *
@@ -1905,6 +1908,8 @@ ReorganizeReturnIcm (node *ret_icm)
     DBUG_RETURN (ret_icm);
 }
 
+#ifndef DBUG_OFF
+
 /******************************************************************************
  *
  * Function:
@@ -1946,6 +1951,8 @@ CheckAp (ids *let_ids, node *ap, node *arg_info)
 
     DBUG_RETURN (ok);
 }
+
+#endif
 
 /******************************************************************************
  *
