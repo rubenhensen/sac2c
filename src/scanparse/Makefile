@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2004/11/07 18:03:59  sah
+# added external functions support
+#
 # Revision 3.16  2004/10/15 12:06:03  sah
 # added switch to choose between two alternative
 # scanner/parser implementations
@@ -89,7 +92,7 @@ else
 endif
 
 
-all: y.tab.o lex.yy.o scnprs.o handle_dots.o
+all: y.tab.o lex.yy.o scnprs.o handle_dots.o resolvepragma.o
 
 
 y.tab.o: y.tab.c

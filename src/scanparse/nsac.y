@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/07 18:03:59  sah
+ * added external functions support
+ *
  * Revision 1.3  2004/10/22 13:22:31  sah
  * removed all artificial namespaces
  * added during parsing
@@ -50,13 +53,10 @@ extern int yylex();
 
 
 node *syntax_tree;
-node *decl_tree;
-node *sib_tree;
-node *spec_tree;
-
 
 static char *mod_name = MAIN_MOD_NAME;
 static node *global_wlcomp_aps = NULL;
+static node *store_pragma = NULL;
 
 /*
  * used to distinguish the different kinds of files
@@ -110,7 +110,7 @@ static int prf_arity[] = {
        MODSPEC
        SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
        HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
-       TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH 
+       TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
        WLCOMP  CACHESIM  SPECIALIZE 
        TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
        LE  LT  GT 
@@ -140,13 +140,14 @@ static int prf_arity[] = {
  * SAC programs
  */
 
-%type <node> prg  defs  def2  def3  def4
+%type <node> prg  defs  def2  def3  def4 def5
 
 %type <node> typedefs  typedef
 
 %type <node> objdefs  objdef
 
 %type <node> fundefs  fundef  fundef1  fundef2  main
+%type <node> fundecs fundec fundec2 fundecargs varargs
 %type <node> mainargs  fundefargs  args  arg 
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
              let cond optelse  doloop whileloop forloop  assignblock
@@ -157,21 +158,22 @@ static int prf_arity[] = {
 %type <prf> genop  foldop  prf
 
 %type <id> id  reservedid  symbolid  string
-%type <ids> ids  local_fun_id  fun_id /* fun_ids */
+%type <ids> ids  local_fun_id  fun_id fun_ids
 
 %type <types> returntypes  types  type  localtype  simpletype
+%type <types> varreturntypes vartypes
 
 
 /* pragmas */
 %type <id> pragmacachesim
 %type <node> wlcomp_pragma_global  wlcomp_pragma_local  wlcomp_conf
+%type <node> pragmas pragma
 /*
 %type <node> pragmas 
 */
 
-/* general helpers
+/* general helpers */
 %type <nums> nums
-*/
 
 
 
@@ -291,7 +293,16 @@ def3: objdefs def4
       { $$ = $1; }
     ;
 
-def4: fundefs
+def4: fundecs def5
+      { $$ = $2;
+        MODUL_FUNDECS( $$) = $1;
+      }
+    | def5
+      { $$ = $1;
+      }
+    ;
+
+def5: fundefs
       { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1, NULL);
 
         DBUG_PRINT( "PARSE",
@@ -499,13 +510,14 @@ fundef: INLINE fundef1
         }
       ;
 
-fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
+fundef1: returntypes BRACKET_L local_fun_id BRACKET_R BRACKET_L fundef2
          { $$ = $6;
-           FUNDEF_TYPES( $$) = $1;              /* result type(s) */
-           FUNDEF_NAME( $$) = IDS_NAME( $3);    /* function name  */
-           FUNDEF_MOD( $$) = IDS_MOD( $3);      /* module name    */
+           FUNDEF_TYPES( $$) = $1;                        /* result type(s) */
+           FUNDEF_NAME( $$) = StringCopy( IDS_NAME( $3)); /* function name  */
+           FUNDEF_MOD( $$) = StringCopy( IDS_MOD( $3));   /* module name    */
 
-           FUNDEF_LINKMOD( $$) = NULL;
+           $3 = FreeOneIds( $3);
+
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = TRUE;
@@ -523,7 +535,6 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $2);    /* function name  */
            FUNDEF_MOD( $$) = IDS_MOD( $2);      /* module name    */
-           FUNDEF_LINKMOD( $$) = NULL;
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = FALSE;
@@ -543,8 +554,8 @@ fundef2: fundefargs BRACKET_R
          exprblock
          { 
            $$ = $<node>3;
-           FUNDEF_BODY( $$) = $4;             /* Funktionsrumpf  */
-           FUNDEF_ARGS( $$) = $1;             /* Funktionsargumente */
+           FUNDEF_BODY( $$) = $4;             /* function bdoy  */
+           FUNDEF_ARGS( $$) = $1;             /* fundef args */
       
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
@@ -633,13 +644,91 @@ mainargs: TYPE_VOID     { $$ = NULL; }
 /*
 *********************************************************************
 *
+*  rules for fundecs
+*
+*********************************************************************
+*/
+
+fundecs: fundec fundecs
+         { $$ = $1;
+           FUNDEF_NEXT( $$) = $2;
+         }
+       | fundec { $$ = $1;
+         }
+       ;
+
+fundec: EXTERN varreturntypes local_fun_id BRACKET_L fundec2
+        { $$ = $5;
+          FUNDEF_TYPES( $$) = $2;
+          FUNDEF_NAME( $$) = StringCopy( IDS_NAME( $3));  /* function name */
+          FUNDEF_MOD( $$) = StringCopy( IDS_MOD( $3));    /* module name   */
+          $3 = FreeOneIds( $3);
+          FUNDEF_ATTRIB( $$) = ST_regular;
+          FUNDEF_STATUS( $$) = ST_Cfun;
+        }
+      ;
+
+fundec2: fundecargs BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
+         { $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
+           NODE_LINE( $$) = $<cint>3;
+           FUNDEF_PRAGMA( $$) = $4;
+         }
+       | BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
+         { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
+           NODE_LINE( $$) = $<cint>2;
+           FUNDEF_PRAGMA( $$) = $3;
+         }
+       ;
+
+fundecargs: varargs       { $$ = $1; }
+          | TYPE_VOID     { $$ = NULL; }
+          | DOT DOT DOT   
+            { $$ = MakeArg( NULL, MakeTypes1( T_dots),
+                            ST_regular, ST_regular, NULL);
+            }
+          ;
+
+varargs: arg COMMA varargs
+         { $$ = $1;
+           ARG_NEXT( $$) = $3;
+         }
+       | arg COMMA DOT DOT DOT
+         { $$ = $1;
+           ARG_NEXT( $$) = MakeArg( NULL,
+                                    MakeTypes1( T_dots),
+                                    ST_regular, ST_regular,
+                                    NULL);
+         }
+       | arg
+         { $$ = $1;
+         }
+       ;
+
+varreturntypes: TYPE_VOID     { $$ = MakeTypes1( T_void); }
+              | vartypes      { $$ = $1; }
+              ;
+
+vartypes: type COMMA vartypes
+          { $$ = $1;
+            TYPES_NEXT( $$) = $3;
+          }
+        | type
+          { $$ = $1;
+          }
+        | DOT DOT DOT
+          { $$ = MakeTypes1( T_dots);
+          }
+        ;
+
+/*
+*********************************************************************
+*
 *  rules for pragmas
 *
 *********************************************************************
 */
 
 hash_pragma: HASH PRAGMA ;
-
 
 wlcomp_pragma_global: hash_pragma WLCOMP wlcomp_conf
                       { if (global_wlcomp_aps != NULL) {
@@ -687,9 +776,9 @@ pragmacachesim: hash_pragma CACHESIM string   { $$ = $3;              }
 
 
 /*
- * pragmas as needed for:
- *  - SIBs
- *  - module decls
+ * pragmas as needed for external functions
+ *  
+ */
 
 pragmas: pragmalist
          { $$ = store_pragma;
@@ -712,6 +801,24 @@ pragma: hash_pragma LINKNAME string
             WARN( linenum, ("Conflicting definitions of pragma 'linkname`"));
           }
           PRAGMA_LINKNAME( store_pragma) = $3;
+        }
+      | hash_pragma LINKWITH string
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
+          }
+          if (PRAGMA_LINKMOD( store_pragma) != NULL) {
+            WARN( linenum, ("Conflicting definitions of pragma 'linkmod`"));
+          }
+          PRAGMA_LINKMOD( store_pragma) = $3;
+        }
+      | hash_pragma LINKOBJ string
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
+          }
+          if (PRAGMA_LINKOBJ( store_pragma) != NULL) {
+            WARN( linenum, ("Conflicting definitions of pragma 'linkmod`"));
+          }
+          PRAGMA_LINKOBJ( store_pragma) = $3;
         }
       | hash_pragma LINKSIGN SQBR_L nums SQBR_R
         { if (store_pragma == NULL) {
@@ -787,7 +894,7 @@ pragma: hash_pragma LINKNAME string
         }
       ;
 
-*/
+
 
 /*
  *********************************************************************
@@ -1421,14 +1528,6 @@ prf: foldop        { $$ = $1;        }
    | PRF_DROP_SxV  { $$ = F_drop_SxV;}
    ;
 
-/*
-fun_ids: fun_id COMMA fun_ids 
-         { $$ = $1;
-           IDS_NEXT( $$) = $3;
-         }
-       | fun_id {$$ = $1; }
-       ;
-*/
 fun_id: local_fun_id
         { $$ = $1;
         }
@@ -1437,6 +1536,15 @@ fun_id: local_fun_id
           IDS_MOD( $$) = $1;
         }
       ; 
+
+fun_ids: fun_id COMMA fun_ids
+         { $$ = $1;
+           IDS_NEXT( $$) = $3;
+         }
+       | fun_id
+         { $$ = $1;
+         }
+       ;
 
 local_fun_id: id         { $$ = MakeIds( $1,
                                          NULL, ST_regular); }
@@ -1484,11 +1592,11 @@ string: STR
           $2 = Free( $2);
         }
       ;
-/*
+
 nums: NUM COMMA nums   { $$ = MakeNums( $1, $3);   }
     | NUM              { $$ = MakeNums( $1, NULL); }
     ;
-*/
+
 
 
 /*

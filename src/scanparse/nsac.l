@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/07 18:03:59  sah
+ * added external functions support
+ *
  * Revision 1.2  2004/10/17 14:52:30  sah
  * added support for except
  * in interface descriptions
@@ -205,6 +208,7 @@ int charpos = 0;
 "freefun"                  { FILTER( FREEFUN); }
 "initfun"                  { FILTER( INITFUN); }
 "linkwith"                 { FILTER( LINKWITH); }
+"linkobj"                  { FILTER( LINKOBJ); }
 "wlcomp"                   { FILTER( WLCOMP); }
 "cachesim"                 { FILTER( CACHESIM); }
 "specialize"               { FILTER( SPECIALIZE); }
