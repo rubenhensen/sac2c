@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/02/26 13:07:46  khf
+ * TmpVar(): wlpg_tab added
+ *
  * Revision 3.40  2003/09/30 22:44:44  dkrHH
  * Free(): DBUG_ASSERT put into if-clause to ease debugging
  *
@@ -1148,6 +1151,8 @@ PrefixForTmpVar (void)
         s = "dl";
     } else if (act_tab == sp_tab) {
         s = "sp";
+    } else if (act_tab == wlpg_tab) {
+        s = "wlpg";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
