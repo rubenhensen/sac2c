@@ -2461,6 +2461,7 @@
         <son name="Ids" mandatory="no">
           <target>
             <node name="Ids" />
+            <node name="SPIds" />
           </target>
         </son>
         <son name="Expr" mandatory="yes">
