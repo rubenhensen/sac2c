@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/11/22 10:34:01  sbs
+ * string.h included (required on ALPHA)
+ *
  * Revision 3.3  2001/11/21 11:05:03  dkr
  * include of icm2c_sched.h added
  *
@@ -46,6 +49,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "dbug.h"
 
 #include "globals.h"
