@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/03/03 13:50:21  srs
+ * removed 'tmp' infix from name generation in TmpVar()
+ *
  * Revision 1.26  1998/03/02 13:57:21  cg
  * added function OptCmp() to compare two strings regardless of lower
  * or upper case letters (used for scanning optimization command line options.
@@ -391,11 +394,11 @@ char *
 TmpVar ()
 {
     static int counter = 0;
-    char *result, *s;
+    char *result, *s = NULL;
 
     DBUG_ENTER ("TmpVar");
 
-    result = (char *)Malloc (sizeof (char) * 20);
+    result = (char *)Malloc (sizeof (char) * 16);
 
     if (act_tab == imp_tab) {
         s = "imp";
@@ -404,7 +407,7 @@ TmpVar ()
         s = "flat";
     }
     if (act_tab == print_tab) {
-        s = "print";
+        s = "prt";
     }
     if (act_tab == type_tab) {
         s = "type";
@@ -413,7 +416,7 @@ TmpVar ()
         s = "opt";
     }
     if (act_tab == active_tab) {
-        s = "active";
+        s = "act";
     }
     if (act_tab == dcr_tab) {
         s = "dcr";
@@ -434,61 +437,61 @@ TmpVar ()
         s = "lir";
     }
     if (act_tab == lir_mov_tab) {
-        s = "lir_mov";
+        s = "lirm";
     }
     if (act_tab == dup_tab) {
         s = "dup";
     }
     if (act_tab == inline_tab) {
-        s = "inline";
+        s = "inl";
     }
     if (act_tab == unroll_tab) {
-        s = "unroll";
+        s = "unr";
     }
     if (act_tab == unswitch_tab) {
-        s = "unswitch";
+        s = "uns";
     }
     if (act_tab == idx_tab) {
         s = "idx";
     }
     if (act_tab == wlf_tab) {
-        s = "fusion";
+        s = "fusn";
     }
     if (act_tab == ae_tab) {
         s = "ae";
     }
     if (act_tab == writesib_tab) {
-        s = "writesib";
+        s = "wsib";
     }
     if (act_tab == obj_tab) {
         s = "obj";
     }
     if (act_tab == impltype_tab) {
-        s = "impltype";
+        s = "impl";
     }
     if (act_tab == objinit_tab) {
-        s = "objinit";
+        s = "obji";
     }
     if (act_tab == analy_tab) {
         s = "analy";
     }
     if (act_tab == checkdec_tab) {
-        s = "checkdec";
+        s = "cdec";
     }
     if (act_tab == writedec_tab) {
-        s = "writedec";
+        s = "wdec";
     }
     if (act_tab == unique_tab) {
-        s = "unique";
+        s = "uniq";
     }
     if (act_tab == rmvoid_tab) {
         s = "rmvoid";
     }
     if (act_tab == precomp_tab) {
-        s = "precomp";
+        s = "pcomp";
     }
     if (act_tab == readsib_tab) {
-        s = "readsib";
+        s = "rsib";
     }
     if (act_tab == cse_tab) {
         s = "cse";
@@ -497,10 +500,13 @@ TmpVar ()
         s = "dfr";
     }
     if (act_tab == o2nWith_tab) {
-        s = "o2nWith";
+        s = "o2nW";
     }
 
-    sprintf (result, "__tmp_%s_%d", s, counter);
+    if (!s)
+        s = "unknown_Phase";
+
+    sprintf (result, "__%s_%d", s, counter);
     counter++;
 
     DBUG_RETURN (result);
