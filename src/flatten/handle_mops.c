@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/08/14 13:49:43  sbs
+ * handling of unary minus for old type checker adopted
+ * more closely to the old solution 8-(((
+ *
  * Revision 1.9  2002/08/14 12:09:17  sbs
  * HMap transforma unary minus for old tc better now....
  *
@@ -441,19 +445,28 @@ HMap (node *arg_node, node *arg_info)
             if ((primfun == F_sub) && (CountExprs (exprs) == 1)) {
                 switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
                 case N_double:
-                    AP_ARGS (arg_node) = MakeExprs (MakeDouble (0.0), exprs);
+                    res = MakeDouble (-DOUBLE_VAL (EXPRS_EXPR1 (exprs)));
+                    arg_node = FreeNode (arg_node);
                     break;
                 case N_float:
-                    AP_ARGS (arg_node) = MakeExprs (MakeFloat (0.0f), exprs);
+                    res = MakeFloat (-FLOAT_VAL (EXPRS_EXPR1 (exprs)));
+                    arg_node = FreeNode (arg_node);
                     break;
                 case N_num:
+                    res = MakeNum (-NUM_VAL (EXPRS_EXPR1 (exprs)));
+                    arg_node = FreeNode (arg_node);
+                    break;
                 default:
                     AP_ARGS (arg_node) = MakeExprs (MakeNum (0), exprs);
+                    res = MakePrf (primfun, AP_ARGS (arg_node));
+                    AP_ARGS (arg_node) = NULL;
+                    arg_node = FreeNode (arg_node);
                 }
+            } else {
+                res = MakePrf (primfun, AP_ARGS (arg_node));
+                AP_ARGS (arg_node) = NULL;
+                arg_node = FreeNode (arg_node);
             }
-            res = MakePrf (primfun, AP_ARGS (arg_node));
-            AP_ARGS (arg_node) = NULL;
-            arg_node = FreeNode (arg_node);
         } else {
             res = arg_node;
         }
