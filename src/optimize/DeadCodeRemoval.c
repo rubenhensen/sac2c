@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1999/01/19 13:20:27  sbs
+ * #ifndef DBUG_OFF inserted
+ *
  * Revision 1.24  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -129,8 +132,10 @@ node *
 DeadCodeRemoval (node *arg_node, node *info_node)
 {
     funptr *tmp_tab;
+#ifndef DBUG_OFF
     int mem_dead_var = dead_var;
     int mem_dead_expr = dead_expr;
+#endif
 
     DBUG_ENTER ("DeadCodeRemoval");
     DBUG_PRINT ("OPT", ("DEAD CODE REMOVAL"));
