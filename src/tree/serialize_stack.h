@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/09/23 21:12:25  sah
+ * ongoing implementation
+ *
  * Revision 1.2  2004/09/21 16:34:27  sah
  * ongoing implementation of
  * serialize traversal
@@ -15,6 +18,8 @@
 #define _SERIALIZE_STACK_H
 
 #include "types.h"
+
+#define SERSTACK_NOT_FOUND -1
 
 typedef struct SERSTACK_T serstack_t;
 

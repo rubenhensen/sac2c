@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/09/23 21:14:23  sah
+ * ongoing implementation
+ *
  * Revision 1.1  2004/09/22 11:37:27  sah
  * Initial revision
  *
@@ -15,13 +18,18 @@
 
 typedef struct SYMBOLTABLESYMBOL_T symboltablesymbol_t;
 
+struct SYMBOLCHAIN_T {
+    symboltablesymbol_t *head;
+    symboltablesymbol_t *pos;
+};
+
 struct SYMBOLENTRY_T {
     char *name;
     symbolentrytype_t type;
     symbolentry_t *next;
 };
 
-struct SYMBOLCHAIN_T {
+struct SYMBOLENTRYCHAIN_T {
     symbolentry_t *head;
     symbolentry_t *pos;
 };
@@ -37,7 +45,7 @@ struct SYMBOLTABLE_T {
 };
 
 static symbolentry_t *
-SymbolTableEntryInit (char *name, symbolentrytype_t type)
+SymbolTableEntryInit (const char *name, symbolentrytype_t type)
 {
     symbolentry_t *result;
 
@@ -69,7 +77,7 @@ SymbolTableEntryDestroy (symbolentry_t *entry)
 }
 
 static symboltablesymbol_t *
-SymbolTableSymbolInit (char *symbol)
+SymbolTableSymbolInit (const char *symbol)
 {
     symboltablesymbol_t *result;
 
@@ -115,7 +123,7 @@ SymbolTableSymbolAdd (symboltablesymbol_t *symbol, symboltable_t *table)
 }
 
 static symboltablesymbol_t *
-SymbolTableSymbolLookup (char *symbol, symboltable_t *table)
+SymbolTableSymbolLookup (const char *symbol, symboltable_t *table)
 {
     symboltablesymbol_t *result;
 
@@ -170,7 +178,7 @@ SymbolTableDestroy (symboltable_t *table)
 }
 
 static void
-SymbolTableEntryAdd (char *symbolname, symbolentry_t *entry, symboltable_t *table)
+SymbolTableEntryAdd (const char *symbolname, symbolentry_t *entry, symboltable_t *table)
 {
     symboltablesymbol_t *symbol;
 
@@ -181,14 +189,16 @@ SymbolTableEntryAdd (char *symbolname, symbolentry_t *entry, symboltable_t *tabl
     if (symbol == NULL) {
         symbol = SymbolTableSymbolInit (symbolname);
         SymbolTableSymbolAdd (symbol, table);
-        SymbolTableSymbolEntryAdd (entry, symbol);
     }
+
+    SymbolTableSymbolEntryAdd (entry, symbol);
 
     DBUG_VOID_RETURN;
 }
 
 void
-SymbolTableAdd (char *symbol, char *name, symbolentrytype_t type, symboltable_t *table)
+SymbolTableAdd (const char *symbol, const char *name, symbolentrytype_t type,
+                symboltable_t *table)
 {
     symbolentry_t *entry;
 
@@ -200,14 +210,74 @@ SymbolTableAdd (char *symbol, char *name, symbolentrytype_t type, symboltable_t 
     DBUG_VOID_RETURN;
 }
 
-static symbolchain_t *
-SymbolTableChainInit (symboltablesymbol_t *symbol)
+symbolchain_t *
+SymbolTableSymbolChainGet (symboltable_t *table)
 {
     symbolchain_t *result;
 
-    DBUG_ENTER ("SymbolTableChainInit");
+    DBUG_ENTER ("SymbolTableSymbolChainGet");
 
     result = (symbolchain_t *)Malloc (sizeof (symbolchain_t));
+
+    result->head = table->head;
+    result->pos = table->head;
+
+    DBUG_RETURN (result);
+}
+
+symbolchain_t *
+SymbolTableSymbolChainRelease (symbolchain_t *chain)
+{
+    DBUG_ENTER ("SymbolTableSymbolChainRelease");
+
+    chain = Free (chain);
+
+    DBUG_RETURN (chain);
+}
+
+const char *
+SymbolTableSymbolChainNext (symbolchain_t *chain)
+{
+    char *result;
+
+    DBUG_ENTER ("SymbolTableSymbolChainNext");
+
+    if (chain->pos == NULL) {
+        result = NULL;
+    } else {
+        result = chain->pos->name;
+        chain->pos = chain->pos->next;
+    }
+
+    DBUG_RETURN (result);
+}
+
+void
+SymbolTableSymbolChainReset (symbolchain_t *chain)
+{
+    DBUG_ENTER ("SymbolTableEntryChainReset");
+
+    chain->head = chain->pos;
+
+    DBUG_VOID_RETURN;
+}
+
+int
+SymbolTableSymbolChainHasMore (symbolchain_t *chain)
+{
+    DBUG_ENTER ("SymbolTableSymbolChainHasMore");
+
+    DBUG_RETURN (chain->pos != NULL);
+}
+
+static symbolentrychain_t *
+SymbolTableEntryChainInit (symboltablesymbol_t *symbol)
+{
+    symbolentrychain_t *result;
+
+    DBUG_ENTER ("SymbolTableEntryChainInit");
+
+    result = (symbolentrychain_t *)Malloc (sizeof (symbolentrychain_t));
 
     result->head = symbol->head;
     result->pos = symbol->head;
@@ -215,27 +285,37 @@ SymbolTableChainInit (symboltablesymbol_t *symbol)
     DBUG_RETURN (result);
 }
 
-symbolchain_t *
-SymbolTableChainGet (char *symbolname, symboltable_t *table)
+symbolentrychain_t *
+SymbolTableEntryChainGet (const char *symbolname, symboltable_t *table)
 {
-    symbolchain_t *result;
+    symbolentrychain_t *result;
     symboltablesymbol_t *symbol;
 
-    DBUG_ENTER ("SymbolTableChainGet");
+    DBUG_ENTER ("SymbolTableEntryChainGet");
 
     symbol = SymbolTableSymbolLookup (symbolname, table);
 
-    result = SymbolTableChainInit (symbol);
+    result = SymbolTableEntryChainInit (symbol);
 
     DBUG_RETURN (result);
 }
 
+symbolentrychain_t *
+SymbolTableEntryChainRelease (symbolentrychain_t *chain)
+{
+    DBUG_ENTER ("SymbolTableEntryChainRelease");
+
+    chain = Free (chain);
+
+    DBUG_RETURN (chain);
+}
+
 symbolentry_t *
-SymbolTableChainNext (symbolchain_t *chain)
+SymbolTableEntryChainNext (symbolentrychain_t *chain)
 {
     symbolentry_t *result;
 
-    DBUG_ENTER ("SymbolTableChainNext");
+    DBUG_ENTER ("SymbolTableEntryChainNext");
 
     result = chain->pos;
 
@@ -246,16 +326,24 @@ SymbolTableChainNext (symbolchain_t *chain)
 }
 
 void
-SymbolTableChainReset (symbolchain_t *chain)
+SymbolTableEntryChainReset (symbolentrychain_t *chain)
 {
-    DBUG_ENTER ("SymbolTableChainReset");
+    DBUG_ENTER ("SymbolTableEntryChainReset");
 
     chain->pos = chain->head;
 
     DBUG_VOID_RETURN;
 }
 
-char *
+int
+SymbolTableEntryChainHasMore (symbolentrychain_t *chain)
+{
+    DBUG_ENTER ("SymbolTableSymbolChainHasMore");
+
+    DBUG_RETURN (chain->pos != NULL);
+}
+
+const char *
 SymbolTableEntryName (symbolentry_t *entry)
 {
     DBUG_ENTER ("SymbolTableEntryName");
@@ -273,4 +361,52 @@ SymbolTableEntryType (symbolentry_t *entry)
     DBUG_ASSERT ((entry != NULL), "SymbolTableEntryType called with NULL argument");
 
     DBUG_RETURN (entry->type);
+}
+
+void
+SymbolTableEntryPrint (symbolentry_t *entry)
+{
+    DBUG_ENTER ("SymbolTableEntryPrint");
+
+    printf ("    %s\n", entry->name);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SymbolTableSymbolPrint (symboltablesymbol_t *symbol)
+{
+    symbolentry_t *entry;
+
+    DBUG_ENTER ("SymbolTableSymbolPrint");
+
+    printf ("Symbol: %s\n", symbol->name);
+
+    entry = symbol->head;
+
+    while (entry != NULL) {
+        SymbolTableEntryPrint (entry);
+        entry = entry->next;
+    }
+
+    printf ("\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SymbolTablePrint (symboltable_t *table)
+{
+    symboltablesymbol_t *symbol;
+
+    DBUG_ENTER ("SymbolTablePrint");
+
+    symbol = table->head;
+
+    while (symbol != NULL) {
+        SymbolTableSymbolPrint (symbol);
+        symbol = symbol->next;
+    }
+
+    DBUG_VOID_RETURN;
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/09/23 21:12:25  sah
+ * ongoing implementation
+ *
  * Revision 1.2  2004/09/21 16:34:27  sah
  * ongoing implementation of
  * serialize traversal
@@ -16,6 +19,7 @@
 
 #include <stdio.h>
 #include "serialize_stack.h"
+#include "symboltable.h"
 
 /*
  * INFO structure
@@ -24,6 +28,7 @@
 struct INFO {
     FILE *file;
     serstack_t *stack;
+    symboltable_t *table;
 };
 
 /*
@@ -31,5 +36,6 @@ struct INFO {
  */
 #define INFO_SER_FILE(n) n->file
 #define INFO_SER_STACK(n) n->stack
+#define INFO_SER_TABLE(n) n->table
 
 #endif /* _SERIALIZE_INFO_H */

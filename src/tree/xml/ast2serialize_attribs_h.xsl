@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/09/23 21:18:53  sah
+  ongoing implementation
+
   Revision 1.1  2004/09/20 16:15:58  sah
   Initial revision
 
@@ -46,17 +49,15 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="type">
-  <xsl:value-of select="'extern '"/>
-  <xsl:value-of select="@ctype"/>
-  <xsl:value-of select="' Serialize'"/>
+  <xsl:value-of select="'extern void Serialize'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'Attrib( char*, '"/>
+  <xsl:value-of select="' info*, '"/>
   <xsl:if test="@size">
     <xsl:value-of select="' int, '" />
   </xsl:if>
-  <xsl:value-of select="' info*, '"/>
   <xsl:value-of select="@ctype"/>
-  <xsl:value-of select="' );'"/>
+  <xsl:value-of select="', node* );'"/>
 </xsl:template>
 
 </xsl:stylesheet>

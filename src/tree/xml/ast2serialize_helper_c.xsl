@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/09/23 21:18:34  sah
+  ongoing implementation
+
   Revision 1.1  2004/09/20 19:56:42  sah
   Initial revision
 
@@ -81,7 +84,7 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="/" mode="gen-alloc-fun">
-  <xsl:value-of select="'node *AllocateNode( nodetype ntype, int lineno, char* sfile) {'" />
+  <xsl:value-of select="'node *SHLPAllocateNode( nodetype ntype, int lineno, char* sfile) {'" />
   <xsl:value-of select="'node *result = Malloc( sizeof( node));'" />
   <xsl:value-of select="'result->nodetype=ntype;'" />
   <xsl:value-of select="'result->lineno=lineno;'" />
@@ -101,7 +104,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="': '" />
-  <xsl:value-of select="'result->attribs->N_'" />
+  <xsl:value-of select="'result->attribs.N_'" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' = Malloc(sizeof(struct AttribS_N_'"/>
   <xsl:value-of select="@name" />
@@ -110,10 +113,10 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="/" mode="gen-fill-fun">
-  <xsl:value-of select="'void FillNode( node *node, ...) {'"/>
+  <xsl:value-of select="'void SHLPFillNode( node *ref, ...) {'"/>
   <xsl:value-of select="'va_list args;'" />
   <xsl:value-of select="'int cnt, max;'" />
-  <xsl:value-of select="'switch (NODE_TYPE(node)) {'" />
+  <xsl:value-of select="'switch (NODE_TYPE(ref)) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-fill-fun" />
   <xsl:value-of select="'default: /* error */ '" />
   <xsl:value-of select="'break;'" />
@@ -130,7 +133,7 @@ version="1.0">
   <xsl:value-of select="': '" />
   <!-- check whether there was an argument -->
   <xsl:if test="sons/son | attributes/attribute">
-    <xsl:value-of select="'va_start( args, node);'" />
+    <xsl:value-of select="'va_start( args, ref);'" />
     <xsl:apply-templates select="attributes/attribute" mode="gen-fill-fun" />
     <xsl:apply-templates select="sons/son" mode="gen-fill-fun" />
     <xsl:value-of select="'va_end( args);'" />
@@ -147,7 +150,7 @@ version="1.0">
     <xsl:value-of select="'for( cnt=0; cnt &lt; max; cnt++) {'" />
   </xsl:if>
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">node</xsl:with-param>
+    <xsl:with-param name="node">ref</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
@@ -172,7 +175,7 @@ version="1.0">
 
 <xsl:template match="son" mode="gen-fill-fun">
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">node</xsl:with-param>
+    <xsl:with-param name="node">ref</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>

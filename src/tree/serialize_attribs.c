@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/09/23 21:12:25  sah
+ * ongoing implementation
+ *
  * Revision 1.2  2004/09/21 16:34:27  sah
  * ongoing implementation of
  * serialize traversal
@@ -28,6 +31,10 @@
 
 #include "serialize_attribs.h"
 #include "serialize_info.h"
+#include "serialize_stack.h"
+#include "tree_basic.h"
+#include "traverse.h"
+#include "dbug.h"
 
 /** <!--******************************************************************-->
  *
@@ -124,7 +131,7 @@ SerializeLongAttrib (char *vname, info *info, long attr, node *parent)
 {
     DBUG_ENTER ("SerializeLongAttrib");
 
-    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+    fprintf (INFO_SER_FILE (info), "%s = %ld;\n", vname, attr);
 
     DBUG_VOID_RETURN;
 }
@@ -238,6 +245,13 @@ void
 SerializeOldTypeAttrib (char *vname, info *info, types *attr, node *parent)
 {
     DBUG_ENTER ("SerializeOldTypeAttrib");
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    } else {
+        fprintf (INFO_SER_FILE (info), "%s = MakeTypes1( T_unknown);\n", vname);
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -258,6 +272,15 @@ void
 SerializeNodeAttrib (char *vname, info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNodeAttrib");
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    } else {
+        Trav (attr, info);
+        fprintf (INFO_SER_FILE (info), "%s = LOOKUP( %d);\n", vname,
+                 SerStackFindPos (attr, INFO_SER_STACK (info)));
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -278,6 +301,25 @@ void
 SerializeLinkAttrib (char *vname, info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeLinkAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = ", vname);
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "NULL;\n");
+    } else {
+        int pos = SerStackFindPos (attr, INFO_SER_STACK (info));
+
+        if (pos == SERSTACK_NOT_FOUND) {
+            DBUG_PRINT ("SET", ("missing link on stack: [%s] -> [%s]",
+                                mdb_nodetype[NODE_TYPE (parent)],
+                                mdb_nodetype[NODE_TYPE (attr)]));
+
+            fprintf (INFO_SER_FILE (info), "NULL;\n");
+        } else {
+            fprintf (INFO_SER_FILE (info), "LOOKUP( %d);\n", pos);
+        }
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -298,6 +340,9 @@ void
 SerializeApLinkAttrib (char *vname, info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeApLinkAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -488,6 +533,36 @@ void
 SerializeIdsAttrib (char *vname, info *info, ids *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIdsAttrib");
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    } else {
+        char *tmpvar = TmpVar ();
+
+        fprintf (INFO_SER_FILE (info), "{ /* serialize ids structure */\n");
+        fprintf (INFO_SER_FILE (info), "ids *%s;\n", tmpvar);
+
+        if (IDS_NEXT (attr) != NULL) {
+            SerializeIdsAttrib (tmpvar, info, IDS_NEXT (attr), parent);
+        } else {
+            fprintf (INFO_SER_FILE (info), "%s = NULL;\n", tmpvar);
+        }
+
+        fprintf (INFO_SER_FILE (info), "%s = MakeIds( \"%s\", ", vname, IDS_NAME (attr));
+        if (IDS_MOD (attr) == NULL) {
+            fprintf (INFO_SER_FILE (info), "NULL");
+        } else {
+            fprintf (INFO_SER_FILE (info), "\"%s\"", IDS_MOD (attr));
+        }
+        fprintf (INFO_SER_FILE (info), ", %d);\n", IDS_STATUS (attr));
+
+        fprintf (INFO_SER_FILE (info), "IDS_NEXT( %s) = %s;\n", vname, tmpvar);
+
+        fprintf (INFO_SER_FILE (info), "}\n");
+
+        tmpvar = Free (tmpvar);
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -571,6 +646,9 @@ void
 SerializePragmaLinkAttrib (char *vname, info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializePragmaLinkAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -591,6 +669,9 @@ void
 SerializeDFMMaskAttrib (char *vname, info *info, DFMmask_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeDFMMaskAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -611,6 +692,9 @@ void
 SerializeDFMMaskBaseAttrib (char *vname, info *info, DFMmask_base_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeDFMMaskBaseAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -631,6 +715,9 @@ void
 SerializeDFMFoldMaskAttrib (char *vname, info *info, DFMfoldmask_t *attr, node *parent)
 {
     DBUG_ENTER ("SerializeDFMFoldMaskAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -651,6 +738,9 @@ void
 SerializeNewTypeAttrib (char *vname, info *info, ntype *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNewTypeAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -671,6 +761,9 @@ void
 SerializeArgTabAttrib (char *vname, info *info, argtab_t *attr, node *parent)
 {
     DBUG_ENTER ("SerializeArgTabAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -711,6 +804,9 @@ void
 SerializeShapeAttrib (char *vname, info *info, shape *attr, node *parent)
 {
     DBUG_ENTER ("SerializeShapeAttrib");
+
+    SHSerializeShape (INFO_SER_FILE (info), attr, vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -814,6 +910,9 @@ void
 SerializeShpSegAttrib (char *vname, info *info, shpseg *attr, node *parent)
 {
     DBUG_ENTER ("SerializeShpSegAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -834,6 +933,9 @@ void
 SerializeIntegerPointerAttrib (char *vname, info *info, int *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerPointerAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -916,6 +1018,9 @@ void
 SerializeNodePointerAttrib (char *vname, info *info, node **attr, node *parent)
 {
     DBUG_ENTER ("SerializeNodePointerAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -936,6 +1041,9 @@ void
 SerializeSSAPhiAttrib (char *vname, info *info, ssaphit_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeSSAPhiAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -979,6 +1087,11 @@ void
 SerializeConstantAttrib (char *vname, info *info, constant *attr, node *parent)
 {
     DBUG_ENTER ("SerializeConstantAttrib");
+
+    /* TODO */
+
+    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+
     DBUG_VOID_RETURN;
 }
 
@@ -999,6 +1112,9 @@ void
 SerializeMTExecModeAttrib (char *vname, info *info, mtexecmode_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeMTExecModeAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 

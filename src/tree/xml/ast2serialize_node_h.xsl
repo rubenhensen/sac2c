@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/09/23 21:18:34  sah
+  ongoing implementation
+
   Revision 1.1  2004/08/31 14:23:57  sah
   Initial revision
 
@@ -45,7 +48,7 @@ version="1.0">
 <xsl:template match="node">
   <xsl:value-of select="'extern '" />
   <xsl:call-template name="travfun-head">
-    <xsl:with-param name="prefix">Serialize</xsl:with-param>
+    <xsl:with-param name="prefix">SET</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="@name" /></xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="';'" />

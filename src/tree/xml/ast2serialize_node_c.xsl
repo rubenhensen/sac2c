@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/09/23 21:18:34  sah
+  ongoing implementation
+
   Revision 1.2  2004/09/20 19:56:01  sah
   ongoing work
 
@@ -79,6 +82,7 @@ version="1.0">
 #include "serialize_node.h"
 #include "serialize_attribs.h"
 #include "serialize_info.h"
+#include "serialize_stack.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "internal_lib.h"
@@ -86,6 +90,8 @@ version="1.0">
 
 #define AST_NO_COMPAT
 #include "node_compat.h"
+
+#define TRAVNONNULL( node, info) if (node != NULL) Trav( node, info)
 
   </xsl:text>
   <!-- functions -->
@@ -126,15 +132,19 @@ version="1.0">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;Serialize'"/>
+  <xsl:value-of select="'DBUG_ENTER( &quot;SET'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'&quot;);'"/>
+  <!-- DBUG PRINT -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;SET&quot;, (&quot;Serializing '" />
+  <xsl:value-of select="@name"/>
+  <xsl:value-of select="' node&quot;));'" />
   <!-- print start of new block -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;{\n&quot;);'"/>
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;{ &quot;);'"/>
   <!-- print comment of what is to be done -->
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;/* serialization of '" />
   <xsl:value-of select="@name" />
-  <xsl:value-of select="' node /*\n&quot;);'" />
+  <xsl:value-of select="' node */\n&quot;);'" />
   <!-- print defines for all needed vars -->
   <xsl:apply-templates select="." mode="gen-vars"/>
   <!-- print generators of all vars -->
@@ -160,12 +170,12 @@ version="1.0">
 
 <xsl:template match="@name">
   <xsl:call-template name="travfun-comment">
-    <xsl:with-param name="prefix">Serialize</xsl:with-param>
+    <xsl:with-param name="prefix">SET</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="." /></xsl:with-param>
     <xsl:with-param name="text">Creates C code for this node type</xsl:with-param>
   </xsl:call-template>  
   <xsl:call-template name="travfun-head">
-    <xsl:with-param name="prefix">Serialize</xsl:with-param>
+    <xsl:with-param name="prefix">SET</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="." /></xsl:with-param>
   </xsl:call-template>
 </xsl:template>
@@ -202,7 +212,7 @@ version="1.0">
   <!-- gen printf -->
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;node *son_'" />
   <xsl:value-of select="@name" />
-  <xsl:value-of select="';\n&quot;);'" />
+  <xsl:value-of select="' = NULL;\n&quot;);'" />
 </xsl:template>
 
 <!--
@@ -247,26 +257,60 @@ version="1.0">
 
 <xsl:template match="node" mode="gen-values">
   <!-- Allocate node pointer -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;tmp = AllocateNode( '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;tmp = SHLPAllocateNode( '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="');\n&quot;);'" />
+  <xsl:value-of select="', %d, \&quot;%s\&quot;);\n&quot;, NODE_LINE( arg_node), NODE_FILE( arg_node));'" />
   <!-- push current node -->
-  <xsl:value-of select="'PUSH( arg_node);'"/>
+  <xsl:value-of select="'SerStackPush( arg_node, INFO_SER_STACK( arg_info));'"/>
   <!-- print push for generated node -->
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;PUSH( tmp);\n&quot;);'" />
   <!-- generate all sons and attributes -->
-  <xsl:apply-templates select="sons/son" mode="gen-values"/>
-  <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;FillNode( tmp&quot;);'" />
+  <xsl:apply-templates select="." mode="gen-values-dispatch"/>
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;SHLPFillNode( tmp&quot;);'" />
   <!-- add all attributes and sons as argument -->
   <xsl:apply-templates select="attributes/attribute" mode="gen-allocnode-params" />
   <xsl:apply-templates select="sons/son" mode="gen-allocnode-params"
  />
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;);\n&quot;);'" />
+</xsl:template>
+
+<!-- 
+     traversal gen-values-dispatch node
+
+     this traversal decides on which sons/attributes have to be serilized
+     or not on a per node basis. This is needed to not serialize some
+     sons/attributes in case they have to be freshly created or to
+     have some influence on the order in which sons/attributes
+     are serialized.
+
+-->
+
+<!-- traversal gen-values-dispatch node @name=Fundef
+
+     For Fundef nodes, the Next and Body sons are not traversed. This is
+     done to allow the serialisation to be used on a per function-header /
+     function-body basis.
+
+     Furthermore, the Return attribute is not serialized, as it points
+     into the body, which is not present at that time. This link is recreated
+     later on
+-->
+
+<xsl:template match="node[@name= &quot;Fundef&quot;]" mode="gen-values-dispatch">
+  <xsl:apply-templates select="attributes/attribute[@name != &quot;Return&quot;]" mode="gen-values"/>
+  <xsl:apply-templates select="attributes/attribute[@name = &quot;Return&quot;]" mode="gen-null"/>
+  <xsl:apply-templates select="sons/son[@name != &quot;Next&quot;][@name != &quot;Body&quot;]" mode="gen-values" />
+  <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]" mode="gen-null" />
+  <xsl:apply-templates select="sons/son[@name = &quot;Body&quot;]" mode="gen-null" />
+</xsl:template>
+
+<xsl:template match="node" mode="gen-values-dispatch">
+  <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
+  <xsl:apply-templates select="sons/son" mode="gen-values"/>
 </xsl:template>
 
 <xsl:template match="attributes/attribute" mode="gen-values">
@@ -281,12 +325,11 @@ version="1.0">
   <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@name" />
   <xsl:value-of select="'Attrib( &quot;attr_'" />
   <xsl:value-of select="@name" />
-  <xsl:value-of select="'&quot; '" />
+  <xsl:value-of select="'&quot;, arg_info, '" />
   <!-- if it is an array, we need to pass the selector as well -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-    <xsl:value-of select="', cnt'" />
+    <xsl:value-of select="'cnt, '" />
   </xsl:if>
-  <xsl:value-of select="', arg_info, '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
@@ -302,7 +345,7 @@ version="1.0">
       </xsl:if>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="');'" />
+  <xsl:value-of select="', arg_node);'" />
   <!-- if it is an array, we have to complete the for loop -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'}'"/>
@@ -310,7 +353,8 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="sons/son" mode="gen-values">
-  <xsl:value-of select="'Trav( '" />
+  <!-- check for NULL pointer son -->
+  <xsl:value-of select="'if ( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
@@ -320,10 +364,25 @@ version="1.0">
       <xsl:value-of select="@name"/>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', arg_info);'" />
+  <xsl:value-of select="' == NULL)'" />
+  <!-- generate code for a NULL pointer son -->
+  <xsl:value-of select="'{ SerStackPush( NULL, INFO_SER_STACK( arg_info));'"/>
+  <xsl:value-of select="' fprintf( INFO_SER_FILE( arg_info), &quot;PUSH( NULL);&quot;); }'" />
+  <!-- call Trav otherwise -->
+  <xsl:value-of select="'else { Trav( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', arg_info); }'" />
   <xsl:value-of select="' fprintf(INFO_SER_FILE(arg_info), &quot;son_'" />
   <xsl:value-of select="@name" />
-  <xsl:value-of select="' = LOOKUP( %d);&quot;, FINDPOS( '"/>
+  <xsl:value-of select="' = LOOKUP( %d);\n&quot;, SerStackFindPos( '"/>
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
@@ -333,7 +392,28 @@ version="1.0">
       <xsl:value-of select="@name"/>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'));'" />
+  <xsl:value-of select="', INFO_SER_STACK( arg_info)));'" />
+</xsl:template>
+
+<!-- 
+     traversal gen-null
+
+     This traversal is used to assign a NULL pointer to certain
+     links which are not traversed.
+
+     see gen-values-dispatch
+-->
+
+<xsl:template match="attributes/attribute" mode="gen-null">
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;attr_'" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="' = NULL;&quot;);'"/>
+</xsl:template>
+
+<xsl:template match="sons/son" mode="gen-null">
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;son_'" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="' = NULL;&quot;);'"/>
 </xsl:template>
 
 <!--
