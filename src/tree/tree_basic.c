@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/05/14 10:21:20  cg
+ * Bug in indentation of SPMD_BEGIN/END ICMs fixed.
+ *
  * Revision 3.36  2001/05/08 12:28:23  dkr
  * new macros for RC used
  *
@@ -1323,6 +1326,22 @@ MakeIcm (char *name, node *args)
         ICM_INDENT_AFTER (tmp) = 1;
     } else if (strcmp (name, "MT2_END_I_AM_FIRST") == 0) {
         ICM_INDENT_BEFORE (tmp) = -1;
+        ICM_INDENT_AFTER (tmp) = 0;
+    } else if (strcmp (name, "MT_SPMD_BEGIN") == 0) {
+        /*
+         * This ICM must be handled specifically since it would otherwise
+         * be treated according to the more generic rules for BEGIN/END
+         * ICMs found below.
+         */
+        ICM_INDENT_BEFORE (tmp) = 0;
+        ICM_INDENT_AFTER (tmp) = 0;
+    } else if (strcmp (name, "MT_SPMD_END") == 0) {
+        /*
+         * This ICM must be handled specifically since it would otherwise
+         * be treated according to the more generic rules for BEGIN/END
+         * ICMs found below.
+         */
+        ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 0;
     } else if (strstr (name, "BEGIN")) {
         ICM_INDENT_BEFORE (tmp) = 0;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/05/14 10:21:20  cg
+ * Bug in indentation of SPMD_BEGIN/END ICMs fixed.
+ *
  * Revision 3.21  2001/05/11 14:36:56  cg
  * Implementations of ICMs concerned with loop scheduling
  * are now moved to new specific file icm2c_sched.c
@@ -1196,6 +1199,8 @@ ICMCompileMT_SPMD_ALTSEQ (char *name)
 {
     DBUG_ENTER ("ICMCompileMT_SPMD_ALTSEQ");
 
+    indent--;
+
 #define MT_SPMD_ALTSEQ
 #include "icm_comment.c"
 #include "icm_trace.c"
@@ -1203,7 +1208,6 @@ ICMCompileMT_SPMD_ALTSEQ (char *name)
 
     INDENT;
     fprintf (outfile, "}\n");
-    indent--;
     INDENT;
     fprintf (outfile, "else\n");
     INDENT;
