@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1996/01/17 16:49:21  asi
+ * Revision 1.40  1996/01/25 18:39:25  cg
+ * added new stop options  using compiler phase numbers
+ *
+ * Revision 1.39  1996/01/17  16:49:21  asi
  * added common subexpression elimination
  *
  * Revision 1.38  1996/01/16  16:44:04  cg
@@ -129,6 +132,7 @@
 #include "dbug.h"
 #include "tree.h"
 #include "optimize.h"
+#include "Error.h"
 
 void
 usage (char *prg_name)
@@ -161,25 +165,47 @@ usage (char *prg_name)
     printf ("\t\t\t\t\t3: full compile time information (default)\n");
 
     printf ("\n\nSTOP OPTIONS:\n\n");
+#if 0
+   printf("\t -bp -b2\tstop after scan/parse\n");
+   printf("\t -bi -b3\tstop after module imports\n");
+   printf("\t -bb -b4\tstop after writing SIB-file\n");
+   printf("\t -bj \t\t\tstop after object init transformation\n");
+   printf("\t -bf \t\t\tstop after flatten\n");
+   printf("\t -bt \t\t\tstop after typecheck\n");
+   printf("\t -bd \t\t\tstop after checking module/class declaration\n");
+   printf("\t -bm \t\t\tstop after resolving implicit types\n");
+   printf("\t -by \t\t\tstop after analysing functions\n");
+   printf("\t -bb \t\t\tstop after writing SIB-file\n");
+   printf("\t -be \t\t\tstop after handling objects\n");
+   printf("\t -bq \t\t\tstop after checking uniqueness\n");
+   printf("\t -bv \t\t\tstop after generating purely functional code\n");
+   printf("\t -bo \t\t\tstop after sac-optimizations\n");
+   printf("\t -ba \t\t\tstop after array-elimination\n");
+   printf("\t -bs \t\t\tstop after psi-optimizations\n");
+   printf("\t -br \t\t\tstop after refcount inference\n");
+   printf("\t -bl \t\t\tstop after preparing code generation\n");
+   printf("\t -bc \t\t\tstop after generating ICM code\n");
+#endif
 
-    printf ("\t -bp \t\t\tstop after scan/parse\n");
-    printf ("\t -bi \t\t\tstop after module imports\n");
-    printf ("\t -bj \t\t\tstop after object init transformation\n");
-    printf ("\t -bf \t\t\tstop after flatten\n");
-    printf ("\t -bt \t\t\tstop after typecheck\n");
-    printf ("\t -bd \t\t\tstop after checking module/class declaration\n");
-    printf ("\t -bm \t\t\tstop after resolving implicit types\n");
-    printf ("\t -by \t\t\tstop after analysing functions\n");
-    printf ("\t -bb \t\t\tstop after writing SIB-file\n");
-    printf ("\t -be \t\t\tstop after handling objects\n");
-    printf ("\t -bq \t\t\tstop after checking uniqueness\n");
-    printf ("\t -bv \t\t\tstop after generating purely functional code\n");
-    printf ("\t -bo \t\t\tstop after sac-optimizations\n");
-    printf ("\t -ba \t\t\tstop after array-elimination\n");
-    printf ("\t -bs \t\t\tstop after psi-optimizations\n");
-    printf ("\t -br \t\t\tstop after refcount inference\n");
-    printf ("\t -bl \t\t\tstop after preparing code generation\n");
-    printf ("\t -bc \t\t\tstop after generating ICM code\n");
+    printf ("\t -bp -b2\tstop after: %s\n", compiler_phase_name[2]);
+    printf ("\t -bi -b3\tstop after: %s\n", compiler_phase_name[3]);
+    printf ("\t -bb -b4\tstop after: %s\n", compiler_phase_name[4]);
+    printf ("\t -bj -b5\tstop after: %s\n", compiler_phase_name[5]);
+    printf ("\t -bf -b6\tstop after: %s\n", compiler_phase_name[6]);
+    printf ("\t -bt -b7\tstop after: %s\n", compiler_phase_name[7]);
+    printf ("\t -bd -b8\tstop after: %s\n", compiler_phase_name[8]);
+    printf ("\t -bm -b9\tstop after: %s\n", compiler_phase_name[9]);
+    printf ("\t -by -b10\tstop after: %s\n", compiler_phase_name[10]);
+    printf ("\t -bw -b11\tstop after: %s\n", compiler_phase_name[11]);
+    printf ("\t -be -b12\tstop after: %s\n", compiler_phase_name[12]);
+    printf ("\t -bq -b13\tstop after: %s\n", compiler_phase_name[13]);
+    printf ("\t -bv -b14\tstop after: %s\n", compiler_phase_name[14]);
+    printf ("\t -bo -b15\tstop after: %s\n", compiler_phase_name[15]);
+    printf ("\t -ba \t\tstop after: Array elimination\n");
+    printf ("\t -bs -b16\tstop after: %s\n", compiler_phase_name[16]);
+    printf ("\t -br -b17\tstop after: %s\n", compiler_phase_name[17]);
+    printf ("\t -bl -b18\tstop after: %s\n", compiler_phase_name[18]);
+    printf ("\t -bc -b19\tstop after: %s\n", compiler_phase_name[19]);
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n");
 
@@ -240,6 +266,17 @@ usage (char *prg_name)
     printf ("\t SAC_PATH\t\tsearch paths for program source\n");
     printf ("\t SAC_DEC_PATH\t\tsearch paths for declarations\n");
     printf ("\t SAC_LIBRARY_PATH\tsearch paths for libraries\n");
+
+    printf ("\n\nAUTHORS:\n\n");
+
+    printf ("\t Sven-Bodo Scholz\n");
+    printf ("\t Henning Wolf\n");
+    printf ("\t Arne Sievers\n");
+    printf ("\t Clemens Grelck\n");
+
+    printf ("\n\nBUGS:\n\n");
+
+    printf ("\t Bugs ??  We ????\n");
 
     printf ("\n");
 
