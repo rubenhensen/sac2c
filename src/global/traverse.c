@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/02/06 16:51:08  srs
+ * included WithloopFolding.h
+ *
  * Revision 1.55  1998/02/05 17:07:42  srs
  * removed wr_tab and changed fusion_tab into wlf_tab.
  * wr(work reduction) and fusion are unused optimizations.
@@ -216,6 +219,7 @@
 #include "precompile.h"
 #include "cccall.h"
 #include "Old2NewWith.h"
+#include "WithloopFolding.h"
 
 #include "traverse.h"
 
