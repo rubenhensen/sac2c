@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.35  1999/01/07 10:50:49  cg
+ * The rotate function now accepts 1. arguments (rotation dimension)
+ * which are not constants. However, if a constant is provided, it
+ * is checked against the dimension of the array to be rotated.
+ *
  * Revision 1.34  1998/12/07 10:27:02  sbs
  * +,-,*,/ on int[.] x int[.], int[.] x int , and int x int[.]
  * now are intrinsic iff intrinsic is turned off (default)!!!
@@ -1475,12 +1480,15 @@ Rot (node *s_node, types *array)
         if (N_num == s_node->nodetype)
             if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
                 ret_type = DuplicateTypes (array, 0);
-            else
+            else {
+                ERROR (s_node->lineno, ("1.argument of function 'rotate` is constant %d "
+                                        "but rotated array has dimension %d",
+                                        s_node->info.cint, array->dim));
                 GEN_TYPE_NODE (ret_type, T_unknown);
-        else
-            ERROR2 (3, ("%s, %d: 1.argument of function `rotate` "
-                        " should be a constant",
-                        filename, s_node->lineno));
+            }
+        else {
+            ret_type = DuplicateTypes (array, 0);
+        }
     } else {
         /* for modules only */
         if (N_num == NODE_TYPE (s_node)) {
