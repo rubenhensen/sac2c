@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/11/23 11:36:42  cg
+ * Switched mac-file based declaration of global variables.
+ *
  * Revision 3.61  2004/11/23 11:21:53  sbs
  * node_info.mac excluded
  *
@@ -1054,7 +1057,7 @@ typedef struct optimize_t {
  * Read in global variables from globals.mac
  */
 
-typedef struct globals_t {
+typedef struct global_t {
 #define GLOBALtype(it_type) it_type
 #define GLOBALid(it_id) it_id
 #define GLOBALdelim ;
@@ -1062,7 +1065,7 @@ typedef struct globals_t {
 #undef GLOBALdelim
 #undef GLOBALid
 #undef GLOBALtype
-} globals_t;
+} global_t;
 
 /*******************************************************************************
  * moved from SSAConstantFolding.h:

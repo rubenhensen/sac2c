@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/23 11:36:42  cg
+ * Switched mac-file based declaration of global variables.
+ *
  * Revision 1.1  2004/11/22 17:44:33  cg
  * Initial revision
  *
@@ -61,3 +64,9 @@ OPT (al, TRUE, TRUE, "associative law")
 OPT (sp, FALSE, FALSE, "selection propagation")
 OPT (wlfs, TRUE, TRUE, "with-loop fusion")
 OPT (lro, FALSE, FALSE, "loop reuse optimization")
+
+#undef OPTabbr
+#undef OPTdevl
+#undef OPTprod
+#undef OPTdelim
+#undef OPT

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/23 11:36:42  cg
+ * Switched mac-file based declaration of global variables.
+ *
  * Revision 3.6  2004/11/22 15:42:55  ktr
  * SACDevCamp 04 Ismop
  *
@@ -112,6 +115,7 @@
 
 #include "types.h"
 #include "globals.h"
+#include "config.h"
 
 /*
  ********************************************
@@ -196,9 +200,9 @@
  *
  */
 
-#define MAX_ERROR_MESSAGE_LENGTH 2000
-
-#define MAX_LINE_LENGTH 77
+/*
+ * Values moved to config.h.in
+ */
 
 /*
  ********************************************

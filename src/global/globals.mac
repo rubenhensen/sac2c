@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/23 11:36:42  cg
+ * Switched mac-file based declaration of global variables.
+ *
  * Revision 1.3  2004/11/23 09:54:26  cg
  * undefs inserted.
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/11/23 11:36:42  cg
+ * Switched mac-file based declaration of global variables.
+ *
  * Revision 3.76  2004/11/21 11:22:03  sah
  * removed some old ast infos
  *
@@ -267,7 +270,6 @@
 #include "internal_lib.h"
 #include "ssa.h"
 #include "free.h"
-#include "my_debug.h"
 #include "DupTree.h"
 #include "globals.h"
 #include "Error.h"
@@ -306,7 +308,6 @@
 #else
 #include "cccall.h"
 #endif /* NEW_AST */
-#include "PatchWith.h"
 #include "resource.h"
 #include "interrupt.h"
 #include "options.h"
@@ -327,9 +328,7 @@ int
 main (int argc, char *argv[])
 {
     node *syntax_tree = NULL;
-#ifdef NEW_AST
     stringset_t *dependencies;
-#endif
     int i;
 
 #ifdef SHOW_MALLOC
