@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/01/17 11:03:39  asi
- * added OPT2loop and OPT3assign
+ * Revision 1.35  1995/01/17 11:24:58  asi
+ * added OPT1loop
  *
+;; Revision 1.34  1995/01/17  11:03:39  asi
+;; added OPT2loop and OPT3assign
+;;
 ;; Revision 1.33  1995/01/16  10:54:50  asi
 ;; added opt3_tab for loop independent removal
 ;; and free_tree for deletion of a syntax(sub)-tree
@@ -148,9 +151,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        OPT2assign, OPT3assign, DummyFun),
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, DummyFun, OPT2loop, DummyFun,
+  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, OPT1loop, OPT2loop, DummyFun,
        DummyFun),
-  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, OPT2loop,
+  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, OPT1loop, OPT2loop,
        DummyFun, DummyFun),
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPT1cond, OPT2cond,
        DummyFun, DummyFun),
