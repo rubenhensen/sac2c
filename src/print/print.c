@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.242  1998/07/16 20:42:04  dkr
+ * extended PrintNodeTree
+ *
  * Revision 1.241  1998/07/03 10:17:22  cg
  * printing of N_spmd node completely changed.
  *
@@ -3240,6 +3243,9 @@ PrintNodeTree (node *node)
             break;
         case N_prf:
             fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (node)]);
+            break;
+        case N_ap:
+            fprintf (outfile, "(%s)\n", AP_NAME (node));
             break;
         case N_arg:
             fprintf (outfile, "(%s %s:%d)\n", mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
