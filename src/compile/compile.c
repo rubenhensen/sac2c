@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.174  1998/06/19 19:17:16  dkr
+ * fixed a minor bug
+ *
  * Revision 1.173  1998/06/19 18:28:24  dkr
  * added -noUIP
  * fixed bug in COMPnWith2:
@@ -2344,16 +2347,6 @@ COMPFundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-
-#if 0
-    /*
-     * we must update the base mask (vardecs are compiled now!!)
-     */
-    FUNDEF_DFM_BASE( arg_node) = DFMUpdateMaskBaseAfterCompiling(
-                                                  FUNDEF_DFM_BASE( arg_node),
-                                                  FUNDEF_ARGS( arg_node),
-                                                  FUNDEF_VARDEC( arg_node));
-#endif
     }
 
     /*
@@ -6448,7 +6441,8 @@ node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
     node *fundef, *vardec, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
-      *old_wl_ids, *old_wl_node, *rc_icms_wl_ids = NULL, *assigns = NULL;
+      *old_wl_node, *rc_icms_wl_ids = NULL, *assigns = NULL;
+    ids *old_wl_ids;
     char *icm_name1, *icm_name2;
 
     DBUG_ENTER ("COMPNwith2");
