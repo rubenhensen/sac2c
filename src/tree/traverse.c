@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/10/22 12:09:01  sah
+ * ans tab is hidden in old ast mode now
+ *
  * Revision 3.97  2004/10/22 09:01:55  sah
  * added annotatenamespace traversal.
  *
@@ -1989,8 +1992,13 @@ funtab *emsr_tab = &emsr_tab_rec;
  *  (136) ans_tab
  */
 static funtab ans_tab_rec = {{
+#ifdef NEW_AST
 #define NIFans(it_ans) it_ans
 #include "node_info.mac"
+#else
+#define NIFunused_39(it_unused39) it_unused39
+#include "node_info.mac"
+#endif
                              },
                              NULL,
                              NULL};
