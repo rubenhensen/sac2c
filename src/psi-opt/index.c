@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/13 14:03:47  sbs
+ * EqTypes is now based on Type2Shpseg as well for avoiding
+ * IDX( cplx[4]) and IDX( double[4,2]) to co-exist !!
+ *
  * Revision 3.2  2000/11/23 16:09:31  sbs
  * newassign in 1558 initialized by NULL to avoid compiler warning in
  * product version: "`newassign' might be used uninitialized in this function".
@@ -678,6 +682,8 @@ FindVect (node *chain)
  *                  2) types * type2
  *  description   : compares two types with respect to the shape and
  *                  returnes 1 iff the types are equal, 0 otherwise.
+ *                  in case of UDFs the implementation-type is compared!!
+ *                  (This is implemented by using Type2Shpseg!)
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
@@ -691,14 +697,19 @@ int
 EqTypes (types *type1, types *type2)
 {
     int i, res;
+    int dim1, dim2;
+    shpseg *shpseg1, *shpseg2;
 
     DBUG_ENTER ("EqTypes");
-    if (TYPES_DIM (type1) == TYPES_DIM (type2)) {
+    shpseg1 = Type2Shpseg (type1, &dim1);
+    shpseg2 = Type2Shpseg (type2, &dim2);
+
+    if (dim1 == dim2) {
         res = 1;
-        DBUG_ASSERT ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type1) != NULL),
+        DBUG_ASSERT ((shpseg1 != NULL) && (shpseg2 != NULL),
                      "EqTypes used on type without shape");
-        for (i = 0; i < TYPES_DIM (type2); i++)
-            if (TYPES_SHAPE (type1, i) != TYPES_SHAPE (type2, i))
+        for (i = 0; i < dim2; i++)
+            if (SHPSEG_SHAPE (shpseg1, i) != SHPSEG_SHAPE (shpseg2, i))
                 res = 0;
     } else {
         res = 0;
