@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.2  1998/12/21 15:47:42  cg
+# major improvements over initial revision
+#
 # Revision 1.1  1998/12/17 09:46:56  cg
 # Initial revision
 #
@@ -24,7 +27,7 @@ VERSION    =  0_7
 SYSTEMS    =  SOLARIS_SPARC LINUX_X86
 PACKAGES   =  runtime.tar stdlib.tar demo.tar
 FILES      =  install_sac LICENSE README
-SPECIFICS  =  sac2c libsac.a
+SPECIFICS  =  sac2c libsac.a sac2crc
 
 
 #
@@ -70,30 +73,33 @@ LX86_MAKE  =  make
 DATE          :=  $(shell date +%d_%b_%y)
 BINDISTRIBS   :=  $(addprefix $(BINTARGETDIR)/SAC-$(VERSION)-,$(addsuffix -$(DATE).tar.gz,$(SYSTEMS))) 
 SRCDISTRIBS   :=  $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz
+CHECKFILES    :=  $(PACKAGES) $(foreach system,$(SYSTEMS), $(addsuffix .for.$(system),$(SPECIFICS)))
 
-.PHONY: all linux solaris source clean update
 
 
-all: $(BINDISTRIBS) $(SRCDISTRIBS)
+.PHONY: all linux solaris source clean update new allnew check_existing_files 
 
-linux: $(BINTARGETDIR)/SAC-$(VERSION)-LINUX_X86-$(DATE).tar.gz
 
-solaris: $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-$(DATE).tar.gz
+all: check_existing_files $(BINDISTRIBS) $(SRCDISTRIBS)
 
-source: $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz
+linux: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-LINUX_X86-$(DATE).tar.gz
 
-$(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: $(PACKAGES) $(FILES) sac2c.% libsac.a.% 
+solaris: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-$(DATE).tar.gz
+
+source: check_existing_files $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz
+
+$(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
+   $(PACKAGES) $(FILES) $(addsuffix .for.%,$(SPECIFICS))
 	@echo "**************************************************************"
 	@echo "*  Creating SAC binary distribution for $*"
 	@echo "**************************************************************"
 	rm -f $(SPECIFICS)
-	ln -s sac2c.$* sac2c
-	ln -s libsac.a.$* libsac.a
+	for file in $(SPECIFICS); do ln -s $${file}.for.$* $${file}; done
 	tar cvfh $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar $(SPECIFICS) $(PACKAGES) $(FILES)
 	gzip -f $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar
 	rm -f $(SPECIFICS)
 
-sac2c.SOLARIS_SPARC libsac.a.SOLARIS_SPARC: 
+sac2c.for.SOLARIS_SPARC libsac.a.for.SOLARIS_SPARC: 
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC"
 	@echo "**************************************************************"
@@ -104,8 +110,8 @@ sac2c.SOLARIS_SPARC libsac.a.SOLARIS_SPARC:
 	(cd $(SOLARIS_DIR); gunzip -f src.tar.gz)
 	(cd $(SOLARIS_DIR); tar xvf src.tar)
 	(cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC)
-	cp $(SOLARIS_DIR)/sac2c sac2c.SOLARIS_SPARC
-	cp $(SOLARIS_DIR)/src/runtime/libsac.a libsac.a.SOLARIS_SPARC
+	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
+	cp $(SOLARIS_DIR)/src/runtime/libsac.a libsac.a.for.SOLARIS_SPARC
 	@ if [ $${?} -eq 0 ]; then  \
             rm -rf $(SOLARIS_DIR); \
           else \
@@ -114,7 +120,7 @@ sac2c.SOLARIS_SPARC libsac.a.SOLARIS_SPARC:
             exit 1; \
           fi
 
-sac2c.LINUX_X86 libsac.a.LINUX_X86: 
+sac2c.for.LINUX_X86 libsac.a.for.LINUX_X86: 
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for LINUX_X86"
 	@echo "**************************************************************"
@@ -133,8 +139,8 @@ sac2c.LINUX_X86 libsac.a.LINUX_X86:
 	    'tar xvf src.tar;'  \
 	    '$(LX86_MAKE) deps;' \
 	    '$(LX86_MAKE) distrib_product OS=LINUX_X86'
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c ./sac2c.LINUX_X86
-	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.a ./libsac.a.LINUX_X86
+	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/sac2c ./sac2c.for.LINUX_X86
+	rcp $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)/src/runtime/libsac.a ./libsac.a.for.LINUX_X86
 	@ if [ $${?} -eq 0 ]; then  \
             rsh -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR)'; \
           else \
@@ -150,6 +156,10 @@ $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz: $(PACKAGES) $(FILES) src.tar.gz
 	tar cvfh $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar $^
 	gzip -f $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar
 	rm -f src.tar.gz
+
+
+sac2crc.for.%: $(RUNTIMEDIR)/sac2crc.%
+	cp $< $@
 
 
 src.tar.gz:
@@ -180,12 +190,25 @@ demo.tar:
 	cp $(DEMODIR)/demo.tar . 
 
 
+check_existing_files:
+	@ for file in $(CHECKFILES); do  \
+            if [ -f $${file} ]; then echo 'WARNING: '$${file}' is being reused!'; fi ;\
+          done
+
 
 clean:
-	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .*,$(SPECIFICS)) $(PACKAGES)
+	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .for.*,$(SPECIFICS)) $(PACKAGES)
 	rm -f *~ *.bak *.old
 
-update:
+update: clean
 	update $(SAC2CDIR)
 	update $(DEMODIR)
 	update $(STDLIBDIR)
+
+new:
+	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .for.*,$(SPECIFICS))
+	$(MAKE)
+
+allnew:
+	$(MAKE) clean
+	$(MAKE)
