@@ -1,4 +1,11 @@
-
+#
+#
+# $Log$
+# Revision 1.11  2000/11/02 14:54:34  dkr
+# RCS header added
+# explicit .mac dependencies added
+#
+#
 
 #
 # OS setup:
@@ -21,6 +28,15 @@ INCS=-I../global -I../tree -I../../inc -I../compile -I../modules \
 
 all: print_interface.o map_cwrapper.o import_specialization.o \
      print_interface_header.o print_interface_wrapper.o
+
+
+#
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
+#
+print_interface_wrapper.c: ../tree/type_info.mac
+	touch print_interface_wrapper.c
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
