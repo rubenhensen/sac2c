@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2003/04/07 14:26:20  sbs
+ * COMakeConstantFromShape, COCopyScalar2OneElementVector, COConstantData2String, and
+ * COConstant2String added.
+ *
  * Revision 1.16  2002/10/07 23:45:18  dkr
  * signature of COGetDataVec() corrected
  *
@@ -415,6 +419,36 @@ COMakeConstantFromArray (node *a)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn constant *COMakeConstantFromShape( shape *shp)
+ *
+ *   @brief  create a constant from a shape structure.
+ *           ATTENTION: shp is NOT REUSED here!!!
+ *
+ *   @param shp shape structure to be converted.
+ *   @return the freshly created constant.
+ *
+ ******************************************************************************/
+
+constant *
+COMakeConstantFromShape (shape *shp)
+{
+    constant *res;
+    int vlen;
+
+    DBUG_ENTER ("COMakeConstantFromShape");
+
+    vlen = SHGetDim (shp);
+    res = (constant *)Malloc (sizeof (constant));
+    CONSTANT_TYPE (res) = T_int;
+    CONSTANT_SHAPE (res) = SHCreateShape (1, vlen);
+    CONSTANT_ELEMS (res) = SHShape2IntVec (shp);
+    CONSTANT_VLEN (res) = vlen;
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:
@@ -490,6 +524,92 @@ COCopyConstant (constant *a)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn constant *COCopyScalar2OneElementVector( constant *a)
+ *
+ *   @brief creates a 1-element vector from a given scalar.
+ *   @param a        scalar constant to be converted.
+ *   @return         a new constant vector
+ *
+ ******************************************************************************/
+
+constant *
+COCopyScalar2OneElementVector (constant *a)
+{
+    constant *res;
+
+    DBUG_ENTER ("OCopyScalar2OneElementVector");
+
+    res
+      = MakeConstant (CONSTANT_TYPE (a), SHCreateShape (1, 1),
+                      PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), 0, 1), 1);
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char * COConstantData2String( int max_char, constant *a);
+ *
+ *   @brief converts the data vector of the given constant into a string of
+ *          comma separated values.
+ *
+ *          The length of the string to be generated is guaranteed not to exceed
+ *          ( max_char + 3 ) characters! E.g. let a = reshape([5],[1,2,3,4,5]),
+ *          then COConstantData2String( 20, a) yields: "1,2,3,4,5"
+ *               COConstantData2String(  3, a) yields: "1,2..."
+ *   @param max_char maximum number of characters used for value printing
+ *   @param a        constant whose data vector is to be printed
+ *   @return         a freshly allocated string containing the printed values.
+ *
+ ******************************************************************************/
+
+char *
+COConstantData2String (int max_char, constant *a)
+{
+    char *res;
+
+    DBUG_ENTER ("COConstantData2String");
+
+    res = cv2str[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a), max_char);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char * COConstant2String( constant *a);
+ *
+ *   @brief converts the given constant into a string.
+ *
+ *   @param a        constant that is to be printed
+ *   @return         a freshly allocated string containing the printed values.
+ *
+ ******************************************************************************/
+
+char *
+COConstant2String (constant *a)
+{
+    static str_buf *buf = NULL;
+    char *tmp_str, *tmp2_str, *res;
+
+    DBUG_ENTER ("COConstant2String");
+
+    if (buf == NULL) {
+        buf = StrBufCreate (64);
+    }
+    tmp_str = SHShape2String (0, CONSTANT_SHAPE (a));
+    tmp2_str = COConstantData2String (10000, a);
+    buf = StrBufprintf (buf, "reshape( %s, [%s])", tmp_str, tmp2_str);
+    tmp_str = Free (tmp_str);
+    tmp2_str = Free (tmp2_str);
+
+    res = StrBuf2String (buf);
+    StrBufFlush (buf);
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:
@@ -503,12 +623,14 @@ COCopyConstant (constant *a)
 void
 COPrintConstant (FILE *file, constant *a)
 {
+    char *tmp_str;
     DBUG_ENTER ("COPrintConstant");
 
     fprintf (file, "constant at " F_PTR ": %s ", a, mdb_type[CONSTANT_TYPE (a)]);
     SHPrintShape (file, CONSTANT_SHAPE (a));
-    fprintf (file, " [%s]\n",
-             cv2str[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a)));
+    tmp_str = COConstantData2String (10000, a);
+    fprintf (file, " [%s]\n", tmp_str);
+    tmp_str = Free (tmp_str);
 
     DBUG_VOID_RETURN;
 }
