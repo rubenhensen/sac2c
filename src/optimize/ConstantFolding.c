@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/09 11:30:45  bs
+ * Now the compact propagation of constant integer vectors will remain after constant
+ * folding.
+ *
  * Revision 2.1  1999/02/23 12:41:05  sacbase
  * new release made
  *
@@ -271,13 +275,21 @@ CompareNumArrayType (node *array1, node *array2)
 int
 CompareNumArrayElts (node *array1, node *array2)
 {
-    int ok;
+    int ok, i;
 
     DBUG_ENTER ("CompareNumArrayElts");
 
     ok = 1;
 
     /* compare elements */
+
+    if (ARRAY_LENGTH (array1) == ARRAY_LENGTH (array2))
+        for (i = 0; i < ARRAY_LENGTH (array1); i++)
+            ok = (ARRAY_INTARRAY (array1)[i] == ARRAY_INTARRAY (array2)[i]);
+    else
+        ok = 0;
+
+#ifdef 0
     array1 = ARRAY_AELEMS (array1);
     array2 = ARRAY_AELEMS (array2);
     while (ok && array1 && array2) {
@@ -288,7 +300,7 @@ CompareNumArrayElts (node *array1, node *array2)
         array1 = EXPRS_NEXT (array1);
         array2 = EXPRS_NEXT (array2);
     }
-
+#endif
     DBUG_RETURN (ok);
 }
 
@@ -316,7 +328,7 @@ IsConst (node *arg_node)
 
     DBUG_ENTER ("IsConst");
 
-    if (NULL != arg_node) {
+    if (arg_node != NULL) {
         switch (NODE_TYPE (arg_node)) {
         case N_num:
         case N_float:
@@ -327,12 +339,14 @@ IsConst (node *arg_node)
             break;
         case N_array:
             isit = TRUE;
-            expr = ARRAY_AELEMS (arg_node);
-            while ((NULL != expr) && (TRUE == isit)) {
-                if (N_id == NODE_TYPE (EXPRS_EXPR (expr)))
-                    isit = FALSE;
-                expr = EXPRS_NEXT (expr);
-            }
+            if (ARRAY_INTARRAY (arg_node) == NULL) {
+                expr = ARRAY_AELEMS (arg_node);
+                while ((expr != NULL) && (isit == TRUE)) {
+                    if (NODE_TYPE (EXPRS_EXPR (expr)) == N_id)
+                        isit = FALSE;
+                    expr = EXPRS_NEXT (expr);
+                }
+            } /* else : isit == TRUE */
             break;
         default:
             isit = FALSE;
@@ -1067,20 +1081,27 @@ GetShapeVector (node *array, int *vec_shape)
 
     DBUG_ENTER ("GetShapeVector");
 
-    expr = array->node[0];
-
-    for (i = 0; i < SHP_SEG_SIZE; i++) {
-
-        if (NULL != expr) {
-            vec_dim++;
-            vec_shape[i] = expr->node[0]->info.cint;
-            if (NULL != expr->node[1])
-                expr = expr->node[1];
-            else
-                expr = NULL;
-        } else
+    if (ARRAY_INTARRAY (array) == NULL) {
+        expr = ARRAY_AELEMS (array);
+        for (i = 0; i < SHP_SEG_SIZE; i++) {
+            if (expr != NULL) {
+                vec_dim++;
+                vec_shape[i] = NUM_VAL (ARRAY_AELEMS (expr));
+                if (EXPRS_NEXT (expr) != NULL)
+                    expr = EXPRS_NEXT (expr);
+                else
+                    expr = NULL;
+            } else
+                vec_shape[i] = 0;
+        }
+    } else {
+        vec_dim = ARRAY_LENGTH (array);
+        for (i = 0; i < vec_dim; i++)
+            vec_shape[i] = ARRAY_INTARRAY (array)[i];
+        for (i = vec_dim; i < SHP_SEG_SIZE; i++)
             vec_shape[i] = 0;
     }
+
     DBUG_RETURN (vec_dim);
 }
 
@@ -1104,11 +1125,15 @@ ArraySize (node *array)
     int size;
 
     DBUG_ENTER ("ArraySize");
-    size = 1;
-    array = array->node[0];
-    while (array->node[1]) {
-        array = array->node[1];
-        size++;
+
+    size = ARRAY_LENGTH (array);
+    if (size == SCALAR) {
+        size = 1;
+        array = ARRAY_AELEMS (array);
+        while (EXPRS_NEXT (array) != NULL) {
+            array = EXPRS_NEXT (array);
+            size++;
+        }
     }
     DBUG_RETURN (size);
 }
@@ -1130,48 +1155,76 @@ ArraySize (node *array)
  *  remarks       : --
  *
  */
+
 node *
 DupPartialArray (int start, int length, node *array, node *arg_info)
 {
-    int i;
-    node *expr;
+    node *new_node;
+    node *expr0, *expr1;
     node *r_expr = NULL;
+    int i, isconst = 1;
+    int *tmp_vec;
 
     DBUG_ENTER ("DupPartialArray");
 
-    if (0 < length) {
-        array = array->node[0];
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (array)]));
 
+    if (length > 0) {
+        new_node = DupArray (array, arg_info);
+        expr0 = ARRAY_AELEMS (new_node);
+        FREE (ARRAY_INTARRAY (new_node));
         /*
-         * Goto start position
+         * Goto start position and erase the elements which were not wanted.
          */
-        for (i = 0; i < start; i++)
-            array = array->node[1];
+        for (i = 0; i < start; i++) {
 
-        /*
-         * Duplicate first elenment
-         */
-        expr = MakeNode (N_exprs);
-        expr->node[0] = DupTree (array->node[0], NULL);
-        if (N_id == NODE_TYPE (expr->node[0]))
-            DEC_VAR (arg_info->mask[1], expr->node[0]->info.ids->node->varno);
-        array = array->node[1];
-        r_expr = expr;
+            DBUG_ASSERT ((r_expr != NULL), ("not a constant vector or vector too small"));
 
-        /*
-         * Duplicate rest of array till length reached
-         */
-        for (i = 1; i < length; i++) {
-            expr->node[1] = MakeNode (N_exprs);
-            expr = expr->node[1];
-            expr->node[0] = DupTree (array->node[0], NULL);
-            if (N_id == NODE_TYPE (expr->node[0]))
-                DEC_VAR (arg_info->mask[1], expr->node[0]->info.ids->node->varno);
-            array = array->node[1];
+            expr1 = EXPRS_NEXT (expr0);
+            EXPRS_NEXT (expr0) = NULL;
+            if (expr0 != NULL)
+                FreeTree (expr0);
+            expr0 = expr1;
         }
+
+        /*
+         * Duplicate array till length reached
+         */
+
+        ARRAY_AELEMS (new_node) = expr0;
+
+        for (i = 0; i < length; i++) {
+
+            DBUG_ASSERT ((array != NULL), ("not a constant vector or vector too small"));
+
+            if (NODE_TYPE (EXPRS_EXPR (expr0)) != N_num) {
+                isconst = 0;
+                if (NODE_TYPE (EXPRS_EXPR (expr0)) == N_id)
+                    DEC_VAR (arg_info->mask[1],
+                             VARDEC_VARNO (ID_VARDEC (EXPRS_EXPR (expr0))));
+            }
+            expr1 = expr0;
+            expr0 = EXPRS_NEXT (expr0);
+        }
+
+        /*
+         * Erase rest of array.
+         */
+        if (expr0 != NULL)
+            FreeTree (expr0);
+        EXPRS_NEXT (expr1) = NULL;
+
+        if (isconst == 1) {
+            tmp_vec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
+            ARRAY_INTARRAY (new_node) = tmp_vec;
+            ARRAY_LENGTH (new_node) = length;
+        } else
+            ARRAY_LENGTH (new_node) = 0;
+    } else {
+        new_node = MakeArray (NULL);
     }
 
-    DBUG_RETURN (r_expr);
+    DBUG_RETURN (new_node);
 }
 
 /*
@@ -1200,13 +1253,13 @@ FoundZero (node *arg_node)
     case N_num:
     case N_float:
     case N_double:
-        if (0 == CONST_VAL (arg_node))
+        if (CONST_VAL (arg_node) == 0)
             FoundZero = TRUE;
         break;
     case N_array:
         expr = ARRAY_AELEMS (arg_node);
         while (expr != NULL) {
-            if (0 == CONST_VAL (EXPRS_EXPR (expr)))
+            if (CONST_VAL (EXPRS_EXPR (expr)) == 0)
                 FoundZero = TRUE;
             expr = EXPRS_NEXT (expr);
         }
@@ -1533,12 +1586,17 @@ FetchNum (int pos, node *array)
 
     DBUG_ENTER ("FetchNum");
 
-    tmp = ARRAY_AELEMS (array);
+    if (ARRAY_INTARRAY (array) == NULL) {
+        tmp = ARRAY_AELEMS (array);
 
-    for (i = 0; i < pos; i++)
-        tmp = EXPRS_NEXT (tmp);
+        for (i = 0; i < pos; i++)
+            tmp = EXPRS_NEXT (tmp);
 
-    tmp = DupTree (EXPRS_EXPR (tmp), NULL);
+        tmp = DupTree (EXPRS_EXPR (tmp), NULL);
+    } else {
+        i = ARRAY_INTARRAY (array)[pos];
+        tmp = MakeNum (i);
+    }
 
     DBUG_RETURN (tmp);
 }
@@ -1607,12 +1665,10 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     DBUG_PRINT ("CF",
                 ("start = %d, lenght = %d, arg_length = %d", start, length, arg_length));
     if ((start + length <= arg_length) && (start >= 0)) {
-        if (vec_dim == array_dim) {
+        if (vec_dim == array_dim)
             res_node = FetchNum (start, array);
-        } else {
-            res_node = MakeArray (DupPartialArray (start, length, array, arg_info));
-            ARRAY_TYPE (res_node) = DuplicateTypes (ARRAY_TYPE (array), 1);
-        }
+        else
+            res_node = DupPartialArray (start, length, array, arg_info);
     } else {
         WARN (NODE_LINE (INFO_CF_ASSIGN (arg_info)),
               ("Illegal vector for primitive function psi"));
@@ -1640,6 +1696,7 @@ ArrayPrf (node *arg_node, node *arg_info)
 {
     node *arg[MAXARG], *expr[MAXARG], *expr_arg[MAXARG], *tmp;
     int swap, i;
+    int tmp_len;
     long *used_sofar;
 
     DBUG_ENTER ("ArrayPrf");
@@ -2245,6 +2302,13 @@ ArrayPrf (node *arg_node, node *arg_info)
     default:
         break;
     }
+    if ((NODE_TYPE (arg_node) == N_array)
+        && (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) == N_num)) {
+        FREE (ARRAY_INTARRAY (arg_node));
+        ARRAY_INTARRAY (arg_node) = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
+        ARRAY_LENGTH (arg_node) = tmp_len;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
