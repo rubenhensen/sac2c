@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.48  2000/06/15 14:33:09  mab
+ * added block and let for APC and APT
+ * added PIWarg and PIWfundef
+ *
  * Revision 1.47  2000/06/14 15:04:45  nmw
  * PIHarg added in N_arg for PIH
  *
@@ -834,7 +838,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, APCfundef,
        APTfundef,
 
-       PIHfundef, TravSons, TravSons, TravSons, 3),
+       PIHfundef, PIWfundef, TravSons, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons,
@@ -868,7 +872,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LACblock, AIblock, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CUDblock, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCblock, APTblock,
 
        TravSons, TravSons, TravSons, TravSons, 2),
 
@@ -888,7 +892,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCarg, APTarg,
 
-       PIHarg, PrintArg, TravSons, TravSons, 1),
+       PIHarg, PIWarg, TravSons, TravSons, 1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
        FreeMT, TravSons, TravSons, COMPMt, TravSons, DupMt, TravSons, TravSons, TravSons,
@@ -1103,7 +1107,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
        TravSons, TravSons, DFAlet, TravSons, CUDlet, TravSons, TravSons, TravSons,
-       ADJCA2let, PREC1let, TravSons, TravSons,
+       ADJCA2let, PREC1let, APClet, APTlet,
 
        TravSons, TravSons, TravSons, TravSons, 1),
 
