@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2003/03/08 17:45:39  dkr
+ * SSAInsertCopyAssignments(): IS_REFERENCE is set correctly now
+ *
  * Revision 1.26  2002/10/18 13:50:20  sbs
  * SSATransformAllowGOs implemented
  * FLAGS for freshly made N_id nodes set correctly
@@ -381,6 +384,7 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
                 NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSATHEN (avis))));
     ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSATHEN (avis));
     SET_FLAG (ID, right_id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id)) == N_objdef));
+    SET_FLAG (ID, right_id, IS_REFERENCE, FALSE);
     ID_AVIS (right_id) = AVIS_SSATHEN (avis);
 
     /* create one let assign for then part */
@@ -410,6 +414,7 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
                 NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSAELSE (avis))));
     ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSAELSE (avis));
     SET_FLAG (ID, right_id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id)) == N_objdef));
+    SET_FLAG (ID, right_id, IS_REFERENCE, FALSE);
     ID_AVIS (right_id) = AVIS_SSAELSE (avis);
 
     /* create let assign for else part with same left side as then part */
