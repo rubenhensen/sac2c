@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/23 12:44:08  cg
+ * Bug fixed in compilation of multi-threaded nested with-loops.
+ * Now, schedulings for inner with-loops in with-loop nestings
+ * are succesfully removed.
+ *
  * Revision 2.3  1999/07/07 15:50:38  jhs
  * Corrected some copypasted bugs in some assertions.
  *
@@ -374,6 +379,8 @@ SCHEDnwith2 (node *arg_node, node *arg_info)
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
         NWITH2_SCHEDULING (arg_node) = SCHRemoveScheduling (NWITH2_SCHEDULING (arg_node));
     }
+
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), NULL);
     /*
