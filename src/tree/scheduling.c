@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/29 18:32:54  dkr
+ * some superfluous attributes of N_WLsegVar removed
+ * CompileVarSegSchedulingArgs() modified
+ *
  * Revision 3.2  2001/01/24 23:37:24  dkr
  * semantics of WLSEGX_IDX_MAX slightly modified
  * NameOrVal_MakeIndex() used
@@ -945,23 +949,17 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
     node *index, *args;
     int d;
 
-    DBUG_ENTER ("CompileConstSegSchedulingArgs");
+    DBUG_ENTER ("CompileVarSegSchedulingArgs");
 
     args = NULL;
 
     if (sched != NULL) {
         for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-            if (SCHAdjustmentRequired (d, wlseg)) {
-                args = MakeExprs (MakeNum (1), args);
-            } else {
-                args = MakeExprs (MakeNum (MAX (WLSEGVAR_UBV (wlseg)[d],
-                                                WLSEGVAR_SV (wlseg)[d])),
-                                  args);
-            }
+            args = MakeExprs (MakeNum (1), args);
         }
 
         for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-            args = MakeExprs (MakeNum (WLSEGVAR_BV (wlseg, 0)[d]), args);
+            args = MakeExprs (MakeNum (1), args);
         }
     }
 
