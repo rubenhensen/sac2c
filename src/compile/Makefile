@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.22  1997/05/14 06:44:41  sbs
+# Revision 1.23  1997/05/14 08:54:07  sbs
+# deps made
+#
+# Revision 1.22  1997/05/14  06:44:41  sbs
 # analyse.o inserted
 #
 # Revision 1.21  1997/04/25  12:04:10  sbs
@@ -112,7 +115,7 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-a.out.o: libsac.h icm2c.h /usr/include/malloc.h /usr/include/memory.h
+analyse.o: analyse.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
