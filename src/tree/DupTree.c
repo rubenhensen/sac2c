@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/04/04 09:56:45  nmw
+ * DupFundef modified to duplicate ssacnt node in correct order
+ * DupSSAcnt added
+ *
  * Revision 3.37  2001/04/03 14:26:26  nmw
  * set correct avis attribute in DupIds
  *
@@ -829,7 +833,7 @@ DupObjdef (node *arg_node, node *arg_info)
 node *
 DupFundef (node *arg_node, node *arg_info)
 {
-    node *new_node, *old_fundef;
+    node *new_node, *old_fundef, *new_ssacnt;
 
     DBUG_ENTER ("DupFundef");
 
@@ -866,15 +870,29 @@ DupFundef (node *arg_node, node *arg_info)
 
     new_node = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
                            StringCopy (FUNDEF_MOD (arg_node)),
-                           DupTypes_ (FUNDEF_TYPES (arg_node), arg_info),
-                           DUPTRAV (FUNDEF_ARGS (arg_node)), NULL,
+                           DupTypes_ (FUNDEF_TYPES (arg_node), arg_info), NULL, NULL,
                            DUPCONT (FUNDEF_NEXT (arg_node)));
+    /* before duplicating args or vardecs we have to duplicate the ssacounters
+     * (located in the top-block, but traversed here)
+     */
+    if ((FUNDEF_BODY (arg_node) != NULL)
+        && (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) != NULL)) {
+        new_ssacnt = DUPTRAV (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)));
+    } else {
+        new_ssacnt = NULL;
+    }
+
+    FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
 
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     /* copy the body */
     FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
+
+    if (FUNDEF_BODY (new_node) != NULL) {
+        BLOCK_SSACOUNTER (FUNDEF_BODY (new_node)) = new_ssacnt;
+    }
 
     /* store new DFMbase */
     FUNDEF_DFM_BASE (new_node)
@@ -2199,6 +2217,32 @@ DupSSAstack (node *arg_node, node *arg_info)
       = MakeSSAstack (DUPCONT (SSASTACK_NEXT (arg_node)), SSASTACK_AVIS (arg_node));
 
     SSASTACK_INUSE (arg_node) = SSASTACK_INUSE (arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupSSAcnt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_ssacnt node.
+ *
+ ******************************************************************************/
+
+node *
+DupSSAcnt (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupSSAcnt");
+
+    new_node = MakeSSAcnt (DUPCONT (SSACNT_NEXT (arg_node)), SSACNT_COUNT (arg_node),
+                           StringCopy (SSACNT_BASEID (arg_node)));
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
