@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/06 17:07:47  cg
+ * Revision 1.3  1996/01/17 14:17:52  asi
+ * added globals.h
+ *
+ * Revision 1.2  1995/10/06  17:07:47  cg
  * adjusted calls to function MakeIds (now 3 parameters)
  *
  * Revision 1.1  1995/07/24  10:00:19  asi
@@ -14,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "globals.h"
 #include "tree.h"
 #include "Error.h"
 #include "dbug.h"
