@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/11/07 19:26:35  khf
+ * now consider every N_block disjoined
+ *
  * Revision 1.17  2004/10/28 16:58:43  khf
  * support for max_newgens and no_fold_fusion added
  *
@@ -1636,7 +1639,6 @@ AskFusionOracle (info *arg_info)
  *           info *arg_info:  N_info
  *   @return node *        :  N_fundef
  ******************************************************************************/
-
 node *
 WLFSfundef (node *arg_node, info *arg_info)
 {
@@ -1658,6 +1660,38 @@ WLFSfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLFSblock(node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @param  node *arg_node:  N_block
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_block
+ ******************************************************************************/
+node *
+WLFSblock (node *arg_node, info *arg_info)
+{
+    info *info_tmp;
+
+    DBUG_ENTER ("WLFSblock");
+
+    /* Info node has to be stacked before traversal */
+    info_tmp = arg_info;
+    arg_info = MakeInfo ();
+    INFO_WLFS_FUNDEF (arg_info) = INFO_WLFS_FUNDEF (info_tmp);
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    arg_info = FreeInfo (arg_info);
+    arg_info = info_tmp;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLFSassign(node *arg_node, info *arg_info)
  *
  *   @brief store actual assign node in arg_info and traverse instruction
@@ -1666,7 +1700,6 @@ WLFSfundef (node *arg_node, info *arg_info)
  *           info *arg_info:  N_info
  *   @return node *        :  N_assign
  ******************************************************************************/
-
 node *
 WLFSassign (node *arg_node, info *arg_info)
 {
@@ -1850,7 +1883,7 @@ WLFSassign (node *arg_node, info *arg_info)
 node *
 WLFSap (node *arg_node, info *arg_info)
 {
-    info *tmp;
+    info *info_tmp;
 
     DBUG_ENTER ("WLFSap");
 
@@ -1863,13 +1896,13 @@ WLFSap (node *arg_node, info *arg_info)
             DBUG_PRINT ("WLFS", ("traverse special function"));
 
             /* stack arg_info */
-            tmp = arg_info;
+            info_tmp = arg_info;
             arg_info = MakeInfo ();
 
             AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
 
             arg_info = FreeInfo (arg_info);
-            arg_info = tmp;
+            arg_info = info_tmp;
 
             DBUG_PRINT ("WLFS", ("traverse special function complete"));
         }
@@ -1944,7 +1977,6 @@ WLFSNwith (node *arg_node, info *arg_info)
 {
     node *fwl;
     wl_action_t wl_action = WL_nothing;
-    info *info_tmp;
 
     DBUG_ENTER ("WLFSNwith");
 
@@ -1952,20 +1984,12 @@ WLFSNwith (node *arg_node, info *arg_info)
      * first traversal in CODEs
      * The CODEs have to be traversed as they may contain further (nested) WLs
      * and I want to modify bottom up.
-     * Info node has to be stacked before traversal
      */
-
-    info_tmp = arg_info;
-    arg_info = MakeInfo ();
-
     DBUG_PRINT ("WLFS", ("trav NCODE of WL"));
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
     DBUG_PRINT ("WLFS", ("trav NCODE of WL finished"));
-
-    arg_info = FreeInfo (arg_info);
-    arg_info = info_tmp;
 
     /* initialise some pointers */
     arg_info = InitInfo (arg_info);
