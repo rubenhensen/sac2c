@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/08/08 13:29:44  sbs
+ * addded some DBUG_PRINTs
+ *
  * Revision 1.5  2003/03/28 17:19:30  sbs
  * added to group ntc.
  *
@@ -220,6 +223,8 @@ SSIMakeVariable ()
     TVAR_MASS (res) = 0;
     TVAR_NASS (res) = 0;
     TVAR_HANDS (res) = NULL;
+
+    DBUG_PRINT ("SSI", ("new type var generated: #%d", var_cntr - 1));
 
     DBUG_RETURN (res);
 }
