@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.9  1994/11/11 13:48:31  hw
+ * Revision 1.10  1994/11/15 16:55:53  hw
+ * changed assignblock rule
+ * converted for loop to while loop
+ * => eliminated N_for
+ *
+ * Revision 1.9  1994/11/11  13:48:31  hw
  * added prefix & postfix increment-& decrementation
  * added new nodes: N_pre N_post N_inc N_dec
  *
@@ -225,23 +230,20 @@ assignblock: COLON
                   $$->nnode=1;
                 }
              | BRACE_L BRACE_R  { $$=MakeNode(N_empty); }
-             | assign  {$$=$1;}
+             | assign  
+                { $$=MakeNode(N_block);
+                  $$->node[0]=$1;
+                  $$->nnode=1;
+                } 
              ;
 
 retassignblock: BRACE_L assigns retassign COLON BRACE_R
                   { node *tmp;
                     $$=MakeNode(N_block);
-                    $$->node[0]=$2;  /* Anweisung im Block */
+                    /* append retassign node($3) to assigns nodes($2)
+                     */
+                    $$->node[0]=Append($2,$3);
                     $$->nnode=1;
-
-                    /* append retassign node($4) to assigns nodes */
-                    tmp=$$->node[0];
-                    while( NULL != tmp->node[1] )      /* look for last N_assign node */
-                       tmp=tmp->node[1];
-                    tmp->node[1]=MakeNode(N_assign);
-                    tmp->nnode=2;
-                    tmp->node[1]->node[0]=$3;
-                    tmp->node[1]->nnode=1;             /* set number of children nodes */
 
                     DBUG_PRINT("GENTREE",
                                ("%s "P_FORMAT", %s"P_FORMAT, 
@@ -299,9 +301,15 @@ assign: letassign COLON
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
            }
       | forassign 
-           { $$=MakeNode(N_assign);
-             $$->node[0]=$1;
-             $$->nnode=1;
+           { if (N_assign != $$->nodetype)
+             {
+                $$=MakeNode(N_assign);
+                $$->node[0]=$1;
+                $$->nnode=1;
+             }
+             else
+                $$=$1; /* if for loop is converted to while loop */
+             
 
              DBUG_PRINT("GENTREE",
                         ("%s "P_FORMAT", %s "P_FORMAT,
@@ -413,21 +421,23 @@ forassign: DO assignblock WHILE BRACKET_L expr BRACKET_R
                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
               }
            | FOR BRACKET_L assign expr COLON letassign BRACKET_R assignblock
-              { $$=MakeNode(N_for);
-                $$->node[0]=$3;  /* Initialisierung */
-                $$->node[1]=$4;  /* Test  */
-                $$->node[2]=$6;  /* Modifizierer */
-                $$->node[3]=$8;  /* Schleifenrumpf */
-                $$->nnode=4;
+              { $$=$3;  /* initialisation */
+                $$->node[1]=MakeNode(N_assign);
+                $$->nnode=2;
+                $$->node[1]->node[0]=MakeNode(N_while);
+                $$->node[1]->node[0]->node[0]=$4;  /* condition  */
+                $$->node[1]->node[0]->node[1]=Append($8,$6);  /* body of loop */
+                $$->node[1]->node[0]->nnode=2;
+                $$->node[1]->nnode=1;
                 
                 DBUG_PRINT("GENTREE",
-                           ("%s "P_FORMAT": %s "P_FORMAT", %s "P_FORMAT", %s "
-                            P_FORMAT", %s " P_FORMAT ,
-                            mdb_nodetype[$$->nodetype], $$,
-                            mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
-                            mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
-                            mdb_nodetype[$$->node[2]->nodetype], $$->node[2],
-                            mdb_nodetype[$$->node[3]->nodetype], $$->node[3] ));
+                           ("%s "P_FORMAT": %s "P_FORMAT", %s "P_FORMAT,
+                            mdb_nodetype[$$->node[1]->node[0]->nodetype], $$,
+                            mdb_nodetype[$$->node[1]->node[0]->node[0]->nodetype],
+                            $$->node[1]->node[0]->node[0],
+                            mdb_nodetype[$$->node[1]->node[0]->node[1]->nodetype],
+                            $$->node[1]->node[0]->node[1] ));
+ 
               } 
            ;
 
@@ -913,4 +923,31 @@ node *GenVardec( types *type, ids *ids_p)
      free(tmp2);
   } while (ids_p != NULL);
   DBUG_RETURN(vardec_p);
+}
+
+node *Append(node *target_node, const node *append_node)
+{
+   node *tmp;
+   
+   DBUG_ENTER("Append");
+
+   tmp=target_node->node[0];
+   while( NULL != tmp->node[1] )      /* look for last N_assign node */
+      tmp=tmp->node[1];
+   
+   if (N_assign != append_node->nodetype)
+   {
+      tmp->node[1]=MakeNode(N_assign);
+      tmp->node[1]->node[0]=append_node;
+      tmp->node[1]->nnode=1;
+   }
+   else
+      tmp->node[1]=append_node;
+   
+   tmp->nnode=2;
+   DBUG_PRINT("APPEND",("return node :%s"P_FORMAT,
+                        mdb_nodetype[target_node->nodetype],target_node));
+   
+   
+   DBUG_RETURN(target_node);
 }
