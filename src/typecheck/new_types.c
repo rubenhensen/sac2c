@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/03/05 12:08:54  sbs
+ * TYOldType2ScalarType added.
+ *
  * Revision 3.51  2003/06/17 16:56:17  sbs
  * bug in MakeOverloadedFunType eliminated
  * Now, overloading of functions with disjoint result type specifications
@@ -4520,16 +4523,15 @@ TYDeNestTypes (ntype *nested, ntype *inner)
 /******************************************************************************
  *
  * function:
- *    ntype * TYOldType2Type( types *old)
+ *    ntype * TYOldType2ScalarType( types *old)
  *
  * description:
- *    converts an old TYPES node into an ntype node (or - if neccessary -
- *    a nesting of ntype nodes).
+ *    converts an old TYPES node into an ntype node for the base type.
  *
  ******************************************************************************/
 
 ntype *
-TYOldType2Type (types *old)
+TYOldType2ScalarType (types *old)
 {
     ntype *res;
     usertype udt;
@@ -4538,7 +4540,7 @@ TYOldType2Type (types *old)
     char *tmp, *tmp2;
 #endif
 
-    DBUG_ENTER ("TYOldType2Type");
+    DBUG_ENTER ("TYOldType2ScalarType");
 
     switch (TYPES_BASETYPE (old)) {
     case T_user:
@@ -4582,6 +4584,37 @@ TYOldType2Type (types *old)
         res = NULL;
         DBUG_ASSERT (0, "TYOldType2Type applied to illegal type");
     }
+
+    DBUG_EXECUTE ("NTY", tmp = Type2String (old, 3, TRUE);
+                  tmp2 = TYType2DebugString (res, TRUE, 0););
+    DBUG_PRINT ("NTY", ("base type of %s converted into : %s\n", tmp, tmp2));
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype * TYOldType2Type( types *old)
+ *
+ * description:
+ *    converts an old TYPES node into an ntype node (or - if neccessary -
+ *    a nesting of ntype nodes).
+ *
+ ******************************************************************************/
+
+ntype *
+TYOldType2Type (types *old)
+{
+    ntype *res;
+
+#ifndef DBUG_OFF
+    char *tmp, *tmp2;
+#endif
+
+    DBUG_ENTER ("TYOldType2Type");
+
+    res = TYOldType2ScalarType (old);
 
     if (res != NULL) {
         if (TYPES_DIM (old) > SCALAR) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/03/05 12:08:54  sbs
+ * TYOldType2ScalarType added.
+ *
  * Revision 3.17  2003/05/30 14:21:43  dkr
  * TYStaticDispatchWrapper() removed
  *
@@ -379,6 +382,7 @@ extern ntype *TYDeNestTypes (ntype *nested, ntype *inner);
  */
 typedef enum { TY_symb, TY_user } type_conversion_flag;
 
+extern ntype *TYOldType2ScalarType (types *old);
 extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
 extern ntype *TYOldTypes2ProdType (types *old);
