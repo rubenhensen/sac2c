@@ -1,0 +1,40 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  2002/03/01 02:42:37  dkr
+ * Initial revision
+ *
+ */
+
+#ifndef SELECTelement
+#define SELECTelement(it_element)
+#endif
+
+#ifndef SELECTtext
+#define SELECTtext(it_text)
+#endif
+
+#define SELECT(it_element, it_text) SELECTelement (it_element) SELECTtext (it_text)
+
+SELECT (ATG_notag, ""),
+
+  SELECT (ATG_in, "in"),
+
+  SELECT (ATG_in_rc, "in_rc"),
+
+  SELECT (ATG_inout, "inout"),
+
+  SELECT (ATG_inout_rc, "inout_rc"),
+
+  SELECT (ATG_upd, "upd"),
+
+  SELECT (ATG_upd_bx, "upd_bx"),
+
+  SELECT (ATG_out, "out"),
+
+  SELECT (ATG_out_rc, "out_rc"),
+
+#undef SELECT
+
+#undef SELECTelement
+#undef SELECTtext
