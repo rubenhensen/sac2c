@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/07/30 20:05:02  dkr
+ * some comments corrected
+ *
  * Revision 3.16  2002/07/15 14:43:59  dkr
  * bug in WL_ASSIGN__COPY fixed
  *
@@ -634,7 +637,7 @@ ICMCompileWL_INIT_OFFSET (int to_dim, char *to_nt, char *idx_vec_nt, int dims)
  *
  * remark:
  *   This ICM is needed (and usefull) in combination with NOOP N_WL..-nodes
- *   only! It uses the variable 'SAC__diff...' defined by the ICMs
+ *   only! It uses the variable 'SAC_diff...' defined by the ICMs
  *   WL_..._NOOP_BEGIN.
  *
  ******************************************************************************/
@@ -676,7 +679,7 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int to_dim, char *to_nt, char *idx_vec_nt, 
  * remark:
  *   This ICM is needed (and usefull) in combination with multiple segments,
  *   (unrolling-)blocking or naive compilation only!!
- *   If the C compiler reports an undeclared 'SAC__start...' then there is
+ *   If the C compiler reports an undeclared 'SAC_start...' then there is
  *   an error in compile.c:
  *   Either a WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_SET_OFFSET
  *   ICM is obsolete (probably a bug in the inference function COMPWLgrid...).
