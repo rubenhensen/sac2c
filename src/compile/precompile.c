@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/04/03 21:07:54  dkr
+ * changed usage of arg_info
+ * changed PRECconc
+ *
  * Revision 1.43  1998/04/02 18:47:31  dkr
  * added PRECconc
  *
@@ -156,7 +160,7 @@
 #include "convert.h"
 #include "traverse.h"
 
-#include "refcount.h"
+#include "optimize.h"
 #include "DupTree.h"
 #include "dbug.h"
 
@@ -198,48 +202,76 @@
     }                                                                                    \
     }
 
-/*
+/******************************************************************************
  *
- *  functionname  : precompile
- *  arguments     : 1) syntax tree
- *  description   : prepares syntax tree for code generation.
- *                  - renames functions and global objects
- *                  - removes all casts
- *                  - inserts extern declarations for function definitions
- *                  - removes all artificial parameters and return values
- *                  - marks reference parameters in function applications
- *  global vars   : act_tab, precomp_tab
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG
+ * function:
+ *   node *precompile(node *syntax_tree)
  *
- *  remarks       :
+ * description:
+ *   prepares syntax tree for code generation.
+ *     - renames functions and global objects
+ *     - removes all casts
+ *     - inserts extern declarations for function definitions
+ *     - removes all artificial parameters and return values
+ *     - marks reference parameters in function applications
+ *     - transforms new with-loops
+ *     - generates fundefs for concurrent regions
  *
- */
+ * remark:
+ *   INFO_NAME(info_node) contains the name of the current function
+ *    --- needed to create a name for concregion-funs.
+ *   INFO_CONCFUNS(info_node) collects the generated fundefs for concurrent
+ *    regions to insert them into MODUL_FUNDEF of the current modul.
+ *
+ ******************************************************************************/
 
 node *
 precompile (node *syntax_tree)
 {
+    node *info;
+
     DBUG_ENTER ("precompile");
 
+    /*
+     * generate masks (for CONC_MASK)
+     */
+    syntax_tree = GenerateMasks (syntax_tree, NULL);
+
+    info = MakeInfo ();
     act_tab = precomp_tab;
 
-    DBUG_RETURN (Trav (syntax_tree, NULL));
+    syntax_tree = Trav (syntax_tree, info);
+
+    FREE (info);
+
+    DBUG_RETURN (syntax_tree);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * function:
+ *   char *ConcFunName(char *name)
  *
- *  remarks       :
+ * description:
+ *   create a name for a concregion-fun.
+ *   this name is build from the name of the current scope ('name')
+ *    and an unambiguous number.
  *
- */
+ ******************************************************************************/
+
+char *
+ConcFunName (char *name)
+{
+    static no;
+    char *funname;
+
+    DBUG_ENTER ("ConcFunName");
+
+    funname = (char *)Malloc ((strlen (name) + 10) * sizeof (char));
+    sprintf (funname, "CONC_%s_%d", name, no);
+
+    DBUG_RETURN (funname);
+}
 
 /*
  *
@@ -425,25 +457,25 @@ RenameFun (node *fun)
     DBUG_RETURN (fun);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECmodul
- *  arguments     : 1) N_modul node
- *                  2) arg_info unused
- *  description   : starts traversal mechanism for objdef and fundef nodes
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG, TREE
+ * function:
+ *   node *PRECmodul(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   starts traversal mechanism for objdef and fundef nodes.
+ *   appends new fundefs from 'arg_info' at fundef chain.
  *
- */
+ ******************************************************************************/
 
 node *
 PRECmodul (node *arg_node, node *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ("PRECmodul");
+
+    INFO_MODUL (arg_info) = arg_node;
 
     if (MODUL_TYPES (arg_node) != NULL) {
         MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
@@ -454,7 +486,20 @@ PRECmodul (node *arg_node, node *arg_info)
     }
 
     if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_node);
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    /*
+     * insert new fundefs from 'arg_info' into fundef chain
+     */
+    tmp = INFO_CONCFUNS (arg_info);
+    if (tmp != NULL) {
+        while (FUNDEF_NEXT (tmp) != NULL) {
+            tmp = FUNDEF_NEXT (tmp);
+        }
+        FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
+        MODUL_FUNS (arg_node) = INFO_CONCFUNS (arg_info);
+        INFO_CONCFUNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -562,29 +607,29 @@ PRECobjdef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECfundef
- *  arguments     : 1) N_fundef node
- *                  2) arg_info unused
- *  description   : triggers the precompilation
- *  global vars   : ---
- *  internal funs : RenameFun
- *  external funs : Trav
- *  macros        : DBUG, TREE
+ * function:
+ *   node *PRECfundef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   triggers the precompilation
  *
- */
+ ******************************************************************************/
 
 node *
 PRECfundef (node *arg_node, node *arg_info)
 {
-    int cnt_artificial = 0, i;
     char *keep_name, *keep_mod;
     statustype keep_status, keep_attrib;
+    int i;
 
     DBUG_ENTER ("PRECfundef");
+
+    /*
+     * save name of current function in INFO_NAME
+     */
+    INFO_NAME (arg_info) = FUNDEF_NAME (arg_node);
 
     /*
      *  The body of an imported inline function is removed.
@@ -637,8 +682,9 @@ PRECfundef (node *arg_node, node *arg_info)
      *  is counted and stored in 'cnt_artificial'
      */
 
+    INFO_CNT_ARTIFICIAL (arg_info) = 0;
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), (node *)&cnt_artificial);
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     /*
@@ -649,13 +695,13 @@ PRECfundef (node *arg_node, node *arg_info)
      *  syntax tree.
      */
 
-    if (cnt_artificial > 0) {
+    if (INFO_CNT_ARTIFICIAL (arg_info) > 0) {
         keep_name = FUNDEF_NAME (arg_node);
         keep_mod = FUNDEF_MOD (arg_node);
         keep_status = FUNDEF_STATUS (arg_node);
         keep_attrib = FUNDEF_ATTRIB (arg_node);
 
-        for (i = 1; i < cnt_artificial; i++) {
+        for (i = 1; i < INFO_CNT_ARTIFICIAL (arg_info); i++) {
             FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
         }
 
@@ -683,7 +729,7 @@ PRECfundef (node *arg_node, node *arg_info)
 
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
         FUNDEF_BODY (arg_node)
-          = InsertObjInits (FUNDEF_BODY (arg_node), MODUL_OBJS (arg_info));
+          = InsertObjInits (FUNDEF_BODY (arg_node), MODUL_OBJS (INFO_MODUL (arg_info)));
     } else {
         if (FUNDEF_MOD (arg_node) == NULL) {
             FUNDEF_STATUS (arg_node) = ST_Cfun;
@@ -696,24 +742,19 @@ PRECfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECarg
- *  arguments     : 1) N_arg node
- *                  2) casted pointer to an integer, which is used to
- *                     count the number of artificial return values.
- *  description   : An artificial argument is removed,
- *                  the attribs are switched:
- *                    ST_readonly_reference -> ST_regular
- *                    ST_was_reference -> ST_inout
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : FreeNode, Trav
- *  macros        : DBUG, TREE
+ * function:
+ *   node *PRECarg(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *  An artificial argument is removed, the attribs are switched:
+ *       ST_readonly_reference -> ST_regular
+ *       ST_was_reference -> ST_inout
  *
- */
+ *  INFO_CNT_ARTIFICIAL is used to count the number of artificial return values.
+ *
+ ******************************************************************************/
 
 node *
 PRECarg (node *arg_node, node *arg_info)
@@ -721,7 +762,7 @@ PRECarg (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECarg");
 
     if (ARG_ATTRIB (arg_node) == ST_was_reference) {
-        *((int *)arg_info) += 1;
+        INFO_CNT_ARTIFICIAL (arg_info)++;
     }
 
     if (ARG_STATUS (arg_node) == ST_artificial) {
@@ -792,20 +833,6 @@ PRECvardec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- *
- *  functionname  : PRECassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
 node *
 PRECassign (node *arg_node, node *arg_info)
 {
@@ -813,7 +840,7 @@ PRECassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PRECassign");
 
-    instrs = Trav (ASSIGN_INSTR (arg_node), NULL);
+    instrs = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     ASSIGN_INSTR (arg_node) = instrs;
     if (instrs == NULL) {
@@ -1122,8 +1149,6 @@ PRECid (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************/
-
 /******************************************************************************
  *
  * function:
@@ -1137,9 +1162,46 @@ PRECid (node *arg_node, node *arg_info)
 node *
 PRECconc (node *arg_node, node *arg_info)
 {
+    node *arglist, *body, *ret, *fundef, *args;
+    types *types;
+    char *name;
+
     DBUG_ENTER ("PRECconc");
 
     CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
+
+    /*
+     * generate fundef for this concurrent region
+     */
+
+    name = ConcFunName (INFO_NAME (arg_info));
+    types = MakeType (T_int, 0, NULL, NULL, NULL);
+    arglist = NULL /* MakeArg() */;
+    body = NULL /* MakeBlock() */;
+
+    ret = NULL /* MakeReturn();
+    RETURN_INWITH(ret) = 0 */
+      ;
+
+    fundef = MakeFundef (name, NULL, types, arglist, body, NULL);
+    FUNDEF_STATUS (fundef) = ST_concfun;
+    FUNDEF_ATTRIB (fundef) = ST_regular;
+    FUNDEF_INLINE (fundef) = 0;
+    FUNDEF_RETURN (fundef) = ret;
+    /*
+     * insert new fundef into INFO_CONCFUNS
+     */
+    FUNDEF_NEXT (fundef) = INFO_CONCFUNS (arg_info);
+    INFO_CONCFUNS (arg_info) = fundef;
+
+    /*
+     * generate CONC_AP
+     */
+
+    args = NULL /* MakeExprs() */;
+
+    CONC_AP (arg_node) = MakeAp (name, NULL, args);
+    AP_ATFLAG (CONC_AP (arg_node)) = 1;
 
     DBUG_RETURN (arg_node);
 }
