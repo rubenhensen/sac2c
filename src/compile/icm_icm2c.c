@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/23 12:51:18  cg
+ * implemented new ICM argument type VARINT for a variable number
+ * of integer arguments.
+ *
  * Revision 1.1  1998/04/25 16:21:33  sbs
  * Initial revision
  *
@@ -123,6 +127,19 @@
             };                                                                           \
     }
 
+#define GetVarInt(dim, v, ex)                                                            \
+    {                                                                                    \
+        int i, num;                                                                      \
+        v = (int *)Malloc (sizeof (int) * dim);                                          \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
+        for (i = 0; i < dim; i++) {                                                      \
+            DBUG_ASSERT ((ex->node[0]->nodetype == N_num),                               \
+                         "wrong icm-arg: N_num expected");                               \
+            GetNextInt (num, ex);                                                        \
+            v[i] = num;                                                                  \
+        }                                                                                \
+    }
+
 #define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs, node *arg_info)                                        \
     {                                                                                    \
@@ -132,6 +149,9 @@
 #define ICM_VAR(dim, name)                                                               \
     if (dim > 0)                                                                         \
         GetShape (dim, name, exprs);
+#define ICM_VARINT(dim, name)                                                            \
+    if (dim > 0)                                                                         \
+        GetVarInt (dim, name, exprs);
 #define ICM_END(prf, args)                                                               \
     ICMCompile##prf args;                                                                \
     DBUG_VOID_RETURN;                                                                    \
@@ -143,4 +163,5 @@
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
+#undef ICM_VARINT
 #undef ICM_END

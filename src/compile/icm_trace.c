@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/23 12:51:18  cg
+ * implemented new ICM argument type VARINT for a variable number
+ * of integer arguments.
+ *
  * Revision 1.7  1998/05/07 08:10:02  cg
  * C implemented ICMs converted to new naming conventions.
  *
@@ -71,6 +75,17 @@
         }                                                                                \
     }
 
+#define ICM_VARINT(dim, name)                                                            \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < dim; i++) {                                                      \
+            SEP;                                                                         \
+            INDENT;                                                                      \
+            fprintf (outfile, "SAC_Print( \"%d \");\n", name[i]);                        \
+            sep = 1;                                                                     \
+        }                                                                                \
+    }
+
 #define ICM_END(prf, args)                                                               \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_Print( \")\\n\");\n");                                        \
@@ -84,4 +99,5 @@
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
+#undef ICM_VARINT
 #undef ICM_END

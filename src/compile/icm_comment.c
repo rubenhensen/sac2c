@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/06/23 12:51:18  cg
+ * implemented new ICM argument type VARINT for a variable number
+ * of integer arguments.
+ *
  * Revision 1.8  1998/05/28 16:25:17  dkr
  * ICM-comment is indented now
  *
@@ -40,14 +44,17 @@
         fprintf (outfile, "/*\n");                                                       \
         INDENT;                                                                          \
         fprintf (outfile, " * %s( ", #prf);
+
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%s", name);                                                       \
     sep = 1;
+
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%d", name);                                                       \
     sep = 1;
+
 #define ICM_VAR(dim, name)                                                               \
     {                                                                                    \
         int i;                                                                           \
@@ -57,6 +64,16 @@
             sep = 1;                                                                     \
         }                                                                                \
     }
+#define ICM_VARINT(dim, name)                                                            \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < dim; i++) {                                                      \
+            SEP;                                                                         \
+            fprintf (outfile, "%d", name[i]);                                            \
+            sep = 1;                                                                     \
+        }                                                                                \
+    }
+
 #define ICM_END(prf, args)                                                               \
     fprintf (outfile, ")\n");                                                            \
     INDENT;                                                                              \
@@ -70,4 +87,5 @@
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
+#undef ICM_VARINT
 #undef ICM_END
