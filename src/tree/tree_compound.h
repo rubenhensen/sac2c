@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/05/31 14:50:43  nmw
+ * CompareTypesImplementation() added
+ *
  * Revision 3.42  2001/04/26 21:06:45  dkr
  * L_VARDEC_OR_ARG_TYPE added
  *
@@ -213,6 +216,7 @@ extern int GetDim (types *type);
 extern simpletype GetBasetype (types *type);
 extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
+extern bool CompareTypesImplementation (types *t1, types *t2);
 extern shpseg *Type2Shpseg (types *type, int *ret_dim);
 extern node *Type2Exprs (types *type);
 

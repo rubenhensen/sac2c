@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/05/31 14:50:43  nmw
+ * CompareTypesImplementation() added
+ *
  * Revision 3.39  2001/05/17 14:43:58  dkr
  * FREE, MALLOC eliminated
  *
@@ -610,6 +613,48 @@ GetBasetypeSize (types *type)
     size = basetype_size[GetBasetype (type)];
 
     DBUG_RETURN (size);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool CompareTypesImplementation(types *t1, types *t2)
+ *
+ * Description:
+ *   compares two types for having the equal implementation types (resolving
+ *   user defined types) - that means double[2] and Complex are equal!
+ *
+ ******************************************************************************/
+
+bool
+CompareTypesImplementation (types *t1, types *t2)
+{
+    bool res;
+    shpseg *shpseg1;
+    shpseg *shpseg2;
+    int dim;
+
+    DBUG_ENTER ("CompareTypes");
+    res = FALSE;
+
+    DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)), "CompareTypes() called with NULL type");
+
+    if (GetBasetype (t1) == GetBasetype (t2)) {
+        if (GetDim (t1) == GetDim (t2)) {
+            shpseg1 = Type2Shpseg (t1, &dim);
+            shpseg2 = Type2Shpseg (t2, NULL);
+            res = EqualShpseg (dim, shpseg1, shpseg2);
+            if (shpseg1 != NULL) {
+                FreeShpseg (shpseg1);
+            }
+
+            if (shpseg2 != NULL) {
+                FreeShpseg (shpseg2);
+            }
+        }
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
