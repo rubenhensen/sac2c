@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.108  1998/04/01 12:55:06  dkr
+ * added some comments for N_WL... nodes
+ *
  * Revision 1.107  1998/04/01 07:39:25  srs
  * renames INFO_* macros for CF
  *
@@ -2358,7 +2361,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  temporary attributes:
  ***
- ***    int      BLOCKS    (number of blocking levels --- without unrolling-blocking)
+ ***    int      BLOCKS    (number of blocking levels
+ ***                         --- without unrolling-blocking)
  ***    long*    BV                     (Precompile ! )
  ***    long*    UBV                    (Precompile ! )
  ***
@@ -2377,6 +2381,21 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 /*
  * here are some macros for N_WL... nodes:
+ *
+ * CAUTION: not every macro is suitable for all node tpyes.
+ *          e.g. NEXTDIM is not a son of N_WLstride nodes
+ *
+ *          it would be better to contruct these macros like this:
+ *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
+ *                                        DBUG_ASSERT(...) :
+ *                                        (NODE_TYPE(n) == N_WLblock) ?
+ *                                         WLBLOCK_NEXTDIM(n) :
+ *                                         ...)
+ *          but unfortunately this is not a modifiable l-value in ANSI-C :(
+ *          so it would be impossible to use them on the left side of an
+ *          assignment.
+ *          because of that I designed this "static" macros to make a
+ *          concise modelling of routines still possible.
  */
 
 #define WLNODE_LEVEL(n) (n->lineno)
