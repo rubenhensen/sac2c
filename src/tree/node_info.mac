@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/02/27 11:56:22  dkr
+ * PREC3modul added
+ *
  * Revision 3.61  2002/02/21 17:00:51  sbs
  * INSVDwithid inserted
  *
@@ -833,7 +836,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTunknown, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, COMP2Modul, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, COMP2Modul, PREC3modul, TravSons, TravSons, TravSons, TravSons, TravSons,
        5),
 
   NIF (N_typedef, "N_typedef", IMtypedef, TravSons, PrintTypedef, TravSons, TravSons,
