@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/05/11 16:18:27  jhs
+ * Done4 some cosmetics to learn about the code.
+ *
  * Revision 2.13  1999/05/06 12:08:50  sbs
  * includes brushed!.
  *
@@ -836,50 +839,56 @@ FltnArray (node *arg_node, node *arg_info)
     contextflag old_ctxt;
 
     DBUG_ENTER ("FltnArray");
-    /*
-    DBUG_ASSERT( (ARRAY_AELEMS( arg_node) != NULL),
-                 "N_array node where AELEMS is NULL!");
-                 */
+
     old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-    INFO_FLTN_VECLEN (arg_info) = 0;
+
     INFO_FLTN_CONSTVEC (arg_info) = NULL;
-    INFO_FLTN_VECTYPE (arg_info) = T_int;
     INFO_FLTN_CONTEXT (arg_info) = CT_array;
+    INFO_FLTN_VECLEN (arg_info) = 0;
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
+        /* the array has elements that will tell us the type of the array. */
+        INFO_FLTN_VECTYPE (arg_info) = T_int;
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
+        ARRAY_VECTYPE (arg_node) = INFO_FLTN_VECTYPE (arg_info);
     } else {
+        /* the array is empty, but we cannot infere any type. */
         INFO_FLTN_VECTYPE (arg_info) = T_nothing;
+        ARRAY_VECLEN (arg_node) = 0;
+        ARRAY_VECTYPE (arg_node) = T_nothing;
     }
 
-    ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
-
-    ARRAY_VECTYPE (arg_node) = INFO_FLTN_VECTYPE (arg_info);
-
+    /*  Now we have to copy the compact representation of the constant vector from
+     *  the arg_info node to the actual array node.
+     */
     switch (INFO_FLTN_VECTYPE (arg_info)) {
     case T_bool:
+        /*  T_bool and T_int are treated as identical,
+         *  so no break is missing here.
+         */
     case T_int:
         ARRAY_INTVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     case T_float:
         ARRAY_FLOATVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     case T_double:
         ARRAY_DOUBLEVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     case T_char:
         ARRAY_CHARVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
-        INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     case T_nothing:
-        /* nothing do be done */
+        /*  nothing do be done, there should be no constvec reserved,
+         *  because T_nothing occurs only with empty arrays.
+         */
         break;
     default:
         FREE (INFO_FLTN_CONSTVEC (arg_info));
     }
+
+    INFO_FLTN_CONSTVEC (arg_info) = NULL;
     INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
 
     DBUG_RETURN (arg_node);
@@ -998,14 +1007,21 @@ FltnExprs (node *arg_node, node *arg_info)
     char *info_fltn_charvec;
     float *info_fltn_floatvec;
     double *info_fltn_doublevec;
-    node *expr, *expr2, *orig_expr;
+    node *expr, *expr2, *casts_expr;
 
     DBUG_ENTER ("FltnExprs");
 
     info_fltn_array_index = INFO_FLTN_VECLEN (arg_info);
-    expr = EXPRS_EXPR (arg_node);
 
-    /* skip leading casts */
+    /*  an expression can be hidden behind some cast, for programmer's convenience
+     *  we hold both: the expression with the casts (casts_expr) and the real one
+     *  behind the casts without the casts (expr).
+     *  So there will be no traversal on the N_cast nodes.
+     *
+     *  if there is no cast => (casts_expr == expr)
+     */
+    casts_expr = EXPRS_EXPR (arg_node);
+    expr = casts_expr;
     while (NODE_TYPE (expr) == N_cast)
         expr = CAST_EXPR (expr);
 
@@ -1041,8 +1057,7 @@ FltnExprs (node *arg_node, node *arg_info)
         break;
     default:
         DBUG_ASSERT (0, "illegal context !");
-        /*
-         * the following assignment is used only for convincing the C compiler
+        /* the following assignment is used only for convincing the C compiler
          * that abstract will be initialized in any case!
          */
         abstract = 0;
@@ -1052,14 +1067,24 @@ FltnExprs (node *arg_node, node *arg_info)
                 ("context: %d, abstract: %d, expr: %s", INFO_FLTN_CONTEXT (arg_info),
                  abstract, mdb_nodetype[NODE_TYPE (expr)]));
 
+    /*  if this is to be abstracted, we abstract and eventually annotate constant
+     *  integer arrays in the N_id node.
+     */
     if (abstract) {
-        orig_expr = EXPRS_EXPR (arg_node);
-
-        EXPRS_EXPR (arg_node) = Abstract (orig_expr, arg_info);
+        /*  if there are type casts we need to abstract them too.
+         *  if we leave them, empty arrays will be left uncasted and so untyped.
+         */
+        EXPRS_EXPR (arg_node) = Abstract (casts_expr, arg_info);
         expr2 = Trav (expr, arg_info);
+        /*  is this
+         *  - a constant array of integers?
+         *  - or an empty array, casted as an array of integers?
+         *  if yes, we annotate the constant values, so the array can be viewed as
+         *  constant, although there's only an identifier left.
+         */
         if (((NODE_TYPE (expr2) == N_array) && (ARRAY_VECTYPE (expr2) == T_int))
-            || ((NODE_TYPE (orig_expr) == N_cast) && (CAST_BASETYPE (orig_expr) == T_int)
-                && (NODE_TYPE (expr2) == N_array)
+            || ((NODE_TYPE (casts_expr) == N_cast)
+                && (CAST_BASETYPE (casts_expr) == T_int) && (NODE_TYPE (expr2) == N_array)
                 && (ARRAY_VECTYPE (expr2) == T_nothing))) {
             ID_VECLEN (EXPRS_EXPR (arg_node)) = ARRAY_VECLEN (expr2);
             if (ID_VECLEN (EXPRS_EXPR (arg_node)) != 0) {
