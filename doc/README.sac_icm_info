@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.8  1995/04/26 14:02:13  hw
- * Macros for with-loop inserted
+ * Revision 1.9  1995/04/26 14:59:40  sbs
+ * dim_res inserted in END_WITH macros
  *
+# Revision 1.8  1995/04/26  14:02:13  hw
+# Macros for with-loop inserted
+#
 # Revision 1.7  1995/04/19  13:39:22  sbs
 # ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S updated
 #
@@ -133,5 +136,5 @@ Macros for WITH-loop:
  ND_BEGIN_MODARRAY( res, dim_res, arg, from, to, index_vector)
  ND_BEGIN_GENARRAY( res, dim_res, form, to, index_vector)
  
- ND_END_WITH_S( res, value)
- ND_END_WITH_A( res, array)
+ ND_END_WITH_S( res, dim_res, value)
+ ND_END_WITH_A( res, dim_res, array)
