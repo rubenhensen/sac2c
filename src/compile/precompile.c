@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/04/09 14:00:07  dkr
+ * attributes for N_conc nodes are now build in 'concregions.[ch]'
+ *
  * Revision 1.46  1998/04/07 17:33:19  dkr
  * removed a bug in PRECnwith
  *
@@ -166,9 +169,8 @@
 #include "convert.h"
 #include "traverse.h"
 
-#include "optimize.h"
 #include "DupTree.h"
-#include "typecheck.h"
+#include "refcount.h"
 #include "dbug.h"
 
 #include <string.h>
@@ -222,13 +224,6 @@
  *     - removes all artificial parameters and return values
  *     - marks reference parameters in function applications
  *     - transforms new with-loops
- *     - generates fundefs for concurrent regions
- *
- * remark:
- *   INFO_NAME(info_node) contains the name of the current function
- *    --- needed to create a name for concregion-funs.
- *   INFO_CONCFUNS(info_node) collects the generated fundefs for concurrent
- *    regions to insert them into MODUL_FUNDEF of the current modul.
  *
  ******************************************************************************/
 
@@ -239,11 +234,6 @@ precompile (node *syntax_tree)
 
     DBUG_ENTER ("precompile");
 
-    /*
-     * generate masks (for CONC_MASK)
-     */
-    syntax_tree = GenerateMasks (syntax_tree, NULL);
-
     info = MakeInfo ();
     act_tab = precomp_tab;
 
@@ -252,76 +242,6 @@ precompile (node *syntax_tree)
     FREE (info);
 
     DBUG_RETURN (syntax_tree);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *ConcFunName(char *name)
- *
- * description:
- *   create a name for a concregion-fun.
- *   this name is build from the name of the current scope ('name')
- *    and an unambiguous number.
- *
- ******************************************************************************/
-
-char *
-ConcFunName (char *name)
-{
-    static no;
-    char *funname;
-
-    DBUG_ENTER ("ConcFunName");
-
-    funname = (char *)Malloc ((strlen (name) + 10) * sizeof (char));
-    sprintf (funname, "CONC_%s_%d", name, no);
-
-    DBUG_RETURN (funname);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FindVardec(int varno, node *fundef)
- *
- * description:
- *   returns the vardec of var number 'varno'
- *
- ******************************************************************************/
-
-node *
-FindVardec (int varno, node *fundef)
-{
-    node *tmp, *result = NULL;
-
-    DBUG_ENTER ("FindVardec");
-
-    if (result == NULL) {
-        tmp = FUNDEF_ARGS (fundef);
-        while (tmp != NULL) {
-            if (ARG_VARNO (tmp) == varno) {
-                result = tmp;
-                break;
-            } else {
-                tmp = ARG_NEXT (tmp);
-            }
-        }
-    }
-
-    if (result == NULL) {
-        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
-        while (tmp != NULL) {
-            if (VARDEC_VARNO (tmp) == varno) {
-                result = tmp;
-                break;
-            } else {
-                tmp = VARDEC_NEXT (tmp);
-            }
-        }
-    }
-
-    DBUG_RETURN (result);
 }
 
 /*
@@ -522,11 +442,9 @@ RenameFun (node *fun)
 node *
 PRECmodul (node *arg_node, node *arg_info)
 {
-    node *tmp;
-
     DBUG_ENTER ("PRECmodul");
 
-    INFO_MODUL (arg_info) = arg_node;
+    INFO_PREC_MODUL (arg_info) = arg_node;
 
     if (MODUL_TYPES (arg_node) != NULL) {
         MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
@@ -538,19 +456,6 @@ PRECmodul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-    }
-
-    /*
-     * insert new fundefs from 'arg_info' into fundef chain
-     */
-    tmp = INFO_CONCFUNS (arg_info);
-    if (tmp != NULL) {
-        while (FUNDEF_NEXT (tmp) != NULL) {
-            tmp = FUNDEF_NEXT (tmp);
-        }
-        FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
-        MODUL_FUNS (arg_node) = INFO_CONCFUNS (arg_info);
-        INFO_CONCFUNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -678,11 +583,6 @@ PRECfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECfundef");
 
     /*
-     * save name of current function in INFO_NAME
-     */
-    INFO_NAME (arg_info) = FUNDEF_NAME (arg_node);
-
-    /*
      *  The body of an imported inline function is removed.
      */
 
@@ -733,7 +633,7 @@ PRECfundef (node *arg_node, node *arg_info)
      *  is counted and stored in 'cnt_artificial'
      */
 
-    INFO_CNT_ARTIFICIAL (arg_info) = 0;
+    INFO_PREC_CNT_ARTIFICIAL (arg_info) = 0;
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
@@ -746,13 +646,13 @@ PRECfundef (node *arg_node, node *arg_info)
      *  syntax tree.
      */
 
-    if (INFO_CNT_ARTIFICIAL (arg_info) > 0) {
+    if (INFO_PREC_CNT_ARTIFICIAL (arg_info) > 0) {
         keep_name = FUNDEF_NAME (arg_node);
         keep_mod = FUNDEF_MOD (arg_node);
         keep_status = FUNDEF_STATUS (arg_node);
         keep_attrib = FUNDEF_ATTRIB (arg_node);
 
-        for (i = 1; i < INFO_CNT_ARTIFICIAL (arg_info); i++) {
+        for (i = 1; i < INFO_PREC_CNT_ARTIFICIAL (arg_info); i++) {
             FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
         }
 
@@ -779,8 +679,8 @@ PRECfundef (node *arg_node, node *arg_info)
      */
 
     if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
-        FUNDEF_BODY (arg_node)
-          = InsertObjInits (FUNDEF_BODY (arg_node), MODUL_OBJS (INFO_MODUL (arg_info)));
+        FUNDEF_BODY (arg_node) = InsertObjInits (FUNDEF_BODY (arg_node),
+                                                 MODUL_OBJS (INFO_PREC_MODUL (arg_info)));
     } else {
         if (FUNDEF_MOD (arg_node) == NULL) {
             FUNDEF_STATUS (arg_node) = ST_Cfun;
@@ -803,7 +703,8 @@ PRECfundef (node *arg_node, node *arg_info)
  *       ST_readonly_reference -> ST_regular
  *       ST_was_reference -> ST_inout
  *
- *  INFO_CNT_ARTIFICIAL is used to count the number of artificial return values.
+ *  INFO_PREC_CNT_ARTIFICIAL is used to count the number of artificial
+ *   return values.
  *
  ******************************************************************************/
 
@@ -813,7 +714,7 @@ PRECarg (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECarg");
 
     if (ARG_ATTRIB (arg_node) == ST_was_reference) {
-        INFO_CNT_ARTIFICIAL (arg_info)++;
+        INFO_PREC_CNT_ARTIFICIAL (arg_info)++;
     }
 
     if (ARG_STATUS (arg_node) == ST_artificial) {
@@ -1206,197 +1107,16 @@ PRECid (node *arg_node, node *arg_info)
  *   node *PRECconc(node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   precompile of a N_conc node: just traverses the son
  *
  ******************************************************************************/
 
 node *
 PRECconc (node *arg_node, node *arg_info)
 {
-    node *fundefs, *old_vardec;
-    node *args, *arg, *last_arg;
-    ids *lets, *let, *last_let;
-    node *fargs, *farg, *last_farg;
-    node *retexprs, *retexpr, *last_retexpr;
-    types *rettypes, *rettype, *last_rettype;
-    node *ret, *fundef, *ap, *conc, *tmp;
-    char *name;
-    int varno, i;
-
     DBUG_ENTER ("PRECconc");
 
     CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
-
-    fundefs = MODUL_FUNS (INFO_MODUL (arg_info));
-    varno = FUNDEF_VARNO (fundefs);
-
-    /*
-     * generate fundef for this concurrent region
-     */
-    name = ConcFunName (INFO_NAME (arg_info));
-
-    args = NULL;
-    lets = NULL;
-    fargs = NULL;
-    retexprs = NULL;
-    rettypes = NULL;
-    for (i = 0; i < varno; i++) {
-        if ((CONC_MASK (arg_node, 0))[i] > 0) {
-
-            old_vardec = FindVardec (i, fundefs);
-
-            if (NODE_TYPE (old_vardec) == N_vardec) {
-                arg = MakeId (StringCopy (VARDEC_NAME (old_vardec)), NULL,
-                              VARDEC_STATUS (old_vardec));
-                ID_ATTRIB (arg) = VARDEC_ATTRIB (old_vardec);
-
-                let = MakeIds (StringCopy (VARDEC_NAME (old_vardec)), NULL,
-                               VARDEC_STATUS (old_vardec));
-                IDS_ATTRIB (let) = VARDEC_ATTRIB (old_vardec);
-
-                farg = MakeArg (StringCopy (VARDEC_NAME (old_vardec)),
-                                DuplicateTypes (VARDEC_TYPE (old_vardec), 1),
-                                VARDEC_STATUS (old_vardec), VARDEC_ATTRIB (old_vardec),
-                                NULL);
-
-                retexpr = MakeId (StringCopy (VARDEC_NAME (old_vardec)), NULL,
-                                  VARDEC_STATUS (old_vardec));
-                ID_ATTRIB (retexpr) = VARDEC_ATTRIB (old_vardec);
-
-                rettype = DuplicateTypes (VARDEC_TYPE (old_vardec), 1);
-            } else {
-                arg = MakeId (StringCopy (ARG_NAME (old_vardec)), NULL,
-                              ARG_STATUS (old_vardec));
-                ID_ATTRIB (arg) = ARG_ATTRIB (old_vardec);
-
-                let = MakeIds (StringCopy (ARG_NAME (old_vardec)), NULL,
-                               ARG_STATUS (old_vardec));
-                IDS_ATTRIB (let) = ARG_ATTRIB (old_vardec);
-
-                farg = MakeArg (StringCopy (ARG_NAME (old_vardec)),
-                                DuplicateTypes (ARG_TYPE (old_vardec), 1),
-                                ARG_STATUS (old_vardec), ARG_ATTRIB (old_vardec), NULL);
-
-                retexpr = MakeId (StringCopy (ARG_NAME (old_vardec)), NULL,
-                                  ARG_STATUS (old_vardec));
-                ID_ATTRIB (retexpr) = ARG_ATTRIB (old_vardec);
-
-                rettype = DuplicateTypes (ARG_TYPE (old_vardec), 1);
-            }
-
-            ID_VARDEC (arg) = old_vardec;
-            ID_MAKEUNIQUE (arg) = 0;
-            ID_REFCNT (arg) = -1; /* not needed anymore !?! */
-            arg = MakeExprs (arg, NULL);
-
-            IDS_VARDEC (let) = old_vardec;
-            IDS_REFCNT (let) = -1; /* not needed anymore !?! */
-
-            /* the function body is statically refcounted! */
-            ARG_REFCNT (farg) = 0;
-            ARG_VARNO (farg) = -1; /* not needed anymore !?! */
-
-            ID_VARDEC (retexpr) = farg;
-            ID_MAKEUNIQUE (retexpr) = 0;
-            ID_REFCNT (retexpr) = -1; /* not needed anymore !?! */
-            retexpr = MakeExprs (retexpr, NULL);
-
-            if (args == NULL) {
-                args = arg;
-                lets = let;
-                fargs = farg;
-                retexprs = retexpr;
-                rettypes = rettype;
-            } else {
-                EXPRS_NEXT (last_arg) = arg;
-                IDS_NEXT (last_let) = let;
-                ARG_NEXT (last_farg) = farg;
-                EXPRS_NEXT (last_retexpr) = retexpr;
-                TYPES_NEXT (last_rettype) = rettype;
-            }
-            last_arg = arg;
-            last_let = let;
-            last_farg = farg;
-            last_retexpr = retexpr;
-            last_rettype = rettype;
-        }
-    }
-
-    for (i = 0; i < varno; i++) {
-        if ((CONC_MASK (arg_node, 1))[i] > 0) {
-
-            old_vardec = FindVardec (i, fundefs);
-
-            if (NODE_TYPE (old_vardec) == N_vardec) {
-                arg = MakeId (StringCopy (VARDEC_NAME (old_vardec)), NULL,
-                              VARDEC_STATUS (old_vardec));
-                ID_ATTRIB (arg) = VARDEC_ATTRIB (old_vardec);
-
-                farg = MakeArg (StringCopy (VARDEC_NAME (old_vardec)),
-                                DuplicateTypes (VARDEC_TYPE (old_vardec), 1),
-                                VARDEC_STATUS (old_vardec), VARDEC_ATTRIB (old_vardec),
-                                NULL);
-            } else {
-                arg = MakeId (StringCopy (ARG_NAME (old_vardec)), NULL,
-                              ARG_STATUS (old_vardec));
-                ID_ATTRIB (arg) = ARG_ATTRIB (old_vardec);
-
-                farg = MakeArg (StringCopy (ARG_NAME (old_vardec)),
-                                DuplicateTypes (ARG_TYPE (old_vardec), 1),
-                                ARG_STATUS (old_vardec), ARG_ATTRIB (old_vardec), NULL);
-            }
-
-            ID_VARDEC (arg) = old_vardec;
-            ID_MAKEUNIQUE (arg) = 0;
-            ID_REFCNT (arg) = -1; /* not needed anymore !?! */
-            arg = MakeExprs (arg, NULL);
-
-            /* the function body is statically refcounted! */
-            ARG_REFCNT (farg) = 0;
-            ARG_VARNO (farg) = -1; /* not needed anymore !?! */
-
-            if (args == NULL) {
-                args = arg;
-                fargs = farg;
-            } else {
-                EXPRS_NEXT (last_arg) = arg;
-                ARG_NEXT (last_farg) = farg;
-            }
-            last_arg = arg;
-            last_farg = farg;
-        }
-    }
-
-    ret = MakeReturn (retexprs);
-    RETURN_INWITH (ret) = 0;
-
-    /* append 'ret' to concregion block */
-    conc = DupTree (CONC_REGION (arg_node), NULL);
-    tmp = conc;
-    while (ASSIGN_NEXT (tmp) != NULL) {
-        tmp = ASSIGN_NEXT (tmp);
-    }
-    ASSIGN_NEXT (tmp) = MakeAssign (ret, NULL);
-
-    fundef = MakeFundef (name, NULL, rettypes, fargs, MakeBlock (conc, NULL), NULL);
-    FUNDEF_STATUS (fundef) = ST_concfun;
-    FUNDEF_ATTRIB (fundef) = ST_regular;
-    FUNDEF_INLINE (fundef) = 0;
-    FUNDEF_RETURN (fundef) = ret;
-    /*
-     * insert new fundef into INFO_CONCFUNS
-     */
-    FUNDEF_NEXT (fundef) = INFO_CONCFUNS (arg_info);
-    INFO_CONCFUNS (arg_info) = fundef;
-
-    /*
-     * generate CONC_AP_LET
-     */
-
-    ap = MakeAp (name, NULL, args);
-    AP_ATFLAG (ap) = 1;
-
-    CONC_AP_LET (arg_node) = MakeLet (ap, lets);
 
     DBUG_RETURN (arg_node);
 }
