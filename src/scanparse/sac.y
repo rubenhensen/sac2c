@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.151  1998/03/15 11:01:51  srs
+ * fixed bug in letassign-rule. Abbreviation id[expr] of modarray did
+ * not duplicate string so that the flatten phase freed a still used
+ * name.
+ *
  * Revision 1.150  1998/03/04 16:25:23  cg
  * Now, adjacent strings are concatenated to a single one.
  *
@@ -1752,7 +1757,7 @@ letassign: ids LET expr
                              MakeExprs( $3,
                                MakeExprs($6,
                                  NULL))) ),
-                         MakeIds($1, NULL, ST_regular) );
+                         MakeIds(StringCopy($1), NULL, ST_regular) );
            }
          | expr_ap 
            { $$=MakeLet( $1, NULL);
