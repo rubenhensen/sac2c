@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/11/22 08:46:31  sbs
+ * DbugPrintStack compiled when DBUG package is active only!
+ *
  * Revision 3.5  2001/05/17 11:43:57  dkr
  * FREE eliminated
  *
@@ -222,6 +225,12 @@ static local_stack *tos, *stack, *stack_limit;
  *
  ******************************************************************************/
 
+#ifndef DBUG_OFF
+
+/*
+ * used within DBUG_EXECUTE only!
+ */
+
 static void
 DbugPrintStack (void)
 {
@@ -237,6 +246,8 @@ DbugPrintStack (void)
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* !DBUG_OFF */
 
 /******************************************************************************
  *
