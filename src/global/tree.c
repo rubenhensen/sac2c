@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/03/13 16:04:19  asi
+ * Revision 1.12  1995/03/14 14:11:24  asi
+ * added initialization of 'bblock' in MakeNode
+ *
+ * Revision 1.11  1995/03/13  16:04:19  asi
  * changed MakeIds
  *
  * Revision 1.10  1995/03/13  15:47:32  hw
@@ -110,6 +113,7 @@ MakeNode (nodetype nodetype)
         tmp->node[i] = NULL;
     tmp->nnode = 0;
     tmp->info.id = NULL;
+    tmp->bblock = 0;
     tmp->varno = 0;
     tmp->lineno = linenum;
     tmp->refcnt = 0;
