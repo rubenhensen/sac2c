@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/03/17 09:51:25  srs
+ * fixed bug in FltnCon.
+ * Traverse neutral element only if not NULL.
+ *
  * Revision 1.68  1998/03/16 14:44:52  srs
  * fixed bug resulted from changes in 1.65
  *
@@ -1487,16 +1491,19 @@ FltnCon (node *arg_node, node *arg_info)
            neutral element now but the variable in this position causes other
            errors. => ASSERT here */
         int old_tag = arg_info->info.cint;
-        node *exprs = MakeNode (N_exprs);
-        arg_info->info.cint = NORMAL;
-        exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
-                                             * call FltnExprs
-                                             */
-        exprs = Trav (exprs, arg_info);     /* call FltnExprs */
-        arg_node->node[1] = exprs->node[0];
-        FREE (exprs);
-        DBUG_ASSERT (N_id != NODE_TYPE (arg_node->node[1]),
-                     "FoldPrf only for constant neutral elements implemented yet.");
+        node *exprs;
+        if (FOLDPRF_NEUTRAL (arg_node)) {
+            exprs = MakeNode (N_exprs);
+            arg_info->info.cint = NORMAL;
+            /* exprs is only used temporary to call FltnExprs */
+            EXPRS_EXPR (exprs) = FOLDPRF_NEUTRAL (arg_node);
+            exprs = Trav (exprs, arg_info); /* call FltnExprs */
+            FOLDPRF_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
+            FREE (exprs);
+            DBUG_ASSERT (N_id != NODE_TYPE (FOLDPRF_NEUTRAL (arg_node)),
+                         "FoldPrf only for constant neutral elements implemented yet.");
+        }
+
         arg_info->info.cint = old_tag;
         FOLDPRF_BODY (arg_node) = Trav (FOLDPRF_BODY (arg_node), info_node);
         break;
