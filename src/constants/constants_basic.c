@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/26 08:22:07  sbs
+ * new_co in COAST2Constant now also initialized in default case as well
+ *
  * Revision 1.2  2001/03/22 14:25:41  nmw
  * COAST2Constant, COIsConstant, DebugPrint added
  *
@@ -595,6 +598,7 @@ COAST2Constant (node *n)
 
         default:
             DBUG_ASSERT ((FALSE), "missing implementation for given nodetype");
+            new_co = NULL; /* just to please the compiler... */
         }
     } else {
         /* node is not a constant */
