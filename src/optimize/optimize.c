@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/07/28 08:33:30  mab
+ * fixed minor bug in ResetCounters
+ *
  * Revision 2.16  2000/07/25 11:54:28  mab
  * added ap_padded and ap_unsupported
  *
@@ -238,7 +241,7 @@ ResetCounters ()
     wlt_expr = 0;
     cse_expr = 0;
     ap_padded = 0;
-    ap_unsupported;
+    ap_unsupported = 0;
 
     DBUG_VOID_RETURN;
 }
