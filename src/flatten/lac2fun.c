@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/04/02 11:06:25  nmw
+ * MakeL2Ffundef inits counter/list for multiple used special fundefs.
+ *
  * Revision 3.13  2001/03/22 19:21:19  dkr
  * include of tree.h eliminated
  *
@@ -323,9 +326,10 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
                     NULL);
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
     FUNDEF_INT_ASSIGN (fundef) = NULL;
-    FUNDEF_EXT_ASSIGN (fundef) = INFO_L2F_ASSIGN (arg_info);
-
-    DBUG_PRINT ("L2F", ("link to assignment: %p\n\n", FUNDEF_EXT_ASSIGN (fundef)));
+    FUNDEF_EXT_ASSIGNS (fundef) = NodeListAppend (NULL, INFO_L2F_ASSIGN (arg_info), NULL);
+    FUNDEF_USED (fundef) = 1;
+    DBUG_PRINT ("L2F",
+                ("set link to external assignment: %p\n\n", INFO_L2F_ASSIGN (arg_info)));
 
     switch (NODE_TYPE (instr)) {
     case N_cond:
