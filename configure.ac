@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.26  2003/07/31 16:55:41  mwe
+dnl changed PDCCFLAGS from -g3 to -g for Mac's
+dnl
 dnl Revision 1.25  2003/04/26 12:33:50  sah
 dnl added pthread test for gccs
 dnl
@@ -388,7 +391,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
   AC_SUBST(RCCCFLAGS, ["-Wall -traditional-cpp -Wno-unused -fno-builtin"])
   AC_SUBST(MKCCFLAGS, ["-g"])
-  AC_SUBST(PDCCFLAGS, ["-g3"])
+  AC_SUBST(PDCCFLAGS, ["-g"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
   AC_SUBST(CCMTLINK, [""])
