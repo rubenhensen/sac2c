@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.52  2002/06/07 17:20:09  mwe
+# Added AssociativeLaw.o for linking
+#
 # Revision 3.51  2002/05/31 17:22:23  dkr
 # NameTuplesUtils.o and icm2c_utils.o added
 #
@@ -135,7 +138,9 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/CSE.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
-          src/optimize/SSALUR.o src/optimize/rmcasts.o src/optimize/SSAInferLI.o
+          src/optimize/SSALUR.o src/optimize/rmcasts.o src/optimize/SSAInferLI.o \
+	  src/optimize/AssociativeLaw.o
+
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
