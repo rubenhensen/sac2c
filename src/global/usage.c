@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/08/09 16:44:12  asi
+ * Revision 1.43  1996/09/11 06:15:08  cg
+ * Added options -libstat, -deps, -noranlib, -l1, l2, l3
+ *
+ * Revision 1.42  1996/08/09  16:44:12  asi
  * dead function removal added
  *
  * Revision 1.41  1996/05/29  14:18:57  sbs
@@ -145,7 +148,9 @@ usage (char *prg_name)
 {
     DBUG_ENTER ("usage");
 
-    printf ("\n\nNAME:\n\n");
+    printf ("\n\n\tsac2c  --  The ultimate SAC compiler\n\n");
+
+    printf ("\nNAME:\n\n");
 
     printf ("\t%s\n", prgname);
 
@@ -156,6 +161,10 @@ usage (char *prg_name)
     printf ("\n\nOVERALL OPTIONS:\n\n");
 
     printf ("\t -h\t\t\tthis helptext\n");
+    printf ("\t -libstat\t\tprint status information about a SAC library file\n");
+    printf ("\t -deps\t\t\tupdate Makefile in current directory with \n");
+    printf ("\t\t\t\tdependencies from imported modules/classes.\n");
+
     printf ("\t -#string\t\toptions (string) for DBUG information\n");
     printf ("\t -I path\t\tspecify additional declaration path\n");
     printf ("\t -L path\t\tspecify additional library path\n");
@@ -239,6 +248,15 @@ usage (char *prg_name)
     printf ("\t -dcheck_boundary\tcheck boundary of arrays upon access\n");
     printf ("\t -dnocleanup\t\tdon't remove temporary files and directories\n");
     printf ("\t -dcheck_malloc\t\tcheck success of memory allocations\n");
+
+    printf ("\n\nLINK OPTIONS:\n\n");
+
+    printf ("\t -noranlib\t\tdon't use ranlib (for systems without ranlib)\n");
+    printf ("\t -l<n>\t\t\tlink level for generating SAC library\n");
+    printf ("\t\t\t\t1: compile to one large object file\n");
+    printf ("\t\t\t\t2: compile to archive of object files (default)\n");
+    printf ("\t\t\t\t3: compile to archive of object files\n");
+    printf ("\t\t\t\t   and include required non-standard modules\n");
 
     printf ("\n\nC-COMPILER OPTIONS:\t(handed to the C-compiler)\n\n");
 

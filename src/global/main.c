@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.88  1996/08/09 16:44:12  asi
+ * Revision 1.89  1996/09/11 06:15:08  cg
+ * Added options -libstat, -deps, -noranlib, -l1, l2, l3
+ *
+ * Revision 1.88  1996/08/09  16:44:12  asi
  * dead function removal added
  *
  * Revision 1.87  1996/07/14  13:02:19  sbs
@@ -342,7 +345,10 @@ char prgname[MAX_FILE_NAME];
 /* name of the compiler, e.g. sac2c */
 
 char outfilename[MAX_FILE_NAME] = "";
-/* name of executable or archive    */
+/* name of executable    */
+
+char modulename[MAX_FILE_NAME] = "";
+/* name of module/class which is compiled    */
 
 char cfilename[MAX_FILE_NAME];
 /* name of C source code file       */
@@ -352,6 +358,9 @@ char targetdir[MAX_FILE_NAME];
 
 char ccflagsstr[MAX_FILE_NAME] = "";
 /* flags which are handed to gcc    */
+
+char commandline[MAX_PATH_LEN] = "";
+/* command line, used for diagnostic output (status report)  */
 
 int Ccodeonly = 0;
 int break_compilation = 0;
@@ -380,6 +389,26 @@ int check_malloc = 0;
 int breakae = 0;
 int check_boundary = 0;
 int cleanup = 1;
+int linkstyle = 2;
+int useranlib = 1;
+int libstat = 0;
+int makedeps = 0;
+
+int print_objdef_for_header_file = 0;
+/*
+ *  This global variable serves a very special purpose.
+ *  When generating separate C-files for functions and global variables,
+ *  a header file is required which contains declarations of them all.
+ *  In this case the ICM ND_KS_DECL_GLOBAL_ARRAY must be written
+ *  differently. This global variable triggers the respective print
+ *  function defined in icm2c.c. It is set by PrintModul.
+ */
+
+int function_counter = 1;
+/*
+ *  This global variable is used whenever the functions of a module or
+ *  class are written to separate files.
+ */
 
 /*
  *  And now, the main function which triggers the whole compilation.
@@ -395,13 +424,26 @@ MAIN
 
     node *syntax_tree;
 
+    int i;
+
     InitPaths ();
+
+    /*
+     *  The command line is written to a single string.
+     */
+
+    strcpy (commandline, argv[0]);
+
+    for (i = 1; i < argc; i++) {
+        strcat (commandline, " ");
+        strcat (commandline, argv[i]);
+    }
 
     /*
      *  First, we evaluate the given command line options...
      */
 
-    NOTE_COMPILER_PHASE;
+    /*  NOTE_COMPILER_PHASE; */
 
     strcpy (prgname, argv[0]);
 
@@ -679,6 +721,8 @@ MAIN
             opt_rco = 0;
         else if (!strncmp (*argv, "oRCO", 3))
             opt_rco = 0;
+        else if (!strncmp (*argv, "oranlib", 7))
+            useranlib = 0;
         else
             SYSWARN (("Unknown compiler option '-n%s`", *argv));
     }
@@ -749,8 +793,30 @@ MAIN
             cleanup = 0;
         else if (!strncmp (*argv, "NC", 2))
             cleanup = 0;
+        else if (!strncmp (*argv, "eps", 3))
+            makedeps = 1;
         else
             SYSWARN (("Unknown debug option '-d%s`", *argv));
+    }
+    NEXTOPT
+    ARG 'l' : PARM
+    {
+        switch (**argv) {
+        case '1':
+            linkstyle = 1;
+            break;
+        case '2':
+            linkstyle = 2;
+            break;
+        case '3':
+            linkstyle = 3;
+            break;
+        default:
+            if (!strncmp (*argv, "ibstat", 6))
+                libstat = 1;
+            else
+                SYSWARN (("Unknown command line option '-l%s`", *argv));
+        }
     }
     NEXTOPT
     OTHER
@@ -768,6 +834,8 @@ MAIN
      * and module implementations...
      */
 
+    RearrangePaths ();
+
     if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
 
@@ -776,6 +844,17 @@ MAIN
 
     if (AppendEnvVar (PATH, "SAC_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
+
+    /*
+     * If sac2c was started with the option -libstat,
+     * then the library status is printed to stdout and the
+     * compilation process is terminated immediately.
+     */
+
+    if (libstat) {
+        PrintLibStat ();
+        exit (0);
+    }
 
     /*
      * Now, we create tmp directories for files generated during the
@@ -973,15 +1052,19 @@ MAIN
         InvokeCC (syntax_tree);
         ABORT_ON_ERROR;
         compiler_phase++;
-    }
 
-    if ((!Ccodeonly)
-        && ((MODUL_FILETYPE (syntax_tree) == F_modimp)
-            || (MODUL_FILETYPE (syntax_tree) == F_classimp))) {
-        NOTE_COMPILER_PHASE;
-        CreateLibrary (syntax_tree);
-        ABORT_ON_ERROR;
+        if ((MODUL_FILETYPE (syntax_tree) == F_modimp)
+            || (MODUL_FILETYPE (syntax_tree) == F_classimp)) {
+            NOTE_COMPILER_PHASE;
+            CreateLibrary (syntax_tree);
+            ABORT_ON_ERROR;
+        }
         compiler_phase++;
+
+        if (makedeps) {
+            NOTE_COMPILER_PHASE;
+            UpdateMakefile ();
+        }
     }
 
     /*
