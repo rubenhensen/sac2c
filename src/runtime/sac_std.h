@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/12/08 10:58:21  cg
+ * bug fixed: SAC_TR_MEM_PRINT_TRACEHEADER_ALL still used but no
+ * longer defined.
+ *
  * Revision 1.5  1998/07/10 08:09:21  cg
  * some bugs fixed, appropriate renaming of macros
  *
@@ -138,24 +142,24 @@
 #define SAC_ND_FREE_HIDDEN(name, freefun)                                                \
     freefun (name);                                                                      \
     SAC_FREE (SAC_ND_A_RCP (name));                                                      \
-    SAC_TR_MEM_PRINT (("ND_FREE_HIDDEN(%s, %s) at adr: %p", #name, #freefun, name));     \
+    SAC_TR_MEM_PRINT (("ND_FREE_HIDDEN(%s, %s) at addr: %p", #name, #freefun, name));    \
     SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
 #define SAC_ND_NO_RC_FREE_HIDDEN(name, freefun)                                          \
     freefun (name);                                                                      \
     SAC_TR_MEM_PRINT (                                                                   \
-      ("ND_NO_RC_FREE_HIDDEN(%s, %s) at adr: %p", #name, #freefun, name));               \
+      ("ND_NO_RC_FREE_HIDDEN(%s, %s) at addr: %p", #name, #freefun, name));              \
     SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
 #define SAC_ND_FREE_ARRAY(name)                                                          \
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
     SAC_FREE (SAC_ND_A_RCP (name));                                                      \
-    SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at adr: %p", #name, name));                    \
+    SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
-    SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at adr: %p", #name, name));              \
+    SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));
 
 /*
@@ -194,7 +198,7 @@
     {                                                                                    \
         new = copyfun (old);                                                             \
         SAC_TR_MEM_PRINT (("ND_COPY_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));         \
-        SAC_TR_MEM_PRINT (("new hidden object at adr: %p", new));                        \
+        SAC_TR_MEM_PRINT (("new hidden object at addr: %p", new));                       \
         SAC_TR_INC_HIDDEN_MEMCNT (1);                                                    \
         SAC_TR_REF_PRINT_RC (new);                                                       \
     }
@@ -215,7 +219,8 @@
         for (__i = 0; __i < SAC_ND_A_SIZE (old); __i++) {                                \
             SAC_ND_A_FIELD (new)[__i] = SAC_ND_A_FIELD (old)[__i];                       \
         }                                                                                \
-        SAC_TR_MEM_PRINT_TRACEHEADER_ALL (("ND_KS_COPY_ARRAY(%s, %s)", #old, #new));     \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_KS_COPY_ARRAY(%s, %s) at addr: %p", #old, #new, SAC_ND_A_FIELD (new)));   \
         SAC_TR_REF_PRINT_RC (old);                                                       \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (new));                                   \
     }
@@ -252,7 +257,7 @@
           = (basetype *)SAC_MALLOC (sizeof (basetype) * SAC_ND_A_SIZE (name));           \
         SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                          \
         SAC_ND_A_RC (name) = rc;                                                         \
-        SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at adr: %d", #basetype, #name,    \
+        SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                  \
         SAC_TR_REF_PRINT_RC (name);                                                      \
