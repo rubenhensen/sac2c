@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/05/31 11:25:22  mab
+ * added traversal tables for array padding
+ *
  * Revision 1.15  2000/05/29 14:29:50  dkr
  * a second traversal-table for precompile added
  *
@@ -165,6 +168,8 @@ extern funtab *barin_tab;
 extern funtab *blkli_tab;
 extern funtab *adjca1_tab;
 extern funtab *adjca2_tab;
+extern funtab *padcoll_tab;
+extern funtab *padtrans_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/05/31 11:23:17  mab
+ * added traversal tables for array padding
+ *
  * Revision 2.16  2000/05/29 14:31:10  dkr
  * second traversal table for precompile added
  *
@@ -627,7 +630,11 @@ TmpVar ()
     } else if (act_tab == fun2lac_tab) {
         s = "fun2lac";
     } else if (act_tab == ai_tab) {
-        s = "fun2lac";
+        s = "ai";
+    } else if (act_tab == padcoll_tab) {
+        s = "padc";
+    } else if (act_tab == padtrans_tab) {
+        s = "padt";
     } else {
         s = "unknown";
     }
