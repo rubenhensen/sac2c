@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/31 12:28:11  jhs
+ * fixed bug
+ *
  * Revision 1.4  2000/03/29 16:09:16  jhs
  * DFMPrintMask's outcommented.
  *
@@ -398,22 +401,25 @@ DFAlet_dn (node *arg_node, node *arg_info)
         DFMSetMaskEntrySet (LET_USEMASK (arg_node), ID_NAME (expr), NULL);
     } else if ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)) {
         DBUG_PRINT ("DFA", ("reached N_ap or N_prf"));
+        DBUG_PRINT ("DFA", ("hit %s", NODE_TEXT (expr)));
         /* see comment above */
         args = AP_OR_PRF_ARGS (expr);
-        DBUG_PRINT ("DFA", ("hit %s", NODE_TEXT (args)));
-        DBUG_ASSERT ((NODE_TYPE (args) == N_exprs), ("args not N_exprs"));
-        while (args != NULL) {
-            arg = EXPRS_EXPR (args);
-            DBUG_PRINT ("DFA", ("type of arg is %s", NODE_TEXT (arg)));
-            if (NODE_TYPE (arg) == N_id) {
-                DBUG_PRINT ("DFA", ("add %s", ID_NAME (arg)));
-                DFMSetMaskEntrySet (LET_USEMASK (arg_node), ID_NAME (arg), NULL);
-            } else if ((NODE_TYPE (arg) == N_num) || (NODE_TYPE (arg) == N_array)) {
-                /* ignore */
-            } else {
-                DBUG_ASSERT (0, "unknown kind of arg found (watch DFA)");
-            }
-            args = EXPRS_NEXT (args);
+        if (args != NULL) {
+            DBUG_PRINT ("DFA", ("hit %s", NODE_TEXT (args)));
+            DBUG_ASSERT ((NODE_TYPE (args) == N_exprs), ("args not N_exprs"));
+            while (args != NULL) {
+                arg = EXPRS_EXPR (args);
+                DBUG_PRINT ("DFA", ("type of arg is %s", NODE_TEXT (arg)));
+                if (NODE_TYPE (arg) == N_id) {
+                    DBUG_PRINT ("DFA", ("add %s", ID_NAME (arg)));
+                    DFMSetMaskEntrySet (LET_USEMASK (arg_node), ID_NAME (arg), NULL);
+                } else if ((NODE_TYPE (arg) == N_num) || (NODE_TYPE (arg) == N_array)) {
+                    /* ignore */
+                } else {
+                    DBUG_ASSERT (0, "unknown kind of arg found (watch DFA)");
+                }
+                args = EXPRS_NEXT (args);
+            } /* while (args != NULL) */
         }
     } else if ((NODE_TYPE (expr) == N_Nwith2)) {
         /*
