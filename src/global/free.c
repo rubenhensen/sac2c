@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/03/06 13:19:47  srs
+ * added free node->info2 of N_Nwith node
+ *
  * Revision 1.31  1998/02/11 17:15:19  srs
  * changed NPART_IDX to NPART_WITHID
  *
@@ -1453,6 +1456,7 @@ FreeNWith (node *arg_node, node *arg_info)
     FREETRAV (NWITH_PART (arg_node));
     FREETRAV (NWITH_CODE (arg_node));
     FREETRAV (NWITH_WITHOP (arg_node));
+    FREE (arg_node->info2);
     FREE (arg_node);
 
     DBUG_RETURN ((node *)NULL);
