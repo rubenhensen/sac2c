@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/10/20 15:38:45  dkr
+ * MT_CREATE_LOCAL_DESC modified
+ *
  * Revision 3.42  2003/10/20 15:35:04  dkr
  * MT_SYNCBLOCK_CLEANUP added
  *
@@ -1462,7 +1465,7 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
      * object is neither reused nor deleted.
      */
     INDENT;
-    fprintf (outfile, "SAC_ND_SET__RC( %s, 10)\n", var_NT);
+    fprintf (outfile, "SAC_ND_SET__RC( %s, 2)\n", var_NT);
 
     DBUG_VOID_RETURN;
 }
