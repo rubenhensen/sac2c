@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/07/12 18:38:30  dkr
+ * CT_prf removed (okay, that was a bullshit idea ... #$%@&)
+ *
  * Revision 3.16  2002/07/08 20:14:00  dkr
  * CT_prf added
  *
@@ -222,7 +225,7 @@ typedef enum {
     F_modspec
 } file_type;
 
-typedef enum { CT_normal, CT_ap, CT_prf, CT_array, CT_return, CT_wl } contextflag;
+typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
 
 typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t;
 
