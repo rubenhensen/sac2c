@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/12/01 17:19:13  cg
+ * Revision 1.38  1996/01/17 14:21:59  asi
+ * new dataflow-information 'most-recently-defined-Listen' MRD used for substitution
+ * added constant-folding for double-type
+ * new trav-function OPTTrav used and some functions uses new access-macros for
+ * virtuell syntax-tree
+ *
+ * Revision 1.37  1995/12/01  17:19:13  cg
  * All warnings converted to new Error macros
  *
  * Revision 1.36  1995/08/07  10:10:51  asi
@@ -135,6 +141,7 @@
 #include "print.h"
 #include "Error.h"
 #include "dbug.h"
+#include "globals.h"
 #include "my_debug.h"
 #include "traverse.h"
 #include "typecheck.h"
@@ -146,235 +153,31 @@
 #include "LoopInvariantRemoval.h"
 #include "ConstantFolding.h"
 
-extern char filename[]; /* is set temporary; will be set later on in main.c */
-
 #define MAXARG 3
+#define INFO_TYPE arg_info->info.types
 #define FALSE 0
 #define TRUE 1
 
 /*
  *  This macros secects the right element out of the union info
  */
-#define SELARG(n) ((n->nodetype == N_float) ? n->info.cfloat : n->info.cint)
-
-/*
- *
- *  functionname  : CheckStack
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-void
-CheckStack (stack *my_stack)
-{
-    DBUG_ENTER ("CheckStack");
-    if (def_stack->tos == ((def_stack->st_len) - 1)) {
-        def_stack->stack
-          = realloc (def_stack->stack, (sizeof (stelm) * (2 * def_stack->st_len)));
-        if (NULL == def_stack->stack)
-            Error ("out of memory", 1);
-        def_stack->st_len *= 2;
-    }
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  : PushVL
- *  arguments     : 1) number of variables in new list
- *  description   : a new entry will be pushed on the def_stack. The entry is a pointer
- *		    to an array with size NumVar. The elements of the array are pointers
- *		    to the last expression the variable is set to in control-flow
- *		    direction.
- *  global vars   : def_stack
- *  internal funs : --
- *  external funs : Error, MAlloc
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-void
-PushVL (long NumVar)
-{
-    int i;
-
-    DBUG_ENTER ("PushVL");
-    DBUG_PRINT ("STACK",
-                ("Push Stack TOS = %d -> %d", def_stack->tos, (def_stack->tos) + 1));
-    def_stack->stack[++def_stack->tos].varlist
-      = (node **)MAlloc (sizeof (node *) * (NumVar + 1));
-    def_stack->stack[def_stack->tos].vl_len = NumVar;
-    for (i = 0; i < NumVar; i++)
-        def_stack->stack[def_stack->tos].varlist[i] = NULL;
-    CheckStack (def_stack);
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  : PushDupVL
- *  arguments     : --
- *  description   : Duplicates the top entry of the def_stack
- *  global vars   : def_stack
- *  internal funs : --
- *  external funs : MAlloc
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-void
-PushDupVL ()
-{
-    int NumVar, i;
-
-    DBUG_ENTER ("PushDupVL");
-    DBUG_PRINT ("STACK",
-                ("Dup Stack TOS = %d -> %d", def_stack->tos, (def_stack->tos) + 1));
-    NumVar = def_stack->stack[def_stack->tos].vl_len;
-    def_stack->stack[++def_stack->tos].varlist
-      = (node **)MAlloc (sizeof (node *) * (NumVar + 1));
-    for (i = 0; i < NumVar; i++)
-        def_stack->stack[def_stack->tos].varlist[i]
-          = def_stack->stack[def_stack->tos - 1].varlist[i];
-    def_stack->stack[def_stack->tos].vl_len = def_stack->stack[def_stack->tos - 1].vl_len;
-    CheckStack (def_stack);
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  : PopVL
- *  arguments     : --
- *  description   : The top entry of the def_stack will be removed
- *  global vars   : def_stack
- *  internal funs : --
- *  external funs : --
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-void
-PopVL ()
-{
-    DBUG_ENTER ("PopVL");
-    DBUG_PRINT ("STACK", ("Pop TOS = %d -> %d", def_stack->tos, (def_stack->tos) - 1));
-    FREE (def_stack->stack[def_stack->tos].varlist);
-    def_stack->tos--;
-    DBUG_VOID_RETURN;
-}
-
-void
-PopVL2 ()
-{
-    DBUG_ENTER ("PopVL2");
-    DBUG_PRINT ("STACK",
-                ("Pop second TOS = %d -> %d", def_stack->tos, (def_stack->tos) - 1));
-    FREE (def_stack->stack[(def_stack->tos) - 1].varlist);
-    def_stack->stack[(def_stack->tos) - 1].varlist
-      = def_stack->stack[def_stack->tos].varlist;
-    def_stack->tos--;
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  : ConstantFolding
- *  arguments     : 1) ptr to root of the syntaxtree or a N_fundef - node.
- *		    2) NULL
- *                  R) ptr to root of the optimized syntax-tree
- *  description   : initiates constant folding for the intermediate sac-code:
- *		    - the constant-folding stack (def_stack) will be initialize
- *		    - call Trav to start constant-folding
- *  global vars   : syntax_tree, cf_tab, act_tab, def_stack
- *  internal funs : ---
- *  external funs : Trav, MakeNode, MAlloc
- *  macros        : DBUG..., MIN_STACK_SIZE
- *
- *  remarks       : --
- *
- *
- */
-node *
-ConstantFolding (node *arg_node, node *info_node)
-{
-    DBUG_ENTER ("ConstantFolding");
-    act_tab = cf_tab;
-    info_node = MakeNode (N_info);
-    def_stack = MAlloc (sizeof (stack));
-    def_stack->tos = -1;
-    def_stack->st_len = MIN_STACK_SIZE;
-    def_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
-
-    arg_node = Trav (arg_node, info_node);
-
-    FREE (info_node);
-    FREE (def_stack->stack);
-    FREE (def_stack);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : CFfundef
- *  arguments     : 1) fundef-node
- *		    2) NULL
- *		    R) fundef-node with constant folded body of function
- *  description   : - generates info_node
- *		    - varno of the info_node will be set to the number of local variables
- *			and arguments in this functions
- *		    - new entry will be pushed on the def_stack
- *		    - generates two masks and links them to the info_node
- * 			[0] - variables not further defined in function and
- *			[1] - variables not further used in function after c.- f.
- *		    - calls Trav to fold constants in current function
- *		    - last entry will be poped from def_stack
- *		    - updates masks in fundef node.
- *  global vars   : syntax_tree, def_stack
- *  internal funs : PushVL, PopVL
- *  external funs : GenMask, MinusMask, OptTrav
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-node *
-CFfundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("CFfundef");
-
-    DBUG_PRINT ("CF", ("Constant folding function: %s", arg_node->info.types->id));
-    VARNO = arg_node->varno;
-    PushVL (arg_info->varno);
-
-    arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
-
-    PopVL (def_stack);
-
-    arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
-    DBUG_RETURN (arg_node);
-}
+#define SELARG(n)                                                                        \
+    ((n->nodetype == N_num)                                                              \
+       ? NUM_VAL (n)                                                                     \
+       : ((n->nodetype == N_float) ? FLOAT_VAL (n) : DOUBLE_VAL (n)))
 
 /*
  *
  *  functionname  : IsConst
  *  arguments     : 1) node to be examine
- *		    R) 0 if node isn't a constant
- *		       1 if node is a constant
- *		       2 if node is a array, but containing non constant elements
+ *		    R) TRUE  - if node is a constant
+ *		       FALSE - if node isn't a constant, or if node is a array, but
+ *                             containing non constant elements
  *  description   : determines if expression is a constant
  *  global vars   : syntax_tree, N_num, N_float, N_array, N_str, N_bool, N_id
  *  internal funs : --
  *  external funs : --
- *  macros        : DBUG...
+ *  macros        : TRUE, FALSE, NODE_TYPE, ARRAY_AELEMS, EXPRS_EXPR, EXPRS_NEXT
  *
  *  remarks       : --
  *
@@ -388,30 +191,212 @@ IsConst (node *arg_node)
     DBUG_ENTER ("IsConst");
 
     if (NULL != arg_node) {
-        switch (arg_node->nodetype) {
+        switch (NODE_TYPE (arg_node)) {
         case N_num:
         case N_float:
+        case N_double:
         case N_str:
         case N_bool:
-            isit = 1;
+            isit = TRUE;
             break;
         case N_array:
-            isit = 1;
-            expr = arg_node->node[0];
+            isit = TRUE;
+            expr = ARRAY_AELEMS (arg_node);
             while (NULL != expr) {
-                if (N_id == expr->node[0]->nodetype)
-                    isit = 2;
-                expr = expr->node[1];
+                if (N_id == NODE_TYPE (EXPRS_EXPR (expr)))
+                    isit = TRUE;
+                expr = EXPRS_NEXT (expr);
             }
             break;
         default:
-            isit = 0;
+            isit = FALSE;
             break;
         }
     } else {
-        isit = 0;
+        isit = FALSE;
     }
     DBUG_RETURN (isit);
+}
+
+/*
+ *
+ *  functionname  : ConstantFolding
+ *  arguments     : 1) ptr to root of the syntaxtree or a N_fundef - node.
+ *		    2) NULL
+ *                  R) ptr to root of the optimized syntax-tree
+ *  description   : initiates constant folding for the intermediate sac-code:
+ *		    - the most-recently-defined- stack (mrdl_stack) will be initialize
+ *		    - call Trav to start constant-folding
+ *  global vars   : syntax_tree, cf_tab, act_tab, mrdl_stack
+ *  internal funs : ---
+ *  external funs : Trav (traverse.h), MakeNode (tree_basic.h)
+ *  macros        : FREE
+ *
+ *  remarks       : --
+ *
+ *
+ */
+node *
+ConstantFolding (node *arg_node, node *info_node)
+{
+    DBUG_ENTER ("ConstantFolding");
+    act_tab = cf_tab;
+    info_node = MakeNode (N_info);
+
+    arg_node = Trav (arg_node, info_node);
+
+    FREE (info_node);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CFfundef
+ *  arguments     : 1) N_fundef - node
+ *		    2) N_info - node
+ *		    R) N_fundef - node
+ *  description   : calls OPTTrav to fold constants in current and following functions
+ *  global vars   : syntax_tree, mrdl_stack
+ *  internal funs : ---
+ *  external funs : OPTTrav (optimize.h)
+ *  macros        : FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_NEXT, FUNDEF_NAME
+ *
+ *  remarks       : ---
+ *
+ */
+node *
+CFfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CFfundef");
+
+    DBUG_PRINT ("CF", ("Constant folding function: %s", FUNDEF_NAME (arg_node)));
+    if (NULL != FUNDEF_BODY (arg_node))
+        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CFassign
+ *  arguments     : 1) N_assign - node
+ *                  2) N_info - node
+ *                  R) N_assign - node
+ *  description   : - constant folding of the instructions
+ *		    - construction of a new assign-list if nessessary
+ *  global vars   : syntax_tree, mrdl_stack
+ *  internal funs : CFassign
+ *  external funs : OPTTrav (optimize.h), FreeNode (free.h),
+ *                  AppendNodeChain (internal_lib.h)
+ *  macros        : NODE_LINE, NODE_TYPE, ASSIGN_INSTR, ASSIGN_NEXT
+ *
+ *  remarks       : --
+ *
+ */
+node *
+CFassign (node *arg_node, node *arg_info)
+{
+    node *returnnode;
+    nodetype ntype;
+
+    DBUG_ENTER ("CFassign");
+    DBUG_PRINT ("CF", ("Begin folding of line %d", NODE_LINE (arg_node)));
+    ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
+    if (N_return != ntype) {
+        ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
+
+        switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+        case N_empty:
+            returnnode = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+            FreeNode (arg_node);
+            break;
+        case N_assign:
+            if (N_do == ntype) {
+                ASSIGN_NEXT (arg_node)
+                  = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+                returnnode
+                  = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+                ASSIGN_INSTR (arg_node) = NULL;
+                ASSIGN_NEXT (arg_node) = NULL;
+                FreeTree (arg_node);
+            } else {
+                returnnode
+                  = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+                ASSIGN_INSTR (arg_node) = NULL;
+                ASSIGN_NEXT (arg_node) = NULL;
+                FreeTree (arg_node);
+                returnnode = CFassign (returnnode, arg_info);
+            }
+            break;
+        default:
+            ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+            returnnode = arg_node;
+            break;
+        }
+    } else {
+        returnnode = arg_node;
+    }
+    DBUG_RETURN (returnnode);
+}
+
+/*
+ *
+ *  functionname  : GetType
+ *  arguments     : 1) type
+ *                  R) real type
+ *  description   : determines real type
+ *  global vars   : syntax_tree
+ *  internal funs : --
+ *  external funs : LookupType (typcheck.h)
+ *  macros        : TYPES_BASETYPE, TYPES_NAME, TYPES_MOD, TYPEDEF_TYPE
+ *
+ *  remarks       : --
+ *
+ */
+types *
+GetType (types *type)
+{
+    node *tnode;
+
+    DBUG_ENTER ("GetType");
+    if (T_user == TYPES_BASETYPE (type)) {
+        tnode = LookupType (TYPES_NAME (type), TYPES_MOD (type), 0);
+        type = TYPEDEF_TYPE (tnode);
+    }
+    DBUG_RETURN (type);
+}
+
+/*
+ *
+ *  functionname  : CFlet
+ *  arguments     : 1) N_let  - node
+ *		    2) N_info - node
+ *                  R) N_let  - node
+ *  description   : - stores alink to the type of expression at the left hand side
+ *		      of the let in the info_node
+ *		    - initiates constant folding for the right hand side
+ *  global vars   : syntax_tree, mrdl_stack
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+CFlet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CFlet");
+
+    /* get result type for potential primitive function */
+    INFO_TYPE = GetType (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node))));
+
+    /* Trav expression */
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    INFO_TYPE = NULL;
+
+    DBUG_RETURN (arg_node);
 }
 
 /*
@@ -423,7 +408,7 @@ IsConst (node *arg_node)
  *		       num-, float-, bool- or array-node.
  *  description   : the id-node will be replaced with a new node reppresenting the
  *                  constant value of the identifikator in this context
- *  global vars   : syntax_tree, info_node, def_stack
+ *  global vars   : syntax_tree, info_node, mrdl_stack
  *  internal funs :
  *  external funs : DupTree
  *  macros        : DBUG..., TOS
@@ -434,35 +419,55 @@ IsConst (node *arg_node)
 node *
 CFid (node *arg_node, node *arg_info)
 {
-    node *value;
+    node *mrd;
 
     DBUG_ENTER ("CFid");
-    value = VAR (arg_node->info.ids->node->varno);
-    if (NULL != value) {
-        switch (value->nodetype) {
+    MRD_GETSUBST (mrd, ID_VARNO (arg_node), INFO_VARNO);
+    if (NULL != mrd) {
+        switch (NODE_TYPE (mrd)) {
         case N_id:
-            if (NULL != arg_info)
-                DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            DEC_VAR (INFO_USE, ID_VARNO (arg_node));
             FreeTree (arg_node);
-            arg_node = DupTree (value, NULL);
-            if (NULL != arg_info)
-                INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            arg_node = DupTree (mrd, NULL);
+            INC_VAR (INFO_USE, ID_VARNO (arg_node));
             break;
         case N_num:
         case N_float:
+        case N_double:
         case N_bool:
-            if (NULL != arg_info)
-                DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+        case N_str:
+            DEC_VAR (INFO_USE, ID_VARNO (arg_node));
             FreeTree (arg_node);
-            arg_node = DupTree (value, NULL);
+            arg_node = DupTree (mrd, NULL);
+            break;
+        case N_prf:
+        case N_array:
+        case N_ap:
+        case N_with:
             break;
         default:
+            DBUG_ASSERT ((FALSE), "Substitution not implemented for constant folding");
             break;
         }
     }
     DBUG_RETURN (arg_node);
 }
 
+/*
+ *
+ *  functionname  : CFap
+ *  arguments     : 1) N_ap   - node
+ *                  2) N_info - node
+ *                  R) N_ap   - node
+ *  description   : Do not traverse arguments of user defined functions
+ *  global vars   : syntax_tree
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ---
+ *
+ *  remarks       : ---
+ *
+ */
 node *
 CFap (node *arg_node, node *arg_info)
 {
@@ -476,221 +481,83 @@ CFap (node *arg_node, node *arg_info)
  *  arguments     : 1) cast-node
  *                  2) info-node
  *                  R) cast-node
- *  description   :
+ *  description   : removes N_cast-node from syntax_tree
  *  global vars   : syntax_tree, info_node
- *  internal funs : --
- *  external funs : OptTrav
- *  macros        : DBUG...
+ *  internal funs : ---
+ *  external funs : OPTTrav (optimize.h), FreeTree (free.h)
+ *  macros        : CAST_EXPR
  *
- *  remarks       : --
+ *  remarks       : ---
  *
  */
 node *
 CFcast (node *arg_node, node *arg_info)
 {
-    node *cast;
+    node *next_node;
 
     DBUG_ENTER ("CFcast");
 
-    arg_node = OptTrav (arg_node, arg_info, 0);
+    next_node = Trav (CAST_EXPR (arg_node), arg_info);
 
-    switch (arg_node->node[0]->nodetype) {
-    case N_num:
-    case N_float:
-    case N_bool:
-        cast = arg_node;
-        arg_node = arg_node->node[0];
-        cast->nnode = 0;
-        FreeTree (cast);
-        break;
-    case N_array:
-        arg_node = arg_node->node[0];
-        break;
-    case N_id:
-    case N_with:
-    case N_prf:
-    case N_ap:
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Unknown nodetype for CFcast");
-        break;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : CFassign
- *  arguments     : 1) assign-node
- *                  2) info-node
- *                  R) assign-node
- *  description   : - constant folding of the instructions
- *		    - construction of a new assign-list if nessessary
- *  global vars   : syntax_tree, def_stack, info_node
- *  internal funs : --
- *  external funs : GenMask, AppendNodeChain, PlusMask, OptTrav, MinusMask
- *  macros        : DBUG..., TOS
- *
- *  remarks       : --
- *
- */
-node *
-CFassign (node *arg_node, node *arg_info)
-{
-    node *returnnode;
-    nodetype ntype;
-
-    DBUG_ENTER ("CFassign");
-    DBUG_PRINT ("CF", ("Begin folding of line %d", arg_node->lineno));
-    returnnode = arg_node;
-    if (N_return != arg_node->node[0]->nodetype) {
-        arg_info->lineno = arg_node->lineno;
-        ntype = arg_node->node[0]->nodetype;
-
-        arg_node = OptTrav (arg_node, arg_info, 0); /* Trav instruction */
-
-        arg_info->node[0] = NULL;
-        switch (arg_node->node[0]->nodetype) {
-        case N_empty:
-            returnnode = arg_node->node[1];
-            arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
-            arg_node->nnode = 1;
-            FreeTree (arg_node);
-            break;
-        case N_assign:
-            if (N_do == ntype) {
-                arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-                returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-            } else {
-                returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-                arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-            }
-            break;
-        default:
-            arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
-            break;
-        }
-    }
-    DBUG_RETURN (returnnode);
-}
-
-/*
- *
- *  functionname  : GetType
- *  arguments     : 1) type
- *                  R) real type
- *  description   : determines real type
- *  global vars   : syntax_tree
- *  internal funs : --
- *  external funs : LookupType
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-types *
-GetType (types *type)
-{
-    node *tnode;
-
-    DBUG_ENTER ("GetType");
-    if (T_user == type->simpletype) {
-        tnode = LookupType (type->name, type->name_mod, 0);
-        type = tnode->info.types;
-    }
-    DBUG_RETURN (type);
-}
-
-/*
- *
- *  functionname  : CFlet
- *  arguments     : 1) let-node
- *		    2) info-node
- *                  R) let-node
- *  description   : - stores alink to the type of expression at the left hand side
- *		      of the let in the info_node
- *		    - initiates constant folding for the right hand side
- *                  - stack-entry modified for left hand expression
- *  global vars   : syntax_tree, def_stack, info_node
- *  internal funs : --
- *  external funs : OptTrav
- *  macros        : DBUG..., VAR
- *
- *  remarks       :
- *
- */
-node *
-CFlet (node *arg_node, node *arg_info)
-{
-    node *arg2;
-    ids *ids_node;
-
-    DBUG_ENTER ("CFlet");
-
-    /* get result type for potential primitive function */
-    arg_info->info.types = GetType (arg_node->info.ids->node->info.types);
-
-    /* Trav expression */
-    arg_node = OptTrav (arg_node, arg_info, 0);
-
-    arg_info->info.types = NULL;
-
-    /* primitive function reshape will not be folded, but result is obviously */
-    if ((N_prf == arg_node->node[0]->nodetype)
-        && (F_reshape == arg_node->node[0]->info.prf)) {
-        arg2 = arg_node->node[0]->node[0]->node[1]->node[0];
-        if (N_id == arg2->nodetype)
-            VAR (arg_node->info.ids->node->varno) = VAR (arg2->info.ids->node->varno);
-        else
-            VAR (arg_node->info.ids->node->varno) = arg2;
-    } else {
-        ids_node = arg_node->info.ids;
-        while (NULL != ids_node) {
-            VAR (ids_node->node->varno) = arg_node->node[0];
-            ids_node = ids_node->next;
-        }
-    }
-
-    DBUG_RETURN (arg_node);
+    CAST_EXPR (arg_node) = NULL;
+    FreeTree (arg_node);
+    DBUG_RETURN (next_node);
 }
 
 /*
  *
  *  functionname  : CFwhile
- *  arguments     : 1) while-node
- *		    2) info_node
- *                  R) while-node or empty-node
- *  description   : returns empty-node if condition is false otherwise
- *                  constant folding inside while loop with new stack entry
- *  global vars   : syntax_tree, def_stack, info_node
- *  internal funs : PushDupVL, PopVL
- *  external funs : MinusMask, PlusMask, FreeTree, ReadMask, OptTrav
- *  macros        : DBUG...,  WARNO, VAR
+ *  arguments     : 1) N_while - node
+ *		    2) N_info  - node
+ *		    R) N_while - node
+ *  description   : initiates constant folding inside while-loop
+ *  global vars   : syntax_tree, mrdl_stack, cf_expr
+ *  internal funs : ---
+ *  external funs : OPTTrav, MinusMask (optimize.h), While2Do, MakeEmpty (tree_basic.h),
+ *                  FreeTree (free.h)
+ *  macros        : WHILE_INSTR, WHILE_COND, NODE_TYPE, BOOL_VAL, MRD_GETLAST, ID_VARNO,
+ *                  WHILE_DEFMASK, WHILE_USEMASK, WHILE_TERMMASK, INFO_VARNO
  *
- *  remarks       : --
+ *  remarks       : ---
  *
  */
 node *
 CFwhile (node *arg_node, node *arg_info)
 {
-    int i;
-    long *used_while;
+    int trav_body = TRUE;
+    node *last_value;
 
     DBUG_ENTER ("CFwhile");
 
-    used_while = arg_node->node[1]->mask[0];
-    for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (used_while, i) != 0) {
-            VAR (i) = NULL;
+    WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
+
+    if (N_bool == NODE_TYPE (WHILE_COND (arg_node)))
+        if (!BOOL_VAL (WHILE_COND (arg_node)))
+            trav_body = FALSE;
+        else
+            arg_node = While2Do (arg_node);
+
+    if (N_id == NODE_TYPE (WHILE_COND (arg_node))) {
+        MRD_GETLAST (last_value, ID_VARNO (WHILE_COND (arg_node)), INFO_VARNO);
+        if ((NULL != last_value) && (N_bool == NODE_TYPE (last_value))) {
+            if (!BOOL_VAL (last_value))
+                trav_body = FALSE;
+            else
+                arg_node = While2Do (arg_node);
         }
     }
-    PushDupVL ();
 
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav while-condition */
-
-    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
-    PopVL ();
+    if (trav_body) {
+        WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+    } else {
+        DBUG_PRINT ("CF", ("while-loop eliminated in line %d", NODE_LINE (arg_node)));
+        MinusMask (INFO_DEF, WHILE_DEFMASK (arg_node), INFO_VARNO);
+        MinusMask (INFO_USE, WHILE_USEMASK (arg_node), INFO_VARNO);
+        MinusMask (INFO_USE, WHILE_TERMMASK (arg_node), INFO_VARNO);
+        FreeTree (arg_node);
+        arg_node = MakeEmpty ();
+        cf_expr++;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -698,35 +565,41 @@ CFwhile (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : CFdo
- *  arguments     : 1) do-node
- *		    2) info_node
- *		    R) do-node
- *  description   : initiates constant folding inside do-loop with new stack
- *  global vars   : syntax_tree, def_stack, info_node
- *  internal funs : PushDupVL, PopVL
- *  external funs : ReadMask, OptTrav, FreeTree
- *  macros        : DBUG..., VAR
+ *  arguments     : 1) N_do   - node
+ *		    2) N_info - node
+ *		    R) N_do   - node
+ *  description   : initiates constant-folding inside do-loop and eliminates
+ *                  do-loop if possible
+ *  global vars   : syntax_tree, mrdl_stack, cf_expr
+ *  internal funs : ---
+ *  external funs : OPTTrav, MinusMask (optimize.h) FreeTree (free.h)
+ *  macros        : DO_INSTR, DO_COND, NODE_TYPE, BOOL_VAL, NODE_LINE, INFO_USE,
+ *                  DO_TERMMASK, INFO_VARNO,
  *
- *  remarks       : --
+ *  remarks       : ---
  *
  */
 node *
 CFdo (node *arg_node, node *arg_info)
 {
-    int i;
-    node *a_node;
+    node *returnnode;
 
     DBUG_ENTER ("CFdo");
-    a_node = arg_info->node[0];
-    for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
-            VAR (i) = NULL;
+
+    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
+
+    DO_COND (arg_node) = OPTTrav (DO_COND (arg_node), arg_info, arg_node);
+
+    if (N_bool == NODE_TYPE (DO_COND (arg_node)))
+        if (!BOOL_VAL (DO_COND (arg_node))) {
+            DBUG_PRINT ("CF", ("do-loop eliminated in line %d", NODE_LINE (arg_node)));
+            MinusMask (INFO_USE, DO_TERMMASK (arg_node), INFO_VARNO);
+            returnnode = DO_INSTR (arg_node);
+            DO_INSTR (arg_node) = NULL;
+            FreeTree (arg_node);
+            arg_node = returnnode;
+            cf_expr++;
         }
-    }
-
-    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
-
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
 
     DBUG_RETURN (arg_node);
 }
@@ -734,68 +607,57 @@ CFdo (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : CFcond
- *  arguments     : 1) cond-node
- *		    2) info_node
- *		    R) cond-node , assign-node or empty-node
+ *  arguments     : 1) N_cond - node
+ *		    2) N_info - node
+ *		    R) N_cond - node , N_assign - node or N_empty - node
  *  description   : initiates constant folding for the conditional, if conditional
- *		    is true or false, return then or else part, otherwise constant
- *		    folding inside the conditional.
- *  global vars   : syntax_tree, info_node, def_stack
- *  internal funs : PushDupVL, PopVL
- *  external funs : GenMask, OptTrav, MinusMask, PlusMask, ClearMask, FreeTree
- *  macros        : DBUG...
+ *		    is true or false, return then or elseinstruction_chain,
+ *                   otherwise constant-folding inside the conditional.
+ *  global vars   : syntax_tree, mrdl_stack, cf_expr
+ *  internal funs : ---
+ *  external funs : OPTTrav, MinusMask (optimize.h), FreeTree (free.h)
+ *  macros        : COND_COND, NODE_TYPE, BOOL_VAL, INFO_DEF, INFO_USE, COND_ELSEDEFMASK,
+ *                  COND_ELSEUSEMASK, COND_THENDEFMASK, COND_THENUSEMASK, COND_ELSEINSTR,
+ *                  COND_THENINSTR, COND_ELSE, COND_THEN
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
 CFcond (node *arg_node, node *arg_info)
 {
     node *returnnode;
-    int i;
 
     DBUG_ENTER ("CFcond");
     returnnode = arg_node;
 
-    arg_node = OptTrav (arg_node, arg_info, 0);
+    COND_COND (arg_node) = OPTTrav (COND_COND (arg_node), arg_info, arg_node);
 
-    if (arg_node->node[0]->nodetype == N_bool) {
-        if (arg_node->node[0]->info.cint != 0) {
-            MinusMask (arg_info->mask[0], arg_node->node[2]->mask[0], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->node[2]->mask[1], VARNO);
-            FreeTree (arg_node->node[2]);
-            returnnode = arg_node->node[1]->node[0];
-            FREE (arg_node->node[1]);
-            DBUG_PRINT ("CF", ("else-part of conditional eliminated in line %d",
-                               arg_info->lineno));
+    if (N_bool == NODE_TYPE (COND_COND (arg_node))) {
+        if (BOOL_VAL (COND_COND (arg_node))) {
+            DBUG_PRINT ("CF", ("then-part of conditional eliminated in line %d",
+                               NODE_LINE (arg_node)));
+            MinusMask (INFO_DEF, COND_ELSEDEFMASK (arg_node), INFO_VARNO);
+            MinusMask (INFO_USE, COND_ELSEUSEMASK (arg_node), INFO_VARNO);
+            returnnode = COND_THENINSTR (arg_node);
+            COND_THEN (arg_node) = NULL;
+            FreeTree (arg_node);
             cf_expr++;
         } else {
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
-            FreeTree (arg_node->node[1]);
-            returnnode = arg_node->node[2]->node[0];
-            FREE (arg_node->node[2]);
             DBUG_PRINT ("CF", ("else-part of conditional eliminated in line %d",
-                               arg_info->lineno));
+                               NODE_LINE (arg_node)));
+            MinusMask (INFO_DEF, COND_THENDEFMASK (arg_node), INFO_VARNO);
+            MinusMask (INFO_USE, COND_THENUSEMASK (arg_node), INFO_VARNO);
+            returnnode = COND_ELSEINSTR (arg_node);
+            COND_ELSE (arg_node) = NULL;
+            FreeTree (arg_node);
             cf_expr++;
         }
     } else {
-        PushDupVL ();
-
-        arg_node = OptTrav (arg_node, arg_info, 1);
-
-        PopVL ();
-        PushDupVL ();
-
-        arg_node = OptTrav (arg_node, arg_info, 2);
-
-        PopVL ();
-        for (i = 0; i < TOS.vl_len; i++) {
-            if ((ReadMask (arg_node->node[1]->mask[0], i) != 0)
-                || (ReadMask (arg_node->node[2]->mask[0], i) != 0)) {
-                VAR (i) = NULL;
-            }
-        }
+        COND_THENINSTR (arg_node)
+          = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
+        COND_ELSEINSTR (arg_node)
+          = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
     }
 
     DBUG_RETURN (returnnode);
@@ -804,14 +666,18 @@ CFcond (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : CFwith
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
+ *  arguments     : 1) N_with - node
+ *                  2) N_info - node
+ *                  R) N_with - node
+ *  description   : Travereses generator, then opertator
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : OPTTrav (optimize.h)
+ *  macros        : INFO_TYPE, WITH_GEN, GEN_VARDEC, VARDEC_TYPE, WITH_OPERATOR,
+ *                  NODE_TYPE, GENARRAY_BODY, MODARRAY_BODY, FOLDPRF_BODY, FOLDFUN_BODY,
+ *                  BLOCK_INSTR
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -820,49 +686,38 @@ CFwith (node *arg_node, node *arg_info)
     types *oldtype;
 
     DBUG_ENTER ("CFwith");
-    oldtype = arg_info->info.types;
-    arg_info->info.types = arg_node->node[0]->info.ids->node->info.types;
+    oldtype = INFO_TYPE;
+    INFO_TYPE = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
 
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav generator */
+    WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
 
-    arg_info->info.types = oldtype;
+    INFO_TYPE = oldtype;
 
-    PushDupVL ();
-
-    arg_node = OptTrav (arg_node, arg_info, 2); /* Trav with-body */
-
-    PopVL ();
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : GotoExprNr
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-node *
-GotoExprNr (int n, node *arg_node)
-{
-    int i;
-
-    DBUG_ENTER ("GotoExprNr");
-
-    for (i = 0; i < n; i++)
-        if (NULL != arg_node->node[1])
-            arg_node = arg_node->node[1];
-        else {
-            arg_node = NULL;
-            break;
-        }
-
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
+        break;
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -1102,19 +957,40 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
  */
 #define ARI(op, a1, a2)                                                                  \
     {                                                                                    \
-        if (T_float == res_type->simpletype) {                                           \
+        switch (res_type->simpletype) {                                                  \
+        case T_float:                                                                    \
             if (!swap) {                                                                 \
                 a1->info.cfloat = SELARG (a1) op SELARG (a2);                            \
             } else {                                                                     \
                 a1->info.cfloat = SELARG (a2) op SELARG (a1);                            \
             }                                                                            \
             a1->nodetype = N_float;                                                      \
-        } else {                                                                         \
+            break;                                                                       \
+        case T_double:                                                                   \
+            if (!swap) {                                                                 \
+                a1->info.cdbl = SELARG (a1) op SELARG (a2);                              \
+            } else {                                                                     \
+                a1->info.cdbl = SELARG (a2) op SELARG (a1);                              \
+            }                                                                            \
+            a1->nodetype = N_double;                                                     \
+            break;                                                                       \
+        case T_int:                                                                      \
             if (!swap) {                                                                 \
                 a1->info.cint = a1->info.cint op a2->info.cint;                          \
             } else {                                                                     \
                 a1->info.cint = a2->info.cint op a1->info.cint;                          \
             }                                                                            \
+            break;                                                                       \
+        case T_bool:                                                                     \
+            if (!swap) {                                                                 \
+                a1->info.cint = a1->info.cint op a2->info.cint;                          \
+            } else {                                                                     \
+                a1->info.cint = a2->info.cint op a1->info.cint;                          \
+            }                                                                            \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT ((FALSE), "Type not implemented for Constant folding");          \
+            break;                                                                       \
         }                                                                                \
         cf_expr++;                                                                       \
         DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));       \
@@ -1303,16 +1179,20 @@ NoConstSkalarPrf (node *arg_node, types *res_type, node *arg_info)
                 WARN (arg_node->lineno, ("Division by zero expected"));
             }
             arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 / x = 0 */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x / 1 = x */
             break;
         case F_add:
         case F_add_AxS:
         case F_add_SxA:
+            arg_node = FoldExpr (arg_node, 0, 1, 0, arg_info); /* 0 + x = x */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x + 0 = x */
+            break;
         case F_sub:
         case F_sub_AxS:
         case F_sub_SxA:
-            arg_node = FoldExpr (arg_node, 0, 1, 0, arg_info); /* 0 [+-] x = x */
-            if (N_prf == arg_node->nodetype)
-                arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x [+-] 0 = x */
+            arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x - 0 = x */
             break;
         default:
             break;
@@ -1389,12 +1269,12 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
         old_arg[1] = arg[1];
 
         if (N_id == arg[0]->nodetype) {
-            value = VAR (arg[0]->info.ids->node->varno);
-            if (1 == IsConst (value)) {
+            MRD_GETDATA (value, arg[0]->info.ids->node->varno, INFO_VARNO);
+            if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
                 arg[0] = DupTree (value, NULL);
                 used_sofar = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (VARNO);
+                arg_info->mask[1] = GenMask (INFO_VARNO);
                 arg[0] = Trav (arg[0], arg_info);
                 FREE (arg_info->mask[1]);
                 arg_info->mask[1] = used_sofar;
@@ -1403,17 +1283,17 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             }
         } else {
             arg[0] = Trav (arg[0], arg_info);
-            if (1 != IsConst (arg[0]))
+            if (!IsConst (arg[0]))
                 break;
         }
 
         if (N_id == arg[1]->nodetype) {
-            value = VAR (arg[1]->info.ids->node->varno);
-            if (1 == IsConst (value)) {
+            MRD_GETDATA (value, arg[1]->info.ids->node->varno, INFO_VARNO);
+            if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
                 arg[1] = DupTree (value, NULL);
                 used_sofar = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (VARNO);
+                arg_info->mask[1] = GenMask (INFO_VARNO);
                 arg[1] = Trav (arg[1], arg_info);
                 FREE (arg_info->mask[1]);
                 arg_info->mask[1] = used_sofar;
@@ -1426,7 +1306,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             }
         } else {
             arg[1] = Trav (arg[1], arg_info);
-            if (1 != IsConst (arg[1])) {
+            if (!IsConst (arg[1])) {
                 if (N_id == old_arg[0]->nodetype) {
                     INC_VAR (arg_info->mask[1], old_arg[0]->info.ids->node->varno);
                     FreeTree (arg[0]);
@@ -1687,7 +1567,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             int length, start, mult, i, j, arg_length;
             int vec_dim;
             int vec_shape[SHP_SEG_SIZE];
-            node *res_node, *old_arg_0, *value;
+            node *res_node, *old_arg_0, *value, *tmp;
 
             old_arg_0 = arg[0];
 
@@ -1695,12 +1575,12 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
              * Substitute shape-vector
              */
             if (N_id == arg[0]->nodetype) {
-                value = VAR (arg[0]->info.ids->node->varno);
-                if (1 == IsConst (value)) {
+                MRD_GETDATA (value, arg[0]->info.ids->node->varno, INFO_VARNO);
+                if (IsConst (value)) {
                     DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
                     arg[0] = DupTree (value, NULL);
                     used_sofar = arg_info->mask[1];
-                    arg_info->mask[1] = GenMask (VARNO);
+                    arg_info->mask[1] = GenMask (INFO_VARNO);
                     arg[0] = Trav (arg[0], arg_info);
                     FREE (arg_info->mask[1]);
                     arg_info->mask[1] = used_sofar;
@@ -1713,8 +1593,8 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             /*
              * Substitution of shape-vector successful ?
              */
-            if ((1 != IsConst (arg[0]))
-                || (0 == IsConst (VAR (arg[1]->info.ids->node->varno)))) {
+            MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
+            if ((!IsConst (arg[0])) || (!IsConst (tmp))) {
                 if (N_id == old_arg_0->nodetype) {
                     INC_VAR (arg_info->mask[1], old_arg_0->info.ids->node->varno);
                     FreeTree (arg[0]);
@@ -1751,18 +1631,18 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             if ((start + length <= arg_length) && (start >= 0)) {
                 DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
                 if (vec_dim == arg[1]->info.ids->node->info.types->dim) {
-                    res_node = FetchNum (start, VAR (arg[1]->info.ids->node->varno));
+                    MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
+                    res_node = FetchNum (start, tmp);
                     if (N_id == res_node->nodetype)
                         DEC_VAR (arg_info->mask[1], res_node->info.ids->node->varno);
                 } else {
                     res_node = MakeNode (N_array);
                     res_node->nnode = 1;
-                    res_node->node[0]
-                      = DupPartialArray (start, length,
-                                         VAR (arg[1]->info.ids->node->varno), arg_info);
+                    MRD_GETDATA (tmp, arg[1]->info.ids->node->varno, INFO_VARNO);
+                    res_node->node[0] = DupPartialArray (start, length, tmp, arg_info);
                 }
                 DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
-                                   prf_string[arg_node->info.prf], arg_info->lineno));
+                                   prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
                 FreeTree (arg_node);
                 arg_node = res_node;
                 cf_expr++;
@@ -1794,7 +1674,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
  *		    R) prf-node or calculated constant value
  *  description   : first replace constant values for variables in expression
  *		    then calculate primitive function.
- *  global vars   : syntax_tree, info_node, def_stack
+ *  global vars   : syntax_tree, info_node, mrdl_stack
  *  internal funs : SkalarPrf, ArrayPrf
  *  external funs : Trav
  *  macros        : DBUG...
@@ -1811,48 +1691,51 @@ CFprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    if (N_prf == arg_node->nodetype) {
-        if (arg_node->info.prf <= F_neq) {
-            /*
-             * substitute all arguments
-             */
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    if (PRF_PRF (arg_node) <= F_neq) {
+        /*
+         * substitute all arguments
+         */
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
 
-            /*
-             * Search Arguments for primitive Functions
-             */
-            tmp = arg_node->node[0];
-            for (i = 0; i < MAXARG; i++) {
-                if (tmp != NULL) {
-                    arg[i] = tmp->node[0];
-                    tmp = tmp->node[1];
-                } else
-                    arg[i] = NULL;
-            }
-
-            /*
-             * Calculate non array primitive functions
-             */
-            if ((1 == IsConst (arg[0]))
-                && ((F_not == arg_node->info.prf) || (1 == IsConst (arg[1])))) {
-                if (!((F_div == arg_node->info.prf) && (TRUE == FoundZero (arg[1])))) {
-                    arg[0]
-                      = SkalarPrf (arg, arg_node->info.prf, arg_info->info.types, FALSE);
-                    FreePrf2 (arg_node, 0);
-                    arg_node = arg[0];
-                }
-            }
-        } else {
-            /*
-             * substitute all arguments
-             */
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-            /*
-             * Calculate primitive functions with arrays
-             */
-            arg_node = ArrayPrf (arg_node, arg_info->info.types, arg_info);
+        /*
+         * Search Arguments for primitive Functions
+         */
+        tmp = PRF_ARGS (arg_node);
+        for (i = 0; i < MAXARG; i++) {
+            if (tmp != NULL) {
+                arg[i] = EXPRS_EXPR (tmp);
+                tmp = EXPRS_NEXT (tmp);
+            } else
+                arg[i] = NULL;
         }
+
+        /*
+         * Calculate non array primitive functions
+         */
+        if ((IsConst (arg[0])) && ((F_not == PRF_PRF (arg_node)) || (IsConst (arg[1])))) {
+            if (!((F_div == PRF_PRF (arg_node)) && (TRUE == FoundZero (arg[1])))) {
+                arg[0] = SkalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE, FALSE);
+                FreePrf2 (arg_node, 0);
+                arg_node = arg[0];
+            }
+        }
+    } else {
+        /*
+         * substitute all arguments
+         */
+        switch (PRF_PRF (arg_node)) {
+        case F_shape:
+        case F_dim:
+            break;
+        default:
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+            break;
+        }
+
+        /*
+         * Calculate primitive functions with arrays
+         */
+        arg_node = ArrayPrf (arg_node, arg_info->info.types, arg_info);
     }
 
     /*
