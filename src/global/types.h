@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1997/11/18 18:05:04  srs
+ * expanded infotype by GeneratorRel
+ * new enum WithIdType
+ *
  * Revision 1.22  1997/11/13 16:25:14  srs
  * added enum WithOpType
  * removed struct with_ids
@@ -122,7 +126,22 @@ typedef enum {
 
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 
-typedef enum { WO_genarray, WO_modarray, WO_foldfun, WO_foldprf } WithOpType;
+typedef enum {
+    /* operation of withloop (N_Nwithop) */
+    WO_genarray,
+    WO_modarray,
+    WO_foldfun,
+    WO_foldprf
+} WithOpType;
+
+typedef enum {
+    /* type of Ids within generator parts of a withloops (N_Nwithid).
+     * WI_vector : e.g. [0,0] <= i < [5,5]
+     * WI_scalars: e.g. [0,0] <= [i,j] <= [5,5]
+     */
+    WI_vector,
+    WI_scalars
+} WithIdType;
 
 typedef enum {
     ST_regular,            /* normal types */
@@ -166,6 +185,33 @@ typedef enum {
     F_extclassdec,
     F_sib
 } file_type;
+
+/*
+ * new nodes for yacc and the syntax tree
+ *
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
+    n
+
+typedef enum {
+#include "node_info.mac"
+} nodetype; /* Typ of nodes of syntax tree */
+
+#undef NIF
+
+#define PRF_IF(n, s, x, y) n
+
+typedef enum {
+#include "prf_node_info.mac"
+} prf;
+
+#undef PRF_IF
+
+/*
+ * structs
+ */
 
 typedef struct STRINGS {
     char *name;
@@ -229,6 +275,11 @@ typedef struct TYPES {
     statustype status;  /* regular or artificial */
 } types;
 
+typedef struct {
+    prf op1; /* <= or < */
+    prf op2; /* <= or < */
+} GeneratorRel;
+
 /* and now some macros for the use with 'types->dim'
  * They are used to classify :
  * -shape of type is known:             dim > SCALAR
@@ -252,50 +303,29 @@ typedef struct FUN_NAME {
     char *id_mod; /* name of modul belonging to 'id' */
 } fun_name;
 
-/*
- * new nodes for yacc and the syntax tree
- *
- */
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
-    n
-
-typedef enum {
-#include "node_info.mac"
-} nodetype; /* Typ of nodes of syntax tree */
-
-#undef NIF
-
-#define PRF_IF(n, s, x, y) n
-
-typedef enum {
-#include "prf_node_info.mac"
-} prf;
-
-#undef PRF_IF
-
 typedef struct {
     int tag; /* tag for return type */
     int tc;  /* type class */
 } prf_tag;
 
 typedef union {
-    ids *ids;          /* list  of identifiers               */
-    char *id;          /* identifier                         */
-    types *types;      /* type information                   */
-    int cint;          /* integer value                      */
-    float cfloat;      /* float value                        */
-    double cdbl;       /* double value                       */
-    char cchar;        /* char value                         */
-    prf prf;           /* tag for primitive functions        */
-    fun_name fun_name; /* used in N_ap nodes                 */
-    useflag use;       /* used in N_vect_info nodes          */
-    prf_tag prf_dec;   /* used for declaration of primitive functions
-                        * this declarations are used to look for argument
-                        * and result type of primitive functions
-                        */
-    WithOpType withop; /* used in N_Nwith node */
+    ids *ids;            /* list  of identifiers               */
+    char *id;            /* identifier                         */
+    types *types;        /* type information                   */
+    int cint;            /* integer value                      */
+    float cfloat;        /* float value                        */
+    double cdbl;         /* double value                       */
+    char cchar;          /* char value                         */
+    prf prf;             /* tag for primitive functions        */
+    fun_name fun_name;   /* used in N_ap nodes                 */
+    useflag use;         /* used in N_vect_info nodes          */
+    prf_tag prf_dec;     /* used for declaration of primitive functions
+                          * this declarations are used to look for argument
+                          * and result type of primitive functions
+                          */
+    WithOpType withop;   /* used in N_Nwith node */
+    WithIdType withid;   /* used in N_Nwithid node */
+    GeneratorRel genrel; /* used in N_Ngenerator node */
 } infotype;
 
 /*
