@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/14 16:25:41  jhs
+ * int[*] removed for second try with empty arrays.
+ *
  * Revision 2.4  1999/04/09 13:54:07  jhs
  * No changes made, error not in this file.
  *
@@ -261,8 +264,6 @@ Type2String (types *type, int flag)
             } else {
                 if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
                     strcat (tmp_string, "[?]");
-                } else if (TYPES_DIM (type) == EMPTY_ARRAY) {
-                    strcat (tmp_string, "[*]");
                 } else {
                     int i, dim;
                     static char int_string[INT_STRING_LENGTH];
