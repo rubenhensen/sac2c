@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/02/07 11:06:57  asi
+ * Revision 1.13  1995/02/13 16:40:29  asi
+ * functions for dead code removal and constant folding
+ * moved in DeadCodeRemoval.c and ConstantFolding.c
+ * global variables opt_cf and opt_dcr defined in main.c defined extern
+ *
+ * Revision 1.12  1995/02/07  11:06:57  asi
  * renamed the functions OPT1* -> OPT*, OPT2* -> DEAD*, OPT3* -> LIR*
  * added CFprf
  *
@@ -50,6 +55,16 @@
 
 #define _optimize_h
 
+/*
+ * Global variables defined in main.c
+ */
+extern int opt_dcr;
+extern int opt_cf;
+/* main.c end */
+
+extern long optno;
+extern long deadvar;
+
 #define MAX_VAR 255
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
@@ -57,7 +72,16 @@
 #define VAR_LENGTH 10
 
 extern node *Optimize (node *arg_node);
+
 extern char *PrintMask (long *mask);
+extern long *GenMask ();
+extern void MinusMask (long *mask1, long *mask2);
+extern long *DupMask (long *oldmask);
+extern void OrMask (long *mask1, long *mask2);
+extern short CheckMask (long *mask1, long *mask2);
+extern void PlusMask (long *mask1, long *mask2);
+extern void If3_2Mask (long *mask1, long *mask2, long *mask3);
+extern short MaskIsNotZero (long *mask);
 
 extern node *OPTfundef (node *arg_node, node *arg_info);
 extern node *OPTarg (node *arg_node, node *arg_info);
@@ -70,14 +94,5 @@ extern node *OPTpp (node *arg_node, node *arg_info);
 extern node *OPTblock (node *arg_node, node *arg_info);
 extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
-
-extern node *DEADfundef (node *arg_node, node *arg_info);
-extern node *DEADassign (node *arg_node, node *arg_info);
-extern node *DEADblock (node *arg_node, node *arg_info);
-extern node *DEADvardec (node *arg_node, node *arg_info);
-extern node *DEADcond (node *arg_node, node *arg_info);
-extern node *DEADloop (node *arg_node, node *arg_info);
-
-extern node *CFprf (node *arg_node, node *arg_info);
 
 #endif /* _optimize_h */
