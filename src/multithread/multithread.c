@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/03/02 12:58:36  jhs
+ * Rearranged the traversal, each miniphase is apllied to all functions
+ * before the next one is executed.
+ *
  * Revision 1.10  2000/02/21 17:54:43  jhs
  * New mini-phase BLKEX.
  *
@@ -45,6 +49,43 @@
  *   multithread-support.
  *   ... The entire process is still under development ...
  *
+ *   The step of exploiting concurrency is done step by step in several
+ *   miniphases. Each miniphase will be done on *all* functions before
+ *   the next step is done.
+ *
+ *   - PHASE 1 - Scheduling-Inference (schedule_init.[ch])
+ *     Decides which with-loops will be executed multithreaded an
+ *     which not:
+ *     > At each with-loop *to be* executed multithreaded a scheduling is
+ *       annotated, schedulings annotated by pragmas are also considered,
+ *       if annotated scheduling is not suitable error messages occur
+ *     > At each with-loop *not to be* executed multithreaded no scheduling
+ *       is annotated, warnings will be displayed if schedulings
+ *       are annotatated at such with-loops by pragmas
+ *   - PHASE 2 - Creation of REPfunctions
+ *        #### to be done  ...
+ *   - PHASE 3 - Creation of MT- and ST-Blocks
+ *     ####
+ *     > Creates a MT-Block around each assigment to be executed
+ *       multithreaded, these are only the with-loops with schedulings
+ *       annotated in Phase 1.
+ *     > Creates a ST Block around each assigment to be executed
+ *       singlethreaded, because it is not allowed to execute it
+ *       multithreaded
+ *       - usage of class-function ####
+ *       - application of (primitive) function with unknown body, returning
+ *         an array result > threshold ####
+ *       - assignments of an array-constant > threshold ####
+ *       - ???? application of a known function, with st-block before
+ *         mt-block, including loopi- and condi-functions resp. loops and
+ *         conditionals ####
+ *     > Traverses also with-loops without scheduling ####
+ *   - ...
+ *      .
+ *      .     #### to be done
+ *      .
+ *   - ...
+ *
  ******************************************************************************/
 
 #include "dbug.h"
@@ -60,6 +101,8 @@
 #include "repfuns_init.h"
 #include "blocks_init.h"
 #include "blocks_expand.h"
+#include "mtfuns_init.h"
+#include "blocks_cons.h"
 
 /******************************************************************************
  *
@@ -95,26 +138,61 @@ BuildMultiThread (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+typedef int (*ignorefun) (node *arg_node, node *arg_info);
+
 /******************************************************************************
  *
  * function:
- *   node *MUTHmodul(node *arg_node, node *arg_info)
+ * node *MUTHdriver(node *arg_node,
+ *                  node *arg_info,
+ *                  funptr driver,
+ *                  ignorefun ignore)
  *
  * description:
+ *   This is not function of the traversal itself, but behaves like a
+ *   normal traversal function.
  *
- *   muth_tab traversal function for N_fundef node.
+ *   - first driver is stored in INFO_MUTH_DRIVER and
+ *           ignore           in INFO_MUTH_IGNORE,
+ *   - then arg_node will be traversed,
+ *   - and the arg_info is retored afterwards
  *
- *   This function assures that only function definitions are traversed
- *   during the process of exploiting concurrency.
+ *   While traversing the driver and ignore can be used to customize
+ *   the actual traversal on the fly.
+ *   Ignore says which nodes can be applied to the driver function,
+ *   these node will be applied to the driver function then,
+ *
+ *   The *driver* function is a simple function that behaves like an
+ *   ordinary traversal function, but can contain whole mini-phases or
+ *   simple actions.
+ *   The *ignore* function takes an arg_node and an arg_info and decides
+ *   if the node should be ignored (Result == TRUE == 1) or not
+ *   (Result == FALSE = 0).
+ *
+ *   This function is used to customize the traversal for these many many
+ *   miniphases simply on-the-fly.
  *
  ******************************************************************************/
 node *
-MUTHmodul (node *arg_node, node *arg_info)
+MUTHdriver (node *arg_node, node *arg_info, funptr driver, ignorefun ignore)
 {
-    DBUG_ENTER ("MUTHmodul");
+    funptr old_driver;
+    ignorefun old_ignore;
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    DBUG_ENTER ("MUTHdriver");
+
+    if (arg_node != NULL) {
+        DBUG_PRINT ("MUTH", ("begin driving"));
+        old_driver = INFO_MUTH_DRIVER (arg_info);
+        old_ignore = INFO_MUTH_IGNORE (arg_info);
+        INFO_MUTH_DRIVER (arg_info) = driver;
+        INFO_MUTH_IGNORE (arg_info) = ignore;
+
+        arg_node = Trav (arg_node, arg_info);
+
+        INFO_MUTH_DRIVER (arg_info) = old_driver;
+        INFO_MUTH_IGNORE (arg_info) = old_ignore;
+        DBUG_PRINT ("MUTH", ("end driving"));
     }
 
     DBUG_RETURN (arg_node);
@@ -126,43 +204,16 @@ MUTHmodul (node *arg_node, node *arg_info)
  *   node *MUTHfundef(node *arg_node, node *arg_info)
  *
  * description:
+ *   This function
+ *   - first stores the arg_node (or the actual N_fundef-node) in
+ *     INFO_MUTH_FUNDEF,
+ *   - then checks if the actual ignore-function INFO_MUTH_IGNORE
+ *     says the actual fundef has to be applied by the
+ *     actual driver-function INFO_MUTH_driver, or not,
+ *   - and restores the old arg_info.
  *
- *   muth_tab traversal function for N_fundef node.
- *
- *   This function traverses the function definitions and controls the
- *   entire ... step process of exploiting concurrency:
- *     - PHASE 1 - Scheduling-Inference (schedule_init.[ch])
- *       Decides which with-loops will be executed multithreaded an
- *       which not:
- *       > At each with-loop *to be* executed multithreaded a scheduling is
- *         annotated, schedulings annotated by pragmas are also considered,
- *         if annotated scheduling is not suitable error messages occur
- *       > At each with-loop *not to be* executed multithreaded no scheduling
- *         is annotated, warnings will be displayed if schedulings
- *         are annotatated at such with-loops by pragmas
- *     - PHASE 2 - Creation of REPfunctions
- *          #### to be done  ...
- *     - PHASE 3 - Creation of MT- and ST-Blocks
- *       ####
- *       > Creates a MT-Block around each assigment to be executed
- *         multithreaded, these are only the with-loops with schedulings
- *         annotated in Phase 1.
- *       > Creates a ST Block around each assigment to be executed
- *         singlethreaded, because it is not allowed to execute it
- *         multithreaded
- *         - usage of class-function ####
- *         - application of (primitive) function with unknown body, returning
- *           an array result > threshold ####
- *         - assignments of an array-constant > threshold ####
- *         - ???? application of a known function, with st-block before mt-block,
- *                including loopi- and condi-functions resp. loops an conditionals
- *           ####
- *       > Traverses also with-loops without scheduling ####
- *     - ...
- *        .
- *        .     #### to be done
- *        .
- *     - ...
+ *   This function reuses information stored by MUTHdriver,
+ *   MUTHdriver has to be called before the traversal reaches this function!
  *
  ******************************************************************************/
 node *
@@ -175,56 +226,172 @@ MUTHfundef (node *arg_node, node *arg_info)
     old_fundef = INFO_MUTH_FUNDEF (arg_info);
     INFO_MUTH_FUNDEF (arg_info) = arg_node;
 
-    NOTE (("%s", FUNDEF_NAME (arg_node)));
-
-    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
-        && (FUNDEF_STATUS (arg_node) != ST_repfun)) {
-
-        DBUG_PRINT ("MUTH", ("begin ScheduleInit"));
-        arg_node = ScheduleInit (arg_node, arg_info);
-        DBUG_PRINT ("MUTH", ("end ScheduleInit"));
-
-        if ((break_after == PH_spmdregions) && (strcmp ("schin", break_specifier) == 0)) {
-            goto cont;
-        }
-
-        DBUG_PRINT ("MUTH", ("begin RepfunsInit"));
-        arg_node = RepfunsInit (arg_node, arg_info);
-        DBUG_PRINT ("MUTH", ("end RepfunsInit"));
-
-        if ((break_after == PH_spmdregions) && (strcmp ("rfin", break_specifier) == 0)) {
-            goto cont;
-        }
-
-        DBUG_PRINT ("MUTH", ("begin BlocksInit"));
-        arg_node = BlocksInit (arg_node, arg_info);
-        DBUG_PRINT ("MUTH", ("end BlocksInit"));
-
-        if ((break_after == PH_spmdregions) && (strcmp ("blkin", break_specifier) == 0)) {
-            goto cont;
-        }
-
-        DBUG_PRINT ("MUTH", ("begin BlocksExpand"));
-        arg_node = BlocksExpand (arg_node, arg_info);
-        DBUG_PRINT ("MUTH", ("end BlocksExpand"));
-
-        if ((break_after == PH_spmdregions) && (strcmp ("blkex", break_specifier) == 0)) {
-            goto cont;
-        }
-
-    cont:
+    if (!INFO_MUTH_IGNORE (arg_info) (arg_node, arg_info)) {
+        DBUG_PRINT ("MUTH", ("into driver fun (%s)", FUNDEF_NAME (arg_node)));
+        INFO_MUTH_DRIVER (arg_info) (arg_node, arg_info);
+        DBUG_PRINT ("MUTH", ("from driver fun (%s)", FUNDEF_NAME (arg_node)));
+    } else {
+        DBUG_PRINT ("MUTH", ("ignore %s", FUNDEF_NAME (arg_node)));
     }
-
-    /*
-      #### MUTH_LUT einbauen zu Korrektur von Traversiervorgaengen ...
-    */
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("MUTH", ("trav into next; leaving: %s", FUNDEF_NAME (arg_node)));
         /* FUNDEF_NEXT( arg_node) = */ Trav (FUNDEF_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("MUTH", ("trav from next; reenter: %s", FUNDEF_NAME (arg_node)));
     }
 
     INFO_MUTH_FUNDEF (arg_info) = old_fundef;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ClearATTRIB(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   >>driver<< function, used to clean the N_fundef´s before mini-phase
+ *   mtfin is executed.
+ *   FUNDEF_ATTRIB is set to ST_call_any for all N_fundef´s.
+ *
+ ******************************************************************************/
+node *
+ClearATTRIB (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("ClearATTRIB");
+
+    FUNDEF_ATTRIB (arg_node) = ST_call_any;
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+ClearCOMPANION (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("ClearCOMPANION");
+
+    FUNDEF_COMPANION (arg_node) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int MUTHignore(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   >>ignore<< function, used for most (all?) of the miniphases,
+ *   functions with empty body, fold_funs and rep_funs are ignored.
+ *
+ ******************************************************************************/
+int
+MUTHignore (node *arg_node, node *arg_info)
+{
+    int result;
+
+    DBUG_ENTER ("MUTHignore");
+
+    result = (FUNDEF_BODY (arg_node) == NULL) || (FUNDEF_ATTRIB (arg_node) == ST_foldfun)
+             || (FUNDEF_ATTRIB (arg_node) == ST_call_rep);
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int MUTHignore_none(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   >>ignore<< function, ignores nothing
+ *
+ ******************************************************************************/
+int
+MUTHignore_none (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("MUTHignore_none");
+
+    DBUG_RETURN (FALSE);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MUTHmodul(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   muth_tab traversal function for N_modul node.
+ *   Executes miniphases on all N_fundefs.
+ *
+ *   ** Each phase is done on all N_fundefs, before the next miniphase **
+ *   ** is started!!!!                                                 **
+ *
+ *
+ ******************************************************************************/
+node *
+MUTHmodul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("MUTHmodul");
+
+    DBUG_PRINT ("MUTH", ("begin initializing"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, ClearATTRIB, MUTHignore_none);
+    DBUG_PRINT ("MUTH", ("end initializing"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("init", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin ScheduleInit"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, ScheduleInit, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end ScheduleInit"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("schin", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin RepfunsInit"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, ClearCOMPANION, MUTHignore_none);
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, RepfunsInit, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end RepfunsInit"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("rfin", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin BlocksInit"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksInit, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end BlocksInit"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("blkin", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin BlocksExpand"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksExpand, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end BlocksExpand"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("blkex", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin MtfunsInit"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, ClearCOMPANION, MUTHignore_none);
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, MtfunsInit, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end MtfunsInit"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("mtfin", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin BlocksCons"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksCons, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end BlocksCons"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("blkco", break_specifier) == 0)) {
+        goto cont;
+    }
+
+cont:
 
     DBUG_RETURN (arg_node);
 }
