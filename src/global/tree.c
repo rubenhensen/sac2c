@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/03/25 14:33:49  srs
+ * removed NEWTREE
+ *
  * Revision 1.29  1997/11/13 12:57:30  srs
  * initialized compound info2 of node-type in MakeNode()
  *
@@ -139,14 +142,10 @@ AppendNodeChain (int pos, node *first, node *second)
         first = second;
     else {
         tmp = first;
-        while (tmp->node[pos] != NULL)
+        while (tmp->node[pos])
             tmp = tmp->node[pos];
         tmp->node[pos] = second;
         DBUG_PRINT ("APP", ("Append node chain behind line %d", tmp->lineno));
-#ifndef NEWTREE
-        if (second != NULL)
-            tmp->nnode++;
-#endif
     }
 
     DBUG_RETURN (first);
@@ -226,9 +225,6 @@ MakeNode (nodetype nodetype)
     tmp->nodetype = nodetype;
     for (i = 0; i < MAX_SONS; i++)
         tmp->node[i] = NULL;
-#ifndef NEWTREE
-    tmp->nnode = 0;
-#endif
     tmp->info.id = NULL;
     tmp->flag = 0;
     tmp->varno = 0;
