@@ -1,6 +1,8 @@
-<?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.69  2004/11/25 13:05:06  sbs
+  REUSE added.
+
   Revision 1.68  2004/11/25 12:57:14  khf
   added USSAT
 
@@ -706,6 +708,17 @@
         </travnone>
         <traverror>
         </traverror>
+      </traversal>
+      <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="With2" />
+        </travuser>
       </traversal>
       <traversal id="EMSR" name="Static Reuse" default="sons" include="staticreuse.h" >
         <travuser>
@@ -4144,12 +4157,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Unrolling" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="Part" mandatory="yes">
           <type name="Link">
             <target>
@@ -4171,7 +4178,9 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="DoUnroll" />
+      </flags>
     </node>
 <!--
 
