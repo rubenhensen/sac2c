@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.125  1997/05/28 12:37:20  sbs
+ * Revision 1.126  1997/05/29 13:42:20  sbs
+ * F_idx_modarray added
+ *
+ * Revision 1.125  1997/05/28  12:37:20  sbs
  * Profiling integrated
  *
  * Revision 1.124  1997/05/16  09:54:29  sbs
@@ -1056,7 +1059,8 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_tod_A:
     case F_idx_psi:
     case F_modarray:
-    case F_genarray: {
+    case F_genarray:
+    case F_idx_modarray: {
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
         Trav (arg_node->node[0], arg_info);

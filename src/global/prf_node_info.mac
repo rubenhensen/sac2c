@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/12/04 16:13:56  hw
- * added primitve functions toi, tof & tod
+ * Revision 1.13  1997/05/29 13:42:53  sbs
+ * F_idx_modarray added
  *
+;; Revision 1.12  1995/12/04  16:13:56  hw
+;; added primitve functions toi, tof & tod
+;;
 ;; Revision 1.11  1995/08/11  17:26:00  hw
 ;; N_modarray & N_genarray inserted
 ;;
@@ -54,7 +57,7 @@
          least one array as argument.
 */
 
-/*   Node_name       dbug-string[]  prf_string[]        prf_name_str[]*/
+/*   Node_name         dbug-string[]  prf_string[]        prf_name_str[]*/
 
 PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_tod, "F_fod", "tod", "_tod"), PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_ftoi"),
@@ -97,4 +100,5 @@ PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
   PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
   PRF_IF (F_modarray, "F_modarray", "modarray", "_modarray"),
+  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "_idx_modarray"),
   PRF_IF (F_genarray, "F_genarray", "genarray", "_genarray")
