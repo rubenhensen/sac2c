@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/03/21 17:18:44  dkr
+ * inference of WLSEG_HOMSV and WLSEG_MAXHOMDIM added
+ *
  * Revision 2.14  2000/03/15 18:16:34  dkr
  * CalcSV replaced by GetLcmUnroll
  * ComputeIndexMinMax moved to here from wlpragma_funs.c
@@ -173,15 +176,15 @@
  */
 
 #include "tree.h"
-#include "free.h"
-
-#include "internal_lib.h"
 #include "traverse.h"
-#include "DataFlowMask.h"
-#include "wlpragma_funs.h"
-
-#include "DupTree.h"
+#include "free.h"
 #include "dbug.h"
+#include "internal_lib.h"
+#include "DupTree.h"
+#include "DataFlowMask.h"
+#include "print.h"
+
+#include "wlpragma_funs.h"
 
 #include <limits.h> /* INT_MAX */
 
@@ -1902,7 +1905,7 @@ GetLcmUnroll (node *nodes, int dim)
                 break;
 
             case N_WLgrid:
-                unroll = lcm (unroll, GetLcmUnroll (WLBLOCK_NEXTDIM (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLGRID_NEXTDIM (nodes), dim));
                 break;
 
             default:
@@ -5646,6 +5649,15 @@ InferSegParams (node *seg)
     ComputeIndexMinMax (WLSEGX_IDX_MIN (seg), WLSEGX_IDX_MAX (seg), WLSEGX_DIMS (seg),
                         WLSEGX_CONTENTS (seg));
 
+    DBUG_EXECUTE ("WLprec", fprintf (stderr, "InferSegParams: ");
+                  fprintf (stderr, "WLSEGX_SV = ");
+                  PRINT_VECT (stderr, WLSEGX_SV (seg), WLSEGX_DIMS (seg), "%i");
+                  fprintf (stderr, ", WLSEGX_IDX_MIN = ");
+                  PRINT_VECT (stderr, WLSEGX_IDX_MIN (seg), WLSEGX_DIMS (seg), "%i");
+                  fprintf (stderr, ", WLSEGX_IDX_MAX = ");
+                  PRINT_VECT (stderr, WLSEGX_IDX_MAX (seg), WLSEGX_DIMS (seg), "%i");
+                  fprintf (stderr, "\n"););
+
     DBUG_RETURN (seg);
 }
 
@@ -5666,60 +5678,57 @@ InferSegParams (node *seg)
 /******************************************************************************
  *
  * Function:
- *   int InferHomSV( node *nodes, int dim, int sv)
+ *   int IsHomSV( node *nodes, int dim, int sv)
  *
  * Description:
- *   Infers HOMSV of the given wlnode tree in dimension 'dim'.
- *   'sv' contains the step factor of the given wlnode tree in this dimension.
+ *   Infers for the given wlnode tree whether in dimension 'dim' the extend
+ *   of each ublock- or stride-node is a multiple of step factor 'sv'.
  *
  ******************************************************************************/
 
 int
-InferHomSV (node *nodes, int dim, int sv)
+IsHomSV (node *nodes, int dim, int sv)
 {
-    int homsv = 0;
+    int ishom = TRUE;
 
-    DBUG_ENTER ("InferHomSV");
+    DBUG_ENTER ("IsHomSV");
 
-#if 0
-  if (nodes != NULL) {
-    homsv = InferHomSV( WLNODE_NEXT( nodes), dim, sv);
+    if (nodes != NULL) {
+        ishom = IsHomSV (WLNODE_NEXT (nodes), dim, sv);
 
-    if ((WLNODE_DIM( nodes) == dim) &&
-        ((NODE_TYPE( nodes) == N_WLublock) || (NODE_TYPE( nodes) == N_WLstride))) {
-      /*
-       * we have found a node with unrolling information
-       */
-      homsv = lcm( homsv, WLNODE_STEP( nodes));
+        if ((WLNODE_DIM (nodes) == dim)
+            && ((NODE_TYPE (nodes) == N_WLublock) || (NODE_TYPE (nodes) == N_WLstride))) {
+            /*
+             * we have found a relevant node
+             */
+            ishom &= ((WLNODE_BOUND2 (nodes) - WLNODE_BOUND1 (nodes)) % sv == 0);
+        } else {
+            /*
+             * search in whole tree for relevant nodes
+             */
+            switch (NODE_TYPE (nodes)) {
+            case N_WLblock:
+                /* here is no break missing! */
+            case N_WLublock:
+                ishom &= IsHomSV (WLBLOCK_NEXTDIM (nodes), dim, sv);
+                ishom &= IsHomSV (WLBLOCK_CONTENTS (nodes), dim, sv);
+                break;
+
+            case N_WLstride:
+                ishom &= IsHomSV (WLSTRIDE_CONTENTS (nodes), dim, sv);
+                break;
+
+            case N_WLgrid:
+                ishom &= IsHomSV (WLGRID_NEXTDIM (nodes), dim, sv);
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "wrong node type");
+            }
+        }
     }
-    else {
-      /*
-       * search in whole tree for nodes with unrolling information
-       */
-      switch (NODE_TYPE( nodes)) {
-        case N_WLblock:
-          /* here is no break missing! */
-        case N_WLublock:
-          homsv = lcm( homsv, InferHomSV( WLBLOCK_NEXTDIM( nodes), dim, sv));
-          homsv = lcm( homsv, InferHomSV( WLBLOCK_CONTENTS( nodes), dim, sv));
-          break;
 
-        case N_WLstride:
-          homsv = lcm( homsv, InferHomSV( WLSTRIDE_CONTENTS( nodes), dim, sv));
-          break;
-
-        case N_WLgrid:
-          homsv = lcm( homsv, InferHomSV( WLBLOCK_NEXTDIM( nodes), dim, sv));
-          break;
-
-        default:
-          DBUG_ASSERT( (0), "wrong node type");
-      }
-    }
-  }
-#endif
-
-    DBUG_RETURN (homsv);
+    DBUG_RETURN (ishom);
 }
 
 /******************************************************************************
@@ -5728,16 +5737,14 @@ InferHomSV (node *nodes, int dim, int sv)
  *   node *InferSchedulingParams( node *seg)
  *
  * Description:
- *   infers WLSEGX_MAXHOMDIM for the given segment 'seg' and WL..._INNERSTEP
- *   for all contained WLblock-, WLublock-, WLstride-nodes with
- *   (WL..._LEVEL == 0).
+ *   Infers WLSEG_HOMSV and WLSEG_MAXHOMDIM for the given segment 'seg'.
  *
  ******************************************************************************/
 
 node *
 InferSchedulingParams (node *seg)
 {
-    int homsv, d;
+    int new_sv, d;
 
     DBUG_ENTER ("InferSchedulingParams");
 
@@ -5748,18 +5755,36 @@ InferSchedulingParams (node *seg)
         WLSEG_HOMSV (seg) = (int *)MALLOC (WLSEG_DIMS (seg) * sizeof (int));
 
         for (d = 0; d < WLSEG_DIMS (seg); d++) {
-            homsv = InferHomSV (WLSEG_CONTENTS (seg), d, (WLSEG_SV (seg))[d]);
-            if (homsv >= 1) {
-                (WLSEG_HOMSV (seg))[d] = homsv;
+            /*
+             * We must recalculate SV here because the with-loop transformations
+             * (especially the fitting) probabily have modified the layout!
+             */
+            new_sv = GetLcmUnroll (WLSEG_CONTENTS (seg), d);
+
+            /*
+             * Stores the recalculated SV entries in WLSEG_HOMSV until an inhomogeneous
+             * dimension is found.
+             */
+            if (IsHomSV (WLSEG_CONTENTS (seg), d, new_sv)) {
+                (WLSEG_HOMSV (seg))[d] = new_sv;
             } else {
                 break;
             }
         }
+
+        WLSEG_MAXHOMDIM (seg) = (d - 1);
+        /*
+         * WLSEG_HOMSV is set to 0 for the dimensions beyond WLSEG_MAXHOMDIM.
+         */
         for (; d < WLSEG_DIMS (seg); d++) {
             (WLSEG_HOMSV (seg))[d] = 0;
         }
 
-        WLSEG_MAXHOMDIM (seg) = d;
+        DBUG_EXECUTE ("WLprec", fprintf (stderr, "InferSchedulingParams: ");
+                      fprintf (stderr, "WLSEG_HOMSV = ");
+                      PRINT_VECT (stderr, WLSEG_HOMSV (seg), WLSEG_DIMS (seg), "%i");
+                      fprintf (stderr, ", WLSEG_MAXHOMDIM = %i\n",
+                               WLSEG_MAXHOMDIM (seg)););
     }
 
     DBUG_RETURN (seg);
