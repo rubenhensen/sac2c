@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/02 12:56:37  jhs
+ * Added comments.
+ *
  * Revision 1.4  2000/02/23 13:28:22  jhs
  * Expansion stops above first block in a function now.
  *
@@ -140,6 +143,13 @@ BLKEXassign (node *arg_node, node *arg_info)
             next = ASSIGN_NEXT (arg_node);
             next_instr = ASSIGN_INSTR (next);
 
+            /*
+             *  this is a N_mt or N_st, if the next one is of the same type
+             *  then both blocks will be melted.
+             *  By the way: next could be something not N_mt or N_st while
+             *  traversing the last part of a function behind the last (N_mt
+             *  or N_st) and the return as end of the function.
+             */
             if (NODE_TYPE (this_instr) == NODE_TYPE (next_instr)) {
                 /* melt these blocks */
                 DBUG_PRINT ("BLKEX", ("melt %s", NODE_TEXT (this_instr)));
@@ -160,7 +170,7 @@ BLKEXassign (node *arg_node, node *arg_info)
             }
         }
     } else if (NODE_TYPE (this_instr) == N_return) {
-        /* nothing happens */
+        /* nothing happens, returns are ignored */
     } else {
         DBUG_PRINT ("BLKEX", ("node_type: %s", NODE_TEXT (this_instr)));
         DBUG_ASSERT (0, ("unhandled type of ASSIGN_INSTR (watch BLKEX)"));
