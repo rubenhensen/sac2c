@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/04/24 01:14:59  dkr
+ * added N_sync
+ *
  * Revision 1.62  1998/04/21 13:31:00  dkr
  * NWITH2_SEG renamed to NWITH2_SEGS
  *
@@ -1425,6 +1428,22 @@ MakeSPMD (node *region)
 
     NODE_TYPE (tmp) = N_spmd;
     SPMD_REGION (tmp) = region;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeSync (node *region)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeSync");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_sync;
+    SYNC_REGION (tmp) = region;
 
     DBUG_RETURN (tmp);
 }
