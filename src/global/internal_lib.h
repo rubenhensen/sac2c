@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/27 21:39:09  dkr
+ * macros ..._VECT added
+ *
  * Revision 3.3  2001/03/27 11:29:43  dkr
  * OptCmp() removed
  *
@@ -134,6 +137,50 @@ extern void ComputeMallocAlignStep (void);
 #define L_UNSET_BIT(bf, bit) bf = UNSET_BIT (bf, bit)
 
 #define TEST_BIT(bf, bit) ((bf & bit) != 0)
+
+/*
+ * macros for handling vectors
+ */
+
+#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
+    if (vect != NULL) {                                                                  \
+        (vect) = (type *)MALLOC (dims * sizeof (type));                                  \
+    }                                                                                    \
+    INIT_VECT (vect, dims, type, val)
+
+#define INIT_VECT(vect, dims, type, val)                                                 \
+    {                                                                                    \
+        int d;                                                                           \
+        for (d = 0; d < dims; d++) {                                                     \
+            (vect)[d] = val;                                                             \
+        }                                                                                \
+    }
+
+#define DUP_VECT(new_vect, old_vect, dims, type)                                         \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((old_vect) != NULL) {                                                        \
+            (new_vect) = (type *)MALLOC (dims * sizeof (type));                          \
+            for (d = 0; d < dims; d++) {                                                 \
+                (new_vect)[d] = (old_vect)[d];                                           \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define PRINT_VECT(handle, vect, dims, format)                                           \
+    {                                                                                    \
+        int d;                                                                           \
+        if (vect != NULL) {                                                              \
+            fprintf (handle, "[ ");                                                      \
+            for (d = 0; d < dims; d++) {                                                 \
+                fprintf (handle, format, (vect)[d]);                                     \
+                fprintf (handle, " ");                                                   \
+            }                                                                            \
+            fprintf (handle, "]");                                                       \
+        } else {                                                                         \
+            fprintf (handle, "NULL");                                                    \
+        }                                                                                \
+    }
 
 /*
  * malloc
