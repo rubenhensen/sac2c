@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2004/10/25 16:50:12  khf
+ * added copying of new type in DupAssign and DupNwith
+ *
  * Revision 3.112  2004/10/20 08:04:09  khf
  * added NWITH_MTO_OFFSET_NEEDED, NCODE_RESOLVEABLE_DEPEND
  *
@@ -1537,6 +1540,7 @@ DupAssign (node *arg_node, info *arg_info)
                                      DupOneTypes (IDS_TYPE (oldids)), NULL);
                 IDS_VARDEC (newids) = vardec;
                 IDS_AVIS (newids) = VARDEC_AVIS (vardec);
+                AVIS_TYPE (IDS_AVIS (newids)) = TYCopyType (IDS_NTYPE (oldids));
                 INFO_DUP_FUNDEFSSA (arg_info)
                   = AddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
 
@@ -1986,6 +1990,7 @@ DupNwith (node *arg_node, info *arg_info)
           = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (oldvec)), NULL);
         IDS_VARDEC (newvec) = vardec;
         IDS_AVIS (newvec) = VARDEC_AVIS (vardec);
+        AVIS_TYPE (IDS_AVIS (newvec)) = TYCopyType (IDS_NTYPE (oldvec));
         INFO_DUP_FUNDEFSSA (arg_info)
           = AddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
 
@@ -2002,6 +2007,7 @@ DupNwith (node *arg_node, info *arg_info)
               = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (oldids)), NULL);
             IDS_VARDEC (newids) = vardec;
             IDS_AVIS (newids) = VARDEC_AVIS (vardec);
+            AVIS_TYPE (IDS_AVIS (newids)) = TYCopyType (IDS_NTYPE (oldids));
             INFO_DUP_FUNDEFSSA (arg_info)
               = AddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
 
