@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.50  1995/06/23 13:13:53  hw
+ * Revision 1.51  1995/06/26 09:27:07  sbs
+ * insertion of idx_psi initiated :->
+ *
+ * Revision 1.50  1995/06/23  13:13:53  hw
  * - functions will be renamed now, so overloading of userdefined
  *   functions can be done.
  *   ( new function RenameFunName inserted)
@@ -1587,6 +1590,9 @@ CompPrf (node *arg_node, node *arg_info)
                 INSERT_ASSIGN;
                 FREE (old_arg_node);
             }
+            break;
+        }
+        case F_idx_psi: {
             break;
         }
         case F_dim: {
