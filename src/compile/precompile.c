@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/03/31 18:34:33  dkr
+ * the UNROLLING flag in N_WLstride, N_WLgrid is now set correctly
+ *
  * Revision 1.40  1998/03/31 00:03:52  dkr
  * removed unused vars
  *
@@ -1801,11 +1804,11 @@ SetSegAttribs (node *seg)
 #else
     WLSEG_BLOCKS (seg) = 1;
 
-    (WLSEG_BV (seg, 0))[0] = 180; /* 180 or 1 */
-    (WLSEG_BV (seg, 0))[1] = 156; /* 156 */
+    (WLSEG_BV (seg, 0))[0] = 10; /* 180 or 1 */
+    (WLSEG_BV (seg, 0))[1] = 10; /* 156 */
 
     (WLSEG_UBV (seg))[0] = 1; /* 1 */
-    (WLSEG_UBV (seg))[1] = 6; /* 6 */
+    (WLSEG_UBV (seg))[1] = 1; /* 6 */
 #endif
 
     FREE (sv);
@@ -2129,8 +2132,9 @@ SplitWL (node *strides)
  *   node *BlockStride(node *stride, long *bv)
  *
  * description:
- *   returns 'stride' with corrected bounds and blocking levels
- *     (needed after a blocking)
+ *   returns 'stride' with corrected bounds, blocking levels and
+ *     unrolling-flag.
+ *   this function is needed after a blocking.
  *
  ******************************************************************************/
 
@@ -2148,11 +2152,13 @@ BlockStride (node *stride, long *bv)
         curr_stride = stride;
         do {
 
-            /* correct blocking level */
+            /* correct blocking level and unrolling-flag */
             WLSTRIDE_LEVEL (curr_stride)++;
+            WLSTRIDE_UNROLLING (curr_stride) = 1; /* we want to unroll this stride */
             grids = WLSTRIDE_CONTENTS (curr_stride);
             do {
                 WLGRID_LEVEL (grids)++;
+                WLGRID_UNROLLING (grids) = 1; /* we want to unroll this grid */
                 grids = WLGRID_NEXT (grids);
             } while (grids != NULL);
 
