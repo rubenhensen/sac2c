@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2002/09/26 11:52:35  sbs
+ * ugly trick for OSF_ALPHA is now obsolete.
+ *
  * Revision 3.67  2002/09/25 14:50:29  sbs
  * preceedence annotations move to please yacc on OSF
  *
@@ -419,7 +422,7 @@ file: PARSE_PRG  prg       { syntax_tree = $2; }
 eof: { if (commlevel) {
          ABORT( linenum, ("Unterminated comment found"));
 
-#ifdef SAC_FOR_OSF_ALPHA
+#ifdef SAC_FOR_OSF_ALPHA_OBSOLETE
         /*
          * The follwing command is a veeeeeeery ugly trick to avoid warnings
          * on the alpha: the YYBACKUP-macro contains jumps to two labels
