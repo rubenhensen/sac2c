@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/22 11:56:21  jhs
+ * Improved spelling.
+ *
  * Revision 1.1  2000/01/21 15:38:42  dkr
  * Initial revision
  *
  * Revision 2.3  1999/09/10 14:21:32  jhs
- * I deleted on simple and plain blank.
+ * I deleted one simple and plain blank.
  *
  * Revision 2.2  1999/05/07 13:00:22  jhs
  * initialization of src_file in Make Node added.
