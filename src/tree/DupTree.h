@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/11/23 13:31:14  khf
+ * more codebrushing
+ *
  * Revision 3.33  2004/11/22 21:35:54  khf
  * codebrushing part2
  *
@@ -135,10 +138,10 @@ extern types *DUPdupAllTypes (types *arg_types);
 extern nodelist *DUPdupNodelist (nodelist *arg_nl);
 
 /*
- * Functions for duplicating N_id/ids and converting into ids/N_id
+ * Functions for duplicating N_id/N_ids and converting into N_ids/N_id
  */
 extern node *DUPdupIdsId (node *arg_ids);
-extern ids *DUPdupIdIds (node *arg_id);
+extern node *DUPdupIdIds (node *arg_id);
 
 /*
  * Functions for duplicating N_id/ids and enabling NT_TAG
