@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1995/04/20 10:21:23  asi
+# Revision 1.9  1995/05/04 11:44:35  sbs
+# new deps made
+#
+# Revision 1.8  1995/04/20  10:21:23  asi
 # make deps done
 #
 # Revision 1.7  1995/04/19  13:15:55  sbs
@@ -32,7 +35,7 @@ MAKE=make
 CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
-MACS=icm.data icm_decl.c icm_args.c icm_comment.c
+MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
 all: compile.o icm2c.o
 
@@ -64,7 +67,10 @@ compile.o: ../global/free.h
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
 icm2c.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
 icm2c.o: ../global/prf_node_info.mac ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: ../../inc/main.h icm_decl.c icm.data icm_args.c icm_comment.c
-icm_args.o: icm.data
-icm_comment.o: icm.data
-icm_decl.o: icm.data
+icm2c.o: ../../inc/main.h icm_decl.c icm.data trace.h icm_args.c
+icm2c.o: icm_comment.c icm_trace.c
+icm_args.o: icm.data trace.h
+icm_comment.o: icm.data trace.h
+icm_decl.o: icm.data trace.h
+icm_trace.o: icm.data trace.h
+tutu.o: icm_comment.c icm.data trace.h
