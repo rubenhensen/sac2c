@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/12/18 16:25:39  cg
- * ICMs ND_FUN_DEC, ND_FUN_AP and ND_FUN_RET modified
- * new ICMs ND_KS_DECL_GLOBAL_ARRAY and ND_KD_DECL_EXTERN_ARRAY for
- * arrays as global objects.
+ * Revision 1.24  1996/01/21 14:04:31  cg
+ * added icm ND_CREATE_CONST_ARRAY_H
  *
+# Revision 1.23  1995/12/18  16:25:39  cg
+# ICMs ND_FUN_DEC, ND_FUN_AP and ND_FUN_RET modified
+# new ICMs ND_KS_DECL_GLOBAL_ARRAY and ND_KD_DECL_EXTERN_ARRAY for
+# arrays as global objects.
+#
 # Revision 1.22  1995/10/08  11:22:36  sbs
 # some bugs fixed
 #
@@ -107,8 +110,17 @@ ICM_END( ND_FUN_RET)
 ICM_DEF( ND_CREATE_CONST_ARRAY_S, NO_TRACE)
   ICM_STR(name)
   ICM_INT(dim)
-  ICM_VAR( dim, s)
+  ICM_VAR(dim, s)
 ICM_END( ND_CREATE_CONST_ARRAY_S)
+#endif
+
+#if defined(ND_CREATE_CONST_ARRAY_H) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE_CONST_ARRAY_H, NO_TRACE)
+  ICM_STR(name)
+  ICM_STR(copyfun)
+  ICM_INT(dim)
+  ICM_VAR(dim, A)
+ICM_END( ND_CREATE_CONST_ARRAY_H)
 #endif
 
 #if defined(ND_CREATE_CONST_ARRAY_A) || defined(ICM_ALL)
