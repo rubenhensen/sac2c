@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/02/09 10:47:07  dkr
+ * macros PRF_EXPRS?, AP_EXPRS? added
+ *
  * Revision 3.16  2001/02/07 21:14:04  dkr
  * some WL... macros corrected: all ?-expressions in brackets now
  *
@@ -1352,9 +1355,13 @@ extern node *MakeVinfoDollar (node *next);
  *  compound access macros
  */
 
-#define PRF_ARG1(n) (EXPRS_EXPR (PRF_ARGS (n)))
-#define PRF_ARG2(n) (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (n))))
-#define PRF_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))))
+#define PRF_EXPRS1(n) PRF_ARGS (n)
+#define PRF_EXPRS2(n) EXPRS_NEXT (PRF_ARGS (n))
+#define PRF_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))
+
+#define PRF_ARG1(n) EXPRS_EXPR (PRF_EXPRS1 (n))
+#define PRF_ARG2(n) EXPRS_EXPR (PRF_EXPRS2 (n))
+#define PRF_ARG3(n) EXPRS_EXPR (PRF_EXPRS3 (n))
 
 #define MAKE_BIN_PRF(f, arg1, arg2) MakePrf (f, MakeExprs (arg1, MakeExprs (arg2, NULL)))
 
@@ -1379,9 +1386,13 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *  compound access macros
  */
 
-#define AP_ARG1(n) (EXPRS_EXPR (AP_ARGS (n)))
-#define AP_ARG2(n) (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (n))))
-#define AP_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (n)))))
+#define AP_EXPRS1(n) AP_ARGS (n)
+#define AP_EXPRS2(n) EXPRS_NEXT (AP_ARGS (n))
+#define AP_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (n)))
+
+#define AP_ARG1(n) EXPRS_EXPR (AP_EXPRS1 (n))
+#define AP_ARG2(n) EXPRS_EXPR (AP_EXPRS2 (n))
+#define AP_ARG3(n) EXPRS_EXPR (AP_EXRPS3 (n))
 
 /*--------------------------------------------------------------------------*/
 
