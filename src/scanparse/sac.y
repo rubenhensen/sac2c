@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1994/11/22 11:41:25  hw
+ * Revision 1.16  1994/11/22 13:42:58  hw
+ * - error fixed in Append
+ * - changed rule expr -> ID [ exprs ]  into expr -> expr [ expr ]
+ *
+ * Revision 1.15  1994/11/22  11:41:25  hw
  * - declaration of arrays without shape is possible now
  * - changed exprblock assignblock retassignblock, because of changes in assigns
  *
@@ -592,20 +596,20 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
       | BRACKET_L expr BRACKET_R 
          { $$=$2;
          }
-      | ID {$$=MakeNode(N_prf);} SQBR_L exprs SQBR_R 
-         { $$=$<node>2;
-           $$->node[0]=$4;       /* list of expressions  */
+      | expr SQBR_L expr SQBR_R 
+         { $$=MakeNode(N_prf);
+           $$->node[0]=$3;       /*  expression (shape)  */
            $$->info.prf=F_psi;
-           $$->node[1]=MakeNode(N_id);
-           $$->node[1]->info.id=$1 ;      /* name of array */
-           $$->node[1]->lineno=$$->lineno; /* set korrect linenumber */
+           $$->node[1]=$1;       /* array */
            $$->nnode=2;
-          
+           $$->lineno=$1->lineno;
+           
            DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": ID: %s " P_FORMAT ", %s " P_FORMAT,
-                       mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],
-                       $$, $$->node[1]->info.id,
-                       $$->node[1], mdb_nodetype[ $$->node[0]->nodetype ],
+                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT
+                       ", %s " P_FORMAT,
+                       mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$, 
+                       mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
+                       mdb_nodetype[ $$->node[0]->nodetype ],
                        $$->node[0]));
          }
       | SQBR_L {$$=MakeNode(N_array);} exprs SQBR_R
@@ -623,8 +627,8 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
            $$->node[0]=$3;   /* Argument  */
            $$->nnode=1;
            DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %s " P_FORMAT "",
-                       mdb_nodetype[$$->nodetype], $$,
+                      ("%s (%s)" P_FORMAT ": %s " P_FORMAT "",
+                       mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
                        mdb_nodetype[ $$->node[0]->nodetype], $$->node[0] ));
          }
       | binop BRACKET_L expr COMMA expr  BRACKET_R 
@@ -634,8 +638,8 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
            $$->nnode=2;
 
            DBUG_PRINT("GENTREE",
-                      ("%s "P_FORMAT": %s " P_FORMAT ", %s " P_FORMAT,
-                       mdb_nodetype[$$->nodetype], $$,
+                      ("%s (%s)"P_FORMAT": %s " P_FORMAT ", %s " P_FORMAT,
+                       mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
                        mdb_nodetype[$$->node[0]->nodetype], $$->node[0], 
                        mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
           }
@@ -647,8 +651,9 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
            $$->nnode=3;
 
            DBUG_PRINT("GENTREE",
-                      ("%s"P_FORMAT": %s"P_FORMAT",  %s"P_FORMAT", %s "P_FORMAT,
-                       mdb_nodetype[$$->nodetype], $$,
+                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT
+                       ", %s"P_FORMAT,
+                       mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
                        mdb_nodetype[$$->node[0]->nodetype], $$->node[0], 
                        mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
                        mdb_nodetype[$$->node[2]->nodetype], $$->node[2] ));
@@ -1056,7 +1061,7 @@ node *Append(node *target_node, node *append_node)
       tmp=target_node->node[0];
    else
       tmp=target_node;
-   if (N_assign == target_node->nodetype) 
+   if (N_assign == tmp->nodetype) 
    {
       while( 1 != tmp->nnode )      /* look for last N_assign node */
       tmp=tmp->node[1];
