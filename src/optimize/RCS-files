@@ -4,9 +4,13 @@ DeadCodeRemoval.c
 DeadCodeRemoval.h
 DupTree.c
 DupTree.h
+Inline.c
+Inline.h
 LoopInvariantRemoval.c
 LoopInvariantRemoval.h
 Makefile
+Unroll.c
+Unroll.h
 WorkReduction.c
 WorkReduction.h
 optimize.c
