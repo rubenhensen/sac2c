@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2004/11/23 14:49:38  skt
+ * brushing during SDC 2k4
+ *
  * Revision 3.111  2004/11/23 13:52:52  skt
  * ismop in SACDEvCampDK 2k4
  *
@@ -1389,8 +1392,6 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
-
-extern node *TCmakeId_Copy (char *str);
 
 extern node *TCmakeId_Copy_NT (char *str, types *type);
 
