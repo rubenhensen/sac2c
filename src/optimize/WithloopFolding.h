@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.14  1998/04/24 17:32:31  srs
+ * changed comments and added export of MakeNullVec()
+ *
  * Revision 1.13  1998/04/20 09:01:24  srs
  * new function WithloopFoldingWLT()
  *
@@ -61,10 +64,12 @@ typedef struct INDEX_INFO {
                                  (ONLY a constant, else the vector is not
                                  valid) this value is 0 and the constant
                                  can be found in const_arg. */
-    struct INDEX_INFO **last; /* points to last transformations */
+    struct INDEX_INFO **last; /* Vector of predecessores (in case of vector)
+                                 or one predecessor (last[0] in case of scalar).
+                                 Point to last transformations */
 
     /* the next 3 components describe the executed transformation */
-    prf prf;        /* prf +,-,*,/ or */
+    prf prf;        /* prf +,-,* or / */
     int *const_arg; /* the constant arg has to be an integer.
                        For every element of a vector there is an
                        own constant arg.
@@ -72,10 +77,10 @@ typedef struct INDEX_INFO {
                        only const_arg[0] is valid.
                        If the corresponding permutation is 0, the
                        vector's element is a constant which is
-                       stored here (no prf arg). */
+                       stored here (not a prf arg). */
     int arg_no;     /* const_arg is the first (1) or second (2)
                        argument of prf. arg_no may be 0 which
-                       means that no prf given. Can only be in:
+                       means that no prf is given. Can only be in:
                         tmp = [i,j,c];
                         val = psi(...,tmp);
                        Well, can also happen when CF is deacivated.
@@ -108,6 +113,7 @@ extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
 extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
+extern node *MakeNullVec (int dim);
 
 /* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);
@@ -124,7 +130,7 @@ extern intern_gen *CreateInternGen (int shape, int stepwidth);
 extern intern_gen *AppendInternGen (intern_gen *, int, node *, int);
 extern intern_gen *CopyInternGen (intern_gen *source);
 extern intern_gen *MoveInternGen (intern_gen *source, intern_gen **dest);
-extern void *FreeInternGenChain (intern_gen *ig);
+extern intern_gen *FreeInternGenChain (intern_gen *ig);
 
 /******************************************************************************
  *
