@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/05/17 09:37:55  mwe
+ * ARRAY_NTYPE added
+ *
  * Revision 3.94  2004/05/12 12:58:27  ktr
  * DO_LABEL and DO_SKIP inserted.
  *
@@ -1689,6 +1692,7 @@ DupArray (node *arg_node, node *arg_info)
     ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
 
     ARRAY_TYPE (new_node) = DupTypes_ (ARRAY_TYPE (arg_node), arg_info);
+    ARRAY_NTYPE (new_node) = TYCopyType (ARRAY_NTYPE (arg_node));
 
     ARRAY_ISCONST (new_node) = ARRAY_ISCONST (arg_node);
     ARRAY_VECLEN (new_node) = ARRAY_VECLEN (arg_node);
