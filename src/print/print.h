@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/11/10 15:35:18  sbs
+ * Revision 1.3  1994/11/11 13:50:54  hw
+ * added new Print-functions: PrintInc PrintDec PrintPost PrintPre
+ *
+ * Revision 1.2  1994/11/10  15:35:18  sbs
  * RCS-header inserted
  *
  *
@@ -36,6 +39,10 @@ extern node *PrintWith (node *, node *);
 extern node *PrintGenator (node *, node *);
 extern node *PrintConexpr (node *, node *);
 extern node *PrintArray (node *, node *);
+extern node *PrintInc (node *, node *);
+extern node *PrintDec (node *, node *);
+extern node *PrintPost (node *, node *);
+extern node *PrintPre (node *, node *);
 
 extern node *Print (node *);
 
