@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/04/18 12:33:11  dkr
+ * minor changes done
+ *
  * Revision 3.45  2001/04/10 09:37:03  dkr
  * macro F_PTR moved to internal_lib.h
  *
@@ -1687,7 +1690,7 @@ PrintDo (node *arg_node, node *arg_info)
                       INDENT; PrintMrdMask (outfile, DO_MRDMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info)););
 
-        Trav (DO_BODY (arg_node), arg_info); /* traverse body of loop */
+        Trav (DO_BODY (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
 
@@ -1702,7 +1705,7 @@ PrintDo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintWhile(node *arg_node, node *arg_info)
+ *   node *PrintWhile( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1745,7 +1748,7 @@ PrintWhile (node *arg_node, node *arg_info)
                       INDENT; PrintMrdMask (outfile, WHILE_MRDMASK (arg_node),
                                             INFO_PRINT_VARNO (arg_info)););
 
-        Trav (WHILE_BODY (arg_node), arg_info); /* traverse body of loop */
+        Trav (WHILE_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1754,7 +1757,7 @@ PrintWhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintCond(node *arg_node, node *arg_info)
+ *   node *PrintCond( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1765,6 +1768,9 @@ node *
 PrintCond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintCond");
+
+    fprintf (outfile, "\n");
+    INDENT;
 
     fprintf (outfile, "if ");
 
@@ -1820,7 +1826,7 @@ PrintCond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintCast(node  *arg_node, node *arg_info)
+ *   node *PrintCast( node *arg_node, node *arg_info)
  *
  * Description:
  *
