@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/02 11:08:54  hw
+ * Revision 1.5  1994/12/05 13:02:03  hw
+ * removed char *type_string[]
+ * included "convert.h" to have char *type_string[]
+ * included "tree.h" to have no problem with including "convert.h"
+ *
+ * Revision 1.4  1994/12/02  11:08:54  hw
  * inserted  char *type_string[]..
  * deleted  some preprosessor statemenmts
  *
@@ -14,7 +19,9 @@
  *
  */
 
-#ifndef DBUG_OFF /* All this stuff is only used in connection with DBUG */
+#ifndef DBUG_OFF     /* All this stuff is only used in connection with DBUG */
+#include "tree.h"    /* to have TYPE types */
+#include "convert.h" /* to have type_string[] */
 
 /*
 ** global array used for DBUG purposes only
@@ -35,7 +42,5 @@ char *mdb_prf[] = {
 };
 
 #undef PRF_IF
-
-char *type_string[] = {"int", "float", "bool"}; /* used for DBUG_PRINT */
 
 #endif /* DBUG_OFF */
