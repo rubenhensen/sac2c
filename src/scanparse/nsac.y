@@ -4,8 +4,8 @@
 /*
 *
 * $Log$
-* Revision 1.16  2004/11/22 19:28:38  sbs
-* some adjustments wrt ntypes
+* Revision 1.17  2004/11/22 21:34:29  sbs
+* SacDevCamp04
 *
 * Revision 1.15  2004/11/21 11:22:03  sah
 * removed some old ast infos
@@ -94,6 +94,7 @@ static char *mod_name = MAIN_MOD_NAME;
 static node *global_wlcomp_aps = NULL;
 static node *store_pragma = NULL;
 static int intnum_len = 0;
+static bool have_seen_dots = FALSE;
 
 /*
 * used to distinguish the different kinds of files
@@ -184,13 +185,13 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %type <node> fundef  fundef1  fundef2  main
 %type <node> fundec fundec2
-%type <node> mainargs  fundefargs  args  arg 
+%type <node> mainargs  fundecargs fundefargs  args  arg varargs
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
 %type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
      generator  steps  width  nwithop  withop  wlassignblock  genidx 
-     part  parts nums returntypes ntypes 
+     part  parts nums returntypes returndectypes ntypes varntypes
 %type <prf> genop  foldop  prf
 
 %type <id> reservedid  string ext_id
@@ -535,7 +536,7 @@ fundef2: fundefargs BRACKET_R
            $$ = $<node>3;
            FUNDEF_BODY( $$) = $4;             /* function bdoy  */
            FUNDEF_ARGS( $$) = $1;             /* fundef args */
-      
+
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
@@ -548,7 +549,7 @@ fundef2: fundefargs BRACKET_R
        | BRACKET_R { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { $$ = $<node>2;
-           FUNDEF_BODY( $$) = $3;             /* Funktionsrumpf  */
+           FUNDEF_BODY( $$) = $3;
 
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR" %s"F_PTR,
@@ -564,14 +565,34 @@ fundefargs: args        { $$ = $1;   }
           | TYPE_VOID   { $$ = NULL; }
           ;
 
+fundecargs: varargs     { $$ = $1;   }
+          | TYPE_VOID   { $$ = NULL; }
+          | DOT DOT DOT { $$ = NULL; have_seen_dots = TRUE; }
+          ;
+
+
 args: arg COMMA args
       { ARG_NEXT($1) = $3;
         $$ = $1;
       }
     | arg
-      { $$ = $1;
+     { $$ = $1; 
       }
     ;
+
+varargs: arg COMMA args
+         { ARG_NEXT($1) = $3;
+           $$ = $1;
+         }
+       | arg
+        { $$ = $1;
+         }
+       | arg COMMA DOT DOT DOT
+         { $$ = $1;
+           have_seen_dots = TRUE;
+         }
+       ;
+
 
 arg: ntype ID
      { $$ = TBmakeArg( TBmakeAvis( $2, $1), null);
@@ -627,49 +648,31 @@ mainargs: TYPE_VOID     { $$ = NULL; }
 *********************************************************************
 */
 
-fundec: EXTERN returntypes ext_id BRACKET_L fundec2
+fundec: EXTERN returndectypes ext_id BRACKET_L fundec2
         { $$ = $5;
           FUNDEF_RETS( $$) = $2;
           FUNDEF_NAME( $$) = $3;  /* function name */
           FUNDEF_ISEXTERN( $$) = TRUE;
-        }
-      | EXTERN ntypes DOT DOT DOT DOT ext_id BRACKET_L fundec2
-        { $$ = $9;
-          FUNDEF_RETS( $$) = $2;
-          FUNDEF_NAME( $$) = $7;  /* function name */
-          FUNDEF_ISEXTERN( $$) = TRUE;
-          FUNDEF_HASDOTRETS( $$) = TRUE;
-        }
-      | EXTERN DOT DOT DOT ext_id BRACKET_L fundec2
-        { $$ = $7;
-          FUNDEF_RETS( $$) = NULL;
-          FUNDEF_NAME( $$) = $5;  /* function name */
-          FUNDEF_ISEXTERN( $$) = TRUE;
-          FUNDEF_HASDOTRETS( $$) = TRUE;
+          if( have_seen_dots) {
+             FUNDEF_HASDOTARGS( $$) = TRUE;
+             have_seen_dots = FALSE;
+           }
         }
       ;
 
-fundec2: fundefargs BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
+fundec2: fundecargs BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
            NODE_LINE( $$) = $<cint>3;
            FUNDEF_PRAGMA( $$) = $4;
-         }
-       | fundefargs DOT DOT DOT DOT BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
-         { $$ = TBmakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-           NODE_LINE( $$) = $<cint>7;
-           FUNDEF_PRAGMA( $$) = $8;
-           FUNDEF_HASDOTARGS( $$) = TRUE;
+           if( have_seen_dots) {
+             FUNDEF_HASDOTARGS( $$) = TRUE;
+             have_seen_dots = FALSE;
+           }
          }
        | BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
            NODE_LINE( $$) = $<cint>2;
            FUNDEF_PRAGMA( $$) = $3;
-         }
-       | DOT DOT DOT BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
-         { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
-           NODE_LINE( $$) = $<cint>5;
-           FUNDEF_PRAGMA( $$) = $6;
-           FUNDEF_HASDOTARGS( $$) = TRUE;
          }
        ;
 
@@ -1194,7 +1197,7 @@ expr: qual_ext_id                { $$ = $1;                   }
     | wlcomp_pragma_local NWITH { $<cint>$ = linenum; } with
       { $$ = $4;
         NODE_LINE( $$)= $<cint>3;
-        NWITH_PRAGMA( $$) = $1;
+        WITH_PRAGMA( $$) = $1;
       }
     ;
       
@@ -1211,26 +1214,26 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
 #endif
 
         /*
-         * the tricky part about this rule is that $5 (an N_Nwithop node)
+         * the tricky part about this rule is that $5 (an N_withop node)
          * carries the goal-expression of the With-Loop, i.e., the "N-expr"
-         * node which belongs into the N_Ncode node!!!
+         * node which belongs into the N_code node!!!
          * The reason for this is that an exclusion of the goal expression
          * from the non-terminal withop would lead to a shift/reduce
          * conflict in that rule!
          */
-        $$ = TBmakeNWith( $2, TBmakeNCode( $4, TBmakeExprs( NWITHOP_EXPR( $5),
-                                                      NULL)), $5);
-        NWITHOP_EXPR( $5) = NULL;
-        NCODE_USED( NWITH_CODE( $$))++;
+        $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( NULL, // NWITHOP_EXPR( $5),
+                                                          NULL)), $5);
+        // NWITHOP_EXPR( $5) = NULL;
+        CODE_USED( WITH_CODE( $$))++;
         /*
          * Finally, we generate the link between the (only) partition
          * and the (only) code!
          */
-        NPART_CODE( NWITH_PART( $$)) = NWITH_CODE( $$);
+        PART_CODE( WITH_PART( $$)) = WITH_CODE( $$);
       }
     | BRACKET_L ID BRACKET_R parts nwithop
       { $$ = $4;
-        NWITH_WITHOP( $$) = $5;
+        WITH_WITHOP( $$) = $5;
         /*
          * At the time being we ignore $2. However, it SHOULD be checked
          * against all genidxs in $4 here....
@@ -1304,18 +1307,18 @@ parts: part
        }
      | part parts
        { $$ = $1;
-         NPART_NEXT( NWITH_PART( $1)) = NWITH_PART( $2);
-         NCODE_NEXT( NWITH_CODE( $1)) = NWITH_CODE( $2);
-         NWITH_PART( $2) = NULL;
-         NWITH_CODE( $2) = NULL;
+         PART_NEXT( WITH_PART( $1)) = WITH_PART( $2);
+         CODE_NEXT( WITH_CODE( $1)) = WITH_CODE( $2);
+         WITH_PART( $2) = NULL;
+         WITH_CODE( $2) = NULL;
          FreeTree( $2);
        }
      ;
 
 part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
       { $$ = TBmakeNWith( $2, TBmakeNCode( $4, TBmakeExprs( $6, NULL)), NULL);
-        NCODE_USED( NWITH_CODE( $$))++;
-        NPART_CODE( $2) = NWITH_CODE( $$);
+        CODE_USED( WITH_CODE( $$))++;
+        PART_CODE( $2) = WITH_CODE( $$);
       }
     ;
      
@@ -1327,7 +1330,7 @@ generator: expr LE genidx genop expr steps width
                $7 = FreeTree( $7);
              }
              $$ = TBmakeNPart( $3,
-                             TBmakeNGenerator( $1, $5, F_le, $4, $6, $7),
+                             TBmakeGenerator( $1, $5, F_le, $4, $6, $7),
                              NULL);
            }
          | expr LT genidx genop expr steps width
@@ -1338,7 +1341,7 @@ generator: expr LE genidx genop expr steps width
                $7 = FreeTree( $7);
              }
              $$ = TBmakeNPart( $3,
-                             TBmakeNGenerator( $1, $5, F_lt, $4, $6, $7),
+                             TBmakeGenerator( $1, $5, F_lt, $4, $6, $7),
                              NULL);
            }
          ;
@@ -1383,48 +1386,45 @@ wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
              ;
 
 nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
-         { $$ = TBmakeNWithOp( WO_genarray, $3);
-           NWITHOP_DEFAULT( $$) = $5;
+         { $$ = TBmakeGenarray( $3, $5);
          }
        | GENARRAY BRACKET_L expr BRACKET_R
-         { $$ = TBmakeNWithOp( WO_genarray, $3);
-           NWITHOP_DEFAULT( $$) = NULL;
+         { $$ = TBmakeGenarray( $3, NULL);
          }
        | MODARRAY BRACKET_L expr BRACKET_R
-         { $$ = TBmakeNWithOp( WO_modarray, $3);
+         { $$ = TBmakeModarray( $3);
          }
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
-         { $$ = TBmakeNWithOp( WO_foldfun, $5);
-           NWITHOP_FUN( $$) = ILIBstringCopy( ID_NAME( $3));
-           NWITHOP_MOD( $$) = ILIBstringCopy( ID_MOD( $3));
+         { $$ = TBmakeFold( $5);
+           FOLD_FUN( $$) = ILIBstringCopy( ID_NAME( $3));
+           FOLD_MOD( $$) = ILIBstringCopy( ID_MOD( $3));
            $3 = FREEdoFreeTree( $3);
          }
        ;
 
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
-        { $$ = TBmakeNWithOp( WO_genarray, $3);
-          NWITHOP_EXPR( $$) = $5;
+        { $$ = TBmakeGenarray( $3, NULL);
+          // NWITHOP_EXPR( $$) = $5;
         }
       | GENARRAY BRACKET_L expr COMMA expr COMMA expr BRACKET_R
-        { $$ = TBmakeNWithOp( WO_genarray, $3);
-          NWITHOP_EXPR( $$) = $5;
-          NWITHOP_DEFAULT( $$) = $7;
+        { $$ = TBmakeGenarray( $3, $7);
+          // NWITHOP_EXPR( $$) = $5;
         }
       | MODARRAY BRACKET_L expr COMMA ID COMMA expr BRACKET_R
-        { $$ = TBmakeNWithOp( WO_modarray, $3);
-          NWITHOP_EXPR( $$) = $7;
+        { $$ = TBmakeModarray( $3);
+          // NWITHOP_EXPR( $$) = $7;
         }
       | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
-        { $$ = TBmakeNWithOp( WO_foldprf, $5);
-          NWITHOP_PRF( $$) = $3;
-          NWITHOP_EXPR( $$) = $7;
+        { $$ = TBmakeFold( $5);
+          FOLD_PRF( $$) = $3;
+          // NWITHOP_EXPR( $$) = $7;
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
-        { $$ = TBmakeNWithOp( WO_foldfun, $5);
-          NWITHOP_FUN( $$) = ILIBstringCopy( ID_NAME( $3));
-          NWITHOP_MOD( $$) = ILIBstringCopy( ID_MOD( $3));
-          NWITHOP_EXPR( $$) = $7;
+        { $$ = TBmakeFold( $5);
+          FOLD_FUN( $$) = ILIBstringCopy( ID_NAME( $3));
+          FOLD_MOD( $$) = ILIBstringCopy( ID_MOD( $3));
           $3 = FREEdoFreeTree( $3);
+          // NWITHOP_EXPR( $$) = $7;
         }
       ;
 
@@ -1567,9 +1567,23 @@ returntypes: TYPE_VOID   { $$ = NULL; }
            | ntypes      { $$ = $1;   }
            ;
 
+returndectypes: TYPE_VOID   { $$ = NULL; }
+              | varntypes      { $$ = $1;   }
+              | DOT DOT DOT { $$ = NULL; have_seen_dots = TRUE; }
+              ;
+
 ntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
       | ntype { $$ = TBmakeRet( $1,NULL); }
       ;
+
+varntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
+         | ntype { $$ = TBmakeRet( $1,NULL); }
+         | ntype COMMA DOT DOT DOT
+         { $$ = TBmakeRet( $1,NULL);
+           have_seen_dots = TRUE;
+         }
+       ;
+         ;
 
 ntype: basentype
        { $$ = TYMakeAKS( $1, SHMakeShape(0)); 
