@@ -35,3 +35,4 @@ SSADeadCodeRemoval.c
 SSADeadCodeRemoval.h
 SSAWLUnroll.c
 SSAWLUnroll.h
+SSALUR_info.h
