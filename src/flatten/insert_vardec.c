@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/02/22 09:26:19  sbs
+ * INSVDwithid added .
+ *
  * Revision 1.1  2002/02/21 15:12:36  sbs
  * Initial revision
  *
@@ -51,21 +54,28 @@ funtab *insvd_tab = &insvd_tab_rec;
 /******************************************************************************
  *
  * function:
- *  node * SearchForName( char *name, node *vardecs)
+ *  node * SearchForName( char *name, node *vardecs, node *args)
  *
  * description:
- *   looks up the name in the vardecs. Returns the address of the vardec
+ *   looks up the name in the vardecs/args. Returns the address of the vardec/arg
  *   if found, NULL otherwise.
  *
  ******************************************************************************/
 
 node *
-SearchForName (char *name, node *vardecs)
+SearchForName (char *name, node *vardecs, node *args)
 {
     DBUG_ENTER ("SearchForName");
 
-    while ((vardecs != NULL) && (strcmp (VARDEC_NAME (vardecs), name) != 0)) {
-        vardecs = VARDEC_NEXT (vardecs);
+    while ((args != NULL) && (strcmp (ARG_NAME (args), name) != 0)) {
+        args = ARG_NEXT (args);
+    }
+    if (args == NULL) {
+        while ((vardecs != NULL) && (strcmp (VARDEC_NAME (vardecs), name) != 0)) {
+            vardecs = VARDEC_NEXT (vardecs);
+        }
+    } else {
+        vardecs = args;
     }
     DBUG_RETURN (vardecs);
 }
@@ -73,7 +83,7 @@ SearchForName (char *name, node *vardecs)
 /******************************************************************************
  *
  * function:
- *  node * CheckIds( ids *idents, node *vardecs)
+ *  node * CheckIds( ids *idents, node *vardecs, node *args)
  *
  * description:
  *   looks up each identifyer of the idents within the vardecs. If found
@@ -83,14 +93,14 @@ SearchForName (char *name, node *vardecs)
  ******************************************************************************/
 
 node *
-CheckIds (ids *idents, node *vardecs)
+CheckIds (ids *idents, node *vardecs, node *args)
 {
     node *vardec;
 
     DBUG_ENTER ("CheckIds");
 
     while (idents != NULL) {
-        vardec = SearchForName (IDS_NAME (idents), vardecs);
+        vardec = SearchForName (IDS_NAME (idents), vardecs, args);
         if (vardec == NULL) {
             /*
              * The identifyer we are looking for does not have a
@@ -151,7 +161,8 @@ INSVDlet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     INFO_INSVD_VARDECS (arg_info)
-      = CheckIds (LET_IDS (arg_node), INFO_INSVD_VARDECS (arg_info));
+      = CheckIds (LET_IDS (arg_node), INFO_INSVD_VARDECS (arg_info),
+                  INFO_INSVD_ARGS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -171,7 +182,32 @@ INSVDid (node *arg_node, node *arg_info)
     DBUG_ENTER ("INSVDid");
 
     INFO_INSVD_VARDECS (arg_info)
-      = CheckIds (ID_IDS (arg_node), INFO_INSVD_VARDECS (arg_info));
+      = CheckIds (ID_IDS (arg_node), INFO_INSVD_VARDECS (arg_info),
+                  INFO_INSVD_ARGS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSVDwithid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSVDwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("INSVDwithid");
+
+    INFO_INSVD_VARDECS (arg_info)
+      = CheckIds (NWITHID_IDS (arg_node), INFO_INSVD_VARDECS (arg_info),
+                  INFO_INSVD_ARGS (arg_info));
+    INFO_INSVD_VARDECS (arg_info)
+      = CheckIds (NWITHID_VEC (arg_node), INFO_INSVD_VARDECS (arg_info),
+                  INFO_INSVD_ARGS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -191,7 +227,7 @@ INSVDid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-InsertVardecs (node *syntax_tree)
+InsertVardec (node *syntax_tree)
 {
     funtab *old_funtab;
     node *info_node;
@@ -202,7 +238,7 @@ InsertVardecs (node *syntax_tree)
     act_tab = insvd_tab;
 
     info_node = MakeInfo ();
-    syntax_tree = Trav (syntax_tree, NULL);
+    syntax_tree = Trav (syntax_tree, info_node);
     act_tab = old_funtab;
 
     info_node = FreeNode (info_node);
