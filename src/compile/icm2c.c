@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/08/16 10:03:58  sbs
+ * Revision 1.29  1995/09/05 11:36:50  hw
+ * changed condition of boundary check of PRF_MODARRAY...
+ * ( ">=" -> ">" )
+ *
+ * Revision 1.28  1995/08/16  10:03:58  sbs
  * bug fixed in ND_PRF_MODARRAY_AxCxS_CHECK_REUSE
  * ( CHECK_REUSE ( old <-> new ) )
  *
@@ -1249,7 +1253,7 @@ if (check_boundary) {
     fprintf (outfile, ";\n");
     indent++;
     INDENT;
-    fprintf (outfile, "if( ND_A_SIZE(%s) >= __idx)\n", res);
+    fprintf (outfile, "if( (ND_A_SIZE(%s) > __idx) && (0 <= __idx))\n", res);
     indent++;
     INDENT;
 }
@@ -1305,7 +1309,7 @@ if (check_boundary) {
     fprintf (outfile, ";\n");
     indent++;
     INDENT;
-    fprintf (outfile, "if( ND_A_SIZE(%s) >= __idx)\n", res);
+    fprintf (outfile, "if( (ND_A_SIZE(%s) > __idx) && (0 <= __idx))\n", res);
     indent++;
     INDENT;
 }
@@ -1353,7 +1357,10 @@ VectToOffset (dimv, AccessConst (vi, i), dimres, res);
 fprintf (outfile, ";\n");
 INDENT;
 if (check_boundary) {
-    fprintf (outfile, "if( ND_A_SIZE(%s) >= (__idx+ND_A_SIZE(%s))) {\n", res, value);
+    fprintf (outfile,
+             "if( (ND_A_SIZE(%s) > (__idx+ND_A_SIZE(%s)))"
+             "&& (0 <= (__idx+ND_A_SIZE(%s))) ){\n",
+             res, value, value);
     indent++;
     INDENT;
 }
@@ -1415,7 +1422,10 @@ VectToOffset (dimv, AccessConst (vi, i), dimres, res);
 fprintf (outfile, ";\n");
 INDENT;
 if (check_boundary) {
-    fprintf (outfile, "if( ND_A_SIZE(%s) >= (__idx+ND_A_SIZE(%s))) {\n", res, value);
+    fprintf (outfile,
+             "if( (ND_A_SIZE(%s) > (__idx+ND_A_SIZE(%s)))"
+             "&& (0 <= (__idx+ND_A_SIZE(%s))) ){\n",
+             res, value, value);
     indent++;
     INDENT;
 }
