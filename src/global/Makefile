@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.8  1994/12/13 14:57:18  hw
+# Revision 1.9  1994/12/13 15:15:04  hw
+# moved -I/usr/local/lib/gcc-include from Error.o to INCS
+# `make deps` done
+#
+# Revision 1.8  1994/12/13  14:57:18  hw
 # added -I/usr/local/lib/gcc-include/ to rule for Error.o
 #
 # Revision 1.7  1994/12/11  17:30:14  sbs
@@ -28,7 +32,7 @@ MAKE=make
 CC=gcc -ansi -g 
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
-     -I../optimize -I../modules
+     -I../optimize -I../modules -I/usr/local/lib/gcc-include
 
 all: main.o Error.o traverse.o usage.o my_debug.o
 
@@ -36,7 +40,7 @@ main.o: main.c
 	$(CC) -c main.c $(INCS)
 
 Error.o: Error.c 
-	$(CC) -o Error.o -c Error.c $(INCS) -I/usr/local/lib/gcc-include/
+	$(CC) -o Error.o -c Error.c $(INCS) 
 
 traverse.o: traverse.c
 	$(CC) -o traverse.o -c traverse.c $(INCS)
@@ -52,10 +56,10 @@ deps:
 
 clean:
 	$(RM) *.o *.bak
-
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: /usr/include/stdio.h Error.h ../../inc/dbug.h
+Error.o: /usr/local/lib/gcc-include/stdarg.h /usr/include/stdio.h Error.h
+Error.o: ../../inc/dbug.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h tree.h
 main.o: node_info.mac prf_node_info.mac Error.h usage.h ../flatten/flatten.h
 main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
