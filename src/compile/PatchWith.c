@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/10/31 16:25:26  dkr
+ * bug fixed: empty NCODE_BLOCK is build correctly now.
+ *
  * Revision 1.3  2000/07/12 15:15:27  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -281,7 +284,7 @@ PWwith (node *arg_node, node *arg_info)
 
     /* generate a new code table */
     for (i = 0; i < CODETAB_MAX; i++) {
-        codetab[i] = MakeNCode (NULL, MakeNum (i));
+        codetab[i] = MakeNCode (MakeBlock (MakeEmpty (), NULL), MakeNum (i));
         if (i == 0) {
             NWITH_CODE (arg_node) = codetab[i];
         } else {
