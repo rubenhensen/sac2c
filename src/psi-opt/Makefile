@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/03/27 11:12:49  nmw
+# include of directory ../constants added
+#
 # Revision 3.7  2001/03/22 20:20:03  dkr
 # make deps done
 #
@@ -95,8 +98,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 
 INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
-     -I../print -I../optimize
-
+     -I../print -I../optimize -I../constants
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      WithloopFolding.o WLT.o WLI.o WLF.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
