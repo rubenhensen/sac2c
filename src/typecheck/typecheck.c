@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/06/24 15:14:42  sbs
+ * eliminated an error in BuildPsiWithLoop
+ *
  * Revision 2.22  1999/06/17 14:29:22  sbs
  * patched the typechecker in order to accept programs which only require
  * the dimensionality rather than the exact shape of all arrays to be
@@ -4791,7 +4794,7 @@ node *
 TClet (node *arg_node, node *arg_info)
 {
     ids *ids;
-    types *type, *tmp, *next_type;
+    types *type, *tmp, *next_type, *type_arg1, *type_arg2;
     stack_elem *elem;
 #ifndef DBUG_OFF
     char *db_str; /* only used for debugging */
@@ -4907,8 +4910,13 @@ TClet (node *arg_node, node *arg_info)
                      * to be used, the function application is now replaced by an
                      * equialent with-loop.
                      */
+                    type_arg1 = ID_TYPE (PRF_ARG1 (LET_EXPR (arg_node)));
+                    type_arg2 = ID_TYPE (PRF_ARG2 (LET_EXPR (arg_node)));
+
                     if (NULL != LookupFun (prf_name_str[F_psi], "Array", NULL)) {
-                        if (TYPES_DIM (type) > SCALAR) {
+                        if ((TYPES_DIM (type) > SCALAR)
+                            && (TYPES_DIM (type_arg1) > SCALAR)
+                            && (TYPES_DIM (type_arg2) > SCALAR)) {
                             /*
                              * The actual replacement is only performed if the result
                              * shape has been determined.
