@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2000/12/16 10:42:06  cg
+ * Added new attribute ID_NUM for typecheck constant propagation.
+ *
  * Revision 3.7  2000/12/15 10:42:20  dkr
  * INFO_INFDFMS_HIDELOC added
  *
@@ -1727,6 +1730,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    int         VECLEN      (O)             (flatten -> )
  ***    simpletype  VECTYPE     (O)             (flatten -> )
  ***    int         ISCONST     (O)             (flatten -> )
+ ***    int         NUM         (O)
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1744,8 +1748,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    node->info.types->id
  ***
  ***  remark:
- ***    ISCONST, VECTYPE, VECLEN, and CONSTVEC are used for propagation of constant
- ***    integer arrays.
+ ***    ISCONST, VECTYPE, VECLEN, CONSTVEC, and NUM are used for propagation
+ ***    of constant integer arrays.
  ***    Usually, there is no constant propagation for arrays since this
  ***    normally slows down the code due to memory allocation/de-allocation
  ***    costs. However for some other optimizations, namely tile size inference,
@@ -1792,6 +1796,7 @@ extern node *MakeId_Copy (char *str);
 #define ID_VECTYPE(n) ((simpletype) (n->int_data))
 #define ID_CONSTVEC(n) (n->info2)
 #define ID_ISCONST(n) (n->varno)
+#define ID_NUM(n) (n->refcnt)
 
 /*--------------------------------------------------------------------------*/
 
