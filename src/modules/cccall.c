@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/03/25 16:23:51  sah
+ * added support for system libraries
+ * with unkown path to GetLibstatEntry.
+ *
  * Revision 3.9  2003/03/20 13:56:09  sbs
  * config.h included; MUST_KILL_AR_MAGIC_FILE used.
  *
@@ -233,6 +237,7 @@ GenLibstatEntry (FILE *statusfile, deps *depends, statustype stat, strings *done
 {
     strings *tmp_done;
     deps *tmp;
+    char *libname;
 
     DBUG_ENTER ("GenLibstatEntry");
 
@@ -249,9 +254,21 @@ GenLibstatEntry (FILE *statusfile, deps *depends, statustype stat, strings *done
 
             if (tmp_done == NULL) {
                 done = MakeStrings (DEPS_NAME (tmp), done);
+                libname = strrchr (DEPS_LIBNAME (tmp) + 1, '/');
+                if (libname == NULL) {
+                    /* this is an implicit system library */
+                    /* without known path                 */
 
-                fprintf (statusfile, "  %-15s found : %s\n",
-                         strrchr (DEPS_LIBNAME (tmp), '/') + 1, DEPS_LIBNAME (tmp));
+                    char *buffer = Malloc (strlen (DEPS_LIBNAME (tmp)) + 3);
+                    buffer = strcpy (buffer, "lib");
+                    buffer = strcat (buffer, DEPS_LIBNAME (tmp));
+
+                    fprintf (statusfile, "  %-15s found : implicit\n", buffer);
+                    Free (buffer);
+                } else {
+                    fprintf (statusfile, "  %-15s found : %s\n", libname + 1,
+                             DEPS_LIBNAME (tmp));
+                }
             }
         }
 
@@ -535,7 +552,15 @@ FillLinklist (deps *depends, char *linklist)
             strcat (linklist, " ");
             break;
         case ST_external:
+            strcat (linklist, DEPS_LIBNAME (depends));
+            strcat (linklist, " ");
+            break;
         case ST_system:
+            if (*(DEPS_LIBNAME (depends)) != '/') {
+                /* check whether the library has full path */
+                /* information. If not, link it using ld!  */
+                strcat (linklist, "-l");
+            }
             strcat (linklist, DEPS_LIBNAME (depends));
             strcat (linklist, " ");
             break;
