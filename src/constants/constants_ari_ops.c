@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/06 10:29:56  sbs
+ * res in COZip post-mortem initialized in order to please gcc 8-))
+ *
  * Revision 1.2  2001/03/05 16:57:04  sbs
  * COAdd, COSub, COMul, and CODiv added
  *
@@ -91,6 +94,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b)
 
             } else {
                 DBUG_ASSERT ((0 == 1), "COZip called with args of different shape!");
+                res = NULL;
             }
         }
     }
