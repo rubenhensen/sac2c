@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/08/30 13:04:29  dkr
+ * rule '#\ .*\n' revisited:
+ * 'linenum' must be incremented by 1 because \n is still in
+ * input-buffer!
+ *
  * Revision 2.15  2000/08/15 19:39:18  dkr
  * rule '#\ .*\n':
  * yyless(yyleng-1) added in order to leave the '\n' in input.
@@ -433,7 +438,7 @@ int start_token;
                                 }
 [ \t]                           { charpos += yyleng;}
 "\f"                            { charpos += yyleng;}
-#\ .*\n                         { linenum=atoi(yytext+2);
+#\ .*\n                         { linenum=atoi(yytext+2)-1;
                                   { int start, len;
                                     start = strcspn( yytext, "\"")+1;
                                     len   = strcspn( yytext+start, "\"");
