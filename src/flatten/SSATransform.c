@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.20  2004/11/25 22:50:01  mwe
+ * changes according to changes in ast.xml
+ *
  * Revision 1.19  2004/11/25 14:04:33  mwe
  * SacDevCamp Dk: Compiles!!
  *
@@ -527,7 +530,7 @@ SSATnewVardec (node *old_vardec_or_arg)
 
     DBUG_ENTER ("SSATnewVardec");
 
-    ssacnt = AVIS_SSACOUNT (VARDEC_OR_ARG_AVIS (old_vardec_or_arg));
+    ssacnt = AVIS_SSACOUNT (DECL_AVIS (old_vardec_or_arg));
 
     if (NODE_TYPE (old_vardec_or_arg) == N_arg) {
         new_vardec = TCmakeVardecFromArg (old_vardec_or_arg);
@@ -1301,11 +1304,6 @@ SSATcode (node *arg_node, info *arg_info)
     /* traverse expressions */
     DBUG_ASSERT ((CODE_CEXPRS (arg_node) != NULL), "Ncode without Ncexprs node!");
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-
-    /* traverse epilogue */
-    if (CODE_EPILOGUE (arg_node) != NULL) {
-        CODE_EPILOGUE (arg_node) = TRAVdo (CODE_EPILOGUE (arg_node), arg_info);
-    }
 
     /* restore old rename stack !!! */
     FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));

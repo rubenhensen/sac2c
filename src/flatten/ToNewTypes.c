@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/25 22:50:01  mwe
+ * changes according to changes in ast.xml
+ *
  * Revision 1.5  2004/11/25 14:07:36  mwe
  * unused variables removed
  *
@@ -290,14 +293,6 @@ node *
 TNTobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TNTobjdef");
-
-    DBUG_ASSERT ((OBJDEF_AVIS (arg_node) != NULL), "missing avis in objdef found.");
-
-    DBUG_ASSERT ((AVIS_DECL (OBJDEF_AVIS (arg_node)) == arg_node),
-                 "wrong backreference from avis to objdef node!");
-
-    DBUG_ASSERT ((AVIS_TYPE (OBJDEF_AVIS (arg_node)) != NULL),
-                 "missing ntype in avis found");
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
