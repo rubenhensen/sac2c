@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.36  2000/10/23 10:40:05  dkr
+ * DupIds_Id added
+ *
  * Revision 1.35  2000/10/09 17:07:31  dkr
  * DupNodelist():
  *   wrong DBUG_ASSERT in DupNodelist removed.
@@ -471,7 +474,7 @@ DupShpSeg (shpseg *shp_seg)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
- *   the traversal mechanism but also called directly!
+ *   the traversal mechanism but also called by DupIds_Id() or directly!
  *
  ******************************************************************************/
 
@@ -549,6 +552,29 @@ DupIds (ids *old_ids, node *arg_info)
     }
 
     DBUG_RETURN (new_ids);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   ids *DupIds_Id( ids *old_ids)
+ *
+ * Description:
+ *   Duplicates an IDS and returns a *N_id* node.
+ *
+ ******************************************************************************/
+
+node *
+DupIds_Id (ids *old_ids)
+{
+    node *new_id;
+
+    DBUG_ENTER ("DupIds_Id");
+
+    new_id = MakeId (NULL, NULL, ST_regular);
+    ID_IDS (new_id) = DupOneIds (old_ids, NULL);
+
+    DBUG_RETURN (new_id);
 }
 
 /******************************************************************************
