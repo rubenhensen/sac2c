@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/07/07 13:40:15  asi
+ * Revision 1.2  1995/07/07 14:58:38  asi
+ * added loop unswitching
+ *
+ * Revision 1.1  1995/07/07  13:40:15  asi
  * Initial revision
  *
  */
@@ -10,7 +13,7 @@
 
 #define _Unswitch_h
 
-extern node *Unswitsh (node *arg_node, node *arg_info);
+extern node *Unswitch (node *arg_node, node *arg_info);
 
 extern node *UNSfundef (node *arg_node, node *arg_info);
 extern node *UNSdo (node *arg_node, node *arg_info);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/07/07 13:40:15  asi
+ * Revision 1.2  1995/07/07 14:58:38  asi
+ * added loop unswitching
+ *
+ * Revision 1.1  1995/07/07  13:40:15  asi
  * Initial revision
  *
  *
@@ -23,7 +26,7 @@
 #include "ConstantFolding.h"
 #include "DupTree.h"
 #include "Unroll.h"
-#include "Unswitsh.h"
+#include "Unswitch.h"
 
 #define FALSE 0
 #define TRUE 1
@@ -68,7 +71,7 @@ Unswitch (node *arg_node, node *arg_info)
  *  functionname  : UNSfundef
  *  arguments     : 1) fundef-node
  *                  2) NULL
- *                  R) fundef-node with unrolled loops in body of function
+ *                  R) fundef-node with unswitched loops in body of function
  *  description   : - generates info_node
  *                  - varno of the info_node will be set to the number of local variables
  *                      and arguments in this functions
@@ -145,9 +148,6 @@ UNSlet (node *arg_node, node *arg_info)
 node *
 UNSassign (node *arg_node, node *arg_info)
 {
-    node *unroll = NULL, *tmp;
-    int i;
-
     DBUG_ENTER ("UNSassign");
 
     /* unswitch subexpressions */
@@ -213,7 +213,7 @@ UNSdo (node *arg_node, node *arg_info)
     arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
 
     loop_info = AnalyseLoop (COND_TEST, COND_MOD, N_do);
-    if ((NULL != loop_info) && (loop_info->loop_num <= unrnum)) {
+    if ((NULL != loop_info)) {
         FREE (loop_info);
     }
 
@@ -277,7 +277,7 @@ UNSwhile (node *arg_node, node *arg_info)
     arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
 
     loop_info = AnalyseLoop (COND_TEST, COND_MOD, N_while);
-    if ((NULL != loop_info) && (loop_info->loop_num <= unrnum)) {
+    if ((NULL != loop_info)) {
         FREE (loop_info);
     }
 

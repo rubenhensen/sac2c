@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.24  1995/06/02 09:53:02  sbs
+# Revision 1.25  1995/07/07 15:00:40  asi
+# added loop unswitching
+#
+# Revision 1.24  1995/06/02  09:53:02  sbs
 # psi-opt inserted.
 #
 # Revision 1.23  1995/05/26  14:23:42  asi
@@ -88,7 +91,7 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
-	  src/optimize/Inline.o src/optimize/Unroll.o
+	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/Unswitch.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o

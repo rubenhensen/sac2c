@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/06/26 11:53:18  asi
+ * Revision 1.32  1995/07/07 14:58:38  asi
+ * added loop unswitching
+ *
+ * Revision 1.31  1995/06/26  11:53:18  asi
  * parameter for GenerateMasks changed
  *
  * Revision 1.30  1995/06/20  15:55:08  asi
@@ -122,6 +125,7 @@ extern int opt_wr;
 extern int opt_lir;
 extern int opt_inl;
 extern int opt_unr;
+extern int opt_uns;
 extern int optvar;
 extern int inlnum;
 extern int unrnum;
@@ -134,6 +138,7 @@ extern int wr_expr;
 extern int lir_expr;
 extern int inl_fun;
 extern int unr_expr;
+extern int uns_expr;
 extern int optvar_counter;
 
 #define INC_VAR(mask, var) mask[var] += 1

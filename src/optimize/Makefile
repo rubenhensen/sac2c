@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.15  1995/06/02 11:58:26  asi
+# Revision 1.16  1995/07/07 14:58:38  asi
+# added loop unswitching
+#
+# Revision 1.15  1995/06/02  11:58:26  asi
 # make deps done
 #
 # Revision 1.14  1995/05/26  14:28:10  asi
@@ -53,7 +56,7 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../typecheck -I../print
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
-     LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o
+     LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o
 
 optimize.o: optimize.c
 	$(CC) -o optimize.o -c optimize.c $(INCS)
@@ -78,6 +81,9 @@ Inline.o: Inline.c
 
 Unroll.o: Unroll.c
 	$(CC) -o Unroll.o -c Unroll.c $(INCS)
+
+Unswitch.o: Unswitch.c
+	$(CC) -o Unswitch.o -c Unswitch.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
