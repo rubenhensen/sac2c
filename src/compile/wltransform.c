@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2003/04/10 16:04:53  dkr
+ * DBUG_ASSERT for with-loops with empty shape added
+ *
  * Revision 3.75  2003/04/10 13:27:22  dkr
  * GetWlShape() streamlined and corrected
  *
@@ -2782,6 +2785,16 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
         is_empty = FALSE;
         new_grid = NULL;
 
+        /*
+         * with-loops with empty shapes should have been removed already!!!
+         *
+         *    B = with( [] <= iv <= []) genarray( [], arr);   =>   B = arr;
+         *    B = with( [] <= iv <= []) modarray( A,  scl);   =>   B = scl;
+         *      where A represents a scalar
+         *    B = with( [] <= iv <= []) fold( f, n, expr);    =>   iv = [];
+         *                                                         B = f( n, expr);
+         */
+        DBUG_ASSERT ((dims > 0), "with-loop with empty shape found!");
         for (dim = 0; dim < dims; dim++) {
             DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
             DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
@@ -2852,6 +2865,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
         }
 
         if (!is_empty) {
+            DBUG_ASSERT ((new_grid != NULL), "no produced grid found!");
             WLGRIDX_CODE (new_grid) = code;
             NCODE_USED (code)++;
             WLGRIDX_NOOP (new_grid) = NCODE_AP_DUMMY_CODE (code);
@@ -2895,14 +2909,8 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
 
     switch (NWITH2_TYPE ((*wl))) {
     case WO_genarray:
-#if 0
-      /*
-       * empty genarray with-loops are not allowed!!!
-       */
-      ERROR( linenum, ("genarray-with-loop with empty index vector set found"));
-#else
         if (
-#if 0
+#if 0 /* with-loop is never replaced! */
           GetShpsegLength( dims, shape) > 0
 #else
           TRUE
@@ -2933,7 +2941,6 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
 
             tmp = FreeNode (tmp);
         }
-#endif
         break;
 
     case WO_modarray:
