@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/01/17 16:25:58  cg
+ * Added new global variable to control initial heap sizes separately
+ * for master's arena of arenas, workers' arena of arenas and the
+ * top arena.
+ *
  * Revision 2.19  1999/10/22 14:16:41  sbs
  * made simpletype_size global, since it is needed in compile, tile_size_inference AND
  * constants already!
@@ -264,7 +269,10 @@ int wlunrnum = 9;
 int minarray = 4;
 int max_overload = 10;
 int max_optcycles = 4;
-int initial_heapsize = 2;
+
+int initial_master_heapsize = 1024;
+int initial_worker_heapsize = 64;
+int initial_unified_heapsize = 1024;
 
 /*
  * special hidden options!

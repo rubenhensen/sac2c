@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/01/17 16:25:58  cg
+ * Added new global variable to control initial heap sizes separately
+ * for master's arena of arenas, workers' arena of arenas and the
+ * top arena.
+ *
  * Revision 2.20  1999/10/22 14:16:41  sbs
  * made simpletype_size global, since it is needed in compile, tile_size_inference AND
  * constants already!
@@ -25,6 +30,11 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.21  2000/01/17 16:25:58  cg
+ * Added new global variable to control initial heap sizes separately
+ * for master's arena of arenas, workers' arena of arenas and the
+ * top arena.
+ *
  * Revision 2.20  1999/10/22 14:16:41  sbs
  * made simpletype_size global, since it is needed in compile, tile_size_inference AND
  * constants already!
@@ -215,7 +225,9 @@ extern int minarray;
 extern int max_overload;
 extern int max_optcycles;
 
-extern int initial_heapsize;
+extern int initial_master_heapsize;
+extern int initial_worker_heapsize;
+extern int initial_unified_heapsize;
 
 extern int show_refcnt;
 extern int show_idx;
