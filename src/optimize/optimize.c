@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/11/27 01:48:24  jhb
+ * comment out WLAdoAccessAnalysis and ApdoArrayPadding
+ *
  * Revision 3.70  2004/11/26 18:14:35  mwe
  * change prefix of IVE
  *
@@ -803,7 +806,7 @@ OPTmodule (node *arg_node, info *arg_info)
      * Now, it's indicated to analyze the array accesses within WLs.
      */
     if ((global.optimize.dotsi) || (global.optimize.doap)) {
-        arg_node = WLAAdoAccessAnalyze (arg_node);
+        /*      arg_node = WLAAdoAccessAnalyze (arg_node); */
 
         if ((global.break_after == PH_sacopt)
             && (0 == strcmp (global.break_specifier, "wlaa"))) {
@@ -815,7 +818,7 @@ OPTmodule (node *arg_node, info *arg_info)
      * Now, we apply array padding
      */
     if (global.optimize.doap) {
-        arg_node = APdoArrayPadding (arg_node);
+        /*      arg_node = APdoArrayPadding (arg_node); */
 
         if ((global.break_after == PH_sacopt)
             && (0 == strcmp (global.break_specifier, "ap"))) {
