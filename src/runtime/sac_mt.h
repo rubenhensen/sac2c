@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/03 13:31:27  jhs
+ * Deleted extra frame, all that can be done with the existing frame.
+ *
  * Revision 2.3  1999/06/03 13:20:14  jhs
  * Added extra spmd-frame to exchange data between master & workers.
  *
@@ -188,9 +191,7 @@ typedef union {
 
 #endif /* SAC_MT_CACHE_LINE_MAX() */
 
-#define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
-    static union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;                                   \
-    static union SAC_SET_SPMD_FRAME SAC_MT_spmd_sync;
+#define SAC_MT_DEFINE_SPMD_FRAME() static union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
 
 #define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
 
