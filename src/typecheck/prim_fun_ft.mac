@@ -1,10 +1,13 @@
 /*
  *  $Log$
- *  Revision 1.7  1995/03/08 16:09:00  hw
- *  added FT's for F_..._..x.. (some parts of the syntaxtree are traversed
- *   more than once while typechecking. So one has to know the declaration
- *   of them)
+ *  Revision 1.8  1995/06/30 11:36:31  hw
+ *  functions F2I & I2F inserted
  *
+;; Revision 1.7  1995/03/08  16:09:00  hw
+;; added FT's for F_..._..x.. (some parts of the syntaxtree are traversed
+;;  more than once while typechecking. So one has to know the declaration
+;;  of them)
+;;
 ;; Revision 1.6  1995/03/08  14:14:13  hw
 ;; - changed some AxS-... to SxA_... to distinguish the argumenttypes
 ;; - added new prf-enumerators to distinguish weather one argument
@@ -77,3 +80,7 @@ FT (F_rotate, SxSxA_A, F_rotate)
 FT (F_not, B_B, F_not)
 FT (F_and, BxB_B, F_and)
 FT (F_or, BxB_B, F_or)
+FT (F_ftoi, f_i, F_ftoi)
+FT (F_ftoi, F_I, F_ftoi_A)
+FT (F_itof, i_f, F_itof)
+FT (F_itof, I_F, F_itof_A)
