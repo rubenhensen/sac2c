@@ -1,6 +1,11 @@
+
 /*
  *
  * $Log$
+ * Revision 3.53  2004/02/20 08:14:00  mwe
+ * now functions with and without body are separated
+ * changed tree traversal (added traverse of MODUL_FUNDECS)
+ *
  * Revision 3.52  2003/12/23 10:58:51  khf
  * DebugAssert in BuildGenarrayWithLoop inserted.
  *
@@ -2197,7 +2202,7 @@ AllChecked ()
 /*
  *  functionname  : DeleteFun
  *  arguments     : 1) N_fundef to delete
- *                  2) first N_fundef of the syntax_tree
+ *                  2) modul of the syntax_tree
  *  description   : deletes 1) from 2)
  *                  returns 2) without 1)
  *  global vars   : ----
@@ -2210,36 +2215,52 @@ AllChecked ()
  */
 
 static node *
-DeleteFun (node *arg_node, node *tree)
+DeleteFun (node *arg_node, node *modul)
 {
-    node *fun_node, *last_node;
+    node *fun_node, *last_node, *tree;
+    int i;
 
     DBUG_ENTER ("DeleteFun");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "DeleteFun with non-N_fundef node!");
 
+    tree = MODUL_FUNS (modul);
     last_node = tree;
-    if (last_node == arg_node) {
-        tree = FUNDEF_NEXT (tree);
-        FUNDEF_NEXT (last_node) = NULL;
-        DBUG_PRINT ("TYPE", ("removed function %s", FUNDEF_NAME (last_node)));
-        FreeTree (last_node);
-    } else {
-        fun_node = FUNDEF_NEXT (tree);
-        while (fun_node != arg_node) {
-            last_node = fun_node;
-            fun_node = FUNDEF_NEXT (fun_node);
+
+    for (i = 0; i < 2; i++) {
+        if (last_node == arg_node) {
+            tree = FUNDEF_NEXT (tree);
+            FUNDEF_NEXT (last_node) = NULL;
+            DBUG_PRINT ("TYPE", ("removed function %s", FUNDEF_NAME (last_node)));
+            FreeTree (last_node);
+            /* node already found */
+            if (i == 0) {
+                MODUL_FUNS (modul) = tree;
+            } else {
+                MODUL_FUNDECS (modul) = tree;
+            }
+            break;
+
+        } else {
+            fun_node = FUNDEF_NEXT (tree);
+            while ((fun_node != arg_node) && (fun_node != NULL)) {
+                last_node = fun_node;
+                fun_node = FUNDEF_NEXT (fun_node);
+            }
+
+            if (fun_node == arg_node) {
+                FUNDEF_NEXT (last_node) = FUNDEF_NEXT (fun_node);
+                FUNDEF_NEXT (fun_node) = NULL;
+                DBUG_PRINT ("TYPE", ("removed function %s", FUNDEF_NAME (fun_node)));
+                FreeTree (fun_node);
+                /* node already found */
+                break;
+            }
+            tree = MODUL_FUNDECS (modul);
+            last_node = tree;
         }
-        DBUG_ASSERT ((fun_node == arg_node), " fun not found");
-        FUNDEF_NEXT (last_node) = FUNDEF_NEXT (fun_node);
-        FUNDEF_NEXT (fun_node) = NULL;
-        DBUG_PRINT ("TYPE", ("removed function %s", FUNDEF_NAME (fun_node)));
-        FreeTree (fun_node);
-    }
-    if (NULL == tree) {
-        ABORT (0, ("All functions deleted"));
     }
 
-    DBUG_RETURN (tree);
+    DBUG_RETURN (MODUL_FUNS (modul));
 }
 
 /*
@@ -2248,6 +2269,7 @@ DeleteFun (node *arg_node, node *tree)
  *  arguments     : 1) first N_fundef of the syntax_tree
  *                  2) tag: 0: check a sac-program (SAC_PRG)
  *                          1: check a sac-module (implementation)(SAC_MOD)
+ *                  3) current modul node, needed in DeleteFun
  *  description   : looks whether all functions are checked
  *                  if one function is checked "fast" then check it again ,but
  *                  normally
@@ -2265,7 +2287,7 @@ DeleteFun (node *arg_node, node *tree)
  */
 
 static node *
-CheckRest (node *arg_node, int kind)
+CheckRest (node *arg_node, int kind, node *modul)
 {
     fun_tab_elem *fun_p;
 
@@ -2323,7 +2345,7 @@ CheckRest (node *arg_node, int kind)
             }
 
             if (FUNDEF_STATUS (fun_p->node) != ST_objinitfun) {
-                arg_node = DeleteFun (fun_p->node, arg_node);
+                arg_node = DeleteFun (fun_p->node, modul);
             }
 
             DBUG_PRINT ("CHECK", ("function %s is not used", fun_p->id));
@@ -2343,7 +2365,7 @@ CheckRest (node *arg_node, int kind)
                        "because of unknown shapes in declaration. "
                        "Function will be removed",
                        ModName (fun_p->id_mod, fun_p->id)));
-                arg_node = DeleteFun (fun_p->node, arg_node);
+                arg_node = DeleteFun (fun_p->node, modul);
             }
             break;
         }
@@ -2362,7 +2384,7 @@ CheckRest (node *arg_node, int kind)
                 WARN (NODE_LINE (fun_p->node), ("Function '%s` cannot be"
                                                 " typechecked and will be removed",
                                                 ModName (fun_p->id_mod, fun_p->id)));
-                arg_node = DeleteFun (fun_p->node, arg_node);
+                arg_node = DeleteFun (fun_p->node, modul);
             }
             break;
         }
@@ -2745,7 +2767,8 @@ InitTypeTab (node *modul_node)
 /*
  *
  *  functionname  : InitFunTable
- *  arguments     : 1) pointer to first function declaration (N_fundef)
+ *  arguments     : 1) pointer to first FUNS declaration (N_fundef)
+ *                : 2) pointer to first FUNDECS declaration (N_fundef)
  *  description   : generates a table of userdefined functions
  *                  - checks whether types of parameters are ok
  *                       - extern functions do not contain arrays with
@@ -2766,111 +2789,123 @@ InitTypeTab (node *modul_node)
  */
 
 static void
-InitFunTable (node *arg_node)
+InitFunTable (node *funs, node *fundecs)
 {
     node *fun_node;
     fun_tab_elem *fun_p, *last_fun_p, *dummy;
     char *fun_name, *mod_name;
+    int counter;
 
     DBUG_ENTER ("InitFunTable");
 
-    DBUG_ASSERT ((N_fundef == arg_node->nodetype), " arg_node not N_fundef");
-
+    /*  DBUG_ASSERT((N_fundef == funs->nodetype)," funs not N_fundef");
+      DBUG_ASSERT((N_fundef == fundecs->nodetype)," fundecs not N_fundef");
+     */
     /* first count fundefs and check whether types of external functions are ok*/
     dummy = NEW_FUN_TAB_ELEM; /* this is only a dummy entry and will
                                * be removed later on.
                                */
     fun_table = dummy;
     INIT_FUN_TAB_ELEM (fun_table);
-    fun_node = arg_node;
-    while (NULL != fun_node) {
-        if (NULL == fun_node->node[0]) {
-            node *tmp_fun_node = fun_node->node[1];
-            char *tmp_fun_name;
-            int equal_name = 0;
+    fun_node = funs;
 
-            /* first check whether the types of the external function declaration
-             * are ok
-             */
-            CheckFunctionDeclaration (fun_node, 1);
-            /* check whether there are more external functions with name for
-             * extern function (node[5])
-             */
-            /* fun_name=(NULL == fun_node->node[5]) ? FUNDEF_NAME( fun_node)
-                                                    : (char*)fun_node->node[5]; */
-            fun_name
-              = (NULL == FUNDEF_PRAGMA (fun_node)
-                   ? FUNDEF_NAME (fun_node)
-                   : (NULL == FUNDEF_LINKNAME (fun_node) ? FUNDEF_NAME (fun_node)
-                                                         : FUNDEF_LINKNAME (fun_node)));
+    /* execute inner loops 2 times
+     * first time for funs, second time for fundecs
+     */
+    for (counter = 0; counter < 2; counter++) {
 
-            while (NULL != tmp_fun_node) {
-                if (NULL == tmp_fun_node->node[0]) {
-                    if (NULL == FUNDEF_MOD (tmp_fun_node)) {
-                        /* tmp_fun_name=(NULL != tmp_fun_node->node[5])
-                           ?(char*)(tmp_fun_node->node[5]) : FUNDEF_NAME( tmp_fun_node);
-                         */
-                        tmp_fun_name = (NULL == FUNDEF_PRAGMA (tmp_fun_node)
-                                          ? FUNDEF_NAME (tmp_fun_node)
-                                          : (NULL == FUNDEF_LINKNAME (tmp_fun_node)
-                                               ? FUNDEF_NAME (tmp_fun_node)
-                                               : FUNDEF_LINKNAME (tmp_fun_node)));
+        while (NULL != fun_node) {
+            if (NULL == fun_node->node[0]) {
+                node *tmp_fun_node = fun_node->node[1];
+                char *tmp_fun_name;
+                int equal_name = 0;
 
-                        DBUG_PRINT ("CHECK", ("compare funname  %s  with %s", fun_name,
-                                              tmp_fun_name));
-
-                        if (0 == strcmp (fun_name, tmp_fun_name))
-                            equal_name += 1;
-                    }
-                    tmp_fun_node = FUNDEF_NEXT (tmp_fun_node);
-                } else
-                    /* it is a local defined function, so stop checking */
-                    break;
-            }
-            if (0 != equal_name) {
-                /*
-                  WARN(0,("More than one external function with name '%s`",
-                          fun_name));
+                /* first check whether the types of the external function declaration
+                 * are ok
                  */
-                /*
-                 * This is allowed due to overloading external functions
-                 * using the linkname pragma.
+                CheckFunctionDeclaration (fun_node, 1);
+                /* check whether there are more external functions with name for
+                 * extern function (node[5])
                  */
-            }
-        } else
-            CheckKnownTypes (fun_node);
+                /* fun_name=(NULL == fun_node->node[5]) ? FUNDEF_NAME( fun_node)
+                                                        : (char*)fun_node->node[5]; */
+                fun_name = (NULL == FUNDEF_PRAGMA (fun_node)
+                              ? FUNDEF_NAME (fun_node)
+                              : (NULL == FUNDEF_LINKNAME (fun_node)
+                                   ? FUNDEF_NAME (fun_node)
+                                   : FUNDEF_LINKNAME (fun_node)));
 
-        /* now insert function into fun_table */
-        fun_name = FUNDEF_NAME (fun_node);
-        mod_name = (NULL == FUNDEF_MOD (fun_node)) ? (FUNDEF_LINKMOD (fun_node))
-                                                   : (FUNDEF_MOD (fun_node));
-        fun_p = LookupFun (fun_name, NULL, NULL);
+                while (NULL != tmp_fun_node) {
+                    if (NULL == tmp_fun_node->node[0]) {
+                        if (NULL == FUNDEF_MOD (tmp_fun_node)) {
+                            /* tmp_fun_name=(NULL != tmp_fun_node->node[5])
+                               ?(char*)(tmp_fun_node->node[5]) : FUNDEF_NAME(
+                               tmp_fun_node);
+                             */
+                            tmp_fun_name = (NULL == FUNDEF_PRAGMA (tmp_fun_node)
+                                              ? FUNDEF_NAME (tmp_fun_node)
+                                              : (NULL == FUNDEF_LINKNAME (tmp_fun_node)
+                                                   ? FUNDEF_NAME (tmp_fun_node)
+                                                   : FUNDEF_LINKNAME (tmp_fun_node)));
 
-        if (NULL == fun_p) {
-            /*         INSERT_FUN(fun_table, fun_name, mod_name, fun_node,
-                             (NULL == fun_node->node[0])?IS_CHECKED:NOT_CHECKED,
-                                max_overload);*/
-            INSERT_FUN (fun_table, fun_node, max_overload);
-        } else {
-            do {
-                last_fun_p = fun_p;
-                if (CMP_MOD (fun_p->id_mod, FUNDEF_MOD (fun_node))) {
-                    if (1 == CmpFunParams (fun_p->node->node[2], fun_node->node[2])) {
-                        ERROR (0, ("Function '%s` is defined more"
-                                   " than once with equal domain",
-                                   ModName (fun_p->id_mod, fun_p->id)));
+                            DBUG_PRINT ("CHECK", ("compare funname  %s  with %s",
+                                                  fun_name, tmp_fun_name));
+
+                            if (0 == strcmp (fun_name, tmp_fun_name))
+                                equal_name += 1;
+                        }
+                        tmp_fun_node = FUNDEF_NEXT (tmp_fun_node);
+                    } else
+                        /* it is a local defined function, so stop checking */
                         break;
-                    }
                 }
-                fun_p = NEXT_FUN_TAB_ELEM (fun_p);
-            } while (
-              END_OF_FUN_TAB (fun_p) ? 0 : (!strcmp (fun_p->id, FUNDEF_NAME (fun_node))));
-            /*         INSERT_FUN(last_fun_p, fun_name, mod_name, fun_node,
-                                (NULL == fun_node->node[0])?IS_CHECKED:NOT_CHECKED,
-                                max_overload);*/
-            INSERT_FUN (last_fun_p, fun_node, max_overload);
+                if (0 != equal_name) {
+                    /*
+                      WARN(0,("More than one external function with name '%s`",
+                      fun_name));
+                    */
+                    /*
+                     * This is allowed due to overloading external functions
+                     * using the linkname pragma.
+                     */
+                }
+            } else
+                CheckKnownTypes (fun_node);
+
+            /* now insert function into fun_table */
+            fun_name = FUNDEF_NAME (fun_node);
+            mod_name = (NULL == FUNDEF_MOD (fun_node)) ? (FUNDEF_LINKMOD (fun_node))
+                                                       : (FUNDEF_MOD (fun_node));
+            fun_p = LookupFun (fun_name, NULL, NULL);
+
+            if (NULL == fun_p) {
+                /*         INSERT_FUN(fun_table, fun_name, mod_name, fun_node,
+                           (NULL == fun_node->node[0])?IS_CHECKED:NOT_CHECKED,
+                           max_overload);*/
+                INSERT_FUN (fun_table, fun_node, max_overload);
+            } else {
+                do {
+                    last_fun_p = fun_p;
+                    if (CMP_MOD (fun_p->id_mod, FUNDEF_MOD (fun_node))) {
+                        if (1 == CmpFunParams (fun_p->node->node[2], fun_node->node[2])) {
+                            ERROR (0, ("Function '%s` is defined more"
+                                       " than once with equal domain",
+                                       ModName (fun_p->id_mod, fun_p->id)));
+                            break;
+                        }
+                    }
+                    fun_p = NEXT_FUN_TAB_ELEM (fun_p);
+                } while (END_OF_FUN_TAB (fun_p)
+                           ? 0
+                           : (!strcmp (fun_p->id, FUNDEF_NAME (fun_node))));
+                /*         INSERT_FUN(last_fun_p, fun_name, mod_name, fun_node,
+                           (NULL == fun_node->node[0])?IS_CHECKED:NOT_CHECKED,
+                           max_overload);*/
+                INSERT_FUN (last_fun_p, fun_node, max_overload);
+            }
+            fun_node = fun_node->node[1];
         }
-        fun_node = fun_node->node[1];
+        fun_node = fundecs;
     }
     ABORT_ON_ERROR;
 
@@ -2972,8 +3007,8 @@ Typecheck (node *arg_node)
 
         ABORT_ON_ERROR;
 
-        if (MODUL_FUNS (arg_node) != NULL) {
-            InitFunTable (MODUL_FUNS (arg_node));
+        if ((MODUL_FUNS (arg_node) != NULL) || (MODUL_FUNDECS (arg_node) != NULL)) {
+            InitFunTable (MODUL_FUNS (arg_node), MODUL_FUNDECS (arg_node));
 
             /*  ABORT_ON_ERROR;  */
 
@@ -2990,7 +3025,10 @@ Typecheck (node *arg_node)
                 Trav (tmp_node->node, NULL);
 
                 /* now check the type of "fastchecked" functions */
-                MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_PRG);
+                MODUL_FUNS (arg_node)
+                  = CheckRest (MODUL_FUNS (arg_node), SAC_PRG, arg_node);
+                /* MODUL_FUNDECS( arg_node) = CheckRest( MODUL_FUNDECS(arg_node), SAC_PRG,
+                 * arg_node);*/
             } else {
                 fun_tab_elem *fun_p;
                 kind_of_file = SAC_MOD;
@@ -3038,7 +3076,10 @@ Typecheck (node *arg_node)
                     }
                 }
 
-                MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_MOD);
+                MODUL_FUNS (arg_node)
+                  = CheckRest (MODUL_FUNS (arg_node), SAC_MOD, arg_node);
+                /*      MODUL_FUNDECS( arg_node) = CheckRest( MODUL_FUNDECS( arg_node),
+                 * SAC_MOD,arg_node);*/
             }
 
             stack = Free (stack);
@@ -3054,6 +3095,11 @@ Typecheck (node *arg_node)
          * function!
          */
         if (pseudo_fold_fundefs != NULL) {
+
+            pseudo_fold_fundefs = TypecheckFunctionDeclarations (pseudo_fold_fundefs);
+
+            DBUG_ASSERT ((pseudo_fold_fundefs != NULL), "pseudo_fold_fundefs is NULL");
+
             tmp = pseudo_fold_fundefs;
             while (FUNDEF_NEXT (tmp) != NULL) {
                 tmp = FUNDEF_NEXT (tmp);
@@ -3062,7 +3108,8 @@ Typecheck (node *arg_node)
             MODUL_FUNS (arg_node) = pseudo_fold_fundefs;
         }
 
-        MODUL_FUNS (arg_node) = TypecheckFunctionDeclarations (MODUL_FUNS (arg_node));
+        MODUL_FUNDECS (arg_node)
+          = TypecheckFunctionDeclarations (MODUL_FUNDECS (arg_node));
     }
 
     DBUG_RETURN (arg_node);

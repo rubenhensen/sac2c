@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/02/20 08:14:00  mwe
+ * now functions with and without body are separated
+ * changed tree traversal (added traverse of MODUL_FUNDECS)
+ *
  * Revision 1.17  2003/11/18 17:45:42  dkr
  * CWCwithop(): all node sons are traversed now
  *
@@ -71,6 +75,7 @@
 
 #define INFO_CWC_TRAVNO(n) ((n)->flag)
 #define INFO_CWC_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
+#define INFO_CWC_MODUL(n) ((n)->node[0])
 
 /**
  **
@@ -109,10 +114,16 @@ CWCmodul (node *arg_node, node *arg_info)
     DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) != NULL), "MODUL_WRAPPERFUNS not found!");
     INFO_CWC_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node);
 
+    INFO_CWC_MODUL (arg_info) = arg_node;
+
     /*
      * create separate wrapper function for all base type constellations
      */
     INFO_CWC_TRAVNO (arg_info) = 1;
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
+
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
@@ -129,10 +140,12 @@ CWCmodul (node *arg_node, node *arg_info)
      * create separate wrapper function for all base type constellations
      */
     INFO_CWC_TRAVNO (arg_info) = 3;
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
-
     MODUL_WRAPPERFUNS (arg_node) = RemoveLUT (MODUL_WRAPPERFUNS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -508,6 +521,7 @@ CWCfundef (node *arg_node, node *arg_info)
 {
     node *new_fundef;
     node *new_fundefs;
+    node *next;
 
     DBUG_ENTER ("CWCfundef");
 
@@ -540,15 +554,17 @@ CWCfundef (node *arg_node, node *arg_info)
             }
 
             /*
-             * insert new wrapper functions behind the original one and
+             * insert new wrapper functions at the begining of MODULE_FUNS and
              * free original wrapper function (-> zombie function)
              */
-            new_fundefs = AppendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
+            new_fundefs
+              = AppendFundef (new_fundefs, MODUL_FUNS (INFO_CWC_MODUL (arg_info)));
+            next = FUNDEF_NEXT (arg_node);
             arg_node = FreeNode (arg_node);
             DBUG_ASSERT (((arg_node != NULL)
                           && (FUNDEF_STATUS (arg_node) == ST_zombiefun)),
                          "zombie fundef not found!");
-            FUNDEF_NEXT (arg_node) = new_fundefs;
+            FUNDEF_NEXT (arg_node) = next;
         }
     } else if (INFO_CWC_TRAVNO (arg_info) == 2) {
         /*

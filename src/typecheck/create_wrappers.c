@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/02/20 08:14:00  mwe
+ * now functions with and without body are separated
+ * changed tree traversal (added traverse of MODUL_FUNDECS)
+ *
  * Revision 1.15  2003/11/18 17:21:57  dkr
  * NWITHOP_DEFAULT added
  *
@@ -405,11 +409,14 @@ CRTWRPmodul (node *arg_node, node *arg_info)
                  "MODUL_WRAPPERFUNS is not NULL!");
     INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node) = GenerateLUT ();
 
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
-    MODUL_FUNS (arg_node)
-      = FoldLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODUL_FUNS (arg_node),
+    MODUL_FUNDECS (arg_node)
+      = FoldLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODUL_FUNDECS (arg_node),
                    (void *(*)(void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
