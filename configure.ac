@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.25  2003/04/26 12:33:50  sah
+dnl added pthread test for gccs
+dnl
 dnl Revision 1.24  2003/04/25 18:28:04  sah
 dnl added flag CCMTLINK and removed NEED_REENTRANT
 dnl as now everything should be handeled right by
@@ -318,6 +321,19 @@ if test "$YACC" = "obsolete_yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
 fi
 
+dnl check for pthread flag on gcc
+if test "$GCC" = yes; then
+  AC_MSG_CHECKING([existence of pthread flag])
+  echo "int main(){return 0;}" > .sac_configure_temp.c
+  if test "`gcc -pthread .sac_configure_temp.c 2>&1 | grep "unrecognized option"`" = ""; then
+    AC_MSG_RESULT([supported])
+    GCC_PTHREADS="-pthread"
+  else
+    AC_MSG_RESULT([unsupported])
+    GCC_PTHREADS="-lpthread"
+  fi
+  rm -f .sac_configure_temp.c
+fi
 dnl test for compiler flags
 dnl for sac2crc
 AC_MSG_CHECKING([sac2crc compiler flags])
@@ -333,7 +349,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-ansi -Wall -g -O3"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
-  AC_SUBST(CCMTLINK, ["-pthread"])
+  AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
