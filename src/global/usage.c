@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.42  2000/11/14 16:47:47  sbs
+ * string.h included which is needed by strlen
+ *
  * Revision 2.41  2000/10/31 18:06:27  cg
  * Added additional break specifier -b15:dfr2.
  *
@@ -141,6 +144,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "usage.h"
 #include "globals.h"
