@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/12/18 16:20:52  cg
+ * Revision 1.12  1996/01/21 14:00:29  cg
+ * added APPEND_ICM_ARG, new DBUG_PRINTs in CREATE_1_ARY_ICM
+ *
+ * Revision 1.11  1995/12/18  16:20:52  cg
  * added declaration of node *CompObjdef(node *arg_node, node *arg_info);
  *
  * Revision 1.10  1995/06/28  09:30:22  hw
@@ -85,15 +88,24 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
         prev = tmp;                                                                      \
     }
 
-/* following macros use a variabel 'node *icm_arg', it has to be defined
- * before
+#define APPEND_ICM_ARG(prev, new)                                                        \
+    prev->node[1] = new;                                                                 \
+    prev->nnode = 2;                                                                     \
+    prev = new;
+
+/*
+ * The following macros use a variabel 'node *icm_arg', it has to be defined
+ * before usage.
  */
+
 #define CREATE_1_ARY_ICM(assign, str, arg)                                               \
+    DBUG_PRINT ("COMP", ("Creating ICM \"%s\" ...", str));                               \
     MAKE_ICM (assign);                                                                   \
     MAKE_ICM_NAME (assign->node[0], str);                                                \
     MAKE_ICM_ARG (assign->node[0]->node[0], arg);                                        \
     icm_arg = assign->node[0]->node[0];                                                  \
-    assign->node[0]->nnode = 1
+    assign->node[0]->nnode = 1;                                                          \
+    DBUG_PRINT ("COMP", ("ICM \"%s\" created", str));
 
 #define CREATE_2_ARY_ICM(assign, str, arg1, arg2)                                        \
     CREATE_1_ARY_ICM (assign, str, arg1);                                                \
