@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.73  2001/04/04 15:11:41  nmw
- * *** empty log message ***
+ * Revision 3.74  2001/04/04 22:20:49  dkr
+ * INFO_COMP_FOLDFUNS added
  *
  * Revision 3.72  2001/04/04 13:21:53  dkr
  * INFO_COMP_TABSIZE added
@@ -12,12 +12,6 @@
  *
  * Revision 3.70  2001/04/04 09:57:59  nmw
  * INFO_INL macros added
- *
- * Revision 3.69  2001/04/03 15:39:42  dkr
- * uuups, typo corrected
- *
- * Revision 3.68  2001/04/03 15:28:03  dkr
- * comment for N_WLseg modified
  *
  * Revision 3.67  2001/04/02 11:16:58  nmw
  * INFO_xxx macros for MODUL, ASSIGN added for optimizations
@@ -34,14 +28,8 @@
  * Revision 3.63  2001/03/27 20:51:49  dkr
  * macros INFO_F2L_... added
  *
- * Revision 3.62  2001/03/27 13:48:34  dkr
- * some comments modified
- *
  * Revision 3.61  2001/03/27 09:09:46  nmw
  * INFO_SSALIR_ macros added
- *
- * Revision 3.60  2001/03/26 15:03:44  dkr
- * some comments modified
  *
  * Revision 3.59  2001/03/26 10:46:03  nmw
  * INFO_SSACF_ macros added
@@ -50,17 +38,11 @@
  * INFO_INL_NAIVE added
  * INFO_DUP_ALL removed
  *
- * Revision 3.57  2001/03/22 13:28:07  dkr
- * minor changes done
- *
  * Revision 3.56  2001/03/21 17:49:33  dkr
  * macros INFO_INL_... modified
  *
  * Revision 3.55  2001/03/21 14:08:06  nmw
  * INFO_SSACF_ macros added
- *
- * Revision 3.54  2001/03/21 13:51:39  dkr
- * forced check-in
  *
  * Revision 3.53  2001/03/19 16:43:46  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
@@ -71,17 +53,11 @@
  * Revision 3.51  2001/03/16 11:56:39  nmw
  * AVIS_SSAPHITRAGET type changed and AVIS macros changed. too
  *
- * Revision 3.50  2001/03/15 15:32:23  dkr
- * comment for N_arg modified
- *
  * Revision 3.49  2001/03/15 13:57:26  dkr
  * definition of INFO_PREC2_OBJINITFUNDEF modified
  *
  * Revision 3.48  2001/03/15 13:29:09  nmw
  * INFO_SSA_ASSIGN added
- *
- * Revision 3.47  2001/03/15 12:33:06  dkr
- * comments about STATUS and ATTRIB updated
  *
  * Revision 3.46  2001/03/15 10:54:29  nmw
  * AVIS_SSAUNDOFLAG added
@@ -98,14 +74,8 @@
  * Revision 3.42  2001/03/06 13:18:19  nmw
  * INFO_CMPT_ marcros added
  *
- * Revision 3.41  2001/03/05 16:52:05  dkr
- * comment for N_Ncode added
- *
  * Revision 3.40  2001/03/05 16:19:04  nmw
  * INFO_SSACSE macros added
- *
- * Revision 3.39  2001/03/05 15:10:49  dkr
- * some minor corrections done
  *
  * Revision 3.38  2001/03/05 15:01:18  dkr
  * some comments added
@@ -202,9 +172,6 @@
  * Revision 3.7  2000/12/15 10:42:20  dkr
  * INFO_INFDFMS_HIDELOC added
  *
- * Revision 3.6  2000/12/12 15:34:12  dkr
- * some macros renamed
- *
  * Revision 3.5  2000/12/06 20:13:13  dkr
  * INFO_LAC2FUN_... renamed into INFO_L2F_... or
  * INFO_INFDFMS_... respectively
@@ -218,9 +185,6 @@
  * Revision 3.2  2000/11/27 21:11:20  cg
  * Added new attribute PRAGMA for Nwith2 nodes.
  * Added new attribute APL for N_pragma nodes.
- *
- * Revision 3.1  2000/11/20 18:03:34  sacbase
- * new release made
  *
  * [...]
  *
@@ -2730,12 +2694,13 @@ extern node *MakeInfo ();
 #define INFO_COMP_MODUL(n) (n->node[0])
 #define INFO_COMP_FUNDEF(n) (n->node[1])
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[2])
+#define INFO_COMP_LAST_SYNC(n) (n->node[3])
 #define INFO_COMP_LASTIDS(n) (n->info.ids)
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
-#define INFO_COMP_ICMTAB(n) ((node **)(n->node[3]))
+#define INFO_COMP_ICMTAB(n) ((node **)(n->node[4]))
 #define INFO_COMP_TABSIZE(n) (n->flag)
-#define INFO_COMP_LAST_SYNC(n) (*((node **)(&(n->int_data))))
+#define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
