@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/11/15 15:12:46  sacbase
+# PROJECT_ROOT added
+#
 # Revision 3.9  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -44,7 +47,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
