@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.150  1999/02/19 18:08:30  dkr
+ * flag -defence added
+ *
  * Revision 1.149  1999/02/15 13:34:09  sbs
  * added -noDLAW opt_dlaw;
  *
@@ -743,7 +746,9 @@ MAIN
     NEXTOPT
     ARG 'd' : PARM
     {
-        if (0 == strcmp (*argv, "check_boundary"))
+        if (0 == strcmp (*argv, "efence"))
+            use_efence = 1;
+        else if (0 == strcmp (*argv, "check_boundary"))
             check_boundary = 1;
         else if (0 == strcmp (*argv, "CB"))
             check_boundary = 1;
