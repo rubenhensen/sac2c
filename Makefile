@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.29  1995/09/27 12:15:18  cg
+# Revision 1.30  1995/10/05 15:56:11  cg
+# added implicittypes.o
+#
+# Revision 1.29  1995/09/27  12:15:18  cg
 # included tree_basic.c and tree_compound.c
 #
 # Revision 1.28  1995/09/01  07:44:25  cg
@@ -109,7 +112,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/Unswitch.o \
 	  src/psi-opt/ArrayElimination.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
-MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o
+MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
+         src/modules/implicittypes.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
 
