@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.4  1999/04/12 09:40:54  cg
+ * Bug removed in initialization of write access function table.
+ * Presentation of results immproved.
+ *
  * Revision 2.3  1999/04/06 13:45:39  cg
  * added extended setup of cache parameters.
  *
@@ -18,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "sac_cachesim.h"
 #include "libsac_cachesim.h"
@@ -42,7 +47,6 @@ tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
    SAC_CS_xxx_access_table[MAX_CACHELEVEL+1] for dummy/MainMem */
 /* END: */
 static int already_started = 0;
-static char *empty_string = ""; /* will never be changed */
 static char *starttag;
 static tProfilingLevel profiling_level;
 
@@ -380,6 +384,7 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
         }
     } else {
         SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
+        SAC_CS_write_access_table[L] = &SAC_CS_Access_MM;
         free (act_cl);
         act_cl = NULL;
         SAC_CS_cachelevel[L] = NULL;
@@ -400,7 +405,7 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
 {
     profiling_level = profilinglevel;
 
-    if (nr_of_cpu) {
+    if (nr_of_cpu > 1) {
         SAC_RuntimeError ("Cache simulation does not support multi-threaded execution");
     }
 
@@ -436,33 +441,37 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
     SAC_CS_ReadAccess = SAC_CS_read_access_table[1];
     SAC_CS_WriteAccess = SAC_CS_write_access_table[1];
 
-    printf ("====================================================\n"
-            "SAC program running with cache simulation enabled!\n"
-            "====================================================\n"
-            "L1 cache:  cache size        : %lu KByte\n"
-            "           cache line size   : %d Byte\n"
-            "           associativity     : %d\n"
-            "           write miss policy : %s\n",
-            cachesize1, cachelinesize1, associativity1, WritePolicyName (writepolicy1));
+    fprintf (stderr,
+             "====================================================\n"
+             "SAC program running with cache simulation enabled!\n"
+             "This delays program execution significantly.\n"
+             "====================================================\n"
+             "L1 cache:  cache size        : %lu KByte\n"
+             "           cache line size   : %d Byte\n"
+             "           associativity     : %d\n"
+             "           write miss policy : %s\n",
+             cachesize1, cachelinesize1, associativity1, WritePolicyName (writepolicy1));
 
     if (cachesize2 > 0) {
-        printf ("====================================================\n"
-                "L2 cache:  cache size        : %lu KByte\n"
-                "           cache line size   : %d Byte\n"
-                "           associativity     : %d\n"
-                "           write miss policy : %s\n",
-                cachesize2, cachelinesize2, associativity2,
-                WritePolicyName (writepolicy2));
+        fprintf (stderr,
+                 "====================================================\n"
+                 "L2 cache:  cache size        : %lu KByte\n"
+                 "           cache line size   : %d Byte\n"
+                 "           associativity     : %d\n"
+                 "           write miss policy : %s\n",
+                 cachesize2, cachelinesize2, associativity2,
+                 WritePolicyName (writepolicy2));
     }
 
     if (cachesize3 > 0) {
-        printf ("====================================================\n"
-                "L3 cache:  cache size        : %lu KByte\n"
-                "           cache line size   : %d Byte\n"
-                "           associativity     : %d\n"
-                "           write miss policy : %s\n",
-                cachesize3, cachelinesize3, associativity3,
-                WritePolicyName (writepolicy3));
+        fprintf (stderr,
+                 "====================================================\n"
+                 "L3 cache:  cache size        : %lu KByte\n"
+                 "           cache line size   : %d Byte\n"
+                 "           associativity     : %d\n"
+                 "           write miss policy : %s\n",
+                 cachesize3, cachelinesize3, associativity3,
+                 WritePolicyName (writepolicy3));
     }
 
     printf ("====================================================\n");
@@ -596,27 +605,49 @@ SAC_CS_Access_MM (void *baseaddress, void *elemaddress)
 void
 SAC_CS_ShowResults (void)
 {
-    int i;
+    int i, digits;
+    long unsigned int accesses;
+    float hit_ratio;
+
+    fprintf (stderr,
+             "\n"
+             "====================================================\n"
+             "SAC cache simulation results: %s\n"
+             "====================================================\n",
+             starttag == NULL ? "" : starttag);
+
+    digits = (int)ceil (log10 ((double)SAC_CS_hit[1] + SAC_CS_miss[1]));
 
     for (i = 1; i <= MAX_CACHELEVEL; i++) {
         if (SAC_CS_cachelevel[i] != NULL) {
-            fprintf (stdout,
-                     "  Level %d\n"
-                     "  -Hits: %lu / %.1f%%   Total Misses: %lu / %.1f%%\n",
-                     i, SAC_CS_hit[i],
-                     (double)SAC_CS_hit[i] / (double)(SAC_CS_hit[i] + SAC_CS_miss[i])
-                       * 100.0,
-                     SAC_CS_miss[i],
-                     (double)SAC_CS_miss[i] / (double)(SAC_CS_hit[i] + SAC_CS_miss[i])
-                       * 100.0);
+            accesses = SAC_CS_hit[i] + SAC_CS_miss[i];
+            hit_ratio = ((float)SAC_CS_hit[i] / (float)accesses) * 100.0;
+
+            fprintf (stderr,
+                     "L%d cache:  accesses:  %*lu\n"
+                     "           hits:      %*lu  (%5.1f%%)\n"
+                     "           misses:    %*lu  (%5.1f%%)\n",
+                     i, digits, accesses, digits, SAC_CS_hit[i], hit_ratio, digits,
+                     SAC_CS_miss[i], 100.0 - hit_ratio);
 
             if ((profiling_level == SAC_CS_advanced)) {
-                fprintf (stdout, "  -Cold: %lu   Cross: %lu   Self: %lu   Invalid: %lu\n",
-                         SAC_CS_cold[i], SAC_CS_cross[i], SAC_CS_self[i],
-                         SAC_CS_invalid[i]);
+                fprintf (stderr,
+                         "  misses:  cold start:          %*lu  (%5.1f%%)\n"
+                         "           cross interference:  %*lu  (%5.1f%%)\n"
+                         "           self interference:   %*lu  (%5.1f%%)\n"
+                         "           invalidation:        %*lu  (%5.1f%%)\n",
+                         digits, SAC_CS_cold[i],
+                         ((float)SAC_CS_cold[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         SAC_CS_cross[i],
+                         ((float)SAC_CS_cross[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         SAC_CS_self[i],
+                         ((float)SAC_CS_self[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         SAC_CS_invalid[i],
+                         ((float)SAC_CS_invalid[i] / (float)SAC_CS_miss[i]) * 100.0);
             } /* if */
-        }     /* if */
-    }         /* for: i */
+            fprintf (stderr, "====================================================\n");
+        } /* if */
+    }     /* for: i */
 } /* SAC_CS_ShowResults */
 
 void
@@ -651,10 +682,6 @@ SAC_CS_Stop (void)
         fprintf (stderr, "libsac_cachesim: "
                          "cachesimulation is already stopped.\n");
     } else {
-        if (starttag == NULL) {
-            starttag = empty_string;
-        }
-        printf ("\nResults for tag: %s\n", starttag);
         SAC_CS_ShowResults ();
         starttag = NULL;
         already_started = 0;
