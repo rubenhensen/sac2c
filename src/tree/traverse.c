@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2000/05/31 11:26:29  mab
+ * added includes and traversal tables for array padding
+ *
  * Revision 1.18  2000/05/29 14:29:57  dkr
  * a second traversal-table for precompile added
  *
@@ -233,6 +236,8 @@
 #include "barriers_init.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
+#include "pad_collect.h"
+#include "pad_transform.h"
 
 #include "traverse.h"
 
@@ -1103,6 +1108,28 @@ static funtab precomp1_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp1_tab = &precomp1_tab_rec;
+
+/*
+ *  (80) padcoll_tab
+ */
+static funtab padcoll_tab_rec = {{
+#define NIFpadcoll(it_padcoll) it_padcoll
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *padcoll_tab = &padcoll_tab_rec;
+
+/*
+ *  (81) padtrans_tab
+ */
+static funtab padtrans_tab_rec = {{
+#define NIFpadtrans(it_padtrans) it_padtrans
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *padtrans_tab = &padtrans_tab_rec;
 
 /*
  *  nnode
