@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.182  2004/11/26 23:23:31  khf
+ * SacDevCamp04: COMPILES!!
+ *
  * Revision 3.181  2004/11/26 22:31:13  sbs
  * construction site reopened 8-)
  *
@@ -24,7 +27,6 @@
 #include "tree_compound.h"
 #include "new_types.h"
 #include "DupTree.h"
-#include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "Error.h"
@@ -639,8 +641,7 @@ PrintArgtab (argtab_t *argtab, bool is_def)
                                      "illegal argtab entry found!");
 
                         fprintf (global.outfile, "%s",
-                                 mdb_nodetype[NODE_TYPE (
-                                   EXPRS_EXPR (argtab->ptr_in[i]))]);
+                                 NODE_TEXT (EXPRS_EXPR (argtab->ptr_in[i])));
                     }
                 } else {
                     fprintf (global.outfile, "-");
@@ -693,7 +694,7 @@ Argtab2Fundef (node *fundef)
     node *new_fundef;
     argtab_t *argtab;
     int i;
-    types *rettypes = NULL;
+    node *rets = NULL;
     node *args = NULL;
 
     DBUG_ENTER ("Argtab2Fundef");
@@ -703,11 +704,7 @@ Argtab2Fundef (node *fundef)
 
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
-    if (argtab->ptr_out[0] == NULL) {
-        rettypes = TBmakeTypes1 (T_void);
-    } else {
-        rettypes = DUPdupOneTypes (argtab->ptr_out[0]);
-    }
+    rets = argtab->ptr_out[0];
 
     for (i = argtab->size - 1; i >= 1; i--) {
         if (argtab->ptr_in[i] != NULL) {
@@ -715,16 +712,15 @@ Argtab2Fundef (node *fundef)
             ARG_NEXT (arg) = args;
             args = arg;
         } else if (argtab->ptr_out[i] != NULL) {
-            types *type;
-            type = DUPdupOneTypes (argtab->ptr_out[i]);
-            args = MakeArg (NULL, DUPdupOneTypes (argtab->ptr_out[i]), ST_regular,
-                            ST_regular, args);
+            args
+              = TBmakeArg (TBmakeAvis (NULL, TYcopyType (RET_TYPE (argtab->ptr_out[i]))),
+                           args);
         }
     }
 
     new_fundef
       = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
-                      ILIBstringCopy (FUNDEF_MOD (fundef)), rettypes, args, NULL, NULL);
+                      ILIBstringCopy (FUNDEF_MOD (fundef)), rets, args, NULL, NULL);
 
     DBUG_RETURN (new_fundef);
 }
@@ -745,8 +741,9 @@ Argtab2Let (node *ap)
     node *new_let, *new_ap;
     argtab_t *argtab;
     int i;
-    ids *_ids = NULL;
+    node *ids = NULL;
     node *exprs = NULL;
+    node *expr = NULL;
 
     DBUG_ENTER ("Argtab2Let");
 
@@ -756,23 +753,24 @@ Argtab2Let (node *ap)
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
     if (argtab->ptr_out[0] != NULL) {
-        _ids = DUPdupOneIds (argtab->ptr_out[0]);
+        ids = DUPdoDupNode (argtab->ptr_out[0]);
     }
 
     for (i = argtab->size - 1; i >= 1; i--) {
         if (argtab->ptr_out[i] != NULL) {
-            exprs = TBmakeExprs (DupIds_Id (argtab->ptr_out[i]), exprs);
+            expr = DUPdoDupNode (argtab->ptr_out[i]);
+            EXPRS_NEXT (expr) = exprs;
+            exprs = expr;
         } else if (argtab->ptr_in[i] != NULL) {
-            node *expr = DUPdoDupNode (argtab->ptr_in[i]);
+            expr = DUPdoDupNode (argtab->ptr_in[i]);
             EXPRS_NEXT (expr) = exprs;
             exprs = expr;
         }
     }
 
-    new_ap = MakeAp (ILIBstringCopy (AP_NAME (ap)), AP_MOD (ap), exprs);
-    AP_FUNDEF (new_ap) = AP_FUNDEF (ap);
+    new_ap = TBmakeAp (AP_FUNDEF (ap), exprs);
 
-    new_let = MakeLet (new_ap, _ids);
+    new_let = TBmakeLet (ids, new_ap);
 
     DBUG_RETURN (new_let);
 }
@@ -860,7 +858,7 @@ PRTmodule (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTmodule");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     if (INFO_PRINT_SEPARATE (arg_info)) {
         /*
@@ -1069,7 +1067,7 @@ PRTtypedef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTtypedef");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     if ((TYPEDEF_ICM (arg_node) == NULL)
         || (NODE_TYPE (TYPEDEF_ICM (arg_node)) != N_icm)) {
@@ -1121,7 +1119,7 @@ PRTobjdef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTobjdef");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     /* print objinit flag declaration in header.file
      * this has to placed before the if switch, because the ICM_Trav seems
@@ -1212,8 +1210,6 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     }
 
     if (print_c) {
-        node *tmp;
-
         node *tmp = Argtab2Fundef (arg_node);
 
         PrintFunctionHeader (tmp, arg_info, in_comment);
@@ -1328,7 +1324,7 @@ PRTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTfundef");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     INFO_PRINT_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
@@ -1493,7 +1489,7 @@ PRTannotate (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTannotate");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
         sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d, %d)", ANNOTATE_FUNNUMBER (arg_node),
@@ -1642,7 +1638,7 @@ PRTblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTblock");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     INDENT;
     fprintf (global.outfile, "{ \n");
@@ -1738,7 +1734,7 @@ PRTassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTassign");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     instr = ASSIGN_INSTR (arg_node);
     DBUG_ASSERT ((instr != NULL), "instruction of N_assign is NULL");
@@ -1928,7 +1924,7 @@ PRTlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PRTlet");
 
-    DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
     if (LET_USEMASK (arg_node) != NULL) {
         fprintf (global.outfile, "/* use:");
@@ -2019,8 +2015,8 @@ PRTprf (node *arg_node, info *arg_info)
     prf = PRF_PRF (arg_node);
     prf_str = global.prf_symbol[prf];
 
-    DBUG_PRINT ("PRINT", ("%s (%s)" F_PTR, mdb_nodetype[NODE_TYPE (arg_node)],
-                          mdb_prf[prf], arg_node));
+    DBUG_PRINT ("PRINT",
+                ("%s (%s)" F_PTR, NODE_TEXT (arg_node), global.mdb_prf[prf], arg_node));
 
     if ((prf == F_sel) && (TCcountExprs (PRF_ARGS (arg_node)) == 2)) {
         /*
@@ -4026,7 +4022,7 @@ PrintTravPre (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PrintTravPre");
 
-    DBUG_PRINT ("PRINT_LINE", ("line (%s) %s:%i\n", mdb_nodetype[NODE_TYPE (arg_node)],
+    DBUG_PRINT ("PRINT_LINE", ("line (%s) %s:%i\n", NODE_TEXT (arg_node),
                                NODE_FILE (arg_node), NODE_LINE (arg_node)));
 
     DBUG_RETURN (arg_node);
