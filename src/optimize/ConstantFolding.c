@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/09/05 13:46:04  cg
+ * All cast expressions are now removed by rmvoidfun.c. Therefore,
+ * the respective attempts in precompile.c and ConstantFolding.c
+ * are removed. Cast expressions are only used by the type checker.
+ * Afterwards, they are useless, and they are not supported by
+ * Constant Folding as well as code generation.
+ *
  * Revision 1.49  1996/09/23 16:51:08  asi
  * bug fixed in CalcPsi
  *
@@ -511,8 +518,12 @@ CFap (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- *
+#if 0
+
+All cast expressions are now removed by rmvoidfun.c !!
+
+/* 
+ * 
  *  functionname  : CFcast
  *  arguments     : 1) cast-node
  *                  2) info-node
@@ -522,23 +533,24 @@ CFap (node *arg_node, node *arg_info)
  *  internal funs : ---
  *  external funs : OPTTrav (optimize.h), FreeTree (free.h)
  *  macros        : CAST_EXPR
- *
+ * 
  *  remarks       : ---
- *
+ * 
  */
-node *
-CFcast (node *arg_node, node *arg_info)
+node *CFcast(node *arg_node, node *arg_info)
 {
-    node *next_node;
-
-    DBUG_ENTER ("CFcast");
-
-    next_node = Trav (CAST_EXPR (arg_node), arg_info);
-
-    CAST_EXPR (arg_node) = NULL;
-    FreeTree (arg_node);
-    DBUG_RETURN (next_node);
+  node *next_node;
+  
+  DBUG_ENTER("CFcast");
+  
+  next_node = Trav(CAST_EXPR(arg_node), arg_info);
+  
+  CAST_EXPR(arg_node) = NULL;
+  FreeTree(arg_node);
+  DBUG_RETURN(next_node);
 }
+
+#endif
 
 /*
  *

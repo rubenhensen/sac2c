@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1997/09/05 13:46:04  cg
+ * All cast expressions are now removed by rmvoidfun.c. Therefore,
+ * the respective attempts in precompile.c and ConstantFolding.c
+ * are removed. Cast expressions are only used by the type checker.
+ * Afterwards, they are useless, and they are not supported by
+ * Constant Folding as well as code generation.
+ *
  * Revision 1.11  1996/01/17 14:37:31  asi
  * stack-handling moved to optimize.h
  *
@@ -56,7 +63,6 @@ extern node *CFcond (node *arg_node, node *arg_info);
 extern node *CFvar (node *arg_node, node *arg_info);
 extern node *CFassign (node *arg_node, node *arg_info);
 extern node *CFwith (node *arg_node, node *arg_info);
-extern node *CFcast (node *arg_node, node *arg_info);
 extern node *CFap (node *arg_node, node *arg_info);
 
 #endif /* _ConstantFolding_h */

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1997/09/05 13:46:04  cg
+ * All cast expressions are now removed by rmvoidfun.c. Therefore,
+ * the respective attempts in precompile.c and ConstantFolding.c
+ * are removed. Cast expressions are only used by the type checker.
+ * Afterwards, they are useless, and they are not supported by
+ * Constant Folding as well as code generation.
+ *
  * Revision 1.13  1997/04/30 11:55:34  cg
  * Artificial return values and arguments are removed even in the case
  * of function inlining.
@@ -1031,37 +1038,6 @@ PRECid (node *arg_node, node *arg_info)
 
         ID_MAKEUNIQUE (arg_node) = 0;
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : PRECcast
- *  arguments     : 1) N_cast node
- *                  2) arg_info unused
- *  description   : deletes all casts
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav, FreeOneTypes
- *  macros        : DBUG, TREE, FREE
- *
- *  remarks       :
- *
- */
-
-node *
-PRECcast (node *arg_node, node *arg_info)
-{
-    node *tmp;
-
-    DBUG_ENTER ("PRECcast");
-
-    tmp = arg_node;
-    arg_node = Trav (CAST_EXPR (arg_node), arg_info);
-
-    FreeOneTypes (CAST_TYPE (tmp));
-    FREE (tmp);
 
     DBUG_RETURN (arg_node);
 }

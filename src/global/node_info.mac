@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.133  1997/09/05 13:46:04  cg
+ * All cast expressions are now removed by rmvoidfun.c. Therefore,
+ * the respective attempts in precompile.c and ConstantFolding.c
+ * are removed. Cast expressions are only used by the type checker.
+ * Afterwards, they are useless, and they are not supported by
+ * Constant Folding as well as code generation.
+ *
  * Revision 1.132  1997/05/14 08:16:43  sbs
  * N_annotate added
  *
@@ -663,9 +670,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, DFRap, TravSons),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
-       TravSons, FreeCast, CFcast, TravSons, TravSons, TravSons, DupTypes, TravSons,
+       TravSons, FreeCast, TravSons, TravSons, TravSons, TravSons, DupTypes, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintCast, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECcast,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, RMVcast, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
   NIF (N_exprs, "N_exprs", TravSons, FltnExprs, PrintExprs, TravSons, TravSons, TravSons,

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1997/09/05 13:46:04  cg
+ * All cast expressions are now removed by rmvoidfun.c. Therefore,
+ * the respective attempts in precompile.c and ConstantFolding.c
+ * are removed. Cast expressions are only used by the type checker.
+ * Afterwards, they are useless, and they are not supported by
+ * Constant Folding as well as code generation.
+ *
  * Revision 1.5  1997/04/30 11:55:34  cg
  * new function PRECassign added
  *
@@ -38,6 +45,5 @@ extern node *PRECreturn (node *arg_node, node *arg_info);
 extern node *PRECid (node *arg_node, node *arg_info);
 extern node *PRECvardec (node *arg_node, node *arg_info);
 extern node *PRECtypedef (node *arg_node, node *arg_info);
-extern node *PRECcast (node *arg_node, node *arg_info);
 
 #endif /* _sac_precompile_h */
