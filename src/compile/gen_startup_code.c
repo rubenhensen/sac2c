@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/06/04 14:33:15  cg
+ * added global setting CACHESIM_HOST.
+ *
  * Revision 2.6  1999/05/26 13:21:44  cg
  * Bug fixed in activating cache simulation.
  *
@@ -426,6 +429,9 @@ PrintGlobalSettings (node *syntax_tree)
              config.cache3_assoc == 0 ? 1 : config.cache3_assoc);
     fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL  SAC_CS_%s\n\n",
              config.cache3_writepol);
+
+    fprintf (outfile, "#define SAC_SET_CACHESIM_HOST     \"%s\"\n\n",
+             cachesim_host[0] == '\0' ? "" : cachesim_host);
 
     fprintf (outfile, "#define SAC_SET_MAXFUN            %d\n", PFfuncntr);
     fprintf (outfile, "#define SAC_SET_MAXFUNAP          %d\n", PFfunapmax);
