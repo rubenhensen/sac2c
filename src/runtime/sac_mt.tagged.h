@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2003/10/20 14:35:30  dkr
+ * bug in SAC_MT_FREE_LOCAL_DESC fixed
+ *
  * Revision 1.9  2003/10/15 17:31:09  dkrHH
  * MT_CREATE_LOCAL_DESC is a C-ICM now
  *
@@ -392,7 +395,7 @@ typedef union {
 /* MT_CREATE_LOCAL_DESC( ...)  is a C-ICM */
 
 #define SAC_MT_FREE_LOCAL_DESC(var_NT, dim)                                              \
-    CAT11 (SAC_MT_FREE_LOCAL_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
+    CAT14 (SAC_MT_FREE_LOCAL_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
 
 /*
  * SCL
