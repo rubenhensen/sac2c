@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/12/01 18:46:37  sah
+ * added some code to get notified in gdb
+ * whenever a watched memory address is freed
+ * however it is commented out
+ *
  * Revision 3.74  2004/11/30 14:50:42  sah
  * fixed a segfault in ILIBcreateCppCallString
  *
@@ -349,6 +354,16 @@ ILIBfree (void *address)
         DBUG_ASSERT ((size >= 0), "illegal size found!");
         DBUG_PRINT ("MEM_ALLOC",
                     ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+
+#if 0
+    /*
+     * this code overwrites the memory prior to freeing it. This
+     * is very useful when watching a memory address in gdb, as
+     * one gets notified as soon as it is freed
+     */
+    
+    orig_address = memset( orig_address, 0, size);
+#endif
 
         if (global.current_allocated_mem < global.current_allocated_mem - size) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
