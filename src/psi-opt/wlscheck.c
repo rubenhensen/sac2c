@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/24 18:51:58  ktr
+ * COMPILES!
+ *
  * Revision 1.1  2004/10/07 12:36:00  ktr
  * Initial revision
  *
@@ -78,8 +81,7 @@
  * Contains a traversal to check whether all criteria necessary for applying
  * With-Loop Scalarization are met.
  */
-
-#define NEW_INFO
+#include "wls.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -90,7 +92,7 @@
 #include "print.h"
 #include "optimize.h"
 #include "shape.h"
-#include "wls.h"
+#include "internal_lib.h"
 
 /**
  * INFO structure
@@ -122,7 +124,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_WLS_POSSIBLE (result) = TRUE;
     INFO_WLS_INNERTRAV (result) = FALSE;
@@ -138,14 +140,14 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn int WLSCheck( node *with)
+ * @fn int WLSCdoCheck( node *with)
  *
  * @brief starting function of the WLSCheck traversal.
  *
@@ -156,25 +158,22 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 int
-WLSCheck (node *with)
+WLSCdoCheck (node *with)
 {
-    funtab *old_tab;
     info *info;
     int res;
 
-    DBUG_ENTER ("WLSCheck");
+    DBUG_ENTER ("WLSCdoCheck");
 
-    DBUG_ASSERT (NODE_TYPE (with) == N_Nwith, "First parameter must be a with-loop");
+    DBUG_ASSERT (NODE_TYPE (with) == N_with, "First parameter must be a with-loop");
 
     info = MakeInfo ();
 
-    old_tab = act_tab;
-    act_tab = wlsc_tab;
-
     DBUG_PRINT ("WLS", ("Checking whether with-loop can be scalarized..."));
 
-    with = Trav (with, info);
-    act_tab = old_tab;
+    TRAVpush (TR_wlsc);
+    with = TRAVdo (with, info);
+    TRAVpop ();
 
     if (INFO_WLS_POSSIBLE (info)) {
 
@@ -183,12 +182,12 @@ WLSCheck (node *with)
              * If there is no inner with-loop, the number of scalarizable
              * dimensions is only given by the CEXPRs
              */
-            res = TYGetDim (ID_NTYPE (INFO_WLS_CEXPR (info)));
+            res = TYgetDim (ID_NTYPE (INFO_WLS_CEXPR (info)));
         } else {
             /*
              * In all other cases, use the number of inner index scalars
              */
-            res = CountIds (NWITHID_IDS (INFO_WLS_INNERWITHID (info)));
+            res = TCcountIds (WITHID_IDS (INFO_WLS_INNERWITHID (info)));
         }
     } else {
         res = 0;
@@ -248,7 +247,7 @@ WLSCblock (node *arg_node, info *arg_info)
          * The assignment must have a with-loop as RHS
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            if (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (arg_node))) != N_Nwith) {
+            if (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (arg_node))) != N_with) {
                 INFO_WLS_POSSIBLE (arg_info) = FALSE;
                 DBUG_PRINT ("WLS", ("CEXPR is not given by a with-loop!"));
             }
@@ -259,7 +258,7 @@ WLSCblock (node *arg_node, info *arg_info)
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
             ASSIGN_RHS (BLOCK_INSTR (arg_node))
-              = Trav (ASSIGN_RHS (BLOCK_INSTR (arg_node)), arg_info);
+              = TRAVdo (ASSIGN_RHS (BLOCK_INSTR (arg_node)), arg_info);
         }
     }
 
@@ -289,13 +288,13 @@ WLSCcode (node *arg_node, info *arg_info)
     /*
      * Remember the current CEXPR
      */
-    INFO_WLS_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
+    INFO_WLS_CEXPR (arg_info) = CODE_CEXPR (arg_node);
 
     /*
      * The CEXPR must be AKS or better
      */
-    if ((!TYIsAKS (ID_NTYPE (NCODE_CEXPR (arg_node))))
-        && (!TYIsAKV (ID_NTYPE (NCODE_CEXPR (arg_node))))) {
+    if ((!TYisAKS (ID_NTYPE (CODE_CEXPR (arg_node))))
+        && (!TYisAKV (ID_NTYPE (CODE_CEXPR (arg_node))))) {
         INFO_WLS_POSSIBLE (arg_info) = FALSE;
         DBUG_PRINT ("WLS", ("CEXPR is neither AKS nor AKV!!!"));
     }
@@ -304,7 +303,7 @@ WLSCcode (node *arg_node, info *arg_info)
      * The CEXPR must not be scalar
      */
     if (INFO_WLS_POSSIBLE (arg_info)) {
-        if (TYGetDim (ID_NTYPE (NCODE_CEXPR (arg_node))) == 0) {
+        if (TYgetDim (ID_NTYPE (CODE_CEXPR (arg_node))) == 0) {
             INFO_WLS_POSSIBLE (arg_info) = FALSE;
             DBUG_PRINT ("WLS", ("With-loop already has got scalar elements."));
         }
@@ -314,22 +313,23 @@ WLSCcode (node *arg_node, info *arg_info)
      * Its type must match the type of the previous CEXPRs
      */
     if ((INFO_WLS_POSSIBLE (arg_info)) && (INFO_WLS_CEXPR (arg_info) != NULL)) {
-        if (!TYEqTypes (ID_NTYPE (INFO_WLS_CEXPR (arg_info)),
-                        ID_NTYPE (NCODE_CEXPR (arg_node)))) {
+        if (!TYeqTypes (ID_NTYPE (INFO_WLS_CEXPR (arg_info)),
+                        ID_NTYPE (CODE_CEXPR (arg_node)))) {
             INFO_WLS_POSSIBLE (arg_info) = FALSE;
             DBUG_PRINT ("WLS", ("Inner CEXPRS have different types!!!"));
         }
     }
 
-    if ((INFO_WLS_POSSIBLE (arg_info)) && (!wls_aggressive)
-        && (SHGetUnrLen (TYGetShape (ID_NTYPE (NCODE_CEXPR (arg_node)))) > maxwls)) {
+    if ((INFO_WLS_POSSIBLE (arg_info)) && (!global.wls_aggressive)
+        && (SHgetUnrLen (TYgetShape (ID_NTYPE (CODE_CEXPR (arg_node))))
+            > global.maxwls)) {
 
         /*
-         * Traverse into NCODE_CBLOCK
+         * Traverse into CODE_CBLOCK
          */
-        if (NCODE_CBLOCK (arg_node) != NULL) {
+        if (CODE_CBLOCK (arg_node) != NULL) {
             INFO_WLS_INNERTRAV (arg_info) = TRUE;
-            NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
             INFO_WLS_INNERTRAV (arg_info) = FALSE;
         } else {
             /*
@@ -392,20 +392,20 @@ WLSCpart (node *arg_node, info *arg_info)
         /*
          * Traverse into withid in order to initialize AVIS_WITHID fields
          */
-        NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
-        INFO_WLS_OUTERWITHID (arg_info) = NPART_WITHID (arg_node);
+        PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+        INFO_WLS_OUTERWITHID (arg_info) = PART_WITHID (arg_node);
 
         /*
          * Traverse into the part's code
          */
-        NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+        PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
         /*
          * Traverse next part
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            if (NPART_NEXT (arg_node) != NULL) {
-                NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+            if (PART_NEXT (arg_node) != NULL) {
+                PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
             }
         }
     } else {
@@ -416,14 +416,14 @@ WLSCpart (node *arg_node, info *arg_info)
         /*
          * Traverse generators
          */
-        NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
         /*
          * Traverse next part
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            if (NPART_NEXT (arg_node) != NULL) {
-                NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+            if (PART_NEXT (arg_node) != NULL) {
+                PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
             }
         }
     }
@@ -456,8 +456,8 @@ WLSCwith (node *arg_node, info *arg_info)
         /*
          * Outer with-loop must not be a fold with-loop
          */
-        if ((NWITH_TYPE (arg_node) != WO_genarray)
-            && (NWITH_TYPE (arg_node) != WO_modarray)) {
+        if ((WITH_TYPE (arg_node) != N_genarray)
+            && (WITH_TYPE (arg_node) != N_modarray)) {
             INFO_WLS_POSSIBLE (arg_info) = FALSE;
             DBUG_PRINT ("WLS", ("Outer with-loop is no genarray/modarray with-loop!"));
         }
@@ -466,7 +466,7 @@ WLSCwith (node *arg_node, info *arg_info)
          * Its parts must form a full partition of index space
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            if (NWITH_PARTS (arg_node) < 0) {
+            if (WITH_PARTS (arg_node) < 0) {
                 INFO_WLS_POSSIBLE (arg_info) = FALSE;
                 DBUG_PRINT ("WLS", ("Outer with-loop has no full partition!"));
             }
@@ -476,7 +476,7 @@ WLSCwith (node *arg_node, info *arg_info)
          * Traverse into parts for further checking
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+            WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
         }
     } else {
         /*
@@ -487,21 +487,21 @@ WLSCwith (node *arg_node, info *arg_info)
          * Traverse withop
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+            WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         }
 
         /*
          * Traverse withid
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            NWITH_WITHID (arg_node) = Trav (NWITH_WITHID (arg_node), arg_info);
+            WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
         }
 
         /*
          * Traverse parts
          */
         if (INFO_WLS_POSSIBLE (arg_info)) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+            WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
         }
     }
 
@@ -529,21 +529,21 @@ WLSCwithid (node *arg_node, info *arg_info)
         /*
          * Outer withid traversal
          */
-        ids *_ids;
+        node *_ids;
 
         /*
          * The outer WL must be a AKD-WL
          * => index scalars must be present
          */
         INFO_WLS_POSSIBLE (arg_info)
-          = (INFO_WLS_POSSIBLE (arg_info) && (NWITHID_IDS (arg_node) != NULL));
+          = (INFO_WLS_POSSIBLE (arg_info) && (WITHID_IDS (arg_node) != NULL));
 
         /*
          * Initialize the AVIS_WITHID field of the withid variables
          */
-        AVIS_WITHID (IDS_AVIS (NWITHID_VEC (arg_node))) = arg_node;
+        AVIS_WITHID (IDS_AVIS (WITHID_VEC (arg_node))) = arg_node;
 
-        _ids = NWITHID_IDS (arg_node);
+        _ids = WITHID_IDS (arg_node);
         while (_ids != NULL) {
             AVIS_WITHID (IDS_AVIS (_ids)) = arg_node;
             _ids = IDS_NEXT (_ids);
@@ -555,13 +555,38 @@ WLSCwithid (node *arg_node, info *arg_info)
         if (INFO_WLS_INNERWITHID (arg_info) == NULL) {
             INFO_WLS_INNERWITHID (arg_info) = arg_node;
         } else {
-            if (CountIds (NWITHID_IDS (INFO_WLS_INNERWITHID (arg_info)))
-                != CountIds (NWITHID_IDS (arg_node))) {
+            if (TCcountIds (WITHID_IDS (INFO_WLS_INNERWITHID (arg_info)))
+                != TCcountIds (WITHID_IDS (arg_node))) {
                 INFO_WLS_POSSIBLE (arg_info) = FALSE;
                 DBUG_PRINT ("WLS", ("Inner with-loops' index vectors differ in length"));
             }
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSCgenarray(node *arg_node, info *arg_info)
+ *
+ * @brief ensures the inner shape has no depencies to the outer generator.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLSCgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSCgenarray");
+
+    /*
+     * The inner shape must not depend on the outer WITHID
+     */
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -579,31 +604,37 @@ WLSCwithid (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-WLSCwithop (node *arg_node, info *arg_info)
+WLSCmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSCwithop");
+    DBUG_ENTER ("WLSCmodarray");
 
-    switch (NWITHOP_TYPE (arg_node)) {
+    /*
+     * The modified array must not depend on the outer WITHID
+     */
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
-    case WO_genarray:
-        /*
-         * The inner shape must not depend on the outer WITHID
-         */
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        break;
+    DBUG_RETURN (arg_node);
+}
 
-    case WO_modarray:
-        /*
-         * The modified array must not depend on the outer WITHID
-         */
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        break;
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSCfold(node *arg_node, info *arg_info)
+ *
+ * @brief ensures the inner shape has no depencies to the outer generator.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLSCfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSCfold");
 
-    default:
-        INFO_WLS_POSSIBLE (arg_info) = FALSE;
-        DBUG_PRINT ("WLS", ("Inner with-loop is no genarray/modarray with-loop!!!"));
-        break;
-    }
+    INFO_WLS_POSSIBLE (arg_info) = FALSE;
+    DBUG_PRINT ("WLS", ("Inner with-loop is no genarray/modarray with-loop!!!"));
 
     DBUG_RETURN (arg_node);
 }

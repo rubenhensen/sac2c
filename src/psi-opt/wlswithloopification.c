@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/24 18:51:58  ktr
+ * COMPILES!
+ *
  * Revision 1.1  2004/10/07 12:36:03  ktr
  * Initial revision
  *
@@ -66,7 +69,7 @@
  *
  */
 
-#define NEW_INFO
+#include "wls.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -78,6 +81,8 @@
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "internal_lib.h"
+#include "shape.h"
 
 /**
  * INFO structure
@@ -88,7 +93,7 @@ struct INFO {
     node *outerwithid;
     bool innertrav;
     node *depstack;
-    DFMmask_t depmask;
+    dfmask_t *depmask;
     node *cexpr;
     bool mustcopy;
 };
@@ -115,7 +120,7 @@ MakeInfo (node *fundef, int innerdims)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_WLSW_FUNDEF (result) = fundef;
     INFO_WLSW_INNERDIMS (result) = innerdims;
@@ -134,14 +139,14 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSWithloopify( node *arg_node, node *fundef, int innerdims)
+ * @fn node *WLSWdoWithloopify( node *arg_node, node *fundef, int innerdims)
  *
  * @brief starting point of WLSWithloopification
  *
@@ -153,26 +158,22 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-WLSWithloopify (node *with, node *fundef, int innerdims)
+WLSWdoWithloopify (node *with, node *fundef, int innerdims)
 {
     info *info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("WLSWithloopify");
+    DBUG_ENTER ("WLSWdoWithloopify");
 
-    DBUG_ASSERT (NODE_TYPE (with) == N_Nwith, "First parameter must be a with-loop");
+    DBUG_ASSERT (NODE_TYPE (with) == N_with, "First parameter must be a with-loop");
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "Second parameter must be a fundef node");
 
     info = MakeInfo (fundef, innerdims);
 
-    old_tab = act_tab;
-    act_tab = wlsw_tab;
-
-    with = Trav (with, info);
-
-    act_tab = old_tab;
+    TRAVpush (TR_wlsw);
+    with = TRAVdo (with, info);
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -205,11 +206,11 @@ LowerBound (shape *unrshp, int index)
 
     DBUG_ENTER ("LowerBound");
 
-    idx_shape = SHCopyShape (unrshp);
+    idx_shape = SHcopyShape (unrshp);
 
-    for (i = SHGetDim (unrshp) - 1; i >= 0; i--) {
-        SHSetExtent (idx_shape, i, index % SHGetExtent (unrshp, i));
-        index = index / SHGetExtent (unrshp, i);
+    for (i = SHgetDim (unrshp) - 1; i >= 0; i--) {
+        SHsetExtent (idx_shape, i, index % SHgetExtent (unrshp, i));
+        index = index / SHgetExtent (unrshp, i);
     }
 
     DBUG_RETURN (idx_shape);
@@ -236,11 +237,11 @@ UpperBound (shape *unrshp, int index)
 
     DBUG_ENTER ("UpperBound");
 
-    idx_shape = SHCopyShape (unrshp);
+    idx_shape = SHcopyShape (unrshp);
 
-    for (i = SHGetDim (unrshp) - 1; i >= 0; i--) {
-        SHSetExtent (idx_shape, i, (index % SHGetExtent (unrshp, i)) + 1);
-        index = index / SHGetExtent (unrshp, i);
+    for (i = SHgetDim (unrshp) - 1; i >= 0; i--) {
+        SHsetExtent (idx_shape, i, (index % SHgetExtent (unrshp, i)) + 1);
+        index = index / SHgetExtent (unrshp, i);
     }
 
     DBUG_RETURN (idx_shape);
@@ -248,35 +249,9 @@ UpperBound (shape *unrshp, int index)
 
 /** <!--********************************************************************-->
  *
- * @fn int CountParts( node *parts)
- *
- * @brief Counts the number of parts in a given chain of parts
- *
- * @param parts
- *
- * @return number of parts
- *
- *****************************************************************************/
-static int
-CountParts (node *parts)
-{
-    int counter = 0;
-
-    DBUG_ENTER ("CountParts");
-
-    while (parts != NULL) {
-        counter += 1;
-        parts = NPART_NEXT (parts);
-    }
-
-    DBUG_RETURN (counter);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *MakeSelCodes( node *parts, ids *iv, node *arr, node *fundef)
  *
- * @brief creates a NCODE for each part in parts that does nothing but select
+ * @brief creates a CODE for each part in parts that does nothing but select
  *        arr[ iv ].
  *        The parts cannot simply share a code as the hope is to be able
  *        to do constant folding on these very small parts.
@@ -290,9 +265,10 @@ CountParts (node *parts)
  *
  *****************************************************************************/
 static node *
-MakeSelCodes (node *part, ids *iv, node *arr, node *fundef)
+MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
 {
     node *code = NULL;
+    node *avis = NULL;
     node *vardecs = NULL;
     node *id;
     ntype *new_type;
@@ -301,32 +277,31 @@ MakeSelCodes (node *part, ids *iv, node *arr, node *fundef)
     DBUG_ENTER ("MakeSelCodes");
 
     if (part != NULL) {
-        id = MakeId (TmpVar (), NULL, ST_regular);
+        dim = SHgetUnrLen (TYgetShape (AVIS_TYPE (IDS_AVIS (iv))));
 
-        dim = SHGetUnrLen (TYGetShape (AVIS_TYPE (IDS_AVIS (iv))));
+        new_type = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (arr))),
+                              SHdropFromShape (dim, TYgetShape (ID_NTYPE (arr))));
 
-        new_type = TYMakeAKS (TYCopyType (TYGetScalar (ID_NTYPE (arr))),
-                              SHDropFromShape (dim, TYGetShape (ID_NTYPE (arr))));
+        avis = TBmakeAvis (ILIBtmpVar (), new_type);
 
-        vardecs
-          = MakeVardec (StringCopy (ID_NAME (id)), TYType2OldType (new_type), vardecs);
+        vardecs = TBmakeVardec (avis, vardecs);
 
-        fundef = AddVardecs (fundef, vardecs);
+        fundef = TCaddVardecs (fundef, vardecs);
 
-        ID_VARDEC (id) = vardecs;
-        ID_AVIS (id) = VARDEC_AVIS (vardecs);
-        ID_NTYPE (id) = new_type;
+        id = TBmakeId (avis);
 
-        code = MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (id)), vardecs,
-                                                    MakePrf2 (F_sel, DupIds_Id (iv),
-                                                              DupNode (arr))),
-                                     NULL),
-                          MakeExprs (id, NULL));
+        code = TBmakeCode (TBmakeBlock (TCmakeAssignLet (avis,
+                                                         TCmakePrf2 (F_sel,
+                                                                     TBmakeId (
+                                                                       IDS_AVIS (iv)),
+                                                                     DUPdoDupNode (arr))),
+                                        NULL),
+                           TBmakeExprs (id, NULL));
 
-        NPART_CODE (part) = code;
-        NCODE_USED (code) = 1;
+        PART_CODE (part) = code;
+        CODE_USED (code) = 1;
 
-        NCODE_NEXT (code) = MakeSelCodes (NPART_NEXT (part), iv, arr, fundef);
+        CODE_NEXT (code) = MakeSelCodes (PART_NEXT (part), iv, arr, fundef);
     }
 
     DBUG_RETURN (code);
@@ -355,42 +330,41 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
 
     DBUG_ENTER ("MakeSelParts");
 
-    unrshp = SHTakeFromShape (unrdim, maxshp);
+    unrshp = SHtakeFromShape (unrdim, maxshp);
 
-    upper_tl = SHDropFromShape (unrdim, maxshp);
+    upper_tl = SHdropFromShape (unrdim, maxshp);
 
-    lower_tl = SHCopyShape (upper_tl);
-    for (i = 0; i < SHGetDim (lower_tl); i++) {
-        SHSetExtent (lower_tl, i, 0);
+    lower_tl = SHcopyShape (upper_tl);
+    for (i = 0; i < SHgetDim (lower_tl); i++) {
+        SHsetExtent (lower_tl, i, 0);
     }
 
-    for (i = 0; i < SHGetUnrLen (unrshp); i++) {
+    for (i = 0; i < SHgetUnrLen (unrshp); i++) {
         node *newpart;
         shape *lower, *upper, *lower_hd, *upper_hd;
 
         lower_hd = LowerBound (unrshp, i);
         upper_hd = UpperBound (unrshp, i);
 
-        lower = SHAppendShapes (lower_hd, lower_tl);
-        upper = SHAppendShapes (upper_hd, upper_tl);
+        lower = SHappendShapes (lower_hd, lower_tl);
+        upper = SHappendShapes (upper_hd, upper_tl);
 
-        newpart = MakeNPart (DupNode (withid),
-                             MakeNGenerator (SHShape2Array (lower), SHShape2Array (upper),
-                                             F_le, F_lt, NULL, NULL),
-                             NULL);
+        newpart = TBmakePart (NULL, DUPdoDupNode (withid),
+                              TBmakeGenerator (F_le, F_lt, SHshape2Array (lower),
+                                               SHshape2Array (upper), NULL, NULL));
 
-        lower_hd = SHFreeShape (lower_hd);
-        upper_hd = SHFreeShape (upper_hd);
-        lower = SHFreeShape (lower);
-        upper = SHFreeShape (upper);
+        lower_hd = SHfreeShape (lower_hd);
+        upper_hd = SHfreeShape (upper_hd);
+        lower = SHfreeShape (lower);
+        upper = SHfreeShape (upper);
 
-        NPART_NEXT (newpart) = parts;
+        PART_NEXT (newpart) = parts;
         parts = newpart;
     }
 
-    lower_tl = SHFreeShape (lower_tl);
-    upper_tl = SHFreeShape (upper_tl);
-    unrshp = SHFreeShape (unrshp);
+    lower_tl = SHfreeShape (lower_tl);
+    upper_tl = SHfreeShape (upper_tl);
+    unrshp = SHfreeShape (unrshp);
 
     DBUG_RETURN (parts);
 }
@@ -416,41 +390,32 @@ static node *
 CreateCopyWithloop (node *array, int dim, node *fundef)
 {
     node *wl;
+    node *avis;
     node *vardecs = NULL;
     node *parts;
     node *codes;
     node *withid;
     node *withop;
-    ids *vec_ids;
-    ids *scl_ids = NULL;
-    ids *tmp_ids;
+    node *vec_ids;
+    node *scl_ids = NULL;
     int i;
     int unrdim;
     shape *maxshp;
-    ntype *new_type;
 
     DBUG_ENTER ("CreateCopyWithloop");
 
-    vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
+    avis = TBmakeAvis (ILIBtmpVar (),
+                       TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
 
-    new_type = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, dim));
-
-    vardecs
-      = MakeVardec (StringCopy (IDS_NAME (vec_ids)), TYType2OldType (new_type), vardecs);
-    IDS_VARDEC (vec_ids) = vardecs;
-    IDS_AVIS (vec_ids) = VARDEC_AVIS (vardecs);
-    AVIS_TYPE (IDS_AVIS (vec_ids)) = new_type;
+    vardecs = TBmakeVardec (avis, vardecs);
+    vec_ids = TBmakeIds (avis, NULL);
 
     for (i = 0; i < dim; i++) {
-        tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
-        new_type = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
-        vardecs
-          = MakeVardec (StringCopy (IDS_NAME (tmp_ids)), MakeTypes1 (T_int), vardecs);
-        IDS_NEXT (tmp_ids) = scl_ids;
-        scl_ids = tmp_ids;
-        IDS_VARDEC (scl_ids) = vardecs;
-        IDS_AVIS (scl_ids) = VARDEC_AVIS (vardecs);
-        AVIS_TYPE (IDS_AVIS (scl_ids)) = new_type;
+        avis = TBmakeAvis (ILIBtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+
+        vardecs = TBmakeVardec (avis, vardecs);
+        scl_ids = TBmakeIds (avis, scl_ids);
     }
 
     if (AVIS_WITHID (ID_AVIS (array)) != NULL) {
@@ -467,7 +432,7 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
              * array is given by an array, unroll at most the array dimensionality
              */
             int arraydim
-              = SHGetDim (ARRAY_SHAPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)))));
+              = SHgetDim (ARRAY_SHAPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)))));
 
             unrdim = (dim < arraydim) ? dim : arraydim;
         } else {
@@ -478,29 +443,29 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
         }
     }
 
-    maxshp = SHTakeFromShape (dim, TYGetShape (ID_NTYPE (array)));
+    maxshp = SHtakeFromShape (dim, TYgetShape (ID_NTYPE (array)));
 
-    withid = MakeNWithid (vec_ids, scl_ids);
+    withid = TBmakeWithid (vec_ids, scl_ids);
 
     parts = MakeSelParts (maxshp, unrdim, withid);
 
     codes = MakeSelCodes (parts, vec_ids, array, fundef);
 
-    withop = MakeNWithOp (WO_genarray,
-                          SHShape2Array (
-                            SHTakeFromShape (dim, TYGetShape (ID_NTYPE (array)))));
+    withop = TBmakeGenarray (SHshape2Array (
+                               SHtakeFromShape (dim, TYgetShape (ID_NTYPE (array)))),
+                             NULL);
 
-    wl = MakeNWith (parts, codes, withop);
+    wl = TBmakeWith (parts, codes, withop);
 
-    NWITH_PARTS (wl) = CountParts (parts);
+    WITH_PARTS (wl) = TCcountParts (parts);
 
-    fundef = AddVardecs (fundef, vardecs);
+    fundef = TCaddVardecs (fundef, vardecs);
 
     /*
      * Clean up
      */
-    maxshp = SHFreeShape (maxshp);
-    withid = FreeTree (withid);
+    maxshp = SHfreeShape (maxshp);
+    withid = FREEdoFreeTree (withid);
 
     DBUG_RETURN (wl);
 }
@@ -528,8 +493,8 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
 node *
 WLSWcode (node *arg_node, info *arg_info)
 {
-    DFMmask_base_t maskbase;
-    ids *_ids;
+    dfmask_base_t *maskbase;
+    node *ids;
 
     DBUG_ENTER ("WLSWcode");
 
@@ -541,79 +506,73 @@ WLSWcode (node *arg_node, info *arg_info)
         /*
          * Build a maskbase and DEPMASK
          */
-        maskbase = DFMGenMaskBase (FUNDEF_ARGS (INFO_WLSW_FUNDEF (arg_info)),
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (INFO_WLSW_FUNDEF (arg_info)),
                                    FUNDEF_VARDEC (INFO_WLSW_FUNDEF (arg_info)));
-        INFO_WLSW_DEPMASK (arg_info) = DFMGenMaskClear (maskbase);
+        INFO_WLSW_DEPMASK (arg_info) = DFMgenMaskClear (maskbase);
 
         /*
          * Mark all variables in OUTERWITHID as the inner generators
          * must not depend on them
          */
-        DFMSetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL,
-                            IDS_VARDEC (NWITHID_VEC (INFO_WLSW_OUTERWITHID (arg_info))));
+        DFMsetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL,
+                            IDS_AVIS (WITHID_VEC (INFO_WLSW_OUTERWITHID (arg_info))));
 
-        _ids = NWITHID_IDS (INFO_WLSW_OUTERWITHID (arg_info));
-        while (_ids != NULL) {
-            DFMSetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL, IDS_VARDEC (_ids));
-            _ids = IDS_NEXT (_ids);
+        ids = WITHID_IDS (INFO_WLSW_OUTERWITHID (arg_info));
+        while (ids != NULL) {
+            DFMsetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL, IDS_AVIS (ids));
+            ids = IDS_NEXT (ids);
         }
 
         /*
          * Traverse into CBLOCK
          */
-        INFO_WLSW_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
+        INFO_WLSW_CEXPR (arg_info) = CODE_CEXPR (arg_node);
         INFO_WLSW_MUSTCOPY (arg_info) = TRUE;
         INFO_WLSW_INNERTRAV (arg_info) = TRUE;
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
         INFO_WLSW_INNERTRAV (arg_info) = FALSE;
 
         /*
          * Remove mask and maskbase
          */
-        INFO_WLSW_DEPMASK (arg_info) = DFMRemoveMask (INFO_WLSW_DEPMASK (arg_info));
-        maskbase = DFMRemoveMaskBase (maskbase);
+        INFO_WLSW_DEPMASK (arg_info) = DFMremoveMask (INFO_WLSW_DEPMASK (arg_info));
+        maskbase = DFMremoveMaskBase (maskbase);
 
         /*
          * 2. Insert copy with-loop (if required)
          */
-        DBUG_EXECUTE ("WLS", PrintNode (arg_node););
+        DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
         if (INFO_WLSW_MUSTCOPY (arg_info)) {
             node *id;
-            ntype *new_type;
+            node *avis;
             node *vardecs = NULL;
             node *ass;
 
             DBUG_PRINT ("WLS", ("Copy with-loop required"));
 
-            id = MakeId (TmpVar (), NULL, ST_regular);
+            avis
+              = TBmakeAvis (ILIBtmpVar (), TYcopyType (ID_NTYPE (CODE_CEXPR (arg_node))));
 
-            new_type = TYCopyType (ID_NTYPE (NCODE_CEXPR (arg_node)));
-
-            vardecs = MakeVardec (StringCopy (ID_NAME (id)), TYType2OldType (new_type),
-                                  vardecs);
-
-            ID_VARDEC (id) = vardecs;
-            ID_AVIS (id) = VARDEC_AVIS (vardecs);
-            ID_NTYPE (id) = new_type;
+            id = TBmakeId (avis);
+            vardecs = TBmakeVardec (avis, vardecs);
 
             INFO_WLSW_FUNDEF (arg_info)
-              = AddVardecs (INFO_WLSW_FUNDEF (arg_info), vardecs);
+              = TCaddVardecs (INFO_WLSW_FUNDEF (arg_info), vardecs);
 
-            ass = MakeAssignLet (StringCopy (ID_NAME (id)), vardecs,
-                                 CreateCopyWithloop (NCODE_CEXPR (arg_node),
-                                                     INFO_WLSW_INNERDIMS (arg_info),
-                                                     INFO_WLSW_FUNDEF (arg_info)));
-
+            ass
+              = TCmakeAssignLet (avis, CreateCopyWithloop (CODE_CEXPR (arg_node),
+                                                           INFO_WLSW_INNERDIMS (arg_info),
+                                                           INFO_WLSW_FUNDEF (arg_info)));
             AVIS_SSAASSIGN (ID_AVIS (id)) = ass;
 
-            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-              = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), ass);
+            BLOCK_INSTR (CODE_CBLOCK (arg_node))
+              = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), ass);
 
-            NCODE_CEXPRS (arg_node) = FreeTree (NCODE_CEXPRS (arg_node));
-            NCODE_CEXPRS (arg_node) = MakeExprs (id, NULL);
+            CODE_CEXPRS (arg_node) = FREEdoFreeTree (CODE_CEXPRS (arg_node));
+            CODE_CEXPRS (arg_node) = TBmakeExprs (id, NULL);
 
             DBUG_PRINT ("WLS", ("New code after insertion of copy with-loop"));
-            DBUG_EXECUTE ("WLS", PrintNode (arg_node););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
         } else {
             DBUG_PRINT ("WLS", ("No copy with-loop required"));
         }
@@ -621,8 +580,8 @@ WLSWcode (node *arg_node, info *arg_info)
         /*
          * 3. Expand inner with-loops ( aggressive behaviour!)
          */
-        if (BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-            != AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (arg_node)))) {
+        if (BLOCK_INSTR (CODE_CBLOCK (arg_node))
+            != AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))) {
 
             node *first, *last;
             node *innercode;
@@ -635,94 +594,95 @@ WLSWcode (node *arg_node, info *arg_info)
              * Remember it in first
              * the last assignment of that block is given by last
              */
-            first = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+            first = BLOCK_INSTR (CODE_CBLOCK (arg_node));
             last = first;
-            DBUG_EXECUTE ("WLS", PrintNode (last););
-            DBUG_EXECUTE ("WLS",
-                          PrintNode (AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (arg_node)))););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNode (last););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNode (
+                                   AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))););
+
             while (ASSIGN_NEXT (last)
-                   != AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (arg_node)))) {
+                   != AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))) {
                 last = ASSIGN_NEXT (last);
-                DBUG_EXECUTE ("WLS", PrintNode (last););
+                DBUG_EXECUTE ("WLS", PRTdoPrintNode (last););
             }
 
             /*
              * Make the inner with-loop the first assignment in the current code
              */
-            BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = ASSIGN_NEXT (last);
+            BLOCK_INSTR (CODE_CBLOCK (arg_node)) = ASSIGN_NEXT (last);
             ASSIGN_NEXT (last) = NULL;
 
             DBUG_PRINT ("WLS", ("Intermediate code cut out"));
-            DBUG_EXECUTE ("WLS", PrintNode (arg_node););
+            DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
             DBUG_PRINT ("WLS", ("first"));
-            DBUG_EXECUTE ("WLS", Print (first););
+            DBUG_EXECUTE ("WLS", PRTdoPrint (first););
             DBUG_PRINT ("WLS", ("last"););
-            DBUG_EXECUTE ("WLS", Print (last););
+            DBUG_EXECUTE ("WLS", PRTdoPrint (last););
 
             /*
              * Insert the code fragment into all inner codes
              */
-            innercode = NWITH_CODE (ASSIGN_RHS (BLOCK_INSTR (NCODE_CBLOCK (arg_node))));
+            innercode = WITH_CODE (ASSIGN_RHS (BLOCK_INSTR (CODE_CBLOCK (arg_node))));
             while (innercode != NULL) {
                 node *newcode;
 
                 /*
                  * Ensure there is no N_empty node in the inner with-loop
                  */
-                if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (innercode))) == N_empty) {
-                    BLOCK_INSTR (NCODE_CBLOCK (innercode))
-                      = FreeTree (BLOCK_INSTR (NCODE_CBLOCK (innercode)));
+                if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (innercode))) == N_empty) {
+                    BLOCK_INSTR (CODE_CBLOCK (innercode))
+                      = FREEdoFreeTree (BLOCK_INSTR (CODE_CBLOCK (innercode)));
                 }
 
                 /*
                  * Prepend the inner code with the outer code and
                  * create a duplicate.
                  */
-                ASSIGN_NEXT (last) = BLOCK_INSTR (NCODE_CBLOCK (innercode));
-                BLOCK_INSTR (NCODE_CBLOCK (innercode)) = first;
+                ASSIGN_NEXT (last) = BLOCK_INSTR (CODE_CBLOCK (innercode));
+                BLOCK_INSTR (CODE_CBLOCK (innercode)) = first;
 
-                newcode = DupTreeSSA (innercode, INFO_WLSW_FUNDEF (arg_info));
+                newcode = DUPdoDupTreeSsa (innercode, INFO_WLSW_FUNDEF (arg_info));
 
                 /*
                  * Restore old state of inner code
                  */
-                BLOCK_INSTR (NCODE_CBLOCK (innercode)) = ASSIGN_NEXT (last);
+                BLOCK_INSTR (CODE_CBLOCK (innercode)) = ASSIGN_NEXT (last);
                 ASSIGN_NEXT (last) = NULL;
 
                 /*
                  * Replace the old CBLOCK and CEXPRS with the new ones.
                  */
-                NCODE_CBLOCK (innercode) = FreeNode (NCODE_CBLOCK (innercode));
-                NCODE_CEXPRS (innercode) = FreeNode (NCODE_CEXPRS (innercode));
-                NCODE_CBLOCK (innercode) = NCODE_CBLOCK (newcode);
-                NCODE_CEXPRS (innercode) = NCODE_CEXPRS (newcode);
-                NCODE_CBLOCK (newcode) = NULL;
-                NCODE_CEXPRS (newcode) = NULL;
+                CODE_CBLOCK (innercode) = FREEdoFreeNode (CODE_CBLOCK (innercode));
+                CODE_CEXPRS (innercode) = FREEdoFreeNode (CODE_CEXPRS (innercode));
+                CODE_CBLOCK (innercode) = CODE_CBLOCK (newcode);
+                CODE_CEXPRS (innercode) = CODE_CEXPRS (newcode);
+                CODE_CBLOCK (newcode) = NULL;
+                CODE_CEXPRS (newcode) = NULL;
 
-                newcode = FreeNode (newcode);
+                newcode = FREEdoFreeNode (newcode);
 
-                innercode = NCODE_NEXT (innercode);
+                innercode = CODE_NEXT (innercode);
             }
 
             /*
              * Free the now obsolete code
              */
-            last = FreeTree (last);
+            last = FREEdoFreeTree (last);
         }
 
-        if (NCODE_NEXT (arg_node) != NULL) {
-            NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+        if (CODE_NEXT (arg_node) != NULL) {
+            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
         }
     } else {
         /*
          * Traversal of inner code: TravSons
          */
-        if (NCODE_CBLOCK (arg_node) != NULL) {
-            NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+        if (CODE_CBLOCK (arg_node) != NULL) {
+            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
         }
 
-        if (NCODE_NEXT (arg_node) != NULL) {
-            NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+        if (CODE_NEXT (arg_node) != NULL) {
+            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
         }
     }
 
@@ -750,7 +710,7 @@ WLSWid (node *arg_node, info *arg_info)
     /*
      * If the current id is marked in DEPMASK, all LHS identifiers depend on it
      */
-    if (DFMTestMaskEntry (INFO_WLSW_DEPMASK (arg_info), NULL, ID_VARDEC (arg_node))) {
+    if (DFMtestMaskEntry (INFO_WLSW_DEPMASK (arg_info), NULL, ID_AVIS (arg_node))) {
         node *tmp;
 
         /*
@@ -758,8 +718,8 @@ WLSWid (node *arg_node, info *arg_info)
          */
         tmp = INFO_WLSW_DEPSTACK (arg_info);
         while (tmp != NULL) {
-            DFMSetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL,
-                                ID_VARDEC (EXPRS_EXPR (tmp)));
+            DFMsetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL,
+                                ID_AVIS (EXPRS_EXPR (tmp)));
 
             tmp = EXPRS_NEXT (tmp);
         }
@@ -784,32 +744,32 @@ WLSWid (node *arg_node, info *arg_info)
 node *
 WLSWlet (node *arg_node, info *arg_info)
 {
-    ids *_ids;
+    node *ids;
 
     DBUG_ENTER ("WLSWlet");
 
     /*
      * Push all the LHS identifiers onto DEPSTACK
      */
-    _ids = LET_IDS (arg_node);
-    while (_ids != NULL) {
+    ids = LET_IDS (arg_node);
+    while (ids != NULL) {
         INFO_WLSW_DEPSTACK (arg_info)
-          = MakeExprs (DupIds_Id (_ids), INFO_WLSW_DEPSTACK (arg_info));
-        _ids = IDS_NEXT (_ids);
+          = TBmakeExprs (TBmakeId (IDS_AVIS (ids)), INFO_WLSW_DEPSTACK (arg_info));
+        ids = IDS_NEXT (ids);
     }
 
     /*
      * Traverse RHS
      */
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
      * Pop LHS identifiers from stack
      */
-    _ids = LET_IDS (arg_node);
-    while (_ids != NULL) {
-        INFO_WLSW_DEPSTACK (arg_info) = FreeNode (INFO_WLSW_DEPSTACK (arg_info));
-        _ids = IDS_NEXT (_ids);
+    ids = LET_IDS (arg_node);
+    while (ids != NULL) {
+        INFO_WLSW_DEPSTACK (arg_info) = FREEdoFreeNode (INFO_WLSW_DEPSTACK (arg_info));
+        ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (arg_node);
@@ -836,10 +796,10 @@ WLSWpart (node *arg_node, info *arg_info)
         /*
          * Traversal of inner with-loop part
          */
-        NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-        if (NPART_NEXT (arg_node) != NULL) {
-            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        if (PART_NEXT (arg_node) != NULL) {
+            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
         }
     }
 
@@ -867,18 +827,19 @@ WLSWwith (node *arg_node, info *arg_info)
         /*
          * Traversal of outer with-loop
          */
+
         /*
          * Traverse withid
          */
-        NWITH_WITHID (arg_node) = Trav (NWITH_WITHID (arg_node), arg_info);
+        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
         /*
          * Traverse codes
          */
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
         DBUG_PRINT ("WLS", ("Withloopified with-loop:"));
-        DBUG_EXECUTE ("WLS", PrintNode (arg_node););
+        DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
     } else {
         /*
          * Traversal of inner with-loop
@@ -887,30 +848,30 @@ WLSWwith (node *arg_node, info *arg_info)
         /*
          * Traverse parts
          */
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
         /*
          * Traverse withop
          */
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-        if (ID_VARDEC (EXPRS_EXPR (INFO_WLSW_DEPSTACK (arg_info)))
-            == ID_VARDEC (INFO_WLSW_CEXPR (arg_info))) {
+        if (ID_AVIS (EXPRS_EXPR (INFO_WLSW_DEPSTACK (arg_info)))
+            == ID_AVIS (INFO_WLSW_CEXPR (arg_info))) {
             /*
              * No copy with-loop is required iff we have the base case:
              *  A perfect nesting of with-loops
              */
-            if (((NWITH_TYPE (arg_node) == WO_genarray)
-                 || (NWITH_TYPE (arg_node) == WO_modarray))
-                && (!DFMTestMaskEntry (INFO_WLSW_DEPMASK (arg_info), NULL,
-                                       ID_VARDEC (INFO_WLSW_CEXPR (arg_info))))) {
+            if (((WITH_TYPE (arg_node) == N_genarray)
+                 || (WITH_TYPE (arg_node) == N_modarray))
+                && (!DFMtestMaskEntry (INFO_WLSW_DEPMASK (arg_info), NULL,
+                                       ID_AVIS (INFO_WLSW_CEXPR (arg_info))))) {
                 INFO_WLSW_MUSTCOPY (arg_info) = FALSE;
             }
         } else {
             /*
              * Traverse codes
              */
-            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+            WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         }
     }
 
@@ -935,7 +896,7 @@ WLSWwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSWwithid");
 
-    AVIS_WITHID (IDS_AVIS (NWITHID_VEC (arg_node))) = arg_node;
+    AVIS_WITHID (IDS_AVIS (WITHID_VEC (arg_node))) = arg_node;
     INFO_WLSW_OUTERWITHID (arg_info) = arg_node;
 
     DBUG_RETURN (arg_node);
