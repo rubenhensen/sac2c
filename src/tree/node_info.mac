@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2002/08/30 16:33:36  dkr
+ * NT2OTarray added
+ *
  * Revision 3.96  2002/08/25 14:19:50  mwe
  * ALprf, ALlet, ALassign added
  *
@@ -1678,7 +1681,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, COMP2Array, TravSons, TravSons, TravSons, TravSons, PREC4array, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, NT2OTarray, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_info, "N_info", TravSons, TravSons, PrintInfo, TravSons, TravSons, TravSons,
