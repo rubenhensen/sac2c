@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/28 14:36:59  dkr
+ * include of internal_lib.h added
+ *
  * Revision 3.1  2000/11/20 17:59:51  sacbase
  * new release made
  *
@@ -91,13 +94,14 @@
 #include "types.h"
 #include "tree_basic.h"
 
+#include "internal_lib.h"
 #include "Error.h"
 #include "dbug.h"
 #include "filemgr.h"
 #include "globals.h"
+#include "resource.h"
 
 #include "scnprs.h"
-#include "resource.h"
 
 /*
  *
