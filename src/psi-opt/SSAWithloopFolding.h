@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/16 16:35:08  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.5  2004/07/14 14:17:36  sah
  * added SSADbugIndexInfo as a replacement for DebugIndexInfo
  * from old WithloopFolding, as that will be gone soon
@@ -35,7 +40,11 @@
 extern node *SSAWithloopFolding (node *arg_node, int loop);
 extern node *SSAWithloopFoldingWLT (node *arg_node);
 extern int SSALocateIndexVar (node *idn, node *wln);
+#ifdef MWE_NTYPE_READY
+extern node *SSACreateVardec (char *name, ntype *type, node **vardecs);
+#else
 extern node *SSACreateVardec (char *name, types *type, node **vardecs);
+#endif
 extern void SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
 
 /* index_info related functions */

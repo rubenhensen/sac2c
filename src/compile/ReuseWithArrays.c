@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/11/16 16:34:12  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 3.15  2004/11/08 14:49:00  ktr
  * idx-identifiers renamed by SSATRANSFORM are now recognized, too.
  *
@@ -436,10 +441,14 @@ ReuseSel (node *arg1, node *arg2, info *arg_info)
 {
     if ((NODE_TYPE (arg1) == N_id)
         && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
-        && (NODE_TYPE (arg2) == N_id)
-        && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-        && ((INFO_REUSE_NODEC (arg_info))
-            || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
+        && (NODE_TYPE (arg2) == N_id) &&
+#ifdef MWE_NTYPE_READY
+        TYEqTypes (IDS_NTYPE (ID_IDS (arg2)), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))) &&
+#else
+        TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
+#endif
+        ((INFO_REUSE_NODEC (arg_info))
+         || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
         && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
             == 0)) {
         /*
@@ -474,13 +483,22 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 
     traverse = TRUE;
 
-    if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)
-        && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-        && ((INFO_REUSE_NODEC (arg_info))
-            || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
+    if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id) &&
+#ifdef MWE_NTYPE_READY
+        TYEqTypes (IDS_NTYPE (ID_IDS (arg2)), IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info))) &&
+#else
+        TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info))) &&
+#endif
+        ((INFO_REUSE_NODEC (arg_info))
+         || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
         && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
             == 0)) {
 
+#ifdef MWE_NTYPE_READY
+        shp = TYType2Shape (IDS_NTYPE (INFO_REUSE_WL_IDS (arg_info)));
+        idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        shp = SHFreeShape (shp);
+#else
         type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
 #if 1
         shp = Type2Shape (type);
@@ -493,6 +511,7 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
          * Eventually, this part should vanish!
          */
         idx_sel_name = IdxChangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
+#endif
 #endif
 
         if (strstr (ID_NAME (arg1), idx_sel_name) == ID_NAME (arg1)) {

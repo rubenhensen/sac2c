@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.18  2004/11/16 16:35:08  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.17  2004/10/07 12:12:45  sah
  * added NCODE_INC_USED macro
  *
@@ -615,6 +620,35 @@ SSATree2InternGen (node *wln, node *filter)
     DBUG_RETURN (root);
 }
 
+#ifdef MWE_NTYPE_READY
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACreateArrayFromInternGen( int *source, int number, ntype *type)
+ *
+ * description:
+ *   copies 'number' elements of the array source to an N_array struct and
+ *   returns it.
+ *
+ ******************************************************************************/
+static node *
+SSACreateArrayFromInternGen (int *source, int number, ntype *type)
+{
+    node *arrayn, *tmpn;
+    int i;
+
+    DBUG_ENTER ("SSACreateArrayFromInternGen");
+
+    tmpn = NULL;
+    for (i = number - 1; i >= 0; i--) {
+        tmpn = MakeExprs (MakeNum (source[i]), tmpn);
+    }
+    arrayn = MakeFlatArray (tmpn);
+    ARRAY_NTYPE (arrayn) = TYCopyType (type);
+
+    DBUG_RETURN (arrayn);
+}
+#else
 /******************************************************************************
  *
  * function:
@@ -642,6 +676,7 @@ SSACreateArrayFromInternGen (int *source, int number, types *type)
 
     DBUG_RETURN (arrayn);
 }
+#endif
 
 /******************************************************************************
  *
@@ -661,8 +696,13 @@ node *
 SSAInternGen2Tree (node *wln, intern_gen *ig)
 {
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
-    types *type;
+#ifdef MWE_NTYPE_READY
+    shape *shp;
+    ntype *type;
+#else
     shpseg *shpseg;
+    types *type;
+#endif
     int no_parts; /* number of N_Npart nodes */
 
     DBUG_ENTER ("SSAInternGen2Tree");
@@ -673,7 +713,19 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
     no_parts = 0;
 
     /* create type for N_array nodes*/
+#ifdef MWE_NTYPE_READY
+    shp = SHCreateShape (1, ig->shape);
+    type = TYMakeAKS (TYMakeSimpleType (T_int), shp);
+    while (ig) {
+        /* create generator components */
+        b1n = SSACreateArrayFromInternGen (ig->l, ig->shape, type);
+        b2n = SSACreateArrayFromInternGen (ig->u, ig->shape, type);
+        stepn = ig->step ? SSACreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
+        widthn
+          = ig->width ? SSACreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
+#else
     shpseg = MakeShpseg (MakeNums (ig->shape, NULL));
+
     /* nums struct is freed inside MakeShpseg. */
 
     type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
@@ -685,7 +737,7 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
         stepn = ig->step ? SSACreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
         widthn
           = ig->width ? SSACreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
-
+#endif
         /* create tree structures */
         genn = MakeNGenerator (b1n, b2n, F_le, F_lt, stepn, widthn);
         *part = MakeNPart (DupTree (withidn), genn, ig->code);
@@ -699,7 +751,12 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
     NWITH_PARTS (wln) = no_parts;
 
     FreeTree (withidn);
+#ifdef MWE_NTYPE_READY
+    type = TYFreeType (type);
+    shp = SHFreeShape (shp);
+#else
     FreeOneTypes (type);
+#endif
 
     DBUG_RETURN (wln);
 }
@@ -759,6 +816,58 @@ SSAFreeInternGenChain (intern_gen *ig)
     DBUG_RETURN (ig);
 }
 
+#ifdef MWE_NTYPE_READY
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACreateVardec(char *name, ntype *type, node **vardecs)
+ *
+ * description:
+ *   creates a new Vardec with 'name' of type 'type' at the beginning of
+ *   the 'vardecs' chain. The node of the new Vardec is returned.
+ *   If a vardec for this name already exists, this node is returned.
+ *
+ *
+ * remark:
+ *   new memory is allocated for name. It is expected that type
+ *   is a pointer to an existing type  and it is duplicated, too.
+ *
+ *   does not preserve ssa form because of missing ssacount attribute
+ *
+ ******************************************************************************/
+node *
+SSACreateVardec (char *name, ntype *type, node **vardecs)
+{
+    node *vardecn;
+    char *c;
+
+    DBUG_ENTER ("SSACreateVardec");
+
+    /* search for already existing vardec for this name. */
+    vardecn = SearchDecl (name, *vardecs);
+
+    /* if not found, create vardec. */
+    if (!vardecn) {
+        if (!type) {
+            c = Malloc (50);
+            c[0] = 0;
+            c = strcat (c, "parameter type is NULL for variable ");
+            c = strcat (c, name);
+            DBUG_ASSERT (0, (c));
+        }
+
+        type = TYCopyType (type);
+        vardecn = MakeVardec (StringCopy (name), NULL, type, *vardecs);
+        VARDEC_VARNO (vardecn) = -1;
+
+        /* create ssacnt node: to be implemented */
+
+        *vardecs = vardecn;
+    }
+
+    DBUG_RETURN (vardecn);
+}
+#else
 /******************************************************************************
  *
  * function:
@@ -809,6 +918,7 @@ SSACreateVardec (char *name, types *type, node **vardecs)
 
     DBUG_RETURN (vardecn);
 }
+#endif
 
 /******************************************************************************
  *
