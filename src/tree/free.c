@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/06/27 12:39:06  ben
+ * SCHRemoveTasksel inserted
+ *
  * Revision 3.26  2001/05/18 12:04:35  dkr
  * FREE_VECT used
  *
@@ -2041,6 +2044,10 @@ FreeWLseg (node *arg_node, node *arg_info)
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
 
+    if (WLSEGX_TASKSEL (arg_node) != NULL) {
+        WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+    }
+
     Free (arg_node);
 
     DBUG_RETURN (tmp);
@@ -2078,6 +2085,10 @@ FreeWLsegVar (node *arg_node, node *arg_info)
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (arg_node)
           = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
+    }
+
+    if (WLSEGX_TASKSEL (arg_node) != NULL) {
+        WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
     }
 
     Free (arg_node);
