@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/30 16:37:09  nmw
+ * *** empty log message ***
+ *
  * Revision 3.5  2001/03/16 11:58:44  nmw
  * ssaphit_t enum type added
  *
@@ -150,6 +153,9 @@
 #define SHP_SEG_SIZE 16
 #define MAX_MASK 7
 #define MAX_SONS 6
+
+/* init value for FUNDEF_USED */
+#define FUN_UNUSED -1
 
 typedef char id; /* kept for compatibility reasons with old version only */
 
