@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/08/07 13:06:34  dkr
+ * DBUG_ASSERT added
+ *
  * Revision 3.57  2002/07/15 15:04:02  dkr
  * grrrr... modification of last revision undone
  *
@@ -6637,6 +6640,8 @@ WLTRAwith (node *arg_node, node *arg_info)
 
     is_fold = NWITH_IS_FOLD (arg_node);
     /* get number of dims of with-loop index range */
+    DBUG_ASSERT ((GetShapeDim (IDS_TYPE (NWITH_VEC (arg_node))) == 1),
+                 "with-loop on AUD not implemented yet!");
     wl_dim = IDS_SHAPE (NWITH_VEC (arg_node), 0);
     res_shp = is_fold ? NULL : TYPES_SHPSEG (INFO_WL_TYPES (arg_info));
 
