@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1995/05/01 15:38:20  asi
+# Revision 1.11  1995/05/04 11:54:26  asi
+# added -I../print
+#
+# Revision 1.10  1995/05/01  15:38:20  asi
 # DupTree added
 #
 # Revision 1.9  1995/04/20  10:21:20  asi
@@ -35,7 +38,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../typecheck
+INCS=-I../global -I../../inc -I../typecheck -I../print
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
      LoopInvariantRemoval.o DupTree.o
