@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 23:16:39  khf
+ * SacDevCamp04
+ *
  * Revision 1.3  2004/11/24 14:33:21  khf
  * SacDevCamp04: Compiles
  *
@@ -130,7 +133,7 @@ FreeInfo (info *info)
  *           info *arg_info:  N_info
  *   @return node *        :  N_id
  ******************************************************************************/
-node *
+static node *
 SelId (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SelId");
@@ -147,7 +150,7 @@ SelId (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PrfSel(node *arg_node, info *arg_info)
+ * @fn node *CheckPrfSel(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -155,12 +158,12 @@ SelId (node *arg_node, info *arg_info)
  *           info *arg_info:  N_info
  *   @return node *        :  N_prf
  ******************************************************************************/
-node *
-RDEPENDprfSel (node *arg_node, info *arg_info)
+static node *
+CheckPrfSel (node *arg_node, info *arg_info)
 {
     node *sel, *cexprs, *ids_tmp;
 
-    DBUG_ENTER ("PrfSel");
+    DBUG_ENTER ("CheckPrfSel");
 
     DBUG_PRINT ("WLFS", ("consider following assignment:"));
     DBUG_EXECUTE ("WLFS", PRTdoPrintNode (INFO_RDEPEND_ASSIGN (arg_info)););
@@ -256,7 +259,7 @@ RDEPENDprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
-        arg_node = RDEPENDprfSel (arg_node, arg_info);
+        arg_node = CheckPrfSel (arg_node, arg_info);
         break;
 
     default:

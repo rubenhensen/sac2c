@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/24 23:16:39  khf
+ * SacDevCamp04
+ *
  * Revision 1.6  2004/11/24 14:14:29  khf
  * SacDevCamp04: compiles
  *
@@ -168,38 +171,7 @@ CheckDependency (node *checkid, nodelist *nl)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DDEPENDassign(node *arg_node, info *arg_info)
- *
- *   @brief  We are inside N_code of a withloop and we check
- *           if the current withloop depends on the fusionable withloop.
- *           If TRUE, the withloop is dependent and no more traversal is
- *           necessary.
- *
- *   @param  node *arg_node:  N_assign
- *           info *arg_info:  N_info
- *   @return node *        :  N_assign
- ******************************************************************************/
-
-node *
-DDEPENDassign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DDEPENDassign");
-
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    if (INFO_DDEPEND_WLDEPENDENT (arg_info)) {
-        DBUG_RETURN (arg_node);
-    }
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DDEPENDprfSel(node *arg_node, info *arg_info)
+ * @fn node *CheckPrfSel(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -207,12 +179,12 @@ DDEPENDassign (node *arg_node, info *arg_info)
  *           info *arg_info:  N_info
  *   @return node *        :  N_prf
  ******************************************************************************/
-node *
-DDEPENDprfSel (node *arg_node, info *arg_info)
+static node *
+CheckPrfSel (node *arg_node, info *arg_info)
 {
     node *sel;
 
-    DBUG_ENTER ("DDEPENDprfSel");
+    DBUG_ENTER ("CheckPrfSel");
 
     DBUG_PRINT ("WLFS", ("consider following selection:"));
     DBUG_EXECUTE ("WLFS", PRTdoPrintNode (arg_node););
@@ -256,6 +228,37 @@ DDEPENDprfSel (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *DDEPENDassign(node *arg_node, info *arg_info)
+ *
+ *   @brief  We are inside N_code of a withloop and we check
+ *           if the current withloop depends on the fusionable withloop.
+ *           If TRUE, the withloop is dependent and no more traversal is
+ *           necessary.
+ *
+ *   @param  node *arg_node:  N_assign
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_assign
+ ******************************************************************************/
+
+node *
+DDEPENDassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DDEPENDassign");
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    if (INFO_DDEPEND_WLDEPENDENT (arg_info)) {
+        DBUG_RETURN (arg_node);
+    }
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *DDEPENDprf(node *arg_node, info *arg_info)
  *
  *   @brief  calls special function if this prf is F_sel.
@@ -271,7 +274,7 @@ DDEPENDprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
-        arg_node = DDEPENDprfSel (arg_node, arg_info);
+        arg_node = CheckPrfSel (arg_node, arg_info);
         break;
 
     default:
