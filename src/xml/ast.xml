@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.96  2004/11/26 12:52:24  khf
+  added CMPTids
+
   Revision 1.95  2004/11/26 12:46:23  sbs
   PRT phase added.
 
@@ -323,6 +326,7 @@
           <node name="Ap" />
           <node name="Prf" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Generator" />
 	  <node name="Code" />
           <node name="Withid" />
