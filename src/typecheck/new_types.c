@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/09/27 19:09:28  sbs
+ * 1) sharing of components from FUNDEF_RET_TYPE as introduced
+ * while building Applications removed.
+ * 2) TYMakeFunType now handles akv types by upgrading them to aks types.
+ *
  * Revision 3.54  2004/09/27 13:15:20  sah
  * added serialization support
  *
@@ -1113,6 +1118,7 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
     ntype *dim = NULL;
     ntype *shape = NULL;
     ntype *res = NULL;
+    ntype *aks = NULL;
 
 #ifndef DBUG_OFF
     char *tmp;
@@ -1133,6 +1139,17 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
     base = MakeNtype (TC_ibase, 3);
 
     switch (NTYPE_CON (arg)) {
+    case TC_akv:
+        aks = TYEliminateAKV (arg);
+        arg = TYFreeType (arg);
+        arg = aks;
+        aks = NULL;
+        /**
+         * there is no break here, as we wish to re-use the AKS implementation.
+         * At a later stage, this has to be replaced by proper code suporting
+         * value specialized function instances.
+         */
+
     case TC_aks:
         if (TYGetDim (arg) == 0) {
             IBASE_SCAL (base) = TYCopyType (res); /* scalar: definition case */
@@ -5339,7 +5356,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     while (i >= 0) {
         DBUG_ASSERT ((vardecs != NULL), "inconsistant application found");
 
-        tmp_id = BuildTmpId (PROD_MEMBER (ret_type, i), new_vardecs);
+        tmp_id = BuildTmpId (TYCopyType (PROD_MEMBER (ret_type, i)), new_vardecs);
         assigns = MakeAssign (MakeLet (tmp_id, VardecOrArg2Ids (vardecs)), assigns);
 
         tmp_ids = DupId_Ids (tmp_id);
