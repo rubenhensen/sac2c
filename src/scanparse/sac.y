@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.162  1998/07/20 17:49:07  sbs
+ * if (store_wlcomp_pragma_global != NULL) {
+ * included in wlcomp_pragma_local rule 8-))))
+ *
  * Revision 1.161  1998/07/20 15:54:23  sbs
  * wlcomp_pragma_local now always returns a pragma-node8-)
  *
@@ -1640,9 +1644,13 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                        PRAGMA_WLCOMP_APS($$) = $3;
                      }
                    | /* empty */
-                     { $$ = MakePragma();
-                       PRAGMA_WLCOMP_APS($$)
-                        = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
+                     { if (store_wlcomp_pragma_global != NULL) {
+                         $$ = MakePragma();
+                         PRAGMA_WLCOMP_APS($$)
+                          = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
+                       } else {
+                         $$ = NULL;
+                       }
                      }
                    ;
 
