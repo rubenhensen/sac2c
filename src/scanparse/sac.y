@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.80  1995/08/15 09:25:39  cg
+ * Revision 1.81  1995/08/15 11:58:55  cg
+ * sib-grammar extended for specification of implicit definitions of
+ * implicit and/or unique types.
+ *
+ * Revision 1.80  1995/08/15  09:25:39  cg
  * varargs exclusively allowed in external declarations now.
  * parsing SIBs completed.
  *
@@ -347,7 +351,7 @@ static file_type file_kind = F_prog;
 %type <nums> nums
 %type <statustype> sibobjattrib
 %type <types> localtype, type, types, simpletype, complextype, returntypes,
-              varreturntypes, vartypes;
+              varreturntypes, vartypes, sibimpltypedef;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp,
              argtypes, argtype, varargs, varargtypes,
              fundec2, fundec3,
@@ -2374,7 +2378,7 @@ sibimpltypes: sibimpltype sibimpltypes
                 }
             ;
 
-sibimpltype: ID COLON ID LET type SEMIC
+sibimpltype: ID COLON ID LET sibimpltypedef
                {
                  $$=MakeNode(N_typedef);
                  $$->info.types=$5;
@@ -2382,12 +2386,39 @@ sibimpltype: ID COLON ID LET type SEMIC
                  $$->info.types->id_mod=$1;
 
             DBUG_PRINT("GENSIB",
-                       ("%s:"P_FORMAT", implicit usage, Id: %s:%s",
+                       ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
                         mdb_nodetype[ $$->nodetype ], $$, 
-                        $$->info.types->id_mod, $$->info.types->id));
+                        $$->info.types->id_mod, $$->info.types->id,
+                        $$->info.types->attrib));
+
+               }
+           | CLASSIMP ID COLON ID LET sibimpltypedef
+               {
+                 $$=MakeNode(N_typedef);
+                 $$->info.types=$6;
+                 $$->info.types->id=$4;
+                 $$->info.types->id_mod=$2;
+                 $$->info.types->attrib=ST_unique;
+                 
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        $$->info.types->id_mod, $$->info.types->id,
+                        $$->info.types->attrib));
 
                }
            ;
+
+sibimpltypedef: type SEMIC
+                  {
+                    $$=$1;
+                  }
+              | IMPLICIT type SEMIC
+                  {
+                    $$=MakeTypes(T_hidden);
+                    $$->next=$2;
+                  }
+              ;
 
 sibimplfuns: sibimplfun sibimplfuns
                 {
