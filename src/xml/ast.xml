@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.42  2004/11/24 13:33:30  khf
+  added WLPG
+
   Revision 1.41  2004/11/24 12:31:00  ktr
   FUNDEF_TYPE -> FUNDEF_TYPES
 
@@ -254,6 +257,25 @@
           <node name="With" />
           <node name="Code" />
         </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="WLPG" name="With-Loop Partition Generation" default="sons" include="WLPartitionGeneration.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ap" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Genarray" />
+         </travuser>
         <travsons>
         </travsons>
         <travnone>
