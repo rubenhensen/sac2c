@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2003/04/01 10:44:03  sbs
+# wrong directory for the configure mechanism 8-(
+#
 # Revision 3.11  2003/04/01 09:43:45  sbs
 # knows now how to build $(PROJECT_ROOT)/Makefile.Config 8-)
 #
@@ -108,9 +111,6 @@ clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 	$(RM) CacheSimTest CacheSimAnalyser
-
-$(PROJECT_ROOT)/Makefile.Config: $(PROJECT_ROOT)/Makefile.Config.in
-	(cd $(PROJECT_ROOT); ./configure)
 
 #######################################################################################
 #
