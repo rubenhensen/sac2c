@@ -16,23 +16,18 @@
 #include "resource.h"
 
 /* ??? copied from print.c */
-static void
-PrintRC (int rc, int nrc, int show_rc)
-{
-    DBUG_ENTER ("PrintRC");
+#define TYPE_LENGTH 256      /* dimension of array of char */
+#define INT_STRING_LENGTH 16 /* dimension of array of char */
 
-    if ((rc != -1) && show_rc) {
-        fprintf (outfile, ":%d", rc);
-    }
-    DBUG_EXECUTE ("PRINT_NRC",
-                  if ((nrc != -1) && show_rc) {
-                      fprintf (outfile, "::%d", nrc);
-                  } if ((!(optimize & OPT_RCO)) && show_rc && (rc != -1) && (rc != nrc)) {
-                      fprintf (outfile, "**");
-                  });
+/* strings for primitve types */
 
-    DBUG_VOID_RETURN;
-}
+extern char *type_string[];
+
+/* strings for primitve types used for renaming of functions*/
+#define TYP_IFfunr_str(str) str
+static char *rename_type[] = {
+#include "type_info.mac"
+};
 
 /******************************************************************************
  *
@@ -47,23 +42,16 @@ PrintRC (int rc, int nrc, int show_rc)
 node *
 PIHarg (node *arg_node, node *arg_info)
 {
+    char *typestring;
     DBUG_ENTER ("PIHArg");
 
-    DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", ARG_VARNO (arg_node)););
-
-    fprintf (outfile, " %s",
-             Type2String (ARG_TYPE (arg_node),
-                          INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info) ? 0 : 1));
-
-    /*PrintRC( ARG_REFCNT( arg_node), ARG_NAIVE_REFCNT( arg_node), show_refcnt);*/
-
-    if (ARG_COLCHN (arg_node) && show_idx) {
-        Trav (ARG_COLCHN (arg_node), arg_info);
-    }
+    typestring = Type2CTypeString (ARG_TYPE (arg_node), 0);
+    fprintf (outfile, " %s%s", typestring, truncArgName (ARG_NAME (arg_node)));
+    FREE (typestring);
 
     if (ARG_NEXT (arg_node) != NULL) {
         fprintf (outfile, ",");
-        Trav (ARG_NEXT (arg_node), arg_info);
+        arg_node = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -84,13 +72,113 @@ node *
 PIHfundef (node *arg_node, node *arg_info)
 {
     types *rettypes;
-    node *params;
-    int dim;
-    int i, j;
+    int separator_needed;
+    int i;
+    char *typestring;
 
     DBUG_ENTER ("PIHfundef");
 
-    fprintf (outfile, "/* function declaration for %s */\n", FUNDEF_NAME (arg_node));
+    if (FUNDEF_STATUS (arg_node)
+        == ST_regular) { /* export only functions defined in this module */
+        if ((FUNDEF_BODY (arg_node) == NULL)
+            || ((NULL != FUNDEF_RETURN (arg_node))
+                && (N_icm == NODE_TYPE (FUNDEF_RETURN (arg_node))))) {
+            /* print wrapper-prototype to headerfile */
+            /* comment header */
+            fprintf (outfile, "/* function declaration for %s */\n",
+                     truncFunName (FUNDEF_NAME (arg_node)));
+
+            fprintf (outfile, "extern ");
+
+            /* simple return type */
+            fprintf (outfile, "int ");
+
+            /* function name */
+            fprintf (outfile, "%s(", truncFunName (FUNDEF_NAME (arg_node)));
+
+            /* SAC-return-types */
+            rettypes = FUNDEF_TYPES (arg_node);
+            i = 0;
+            separator_needed = FALSE;
+            while (rettypes != NULL) {
+                i++;
+                typestring = Type2CTypeString (rettypes, 0);
+                fprintf (outfile, "%s*out%d", typestring, i);
+                FREE (typestring);
+                rettypes = TYPES_NEXT (rettypes);
+                if (rettypes != NULL)
+                    fprintf (outfile, ", ");
+                separator_needed = TRUE;
+            }
+
+            /* args */
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                if (separator_needed)
+                    fprintf (outfile, ", ");
+                FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+            }
+
+            /* EOL */
+            fprintf (outfile, ");\n\n");
+        }
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PIWarg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Prints function arguments for use in Wrapper-function c->SAC
+ *
+ *
+ ******************************************************************************/
+node *
+PIWarg (node *arg_node, node *arg_info)
+{
+    char *typestring;
+    DBUG_ENTER ("PIWArg");
+
+    typestring = Type2CTypeString (ARG_TYPE (arg_node), 0);
+    fprintf (outfile, " %s%s", typestring, truncArgName (ARG_NAME (arg_node)));
+    FREE (typestring);
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        fprintf (outfile, ",");
+        arg_node = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PIWfundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Prints Wrapper-function c->SAC
+ *   with argument checks, return values, refcounter handling
+ *
+ *
+ ******************************************************************************/
+node *
+PIWfundef (node *arg_node, node *arg_info)
+{
+    types *rettypes;
+    node *params;
+    int separator_needed;
+    int i;
+    char *typestring;
+
+    DBUG_ENTER ("PIWfundef");
 
     if (FUNDEF_STATUS (arg_node)
         == ST_regular) { /* export only functions defined in this module */
@@ -100,6 +188,7 @@ PIHfundef (node *arg_node, node *arg_info)
 
             /*some debug comment*/
             NOTE (("working on function: %s\n", FUNDEF_NAME (arg_node)));
+
             /*first the returntypes*/
             rettypes = FUNDEF_TYPES (arg_node);
             i = 0;
@@ -109,6 +198,7 @@ PIHfundef (node *arg_node, node *arg_info)
                 NOTE (("  %d. return type: %s\n", i, Type2String (rettypes, 0 | 4)));
                 rettypes = TYPES_NEXT (rettypes);
             }
+
             /*next the parameters*/
             params = FUNDEF_ARGS (arg_node);
             i = 0;
@@ -116,49 +206,53 @@ PIHfundef (node *arg_node, node *arg_info)
                 i++;
                 NOTE (("  %d. arg type: %s %s\n", i,
                        Type2String (ARG_TYPE (params), 0 | 4), ARG_NAME (params)));
-
                 params = ARG_NEXT (params);
             }
 
             NOTE (("\n"));
 
             /* print wrapper-prototype to headerfile */
+            /* comment header */
+            fprintf (outfile, "/* function declaration for %s */\n",
+                     truncFunName (FUNDEF_NAME (arg_node)));
 
             fprintf (outfile, "extern ");
+
             /* simple return type */
-            fprintf (outfile, "<returntype> ");
+            fprintf (outfile, "int ");
 
             /* function name */
             fprintf (outfile, "%s(", truncFunName (FUNDEF_NAME (arg_node)));
 
-            /* rest of return types */
-            fprintf (outfile, "<ret.types>, ");
+            /* SAC-return-types */
+            rettypes = FUNDEF_TYPES (arg_node);
+            i = 0;
+            separator_needed = FALSE;
+            while (rettypes != NULL) {
+                i++;
+                typestring = Type2CTypeString (rettypes, 0);
+                fprintf (outfile, "%s*out%d", typestring, i);
+                FREE (typestring);
+                rettypes = TYPES_NEXT (rettypes);
+                if (rettypes != NULL)
+                    fprintf (outfile, ", ");
+                separator_needed = TRUE;
+            }
 
             /* args */
             if (FUNDEF_ARGS (arg_node) != NULL) {
-                Trav (FUNDEF_ARGS (arg_node), arg_info);
+                if (separator_needed)
+                    fprintf (outfile, ", ");
+                FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
             }
 
             /* EOL */
-            fprintf (outfile, ");\n");
-
-            if ((NULL != FUNDEF_ICM (arg_node))
-                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))
-                && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
-                Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
-            } else {
-                NOTE (("Printed function header!!!\n"));
-                PrintFunctionHeader (arg_node, arg_info);
-            }
-
-            fprintf (outfile, ";\n");
-
-            fprintf (outfile, "\n");
+            fprintf (outfile, ");\n\n");
         }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
-        Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -175,7 +269,6 @@ PIHfundef (node *arg_node, node *arg_info)
  *   NOT a new copy of that string!
  *
  ******************************************************************************/
-
 char *
 truncFunName (char *funname)
 {
@@ -194,6 +287,86 @@ truncFunName (char *funname)
 /******************************************************************************
  *
  * function:
+ *   char *truncArgName( char *argname)
+ *
+ * description:
+ *   truncates the actual argument name after some renaming by removing
+ *   SAC-prefix. returns the offset-pointer in the funname string
+ *   NOT a new copy of that string!
+ *
+ ******************************************************************************/
+
+char *
+truncArgName (char *argname)
+{
+    int offset;
+    char *result;
+    DBUG_ENTER ("truncArgName");
+
+    /* skip additional inserted "SACl_" */
+    offset = strlen ("SACl_");
+
+    result = argname + offset;
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *Type2CTypeString(types *type , int flag)
+ *
+ * description:
+ *   returns as string the c-type to use in the c-interface for sac-type type
+ *   example: array-types int[] -> sa_i, double -> sa_d ...
+ *            int -> int
+ *            usertype -> ???
+ *   flag:    not used
+ *
+ *
+ ******************************************************************************/
+char *
+Type2CTypeString (types *type, int flag)
+{
+    char *tmp_string;
+
+    DBUG_ENTER ("Type2CTypeString");
+
+    tmp_string = (char *)Malloc (sizeof (char) * TYPE_LENGTH);
+    tmp_string[0] = '\0';
+
+    if (TYPES_DIM (type) > 0) { /* arraytype with dim>0 */
+        /* uses prefix sa_ for SAC-ARRAY-TYPE */
+        strcat (tmp_string, "sa_");
+        if (TYPES_BASETYPE (type) == T_user) {
+            /* user defined types are not handled yet */
+            SYSERROR (("User defined types are not handled yet.\n"));
+            strcat (tmp_string, TYPES_NAME (type));
+        } else {
+            /* simple basetype */
+            strcat (tmp_string, rename_type[TYPES_BASETYPE (type)]);
+        }
+        strcat (tmp_string, " *"); /* add pointer * for struct arg */
+    } else {                       /* scalartype */
+        /* no additional prefix neede */
+        if (TYPES_BASETYPE (type) == T_user) {
+            /* user defined types are not handled yet */
+            SYSERROR (("User defined types are not handled yet.\n"));
+            strcat (tmp_string, "__");
+            strcat (tmp_string, TYPES_NAME (type));
+        } else {
+            /* simple basetype */
+            strcat (tmp_string, type_string[TYPES_BASETYPE (type)]);
+        }
+        strcat (tmp_string, " "); /* add space to arg-name */
+    }
+
+    DBUG_RETURN (tmp_string);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PrintInterface( node *syntax_tree)
  *
  * description:
@@ -203,7 +376,6 @@ truncFunName (char *funname)
  *             ...
  *
  ******************************************************************************/
-
 node *
 PrintInterface (node *syntax_tree)
 {
@@ -215,14 +387,16 @@ PrintInterface (node *syntax_tree)
 
     /* open <module>.h in tmpdir for writing*/
     outfile = WriteOpen ("%s/%s.h", tmp_dirname, modulename);
-    fprintf (outfile, "/*Interface SAC-C for %s */\n", modulename);
-    fprintf (outfile, "#include \"sac_std.h\"\n");
+    fprintf (outfile, "/* Interface SAC-C for %s */\n", modulename);
+    fprintf (outfile, "/* use this file %s.h with lib%s.a\n", modulename, modulename);
+    fprintf (outfile, "#include \"sacinterface.h\"\n");
     fprintf (outfile, "\n");
 
     /*Generate fixed manual and usage hints in headerfile*/
     /* to be implemented */
 
     /* print all function headers */
+    /* only printing selected functions: to be implemented */
     old_tab = act_tab;
     act_tab = pih_tab;
 
@@ -230,10 +404,14 @@ PrintInterface (node *syntax_tree)
 
     INFO_PRINT_CONT (arg_info) = NULL;
 
-    syntax_tree = Trav (syntax_tree, arg_info);
-
+    /*start travesal of tree, looking for fundef & arg nodes*/
+    syntax_tree
+      = Trav (syntax_tree,
+              arg_info); /*start travesal of tree, looking for fundef & arg nodes*/
     FREE (arg_info);
 
+    fprintf (outfile,
+             "/* generated headerfile, please do not modify function prototypes */\n");
     fclose (outfile);
 
     /* print all wrapper functions */
@@ -241,8 +419,10 @@ PrintInterface (node *syntax_tree)
 
     /* beautify the headerfile, removing ICMs */
     /* to be implemented */
-    SystemCall ("%s -E -H %s -o %s/%s.h %s/%s.h", config.cc, config.ccdir, tmp_dirname,
-                modulename, tmp_dirname, modulename);
+
+    /* Systemcall to resolve ICM Makros in a file using the cpp */
+    /* SystemCall("%s -E -H %s -o %s/%s.h %s/%s.h",
+       config.cc, config.ccdir, tmp_dirname, modulename, tmp_dirname, modulename); */
 
     DBUG_RETURN (syntax_tree);
 }
