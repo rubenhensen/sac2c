@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/05/05 13:03:21  jhs
+ * Modified type GeneratorRel to store the original operators of
+ * the withloop, these will not be changed during compilation.
+ *
  * Revision 2.6  1999/04/28 12:17:18  bs
  * Typedefinition of access_t modified: direction (read | write) added.
  *
@@ -434,9 +438,20 @@ typedef struct TYPES {
     statustype status;  /* regular or artificial */
 } types;
 
+/*
+ *  Used to store the relations of with-generators.
+ *  Should be normalized in flatten and typecheck to op1: <= and op2: <
+ *  Other values than <= or < are never allowed!
+ *
+ *  For empty arrays, a special treatment is necessary, so original
+ *  Values before nomalization are stored also.
+ */
+
 typedef struct {
-    prf op1; /* <= or < */
-    prf op2; /* <= or < */
+    prf op1;      /* <= or < */
+    prf op2;      /* <= or < */
+    prf op1_orig; /* <= or <, will be set on node creation, not to be changed */
+    prf op2_orig; /* dito */
 } GeneratorRel;
 
 /* and now some macros for the use with 'types->dim'
