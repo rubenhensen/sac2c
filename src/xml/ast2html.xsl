@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/12/07 14:19:38  sah
+  mac OS X compatible version
+
   Revision 1.5  2004/12/06 21:43:12  sah
   added entirely useless favicon
 
@@ -80,15 +83,15 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                      background-color: #AAAAAA; display: none; }
           #NavPhases{ position:fixed; padding: 0px;
                       margin:0px; font-size: smaller; 
-                      background-color: #AAAAAA; visibility: hidden; 
+                      background-color: #AAAAAA; display: none;
                       width: 200pt; max-height: 90%; overflow: scroll; }
           #NavSets{ position:fixed; padding: 0px;
                     margin:0px; font-size: smaller; 
-                    background-color: #AAAAAA; visibility: hidden; 
+                    background-color: #AAAAAA; display: none;
                     width: 200pt; max-height: 90%; overflow: scroll; }
           #NavNodes{ position:fixed; padding: 0px;
                      margin:0px; font-size: smaller; 
-                     background-color: #AAAAAA; visibility: hidden; 
+                     background-color: #AAAAAA; display: none;
                      width: 200pt; max-height: 90%; overflow: scroll; }
           #TOC{ display: none; }
           table.nav { border-width: 1pt; border-style: solid;
@@ -103,10 +106,10 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </style>
         <script type="text/javascript" language="JavaScript1.2">
           function toggle( id) {
-            if (document.getElementById(id).style.visibility != "visible") {
-              document.getElementById(id).style.visibility = "visible";
+            if (document.getElementById(id).style.display != "inline") {
+              document.getElementById(id).style.display = "block";
             } else {
-              document.getElementById(id).style.visibility = "hidden";
+              document.getElementById(id).style.display = "none";
             }
           }
           function showTOC() {
