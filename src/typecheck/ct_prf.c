@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/11/04 17:40:11  sbs
+ * computation of cast further improved; incompatibilities of
+ * user defined types are recognized much better now!
+ *
  * Revision 1.9  2002/11/04 13:18:11  sbs
  * cast computation improved:  (:xx[*])expr   now yields
  * most specific subtype of xx[*] that may be derived from the
@@ -36,6 +40,7 @@
 #include "dbug.h"
 #include "ct_prf.h"
 #include "type_errors.h"
+#include "user_types.h"
 
 ct_funptr NTCPRF_funtab[] = {
 #define PRF_IF(a, b, c, d, e, f, g) g
@@ -133,20 +138,103 @@ NTCPRF_array (te_info *info, ntype *elems)
 ntype *
 NTCPRF_cast (te_info *info, ntype *elems)
 {
-    ntype *cast_t, *cast_bt, *expr_bt;
+    ntype *cast_t, *cast_bt, *expr_t, *expr_bt;
     ntype *res, *res_bt;
+    shape *shp, *d_shp, *s_shp;
 
     DBUG_ENTER ("NTCPRF_cast");
 
     cast_t = TYGetProductMember (elems, 0);
     cast_bt = TYEliminateUser (cast_t);
-    expr_bt = TYEliminateUser (TYGetProductMember (elems, 1));
+    expr_t = TYGetProductMember (elems, 1);
+    expr_bt = TYEliminateUser (expr_t);
 
     TEAssureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
     res_bt = TEAssureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
-
     cast_bt = TYFreeType (cast_bt);
     expr_bt = TYFreeType (expr_bt);
+
+    /*
+     * Unfortunately, this TEAssureSameShape in certain situations does not detect
+     * incompatabilities. The problem arises from the application of TYEliminateUser:
+     * e.g.  TYEliminateUser( complex[.])  =>   double[.,.]   which does not contain
+     *       the information that complex[.] in fact is double[.,2]! As a consequence,
+     * it can be casted into double[3,4] which obviously is wrong!!
+     * Such situations can accur, if
+     *   (a) "res_bt" is an AKS type and
+     *   (b) at least one of "cast_t" and "expr_t" are based on a user type;
+     * or if
+     *   (a) both, "cast_t" and "expr_t" are based on a user type.
+     * Hence, the shapes (if available) of "res_bt" and the definitions of
+     * the user types of "cast_t" and "expr_t" have to be compared:
+     */
+
+    if (TYIsAKS (res_bt)) {
+        shp = TYGetShape (res_bt);
+        if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t))) {
+            d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
+            s_shp = SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp), shp);
+            if (!SHCompareShapes (d_shp, s_shp)) {
+                ABORT (linenum, ("cast type %s does not match expression type %s "
+                                 "as \"%s\" is defined as %s",
+                                 TYType2String (cast_t, FALSE, 0),
+                                 TYType2String (expr_t, FALSE, 0),
+                                 UTGetName (TYGetUserType (TYGetScalar (cast_t))),
+                                 TYType2String (UTGetBaseType (
+                                                  TYGetUserType (TYGetScalar (cast_t))),
+                                                FALSE, 0)));
+            }
+        }
+        if (TYIsArray (expr_t) && TYIsUser (TYGetScalar (expr_t))) {
+            d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (expr_t))));
+            s_shp = SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp), shp);
+            if (!SHCompareShapes (d_shp, s_shp)) {
+                ABORT (linenum, ("cast type %s does not match expression type %s "
+                                 "as \"%s\" is defined as %s",
+                                 TYType2String (cast_t, FALSE, 0),
+                                 TYType2String (expr_t, FALSE, 0),
+                                 UTGetName (TYGetUserType (TYGetScalar (expr_t))),
+                                 TYType2String (UTGetBaseType (
+                                                  TYGetUserType (TYGetScalar (expr_t))),
+                                                FALSE, 0)));
+            }
+        }
+    } else {
+        if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t)) && TYIsArray (expr_t)
+            && TYIsUser (TYGetScalar (expr_t))) {
+            shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
+            d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (expr_t))));
+            if (SHGetDim (shp) < SHGetDim (d_shp)
+                  ? !SHCompareShapes (shp,
+                                      SHDropFromShape (SHGetDim (d_shp) - SHGetDim (shp),
+                                                       d_shp))
+                  : !SHCompareShapes (SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp),
+                                                       shp),
+                                      d_shp)) {
+                ABORT (linenum,
+                       ("cast type %s does not match expression type %s "
+                        "as \"%s\" is defined as %s whereas \"%s\" is defined as %s",
+                        TYType2String (cast_t, FALSE, 0),
+                        TYType2String (expr_t, FALSE, 0),
+                        UTGetName (TYGetUserType (TYGetScalar (cast_t))),
+                        TYType2String (UTGetBaseType (
+                                         TYGetUserType (TYGetScalar (cast_t))),
+                                       FALSE, 0),
+                        UTGetName (TYGetUserType (TYGetScalar (expr_t))),
+                        TYType2String (UTGetBaseType (
+                                         TYGetUserType (TYGetScalar (expr_t))),
+                                       FALSE, 0)));
+            }
+        }
+    }
+
+    /*
+     * Now, that we have checked for potential compatibility, we can compute
+     * the best possible return type. Usualy, this is res_bt. However, if
+     * "cast_t" turns out to be based on a user defined type, we have to "de-nest" the
+     * return type, i.e., we have to cut off the shape of the (base) defining type of the
+     * user type from the back of "res_bt".
+     */
 
     if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t))) {
         res
