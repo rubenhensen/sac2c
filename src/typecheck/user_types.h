@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2004/11/17 19:46:19  sah
+ * changed arguments from char to const char
+ *
  * Revision 3.2  2002/10/18 14:29:31  sbs
  * made the type definition node part of the repository record
  *
@@ -42,7 +45,7 @@
 
 extern usertype UTAddUserType (char *name, char *mod, ntype *type, ntype *base,
                                int lineno, node *tdef);
-extern usertype UTFindUserType (char *name, char *mod);
+extern usertype UTFindUserType (const char *name, const char *mod);
 
 extern int UTGetNumberOfUserTypes ();
 

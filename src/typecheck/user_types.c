@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2004/11/17 19:46:19  sah
+ * changed arguments from char to const char
+ *
  * Revision 3.4  2002/10/18 14:30:12  sbs
  * made the type definition node part of the repository record
  *
@@ -157,7 +160,7 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node
  ******************************************************************************/
 
 usertype
-UTFindUserType (char *name, char *mod)
+UTFindUserType (const char *name, const char *mod)
 {
     int res, res2;
 
