@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/04/16 21:11:55  dkr
+ * main() function has a modname now, too
+ *
  * Revision 3.38  2002/04/16 18:42:56  dkr
  * support for empty return statements added
  *
@@ -1274,6 +1277,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
           NODE_LINE( $$) = $<cint>5;
 
           FUNDEF_NAME( $$) = StringCopy( "main");
+          FUNDEF_MOD( $$) = mod_name;           /* SAC modul name */
           FUNDEF_STATUS( $$) = ST_exported;
 
           DBUG_PRINT("PARSE",("%s:"F_PTR", main "F_PTR
