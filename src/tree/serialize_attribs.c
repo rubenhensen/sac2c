@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/09/30 20:15:10  sah
+ * fixed signature of SerializeRCCounterAttrib
+ *
  * Revision 1.6  2004/09/30 19:52:43  sah
  * added RCCounter support
  *
@@ -1153,7 +1156,7 @@ SerializeMTExecModeAttrib (char *vname, info *info, mtexecmode_t attr, node *par
  ***************************************************************************/
 
 void
-SerializeRCCounterAttrib (char *vname, info *info, mtexecmode_t attr, node *parent)
+SerializeRCCounterAttrib (char *vname, info *info, rc_counter *attr, node *parent)
 {
     DBUG_ENTER ("SerializeMTExecModeAttrib");
 
