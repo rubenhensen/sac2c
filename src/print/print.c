@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2001/06/27 12:37:34  ben
+ * SCHPrintTasksel inserted
+ *
  * Revision 3.63  2001/06/01 14:53:30  dkr
  * PrintNwith() and PrintNwith2() modified:
  * output for DEC_RC shifted at end of with-loop.
@@ -3349,6 +3352,14 @@ PrintWLsegx (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
             INDENT;
         }
+
+        if (WLSEGX_TASKSEL (seg) != NULL) {
+            fprintf (outfile, " * taskselector: ");
+            SCHPrintTasksel (outfile, WLSEGX_TASKSEL (seg));
+            fprintf (outfile, "\n");
+            INDENT;
+        }
+
         fprintf (outfile, " */\n");
 
         Trav (WLSEGX_CONTENTS (seg), arg_info);
