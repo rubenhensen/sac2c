@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/04/16 18:47:27  bs
+ * Bug fixed in BuildDropWithLoop.
+ *
  * Revision 2.8  1999/04/16 11:47:55  jhs
  * Changes made for emty arrays.
  *
@@ -800,9 +803,10 @@ BuildTakeWithLoop (node *take_shp, node *array)
 static node *
 BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
 {
-    node *res, *body, *aelem;
+    node *res, *body, *aelem, *new_array, *tmp_var;
     char *wl_body_var_vec;
     char *wl_body_var_elem;
+    char *new_drop_vec;
     char *iv;
     int i, len_vec, dim_array;
 
@@ -814,12 +818,15 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
 
     wl_body_var_vec = TmpVar ();
     wl_body_var_elem = TmpVar ();
+    new_drop_vec = TmpVar ();
     iv = TmpVar ();
 
     /*
      * First, we expand the length of "drop_vec" to the rank of "array"
      * with 0's.
      */
+    tmp_var = NULL;
+
     if (NODE_TYPE (drop_vec) == N_array) {
         len_vec = TYPES_SHAPE (ARRAY_TYPE (drop_vec), 0);
         dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
@@ -835,22 +842,43 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
             }
         }
     } else { /* NODE_TYPE(drop_vec) == N_id !! */
-        len_vec = TYPES_SHAPE (VARDEC_TYPE (ID_VARDEC (drop_vec)), 0);
+        len_vec = ID_VECLEN (drop_vec);
         dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
+
+        if (len_vec < dim_array) {
+            aelem = IntVec2Array (ID_VECLEN (drop_vec), ID_INTVEC (drop_vec));
+            new_array = MakeArray (aelem);
+
+            while (EXPRS_NEXT (aelem) != NULL) {
+                aelem = EXPRS_NEXT (aelem);
+            }
+            for (i = len_vec; i < dim_array; i++) {
+                EXPRS_NEXT (aelem) = MakeExprs (MakeNum (0), NULL);
+                aelem = EXPRS_NEXT (aelem);
+            }
+            tmp_var = MakeLet (new_array, MakeIds (new_drop_vec, NULL, ST_regular));
+            ID_NAME (drop_vec) = StringCopy (new_drop_vec);
+            ID_VECLEN (drop_vec) = dim_array;
+            FREE (ID_INTVEC (drop_vec));
+            ID_INTVEC (drop_vec) = Array2IntVec (ARRAY_AELEMS (new_array), NULL);
+        }
     }
 
-    body
-      = MakeAssign (MakeLet (MakePrf (F_add, MakeExprs (MakeId (StringCopy (iv), NULL,
-                                                                ST_regular),
-                                                        MakeExprs (drop_vec, NULL))),
-                             MakeIds (wl_body_var_vec, NULL, ST_regular)),
-                    MakeAssign (MakeLet (MakePrf (F_psi,
-                                                  MakeExprs (MakeId (StringCopy (
-                                                                       wl_body_var_vec),
-                                                                     NULL, ST_regular),
-                                                             MakeExprs (array, NULL))),
-                                         MakeIds (wl_body_var_elem, NULL, ST_regular)),
-                                NULL));
+    body = MakeAssign (MakeLet (MakePrf (F_psi,
+                                         MakeExprs (MakeId (StringCopy (wl_body_var_vec),
+                                                            NULL, ST_regular),
+                                                    MakeExprs (array, NULL))),
+                                MakeIds (wl_body_var_elem, NULL, ST_regular)),
+                       NULL);
+    body = MakeAssign (MakeLet (MakePrf (F_add, MakeExprs (MakeId (StringCopy (iv), NULL,
+                                                                   ST_regular),
+                                                           MakeExprs (drop_vec, NULL))),
+                                MakeIds (wl_body_var_vec, NULL, ST_regular)),
+                       body);
+
+    if (tmp_var != NULL) {
+        body = MakeAssign (tmp_var, body);
+    }
 
     res
       = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
@@ -867,6 +895,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
      * (only) partition and the (only) code!
      */
     NPART_CODE (NWITH_PART (res)) = NWITH_CODE (res);
+
     DBUG_RETURN (res);
 }
 
