@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2002/10/21 18:43:30  sah
+ * added debug flag PRINT_SYMBOL to disable printing
+ * long prf identifiers and enable printing prf symbols
+ * instead
+ *
  * Revision 3.126  2002/10/21 17:43:13  sah
  * fixed missing { [ when printing index vector in PrintSetWL
  *
@@ -2272,6 +2277,7 @@ PrintPrf (node *arg_node, node *arg_info)
     prf = PRF_PRF (arg_node);
     if (sbs) {
         prf_str = (compiler_phase < PH_genccode) ? prf_string[prf] : prf_symbol[prf];
+        DBUG_EXECUTE ("PRINT_SYMBOL", prf_str = prf_symbol[prf];);
     } else {
         prf_str = prf_symbol[prf];
     }
