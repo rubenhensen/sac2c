@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.63  1998/06/18 13:45:21  cg
+# added ../concurrent as include directory
+#
 # Revision 1.62  1998/06/07 18:38:53  dkr
 # added ReuseWithArrays.o
 #
@@ -202,7 +205,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount \
-     -I../optimize -I../psi-opt -I../scanparse
+     -I../optimize -I../psi-opt -I../scanparse -I../concurrent
 
 MACS=icm.data icm_comment.c icm_trace.c
 
