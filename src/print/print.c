@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.90  1995/11/01 16:28:21  cg
+ * Revision 1.91  1995/11/06 09:22:49  cg
+ * moved initialization of global variable indent to function Print
+ *
+ * Revision 1.90  1995/11/01  16:28:21  cg
  * bug fixed in writing module/class name as comment in beginning of
  * C program. Now, macro MODUL_FILETYPE used for distinction.
  *
@@ -293,7 +296,7 @@ extern int show_icm;    /* imported from main.c */
 extern int show_idx;    /* imported from main.c */
 extern FILE *outfile;   /* outputfile for PrintTree defined in main.c*/
 
-int indent = 0;
+int indent;
 
 /* First, we generate the external declarations for all functions that
  * expand ICMs to C.
@@ -1178,11 +1181,11 @@ PrintIcm (node *arg_node, node *arg_info)
 node *
 Print (node *arg_node)
 {
-
     DBUG_ENTER ("Print");
 
     act_tab = print_tab;
     mod_name_con = mod_name_con_1;
+    indent = 0;
 
     if (show_icm == 0) {
         if (traceflag != 0) {
