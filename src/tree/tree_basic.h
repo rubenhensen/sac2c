@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2001/07/17 15:12:12  cg
+ * Some compound macros moved from tree_basic.h to tree_compound.h
+ *
  * Revision 3.101  2001/07/16 08:23:11  cg
  * Added function MakeOk for construction of N_ok nodes.
  *
@@ -3594,10 +3597,6 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_WLAA_FEATURE(n) (((node *)(n)->info2)->varno)
 #define NCODE_WLAA_INDEXVAR(n) (((node *)(n)->info2)->node[2])
 #define NCODE_WLAA_WLARRAY(n) (((node *)(n)->info2)->node[3])
-
-#define NCODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (n))
-#define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
-#define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
 #define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)(n)->info2)->node[4]))
 

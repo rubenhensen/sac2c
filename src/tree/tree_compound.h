@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/07/17 15:12:12  cg
+ * Some compound macros moved from tree_basic.h to tree_compound.h
+ *
  * Revision 3.44  2001/06/01 14:46:51  dkr
  * macro NWITH_OR_NWITH2_DEC_RC_IDS added
  *
@@ -1765,6 +1768,10 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
 #define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
+
+#define NCODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (n))
+#define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
+#define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
 /*--------------------------------------------------------------------------*/
 
