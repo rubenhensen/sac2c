@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/03/15 13:29:09  nmw
+ * INFO_SSA_ASSIGN added
+ *
  * Revision 3.47  2001/03/15 12:33:06  dkr
  * comments about STATUS and ATTRIB updated
  *
@@ -2364,6 +2367,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      WITHIDS           (avis of withid ids for multi-part with-loops)
  ***    node*      CONDSTMT          (store cond-node for later access)
  ***    int        CONDSTATUS        (store position in conditional traversal)
+ ***    node*      ASSIGN            (current assignment node)
  ***
  ***  when used in UndoSSATransform.c
  ***    node*      ARGS              (arg chain of fundef)
@@ -2791,6 +2795,7 @@ extern node *MakeInfo ();
 #define INFO_SSA_WITHIDS(n) ((node *)(n->node[3]))
 #define INFO_SSA_CONDSTMT(n) (n->node[4])
 #define INFO_SSA_CONDSTATUS(n) (n->int_data)
+#define INFO_SSA_ASSIGN(n) (n->node[5])
 
 /* when used in UndoSSATransform.c */
 #define INFO_USSA_ARGS(n) (n->node[0])
