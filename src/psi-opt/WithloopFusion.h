@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/07 19:26:35  khf
+ * added WLFSblock
+ *
  * Revision 1.3  2004/07/22 17:28:37  khf
  * added WLFSap
  *
@@ -20,6 +23,7 @@
 extern node *WithloopFusion (node *arg_node);
 
 extern node *WLFSfundef (node *arg_node, info *arg_info);
+extern node *WLFSblock (node *arg_node, info *arg_info);
 extern node *WLFSassign (node *arg_node, info *arg_info);
 extern node *WLFSap (node *arg_node, info *arg_info);
 extern node *WLFSid (node *arg_node, info *arg_info);

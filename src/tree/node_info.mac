@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.234  2004/11/07 19:26:35  khf
+ * added WLFSblock
+ *
  * Revision 3.233  2004/11/07 18:08:47  sah
  * added ResolvePragma (rsp) traversal
  *
@@ -1673,7 +1676,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, COMPBlock, TravSons, TravSons, TravSons, TravSons, TravSons, ALblock,
        TravSons, NT2OTblock, TravSons, TravSons, DLblock, TravSons, ESDblock, UESDblock,
-       TravSons, TravSons, CVPblock, TravSons,
+       TravSons, TravSons, CVPblock, WLFSblock,
 
        ASMRAblock, TravSons, TravSons, TravSons, TravSons, TravSons, WLSCblock, TravSons,
        TravSons, EMRCOblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
