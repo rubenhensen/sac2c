@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1997/08/29 12:36:49  sbs
+ * PRINT_PRF inserted
+ *
  * Revision 1.11  1997/05/28 12:35:25  sbs
  * Profiling integrated
  *
@@ -128,6 +131,16 @@ extern void *__SAC__Runtime_malloc (int size);
 #define DEC_HIDDEN_MEMCNT(size)
 
 #endif /* TRACE_MEM */
+
+#ifdef TRACE_PRF
+
+#define PRINT_PRF(text) __SAC__Runtime_Print text
+
+#else
+
+#define PRINT_PRF(text)
+
+#endif /* TRACE_PRF */
 
 #ifdef CHECK_MALLOC
 
