@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/03/08 22:26:53  dkr
+ * CCFLAGS of custom targets patched for TAGGED_ARRAYS as well
+ *
  * Revision 3.5  2003/02/11 16:42:47  dkr
  * CCFLAGS patched for TAGGED_ARRAYS
  *
@@ -663,6 +666,16 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                         *((char **)(resource_table[i].store)) = new;
                     } else {
                         Free (*((char **)(resource_table[i].store)));
+#ifdef TAGGED_ARRAYS
+                        if (!strcmp (resource_table[i].name, "CCFLAGS")) {
+                            char *tmp = Malloc ((strlen (resource->value_str) + 20)
+                                                * sizeof (char));
+                            tmp = strcpy (tmp, resource->value_str);
+                            tmp = strcat (tmp, " -DTAGGED_ARRAYS");
+                            resource->value_str = Free (resource->value_str);
+                            resource->value_str = tmp;
+                        }
+#endif
                         *((char **)(resource_table[i].store))
                           = StringCopy (resource->value_str);
                     }
