@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/08/13 10:21:52  sbs
+ * HandleMops traversal added.
+ *
  * Revision 3.18  2002/08/07 12:56:58  dkr
  * FltnNwithid() added, NWITHID_VEC is created if missing
  *
@@ -643,7 +646,19 @@ Flatten (node *arg_node)
     DBUG_ENTER ("Flatten");
 
     /*
-     * initialize the static variables :
+     * Before applying the actual flattening of code, we eliminate some
+     * special constructs such as N_mop nodes.( Later, this should be the place
+     * to eliminate N_dot nodes as well but, at the time being, this happens
+     * right after scan-parse.
+     */
+    arg_node = HandleMops (arg_node);
+    if ((break_after == PH_flatten) && (0 == strcmp (break_specifier, "mop"))) {
+        goto DONE;
+    }
+
+    /*
+     * Now, the actual flattening is started.
+     * First, we initialize the static variables :
      */
     stack = (local_stack *)Malloc (sizeof (local_stack) * STACK_SIZE);
     stack_limit = STACK_SIZE + stack;
@@ -667,6 +682,7 @@ Flatten (node *arg_node)
      */
     stack = Free (stack);
 
+DONE:
     DBUG_RETURN (arg_node);
 }
 
