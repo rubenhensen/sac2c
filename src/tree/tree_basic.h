@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/03/12 13:41:08  nmw
+ * macros for INFO_USSA_ modified
+ *
  * Revision 3.44  2001/03/09 11:50:28  sbs
  * INFO_PF_FUNDEF added.
  *
@@ -2317,7 +2320,8 @@ extern node *MakeAvis (node *vardecOrArg);
  ***
  ***  when used in UndoSSATransform.c
  ***    node*      ARGS              (arg chain of fundef)
- ***    node*      VARDECS           (vardec chain in block)
+ ***    node*      TOPBLOCK          (toplevel block with vardec chain)
+ ***    node*      FOLDTARGET        (new AVIS as unique fold-target)
  ***
  ***  when used in SSADeadCodeRemoval.c
  ***    int        DEPTH             (recursion depth of special functions)
@@ -2743,7 +2747,8 @@ extern node *MakeInfo ();
 
 /* when used in UndoSSATransform.c */
 #define INFO_USSA_ARGS(n) (n->node[0])
-#define INFO_USSA_VARDECS(n) (n->node[1])
+#define INFO_USSA_TOPBLOCK(n) (n->node[1])
+#define INFO_USSA_FOLDTARGET(n) (n->node[2])
 
 /* when used in SSADeadCodeRemoval.c */
 #define INFO_SSADCR_DEPTH(n) (n->int_data)
