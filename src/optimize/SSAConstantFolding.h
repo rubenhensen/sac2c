@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2005/02/14 15:51:48  mwe
+ * CFids removed
+ *
  * Revision 1.13  2004/11/26 19:44:47  khf
  * corrected traversal functions
  *
@@ -81,7 +84,6 @@ extern node *CFcond (node *arg_node, info *arg_info);
 extern node *CFreturn (node *arg_node, info *arg_info);
 extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFap (node *arg_node, info *arg_info);
-extern node *CFids (node *arg_node, info *arg_info);
 extern node *CFid (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
