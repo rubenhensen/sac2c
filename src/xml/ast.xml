@@ -103,6 +103,7 @@
           <node name="Nums" />
           <node name="CWrapper" />
           <node name="Chk" />
+          <node name="Fungroup" />
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
@@ -2147,6 +2148,12 @@
 	    <range from="BuildMultithread" to="CreateCells"/>
 	  </phases>
 	</attribute>
+        <attribute name="FunGroup" default="NULL" mandatory="no">
+          <type name="Node" />
+          <phases>
+             <range from="optimize" to="final" />
+          </phases>
+         </attribute>
       </attributes>
       <flags>
         <flag name="IsExported" />
@@ -2165,6 +2172,7 @@
 	<flag name="IsWrapperfun" />
 	<flag name="IsZombie" />
 	<flag name="IsClassConversionFun" />
+        <flag name="IsSpecialized" />
       </flags>
     </node>
 <!--
@@ -5467,6 +5475,42 @@
     <node name="Chk">
       <sons></sons>
       <attributes></attributes>
+      <flags></flags>
+    </node>
+
+<!--
+
+  N_fungroup :
+
+-->
+    <node name="Fungroup">
+      <sons></sons>
+      <attributes>
+        <attribute name="Funlist" mandatory="yes">
+          <type name="Node" />
+          <phases>
+            <range from="optimize" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="Speccounter" default="0" mandatory="yes">
+          <type name="Integer" />
+          <phases>
+            <range from="optimize" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="Refcounter" default="0" mandatory="yes">
+          <type name="Integer" />
+          <phases>
+            <range from="optimize" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="Inlcounter" default="0" mandatory="yes" >
+          <type name="Integer" />
+          <phases>
+            <range from="optimize" to="final" />
+          </phases>
+        </attribute>
+      </attributes>
       <flags></flags>
     </node>
   </syntaxtree>
