@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.33  1998/11/02 17:00:36  sbs
+ * intrinsic-mechanism added, i.e., only those versions of
+ * primitive functions will be used that are either marked
+ * intrinsic (by calling sac2c with -intrinsic) or are inherently
+ * intrinsic, e.g., + on scalars, toi, etc. pp.
+ *
  * Revision 1.32  1998/06/05 15:30:54  cg
  * *** empty log message ***
  *
@@ -334,8 +340,6 @@ enum type_class {
                  tmp_node->node[1]->info.prf_dec.tag, n));                               \
     tmp_node = tmp_node->node[1];
 
-#define FT(pf, tc, new_pf) GenPrimTabEntries (pf, tc, new_pf);
-
 /* follwing macro is used to compare the the dimension of two types
  * especially for comparison of types with known dimension and unknown shape
  * like t[.,.] and types with known shape (and dimension) as t[2,3]
@@ -389,15 +393,63 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
 {
     node *fun_dec = prim_fun_dec;
     prim_fun_tab_elem *tmp;
+    int intrinsic = 0;
 
     DBUG_ENTER ("GenPrimTabEntries");
-    while (NULL != fun_dec) {
-        if (type_c == fun_dec->info.prf_dec.tc) {
-            GEN_PRIM_FUN_TAB_ELEM (prf_old, NULL, fun_dec, 1, 0, prf_new);
-            prim_fun_p->next = tmp;
-            prim_fun_p = prim_fun_p->next;
+
+    /*
+     * First, we check whether the particular entry is a "wanted"
+     * intrinsic function!!
+     */
+
+    switch (prf_old) {
+    case F_add_AxA:
+    case F_add_AxS:
+    case F_add_SxA:
+    case F_add:
+        intrinsic = (type_c == SxS_S || (INTRINSIC_ADD & intrinsics));
+        break;
+    case F_sub_AxA:
+    case F_sub_AxS:
+    case F_sub_SxA:
+    case F_sub:
+        intrinsic = (type_c == SxS_S || (INTRINSIC_SUB & intrinsics));
+        break;
+    case F_mul_AxA:
+    case F_mul_AxS:
+    case F_mul_SxA:
+    case F_mul:
+        intrinsic = (type_c == SxS_S || (INTRINSIC_MUL & intrinsics));
+        break;
+    case F_div_AxA:
+    case F_div_AxS:
+    case F_div_SxA:
+    case F_div:
+        intrinsic = (type_c == SxS_S || (INTRINSIC_DIV & intrinsics));
+        break;
+    case F_psi:
+        intrinsic = (INTRINSIC_PSI & intrinsics);
+    case F_take:
+        intrinsic = (INTRINSIC_TAKE & intrinsics);
+    case F_drop:
+        intrinsic = (INTRINSIC_DROP & intrinsics);
+    case F_cat:
+        intrinsic = (INTRINSIC_CAT & intrinsics);
+    case F_rotate:
+        intrinsic = (INTRINSIC_ROT & intrinsics);
+    default:
+        intrinsic = 1;
+    }
+
+    if (intrinsic) {
+        while (NULL != fun_dec) {
+            if (type_c == fun_dec->info.prf_dec.tc) {
+                GEN_PRIM_FUN_TAB_ELEM (prf_old, NULL, fun_dec, 1, 0, prf_new);
+                prim_fun_p->next = tmp;
+                prim_fun_p = prim_fun_p->next;
+            }
+            fun_dec = fun_dec->node[1];
         }
-        fun_dec = fun_dec->node[1];
     }
 
     DBUG_VOID_RETURN;
@@ -467,6 +519,7 @@ InitPrimFunTab ()
     prim_fun_tab = (prim_fun_tab_elem *)Malloc (sizeof (prim_fun_tab_elem));
     prim_fun_p = prim_fun_tab;
 
+#define FT(pf, tc, new_pf) GenPrimTabEntries (pf, tc, new_pf);
 #include "prim_fun_ft.mac"
 #undef FT
 
