@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/07/07 13:41:49  cg
+ * improved the resource management by implementing multiple inheritence
+ * between targets
+ *
  * Revision 1.4  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -49,8 +53,15 @@
  *  Each configuration file defines a sequence of target configuration or
  *  targets for short. A special target named 'default' is required which
  *  specifies default settings for all configurable resources. Other targets
- *  only need to specify the relevant subset of resources that differ from
- *  the default settings. The sac2c command line option -target <name>
+ *  only need to specify the respective relevant subset of resources.
+ *  A target may inherit resource specifications from other targets.
+ *  This includes multiple inheritence.
+ *  All targets implicitly inherit the default resources.
+ *
+ * Caution:
+ *  sac2c will not check for recursively inheriting targets.
+ *
+ *  The sac2c command line option -target <name>
  *  allows to compile for specific architectures. If no particular target
  *  is specified the default target is used. If a target is chosen which
  *  is specified in the user specific configuration file as well as in the
@@ -66,6 +77,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "types.h"
+#include "tree_basic.h"
 #include "dbug.h"
 #include "resource.h"
 #include "scnprs.h"
@@ -159,13 +172,13 @@ static struct {
   {"CACHE1_LINE", num, &config.cache1_line},
   {"CACHE1_ASSOC", num, &config.cache1_assoc},
 
-  {"CACHE2_SIZE", num, &config.cache1_size},
-  {"CACHE2_LINE", num, &config.cache1_line},
-  {"CACHE2_ASSOC", num, &config.cache1_assoc},
+  {"CACHE2_SIZE", num, &config.cache2_size},
+  {"CACHE2_LINE", num, &config.cache2_line},
+  {"CACHE2_ASSOC", num, &config.cache2_assoc},
 
-  {"CACHE3_SIZE", num, &config.cache1_size},
-  {"CACHE3_LINE", num, &config.cache1_line},
-  {"CACHE3_ASSOC", num, &config.cache1_assoc},
+  {"CACHE3_SIZE", num, &config.cache3_size},
+  {"CACHE3_LINE", num, &config.cache3_line},
+  {"CACHE3_ASSOC", num, &config.cache3_assoc},
 
   {"", 0, NULL},
 };
@@ -176,6 +189,7 @@ static struct {
  *  resource_list_t *RSCMakeResourceListEntry(char *name,
  *                                            char *value_str,
  *                                            int  value_num,
+ *                                            int  add_flag,
  *                                            resource_list_t *next)
  *
  * description:
@@ -189,7 +203,7 @@ static struct {
  ******************************************************************************/
 
 resource_list_t *
-RSCMakeResourceListEntry (char *name, char *value_str, int value_num,
+RSCMakeResourceListEntry (char *name, char *value_str, int value_num, int add_flag,
                           resource_list_t *next)
 {
     resource_list_t *tmp;
@@ -201,6 +215,8 @@ RSCMakeResourceListEntry (char *name, char *value_str, int value_num,
     tmp->name = name;
     tmp->value_str = value_str;
     tmp->value_num = value_num;
+    tmp->add_flag = add_flag;
+
     tmp->next = next;
 
     DBUG_RETURN (tmp);
@@ -209,7 +225,7 @@ RSCMakeResourceListEntry (char *name, char *value_str, int value_num,
 /*****************************************************************************
  *
  * function:
- *  resource_list_t *RSCMakeTargetListEntry(char *name,
+ *  resource_list_t *RSCMakeTargetListEntry(char *name, ids *super_targets,
  *                                          resource_list_t *resource_list,
  *                                          target_list_t *next)
  *
@@ -224,7 +240,8 @@ RSCMakeResourceListEntry (char *name, char *value_str, int value_num,
  ******************************************************************************/
 
 target_list_t *
-RSCMakeTargetListEntry (char *name, resource_list_t *resource_list, target_list_t *next)
+RSCMakeTargetListEntry (char *name, ids *super_targets, resource_list_t *resource_list,
+                        target_list_t *next)
 {
     target_list_t *tmp;
 
@@ -233,6 +250,7 @@ RSCMakeTargetListEntry (char *name, resource_list_t *resource_list, target_list_
     tmp = (target_list_t *)Malloc (sizeof (target_list_t));
 
     tmp->name = name;
+    tmp->super_targets = super_targets;
     tmp->resource_list = resource_list;
     tmp->next = next;
 
@@ -308,6 +326,10 @@ FreeTargetList (target_list_t *target)
             FREE (tmp);
         }
         FREE (tmp_target->name);
+        if (tmp_target->super_targets != NULL) {
+            FreeAllIds (tmp_target->super_targets);
+        }
+
         FREE (tmp_target);
     }
 
@@ -528,6 +550,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
     target_list_t *tmp;
     resource_list_t *resource;
     int i;
+    ids *super_target;
 
     DBUG_ENTER ("EvaluateCustomTarget");
 
@@ -540,6 +563,13 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
         SYSABORT (
           ("Configuration files do not contain specification of custom target '%s`",
            target));
+    }
+
+    super_target = tmp->super_targets;
+
+    while (super_target != NULL) {
+        EvaluateCustomTarget (IDS_NAME (super_target), target_list);
+        super_target = IDS_NEXT (super_target);
     }
 
     resource = tmp->resource_list;
@@ -562,9 +592,21 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                               "resource '%s`",
                               target, resource->name));
                 } else {
-                    FREE (*((char **)(resource_table[i].store)));
-                    *((char **)(resource_table[i].store)) = resource->value_str;
-                    resource->value_str = NULL;
+                    if (resource->add_flag) {
+                        char *new;
+                        new = (char *)Malloc (
+                          strlen (resource->value_str)
+                          + strlen (*((char **)(resource_table[i].store))) + 2);
+                        strcpy (new, *((char **)(resource_table[i].store)));
+                        strcat (new, " ");
+                        strcat (new, resource->value_str);
+                        FREE (*((char **)(resource_table[i].store)));
+                        *((char **)(resource_table[i].store)) = new;
+                    } else {
+                        FREE (*((char **)(resource_table[i].store)));
+                        *((char **)(resource_table[i].store))
+                          = StringCopy (resource->value_str);
+                    }
                 }
                 break;
             case num:
@@ -573,7 +615,11 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                               "resource '%s`",
                               target, resource->name));
                 } else {
-                    *((int *)(resource_table[i].store)) = resource->value_num;
+                    if (resource->add_flag) {
+                        *((int *)(resource_table[i].store)) += resource->value_num;
+                    } else {
+                        *((int *)(resource_table[i].store)) = resource->value_num;
+                    }
                 }
                 break;
             default:

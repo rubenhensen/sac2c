@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/07/07 13:41:49  cg
+ * improved the resource management by implementing multiple inheritence
+ * between targets
+ *
  * Revision 1.3  1998/03/17 12:14:24  cg
  * added resource SYSTEM_LIBPATH.
  * This makes the gcc special feature '--print-file-name' obsolete.
@@ -50,11 +54,13 @@ typedef struct resource_list_t {
     char *name;
     char *value_str;
     int value_num;
+    int add_flag;
     struct resource_list_t *next;
 } resource_list_t;
 
 typedef struct target_list_t {
     char *name;
+    ids *super_targets;
     resource_list_t *resource_list;
     struct target_list_t *next;
 } target_list_t;
@@ -128,9 +134,10 @@ extern configuration_t config;
  ******************************************************************************/
 
 extern resource_list_t *RSCMakeResourceListEntry (char *resource, char *value_str,
-                                                  int value_num, resource_list_t *next);
+                                                  int value_num, int add_flag,
+                                                  resource_list_t *next);
 
-extern target_list_t *RSCMakeTargetListEntry (char *target,
+extern target_list_t *RSCMakeTargetListEntry (char *target, ids *super_targets,
                                               resource_list_t *resource_list,
                                               target_list_t *next);
 

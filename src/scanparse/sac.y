@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.160  1998/07/07 13:41:49  cg
+ * improved the resource management by implementing multiple inheritence
+ * between targets
+ *
  * Revision 1.159  1998/06/03 14:34:20  cg
  * special purpose module name "__MAIN" renamed to "_MAIN"
  *
@@ -639,7 +643,7 @@ static file_type file_kind = F_prog;
 %type <prf> foldop, Ngenop, monop, binop, triop
 %type <nodetype> modclass
 %type <cint> evextern, sibheader, sibevmarker, dots
-%type <ids> ids, modnames, modname
+%type <ids> ids, modnames, modname, inherits
 %type <deps> linkwith, linklist, siblinkwith, siblinklist, sibsublinklist
 %type <id> fun_name, prf_name, sibparam, id, string
 %type <nums> nums
@@ -2894,9 +2898,9 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
  */
 
 
-targets: TARGET ID COLON resources targets
+targets: TARGET ID COLON inherits resources targets
          {
-           $$=RSCMakeTargetListEntry($2, $4, $5);
+           $$=RSCMakeTargetListEntry($2, $4, $5, $6);
 	 }
        | /* empty */
          {
@@ -2904,33 +2908,67 @@ targets: TARGET ID COLON resources targets
 	 }
        ;
 
+inherits: COLON ID COLON inherits
+          {
+            $$=MakeIds($2, NULL, ST_regular);
+            IDS_NEXT($$)=$4;
+          }
+        | /* empty */
+          {
+	    $$=NULL;
+	  } 
+        ;
+
 resources: ID EQUALS string resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+	   }
+         | ID ADDON string resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
          | 
            ID EQUALS OPTION resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+	   }
+         | ID ADDON OPTION resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
          | ID EQUALS ID resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+	   }
+         | ID ADDON ID resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
          | ID EQUALS PRIVATEID resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+	   }
+         | 
+           ID ADDON PRIVATEID resources
+           {
+             $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
          | 
            ID EQUALS NUM resources
            {
-             $$=RSCMakeResourceListEntry($1, NULL, $3, $4);
+             $$=RSCMakeResourceListEntry($1, NULL, $3, 0, $4);
+	   }
+         | 
+           ID ADDON NUM resources
+           {
+             $$=RSCMakeResourceListEntry($1, NULL, $3, 1, $4);
 	   }
          |  /* empty */
            {
 	     $$=NULL;
 	   }
          ;
+
 
 
 %%
