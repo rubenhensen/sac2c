@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/05/27 08:50:04  cg
+ * global variable show_icm made obsolete and removed.
+ *
  * Revision 2.19  1999/05/12 15:29:35  jhs
  * DbugPrintArray dbugged.
  *
@@ -1731,7 +1734,7 @@ PrintIcm (node *arg_node, node *arg_info)
     }
 
     INDENT
-    if (show_icm == 0) {
+    if (compiler_phase == PH_genccode) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
@@ -1756,7 +1759,7 @@ PrintIcm (node *arg_node, node *arg_info)
         }
     }
 
-    if ((show_icm == 1) || (compiled_icm == 0)) {
+    if ((compiler_phase != PH_genccode) || (compiled_icm == 0)) {
 
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
@@ -1770,10 +1773,8 @@ PrintIcm (node *arg_node, node *arg_info)
             Trav (ICM_ARGS (arg_node), arg_info);
         }
         fprintf (outfile, ")");
-    }
 
-    if (NULL != ICM_NEXT (arg_node)) {
-        if ((1 == show_icm) || (0 == compiled_icm)) {
+        if (NULL != ICM_NEXT (arg_node)) {
             if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
                 /*
                  * ICM's within the typedef-chain are connected via ICM_NEXT!

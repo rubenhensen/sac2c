@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/05/27 08:50:04  cg
+ * global variable show_icm made obsolete and removed.
+ *
  * Revision 2.6  1999/05/26 14:32:23  jhs
  * Added options MTO and SBE for multi-thread optimsation and
  * synchronisation barrier elimination, both options are by
@@ -329,7 +332,6 @@ int max_optcycles = 4;
 
 int show_refcnt = 0;
 int show_idx = 0;
-int show_icm = 0;
 
 /*
  * Runtime options
