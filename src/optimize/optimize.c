@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/09/29 14:52:01  sbs
+ * no changes
+ * ,.
+ *
  * Revision 2.20  2000/08/01 13:17:45  dkr
  * check of (break_cycle_specifier == 0) added for breaks before the
  * optimization cycle.
@@ -753,6 +757,7 @@ OPTfundef (node *arg_node, node *arg_info)
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lir")))
                 goto INFO;
+
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
                   || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                   || (dead_fun + dead_var + dead_expr != old_dcr_expr)
