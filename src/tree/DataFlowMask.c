@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/12/08 21:25:01  ktr
+ * DFMtestMaskEntry now returns bool instead of int.
+ *
  * Revision 3.10  2004/11/26 14:13:50  mwe
  * char* arguments of external functions are now declared as const
  *
@@ -1223,10 +1226,11 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
     DBUG_VOID_RETURN;
 }
 
-int
+bool
 DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
 {
     int i, res;
+    bool bres;
     node *decl = NULL;
 
     DBUG_ENTER ("DFMtestMaskEntry");
@@ -1268,7 +1272,8 @@ DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
                         mask->bitfield[i / (8 * sizeof (unsigned int))],
                         access_mask_table[i % (8 * sizeof (unsigned int))], res));
 
-    DBUG_RETURN (res);
+    bres = (res != 0);
+    DBUG_RETURN (bres);
 }
 
 char *
