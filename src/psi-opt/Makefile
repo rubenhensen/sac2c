@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.3  1995/07/14 08:33:01  sbs
+# Revision 1.4  1995/07/24 11:54:09  asi
+# added array elimination
+#
+# Revision 1.3  1995/07/14  08:33:01  sbs
 # make deps done
 #
 # Revision 1.2  1995/07/14  08:31:48  sbs
@@ -15,15 +18,18 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../optimize -I../compile
+INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck
 
-all: index.o psi-opt.o
+all: index.o psi-opt.o ArrayElimination.o
 
 index.o: index.c
 	$(CC) -o index.o -c index.c $(INCS)
 
 psi-opt.o: psi-opt.c
 	$(CC) -o psi-opt.o -c psi-opt.c $(INCS)
+
+ArrayElimination.o: ArrayElimination.c
+	$(CC) -o ArrayElimination.o -c ArrayElimination.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
