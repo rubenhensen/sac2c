@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/12/20 08:13:05  cg
+ * Revision 1.16  1995/12/29 10:22:52  cg
+ * modified FreeSib according to new node structure,
+ * added FreeInfo
+ *
+ * Revision 1.15  1995/12/20  08:13:05  cg
  * modified FreePragma with respect to using arrays for pragmas linksign,
  * refcounting, and readonly.
  * new function FreeChar for new N_char node
@@ -466,9 +470,10 @@ FreeSib (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_sib node ..."));
 
     FREETRAV (SIB_TYPES (arg_node));
+    FREETRAV (SIB_OBJS (arg_node));
     FREETRAV (SIB_FUNS (arg_node));
 
-    FreeAllStrings (SIB_LINKLIST (arg_node));
+    FREE (SIB_NAME (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_sib node ..."));
 
@@ -1297,6 +1302,20 @@ FreePragma (node *arg_node, node *arg_info)
     */
 
     DBUG_PRINT ("FREE", ("Removing N_pragma node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreeInfo (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeInfo");
+
+    DBUG_PRINT ("FREE", ("Removing N_info node ..."));
 
     FREE (arg_node);
 
