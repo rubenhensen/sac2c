@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.146  1998/05/08 00:44:52  dkr
+ * with-loop:
+ *   index-vector is now set up correctly, if needed.
+ *   RCO of with-loop arguments added.
+ *
  * Revision 1.145  1998/05/07 16:18:06  dkr
  * added INC_RCs in COMPNwith2
  *
@@ -931,6 +936,50 @@ MakeIncRcICMs (ids *mm_ids)
                                                            NULL)),
                                      NULL),
                             NULL);
+
+            if (assigns == NULL) {
+                assigns = assign;
+            } else {
+                ASSIGN_NEXT (last_assign) = assign;
+            }
+            last_assign = assign;
+
+            mm_ids = IDS_NEXT (mm_ids);
+        } else {
+            mm_ids = FreeOneIds (mm_ids);
+        }
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeDecRcFreeICMs( ids *mm_ids)
+ *
+ * description:
+ *   builds a ND_DEC_RC_FREE icm for each ids in 'mm_ids', which rc is >=0.
+ *
+ ******************************************************************************/
+
+node *
+MakeDecRcFreeICMs (ids *mm_ids)
+{
+    node *assigns = NULL;
+    node *assign, *last_assign;
+    simpletype s_type;
+
+    DBUG_ENTER ("MakeDecRcFreeICMs");
+
+    while (mm_ids != NULL) {
+        if (IDS_REFCNT (mm_ids) >= 0) {
+            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
+            assign = MakeAssign (MakeIcm ("ND_DEC_RC_FREE_ARRAY",
+                                          MakeExprs (MakeId2 (mm_ids),
+                                                     MakeExprs (MakeNum (1), NULL)),
+                                          NULL),
+                                 NULL);
 
             if (assigns == NULL) {
                 assigns = assign;
@@ -5465,7 +5514,7 @@ COMPLoop (node *arg_node, node *arg_info)
         while (NULL != v1) {
             if (1 <= (ID_REFCNT (EXPRS_EXPR (v1)) - 1)) {
                 MAKENODE_NUM (n_node, ID_REFCNT (EXPRS_EXPR (v1)) - 1);
-                INC_RC_ND (v1, n_node);
+                INC_RC_ND (EXPRS_EXPR (v1), n_node);
             }
 
             v1 = EXPRS_NEXT (v1);
@@ -6159,7 +6208,7 @@ COMPSync (node *arg_node, node *arg_info)
     /*
      * insert a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT'
      */
-    assigns = AppendAssign( assigns, 
+    assigns = AppendAssign( assigns,
                             MakeAllocArrayICMs( DupIds( SYNC_INOUT( arg_node), NULL)));
 
     assigns = AppendAssign( assigns,
@@ -6260,8 +6309,8 @@ node *wl_withid = NULL;
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_arg, *last_icm_arg;
-    ids *wl_ids, *withid_ids;
+    node *icm_args, *icm_arg, *last_icm_arg, *vardec;
+    ids *wl_ids, *withid_ids, *in_ids, *new_in_ids, *last_in_ids;
     int num_args;
     node *assigns = NULL;
 
@@ -6277,7 +6326,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
     /*
      * if with-loop is compiled to sequential code,
-     *  insert ICMs for memory management
+     *  insert ICMs for memory management (ND_ALLOC_ARRAY)
      */
 
     if (INFO_COMP_MT (arg_info) == 0) {
@@ -6344,6 +6393,25 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
     assigns
       = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", icm_args, NULL), NULL));
+
+    /*
+     * if with-loop is compiled to sequential code,
+     *  insert ICMs for memory management (ND_DEC_RC_FREE).
+     */
+
+    if ((INFO_COMP_MT (arg_info) == 0) && (NWITH2_RC_IDS (arg_node) != NULL)) {
+        assigns
+          = AppendAssign (assigns,
+                          MakeDecRcFreeICMs (DupIds (NWITH2_RC_IDS (arg_node), NULL)));
+    }
+
+    /*
+     * insert ICM 'DEC_RC_FREE' for index-vector.
+     */
+
+    assigns
+      = AppendAssign (assigns, MakeDecRcFreeICMs (
+                                 DupIds (NWITHID_VEC (NWITH2_WITHID (arg_node)), NULL)));
 
     /*
      * old with-loop representation is useless now!
@@ -6717,6 +6785,13 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
     /* insert ICMs for current node */
     DBUG_ASSERT ((assigns != NULL), "code and nextdim are empty");
+    if (IDS_REFCNT (NWITHID_VEC (wl_withid)) > 0) {
+        /*
+         * if the index-vector is needed somewhere in the code-blocks,
+         *  we must add the ICM 'WL_GRID_SET_IDX'.
+         */
+        assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
+    }
     assigns = MakeAssign (MakeIcm ("WL_GRID_LOOP_BEGIN", icm_args, NULL), assigns);
     assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_GRID_LOOP_END",
                                                           DupTree (icm_args, NULL), NULL),
