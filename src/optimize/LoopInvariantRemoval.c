@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/19 12:43:53  jhs
+ * TRUE and FALSE from internal_lib.h used now.
+ *
  * Revision 2.1  1999/02/23 12:41:22  sacbase
  * new release made
  *
@@ -127,8 +130,6 @@ extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
 #define DONE -3
 #define CAUTION_UNSWITCH -4
 
-#define TRUE 1
-#define FALSE 0
 #define UNDEF -1
 
 #define VAR "__lir"   /* name of new variable */
