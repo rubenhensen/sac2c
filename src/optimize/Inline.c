@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/12/13 17:33:40  asi
+ * Revision 1.11  1995/12/21 15:26:46  asi
+ * INLblock removed
+ *
+ * Revision 1.10  1995/12/13  17:33:40  asi
  * added #ifndef NEWTREE for new virtuell syntaxtree
  *
  * Revision 1.9  1995/12/07  16:17:40  asi
@@ -68,14 +71,16 @@ static int inline_nr = 0;
 /*
  *
  *  functionname  : Inline
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) ptr to root of the syntaxtree
+ *                  R) ptr to root of the optimized syntaxtree
+ *  description   : Starts Function Inlining
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav     (traverse.h)
+ *                  MakeNode (tree.h)
+ *  macros        : FREE
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -94,14 +99,17 @@ Inline (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : INLmodul
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) N_modul - node
+ *                  2) N_info - node
+ *                  R) N_modul - node
+ *  description   : stores pointer to first function in info-node
+ *                  and traverses function-chain
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav     (traverse.h)
+ *  macros        : MODUL_FUNS, FIRST_FUNC
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -124,7 +132,7 @@ INLmodul (node *arg_node, node *arg_info)
  *  global vars   : inlnum
  *  internal funs : ---
  *  external funs : ---
- *  macros        : FUNDEF_INLINE, FUNDEF_NEXT
+ *  macros        : FUNDEF_INLINE, FUNDEF_INLREC, FUNDEF_NEXT
  *
  *  remarks       : ---
  *
@@ -148,14 +156,18 @@ InlineNo (node *first)
 /*
  *
  *  functionname  : INLfundef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) N_fundef - node
+ *                  2) N_info - node
+ *                  R) N_fundef - node
+ *  description   : Traverses instructons if function not inlined marked
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav            (traverse.h)
+ *                  AppendNodeChain (tree.h)
+ *  macros        : FUNDEF_BODY, FUNDEF_INLINE, FUNDEF_NAME, FIRST_FUNC, INL_TYPES,
+ *                  FUNDEF_INSTR, FUNDEF_VARDEC, FUNDEF_NEXT
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -183,38 +195,23 @@ INLfundef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : INLblock
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-node *
-INLblock (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("INLblock");
-    if (NULL != BLOCK_INSTR (arg_node)) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
  *  functionname  : DoInline
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) N_let - node
+ *                  2) N_ap - node
+ *                  3) N_info - node
+ *                  R) N_assign - chain
+ *  description   : Do funcion inlining
+ *  global vars   : inline_nr
+ *  internal funs : RenameInlinedVar, SearchDecl
+ *  external funs : Trav            (traverse.h)
+ *                  DupTree         (DupTree.h)
+ *                  MakeAssignLet   (tree_compound.h)
+ *		    AppendNodeChain (tree.h)
+ *  macros        : AP_NAME, BLOCK_VARDEC, FUNDEF_BODY, AP_FUNDEF, FUNDEF_ARGS,
+ *                  DUPTYPE, NORMAL, ARG_NAME, INL_TYPES, ASSIGN_INSTR, VARDEC_NEXT,
+ *                  EXPRS_NEXT, NEWTREE, IDS_NEXT, INLINE,
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -303,14 +300,18 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 /*
  *
  *  functionname  : INLassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) N_assign - chain
+ *                  2) N_info - node
+ *                  R) N_assign - chain
+ *  description   : Initiate function inlining if substitution-counter not 0
+ *  global vars   : ---
+ *  internal funs : DoInline
+ *  external funs : Trav            (traverse.h)
+ *		    AppendNodeChain (tree.h)
+ *  macros        : NODE_TYPE, AP_NAME, NODE_LINE, FUNDEF_INLINE, FUNDEF_INLREC,
+ *                  AP_FUNDEF, ASSIGN_INSTR, ASSIGN_NEXT,
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -356,14 +357,17 @@ INLassign (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : RenameInlinedVar
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) character string
+ *                  R) character string
+ *  description   : rename variable, for example a -> _inl100_a, if inline_nr == 100
+ *                  and INLINE_PREFIX == _inl
+ *  global vars   : inline_nr
+ *  internal funs : ---
+ *  external funs : sizeof, strlen, sprintf
+ *                  MAlloc                  (optimize.h)
+ *  macros        : INLINE_PREFIX, INLINE_PREFIX_LENGTH
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 char *
@@ -381,14 +385,17 @@ RenameInlinedVar (char *old_name)
 /*
  *
  *  functionname  : SearchDecl
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) character string
+ *                  2) N_vardec - or N_arg - chain
+ *                  R) true or false
+ *  description   : returns ptr to N_vardec - or N_arg - node  if variable or argument
+ *                  with same name as in 1) has been found, else NULL
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : strcmp
+ *  macros        : NODE_TYPE, VARDEC_NAME, VARDEC_NEXT, ARG_NAME, ARG_NEXT
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -420,14 +427,18 @@ SearchDecl (char *name, node *decl_node)
 /*
  *
  *  functionname  : INLvar
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  arguments     : 1) N_vardec - or N_arg - chain
+ *                  2) N_info - node
+ *                  R) N_vardec - or N_arg - chain
+ *  description   : Duplicates and renames 1) for function inlining
+ *  global vars   : ---
+ *  internal funs : RenameInlinedVar, SearchDecl
+ *  external funs : DuplicateTypes (typcheck.h)
+ *                  MakeVardec     (tree_basic.h)
+ *  macros        : VARDEC_NAME, INL_TYPES, VARDEC_TYPE, ARG_NAME, ARG_TYPE, ARG_NEXT
+ *                  FREE, NEWTREE, VARDEC_NEXT, ARG_NEXT
  *
- *  remarks       :
+ *  remarks       : ---
  *
  */
 node *
@@ -462,7 +473,7 @@ INLvar (node *arg_node, node *arg_info)
             INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
 /*-----------------------------------------------------------------------------------*/
 #ifndef NEWTREE
-            if (NULL == VARDEC_NEXT (INL_TYPES))
+            if (NULL == ARG_NEXT (INL_TYPES))
                 INL_TYPES->nnode = 0;
 #endif
             /*-----------------------------------------------------------------------------------*/

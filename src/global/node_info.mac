@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.111  1995/12/21 13:22:01  asi
- * added functions for dcr_tab and active_tab
+ * Revision 1.112  1995/12/21 15:26:46  asi
+ * INLblock removed
  *
+;; Revision 1.111  1995/12/21  13:22:01  asi
+;; added functions for dcr_tab and active_tab
+;;
 ;; Revision 1.110  1995/12/20  08:14:37  cg
 ;; added function table for new N_char node.
 ;;
@@ -464,7 +467,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        PRECvardec, TravSons, TravSons),
 
   NIF (N_block, "N_block", TravSons, TravSons, PrintBlock, TravSons, OPTblock, TravSons,
-       TravSons, FreeBlock, TravSons, TravSons, CompBlock, TravSons, DupChain, INLblock,
+       TravSons, FreeBlock, TravSons, TravSons, CompBlock, TravSons, DupChain, TravSons,
        TravSons, LIRMblock, TravSons, TravSons, TravSons, TravSons, PrintBlock, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock, RMVblock, TravSons,
        TravSons, TravSons),

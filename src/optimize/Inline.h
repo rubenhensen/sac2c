@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/07/24 09:09:34  asi
+ * Revision 1.5  1995/12/21 15:26:46  asi
+ * INLblock removed
+ *
+ * Revision 1.4  1995/07/24  09:09:34  asi
  * macro TYPES renamed to INL_TYPES
  *
  * Revision 1.3  1995/06/08  10:03:44  asi
@@ -28,7 +31,6 @@ extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
 extern node *INLassign (node *arg_node, node *arg_info);
 extern node *INLvar (node *arg_node, node *arg_info);
-extern node *INLblock (node *arg_node, node *arg_info);
 
 extern node *SearchDecl (char *name, node *decl_node);
 extern char *RenameInlinedVar (char *old_name);
