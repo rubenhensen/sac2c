@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2002/09/13 14:22:57  dkr
+ * Mop2Ap() corrected
+ *
  * Revision 1.15  2002/09/13 12:47:58  sbs
  * Mop2Ap redone...
  *
@@ -205,80 +208,89 @@ LeftAssoc (ids *lop, ids *rop)
 /******************************************************************************
  *
  * function:
- *    node * Mop2Ap( ids * op, node *mop)
+ *    node *Mop2Ap( ids *op, node *mop)
  *
  * description:
  *   Transformes a N_mop node into a nesting of N_ap nodes according to the
  *   following algorithm (e's are expressions; o's are operations):
  *
- *   prec(op) > prec(o1)  =>  mop
+ *   e1                   e1
+ *   ---              =>  ---
  *
- *   e1 : e2               /  Ap{ o1, e1, e2} \
- *      o1            =>   \     ----         /
+ *   e1 : e2              /             / e1 : e2 \                 iff prec(op)
+ *      o1            =>  |             \    o1   /                   > prec(o1)
+ *                        |
+ *                        | Mop2Ap( op, / Ap{o1,e1,e2} \ )          iff prec(o1)
+ *                        \             \    ---       /              > prec(o2)
  *
- *   e1 : e2 : es         /              / Ap{ o1, e1, e2} : es     \
- *      o1 : o2 : os  =>  |  Mop2Ap( op, \                 o2 : os  / ) iff prec(o1)
- *                        |                                                 > prec(o2)
- *                        |              / Ap{ o1, e1, e1`} : es`  \
- *                        |  Mop2Ap( op, \                 os`     /  ) otherwise
- *                        |  where
- *                        |     /  e1`:es` \                 / e2:es   \
- *                        \     \     os`  /   = Mop2Ap( o1, \   o2:os /
+ *   e1 : e2 : es         /             / e1 : e2 : es    \         iff prec(op)
+ *      o1 : o2 : os  =>  |             \    o1 : o2 : os /           > prec(o1)
+ *                        |
+ *                        | Mop2Ap( op, / Ap{o1,e1,e2} : es    \ )  iff prec(o1)
+ *                        |             \              o2 : os /      > prec(o2)
+ *                        |
+ *                        | Mop2Ap( op, / Ap{o1,e1,e1'} : es' \ )   otherwise
+ *                        |             \               os'   /
+ *                        |   where
+ *                        |         / e1' : es' \ = Mop2Ap( o1, / e2 : es    \ )
+ *                        \         \     os'   /               \    o2 : os /
  *
  ******************************************************************************/
 
 static node *
 Mop2Ap (ids *op, node *mop)
 {
-    node *res, *exprs, *new_expr, *exprs3, *exprs_prime;
+    node *ap, *exprs, *exprs3, *exprs_prime;
     ids *fun_ids;
-    char *name, *mod;
 
     DBUG_ENTER ("Mop2Ap");
 
     exprs = MOP_EXPRS (mop);
     fun_ids = MOP_OPS (mop);
 
-    if (!LeftAssoc (op, fun_ids)) {
-        if (IDS_NEXT (fun_ids) == NULL) {
-            /* there is just one operation left */
-            res = MakeAp (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
-                          exprs);
-            MOP_OPS (mop) = FreeAllIds (MOP_OPS (mop));
-            MOP_EXPRS (mop) = res;
+    if ((fun_ids != NULL) && ((op == NULL) || (!LeftAssoc (op, fun_ids)))) {
+        /*
+         * there is at least one operation left  -AND-
+         * 'op' is weaker (or not present at all) than 'o1'
+         *    -> recursive call needed
+         */
+        if ((IDS_NEXT (fun_ids) == NULL) || LeftAssoc (fun_ids, IDS_NEXT (fun_ids))) {
+            /*
+             * 'o2' is weaker (or not present at all) than 'o1'
+             *    -> build  Ap{o1,e1,e2}
+             */
+            exprs3 = EXPRS_EXPRS3 (exprs);
+            EXPRS_EXPRS3 (exprs) = NULL;
+
+            ap = MakeAp (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
+                         exprs);
+
+            MOP_EXPRS (mop) = MakeExprs (ap, exprs3);
+            MOP_OPS (mop) = FreeOneIds (fun_ids);
+
+            mop = Mop2Ap (op, mop);
         } else {
-            /* we do have at least two operations */
-            if (LeftAssoc (fun_ids, IDS_NEXT (fun_ids))) {
-                exprs3 = EXPRS_EXPRS3 (exprs);
-                EXPRS_EXPRS3 (exprs) = NULL;
+            MOP_EXPRS (mop) = EXPRS_NEXT (exprs);
+            MOP_OPS (mop) = IDS_NEXT (fun_ids);
+            mop = Mop2Ap (fun_ids, mop); /* where clause! */
 
-                new_expr = MakeAp (StringCopy (IDS_NAME (fun_ids)),
-                                   StringCopy (IDS_MOD (fun_ids)), exprs);
+            exprs_prime = MOP_EXPRS (mop);
 
-                MOP_OPS (mop) = FreeOneIds (fun_ids);
-                MOP_EXPRS (mop) = MakeExprs (new_expr, exprs3);
+            ap = MakeAp2 (StringCopy (IDS_NAME (fun_ids)), StringCopy (IDS_MOD (fun_ids)),
+                          EXPRS_EXPR (exprs), EXPRS_EXPR (exprs_prime));
+            EXPRS_EXPR (exprs_prime) = ap;
 
-                mop = Mop2Ap (op, mop);
-            } else {
-                MOP_OPS (mop) = IDS_NEXT (fun_ids);
-                MOP_EXPRS (mop) = EXPRS_NEXT (exprs);
-                mop = Mop2Ap (fun_ids, mop); /* where clause! */
+            mop = Mop2Ap (op, mop);
 
-                name = StringCopy (IDS_NAME (fun_ids));
-                mod = StringCopy (IDS_MOD (fun_ids));
-
-                exprs_prime = MOP_EXPRS (mop);
-
-                res = MakeAp2 (name, mod, EXPRS_EXPR (exprs), EXPRS_EXPR (exprs_prime));
-                EXPRS_EXPR (exprs_prime) = res;
-
-                mop = Mop2Ap (op, mop);
-
-                fun_ids = FreeOneIds (fun_ids);
-                EXPRS_EXPR (exprs) = NULL;
-                exprs = FreeNode (exprs);
-            }
+            EXPRS_EXPR (exprs) = NULL;
+            exprs = FreeNode (exprs);
+            fun_ids = FreeOneIds (fun_ids);
         }
+    } else {
+        /*
+         * 'mop' is a single expression  -OR-  'op' is stronger than 'o1'
+         *    -> do nothing
+         */
     }
 
     DBUG_RETURN (mop);
@@ -332,17 +344,24 @@ HandleMops (node *arg_node)
  *    node *HMmop( node *arg_node, node *arg_info)
  *
  * description:
+ *    Converts a N_mop node into a nested N_ap node.
  *
  ******************************************************************************/
 
 node *
 HMmop (node *arg_node, node *arg_info)
 {
-    node *res;
+    node *mop, *res;
 
     DBUG_ENTER ("HMmop");
 
-    res = Mop2Ap (NULL, arg_node);
+    mop = Mop2Ap (NULL, arg_node);
+    DBUG_ASSERT (((mop != NULL) && (NODE_TYPE (mop) == N_mop) && (MOP_OPS (mop) == NULL)
+                  && (MOP_EXPRS (mop) != NULL) && (EXPRS_NEXT (MOP_EXPRS (mop)) == NULL)),
+                 "illegal result of Mop2Ap() found!");
+    res = EXPRS_EXPR (MOP_EXPRS (mop));
+    EXPRS_EXPR (MOP_EXPRS (mop)) = NULL;
+    mop = FreeTree (mop);
 
     res = Trav (res, arg_info);
 
