@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/12/07 17:59:56  cg
+ * Revision 1.9  1996/01/21 14:17:36  cg
+ * added function RCarg
+ *
+ * Revision 1.8  1995/12/07  17:59:56  cg
  * added declaration of function IsNonUniqueHidden
  *
  * Revision 1.7  1995/04/28  17:24:50  hw
@@ -29,6 +32,7 @@
  *
  *
  */
+
 #ifndef _refcount_h
 
 #define _refcount_h
@@ -41,6 +45,7 @@ extern node *RCcond (node *arg_node, node *arg_info);
 extern node *RCfundef (node *arg_node, node *arg_info);
 extern node *RCwith (node *arg_node, node *arg_info);
 extern node *RCcon (node *arg_node, node *arg_info);
+extern node *RCarg (node *arg_node, node *arg_info);
 extern node *Refcount (node *arg_node);
 extern node *RCgen (node *arg_node, node *arg_info);
 
