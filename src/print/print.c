@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.90  2000/07/28 14:40:04  nmw
+ * flag generation in PrintObjdef moved, because some traversals
+ * do not return
+ *
  * Revision 2.89  2000/07/28 12:30:48  cg
  * N_typedef nodes are no longer replaced by N_icm node during
  * code generation. Instead an N_icm node is added to the N_typedef
@@ -1077,6 +1081,17 @@ PrintObjdef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
+    /* print objinit flag declaration in header.file
+     * this has to placed before the if switch, because the ICM_Trav seems
+     * to leave with no return...
+     */
+    if ((generatelibrary & GENERATELIBRARY_C) && (print_objdef_for_header_file)) {
+        fprintf (outfile,
+                 "/* flag, if object has been initialized */\n"
+                 "extern bool SAC_INIT_FLAG_%s;\n",
+                 OBJDEF_NAME (arg_node));
+    }
+
     if ((OBJDEF_ICM (arg_node) != NULL) && (NODE_TYPE (OBJDEF_ICM (arg_node)) == N_icm)) {
         Trav (OBJDEF_ICM (arg_node), arg_info);
         fprintf (outfile, "\n");
@@ -1107,14 +1122,6 @@ PrintObjdef (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, "\n");
-
-        /* print objinit flag */
-        if ((generatelibrary & GENERATELIBRARY_C) && (print_objdef_for_header_file)) {
-            fprintf (outfile,
-                     "/* flag, if object has been initialized */\n"
-                     "extern bool SAC_INIT_FLAG_%s;\n",
-                     OBJDEF_NAME (arg_node));
-        }
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
