@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1999/01/08 17:23:21  cg
+ * Bug fixed in generation of SPMD-frames: now imported functions
+ * with body are also checked for containing SPMD-blocks.
+ *
  * Revision 1.15  1998/12/07 17:32:24  cg
  * Now, the platform identification is taken from the global
  * variable target_platform.
@@ -536,7 +540,12 @@ GSCfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GSCfundef");
 
-    if (FUNDEF_STATUS (arg_node) == ST_regular) {
+    if ((FUNDEF_STATUS (arg_node) == ST_regular)
+        || ((FUNDEF_STATUS (arg_node) == ST_imported)
+            && (FUNDEF_BODY (arg_node) != NULL))) {
+        /*
+         * Here, we want to check all functions which may contain an SPMD-block.
+         */
         fprintf (outfile, "    SAC_MT_FUN_FRAME( %s, {   \\\n", FUNDEF_NAME (arg_node));
         spmd_block_counter = 0;
 
