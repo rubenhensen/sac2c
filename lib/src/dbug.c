@@ -66,9 +66,9 @@
  *     Manifest constants which may be "tuned" if desired.
  */
 
-#define PRINTBUF 1024 /* Print buffer size */
-#define INDENT 4      /* Indentation per trace level */
-#define MAXDEPTH 5000 /* Maximum trace depth default */
+#define PRINTBUF 1024  /* Print buffer size */
+#define INDENT 4       /* Indentation per trace level */
+#define MAXDEPTH 20000 /* Maximum trace depth default */
 
 /*
  *     The following flags are used to determine which
