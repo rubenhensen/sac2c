@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/02/03 17:30:52  dkr
+ * DupTreeLUT and DupNodeLUT added
+ *
  * Revision 1.4  2000/01/31 13:28:52  dkr
  * Some Functions renamed or specialized
  *
@@ -46,12 +49,16 @@
 #ifndef _sac_DupTree_h
 #define _sac_DupTree_h
 
+#include <LookUpTable.h>
+
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
 #define DUP_INVARIANT 2
 #define DUP_WLF 3
 
+extern node *DupTreeLUT (node *arg_node, node *arg_info, lut_t *lut);
 extern node *DupTree (node *arg_node, node *arg_info);
+extern node *DupNodeLUT (node *arg_node, lut_t *lut);
 extern node *DupNode (node *arg_node);
 
 extern node *DupTreePre (node *arg_node, node *arg_info);
