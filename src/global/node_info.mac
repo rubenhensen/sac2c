@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.96  1995/10/05 15:56:48  cg
- * impltype_tab added
+ * Revision 1.97  1995/10/16 12:02:18  cg
+ * added 'TCobjdef' in type_tab.
+ * added new function table 'objinit_tab'.
  *
+;; Revision 1.96  1995/10/05  15:56:48  cg
+;; impltype_tab added
+;;
 ;; Revision 1.95  1995/10/05  14:23:47  sbs
 ;; IDX... funs adjusted
 ;;
@@ -313,7 +317,7 @@
  *                              cf_tab       refcnt_tab    comp_tab       lir_tab
  *                             dup_tab       inline_tab    unroll_tab   lir_mov_tab
  *                             idx_tab       unswitch_tab  fusion_tab      ae_tab
- *                             sib_tab       obj_tab       impltyp_tab        unused
+ *                             sib_tab       obj_tab       impltyp_tab    objinit_tab
  */
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -343,14 +347,14 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, CompTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_objdef, "N_objdef", DummyFun, DummyFun, PrintObjdef, DummyFun, DummyFun,
+  NIF (N_objdef, "N_objdef", DummyFun, DummyFun, PrintObjdef, TCobjdef, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, OIobjdef),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, INLmodul,
        OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, OPTmodul, SIBmodul, DummyFun,
-       IMPLmodul, DummyFun),
+       IMPLmodul, OImodul),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
