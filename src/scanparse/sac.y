@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/05/23 07:39:53  sbs
+ * moved eof 'out' of all!
+ * The alpha-trick doesn't work within a standalone function!
+ * It has to be within the rules section!
+ *
  * Revision 3.23  2001/05/22 15:06:22  dkr
  * function CleanUpParser() added.
  * rule 'eof' replaced by rule 'all'.
@@ -256,7 +261,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %}
 %%
 
-all: file { CleanUpParser(); }
+all: file eof { CleanUpParser(); }
 
 file: PARSE_PRG prg
         {
@@ -283,6 +288,26 @@ file: PARSE_PRG prg
           spec_tree = $2;
         }
     ;
+
+
+eof:
+     {
+       if (commlevel) {
+         ABORT( linenum, ("Unterminated comment found"));
+
+#ifdef SAC_FOR_OSF_ALPHA
+         /*
+          * The follwing command is a veeeeeeery ugly trick to avoid warnings
+          * on the alpha: the YYBACKUP-macro contains jumps to two labels
+          * yyerrlab  and  yynewstate  which are not used otherwise.
+          * Hence, the usage here, which in fact never IS (and never SHOULD)
+          * be carried out, prevents the gcc from complaining about the two
+          * aforementioned labels not to be used!!
+          */
+         YYBACKUP( NUM, yylval);
+#endif
+       }
+     }
 
 
 id: ID
@@ -2603,22 +2628,6 @@ void CleanUpParser()
 
   if (global_wlcomp_aps != NULL) {
     global_wlcomp_aps = FreeTree( global_wlcomp_aps);
-  }
-
-  if (commlevel) {
-    ABORT( linenum, ("Unterminated comment found"));
-
-#ifdef SAC_FOR_OSF_ALPHA
-    /* 
-     * The follwing command is a veeeeeeery ugly trick to avoid warnings
-     * on the alpha: the YYBACKUP-macro contains jumps to two labels
-     * yyerrlab  and  yynewstate  which are not used otherwise.
-     * Hence, the usage here, which in fact never IS (and never SHOULD)
-     * be carried out, prevents the gcc from complaining about the two
-     * aforementioned labels not to be used!!
-     */
-    YYBACKUP( NUM, yylval);
-#endif
   }
 
   DBUG_VOID_RETURN;
