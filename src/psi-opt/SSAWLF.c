@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/06/20 15:23:13  dkr
+ * signature of MakeNWithOp modified
+ *
  * Revision 1.10  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -1277,8 +1280,7 @@ Modarray2Genarray (node *wln, node *substwln)
 
     /* delete old withop and create new one */
     FreeTree (NWITH_WITHOP (wln));
-    NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray);
-    NWITH_SHAPE (wln) = shape;
+    NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray, shape);
 
     DBUG_RETURN (wln);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/06/20 15:23:41  dkr
+ * signature of MakeNWithOp modified
+ *
  * Revision 3.38  2002/03/05 15:53:33  sbs
  * in sbs mode print is called on the ast before exiting
  *
@@ -750,9 +753,8 @@ BuildSelWithLoop (types *restype, node *idx, node *array)
                               MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
                    MakeNCode (MakeBlock (assign, NULL),
                               MakeId (StringCopy (tmp_vars[0]), NULL, ST_regular)),
-                   MakeNWithOp (WO_genarray));
+                   MakeNWithOp (WO_genarray, Type2Vec (restype)));
 
-    NWITHOP_SHAPE (NWITH_WITHOP (res)) = Type2Vec (restype);
     NCODE_USED (NWITH_CODE (res))++;
 
     /*
@@ -785,7 +787,7 @@ BuildGenarrayWithLoop (node *shp, node *val)
     res
       = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
                               MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
-                   MakeNCode (MAKE_EMPTY_BLOCK (), val), MakeNWithOp (WO_genarray));
+                   MakeNCode (MAKE_EMPTY_BLOCK (), val), MakeNWithOp (WO_genarray, NULL));
     if (NODE_TYPE (shp) == N_array) {
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = shp;
     } else {
@@ -868,9 +870,7 @@ BuildTakeWithLoop (node *take_shp, node *array)
                               MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
                    MakeNCode (MakeBlock (body, NULL),
                               MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
-                   MakeNWithOp (WO_genarray));
-
-    /* NWITHOP_SHAPE(NWITH_WITHOP(res)) = take_shp; */
+                   MakeNWithOp (WO_genarray, NULL));
 
     if (NODE_TYPE (take_shp) == N_array) {
         /*
@@ -1025,9 +1025,8 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
                               MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
                    MakeNCode (MakeBlock (body, NULL),
                               MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
-                   MakeNWithOp (WO_genarray));
+                   MakeNWithOp (WO_genarray, Type2Vec (new_shape)));
 
-    NWITHOP_SHAPE (NWITH_WITHOP (res)) = Type2Vec (new_shape);
     NCODE_USED (NWITH_CODE (res))++;
 
     /*
@@ -1076,9 +1075,7 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
                                 MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
-                     MakeNWithOp (WO_genarray));
-
-    NWITHOP_SHAPE (NWITH_WITHOP (res)) = Type2Vec (new_shape);
+                     MakeNWithOp (WO_genarray, Type2Vec (new_shape)));
 
     NCODE_USED (NWITH_CODE (res))++;
 
@@ -1179,10 +1176,8 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
                                 MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
-                     MakeNWithOp (WO_modarray));
-
-    NWITHOP_ARRAY (NWITH_WITHOP (res))
-      = MakeId (StringCopy (IDS_NAME (lhs)), NULL, ST_regular);
+                     MakeNWithOp (WO_modarray, MakeId (StringCopy (IDS_NAME (lhs)), NULL,
+                                                       ST_regular)));
 
     NCODE_USED (NWITH_CODE (res))++;
 

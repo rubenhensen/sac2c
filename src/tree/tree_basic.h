@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.128  2002/06/20 15:22:47  dkr
+ * signature of MakeNWithOp modified
+ *
  * Revision 3.127  2002/06/19 07:48:58  ktr
  * Set INFO_WLS_FUNDEF to n->node[3] to gain compatibility with SSAWLT
  *
@@ -3465,7 +3468,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    - FUNDEF is used if (TYPE == WO_foldfun, WO_foldprf).
  ***/
 
-extern node *MakeNWithOp (WithOpType WithOp);
+extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 
 #define NWITHOP_TYPE(n) (*((WithOpType *)(n)->info2))
 #define NWITHOP_FUN(n) ((n)->info.fun_name.id)

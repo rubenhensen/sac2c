@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/06/20 15:23:25  dkr
+ * signature of MakeNWithOp modified
+ *
  * Revision 3.61  2002/06/02 21:47:23  dkr
  * ID_NT_TAG modified
  *
@@ -1681,7 +1684,7 @@ DupNwithop (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupNwithop");
 
-    new_node = MakeNWithOp (NWITHOP_TYPE (arg_node));
+    new_node = MakeNWithOp (NWITHOP_TYPE (arg_node), NULL);
 
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:

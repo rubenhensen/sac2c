@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2002/06/20 15:22:34  dkr
+ * signature of MakeNWithOp modified
+ *
  * Revision 3.53  2002/06/05 12:19:42  sbs
  * N_tcfuninfo added .
  *
@@ -1704,7 +1707,7 @@ MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step, node *
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNWithOp (WithOpType WithOp)
+MakeNWithOp (WithOpType WithOp, node *shape_array_neutral)
 {
     node *tmp;
 
@@ -1715,6 +1718,22 @@ MakeNWithOp (WithOpType WithOp)
     /* allocate mem to store WithOpType in. */
     tmp->info2 = Malloc (sizeof (WithOpType));
     NWITHOP_TYPE (tmp) = WithOp;
+
+    switch (WithOp) {
+    case WO_genarray:
+        NWITHOP_SHAPE (tmp) = shape_array_neutral;
+        break;
+    case WO_modarray:
+        NWITHOP_ARRAY (tmp) = shape_array_neutral;
+        break;
+    case WO_foldprf:
+        /* here is no break missing! */
+    case WO_foldfun:
+        NWITHOP_NEUTRAL (tmp) = shape_array_neutral;
+        break;
+    default:
+        break;
+    }
 
     DBUG_RETURN (tmp);
 }
