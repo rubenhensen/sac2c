@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.131  1997/10/07 13:30:40  srs
+ * PrintPrf: F_min, F_max adjusted
+ *
  * Revision 1.130  1997/10/03 17:47:46  dkr
  * added support for F_abs
  *
@@ -1065,6 +1068,8 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_ftod:
     case F_ftod_A:
     case F_itof:
+    case F_min:
+    case F_max:
     case F_itof_A:
     case F_itod:
     case F_itod_A:
