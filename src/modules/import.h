@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/08/15 09:28:15  cg
+ * Revision 1.12  1995/08/30 14:04:17  cg
+ * GenExtmodList and InsertClassType added.
+ *
+ * Revision 1.11  1995/08/15  09:28:15  cg
  * include of typecheck.h deleted.
  *
  * Revision 1.10  1995/08/08  09:52:45  cg
@@ -84,5 +87,7 @@ extern node *IMtypedef (node *, node *);
 extern node *IMfundef (node *, node *);
 extern node *Import (node *);
 extern char *GenLinkerList ();
+extern charlist *GenExtmodlistList ();
+extern void InsertClassType (node *);
 
 #endif /* _import_h */
