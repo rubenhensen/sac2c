@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/05/07 10:15:08  dkr
+ * changed refcounting in new with-loop
+ *
  * Revision 1.46  1998/05/05 11:26:28  dkr
  * added RCNwithop
- * .
  *
  * Revision 1.45  1998/05/03 14:02:03  dkr
  * fixed a bug in RCNcode: traverses NEXT-node now
@@ -183,18 +185,21 @@
 #include "tree.h"
 #include "my_debug.h"
 #include "dbug.h"
+#include "DupTree.h"
 #include "typecheck.h" /* to use LookupType */
+#include "DataFlowMask.h"
 #include "traverse.h"
 #include "optimize.h"
 #include "internal_lib.h"
 #include "free.h"
+
 #include "refcount.h"
 
 #define DUB_ID_NODE(a, b)                                                                \
     a = MakeId (StringCopy (ID_NAME (b)), NULL, ST_regular);                             \
     ID_VARDEC (a) = ID_VARDEC (b)
 
-#define VAR_DEC_2_ID_NODE(a, b)                                                          \
+#define VARDEC_2_ID_NODE(a, b)                                                           \
     a = MakeId (StringCopy (VARDEC_NAME (b)), NULL, ST_regular);                         \
     ID_VARDEC (a) = b;                                                                   \
     ID_REFCNT (a) = VARDEC_REFCNT (b);
@@ -454,154 +459,209 @@ LookupId (char *id, node *id_chain)
     DBUG_RETURN (ret_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : StoreAndInit
- *  arguments     : 1) number to initialize
- *  description   : returns an arry of int that contains the refcount stored in
- *                  the variable declaration part
- *                  the refcount in the variable declartion part is set to 1) if
- *                   refcount was >= 1
- *  global vars   : fundef_node, args_no, varno
- *  internal funs :
- *  external funs : Malloc, sizeof
- *  macros        : DBUG...
+ * function:
+ *   int *AllocDump( int *dump)
  *
- *  remarks       :
+ * description:
+ *   Initializes an array for dumping refcounts:
+ *     If 'dump' is not NULL, the old memory is disposed.
+ *     After that new memory is allocated.
  *
- */
+ ******************************************************************************/
 
 int *
-StoreAndInit (int n)
+AllocDump (int *dump)
 {
-    int *dump, i, k;
-    node *var_dec;
+    DBUG_ENTER (" AllocDump");
 
-    DBUG_ENTER ("StoreAndInit");
+    if (dump != NULL) {
+        FREE (dump);
+    }
     dump = (int *)Malloc (sizeof (int) * varno);
-    var_dec = fundef_node->node[2]; /* arguments of function */
-    for (i = 0; i < args_no; i++) {
-        dump[i] = var_dec->refcnt;
-        if (var_dec->refcnt > 0) {
-            var_dec->refcnt = n;
-        }
-        var_dec = var_dec->node[0];
-    }
-    var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
-    for (k = i; k < varno; k++) {
-        if (k == var_dec->varno) {
-            /* var_dec is the right node belonging to 'k', so store the refcount */
-            dump[k] = var_dec->refcnt;
-            if (var_dec->refcnt > 0)
-                var_dec->refcnt = n;
-            var_dec = var_dec->node[0];
-        } else {
-            dump[k] = -1; /* var_dec belonging to 'k' was eliminated while
-                           * optimasation, so store -1 at this position
-                           */
-        }
-    }
 
     DBUG_RETURN (dump);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : Store
- *  arguments     :
- *  description   : returns an arry of int that contains the refcount of
- *                  the variable declaration
- *  global vars   : fundef_node, args_no, varno
- *  internal funs :
- *  external funs : Malloc, sizeof
- *  macros        : DBUG...
+ * function:
+ *   void InitRC( int n)
  *
- *  remarks       :
+ * description:
+ *   The refcounts in the vardecs are set to 'n' if refcount was >= 0.
  *
- */
-
-int *
-Store ()
-{
-    int *dump, i, k;
-    node *var_dec;
-
-    DBUG_ENTER ("Store");
-    dump = (int *)Malloc (sizeof (int) * varno);
-    var_dec = fundef_node->node[2]; /* arguments of function */
-    for (i = 0; i < args_no; i++) {
-        dump[i] = var_dec->refcnt;
-        var_dec = var_dec->node[0];
-    }
-    var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
-    for (k = i; k < varno; k++) {
-        if (k == var_dec->varno) {
-            /* var_dec is the right node belonging to 'k', so store the refcount */
-            dump[k] = var_dec->refcnt;
-            var_dec = var_dec->node[0];
-        } else {
-            dump[k] = -1; /* var_dec belonging to 'k' was eliminated while
-                           * optimasation, so store -1 at this position
-                           */
-        }
-    }
-
-    DBUG_RETURN (dump);
-}
-
-/*
- *
- *  functionname  : Restore
- *  arguments     : 1) dump
- *  description   : copies dump-entries to refcounts of variable declaration
- *  global vars   : args_no, fundef_node, varno
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
+ ******************************************************************************/
 
 void
-Restore (int *dump)
+InitRC (int n)
 {
-    int i;
-    node *var_dec;
+    node *vardec;
 
-    DBUG_ENTER ("Restore");
+    DBUG_ENTER ("InitRC");
 
-    var_dec = fundef_node->node[2]; /* arguments of function */
-    for (i = 0; i < args_no; i++) {
-        var_dec->refcnt = dump[i];
-        var_dec = var_dec->node[0];
-    }
-    var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
-    while (NULL != var_dec) {
-        var_dec->refcnt = dump[var_dec->varno];
-        var_dec = var_dec->node[0];
-    }
+    FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+        if (NODE_TYPE (vardec) == N_arg) {
+            ARG_REFCNT (vardec) = n;
+        } else {
+            VARDEC_REFCNT (vardec) = n;
+        }
+    }) /* FOREACH_VARDEC_AND_ARG */
 
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : Refcount
- *  arguments     : 1) argument node
- *  description   : starts the refcount-traversal (sets act_tab)
- *  global vars   : act_tab, refcnt_tab
- *  internal funs :
- *  external funs : MakeNode
- *  macros        : DBUG..., FREE
+ * function:
+ *   int *StoreRC()
  *
- *  remarks       :
+ * description:
+ *   returns an arry of int that contains the refcounters of the variable
+ *    declaration.
  *
- */
+ ******************************************************************************/
+
+int *
+StoreRC ()
+{
+    node *vardec;
+    int k;
+    int *dump = NULL;
+
+    DBUG_ENTER ("StoreRC");
+
+    dump = AllocDump (dump);
+
+    vardec = FUNDEF_ARGS (fundef_node);
+    while (vardec != NULL) {
+        dump[ARG_VARNO (vardec)] = ARG_REFCNT (vardec);
+        vardec = ARG_NEXT (vardec);
+    }
+    vardec = FUNDEF_VARDEC (fundef_node);
+    for (k = args_no; k < varno; k++) {
+        if (k == VARDEC_VARNO (vardec)) {
+            /*
+             * 'vardec' is the right node belonging to 'k'.
+             *   -> store the refcount.
+             */
+            dump[k] = VARDEC_REFCNT (vardec);
+            vardec = VARDEC_NEXT (vardec);
+        } else {
+            /*
+             * vardec belonging to 'k' was eliminated while optimisation.
+             *  -> store -1 at this position.
+             */
+            dump[k] = -1;
+        }
+    }
+
+    DBUG_RETURN (dump);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int *StoreAndInitRC( int n)
+ *
+ * description:
+ *   Returns an array of int that contains the refcounts stored in the vardecs.
+ *   The refcounts in the vardecs are set to 'n' if refcount was >= 1.
+ *
+ ******************************************************************************/
+
+int *
+StoreAndInitRC (int n)
+{
+    node *vardec;
+    int k;
+    int *dump = NULL;
+
+    DBUG_ENTER ("StoreAndInitRC");
+
+    dump = AllocDump (dump);
+
+    vardec = FUNDEF_ARGS (fundef_node);
+    while (vardec != NULL) {
+        dump[ARG_VARNO (vardec)] = ARG_REFCNT (vardec);
+        if (ARG_REFCNT (vardec) > 0) {
+            ARG_REFCNT (vardec) = n;
+        }
+        vardec = ARG_NEXT (vardec);
+    }
+    vardec = FUNDEF_VARDEC (fundef_node);
+    for (k = args_no; k < varno; k++) {
+        if (k == VARDEC_VARNO (vardec)) {
+            /*
+             * 'vardec' is the right node belonging to 'k'.
+             *   -> store the refcount.
+             */
+            dump[k] = VARDEC_REFCNT (vardec);
+            if (VARDEC_REFCNT (vardec) > 0) {
+                VARDEC_REFCNT (vardec) = n;
+            }
+            vardec = VARDEC_NEXT (vardec);
+        } else {
+            /*
+             * vardec belonging to 'k' was eliminated while optimisation.
+             *  -> store -1 at this position.
+             */
+            dump[k] = -1;
+        }
+    }
+
+    DBUG_RETURN (dump);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void RestoreRC( int *dump)
+ *
+ * description:
+ *   copies dump-entries to refcounts of variable declaration
+ *
+ ******************************************************************************/
+
+void
+RestoreRC (int *dump)
+{
+    node *vardec;
+
+    DBUG_ENTER ("RestoreRC");
+
+    FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
+                            if (NODE_TYPE (vardec) == N_arg) {
+                                ARG_REFCNT (vardec) = dump[ARG_VARNO (vardec)];
+                            } else {
+                                VARDEC_REFCNT (vardec) = dump[VARDEC_VARNO (vardec)];
+                            }) /* FOREACH_VARDEC_AND_ARG */
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *Refcount( node *arg_node)
+ *
+ * description:
+ *   starts the refcount-traversal (sets act_tab).
+ *
+ * remarks:
+ *   INFO_RC_PRF( arg_info) is relevant for N_id nodes only.
+ *   (INFO_RC_PRF != NULL) indicates that a N_id node is argument of a
+ *    primitive function (exept F_reshape).
+ *   INFO_RC_PRF then points to this prf.
+ *
+ ******************************************************************************/
 
 node *
 Refcount (node *arg_node)
 {
+    node *arg_info;
+
     DBUG_ENTER ("Refcount");
 
     /*
@@ -610,16 +670,20 @@ Refcount (node *arg_node)
     arg_node = GenerateMasks (arg_node, NULL);
 
     act_tab = refcnt_tab;
+    arg_info = MakeInfo ();
+    INFO_RC_PRF (arg_info) = NULL;
 
     if (N_modul == NODE_TYPE (arg_node)) {
         if (MODUL_FUNS (arg_node) != NULL) {
             DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "wrong node ");
-            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), NULL);
+            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
         }
     } else {
-        DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "wrong node ");
-        arg_node = Trav (arg_node, NULL);
+        DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "wrong node");
+        arg_node = Trav (arg_node, arg_info);
     }
+
+    FREE (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -660,21 +724,16 @@ RCarg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCfundef
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : calls Trav to traverse body of function
- *                  sets varno ,fundef_node and arg_no
- *  global vars   : varno, fundef_node, args_no
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., NULL
+ * function:
+ *   node *RCfundef( node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   traverses body of function; sets 'varno', 'fundef_node' and 'arg_no';
+ *   generates FUNDEF_DFM_BASE.
  *
- */
+ ******************************************************************************/
 
 node *
 RCfundef (node *arg_node, node *arg_info)
@@ -684,17 +743,22 @@ RCfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCfundef");
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
         /*
          *  The args are traversed to initialize ARG_REFCNT.
          *  Refcounted objects are initialized by 0 others by -1.
-         *  This information is needed by compile.c .
+         *  This information is needed by compile.c.
          */
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     if (NULL != FUNDEF_BODY (arg_node)) {
-        /* setting some global variables to use with the 'mask'
-         * and storage of refcounts
+
+        FUNDEF_DFM_BASE (arg_node)
+          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        /*
+         * setting some global variables to use with the 'mask'
+         *  and storage of refcounts.
          */
         varno = FUNDEF_VARNO (arg_node);
         fundef_node = arg_node;
@@ -771,32 +835,109 @@ RCvardec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCassign
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : Realizes bottom-up traversal for refcounting
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG...
+ * function:
+ *   node *RCassign( node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   Performs bottom-up traversal for refcounting.
+ *   When containing a with-loop, NWITH_IN/INOUT/OUT/LOCAL are infered.
  *
- */
+ ******************************************************************************/
 
 node *
 RCassign (node *arg_node, node *arg_info)
 {
+    node *with;
+    ids *let_ids;
+    DFMmask_t ids_mask;
+    int i;
+
     DBUG_ENTER ("RCassign");
 
-    /* Bottom up traversal!! */
+    /*
+     * if the instruction contains a with-loop, infer NWITH_IN/INOUT/OUT/LOCAL
+     */
+
+    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
+        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)) {
+
+        /*
+         * generate masks.
+         *
+         * we must start at the fundef node to get the right value for VARNO
+         *  in GenerateMasks().
+         */
+        fundef_node = GenerateMasks (fundef_node, NULL);
+
+        let_ids = LET_IDS (ASSIGN_INSTR (arg_node));
+        with = LET_EXPR (ASSIGN_INSTR (arg_node));
+
+        /*
+         * INOUT (for genarray/modarray with-loops),
+         * OUT (for fold with-loops):
+         *
+         * the only inout/out var is the let-id (N_ids).
+         */
+
+        DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "more than one let-ids found");
+
+        ids_mask = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        DFMSetMaskEntrySet (ids_mask, IDS_NAME (let_ids));
+
+        if ((NWITH_TYPE (with) == WO_genarray) || (NWITH_TYPE (with) == WO_modarray)) {
+            NWITH_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+            NWITH_INOUT (with) = ids_mask;
+        } else {
+            NWITH_OUT (with) = ids_mask;
+            NWITH_INOUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        }
+
+        /*
+         * LOCAL:
+         *
+         * All vars that are defined in the assignment (ASSIGN_MASK(0)), except
+         *  for the let-var (ids_mask), are local.
+         */
+
+        NWITH_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        for (i = 0; i < varno; i++) {
+            if ((ASSIGN_MASK (arg_node, 0))[i] > 0) {
+                DFMSetMaskEntrySet (NWITH_LOCAL (with),
+                                    VARDEC_OR_ARG_NAME (FindVardec (i, fundef_node)));
+            }
+        }
+        DFMSetMaskMinus (NWITH_LOCAL (with), ids_mask);
+
+        /*
+         * IN:
+         *
+         * In-arguments of the with-loop are all vars that are used in the with-loop,
+         *  except for local vars.
+         */
+
+        NWITH_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        for (i = 0; i < varno; i++) {
+            if ((ASSIGN_MASK (arg_node, 1))[i] > 0) {
+                DFMSetMaskEntrySet (NWITH_IN (with),
+                                    VARDEC_OR_ARG_NAME (FindVardec (i, fundef_node)));
+            }
+        }
+        DFMSetMaskMinus (NWITH_IN (with), NWITH_LOCAL (with));
+    }
+
+    /*
+     * Bottom up traversal!!
+     */
     if (NULL != ASSIGN_NEXT (arg_node)) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    } else { /* this must be the return-statement!!! */
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), NULL);
+    } else {
+        /*
+         * this must be the return-statement!!
+         */
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -823,7 +964,7 @@ RCassign (node *arg_node, node *arg_info)
 node *
 RCloop (node *arg_node, node *arg_info)
 {
-    node *usevars, *defvars, *var_dec, *id_node, *id_exprs;
+    node *usevars, *defvars, *vardec, *id_node, *id_exprs;
     long *defined_mask, *used_mask;
     int i, again = 0, use_old = 0;
     int *ref_dump;
@@ -831,10 +972,10 @@ RCloop (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCloop");
 
     /* traverse body of loop */
-    ref_dump = StoreAndInit (1); /* store the current ref-cnt values from
-                                    the VARDECs to ref_dump and initialize
-                                    all ref-cnts from the function's vardec
-                                    with 1 */
+    ref_dump = StoreAndInitRC (1); /* store the current ref-cnt values from
+                                      the VARDECs to ref_dump and initialize
+                                      all ref-cnts from the function's vardec
+                                      with 1 */
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
@@ -853,42 +994,42 @@ RCloop (node *arg_node, node *arg_info)
     /* first compute sets v1 and v2 */
     for (i = 0; i < varno; i++)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-            var_dec = FindVardec (i, fundef_node);
-            DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (MUST_REFCOUNT (VARDEC_TYPE (var_dec))) {
+            vardec = FindVardec (i, fundef_node);
+            DBUG_ASSERT ((NULL != vardec), "variable not found");
+            if (MUST_REFCOUNT (VARDEC_TYPE (vardec))) {
 
                 /* first store used and defined variables (v1), (v2) */
                 if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
                     /* store refcount of defined variables in defvars (v2)
                      */
                     if (0 == use_old) {
-                        VAR_DEC_2_ID_NODE (id_node, var_dec);
+                        VARDEC_2_ID_NODE (id_node, vardec);
                         ID_REFCNT (id_node) = ref_dump[i];
                         /* insert 'id_node' at the begining of 'defvars' */
                         defvars = MakeExprs (id_node, defvars);
                         DBUG_PRINT ("RC", ("store defined var (v2) %s:%d",
                                            ID_NAME (id_node), ID_REFCNT (id_node)));
                     } else {
-                        id_node = LookupId (var_dec->info.types->id, defvars);
+                        id_node = LookupId (vardec->info.types->id, defvars);
                         DBUG_ASSERT ((NULL != id_node), "var not found");
                         ID_REFCNT (id_node) = ref_dump[i];
                         DBUG_PRINT ("RC", ("changed defined var (v2) %s:%d",
                                            ID_NAME (id_node), ID_REFCNT (id_node)));
                     }
                 }
-                if ((used_mask[i] > 0) && (0 < var_dec->refcnt)) {
+                if ((used_mask[i] > 0) && (0 < vardec->refcnt)) {
                     /* store refcount of used variables in usevars (v1)
                      */
                     if (0 == use_old) {
-                        VAR_DEC_2_ID_NODE (id_node, var_dec);
+                        VARDEC_2_ID_NODE (id_node, vardec);
                         /* insert 'id_node' at the begining of 'usevars' */
                         usevars = MakeExprs (id_node, usevars);
                         DBUG_PRINT ("RC", ("store used var (v1) %s:%d", ID_NAME (id_node),
                                            ID_REFCNT (id_node)));
                     } else {
-                        id_node = LookupId (var_dec->info.types->id, usevars);
+                        id_node = LookupId (vardec->info.types->id, usevars);
                         DBUG_ASSERT ((NULL != id_node), "var not found");
-                        ID_REFCNT (id_node) = var_dec->refcnt;
+                        ID_REFCNT (id_node) = vardec->refcnt;
                         DBUG_PRINT ("RC", ("changed used var (v1) %s:%d",
                                            ID_NAME (id_node), ID_REFCNT (id_node)));
                     }
@@ -908,8 +1049,8 @@ RCloop (node *arg_node, node *arg_info)
         }
         if (1 == again) {
             DBUG_PRINT ("RC", ("while  loop again "));
-            Restore (ref_dump);
-            ref_dump = StoreAndInit (1);
+            RestoreRC (ref_dump);
+            ref_dump = StoreAndInitRC (1);
             id_exprs = usevars;
             /* init all variables that are member of v1 with refcount 1 */
             while (NULL != id_exprs) {
@@ -925,16 +1066,16 @@ RCloop (node *arg_node, node *arg_info)
     /* compute new refcounts because of 'virtuell function application' */
     for (i = 0; i < varno; i++) {
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-            var_dec = FindVardec (i, fundef_node);
-            DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (MUST_REFCOUNT (VARDEC_TYPE (var_dec))) {
-                if ((used_mask[i] > 0) && (0 < var_dec->refcnt) && (1 == again)) {
+            vardec = FindVardec (i, fundef_node);
+            DBUG_ASSERT ((NULL != vardec), "variable not found");
+            if (MUST_REFCOUNT (VARDEC_TYPE (vardec))) {
+                if ((used_mask[i] > 0) && (0 < vardec->refcnt) && (1 == again)) {
                     /* update refcount of used variables  (v1)
                      */
-                    id_node = LookupId (var_dec->info.types->id, usevars);
+                    id_node = LookupId (vardec->info.types->id, usevars);
                     DBUG_ASSERT ((NULL != id_node), "var not found");
 
-                    ID_REFCNT (id_node) = var_dec->refcnt;
+                    ID_REFCNT (id_node) = vardec->refcnt;
                     DBUG_PRINT ("RC",
                                 ("(v1) %s:%d", ID_NAME (id_node), ID_REFCNT (id_node)));
                 }
@@ -947,7 +1088,7 @@ RCloop (node *arg_node, node *arg_info)
                         /* check whether current variable is an argument of
                          * 'virtual function'
                          */
-                        if (0 == var_dec->refcnt) {
+                        if (0 == vardec->refcnt) {
                             /* in this case the variable will be defined before it
                              * will be used, so we don't need it as argument of
                              * the virtual function (it can be freed earlier)
@@ -961,13 +1102,13 @@ RCloop (node *arg_node, node *arg_info)
                     }
 
                     DBUG_PRINT ("RC", ("set refcount of %s(%d) to: %d",
-                                       var_dec->info.types->id, i, ref_dump[i]));
+                                       vardec->info.types->id, i, ref_dump[i]));
                 } else {
-                    if ((used_mask[i] > 0) && (0 < var_dec->refcnt)) {
+                    if ((used_mask[i] > 0) && (0 < vardec->refcnt)) {
                         /* these variables are arguments of the virtual function */
                         ref_dump[i]++;
                         DBUG_PRINT ("RC", ("increased  refcount of %s(%d) to: %d",
-                                           var_dec->info.types->id, i, ref_dump[i]));
+                                           vardec->info.types->id, i, ref_dump[i]));
                     }
                 }
             }
@@ -979,7 +1120,7 @@ RCloop (node *arg_node, node *arg_info)
     DO_DEFVARS (arg_node) = defvars;
 
     /* restore old vardec refcounts */
-    Restore (ref_dump);
+    RestoreRC (ref_dump);
     FREE (ref_dump);
 
     /* traverse termination condition */
@@ -988,65 +1129,68 @@ RCloop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCprf
- *  arguments     : 1) argument node
- *                  2) ignored
- *  description   : traverse the args with arg_info pointing to the N_prf!
- *                  if N_prf is F_reshape it has to be treated in exactly
- *                  the same way as if we had an assignment, i.e., traverse
- *                  with unchanged arg_info!
- *                  The reason for this situation is that it is compiled
- *                  as if it would be a simple assignment!
- *  remarks       :
+ * function:
+ *   node *RCprf( node *arg_node, node *arg_info)
  *
- */
+ * description:
+ *   Traverse the args with INFO_RC_PRF( arg_info) pointing to the N_prf!
+ *   If N_prf is F_reshape it has to be treated in exactly the same way
+ *    as if we had an assignment, i.e., traverse with (INFO_RC_PRF( arg_info)
+ *    == NULL)!
+ *   The reason for this situation is that it is compiled as if it would be a
+ *    simple assignment!
+ *
+ ******************************************************************************/
 
 node *
 RCprf (node *arg_node, node *arg_info)
 {
-
     DBUG_ENTER ("RCprf");
 
     DBUG_PRINT ("RC", ("traversing args of prf-node (%08x) %s", arg_node,
                        mdb_prf[PRF_PRF (arg_node)]));
-    if (PRF_PRF (arg_node) == F_reshape)
+    if (PRF_PRF (arg_node) == F_reshape) {
+        INFO_RC_PRF (arg_info) = NULL;
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-    else
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_node);
+    } else {
+        INFO_RC_PRF (arg_info) = arg_node;
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+    }
+    INFO_RC_PRF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCid
- *  arguments     : 1) argument node
- *                  2) NULL == normal N_id node
- *                     *node == argument of N_prf-node!!
- *  description   : depending on the arg_info do one of the following:
- *                    a) Increment refcnt at vardec and set local refcnt
- *                       of the N_id node accordingly. (RC op needed)
- *                    b) Set local refcnt to -1. (no RC op)
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *  remarks       :
+ * function:
+ *   node *RCid(node *arg_node, node *arg_info)
  *
- */
+ * description:
+ *   depending on INFO_RC_PRF( arg_info) do one of the following:
+ *     a) Increment refcnt at vardec and set local refcnt
+ *        of the N_id node accordingly. (RC op needed)
+ *     b) Set local refcnt to -1. (no RC op)
+ *
+ * remarks:
+ *   (INFO_RC_PRF != NULL) indicates that this N_id node is argument of a
+ *    primitive function (exept F_reshape).
+ *   INFO_RC_PRF then points to this prf.
+ *
+ ******************************************************************************/
 
 node *
 RCid (node *arg_node, node *arg_info)
 {
-
     DBUG_ENTER ("RCid");
 
     if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
-        if ((arg_info == NULL) || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0)
-            || (!opt_rco)) {
-            /* This N_id node either is NOT an argument of a primitive
+        if ((INFO_RC_PRF (arg_info) == NULL)
+            || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0) || (!opt_rco)) {
+            /*
+             * This N_id node either is NOT an argument of a primitive
              * function, or it is the last usage within the body of the
              * current function. (or refcount-optimization is turned off!)
              * In both cases, the refcnt is incremented and attached to
@@ -1056,10 +1200,11 @@ RCid (node *arg_node, node *arg_info)
             VARDEC_REFCNT (ID_VARDEC (arg_node))++;
             ID_REFCNT (arg_node) = VARDEC_REFCNT (ID_VARDEC (arg_node));
         } else {
-            /* This N_id node is argument to the N_prf node (*arg_info)
+            /*
+             * This N_id node is argument to the N_prf node
              * AND it is definitly not the last usage of it.
-             * Therefore -1 is attached to the refcnt field if N_id (to
-             * indicate that this operation does not need any refcnt
+             * Therefore -1 is attached to the refcnt field if N_id
+             * (to indicate that this operation does not need any refcnt
              * adjustments).
              */
             ID_REFCNT (arg_node) = -1;
@@ -1134,22 +1279,22 @@ RClet (node *arg_node, node *arg_info)
 node *
 RCcond (node *arg_node, node *arg_info)
 {
-    node *thenvars, *elsevars, *var_dec, *id_node;
+    node *thenvars, *elsevars, *vardec, *id_node;
     int *rest_dump, *then_dump, *else_dump, i, use_old = 0;
     DBUG_ENTER ("RCcond");
 
     /* store current vardec refcounts in rest_dump */
-    rest_dump = Store ();
+    rest_dump = StoreRC ();
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     /* store vardec refcounts after refcounting then part */
-    then_dump = Store ();
+    then_dump = StoreRC ();
 
     /* get same refcounts as before refcounting else part */
-    Restore (rest_dump);
+    RestoreRC (rest_dump);
 
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
     /* store vardec refcounts after refcounting else part */
-    else_dump = Store ();
+    else_dump = StoreRC ();
 
     /* now compute maximum of then- and else-dump and store it
      *  in vardec refcnt.
@@ -1171,46 +1316,46 @@ RCcond (node *arg_node, node *arg_info)
 
     for (i = 0; i < varno; i++) {
         if (then_dump[i] < else_dump[i]) {
-            var_dec = FindVardec (i, fundef_node);
-            DBUG_ASSERT ((NULL != var_dec), " var not found");
+            vardec = FindVardec (i, fundef_node);
+            DBUG_ASSERT ((NULL != vardec), " var not found");
             if (0 == use_old) {
-                VAR_DEC_2_ID_NODE (id_node, var_dec);
+                VARDEC_2_ID_NODE (id_node, vardec);
                 ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
                 /* insert 'id_node' at the begining of 'thenvars' */
                 thenvars = MakeExprs (id_node, thenvars);
                 DBUG_PRINT ("RC", ("append %s :%d to then-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
-                id_node = LookupId (var_dec->info.types->id, thenvars);
+                id_node = LookupId (vardec->info.types->id, thenvars);
                 DBUG_ASSERT ((NULL != id_node), "var not found");
                 ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
                 DBUG_PRINT ("RC", ("changed %s :%d in then-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             }
-            var_dec->refcnt = else_dump[i];
+            vardec->refcnt = else_dump[i];
             DBUG_PRINT ("RC",
-                        ("set refcount of %s to %d", ID_NAME (id_node), var_dec->refcnt));
+                        ("set refcount of %s to %d", ID_NAME (id_node), vardec->refcnt));
         } else {
             if (else_dump[i] < then_dump[i]) {
-                var_dec = FindVardec (i, fundef_node);
-                DBUG_ASSERT ((NULL != var_dec), " var not found");
+                vardec = FindVardec (i, fundef_node);
+                DBUG_ASSERT ((NULL != vardec), " var not found");
                 if (0 == use_old) {
-                    VAR_DEC_2_ID_NODE (id_node, var_dec);
+                    VARDEC_2_ID_NODE (id_node, vardec);
                     ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
                     /* insert 'id_node' at the begining of 'elsevars' */
                     elsevars = MakeExprs (id_node, elsevars);
                     DBUG_PRINT ("RC", ("append %s :%d to else-part", ID_NAME (id_node),
                                        ID_REFCNT (id_node)));
                 } else {
-                    id_node = LookupId (var_dec->info.types->id, elsevars);
+                    id_node = LookupId (vardec->info.types->id, elsevars);
                     DBUG_ASSERT ((NULL != id_node), "var not found");
                     ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
                     DBUG_PRINT ("RC", ("changed %s :%d in then-part", ID_NAME (id_node),
                                        ID_REFCNT (id_node)));
                 }
-                var_dec->refcnt = then_dump[i];
+                vardec->refcnt = then_dump[i];
                 DBUG_PRINT ("RC", ("set refcount of %s to %d", ID_NAME (id_node),
-                                   var_dec->refcnt));
+                                   vardec->refcnt));
             }
         }
     }
@@ -1248,27 +1393,27 @@ RCprepost (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RCwith
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   :
- *  remarks       :
+ * function:
+ *   node *RCwith(node *arg_node, node *arg_info)
  *
- */
+ * description:
+ *   performs reference counting for with-loop.
+ *
+ ******************************************************************************/
 
 node *
 RCwith (node *arg_node, node *arg_info)
 {
     int *ref_dump, *with_dump, index_vec_varno, i, mod_array_varno;
-    node *var_dec, *id_node;
+    node *vardec, *id_node;
     long *used_mask;
 
     DBUG_ENTER ("RCwith");
 
     /* store refcounts */
-    ref_dump = StoreAndInit (0);
+    ref_dump = StoreAndInitRC (0);
 
     WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
     WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info);
@@ -1281,7 +1426,7 @@ RCwith (node *arg_node, node *arg_info)
     } else
         mod_array_varno = -1;
 
-    with_dump = Store ();
+    with_dump = StoreRC ();
 
     /* mask of variables that are used in body */
     used_mask = WITH_MASK (arg_node, 1);
@@ -1293,12 +1438,12 @@ RCwith (node *arg_node, node *arg_info)
      */
     for (i = 0; i < varno; i++) {
         if (used_mask[i] > 0) {
-            var_dec = FindVardec (i, fundef_node);
-            DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (MUST_REFCOUNT (VARDEC_TYPE (var_dec))) {
-                if (0 < VARDEC_REFCNT (var_dec)) {
+            vardec = FindVardec (i, fundef_node);
+            DBUG_ASSERT ((NULL != vardec), "variable not found");
+            if (MUST_REFCOUNT (VARDEC_TYPE (vardec))) {
+                if (0 < VARDEC_REFCNT (vardec)) {
                     /* store refcount of used variables in WITH_USEDVARS() */
-                    VAR_DEC_2_ID_NODE (id_node, var_dec);
+                    VARDEC_2_ID_NODE (id_node, vardec);
                     id_node->node[0] = WITH_USEDVARS (arg_node)->node[0];
                     WITH_USEDVARS (arg_node)->node[0] = id_node;
                     DBUG_PRINT ("RC", ("store used variables %s:%d", ID_NAME (id_node),
@@ -1314,11 +1459,11 @@ RCwith (node *arg_node, node *arg_info)
      */
     for (i = 0; i < varno; i++) {
         if ((with_dump[i] > 0) && (i != index_vec_varno) && (i != mod_array_varno)) {
-            var_dec = FindVardec (i, fundef_node);
-            DBUG_ASSERT ((NULL != var_dec), "var not found");
-            if (0 < var_dec->refcnt) {
+            vardec = FindVardec (i, fundef_node);
+            DBUG_ASSERT ((NULL != vardec), "var not found");
+            if (0 < vardec->refcnt) {
                 ref_dump[i]++;
-                DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
+                DBUG_PRINT ("RC", ("set refcount of %s to %d:", vardec->info.types->id,
                                    ref_dump[i]));
             }
         }
@@ -1326,14 +1471,14 @@ RCwith (node *arg_node, node *arg_info)
 
     if (-1 != mod_array_varno) {
         /* now increase refcount of modified array */
-        var_dec = FindVardec (mod_array_varno, fundef_node);
-        DBUG_ASSERT ((NULL != var_dec), "var not found");
+        vardec = FindVardec (mod_array_varno, fundef_node);
+        DBUG_ASSERT ((NULL != vardec), "var not found");
         ref_dump[mod_array_varno]++;
-        DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
+        DBUG_PRINT ("RC", ("set refcount of %s to %d:", vardec->info.types->id,
                            ref_dump[mod_array_varno]));
     }
 
-    Restore (ref_dump);
+    RestoreRC (ref_dump);
 
     DBUG_RETURN (arg_node);
 }
@@ -1358,9 +1503,6 @@ RCcon (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCcon");
     GENARRAY_BODY (arg_node) = Trav (GENARRAY_BODY (arg_node), arg_info);
-#if 0
-   GENARRAY_ARRAY(arg_node)=Trav(GENARRAY_ARRAY(arg_node), arg_info);
-#endif
     DBUG_RETURN (arg_node);
 }
 
@@ -1398,16 +1540,79 @@ RCgen (node *arg_node, node *arg_info)
  * description:
  *   performs the refcounting for a N_Nwith node.
  *
+ * remarks:
+ *   In INFO_RC_RCDUMP( arg_info) we store the initial refcounters for RCNcode:
+ *    rc(var) = 1,  if 'var' is element of NWITH_IN           \ this is done,
+ *              1,  if 'var' is index-vector of the with-loop / to fool the RCO
+ *              0,  otherwise
+ *
  ******************************************************************************/
 
 node *
 RCNwith (node *arg_node, node *arg_info)
 {
+    node *vardec;
+    int *ref_dump;
+
     DBUG_ENTER ("RCNwith");
 
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    /*
+     * store current refcounts, initialize them with 0
+     */
+    ref_dump = StoreAndInitRC (0);
+
+    /*
+     * now we set up 'INFO_RC_RCDUMP( arg_info)' (needed in RCNcode)
+     */
+    FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
+                            if (DFMTestMaskEntry (NWITH_IN (arg_node),
+                                                  VARDEC_OR_ARG_NAME (vardec))
+                                || (strcmp (IDS_NAME (NWITH_VEC (arg_node)),
+                                            VARDEC_OR_ARG_NAME (vardec))
+                                    == 0)) {
+                                /*
+                                 * remark: We only need to inspect the withid of the first
+                                 * part, because the withid is in *all* parts the same!!
+                                 */
+                                if (NODE_TYPE (vardec) == N_arg) {
+                                    ARG_REFCNT (vardec) = 1;
+                                } else {
+                                    VARDEC_REFCNT (vardec) = 1;
+                                }
+                            }) /* FOREACH_VARDEC_AND_ARG */
+    INFO_RC_RCDUMP (arg_info) = StoreRC ();
+
+    /*************************************************************
+     * count references in with-loop
+     */
+
+    InitRC (0);
+
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    /*
+     * count references in with-loop
+     *************************************************************/
+
+    /*
+     * restore refcounts
+     */
+    RestoreRC (ref_dump);
+
+    /*
+     * increase refcount of each variable in NWITH_IN
+     */
+    FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
+                            if (DFMTestMaskEntry (NWITH_IN (arg_node),
+                                                  VARDEC_OR_ARG_NAME (vardec))) {
+                                if (NODE_TYPE (vardec) == N_arg) {
+                                    ARG_REFCNT (vardec)++;
+                                } else {
+                                    VARDEC_REFCNT (vardec)++;
+                                }
+                            }) /* FOREACH_VARDEC_AND_ARG */
 
     DBUG_RETURN (arg_node);
 }
@@ -1425,59 +1630,25 @@ RCNwith (node *arg_node, node *arg_info)
 node *
 RCNpart (node *arg_node, node *arg_info)
 {
-    int *ref_dump, *with_dump, i;
-    node *var_dec;
-
     DBUG_ENTER ("RCNpart");
 
-    ref_dump = StoreAndInit (0); /* store refcounts */
-
+    /*
+     * we do not need any RCs at the withids.
+     *  -> mark them as non-RC-objects.
+     */
     NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
-
-    with_dump = Store (); /* store refcounts of with-loop */
-
-#if 0
-  long *used_mask;
-  /*
-   * store refcounts of variables that are used in body
-   *  before they will be defined in a with_loop
-   *  in NPART_USEDVARS(arg_node).
-   */
-  used_mask = NPART_MASK( arg_node, 1);
-  NPART_USEDVARS( arg_node) = MakeInfo();
-  for (i = 0; i < varno; i++)
-    if (used_mask[i] > 0) {
-      var_dec = FindVardec( i, fundef_node);
-      DBUG_ASSERT( (NULL != var_dec), "variable not found");
-      if (0 < VARDEC_REFCNT( var_dec)) {
-        /* store refcount of used variables in NPART_USEDVARS() */
-        VAR_DEC_2_ID_NODE( id_node, var_dec);
-        id_node->node[0] = NPART_USEDVARS( arg_node)->node[0];
-        NPART_USEDVARS( arg_node)->node[0] = id_node;
-        DBUG_PRINT( "RC", ("store used variables %s:%d",
-                           ID_NAME( id_node), ID_REFCNT( id_node)));
-      }
-    }
-#endif
 
     /*
-     * increase refcount of variables that are used in with-loop
-     *   before they will be defined
+     * we count the references in the generator.
      */
-    for (i = 0; i < varno; i++) {
-        if (with_dump[i] > 0) {
-            var_dec = FindVardec (i, fundef_node);
-            DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (0 < VARDEC_REFCNT (var_dec)) {
-                ref_dump[i]++;
-                DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
-                                   ref_dump[i]));
-            }
-        }
-    }
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
-    Restore (ref_dump); /* restore refcounts */
+    /*
+     * traverse next part-node
+     */
+    if (NPART_NEXT (arg_node) != NULL) {
+        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1490,15 +1661,57 @@ RCNpart (node *arg_node, node *arg_info)
  * description:
  *   performs reference counting for N_Ncode nodes.
  *
+ * remarks:
+ *   In INFO_RC_RCDUMP( arg_info) are the initial refcounters stored:
+ *    rc(var) = 1,  if 'var' is element of NWITH_IN           \ this is done,
+ *              1,  if 'var' is index-vector of the with-loop / to fool the RCO
+ *              0,  otherwise
+ *
  ******************************************************************************/
 
 node *
 RCNcode (node *arg_node, node *arg_info)
 {
+    node *vardec;
+    ids *new_ids, *last_ids;
+
     DBUG_ENTER ("RCNcode");
+
+    /*
+     * initialize refcounters with 0
+     */
+
+    RestoreRC (INFO_RC_RCDUMP (arg_info));
+
+    /*
+     * count the references in the code
+     */
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    /*
+     * We collect all ids, which RC is >1, in 'NCODE_RC_IDS( arg_node)'.
+     * In 'IDS_REFCNT' we store (RC - 1) --- because we started the refcounting
+     *  of these vars with (RC == 1)!!!
+     * 'compile' generates for each var in NCODE_RC_IDS a 'ND_INC_RC' ICM!
+     */
+
+    FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 0) {
+        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
+        IDS_VARDEC (new_ids) = vardec;
+        IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec) - 1;
+        if (NCODE_RC_IDS (arg_node) == NULL) {
+            NCODE_RC_IDS (arg_node) = new_ids;
+        } else {
+            IDS_NEXT (last_ids) = new_ids;
+        }
+        last_ids = new_ids;
+    }) /* FOREACH_VARDEC_AND_ARG */
+
+    /*
+     * count the references in next code
+     */
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
@@ -1513,7 +1726,7 @@ RCNcode (node *arg_node, node *arg_info)
  *   node *RCNgen( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   performs the refcounting for a N_Ngen node.
  *
  ******************************************************************************/
 
@@ -1540,7 +1753,7 @@ RCNgen (node *arg_node, node *arg_info)
  *   node *RCNwithid( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   marks the index-vectors as non-RC-objects.
  *
  ******************************************************************************/
 
@@ -1551,20 +1764,21 @@ RCNwithid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCNwithid");
 
-    /* set refcount of index vector */
-    IDS_REFCNT (NWITHID_VEC (arg_node))
-      = VARDEC_REFCNT (IDS_VARDEC (NWITHID_VEC (arg_node)));
-    VARDEC_REFCNT (IDS_VARDEC (NWITHID_VEC (arg_node))) = 0;
+    /*
+     * we do not need the RC of the index-vector here.
+     *  -> mark index-vector as a non-RC-object.
+     */
 
-    /* set refcount of index-vector-components */
+    IDS_REFCNT (NWITHID_VEC (arg_node)) = -1;
+
+    /*
+     * index-vector-components are scalar values.
+     *  -> mark them as non-RC-objects.
+     */
+
     my_ids = NWITHID_IDS (arg_node);
     while (my_ids != NULL) {
-        if (MUST_REFCOUNT (IDS_TYPE (my_ids))) {
-            IDS_REFCNT (my_ids) = VARDEC_REFCNT (IDS_VARDEC (my_ids));
-            VARDEC_REFCNT (IDS_VARDEC (my_ids)) = 0;
-        } else {
-            IDS_REFCNT (my_ids) = -1;
-        }
+        IDS_REFCNT (my_ids) = -1;
         my_ids = IDS_NEXT (my_ids);
     }
 
@@ -1577,7 +1791,7 @@ RCNwithid (node *arg_node, node *arg_info)
  *   node *RCNwithop( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   performs the refcounting for a N_Nwithop node.
  *
  ******************************************************************************/
 
@@ -1585,6 +1799,40 @@ node *
 RCNwithop (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCNwithop");
+
+    switch (NWITHOP_TYPE (arg_node)) {
+
+    case WO_genarray:
+        if (NWITHOP_SHAPE (arg_node) != NULL) {
+            NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        }
+        break;
+
+    case WO_modarray:
+        /*
+         * We do not count the reference of NWITHOP_ARRAY, because this is not
+         *  a real reference.
+         * It just means, that NWITHOP_ARRAY *might* be referenced in the code
+         *  block, but these references are counted in RCNcode() ...
+         */
+        if (NWITHOP_ARRAY (arg_node) != NULL) {
+            if (NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id) {
+                ID_REFCNT (NWITHOP_ARRAY (arg_node)) = -1;
+            }
+        }
+        break;
+
+    case WO_foldfun:
+        /* here is no break missing! */
+    case WO_foldprf:
+        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
+            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "wrong withop type found");
+    }
 
     DBUG_RETURN (arg_node);
 }
