@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.137  2003/05/27 18:56:24  ktr
+ * removed bug in PrintExprs. It was assumed that arg_info would always contain
+ * an arg_info node.
+ *
  * Revision 3.136  2003/05/23 14:51:34  ktr
  * Moved variable declarations before the DBUG_ENTER Macro.
  *
@@ -2552,18 +2556,23 @@ PrintExprs (node *arg_node, node *arg_info)
     Trav (EXPRS_EXPR (arg_node), arg_info);
 
     if (EXPRS_NEXT (arg_node) != NULL) {
-        for (i = INFO_PRINT_DIM (arg_info) - 1;
-             (i >= 0)
-             && (++SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i)
-                 >= SHPSEG_SHAPE (INFO_PRINT_SHAPE (arg_info), i));
-             i--)
-            SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i) = 0;
-        for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
-            fprintf (outfile, " ]");
-        fprintf (outfile, ", ");
-        for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
-            fprintf (outfile, "[ ");
-        PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info), ;);
+        if (arg_info != NULL) {
+            for (i = INFO_PRINT_DIM (arg_info) - 1;
+                 (i >= 0)
+                 && (++SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i)
+                     >= SHPSEG_SHAPE (INFO_PRINT_SHAPE (arg_info), i));
+                 i--)
+                SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i) = 0;
+            for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
+                fprintf (outfile, " ]");
+            fprintf (outfile, ", ");
+            for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
+                fprintf (outfile, "[ ");
+            PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info), ;);
+        } else {
+            fprintf (outfile, ", ");
+            PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info), ;);
+        }
     }
 
     DBUG_RETURN (arg_node);
