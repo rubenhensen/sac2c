@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.5  2001/05/17 11:37:30  dkr
+ * FREE/MALLOC eliminated
+ *
  * Revision 3.4  2001/04/03 14:23:44  nmw
  * DBUG_ASSERT modified for better breakpoint
  *
@@ -86,6 +90,7 @@
  *
  * Revision 1.1  1998/05/05 15:53:54  cg
  * Initial revision
+ *
  */
 
 /*****************************************************************************
@@ -105,12 +110,6 @@
  *
  *****************************************************************************/
 
-#ifdef DFMtest
-#define Malloc malloc
-#define FREE free
-#include <malloc.h>
-#endif /* DFMtest */
-
 #include <stdio.h>
 #include <string.h>
 
@@ -118,12 +117,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-
-#ifndef DFMtest
 #include "internal_lib.h"
-#include "free.h"
-#include "globals.h"
-#endif /* DFMtest */
 
 /*
  * definition of static data
@@ -178,7 +172,7 @@ ExtendMask (mask_t *mask)
         mask->bitfield[i] = 0;
     }
     mask->num_bitfields = mask->mask_base->num_bitfields;
-    FREE (old);
+    old = Free (old);
 
     DBUG_VOID_RETURN;
 }
@@ -346,11 +340,10 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      * identifiers.
      */
 
-    FREE (mask_base->ids);
-    FREE (mask_base->decls);
+    Free (mask_base->ids);
+    Free (mask_base->decls);
 
     old_num_ids = mask_base->num_ids;
-
     mask_base->num_ids = cnt;
 
     mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
@@ -371,7 +364,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
                                                         : VARDEC_NAME (old_decls[i]));
     }
 
-    FREE (old_decls);
+    old_decls = Free (old_decls);
 
     /*
      * New local identifiers are appended to the identifier table.
@@ -424,11 +417,11 @@ DFMRemoveMaskBase (mask_base_t *mask_base)
 
     DBUG_ASSERT ((mask_base != NULL), "DFMRemoveMaskBase() called with mask_base NULL");
 
-    FREE (mask_base->ids);
-    FREE (mask_base->decls);
-    FREE (mask_base);
+    Free (mask_base->ids);
+    Free (mask_base->decls);
+    mask_base = Free (mask_base);
 
-    DBUG_RETURN ((mask_base_t *)NULL);
+    DBUG_RETURN (mask_base);
 }
 
 mask_base_t *
@@ -1018,10 +1011,10 @@ DFMRemoveMask (mask_t *mask)
 
     DBUG_ASSERT ((mask != NULL), "DFMRemoveMask() called with mask NULL");
 
-    FREE (mask->bitfield);
-    FREE (mask);
+    Free (mask->bitfield);
+    mask = Free (mask);
 
-    DBUG_RETURN ((mask_t *)NULL);
+    DBUG_RETURN (mask);
 }
 
 /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/05/17 11:38:19  dkr
+ * FREE/MALLOC eliminated
+ *
  * Revision 1.14  2001/05/09 12:31:29  nmw
  * remove unused vardecs after renaming operation
  *
@@ -311,7 +314,7 @@ USSAvardec (node *arg_node, node *arg_info)
          * so rename this vardec to original name.
          */
         if (AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) == NULL) {
-            FREE (VARDEC_NAME (arg_node));
+            Free (VARDEC_NAME (arg_node));
             VARDEC_NAME (arg_node)
               = StringCopy (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))));
 
@@ -544,7 +547,7 @@ USSANcode (node *arg_node, node *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        FREE (ID_NAME (NCODE_CEXPR (arg_node)));
+        Free (ID_NAME (NCODE_CEXPR (arg_node)));
         ID_NAME (NCODE_CEXPR (arg_node))
           = StringCopy (VARDEC_NAME (AVIS_VARDECORARG (INFO_USSA_FOLDTARGET (arg_info))));
 #endif
@@ -811,7 +814,7 @@ USSAids (ids *arg_ids, node *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        FREE (IDS_NAME (arg_ids));
+        Free (IDS_NAME (arg_ids));
         IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
 #endif
     }
@@ -874,7 +877,7 @@ UndoSSATransform (node *modul)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     /* ast is no longer in ssaform */
     valid_ssaform = FALSE;

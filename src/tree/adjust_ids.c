@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/05/17 11:37:55  dkr
+ * FREE/MALLOC eliminated
+ *
  * Revision 1.3  2001/05/08 13:16:22  dkr
  * new macros for RC used
  *
@@ -103,7 +106,7 @@ RenameIds (ids *ids_chain)
         DBUG_ASSERT ((IDS_VARDEC (tmp) != NULL),
                      "Missing back reference for identifier.");
 
-        FREE (IDS_NAME (tmp));
+        Free (IDS_NAME (tmp));
         IDS_NAME (tmp) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (tmp)));
 
         tmp = IDS_NEXT (tmp);
@@ -127,7 +130,7 @@ RenameId (node *id_node)
 {
     DBUG_ENTER ("RenameId");
 
-    FREE (ID_NAME (id_node));
+    Free (ID_NAME (id_node));
     ID_NAME (id_node) = StringCopy (VARDEC_OR_ARG_NAME (ID_VARDEC (id_node)));
 
     DBUG_RETURN (id_node);
@@ -539,7 +542,7 @@ AIvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AIvardec");
 
-    FREE (VARDEC_NAME (arg_node));
+    Free (VARDEC_NAME (arg_node));
     VARDEC_NAME (arg_node) = TmpVar ();
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -567,7 +570,7 @@ AIarg (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_AI_ARGS (arg_info))) == N_id),
                  "Illegal actual parameter in AIarg()");
 
-    FREE (ARG_NAME (arg_node));
+    Free (ARG_NAME (arg_node));
     ARG_NAME (arg_node) = StringCopy (ID_NAME (EXPRS_EXPR (INFO_AI_ARGS (arg_info))));
 
     INFO_AI_ARGS (arg_info) = EXPRS_NEXT (INFO_AI_ARGS (arg_info));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/05/17 11:37:38  dkr
+ * FREE/MALLOC eliminated
+ *
  * Revision 3.25  2001/05/09 15:13:00  cg
  * All scheduling ICMs get an additional first parameter,
  * i.e. the segment ID. This is required to identify the appropriate
@@ -428,7 +431,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
     DBUG_ASSERT ((scheduler_table[disc_no].discipline[0] != '\0'),
                  "Infered scheduling discipline not implemented");
 
-    sched = (sched_t *)MALLOC (sizeof (sched_t));
+    sched = (sched_t *)Malloc (sizeof (sched_t));
 
     sched->discipline = scheduler_table[disc_no].discipline;
     sched->class = scheduler_table[disc_no].class;
@@ -439,7 +442,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
     if (sched->num_args == 0) {
         sched->args = NULL;
     } else {
-        sched->args = (sched_arg_t *)MALLOC (sched->num_args * sizeof (sched_arg_t));
+        sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
     }
 
     arg_spec = strtok (scheduler_table[disc_no].arg_spec, ",");
@@ -521,7 +524,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
     }
 
     if (scheduler_table[i].discipline[0] != '\0') {
-        sched = (sched_t *)MALLOC (sizeof (sched_t));
+        sched = (sched_t *)Malloc (sizeof (sched_t));
         sched->discipline = scheduler_table[i].discipline;
         /*
          * Because sched is an object of an abstract data type, we may share it
@@ -529,7 +532,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
          */
         sched->class = scheduler_table[i].class;
         sched->num_args = scheduler_table[i].num_args;
-        sched->args = (sched_arg_t *)MALLOC (sched->num_args * sizeof (sched_arg_t));
+        sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
         sched->line = line;
 
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
@@ -569,12 +572,13 @@ SCHRemoveScheduling (sched_t *sched)
         for (i = 0; i < sched->num_args; i++) {
             switch (sched->args[i].arg_type) {
             case AT_num_vec:
+                /* here is no break missing! */
             case AT_num_for_id_vec:
-                FREE (sched->args[i].arg.num_vec);
+                Free (sched->args[i].arg.num_vec);
                 break;
 
             case AT_id_vec:
-                FREE (sched->args[i].arg.id_vec);
+                Free (sched->args[i].arg.id_vec);
                 break;
 
             default:
@@ -582,12 +586,12 @@ SCHRemoveScheduling (sched_t *sched)
             }
         }
 
-        FREE (sched->args);
+        Free (sched->args);
     }
 
-    FREE (sched);
+    sched = Free (sched);
 
-    DBUG_RETURN ((sched_t *)NULL);
+    DBUG_RETURN (sched);
 }
 
 /******************************************************************************
@@ -609,7 +613,7 @@ SCHCopyScheduling (sched_t *sched)
 
     DBUG_ENTER ("SCHCopyScheduling");
 
-    new_sched = (sched_t *)MALLOC (sizeof (sched_t));
+    new_sched = (sched_t *)Malloc (sizeof (sched_t));
 
     new_sched->discipline = sched->discipline;
     /*
@@ -622,7 +626,7 @@ SCHCopyScheduling (sched_t *sched)
     new_sched->num_args = sched->num_args;
 
     if (sched->num_args > 0) {
-        new_sched->args = (sched_arg_t *)MALLOC (sched->num_args * sizeof (sched_arg_t));
+        new_sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
 
         for (i = 0; i < sched->num_args; i++) {
             new_sched->args[i].arg_type = sched->args[i].arg_type;
@@ -1023,11 +1027,11 @@ CompileScheduling (int seg_id, char *wl_name, sched_t *sched, node *arg_node,
     DBUG_ENTER ("CompileScheduling");
 
     if (sched != NULL) {
-        name = (char *)MALLOC (sizeof (char)
+        name = (char *)Malloc (sizeof (char)
                                * (strlen (sched->discipline) + strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)MALLOC (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)Malloc (sizeof (char) * (strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 
