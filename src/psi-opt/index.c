@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/07/15 17:24:00  dkr
+ * N_prf arguments of F_idx_... are lifted now :-)
+ *
  * Revision 3.20  2002/07/12 22:53:23  dkr
  * ND_USE_GENVAR_OFFSET-ICM modified for TAGGED_ARRAYS
  *
@@ -527,13 +530,18 @@
  *
  *    INFO_IVE_FUNDEF  - holds pointer to actual N_fundef
  *                     - is needed for creating backrefs of arg-nodes.
+ *                       and to insert new vardecs for lifted arguments
  *    INFO_IVE_VARDECS - holds pointer to the topmost vardec of the function
  *                     - is needed for traversing all vardecs in loops/conds
+ *    INFO_IVE_PRE_ASSIGNS - contains all newly created assignments before
+ *                           they are inserted into the AST by IdxAssign()
  *    INFO_IVE_MODE    - indicates whether we are interested in uses only
  *                       (M_uses_only) or in code transformations as well
  *                       (M_uses_and_transform)
  *    INFO_IVE_CURRENTASSIGN - holds the current assign node
  *                           - needed for inserting new assignments and in WLs
+ *                             dkr: it would be nicer to use something like
+ *                                  INFO_IVE_POST_ASSIGNS here (see ..._PRE_...)
  *    INFO_IVE_TRANSFORM_VINFO - indicates whether N_nums, N_prfs, and N_arrays
  *                               should be transformed or not.
  *    INFO_IVE_NON_SCAL_LEN - needed for F_add_SxA, F_add_AxS, F_sub_SxA, and
@@ -1193,13 +1201,14 @@ IdxFundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxFundef");
 
+    INFO_IVE_FUNDEF (arg_info) = arg_node;
+
     /*
      * We have to traverse the args first, since we need backrefs
      * to this fundef-node.
      * For doing so we supply the fundef-node in INFO_IVE_FUNDEF( arg_info).
      */
-    if (NULL != FUNDEF_ARGS (arg_node)) {
-        INFO_IVE_FUNDEF (arg_info) = arg_node;
+    if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
@@ -1212,6 +1221,7 @@ IdxFundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_IVE_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         INFO_IVE_MODE (arg_info) = M_uses_and_transform;
+        INFO_IVE_PRE_ASSIGNS (arg_info) = NULL;
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -1222,11 +1232,11 @@ IdxFundef (node *arg_node, node *arg_info)
      * automatically eliminate the freshly inserted assign-nodes.
      * The second pass is indicated to IdxArg by a NULL arg_info!
      */
-    if (NULL != FUNDEF_ARGS (arg_node)) {
+    if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), NULL);
     }
 
-    if (NULL != FUNDEF_NEXT (arg_node)) {
+    if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -1421,12 +1431,18 @@ IdxAssign (node *arg_node, node *arg_info)
     DBUG_ENTER ("IdxAssign");
 
     /* Bottom up traversal!! */
-    if (NULL != ASSIGN_NEXT (arg_node)) {
+    if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
+
     /* store the current N_assign in INFO_IVE_CURRENTASSIGN */
     INFO_IVE_CURRENTASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_IVE_PRE_ASSIGNS (arg_info) != NULL) {
+        arg_node = AppendAssign (INFO_IVE_PRE_ASSIGNS (arg_info), arg_node);
+        INFO_IVE_PRE_ASSIGNS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1434,7 +1450,7 @@ IdxAssign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *IdxReturn(node *arg_node, node *arg_info)
+ *   node *IdxReturn(node *arg_node, node *arg_info)
  *
  * description:
  *   initiates the uses-collection. In order to guarantee a "VECT" attribution
@@ -1459,11 +1475,12 @@ IdxReturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *IdxLet(node *arg_node, node *arg_info)
+ *   node *IdxLet(node *arg_node, node *arg_info)
  *
- * description: This is the central mechanism for steering the code
- *    transformation. It Duplicates assignments - if required - and adds
- *    the transformation information into arg_info.
+ * description:
+ *   This is the central mechanism for steering the code transformation.
+ *   It duplicates assignments - if required - and adds the transformation
+ *   information into arg_info.
  *
  ******************************************************************************/
 
@@ -1568,7 +1585,8 @@ IdxLet (node *arg_node, node *arg_info)
          * Here, for each IDX(...) in LET_USE(arg_node), we traverse the assignment
          * with INFO_IVE_TRANSFORM_VINFO( arg_info) being set accordingly.
          * iff we have to transform the assignment as well, i.e.,
-         * ( INFO_IVE_MODE( arg_info) == M_uses_and_transform ) , we duplicate it first!
+         * (INFO_IVE_MODE( arg_info) == M_uses_and_transform) , we duplicate it
+         * first!
          */
         act_let = arg_node;
         while (VINFO_FLAG (vinfo) != DOLLAR) {
@@ -1579,9 +1597,9 @@ IdxLet (node *arg_node, node *arg_info)
                 if (VINFO_FLAG (VINFO_NEXT (vinfo)) != DOLLAR) {
                     /* We have to transform the assignment AND there are more indices
                      * needed, so we have to duplicate the let node and repeat the
-                     * let-traversal until there are no shapes left! More precisely, we
-                     * have to copy the Assign node, who is the father of the let node and
-                     * whose adress is given by arg_info!
+                     * let-traversal until there are no shapes left!
+                     * More precisely, we have to copy the assign node, who is the father
+                     * of the let node and whose adress is given by arg_info!
                      */
                     current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
                     next_assign = ASSIGN_NEXT (current_assign);
@@ -1736,6 +1754,12 @@ IdxPrf (node *arg_node, node *arg_info)
             if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
                 PRF_PRF (arg_node) = F_idx_sel;
             }
+            if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
+                PRF_ARG1 (arg_node)
+                  = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info),
+                             MakeTypes1 (T_int), FALSE,
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+            }
         } else {
             INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
             PRF_ARG1 (arg_node) = Trav (arg1, arg_info);
@@ -1766,6 +1790,12 @@ IdxPrf (node *arg_node, node *arg_info)
             FreeNode (vinfo);
             if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
                 PRF_PRF (arg_node) = F_idx_modarray;
+            }
+            if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_prf) {
+                PRF_ARG2 (arg_node)
+                  = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info),
+                             MakeTypes1 (T_int), FALSE,
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
             }
         } else {
             INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
