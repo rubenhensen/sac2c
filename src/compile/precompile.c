@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.59  1998/04/24 17:20:41  dkr
- * *** empty log message ***
+ * Revision 1.60  1998/04/25 13:20:33  dkr
+ * extended PRECSPMD
  *
  * Revision 1.58  1998/04/24 01:15:43  dkr
  * added PrecSync
@@ -208,6 +208,7 @@
 
 #include "DupTree.h"
 #include "typecheck.h"
+#include "refcount.h"
 #include "dbug.h"
 
 #include <string.h>
@@ -249,14 +250,6 @@
 #define COMP_END                                                                         \
     }                                                                                    \
     }
-
-/*
- * returns 0 for refcounting-objects and -1 otherwise
- *  (used in 'PRECSPMD')
- */
-#define GET_ZERO_REFCNT(vardec)                                                          \
-    (NODE_TYPE (vardec) == N_arg) ? ((ARG_REFCNT (vardec) >= 0) ? 0 : -1)                \
-                                  : ((VARDEC_REFCNT (vardec) >= 0) ? 0 : -1)
 
 /******************************************************************************
  *
@@ -864,8 +857,6 @@ PRECVardec (node *arg_node, node *arg_info)
 node *
 PRECAssign (node *arg_node, node *arg_info)
 {
-    node *instrs;
-
     DBUG_ENTER ("PRECAssign");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -897,7 +888,7 @@ PRECAssign (node *arg_node, node *arg_info)
 node *
 PRECLet (node *arg_node, node *arg_info)
 {
-    ids *let_ids, *new_let_ids, *tmp;
+    ids *let_ids;
 
     DBUG_ENTER ("PRECLet");
 
@@ -1157,7 +1148,7 @@ PRECId (node *arg_node, node *arg_info)
 node *
 PRECSPMD (node *arg_node, node *arg_info)
 {
-    node *vardecs, *last_vardec;
+    node *vardecs, *vardec, *last_vardec;
     node *fargs, *farg, *last_farg;
     node *retexprs, *retexpr, *last_retexpr;
     types *rettypes, *rettype, *last_rettype;
@@ -1211,15 +1202,17 @@ PRECSPMD (node *arg_node, node *arg_info)
 
     spmd_ids = SPMD_LOCAL (arg_node);
     while (spmd_ids != NULL) {
+        vardec = IDS_VARDEC (spmd_ids);
         if (SPMD_VARDEC (arg_node) == NULL) {
-            SPMD_VARDEC (arg_node) = IDS_VARDEC (spmd_ids);
+            SPMD_VARDEC (arg_node) = vardec;
         } else {
-            VARDEC_NEXT (last_vardec) = IDS_VARDEC (spmd_ids);
+            VARDEC_NEXT (last_vardec) = vardec;
         }
-        last_vardec = IDS_VARDEC (spmd_ids);
+        last_vardec = vardec;
 
         spmd_ids = IDS_NEXT (spmd_ids);
     }
+    VARDEC_NEXT (last_vardec) = NULL;
 
     /*
      * generate SPMD_FUNDEF for this spmd region
@@ -1246,7 +1239,7 @@ PRECSPMD (node *arg_node, node *arg_info)
     retexprs = NULL; /* build return exprs/types (use SPMD_OUT/INOUT) */
     rettypes = NULL;
 
-    spmd_ids = SPMD_INOUT (arg_node);
+    spmd_ids = SPMD_INOUT (arg_node); /* INOUT */
     while (spmd_ids != NULL) {
         retexpr = MakeExprs (MakeId2 (DupOneIds (spmd_ids, NULL)), NULL);
         rettype = DuplicateTypes (IDS_TYPE (spmd_ids), 1);
@@ -1264,7 +1257,7 @@ PRECSPMD (node *arg_node, node *arg_info)
         spmd_ids = IDS_NEXT (spmd_ids);
     }
 
-    spmd_ids = SPMD_OUT (arg_node);
+    spmd_ids = SPMD_OUT (arg_node); /* OUT */
     while (spmd_ids != NULL) {
         retexpr = MakeExprs (MakeId2 (DupOneIds (spmd_ids, NULL)), NULL);
         rettype = DuplicateTypes (IDS_TYPE (spmd_ids), 1);
