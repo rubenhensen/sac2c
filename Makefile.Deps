@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.2  2001/11/14 13:19:06  sbs
+# TARGET clean added for avoiding deps mechanism on clean.
+#
 # Revision 1.1  2001/11/14 13:02:58  sbs
 # Initial revision
 #
@@ -15,7 +18,9 @@
 DEPS = $(patsubst %.c,.%.d, $(wildcard *.c))
 
 ifneq ($(DEPS),)
+  ifneq ($(TARGET),clean)
 include $(DEPS)
+  endif
 endif
 
 

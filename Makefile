@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.40  2001/11/14 13:19:06  sbs
+# TARGET clean added for avoiding deps mechanism on clean.
+#
 # Revision 3.39  2001/11/14 13:06:31  sbs
 # deps line inserted.
 # (when called via script a warning is issued)
@@ -299,28 +302,28 @@ deps:
 	$(ECHO) "make deps is obsolete"
 
 clean:
-	(cd lib/src; $(MAKE) clean)
-	(cd src/scanparse; $(MAKE) clean)
-	(cd src/global; $(MAKE) clean)
-	(cd src/tree; $(MAKE) clean)
-	(cd src/print; $(MAKE) clean)
-	(cd src/flatten; $(MAKE) clean)
-	(cd src/typecheck; $(MAKE) clean)
-	(cd src/constants; $(MAKE) clean)
-	(cd src/optimize; $(MAKE) clean)
-	(cd src/modules; $(MAKE) clean)
-	(cd src/objects; $(MAKE) clean)
-	(cd src/refcount; $(MAKE) clean)
-	(cd src/concurrent; $(MAKE) clean)
-	(cd src/multithread; $(MAKE) clean)
-	(cd src/compile; $(MAKE) clean )
-	(cd src/profile; $(MAKE) clean )
-	(cd src/psi-opt; $(MAKE) clean)
-	(cd src/libsac; $(MAKE) clean)
-	(cd src/heapmgr; $(MAKE) clean)
-	(cd src/tools; $(MAKE) clean)
-	(cd src/runtime; $(MAKE) clean)
-	(cd src/c-interface; $(MAKE) clean)
+	(cd lib/src; $(MAKE_CLEAN) )
+	(cd src/scanparse; $(MAKE_CLEAN) )
+	(cd src/global; $(MAKE_CLEAN) )
+	(cd src/tree; $(MAKE_CLEAN) )
+	(cd src/print; $(MAKE_CLEAN) )
+	(cd src/flatten; $(MAKE_CLEAN) )
+	(cd src/typecheck; $(MAKE_CLEAN) )
+	(cd src/constants; $(MAKE_CLEAN) )
+	(cd src/optimize; $(MAKE_CLEAN) )
+	(cd src/modules; $(MAKE_CLEAN) )
+	(cd src/objects; $(MAKE_CLEAN) )
+	(cd src/refcount; $(MAKE_CLEAN) )
+	(cd src/concurrent; $(MAKE_CLEAN) )
+	(cd src/multithread; $(MAKE_CLEAN) )
+	(cd src/compile; $(MAKE_CLEAN) )
+	(cd src/profile; $(MAKE_CLEAN) )
+	(cd src/psi-opt; $(MAKE_CLEAN) )
+	(cd src/libsac; $(MAKE_CLEAN) )
+	(cd src/heapmgr; $(MAKE_CLEAN) )
+	(cd src/tools; $(MAKE_CLEAN) )
+	(cd src/runtime; $(MAKE_CLEAN) )
+	(cd src/c-interface; $(MAKE_CLEAN) )
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb SunWS_cache
