@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/08/03 10:50:52  cg
+ * added implementation of new ICM MT_ADJUST_SCHEDULER
+ *
  * Revision 1.11  1998/07/29 08:44:16  cg
  * bug fixed in one-fold-barrier: now programs produce correct
  * results even if started with -mt 1
@@ -440,14 +443,25 @@ typedef union {
  *  Definitions of macro-implemented ICMs for scheduling
  */
 
+#define SAC_MT_ADJUST_SCHEDULER(array, dim, lower, unrolling, offset)                    \
+    {                                                                                    \
+        int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - lower) % unrolling;                  \
+                                                                                         \
+        if (tmp) {                                                                       \
+            tmp = unrolling - tmp;                                                       \
+            SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                       \
+            array##__destptr += tmp * offset;                                            \
+        }                                                                                \
+    }
+
 #define SAC_MT_SCHEDULER_Static_BEGIN()
 
 #define SAC_MT_SCHEDULER_Static_END()
 
-#define SAC_MT_SCHEDULER_Block_DIM0(lower, upper)                                        \
+#define SAC_MT_SCHEDULER_Block_DIM0(lower, upper, unrolling)                             \
     {                                                                                    \
-        const int iterations = upper - lower;                                            \
-        const int iterations_per_thread = iterations / SAC_MT_THREADS ();                \
+        const int iterations = (upper - lower) / unrolling;                              \
+        const int iterations_per_thread = (iterations / SAC_MT_THREADS ()) * unrolling;  \
         const int iterations_rest = iterations % SAC_MT_THREADS ();                      \
                                                                                          \
         if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
@@ -466,6 +480,9 @@ typedef union {
                           SAC_WL_MT_SCHEDULE_START (0), SAC_WL_MT_SCHEDULE_STOP (0)));   \
     }
 
+#if 0
+/* These macros are probably no longer used. */
+
 #if SAC_DO_THREADS_STATIC
 
 #define SAC_MT_SCHEDULER_Block_DIM0_PREDICATE(iterations_rest) iterations_rest
@@ -475,6 +492,7 @@ typedef union {
 #define SAC_MT_SCHEDULER_Block_DIM0_PREDICATE(iterations_rest) 1
 
 #endif
+#endif /* 0 */
 
 /*
  *  Declarations of global variables and functions defined in libsac_mt.c

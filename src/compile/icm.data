@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/08/03 10:50:52  cg
+ * added implementation of new ICM MT_ADJUST_SCHEDULER
+ *
  * Revision 1.46  1998/07/03 10:18:15  cg
  * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
@@ -749,6 +752,17 @@ ICM_DEF( MT_SPMD_PRESET, NO_TRACE)
   ICM_VAR((2*narg), vararg)
 ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 #endif
+
+#if defined(MT_ADJUST_SCHEDULER) || defined(ICM_ALL)
+ICM_DEF( MT_ADJUST_SCHEDULER, NO_TRACE)
+  ICM_INT(current_dim)
+  ICM_INT(array_dim)
+  ICM_INT(lower)
+  ICM_INT(unrolling)
+  ICM_STR(array)
+ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, unrolling))
+#endif
+
 
 
 /*

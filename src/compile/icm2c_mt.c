@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/08/03 10:50:52  cg
+ * added implementation of new ICM MT_ADJUST_SCHEDULER
+ *
  * Revision 1.14  1998/07/07 13:45:42  cg
  * bug fixed: fold function are now retrieved correctly.
  *
@@ -919,6 +922,51 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int unrolling,
+                               char *array)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_ADJUST_SCHEDULER");
+
+#define MT_ADJUST_SCHEDULER
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_ADJUST_SCHEDULER
+
+    INDENT;
+    fprintf (outfile, "MT_ADJUST_SCHEDULER(%s, %d, %d, %d, (", array, current_dim, lower,
+             unrolling);
+
+    if (current_dim == array_dim - 1) {
+        fprintf (outfile, "1");
+    } else {
+        fprintf (outfile, "SAC_ND_A_SHAPE(%s, %d)", array, current_dim + 1);
+
+        for (i = current_dim + 2; i < array_dim; i++) {
+            fprintf (outfile, " * SAC_ND_A_SHAPE(%s, %d)", array, current_dim + i);
+        }
+    }
+
+    fprintf (outfile, "));\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int narg, int *vararg)
  *   void ICMCompileMT_SCHEDULER_Block_END(int narg, int *vararg)
  *
@@ -939,9 +987,9 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
 {
     int *lower_bound = varint;
     int *upper_bound = varint + dim;
+    int *unrolling = varint + 3 * dim;
     /*
      * int *blocking    = varint+2*dim;
-     * int *unrolling   = varint+3*dim;
      */
     int i;
 
@@ -953,8 +1001,8 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
 #undef MT_SCHEDULER_Block_BEGIN
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Block_DIM0(%d, %d);\n", lower_bound[0],
-             upper_bound[0]);
+    fprintf (outfile, "SAC_MT_SCHEDULER_Block_DIM0(%d, %d, %d);\n", lower_bound[0],
+             upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
         INDENT;
