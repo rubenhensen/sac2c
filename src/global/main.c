@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.121  1998/04/29 17:10:04  dkr
+ * changed phase order
+ *
  * Revision 1.120  1998/04/23 19:14:46  dkr
  * SpmdRegions() has now two traverse-tab
  *
@@ -415,6 +418,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
+#include "wltransform.h"
 #include "spmdregions.h"
 #include "precompile.h"
 #include "compile.h"
@@ -560,13 +564,17 @@ MAIN
         case 'p':
             break_after = PH_scanparse;
             break;
-        case 'j':
-        case '5':
-            break_after = PH_objinit;
-            break;
         case 'i':
         case '3':
             break_after = PH_import;
+            break;
+        case 'b':
+        case '4':
+            break_after = PH_readsib;
+            break;
+        case 'j':
+        case '5':
+            break_after = PH_objinit;
             break;
         case 'f':
         case '6':
@@ -575,6 +583,29 @@ MAIN
         case 't':
         case '7':
             break_after = PH_typecheck;
+            break;
+        case 'd':
+        case '8':
+            break_after = PH_checkdec;
+            break;
+        case 'm':
+        case '9':
+            break_after = PH_impltype;
+            break;
+        case 'a':
+            break_after = PH_analysis;
+            break;
+        case 'w':
+            break_after = PH_writesib;
+            break;
+        case 'e':
+            break_after = PH_objects;
+            break;
+        case 'q':
+            break_after = PH_uniquecheck;
+            break;
+        case 'v':
+            break_after = PH_rmvoidfun;
             break;
         case 'o':
             break_after = PH_sacopt;
@@ -587,39 +618,18 @@ MAIN
             break_after = PH_refcnt;
             show_refcnt = 1;
             break;
-        case 'c':
-            break_after = PH_compile;
-            show_icm = 1;
-            break;
-        case 'w':
-            break_after = PH_writesib;
-            break;
-        case 'b':
-        case '4':
-            break_after = PH_readsib;
-            break;
-        case 'd':
-        case '8':
-            break_after = PH_checkdec;
-            break;
-        case 'm':
-        case '9':
-            break_after = PH_impltype;
+        case 'n':
+            break_after = PH_wltrans;
             break;
         case 'y':
-            break_after = PH_analysis;
-            break;
-        case 'e':
-            break_after = PH_objects;
-            break;
-        case 'v':
-            break_after = PH_rmvoidfun;
-            break;
-        case 'q':
-            break_after = PH_uniquecheck;
+            break_after = PH_spmdregions;
             break;
         case 'l':
             break_after = PH_precompile;
+            break;
+        case 'c':
+            break_after = PH_compile;
+            show_icm = 1;
             break;
         case '1':
             switch (*(*argv + 1)) {
@@ -658,11 +668,11 @@ MAIN
                 show_refcnt = 1;
                 break;
             case '8':
-                break_after = PH_spmdregions;
+                break_after = PH_wltrans;
                 tmp_break = 2;
                 break;
             case '9':
-                break_after = PH_precompile;
+                break_after = PH_spmdregions;
                 tmp_break = 2;
                 break;
             case '\0':
@@ -675,6 +685,10 @@ MAIN
         case '2':
             switch (*(*argv + 1)) {
             case '0':
+                break_after = PH_precompile;
+                tmp_break = 2;
+                break;
+            case '1':
                 break_after = PH_compile;
                 tmp_break = 2;
                 show_icm = 1;
@@ -1202,12 +1216,23 @@ MAIN
     NOTE2 (("   \n"
             "** Convert old with-loops into new ones ...\n"
             "   Generate multiple parts in new with-loops ...\n"));
-    if (Make_Old2NewWith)
+    if (Make_Old2NewWith) {
         syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
+    }
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
-    syntax_tree = SpmdRegions (syntax_tree); /* spmdinit_tab, spmdopt_tab */
+    syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
+    CHECK_DBUG_STOP;
+    ABORT_ON_ERROR;
+
+    if (break_after == PH_wltrans)
+        goto BREAK;
+    compiler_phase++;
+
+    NOTE_COMPILER_PHASE;
+    CHECK_DBUG_START;
+    syntax_tree = SpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
     CHECK_DBUG_STOP;
     ABORT_ON_ERROR;
 
