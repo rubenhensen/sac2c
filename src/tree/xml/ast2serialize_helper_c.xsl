@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/09/24 20:20:58  sah
+  added LookupFunction support
+
   Revision 1.2  2004/09/23 21:18:34  sah
   ongoing implementation
 
@@ -23,12 +26,14 @@ version="1.0">
 <xsl:strip-space elements="*"/>
 
 <!-- 
-     This stylesheet generates two helper functions for the
+     This stylesheet generates some helper functions for the
      deserialization process. 
 
      AllocateNode to allocate an empty node structure
 
      FillNode to assign all node attributes/sons their values
+
+     LookupFunction
 
      templates:
 
@@ -72,6 +77,7 @@ version="1.0">
 #include "tree_basic.h"
 #include "attribs.h"
 #include "serialize_helper.h"
+#include "serialize.h"
 #include "stdarg.h"
 
 #define AST_NO_COMPAT
@@ -80,6 +86,7 @@ version="1.0">
   </xsl:text>
   <xsl:apply-templates select="." mode="gen-alloc-fun" />
   <xsl:apply-templates select="." mode="gen-fill-fun" />
+  <xsl:apply-templates select="." mode="gen-lookup-fun" />
   <xsl:call-template name="travfun-group-end"/>
 </xsl:template>
 
@@ -184,6 +191,11 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="'= va_arg( args, node*);'" />
+</xsl:template>
+
+<xsl:template match="/" mode="gen-lookup-fun">
+  <xsl:value-of select="'node *SHLPLookupFunction( const char *module, const char *funname)'" />
+  <xsl:value-of select="'{ return( SerializeLookupFunction( module, funname)); }'" />
 </xsl:template>
 
 </xsl:stylesheet>
