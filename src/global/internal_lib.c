@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/02/08 15:58:00  mwe
+ * (TmpVar) dl_tab added
+ *
  * Revision 3.30  2002/10/08 00:59:22  dkr
  * TmpVar(): nt2ot_tab added
  *
@@ -895,6 +898,8 @@ PrefixForTmpVar (void)
         s = "al";
     } else if (act_tab == nt2ot_tab) {
         s = "nt2ot";
+    } else if (act_tab == dl_tab) {
+        s = "dl";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
