@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/12/02 15:12:29  sah
+ * added support for ops node
+ *
  * Revision 3.38  2004/11/29 15:31:34  ktr
  * PRTprf corrected
  *
@@ -86,6 +89,7 @@ extern node *PRTlet (node *arg_node, info *arg_info);
 extern node *PRTprf (node *arg_node, info *arg_info);
 extern node *PRTap (node *arg_node, info *arg_info);
 extern node *PRTmop (node *arg_node, info *arg_info);
+extern node *PRTops (node *arg_node, info *arg_info);
 extern node *PRTempty (node *arg_node, info *arg_info);
 extern node *PRTarray (node *arg_node, info *arg_info);
 extern node *PRTexprs (node *arg_node, info *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.193  2004/12/02 15:12:29  sah
+ * added support for ops node
+ *
  * Revision 3.192  2004/12/01 19:18:08  sbs
  * moved PRTvectinfo into index.c
  * some further brushing
@@ -2145,7 +2148,11 @@ PRTmop (node *arg_node, info *arg_info)
     while (fun_ids) {
         TRAVdo (EXPRS_EXPR (exprs), arg_info);
 
-        fprintf (global.outfile, " %s ", IDS_NAME (fun_ids));
+        if (IDS_AVIS (fun_ids) != NULL) {
+            fprintf (global.outfile, " %s ", IDS_NAME (fun_ids));
+        } else {
+            fprintf (global.outfile, " %s ", IDS_SPNAME (fun_ids));
+        }
 
         exprs = EXPRS_NEXT (exprs);
         fun_ids = IDS_NEXT (fun_ids);
@@ -2156,6 +2163,25 @@ PRTmop (node *arg_node, info *arg_info)
 
     if (MOP_ISFIXED (arg_node)) {
         fprintf (global.outfile, ")");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTops (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTops");
+
+    if (OPS_MOD (arg_node) != NULL) {
+        fprintf (global.outfile, "%s:", OPS_MOD (arg_node));
+    }
+
+    fprintf (global.outfile, "%s", OPS_NAME (arg_node));
+
+    if (OPS_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ", ");
+        OPS_NEXT (arg_node) = TRAVdo (OPS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

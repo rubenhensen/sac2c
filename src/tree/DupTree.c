@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.129  2004/12/02 15:12:29  sah
+ * added support for ops node
+ *
  * Revision 3.128  2004/12/01 18:53:15  sah
  * added some more SPxxx support
  *
@@ -1595,7 +1598,7 @@ DUPap (node *arg_node, info *arg_info)
 
     AP_ARGTAB (new_node) = DupArgtab (AP_ARGTAB (arg_node), arg_info);
     AP_SPNAME (new_node) = ILIBstringCopy (AP_SPNAME (arg_node));
-    AP_MOD (new_node) = ILIBstringCopy (AP_SPMOD (arg_node));
+    AP_SPMOD (new_node) = ILIBstringCopy (AP_SPMOD (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2570,6 +2573,23 @@ DUPwlgridvar (node *arg_node, info *arg_info)
     }
 
     CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPops (node *arg_node, info *arg_info)
+{
+    node *new_node;
+    node *next_node;
+
+    DBUG_ENTER ("DUPops");
+
+    next_node = DUPCONT (OPS_NEXT (arg_node), arg_info);
+
+    new_node = TBmakeOps (OPS_MOD (arg_node), OPS_NAME (arg_node), next_node);
 
     DBUG_RETURN (new_node);
 }

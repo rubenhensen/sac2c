@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/12/02 15:12:29  sah
+ * added support for ops node
+ *
  * Revision 3.39  2004/11/26 18:22:05  mwe
  * DUPglobobj added
  *
@@ -241,6 +244,7 @@ extern node *DUPlinklist (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
+extern node *DUPops (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);
