@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/09/18 16:05:48  ktr
+ * DFMs are adjusted differently in EMM because memory is allocated explicitly.
+ *
  * Revision 3.3  2001/03/05 16:42:00  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -150,7 +153,14 @@ SYNCIassign (node *arg_node, node *arg_info)
          * add vars from LHS of with-loop assignment
          */
         if ((NWITH2_TYPE (with) == WO_genarray) || (NWITH2_TYPE (with) == WO_modarray)) {
-            DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL, LET_VARDEC (sync_let));
+            if (!emm) {
+                DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL, LET_VARDEC (sync_let));
+            } else {
+                DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL,
+                                    ID_VARDEC (NWITH2_MEM (with)));
+                DFMSetMaskEntryClear (SYNC_IN (sync), NULL,
+                                      ID_VARDEC (NWITH2_MEM (with)));
+            }
         } else {
             DFMSetMaskEntrySet (SYNC_OUT (sync), NULL, LET_VARDEC (sync_let));
         }

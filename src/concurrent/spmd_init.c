@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/09/18 16:05:48  ktr
+ * DFMs are adjusted differently in EMM because memory is allocated explicitly.
+ *
  * Revision 3.6  2001/03/05 16:41:53  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -271,10 +274,14 @@ InsertSPMD (node *assign, node *fundef)
             /*
              * add vars from LHS of with-loop assignment
              */
-            DFMSetMaskEntrySet (SPMD_OUT (spmd), NULL, LET_VARDEC (instr));
-            if ((NWITH2_TYPE (with) == WO_genarray)
-                || (NWITH2_TYPE (with) == WO_modarray)) {
-                DFMSetMaskEntrySet (SPMD_INOUT (spmd), NULL, LET_VARDEC (instr));
+            if (!emm) {
+                DFMSetMaskEntrySet (SPMD_OUT (spmd), NULL, LET_VARDEC (instr));
+                if ((NWITH2_TYPE (with) == WO_genarray)
+                    || (NWITH2_TYPE (with) == WO_modarray)) {
+                    DFMSetMaskEntrySet (SPMD_INOUT (spmd), NULL, LET_VARDEC (instr));
+                }
+            } else {
+                DFMSetMaskEntrySet (SPMD_OUT (spmd), NULL, LET_VARDEC (instr));
             }
         } else {
             /* #### ins outs missing ... */
