@@ -1,53 +1,50 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/05/04 11:48:35  sbs
+ * Revision 1.2  1995/05/23 09:59:39  sbs
+ * fprintf's of arguments to stderr inserted.
+ *
+ * Revision 1.1  1995/05/04  11:48:35  sbs
  * Initial revision
  *
  *
  *
  */
 
-#if 0
 #define SEP                                                                              \
-    if (sep)                                                                             \
-        fprintf (outfile, ", ");
+    if (sep) {                                                                           \
+        INDENT;                                                                          \
+        fprintf (outfile, "fprintf( stderr, \", \");\n");                                \
+    }
 
 #define ICM_DEF(prf, trf)                                                                \
-    {                                                                                    \
+    if (trf & traceflag) {                                                               \
         int sep = 0;                                                                     \
-        fprintf (outfile, "/*\n * %s( ", #prf);
+        INDENT;                                                                          \
+        fprintf (outfile, "fprintf( stderr, \"%s( \");\n", #prf);
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
-    fprintf (outfile, "%s", name);                                                       \
+    INDENT;                                                                              \
+    fprintf (outfile, "fprintf( stderr, \"%s\");\n", name);                              \
     sep = 1;
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
-    fprintf (outfile, "%d", name);                                                       \
+    INDENT;                                                                              \
+    fprintf (outfile, "fprintf( stderr, \"%d\");\n", name);                              \
     sep = 1;
 #define ICM_VAR(dim, name)                                                               \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             SEP;                                                                         \
-            AccessConst (name, i);                                                       \
+            INDENT;                                                                      \
+            fprintf (outfile, "fprintf( stderr, \"%s\");\n", name[i]);                   \
             sep = 1;                                                                     \
         }                                                                                \
     }
 #define ICM_END(prf)                                                                     \
-    fprintf (outfile, ")\n */\n");                                                       \
-    }
-#endif
-
-#define ICM_DEF(prf, trf)                                                                \
-    if (trf & traceflag) {                                                               \
-        INDENT;                                                                          \
-        fprintf (outfile, "fprintf( stderr, \"%%s\\n\", \"%s\");\n", #prf);
-#define ICM_STR(name)
-#define ICM_INT(name)
-#define ICM_VAR(dim, name)
-#define ICM_END(prf)                                                                     \
-    fprintf (outfile, "\n");                                                             \
+    INDENT;                                                                              \
+    fprintf (outfile, "fprintf( stderr, \")\\n\");\n");                                  \
     }                                                                                    \
     ;
 
