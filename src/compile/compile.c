@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.52  2000/04/20 11:35:20  jhs
+ * Comments at CreateIcmND_FUN_DEC added.
+ * Made static: RenameVar, RenameReturn, ShapeToArray.
+ *
  * Revision 2.51  2000/04/18 14:00:48  jhs
  * Added COMPSt and COMPMt.
  *
@@ -1379,7 +1383,13 @@ CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
  *   node *CreateIcmND_FUN_DEC(char *name, node **icm_tab, int tab_size)
  *
  * description:
- *   creates a ND_FUN_DEC ICM.
+ *   creates a ND_FUN_DEC ICM, which has the following format:
+ *     ND_FUN_DEC( name, rettype, narg, [TAG, type, arg]*)
+ *   name provides the name of the function.
+ *   icm_tab[0], icm_tab[0] != NULL      T_dots
+ *   icm_tab[1]                          provides the rettype
+ *   icm_tab[n], n>1, icm_tab[n] != NULL provides the arguments
+ *                                       as icm_args: TAG, type arg
  *
  ******************************************************************************/
 
@@ -1396,23 +1406,46 @@ CreateIcmND_FUN_DEC (char *name, node **icm_tab, int tab_size)
 
     icm = MakeIcm0 ("ND_FUN_DEC");
 
+    /*
+     *  First arg is name of function.
+     *  The args will be builded from left to right.
+     */
     icm_arg = MakeExprs (MakeId1 (name), NULL);
     ICM_ARGS (icm) = icm_arg;
 
+    /*
+     *  Second argument is returntype, void if none given.
+     *  returntype is stored in icm_tab[1]
+     */
     if (icm_tab[1] == NULL) {
         MAKE_NEXT_ICM_ARG (icm_arg, MakeId1 ("void"));
     } else {
         APPEND_ICM_ARG (icm_arg, EXPRS_NEXT (icm_tab[1]));
     }
 
+    /*
+     *  Count number of arguments
+     *  including optional dots, but excluding returnvalue
+     */
     for (i = 0; i < tab_size; i++) {
+        /*
+         *  ignore actual returnvalue and not given arguments
+         */
         if ((i != 1) && (icm_tab[i] != NULL)) {
             cnt_icm++;
         }
     }
 
+    /*
+     *  Third argument is number of following args,
+     *  where each arg willl contain 3 parts: tag, type and arg_name.
+     */
     MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (cnt_icm));
 
+    /*
+     *  From 2 on we find the arguments of the function
+     *  we add tag, type and arg_name as icm_args
+     */
     for (i = 2; i < tab_size; i++) {
         if (icm_tab[i] != NULL) {
             APPEND_ICM_ARG (icm_arg, icm_tab[i]);
@@ -1420,6 +1453,9 @@ CreateIcmND_FUN_DEC (char *name, node **icm_tab, int tab_size)
         }
     }
 
+    /*
+     *  If there is an optional dots we add this one as the last arg.
+     */
     if (icm_tab[0] != NULL) {
         APPEND_ICM_ARG (icm_arg, icm_tab[0]);
     }
@@ -1697,8 +1733,7 @@ InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *ty
  *   puts '__tmp' behind 'string'.
  *
  ******************************************************************************/
-
-char *
+static char *
 RenameVar (char *string, int i)
 {
     char *new_name;
@@ -1734,8 +1769,7 @@ RenameVar (char *string, int i)
  *                    last COMPAssign (return value of COMPReturn)) again
  *
  */
-
-node *
+static node *
 RenameReturn (node *return_node, node *arg_info)
 {
     node *exprs, *tmp_exprs, *assign, *let, *next_assign, *vardec;
@@ -1794,8 +1828,7 @@ RenameReturn (node *return_node, node *arg_info)
  *  remarks       : 1) <= 99
  *
  */
-
-char *
+static char *
 GenName (int i, char *name)
 {
     char *new_name;
@@ -1817,8 +1850,7 @@ GenName (int i, char *name)
  *  remarks       : ----
  *
  */
-
-node *
+static node *
 ShapeToArray (node *vardec_node)
 {
     node *ret_node = NULL, *tmp, *basic_type_node;
@@ -7379,7 +7411,7 @@ COMPMt (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("COMPMt");
 
-    DBUG_ASSERT (0, ("COMPMt not implemented yet, cannot coimpile mt-block"));
+    DBUG_ASSERT (0, ("COMPMt not implemented yet, cannot compile this"));
 
     DBUG_RETURN (arg_node);
 }
@@ -7389,7 +7421,37 @@ COMPSt (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("COMPSt");
 
-    DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot coimpile st-block"));
+    DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot compile this"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+COMPMTsignal (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPMTsignal");
+
+    DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+COMPMTalloc (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPMTalloc");
+
+    DBUG_ASSERT (0, ("COMPMTalloc not implemented yet, cannot compile this"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+COMPMTsync (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPMTsync");
+
+    DBUG_ASSERT (0, ("COMPMTsync not implemented yet, cannot compile this"));
 
     DBUG_RETURN (arg_node);
 }
