@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/10/29 19:10:02  dkr
+ * some macros for code generation added
+ *
  * Revision 3.10  2002/10/07 23:36:39  dkr
  * GetAttr() added
  *
@@ -48,10 +51,61 @@
  *
  */
 
-#ifndef _icm2c_basic_h
-#define _icm2c_basic_h
+#ifndef _icm2c_basic_h_
+#define _icm2c_basic_h_
 
 extern int print_comment; /* bool */
+
+#define ASSURE_TYPE_ASS(cond_ass, msg_ass)                                               \
+    INDENT;                                                                              \
+    ASSURE_TYPE_EXPR (cond_ass, msg_ass);                                                \
+    fprintf (outfile, ";\n")
+
+#define ASSURE_TYPE_EXPR(cond_ass, msg_ass)                                              \
+    fprintf (outfile, "SAC_ASSURE_TYPE( (");                                             \
+    cond_ass fprintf (outfile, "), (\"");                                                \
+    msg_ass fprintf (outfile, "\"))")
+
+#define BLOCK(ass)                                                                       \
+    INDENT;                                                                              \
+    BLOCK_VARDECS (, ass)
+
+#define BLOCK_VARDECS(vardecs, ass)                                                      \
+    INDENT;                                                                              \
+    BLOCK_VARDECS__NOINDENT (vardecs, ass)
+
+#define BLOCK__NOINDENT(ass) BLOCK_VARDECS__NOINDENT (, ass)
+
+#define BLOCK_VARDECS__NOINDENT(vardecs, ass)                                            \
+    fprintf (outfile, "{ ");                                                             \
+    vardecs fprintf (outfile, "\n");                                                     \
+    indent++;                                                                            \
+    ass indent--;                                                                        \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n")
+
+#define FOR_LOOP(init, cond, post, ass)                                                  \
+    INDENT;                                                                              \
+    fprintf (outfile, "for (");                                                          \
+    init fprintf (outfile, "; ");                                                        \
+    cond fprintf (outfile, "; ");                                                        \
+    post fprintf (outfile, ") ");                                                        \
+    BLOCK__NOINDENT (ass)
+
+#define COND1(cond, ass)                                                                 \
+    INDENT;                                                                              \
+    fprintf (outfile, "if (");                                                           \
+    cond fprintf (outfile, ") ");                                                        \
+    BLOCK__NOINDENT (ass)
+
+#define COND2(cond, then_ass, else_ass)                                                  \
+    INDENT;                                                                              \
+    fprintf (outfile, "if (");                                                           \
+    cond fprintf (outfile, ") ");                                                        \
+    BLOCK__NOINDENT (then_ass);                                                          \
+    INDENT;                                                                              \
+    fprintf (outfile, "else ");                                                          \
+    BLOCK__NOINDENT (else_ass)
 
 #ifdef TAGGED_ARRAYS
 
@@ -71,16 +125,15 @@ extern void SizeId (void *nt);
 
 extern void GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *));
 
-extern void VectToOffset2 (char *off_any, void *v_any, int v_dim,
-                           void (*v_size_fun) (void *),
-                           void (*v_read_fun) (void *, char *, int), void *a_any,
-                           int a_dim, void (*a_dim_fun) (void *),
-                           void (*a_shape_fun) (void *, char *, int));
-
-extern void VectToOffset (char *off_any, void *v_any, int v_dim,
+extern void Vect2Offset2 (char *off_any, void *v_any, int v_dim,
                           void (*v_size_fun) (void *),
-                          void (*v_read_fun) (void *, char *, int), void *a_nt,
-                          int a_dim);
+                          void (*v_read_fun) (void *, char *, int), void *a_any,
+                          int a_dim, void (*a_dim_fun) (void *),
+                          void (*a_shape_fun) (void *, char *, int));
+
+extern void Vect2Offset (char *off_any, void *v_any, int v_dim,
+                         void (*v_size_fun) (void *),
+                         void (*v_read_fun) (void *, char *, int), void *a_nt, int a_dim);
 
 #else
 
@@ -90,7 +143,7 @@ extern void VectToOffset (char *off_any, void *v_any, int v_dim,
 
 #define AccessShape(v, i) fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", v, i)
 
-#define VectToOffset2(dim, v_i_str, dima, a_i_str)                                       \
+#define Vect2Offset2(dim, v_i_str, dima, a_i_str)                                        \
     {                                                                                    \
         int i;                                                                           \
         if (dim > 0) {                                                                   \
@@ -116,9 +169,9 @@ extern void VectToOffset (char *off_any, void *v_any, int v_dim,
         }                                                                                \
     }
 
-#define VectToOffset(dimv, v_i_str, dima, a)                                             \
-    VectToOffset2 (dimv, v_i_str, dima, AccessShape (a, i))
+#define Vect2Offset(dimv, v_i_str, dima, a)                                              \
+    Vect2Offset2 (dimv, v_i_str, dima, AccessShape (a, i))
 
 #endif
 
-#endif /* _icm2c_basic_h */
+#endif /* _icm2c_basic_h_ */
