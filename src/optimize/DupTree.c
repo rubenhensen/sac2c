@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/12/04 13:51:03  cg
+ * Revision 1.17  1995/12/20 08:19:06  cg
+ * added new function DupChar to duplicate N_char nodes.
+ *
+ * Revision 1.16  1995/12/04  13:51:03  cg
  * now, attrib and status are copied by function DupIds
  *
  * Revision 1.15  1995/10/06  16:35:40  cg
@@ -103,6 +106,18 @@ DupInt (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.cint = arg_node->info.cint;
+    DUP (arg_node, new_node);
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupChar (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupChar");
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    new_node = MakeChar (CHAR_VAL (arg_node));
     DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }

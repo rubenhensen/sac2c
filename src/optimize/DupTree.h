@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/08/16 09:23:01  asi
+ * Revision 1.9  1995/12/20 08:19:06  cg
+ * added new function DupChar to duplicate N_char nodes.
+ *
+ * Revision 1.8  1995/08/16  09:23:01  asi
  * renamed DupCast to DupTypes
  *
  * Revision 1.7  1995/07/28  12:57:15  asi
@@ -49,6 +52,7 @@
 extern node *DupTree (node *arg_node, node *arg_info);
 
 extern node *DupInt (node *arg_node, node *arg_info);
+extern node *DupChar (node *arg_node, node *arg_info);
 extern node *DupFloat (node *arg_node, node *arg_info);
 extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
