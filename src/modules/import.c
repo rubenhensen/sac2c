@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1999/01/19 16:22:04  cg
+ * removed bug in handling of file names when reading a module's
+ * own declaration.
+ *
  * Revision 1.54  1998/10/29 13:07:59  cg
  * bug fixed in PrintDependencies():
  * Options -M/-Mlib now work correctly even if a module/program depends
@@ -2046,7 +2050,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
     int i;
     char buffer[MAX_FILE_NAME];
     node *decl = NULL, *symbol;
-    char *pathname, *abspathname;
+    char *pathname, *abspathname, *old_filename;
 
     DBUG_ENTER ("ImportOwnDeclaration");
 
@@ -2072,6 +2076,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
         NOTE (("  Parsing file \"%s\" ...", abspathname));
 
         linenum = 1;
+        old_filename = filename; /* required for restauration */
         filename = buffer;
         start_token = PARSE_DEC;
         yyparse ();
@@ -2131,11 +2136,11 @@ ImportOwnDeclaration (char *name, file_type modtype)
                 symbol = NODE_NEXT (symbol);
             }
         }
+
+        filename = old_filename;
     }
 
     mod_tab = old_mod_tab;
-
-    filename = puresacfilename;
 
     DBUG_RETURN (decl);
 }
