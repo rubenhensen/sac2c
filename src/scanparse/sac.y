@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1994/11/18 14:54:56  hw
+ * Revision 1.13  1994/11/18 16:55:52  hw
+ * error in assignblock fixed
+ *
+ * Revision 1.12  1994/11/18  14:54:56  hw
  * changed function Append
  * added function MakeEmptyBlock
  *
@@ -147,7 +150,8 @@ arg: type ID {$$=MakeNode(N_arg);
 
               DBUG_PRINT("GENTREE",
                          ("%s: "P_FORMAT", Id: %s ",
-                          mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id));
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          $$->info.types->id));
              }
      ;
 
@@ -167,14 +171,18 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R exprblock
 
         DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main %s (" P_FORMAT ") ",
                               mdb_nodetype[$$->nodetype], $$, 
-                              mdb_nodetype[ $$->node[0]->nodetype], $$->node[0]));
+                              mdb_nodetype[ $$->node[0]->nodetype], 
+                              $$->node[0]));
         
        }
       ;
 
 exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R 
             { $$=MakeNode(N_block);
-              $$->node[0]=Append($3,$4); /* append retassign node($4) to assigns nodes */
+              
+              /* append retassign node($4) to assigns nodes */
+              $$->node[0]=Append($3,$4);
+              
               $$->node[1]=$2;  /* Variablendeklarationen */
               $$->nnode=2;              /* set number of child nodes */
 
@@ -188,7 +196,10 @@ exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R
          | BRACE_L assigns retassign COLON BRACE_R 
             { 
               $$=MakeNode(N_block);
-              $$->node[0]=Append($2,$3); /* append retassign node($4) to assigns nodes */
+
+             /* append retassign node($4) to assigns nodes */
+              $$->node[0]=Append($2,$3); 
+              
               $$->nnode=1;
 
               DBUG_PRINT("GENTREE",
@@ -221,8 +232,14 @@ assignblock: COLON
               }
 
              | BRACE_L assigns BRACE_R 
-                { $$=MakeEmptyBlock();
-  
+                { $$=MakeNode(N_block);
+                  $$->node[0]=$2;
+                  $$->nnode=1;
+                  
+                  DBUG_PRINT("GENTREE",
+                             ("%s"P_FORMAT", %s"P_FORMAT,
+                              mdb_nodetype[$$->nodetype], $$,
+                              mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
                 }
              | BRACE_L BRACE_R  
                 {  $$=MakeEmptyBlock();
@@ -231,6 +248,11 @@ assignblock: COLON
                 { $$=MakeNode(N_block);
                   $$->node[0]=$1;
                   $$->nnode=1;
+
+                  DBUG_PRINT("GENTREE",
+                             ("%s"P_FORMAT", %s"P_FORMAT,
+                              mdb_nodetype[$$->nodetype], $$,
+                              mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
                 } 
              ;
 
@@ -245,7 +267,8 @@ retassignblock: BRACE_L assigns retassign COLON BRACE_R
                     DBUG_PRINT("GENTREE",
                                ("%s "P_FORMAT", %s"P_FORMAT, 
                                 mdb_nodetype[$$->nodetype], $$,
-                                mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
+                                mdb_nodetype[$$->node[0]->nodetype],
+                                $$->node[0]));
                   } 
                 | retassign
                     { $$=MakeNode(N_block);
@@ -256,14 +279,16 @@ retassignblock: BRACE_L assigns retassign COLON BRACE_R
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s "P_FORMAT", %s " P_FORMAT ,
-                                  mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
+                                  mdb_nodetype[$$->node[0]->nodetype],
+                                  $$->node[0],
                                   mdb_nodetype[$$->node[0]->node[0]->nodetype],
                                   $$->node[0]->node[0]));
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s "P_FORMAT", %s " P_FORMAT ,
                                   mdb_nodetype[$$->nodetype], $$,
-                                  mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
+                                  mdb_nodetype[$$->node[0]->nodetype],
+                                  $$->node[0]));
                     }
                 ;
 
@@ -336,7 +361,7 @@ retassign: RETURN BRACKET_L exprs BRACKET_R
            ;
 
 letassign: ids let expr 
-             { $$=$2;            /* durch "let" erstellten Knoten u"bernehmen */ 
+             { $$=$2;           /* durch "let" erstellten Knoten u"bernehmen */ 
                $$->info.ids=$1;  /* zuzuweisende Variablenliste */
                $$->node[0]=$3;     /* Ausdruck */
                $$->nnode=1;
@@ -392,7 +417,7 @@ selassign: IF BRACKET_L expr BRACKET_R assignblock ELSE assignblock
               $$->nnode=3;
 
              DBUG_PRINT("GENTREE",
-                        ("%s "P_FORMAT", %s "P_FORMAT", %s "P_FORMAT", %s "P_FORMAT,
+                        ("%s"P_FORMAT", %s"P_FORMAT", %s"P_FORMAT", %s"P_FORMAT,
                          mdb_nodetype[$$->nodetype], $$,
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
@@ -442,12 +467,12 @@ forassign: DO assignblock WHILE BRACKET_L expr BRACKET_R
                             $$->node[1]->node[0]));
                                 
                 DBUG_PRINT("GENTREE",
-                           ("%s "P_FORMAT": %s "P_FORMAT", %s "P_FORMAT,
-                            mdb_nodetype[$$->node[1]->node[0]->nodetype], $$,
-                            mdb_nodetype[$$->node[1]->node[0]->node[0]->nodetype],
-                            $$->node[1]->node[0]->node[0],
-                            mdb_nodetype[$$->node[1]->node[0]->node[1]->nodetype],
-                            $$->node[1]->node[0]->node[1] ));
+                         ("%s "P_FORMAT": %s "P_FORMAT", %s "P_FORMAT,
+                          mdb_nodetype[$$->node[1]->node[0]->nodetype], $$,
+                          mdb_nodetype[$$->node[1]->node[0]->node[0]->nodetype],
+                          $$->node[1]->node[0]->node[0],
+                          mdb_nodetype[$$->node[1]->node[0]->node[1]->nodetype],
+                          $$->node[1]->node[0]->node[1] ));
  
               } 
            ;
@@ -572,7 +597,7 @@ expr:   ID BRACKET_L exprs BRACKET_R
            $$->nnode=3;
 
            DBUG_PRINT("GENTREE",
-                      ("%s "P_FORMAT": %s "P_FORMAT",  %s "P_FORMAT", %s "P_FORMAT,
+                      ("%s"P_FORMAT": %s"P_FORMAT",  %s"P_FORMAT", %s "P_FORMAT,
                        mdb_nodetype[$$->nodetype], $$,
                        mdb_nodetype[$$->node[0]->nodetype], $$->node[0], 
                        mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
@@ -834,7 +859,8 @@ int yyerror( char *errname)
 
 int warn( char *warnname)
 {
-  fprintf(stderr, "sac: Warning: %s in line %d  at \"%s\"\n", warnname, linenum, yytext);
+  fprintf(stderr, "sac: Warning: %s in line %d  at \"%s\"\n",warnname, 
+          linenum, yytext);
   return(1);
 }
 
@@ -857,8 +883,8 @@ node *MakeNode(nodetype nodetype)
    tmp->nnode=0;
    tmp->info.id=NULL;
 
-   DBUG_PRINT("MAKENODE",("nodetype: %s "P_FORMAT,mdb_nodetype[nodetype],tmp));   
- 
+   DBUG_PRINT("MAKENODE",("nodetype: %s "P_FORMAT,mdb_nodetype[nodetype],tmp)); 
+
    DBUG_RETURN(tmp);
 }
 
@@ -979,7 +1005,7 @@ node *Append(node *target_node, node *append_node)
    else
    {  /* target_node has type N_empty */
 
-         free(tmp);                               /* delete node of type N_empty */
+         free(tmp);     /* delete node of type N_empty */
       if (N_assign != append_node->nodetype)
       {
          tmp=MakeNode(N_assign);  
@@ -1024,7 +1050,8 @@ node *MakeEmptyBlock()
    DBUG_PRINT("GENTREE",
               ("%s"P_FORMAT", %s"P_FORMAT,
                mdb_nodetype[return_node->nodetype], return_node,
-               mdb_nodetype[return_node->node[0]->nodetype], return_node->node[0]));
+               mdb_nodetype[return_node->node[0]->nodetype],
+               return_node->node[0]));
    
    DBUG_RETURN(return_node);
 }
