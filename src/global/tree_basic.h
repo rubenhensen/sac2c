@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.100  1998/03/25 18:11:52  srs
+ * added INFO_WLI_FUNDEF
+ *
  * Revision 1.99  1998/03/25 13:04:02  srs
  * corrected comment of N_modarray
  *
@@ -2078,6 +2081,7 @@ extern node *MakeInfo ();
 #define INFO_WLI_NEXT(n) (n->node[0])
 #define INFO_WLI_WL(n) (n->node[1])
 #define INFO_WLI_ASSIGN(n) (n->node[2])
+#define INFO_WLI_FUNDEF(n) (n->node[3])
 
 /* CF */
 #define INFO_ASSIGN(n) (n->node[0])
