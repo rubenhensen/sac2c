@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.53  1998/05/15 12:36:39  dkr
- * removed a bug with 'arg_info' in RCNwith2
+ * Revision 1.54  1998/05/15 15:17:36  dkr
+ * fixed a bug in RCNwith
  *
  * Revision 1.52  1998/05/12 15:52:07  dkr
  * removed ???_VARINFO
@@ -1594,9 +1594,9 @@ RCgen (node *arg_node, node *arg_info)
 node *
 RCNwith (node *arg_node, node *arg_info)
 {
-    node *vardec, *tmp_with, *tmp_rcdump;
+    node *vardec, *tmp_with;
     ids *new_ids, *last_ids;
-    int *ref_dump;
+    int *ref_dump, *tmp_rcdump;
 
     DBUG_ENTER ("RCNwith");
 
