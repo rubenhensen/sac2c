@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2004/08/31 11:57:28  skt
+ * handling of CALCPARALLEL-flag added
+ *
  * Revision 1.11  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -217,6 +220,11 @@ TEMassign (node *arg_node, info *arg_info)
                          "TEMassign expects a N_let here");
             DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2),
                          "TEMassign expects a N_Nwith2 here");
+            /* set the calcparallel-flag */
+
+            NWITH2_CALCPARALLEL (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
+
+            /* tag the allocations of the withloop */
             TagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);
         } else if (MustExecuteSingle (arg_node, arg_info)) {
             ASSIGN_EXECMODE (arg_node) = MUTH_SINGLE;
