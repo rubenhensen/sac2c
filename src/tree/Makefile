@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.38  2004/10/26 11:11:30  sah
+# moved some .o files to NEWAST only
+#
 # Revision 3.37  2004/10/25 11:59:14  sah
 # added SEL traversal
 #
@@ -102,7 +105,8 @@ ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
   NEWASTTARGETS := node_basic.o free_node.o free_attribs.o \
                    serialize_node.o serialize_attribs.o \
                    deserialize.o serialize_buildstack.o \
-                   serialize_helper.o serialize_link.o
+                   serialize_helper.o serialize_link.o \
+                   serialize.o serialize_stack.o
 else
   NEWASTTARGETS :=
 endif
@@ -116,7 +120,7 @@ all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
      change_signature.o compare_tree.o wl_bounds.o \
-     serialize.o serialize_stack.o $(NEWASTTARGETS)
+     $(NEWASTTARGETS)
 
 
 #
