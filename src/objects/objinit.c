@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/12/02 16:30:37  cg
+ * Now, generic object creation functions for imported global objects
+ * have status ST_objinitfun rather than ST_imported. This forces the
+ * typechecker to typecheck them and thereby to qualify them as being
+ * used.
+ *
  * Revision 1.10  1997/11/07 14:44:48  dkr
  * eliminated another nnode
  *
@@ -265,7 +271,7 @@ OIobjdef (node *arg_node, node *arg_info)
         new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
 #endif
 
-        FUNDEF_STATUS (new_node) = ST_imported;
+        FUNDEF_STATUS (new_node) = ST_objinitfun;
 
         MODUL_FUNS (arg_info) = new_node;
 
