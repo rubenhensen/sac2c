@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/03/02 16:41:27  mwe
+ * cvp_tab added
+ *
  * Revision 3.37  2004/02/26 13:06:03  khf
  * wlpg_tab added
  *
@@ -340,6 +343,7 @@ extern funtab *uesd_tab;
 extern funtab *sp_tab;
 extern funtab *ts_tab;
 extern funtab *wlpg_tab;
+extern funtab *cvp_tab;
 
 extern int nnode[];
 

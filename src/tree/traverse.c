@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/03/02 16:41:27  mwe
+ * cvp_tab added
+ *
  * Revision 3.47  2004/02/26 13:06:03  khf
  * wlpg_tab added
  *
@@ -273,6 +276,7 @@
 #include "SelectionPropagation.h"
 #include "type_statistics.h"
 #include "WLPartitionGeneration.h"
+#include "ConstVarPropagation.h"
 
 #include "traverse.h"
 
@@ -1579,6 +1583,17 @@ static funtab ts_tab_rec = {{
                             NULL,
                             NULL};
 funtab *ts_tab = &ts_tab_rec;
+
+/*
+ *  (118) cvp_tab
+ */
+static funtab cvp_tab_rec = {{
+#define NIFcvp(it_cvp) it_cvp
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *cvp_tab = &cvp_tab_rec;
 
 /*
  *  nnode
