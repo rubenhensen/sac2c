@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/01/17 16:25:58  cg
+ * The implementation of the SAC runtime message system is now
+ * thread-safe !!
+ *
  * Revision 2.2  1999/07/08 12:29:20  cg
  * File moved to new directory src/libsac.
  *
@@ -41,11 +45,26 @@
  *   since name/type clashes with functions whose prototypes are derived from
  *   imported external modules may occur.
  *
+ *   During multi-threaded execution, the integrity of messages is guaranteed
+ *   through a locking mechanism.
+ *
  *****************************************************************************/
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+
+#ifdef MT
+#define SAC_DO_MULTITHREAD 1
+#define SAC_DO_THREADS_STATIC 1
+#else
+#define SAC_DO_MULTITHREAD 0
+#endif /*  MT  */
+
+#include "sac_mt.h"
+
+#undef SAC_DO_MULTITHREAD
+#undef SAC_DO_THREADS_STATIC
 
 /*
  * Function definitions
@@ -56,6 +75,8 @@ SAC_RuntimeError (char *format, ...)
 {
     va_list arg_p;
 
+    SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
     fprintf (stderr, "\n\n*** SAC runtime error\n");
     fprintf (stderr, "*** ");
 
@@ -65,6 +86,8 @@ SAC_RuntimeError (char *format, ...)
 
     fprintf (stderr, "\n\n");
 
+    SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+
     exit (1);
 }
 
@@ -73,7 +96,11 @@ SAC_Print (char *format, ...)
 {
     va_list arg_p;
 
+    SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);
+
+    SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 }
