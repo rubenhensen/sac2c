@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  2004/11/16 14:39:17  mwe
+ * ntype-support for ID_TYPE added
+ *
  * Revision 1.74  2004/11/10 18:27:29  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -3528,7 +3531,11 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             new_node = SSACFStructOpReshape (arg_co[0], arg_expr[1]);
             if ((new_node == NULL) && (NODE_TYPE (arg_expr[1]) == N_id)) {
                 /* reshape( shp, a)  ->  a    iff (shp == shape(a)) */
+#ifdef MWE_NTYPE_READY
+                shape *shp = TYType2hape (IDS_NTYPE (ID_IDS (arg_expr[1])));
+#else
                 shape *shp = SHOldTypes2Shape (ID_TYPE (arg_expr[1]));
+#endif
                 if (shp != NULL) {
                     if (SHCompareWithCArray (shp, COGetDataVec (arg_co[0]),
                                              SHGetExtent (COGetShape (arg_co[0]), 0))) {
