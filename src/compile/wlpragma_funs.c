@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/08 12:07:26  dkr
+ * no changes done
+ *
  * Revision 3.3  2000/12/06 10:57:33  dkr
  * nothing changed
  *
@@ -103,12 +106,12 @@
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *IntersectStridesArray( node *strides,
  *                                node *aelems1, node *aelems2,
  *                                int line)
  *
- * description:
+ * Description:
  *   returns the intersection of the N_WLstride-chain 'strides' with
  *    the index vector space ['alemes1', 'aelems2'].
  *    (-> 'aelems1' is the upper, 'aelems2' the lower bound).
@@ -241,10 +244,10 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *Array2Bv( node *array, int *bv, int dims, int line)
  *
- * description:
+ * Description:
  *   converts an N_array node into a blocking vector (int *).
  *
  ******************************************************************************/
@@ -284,15 +287,15 @@ Array2Bv (node *array, int *bv, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *All( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   choose the hole array as the only segment;
  *   init blocking vectors ('NoBlocking')
  *
  * caution:
- *   in 'segs' are possibly N_WLstriVar- and N_WLgridVar-nodes!!
+ *   'segs' can contain N_WLstriVar- as well as N_WLgridVar-nodes!!
  *
  ******************************************************************************/
 
@@ -323,10 +326,10 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *Cubes( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   choose every cube as a segment;
  *   init blocking vectors ('NoBlocking')
  *
@@ -379,10 +382,10 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *ConstSegs( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   Defines a new set of segments in reliance on the given extra parameters
  *    'parms'. Each segment is described by two N_array nodes containing
  *    the start, stop index vector, respectively.
@@ -444,10 +447,10 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *NoBlocking( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   sets all blocking vectors and the unrolling-blocking vector to
  *    (1, ..., 1)  ->  no blocking is performed.
  *
@@ -498,10 +501,10 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *Bv( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   Changes the blocking-vector for one blocking level (ubv respectively).
  *   The level number is given as first element in 'parms' (N_num);
  *    the rest of 'parms' contains the blocking-vectors for different
@@ -572,10 +575,10 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *BvL0( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   uses 'Bv' to change the blocking-vectors in level 0.
  *
  ******************************************************************************/
@@ -594,10 +597,10 @@ BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *BvL1( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   uses 'Bv' to change the blocking-vectors in level 1.
  *
  ******************************************************************************/
@@ -616,10 +619,10 @@ BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *BvL2( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   uses 'Bv' to change the blocking-vectors in level 2.
  *
  ******************************************************************************/
@@ -638,10 +641,10 @@ BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 
 /******************************************************************************
  *
- * function:
+ * Function:
  *   node *Ubv( node *segs, node *parms, node *cubes, int dims, int line)
  *
- * description:
+ * Description:
  *   uses 'Bv' to change the unrolling-blocking-vectors.
  *
  ******************************************************************************/
