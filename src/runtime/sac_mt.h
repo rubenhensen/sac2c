@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.44  2002/04/30 08:43:01  dkr
- * no changes done
+ * Revision 3.45  2002/07/16 12:51:49  dkr
+ * code beautified
  *
  * Revision 3.43  2002/03/07 20:28:15  dkr
  * ';' added for SAC_MT_DECL_MYTHREAD
@@ -83,7 +83,8 @@
  * SAC_MT_SCHEDULER_..._FIRST_TASK/NEXT_TASK added
  * SAC_MT_SCHEDULER_TS_Even optimized (% eliminated,...)
  * SAC_MT_SCHEDULER_Afs_next_task renamed to Affinity_NEXT_TASK
- * in SAC_MT_SCHEDULER_Affinity_NEXT_TASK some paramters renamed for better understanding
+ * in SAC_MT_SCHEDULER_Affinity_NEXT_TASK some paramters renamed for better
+ *   understanding
  *
  * Revision 3.19  2001/04/26 15:12:28  dkr
  * declarations of volatile pointers to non-volatile objects are correct
@@ -91,53 +92,6 @@
  *
  * Revision 3.18  2001/04/04 07:47:29  ben
  * SAC_MT_SCHEDULER_Select_Block modified for better tasksizes
- *
- * Revision 3.17  2001/04/03 19:39:28  dkr
- * Fixed a bug in SAC_MT_ADJUST_SCHEDULER: now, upper bound also adjusted.
- * This is crucial in case of variable with-loop bounds!
- *
- * Revision 3.16  2001/03/28 12:48:38  ben
- * for SAC_MT_SCHEDULER_Afs_next_task the parameter param added
- *
- * Revision 3.15  2001/03/27 11:49:20  ben
- *  SAC_MT_SCHEDULER_Afs_next_task() added
- *
- * Revision 3.14  2001/03/23 13:33:29  ben
- *  SAC_MT_SCHEDULER_Reset_Tasks modified
- *
- * Revision 3.13  2001/03/22 17:40:37  ben
- *  SAC_MT_DEFINE_TASKLOCKS, SAC_MT_TASKLOCK, SAC_MT_DEFINE_TASK, SAC_MT_TASK,
- * SAC_MT_SCHEDULER_Reset_Tasks added
- *
- * Revision 3.12  2001/03/22 12:45:32  ben
- * Tracingoutput of  SAC_MT_SCHEDULER_Select_Block modified
- *
- * Revision 3.11  2001/03/21 11:52:07  ben
- * SAC_MT_SCHEDULER_Block_Select renamed to SAC_MT_SCHEDULER_Select_Block
- *
- * Revision 3.10  2001/03/20 13:21:17  ben
- *  SAC_MT_SCHEDULER_Block_Select added
- *
- * Revision 3.9  2001/03/16 15:16:28  dkr
- * fixed a bug in SAC_MT_ADJUST_SCHEDULER__OFFSET,
- * SAC_MT_ADJUST_SCHEDULER
- *
- * Revision 3.8  2001/03/15 10:23:04  dkr
- * SAC_MT_ADJUST_SCHEDULER_OFFSET renamed into
- * SAC_MT_ADJUST_SCHEDULER__OFFSET
- *
- * Revision 3.7  2001/03/14 16:03:21  ben
- * ICM  SAC_MT_SCHEDULER_BlockVar_DIM0 modified
- *
- * Revision 3.6  2001/03/14 10:16:22  ben
- * new ICM  SAC_MT_SCHEDULER_BlockVar_DIM0 added
- *
- * Revision 3.5  2001/01/22 13:46:02  dkr
- * ICM SAC_MT_ADJUST_SCHEDULER renamed into SAC_MT_ADJUST_SCHEDULER_OFFSET
- * new ICM SAC_MT_ADJUST_SCHEDULER added
- *
- * Revision 3.4  2001/01/19 11:56:51  dkr
- * SAC_WL_DEST renamed into SAC_WL_OFFSET
  *
  */
 
@@ -756,6 +710,7 @@ typedef union {
     }                                                                                    \
     }                                                                                    \
     }
+
 /*
  * Definition of macros implementing a general locking mechanism
  */
@@ -791,7 +746,7 @@ typedef union {
         }                                                                                \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER__OFFSET(array, dims, dim, lower, upper, unrolling,       \
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_nt, dims, dim, lower, upper, unrolling,       \
                                         offset)                                          \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
@@ -801,13 +756,13 @@ typedef union {
         SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
                                        upper, unrolling)                                 \
                                                                                          \
-        SAC_WL_OFFSET (array) += diff_start * (offset);                                  \
+        SAC_WL_OFFSET (to_nt) += diff_start * (offset);                                  \
         SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
                           SAC_WL_MT_SCHEDULE_START (dim),                                \
                           SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER(array, dims, dim, lower, upper, unrolling)               \
+#define SAC_MT_ADJUST_SCHEDULER(to_nt, dims, dim, lower, upper, unrolling)               \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
                                                                                          \
@@ -857,10 +812,10 @@ typedef union {
  * first it gets the dimension for dividing tasks
  * second it divides in num_tasks*SAC_MT_THREADS() tasks
  */
+
 #define SAC_MT_SCHEDULER_TS_Even(sched_id, tasks_on_dim, lower, upper, unrolling,        \
                                  num_tasks, taskid, worktodo)                            \
     {                                                                                    \
-                                                                                         \
         const int number_of_tasks = num_tasks * SAC_MT_THREADS ();                       \
         const int iterations = (upper - lower) / unrolling;                              \
         const int iterations_per_thread = (iterations / number_of_tasks) * unrolling;    \
@@ -900,7 +855,8 @@ typedef union {
 
 /*
  * TS_Factoring divides the With Loop in Blocks with decreasing size
- * every SAC_MT_THREADS taskss have the same size and then a new tasksize will be computed
+ * every SAC_MT_THREADS taskss have the same size and then a new tasksize
+ * will be computed
  */
 
 #define SAC_MT_SCHEDULER_TS_Factoring(sched_id, tasks_on_dim, lower, upper, unrolling,   \
@@ -1029,8 +985,10 @@ typedef union {
             SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             worktodo = 1;                                                                \
         } else {                                                                         \
-            /* if there was no work to do, find the task, which has done, the smallest   \
-             * work till now*/                                                           \
+            /*                                                                           \
+             * if there was no work to do, find the task, which has done, the            \
+             * smallest work till now                                                    \
+             */                                                                          \
             SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             maxloadthread = 0;                                                           \
             mintask = SAC_MT_LAST_TASK (sched_id, 0) - SAC_MT_TASK (sched_id, 0);        \
@@ -1089,6 +1047,7 @@ extern volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int,
                                                       const unsigned int, unsigned int);
 
 extern void SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
+
 extern void SAC_MT_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
 
 extern void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
