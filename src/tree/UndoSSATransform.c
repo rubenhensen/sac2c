@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2001/03/20 14:22:28  nmw
+ * documentation added
+ *
  * Revision 1.6  2001/03/19 14:23:32  nmw
  * removal of ssa phi copy assignments added
  *
@@ -33,25 +36,54 @@
  * 1. This module renames all artificial identifier to their original
  *    baseid to avoid problems with multiple global object names in the
  *    compiler backend.
- *
- *    All idetifiers marked as:
- *      ST_aritificial
- *      ST_was_reference
- *      ST_unique
- *    are re-renamed.
+ *    All idetifiers marked with AVIS_SSAUNDOFLAG are re-renamed. This
+ *    flag has been set by SSATransform.
  *
  * 2. All result-variables of a multigenerator fold-withloop are made identical
  *    by inserting an additional variable and corresponding assignments at
  *    the end of each Ncode CBLOCK and adjusting the CEXPR identifier to
- *    the new created variable.
+ *    the new created variable. This adjustment is necessary for the inlining
+ *    of the fold-function.
  *
  * 3. in special functions (lifted do and while loops) a removal of the
  *    phi-copy-target assignments is done by renaming different variables in
  *    then- and else-part to the single variable used in the return statement.
  *    Constant phi-copy-targets in the else-part are moved down behind the
- *    conditional.
+ *    conditional. From now on the else parts of conditionals in do- and while
+ *    functions are empty as it is required by the fun2lac transformation.
  *
- *    Example: < ##nmw## >
+ *    Example:
+ *    int, globobj_t f_do(int i, globobj_t obj)
+ *    {
+ *      <body with assignments to i_SSA_1 and obj_SSA_1>
+ *
+ *      if (<condition>) {
+ *        i_SSA_2, obj_SSA_2 = f_do(i_SSA_1, obj_SSA_1);
+ *        i_SSA_3 = i_SSA_2;
+ *        obj_SSA_3 = obj_SSA_2;
+ *      } else {
+ *        i_SSA_3 = i_SSA_1;
+ *        obj_SSA_3 = obj_SSA_1;
+ *      }
+ *     return(i_SSA_3, obj_SSA_3);
+ *    }
+ *
+ *    will be transformed to:
+ *    int, globobj_t f_do(int i, globobj_t obj)
+ *    {
+ *      <body with assignments to i_SSA_3 and obj>
+ *
+ *      if (<condition>) {
+ *        i_SSA_3, obj = f_do(i_SSA_3, obj);
+ *      } else {
+ *        <empty>
+ *      }
+ *      return(i_SSA_3, obj);
+ *     }
+ *
+ *     where all identifiers of obj(_SSA_x) are mapped back to the one global
+ *     object obj. And the different phi copy assignments for i_SSA_3 from
+ *     i_SSA_2 and i_SSA_1 are made identical by renaming them to i_SSA_3;
  *
  *****************************************************************************/
 

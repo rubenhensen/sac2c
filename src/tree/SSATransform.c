@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2001/03/20 14:22:08  nmw
+ * documentation added
+ *
  * Revision 1.8  2001/03/19 14:23:02  nmw
  * handling for AVIS_ASSIGN2 attribute added
  *
@@ -35,7 +38,59 @@
  * prefix: SSA
  *
  * description:
- *    this module traverses the AST and transformes the code in SSA form.
+ *    This module traverses the AST and transformes the code in SSA form.
+ *    In ssa-form every identifier has exactly one defining assignment
+ *    in the code. So redefinitions are not allowed and lead to a new
+ *    identifier (here a renamed version of the original one extended
+ *    by the postfix __SSA_<x>. Where x is an integer greater 0.
+ *
+ *    In performing a top-down traversal for each re-definition of some
+ *    identifier there will be created a new, renamed identifier (e.g.
+ *    i is renamend to i__SSA_1). The counter for this is stored in a
+ *    SSACNT node for each variable name (stored as attribute in AVIS node).
+ *    All SSACNT nodes are chained as attribute of the top block of the
+ *    concerning function). The counter is used in sharing for all renamed
+ *    instances of one original variable. So every additional renaming of
+ *    a renamed identifier gets a fresh, unique name and it is still linked
+ *    with the original name (which is also stored in SSACNT as BASID
+ *    attribute).
+ *    When doing the top-down traversal, the identifier are renamed to the
+ *    actual instance that is defined at this point. In conditionals and
+ *    with-loops the actual names are stacked in SSASTACK nodes.
+ *
+ *    To handle conditionals in ssaform, where the control flow merges and
+ *    where are more than one definitions for an identifier, in ssa-form
+ *    there are so called PHI-functions. These special functions are simulated
+ *    by explicit copy assignments in both parts of the conditional, that
+ *    have the same target (*). This leads to code not in (pure) ssa-form, but
+ *    is is an compromiss between intruducing special functions that require
+ *    a special handling in ALL working steps and preserve the ssa-form and
+ *    the copy assignments which are the explicit version of an phi function
+ *    that is ease to handle but destroys the pure ssa-form at one point.
+ *
+ *  Example: (usual form)       -->  (ssa-form)
+ *    a = 6;                       a = 6;
+ *    a = a + 4;                   a__SSA_1 = a + 4;
+ *    b = a + a;                   b = a__SSA_1 + a__SSA_1;
+ *    if (b < a) {                 if (b < a__SSA_1)
+ *      a = 0;                       a__SSA_2 = 0;
+ *      c = 1;                       c = 1;
+ *                                   a__SSA_3 = a__SSA_2;     (*)
+ *                                   c__SSA_2 = c;            (*)
+ *    } else {                     } else {
+ *      c = 2;                       c__SSA_1 = 2;
+ *                                   a__SSA_3 = a__SSA_1;     (*)
+ *                                   c__SSA_2 = c__SSA_1;     (*)
+ *    }                            }
+ *    print(c + b);                print(c__SSA_2 + b)
+ *
+ * Remarks:
+ *    This module requires loops and conditionals in explicit functions.
+ *    This transformation has to be done by lac2fun before calling
+ *    SSATransform! SSATransform can be called again to preserve the ssa-form
+ *    of the AST (e.g. after old code that cannot deal with the ssa-form).
+ *    After using the ssa-form the code can be cleaned up by UndoSSATransform,
+ *    that e.g. removes copy assignments and renamings of global objects.
  *
  *****************************************************************************/
 
