@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/03/12 13:40:42  nmw
+ * USSANwith and USSANcode added
+ *
  * Revision 3.30  2001/03/09 11:49:32  sbs
  * profile_tab added.
  *
@@ -1677,7 +1680,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCwith, APTwith,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSANwith, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSANwith, TravSons, USSANwith,
        SSADCRNwith, SSACSENwith, CMPTTravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, 3),
 
@@ -1777,7 +1780,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, PREC1code, APCcode, APTcode,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSANcode, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSANcode, TravSons, USSANcode,
        SSADCRNcode, SSACSENcode, CMPTNcode, TravSons, TravSons, TravSons, TravSons,
        TravSons, 3),
 
