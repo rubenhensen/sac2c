@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.28  2000/07/12 15:19:51  dkr
+ * function SearchDecl moved from Inline.h to tree_compound.h
+ *
  * Revision 1.27  2000/07/11 14:50:40  dkr
  * function IsHidden added
  *
@@ -118,20 +121,9 @@ specific implementation of a function should remain with the source code.
 #define CHECK_NULL(a) ((NULL == a) ? "" : a)
 
 /*
- *
- *  macro name    : CMP_MOD(a,b)
- *  arg types     : 1) char*
- *                  2) char*
- *  result type   : int
- *  description   : compares two module names (name maybe NULL)
- *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       :
- *
+ * compares two module names (name maybe NULL)
+ * result: 1 - equal, 0 - not equal
  */
-
 #define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
 
 /*--------------------------------------------------------------------------*/
@@ -262,12 +254,6 @@ extern ids *LookupIds (char *name, ids *ids_chain);
  *  functionname  : CountNums
  *  arguments     : pointer to nums-chain (chained list of integers)
  *  description   : returns the length of th chained list
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -276,7 +262,7 @@ extern int CountNums (nums *numsp);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Constvec :
+ ***  ConstVec :
  ***/
 
 extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
@@ -299,11 +285,6 @@ extern node *AnnotateIdWithConstVec (node *expr, node *id);
  *  description   : inserts the given node at the end of the correct
  *                  nodelist (funlist, objlist, or typelist) of the
  *                  given fundef node and
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
  *  remarks       : status may be ST_regular | ST_artificial
  *
  */
@@ -318,11 +299,6 @@ extern void StoreNeededNode (node *insert, node *fundef, statustype status);
  *                  3) status of the new nodelist entry
  *  description   : inserts each node of the nodelist into the correct
  *                  nodelist of the fundef node
- *  global vars   : ---
- *  internal funs : StoreNeededNode
- *  external funs : ---
- *  macros        :
- *
  *  remarks       : status may be ST_regular | ST_artificial
  *
  */
@@ -338,11 +314,6 @@ extern void StoreNeededNodes (nodelist *inserts, node *fundef, statustype status
  *  description   : inserts all those nodes of the nodelist into the correct
  *                  nodelist of the fundef node
  *                  which have attribute 'unresolved'.
- *  global vars   : ---
- *  internal funs : StoreNeededNode
- *  external funs : ---
- *  macros        :
- *
  *  remarks       : status may be ST_regular | ST_artificial
  *
  */
@@ -355,11 +326,6 @@ extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype st
  *  arguments     : 1) beginning of nodelist
  *  description   : frees all those entries of a node list which have
  *                  status 'ST_artificial'
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : free
- *  macros        : DBUG, TREE
- *
  *  remarks       : returns the beginning of the resulting nodelist
  *
  */
@@ -373,12 +339,6 @@ extern nodelist *TidyUpNodelist (nodelist *list);
  *                  2) second node list
  *  description   : concatenates two node lists without checking double
  *                  occurrences
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -389,12 +349,6 @@ extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
  *  functionname  : CopyNodelist
  *  arguments     : 1) node list
  *  description   : copies an entire node list
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeNodelist, CopyNodelist
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -555,34 +509,12 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 
 /*
  *
- *  functionname  : SearchTypedef
- *  arguments     : 1) type name to be searched for
- *                  2) module name of type to be searched for
- *                  3) list of type implementations (typedef nodes)
- *  description   : looks for a certain typedef in list of typedefs
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : CMP_TYPE_TYPEDEF
- *
- *  remarks       :
- *
- */
-
-extern node *SearchTypedef (char *name, char *mod, node *implementations);
-
-/*
- *
  *  macro name    : CMP_TYPEDEF(a,b)
  *  arg types     : 1) node*  (N_typedef)
  *                  2) node*  (N_typedef)
  *  result type   : int
  *  description   : compares two typedef nodes (name and module)
  *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       :
  *
  */
 
@@ -605,16 +537,24 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *  description   : compares name and module name of a type with the
  *                  defined name and module name of a typedef
  *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       :
  *
  */
 
 #define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
     ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
      && (!strcmp (CHECK_NULL (mod), CHECK_NULL (TYPEDEF_MOD (tdef)))))
+
+/*
+ *
+ *  functionname  : SearchTypedef
+ *  arguments     : 1) type name to be searched for
+ *                  2) module name of type to be searched for
+ *                  3) list of type implementations (typedef nodes)
+ *  description   : looks for a certain typedef in list of typedefs
+ *
+ */
+
+extern node *SearchTypedef (char *name, char *mod, node *implementations);
 
 /*--------------------------------------------------------------------------*/
 
@@ -651,10 +591,6 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *  result type   : int
  *  description   : compares two objdef nodes (name and module)
  *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       :
  *
  */
 
@@ -676,10 +612,6 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *  description   : compares name and module name of an object with the
  *                  defined name and module name of an objdef
  *                  result: 1 - equal, 0 - not equal
- *  global vars   : ---
- *  funs          : ---
- *
- *  remarks       :
  *
  */
 
@@ -697,12 +629,6 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *                  2) module name of global object to be searched for
  *                  3) list of object implementations (objdef nodes)
  *  description   : looks for a certain objdef in list of objdefs
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : CMP_OBJ_OBJDEF
- *
- *  remarks       :
  *
  */
 
@@ -797,6 +723,9 @@ extern void ObjList2ArgList (node *objdef);
 #define CMP_FUNDEF(a, b)                                                                 \
     ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
 
+extern node *FindVardec_Name (char *name, node *fundef);
+extern node *FindVardec_Varno (int varno, node *fundef);
+
 /*
  *
  *  functionname  : CountFunctionParams
@@ -815,24 +744,6 @@ extern void ObjList2ArgList (node *objdef);
 extern int CountFunctionParams (node *fundef);
 
 /*
- *  functionname  : CmpDomain
- *  arguments     : 1) N_arg node of one function
- *                  2) N_arg node of another function
- *  description   : checks whether the functions have equal domain
- *                  returns 1 if domain is equal, 0 else
- *  global vars   : ----
- *  internal funs : ----
- *  external funs : ----
- *  macros        : CMP_TYPE_USER
- *
- *  remarks       : similar to function CmpFunParams of typechecker.
- *                  some minor changes to fix appearing segmentation
- *                  faults.
- */
-
-extern int CmpDomain (node *args1, node *args2);
-
-/*
  *  functionname  : SearchFundef
  *  arguments     : 1) fundef node of function to search for
  *                  2) ptr to head of fundef chain
@@ -849,9 +760,6 @@ extern int CmpDomain (node *args1, node *args2);
  */
 
 extern node *SearchFundef (node *fun, node *allfuns);
-
-extern node *FindVardec_Name (char *name, node *fundef);
-extern node *FindVardec_Varno (int varno, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
@@ -921,10 +829,23 @@ extern node *AppendVardecs (node *vardecs, node *append);
 #define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
+/*
+ *  functionname  : CmpDomain
+ *  arguments     : 1) N_arg node of one function
+ *                  2) N_arg node of another function
+ *  description   : checks whether the functions have equal domain
+ *                  returns 1 if domain is equal, 0 else
+ *  remarks       : similar to function CmpFunParams of typechecker.
+ *                  some minor changes to fix appearing segmentation
+ *                  faults.
+ */
+
+extern int CmpDomain (node *args1, node *args2);
+
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_vardec : / N_arg :
+ ***  N_vardec :  *and*  N_arg :
  ***/
 
 /*
@@ -1011,6 +932,8 @@ extern node *AppendVardecs (node *vardecs, node *append);
     while (vardec != NULL) {                                                             \
         code vardec = VARDEC_NEXT (vardec);                                              \
     }
+
+extern node *SearchDecl (char *name, node *decl_node);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1342,15 +1265,6 @@ extern node *MakeExprsNum (int num);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_ap :
- ***
- ***  watch combined macros for N_ap and N_prf
- ***  (search for "N_ap :" or "N_prf :").
- ***/
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_array :
  ***/
 
@@ -1443,17 +1357,6 @@ extern node *MakeVinfoDollar (node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_prf :   N_ap :
- ***
- ***  watch simple macros for N_ap and N_prf
- ***  (search for "N_ap :" or "N_prf :").
- ***/
-
-#define AP_OR_PRF_ARGS(n) ((NODE_TYPE (n) == N_ap) ? AP_ARGS (n) : PRF_ARGS (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_prf :
  ***
  ***  watch combined macros for N_ap and N_prf
@@ -1477,6 +1380,26 @@ extern node *MakeVinfoDollar (node *next);
 extern node *MakePrf1 (prf prf, node *arg1);
 extern node *MakePrf2 (prf prf, node *arg1, node *arg2);
 extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_ap :
+ ***
+ ***  watch combined macros for N_ap and N_prf
+ ***  (search for "N_ap :" or "N_prf :").
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_prf :  *and*  N_ap :
+ ***
+ ***  watch simple macros for N_ap and N_prf
+ ***  (search for "N_ap :" or "N_prf :").
+ ***/
+
+#define AP_OR_PRF_ARGS(n) ((NODE_TYPE (n) == N_ap) ? AP_ARGS (n) : PRF_ARGS (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1679,7 +1602,7 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith : / N_Nwith2 :
+ ***  N_Nwith :  *and*  N_Nwith2 :
  ***/
 
 #define NWITH_OR_NWITH2_TYPE(n)                                                          \
