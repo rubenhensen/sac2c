@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2004/11/26 17:03:05  jhb
+ * on the road again
+ *
  * Revision 1.35  2004/11/26 00:12:54  jhb
  * added really importend TODO! CreateVardec!
  *
@@ -1590,9 +1593,8 @@ SSAWLTNcode (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-DoSSAWLT (node *arg_node)
+WLTdoWLT (node *arg_node)
 {
-    funtab *tmp_tab;
     info *info;
     int expr;
 
@@ -1600,15 +1602,13 @@ DoSSAWLT (node *arg_node)
 
     info = MakeInfo ();
 
-    tmp_tab = act_tab;
-    act_tab = ssawlf_tab;
-
     DBUG_PRINT ("OPT", ("SSAWLF"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+    TRAVpush (TR_ssawlf);
 
-    arg_node = Trav (arg_node, info);
+    arg_node = TRAVdo (arg_node, info);
 
-    act_tab = tmp_tab;
+    TRAVpop ();
 
     expr = (wlt_expr - old_wlt_expr);
 
