@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/20 08:19:06  cg
+ * Revision 1.10  1996/01/05 14:36:35  cg
+ * added DupId for copying sons and info.id
+ *
+ * Revision 1.9  1995/12/20  08:19:06  cg
  * added new function DupChar to duplicate N_char nodes.
  *
  * Revision 1.8  1995/08/16  09:23:01  asi
@@ -57,6 +60,7 @@ extern node *DupFloat (node *arg_node, node *arg_info);
 extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
+extern node *DupId (node *arg_node, node *arg_info);
 extern node *DupIIds (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);
 extern node *DupAssign (node *arg_node, node *arg_info);

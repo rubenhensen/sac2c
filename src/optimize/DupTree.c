@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/12/20 08:19:06  cg
+ * Revision 1.18  1996/01/05 14:36:35  cg
+ * added DupId for copying sons and info.id
+ *
+ * Revision 1.17  1995/12/20  08:19:06  cg
  * added new function DupChar to duplicate N_char nodes.
  *
  * Revision 1.16  1995/12/04  13:51:03  cg
@@ -199,6 +202,23 @@ DupIIds (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.ids = DupIds (arg_node->info.ids, arg_info);
+    DUP (arg_node, new_node);
+    for (i = 0; i < arg_node->nnode; i++) {
+        new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupId (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupId");
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    new_node = MakeNode (arg_node->nodetype);
+    new_node->info.id = StringCopy (arg_node->info.id);
     DUP (arg_node, new_node);
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
