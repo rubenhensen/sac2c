@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/05 14:55:52  sbs
+ * Revision 1.6  1996/02/11 20:17:07  sbs
+ * IdxArgs inserted.
+ *
+ * Revision 1.5  1995/10/05  14:55:52  sbs
  * some bug fixes.
  *
  * Revision 1.4  1995/06/26  09:59:28  sbs
@@ -25,6 +28,7 @@
 
 extern node *IdxModul (node *, node *);
 extern node *IdxFundef (node *, node *);
+extern node *IdxArg (node *, node *);
 extern node *IdxAssign (node *, node *);
 extern node *IdxWith (node *, node *);
 extern node *IdxGenerator (node *, node *);
