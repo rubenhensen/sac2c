@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/12 13:45:15  cg
+ * Revision 1.6  1995/10/16 13:00:38  cg
+ * new macro OBJDEF_VARNAME added.
+ *
+ * Revision 1.5  1995/10/12  13:45:15  cg
  * new macros TYPEDEF_STATUS, FUNDEF_STATUS and OBJDEF_STATUS to mark
  * imported items
  *
@@ -83,6 +86,7 @@ during compilation but is not available any further.
 The following compilation steps are used:
 
  - scanparse
+ - objinit
  - import
  - flatten
  - typecheck
@@ -471,18 +475,25 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***
  ***    node*       EXPR  (O)  ("N_expr")
  ***    node*       NEXT  (O)  (N_objdef)
- ***    statustype  STATUS
  ***
  ***  permanent attributes:
  ***
  ***    char*       NAME
  ***    char*       MOD   (O)
  ***    types*      TYPE
+ ***    statustype  STATUS
+ ***
+ ***  temporary attributes:
+ ***
+ ***    char*       VARNAME    (typecheck -> obj-handling -> )
  ***/
 
 /*
  *  The STATUS indicates whether an object is defined or imported.
  *  Possible values: ST_regular | ST_imported
+ *
+ *  The VARNAME is a combination of NAME and MOD. It's used as parameter
+ *  name when making global objects local.
  */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
@@ -493,6 +504,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_STATUS(n) (n->info.types->status)
+#define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
 
 /*--------------------------------------------------------------------------*/
 
