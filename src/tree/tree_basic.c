@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2004/10/14 13:37:09  sbs
+ * changed VINFO_TYPE into VINFO_SHAPE
+ *
  * Revision 3.102  2004/10/11 14:57:53  sah
  * made INC/DEC NCODE_USED explicit 
  *
@@ -1250,7 +1253,7 @@ MakeFlatArray (node *aelems)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeVinfo (useflag flag, types *type, node *next, node *dollar)
+MakeVinfo (useflag flag, shape *shp, node *next, node *dollar)
 {
     node *tmp;
 
@@ -1259,7 +1262,7 @@ MakeVinfo (useflag flag, types *type, node *next, node *dollar)
     tmp = CreateCleanNode (N_vinfo);
 
     VINFO_FLAG (tmp) = flag;
-    VINFO_TYPE (tmp) = type;
+    VINFO_SHAPE (tmp) = shp;
     VINFO_NEXT (tmp) = next;
     VINFO_DOLLAR (tmp) = dollar;
     VINFO_VARDEC (tmp) = NULL;
