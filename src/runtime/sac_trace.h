@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/03/24 13:56:21  cg
+ * *** empty log message ***
+ *
  * Revision 1.1  1998/03/19 16:55:06  cg
  * Initial revision
  *
@@ -28,8 +31,6 @@
 
 #define SAC_TRACE_H
 
-#include "sac_message.h"
-
 /*
  *  External declarations of global variables and functions defined in trace.c
  *  as part of libsac.
@@ -49,7 +50,7 @@ extern void _SAC_PrintTraceInfo (char *format, ...);
  *  Macros for tracing memory and/or refcount operations
  */
 
-#if (TRACE_MEM || TRACE_REF)
+#if (TRACE_MEM || TRACE_REF || TRACE)
 
 #define PRINT_TRACEHEADER_ALL(text) _SAC_PrintTraceHeader text
 
@@ -71,7 +72,7 @@ extern void _SAC_PrintTraceInfo (char *format, ...);
  *  Macros for tracing refcount operations
  */
 
-#if TRACE_REF
+#if (TRACE_REF || TRACE)
 
 #define PRINT_TRACEHEADER_REF(text) _SAC_PrintTraceHeader text
 
@@ -88,7 +89,7 @@ extern void _SAC_PrintTraceInfo (char *format, ...);
  *  Macros for tracing memory operations
  */
 
-#if TRACE_MEM
+#if (TRACE_MEM || TRACE)
 
 #define PRINT_TRACEHEADER_MEM(text) _SAC_PrintTraceHeader text
 
