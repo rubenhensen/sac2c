@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2002/04/08 20:03:51  dkr
+ * bug in DupFundef() fixed
+ *
  * Revision 3.58  2002/03/07 02:20:12  dkr
  * duplication of AP_ARGTAB and FUNDEF_ARGTAB added
  *
@@ -883,7 +886,9 @@ DupFundef (node *arg_node, node *arg_info)
     new_node = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
                            StringCopy (FUNDEF_MOD (arg_node)),
                            DupTypes_ (FUNDEF_TYPES (arg_node), arg_info),
-                           DUPTRAV (FUNDEF_ARGS (arg_node)), NULL, NULL);
+                           NULL, /* must be duplicated later on */
+                           NULL, /* must be duplicated later on */
+                           NULL);
 
     /* now we copy all the other things ... */
     FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
@@ -930,6 +935,7 @@ DupFundef (node *arg_node, node *arg_info)
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
+    FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
     FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
 
     if (FUNDEF_BODY (new_node) != NULL) {
@@ -1086,11 +1092,15 @@ DupBlock (node *arg_node, node *arg_info)
     BLOCK_NEEDFUNS (new_node) = DupNodelist_ (BLOCK_NEEDFUNS (arg_node), arg_info);
     BLOCK_NEEDTYPES (new_node) = DupNodelist_ (BLOCK_NEEDTYPES (arg_node), arg_info);
 
+    /*
+     * BLOCK_SSACOUNTER is adjusted correctly later on by DupFundef()
+     */
+    BLOCK_SSACOUNTER (new_node) = BLOCK_SSACOUNTER (arg_node);
+
 #if 0
   BLOCK_MASK( new_node, ?) = ???;
   BLOCK_SPMD_PROLOG_ICMS( new_node) = ???;
   BLOCK_SPMD_SETUP_ARGS( new_node) = ???;
-  BLOCK_SSACOUNTER( new_node) = ???;
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
