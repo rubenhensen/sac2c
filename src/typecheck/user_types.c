@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2002/08/05 17:01:02  sbs
+ * minor bugs fixed
+ *
  * Revision 3.2  2001/05/17 09:20:42  sbs
  * MALLOC FREE aliminated
  *
@@ -301,7 +304,7 @@ UTSetBaseType (usertype udt, ntype *type)
  *
  ******************************************************************************/
 
-#define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-89.89s | %-89.89s |"
+#define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-29.29s | %-29.29s |"
 
 void
 UTPrintRepository (FILE *outfile)
@@ -314,8 +317,8 @@ UTPrintRepository (FILE *outfile)
              "udt:", "module:", "name:", "defining type:", "base type:", "line:");
     for (i = 0; i < udt_no; i++) {
         fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d \n", i, UTGetMod (i),
-                 UTGetName (i), TYType2DebugString (UTGetTypedef (i)),
-                 TYType2DebugString (UTGetBaseType (i)), UTGetLine (i));
+                 UTGetName (i), TYType2String (UTGetTypedef (i), TRUE, 0),
+                 TYType2String (UTGetBaseType (i), TRUE, 0), UTGetLine (i));
     }
 
     DBUG_VOID_RETURN;
