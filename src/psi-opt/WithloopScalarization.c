@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2003/08/16 08:45:08  ktr
+ * Minor bugfixes.
+ *
  * Revision 1.33  2003/08/05 11:49:36  ktr
  * Support for maxwls added.
  *
@@ -338,7 +341,8 @@ MakeExprsIdChain (ids *idschain)
     if (idschain != NULL) {
         node *id;
 
-        id = MakeId (IDS_NAME (idschain), IDS_MOD (idschain), ST_regular);
+        id = MakeId (StringCopy (IDS_NAME (idschain)), StringCopy (IDS_MOD (idschain)),
+                     ST_regular);
 
         ID_VARDEC (id) = IDS_VARDEC (idschain);
         ID_AVIS (id) = IDS_AVIS (idschain);
@@ -709,16 +713,16 @@ probePart (node *arg_node, node *arg_info)
                         && (GetShpsegLength (ID_DIM (NPART_CEXPR (arg_node)),
                                              ID_SHPSEG (NPART_CEXPR (arg_node)))
                             <= maxwls))
-                    || ((BLOCK_INSTR (NPART_CBLOCK (arg_node))
-                         == NPART_SSAASSIGN (arg_node)))
-                         &&
+                    || (((BLOCK_INSTR (NPART_CBLOCK (arg_node))
+                          == NPART_SSAASSIGN (arg_node)))
+                        &&
 
-                         /* In non aggressive mode, all the inner WLs must
-                            iterate over the same dimensions */
-                         (INFO_WLS_DIMS (arg_info)
-                          == VARDEC_SHAPE (IDS_VARDEC (
-                                             NWITH_VEC (NPART_LETEXPR (arg_node))),
-                                           0))));
+                        /* In non aggressive mode, all the inner WLs must
+                           iterate over the same dimensions */
+                        (INFO_WLS_DIMS (arg_info)
+                         == VARDEC_SHAPE (IDS_VARDEC (
+                                            NWITH_VEC (NPART_LETEXPR (arg_node))),
+                                          0)))));
 
             } else {
                 INFO_WLS_POSSIBLE (arg_info) =
@@ -730,12 +734,12 @@ probePart (node *arg_node, node *arg_info)
                         && (GetShpsegLength (ID_DIM (NPART_CEXPR (arg_node)),
                                              ID_SHPSEG (NPART_CEXPR (arg_node)))
                             <= maxwls))
-                    || ((!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                               BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
-                         &&
+                    || (((!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                                BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
+                        &&
 
-                         /* In non aggressive mode, CBLOCK must be empty */
-                         (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty)));
+                        /* In non aggressive mode, CBLOCK must be empty */
+                        (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty))));
             }
         }
     }
