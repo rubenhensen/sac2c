@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/31 10:51:31  bs
+ * Function Array2CharVec added.
+ *
  * Revision 2.3  1999/03/15 14:09:04  bs
  * Access macros renamed (take a look at tree_basic.h).
  * Functions Array2FloatVec and Array2Dblvec added.
@@ -1076,6 +1079,40 @@ Array2IntVec (node *aelems, int *length)
     }
 
     DBUG_RETURN (intvec);
+}
+
+/***
+ ***  Array2CharVec
+ ***/
+
+char *
+Array2CharVec (node *aelems, int *length)
+{
+    char *charvec, i = 0, j;
+    node *tmp = aelems;
+
+    DBUG_ENTER ("Array2CharVec");
+
+    while (aelems != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_char),
+                     "constant integer array exspected !");
+        aelems = EXPRS_NEXT (aelems);
+        i++;
+    }
+    /*
+     *  if the length of the vector is not of interrest length may be NULL
+     */
+    if (length != NULL)
+        *length = i;
+
+    charvec = Malloc (i * sizeof (char));
+
+    for (j = 0; j < i; j++) {
+        charvec[j] = CHAR_VAL (EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (charvec);
 }
 
 /***
