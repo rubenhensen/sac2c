@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2000/12/08 10:03:46  nmw
+ * no more warning on type mismatch on alpha
+ *
  * Revision 3.3  2000/12/05 14:29:35  nmw
  * warning when setting refcounter of not refcounted variable
  * added. handling of T_hidden fixed
@@ -59,6 +62,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "sac.h"
 #include "sac_cinterface.h"
 
