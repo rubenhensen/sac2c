@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/11/15 17:18:24  sbs
+ * Malloc for size==0 and ndef SHOW_MALLOC now returns NULL rather than calling
+ * SYSABORT (iff the built-in malloc returns NULL in that case).
+ *
  * Revision 2.23  2000/11/15 14:02:38  sbs
  * args of tolower casted from char to int.
  *
@@ -232,6 +236,7 @@ typedef struct {
  *  functionname  : Malloc
  *  arguments     :  1) size of memory to allocate
  *  description   : allocates memory, if there is enough
+ *                  iff size=0 NULL is returned!
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : malloc, Error
@@ -248,9 +253,8 @@ Malloc (int size)
 
     DBUG_ENTER ("Malloc");
     DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
-    /*
-    DBUG_ASSERT(size > 0, ("must allocate more then zero Bytes."));
-    */
+    DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
+
 #ifdef SHOW_MALLOC
     tmp = malloc (size + malloc_align_step);
     if (NULL == tmp)
@@ -265,7 +269,11 @@ Malloc (int size)
         max_allocated_mem = current_allocated_mem;
 #else /* not SHOW_MALLOC */
     tmp = malloc (size);
-    if (NULL == tmp)
+    /*
+     * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
+     * we do complain for ((NULL == tmp) && (size > 0)) only!!
+     */
+    if ((NULL == tmp) && (size > 0))
         SYSABORT (("Out of memory"));
 #endif
 
