@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.146  1998/02/13 12:48:45  srs
+ * extended generator syntax Ngenidx
+ *
  * Revision 1.145  1998/02/09 16:06:28  srs
  * adjust Ngenidx to new MakeNWithid syntax
  *
@@ -1973,7 +1976,11 @@ Nwidth: /* empty */ { $$ = NULL; }
       | WIDTH expr  { $$ = $2;}
       ;
 
-Ngenidx: id { $$ = MakeNWithid(MakeIds($1, NULL, ST_regular), NULL); }
+Ngenidx: id LET SQBR_L ids SQBR_R 
+         { 
+           $$ = MakeNWithid(MakeIds($1, NULL, ST_regular), $4); 
+         }
+       | id { $$ = MakeNWithid(MakeIds($1, NULL, ST_regular), NULL); }
        | SQBR_L ids SQBR_R { $$ = MakeNWithid( NULL, $2); }
        ;
 
