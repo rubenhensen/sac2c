@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.25  2001/02/02 14:27:53  dkr
- * some minor changes done
+ * Revision 3.26  2001/02/06 01:48:34  dkr
+ * NOOP nodes added
  *
  * Revision 3.22  2001/01/29 19:21:21  dkr
  * fixed a bug in FitWL
@@ -114,6 +114,7 @@
 typedef enum {
     WL_PH_conv,
     WL_PH_cubes,
+    WL_PH_fill1,
     WL_PH_segs,
     WL_PH_split,
     WL_PH_block,
@@ -121,7 +122,9 @@ typedef enum {
     WL_PH_merge,
     WL_PH_opt,
     WL_PH_fit,
-    WL_PH_norm
+    WL_PH_norm,
+    WL_PH_fill2,
+    WL_PH_final /* must be the last item!! */
 } wl_bs_t;
 
 /*
@@ -1931,7 +1934,7 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
     DBUG_ENTER ("GenerateShapeStrides");
 
     if (dim < dims) {
-        new_grid = MakeWLgrid (0, dim, 0, 1, FALSE, FALSE,
+        new_grid = MakeWLgrid (0, dim, 0, 1, FALSE,
                                GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
 
         strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (shape, dim), 1, FALSE, new_grid,
@@ -2211,16 +2214,20 @@ GetCurrentComponent_Node (node *aelems)
 static node *
 Parts2Strides (node *parts, int dims, shpseg *shape)
 {
-    node *parts_stride, *stride, *new_stride, *new_grid, *gen, *bound1, *bound2, *step,
-      *width;
+    node *parts_stride, *stride, *new_stride, *new_grid;
+    node *gen, *code;
+    node *bound1, *bound2, *step, *width;
     int dim;
-    bool is_empty;
+    bool is_empty, is_noop;
     node *last_grid = NULL;
 
     DBUG_ENTER ("Parts2Strides");
 
     parts_stride = NULL;
     while (parts != NULL) {
+        code = NPART_CODE (parts);
+        is_noop = NCODE_AP_DUMMY_CODE (code);
+
         stride = NULL;
 
         gen = NPART_GEN (parts);
@@ -2234,16 +2241,30 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
         width = ToFirstComponent (NGEN_WIDTH (gen));
 
         is_empty = FALSE;
+        new_grid = NULL;
 
         for (dim = 0; dim < dims; dim++) {
             DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
             DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
 
-            if ((NODE_TYPE (bound1) == N_exprs) && (NODE_TYPE (bound2) == N_exprs)
-                && ((step == NULL) || (NODE_TYPE (step) == N_exprs))
-                && ((width == NULL) || (NODE_TYPE (width) == N_exprs))) {
+            if ((width == NULL) || (NODE_TYPE (width) == N_exprs)) {
                 /*
-                 * all generator parameters are constant
+                 * width is constant
+                 */
+                new_grid = MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width), FALSE,
+                                       NULL, NULL, NULL);
+            } else {
+                /*
+                 * width is not constant
+                 */
+                new_grid = MakeWLgridVar (0, dim, 0, GetCurrentComponent_Node (width),
+                                          NULL, NULL, NULL);
+            }
+
+            if ((NODE_TYPE (bound1) == N_exprs) && (NODE_TYPE (bound2) == N_exprs)
+                && ((step == NULL) || (NODE_TYPE (step) == N_exprs))) {
+                /*
+                 * all stride parameters are constant
                  */
 
                 /* build N_WLstride-node of current dimension */
@@ -2252,49 +2273,35 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
                                   (shape != NULL) ? MIN (GetCurrentComponent_Int (bound2),
                                                          SHPSEG_SHAPE (shape, dim))
                                                   : GetCurrentComponent_Int (bound2),
-                                  GetCurrentComponent_Int (step), FALSE,
-                                  MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width),
-                                              FALSE, FALSE, NULL, NULL, NULL),
-                                  NULL);
+                                  GetCurrentComponent_Int (step), FALSE, new_grid, NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
 
                 is_empty = IsEmptyStride_1 (new_stride);
-                if (is_empty) {
-                    new_stride = FreeTree (new_stride);
-                    break;
-                } else {
-                    /* append 'new_stride' to 'stride' */
-                    if (dim == 0) {
-                        stride = new_stride;
-                    } else {
-                        WLGRID_NEXTDIM (last_grid) = new_stride;
-                    }
-                    last_grid = WLSTRIDE_CONTENTS (new_stride);
-                }
-
             } else {
                 /*
-                 * not all generator parameters are constant
+                 * not all stride parameters are constant
                  */
-
-                new_grid = MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width), FALSE,
-                                       FALSE, NULL, NULL, NULL);
 
                 /* build N_WLstrideVar-node of current dimension */
                 new_stride
                   = MakeWLstrideVar (0, dim, GetCurrentComponent_Node (bound1),
                                      GetCurrentComponent_Node (bound2),
                                      GetCurrentComponent_Node (step), new_grid, NULL);
+            }
 
-                /* append 'new_stride' to 'parts_stride' */
+            if (is_empty) {
+                new_stride = FreeTree (new_stride);
+                break;
+            } else {
+                /* append 'new_stride' to 'stride' */
                 if (dim == 0) {
                     stride = new_stride;
                 } else {
-                    WLGRIDVAR_NEXTDIM (last_grid) = new_stride;
+                    WLGRIDX_NEXTDIM (last_grid) = new_stride;
                 }
-                last_grid = WLSTRIDEVAR_CONTENTS (new_stride);
+                last_grid = WLSTRIDEX_CONTENTS (new_stride);
             }
 
             /* go to next dim */
@@ -2305,8 +2312,12 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
         }
 
         if (!is_empty) {
-            WLGRID_CODE (last_grid) = NPART_CODE (parts);
-            NCODE_USED (NPART_CODE (parts))++;
+            WLGRIDX_CODE (last_grid) = code;
+            NCODE_USED (code)++;
+            if (is_noop) {
+                DBUG_ASSERT ((new_grid != NULL), "no grid found!");
+                WLGRIDX_NOOP (new_grid) = TRUE;
+            }
             parts_stride = InsertWLnodes (parts_stride, stride);
         }
 
@@ -2417,11 +2428,7 @@ StridesDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub
                         int step2, int width2)
 {
     int ub, lb, step;
-#ifdef DO_NOT_USE_MOD
-    int inc1, inc2, iv1, iv2;
-#else
     int iv;
-#endif
     bool disjoint = TRUE;
 
     DBUG_ENTER ("StridesDisjoint_OneDim");
@@ -2431,54 +2438,12 @@ StridesDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub
     step = lcm (step1, step2);
     ub = MIN (ub, lb + step);
 
-#ifdef DO_NOT_USE_MOD
-    inc1 = (lb - lb1) % step1;
-    if (inc1 < width1) {
-        iv1 = lb;
-    } else {
-        iv1 = lb + step1 - inc1;
-        inc1 = 0;
-    }
-
-    inc2 = (lb - lb2) % step2;
-    if (inc2 < width2) {
-        iv2 = lb;
-    } else {
-        iv2 = lb + step2 - inc2;
-        inc2 = 0;
-    }
-
-    while ((iv1 < ub) && (iv2 < ub)) {
-        if (iv1 == iv2) {
-            disjoint = FALSE;
-            break;
-        }
-        if (iv1 < iv2) {
-            if (inc1 + 1 < width1) {
-                iv1++;
-                inc1++;
-            } else {
-                iv1 += step1;
-                inc1 = 0;
-            }
-        } else {
-            if (inc2 + 1 < width2) {
-                iv2++;
-                inc2++;
-            } else {
-                iv2 += step2;
-                inc2 = 0;
-            }
-        }
-    }
-#else
     for (iv = lb; iv < ub; iv++) {
         if (((iv - lb1) % step1 < width1) && ((iv - lb2) % step2 < width2)) {
             disjoint = FALSE;
             break;
         }
     }
-#endif
 
     DBUG_RETURN (disjoint);
 }
@@ -4325,7 +4290,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
             if (val1 < val2) {
                 WLGRIDX_NEXT (grid)
                   = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
-                                FALSE, FALSE,
+                                FALSE,
                                 GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
                                 NULL, NULL);
             }
@@ -4333,7 +4298,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
             WLGRIDX_NEXT (grid)
               = MakeWLgridVar (WLGRID_LEVEL (grid), WLGRID_DIM (grid),
                                NameOrVal_MakeNode (name1, val1, pnode1),
-                               DupNode (WLSTRIDEVAR_STEP (stride)), FALSE,
+                               DupNode (WLSTRIDEVAR_STEP (stride)),
                                GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
                                NULL, NULL);
         }
@@ -4356,7 +4321,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
         shp_idx = GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (stride));
         if (val2 != IDX_OTHER) {
             if (val2 < shp_idx) {
-                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
                                        GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims,
                                                              shape),
                                        NULL, NULL);
@@ -4366,7 +4331,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
             }
         } else {
             new_grid
-              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
                             GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims, shape),
                             NULL, NULL);
             WLSTRIDEVAR_NEXT (stride)
@@ -4380,7 +4345,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
          */
         if (val1 != IDX_OTHER) {
             if (val1 > 0) {
-                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
                                        GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims,
                                                              shape),
                                        NULL, NULL);
@@ -4390,7 +4355,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
             }
         } else {
             new_grid
-              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
                             GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims, shape),
                             NULL, NULL);
             stride
@@ -5330,7 +5295,7 @@ ComputeCubes (node *strides)
 /******************************************************************************
  ******************************************************************************
  **
- **  functions for GenerateCompleteGrids()
+ **  functions for InsertNoopGrids(), InsertNoopNodes()
  **
  **/
 
@@ -5345,9 +5310,67 @@ ComputeCubes (node *strides)
  ******************************************************************************/
 
 static node *
-FillGap (node *wlnode)
+FillGap (node *wlnode, char *name1, int val1, void *pnode1, char *name2, int val2,
+         void *pnode2)
 {
+    node *next;
+    bool is_const;
+
     DBUG_ENTER ("FillGap");
+
+    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+
+    next = WLNODE_NEXT (wlnode);
+
+    if (!NameOrVal_Eq (name1, val1, name2, val2)) {
+        is_const = ((val1 != IDX_OTHER) && (val2 != IDX_OTHER));
+
+        switch (NODE_TYPE (wlnode)) {
+        case N_WLblock:
+            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
+            WLNODE_NEXT (wlnode)
+              = MakeWLblock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1, val2, 1,
+                             NULL, NULL, next);
+            break;
+
+        case N_WLublock:
+            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
+            WLNODE_NEXT (wlnode)
+              = MakeWLublock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1, val2, 1,
+                              NULL, NULL, next);
+            break;
+
+        case N_WLstride:
+            /* here is no break missing */
+        case N_WLstrideVar:
+            WLNODE_NEXT (wlnode)
+              = (is_const) ? MakeWLstride (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
+                                           val1, val2, 1, FALSE, NULL, next)
+                           : MakeWLstrideVar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
+                                              NameOrVal_MakeNode (name1, val1, pnode1),
+                                              NameOrVal_MakeNode (name2, val2, pnode2),
+                                              MakeNum (1), NULL, next);
+            break;
+
+        case N_WLgrid:
+            /* here is no break missing */
+        case N_WLgridVar:
+            WLNODE_NEXT (wlnode)
+              = (is_const) ? MakeWLgrid (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
+                                         val2, FALSE, NULL, next, NULL)
+                           : MakeWLgridVar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
+                                            NameOrVal_MakeNode (name1, val1, pnode1),
+                                            NameOrVal_MakeNode (name2, val2, pnode2),
+                                            NULL, next, NULL);
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal node type found!");
+            break;
+        }
+
+        WLNODE_NOOP (WLNODE_NEXT (wlnode)) = TRUE;
+    }
 
     DBUG_RETURN (wlnode);
 }
@@ -5355,12 +5378,13 @@ FillGap (node *wlnode)
 /******************************************************************************
  *
  * Function:
- *   node *GenerateCompleteGrids( node *stride)
+ *   node *InsertNoopGrids( node *stride)
  *
  * Description:
- *   Supplements missings parts of the grid in 'stride'.
+ *   Inserts NOOP N_WLgrid...-nodes for gaps found in the grids of the given
+ *   strides.
  *
- *   Example:
+ *   Example for gaps in grids:
  *       90 -> 200 step[0] 50
  *                   10 -> 20: ... tree1 ...
  *                   30 -> 40: ... tree2 ...
@@ -5376,7 +5400,7 @@ FillGap (node *wlnode)
  ******************************************************************************/
 
 static node *
-GenerateCompleteGrids (node *stride)
+InsertNoopGrids (node *stride)
 {
     node *grid, *grid_next, *tmp;
     void *pnode1, *pnode2;
@@ -5384,7 +5408,7 @@ GenerateCompleteGrids (node *stride)
     char *name1, *name2;
     int val1, val2;
 
-    DBUG_ENTER ("GenerateCompleteGrids");
+    DBUG_ENTER ("InsertNoopGrids");
 
     if (stride != NULL) {
         DBUG_ASSERT (((NODE_TYPE (stride) == N_WLstride)
@@ -5428,24 +5452,12 @@ GenerateCompleteGrids (node *stride)
             pnode2 = WLGRIDX_GET_ADDR (grid_next, BOUND1);
             NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (grid_next), pnode2);
 
-            if (!NameOrVal_Eq (name1, val1, name2, val2)) {
-                if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
-                    WLGRIDX_NEXT (grid)
-                      = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
-                                    FALSE, FALSE, NULL, grid_next, NULL);
-                } else {
-                    WLGRIDX_NEXT (grid)
-                      = MakeWLgridVar (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid),
-                                       NameOrVal_MakeNode (name1, val1, pnode1),
-                                       NameOrVal_MakeNode (name2, val2, pnode2), FALSE,
-                                       NULL, grid_next, NULL);
-                }
-            }
+            grid = FillGap (grid, name1, val1, pnode1, name2, val2, pnode2);
 
             /*
              * next dim
              */
-            WLGRIDX_NEXTDIM (grid) = GenerateCompleteGrids (WLGRIDX_NEXTDIM (grid));
+            WLGRIDX_NEXTDIM (grid) = InsertNoopGrids (WLGRIDX_NEXTDIM (grid));
 
             grid = grid_next;
         }
@@ -5459,37 +5471,116 @@ GenerateCompleteGrids (node *stride)
         pnode2 = WLSTRIDEX_GET_ADDR (stride, STEP);
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
-        if (!NameOrVal_Eq (name1, val1, name2, val2)) {
-            if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
-                WLGRIDX_NEXT (grid)
-                  = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
-                                FALSE, FALSE, NULL, WLGRIDX_NEXT (grid), NULL);
-            } else {
-                WLGRIDX_NEXT (grid)
-                  = MakeWLgridVar (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid),
-                                   NameOrVal_MakeNode (name1, val1, pnode1),
-                                   NameOrVal_MakeNode (name2, val2, pnode2), FALSE, NULL,
-                                   WLGRIDX_NEXT (grid), NULL);
-            }
-        }
+        grid = FillGap (grid, name1, val1, pnode1, name2, val2, pnode2);
 
         /*
          * next dim
          */
-        WLGRIDX_NEXTDIM (grid) = GenerateCompleteGrids (WLGRIDX_NEXTDIM (grid));
+        WLGRIDX_NEXTDIM (grid) = InsertNoopGrids (WLGRIDX_NEXTDIM (grid));
 
         /*
-         * next stride
+         * next
          */
-        WLSTRIDEX_NEXT (stride) = GenerateCompleteGrids (WLSTRIDEX_NEXT (stride));
+        WLSTRIDEX_NEXT (stride) = InsertNoopGrids (WLSTRIDEX_NEXT (stride));
     }
 
     DBUG_RETURN (stride);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *InsertNoopNode( node *wlnode)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+InsertNoopNode (node *wlnode)
+{
+    void *pnode1, *pnode2;
+    char *name1, *name2;
+    int val1, val2;
+    node *next;
+
+    DBUG_ENTER ("InsertNoopNode");
+
+    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+
+    next = WLNODE_NEXT (wlnode);
+
+    if (next != NULL) {
+        pnode1 = WLNODE_GET_ADDR (wlnode, BOUND2);
+        NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (wlnode), pnode1);
+
+        pnode2 = WLNODE_GET_ADDR (next, BOUND1);
+        NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (next), pnode2);
+
+        wlnode = FillGap (wlnode, name1, val1, pnode1, name2, val2, pnode2);
+    }
+
+    DBUG_RETURN (wlnode);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *InsertNoopNodes( node *wlnode)
+ *
+ * Description:
+ *   Inserts NOOP-N_WLnodes for gaps found in 'wlnode'.
+ *
+ ******************************************************************************/
+
+static node *
+InsertNoopNodes (node *wlnode)
+{
+    DBUG_ENTER ("InsertNoopNodes");
+
+    if (wlnode != NULL) {
+        WLNODE_NEXT (wlnode) = InsertNoopNodes (WLNODE_NEXT (wlnode));
+
+        switch (NODE_TYPE (wlnode)) {
+        case N_WLblock:
+            /* here is no break missing */
+        case N_WLublock:
+            WLXBLOCK_CONTENTS (wlnode) = InsertNoopNodes (WLXBLOCK_CONTENTS (wlnode));
+            WLXBLOCK_NEXTDIM (wlnode) = InsertNoopNodes (WLXBLOCK_NEXTDIM (wlnode));
+            wlnode = InsertNoopNode (wlnode);
+            break;
+
+        case N_WLstride:
+            /* here is no break missing */
+        case N_WLstrideVar:
+            WLSTRIDEX_CONTENTS (wlnode) = InsertNoopNodes (WLSTRIDEX_CONTENTS (wlnode));
+            wlnode = InsertNoopNode (wlnode);
+            break;
+
+        case N_WLgrid:
+            /* here is no break missing */
+        case N_WLgridVar:
+            WLGRIDX_NEXTDIM (wlnode) = InsertNoopNodes (WLGRIDX_NEXTDIM (wlnode));
+            /*
+             * no gaps in grids left after call of InsertNoopGrids() !!!
+             *
+            wlnode = InsertNoopNode( wlnode);
+             */
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal node type found!");
+            break;
+        }
+    }
+
+    DBUG_RETURN (wlnode);
+}
+
 /**
  **
- **  functions for GenerateCompleteGrids()
+ **  functions for InsertNoopGrids(), InsertNoopNodes()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -5602,6 +5693,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
 
         default:
             DBUG_ASSERT ((0), "illegal node type found!");
+            d = (-1);
             break;
         }
 
@@ -5807,12 +5899,6 @@ InferFitted (node *wlnode)
         WLNODE_NEXT (wlnode) = InferFitted (WLNODE_NEXT (wlnode));
 
         switch (NODE_TYPE (wlnode)) {
-        case N_WLsegVar:
-            /* here is no break missing */
-        case N_WLseg:
-            WLSEGX_CONTENTS (wlnode) = InferFitted (WLSEGX_CONTENTS (wlnode));
-            break;
-
         case N_WLblock:
             /* here is no break missing */
         case N_WLublock:
@@ -5876,12 +5962,14 @@ AnalyzeBreakSpecifier (void)
 
     DBUG_ENTER ("bs");
 
-    bs = WL_PH_norm;
+    bs = WL_PH_final;
     if (break_after == PH_wltrans) {
         if (!strcmp (break_specifier, "conv")) {
             bs = WL_PH_conv;
         } else if (!strcmp (break_specifier, "cubes")) {
             bs = WL_PH_cubes;
+        } else if (!strcmp (break_specifier, "fill1")) {
+            bs = WL_PH_fill1;
         } else if (!strcmp (break_specifier, "segs")) {
             bs = WL_PH_segs;
         } else if (!strcmp (break_specifier, "split")) {
@@ -5898,6 +5986,8 @@ AnalyzeBreakSpecifier (void)
             bs = WL_PH_fit;
         } else if (!strcmp (break_specifier, "norm")) {
             bs = WL_PH_norm;
+        } else if (!strcmp (break_specifier, "fill2")) {
+            bs = WL_PH_fill2;
         }
     }
 
@@ -5922,7 +6012,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 {
     node *strides, *cubes, *segs, *seg;
     shpseg *wl_shape;
-    bool is_fold;
+    bool is_fold, do_naive_comp;
     int wl_dims, b;
     wl_bs_t WL_break_after;
     node *new_node = NULL;
@@ -5952,7 +6042,7 @@ WLTRAwith (node *arg_node, node *arg_info)
       = ((NWITH_TYPE (arg_node) == WO_foldfun) || (NWITH_TYPE (arg_node) == WO_foldprf));
     /* get number of dims of with-loop index range */
     wl_dims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
-    wl_shape = is_fold ? TYPES_SHPSEG (INFO_WL_TYPES (arg_info)) : NULL;
+    wl_shape = is_fold ? NULL : TYPES_SHPSEG (INFO_WL_TYPES (arg_info));
 
     /*
      * convert parts of with-loop into new format
@@ -5985,8 +6075,7 @@ WLTRAwith (node *arg_node, node *arg_info)
         /*
          * Extract naive-compilation and array-placement pragmas
          */
-        NWITH2_NAIVE_COMP (new_node)
-          = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
+        do_naive_comp = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
         NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (arg_node), line);
         if ((NWITH2_PRAGMA (new_node) != NULL) && is_fold) {
             /*
@@ -6043,13 +6132,13 @@ WLTRAwith (node *arg_node, node *arg_info)
                     if (!is_fold) {
                         strides = GenerateCompleteDomainVar (strides, wl_dims, wl_shape);
 
-                        if (NWITH2_NAIVE_COMP (new_node)) {
+                        if (do_naive_comp) {
                             /*
                              * we have generated a *cube* now!
                              */
                             WARN (line, ("wlcomp-pragma function Naive() ignored for"
                                          " single-generator with-loops"));
-                            NWITH2_NAIVE_COMP (new_node) = FALSE;
+                            do_naive_comp = FALSE;
                         }
                     }
                 } else {
@@ -6057,12 +6146,12 @@ WLTRAwith (node *arg_node, node *arg_info)
                      * we have multiple strides, which are not all constant
                      *  -> just naive compilation possible for the time being :-(
                      */
-                    NWITH2_NAIVE_COMP (new_node) = TRUE;
+                    do_naive_comp = TRUE;
                 }
 
                 cubes = strides;
             } else {
-                if (NWITH2_NAIVE_COMP (new_node)) {
+                if (do_naive_comp) {
                     /*
                      * this is a trick in order to put each stride in a separate segment
                      * later on
@@ -6074,7 +6163,13 @@ WLTRAwith (node *arg_node, node *arg_info)
                 }
             }
 
-            cubes = GenerateCompleteGrids (cubes);
+            if (WL_break_after >= WL_PH_fill1) {
+                /*
+                 * normalize grids and fill gaps
+                 */
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 2: filling gaps (grids only)\n")));
+                cubes = InsertNoopGrids (cubes);
+            }
 
             if (WL_break_after < WL_PH_segs) {
                 /*
@@ -6083,9 +6178,9 @@ WLTRAwith (node *arg_node, node *arg_info)
                  */
                 segs = All (NULL, NULL, cubes, wl_dims, line);
             } else {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 2: choice of segments\n")));
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choice of segments\n")));
 
-                if (NWITH2_NAIVE_COMP (new_node)) {
+                if (do_naive_comp) {
                     /*
                      * naive compilation
                      *  -> put each stride in a separate segment
@@ -6100,94 +6195,100 @@ WLTRAwith (node *arg_node, node *arg_info)
                  */
                 segs = InferSegsParams_Pre (segs);
 
-                if (!NWITH2_NAIVE_COMP (new_node)) {
+                seg = segs;
+                while (seg != NULL) {
                     /*
-                     * naive compilation
-                     *  -> skip other transformations
+                     * check params of segment
                      */
+                    CheckParams (seg);
 
-                    seg = segs;
-                    while (seg != NULL) {
-                        /*
-                         * check params of segment
-                         */
-                        CheckParams (seg);
-
-                        /* splitting */
-                        if (WL_break_after >= WL_PH_split) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans", NOTE (("step 3: splitting\n")));
-                                WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
-                            }
+                    /* splitting */
+                    if ((WL_break_after >= WL_PH_split) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 4: splitting\n")));
+                            WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
                         }
+                    }
 
-                        /* hierarchical blocking */
-                        if (WL_break_after >= WL_PH_block) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans",
-                                              NOTE (("step 4: hierarchical blocking\n")));
-                                for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                                    DBUG_EXECUTE (
-                                      "WLtrans",
-                                      NOTE (
-                                        ("step 4.%d: hierarchical blocking (level %d)\n",
+                    /* hierarchical blocking */
+                    if ((WL_break_after >= WL_PH_block) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans",
+                                          NOTE (("step 5: hierarchical blocking\n")));
+                            for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
+                                DBUG_EXECUTE (
+                                  "WLtrans",
+                                  NOTE (("step 5.%d: hierarchical blocking (level %d)\n",
                                          b + 1, b)));
-                                    WLSEG_CONTENTS (seg)
-                                      = BlockWL (WLSEG_CONTENTS (seg), wl_dims,
-                                                 WLSEG_BV (seg, b), FALSE);
-                                }
-                            }
-                        }
-
-                        /* unrolling-blocking */
-                        if (WL_break_after >= WL_PH_ublock) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans",
-                                              NOTE (("step 5: unrolling-blocking\n")));
                                 WLSEG_CONTENTS (seg)
                                   = BlockWL (WLSEG_CONTENTS (seg), wl_dims,
-                                             WLSEG_UBV (seg), TRUE);
+                                             WLSEG_BV (seg, b), FALSE);
                             }
                         }
-
-                        /* merging */
-                        if (WL_break_after >= WL_PH_merge) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans", NOTE (("step 6: merging\n")));
-                                WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
-                            }
-                        }
-
-                        /* optimization */
-                        if (WL_break_after >= WL_PH_opt) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans",
-                                              NOTE (("step 7: optimization\n")));
-                                WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
-                            }
-                        }
-
-                        /* fitting */
-                        if (WL_break_after >= WL_PH_fit) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans", NOTE (("step 8: fitting\n")));
-                                WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
-                            }
-                        }
-
-                        /* normalization */
-                        if (WL_break_after >= WL_PH_norm) {
-                            if (NODE_TYPE (seg) == N_WLseg) {
-                                DBUG_EXECUTE ("WLtrans",
-                                              NOTE (("step 9: normalization\n")));
-                                WLSEGX_CONTENTS (seg)
-                                  = NormWL (wl_dims, WLSEGX_CONTENTS (seg));
-                            }
-                        }
-
-                        seg = WLSEG_NEXT (seg);
                     }
+
+                    /* unrolling-blocking */
+                    if ((WL_break_after >= WL_PH_ublock) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans",
+                                          NOTE (("step 6: unrolling-blocking\n")));
+                            WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), wl_dims,
+                                                            WLSEG_UBV (seg), TRUE);
+                        }
+                    }
+
+                    /* merging */
+                    if ((WL_break_after >= WL_PH_merge) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 7: merging\n")));
+                            WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
+                        }
+                    }
+
+                    /* optimization */
+                    if ((WL_break_after >= WL_PH_opt) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 8: optimization\n")));
+                            WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
+                        }
+                    }
+
+                    /* fitting */
+                    if ((WL_break_after >= WL_PH_fit) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 9: fitting\n")));
+                            WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
+                        }
+                    }
+
+                    /* normalization */
+                    if ((WL_break_after >= WL_PH_norm) && (!do_naive_comp)) {
+                        if (NODE_TYPE (seg) == N_WLseg) {
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 10: normalization\n")));
+                            WLSEGX_CONTENTS (seg)
+                              = NormWL (wl_dims, WLSEGX_CONTENTS (seg));
+                        }
+                    }
+
+                    if (WL_break_after >= WL_PH_fill2) {
+                        /*
+                         * fill all gaps
+                         */
+                        DBUG_EXECUTE ("WLtrans",
+                                      NOTE (("step 11: filling gaps (all nodes)\n")));
+                        WLSEGX_CONTENTS (seg) = InsertNoopNodes (WLSEGX_CONTENTS (seg));
+                    }
+
+                    /* compute GRIDX_FITTED */
+                    WLSEGX_CONTENTS (seg) = InferFitted (WLSEGX_CONTENTS (seg));
+
+                    seg = WLSEG_NEXT (seg);
                 }
+
+                /*
+                 * compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_HOMSV, SEG_MAXHOMDIM
+                 */
+                segs = InferSegsParams_Post (segs);
             }
 
             /*
@@ -6197,16 +6298,6 @@ WLTRAwith (node *arg_node, node *arg_info)
                 cubes = FreeTree (cubes);
             }
         }
-
-        /*
-         * compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_HOMSV, SEG_MAXHOMDIM
-         */
-        segs = InferSegsParams_Post (segs);
-
-        /*
-         * compute WLGRIDX_FITTED
-         */
-        segs = InferFitted (segs);
 
         NWITH2_SEGS (new_node) = segs;
     }
@@ -6228,27 +6319,33 @@ WLTRAwith (node *arg_node, node *arg_info)
  *   node *WLTRAcode( node *arg_node, node *arg_info)
  *
  * Description:
- *   CODE_NO is set.
+ *   Sets NCODE_NO.
  *
  ******************************************************************************/
 
 node *
 WLTRAcode (node *arg_node, node *arg_info)
 {
-    static int no = 0;
+    node *code;
+    int no = 0;
 
     DBUG_ENTER ("WLTRAcode");
 
-    NCODE_NO (arg_node) = no++;
+    code = arg_node;
+    do {
+        DBUG_ASSERT ((NCODE_USED (code) >= 0), "illegal NCODE_USED value!");
 
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    }
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+        NCODE_NO (code) = no++;
 
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
-    }
+        if (NCODE_CBLOCK (code) != NULL) {
+            NCODE_CBLOCK (code) = Trav (NCODE_CBLOCK (code), arg_info);
+        }
+        if (NCODE_CEXPR (code) != NULL) {
+            NCODE_CEXPR (code) = Trav (NCODE_CEXPR (code), arg_info);
+        }
+
+        code = NCODE_NEXT (code);
+    } while (code != NULL);
 
     DBUG_RETURN (arg_node);
 }
