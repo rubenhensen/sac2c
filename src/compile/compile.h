@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/08 12:07:06  dkr
+ * macros RC_INACTIVE, RC_UNDEF added
+ *
  * Revision 3.6  2001/04/26 15:16:58  dkr
  * no changes done
  *
@@ -66,7 +69,7 @@
 #ifndef _sac_compile_h
 #define _sac_compile_h
 
-#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) >= 0)
+#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) != RC_INACTIVE)
 
 extern node *MakeAdjustRcIcm (char *name, types *type, int rc, int num);
 extern node *MakeIncRcIcm (char *name, types *type, int rc, int num);
