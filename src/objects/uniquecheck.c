@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  2000/06/23 13:32:24  dkr
+ * comment about old with-loop removed
+ *
  * Revision 2.2  2000/05/30 12:34:36  dkr
  * functions for old with-loop removed
  *
@@ -1209,8 +1212,6 @@ UNQNwith (node *arg_node, node *arg_info)
     AddHistory (unqstate, H_with_enter);
     AddHistory (skipped_state, H_with_skipped);
 
-    /*   Trav(WITH_OPERATOR(arg_node), arg_node);  */
-    /* traverse same elements as in the old withloop: */
     Trav (NWITH_CODE (arg_node), arg_node);
 
     DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after with\n");
