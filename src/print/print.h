@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/08/09 14:11:31  dkr
+ * signature of PrintFunctionHeader modified
+ *
  * Revision 3.16  2002/06/25 14:07:03  sbs
  * PrintDot added .
  *
@@ -82,7 +85,7 @@ extern void PrintArgtab (argtab_t *argtab, bool is_def);
 /*
  * Other functions for external use
  */
-extern void PrintFunctionHeader (node *arg_node, node *arg_info);
+extern void PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment);
 
 /*
  * Functions for internal use during AST traversal only!
