@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/04/28 15:44:01  srs
+ * added tcwl_tab
+ *
  * Revision 1.44  1998/04/23 18:58:25  dkr
  * added tabs
  * changed usage of NIF
@@ -187,6 +190,7 @@ extern funptr readsib_tab[];
 extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
+extern funptr tcwl_tab[];
 extern funptr spmdinit_tab[];
 extern funptr spmdopt_tab[];
 extern funptr o2nWith_tab[];

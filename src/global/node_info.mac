@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.194  1998/04/28 15:43:34  srs
+ * added tcwl_tab
+ *
  * Revision 1.193  1998/04/28 13:23:18  dkr
  * added RCblock, RCvardec
  *
@@ -600,7 +603,7 @@
  *                             writesib_tab  obj_tab       impltype_tab  objinit_tab
  *                             analy_tab     checkdec_tab  writedec_tab  unique_tab
  *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
- *                             wlt_tab       cse_tab       dfr_tab       *unused*
+ *                             wlt_tab       cse_tab       dfr_tab       tcwl_tab
  *                             spmdinit_tab  spmdopt_tab   *unused*      *unused*
  *                             o2nWith_tab
  *                             nnode
