@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1996/09/11 06:13:14  cg
+ * Revision 1.15  1997/04/24 14:59:22  sbs
+ * HAVE_MALLOC_O inserted
+ *
+ * Revision 1.14  1996/09/11  06:13:14  cg
  * Function SystemCall2 added that executes a system call and returns the
  * exit code rather than terminating with an error message upon failure.
  *
@@ -96,7 +99,9 @@ Malloc (int size)
 
     DBUG_PRINT ("MEM", ("new memory: " P_FORMAT, tmp));
 
+#ifdef HAVE_MALLOC_O
     DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););
+#endif /* HAVE_MALLOC_O */
 
     DBUG_RETURN (tmp);
 }

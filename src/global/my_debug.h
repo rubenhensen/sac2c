@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/12/28 10:32:52  cg
+ * Revision 1.8  1997/04/24 15:00:54  sbs
+ * HAVE_MALLOC_O inserted
+ *
+ * Revision 1.7  1995/12/28  10:32:52  cg
  * added declarations for malloc_debug and malloc_verify
  *
  * Revision 1.6  1994/12/30  16:57:01  sbs
@@ -34,8 +37,10 @@ extern char *mdb_prf[];
 
 extern char *mdb_type[];
 
+#ifdef HAVE_MALLOC_O
 extern int malloc_debug (int);
 extern int malloc_verify ();
+#endif /* HAVE_MALLOC_O */
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 

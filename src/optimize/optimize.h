@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/08/09 16:42:52  asi
+ * Revision 1.43  1997/04/24 15:03:43  sbs
+ * HAVE_MALLOC_O inserted
+ *
+ * Revision 1.42  1996/08/09  16:42:52  asi
  * dead function removal added
  *
  * Revision 1.41  1996/02/13  13:58:14  asi
@@ -236,12 +239,12 @@ extern void PopMRDL2 ();
         fprintf (stderr, "\n");                                                          \
     }
 
-#ifdef MALLOC_OPT
+#ifdef HAVE_MALLOC_O
 extern int malloc_verify();
 extern int malloc_debug(int level);
-#endif /*MALLOC_OPT */
+#endif /*HAVE_MALLOC_O */
 
-#ifdef MALLOC_OPT
+#ifdef HAVE_MALLOC_O
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address);                                                                      \
@@ -250,7 +253,7 @@ extern int malloc_debug(int level);
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address)
-#endif /*MALLOC_OPT */
+#endif /*HAVE_MALLOC_O */
 
 #endif /* 0 */
 
