@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2004/11/23 12:51:04  cg
+# Removed legacy code.
+#
 # Revision 3.21  2004/07/14 15:29:54  ktr
 # Nothing really changed.
 #
@@ -68,44 +71,9 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../../inc -I../tree -I../print -I../flatten -I../scanparse \
-       -I../typecheck -I../optimize -I../modules -I../global -I../refcount \
-       -I../compile -I../psi-opt -I../objects -I../concurrent \
-       -I../multithread -I../profile -I../constants
 
-
-all: types.h \
-     main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o \
-     build.o interrupt.o options.o NameTuples.o NameTuplesUtils.o
-
-
-#
-# the *.[ch] objects are to fool makedepend which does not
-# recognize the dependency between *.[ch] and the .mac files!
-#
-types.h: ../tree/type_info.mac phase_info.mac status_info.mac \
-         ../tree/node_info.mac ../tree/prf_node_info.mac argtag_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-NameTuples.h: nt_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-NameTuples.c: nt_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-globals.c: ../tree/prf_node_info.mac ../tree/type_info.mac phase_info.mac argtag_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-
-my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac \
-             ../tree/type_info.mac status_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
+all: main.o Error.o usage.o internal_lib.o globals.o resource.o \
+     build.o interrupt.o options.o NameTuplesUtils.o
 
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
@@ -120,11 +88,9 @@ build.o: build.c
 	$(RM) build.c
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 	$(CLOCK_SKEW_ELIMINATION) $@
-
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
