@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/09/03 11:09:07  dkr
+ * signature of CompareTypesImplementation() modified
+ *
  * Revision 3.65  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -290,7 +293,7 @@ extern int GetDim (types *type);
 extern simpletype GetBasetype (types *type);
 extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
-extern bool CompareTypesImplementation (types *t1, types *t2);
+extern int CompareTypesImplementation (types *t1, types *t2);
 extern shpseg *Type2Shpseg (types *type, int *ret_dim);
 extern node *Type2Exprs (types *type);
 extern node *CreateZeroFromType (types *type, bool unroll, node *fundef);
