@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  1999/07/14 12:14:36  sbs
+ * proper support for arg_info during IVE added.
+ *
  * Revision 2.35  1999/07/07 15:30:22  jhs
  * Removed SYNC_WITH_PTRS.
  *
@@ -2210,6 +2213,14 @@ extern node *MakePragma ();
  ***    int        NEWACT
  ***    long*      ACT
  ***
+ ***  when used in index.c:
+ ***    node *     INFO_IVE_FUNDEF           (N_fundef)
+ ***    node *     INFO_IVE_VARDECS          (N_vardec)
+ ***    ive_mode   INFO_IVE_MODE
+ ***    node *     INFO_IVE_CURRENTASSIGN    (N_assign)
+ ***    node *     INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
+ ***    int        INFO_IVE_NON_SCAL_LEN
+ ***
  ***  when used in managing spmd- and sync blocks :
  ***  also when used in spmd traversal (spmd_trav.[ch]) :
  ***  also when used in sync optimization (sync_opt.[ch]) :
@@ -2411,6 +2422,14 @@ extern node *MakeInfo ();
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
 #define INFO_CF_VARNO(n) (n->varno)
+
+/* IVE */
+#define INFO_IVE_FUNDEF(n) (n->node[0])
+#define INFO_IVE_VARDECS(n) (n->node[1])
+#define INFO_IVE_CURRENTASSIGN(n) (n->node[2])
+#define INFO_IVE_TRANSFORM_VINFO(n) (n->node[3])
+#define INFO_IVE_MODE(n) (n->flag)
+#define INFO_IVE_NON_SCAL_LEN(n) (n->counter)
 
 /* DCR */
 #define INFO_DCR_VARNO(n) (n->varno)
@@ -2777,6 +2796,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    int       NO         (unambiguous number for PrintNwith2())
  ***                                      (precompile -> )
  ***    long*     MASK                    (optimize -> )
+ ***    node *    USE         (N_vinfo)   (IVE -> )
  ***    int       FLAG                    (WLI -> WLF)
  ***    node*     COPY                    ( -> DupTree )
  ***    ids*      INC_RC_IDS              (refcount -> compile )
@@ -2809,6 +2829,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_NEXT(n) (n->node[2])
 #define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
 #define NCODE_COPY(n) (n->node[4])
+#define NCODE_USE(n) (n->node[5])
 #define NCODE_USED(n) (n->info.cint)
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)

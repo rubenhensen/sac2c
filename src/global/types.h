@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/07/14 12:14:36  sbs
+ * proper support for arg_info during IVE added.
+ *
  * Revision 2.15  1999/07/07 06:00:57  sbs
  * added DOLLAR to useflag which is used for the N_vinfo nodes
  *
@@ -269,6 +272,8 @@ typedef enum {
     WI_vector,
     WI_scalars
 } WithIdType;
+
+typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
 
 /*
  * type for representing compiler phases.
