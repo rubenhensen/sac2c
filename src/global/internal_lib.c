@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1997/10/29 14:56:07  srs
+ * changed Malloc() and removed HAVE_MALLOC_O
+ *
  * Revision 1.17  1997/10/09 13:53:49  srs
  * counter for memory allocation
  *
@@ -90,27 +93,33 @@
  *  remarks       : exit if there is not enough memory
  *
  */
-
 void *
 Malloc (int size)
 {
     void *tmp;
 
     DBUG_ENTER ("Malloc");
-
     DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
 
+#ifdef show_malloc
+    tmp = malloc (size + sizeof (int));
+    if (NULL == tmp)
+        SYSABORT (("Out of memory"));
+    *(int *)tmp = size;
+    tmp = (void *)((int *)tmp + 1);
+
+    total_allocated_mem += size;
+    current_allocated_mem += size;
+    if (max_allocated_mem < current_allocated_mem)
+        max_allocated_mem = current_allocated_mem;
+
+#else /* not show_malloc */
     tmp = malloc (size);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
-    total_allocated_mem += size;
+#endif
 
     DBUG_PRINT ("MEMALLOC", ("new memory: " P_FORMAT, tmp));
-
-#ifdef HAVE_MALLOC_O
-    DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););
-#endif /* HAVE_MALLOC_O */
-
     DBUG_RETURN (tmp);
 }
 
