@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/31 15:34:49  dkr
+ * new hidden tag added
+ *
  * Revision 3.3  2002/06/02 21:42:42  dkr
  * symbols renamed
  *
@@ -22,35 +25,43 @@
 #define _NameTuples_h_
 
 /*
- * The following defines indicate the position of tags
- * within name tuples. They should be kept in synch with the
- * NT_NAME, NT_DATA and NT_UNQ macros in sac_std.h
+ * The following defines indicate the position of tags within name tuples.
+ * They should be kept in synch with the NT_NAME, NT_SHP, NT_HID and NT_UNQ
+ * macros in sac_std.h
  */
 #define NT_NAME_INDEX 0
-#define NT_DATA_INDEX 1
-#define NT_UNQ_INDEX 2
+#define NT_SHAPE_INDEX 1
+#define NT_HIDDEN_INDEX 2
+#define NT_UNIQUE_INDEX 3
 
 /*
  * Enumerated types for data class and uniqueness class
  */
 
 typedef enum {
-#define ATTRIB 1
+#define ATTRIB NT_SHAPE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-} data_class_t;
+} shape_class_t;
 
 typedef enum {
-#define ATTRIB 2
+#define ATTRIB NT_HIDDEN_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-} unq_class_t;
+} hidden_class_t;
+
+typedef enum {
+#define ATTRIB NT_UNIQUE_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+} unique_class_t;
 
 /*
  * These character arrays are the macro-name-parts used to select
  * data class and uniqueness class properties.
  */
-extern char *nt_data_string[];
-extern char *nt_unq_string[];
+extern char *nt_shape_string[];
+extern char *nt_hidden_string[];
+extern char *nt_unique_string[];
 
 #endif /* _NameTuples_h_ */

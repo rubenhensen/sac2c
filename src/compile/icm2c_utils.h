@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/31 15:37:28  dkr
+ * new hidden tag added
+ *
  * Revision 3.3  2002/06/02 21:36:56  dkr
  * functions renamed
  *
@@ -42,7 +45,8 @@
 
 #include "NameTuples.h"
 
-extern data_class_t ICUGetDataClass (char *nt);
-extern unq_class_t ICUGetUnqClass (char *nt);
+extern shape_class_t ICUGetShapeClass (char *nt);
+extern hidden_class_t ICUGetHiddenClass (char *nt);
+extern unique_class_t ICUGetUniqueClass (char *nt);
 
 #endif /* _icm2c_utils_h */

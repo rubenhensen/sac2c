@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/31 15:34:43  dkr
+ * new hidden tag added
+ *
  * Revision 3.4  2002/06/02 21:42:42  dkr
  * symbols renamed
  *
@@ -31,14 +34,20 @@
  * array class and array uniqueness properties.
  */
 
-char *nt_data_string[] = {
-#define ATTRIB 1
+char *nt_shape_string[] = {
+#define ATTRIB NT_SHAPE_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
 };
 
-char *nt_unq_string[] = {
-#define ATTRIB 2
+char *nt_hidden_string[] = {
+#define ATTRIB NT_HIDDEN_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+};
+
+char *nt_unique_string[] = {
+#define ATTRIB NT_UNIQUE_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
 };

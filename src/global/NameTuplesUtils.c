@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/07/31 15:35:02  dkr
+ * new hidden tag added
+ *
  * Revision 1.6  2002/07/15 18:40:39  dkr
  * Get...ClassFromTypes(): DBUG_ASSERT added
  *
@@ -31,19 +34,19 @@
 /******************************************************************************
  *
  * function:
- *   data_class_t GetDataClassFromTypes( types *type)
+ *   shape_class_t GetShapeClassFromTypes( types *type)
  *
  * description:
- *   Returns the Data Class of an object (usually an array) from its type.
+ *   Returns the Shape Class of an object (usually an array) from its type.
  *
  ******************************************************************************/
 
-data_class_t
-GetDataClassFromTypes (types *type)
+shape_class_t
+GetShapeClassFromTypes (types *type)
 {
-    data_class_t z;
+    shape_class_t z;
 
-    DBUG_ENTER ("GetDataClassFromTypes");
+    DBUG_ENTER ("GetShapeClassFromTypes");
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 
@@ -52,9 +55,7 @@ GetDataClassFromTypes (types *type)
          * the TC has probably not been called yet :-(
          */
         DBUG_ASSERT ((0), "illegal data class found!");
-        z = C_unknownd;
-    } else if (IsHidden (type)) {
-        z = C_hid;
+        z = C_unknowns;
     } else {
         int dim = GetShapeDim (type);
 
@@ -75,7 +76,42 @@ GetDataClassFromTypes (types *type)
 /******************************************************************************
  *
  * function:
- *   unq_class_t GetUnqClassFromTypes( types *type)
+ *   hidden_class_t GetHiddenClassFromTypes( types *type)
+ *
+ * description:
+ *   Returns the Hiddenness Class of an object (usually an array) from
+ *   its type.
+ *
+ ******************************************************************************/
+
+hidden_class_t
+GetHiddenClassFromTypes (types *type)
+{
+    hidden_class_t z;
+
+    DBUG_ENTER ("GetHiddenClassFromTypes");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        DBUG_ASSERT ((0), "illegal data class found!");
+        z = C_unknownh;
+    } else if (IsHidden (type)) {
+        z = C_unq;
+    } else {
+        z = C_nuq;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   unique_class_t GetUniqueClassFromTypes( types *type)
  *
  * description:
  *   Returns the Uniqueness Class of an object (usually an array) from
@@ -83,12 +119,12 @@ GetDataClassFromTypes (types *type)
  *
  ******************************************************************************/
 
-unq_class_t
-GetUnqClassFromTypes (types *type)
+unique_class_t
+GetUniqueClassFromTypes (types *type)
 {
-    unq_class_t z;
+    unique_class_t z;
 
-    DBUG_ENTER ("GetUnqClassFromTypes");
+    DBUG_ENTER ("GetUniqueClassFromTypes");
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 
@@ -120,16 +156,26 @@ GetUnqClassFromTypes (types *type)
 char *
 CreateNtTag (char *name, types *type)
 {
+    shape_class_t sc;
+    hidden_class_t hc;
+    unique_class_t uc;
     char *res;
 
     DBUG_ENTER ("CreateNtTag");
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 
-    res = (char *)Malloc ((strlen (name) + 20) * sizeof (char));
+    sc = GetShapeClassFromTypes (type);
+    hc = GetHiddenClassFromTypes (type);
+    uc = GetUniqueClassFromTypes (type);
 
-    sprintf (res, "(%s, (%s, (%s,)))", name, nt_data_string[GetDataClassFromTypes (type)],
-             nt_unq_string[GetUnqClassFromTypes (type)]);
+    res = (char *)Malloc ((strlen (name) + strlen (nt_shape_string[sc])
+                           + strlen (nt_hidden_string[hc]) + strlen (nt_unique_string[uc])
+                           + 16)
+                          * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s, (%s,))))", name, nt_shape_string[sc],
+             nt_hidden_string[hc], nt_unique_string[uc]);
 
     DBUG_RETURN (res);
 }

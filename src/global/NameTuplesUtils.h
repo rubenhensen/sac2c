@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/07/31 15:35:08  dkr
+ * new hidden tag added
+ *
  * Revision 1.3  2002/07/11 13:59:00  dkr
  * AddNtTag() added
  *
@@ -20,7 +23,8 @@
 extern char *CreateNtTag (char *name, types *type);
 extern node *AddNtTag (node *id);
 
-extern unq_class_t GetUnqClassFromTypes (types *type);
-extern data_class_t GetDataClassFromTypes (types *type);
+extern shape_class_t GetShapeClassFromTypes (types *type);
+extern hidden_class_t GetHiddenClassFromTypes (types *type);
+extern unique_class_t GetUniqueClassFromTypes (types *type);
 
 #endif /* _NameTuplesUtils_h_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/31 15:34:55  dkr
+ * new hidden tag added
+ *
  * Revision 3.3  2002/06/04 08:35:54  dkr
  * C_unknownc renamed into C_unknownd
  *
@@ -46,13 +49,18 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 
 #define NTIF(it_type, it_str) NTIFtype (it_type) NTIFstr (it_str)
 
-#if (ATTRIB == 1)
+#if (ATTRIB == NT_SHAPE_INDEX)
 
   NTIF (C_scl, "SCL"),
-  NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"), NTIF (C_hid, "HID"),
-  NTIF (C_unknownd, "???") /* should be the last entry! */
+  NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"),
+  NTIF (C_unknowns, "???") /* should be the last entry! */
 
-#elif (ATTRIB == 2)
+#elif (ATTRIB == NT_HIDDEN_INDEX)
+
+NTIF (C_nhd, "NHD"), NTIF (C_hid, "HID"),
+  NTIF (C_unknownh, "???") /* should be the last entry! */
+
+#elif (ATTRIB == NT_UNIQUE_INDEX)
 
 NTIF (C_nuq, "NUQ"), NTIF (C_unq, "UNQ"),
   NTIF (C_unknownu, "???") /* should be the last entry! */

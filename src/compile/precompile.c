@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/07/31 15:33:54  dkr
+ * new hidden tag added
+ *
  * Revision 3.54  2002/07/24 18:55:06  dkr
  * TAGGED_ARRAYS: scalar args are flattened during precompile
  * now (in PREC2ap())
@@ -1753,7 +1756,7 @@ PREC2let (node *arg_node, node *arg_info)
     types *rettypes;
     node *ap_exprs, *ap_id, *args;
     int idx, dots_off;
-    data_class_t actual_cls, formal_cls;
+    shape_class_t actual_cls, formal_cls;
 
     DBUG_ENTER ("PREC2let");
 
@@ -1790,15 +1793,15 @@ PREC2let (node *arg_node, node *arg_info)
 
 #ifdef TAGGED_ARRAYS
             if (TYPES_BASETYPE (rettypes) != T_dots) {
-                actual_cls = GetDataClassFromTypes (IDS_TYPE (ap_ids));
-                formal_cls = GetDataClassFromTypes (rettypes);
+                actual_cls = GetShapeClassFromTypes (IDS_TYPE (ap_ids));
+                formal_cls = GetShapeClassFromTypes (rettypes);
                 if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
                     DBUG_PRINT ("PREC",
-                                ("Return value with inappropriate data class found:"));
-                    DBUG_PRINT ("PREC",
-                                ("   ... %s ... = %s( ... ), %s instead of %s",
-                                 FUNDEF_NAME (fundef), IDS_NAME (ap_ids),
-                                 nt_data_string[actual_cls], nt_data_string[formal_cls]));
+                                ("Return value with inappropriate shape class found:"));
+                    DBUG_PRINT ("PREC", ("   ... %s ... = %s( ... ), %s instead of %s",
+                                         FUNDEF_NAME (fundef), IDS_NAME (ap_ids),
+                                         nt_shape_string[actual_cls],
+                                         nt_shape_string[formal_cls]));
                     LiftIds (ap_ids, INFO_PREC_FUNDEF (arg_info), rettypes,
                              &(INFO_PREC2_POST_ASSIGNS (arg_info)));
                 }
@@ -1831,15 +1834,15 @@ PREC2let (node *arg_node, node *arg_info)
 
             DBUG_ASSERT ((NODE_TYPE (ap_id) == N_id), "no N_id node found!");
             if (ARG_BASETYPE (args) != T_dots) {
-                formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
-                actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
+                formal_cls = GetShapeClassFromTypes (ARG_TYPE (args));
+                actual_cls = GetShapeClassFromTypes (ID_TYPE (ap_id));
                 if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
                     DBUG_PRINT ("PREC",
-                                ("Argument with inappropriate data class found:"));
-                    DBUG_PRINT ("PREC",
-                                ("   ... = %s( ... %s ...), %s instead of %s",
-                                 FUNDEF_NAME (fundef), ID_NAME (ap_id),
-                                 nt_data_string[actual_cls], nt_data_string[formal_cls]));
+                                ("Argument with inappropriate shape class found:"));
+                    DBUG_PRINT ("PREC", ("   ... = %s( ... %s ...), %s instead of %s",
+                                         FUNDEF_NAME (fundef), ID_NAME (ap_id),
+                                         nt_shape_string[actual_cls],
+                                         nt_shape_string[formal_cls]));
                     EXPRS_EXPR (ap_exprs)
                       = LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info), ARG_TYPE (args),
                                  TRUE, &(INFO_PREC2_PRE_ASSIGNS (arg_info)));

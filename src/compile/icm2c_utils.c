@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/31 15:37:19  dkr
+ * new hidden tag added
+ *
  * Revision 3.4  2002/06/04 08:35:45  dkr
  * C_unknownc renamed into C_unknownd
  *
@@ -88,32 +91,32 @@ FindParen (char *nt, int n)
 /******************************************************************************
  *
  * function:
- *   data_class_t ICUGetDataClass( char *nt)
+ *   shape_class_t ICUGetShapeClass( char *nt)
  *
  * description:
  *   Returns the class tag of an array or other object
  *
  ******************************************************************************/
 
-data_class_t
-ICUGetDataClass (char *nt)
+shape_class_t
+ICUGetShapeClass (char *nt)
 {
     int nc, i;
-    data_class_t z;
+    shape_class_t z;
 
-    DBUG_ENTER ("ICUGetDataClass");
+    DBUG_ENTER ("ICUGetShapeClass");
 
-    nc = FindParen (nt, NT_DATA_INDEX + 1) + 1;
+    nc = FindParen (nt, NT_SHAPE_INDEX + 1) + 1;
     i = 0;
-    z = C_unknownd;
-    while ((i != C_unknownd) && (z == C_unknownd)) {
-        if (!strncmp (nt + nc, nt_data_string[i], 3)) {
+    z = C_unknowns;
+    while ((i != C_unknowns) && (z == C_unknowns)) {
+        if (!strncmp (nt + nc, nt_shape_string[i], 3)) {
             z = i;
         }
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownd), "ICUGetDataClass() did not find valid class tag");
+    DBUG_ASSERT ((z != C_unknowns), "ICUGetShapeClass() did not find valid shape tag");
 
     DBUG_RETURN (z);
 }
@@ -121,32 +124,66 @@ ICUGetDataClass (char *nt)
 /******************************************************************************
  *
  * function:
- *   unq_class_t ICUGetUnqClass( char *nt)
+ *   hidden_class_t ICUGetHiddenClass( char *nt)
+ *
+ * description:
+ *   Returns the hidden tag of an array or other object
+ *
+ ******************************************************************************/
+
+hidden_class_t
+ICUGetHiddenClass (char *nt)
+{
+    int nc, i;
+    hidden_class_t z;
+
+    DBUG_ENTER ("ICUGetHiddenClass");
+
+    nc = FindParen (nt, NT_HIDDEN_INDEX + 1) + 1;
+    i = 0;
+    z = C_unknownh;
+    while ((i != C_unknownh) && (z == C_unknownh)) {
+        if (!strncmp (nt + nc, nt_hidden_string[i], 3)) {
+            z = i;
+        }
+        i++;
+    }
+
+    DBUG_ASSERT ((z != C_unknownh), "ICUGetHiddenClass() did not find valid hidden tag");
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   unique_class_t ICUGetUniqueClass( char *nt)
  *
  * description:
  *   Returns the uniqueness tag of an array or other object
  *
  ******************************************************************************/
 
-unq_class_t
-ICUGetUnqClass (char *nt)
+unique_class_t
+ICUGetUniqueClass (char *nt)
 {
     int nc, i;
-    unq_class_t z;
+    unique_class_t z;
 
-    DBUG_ENTER ("ICUGetUnqClass");
+    DBUG_ENTER ("ICUGetUniqueClass");
 
-    nc = FindParen (nt, NT_UNQ_INDEX + 1) + 1;
+    nc = FindParen (nt, NT_UNIQUE_INDEX + 1) + 1;
     i = 0;
     z = C_unknownu;
     while ((i != C_unknownu) && (z == C_unknownu)) {
-        if (!strncmp (nt + nc, nt_unq_string[i], 3)) {
+        if (!strncmp (nt + nc, nt_unique_string[i], 3)) {
             z = i;
         }
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownu), "ICUGetUnqClass() did not find valid uniqueness tag");
+    DBUG_ASSERT ((z != C_unknownu),
+                 "ICUGetUniqueClass() did not find valid uniqueness tag");
 
     DBUG_RETURN (z);
 }
