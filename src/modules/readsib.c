@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/04/02 15:44:50  cg
+ * Revision 1.11  1996/09/11 06:25:57  cg
+ * Converted to new lib-file format.
+ *
+ * Revision 1.10  1996/04/02  15:44:50  cg
  * bug fixed in function CheckExistFuns: now new symbols are inserted
  * into the global mod_tab for implicitly imported functions
  *
@@ -121,6 +124,8 @@ ReadSib (node *syntax_tree)
  *
  */
 
+#if 0
+
 /*
  *
  *  functionname  : CreateArchive
@@ -129,39 +134,41 @@ ReadSib (node *syntax_tree)
  *  global vars   : yyin, storedirname
  *  internal funs : ---
  *  external funs : WriteOpen, fscanf, fprintf, fclose, feof, SystemCall
- *  macros        :
+ *  macros        : 
  *
  *  remarks       : is called in sac.y when parsing end of SIB
  *
  */
 
-void
-CreateArchive (char *name)
+void CreateArchive(char *name)
 {
-    char tmp;
-    FILE *archive;
+  char tmp;
+  FILE *archive;
+  
+  DBUG_ENTER("CreateArchive");
+  
+  archive=WriteOpen("%s%s.a", store_dirname, name);
 
-    DBUG_ENTER ("CreateArchive");
+  while (!feof(yyin))
+  {
+    fscanf(yyin, "%c", &tmp);
+    fprintf(archive, "%c", tmp);
+  }
+  
+  fclose(archive);
 
-    archive = WriteOpen ("%s%s.a", store_dirname, name);
+  SystemCall("ranlib %s%s.a", store_dirname, name);
+  
+  /*
+   *  ranlib must be rerun here because otherwise the date of the 
+   *  archive's symbol table is older than the archive file itself
+   *  which causes error messages by the C-compiler.
+   */
 
-    while (!feof (yyin)) {
-        fscanf (yyin, "%c", &tmp);
-        fprintf (archive, "%c", tmp);
-    }
-
-    fclose (archive);
-
-    SystemCall ("ranlib %s%s.a", store_dirname, name);
-
-    /*
-     *  ranlib must be rerun here because otherwise the date of the
-     *  archive's symbol table is older than the archive file itself
-     *  which causes error messages by the C-compiler.
-     */
-
-    DBUG_VOID_RETURN;
+  DBUG_VOID_RETURN;
 }
+
+#endif
 
 /*
  *
@@ -184,9 +191,10 @@ CreateArchive (char *name)
 node *
 FindSib (char *name)
 {
-    static char buffer[MAX_FILE_NAME];
+    static char buffer[MAX_PATH_LEN];
     node *tmp;
-    char *pathname;
+    char *pathname, *abspathname;
+    int success;
 
     DBUG_ENTER ("FindSib");
 
@@ -212,7 +220,20 @@ FindSib (char *name)
 
         NOTE (("  Evaluating SAC library \"%s\" !", pathname));
 
-        yyin = fopen (pathname, "r");
+        abspathname = AbsolutePathname (pathname);
+
+        success
+          = SystemCall2 ("cd %s; tar xf %s >/dev/null 2>&1", store_dirname, abspathname);
+
+        if (success != 0) {
+            SYSABORT (("Corrupted library file format: \"%s\"", pathname));
+        }
+
+        strcpy (buffer, store_dirname);
+        strcat (buffer, name);
+        strcat (buffer, ".sib");
+
+        yyin = fopen (buffer, "r");
         linenum = 1;
         start_token = PARSE_SIB;
 
