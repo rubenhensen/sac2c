@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.15  1995/05/30 10:10:04  hw
- * informations updated
+ * Revision 1.16  1995/05/30 12:03:42  cg
+ * Storage of constants and global objects in the syntax tree described.
  *
+# Revision 1.15  1995/05/30  10:10:04  hw
+# informations updated
+#
 # Revision 1.14  1995/03/14  10:51:52  asi
 # added node informations created while optimization
 #
@@ -50,7 +53,7 @@
 This file contains information about the sac2c-syntaxtree-nodes.
 
 
-The nodes have the following structure:
+type structure of syntax-tree:
 
 typedef struct NODE
 {
@@ -71,8 +74,8 @@ typedef struct NODE
                              * this declarations are used to look for argument 
                              * and result type of primitive functions
                              */
-   }            info;      /* used for special informationen */
-   int          refcnt;    /* is used as referenze count information */
+   }            info;      /* used for special information */
+   int          refcnt;    /* is used as reference count information */
    int          bblock;    /* number of basic block assign node belongs to */
    int          flag;      /* the flag is used for node-status */
                            /* (loop invariant/not loop invariant , ...) */
@@ -85,8 +88,42 @@ typedef struct NODE
 			  /*      variable number 10 is defined 10 times in this node   */
    int          nnode;    /* number of used children nodes */
    int          lineno;   /* commands linenumber */
-   struct NODE *node[4];  /* children nodes */
+   struct NODE *node[6];  /* children nodes */
 } node;                   
+          
+typedef struct TYPES{
+   simpletype   simpletype;
+   char         *name;     /* only used for T_user !! */
+   char         *name_mod; /* name of modul belonging to 'name' */
+   int          dim;       /* if (dim == 0) => simpletype */
+   shpseg       *shpseg;
+   struct TYPES *next;     /* only needed for fun-results */
+   id           *id;    /* Bezeichner  */
+   char         *id_mod;  /* name of modul belonging to 'id' */
+} types;
+ 
+typedef struct IDS{
+   id            *id;
+   int           refcnt;     /* refcount information
+                              * it is set while refcounting
+                              * and is used while compilation
+                              * /
+   struct NODE   *node;    /* ptr. to decleration after typechecking */
+   struct NCHAIN *nchain;  /* ptr. to definition(s) resp. usage(s) */
+   struct IDS    *next;
+} ids;
+
+typedef struct FUN_NAME{
+   char    *id;         /* name of function */
+   char    *id_mod;     /* name of modul belonging to 'id' */
+}fun_name;
+
+
+===============================================================================
+
+
+Description of the different node types:
+
 
 N_moduldec, N_classdec:
 =======================
@@ -99,6 +136,10 @@ N_explist:
 node[0]    : implicit types (N_typedef) if present...
 node[1]    : explicit types (N_typedef) if present...
 node[2]    : function declarations (N_fundef with NULL-body) if present...
+node[3]    : constant declarations (N_constdef with optional value) if present...
+              !! not yet implemented !!
+node[4]    : object declarations (N_objdef with NULL-initialization) if present...
+              !! not yet implemented !!
 
 N_modul:
 ========
@@ -106,6 +147,10 @@ nnode = 0 !!!!
 node[0]    : import-list (N_implist) if present...
 node[1]    : typedefs (N_typedef) if present...
 node[2]    : fundefs (N_fundef) if present...
+node[3]    : constdefs (N_constdef) if present...
+              !! not yet implemented !!
+node[4]    : objdefs (N_objdef) if present...
+              !! not yet implemented !!
 info.id    : Modul name/ NULL if simple program.
 
 N_implist:
@@ -115,33 +160,50 @@ node[0]    : subsequent imports if present...
 node[1]    : casted to (ids *) !!! list of implicit type names!
 node[2]    : casted to (ids *) !!! list of explicit type names!
 node[3]    : casted to (ids *) !!! list of function names!
+node[4]    : casted to (ids *) !!! list of constant names!
+              !! not yet implemented !!
+node[5]    : casted to (ids *) !!! list of object names!
+              !! not yet implemented !!
 info.id    : name of import-file.
+
+- If all identifier lists are empty then it's an "import all" -
 
 N_typedef:
 ==========
 node[0]    : subsequent typedefs if present...
 info.types : containes type and new typename (info.type->id) in one types-structure.
 
+N_constdef:
+==========
+              !! not yet implemented !!
+node[0]    : value of constant (expr)
+node[1]    : subsequent constdefs if present...
+info.types : containes type and name of constant.
+
+N_objdef:
+==========
+              !! not yet implemented !!
+node[0]    : generator function call (N_ap)
+node[1]    : subsequent objdefs if present...
+info.types : containes type and name of global object.
+
 N_fundef:
 =========
 node[0]	   : functionbody (N_block)
 node[1]    : next function (N_fundef), if there is one
 node[2]    : arguments of function (N_arg), if there are some
+
 info.types : first types structure contains the functions name (info.types->id,
              info.types->id_mod) and the first part of the functions type. 
              If a function has more than one return value, the types of these return 
 	     values are stored in following types structure.
-	     types looks like:
-             typedef struct TYPES{
-                simpletype   simpletype;
-                char         *name;     /* only used for T_user !! */
-                char         *name_mod; /* name of modul belonging to 'name' */
-                int          dim;       /* if (dim == 0) => simpletype */
-                shpseg       *shpseg;
-                struct TYPES *next;     /* only needed for fun-results */
-                id           *id;    /* Bezeichner  */
-                char         *id_mod;  /* name of modul belonging to 'id' */
-                } types;
+
+-added after type check:
+node[3]    : pointer to corresponding N_return
+node[4]    : casted to (ids *) !!! list of global object identifiers
+             used in this function 
+              !! not yet implemented !!
+
 -Created before optimizing:
 varno      : lenght of the masks in this function
 mask[0]    : contains number of definitions for all variables in this function
@@ -185,16 +247,6 @@ N_let:
 node[0]    : expression 
 info.ids   : names of variables to assign to.
 	     The structure of ids is:
-              typedef struct IDS{
-                       id          *id;
-		       int         refcnt;     /* refcount information
-                                                * it is set while refcounting
-                                                * and is used while compilation
-                                                * /
-		       struct NODE   *node;    /* ptr. to decleration after typechecking */
-		       struct NCHAIN *nchain;  /* ptr. to definition(s) resp. usage(s) */
-                       struct IDS  *next;
-                       } ids;
 
 N_cast:
 =======
@@ -256,10 +308,6 @@ node[1]    : pointer to the belonging functiondeclaration
              !!! nnode will not be increased !!!
 info_node  : name of function to apply ( info.fun_name.id, 
                                          info.fun_name.id_mod)
-typedef struct FUN_NAME{
-                char    *id;  /* name of function */
-                char    *id_mod; /* name of modul belonging to 'id' */
-                }fun_name;
 
 /* the application node is only used for userdefined functions */
 
