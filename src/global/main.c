@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/09/18 16:10:29  ktr
+ * Old MT has been moved into phase 21 to be compatible with EMM
+ *
  * Revision 3.53  2004/08/09 14:55:55  ktr
  * Replaced EMAllocateFill with ExplicitAllocation subphase
  *
@@ -616,18 +619,8 @@ main (int argc, char *argv[])
     case MT_none:
         break;
     case MT_createjoin:
-        NOTE_COMPILER_PHASE;
-        NOTE (("Using create-join version of multithreading (MT1)"));
-        /* spmd..._tab, sync..._tab */
-        syntax_tree = BuildSpmdRegions (syntax_tree);
-        PHASE_DONE_EPILOG;
         break;
     case MT_startstop:
-        NOTE_COMPILER_PHASE;
-        NOTE (("Using start-stop version of multithreading (MT2)"));
-        /* spmd..._tab, sync..._tab */
-        syntax_tree = BuildSpmdRegions (syntax_tree);
-        PHASE_DONE_EPILOG;
         break;
     case MT_mtstblock:
         NOTE_COMPILER_PHASE;
@@ -669,21 +662,45 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (mtmode == MT_mtstblock) {
-        PHASE_PROLOG;
-        NOTE_COMPILER_PHASE;
-        /*syntax_tree = Precompile( syntax_tree);*/ /* ???_tab */
-        PHASE_DONE_EPILOG;
-        PHASE_EPILOG;
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+
+    switch (mtmode) {
+    case MT_none:
+        if (emm) {
+            syntax_tree = UndoSSA (syntax_tree);
+        }
+        break;
+    case MT_createjoin:
+        NOTE (("Using create-join version of multithreading (MT1)"));
+        /* spmd..._tab, sync..._tab */
+        if (emm) {
+            syntax_tree = UndoSSA (syntax_tree);
+        }
+        syntax_tree = BuildSpmdRegions (syntax_tree);
+        break;
+    case MT_startstop:
+        NOTE (("Using start-stop version of multithreading (MT2)"));
+        /* spmd..._tab, sync..._tab */
+        if (emm) {
+            syntax_tree = UndoSSA (syntax_tree);
+        }
+        syntax_tree = BuildSpmdRegions (syntax_tree);
+        break;
+    case MT_mtstblock:
+        /* something's missing... */
+        if (emm) {
+            syntax_tree = UndoSSA (syntax_tree);
+        }
+        break;
     }
+
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
 
     if (break_after == PH_multithread_finish)
         goto BREAK;
     compiler_phase++;
-
-    if (emm) {
-        syntax_tree = UndoSSA (syntax_tree);
-    }
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
