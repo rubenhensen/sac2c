@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/02/02 12:28:38  jhs
+ * Fixex compare.
+ *
  * Revision 2.7  1999/08/27 11:56:12  jhs
  * Brushed code. Added handling of do loops. Corrected pulling spmd-blocks
  * over while-loops.
@@ -154,7 +157,17 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
     DBUG_RETURN (res);
 }
 
-long *
+/******************************************************************************
+ *
+ * function:
+ *   long *DupMask_(long *oldmask, int varno)
+ *
+ * description:
+ *   copies Mask via DupMask, but is able to handle NULL also (returns NULL
+ *   when it has to copy a NULL).
+ *
+ ******************************************************************************/
+static long *
 DupMask_ (long *oldmask, int varno)
 {
     long *result;
@@ -191,8 +204,8 @@ InsertSPMD (node *assign, node *fundef)
 
     DBUG_ENTER ("InsertSPMD");
 
-    DBUG_ASSERT ((NODE_TYPE (assign) = N_assign), ("N_assign expected"));
-    DBUG_ASSERT ((NODE_TYPE (fundef) = N_fundef), ("N_fundef expected"));
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("N_assign expected"));
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("N_fundef expected"));
 
     instr = ASSIGN_INSTR (assign);
 
