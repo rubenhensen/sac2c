@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/11/28 12:23:34  cg
+ * Revision 1.2  1995/12/01 17:23:26  cg
+ * first working revision
+ *
+ * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
  *
  *
@@ -13,6 +16,14 @@
 #include "tree_compound.h"
 #include "free.h"
 
+#include "internal_lib.h"
+#include "convert.h"
+#include "traverse.h"
+
+#include "dbug.h"
+
+#include <string.h>
+
 /*
  *
  *  functionname  : precompile
@@ -20,7 +31,6 @@
  *  description   : prepares syntax tree for code generation.
  *                  - renames functions and global objects
  *                  - inserts extern declarations for function definitions
- *                  - separates function declarations from definitions
  *                  - removes all artificial parameters and return values
  *                  - marks reference parameters in function applications
  *  global vars   : act_tab, precomp_tab
@@ -58,7 +68,7 @@ precompile (node *syntax_tree)
 
 /*
  *
- *  functionname  :
+ *  functionname  : InsertObjInits
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -69,6 +79,26 @@ precompile (node *syntax_tree)
  *  remarks       :
  *
  */
+
+node *
+InsertObjInits (node *fundef, node *objdef)
+{
+    node *block;
+
+    DBUG_ENTER ("InsertObjInits");
+
+    block = FUNDEF_BODY (fundef);
+
+    while (objdef != NULL) {
+        if (OBJDEF_INIT (objdef) != NULL) {
+            BLOCK_INSTR (block) = MakeAssign (OBJDEF_INIT (objdef), BLOCK_INSTR (block));
+        }
+
+        objdef = OBJDEF_NEXT (objdef);
+    }
+
+    DBUG_RETURN (fundef);
+}
 
 /*
  *
@@ -105,7 +135,7 @@ RenameFun (node *fun)
         args = FUNDEF_ARGS (fun);
 
         while (args != NULL) {
-            ARG_TYPESTRING (args) = Type2String (args->TYPES, 2);
+            ARG_TYPESTRING (args) = Type2String (ARG_TYPE (args), 2);
             length += strlen (ARG_TYPESTRING (args));
             args = ARG_NEXT (args);
         }
@@ -129,6 +159,7 @@ RenameFun (node *fun)
         /* don't free FUNDEF_MOD(fun) because it is shared !! */
 
         FUNDEF_NAME (fun) = new_name;
+        FUNDEF_MOD (fun) = NULL;
     } else {
         if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
             /*
@@ -198,6 +229,10 @@ PRECmodul (node *arg_node, node *arg_info)
 node *
 PRECobjdef (node *arg_node, node *arg_info)
 {
+    char *init_fun_name;
+    node *new_node;
+    ids *new_ids;
+
     DBUG_ENTER ("PRECobjdef");
 
     if (OBJDEF_MOD (arg_node) == NULL) {
@@ -205,9 +240,21 @@ PRECobjdef (node *arg_node, node *arg_info)
             FREE (OBJDEF_NAME (arg_node));
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
         }
+
+        OBJDEF_INIT (arg_node) = NULL;
     } else {
+        init_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
+
+        init_fun_name = strcpy (init_fun_name, "_CREATE_");
+        init_fun_name = strcat (init_fun_name, OBJDEF_NAME (arg_node));
+
+        new_node = MakeAp (init_fun_name, OBJDEF_MOD (arg_node), NULL);
+        new_ids = MakeIds (StringCopy (OBJDEF_VARNAME (arg_node)), NULL, ST_regular);
+        OBJDEF_INIT (arg_node) = MakeLet (new_node, new_ids);
+
         FREE (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = OBJDEF_VARNAME (arg_node);
+        OBJDEF_MOD (arg_node) = NULL;
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -235,7 +282,7 @@ PRECobjdef (node *arg_node, node *arg_info)
 node *
 PRECfundef (node *arg_node, node *arg_info)
 {
-    int cnt_artificial = 0;
+    int cnt_artificial = 0, i;
     char *keep_name, *keep_mod;
     statustype keep_status, keep_attrib;
 
@@ -277,72 +324,60 @@ PRECfundef (node *arg_node, node *arg_info)
      *  syntax tree.
      */
 
-    /********************************************************************/
-    keep_name = FUNDEF_NAME (arg_node);
-    keep_mod = FUNDEF_MOD (arg_node);
-    keep_status = FUNDEF_STATUS (arg_node);
-    keep_attrib = FUNDEF_ATTRIB (arg_node);
-    /********************************************************************/
+    if (cnt_artificial > 0) {
 
-    for (i = 0; i < cnt_artificial; i++) {
-        FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
+        /********************************************************************/
+        keep_name = FUNDEF_NAME (arg_node);
+        keep_mod = FUNDEF_MOD (arg_node);
+        keep_status = FUNDEF_STATUS (arg_node);
+        keep_attrib = FUNDEF_ATTRIB (arg_node);
+        /********************************************************************/
+
+        for (i = 1; i < cnt_artificial; i++) {
+            FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
+        }
+
+        if (TYPES_NEXT (FUNDEF_TYPES (arg_node)) == NULL) {
+            FUNDEF_BASETYPE (arg_node) = T_void;
+            FREE (FUNDEF_TNAME (arg_node));
+            FUNDEF_TNAME (arg_node) = NULL;
+            FUNDEF_TMOD (arg_node) = NULL;
+        } else {
+            FUNDEF_TYPES (arg_node) = FreeOneTypes (FUNDEF_TYPES (arg_node));
+        }
+
+        /********************************************************************/
+        FUNDEF_NAME (arg_node) = keep_name;
+        FUNDEF_MOD (arg_node) = keep_mod;
+        FUNDEF_STATUS (arg_node) = keep_status;
+        FUNDEF_ATTRIB (arg_node) = keep_attrib;
+        /********************************************************************/
     }
 
-    /********************************************************************/
-    FUNDEF_NAME (arg_node) = keep_name;
-    FUNDEF_MOD (arg_node) = keep_mod;
-    FUNDEF_STATUS (arg_node) = keep_status;
-    FUNDEF_ATTRIB (arg_node) = keep_attrib;
-    /********************************************************************/
-
     /*
-     *  The function is renamed.
+     *  The main function is extended by applications of the init functions
+     *  of all global objects.
+     *  All other functions are renamed.
      */
 
-    arg_node = RenameFun (arg_node);
-
-    if (FUNDEF_BODY (arg_node) == NULL) {
-        /*
-         *  If the fundef has no body, it must be compiled to an
-         *  extern declaration. Therefore, it is extracted from the list of
-         *  function definitions and added to the list of extern declarations.
-         */
-
-        next_fundef = FUNDEF_NEXT (arg_node);
-        FUNDEF_NEXT (arg_node) = MODUL_EXTERN (arg_info);
-        MODUL_EXTERN (arg_info) = arg_node;
-
-        if (next_fundef != NULL) {
-            arg_node = Trav (next_fundef, arg_info);
-        }
-
+    if (strcmp (FUNDEF_NAME (arg_node), "main") == 0) {
+        arg_node = InsertObjInits (arg_node, MODUL_OBJS (arg_info));
     } else {
-        /*
-         *  If the fundef has a body, a new extern declaration must be
-         *  generated to allow mutual recursive functions in C.
-         *  The declaration is inserted into the list of extern declarations.
-         *  Additionaly a pointer to the new extern declaration is stored
-         *  in the old fundef node. This is used in compile.c to share the
-         *  ICMs between function definitions and their extern declarations.
-         *
-         *  Note, that return types, names, and args are shared between
-         *  function definition and extern declaration.
-         */
+        arg_node = RenameFun (arg_node);
+    }
 
-        MODUL_EXTERN (arg_info)
-          = MakeFundef (FUNDEF_NAME (arg_node), FUNDEF_MOD (arg_node),
-                        FUNDEF_TYPES (arg_node), FUNDEF_ARGS (arg_node), NULL,
-                        MODUL_EXTERN (arg_info));
+    /*
+     *  The inline flag is set to 0
+     */
 
-        FUNDEF_EXTERN (arg_node) = MODUL_EXTERN (arg_info);
+    FUNDEF_INLINE (arg_node) = 0;
 
-        /*
-         *  Now, traverse the following functions.
-         */
+    /*
+     *  Now, traverse the following functions.
+     */
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        }
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -357,7 +392,7 @@ PRECfundef (node *arg_node, node *arg_info)
  *  description   : An artificial argument is removed,
  *                  the attribs are switched:
  *                    ST_readonly_reference -> ST_regular
- *                    ST_was_reference -> ST_reference
+ *                    ST_was_reference -> ST_inout
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : FreeNode, Trav
@@ -370,8 +405,6 @@ PRECfundef (node *arg_node, node *arg_info)
 node *
 PRECarg (node *arg_node, node *arg_info)
 {
-    node *next_arg;
-
     DBUG_ENTER ("PRECarg");
 
     if (ARG_ATTRIB (arg_node) == ST_was_reference) {
@@ -389,7 +422,7 @@ PRECarg (node *arg_node, node *arg_info)
             ARG_ATTRIB (arg_node) = ST_regular;
         } else {
             if (ARG_ATTRIB (arg_node) == ST_was_reference) {
-                ARG_ATTRIB (arg_node) = ST_reference;
+                ARG_ATTRIB (arg_node) = ST_inout;
             }
         }
 
@@ -432,13 +465,11 @@ PREClet (node *arg_node, node *arg_info)
 
     let_ids = LET_IDS (arg_node);
 
-    while (let_ids != NULL) {
-        if (IDS_STATUS (let_ids) == ST_artificial) {
-            let_ids = FreeOneIds (let_ids);
-        } else {
-            let_ids = IDS_NEXT (let_ids);
-        }
+    while ((let_ids != NULL) && (IDS_STATUS (let_ids) == ST_artificial)) {
+        let_ids = FreeOneIds (let_ids);
     }
+
+    LET_IDS (arg_node) = let_ids;
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -499,6 +530,10 @@ PRECreturn (node *arg_node, node *arg_info)
         RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_node);
     }
 
+    if (RETURN_EXPRS (arg_node) == NULL) {
+        arg_node->nnode = 0;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -525,7 +560,7 @@ PRECreturn (node *arg_node, node *arg_info)
  *                  N_arg:
  *                  Additionally to removing artificial expressions, an
  *                  identifier that corresponds to a reference parameter
- *                  of the applied function is marked as attrib ST_reference
+ *                  of the applied function is marked as attrib ST_inout
  *                  for later usage by compile.
  *  global vars   : ---
  *  internal funs : ---
@@ -549,7 +584,7 @@ PRECexprs (node *arg_node, node *arg_info)
          *  So, traverse it as usual.
          */
 
-        EXPRS_EXPR = Trav (EXPRS_EXPR (arg_node), arg_info);
+        EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
 
         if (EXPRS_NEXT (arg_node) != NULL) {
             EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
@@ -655,7 +690,7 @@ PRECexprs (node *arg_node, node *arg_info)
  *  description   : 1) Applied occurrences of global objects may be renamed,
  *                     if the global object was renamed.
  *                  2) Identifiers in function applications are marked as
- *                     attrib 'ST_reference', if the corresponding formal
+ *                     attrib 'ST_inout', if the corresponding formal
  *                     parameter of the applied function is a reference
  *                     parameter.
  *  global vars   : ---
@@ -678,8 +713,9 @@ PRECid (node *arg_node, node *arg_info)
         ID_NAME (arg_node) = OBJDEF_NAME (ID_VARDEC (arg_node));
     }
 
-    if ((arg_info != NULL) && (ARG_ATTRIB (arg_info) == ST_was_reference)) {
-        ID_ATTRIB (EXPRS_EXPR (arg_node)) = ST_reference;
+    if ((arg_info != NULL) && (NODE_TYPE (arg_info) == N_arg)
+        && (ARG_ATTRIB (arg_info) == ST_was_reference)) {
+        ID_ATTRIB (EXPRS_EXPR (arg_node)) = ST_inout;
     }
 
     DBUG_RETURN (arg_node);
