@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/06/12 14:06:09  cg
+ * fixed bug using function GetFoldCode()
+ *
  * Revision 1.8  1998/06/10 15:02:38  cg
  * Synchronisation ICMs now use function GetFoldCode to extract
  * implementation of fold operation.
@@ -58,8 +61,10 @@
 #include "print.h"
 
 #ifndef BEtest
-#include "scnprs.h"   /* for big magic access to syntax tree      */
-#include "traverse.h" /* for traversal of fold operation function */
+#include "scnprs.h"   /* for big magic access to syntax tree             */
+#include "traverse.h" /* for traversal of fold operation function        */
+#include "compile.h"  /* for GetFoldCode()                               */
+#include "free.h"     /* for freeing fold-code produced by GetFoldCode() */
 #endif                /* BEtest */
 
 /******************************************************************************
@@ -402,7 +407,9 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
     INDENT;
     fprintf (outfile, "label_master_continue_%d:\n", barrier_id);
 
+#ifndef BEtest
     FreeTree (fold_code);
+#endif /* BEtest */
 
     DBUG_VOID_RETURN;
 }
