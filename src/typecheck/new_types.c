@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/12/06 17:31:05  sbs
+ * some post DK cleanup 8-)
+ *
  * Revision 3.80  2004/12/06 12:56:11  sbs
  * some debugging in TYcreateWrapperCode
  *
@@ -5121,8 +5124,8 @@ TYcorrectWrapperArgTypes (node *args, ntype *type)
 {
     DBUG_ENTER ("TYcorrectWrapperArgTypes");
 
-    while (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_exprs node found!");
+    if (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
         DBUG_ASSERT ((TYisFun (type)), "no TC_fun found!");
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
 
@@ -5137,7 +5140,6 @@ TYcorrectWrapperArgTypes (node *args, ntype *type)
 
         type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
         ARG_NEXT (args) = TYcorrectWrapperArgTypes (ARG_NEXT (args), type);
-        args = ARG_NEXT (args);
     }
 
     DBUG_RETURN (args);
@@ -5289,11 +5291,11 @@ BuildDimAssign (node *arg, node **new_vardecs)
     DBUG_ENTER ("BuildDimAssign");
 
     assign
-      = TBmakeAssign (TBmakeLet (TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)),
-                                                                NULL)),
-                                 BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
+      = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
                                                          SHcreateShape (0)),
-                                              new_vardecs)),
+                                              new_vardecs),
+                                 TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)),
+                                                                NULL))),
                       NULL);
 
     DBUG_RETURN (assign);
@@ -5306,11 +5308,11 @@ BuildShapeAssign (node *arg, node **new_vardecs)
 
     DBUG_ENTER ("BuildShapeAssign");
 
-    assign = TBmakeAssign (TBmakeLet (TBmakePrf (F_shape,
+    assign = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAUDGZ (TYmakeSimpleType (T_int)),
+                                                   new_vardecs),
+                                      TBmakePrf (F_shape,
                                                  TBmakeExprs (TBmakeId (ARG_AVIS (arg)),
-                                                              NULL)),
-                                      BuildTmpIds (TYmakeAUDGZ (TYmakeSimpleType (T_int)),
-                                                   new_vardecs)),
+                                                              NULL))),
                            NULL);
 
     DBUG_RETURN (assign);
@@ -5354,7 +5356,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
 
             id = DUPdupIdsId (prf_ids2);
             assigns
-              = TBmakeAssign (TBmakeLet (prf2, prf_ids2),
+              = TBmakeAssign (TBmakeLet (prf_ids2, prf2),
                               TBmakeAssign (TBmakeCond (id, TBmakeBlock (then_ass, NULL),
                                                         TBmakeBlock (else_ass, NULL)),
                                             NULL));
@@ -5396,11 +5398,11 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                                 new_vardecs);
 
                 ASSIGN_NEXT (last_ass)
-                  = TBmakeAssign (TBmakeLet (prf2, DUPdupIdIds (flt_prf2)),
-                                  TBmakeAssign (TBmakeLet (prf3, DUPdupIdIds (flt_prf3)),
-                                                TBmakeAssign (TBmakeLet (prf4,
-                                                                         DUPdupIdIds (
-                                                                           flt_prf4)),
+                  = TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf2), prf2),
+                                  TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf3), prf3),
+                                                TBmakeAssign (TBmakeLet (DUPdupIdIds (
+                                                                           flt_prf4),
+                                                                         prf4),
                                                               NULL)));
                 last_ass = ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (last_ass)));
 
@@ -5452,7 +5454,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 
         tmp_id = BuildTmpId (TYcopyType (PROD_MEMBER (ret_type, i)), new_vardecs);
         assigns
-          = TBmakeAssign (TBmakeLet (tmp_id, TBmakeIds (VARDEC_AVIS (vardecs), NULL)),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (VARDEC_AVIS (vardecs), NULL), tmp_id),
                           assigns);
 
         tmp_ids = DUPdupIdIds (tmp_id);
@@ -5466,7 +5468,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 
     ap = TBmakeAp (fundef, Args2Exprs (args));
 
-    assigns = TBmakeAssign (TBmakeLet (ap, lhs), assigns);
+    assigns = TBmakeAssign (TBmakeLet (lhs, ap), assigns);
 
     DBUG_RETURN (assigns);
 }
@@ -5478,10 +5480,10 @@ BuildErrorAssign (char *funname, node *args, node *vardecs)
 
     DBUG_ENTER ("BuildErrorAssign");
 
-    assigns = TBmakeAssign (TBmakeLet (TBmakePrf (F_type_error,
+    assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
+                                       TBmakePrf (F_type_error,
                                                   TBmakeExprs (TCmakeStrCopy (funname),
-                                                               Args2Exprs (args))),
-                                       TCmakeIdsFromVardecs (vardecs)),
+                                                               Args2Exprs (args)))),
                             NULL);
 
     DBUG_RETURN (assigns);
