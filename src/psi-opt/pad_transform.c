@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/11/26 17:33:30  jhb
+ * compile
+ *
  * Revision 3.21  2004/11/25 21:51:21  jhb
  * on the road again
  *
@@ -144,6 +147,8 @@
 #include "pad_info.h"
 #include "pad_transform.h"
 
+#ifndef PADT_DEACTIVATED
+
 /*
  * INFO structure
  */
@@ -195,6 +200,8 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+#endif /* PADT_DEACTIVATED */
+
 /*****************************************************************************
  *
  * file:   pad_transform.c
@@ -219,12 +226,13 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 void
-APtransform (node *arg_node)
+APdoTransform (node *arg_node)
 {
 
-    info *arg_info;
-
     DBUG_ENTER ("APtransform");
+
+#ifndef PADT_DEACTIVATED
+    info *arg_info; /* before DBUG_ENTER */
 
     DBUG_PRINT ("APT", ("Array Padding: applying transformation..."));
 
@@ -240,6 +248,8 @@ APtransform (node *arg_node)
 
     ABORT_ON_ERROR;
 
+#endif /* PADT_DEACTVATED */
+
     DBUG_VOID_RETURN;
 }
 
@@ -253,6 +263,8 @@ APtransform (node *arg_node)
  *   !!! argument is set free within this function !!!
  *
  *****************************************************************************/
+
+#ifndef PADT_DEACTIVATED
 
 static char *
 PadName (char *unpadded_name)
@@ -294,14 +306,14 @@ PadIds (node *arg, info *arg_info)
     /* (for this test ensure that args and vardecs have been traversed previously!) */
     if (IDS_PADDED (arg)) {
         DBUG_PRINT ("APT",
-                    (" padding: '%s' -> '%s'", IDS_NAME (arg), IDS_VARDEC_NAME (arg)));
+                    (" padding: '%s' -> '%s'", IDS_NAME (arg), IDS_DECL_NAME (arg)));
         IDS_NAME (arg) = PadName (IDS_NAME (arg));
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
     } else {
         DBUG_PRINT ("APT", (" leaving unpadded: '%s''", IDS_NAME (arg)));
-        if ((NODE_TYPE (IDS_VARDEC (arg)) == N_vardec)
-            && (VARDEC_PADDED (IDS_VARDEC (arg)))) {
-            IDS_VARDEC (arg) = IDS_VARDEC_NEXT (arg);
+        if ((NODE_TYPE (IDS_DECL (arg)) == N_vardec)
+            && (VARDEC_PADDED (IDS_DECL (arg)))) {
+            IDS_DECL (arg) = IDS_DECL_NEXT (arg);
             /* do not reset PADDED-flag in arg_info */
         }
         /* nothing to be done for arg-nodes */
@@ -420,7 +432,8 @@ AddDummyPart (node *wl, shpseg *old_shape, shpseg *new_shape, int dims)
 
             /* generate (lower_bound <= idx < upper_bound) */
             generator
-              = TBmakeGenerator (lbound_array, ubound_array, F_le, F_lt, NULL, NULL);
+              = TBmakeGenerator (F_le, F_lt, lbound_array, ubound_array, NULL, NULL);
+
             /* copy reference to idx-variable from existing withid-node
              * (remember that there is only ONE idx-variable for all part-nodes
              *  of a with-loop!)
@@ -467,7 +480,7 @@ AddDummyCode (node *wl)
     /* find last vardec */
 
     /* BUG, if CODE is empty and result is specified by ARG instead if VARDEC !!!
-     * vardec = ID_VARDEC(NCODE_CEXPR(WITH_CODE(wl)));
+     * vardec = ID_DECL(NCODE_CEXPR(WITH_CODE(wl)));
      *
      * Now we search the end of the vardec-list by looking at the vardec of the
      * with-loop index vector. Even, if the index vector is passed into a function
@@ -475,7 +488,7 @@ AddDummyCode (node *wl)
      * index vector.
      */
 
-    vardec = ID_VARDEC (PART_WITHID (WITH_PART (wl)));
+    vardec = ID_DECL (PART_WITHID (WITH_PART (wl)));
     while (VARDEC_NEXT (vardec) != NULL) {
         vardec = VARDEC_NEXT (vardec);
     }
@@ -515,12 +528,12 @@ AddDummyCode (node *wl)
     }
 
     ids_attrib = TBmakeIds_Copy (VARDEC_NAME (vardec));
-    IDS_VARDEC (ids_attrib) = vardec;
+    IDS_DECL (ids_attrib) = vardec;
     instr = TBmakeLet (ids_attrib, expr);
     assign = TBmakeAssign (instr, NULL);
     block = TBmakeBlock (assign, NULL);
     id = TBmakeId_Copy (VARDEC_NAME (vardec));
-    ID_VARDEC (id) = vardec;
+    ID_DECL (id) = vardec;
 
     /*
      * dkr:
@@ -544,7 +557,7 @@ AddDummyCode (node *wl)
     CODE_WLAA_ACCESSCNT (code) = 0;
     CODE_WLAA_FEATURE (code) = 0;
     CODE_WLAA_WLARRAY (code) = CODE_WLAA_WLARRAY (WITH_CODE (wl));
-    CODE_WLAA_INDEXVAR (code) = IDS_VARDEC (WITH_VEC (wl));
+    CODE_WLAA_INDEXVAR (code) = IDS_DECL (WITH_VEC (wl));
 
     /* put dummy code at beginning of code-chain (required by AddDummyPart !!!) */
     CODE_NEXT (code) = WITH_CODE (wl);
@@ -1125,15 +1138,15 @@ APTid (node *arg_node, info *arg_info)
      */
     if (ID_PADDED (arg_node)) {
         DBUG_PRINT ("APT", (" padding: '%s' -> '%s'", ID_NAME (arg_node),
-                            ID_VARDEC_NAME (arg_node)));
+                            ID_DECL_NAME (arg_node)));
         ID_NAME (arg_node) = PadName (ID_NAME (arg_node));
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
     } else {
         /* if not padded, update pointer to vardec */
         DBUG_PRINT ("APT", (" leaving unpadded: '%s''", ID_NAME (arg_node)));
-        if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec)
-            && (VARDEC_PADDED (ID_VARDEC (arg_node)))) {
-            ID_VARDEC (arg_node) = ID_VARDEC_NEXT (arg_node);
+        if ((NODE_TYPE (ID_DECL (arg_node)) == N_vardec)
+            && (VARDEC_PADDED (ID_DECL (arg_node)))) {
+            ID_DECL (arg_node) = ID_DECL_NEXT (arg_node);
             INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
         }
         /* nothing to be done for arg-nodes */
@@ -1198,7 +1211,7 @@ APTprf (node *arg_node, info *arg_info)
             types *old_type;
 
             old_type = PIgetOldType (
-              DUPdupAllTypes (VARDEC_TYPE (ID_VARDEC (PRF_ARG1 (arg_node)))));
+              DUPdupAllTypes (VARDEC_TYPE (ID_DECL (PRF_ARG1 (arg_node)))));
             arg_node = TCshpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
             old_type = ILIBfree (old_type);
         }
@@ -1406,3 +1419,4 @@ APTlet (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif /* PADT_DEACTVATED */
