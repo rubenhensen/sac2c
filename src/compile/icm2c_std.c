@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2003/11/11 19:11:18  dkr
+ * ND_ASSIGN__DESC: SAC_NOOP added
+ *
  * Revision 3.56  2003/10/02 06:28:49  dkrHH
  * unused variable removedunused variable removed
  *
@@ -888,6 +891,8 @@ ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT)
              *     -> descriptor / data vector of 'from_NT' are not reused by 'to_NT'
              *         -> ND_DEC_RC_FREE( from_NT) in ND_ASSIGN__DATA
              */
+            INDENT;
+            fprintf (outfile, "SAC_NOOP()\n");
         } else {
             /*
              * -> 'to_NT' is a unique hidden scalar
