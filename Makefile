@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.150  2004/11/27 02:37:33  sbs
+# typeconversions renamed .
+#
 # Revision 3.149  2004/11/27 02:22:25  sbs
 # *** empty log message ***
 #
@@ -188,7 +191,7 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/renameidentifiers.o src/compile/functionprecompile.o \
-         src/compile/type_conversions.o 
+         src/compile/typeconv_precompile.o 
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \
