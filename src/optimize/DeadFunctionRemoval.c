@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/02/20 08:18:59  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.6  2003/11/18 17:41:30  dkr
  * no changes done
  *
@@ -117,6 +121,22 @@ DFRmodul (node *arg_node, node *arg_info)
     node *fun;
     DBUG_ENTER ("DFRmodul");
 
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        /* clear dfr flag */
+        fun = MODUL_FUNDECS (arg_node);
+        while (fun != NULL) {
+            FUNDEF_EXPORT (fun) = FALSE;
+            fun = FUNDEF_NEXT (fun);
+        }
+
+        /* check fundefs for applications (only main in programs) */
+        /*    INFO_DFR_SPINE( arg_info) = TRUE;
+            MODUL_FUNDECS( arg_node) = Trav( MODUL_FUNDECS( arg_node), arg_info);*/
+
+        /* remove all produced zombies */
+        /*    MODUL_FUNDECS(arg_node) = RemoveAllZombies( MODUL_FUNDECS(arg_node));*/
+    }
+
     if (MODUL_FUNS (arg_node) != NULL) {
         /* clear dfr flag */
         fun = MODUL_FUNS (arg_node);
@@ -131,6 +151,12 @@ DFRmodul (node *arg_node, node *arg_info)
 
         /* remove all produced zombies */
         MODUL_FUNS (arg_node) = RemoveAllZombies (MODUL_FUNS (arg_node));
+    }
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+
+        /* remove all produced zombies */
+        MODUL_FUNDECS (arg_node) = RemoveAllZombies (MODUL_FUNDECS (arg_node));
     }
 
     DBUG_RETURN (arg_node);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/02/20 08:20:35  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.6  2003/03/25 16:23:51  sah
  * added support for pathless system
  * libraries
@@ -811,6 +815,8 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
 
     while (fundef != NULL) { /* search function */
         find = SearchFundef (fundef, MODUL_FUNS (modul));
+        if (find == NULL)
+            find = SearchFundef (fundef, MODUL_FUNDECS (modul));
 
         if (find == NULL) {
             DBUG_PRINT ("READSIB",
@@ -1108,6 +1114,7 @@ node *
 RSIBmodul (node *arg_node, node *arg_info)
 {
     node *foldfun;
+    node *tmp, *next;
 
     DBUG_ENTER ("RSIBmodul");
 
@@ -1115,10 +1122,31 @@ RSIBmodul (node *arg_node, node *arg_info)
      *  searching SIB-information about functions
      */
 
+    /*
+     * concatenate fundecs at the end of funs
+     * ugly but much easier as rewriting readsib :-(
+     */
+    tmp = MODUL_FUNDECS (arg_node);
+    if (tmp == NULL) {
+        /* nothing */
+    } else {
+        while (FUNDEF_NEXT (tmp) != NULL) {
+            tmp = FUNDEF_NEXT (tmp);
+        }
+        FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
+
+        MODUL_FUNS (arg_node) = MODUL_FUNDECS (arg_node);
+        MODUL_FUNDECS (arg_node) = NULL;
+    }
+
     arg_info = MakeInfo ();
 
     INFO_RSIB_MODUL (arg_info) = arg_node;
     INFO_RSIB_FOLDFUNS (arg_info) = NULL;
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
@@ -1156,6 +1184,34 @@ RSIBmodul (node *arg_node, node *arg_info)
     }
 
     arg_info = FreeNode (arg_info);
+
+    /*
+     * remove functions without body from FUNS to FUNDECS
+     */
+    tmp = MODUL_FUNS (arg_node);
+    while ((tmp != NULL) && (FUNDEF_BODY (tmp) == NULL)) {
+        /* first node has no body */
+        next = FUNDEF_NEXT (tmp);
+        MODUL_FUNS (arg_node) = next;
+        FUNDEF_NEXT (tmp) = MODUL_FUNDECS (arg_node);
+        MODUL_FUNDECS (arg_node) = tmp;
+        tmp = next;
+    }
+    /* tmp is now first node in FUNS, tmp has a body */
+    next = FUNDEF_NEXT (tmp);
+    while (next != NULL) {
+
+        if (FUNDEF_BODY (next) == NULL) {
+            /* next has no body, move it to FUNDECS*/
+            FUNDEF_NEXT (tmp) = FUNDEF_NEXT (next);
+            FUNDEF_NEXT (next) = MODUL_FUNDECS (arg_node);
+            MODUL_FUNDECS (arg_node) = next;
+            next = FUNDEF_NEXT (tmp);
+        } else {
+            next = FUNDEF_NEXT (next);
+            tmp = FUNDEF_NEXT (tmp);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }

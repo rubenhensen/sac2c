@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/02/20 08:20:35  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.18  2003/03/24 16:38:00  sbs
  * CreateCppCallString used.
  *
@@ -97,7 +101,7 @@
       ? (MODUL_TYPES (n))                                                                \
       : ((id == 1)                                                                       \
            ? (MODUL_TYPES (n))                                                           \
-           : ((id == 2) ? (MODUL_FUNS (n)) : ((id == 3) ? (MODUL_OBJS (n)) : NULL)))
+           : ((id == 2) ? (MODUL_FUNDECS (n)) : ((id == 3) ? (MODUL_OBJS (n)) : NULL)))
 
 #define MODUL_TOF_L(n, id, rhs)                                                          \
     if (id == 0) {                                                                       \
@@ -105,7 +109,7 @@
     } else if (id == 1) {                                                                \
         MODUL_TYPES (n) = rhs;                                                           \
     } else if (id == 2) {                                                                \
-        MODUL_FUNS (n) = rhs;                                                            \
+        MODUL_FUNDECS (n) = rhs;                                                         \
     } else if (id == 3) {                                                                \
         MODUL_OBJS (n) = rhs;                                                            \
     } else {                                                                             \
@@ -1469,7 +1473,8 @@ ImportAll (mod *mod, node *modul)
             tmpnode = FUNDEF_NEXT (tmpnode);
         }
 
-        MODUL_FUNS (modul) = AppendFundef (EXPLIST_FUNS (explist), MODUL_FUNS (modul));
+        MODUL_FUNDECS (modul)
+          = AppendFundef (EXPLIST_FUNS (explist), MODUL_FUNDECS (modul));
 
         /* We mark all syms entries as imported! */
         for (i = 0; i < 4; i++) {
@@ -1759,8 +1764,8 @@ IMmodul (node *arg_node, node *arg_info)
             MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
         }
 
-        if (MODUL_FUNS (arg_node) != NULL) {
-            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_node);
+        if (MODUL_FUNDECS (arg_node) != NULL) {
+            MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_node);
         }
     }
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/02/20 08:20:35  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.5  2002/08/09 14:11:47  dkr
  * signature of PrintFunctionHeader() modified
  *
@@ -956,6 +960,9 @@ WSIBmodul (node *arg_node, node *arg_info)
      *  Lists of needed types and functions are removed as well as
      *  shape or dimension independent functions.
      */
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), NULL);
+    }
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), NULL);

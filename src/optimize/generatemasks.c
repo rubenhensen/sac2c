@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/02/20 08:18:59  mwe
+ * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
+ * changed tree traversal according to that
+ *
  * Revision 3.17  2002/09/06 09:37:41  dkr
  * ND_IDXS2OFFSET added
  *
@@ -2059,7 +2063,9 @@ node *
 GNMmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMmodul");
-
+    if (MODUL_FUNDECS (arg_node)) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    }
     if (MODUL_FUNS (arg_node)) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
