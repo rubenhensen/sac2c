@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/02/07 20:17:02  dkr
+ * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
+ *
  * Revision 3.20  2001/02/06 01:45:24  dkr
  * attribute NOOP for N_WL... nodes added
  *
@@ -3050,7 +3053,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLNODE_STEP(n) ((n)->varno)
 #define WLNODE_NEXTDIM(n) ((n)->node[0])
 #define WLNODE_NEXT(n) ((n)->node[1])
-#define WLNODE_NOOP(n) ((bool)((n)->info.prf_dec.tag))
 
 /*
  * some macros for N_WLseg, N_WLsegVar nodes
@@ -3075,7 +3077,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLXBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLXBLOCK_CONTENTS(n) ((n)->node[2])
 #define WLXBLOCK_NEXT(n) (WLNODE_NEXT (n))
-#define WLXBLOCK_NOOP(n) (WLNODE_NOOP (n))
 
 /*
  * some macros for N_WLstride, N_WLstrideVar nodes
@@ -3085,7 +3086,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSTRIDEX_DIM(n) (WLNODE_DIM (n))
 #define WLSTRIDEX_CONTENTS(n) ((n)->node[0])
 #define WLSTRIDEX_NEXT(n) (WLNODE_NEXT (n))
-#define WLSTRIDEX_NOOP(n) (WLNODE_NOOP (n))
 
 /*
  * some macros for N_WLgrid, N_WLgridVar nodes
@@ -3097,7 +3097,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRIDX_CODE(n) ((n)->node[4])
-#define WLGRIDX_NOOP(n) (WLNODE_NOOP (n))
+#define WLGRIDX_NOOP(n) ((bool)((n)->info.prf_dec.tag))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3213,8 +3213,6 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***    int      BOUND2
  ***    int      STEP
  ***
- ***    bool     NOOP
- ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3222,7 +3220,6 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
- ***    - (NOOP == TRUE)  ->  (NEXTDIM == CONTENTS == NULL)
  ***/
 
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
@@ -3236,7 +3233,6 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
 #define WLBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
 #define WLBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
-#define WLBLOCK_NOOP(n) (WLXBLOCK_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3257,8 +3253,6 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***    int      BOUND2
  ***    int      STEP
  ***
- ***    bool     NOOP
- ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3266,7 +3260,6 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
- ***    - (NOOP == TRUE)  ->  (NEXTDIM == CONTENTS == NULL)
  ***/
 
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
@@ -3280,7 +3273,6 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 #define WLUBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
 #define WLUBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
-#define WLUBLOCK_NOOP(n) (WLXBLOCK_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3301,17 +3293,12 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***    int      STEP
  ***    bool     UNROLLING    (unrolling wanted?)
  ***
- ***    bool     NOOP
- ***
  ***  temporary attributes:
  ***
  ***    node*    PART         (part this stride is generated from)
  ***                                                 (wltransform !!)
  ***    node*    MODIFIED                            (wltransform !!)
  ***
- ***  remarks:
- ***
- ***    - (NOOP == TRUE)  ->  (CONTENTS == NULL)
  ***/
 
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
@@ -3325,7 +3312,6 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 #define WLSTRIDE_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
 #define WLSTRIDE_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
 #define WLSTRIDE_NEXT(n) (WLSTRIDEX_NEXT (n))
-#define WLSTRIDE_NOOP(n) (WLSTRIDEX_NOOP (n))
 
 #define WLSTRIDE_PART(n) ((n)->node[2])
 #define WLSTRIDE_MODIFIED(n) ((n)->node[3])
@@ -3348,8 +3334,6 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***    int      LEVEL
  ***    int      DIM
  ***
- ***    bool     NOOP
- ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3365,7 +3349,6 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
 #define WLSTRIDEVAR_STEP(n) ((n)->node[4])
 #define WLSTRIDEVAR_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
 #define WLSTRIDEVAR_NEXT(n) (WLSTRIDEX_NEXT (n))
-#define WLSTRIDEVAR_NOOP(n) (WLSTRIDEX_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 

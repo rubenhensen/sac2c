@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/02/07 20:16:56  dkr
+ * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
+ *
  * Revision 3.14  2001/02/06 01:48:06  dkr
  * WLBLOCKSTR_GET_ADDR added
  *
@@ -1680,11 +1683,25 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLblock :
  ***/
 
+#define WLBLOCK_NOOP(n) ((WLBLOCK_NEXTDIM (n) == NULL) && (WLBLOCK_CONTENTS (n) == NULL))
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_WLublock :
  ***/
+
+#define WLUBLOCK_NOOP(n)                                                                 \
+    ((WLUBLOCK_NEXTDIM (n) == NULL) && (WLUBLOCK_CONTENTS (n) == NULL))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLblock :  *and*  N_WLublock :
+ ***/
+
+#define WLXBLOCK_NOOP(n)                                                                 \
+    (NODE_TYPE (n) == N_WLblock) ? WLBLOCK_NOOP (n) : WLUBLOCK_NOOP (n)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1692,11 +1709,15 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLstride :
  ***/
 
+#define WLSTRIDE_NOOP(n) (WLSTRIDE_CONTENTS (n) == NULL)
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_WLstrideVar :
  ***/
+
+#define WLSTRIDEVAR_NOOP(n) (WLSTRIDEVAR_CONTENTS (n) == NULL)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1709,6 +1730,9 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
       ? (void *)&(WLSTRIDE_##field (node))                                               \
       : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))     \
                                              : NULL)
+
+#define WLSTRIDEX_NOOP(n)                                                                \
+    (NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_NOOP (n) : WLSTRIDEVAR_NOOP (n)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1787,6 +1811,20 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                           : ((NODE_TYPE (node) == N_WLublock)                            \
                                ? (void *)&(WLUBLOCK_##field (node))                      \
                                : NULL)))))
+
+#define WLNODE_NOOP(n)                                                                   \
+    (NODE_TYPE (n) == N_WLblock)                                                         \
+      ? WLBLOCK_NOOP (n)                                                                 \
+      : ((NODE_TYPE (n) == N_WLublock)                                                   \
+           ? WLUBLOCK_NOOP (n)                                                           \
+           : ((NODE_TYPE (n) == N_WLstride)                                              \
+                ? WLSTRIDE_NOOP (n)                                                      \
+                : ((NODE_TYPE (n) == N_WLstrideVar)                                      \
+                     ? WLSTRIDEVAR_NOOP (n)                                              \
+                     : ((NODE_TYPE (n) == N_WLgrid)                                      \
+                          ? WLGRID_NOOP (n)                                              \
+                          : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)         \
+                                                            : FALSE)))))
 
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);

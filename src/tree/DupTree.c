@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/02/07 20:16:49  dkr
+ * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
+ *
  * Revision 3.8  2001/02/06 01:45:32  dkr
  * attribute NOOP for N_WL... nodes added
  *
@@ -1834,8 +1837,6 @@ DupWLblock (node *arg_node, node *arg_info)
                             DUPTRAV (WLBLOCK_CONTENTS (arg_node)),
                             DUPCONT (WLBLOCK_NEXT (arg_node)));
 
-    WLBLOCK_NOOP (new_node) = WLBLOCK_NOOP (arg_node);
-
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -1856,8 +1857,6 @@ DupWLublock (node *arg_node, node *arg_info)
                       WLUBLOCK_STEP (arg_node), DUPTRAV (WLUBLOCK_NEXTDIM (arg_node)),
                       DUPTRAV (WLUBLOCK_CONTENTS (arg_node)),
                       DUPCONT (WLUBLOCK_NEXT (arg_node)));
-
-    WLUBLOCK_NOOP (new_node) = WLUBLOCK_NOOP (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1880,7 +1879,6 @@ DupWLstride (node *arg_node, node *arg_info)
                              DUPCONT (WLSTRIDE_NEXT (arg_node)));
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
-    WLSTRIDE_NOOP (new_node) = WLSTRIDE_NOOP (arg_node);
 
     /*
      * duplicated strides are not modified yet ;)
@@ -1907,8 +1905,6 @@ DupWLstrideVar (node *arg_node, node *arg_info)
                                 DUPTRAV (WLSTRIDEVAR_STEP (arg_node)),
                                 DUPTRAV (WLSTRIDEVAR_CONTENTS (arg_node)),
                                 DUPCONT (WLSTRIDEVAR_NEXT (arg_node)));
-
-    WLSTRIDEVAR_NOOP (new_node) = WLSTRIDEVAR_NOOP (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 

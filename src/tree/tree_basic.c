@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/02/07 20:17:07  dkr
+ * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
+ *
  * Revision 3.11  2001/02/06 01:45:05  dkr
  * signature of MakeWLgrid() and MakeWLgridVar() modified.
  * MakeIcm simplified.
@@ -1602,8 +1605,6 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim
     WLBLOCK_CONTENTS (new_node) = contents;
     WLBLOCK_NEXT (new_node) = next;
 
-    WLBLOCK_NOOP (new_node) = FALSE;
-
     DBUG_RETURN (new_node);
 }
 
@@ -1619,8 +1620,6 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int step, node *nextdi
 
     new_node = MakeWLblock (level, dim, bound1, bound2, step, nextdim, contents, next);
     NODE_TYPE (new_node) = N_WLublock;
-
-    WLUBLOCK_NOOP (new_node) = FALSE;
 
     DBUG_RETURN (new_node);
 }
@@ -1645,8 +1644,6 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, bool unrolli
     WLSTRIDE_UNROLLING (new_node) = unrolling;
     WLSTRIDE_CONTENTS (new_node) = contents;
     WLSTRIDE_NEXT (new_node) = next;
-
-    WLSTRIDE_NOOP (new_node) = FALSE;
 
     WLSTRIDE_PART (new_node) = NULL;
     WLSTRIDE_MODIFIED (new_node) = NULL;
@@ -1673,8 +1670,6 @@ MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
     WLSTRIDEVAR_STEP (new_node) = step;
     WLSTRIDEVAR_CONTENTS (new_node) = contents;
     WLSTRIDEVAR_NEXT (new_node) = next;
-
-    WLSTRIDEVAR_NOOP (new_node) = FALSE;
 
     DBUG_RETURN (new_node);
 }
@@ -1706,7 +1701,6 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *ne
     WLGRID_CODE (new_node) = code;
 
     WLGRID_NOOP (new_node) = FALSE;
-
     WLGRID_MODIFIED (new_node) = NULL;
 
     DBUG_RETURN (new_node);
