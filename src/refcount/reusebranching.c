@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/18 17:05:18  ktr
+ * ongoing work
+ *
  * Revision 1.4  2004/11/17 11:38:14  ktr
  * ongoing implementation
  *
@@ -266,7 +269,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, DFMmask_t
              * Create condfun
              */
             cflut = GenerateLUT ();
-            cfargs = DFM2Args (inmask, lut);
+            cfargs = DFM2Args (inmask, cflut);
             cfargs
               = MakeArg (TmpVar (), MakeTypes1 (T_bool), ST_regular, ST_regular, cfargs);
 
@@ -489,7 +492,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, DFMmask_t
              * Create c" = alloc( 0, []);
              */
             res = MakeAssign (MakeLet (MakePrf2 (F_alloc, MakeNum (0),
-                                                 MakeFlatArray (NULL)),
+                                                 CreateZeroVector (0, T_int)),
                                        memids),
                               res);
             AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
