@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/21 13:07:54  jhs
+ * Implemented extended version.
+ *
  * Revision 1.1  2000/03/09 19:49:54  jhs
  * Initial revision
  *
@@ -74,12 +77,17 @@ DataflowAnalysis (node *arg_node, node *arg_info)
     DBUG_ENTER ("DataFlowAnalysis");
     DBUG_PRINT ("DFA", ("begin"));
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "DataFlowAnalysis expects a N_fundef as arg_node");
+
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
         && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
         old_tab = act_tab;
         act_tab = dfa_tab;
 
         /* push info */
+
+        INFO_DFA_CONT (arg_info) = NULL;
 
         arg_node = Trav (arg_node, arg_info);
 
@@ -109,6 +117,11 @@ DataflowAnalysis (node *arg_node, node *arg_info)
 node *
 DFAfundef (node *arg_node, node *arg_info)
 {
+    DFMmask_t old_use;
+    DFMmask_t old_def;
+    DFMmask_t old_needchain;
+    DFMmask_t old_needblock;
+
     DBUG_ENTER ("DFAfundef");
     DBUG_PRINT ("DFA", ("begin"));
 
@@ -117,15 +130,75 @@ DFAfundef (node *arg_node, node *arg_info)
     DBUG_ASSERT ((INFO_MUTH_FUNDEF (arg_info) == arg_node),
                  "INFO_MUTH_FUNDEF does not point to this function");
 
-    /*
-      FUNDEF_DFM_BASE( arg_node) = DFMGenMaskBase( FUNDEF_ARGS( arg_node),
-                                                   FUNDEF_VARDEC( arg_node));
-    */
+    old_use = INFO_DFA_USEMASK (arg_info);
+    old_def = INFO_DFA_DEFMASK (arg_info);
+    old_needchain = INFO_DFA_NEEDCHAIN (arg_info);
+    old_needblock = INFO_DFA_NEEDBLOCK (arg_info);
+    INFO_DFA_USEMASK (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
+    INFO_DFA_DEFMASK (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
+    INFO_DFA_NEEDCHAIN (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
+    INFO_DFA_NEEDBLOCK (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
 
     DBUG_PRINT ("DFA", ("into body"));
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     /* DO NOT TRAVERSE FUNDEF_NEXT */
     DBUG_PRINT ("DFA", ("from body"));
+
+    INFO_DFA_USEMASK (arg_info) = DFMRemoveMask (INFO_DFA_USEMASK (arg_info));
+    INFO_DFA_DEFMASK (arg_info) = DFMRemoveMask (INFO_DFA_DEFMASK (arg_info));
+    INFO_DFA_NEEDCHAIN (arg_info) = DFMRemoveMask (INFO_DFA_NEEDCHAIN (arg_info));
+    INFO_DFA_NEEDBLOCK (arg_info) = DFMRemoveMask (INFO_DFA_NEEDBLOCK (arg_info));
+    INFO_DFA_USEMASK (arg_info) = old_use;
+    INFO_DFA_DEFMASK (arg_info) = old_def;
+    INFO_DFA_NEEDCHAIN (arg_info) = old_needchain;
+    INFO_DFA_NEEDBLOCK (arg_info) = old_needblock;
+
+    DBUG_PRINT ("DFA", ("end"));
+    DBUG_RETURN (arg_node);
+}
+
+#define HD_DOWN 1
+#define HD_UP 2
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DFAtrav(node *arg_node, node *arg_info, funptr down, funptr up)
+ *
+ * description:
+ *   The traversal-technique used in this is tricky.
+ *   We need to traverse the "N_instr", i.e. N_let, N_mt, N_st, N_cond and
+ *   N_return during top-down *and* bottom-up with *differnt* actions.
+ *   The chains of N_instr is builded by N_assigns, so we traverse
+ *   ASSIGN_INSTR first, then ASSIGN_NEXT and afterwards ASSIGN_INSTR
+ *   again.
+ *   Because of the differnt actions there are two routines for each N_instr
+ *   DFAinstr_dn and DFAinstr_up, to be used within the corresponding
+ *   traversals.
+ *   From the dfa_tab we call the ordinary DFAinstr, this calls DFAtrav
+ *   with DFAinstr_dn and DFAinstr_up as arguments, DFAtrav then decides
+ *   by checking INFO_DFA_HEADING which of the two to call.
+ *   INFO_DFA_HEADING is set in DFAassign.
+ *
+ ******************************************************************************/
+node *
+DFAtrav (node *arg_node, node *arg_info, funptr down, funptr up)
+{
+    DBUG_ENTER ("DFAtrav");
+    DBUG_PRINT ("DFA",
+                ("begin %i %s", INFO_DFA_HEADING (arg_info), NODE_TEXT (arg_node)));
+
+    if (INFO_DFA_HEADING (arg_info) == HD_DOWN) {
+        if (down != NULL) {
+            arg_node = down (arg_node, arg_info);
+        }
+    } else if (INFO_DFA_HEADING (arg_info) == HD_UP) {
+        if (up != NULL) {
+            arg_node = up (arg_node, arg_info);
+        }
+    } else {
+        DBUG_ASSERT (0, ("Unknown Heading!"));
+    }
 
     DBUG_PRINT ("DFA", ("end"));
     DBUG_RETURN (arg_node);
@@ -134,7 +207,57 @@ DFAfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DFAreturn( node *arg_node, node *arg_info)
+ *   node *DFAassign( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Compare description of DFAtrav for the double traversal of ASSIGN_INSTR!
+ *
+ ******************************************************************************/
+node *
+DFAassign (node *arg_node, node *arg_info)
+{
+    int old_heading;
+    node *old_thisassign;
+    node *old_cont;
+
+    DBUG_ENTER ("DFAassign");
+    DBUG_PRINT ("DFA", ("begin"));
+
+    old_thisassign = INFO_DFA_THISASSIGN (arg_info);
+    old_heading = INFO_DFA_HEADING (arg_info);
+    INFO_DFA_THISASSIGN (arg_info) = arg_node;
+    INFO_DFA_HEADING (arg_info) = HD_DOWN;
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    } else {
+        /*
+         *  If we reach the end of a chain, we check if we have to continue
+         *  with INFO_DFA_CONT or not.
+         */
+        if (INFO_DFA_CONT (arg_info) != NULL) {
+            old_cont = INFO_DFA_CONT (arg_info);
+            INFO_DFA_CONT (arg_info) = NULL;
+            /* ... = */ Trav (old_cont, arg_info);
+            INFO_DFA_CONT (arg_info) = old_cont;
+        }
+    }
+
+    INFO_DFA_HEADING (arg_info) = HD_UP;
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    INFO_DFA_THISASSIGN (arg_info) = old_thisassign;
+    INFO_DFA_HEADING (arg_info) = old_heading;
+
+    DBUG_PRINT ("DFA", ("end"));
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DFAreturn_dn( node *arg_node, node *arg_info)
  *
  * description:
  *   Annotates RETURN_USEMAKS and RETURN_DEFMAKS.
@@ -143,13 +266,13 @@ DFAfundef (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-DFAreturn (node *arg_node, node *arg_info)
+DFAreturn_dn (node *arg_node, node *arg_info)
 {
     node *exprs;
     node *arg;
 
-    DBUG_ENTER ("DFAreturn");
-    DBUG_PRINT ("DFA", ("begin"));
+    DBUG_ENTER ("DFAreturn_dn");
+    DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
 
     RETURN_USEMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
@@ -165,14 +288,37 @@ DFAreturn (node *arg_node, node *arg_info)
 
     /* RETURN_DEFMAKS is by definition empty */
 
-    DBUG_PRINT ("DFA", ("end"));
+    DBUG_PRINT ("DFA", ("end %i", INFO_DFA_HEADING (arg_info)));
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAreturn_up (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFAreturn_up");
+
+    DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), RETURN_USEMASK (arg_node));
+    DFMSetMaskClear (INFO_DFA_NEEDBLOCK (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAreturn (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFAreturn");
+
+    arg_node = DFAtrav (arg_node, arg_info, DFAreturn_dn, DFAreturn_up);
+
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *DFAlet( node *arg_node, node *arg_info)
+ *   node *DFAlet_dn( node *arg_node, node *arg_info)
  *
  * description:
  *   Annotates LET_USEMASK and LET_DEFMASK. How? See below ...
@@ -203,7 +349,7 @@ DFAreturn (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-DFAlet (node *arg_node, node *arg_info)
+DFAlet_dn (node *arg_node, node *arg_info)
 {
     node *expr;
     node *args;
@@ -216,9 +362,10 @@ DFAlet (node *arg_node, node *arg_info)
      */
     int done_lhs;
     ids *let_ids;
+    DFMmask_t helper;
 
     DBUG_ENTER ("DFAlet");
-    DBUG_PRINT ("DFA", ("begin"));
+    DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
 
     LET_USEMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
@@ -272,15 +419,6 @@ DFAlet (node *arg_node, node *arg_info)
          *  LET_DEFMASK = NWITH2_INOUT + NWITH2_OUT
          */
 
-        /*
-            fixmaskbase( NWITH2_IN( expr),
-                         FUNDEF_DFM_BASE( INFO_MUTH_FUNDEF( arg_info)));
-            fixmaskbase( NWITH2_INOUT( expr),
-                         FUNDEF_DFM_BASE( INFO_MUTH_FUNDEF( arg_info)));
-            fixmaskbase( NWITH2_OUT( expr),
-                         FUNDEF_DFM_BASE( INFO_MUTH_FUNDEF( arg_info)));
-        */
-
         /* LET_USEMASK = LET_USEMASK + NWITH2_IN */
         vardec = DFMGetMaskEntryDeclSet (NWITH2_IN (expr));
         while (vardec != NULL) {
@@ -304,6 +442,10 @@ DFAlet (node *arg_node, node *arg_info)
             DFMSetMaskEntrySet (LET_DEFMASK (arg_node), NULL, vardec);
             vardec = DFMGetMaskEntryDeclSet (NULL);
         }
+        /*
+         *  Here we have already done the lhs, we annotate this, so
+         *  the following code does not infer it again.
+         */
         done_lhs = TRUE;
     } else {
         DBUG_ASSERT (0, "unhandled kind of let");
@@ -322,6 +464,154 @@ DFAlet (node *arg_node, node *arg_info)
         }
     }
 
-    DBUG_PRINT ("DFA", ("end"));
+    /* INFO_DFA_USEMASK += LET_USEMASK - INFO_DFA_DEFMASK */
+    helper = DFMGenMaskMinus (LET_USEMASK (arg_node), INFO_DFA_DEFMASK (arg_info));
+    DFMSetMaskOr (INFO_DFA_USEMASK (arg_info), helper);
+    helper = DFMRemoveMask (helper);
+
+    /* INFO_DFA_DEFMASK += LET_DEFMASK */
+    DFMSetMaskOr (INFO_DFA_DEFMASK (arg_info), LET_DEFMASK (arg_node));
+
+    DBUG_PRINT ("DFA", ("end %i", INFO_DFA_HEADING (arg_info)));
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAlet_up (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFAlet_up");
+
+    /* tag if ... #### */
+
+    DFMSetMaskMinus (INFO_DFA_NEEDCHAIN (arg_info), LET_DEFMASK (arg_node));
+    DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), LET_USEMASK (arg_node));
+
+    DFMSetMaskMinus (INFO_DFA_NEEDBLOCK (arg_info), LET_DEFMASK (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAlet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFAlet");
+
+    arg_node = DFAtrav (arg_node, arg_info, DFAlet_dn, DFAlet_up);
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAxt_dn (node *arg_node, node *arg_info)
+{
+    node *old_cont;
+    DFMmask_t old_usemask;
+    DFMmask_t old_defmask;
+
+    DBUG_ENTER ("DFAxt_dn");
+
+    /* USEMASK = {} and DEFMASK = {} */
+    L_MT_OR_ST_USEMASK (arg_node,
+                        DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info))));
+    L_MT_OR_ST_DEFMASK (arg_node,
+                        DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info))));
+
+    old_usemask = INFO_DFA_USEMASK (arg_info);
+    old_defmask = INFO_DFA_DEFMASK (arg_info);
+    old_cont = INFO_DFA_CONT (arg_info);
+    INFO_DFA_USEMASK (arg_info) = old_usemask;
+    INFO_DFA_DEFMASK (arg_info) = old_defmask;
+    INFO_DFA_CONT (arg_info) = NULL;
+
+    L_MT_OR_ST_REGION (arg_node, Trav (MT_OR_ST_REGION (arg_node), arg_info));
+
+    INFO_DFA_USEMASK (arg_info) = old_usemask;
+    INFO_DFA_DEFMASK (arg_info) = old_defmask;
+    INFO_DFA_CONT (arg_info) = old_cont;
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAxt_up (node *arg_node, node *arg_info)
+{
+    DFMmask_t helper;
+
+    DBUG_ENTER ("DFAxt_up");
+
+    /* DEF_B = DEF_B * (NEEDCHAIN + NEEDBLOCK) */
+    helper = DFMGenMaskOr (INFO_DFA_NEEDCHAIN (arg_info), INFO_DFA_NEEDBLOCK (arg_info));
+    DFMSetMaskAnd (MT_OR_ST_DEFMASK (arg_node), helper);
+    helper = DFMRemoveMask (helper);
+
+    if (NODE_TYPE (arg_node) == N_mt) {
+        MT_NEEDLATER (arg_node)
+          = DFMGenMaskOr (INFO_DFA_NEEDCHAIN (arg_info), INFO_DFA_NEEDBLOCK (arg_info));
+    } else if (NODE_TYPE (arg_node) == N_st) {
+        ST_NEEDLATER_ST (arg_node) = DFMGenMaskMinus (INFO_DFA_NEEDCHAIN (arg_info),
+                                                      INFO_DFA_NEEDBLOCK (arg_info));
+
+        ST_NEEDLATER_MT (arg_node) = DFMGenMaskCopy (INFO_DFA_NEEDCHAIN (arg_info));
+    } else {
+        DBUG_ASSERT (0, ("wrong node type"));
+    }
+
+    DFMSetMaskMinus (INFO_DFA_NEEDCHAIN (arg_info), MT_OR_ST_DEFMASK (arg_node));
+
+    DFMSetMaskMinus (INFO_DFA_NEEDBLOCK (arg_info), MT_OR_ST_DEFMASK (arg_node));
+    DFMSetMaskOr (INFO_DFA_NEEDBLOCK (arg_info), MT_OR_ST_USEMASK (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAxt (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFAxt");
+
+    arg_node = DFAtrav (arg_node, arg_info, DFAxt_dn, DFAxt_up);
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAcond_dn (node *arg_node, node *arg_info)
+{
+    node *old_cont;
+
+    DBUG_ENTER ("DFAcond_dn");
+
+    old_cont = INFO_DFA_CONT (arg_info);
+    INFO_DFA_CONT (arg_info) = ASSIGN_NEXT (INFO_DFA_THISASSIGN (arg_info));
+
+    /* need = {} #### */
+    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    /* need_then = need #### */
+
+    /* need = {} #### */
+    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    /* need_else = need #### */
+
+    /* need = need_then + need_else */
+
+    INFO_DFA_CONT (arg_info) = old_cont;
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+DFAcond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFAcond");
+
+    arg_node = DFAtrav (arg_node, arg_info, DFAcond_dn, NULL);
+
     DBUG_RETURN (arg_node);
 }

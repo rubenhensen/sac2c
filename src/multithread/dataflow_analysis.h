@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/21 13:08:07  jhs
+ * Implemented extended version.
+ *
  * Revision 1.1  2000/03/09 19:49:54  jhs
  * Initial revision
  *
@@ -27,5 +30,8 @@ extern node *DataflowAnalysis (node *arg_node, node *arg_info);
 extern node *DFAfundef (node *arg_node, node *arg_info);
 extern node *DFAlet (node *arg_node, node *arg_info);
 extern node *DFAreturn (node *arg_node, node *arg_info);
+extern node *DFAassign (node *arg_node, node *arg_info);
+extern node *DFAxt (node *arg_node, node *arg_info);
+extern node *DFAcond (node *arg_node, node *arg_info);
 
 #endif /* DATAFLOW_ANALYSIS_H */
