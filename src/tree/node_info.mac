@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.172  2004/07/29 14:14:09  skt
+ * location of PEMcond changed
+ *
  * Revision 3.171  2004/07/29 00:40:54  skt
  * added support for creation of dataflowgraph (mtmode 3)
  *
@@ -1881,7 +1884,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPcond, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, PEMcond, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -2986,7 +2989,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPfuncond, TravSons,
 
-       TravSons, TravSons, PEMcond, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
