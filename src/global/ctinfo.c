@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/01/21 18:05:09  cg
+ * Layout bug fixed in error messages.
+ *
  * Revision 1.5  2005/01/14 08:46:31  cg
  * Bug fixed in application of variable argument list functions.
  *
@@ -501,7 +504,8 @@ CTIabortLine (int line, const char *format, ...)
     va_start (arg_p, format);
 
     fprintf (stderr, "\n");
-    fprintf (stderr, "%sline %d  file: %s", abort_message_header, line, global.filename);
+    fprintf (stderr, "%sline %d  file: %s\n", abort_message_header, line,
+             global.filename);
     PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
@@ -554,7 +558,7 @@ CTIwarnLine (int line, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (stderr, "%sline %d  file: %s", warn_message_header, line,
+        fprintf (stderr, "%sline %d  file: %s\n", warn_message_header, line,
                  global.filename);
         PrintMessage (warn_message_header, format, arg_p);
 
