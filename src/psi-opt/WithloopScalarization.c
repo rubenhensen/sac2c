@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2003/03/07 22:16:37  ktr
+ * aggressive behaviour now creates copy-withloops for all expressions
+ * that cannot be handled by other mechanisms.
+ *
  * Revision 1.27  2003/01/28 18:19:02  ktr
  * Much cleaner version, does not recycle old WLs.
  * Phases CODE UNSHARE and DISTRIBUTE eliminated
@@ -451,7 +455,7 @@ correctWL (node *arg_node)
  ****************************************************************************/
 
 /**
- * checks if an assignment occurs part of a list of instructions.
+ * checks if an assignment occurs as a part of a list of instructions.
  *
  * unfortunately this is a tail-end recursive implementation
  *
@@ -664,7 +668,8 @@ probePart (node *arg_node, node *arg_info)
             /* Check whether inner CEXPR is computer by an INNER withloop */
             if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
                 && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                         BLOCK_INSTR (NPART_CBLOCK (arg_node))))) {
+                                         BLOCK_INSTR (NPART_CBLOCK (arg_node))))
+                && (NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0)) {
 
                 /* initialize INFO_WLS_DIMS */
                 if (INFO_WLS_DIMS (arg_info) == -1)
@@ -1111,6 +1116,8 @@ withloopifyPart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("withloopifyPart");
 
+    printf ("withloopify\n");
+
     /* if the part's expr is the index vector we need to insert
        a definition of it into the codeblock */
     if (NPART_SSAASSIGN (arg_node) == NULL)
@@ -1119,8 +1126,11 @@ withloopifyPart (node *arg_node, node *arg_info)
     /* if the part's LETEXPR is a withloop itself, we don't need to
        perform the withloopification */
     if (!((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
+          && (NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0)
           && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
                                    BLOCK_INSTR (NPART_CBLOCK (arg_node))))
+          && (checkGeneratorDependencies (arg_node,
+                                          NWITH_PART (NPART_LETEXPR (arg_node))))
           && (compatWLTypes (INFO_WLS_WITHOP (arg_info),
                              NWITH_WITHOP (NPART_LETEXPR (arg_node)))))) {
         /* if it is an array or a reshape command for an array,
@@ -1727,7 +1737,6 @@ WLSNwith (node *arg_node, node *arg_info)
 
     /* If everything is ok, we can start the scalarization */
     if (INFO_WLS_POSSIBLE (arg_info)) {
-
         /***************************************************************************
          *
          *  WITHLOOPIFICATION
