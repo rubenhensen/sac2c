@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1996/01/25 18:40:55  cg
+ * Revision 1.29  1996/02/06 08:20:44  sbs
+ * the scanner now accepts FF's (ctrl-L, bzw. \f in C-Notation)
+ *
+ * Revision 1.28  1996/01/25  18:40:55  cg
  * added key word classtype
  *
  * Revision 1.27  1996/01/22  17:30:38  cg
@@ -330,6 +333,7 @@ int start_token;
 "*/"	{ if (commlevel) commlevel--; else return(SC); }
 "\n"	{linenum++;}
 [ \t]	{}
+"\f"    {}
 .	{FILTER( SC ); }
 
 %%
