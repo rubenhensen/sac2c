@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/08/04 12:39:05  khf
+ * by appliance of Constant Folding: the result of TRAV must not
+ * be stored in MODUL_FUNS
+ *
  * Revision 1.11  2004/08/03 11:15:02  khf
  * corrected size of array_shape
  *
@@ -1386,7 +1390,7 @@ WLPGmodul (node *arg_node, info *arg_info)
 
     /* For Constant Folding */
     if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+        Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
     if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "cf")))
