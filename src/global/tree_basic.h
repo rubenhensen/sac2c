@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.110  1998/04/01 23:57:56  dkr
+ * added N_WLstriVar, N_WLgridVar
+ *
  * Revision 1.109  1998/04/01 17:22:56  srs
  * added macro ASSIGN_LEVEL
  *
@@ -2576,5 +2579,67 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 #define WLGRID_CODE(n) (n->node[2])
 
 #define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLstriVar :
+ ***
+ ***  sons:
+ ***
+ ***    node*    CONTENTS  (0)    (N_WLgridVar)
+ ***    node*    NEXT      (0)    (N_WLstriVar)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      DIM       (0)
+ ***    node*    BOUND1    (0)    (N_num, N_id)
+ ***    node*    BOUND2    (0)    (N_num, N_id)
+ ***    node*    STEP      (0)    (N_num, N_id)
+ ***
+ ***/
+
+extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
+                            node *contents, node *next);
+
+#define WLSTRIVAR_DIM(n) (n->refcnt)
+#define WLSTRIVAR_BOUND1(n) (n->node[2])
+#define WLSTRIVAR_BOUND2(n) (n->node[3])
+#define WLSTRIVAR_STEP(n) (n->node[4])
+#define WLSTRIVAR_CONTENTS(n) (n->node[0])
+#define WLSTRIVAR_NEXT(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLgridVar :
+ ***
+ ***  sons:
+ ***
+ ***    node*    NEXTDIM   (0)    (N_WLstriVar)
+ ***    node*    NEXT      (0)    (N_WLgridVar)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*    BOUND1    (0)    (N_num, N_id)
+ ***    node*    BOUND2    (0)    (N_num, N_id)
+ ***    node*    CODE      (0)    (N_Ncode)
+ ***    int      DIM       (0)
+ ***
+ ***
+ ***  remark:
+ ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
+ ***
+ ***/
+
+extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
+                            node *next, node *code);
+
+#define WLGRIDVAR_DIM(n) (n->refcnt)
+#define WLGRIDVAR_BOUND1(n) (n->node[2])
+#define WLGRIDVAR_BOUND2(n) (n->node[3])
+#define WLGRIDVAR_NEXTDIM(n) (n->node[0])
+#define WLGRIDVAR_NEXT(n) (n->node[1])
+#define WLGRIDVAR_CODE(n) (n->node[4])
 
 #endif /* _sac_tree_basic_h */
