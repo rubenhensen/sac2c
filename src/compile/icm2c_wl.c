@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/17 17:39:29  dkr
+ * ICMs WL_FOLD_NOOP and WL_ASSIGN_NOOP replaced by WL_NOOP
+ *
  * Revision 3.3  2001/01/10 18:33:30  dkr
  * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
  *
@@ -521,65 +524,31 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN_NOOP( int dims_target, char *target,
- *                                  char *idx_vec,
- *                                  int dims, char **idx_scalars,
- *                                  int cnt_bounds, char **bounds)
+ *   void ICMCompileWL_NOOP( int dims_target, char *target,
+ *                           char *idx_vec,
+ *                           int dims, char **idx_scalars,
+ *                           int cnt_bounds, char **bounds)
  *
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
+ *   WL_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN_NOOP (int dims_target, char *target, char *idx_vec, int dims,
-                          char **idx_scalars)
+ICMCompileWL_NOOP (int dims_target, char *target, char *idx_vec, int dims,
+                   char **idx_scalars)
 {
-    DBUG_ENTER ("ICMCompileWL_ASSIGN_NOOP");
+    DBUG_ENTER ("ICMCompileWL_NOOP");
 
-#define WL_ASSIGN_NOOP
+#define WL_NOOP
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_ASSIGN_NOOP
+#undef WL_NOOP
 
     INDENT;
-    fprintf (outfile, "/* extra elements introduced by array padding */\n");
-    INDENT;
-    fprintf (outfile, "SAC_WL_DEST(%s)++;\n", target);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_FOLD_NOOP( int dims_target, char *target,
- *                                char *idx_vec,
- *                                int dims, char **idx_scalars,
- *                                int cnt_bounds, char **bounds)
- *
- * description:
- *   Implements the compilation of the following ICM:
- *
- *   WL_FOLD_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec, int dims,
-                        char **idx_scalars)
-{
-    DBUG_ENTER ("ICMCompileWL_FOLD_NOOP");
-
-#define WL_FOLD_NOOP
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_FOLD_NOOP
-
-    INDENT;
-    fprintf (outfile, "/* empty */\n");
+    fprintf (outfile, "/* noop */\n");
 
     DBUG_VOID_RETURN;
 }

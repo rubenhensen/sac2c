@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/17 17:39:23  dkr
+ * ICMs WL_FOLD_NOOP and WL_ASSIGN_NOOP replaced by WL_NOOP
+ *
  * Revision 3.2  2001/01/10 18:33:20  dkr
  * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
  *
@@ -85,11 +88,8 @@ extern void ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_v
 extern void ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target,
                                       char *idx_vec, int dims, char **idx_scalars);
 
-extern void ICMCompileWL_ASSIGN_NOOP (int dims_target, char *target, char *idx_vec,
-                                      int dims, char **idx_scalars);
-
-extern void ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec,
-                                    int dims, char **idx_scalars);
+extern void ICMCompileWL_NOOP (int dims_target, char *target, char *idx_vec, int dims,
+                               char **idx_scalars);
 
 extern void ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec,
                                       int dims_wl);
