@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/05/31 14:08:45  dkr
+ * fixed a bug in CheckParams()
+ *
  * Revision 2.15  2000/03/21 17:18:44  dkr
  * inference of WLSEG_HOMSV and WLSEG_MAXHOMDIM added
  *
@@ -2363,6 +2366,15 @@ CheckParams (node *seg)
 
     DBUG_ENTER (" CheckParams");
 
+    /*
+     * Note: For N_WLsegVar nodes (WLSEGX_SV == 0) is hold (see InferSegParams())
+     */
+#if 0
+  for (d = 0; d < WLSEGX_DIMS( seg); d++) {
+    DBUG_ASSERT( ((WLSEGX_SV( seg))[d] >= 1), "illegal WLSEGX_SV value found!");
+  }
+#endif
+
     /* test, whether (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
     for (d = 0; d < WLSEGX_DIMS (seg); d++) {
         j = WLSEGX_BLOCKS (seg) - 1;
@@ -2444,11 +2456,16 @@ CheckParams (node *seg)
     }
 
     for (; d < WLSEGX_DIMS (seg); d++) {
-        if ((WLSEGX_UBV (seg))[d] % (WLSEGX_SV (seg))[d] != 0) {
-            ABORT (line, ("Unrolling-blocking step (%i) is not a multiple of"
-                          " stride step (%i). "
-                          "Please check parameters of functions in wlcomp-pragma",
-                          (WLSEGX_UBV (seg))[d], (WLSEGX_SV (seg))[d]));
+        /*
+         * Note: For N_WLsegVar nodes (WLSEGX_SV == 0) is hold (see InferSegParams())
+         */
+        if ((WLSEGX_SV (seg))[d] >= 1) {
+            if ((WLSEGX_UBV (seg))[d] % (WLSEGX_SV (seg))[d] != 0) {
+                ABORT (line, ("Unrolling-blocking step (%i) is not a multiple of"
+                              " stride step (%i). "
+                              "Please check parameters of functions in wlcomp-pragma",
+                              (WLSEGX_UBV (seg))[d], (WLSEGX_SV (seg))[d]));
+            }
         }
     }
 
