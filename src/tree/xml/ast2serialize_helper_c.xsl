@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/10/19 14:06:44  sah
+  added support for persist flag
+
   Revision 1.4  2004/09/27 13:18:12  sah
   implemented new serialization scheme
 
@@ -92,17 +95,17 @@ version="1.0">
 
 <xsl:template match="/" mode="gen-make-fun">
   <xsl:value-of select="'node *SHLPMakeNode( nodetype node_type, int lineno, char* sfile, ...) {'" />
-  <xsl:value-of select="'node *result = Malloc( sizeof( node));'" />
+  <xsl:value-of select="'node *this = Malloc( sizeof( node));'" />
   <xsl:value-of select="'va_list args;'" />
   <xsl:value-of select="'int cnt, max;'" />
-  <xsl:value-of select="'result->nodetype=node_type;'" />
-  <xsl:value-of select="'result->lineno=lineno;'" />
-  <xsl:value-of select="'result->src_file=sfile;'" />
+  <xsl:value-of select="'this->nodetype=node_type;'" />
+  <xsl:value-of select="'this->lineno=lineno;'" />
+  <xsl:value-of select="'this->src_file=sfile;'" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
   <xsl:value-of select="'break;'" />
-  <xsl:value-of select="'} return(result);}'" />
+  <xsl:value-of select="'} return(this);}'" />
 </xsl:template>
 
 <xsl:template match="node" mode="gen-case">
@@ -119,7 +122,7 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="node" mode="gen-alloc-fun">
-  <xsl:value-of select="'result->attribs.N_'" />
+  <xsl:value-of select="'this->attribs.N_'" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' = Malloc(sizeof(struct AttribS_N_'"/>
   <xsl:value-of select="@name" />
@@ -136,6 +139,38 @@ version="1.0">
   </xsl:if>
 </xsl:template>
 
+<xsl:template match="attribute[key( &quot;types&quot;, ./type/@name)/@persist = &quot;no&quot;]" mode="gen-fill-fun">
+  <!-- in case of an array, we have to iterate in a for loop -->
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+    <!-- first fetch size of the array -->
+    <xsl:value-of select="'max = va_arg( args, int);'" />
+    <!-- start for loop -->
+    <xsl:value-of select="'for( cnt=0; cnt &lt; max; cnt++) {'" />
+  </xsl:if>
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">this</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+    <!-- if its is an array, we have to add another parameter -->
+    <xsl:with-param name="index">
+      <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+        <xsl:value-of select="'cnt'"/>
+      </xsl:if>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'= '" />
+  <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@init" />
+  <xsl:value-of select="';'" />
+  <!-- end of for loop in case of an array -->
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+    <xsl:value-of select="'}'"/>
+  </xsl:if>
+</xsl:template>
+
 <xsl:template match="attribute" mode="gen-fill-fun">
   <!-- in case of an array, we have to iterate in a for loop -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
@@ -145,7 +180,7 @@ version="1.0">
     <xsl:value-of select="'for( cnt=0; cnt &lt; max; cnt++) {'" />
   </xsl:if>
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">result</xsl:with-param>
+    <xsl:with-param name="node">this</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
@@ -170,7 +205,7 @@ version="1.0">
 
 <xsl:template match="son" mode="gen-fill-fun">
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">result</xsl:with-param>
+    <xsl:with-param name="node">this</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>

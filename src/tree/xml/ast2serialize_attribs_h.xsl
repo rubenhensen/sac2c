@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/10/19 14:07:06  sah
+  added support for persist flag
+
   Revision 1.2  2004/09/23 21:18:53  sah
   ongoing implementation
 
@@ -41,7 +44,7 @@ version="1.0">
 #include "attribs.h"  
 
   </xsl:text>
-  <xsl:apply-templates select="//attributetypes/type"/>
+  <xsl:apply-templates select="//attributetypes/type[not( @persist = &quot;no&quot;)]"/>
   <xsl:text>
 
 #endif /* _SAC_SERIALIZE_ATTRIBS_H */
@@ -51,7 +54,7 @@ version="1.0">
 <xsl:template match="type">
   <xsl:value-of select="'extern void Serialize'"/>
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="'Attrib( char*, '"/>
+  <xsl:value-of select="'Attrib('"/>
   <xsl:value-of select="' info*, '"/>
   <xsl:if test="@size">
     <xsl:value-of select="' int, '" />
