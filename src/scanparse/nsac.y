@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/09 15:22:34  sah
+ * aadded missing ;...
+ *
  * Revision 1.5  2004/11/08 19:07:05  sah
  * added typedef for pragmalist
  *
@@ -394,6 +397,8 @@ export: EXPORT ALL SEMIC
       | EXPORT symbolset SEMIC
         { $$ = MakeExport( FALSE, NULL, $2);
         }
+      ;
+
 provide: PROVIDE ALL SEMIC
          { $$ = MakeProvide( TRUE, NULL, NULL);
          }
