@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/08/07 16:05:48  dkr
+ * some ICM changed
+ *
  * Revision 1.15  1998/08/07 12:37:37  dkr
  * signature of WL_ADJUST_OFFSET changed
  *
@@ -54,13 +57,10 @@
 #ifndef _icm2c_wl_h
 #define _icm2c_wl_h
 
-extern void ICMCompileWL_MT_NONFOLD_BEGIN (char *target, char *idx_vec, int dims);
-extern void ICMCompileWL_MT_FOLD_BEGIN (char *target, char *idx_vec, int dims);
-extern void ICMCompileWL_MT_NONFOLD_END (char *target, char *idx_vec, int dims);
-extern void ICMCompileWL_MT_FOLD_END (char *target, char *idx_vec, int dims);
-
-extern void ICMCompileWL_MT_SCHEDULER_SET_OFFSET (char *target, char *idx_vec,
-                                                  int dims_wl, int dims_target);
+extern void ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_NONFOLD_END (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_FOLD_END (char *target, char *idx_vec, int dims);
 
 extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
                                  char *idx_vec, int dims, char **idx_scalars);
@@ -74,6 +74,9 @@ extern void ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *targe
 extern void ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec,
                                     int dims, char **idx_scalars, int cnt_bounds,
                                     char **bounds);
+
+extern void ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec,
+                                      int dims_wl);
 
 extern void ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target,
                                         char *target, char *idx_vec, int dims,
