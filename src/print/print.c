@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/15 15:57:29  sbs
+ * braces for if's inserted which might cause ambiguities.
+ *
  * Revision 2.3  1999/03/15 14:19:19  bs
  * Access macros renamed (take a look at tree_basic.h).
  *
@@ -927,8 +930,9 @@ PrintId (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:%d", ID_NAME (arg_node), ID_REFCNT (arg_node));
     }
 
-    if (compiler_phase != PH_genccode)
+    if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1438,8 +1442,9 @@ PrintArray (node *arg_node, node *arg_info)
     Trav (ARRAY_AELEMS (arg_node), arg_info);
     fprintf (outfile, " ]");
 
-    if (compiler_phase != PH_genccode)
+    if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1532,7 +1537,7 @@ PrintIcm (node *arg_node, node *arg_info)
     }
 
     INDENT
-    if (show_icm == 0)
+    if (show_icm == 0) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
@@ -1555,6 +1560,7 @@ PrintIcm (node *arg_node, node *arg_info)
         if (strcmp (ICM_NAME (arg_node), "NOOP") == 0) {
             compiled_icm = 1;
         }
+    }
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
 
