@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2001/04/26 13:30:00  nmw
+ * INFO_SSACF_INLFUNDEF added
+ *
  * Revision 3.87  2001/04/26 11:54:40  nmw
  * ICM_FUNDEF attribute added
  *
@@ -2512,7 +2515,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      TREE              (tree to compare with)
  ***
  ***  when used in SSAConstantFolding.c
- ***    int        DEPTH             (stacked depth of special functions)
  ***    bool       REMASSIGN         (flag, if assignment can be removed)
  ***    node*      FUNDEF            (current working fundef)
  ***    bool       INSCONST          (flag, if const value should be inserted
@@ -2523,6 +2525,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    bool       INLINEAP          (flag, to inline special function)
  ***    node*      MODUL             (current working modul)
  ***    node*      ASSIGN            (current worling assignment)
+ ***    bool       INLFUNDEF         (current fundef will be inlined)
  ***
  ***  when used in SSALIR.c
  ***    node*      FUNDEF            (current working fundef)
@@ -2999,7 +3002,6 @@ extern node *MakeInfo ();
 #define INFO_PF_FUNDEF(n) (n->node[0])
 
 /* when used in SSAConstantFolding.c */
-#define INFO_SSACF_DEPTH(n) (n->int_data)
 #define INFO_SSACF_REMASSIGN(n) ((bool)(n->flag))
 #define INFO_SSACF_FUNDEF(n) (n->node[0])
 #define INFO_SSACF_INSCONST(n) ((bool)(n->varno))
@@ -3009,6 +3011,7 @@ extern node *MakeInfo ();
 #define INFO_SSACF_INLINEAP(n) ((bool)(n->counter))
 #define INFO_SSACF_MODUL(n) (n->node[4])
 #define INFO_SSACF_ASSIGN(n) (n->node[5])
+#define INFO_SSACF_INLFUNDEF(n) ((bool)(n->refcnt))
 
 /* when used in SSALIR.c */
 #define INFO_SSALIR_FUNDEF(n) (n->node[0])
