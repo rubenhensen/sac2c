@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/20 16:39:19  jhs
+ * Added SYNC_FOLDCOUNT.
+ *
  * Revision 2.8  1999/07/19 14:44:31  jhs
  * Changed signature of MakeSync.
  *
@@ -1456,6 +1459,7 @@ MakeSync (node *region)
     SYNC_REGION (tmp) = region;
     SYNC_FIRST (tmp) = FALSE;
     SYNC_LAST (tmp) = TRUE;
+    SYNC_FOLDCOUNT (tmp) = 0;
 
     DBUG_RETURN (tmp);
 }

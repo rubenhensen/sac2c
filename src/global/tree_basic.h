@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.39  1999/07/20 16:39:19  jhs
+ * Added SYNC_FOLDCOUNT.
+ *
  * Revision 2.38  1999/07/19 14:44:51  jhs
  * Changed signature of MakeSync.
  *
@@ -2587,6 +2590,7 @@ extern node *MakeSync (node *region);
 
 #define SYNC_FIRST(n) (n->flag)
 #define SYNC_LAST(n) (n->int_data)
+#define SYNC_FOLDCOUNT(n) (n->varno)
 #define SYNC_REGION(n) (n->node[0])
 #define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[1]))
 
