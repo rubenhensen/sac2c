@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2000/12/15 18:18:00  dkr
+# make deps done
+#
 # Revision 3.3  2000/12/12 15:09:09  dkr
 # make deps done
 #
@@ -243,7 +246,7 @@ precompile.o: /usr/include/malloc.h /usr/include/sys/types.h
 precompile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 precompile.o: ../tree/prf.h ../tree/traverse.h ../print/convert.h
 precompile.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
-precompile.o: ../tree/scheduling.h ../flatten/adjust_ids.h precompile.h
+precompile.o: ../tree/scheduling.h ../tree/adjust_ids.h precompile.h
 precompile.o: ../c-interface/map_cwrapper.h ../refcount/refcount.h compile.h
 wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
 wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
