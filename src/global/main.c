@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.89  1996/09/11 06:15:08  cg
+ * Revision 1.90  1997/03/11 16:32:44  cg
+ * compiler option -deps replaced by -M
+ *
+ * Revision 1.89  1996/09/11  06:15:08  cg
  * Added options -libstat, -deps, -noranlib, -l1, l2, l3
  *
  * Revision 1.88  1996/08/09  16:44:12  asi
@@ -474,6 +477,10 @@ MAIN
         }
     }
     NEXTOPT
+    ARG 'M':
+    {
+        makedeps = 1;
+    }
     ARG 'h':
     {
         usage (prgname);
@@ -793,8 +800,6 @@ MAIN
             cleanup = 0;
         else if (!strncmp (*argv, "NC", 2))
             cleanup = 0;
-        else if (!strncmp (*argv, "eps", 3))
-            makedeps = 1;
         else
             SYSWARN (("Unknown debug option '-d%s`", *argv));
     }
@@ -894,7 +899,7 @@ MAIN
         }
         compiler_phase++;
 
-        if (!breakimport) {
+        if (!breakimport && !makedeps) {
             if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
                 NOTE_COMPILER_PHASE;
                 syntax_tree = ReadSib (syntax_tree);
@@ -1038,32 +1043,34 @@ MAIN
         }
     }
 
-    if (!break_compilation) {
+    if (makedeps) {
+        compiler_phase = 24;
         NOTE_COMPILER_PHASE;
-        Print (syntax_tree);
+        PrintDependencies (syntax_tree);
         ABORT_ON_ERROR;
-        compiler_phase++;
     } else {
-        Print (syntax_tree);
-    }
-
-    if (!Ccodeonly) {
-        NOTE_COMPILER_PHASE;
-        InvokeCC (syntax_tree);
-        ABORT_ON_ERROR;
-        compiler_phase++;
-
-        if ((MODUL_FILETYPE (syntax_tree) == F_modimp)
-            || (MODUL_FILETYPE (syntax_tree) == F_classimp)) {
+        if (!break_compilation) {
             NOTE_COMPILER_PHASE;
-            CreateLibrary (syntax_tree);
+            Print (syntax_tree);
             ABORT_ON_ERROR;
+            compiler_phase++;
+        } else {
+            Print (syntax_tree);
         }
-        compiler_phase++;
 
-        if (makedeps) {
+        if (!Ccodeonly) {
             NOTE_COMPILER_PHASE;
-            UpdateMakefile ();
+            InvokeCC (syntax_tree);
+            ABORT_ON_ERROR;
+            compiler_phase++;
+
+            if ((MODUL_FILETYPE (syntax_tree) == F_modimp)
+                || (MODUL_FILETYPE (syntax_tree) == F_classimp)) {
+                NOTE_COMPILER_PHASE;
+                CreateLibrary (syntax_tree);
+                ABORT_ON_ERROR;
+            }
+            compiler_phase++;
         }
     }
 
@@ -1079,16 +1086,24 @@ MAIN
      *  After all, a success message is displayed.
      */
 
-    NEWLINE (2);
-    NOTE2 (("*** Compilation successful ***"));
+    if (makedeps) {
+        NEWLINE (2);
+        NOTE2 (("*** Dependency Detection successful ***"));
+        NOTE2 (("*** Exit code 0"));
+        NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+        NEWLINE (2);
+    } else {
+        NEWLINE (2);
+        NOTE2 (("*** Compilation successful ***"));
 
-    if (break_compilation) {
-        NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
+        if (break_compilation) {
+            NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
+        }
+
+        NOTE2 (("*** Exit code 0"));
+        NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+        NEWLINE (2);
     }
-
-    NOTE2 (("*** Exit code 0"));
-    NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
-    NEWLINE (2);
 
     return (0);
 }

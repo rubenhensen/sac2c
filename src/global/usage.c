@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1996/09/11 06:15:08  cg
+ * Revision 1.44  1997/03/11 16:32:44  cg
+ * compiler option -deps replaced by -M
+ *
+ * Revision 1.43  1996/09/11  06:15:08  cg
  * Added options -libstat, -deps, -noranlib, -l1, l2, l3
  *
  * Revision 1.42  1996/08/09  16:44:12  asi
@@ -162,7 +165,7 @@ usage (char *prg_name)
 
     printf ("\t -h\t\t\tthis helptext\n");
     printf ("\t -libstat\t\tprint status information about a SAC library file\n");
-    printf ("\t -deps\t\t\tupdate Makefile in current directory with \n");
+    printf ("\t -M\t\t\tonly detect dependencies and write them to stdout\n");
     printf ("\t\t\t\tdependencies from imported modules/classes.\n");
 
     printf ("\t -#string\t\toptions (string) for DBUG information\n");
