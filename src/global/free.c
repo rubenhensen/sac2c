@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/04/24 01:14:37  dkr
+ * added FreeSync
+ *
  * Revision 1.52  1998/04/21 13:30:51  dkr
  * NWITH2_SEG renamed to NWITH2_SEGS
  *
@@ -883,8 +886,9 @@ FreeAssign (node *arg_node, node *arg_info)
 
     FREETRAV (ASSIGN_INSTR (arg_node));
     FREEMASK (ASSIGN_MASK);
-    if (ASSIGN_INDEX (arg_node))
+    if (ASSIGN_INDEX (arg_node)) {
         FREE (ASSIGN_INDEX (arg_node));
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_assign node ..."));
 
@@ -1555,9 +1559,7 @@ FreePragma (node *arg_node, node *arg_info)
     FREE (PRAGMA_FREEFUN (arg_node));
     FREE (PRAGMA_INITFUN (arg_node));
 
-    if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
-        PRAGMA_WLCOMP_APS (arg_node) = Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
-    }
+    FREETRAV (PRAGMA_WLCOMP_APS (arg_node));
 
     /*
     FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
@@ -1582,9 +1584,37 @@ FreeSPMD (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing contents of N_spmd node ..."));
 
-    FREE (SPMD_REGION (arg_node));
+    FREETRAV (SPMD_REGION (arg_node));
+
+    FREETRAV (SPMD_IN (arg_node));
+    FREETRAV (SPMD_OUT (arg_node));
+    FREETRAV (SPMD_INOUT (arg_node));
+
+    FREEMASK (SPMD_MASK);
 
     DBUG_PRINT ("FREE", ("Removing N_spmd node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeSync (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeSync");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_sync node ..."));
+
+    FREETRAV (SYNC_REGION (arg_node));
+
+    FREETRAV (SYNC_INOUT (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
 
     FREE (arg_node);
 
