@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/06/06 15:19:36  sbs
+ * Revision 1.25  1995/06/23 12:04:13  hw
+ * changed name in DBUG_ENTER of function DummyFun2
+ *
+ * Revision 1.24  1995/06/06  15:19:36  sbs
  * DummyFun2 inserted
  *
  * Revision 1.23  1995/06/02  12:13:35  sbs
@@ -371,7 +374,7 @@ DummyFun2 (node *arg_node, node *arg_info)
 {
     int i;
 
-    DBUG_ENTER ("DummyFun");
+    DBUG_ENTER ("DummyFun2");
     for (i = 0; i < 6; i++)
         if (arg_node->node[i])
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
