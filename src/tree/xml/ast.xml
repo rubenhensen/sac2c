@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.29  2004/10/20 09:20:18  sah
+  fixed non closed tag
+
   Revision 1.28  2004/10/20 08:04:09  khf
   removed NWITH_FUSIONABLE_WL, NWITH_REFERENCES_FUSIONABLE
   added NWITH_MTO_OFFSET_NEEDED, NCODE_RESOLVEABLE_DEPEND
@@ -2873,13 +2876,13 @@
         <attribute name="Dependent" mandatory="no">
           <type name="Bool" />
           <phases>
-            <phase name="wlfs" />
+                        <phase name="wlfs" />
           </phases>
         </attribute>
         <attribute name="Mto_Offset_Needed" mandatory="no">
-          <type name="Bool">
+          <type name="Bool" />
           <phases>
-            <phase name="wlfs" />
+                        <phase name="wlfs" />
           </phases>
         </attribute>
       </attributes>
