@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.56  1995/04/11 15:08:50  hw
+ * Revision 1.57  1995/04/15 15:11:44  asi
+ * debug option LINE added, for linenumber output
+ *
+ * Revision 1.56  1995/04/11  15:08:50  hw
  * changed PrintFundef
  *
  * Revision 1.55  1995/04/11  11:34:45  asi
@@ -249,7 +252,7 @@ PrintAssign (node *arg_node, node *arg_info)
                                    mdb_nodetype[arg_node->node[0]->nodetype]);
                   PrintMasks (arg_node, arg_info););
 
-    DBUG_PRINT ("FLAG", ("flag = %d\n", arg_node->flag));
+    DBUG_PRINT ("FLAG", ("\nflag = %d", arg_node->flag));
 
     if (N_icm == arg_node->node[0]->nodetype) {
         PrintIcm (arg_node->node[0], arg_info);
@@ -258,6 +261,7 @@ PrintAssign (node *arg_node, node *arg_info)
             Trav (arg_node->node[1], arg_info);
     } else {
         INDENT;
+        DBUG_EXECUTE ("LINE", fprintf (outfile, "[%d]", arg_node->lineno););
         Trav (arg_node->node[0], arg_info);
         if (2 == arg_node->nnode) {
             fprintf (outfile, "\n");
