@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/06/30 12:41:43  cg
+ * dynamic command line option -threads replaced by -mt.
+ *
  * Revision 1.72  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
@@ -373,7 +376,7 @@ usage ()
       "\t -mt-dynamic <no>\tcompile program for multi-threaded execution with upper\n"
       "\t\t\t\tbound for the number of threads specified. The exact\n"
       "\t\t\t\tnumber of threads must be given upon application startup\n"
-      "\t\t\t\tusing the generic command line option '-threads=<no>`.\n"
+      "\t\t\t\tusing the generic command line option '-mt <no>`.\n"
       "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
       "\t\t\t\tsynchronisation block.\n");
     printf ("\t\t\t\t Default: -maxsyncfold %d.\n", max_sync_fold);
