@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.15  2004/11/23 16:40:38  jhb
+  fixed bug
+
   Revision 1.14  2004/11/23 16:10:47  jhb
   all traversals of reference counting included
 
@@ -213,7 +216,7 @@
       </travnone>
       <traverror>
       </traverror>
-  </traversals>
+  </traversal>
     <traversal id="EMAA" name="Explicit Copy" default="sons" include="explicitcopy.h" >
       <travuser>
         <node name="Assign" />
