@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  2000/02/17 16:17:53  cg
+ * Function DuplicateTypes() moved to DupTree.c.
+ *
  * Revision 2.2  1999/09/10 14:27:22  jhs
  * Removed those ugly MAKENODE_xxx macros.
  *
@@ -25,83 +28,7 @@
  * Revision 1.28  1997/11/04 11:29:15  srs
  * NEWTREE: nnode is ignored
  *
- * Revision 1.27  1997/05/14 08:13:50  sbs
- * N_annotate's inserted around function apps
- *
- * Revision 1.26  1996/07/16  15:30:32  asi
- * macro GET_BASIC_TYPE changed: commented the part, where th array substructure
- * of the type structure had been duplicated, this is already done in DuplicateTypes
- *
- * Revision 1.25  1996/05/31  09:43:06  asi
- * macros defined in access_macros.h no longer used
- *
- * Revision 1.24  1996/02/12  16:07:31  asi
- * DuplicateTypes added to SHAPE_2_ARRAY
- *
- * Revision 1.23  1996/01/25  16:24:06  hw
- * added macros  SAC_MOD & SAC_PRG as synonym for F_modimpl & F_prog
- *
- * Revision 1.22  1995/10/17  08:29:12  cg
- * new function declaration 'TCobjdef' added
- *
- * Revision 1.21  1995/08/09  15:55:07  cg
- * extern declaration of CmpFunParam deleted.
- *
- * Revision 1.20  1995/08/08  09:54:12  cg
- * declaration of function CmpFunParams added for external use in import.c.
- *
- * Revision 1.19  1995/07/24  09:11:48  hw
- * variable "module_name" will be exported (set while typecheckng)
- *
- * Revision 1.18  1995/07/14  16:39:26  hw
- * macro SHAPE_2_ARRAY inserted
- *
- * Revision 1.17  1995/07/14  12:03:49  hw
- * macro GET_BASIC_SIMPLETYPE_OF_NODE( stype, Node) inserted
- *
- * Revision 1.16  1995/07/13  15:43:05  hw
- * changed macro GET_LENGTH( second argument is now a 'types' struct;
- *  size of basic-type will be computed correctly now)
- *
- * Revision 1.15  1995/06/30  12:10:57  hw
- * -renamed macro GET_BASIC_TYPE to GET_BASIC_SIMPLETYPE
- * - new macro GET_BASIC_TYPE inserted
- *
- * Revision 1.14  1995/06/28  09:29:21  hw
- * moved some macros form compile.h to typecheck.h
- *
- * Revision 1.13  1995/06/23  12:38:43  hw
- * added parameter to function 'DuplicateTypes'
- *
- * Revision 1.12  1995/04/20  10:23:43  asi
- * added DuplicateTypes
- *
- * Revision 1.11  1995/03/28  12:14:22  hw
- * removed StringCopy
- *
- * Revision 1.10  1995/03/17  15:53:51  hw
- * changed function Typecheck (now it returns the syntax_tree)
- *
- * Revision 1.9  1995/03/09  16:04:47  hw
- * added extern declaration for function StringCopy
- *
- * Revision 1.8  1995/03/01  12:49:50  hw
- * added LookupType
- *
- * Revision 1.7  1994/12/30  10:16:36  hw
- * *** empty log message ***
- *
- * Revision 1.6  1994/12/20  14:20:44  hw
- * added function TCunaryOp to handle typechecking of N_post & N_pre
- *
- * Revision 1.6  1994/12/20  14:20:44  hw
- * added function TCunaryOp to handle typechecking of N_post & N_pre
- *
- * Revision 1.5  1994/12/19  13:01:42  hw
- * inserted TCdo & TCwhile
- *
- * Revision 1.4  1994/12/14  08:47:42  hw
- * added declarations of TCcond & TCassign
+ *   [...]
  *
  * Revision 1.3  1994/12/06  09:58:19  hw
  * changed log-header
@@ -139,7 +66,6 @@ extern node *TCobjdef (node *arg_node, node *arg_info);
 extern node *TCNcode (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
-extern types *DuplicateTypes (types *source, int share);
 extern cmp_types CmpTypes (types *type_one, types *type_two);
 
 /* some global variables */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/02/17 16:17:53  cg
+ * Function DuplicateTypes() moved to DupTree.c.
+ *
  * Revision 2.31  2000/01/26 13:45:35  jhs
  * problem for eliminating withloops with empty shape fixed:
  * -iv is set to []
@@ -1183,87 +1186,6 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
     NPART_CODE (NWITH_PART (res)) = NWITH_CODE (res);
 
     DBUG_RETURN (res);
-}
-
-/*
- *
- *  functionname  : DuplicateTypes
- *  arguments     : 1) types node
- *                  2) tag to indicate whether to copy( 2)==1 ) or
- *                     to share( 2) != 1) the strings used in the struct 'types'
- *  description   : duplicates 1)
- *  global vars   :
- *  internal funs : StringCopy
- *  external funs :
- *  macros        : DBUG..., GEN_NODE, NULL
- *
- *  remarks       : DuplicateTypes  can also be used for types of
- *                  userdefined function.
- *
- */
-
-types *
-DuplicateTypes (types *source, int share)
-{
-    types *return_types, *tmp;
-    int i;
-
-    DBUG_ENTER ("DuplicateTypes");
-
-    if (source == NULL) {
-        return_types = NULL;
-    } else {
-        tmp = GEN_NODE (types);
-        if (tmp == NULL)
-            SYSABORT (("Out of memory"));
-
-        return_types = tmp;
-
-        do {
-            tmp->dim = source->dim;
-            TYPES_BASETYPE (tmp) = TYPES_BASETYPE (source);
-            if ((TYPES_DIM (source) > 0) && (TYPES_SHPSEG (source) != NULL)) {
-                DBUG_ASSERT ((source->dim <= SHP_SEG_SIZE), "dimension out of range");
-                tmp->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-                DBUG_ASSERT ((NULL != source->shpseg), "types-structur without shpseg");
-                for (i = 0; i < source->dim; i++)
-                    tmp->shpseg->shp[i] = source->shpseg->shp[i];
-                tmp->shpseg->next = NULL;
-            } else
-                tmp->shpseg = NULL;
-
-            tmp->id = StringCopy (source->id);
-            tmp->name = StringCopy (source->name);
-
-            DBUG_PRINT ("TYPE", ("new type" P_FORMAT ",old " P_FORMAT, tmp, source));
-            DBUG_PRINT ("TYPE",
-                        ("new id" P_FORMAT ", old id" P_FORMAT, tmp->id, source->id));
-            DBUG_PRINT ("TYPE", ("new name" P_FORMAT ", old name" P_FORMAT, tmp->name,
-                                 source->name));
-
-            /*
-             *  Sharing of module names is common throughout sac2c,
-             *  so we can do it here as well.
-             */
-
-            tmp->id_mod = source->id_mod;
-            tmp->name_mod = source->name_mod;
-            tmp->id_cmod = source->id_cmod;
-            tmp->attrib = source->attrib;
-            tmp->status = source->status;
-            TYPES_TDEF (tmp) = TYPES_TDEF (source);
-
-            if (source->next == NULL)
-                tmp->next = NULL;
-            else {
-                tmp->next = GEN_NODE (types);
-                tmp = tmp->next;
-            }
-            source = source->next;
-        } while (source != NULL);
-    }
-
-    DBUG_RETURN (return_types);
 }
 
 /*
@@ -4374,6 +4296,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         VARDEC_TYPE (vardec) = id_type;
         VARDEC_NAME (vardec) = StringCopy (ids->id);
         VARDEC_STATUS (vardec) = ST_used;
+        VARDEC_ATTRIB (vardec) = ST_regular;
 
         if (vardec_p)
             VARDEC_NEXT (vardec) = vardec_p; /* append old variable declaration */
