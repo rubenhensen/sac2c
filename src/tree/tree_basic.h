@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.227  2004/10/15 11:37:53  ktr
+ * Modified AVIS_ALIAS
+ *
  * Revision 3.226  2004/10/15 09:09:14  ktr
  * added AVIS_ALIAS ARG_ALIAS
  *
@@ -2696,7 +2699,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSASTACK(n) (n->node[4])
 #define AVIS_SSAUNDOFLAG(n) ((bool)(n->counter))
 #define AVIS_WITHID(n) (n->node[5])
-#define AVIS_ALIAS(n) ((bool)(n->varno))
+#define AVIS_ALIAS(n) ((bool)(n->dfmask[4]))
 /* used only in ssatransform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
