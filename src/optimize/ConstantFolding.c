@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  1999/11/15 18:06:44  dkr
+ * usage of ExpandMRDL changed
+ *
  * Revision 2.27  1999/11/15 14:25:26  dkr
  * message "CF not yet implemented for prf ..." is now a DBUG_PRINT instead of a NOTE2
  *
@@ -234,7 +237,7 @@
  *                   : type of generator (CFwith)
  * mask[0]/[1]       : DEF and USE information
  * INFO_CF_ASSIGN(n) : (node[0]) arg_node of last N_assign node (CFassign). Used in CFid.
- * INFO_CF_VARNO(n)  : no of elements used in masks
+ * INFO_VARNO(n)     : no of elements used in masks
  *
  ******************************************************************************/
 #include <stdio.h>
@@ -739,9 +742,9 @@ CFid (node *arg_node, node *arg_info)
     /*
      * This is old stuff:
      *
-     * mrd = MRD_GETSUBST( ID_VARNO(arg_node), INFO_CF_VARNO( arg_info));
+     * mrd = MRD_GETSUBST( ID_VARNO(arg_node), INFO_VARNO( arg_info));
      */
-    mrd = MRD_GETCFID (ID_VARNO (arg_node), INFO_CF_VARNO (arg_info));
+    mrd = MRD_GETCFID (ID_VARNO (arg_node), INFO_VARNO (arg_info));
 
     /*
      * check if this is an Id introduced by flatten (for WLs). This
@@ -946,7 +949,7 @@ CFwhile (node *arg_node, node *arg_info)
      */
     if (N_id == NODE_TYPE (WHILE_COND (arg_node))) {
         last_value
-          = MRD_GETLAST (ID_VARNO (WHILE_COND (arg_node)), INFO_CF_VARNO (arg_info));
+          = MRD_GETLAST (ID_VARNO (WHILE_COND (arg_node)), INFO_VARNO (arg_info));
         if (last_value && (N_bool == NODE_TYPE (last_value))) {
             if (!BOOL_VAL (last_value))
                 trav_body = FALSE;
@@ -960,9 +963,9 @@ CFwhile (node *arg_node, node *arg_info)
     else {
         /* the body will never be entered - delete while loop. */
         DBUG_PRINT ("CF", ("while-loop eliminated in line %d", NODE_LINE (arg_node)));
-        MinusMask (INFO_DEF, WHILE_DEFMASK (arg_node), INFO_CF_VARNO (arg_info));
-        MinusMask (INFO_USE, WHILE_USEMASK (arg_node), INFO_CF_VARNO (arg_info));
-        MinusMask (INFO_USE, WHILE_TERMMASK (arg_node), INFO_CF_VARNO (arg_info));
+        MinusMask (INFO_DEF, WHILE_DEFMASK (arg_node), INFO_VARNO (arg_info));
+        MinusMask (INFO_USE, WHILE_USEMASK (arg_node), INFO_VARNO (arg_info));
+        MinusMask (INFO_USE, WHILE_TERMMASK (arg_node), INFO_VARNO (arg_info));
         FreeTree (arg_node);
         arg_node = MakeEmpty ();
         cf_expr++;
@@ -1002,7 +1005,7 @@ CFdo (node *arg_node, node *arg_info)
     if (N_bool == NODE_TYPE (DO_COND (arg_node)))
         if (!BOOL_VAL (DO_COND (arg_node))) {
             DBUG_PRINT ("CF", ("do-loop eliminated in line %d", NODE_LINE (arg_node)));
-            MinusMask (INFO_USE, DO_TERMMASK (arg_node), INFO_CF_VARNO (arg_info));
+            MinusMask (INFO_USE, DO_TERMMASK (arg_node), INFO_VARNO (arg_info));
             returnnode = DO_INSTR (arg_node);
             DO_INSTR (arg_node) = NULL;
             FreeTree (arg_node);
@@ -1046,8 +1049,8 @@ CFcond (node *arg_node, node *arg_info)
         if (BOOL_VAL (COND_COND (arg_node))) {
             DBUG_PRINT ("CF", ("then-part of conditional eliminated in line %d",
                                NODE_LINE (arg_node)));
-            MinusMask (INFO_DEF, COND_ELSEDEFMASK (arg_node), INFO_CF_VARNO (arg_info));
-            MinusMask (INFO_USE, COND_ELSEUSEMASK (arg_node), INFO_CF_VARNO (arg_info));
+            MinusMask (INFO_DEF, COND_ELSEDEFMASK (arg_node), INFO_VARNO (arg_info));
+            MinusMask (INFO_USE, COND_ELSEUSEMASK (arg_node), INFO_VARNO (arg_info));
             returnnode = COND_THENINSTR (arg_node);
             COND_THEN (arg_node) = NULL;
             FreeTree (arg_node);
@@ -1055,8 +1058,8 @@ CFcond (node *arg_node, node *arg_info)
         } else {
             DBUG_PRINT ("CF", ("else-part of conditional eliminated in line %d",
                                NODE_LINE (arg_node)));
-            MinusMask (INFO_DEF, COND_THENDEFMASK (arg_node), INFO_CF_VARNO (arg_info));
-            MinusMask (INFO_USE, COND_THENUSEMASK (arg_node), INFO_CF_VARNO (arg_info));
+            MinusMask (INFO_DEF, COND_THENDEFMASK (arg_node), INFO_VARNO (arg_info));
+            MinusMask (INFO_USE, COND_THENUSEMASK (arg_node), INFO_VARNO (arg_info));
             returnnode = COND_ELSEINSTR (arg_node);
             COND_ELSE (arg_node) = NULL;
             FreeTree (arg_node);
@@ -1947,12 +1950,12 @@ ArrayPrf (node *arg_node, node *arg_info)
         old_arg[1] = arg[1];
 
         if (N_id == NODE_TYPE (arg[0])) {
-            value = MRD_GETDATA (arg[0]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
+            value = MRD_GETDATA (arg[0]->info.ids->node->varno, INFO_VARNO (arg_info));
             if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
                 arg[0] = DupTree (value, NULL);
                 used_sofar = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (INFO_CF_VARNO (arg_info));
+                arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
                 arg[0] = Trav (arg[0], arg_info);
                 FREE (arg_info->mask[1]);
                 arg_info->mask[1] = used_sofar;
@@ -1966,12 +1969,12 @@ ArrayPrf (node *arg_node, node *arg_info)
         }
 
         if (N_id == NODE_TYPE (arg[1])) {
-            value = MRD_GETDATA (arg[1]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
+            value = MRD_GETDATA (arg[1]->info.ids->node->varno, INFO_VARNO (arg_info));
             if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
                 arg[1] = DupTree (value, NULL);
                 used_sofar = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (INFO_CF_VARNO (arg_info));
+                arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
                 arg[1] = Trav (arg[1], arg_info);
                 FREE (arg_info->mask[1]);
                 arg_info->mask[1] = used_sofar;
@@ -2195,7 +2198,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         /*
          *      if (N_id == NODE_TYPE(arg[1])) {
          *        value = MRD_GETDATA(arg[1]->info.ids->node->varno,
-         * INFO_CF_VARNO(arg_info));
+         * INFO_VARNO(arg_info));
          *      }
          *      else {
          *        value = arg[1];
@@ -2281,7 +2284,7 @@ ArrayPrf (node *arg_node, node *arg_info)
          * Substitute shape-vector
          */
         if (N_id == NODE_TYPE (arg[0])) {
-            shape = MRD_GETDATA (ID_VARNO (arg[0]), INFO_CF_VARNO (arg_info));
+            shape = MRD_GETDATA (ID_VARNO (arg[0]), INFO_VARNO (arg_info));
         } else
             shape = arg[0];
 
@@ -2305,7 +2308,7 @@ ArrayPrf (node *arg_node, node *arg_info)
          *  cannot be folded !
          */
         if (N_id == NODE_TYPE (arg[1])) {
-            tmpn = MRD_GETDATA (ID_VARNO (arg[1]), INFO_CF_VARNO (arg_info));
+            tmpn = MRD_GETDATA (ID_VARNO (arg[1]), INFO_VARNO (arg_info));
             if (IsConst (tmpn))
                 arg[1] = tmpn;
         }
@@ -2367,7 +2370,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                     modindex = PRF_ARG2 (array);
                     if (N_id == NODE_TYPE (modindex)) {
                         modindex
-                          = MRD_GETDATA (ID_VARNO (modindex), INFO_CF_VARNO (arg_info));
+                          = MRD_GETDATA (ID_VARNO (modindex), INFO_VARNO (arg_info));
                     }
                     if (IsConstArray (modindex)
                         && CompareNumArrayType (shape, modindex)) {
@@ -2445,7 +2448,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                                             VARDEC_NEXT (vardecs));
                                             VARDEC_NEXT (vardecs) = new_vardec;
                                             VARDEC_VARNO (new_vardec)
-                                              = (INFO_CF_VARNO (arg_info))++;
+                                              = (INFO_VARNO (arg_info))++;
                                             IDS_VARDEC (new_ids) = new_vardec;
 
                                             /*
@@ -2457,20 +2460,20 @@ ArrayPrf (node *arg_node, node *arg_info)
                                                                      new_ids),
                                                             NULL);
                                             ASSIGN_MRDMASK (new_assign)
-                                              = GenMask (INFO_CF_VARNO (arg_info));
+                                              = GenMask (INFO_VARNO (arg_info));
                                             ASSIGN_MRDMASK (new_assign)
                                               = CopyMask (ASSIGN_MRDMASK (assign),
-                                                          INFO_CF_VARNO (arg_info) - 1,
+                                                          INFO_VARNO (arg_info) - 1,
                                                           ASSIGN_MRDMASK (new_assign),
-                                                          INFO_CF_VARNO (arg_info));
+                                                          INFO_VARNO (arg_info));
                                             ASSIGN_DEFMASK (new_assign)
                                               = ReGenMask (ASSIGN_DEFMASK (new_assign),
-                                                           INFO_CF_VARNO (arg_info));
+                                                           INFO_VARNO (arg_info));
                                             INC_VAR (ASSIGN_DEFMASK (new_assign),
                                                      IDS_VARNO (new_ids));
                                             ASSIGN_USEMASK (new_assign)
                                               = ReGenMask (ASSIGN_USEMASK (new_assign),
-                                                           INFO_CF_VARNO (arg_info));
+                                                           INFO_VARNO (arg_info));
                                             INC_VAR (ASSIGN_USEMASK (new_assign),
                                                      ID_VARNO (val));
 
@@ -2479,13 +2482,12 @@ ArrayPrf (node *arg_node, node *arg_info)
                                              * correct current MRD-masks
                                              */
                                             ASSIGN_CF (assign) = new_assign;
-                                            ExpandMRDL (1);
+                                            ExpandMRDL (INFO_VARNO (arg_info));
                                             MRD (IDS_VARNO (new_ids)) = new_assign;
                                             FREE (
                                               ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info)));
                                             ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info))
-                                              = DupMask (MRD_LIST,
-                                                         INFO_CF_VARNO (arg_info));
+                                              = DupMask (MRD_LIST, INFO_VARNO (arg_info));
                                         } else {
                                             /*
                                              * A fresh variable has already been inserted
@@ -2550,7 +2552,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
                                prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
             MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)),
-                       INFO_CF_VARNO (arg_info));
+                       INFO_VARNO (arg_info));
             FreeTree (arg_node);
             /* srs: arg_info is modified within GenMasks. At least ->mask[0],
                mask[1], nodetype and node[2]. Is this intended to happen? */
@@ -2605,9 +2607,9 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         /* search for mrd index vector and val */
         if (N_id == NODE_TYPE (vectorn))
-            vectorn = MRD_GETDATA (ID_VARNO (vectorn), INFO_CF_VARNO (arg_info));
+            vectorn = MRD_GETDATA (ID_VARNO (vectorn), INFO_VARNO (arg_info));
         if (N_id == NODE_TYPE (valn))
-            valn = MRD_GETDATA (ID_VARNO (valn), INFO_CF_VARNO (arg_info));
+            valn = MRD_GETDATA (ID_VARNO (valn), INFO_VARNO (arg_info));
 
         if (base_array && vectorn && valn && (N_array == NODE_TYPE (base_array))
             && IsConstArray (vectorn) &&
