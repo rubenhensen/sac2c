@@ -1,24 +1,16 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/05/12 22:44:44  dkr
+ * changed FreeNwith2:
+ *   added NWITH2_IDX_MIN, NWITH2_IDX_MAX
+ *
  * Revision 1.62  1998/05/12 15:51:41  dkr
  * removed ???_VARINFO
- *
- * Revision 1.61  1998/05/12 14:23:15  dkr
- * changed FreeSpmd, FreeSync
  *
  * Revision 1.60  1998/05/11 15:16:41  dkr
  * changed FreeNwith, FreeNwith2:
  *   free NWITH_RC_IDS
- *
- * Revision 1.59  1998/05/07 10:16:15  dkr
- * changed FreeSpmd, FreeSync, FreeNwith, ...
- *
- * Revision 1.58  1998/05/02 17:47:21  dkr
- * changed FreeSync, FreeSpmd, FreeNwith2
- *
- * Revision 1.57  1998/04/29 17:13:09  dkr
- * changed FreeSPMD, FreeSync
  *
  * Revision 1.56  1998/04/26 21:51:15  dkr
  * FreeSPMD renamed to FreeSpmd
@@ -1649,9 +1641,6 @@ FreeSync (node *arg_node, node *arg_info)
 
     FREETRAV (SYNC_REGION (arg_node));
 
-    FreeAllIds (SYNC_INOUT_IDS (arg_node));
-    FreeAllIds (SYNC_DEC_RC_IDS (arg_node));
-
     if (SYNC_IN (arg_node) != NULL) {
         SYNC_IN (arg_node) = DFMRemoveMask (SYNC_IN (arg_node));
     }
@@ -1846,6 +1835,9 @@ FreeNwith2 (node *arg_node, node *arg_info)
     FREETRAV (NWITH2_SEGS (arg_node));
     FREETRAV (NWITH2_CODE (arg_node));
     FREETRAV (NWITH2_WITHOP (arg_node));
+
+    FREE (NWITH2_IDX_MIN (arg_node));
+    FREE (NWITH2_IDX_MAX (arg_node));
 
     if (NWITH2_IN (arg_node) != NULL) {
         NWITH2_IN (arg_node) = DFMRemoveMask (NWITH2_IN (arg_node));
