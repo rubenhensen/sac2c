@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/10/14 22:49:13  sbs
+ * SHCopyShape in DupVinfo now conditional
+ *
  * Revision 3.107  2004/10/14 13:38:34  sbs
  * adjusted DupVinfo
  *
@@ -786,7 +789,10 @@ DupVinfo (node *arg_node, info *arg_info)
     if (VINFO_FLAG (arg_node) == DOLLAR) {
         new_node = MakeVinfoDollar (rest);
     } else {
-        new_node = MakeVinfo (VINFO_FLAG (arg_node), SHCopyShape (VINFO_SHAPE (arg_node)),
+        new_node = MakeVinfo (VINFO_FLAG (arg_node),
+                              (VINFO_SHAPE (arg_node) == NULL
+                                 ? NULL
+                                 : SHCopyShape (VINFO_SHAPE (arg_node))),
                               rest, VINFO_DOLLAR (rest));
     }
     VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
