@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.61  2000/03/20 19:28:48  dkr
+ * added a second SYSWARN for unbalanced indentation in PrintFundef
+ *
  * Revision 2.60  2000/03/20 18:43:32  dkr
  * SYSWARN added for unbalanced indentation
  *
@@ -656,7 +659,7 @@ PrintBlock (node *arg_node, node *arg_info)
     fprintf (outfile, "}");
 
     if (indent != old_indent) {
-        SYSWARN (("Indentation unbalanced while printing a block in function %s."
+        SYSWARN (("Indentation unbalanced while printing block of function %s."
                   " Indentation at beginning of block: %i."
                   " Indentation at end of block: %i",
                   FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent, indent));
@@ -1046,6 +1049,8 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
 node *
 PrintFundef (node *arg_node, node *arg_info)
 {
+    int old_indent = indent;
+
     DBUG_ENTER ("PrintFundef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
@@ -1146,6 +1151,14 @@ PrintFundef (node *arg_node, node *arg_info)
                 function_counter++;
             }
         }
+    }
+
+    if (indent != old_indent) {
+        SYSWARN (("Indentation unbalanced while printing function %s."
+                  " Indentation at beginning of function: %i."
+                  " Indentation at end of function: %i",
+                  FUNDEF_NAME (arg_node), old_indent, indent));
+        indent = old_indent;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
