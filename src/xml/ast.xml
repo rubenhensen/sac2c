@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.77  2004/11/25 18:13:01  sah
+  added arg/rets LINKSIGN and HASLINKSIGNINFO
+
   Revision 1.76  2004/11/25 17:50:46  sbs
   traversals for create wrappers and ntc patched
 
@@ -1739,6 +1742,12 @@
             <range from="psi-optimize" to="final" />
           </phases>
         </attribute>
+	<attribute name="Linksign" mandatory="no" >
+	  <type name="Integer" />
+	  <phases>
+	    <range from="rsp" to="final" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags>
         <flag name="IsReadonly" />
@@ -1748,6 +1757,7 @@
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsRefcounted" default="TRUE" />
+        <flag name="HasLinksignInfo" />
       </flags>
     </node>
 <!--
@@ -4794,11 +4804,18 @@
 	    <all />
 	  </phases>
 	</attribute>
+	<attribute name="Linksign" mandatory="no" >
+	  <type name="Integer" />
+	  <phases>
+	    <range from="rsp" to="final" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags>
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsArtificial" />
         <flag name="IsRefcounted" default="TRUE" />
+        <flag name="HasLinksignInfo" />
       </flags>
     </node>
 <!--
