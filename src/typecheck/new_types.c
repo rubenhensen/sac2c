@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/09/03 13:17:00  sbs
+ * partial derivations added and type2string mehcanism
+ * changed to StrBuf usage....
+ *
  * Revision 3.16  2002/08/30 10:49:42  dkr
  * BuildApAssign modified
  *
@@ -1649,6 +1653,191 @@ TYFreeDFT_res (DFT_res *res)
     DBUG_RETURN (res);
 }
 
+static bool
+AllArgTypesLe (node *fundef, node *fundef2)
+{
+    node *arg, *arg2;
+
+    DBUG_ENTER ("AllArgTypesLe");
+
+    arg = FUNDEF_ARGS (fundef);
+    arg2 = FUNDEF_ARGS (fundef2);
+    while ((arg != NULL)
+           && TYLeTypes (AVIS_TYPE (ARG_AVIS (arg)), AVIS_TYPE (ARG_AVIS (arg2)))) {
+        arg = ARG_NEXT (arg);
+        arg2 = ARG_NEXT (arg2);
+    }
+
+    DBUG_RETURN ((arg == NULL));
+}
+
+static void
+EliminateDeriveablePartial (node **dp_list, int *dp2ud, int length, int pos)
+{
+    int i;
+
+    DBUG_ENTER ("EliminateDeriveablePartial");
+
+    for (i = pos; i < length - 1; i++) {
+        dp_list[i] = dp_list[i + 1];
+        dp2ud[i] = dp2ud[i + 1];
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static DFT_res *
+UpsDowns2DFT_res (int *ups, int *downs, node **fundefs, int max_num_fundefs, int max_funs)
+{
+    DFT_res *res;
+    int max_deriveable;
+    bool exact_found = FALSE;
+    int i, j;
+    int dom, irr;
+    int *dp2ud;
+    int *p2ud;
+
+    DBUG_ENTER ("UpsDowns2DFT_res");
+
+    res = TYMakeDFT_res (NULL, max_funs);
+    dp2ud = (int *)Malloc (max_funs * sizeof (int));
+    p2ud = (int *)Malloc (max_funs * sizeof (int));
+
+    /*
+     * First, we analyze the accumulated ups and downs:
+     *   ups    dows       consequences
+     *    0       0        - defined here
+     *                       => shadows all potential deriveables
+     *                       => shadows indirectly all deriveable_partials
+     *                          reason: we do have a violated monotonic condition
+     *                                  this may only result from specialization
+     *                                  which in fact MUST have triggered a specialization
+     *                                  of the conflicting definition (the
+     * deriveable_partial) as well 0       -m        - down projection choose the one with
+     * minimum |m| ! n        0        - partial keep them all! n       -m        -
+     * deriveable partial iff we do not have an exact definition, keep them all ( see
+     * comment above). However, in SOME cases where we have partials / deriveable partials
+     * with identical n, these may shadow each other. This shadowing is eliminated at the
+     * very end of this function (see comment down below!)
+     *
+     * While doing so, we set up dp2ud and p2ud which are needed for the correction to be
+     * made later (see comment down below!)
+     */
+    /* Due to a bug in limits.h (!!), we have to use INT_MAX here!! */
+    max_deriveable = 1 - INT_MAX;
+    for (i = 0; i < max_num_fundefs; i++) {
+        if (fundefs[i] != NULL) {
+            if (ups[i] == 0) {
+                if (downs[i] == 0) {
+                    res->def = fundefs[i];
+                    /* no down projections in case of an exact definition! */
+                    max_deriveable = 0;
+                    res->deriveable = NULL;
+                    /* no deriveable partials in case of an exact definition! */
+                    exact_found = TRUE;
+                    res->num_deriveable_partials = 0;
+                } else {
+                    if (downs[i] > max_deriveable) {
+                        res->deriveable = fundefs[i];
+                        max_deriveable = downs[i];
+                    }
+                }
+            } else {
+                if (downs[i] == 0) {
+                    res->partials[res->num_partials] = fundefs[i];
+                    p2ud[res->num_partials] = i;
+                    res->num_partials++;
+                } else {
+                    if (!exact_found) {
+                        res->deriveable_partials[res->num_deriveable_partials]
+                          = fundefs[i];
+                        dp2ud[res->num_deriveable_partials] = i;
+                        res->num_deriveable_partials++;
+                    } /* else ignore it */
+                }
+            }
+        }
+    }
+
+    /*
+     * Finally, we might have to filter out some deriveable partials.
+     * The problem here is that we cannot see from the ups and downs numbers
+     * alone, whether a deriveable partial is shadowed by another deriveable
+     * partial or a partial. Example:
+     *
+     *   fundef0:  int[*] -> int[3] -> alpha
+     *   fundef1:  int[.] -> int[3] -> beta
+     *   fundef2:  int[.] -> int[4] -> gamma
+     *
+     *  assuming an application int[.] int[.] we obtain:
+     *  fundef0:  1  -2   => deriveable partial
+     *  fundef1:  1   0   => partial            [ shadows fundef0 ]
+     *  fundef2:  1   0   => partial            [ does not shadow fundef0 ]
+     *
+     *  assuming an application int[2] int[.] we obtain:
+     *  fundef0:  1  -3   => deriveable partial
+     *  fundef1:  1  -1   => deriveable partial [ shadows fundef0 ]
+     *  fundef2:  1  -1   => deriveable partial [ does not shadow fundef0 ]
+     */
+    /*
+     * Therefore, we establish the following filter mechanism:
+     *  for each deriveable partial:
+     *    find all partials and deriveable partials with identical ups values:
+     *      check whether the up positions are identical;
+     *      if so leave the one with smaller downs value
+     */
+
+    DBUG_PRINT ("NTDIS", ("filtering derived partials:"));
+
+    for (i = 0; i < res->num_deriveable_partials; i++) {
+        for (j = i + 1; j < res->num_deriveable_partials; j++) {
+            if (ups[dp2ud[i]] == ups[dp2ud[j]]) {
+                if (downs[dp2ud[i]] > downs[dp2ud[j]]) {
+                    dom = i;
+                    irr = j;
+                } else {
+                    dom = j;
+                    irr = i;
+                }
+                DBUG_PRINT ("NTDIS", ("  %p might shadow %p here", fundefs[dp2ud[dom]],
+                                      fundefs[dp2ud[irr]]));
+                if (AllArgTypesLe (fundefs[dp2ud[dom]], fundefs[dp2ud[irr]])) {
+                    DBUG_PRINT ("NTDIS", ("  eliminating %p", fundefs[dp2ud[irr]]));
+                    EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
+                                                res->num_deriveable_partials, irr);
+                    res->num_deriveable_partials--;
+                    if (irr == i) {
+                        i--;
+                        j = res->num_deriveable_partials;
+                    } else {
+                        j--;
+                    }
+                }
+            }
+        }
+    }
+    for (i = 0; i < res->num_deriveable_partials; i++) {
+        for (j = 0; j < res->num_partials; j++) {
+            if (ups[dp2ud[i]] == ups[p2ud[j]]) {
+                dom = j;
+                irr = i;
+                DBUG_PRINT ("NTDIS", ("  %p might shadow %p here", fundefs[p2ud[dom]],
+                                      fundefs[dp2ud[irr]]));
+                if (AllArgTypesLe (fundefs[p2ud[dom]], fundefs[dp2ud[irr]])) {
+                    DBUG_PRINT ("NTDIS", ("  eliminating %p", fundefs[dp2ud[irr]]));
+                    EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
+                                                res->num_deriveable_partials, irr);
+                    res->num_deriveable_partials--;
+                    i--;
+                    j = res->num_partials;
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 DFT_res *
 TYDispatchFunType (ntype *fun, ntype *args)
 {
@@ -1660,9 +1849,9 @@ TYDispatchFunType (ntype *fun, ntype *args)
     node *fundef;
     DFT_res *res;
     int *ups = NULL;
+    bool *legal = NULL;
     int *downs = NULL;
     node **fundefs = NULL;
-    int max_deriveable;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -1692,7 +1881,8 @@ TYDispatchFunType (ntype *fun, ntype *args)
             }
 
             DBUG_EXECUTE ("NTDIS", tmp_str = TYType2String (arg, FALSE, 0););
-            DBUG_PRINT ("NTDIS", ("arg #%d: %s yields:", i, tmp_str));
+            DBUG_PRINT ("NTDIS",
+                        ("arg #%d: %s yields (lifted by %d):", i, tmp_str, lower));
             DBUG_EXECUTE ("NTDIS", tmp_str = Free (tmp_str););
             DBUG_EXECUTE ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires););
 
@@ -1701,13 +1891,15 @@ TYDispatchFunType (ntype *fun, ntype *args)
              */
             if (i == 0) {
                 max_funs = IRES_NUMFUNS (ires);
+                legal = (bool *)Malloc (sizeof (bool) * max_funs);
                 ups = (int *)Malloc (sizeof (int) * max_funs);
                 downs = (int *)Malloc (sizeof (int) * max_funs);
                 fundefs = (node **)Malloc (sizeof (node *) * max_funs);
 
                 for (j = 0; j < max_funs; j++) {
+                    fundefs[j] = IRES_FUNDEF (ires, j);
                     if ((IRES_POS (ires, j) <= 0) || (lower == 0)) {
-                        fundefs[j] = IRES_FUNDEF (ires, j);
+                        legal[j] = TRUE;
                         if (IRES_POS (ires, j) > 0) {
                             ups[j] = IRES_POS (ires, j);
                             downs[j] = 0;
@@ -1716,7 +1908,7 @@ TYDispatchFunType (ntype *fun, ntype *args)
                             downs[j] = IRES_POS (ires, j) - lower;
                         }
                     } else {
-                        fundefs[j] = NULL;
+                        legal[j] = FALSE;
                     }
                 }
                 k = max_funs; /* in case we have only one arg (cf. comment below!) */
@@ -1726,7 +1918,7 @@ TYDispatchFunType (ntype *fun, ntype *args)
                         && (IRES_FUNDEF (ires, k) == fundefs[j])) {
                         if (IRES_POS (ires, k) > 0) {
                             if (lower > 0) {
-                                fundefs[j] = NULL;
+                                legal[j] = FALSE;
                             } else {
                                 ups[j] += IRES_POS (ires, k);
                             }
@@ -1748,6 +1940,23 @@ TYDispatchFunType (ntype *fun, ntype *args)
         }
 
         /*
+         * all those that are lower than up-projections were marked as illegal
+         * before; now, we set the according fundefs to NULL.
+         * In contrast to (errorneous) considerations made before, these cannot(!)
+         * be set to NULL earlier since that would not guarantee the j / k mechanism
+         * to work properly anymore.
+         */
+
+        for (i = 0; i < max_funs; i++) {
+            if (!legal[i]) {
+                fundefs[i] = NULL;
+            }
+        }
+
+        DBUG_PRINT ("NTDIS", ("final ups and downs:"));
+        DBUG_EXECUTE ("NTDIS", DebugPrintUpsAndDowns (max_funs, fundefs, ups, downs););
+
+        /*
          * Finally, we export our findings via a DFT_res structure.
          *   in order to avoid multiple allocations we allocate
          *   space for a maximum of "k" fundefs. This is ok as
@@ -1757,36 +1966,10 @@ TYDispatchFunType (ntype *fun, ntype *args)
          * (since no overloading is allowed) so we return NULL!!
          */
 
-        res = TYMakeDFT_res (fun, k);
+        res = UpsDowns2DFT_res (ups, downs, fundefs, max_funs, k);
 
-        /* Due to a bug in limits.h (!!), we have to use INT_MAX here!! */
-        max_deriveable = 1 - INT_MAX;
-        for (i = 0; i < max_funs; i++) {
-            if (fundefs[i] != NULL) {
-                if (ups[i] == 0) {
-                    if (downs[i] == 0) {
-                        res->def = fundefs[i];
-                        /* no down projections in case of an exact definition! */
-                        max_deriveable = 0;
-                        res->deriveable = NULL;
-                    } else {
-                        if (downs[i] > max_deriveable) {
-                            res->deriveable = fundefs[i];
-                            max_deriveable = downs[i];
-                        }
-                    }
-                } else {
-                    if (downs[i] == 0) {
-                        res->partials[res->num_partials] = fundefs[i];
-                        res->num_partials++;
-                    } else {
-                        res->deriveable_partials[res->num_deriveable_partials]
-                          = fundefs[i];
-                        res->num_deriveable_partials++;
-                    }
-                }
-            }
-        }
+        res->type = fun; /* insert the result type */
+
         ups = Free (ups);
         downs = Free (downs);
         fundefs = Free (fundefs);
@@ -1807,49 +1990,54 @@ TYDispatchFunType (ntype *fun, ntype *args)
 char *
 TYDFT_res2DebugString (DFT_res *dft)
 {
-    static char buf[256];
-    char *tmp = &buf[0];
+    static str_buf *buf = NULL;
     int i;
     char *tmp_str;
 
     DBUG_ENTER ("TYDFT_res2DebugString");
 
+    if (buf == NULL) {
+        buf = StrBufCreate (100);
+    }
     if (dft == NULL) {
-        tmp += sprintf (tmp, "--");
+        buf = StrBufprintf (buf, "--");
     } else {
         if (dft->def) {
             tmp_str = OldTypeSignature2String (dft->def);
-            tmp += sprintf (tmp, "exact : (%s) ", tmp_str);
+            buf = StrBufprintf (buf, "exact : (%s) ", tmp_str);
             tmp_str = Free (tmp_str);
         }
         if (dft->deriveable) {
             tmp_str = OldTypeSignature2String (dft->deriveable);
-            tmp += sprintf (tmp, "deriveable : (%s) ", tmp_str);
+            buf = StrBufprintf (buf, "deriveable : (%s) ", tmp_str);
             tmp_str = Free (tmp_str);
         }
         if (dft->num_partials > 0) {
-            tmp += sprintf (tmp, "partials : ");
+            buf = StrBufprintf (buf, "partials : ");
             for (i = 0; i < dft->num_partials; i++) {
                 tmp_str = OldTypeSignature2String (dft->partials[i]);
-                tmp += sprintf (tmp, "%s ", tmp_str);
+                buf = StrBufprintf (buf, "%s ", tmp_str);
                 tmp_str = Free (tmp_str);
             }
         }
         if (dft->num_deriveable_partials > 0) {
-            tmp += sprintf (tmp, "deriveable_partials : ");
+            buf = StrBufprintf (buf, "deriveable_partials : ");
             for (i = 0; i < dft->num_deriveable_partials; i++) {
                 tmp_str = OldTypeSignature2String (dft->deriveable_partials[i]);
-                tmp += sprintf (tmp, "%s ", tmp_str);
+                buf = StrBufprintf (buf, "%s ", tmp_str);
                 tmp_str = Free (tmp_str);
             }
         }
 
-        if (tmp == &buf[0]) {
-            tmp += sprintf (tmp, "no match!");
+        if (StrBufIsEmpty (buf)) {
+            buf = StrBufprintf (buf, "no match!");
         }
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    tmp_str = StrBuf2String (buf);
+    StrBufFlush (buf);
+
+    DBUG_RETURN (tmp_str);
 }
 
 /******************************************************************************
@@ -2806,91 +2994,103 @@ TYDeriveSubtype (ntype *type)
 static char *
 ScalarType2String (ntype *type)
 {
-    static char buf[256];
-    char *tmp = &buf[0];
+    static str_buf *buf = NULL;
+    char *res;
 
     DBUG_ENTER ("ScalarType2String");
 
+    if (buf == NULL) {
+        buf = StrBufCreate (64);
+    }
+
     switch (NTYPE_CON (type)) {
     case TC_simple:
-        tmp += sprintf (tmp, "%s", mdb_type[SIMPLE_TYPE (type)]);
+        buf = StrBufprintf (buf, "%s", mdb_type[SIMPLE_TYPE (type)]);
         break;
     case TC_symbol:
         if (SYMBOL_MOD (type) == NULL) {
-            tmp += sprintf (tmp, "%s", SYMBOL_NAME (type));
+            buf = StrBufprintf (buf, "%s", SYMBOL_NAME (type));
         } else {
-            tmp += sprintf (tmp, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
+            buf = StrBufprintf (buf, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
         }
         break;
     case TC_user:
-        tmp += sprintf (tmp, "%s", UTGetName (USER_TYPE (type)));
+        buf = StrBufprintf (buf, "%s", UTGetName (USER_TYPE (type)));
         break;
     default:
         DBUG_ASSERT (0, "ScalarType2String called with non-scalar type!");
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    res = StrBuf2String (buf);
+    StrBufFlush (buf);
+
+    DBUG_RETURN (res);
 }
 
 static char *
 ArrayType2String (ntype *type)
 {
-    static char buf[512];
-    char *tmp = &buf[0];
+    static str_buf *buf = NULL;
     char *tmp_str;
 
     DBUG_ENTER ("ArrayType2String");
+
+    if (buf == NULL) {
+        buf = StrBufCreate (128);
+    }
 
     DBUG_ASSERT (type, "ArrayType2String called with NULL!");
     DBUG_ASSERT (TYIsArray (type), "ArrayType2String called with non-array type!");
 
     tmp_str = ScalarType2String (AKS_BASE (type));
-    tmp += sprintf (tmp, "%s", tmp_str);
+    buf = StrBufprint (buf, tmp_str);
     tmp_str = Free (tmp_str);
 
     switch (NTYPE_CON (type)) {
     case TC_aks:
         if (TYGetDim (type) > 0) {
             tmp_str = SHShape2String (0, AKS_SHP (type));
-            tmp += sprintf (tmp, "%s", tmp_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
         break;
     case TC_akd:
         tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
-        tmp += sprintf (tmp, "%s", tmp_str);
+        buf = StrBufprint (buf, tmp_str);
         tmp_str = Free (tmp_str);
         break;
     case TC_audgz:
-        tmp += sprintf (tmp, "[+]");
+        buf = StrBufprintf (buf, "[+]");
         break;
     case TC_aud:
-        tmp += sprintf (tmp, "[*]");
+        buf = StrBufprintf (buf, "[*]");
         break;
     default:
         DBUG_ASSERT (0, "ArrayType2String called with non-array type!");
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    tmp_str = StrBuf2String (buf);
+    StrBufFlush (buf);
+
+    DBUG_RETURN (tmp_str);
 }
 
-static char *
-PrintFunSep (char *tmp, bool multiline, int offset)
+static str_buf *
+PrintFunSep (str_buf *buf, bool multiline, int offset)
 {
     DBUG_ENTER ("FunType2String");
     if (multiline) {
-        tmp += sprintf (tmp, ",\n%*s", offset, "");
+        buf = StrBufprintf (buf, ",\n%*s", offset, "");
     } else {
-        tmp += sprintf (tmp, ", ");
+        buf = StrBufprintf (buf, ", ");
     }
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (buf);
 }
 
 static char *
 FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 {
-    char buf[8192];
-    char *tmp = &buf[0];
+    str_buf *buf;
     char *tmp_str, *shp_str;
     shape *empty_shape;
     int i;
@@ -2898,19 +3098,20 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
     DBUG_ENTER ("FunType2String");
 
+    buf = StrBufCreate (4096);
     switch (NTYPE_CON (type)) {
     case TC_fun:
-        tmp += sprintf (tmp, "{ ");
+        buf = StrBufprintf (buf, "{ ");
         offset += 2;
         for (i = 0; i < NTYPE_ARITY (type); i++) {
             tmp_str = FunType2String (NTYPE_SON (type, i), scal_str, multiline, offset);
             if (i > 0) {
-                tmp = PrintFunSep (tmp, multiline, offset);
+                buf = PrintFunSep (buf, multiline, offset);
             }
-            tmp += sprintf (tmp, "%s", tmp_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
-        tmp += sprintf (tmp, "}");
+        buf = StrBufprintf (buf, "}");
         break;
 
     case TC_ibase:
@@ -2924,9 +3125,10 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         /*
          * print "<scal_str>[*]" instance:
          */
+        buf = StrBufprintf (buf, "%s[*]", scal_str);
         tmp_str
           = FunType2String (IBASE_GEN (type), scal_str, multiline, offset + scal_len + 3);
-        tmp += sprintf (tmp, "%s[*]%s", scal_str, tmp_str);
+        buf = StrBufprint (buf, tmp_str);
         tmp_str = Free (tmp_str);
 
         /*
@@ -2935,8 +3137,9 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         if (IBASE_SCAL (type)) {
             tmp_str
               = FunType2String (IBASE_GEN (type), scal_str, multiline, offset + scal_len);
-            tmp = PrintFunSep (tmp, multiline, offset);
-            tmp += sprintf (tmp, "%s%s", scal_str, tmp_str);
+            buf = PrintFunSep (buf, multiline, offset);
+            buf = StrBufprint (buf, scal_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
 
@@ -2945,7 +3148,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
          */
         if (IBASE_IARR (type)) {
             tmp_str = FunType2String (IBASE_IARR (type), scal_str, multiline, offset);
-            tmp += sprintf (tmp, "%s", tmp_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
 
@@ -2960,8 +3163,9 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             scal_len = strlen (scal_str);
             tmp_str = FunType2String (IBASE_GEN (type), scal_str, multiline,
                                       offset + scal_len + 3);
-            tmp = PrintFunSep (tmp, multiline, offset);
-            tmp += sprintf (tmp, "%s[+]%s", scal_str, tmp_str);
+            buf = PrintFunSep (buf, multiline, offset);
+            buf = StrBufprintf (buf, "%s[+]", scal_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
 
@@ -2971,7 +3175,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
         for (i = 0; i < (NTYPE_ARITY (type) - 1); i++) {
             tmp_str = FunType2String (IARR_IDIM (type, i), scal_str, multiline, offset);
-            tmp += sprintf (tmp, "%s", tmp_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
 
@@ -2988,8 +3192,9 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
             tmp_str = FunType2String (IDIM_GEN (type), scal_str, multiline,
                                       offset + strlen (scal_str) + strlen (shp_str));
-            tmp = PrintFunSep (tmp, multiline, offset);
-            tmp += sprintf (tmp, "%s%s%s", scal_str, shp_str, tmp_str);
+            buf = PrintFunSep (buf, multiline, offset);
+            buf = StrBufprintf (buf, "%s%s", scal_str, shp_str);
+            buf = StrBufprint (buf, tmp_str);
             shp_str = Free (shp_str);
             tmp_str = Free (tmp_str);
         }
@@ -3000,7 +3205,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
         for (i = 0; i < (NTYPE_ARITY (type) - 1); i++) {
             tmp_str = FunType2String (IDIM_ISHAPE (type, i), scal_str, multiline, offset);
-            tmp += sprintf (tmp, "%s", tmp_str);
+            buf = StrBufprint (buf, tmp_str);
             tmp_str = Free (tmp_str);
         }
 
@@ -3015,8 +3220,9 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
             tmp_str = FunType2String (IDIM_GEN (type), scal_str, multiline,
                                       offset + strlen (scal_str) + strlen (shp_str));
-            tmp = PrintFunSep (tmp, multiline, offset);
-            tmp += sprintf (tmp, "%s%s%s", scal_str, shp_str, tmp_str);
+            buf = PrintFunSep (buf, multiline, offset);
+            buf = StrBufprintf (buf, "%s%s", scal_str, shp_str);
+            buf = StrBufprint (buf, tmp_str);
             shp_str = Free (shp_str);
             tmp_str = Free (tmp_str);
         }
@@ -3026,7 +3232,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
     case TC_ires:
         offset += 4;
         tmp_str = TYType2String (IRES_TYPE (type), multiline, offset);
-        tmp += sprintf (tmp, " -> %s", tmp_str);
+        buf = StrBufprintf (buf, " -> ");
+        buf = StrBufprint (buf, tmp_str);
         tmp_str = Free (tmp_str);
         break;
     default:
@@ -3034,22 +3241,23 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         break;
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    tmp_str = StrBuf2String (buf);
+    buf = StrBufFree (buf);
+
+    DBUG_RETURN (tmp_str);
 }
 
 char *
 TYType2String (ntype *type, bool multiline, int offset)
 {
-    char buf[4096];
-    char *tmp = &buf[0];
+    str_buf *buf;
     char *tmp_str, *res;
     int i;
 
     DBUG_ENTER ("TYType2String");
 
     if (type == NULL) {
-        tmp += sprintf (tmp, "--");
-        res = StringCopy (buf);
+        res = StringCopy ("--");
     } else {
 
         switch (NTYPE_CON (type)) {
@@ -3063,19 +3271,21 @@ TYType2String (ntype *type, bool multiline, int offset)
             res = FunType2String (type, NULL, multiline, offset);
             break;
         case TC_prod:
-            tmp += sprintf (tmp, "(");
+            buf = StrBufCreate (256);
+            buf = StrBufprintf (buf, "(");
             if (NTYPE_ARITY (type) > 0) {
                 tmp_str = TYType2String (NTYPE_SON (type, 0), multiline, offset);
-                tmp += sprintf (tmp, " %s", tmp_str);
+                buf = StrBufprintf (buf, " %s", tmp_str);
                 tmp_str = Free (tmp_str);
                 for (i = 1; i < NTYPE_ARITY (type); i++) {
                     tmp_str = TYType2String (NTYPE_SON (type, i), multiline, offset);
-                    tmp += sprintf (tmp, ", %s", tmp_str);
+                    buf = StrBufprintf (buf, ", %s", tmp_str);
                     tmp_str = Free (tmp_str);
                 }
             }
-            tmp += sprintf (tmp, ")");
-            res = StringCopy (buf);
+            buf = StrBufprintf (buf, ")");
+            res = StrBuf2String (buf);
+            buf = StrBufFree (buf);
             break;
         case TC_alpha:
             res = SSIVariable2DebugString (ALPHA_SSI (type));
@@ -3106,29 +3316,29 @@ TYType2String (ntype *type, bool multiline, int offset)
 char *
 TYType2DebugString (ntype *type, bool multiline, int offset)
 {
-    char buf[32768];
-    char *tmp = &buf[0];
+    str_buf *buf;
     char *tmp_str;
     int i, n;
 
     DBUG_ENTER ("TYType2DebugString");
 
+    buf = StrBufCreate (8192);
     if (type == NULL) {
-        tmp += sprintf (tmp, "--");
+        buf = StrBufprintf (buf, "--");
     } else {
-        tmp += sprintf (tmp, "%s{ ", dbug_str[NTYPE_CON (type)]);
+        buf = StrBufprintf (buf, "%s{ ", dbug_str[NTYPE_CON (type)]);
 
         switch (NTYPE_CON (type)) {
         case TC_aks:
             multiline = FALSE;
             tmp_str = SHShape2String (0, AKS_SHP (type));
-            tmp += sprintf (tmp, "%s, ", tmp_str);
+            buf = StrBufprintf (buf, "%s, ", tmp_str);
             tmp_str = Free (tmp_str);
             break;
         case TC_akd:
             multiline = FALSE;
             tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
-            tmp += sprintf (tmp, "%s, ", tmp_str);
+            buf = StrBufprintf (buf, "%s, ", tmp_str);
             tmp_str = Free (tmp_str);
             break;
         case TC_aud:
@@ -3136,53 +3346,53 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
             break;
         case TC_simple:
             multiline = FALSE;
-            tmp += sprintf (tmp, "%s", mdb_type[SIMPLE_TYPE (type)]);
+            buf = StrBufprintf (buf, "%s", mdb_type[SIMPLE_TYPE (type)]);
             break;
         case TC_symbol:
             multiline = FALSE;
             if (SYMBOL_MOD (type) == NULL) {
-                tmp += sprintf (tmp, "%s", SYMBOL_NAME (type));
+                buf = StrBufprintf (buf, "%s", SYMBOL_NAME (type));
             } else {
-                tmp += sprintf (tmp, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
+                buf = StrBufprintf (buf, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
             }
             break;
         case TC_user:
             multiline = FALSE;
-            tmp += sprintf (tmp, "%d", USER_TYPE (type));
+            buf = StrBufprintf (buf, "%d", USER_TYPE (type));
             break;
         case TC_ibase:
             tmp_str = TYType2DebugString (IBASE_BASE (type), FALSE, offset);
-            tmp += sprintf (tmp, "%s,", tmp_str);
+            buf = StrBufprintf (buf, "%s,", tmp_str);
             tmp_str = Free (tmp_str);
             break;
         case TC_idim:
-            tmp += sprintf (tmp, "%d,", IDIM_DIM (type));
+            buf = StrBufprintf (buf, "%d,", IDIM_DIM (type));
             break;
         case TC_ishape:
             tmp_str = SHShape2String (0, ISHAPE_SHAPE (type));
-            tmp += sprintf (tmp, "%s,", tmp_str);
+            buf = StrBufprintf (buf, "%s,", tmp_str);
             tmp_str = Free (tmp_str);
             break;
         case TC_ires:
             if (IRES_NUMFUNS (type) > 0) {
-                tmp += sprintf (tmp, "poss: {");
+                buf = StrBufprintf (buf, "poss: {");
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
-                    tmp += sprintf (tmp, "%d ", IRES_POS (type, i));
+                    buf = StrBufprintf (buf, "%d ", IRES_POS (type, i));
                 }
-                tmp += sprintf (tmp, "} ");
+                buf = StrBufprintf (buf, "} ");
             }
             if (IRES_NUMFUNS (type) > 0) {
-                tmp += sprintf (tmp, "fundefs: {");
+                buf = StrBufprintf (buf, "fundefs: {");
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
-                    tmp += sprintf (tmp, F_PTR " ", IRES_FUNDEF (type, i));
+                    buf = StrBufprintf (buf, F_PTR " ", IRES_FUNDEF (type, i));
                 }
-                tmp += sprintf (tmp, "} ");
+                buf = StrBufprintf (buf, "} ");
             }
             break;
         case TC_alpha:
             multiline = FALSE;
             tmp_str = SSIVariable2DebugString (ALPHA_SSI (type));
-            tmp += sprintf (tmp, "%s", tmp_str);
+            buf = StrBufprintf (buf, "%s", tmp_str);
             tmp_str = Free (tmp_str);
             break;
         default:
@@ -3190,7 +3400,7 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
         }
 
         if (variable_arity[NTYPE_CON (type)]) {
-            tmp += sprintf (tmp, " <");
+            buf = StrBufprintf (buf, " <");
         }
         n = NTYPE_ARITY (type);
         offset += 3;
@@ -3198,23 +3408,26 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
             tmp_str = TYType2DebugString (NTYPE_SON (type, i), multiline, offset);
             if (i == 0) {
                 if (multiline) {
-                    tmp += sprintf (tmp, "\n%*s", offset - 1, "");
+                    buf = StrBufprintf (buf, "\n%*s", offset - 1, "");
                 }
-                tmp += sprintf (tmp, "%s", tmp_str);
+                buf = StrBufprintf (buf, "%s", tmp_str);
             } else {
-                tmp = PrintFunSep (tmp, multiline, offset);
-                tmp += sprintf (tmp, "%s", tmp_str);
+                buf = PrintFunSep (buf, multiline, offset);
+                buf = StrBufprintf (buf, "%s", tmp_str);
             }
             tmp_str = Free (tmp_str);
         }
         offset -= 3;
         if (variable_arity[NTYPE_CON (type)]) {
-            tmp += sprintf (tmp, ">");
+            buf = StrBufprintf (buf, ">");
         }
-        tmp += sprintf (tmp, "}");
+        buf = StrBufprintf (buf, "}");
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    tmp_str = StrBuf2String (buf);
+    buf = StrBufFree (buf);
+
+    DBUG_RETURN (tmp_str);
 }
 
 /******************************************************************************
