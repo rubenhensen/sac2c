@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/08/05 21:00:05  sbs
+ * global variable ssaform_phase modified now.
+ *
  * Revision 1.12  2004/08/04 12:04:41  ktr
  * substituted eacc by emm
  *
@@ -1255,6 +1258,13 @@ UndoSSATransform (node *modul)
 
     /* ast is no longer in ssaform */
     valid_ssaform = FALSE;
+
+    /*
+     * finally, we increase the ssaform_phase counter, in order to avoid
+     * name clashes if the ast is transformed into ssa-form at a later stage
+     * of the compiler again. cf. SSANewVardec in SSATransform.c !
+     */
+    ssaform_phase++;
 
     DBUG_RETURN (modul);
 }
