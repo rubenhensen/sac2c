@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.82  1995/08/05 15:45:38  hw
+ * Revision 1.83  1995/08/11 17:35:36  hw
+ * changed PrintPrf (F_modarray, F_genarray inserted)
+ *
+ * Revision 1.82  1995/08/05  15:45:38  hw
  * changed output of N_fundef node (real name of function (node[5]) will
  * be printed too)
  *
@@ -627,7 +630,9 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dtoi:
     case F_dtof:
     case F_dtof_A:
-    case F_idx_psi: {
+    case F_idx_psi:
+    case F_modarray:
+    case F_genarray: {
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
         Trav (arg_node->node[0], arg_info);
