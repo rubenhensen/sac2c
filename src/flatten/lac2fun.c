@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/05 21:16:28  dkr
+ * ooops... another bug in GetLacFunName() fixed...
+ *
  * Revision 3.19  2002/09/05 21:02:35  dkr
  * GetLacFunName(): string is dynamically allocated now
  *
@@ -201,7 +204,7 @@ GetLacFunName (char *suffix)
 
     DBUG_ENTER ("GetLacFunName");
 
-    funname = (char *)Malloc ((strlen (suffix) + number / 10 + 4) * sizeof (char));
+    funname = (char *)Malloc ((strlen (suffix) + 20 + 3) * sizeof (char));
     sprintf (funname, "__%s%i", suffix, number);
     number++;
 
