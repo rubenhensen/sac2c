@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2001/11/14 16:02:00  dkr
+ * fixed a bug in OptWL()
+ *
  * Revision 3.52  2001/06/28 09:30:42  sbs
  * catenation in WP macro def eliminated
  *
@@ -4155,6 +4158,36 @@ OptWL (node *nodes)
          */
         if (next != NULL) {
             if ((WLNODE_STEP (nodes) == WLNODE_STEP (next))
+                && ((NODE_TYPE (nodes) != N_WLstride) ||
+                    /*
+                     * For strides we must check whether the grids are compatible or not.
+                     * The following strides CAN NOT be concatenated:
+                     *    0->5  step 3:
+                     *            0->1: R1
+                     *            1->3: R2
+                     *    5->10 step 3:
+                     *            0->1: R1
+                     *            1->3: R2
+                     * The following strides CAN be concatenated:
+                     *    0->6  step 3:
+                     *            0->1: R1
+                     *            1->3: R2
+                     *    6->10 step 3:
+                     *            0->1: R1
+                     *            1->3: R2
+                     * The following strides COULD be concatenated but the algorithm
+                     * does not detect this yet:
+                     *    0->5  step 3:
+                     *            0->1: R1
+                     *            1->3: R2
+                     *    5->10 step 3:
+                     *            0->1: R2
+                     *            1->2: R1
+                     *            2->3: R2
+                     */
+                    (((WLNODE_BOUND2 (nodes) - WLNODE_BOUND1 (nodes))
+                      % WLNODE_STEP (nodes))
+                     == 0))
                 && (WLNODE_BOUND2 (nodes) == WLNODE_BOUND1 (next))) {
                 if ((((cont1 != NULL) && (NODE_TYPE (cont1) != N_Ncode))
                        ? CompareWLtrees (cont1, cont2)
@@ -4394,7 +4427,7 @@ FitWL (node *wlnode)
                  * We have a inner ublock- or stride-node, therefore we are inside of a
                  * block or unrolling-block. That means, the lower bound must be equal
                  * to 0 and the upper bound should be a multiple of the step.
-                 * If the latter is not hold, this node correspondes with a block-node
+                 * If the latter is not hold, this node corresponds with a block-node
                  * whose block size had been adjusted
                  *   -> we must fathom this adjustment here!
                  */
