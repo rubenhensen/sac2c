@@ -1,9 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.63  1995/10/18 13:29:40  cg
- * converted main.c to new error macros
- * appearnce of SAC-compiler slightly beautified.
+ * Revision 1.64  1995/10/18 13:45:49  cg
+ * *** empty log message ***
  *
  * Revision 1.62  1995/10/16  12:01:20  cg
  * added new compilation phase 'objinit'.
@@ -576,7 +575,7 @@ MAIN
 
     ABORT_ON_ERROR;
 
-    NOTE (("\nParsing file '%s`: ...\n", *argv));
+    NOTE (("\nParsing file '%s` : ...\n", *argv));
     compiler_phase++;
     start_token = PARSE_PRG;
     yyparse ();
