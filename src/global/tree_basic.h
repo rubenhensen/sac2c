@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/02/11 17:21:36  srs
+ * changed NPART_IDX to NPART_WITHID
+ *
  * Revision 1.69  1998/02/10 14:57:05  dkr
  * added macro WITH_USEDVARS
  *
@@ -2001,7 +2004,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*  IDX           (N_Nwithid)
+ ***    node*  WITHID        (N_Nwithid)
  ***    node*  GEN           (N_Ngenerator)
  ***    node*  NEXT      (O) (N_Npart)
  ***
@@ -2012,7 +2015,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 
 extern node *MakeNPart (node *withid, node *generator);
 
-#define NPART_IDX(n) (n->node[0])
+#define NPART_WITHID(n) (n->node[0])
 #define NPART_GEN(n) (n->node[1])
 #define NPART_NEXT(n) (n->node[2])
 #define NPART_CODE(n) (n->node[3])
