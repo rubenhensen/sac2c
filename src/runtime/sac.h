@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.9  2000/07/20 12:46:07  dkr
+ * include of sac_free_interface_handler.h added
+ *
  * Revision 2.8  2000/07/06 08:15:38  dkr
  * include for TAGGED_ARRAYS changed
  *
@@ -40,6 +44,7 @@
  *
  * Revision 1.1  1998/03/19 16:36:57  cg
  * Initial revision
+ *
  */
 
 /*****************************************************************************
@@ -56,8 +61,13 @@
  *****************************************************************************/
 
 #ifndef SAC_H
-
 #define SAC_H
+
+#ifdef TAGGED_ARRAYS
+#include "sac_icm.h"
+#endif /* TAGGED_ARRAYS */
+
+#include "sac_free_interface_handler.h"
 
 #include "sac_boundcheck.h"
 #include "sac_misc.h"
