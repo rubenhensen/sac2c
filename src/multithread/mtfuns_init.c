@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/15 15:49:09  dkr
+ * fixed some bugs:
+ *   old_attrib has type statustype now
+ *   MT_OR_ST_REGION no left hand side is replaced by L_MT_OR_ST_REGION
+ *
  * Revision 1.3  2000/03/09 18:33:39  jhs
  * Brushing
  *
@@ -100,7 +105,7 @@ MtfunsInit (node *arg_node, node *arg_info)
 node *
 MTFINxt (node *arg_node, node *arg_info)
 {
-    nodetype old_attrib;
+    statustype old_attrib;
 
     DBUG_ENTER ("MTFINxt");
 
@@ -119,7 +124,7 @@ MTFINxt (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("MTFIN", ("traverse into region with %s",
                           mdb_statustype[INFO_MTFIN_CURRENTATTRIB (arg_info)]));
-    MT_OR_ST_REGION (arg_node) = Trav (MT_OR_ST_REGION (arg_node), arg_info);
+    L_MT_OR_ST_REGION (arg_node, Trav (MT_OR_ST_REGION (arg_node), arg_info));
     DBUG_PRINT ("MTFIN", ("traverse from region with %s",
                           mdb_statustype[INFO_MTFIN_CURRENTATTRIB (arg_info)]));
 
