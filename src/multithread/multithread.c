@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/04 14:44:24  jhs
+ * Added repfuns-traversel.
+ *
  * Revision 1.7  2000/02/02 12:28:18  jhs
  *  Added INFO_MUTH_FUNDEF, improved BLKIN.
  *
@@ -48,6 +51,7 @@
 #include "Error.h"
 
 #include "schedule_init.h"
+#include "repfuns_init.h"
 #include "blocks_init.h"
 
 /******************************************************************************
@@ -170,7 +174,7 @@ MUTHfundef (node *arg_node, node *arg_info)
 
         arg_node = ScheduleInit (arg_node, arg_info);
 
-        /*  arg_node = BuildRefuns( arg_node, arg_info); */
+        arg_node = RepfunsInit (arg_node, arg_info);
 
         arg_node = BlocksInit (arg_node, arg_info);
     }
