@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.176  1998/04/01 17:22:15  srs
+ * changed DBUG output of PrintNwith
+ *
  * Revision 1.175  1998/03/27 18:39:28  dkr
  * PrintWLproj -> PrintWLstride
  *
@@ -1934,7 +1937,9 @@ PrintNwith (node *arg_node, node *arg_info)
     buffer = arg_info->node[2];
 
     DBUG_EXECUTE ("WLI",
-                  fprintf (outfile, "\n** WLI N_Nwith : (%d,%d,%d,%d,%d,%d)\n",
+                  fprintf (outfile,
+                           "\n** WLI N_Nwith : (PARTS %d, REF %d(%d), CPLX %d, FOLDABLE "
+                           "%d, NO_CHANCE %d)\n",
                            NWITH_PARTS (arg_node), NWITH_REFERENCED (arg_node),
                            NWITH_REFERENCED_FOLD (arg_node), NWITH_COMPLEX (arg_node),
                            NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
