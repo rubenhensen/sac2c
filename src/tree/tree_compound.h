@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/04/04 19:41:45  dkr
+ * FUNDEF_DOES_REFCOUNT and FUNDEF_WANTS_REFCOUNT added
+ *
  * Revision 3.33  2001/04/04 09:58:30  nmw
  * AdjustAvisData added
  *
@@ -676,6 +679,13 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 
 #define FUNDEF_IS_LOOPFUN(n)                                                             \
     ((FUNDEF_STATUS (n) == ST_dofun) || (FUNDEF_STATUS (n) == ST_whilefun))
+
+#define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
+    ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
+
+#define FUNDEF_WANTS_REFCOUNT(n, idx)                                                    \
+    ((FUNDEF_PRAGMA (n) != NULL) && (FUNDEF_REFCOUNTING (n) != NULL)                     \
+     && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx) && (FUNDEF_REFCOUNTING (n)[idx]))
 
 /*
  *  The following compound access macros are useful whenever a fundef
