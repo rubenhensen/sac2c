@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/02/21 15:45:57  dkr
+ * access macros used
+ *
  * Revision 3.35  2002/02/20 14:34:02  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -651,10 +654,10 @@ imptype: id SEMIC pragmas
                                ST_regular, NULL);
 
              DBUG_PRINT("PARSE",("type:"F_PTR" %s",
-                                   $$->info.types,
-                                   mdb_type[$$->info.types->simpletype]));
+                                   TYPEDEF_TYPE( $$),
+                                   mdb_type[TYPEDEF_BASETYPE( $$)]));
 
-             $$->info.types->id_cmod = link_mod_name;
+             TYPEDEF_LINKMOD( $$) = link_mod_name;
              TYPEDEF_STATUS( $$) = (file_kind == F_moddec)
                                      ? ST_imported_mod : ST_imported_class;
              TYPEDEF_PRAGMA( $$) = $3;
@@ -663,8 +666,8 @@ imptype: id SEMIC pragmas
                       ("%s:"F_PTR","F_PTR", Id: %s",
                        mdb_nodetype[ NODE_TYPE( $$)],
                        $$,
-                       $$->info.types,
-                       $$->info.types->id));
+                       TYPEDEF_TYPE( $$),
+                       TYPEDEF_NAME( $$)));
            }
        ;
 
@@ -677,7 +680,7 @@ exptypes: exptype exptypes
 
 exptype: id LET type SEMIC pragmas
            { $$ = MakeTypedef( $1, mod_name, $3, ST_regular, NULL);
-             $$->info.types->id_cmod = link_mod_name;
+             TYPEDEF_LINKMOD( $$) = link_mod_name;
              TYPEDEF_STATUS( $$) = (file_kind == F_moddec)
                                      ? ST_imported_mod : ST_imported_class;
              TYPEDEF_PRAGMA( $$) = $5;
@@ -686,8 +689,8 @@ exptype: id LET type SEMIC pragmas
                         ("%s:"F_PTR","F_PTR", Id: %s",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
-                         $$->info.types,
-                         $$->info.types->id));
+                         TYPEDEF_TYPE( $$),
+                         TYPEDEF_NAME( $$)));
            }
        ;
 
@@ -709,8 +712,8 @@ objdec: type id SEMIC pragmas
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
-                        $$->info.types,
-                        $$->info.types->id));
+                        OBJDEF_TYPE( $$),
+                        OBJDEF_NAME( $$)));
           }
       ;
 
@@ -738,7 +741,7 @@ fundec: varreturntypes id BRACKET_L fundec2
                        ("%s:"F_PTR" Id: %s , NULL body,  %s" F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
-                        $$->info.types->id,
+                        FUNDEF_NAME( $$),
                         mdb_nodetype[ ($$->node[2]==NULL)
                                         ? T_void
                                         : (NODE_TYPE( $$->node[2]))],
@@ -760,8 +763,8 @@ fundec: varreturntypes id BRACKET_L fundec2
                         F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
-                        $$->info.types->id,
-                        $$->info.types->id,
+                        FUNDEF_NAME( $$),
+                        FUNDEF_NAME( $$),
                         mdb_nodetype[ ($$->node[2]==NULL)
                                         ? T_void 
                                         : (NODE_TYPE( $$->node[2]))],
@@ -1027,8 +1030,8 @@ typedef: TYPEDEF type id SEMIC
                         ("%s:"F_PTR","F_PTR", Id: %s",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
-                         $$->info.types,
-                         $$->info.types->id));
+                         TYPEDEF_TYPE( $$),
+                         TYPEDEF_NAME( $$)));
            }
 
 
@@ -1047,8 +1050,8 @@ objdef: OBJDEF type id LET expr SEMIC
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
-                        $$->info.types,
-                        $$->info.types->id));
+                        OBJDEF_TYPE( $$),
+                        OBJDEF_NAME( $$)));
           }
       ;
 
@@ -1078,9 +1081,9 @@ fundef: returntypes fun_name BRACKET_L fundef2
             DBUG_PRINT("PARSE",
                        ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
-                        $$->info.types->id_mod,
-                        $$->info.types->id,
-                        $$->info.types->id));
+                        FUNDEF_MOD( $$),
+                        FUNDEF_NAME( $$),
+                        FUNDEF_NAME( $$)));
 
           }
       | INLINE returntypes fun_name BRACKET_L fundef2
@@ -1096,9 +1099,9 @@ fundef: returntypes fun_name BRACKET_L fundef2
             DBUG_PRINT("PARSE",
                         ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
-                        $$->info.types->id_mod,
-                        $$->info.types->id,
-                        $$->info.types->id));
+                        FUNDEF_MOD( $$),
+                        FUNDEF_NAME( $$),
+                        FUNDEF_NAME( $$)));
 
           }
       ;
@@ -1166,7 +1169,7 @@ varargs: arg COMMA varargs
                           ("%s: "F_PTR", Id: ..., Attrib: %d  ",
                            mdb_nodetype[ NODE_TYPE( $$)],
                            $$, 
-                           $$->info.types->attrib));
+                           ARG_ATTRIB( $$)));
              } 
            }
        | arg
@@ -1182,8 +1185,8 @@ arg: type id
                     ("%s: "F_PTR", Id: %s, Attrib: %d  ",
                      mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
-                     $$->info.types->id,
-                     $$->info.types->attrib));
+                     ARG_NAME( $$),
+                     ARG_ATTRIB( $$)));
        }
    | type AMPERS id
        { $$ = MakeArg( $3, $1, ST_regular, ST_reference, NULL); 
@@ -1192,8 +1195,8 @@ arg: type id
                     ("%s: "F_PTR", Id: %s, Attrib: %d ",
                      mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
-                     $$->info.types->id,
-                     $$->info.types->attrib));
+                     ARG_NAME( $$),
+                     ARG_ATTRIB( $$)));
        }
    ;
 
@@ -1232,7 +1235,7 @@ varargtypes: argtype COMMA varargtypes
                               ("%s: "F_PTR", Attrib: %d  ",
                                mdb_nodetype[ NODE_TYPE( $$)],
                                $$, 
-                               $$->info.types->attrib));
+                               ARG_ATTRIB( $$)));
 
                  }
                }
@@ -1247,7 +1250,7 @@ argtype: type
                         ("%s: "F_PTR", Attrib: %d  ",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
-                         $$->info.types->attrib));
+                         ARG_ATTRIB( $$)));
            }
        | type AMPERS
            { $$ = MakeArg( NULL, $1, ST_regular, ST_reference, NULL);
@@ -1256,7 +1259,7 @@ argtype: type
                         ("%s: "F_PTR", Attrib: %d ",
                          mdb_nodetype[ NODE_TYPE( $$)],
                          $$, 
-                         $$->info.types->attrib));
+                         ARG_ATTRIB( $$)));
            }
        ;
 
@@ -1316,7 +1319,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
                                 "  %s (" F_PTR ") ",
                                 mdb_nodetype[ NODE_TYPE( $$)],
                                 $$, 
-                                $$->info.types->id,
+                                FUNDEF_NAME( $$),
                                 mdb_nodetype[ NODE_TYPE( $$->node[0])], 
                                 $$->node[0]));
         }
@@ -2860,19 +2863,19 @@ types *GenComplexType( types *types, nums *numsp)
 
   DBUG_ENTER( "GenComplexType");
 
-  types->shpseg=MakeShpseg(NULL);
-  destptr=types->shpseg->shp;
+  TYPES_SHPSEG( types) = MakeShpseg(NULL);
+  destptr = TYPES_SHPSEG( types)->shp;
   do {
-    types->dim++;
-    *destptr++=numsp->num;
+    (TYPES_DIM( types))++;
+    *destptr++ = numsp->num;
     DBUG_PRINT("PARSE",("shape-element: %d",numsp->num));
-    tmp=numsp;
-    numsp=numsp->next;
-    Free(tmp);
+    tmp = numsp;
+    numsp = numsp->next;
+    Free( tmp);
   }
   while (numsp != NULL);
 
-  DBUG_RETURN(types);
+  DBUG_RETURN( types);
 }
 
 
