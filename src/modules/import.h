@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/01/02 16:32:06  sbs
+ * Revision 1.4  1995/01/02 17:05:03  sbs
+ * flag inserted in mods structure...
+ *
+ * Revision 1.3  1995/01/02  16:32:06  sbs
  * found arg added for FindSymbolInModul
  *
  * Revision 1.2  1995/01/02  16:08:59  sbs
@@ -19,6 +22,9 @@
  */
 
 #define _import_h
+
+#define IMPORTED 1
+#define NOT_IMPORTED 0
 
 typedef struct SYMS {
     char *id; /* symbol */
@@ -39,6 +45,7 @@ typedef struct MOD {
 
 typedef struct MODS {
     mod *mod;
+    int flag; /* IMPORTED / NOT_IMPORTED */
     struct MODS *next;
 } mods;
 
