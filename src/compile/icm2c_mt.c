@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/09/17 17:48:29  dkr
+ * *** empty log message ***
+ *
  * Revision 3.34  2003/09/17 17:19:37  dkr
  * some minor changes done.
  * This revision does not work correctly yet :(
@@ -555,8 +558,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
         fprintf (outfile,
-                 "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
-                 " \"Pure thread fold result:\");\n",
+                 "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s, \"Pure thread fold result:\");\n",
                  vararg[4 * i], vararg[4 * i + 1]);
     }
 
