@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/09/24 12:53:00  ktr
+ * MT&EMM reactivated (Once more, fingers crossing).
+ *
  * Revision 3.72  2004/09/24 11:25:20  ktr
  * Combination of EMM/MT deactivated again (due to to new problems).
  *
@@ -1127,13 +1130,6 @@ CheckOptionConsistency ()
                   "dead code removal (DCR) enabled.\n"
                   "CSE disabled"));
         optimize &= ~OPT_CSE;
-    }
-
-    if (emm && (mtmode != MT_mtstblock)) {
-        SYSWARN (("Explicit memory management is not available for multi-thread "
-                  "program execution.\n"
-                  "EMM disabled"));
-        emm = FALSE;
     }
 
     if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {
