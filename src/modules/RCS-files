@@ -25,3 +25,4 @@ libstat.c
 libstat.h
 export.c
 export.h
+ccmanager.c
