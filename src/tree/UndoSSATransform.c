@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2003/03/12 23:29:57  dkr
+ * USSAvardec(), USSAarg(): AVIS_SSACOUNT removed since all N_ssacnt nodes
+ * (BLOCK_SSACOUNTER) are removed in USSAblock().
+ *
  * Revision 1.19  2002/08/05 09:52:04  sbs
  * eliminated the requirement for Nwithid nodes to always have both,
  * an IDS and a VEC attribute. This change is motivated by the requirement
@@ -48,7 +52,7 @@
  * removal of ssa phi copy assignments added
  *
  * Revision 1.5  2001/03/16 11:55:59  nmw
- * AVIS_SSAPHITRAGET type changed
+ * AVIS_SSAPHITARGET type changed
  *
  * Revision 1.4  2001/03/15 10:53:31  nmw
  * Undo SSA for all vardecs marked with SSAUNDOFLAG
@@ -197,6 +201,8 @@ USSAInitAvisFlags (node *fundef)
 static node *
 USSARemoveUnusedVardecs (node *vardecs)
 {
+    node *avis;
+
     DBUG_ENTER ("USSARemoveUnusedVardecs");
 
     /* traverse rest of chain */
@@ -204,9 +210,10 @@ USSARemoveUnusedVardecs (node *vardecs)
         VARDEC_NEXT (vardecs) = USSARemoveUnusedVardecs (VARDEC_NEXT (vardecs));
     }
 
+    avis = VARDEC_AVIS (vardecs);
+
     /* check vardec for removal */
-    if ((AVIS_SUBSTUSSA (VARDEC_AVIS (vardecs)) != NULL)
-        && (AVIS_SUBSTUSSA (VARDEC_AVIS (vardecs)) != VARDEC_AVIS (vardecs))) {
+    if ((AVIS_SUBSTUSSA (avis) != NULL) && (AVIS_SUBSTUSSA (avis) != avis)) {
         DBUG_PRINT ("USSA", ("remove unused vardec %s", VARDEC_NAME (vardecs)));
         vardecs = FreeNode (vardecs);
     }
@@ -221,10 +228,10 @@ USSARemoveUnusedVardecs (node *vardecs)
  *
  * description:
  *  check args for AVIS_SUBST entries.
- *  because its not good idea to rename args (e.g. unique identifiers, global
- *  objects) the arg node is used as target identifier in this function instead
- *  of the marked SUBST vardec. This can easily be done by exchanging the
- *  avis nodes of arg and vardec (that will not be used anymore after USSA).
+ *  because it is not a good idea to rename args (e.g. unique identifiers,
+ *  global objects) the arg node is used as target identifier in this function
+ *  instead of the marked SUBST vardec. This can easily be done by exchanging
+ *  the avis nodes of arg and vardec (that will not be used anymore after USSA).
  *
  ******************************************************************************/
 node *
@@ -257,6 +264,12 @@ USSAarg (node *arg_node, node *arg_info)
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
+    /*
+     * remove AVIS_SSACOUNT since all N_ssacnt nodes (BLOCK_SSACOUNTER) will
+     * be removed in USSAblock()
+     */
+    AVIS_SSACOUNT (ARG_AVIS (arg_node)) = NULL;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -267,15 +280,15 @@ USSAarg (node *arg_node, node *arg_info)
  *
  * description:
  *
- * 1. if a vardec is marked with SSAUNDOFALG the corresponsing original vardec
+ * 1. if a vardec is marked with SSAUNDOFLAG the corresponsing original vardec
  *    or arg is searched. if the original node has been deleted by optimizations
  *    the actual node is renamed to this orginal name (stored in SSACNT_BASEID).
  *    in the following tree traversal all corresponding identifiers are renamed
  *    back to their original name.
  *
- * 2. if a vardec is marked as SSAPHITRAGET, the complete copy assignment must
+ * 2. if a vardec is marked as SSAPHITARGET, the complete copy assignment must
  *    be removed to enable the fun2lac transformation. therfore the right-side
- *    identifier has to be renamed to the SSAPHITRAGET identifier (or direct to
+ *    identifier has to be renamed to the SSAPHITARGET identifier (or direct to
  *    its rename target (see 1).
  *
  * 3. after traversing all vardecs, check on back traversal for different
@@ -418,6 +431,12 @@ USSAvardec (node *arg_node, node *arg_info)
         /* no first level renaming -> second level renaming will be done */
         AVIS_SUBSTUSSA (VARDEC_AVIS (arg_node)) = AVIS_SUBST (VARDEC_AVIS (arg_node));
     }
+
+    /*
+     * remove AVIS_SSACOUNT since all N_ssacnt nodes (BLOCK_SSACOUNTER) will
+     * be removed in USSAblock()
+     */
+    AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) = NULL;
 
     DBUG_RETURN (arg_node);
 }
