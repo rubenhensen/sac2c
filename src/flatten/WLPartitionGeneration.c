@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/25 23:28:04  khf
+ * ccorrected error message :)
+ *
  * Revision 1.24  2004/11/24 17:32:14  khf
  * SacDevCamp04
  *
@@ -1007,7 +1010,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
 
     DBUG_ENTER ("CreateScalarWL");
 
-    DBUG_ASSERT ((dim >= 0), "CreateScalarWith() used with unknown shape!");
+    DBUG_ASSERT ((dim >= 0), "CreateScalarWl() used with unknown shape!");
 
     vec_ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                                SHmakeShape (dim))),
