@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/04/14 13:17:29  jhs
+ * DupBlock does not traverse into not existing vardecs or exprs anymore.
+ *
  * Revision 2.6  1999/04/13 14:01:48  cg
  * added function DupBlock for duplication of N_block nodes.
  *
@@ -240,14 +243,27 @@ DupNode (node *arg_node)
 node *
 DupBlock (node *arg_node, node *arg_info)
 {
-    node *tmp;
+    node *tmp, *dup_vardec, *dup_instr;
 
     DBUG_ENTER ("DupBlock");
 
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
 
-    tmp = MakeBlock (Trav (BLOCK_INSTR (arg_node), arg_info),
-                     Trav (BLOCK_VARDEC (arg_node), arg_info));
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        dup_instr = NULL;
+    } else {
+        dup_instr = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_VARDEC (arg_node) == NULL) {
+        dup_vardec = NULL;
+    } else {
+        dup_vardec = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    tmp = MakeBlock (dup_instr, dup_vardec);
+
+    DBUG_PRINT ("DUP", ("Traversals finished"));
 
     BLOCK_VARNO (tmp) = BLOCK_VARNO (arg_node);
 
@@ -444,6 +460,8 @@ DupId (node *arg_node, node *arg_info)
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
         }
     }
+    DBUG_PRINT ("DUP", ("Traversals finished"));
+
     ID_INTVEC (new_node) = CopyIntVector (ID_VECLEN (arg_node), ID_INTVEC (arg_node));
 
     if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
