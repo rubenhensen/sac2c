@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/07/06 16:28:42  dkr
+ * ICM ND_KD_A_SHAPE renamed into ND_A_SHAPE
+ *
  * Revision 2.14  2000/07/06 14:50:24  dkr
  * BEtest support added
  *
@@ -1312,10 +1315,10 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int up
     if (current_dim == array_dim - 1) {
         fprintf (outfile, "1");
     } else {
-        fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)", array, current_dim + 1);
+        fprintf (outfile, "SAC_ND_A_SHAPE(%s, %d)", array, current_dim + 1);
 
         for (i = current_dim + 2; i < array_dim; i++) {
-            fprintf (outfile, " * SAC_ND_KD_A_SHAPE(%s, %d)", array, current_dim + i);
+            fprintf (outfile, " * SAC_ND_A_SHAPE(%s, %d)", array, current_dim + i);
         }
     }
 

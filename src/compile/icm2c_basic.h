@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/07/06 16:27:03  dkr
+ * ICM ND_KD_A_SHAPE renamed into ND_A_SHAPE
+ *
  * Revision 2.3  1999/05/05 09:14:47  jhs
  * VectToOffset2 changed, it prints "0" for empty arrays now.
  * So it is able to handle empty arays now.
@@ -19,18 +22,17 @@
  * Revision 1.1  1998/05/03 13:07:29  dkr
  * Initial revision
  *
- *
- *
  */
 
 #ifndef _icm2c_basic_h
+
 #define _icm2c_basic_h
 
-#define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %i)", v, i)
+#define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY( %s, %i)", v, i)
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 
-#define AccessShape(v, i) fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)", v, i)
+#define AccessShape(v, i) fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", v, i)
 
 #define VectToOffset2(dim, v_i_str, dima, a_i_str)                                       \
     {                                                                                    \
