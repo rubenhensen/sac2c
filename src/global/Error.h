@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/11/24 23:17:31  cg
+ * SacDevCamp approved.
+ *
  * Revision 3.10  2004/11/24 18:04:09  sah
  * added a dependency
  *
@@ -273,7 +276,7 @@
 
 #define EXIT(n)                                                                          \
     {                                                                                    \
-        CleanUp ();                                                                      \
+        ERRcleanUp ();                                                                   \
         exit (n);                                                                        \
     }
 
@@ -283,7 +286,7 @@
                                                                                          \
         global.current_line_length                                                       \
           = MAX_LINE_LENGTH - ind1 - ind2 - ((header == NULL) ? 0 : strlen (header));    \
-        ProcessErrorMessage message;                                                     \
+        ERRprocessErrorMessage message;                                                  \
                                                                                          \
         if (excl)                                                                        \
             strcat (global.error_message_buffer, " !");                                  \
@@ -384,7 +387,7 @@
         ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                             \
         fprintf (stderr, "%s:%d", global.filename, line);                                \
         global.last_indent = ((global.verbose_level > 1) ? 2 : 0)                        \
-                             + strlen (global.filename) + NumberOfDigits (line) + 1;     \
+                             + strlen (global.filename) + ILIBnumberOfDigits (line) + 1; \
         PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, global.message_indent,   \
                        0, 1);                                                            \
         global.errors_cnt++;                                                             \
@@ -460,7 +463,8 @@
             ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                         \
             fprintf (stderr, "%s:%d", global.filename, line);                            \
             global.last_indent = ((global.verbose_level > 1) ? 2 : 0)                    \
-                                 + strlen (global.filename) + NumberOfDigits (line) + 1; \
+                                 + strlen (global.filename) + ILIBnumberOfDigits (line)  \
+                                 + 1;                                                    \
             PRINT_MESSAGE (message, ":WARNING: ", global.last_indent,                    \
                            global.message_indent, 0, 1);                                 \
             global.warnings_cnt++;                                                       \
@@ -580,9 +584,8 @@
  *  employed for immediately subsequent print operations.
  */
 
-extern char *ModName (char *, char *);
-
-extern char *ItemName (node *);
+extern char *ERRmodName (char *, char *);
+extern char *ERRitemName (node *);
 
 /*
  ********************************************
@@ -593,39 +596,8 @@ extern char *ItemName (node *);
  *
  */
 
-extern void ProcessErrorMessage (char *format, ...);
-extern int NumberOfDigits (int);
-extern void CleanUp ();
-
-/*
- *************************************************************************
- *   below this line for compatibility only
- */
-
-#define WARN1(s)                                                                         \
-    if (global.verbose_level > 0) {                                                      \
-        global.warnings_cnt++;                                                           \
-        fprintf (stderr, "\n");                                                          \
-        DoPrint s;                                                                       \
-    }
-
-#define ERROR1(s)                                                                        \
-    {                                                                                    \
-        fprintf (stderr, "\n");                                                          \
-        DoPrint s;                                                                       \
-        global.errors_cnt++;                                                             \
-    }
-
-#define ERROR2(n, s)                                                                     \
-    {                                                                                    \
-        fprintf (stderr, "\n");                                                          \
-        DoPrint s;                                                                       \
-        fprintf (stderr, "\n\n");                                                        \
-        exit (n);                                                                        \
-    }
-
-extern void Error (char *string, int status);
-
-extern void DoPrint (char *format, ...);
+extern void ERRprocessErrorMessage (char *format, ...);
+extern int ERRnumberOfDigits (int);
+extern void ERRcleanUp ();
 
 #endif /* _SAC_ERROR_H_ */

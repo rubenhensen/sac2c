@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/24 23:17:31  cg
+ * SacDevCamp approved.
+ *
  * Revision 3.2  2001/04/24 11:08:19  dkr
  * ProcessErrorMessage():
  * DBUG_ASSERT about TABs removed (Note, that TABs may occur in the
@@ -111,43 +114,17 @@
 #include <string.h>
 
 #include "dbug.h"
-#include "types.h"
-#include "tree_basic.h"
-#include "internal_lib.h"
-#include "globals.h"
-#include "filemgr.h"
-#include "resource.h"
 #include "Error.h"
 
-/*
- *
- *  functionname  : DoPrint
- *  arguments     : 1) format string like the one of printf
- *                  2) ... arguments of format string
- *  description   : prints an error message on stderr
- *
- *  remarks       : following format information are considered:
- *                  %s %d \n \t
- *
- */
-
-void
-DoPrint (char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ("DoPrint");
-
-    va_start (arg_p, format);
-    vfprintf (stderr, format, arg_p);
-    va_end (arg_p);
-
-    DBUG_VOID_RETURN;
-}
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
+#include "globals.h"
 
 /*
  *
- *  functionname  : ProcessErrorMessage
+ *  functionname  : ERRprocessErrorMessage
  *  arguments     : 1) format string
  *                  2) variable number of arguments similar to printf
  *  description   : evaluates the format string with the given arguments
@@ -156,37 +133,38 @@ DoPrint (char *format, ...)
  */
 
 void
-ProcessErrorMessage (char *format, ...)
+ERRprocessErrorMessage (char *format, ...)
 {
     va_list arg_p;
     int index, line, last_space;
 
-    DBUG_ENTER ("ProcessErrorMessage");
+    DBUG_ENTER ("ERRprocessErrorMessage");
 
     va_start (arg_p, format);
-    vsprintf (error_message_buffer, format, arg_p);
+    vsprintf (global.error_message_buffer, format, arg_p);
     va_end (arg_p);
 
     index = 0;
     last_space = 0;
     line = 0;
 
-    while ((index < MAX_ERROR_MESSAGE_LENGTH) && (error_message_buffer[index] != '\0')) {
-        if (error_message_buffer[index] == '\t') {
-            error_message_buffer[index] = ' ';
+    while ((index < MAX_ERROR_MESSAGE_LENGTH)
+           && (global.error_message_buffer[index] != '\0')) {
+        if (global.error_message_buffer[index] == '\t') {
+            global.error_message_buffer[index] = ' ';
         }
 
-        if (error_message_buffer[index] == ' ') {
+        if (global.error_message_buffer[index] == ' ') {
             last_space = index;
         }
 
-        if (error_message_buffer[index] == '\n') {
-            error_message_buffer[index] = '@';
+        if (global.error_message_buffer[index] == '\n') {
+            global.error_message_buffer[index] = '@';
             line = 0;
         } else {
-            if (line == current_line_length) {
-                if (error_message_buffer[last_space] == ' ') {
-                    error_message_buffer[last_space] = '@';
+            if (line == global.current_line_length) {
+                if (global.error_message_buffer[last_space] == ' ') {
+                    global.error_message_buffer[last_space] = '@';
                     line = index - last_space;
                 } else {
                     break;
@@ -198,42 +176,19 @@ ProcessErrorMessage (char *format, ...)
         line++;
     }
 
-    DBUG_PRINT ("ERROR", ("processed message: %s", error_message_buffer));
+    DBUG_PRINT ("ERROR", ("processed message: %s", global.error_message_buffer));
 
     DBUG_VOID_RETURN;
 }
 
 /*
  *
- *  functionname  : NumberOfDigits
- *  arguments     : 1) integer
- *  description   : returns the number of digits, e.g 4 for 1000
- *
- */
-
-int
-NumberOfDigits (int number)
-{
-    int i = 1;
-
-    DBUG_ENTER ("NumberOfDigits");
-
-    while (number / 10 >= 1) {
-        number = number / 10;
-        i += 1;
-    }
-
-    DBUG_RETURN (i);
-}
-
-/*
- *
- *  functionname  : ModName
+ *  functionname  : ERRmodName
  *  arguments     : 1) module name, maybe NULL
  *                  2) item name, may not be NULL
  *  description   : constructs a new string combining module and item name
  *                  with a colon.
- *                  ModName is designed to simplify error messages.
+ *                  ERRmodName is designed to simplify error messages.
  *
  *  remarks       : Since an internal buffer is used for the generation of
  *                  a combined name, this function should exclusively be
@@ -242,12 +197,12 @@ NumberOfDigits (int number)
  */
 
 char *
-ModName (char *mod, char *name)
+ERRmodName (char *mod, char *name)
 {
     char *tmp;
     static char buffer[128];
 
-    DBUG_ENTER ("ModName");
+    DBUG_ENTER ("ERRmodName");
 
     if (mod == NULL) {
         tmp = name;
@@ -263,7 +218,7 @@ ModName (char *mod, char *name)
 
 /*
  *
- *  functionname  : ItemName
+ *  functionname  : ERRitemName
  *  arguments     : 1) pointer to fundef, objdef or typedef node
  *  description   : generates the full combined name of the item,
  *                  including the module name when present.
@@ -271,24 +226,24 @@ ModName (char *mod, char *name)
  */
 
 char *
-ItemName (node *item)
+ERRitemName (node *item)
 {
     char *ret;
 
-    DBUG_ENTER ("ItemName");
+    DBUG_ENTER ("ERRitemName");
 
     switch (NODE_TYPE (item)) {
     case N_fundef:
-        ret = ModName (FUNDEF_MOD (item), FUNDEF_NAME (item));
+        ret = ERRmodName (FUNDEF_MOD (item), FUNDEF_NAME (item));
         break;
     case N_typedef:
-        ret = ModName (TYPEDEF_MOD (item), TYPEDEF_NAME (item));
+        ret = ERRmodName (TYPEDEF_MOD (item), TYPEDEF_NAME (item));
         break;
     case N_objdef:
-        ret = ModName (OBJDEF_MOD (item), OBJDEF_NAME (item));
+        ret = ERRmodName (OBJDEF_MOD (item), OBJDEF_NAME (item));
         break;
     default:
-        DBUG_ASSERT (0, "Wrong item in call of function 'ItemName`");
+        DBUG_ASSERT (0, "Wrong item in call of function 'ERRitemName`");
         ret = NULL;
     }
 
@@ -297,7 +252,7 @@ ItemName (node *item)
 
 /*
  *
- *  functionname  : CleanUp
+ *  functionname  : ERRcleanUp
  *  arguments     : ---
  *  description   : removes all files and directories generated by sac2c
  *                  except the actual result file. Used to clean up the
@@ -307,12 +262,12 @@ ItemName (node *item)
  */
 
 void
-CleanUp ()
+ERRcleanUp ()
 {
-    DBUG_ENTER ("CleanUp");
+    DBUG_ENTER ("ERRcleanUp");
 
-    if (cleanup && (tmp_dirname != NULL)) {
-        SystemCall ("%s %s", config.rmdir, tmp_dirname);
+    if (global.cleanup && (global.tmp_dirname != NULL)) {
+        ILIBsystemCall ("%s %s", global.config.rmdir, global.tmp_dirname);
     }
 
     DBUG_VOID_RETURN;
