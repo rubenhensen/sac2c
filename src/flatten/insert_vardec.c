@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/12/13 11:10:38  sah
+ * fixed a bug
+ *
  * Revision 1.17  2004/12/12 07:55:02  ktr
  * Corrected node usage.
  *
@@ -412,7 +415,7 @@ INSVDspids (node *arg_node, info *arg_info)
      * now we can build a real ids node and remove the spids node
      */
     arg_node = FREEdoFreeNode (arg_node);
-    arg_node = TBmakeIds (VARDEC_AVIS (vardec), arg_node);
+    arg_node = TBmakeIds (DECL_AVIS (vardec), arg_node);
 
     DBUG_RETURN (arg_node);
 }
