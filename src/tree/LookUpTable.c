@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/17 09:41:36  nmw
+ * some bugs in UpdateLUT functions fixed
+ * wrong hashkeytype, illegal pointer sharing resolved
+ *
  * Revision 3.13  2001/04/19 07:47:25  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -875,9 +879,9 @@ UpdateLUT_P (lut_t *lut, void *old_item, void *new_item, void **found_item)
 
     DBUG_ENTER ("UpdateLUT_P");
 
-    k = GetHashKey_String (old_item);
+    k = GetHashKey_Pointer (old_item);
 
-    found_item_p = SearchInLUT (lut, old_item, k, IsEqual_String);
+    found_item_p = SearchInLUT (lut, old_item, k, IsEqual_Pointer);
 
     if (found_item != NULL) {
         (*found_item) = (found_item_p != NULL) ? (*found_item_p) : NULL;
@@ -920,20 +924,20 @@ UpdateLUT_P (lut_t *lut, void *old_item, void *new_item, void **found_item)
 lut_t *
 UpdateLUT_S (lut_t *lut, char *old_item, char *new_item, char **found_item)
 {
-    char **found_item_p;
+    char **found_item_s;
     hash_key_t k;
 
     DBUG_ENTER ("UpdateLUT_S");
 
     k = GetHashKey_String (old_item);
 
-    found_item_p = (char **)SearchInLUT (lut, old_item, k, IsEqual_String);
+    found_item_s = (char **)SearchInLUT (lut, old_item, k, IsEqual_String);
 
     if (found_item != NULL) {
-        (*found_item) = (found_item_p != NULL) ? (*found_item_p) : NULL;
+        (*found_item) = (found_item_s != NULL) ? (*found_item_s) : NULL;
     }
 
-    if (found_item_p == NULL) {
+    if (found_item_s == NULL) {
         lut = InsertIntoLUT (lut, StringCopy (old_item), StringCopy (new_item), k);
 
         DBUG_PRINT ("LUT", ("new strings inserted (hash key %li)"
@@ -942,10 +946,16 @@ UpdateLUT_S (lut_t *lut, char *old_item, char *new_item, char **found_item)
     } else {
         DBUG_PRINT ("LUT", ("strings replaced (hash key %li)"
                             " [ \"%s\" , \"%s\" ] -> [ \"%s\" , \"%s\" ]",
-                            k - (HASH_KEYS_POINTER), old_item, *found_item_p, old_item,
+                            k - (HASH_KEYS_POINTER), old_item, *found_item_s, old_item,
                             new_item));
 
-        (*found_item_p) = new_item;
+        /* free unused old string if not needed anymore */
+        if (found_item == NULL) {
+            FREE (*found_item_s);
+        }
+
+        /* set copy of new item */
+        (*found_item_s) = StringCopy (new_item);
     }
 
     DBUG_RETURN (lut);
