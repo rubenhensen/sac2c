@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/20 16:59:44  jhs
+ * Added counting and checking of FOLDCOUNT.
+ *
  * Revision 2.2  1999/07/07 15:55:57  jhs
  * Added SYNCO[sync|assign], first steps to melt sync-blocks.
  *
@@ -40,6 +43,7 @@
 #include "DataFlowMask.h"
 #include "spmd_trav.h"
 #include "spmd_opt.h"
+#include "globals.h"
 
 #include "sync_opt.h"
 
@@ -69,7 +73,8 @@ Disjunctive (DFMmask_t mask1, DFMmask_t mask2)
  *
  * description:
  *   Tests whether the two syncs specified can be melted together, i.e. whether
- *   their dataflow maske are disjunctive.
+ *   their dataflow maske are disjunctive and do not contain too much
+ *   fold-with-loops.
  *
  *   Returns TRUE if both blocks can be melted together, FALSE otherwise.
  *
@@ -102,6 +107,16 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
         DBUG_PRINT ("SYNCO", ("disjunctive"));
     } else {
         DBUG_PRINT ("SYNCO", ("non-disjunctive"));
+    }
+
+    result
+      = result
+        & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync)) < max_sync_fold);
+
+    if (result) {
+        DBUG_PRINT ("SYNCO", ("folds ok"));
+    } else {
+        DBUG_PRINT ("SYNCO", ("too much folds"));
     }
 
     DBUG_RETURN (result);
@@ -160,6 +175,9 @@ MeltSYNCs (node *first_sync, node *second_sync /*,  ...  #### */)
     DFMSetMaskOr (SYNC_OUT (first_sync), SYNC_OUT (second_sync));
     DFMSetMaskOr (SYNC_LOCAL (first_sync), SYNC_LOCAL (second_sync));
 
+    SYNC_FOLDCOUNT (first_sync)
+      = SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync);
+
     FreeTree (second_sync);
 
     result = first_sync;
@@ -215,8 +233,11 @@ SYNCOsync (node *arg_node, node *arg_info)
      *  blocks are melted together here.
      */
     DBUG_PRINT ("SYNCO", ("try melting sync-blocks"));
+    if (SYNC_FIRST (arg_node)) {
+        DBUG_PRINT ("SYNCO", ("cannot melt first sync-block *<:("));
+    }
     while (
-      (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
+      (!SYNC_FIRST (arg_node)) && (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
       && (NODE_TYPE (ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))) == N_sync)
       && (MeltableSYNCs (arg_node, ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))))) {
         DBUG_PRINT ("SYNCO", ("melting sync-blocks"));
