@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/11/09 16:06:18  sah
+ * TYDeserializeType is now portable as it no more
+ * depends on the platform specific evaluation order
+ * of function arguments.
+ *
  * Revision 3.65  2004/10/28 16:09:51  sah
  * removed a not needed variable
  * andd added some DBUG_PRINTs
@@ -6188,21 +6193,27 @@ TYDeserializeType (typeconstr con, ...)
     DBUG_PRINT ("SER", ("Deserializing ntype %s", dbug_str[con]));
 
     switch (con) {
-    case TC_simple:
+    case TC_simple: {
         va_start (args, con);
 
-        result = TYMakeSimpleType (va_arg (args, simpletype));
+        result = TYMakeSimpleType (va_arg (args, int));
 
         va_end (args);
-        break;
-    case TC_symbol:
+    } break;
+    case TC_symbol: {
+        char *name;
+        char *mod;
+
         va_start (args, con);
 
-        result = TYMakeSymbType (va_arg (args, char *), va_arg (args, char *));
+        name = va_arg (args, char *);
+        mod = va_arg (args, char *);
+
+        result = TYMakeSymbType (name, mod);
 
         va_end (args);
-        break;
-    case TC_user:
+    } break;
+    case TC_user: {
         va_start (args, con);
 
         /* TODO: lookup usertype, if found, set value, otherwise
@@ -6211,42 +6222,61 @@ TYDeserializeType (typeconstr con, ...)
         result = TYMakeUserType (0);
 
         va_end (args);
-        break;
-    case TC_akv:
+    } break;
+    case TC_akv: {
+        ntype *type;
+        constant *cnst;
+
         va_start (args, con);
 
-        result = TYMakeAKV (va_arg (args, ntype *), va_arg (args, constant *));
+        type = va_arg (args, ntype *);
+        cnst = va_arg (args, constant *);
+
+        result = TYMakeAKV (type, cnst);
 
         va_end (args);
-        break;
-    case TC_aks:
+    } break;
+    case TC_aks: {
+        ntype *type;
+        shape *shp;
+
         va_start (args, con);
 
-        result = TYMakeAKS (va_arg (args, ntype *), va_arg (args, shape *));
+        type = va_arg (args, ntype *);
+        shp = va_arg (args, shape *);
+
+        result = TYMakeAKS (type, shp);
 
         va_end (args);
-        break;
-    case TC_akd:
+    } break;
+    case TC_akd: {
+        ntype *type;
+        int dim;
+        shape *shp;
+
         va_start (args, con);
 
-        result = TYMakeAKD (va_arg (args, ntype *), va_arg (args, int),
-                            va_arg (args, shape *));
+        type = va_arg (args, ntype *);
+        dim = va_arg (args, int);
+        shp = va_arg (args, shape *);
+
+        result = TYMakeAKD (type, dim, shp);
 
         va_end (args);
-        break;
-    case TC_aud:
+    } break;
+    case TC_aud: {
         va_start (args, con);
 
         result = TYMakeAUD (va_arg (args, ntype *));
 
         va_end (args);
-        break;
-    case TC_audgz:
+    } break;
+    case TC_audgz: {
         va_start (args, con);
 
         result = TYMakeAUDGZ (va_arg (args, ntype *));
-        break;
-    case TC_prod:
+    } break;
+    case TC_prod: {
         va_start (args, con);
 
         result = MakeNtype (TC_prod, va_arg (args, int));
@@ -6256,8 +6286,8 @@ TYDeserializeType (typeconstr con, ...)
         }
 
         va_end (args);
-        break;
-    case TC_union:
+    } break;
+    case TC_union: {
         va_start (args, con);
 
         result = MakeNtype (TC_union, va_arg (args, int));
@@ -6267,8 +6297,8 @@ TYDeserializeType (typeconstr con, ...)
         }
 
         va_end (args);
-        break;
-    case TC_fun:
+    } break;
+    case TC_fun: {
         va_start (args, con);
 
         result = MakeNtype (TC_fun, va_arg (args, int));
@@ -6278,8 +6308,8 @@ TYDeserializeType (typeconstr con, ...)
         }
 
         va_end (args);
-        break;
-    case TC_ibase:
+    } break;
+    case TC_ibase: {
         va_start (args, con);
 
         result = MakeNtype (TC_ibase, 3);
@@ -6290,8 +6320,8 @@ TYDeserializeType (typeconstr con, ...)
         IBASE_IARR (result) = va_arg (args, ntype *);
 
         va_end (args);
-        break;
-    case TC_iarr:
+    } break;
+    case TC_iarr: {
         va_start (args, con);
 
         result = MakeNtype (TC_iarr, va_arg (args, int));
@@ -6303,8 +6333,8 @@ TYDeserializeType (typeconstr con, ...)
         }
 
         va_end (args);
-        break;
-    case TC_idim:
+    } break;
+    case TC_idim: {
         va_start (args, con);
 
         result = MakeNtype (TC_idim, va_arg (args, int));
@@ -6318,8 +6348,8 @@ TYDeserializeType (typeconstr con, ...)
         }
 
         va_end (args);
-        break;
-    case TC_ishape:
+    } break;
+    case TC_ishape: {
         va_start (args, con);
 
         result = MakeNtype (TC_ishape, 1);
@@ -6328,8 +6358,8 @@ TYDeserializeType (typeconstr con, ...)
         ISHAPE_GEN (result) = va_arg (args, ntype *);
 
         va_end (args);
-        break;
-    case TC_ires:
+    } break;
+    case TC_ires: {
         va_start (args, con);
 
         result = MakeNtype (TC_ires, 1);
@@ -6354,23 +6384,22 @@ TYDeserializeType (typeconstr con, ...)
         IRES_TYPE (result) = va_arg (args, ntype *);
 
         va_end (args);
-        break;
-    case TC_alpha:
+    } break;
+    case TC_alpha: {
         DBUG_ASSERT (0, "Cannot deserialize alpha types");
 
         result = NULL;
-        break;
-    case TC_poly:
+    } break;
+    case TC_poly: {
         va_start (args, con);
 
         result = TYMakePolyType (StringCopy (va_arg (args, char *)));
 
         va_end (args);
-        break;
-    case TC_dummy:
+    } break;
+    case TC_dummy: {
         result = MakeNtype (TC_dummy, 0);
-
-        break;
+    } break;
     }
 
     DBUG_RETURN (result);
