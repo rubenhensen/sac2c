@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/04/03 09:31:20  dkr
+ * bug in InsertIcm_WL_SET_OFFSET() fixed
+ *
  * Revision 3.33  2001/04/02 11:43:56  dkr
  * include of wl_bounds.h added
  *
@@ -5304,8 +5307,10 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
         }
 
         if (icm_dim >= 0) {
-            assigns = MakeAssignIcm3 ("WL_SET_OFFSET", MakeNum (dim), MakeNum (icm_dim),
-                                      BuildIcmArgs_WL_OP2 (arg_node));
+            assigns
+              = MakeAssign (MakeIcm3 ("WL_SET_OFFSET", MakeNum (dim), MakeNum (icm_dim),
+                                      BuildIcmArgs_WL_OP2 (arg_node)),
+                            assigns);
         }
     }
 
