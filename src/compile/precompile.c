@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/04/21 13:31:14  dkr
+ * NWITH2_SEG renamed to NWITH2_SEGS
+ *
  * Revision 1.56  1998/04/20 02:39:15  dkr
  * includes now tree.h
  *
@@ -3789,7 +3792,7 @@ PrecNwith (node *arg_node, node *arg_info)
         segs = MakeWLseg (dims, strides, NULL);
     }
 
-    NWITH2_SEG (new_node) = segs;
+    NWITH2_SEGS (new_node) = segs;
 
     arg_node = FreeTree (arg_node);
 

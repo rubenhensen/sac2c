@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.138  1998/04/21 13:30:27  dkr
+ * NWITH2_SEG renamed to NWITH2_SEGS
+ *
  * Revision 1.137  1998/04/20 14:10:58  sbs
  * N_icm remarks for NEXT inserted
  *
@@ -2546,7 +2549,7 @@ extern node *MakeNCode (node *block, node *expr);
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 
 #define NWITH2_WITHID(n) (n->node[0])
-#define NWITH2_SEG(n) (n->node[1])
+#define NWITH2_SEGS(n) (n->node[1])
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/04/21 13:30:51  dkr
+ * NWITH2_SEG renamed to NWITH2_SEGS
+ *
  * Revision 1.51  1998/04/20 02:37:53  dkr
  * changed comments
  *
@@ -1742,7 +1745,7 @@ FreeNwith2 (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_Nwith2 node ..."));
 
     FREETRAV (NWITH2_WITHID (arg_node));
-    FREETRAV (NWITH2_SEG (arg_node));
+    FREETRAV (NWITH2_SEGS (arg_node));
     FREETRAV (NWITH2_CODE (arg_node));
     FREETRAV (NWITH2_WITHOP (arg_node));
 

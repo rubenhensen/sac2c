@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/04/21 13:31:00  dkr
+ * NWITH2_SEG renamed to NWITH2_SEGS
+ *
  * Revision 1.61  1998/04/17 17:26:22  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -1559,7 +1562,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
 
     NODE_TYPE (tmp) = N_Nwith2;
     NWITH2_WITHID (tmp) = withid;
-    NWITH2_SEG (tmp) = seg;
+    NWITH2_SEGS (tmp) = seg;
     NWITH2_CODE (tmp) = code;
     NWITH2_WITHOP (tmp) = withop;
 

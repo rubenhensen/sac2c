@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.198  1998/04/21 13:31:06  dkr
+ * NWITH2_SEG renamed to NWITH2_SEGS
+ *
  * Revision 1.197  1998/04/20 14:21:23  sbs
  * inserted some comments in PrintIcm that relate to the usage of ICM_NEXT!
  *
@@ -2456,8 +2459,8 @@ PrintNwith2 (node *arg_node, node *arg_info)
         }
     }
 
-    if (NWITH2_SEG (arg_node) != NULL) {
-        NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
+    if (NWITH2_SEGS (arg_node) != NULL) {
+        NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
     }
 
     INDENT
