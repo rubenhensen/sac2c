@@ -2,6 +2,7 @@ CSE.c
 CSE.h
 ConstantFolding.c
 ConstantFolding.h
+DataFlowMask.c
 DataFlowMask.h
 DeadCodeRemoval.c
 DeadCodeRemoval.h
