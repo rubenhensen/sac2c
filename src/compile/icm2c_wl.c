@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/22 15:55:24  dkr
+ * PrintTraceICM modified
+ *
  * Revision 3.6  2001/01/22 13:48:45  dkr
  * bug in WL icms fixed
  *
@@ -147,7 +150,8 @@
 /******************************************************************************
  *
  * Function:
- *   void PrintTraceICM( char *target, int dims, char **idx_scalars,
+ *   void PrintTraceICM( char *target, char *idx_vec,
+ *                       int dims, char **idx_scalars,
  *                       char *operation, bool print_offset)
  *
  * Description:
@@ -156,7 +160,7 @@
  ******************************************************************************/
 
 static void
-PrintTraceICM (char *target, int dims, char **idx_scalars, char *operation,
+PrintTraceICM (char *target, char *idx_vec, int dims, char **idx_scalars, char *operation,
                bool print_offset)
 {
     int i;
@@ -376,7 +380,7 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
 #include "icm_trace.c"
 #undef WL_ASSIGN
 
-    PrintTraceICM (idx_vec, dims, idx_scalars, "assign", TRUE);
+    PrintTraceICM (target, idx_vec, dims, idx_scalars, "assign", TRUE);
 
     if (dims_expr > 0) {
         INDENT;
@@ -444,7 +448,7 @@ ICMCompileWL_ASSIGN__INIT (int dims_target, char *target, char *idx_vec, int dim
 #include "icm_trace.c"
 #undef WL_ASSIGN__INIT
 
-    PrintTraceICM (idx_vec, dims, idx_scalars, "init", TRUE);
+    PrintTraceICM (target, idx_vec, dims, idx_scalars, "init", TRUE);
 
     if (dims_target > dims) {
         INDENT;
@@ -513,7 +517,7 @@ ICMCompileWL_ASSIGN__COPY (char *source, int dims_target, char *target, char *id
 #include "icm_trace.c"
 #undef WL_ASSIGN__COPY
 
-    PrintTraceICM (idx_vec, dims, idx_scalars, "copy", TRUE);
+    PrintTraceICM (target, idx_vec, dims, idx_scalars, "copy", TRUE);
 
     if (dims_target > dims) {
         INDENT;
@@ -580,7 +584,7 @@ ICMCompileWL_FOLD (int dims_target, char *target, char *idx_vec, int dims,
 #include "icm_trace.c"
 #undef WL_FOLD
 
-    PrintTraceICM (idx_vec, dims, idx_scalars, "fold", FALSE);
+    PrintTraceICM (target, idx_vec, dims, idx_scalars, "fold", FALSE);
 
     INDENT;
     fprintf (outfile, "/* fold operation */\n");
@@ -614,7 +618,7 @@ ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_vec, int dim
 #include "icm_trace.c"
 #undef WL_FOLD__OFFSET
 
-    PrintTraceICM (idx_vec, dims, idx_scalars, "fold", TRUE);
+    PrintTraceICM (target, idx_vec, dims, idx_scalars, "fold", TRUE);
 
     INDENT;
     fprintf (outfile, "/* fold operation */\n");
