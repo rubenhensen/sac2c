@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/01 21:51:43  sah
+ * added SerStackDump
+ *
  * Revision 1.3  2004/09/23 21:12:25  sah
  * ongoing implementation
  *
@@ -29,5 +32,6 @@ extern void SerStackPush (node *val, serstack_t *stack);
 extern node *SerStackPop (serstack_t *stack);
 extern int SerStackFindPos (node *val, serstack_t *stack);
 extern node *SerStackLookup (int pos, serstack_t *stack);
+extern void SerStackDump (serstack_t *stack);
 
 #endif /* _SERIALIZE_STACK_H */

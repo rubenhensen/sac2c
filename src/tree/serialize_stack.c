@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/01 21:51:43  sah
+ * added SerStackDump
+ *
  * Revision 1.3  2004/09/23 21:12:25  sah
  * ongoing implementation
  *
@@ -17,6 +20,7 @@
 #include "serialize_stack.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "tree_basic.h"
 
 typedef struct SERENTRY_T serentry_t;
 
@@ -142,4 +146,28 @@ SerStackLookup (int pos, serstack_t *stack)
     }
 
     DBUG_RETURN (result);
+}
+
+void
+SerStackDump (serstack_t *stack)
+{
+    serentry_t *ptr = stack->head;
+
+    DBUG_ENTER ("SerStackDump");
+
+    printf ("StackDump:\n\n");
+
+    while (ptr != NULL) {
+        printf ("- " F_PTR " (", ptr->val);
+
+        if (ptr->val != NULL) {
+            printf ("%s )\n", NODE_TEXT (ptr->val));
+        } else {
+            printf ("-- )\n");
+        }
+
+        ptr = ptr->next;
+    }
+
+    DBUG_VOID_RETURN;
 }
