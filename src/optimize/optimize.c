@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/15 15:42:52  bs
+ * temporary DBUG-Flag inserted
+ *
  * Revision 2.3  1999/03/15 14:06:10  bs
  * Access macros renamed (take a look at tree_basic.h).
  *
@@ -715,7 +718,8 @@ INFO:
                      mem_elim_arrays, mem_wlf_expr, mem_wlt_expr, mem_cse_expr,
                      NON_ZERO_ONLY);
 
-    arg_node = TileSizeInference (arg_node);
+    DBUG_EXECUTE ("DO_THE_TSI", (arg_node = TileSizeInference (arg_node)););
+    /* This DBUG-Flag is a temporary one! It's for testing the tsi. */
 
     DBUG_DO_NOT_EXECUTE ("MASK", arg_node = FreeMasks (arg_node););
     if (FUNDEF_NEXT (arg_node))
