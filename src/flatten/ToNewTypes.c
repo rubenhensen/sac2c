@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/24 16:33:03  mwe
+ * TNT is now activated only after PH_typecheck
+ *
  * Revision 1.3  2004/11/24 14:58:23  mwe
  * SacDevCamp: compiles!!!
  *
@@ -207,7 +210,7 @@ TNTarg (node *arg_node, info *arg_info)
     }
 
 #ifdef MWE_NTYPE_READY
-    if ((ARG_TYPE (arg_node) != NULL) && (compiler_phase > PH_typecheck)) {
+    if ((ARG_TYPE (arg_node) != NULL) && (global.compiler_phase > PH_typecheck)) {
         ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
     }
 #endif
@@ -258,7 +261,7 @@ TNTvardec (node *arg_node, info *arg_info)
     }
 
 #ifdef MWE_NTYPE_READY
-    if ((VARDEC_TYPE (arg_node) != NULL) && (compiler_phase > PH_typecheck))
+    if ((VARDEC_TYPE (arg_node) != NULL) && (global.compiler_phase > PH_typecheck))
         VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
 #endif
 
@@ -404,7 +407,7 @@ TNTarray (node *arg_node, info *arg_info)
     }
 
 #ifdef MWE_NTYPE_READY
-    if ((ARRAY_TYPE (arg_node) != NULL) && (compiler_phase > PH_typecheck))
+    if ((ARRAY_TYPE (arg_node) != NULL) && (global.compiler_phase > PH_typecheck))
         ARRAY_TYPE (arg_node) = FREEfreeAllTypes (ARRAY_TYPE (arg_node));
 #endif
 
@@ -645,14 +648,16 @@ TNTdoToNewTypes (node *syntax_tree)
 
     DBUG_PRINT ("OPT", ("start checking avis information"));
 
-    arg_info = MakeInfo ();
-    INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_FUNDEFS;
+    if (global.compiler_phase > PH_typecheck) {
+        arg_info = MakeInfo ();
+        INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_FUNDEFS;
 
-    TRAVpush (TR_tnt);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+        TRAVpush (TR_tnt);
+        syntax_tree = TRAVdo (syntax_tree, arg_info);
+        TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
+        arg_info = FreeInfo (arg_info);
+    }
 
     DBUG_RETURN (syntax_tree);
 }
@@ -674,20 +679,23 @@ TNTdoToNewTypesOneFunction (node *fundef)
 
     DBUG_ENTER ("TNTdoToNewTypesOneFunction");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "TNTdoToNewTypesOneFunction is used for fundef nodes only");
+    if (global.compiler_phase > PH_typecheck) {
 
-    if (!(FUNDEF_ISLACFUN (fundef))) {
-        DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
+        DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                     "TNTdoToNewTypesOneFunction is used for fundef nodes only");
 
-        arg_info = MakeInfo ();
-        INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_SPECIALS;
+        if (!(FUNDEF_ISLACFUN (fundef))) {
+            DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
 
-        TRAVpush (TR_tnt);
-        fundef = TRAVdo (fundef, arg_info);
-        TRAVpop ();
+            arg_info = MakeInfo ();
+            INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_SPECIALS;
 
-        arg_info = FreeInfo (arg_info);
+            TRAVpush (TR_tnt);
+            fundef = TRAVdo (fundef, arg_info);
+            TRAVpop ();
+
+            arg_info = FreeInfo (arg_info);
+        }
     }
 
     DBUG_RETURN (fundef);
@@ -710,19 +718,22 @@ TNTdoToNewTypesOneFundef (node *fundef)
 
     DBUG_ENTER ("TNTdoToNewTypesOneFundef");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "TNTdoToNewTypesOneFundef is used for fundef nodes only");
+    if (global.compiler_phase > PH_typecheck) {
 
-    DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
+        DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                     "TNTdoToNewTypesOneFundef is used for fundef nodes only");
 
-    arg_info = MakeInfo ();
-    INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_NONE;
+        DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
 
-    TRAVpush (TR_tnt);
-    fundef = TRAVdo (fundef, arg_info);
-    TRAVpop ();
+        arg_info = MakeInfo ();
+        INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_NONE;
 
-    arg_info = FreeInfo (arg_info);
+        TRAVpush (TR_tnt);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
+
+        arg_info = FreeInfo (arg_info);
+    }
 
     DBUG_RETURN (fundef);
 }
