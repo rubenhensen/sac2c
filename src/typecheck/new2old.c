@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/03/20 00:22:16  sbs
+ * NT2OTpart added.
+ * insertion of scalarised index vectors corrected for default partitions.
+ *
  * Revision 1.31  2005/01/14 12:31:57  cg
  * Converted error handling to ctinfo.c
  *
@@ -120,6 +124,7 @@
 #include "ctinfo.h"
 #include "internal_lib.h"
 #include "free.h"
+#include "DupTree.h"
 #include "shape.h"
 
 #include "traverse.h"
@@ -153,6 +158,7 @@
  *   INFO_NT2OT_FOLDFUNS   -   list of the generated fold funs
  *   INFO_NT2OT_LAST_LET   -   poiner to the last N_let node
  *   INFO_NT2OT_VARDECS    -   list of the generated vardecs
+ *   INFO_NT2OT_WLIDS      -   WITHID_VEC of first partition
  */
 
 /**
@@ -162,6 +168,7 @@ struct INFO {
     node *foldfuns;
     node *last_let;
     node *vardecs;
+    node *wlids;
 };
 
 /**
@@ -170,6 +177,7 @@ struct INFO {
 #define INFO_NT2OT_FOLDFUNS(n) (n->foldfuns)
 #define INFO_NT2OT_LAST_LET(n) (n->last_let)
 #define INFO_NT2OT_VARDECS(n) (n->vardecs)
+#define INFO_NT2OT_WLIDS(n) (n->wlids)
 
 /**
  * INFO functions
@@ -186,6 +194,7 @@ MakeInfo ()
     INFO_NT2OT_FOLDFUNS (result) = NULL;
     INFO_NT2OT_LAST_LET (result) = NULL;
     INFO_NT2OT_VARDECS (result) = NULL;
+    INFO_NT2OT_WLIDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -546,6 +555,32 @@ NT2OTlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *NT2OTpart( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NT2OTpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("NT2OTpart");
+
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    } else {
+        INFO_NT2OT_WLIDS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -566,11 +601,7 @@ NT2OTwithid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTwithid");
 
-    /*
-     * The following code will only work before explicit allocation
-     * where WITHID variables are given by N_ids nodes
-     */
-    if (NODE_TYPE (WITHID_VEC (arg_node)) == N_ids) {
+    if (INFO_NT2OT_WLIDS (arg_info) == NULL) {
         vec_type = AVIS_TYPE (IDS_AVIS (WITHID_VEC (arg_node)));
         vec_type = TYfixAndEliminateAlpha (vec_type);
 
@@ -589,12 +620,21 @@ NT2OTwithid (node *arg_node, info *arg_info)
                     new_ids = TBmakeIds (tmp_avis, new_ids);
                 }
                 WITHID_IDS (arg_node) = new_ids;
+                INFO_NT2OT_WLIDS (arg_info) = new_ids;
                 INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
             } else {
                 DBUG_PRINT ("NT2OT", ("no WITHID_IDS for %s built",
                                       IDS_NAME (WITHID_VEC (arg_node))));
             }
+        } else {
+            INFO_NT2OT_WLIDS (arg_info) = WITHID_IDS (arg_node);
         }
+    } else {
+        /**
+         * we are dealing with a default partition here => Duplicate those of the real
+         * one!
+         */
+        WITHID_IDS (arg_node) = DUPdoDupTree (INFO_NT2OT_WLIDS (arg_info));
     }
 
     DBUG_RETURN (arg_node);
