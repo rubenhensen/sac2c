@@ -113,3 +113,8 @@
 
 #define MAX_ERROR_MESSAGE_LENGTH 2000
 #define MAX_LINE_LENGTH 77
+
+#define SHP_SEG_SIZE 16
+#define MAX_MASK 7
+#define MAX_SONS 6
+
