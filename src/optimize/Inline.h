@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/03 14:13:02  dkr
+ * INL_NAIVE removed
+ *
  * Revision 3.5  2001/03/29 01:37:32  dkr
  * signature of InlineSingleApplication modified
  *
@@ -57,7 +60,6 @@
  * (parameter 'type' of InlineSingleApplication())
  */
 #define INL_COUNT 1
-#define INL_NAIVE 2
 
 extern node *Inline (node *arg_node);
 extern node *InlineSingleApplication (node *let, node *fundef, int type);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/04/03 14:12:49  dkr
+ * INL_NAIVE removed
+ *
  * Revision 3.10  2001/03/29 09:46:11  dkr
  * InlineSingleApplication: DBUG_ASSERTs added
  *
@@ -115,11 +118,7 @@ static int inline_nr = 0;
  *   char *CreateInlineName( char *old_name, node *arg_info)
  *
  * Description:
- *   Renames the given variable.
- *
- *   INFO_INL_TYPE & INL_NAIVE:
- *     a  ->  _inl_87
- *   otherwise:
+ *   Renames the given variable:
  *     a  ->  _inl100_a     if (inline_nr == 100) and (INLINE_PREFIX == "_inl")
  *
  ******************************************************************************/
@@ -131,16 +130,11 @@ CreateInlineName (char *old_name, node *arg_info)
 
     DBUG_ENTER ("CreateInlineName");
 
-    if (INFO_INL_TYPE (arg_info) & INL_NAIVE) {
-        new_name = TmpVar ();
-    } else {
-        new_name
-          = (char *)MALLOC (sizeof (char)
-                            * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
-                               NumberOfDigits (inline_nr) + 1));                /* '\0' */
+    new_name = (char *)MALLOC (sizeof (char)
+                               * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
+                                  NumberOfDigits (inline_nr) + 1)); /* '\0' */
 
-        sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
-    }
+    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
 
     DBUG_RETURN (new_name);
 }
@@ -265,8 +259,8 @@ InlineArg (node *arg_node, node *arg_info)
 {
     node *arg;
     node *new_ass;
-    node *new_vardec = NULL;
-    char *new_name = NULL;
+    node *new_vardec;
+    char *new_name;
 
     DBUG_ENTER ("InlineArg");
 
@@ -279,57 +273,27 @@ InlineArg (node *arg_node, node *arg_info)
     arg = EXPRS_EXPR (INFO_INL_ARG (arg_info));
 
     /*
-     * check whether an epilog assignment is needed
+     * build a new vardec based on 'arg_node' and rename it
      */
-    if (INFO_INL_TYPE (arg_info) == INL_NAIVE) {
-        if (NODE_TYPE (arg) == N_id) {
-            node *tmp = EXPRS_NEXT (INFO_INL_ARG (arg_info));
-            bool found_twice = FALSE;
+    new_vardec = MakeVardecFromArg (arg_node);
+    new_name = CreateInlineName (ARG_NAME (arg_node), arg_info);
+    FREE (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = new_name;
 
-            while (tmp != NULL) {
-                if ((NODE_TYPE (EXPRS_EXPR (tmp)) == N_id)
-                    && (!strcmp (ID_NAME (arg), ID_NAME (EXPRS_EXPR (tmp))))) {
-                    /*
-                     * current actual argument occurs twice in argument list
-                     *  -> epilog assignment needed
-                     */
-                    found_twice = TRUE;
-                }
+    /*
+     * insert new vardec into INFO_INL_VARDECS chain
+     */
+    VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
+    INFO_INL_VARDECS (arg_info) = new_vardec;
 
-                tmp = EXPRS_NEXT (tmp);
-            }
-
-            if (!found_twice) {
-                new_vardec = ID_VARDEC (arg);
-                new_name = ID_NAME (arg);
-            }
-        }
-    }
-
-    if (new_vardec == NULL) {
-        /*
-         * build a new vardec based on 'arg_node' and rename it
-         */
-        new_vardec = MakeVardecFromArg (arg_node);
-        new_name = CreateInlineName (ARG_NAME (arg_node), arg_info);
-        FREE (VARDEC_NAME (new_vardec));
-        VARDEC_NAME (new_vardec) = new_name;
-
-        /*
-         * insert new vardec into INFO_INL_VARDECS chain
-         */
-        VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
-        INFO_INL_VARDECS (arg_info) = new_vardec;
-
-        /*
-         * insert assignment
-         *   VARDEC_NAME( new_vardec) = arg;
-         * into INFO_INL_PROLOG
-         */
-        new_ass = MakeAssignLet (StringCopy (new_name), new_vardec, DupNode (arg));
-        ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
-        INFO_INL_PROLOG (arg_info) = new_ass;
-    }
+    /*
+     * insert assignment
+     *   VARDEC_NAME( new_vardec) = arg;
+     * into INFO_INL_PROLOG
+     */
+    new_ass = MakeAssignLet (StringCopy (new_name), new_vardec, DupNode (arg));
+    ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
+    INFO_INL_PROLOG (arg_info) = new_ass;
 
     /*
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
@@ -685,7 +649,6 @@ INLassign (node *arg_node, node *arg_info)
  *
  *   parameter 'type' is a bit field:
  *     INL_COUNT: increment 'inline_nr'
- *     INL_NAIVE: do inlining naively
  *
  *   Example for inlining:
  *
@@ -704,7 +667,7 @@ INLassign (node *arg_node, node *arg_info)
  *     R_0, R_1, ... = fun( A_0, A_1, ...);
  *     ...
  *
- *   Normal inlining:
+ *   After inlining:
  *
  *     type _inl_l_?;
  *
@@ -714,21 +677,6 @@ INLassign (node *arg_node, node *arg_info)
  *                                                    l_? -> _inl_l_?
  *
  *     R_? = _inl_r_?;     <-- prolog assignments
- *
- *   Naive inlining (possible only in some special cases, e.g. inlining of
- *   dummy functions):
- *
- *     type _inl_l_?;
- *
- *     _inl_a_i = A_i;     <-- epilog assignments; needed only iff
- *                             (A_i != N_id) or (exists j>i: A_j == A_i)
- *
- *     [...]               <-- renamed function body: a_? -> A_?
- *                                                    a_i -> _inl_a_i  (epilog)
- *                                                    l_? -> _inl_l_?
- *
- *     R_i = _inl_?_i;     <-- prolog assignments; needed only iff
- *                             (! (r_i -> R_i))
  *
  ******************************************************************************/
 
