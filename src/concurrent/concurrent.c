@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/06/25 08:04:18  cg
+ * sequence of fundefs will now be reordered so that spmd-functions
+ * appear before the original functions they are lifted from.
+ *
  * Revision 1.2  1998/06/23 12:56:32  cg
  * added handling of new attribute NWITH2_MT
  *
@@ -122,6 +126,8 @@ CONCmodul (node *arg_node, node *arg_info)
 node *
 CONCfundef (node *arg_node, node *arg_info)
 {
+    node *first_spmdfun, *last_spmdfun, *current_fun;
+
     DBUG_ENTER ("CONCfundef");
 
     INFO_SPMD_FUNDEF (arg_info) = arg_node;
@@ -240,6 +246,31 @@ CONCfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * For several purposes it is advantageous for the remaining compilation
+     * process to have the spmd-functions stored in front of the original function
+     * from which they have been lifted.
+     * Therefore, the sequence of N_fundef nodes is reordered at the end of this
+     * compiler phase.
+     */
+
+    if ((FUNDEF_STATUS (arg_node) != ST_spmdfun) && (FUNDEF_NEXT (arg_node) != NULL)
+        && (FUNDEF_STATUS (FUNDEF_NEXT (arg_node)) == ST_spmdfun)) {
+        current_fun = arg_node;
+        first_spmdfun = FUNDEF_NEXT (arg_node);
+        last_spmdfun = first_spmdfun;
+
+        while ((FUNDEF_NEXT (last_spmdfun) != NULL)
+               && (FUNDEF_STATUS (FUNDEF_NEXT (last_spmdfun)) == ST_spmdfun)
+               && (FUNDEF_LIFTEDFROM (FUNDEF_NEXT (last_spmdfun)) == arg_node)) {
+            last_spmdfun = FUNDEF_NEXT (last_spmdfun);
+        }
+
+        arg_node = first_spmdfun;
+        FUNDEF_NEXT (current_fun) = FUNDEF_NEXT (last_spmdfun);
+        FUNDEF_NEXT (last_spmdfun) = current_fun;
     }
 
     DBUG_RETURN (arg_node);
