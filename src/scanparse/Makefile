@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2001/11/15 15:18:35  sacbase
+# CLOCK_SKEW_ELIMINATION inserted.
+#
 # Revision 3.10  2001/11/15 15:12:46  sacbase
 # PROJECT_ROOT added
 #
@@ -66,18 +69,23 @@ all: y.tab.o lex.yy.o scnprs.o
 
 y.tab.o: y.tab.c
 	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) -o y.tab.o -c y.tab.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 lex.yy.o: lex.yy.c y.tab.h
 	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) -DYYLMAX=8192 -o lex.yy.o -c lex.yy.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 lex.yy.c: sac.l
 	$(LEX) sac.l
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 y.tab.c y.tab.h: sac.y 
 	$(YACC)  sac.y
+	$(CLOCK_SKEW_ELIMINATION) y.tab.c y.tab.h
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 clean:
