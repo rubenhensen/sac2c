@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/08 14:43:51  dkr
+ * LAC2FUNwithid() added
+ *
  * Revision 1.2  2000/02/03 17:29:40  dkr
  * conditions are lifted now correctly :)
  *
@@ -18,6 +21,7 @@ extern node *LAC2FUNfundef (node *arg_node, node *arg_info);
 extern node *LAC2FUNassign (node *arg_node, node *arg_info);
 extern node *LAC2FUNlet (node *arg_node, node *arg_info);
 extern node *LAC2FUNid (node *arg_node, node *arg_info);
+extern node *LAC2FUNwithid (node *arg_node, node *arg_info);
 extern node *LAC2FUNcond (node *arg_node, node *arg_info);
 extern node *LAC2FUNdo (node *arg_node, node *arg_info);
 extern node *LAC2FUNwhile (node *arg_node, node *arg_info);
