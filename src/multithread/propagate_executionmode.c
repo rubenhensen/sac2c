@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/08/06 17:20:24  skt
+ * some adaptions for creating the dataflowgraph
+ *
  * Revision 1.7  2004/08/06 12:49:43  skt
  * fixed a bug in UpdateCondExecmode
  *
@@ -325,12 +328,12 @@ PEMcond (node *arg_node, info *arg_info)
 
     if (COND_THEN (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into then-branch"));
-        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from then-branch"));
     }
     if (COND_ELSE (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into else-branch"));
-        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from else-branch"));
     }
 

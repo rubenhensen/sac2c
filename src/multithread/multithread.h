@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/08/06 17:20:24  skt
+ * some adaptions for creating the dataflowgraph
+ *
  * Revision 3.8  2004/08/06 13:02:16  skt
  * added FUNDEF_DATAFLOWGRAPH temporary
  *
@@ -56,31 +59,6 @@
 #define MUTH_EXCLUSIVE 1
 #define MUTH_SINGLE 2
 #define MUTH_MULTI 3
-
-/* definitions for the handling of a dataflowgraph
- *
- *   char*     DFGNAME            (name of the dataflownode; NOT substantial
- *                                 for the functionality, but helpful to print
- *                                 and understand the dataflowgraph)
- *   node*     DFGINNERASSIGNMENT (the corresponding assignment)
- *   node*     DFGOUTERASSIGNMENT (the assignment in the list of assignments,
- *                                 that has to be taken for rearranging the
- *                                 list. Usually the same as INNERASSIGNMENT,
- *                                 but neccessary to handle EX-/ST-/MT-cells
- *                                 see CDFGassign for details)
- *   int       DFGEXECUTIONMODE   (some info about the execution of the
- *                                 corresponding assignment;
- *                                 any-, exclusive-, single- or multithreaded)
- *   nodelist* DFGDEPENDENT       (list of (dataflow-) nodes that depend on
- *                                 this node)
- */
-#define INFO_MUTH_DFGNAME(n) ((char *)(n->dfmask[1]))
-#define INFO_MUTH_DFGINNERASSIGN(n) (n->node[0])
-#define INFO_MUTH_DFGOUTERASSIGN(n) (n->node[1])
-#define INFO_MUTH_DFGEXECUTIONMODE(n) (n->flag)
-#define INFO_MUTH_DFGNODEREFCOUNT(n) (n->refcnt)
-#define INFO_MUTH_DFGDEPENDENT(n) ((nodelist *)(n->dfmask[0]))
-#define FUNDEF_DATAFLOWGRAPH(n) ((node *)(n->dfmask[1]))
 
 extern node *BuildMultiThread (node *syntax_tree);
 
