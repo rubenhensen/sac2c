@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.3  1999/02/26 14:24:48  dkr
+# include path changed
+#
 # Revision 2.2  1999/02/26 14:17:43  dkr
 # make deps done
 #
@@ -14,9 +17,6 @@
 #
 # Revision 1.19  1998/03/04 00:11:05  dkr
 # 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.18  1998/02/05 17:08:43  dkr
-# make deps done
 #
 # Revision 1.17  1997/11/20 15:02:11  dkr
 # make deps done
@@ -33,9 +33,6 @@
 # ArrayElimination.o included in clean-line
 #
 # Revision 1.10  1996/02/16  09:46:57  sbs
-# make deps done
-#
-# Revision 1.9  1996/01/18  13:05:44  asi
 # make deps done
 #
 # Revision 1.8  1996/01/17  14:19:52  asi
@@ -60,7 +57,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules
+INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules -I../print
 
 all: index.o psi-opt.o ArrayElimination.o tile_size_inference.o \
      WithloopFolding.o WLT.o WLI.o WLF.o
