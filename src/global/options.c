@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/11/21 19:25:48  sbs
+ * mt code generation on MACs disabled 8-(
+ *
  * Revision 3.15  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -845,6 +848,16 @@ CheckOptionConsistency ()
         num_threads = 1;
         SYSWARN (("Code generation for multi-threaded program execution not"
                   " yet available for DEC-alpha.\n"
+                  "Code for sequential execution generated instead"));
+    }
+#endif
+
+#ifdef SAC_FOR_OSX_MAC
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+        gen_mt_code = GEN_MT_NONE;
+        num_threads = 1;
+        SYSWARN (("Code generation for multi-threaded program execution not"
+                  " yet available for MACs.\n"
                   "Code for sequential execution generated instead"));
     }
 #endif
