@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2002/09/03 12:06:19  dkr
+ * CompareTypesImplementation(): comment corrected
+ *
  * Revision 3.69  2002/09/03 11:09:19  dkr
  * CompareTypesImplementation() modified
  *
@@ -793,10 +796,11 @@ GetBasetypeSize (types *type)
  *   compares two types for having the equal implementation types (resolving
  *   user defined types) - that means double[2] and Complex are equal!
  *
- *   res ==  0:  t1 == t2
- *   res == -1:  t1 <  t2
- *   res ==  1:  t1 >  t2
- *   res ==  2:  t1 != t2
+ *   return value:
+ *     (t1 == t2)   ->   0
+ *     (t1 <  t2)   ->  -1
+ *     (t1 >  t2)   ->   1
+ *     (t1 != t2)   ->   2
  *
  ******************************************************************************/
 
@@ -808,7 +812,7 @@ CompareTypesImplementation (types *t1, types *t2)
     int shpdim1, shpdim2;
     int dim;
 
-    DBUG_ENTER ("CompareTypes");
+    DBUG_ENTER ("CompareTypesImplementation");
 
     DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)),
                  "CompareTypesImplementation() called with NULL type");
