@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/09 12:26:30  nmw
+ * DoUnrollFold uses the correct result id of each part when unrolling
+ * a multigenerator withloop
+ *
  * Revision 3.7  2001/05/07 09:03:44  nmw
  * when used in ssa optimizations no masks are used
  *
@@ -890,7 +894,7 @@ DoUnrollFold (node *wln, node *arg_info)
         opfun = CreateFold;
         arg[0] = partn;                                               /* N_Npart node */
         arg[1] = LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))); /* (ids*)  */
-        arg[2] = NWITH_CEXPR (wln);                                   /* (node*) */
+        arg[2] = NCODE_CEXPR (NPART_CODE (partn));                    /* (node*) */
         arg[3] = NWITH_WITHOP (wln);                                  /* N_Nwithop node */
         arg[4] = INFO_UNR_FUNDEF (arg_info);                          /* N_fundef node */
         opfunarg = arg;
