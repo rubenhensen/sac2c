@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/17 16:25:58  cg
+ * Reorganized initialization of the runtime system for
+ * multithreaded program execution.
+ *
  * Revision 2.11  1999/11/18 10:13:29  jhs
  * Added a very special volatile ...
  *
@@ -124,7 +128,29 @@
  ***   Definitions and declarations for the multi-threaded runtime system
  ***/
 
+#ifndef SAC_SET_MAX_SYNC_FOLD
+#define SAC_SET_MAX_SYNC_FOLD 0
+#endif
+
+#ifndef SAC_SET_CACHE_1_LINE
+#define SAC_SET_CACHE_1_LINE 0
+#endif
+
+#ifndef SAC_SET_CACHE_2_LINE
+#define SAC_SET_CACHE_2_LINE 0
+#endif
+
+#ifndef SAC_SET_CACHE_3_LINE
+#define SAC_SET_CACHE_3_LINE 0
+#endif
+
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199506L
+#endif
+
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
 
 #include <pthread.h>
 
@@ -143,9 +169,9 @@ typedef union {
         volatile float result_float;
         volatile double result_double;
         volatile char result_char;
-        /* volatile */ void *result_array;
+        volatile void *result_array;
         volatile arrayrc_t result_array_rc;
-        /* volatile */ void *result_hidden;
+        volatile void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
 
@@ -232,17 +258,8 @@ typedef union {
     SAC_MT_DEFINE_BARRIER ()                                                             \
     SAC_MT_DEFINE_SPMD_FRAME ()
 
-#if SAC_MT_CACHE_LINE_MAX()
-
 #define SAC_MT_DEFINE_BARRIER()                                                          \
-    static volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
-
-#else /* SAC_MT_CACHE_LINE_MAX() */
-
-#define SAC_MT_DEFINE_BARRIER()                                                          \
-    static volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX];
-
-#endif /* SAC_MT_CACHE_LINE_MAX() */
+    volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
 
 #define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
     static volatile union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
@@ -286,76 +303,20 @@ typedef union {
  *  runtime system.
  */
 
+#if SAC_DO_TRACE_MT
+#define SAC_MT_SETUP_INITIAL()                                                           \
+    SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
+#else
+#define SAC_MT_SETUP_INITIAL()                                                           \
+    SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
+#endif
+
+#if SAC_DO_TRACE_MT
 #define SAC_MT_SETUP()                                                                   \
-    {                                                                                    \
-        SAC_MT_SETUP_TRACE ();                                                           \
-        SAC_MT_SETUP_BARRIER ();                                                         \
-        SAC_MT_SETUP_NUMTHREADS ();                                                      \
-        SAC_MT_SETUP_MASTERCLASS ();                                                     \
-        SAC_MT_SETUP_PTHREAD ();                                                         \
-        SAC_MT_SETUP_MASTER ();                                                          \
-    }
-
-#define SAC_MT_SETUP_PTHREAD()                                                           \
-    if (SAC_MT_THREADS () > 1) {                                                         \
-        pthread_t tmp;                                                                   \
-        if (0 != pthread_attr_init (&SAC_MT_thread_attribs))                             \
-            SAC_RuntimeError ("Multi Thread Error: could not initialize attributes");    \
-        if (0 != pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM))   \
-            SAC_RuntimeError (                                                           \
-              "Multi Thread Error: could not set scope to PTHREAD_SCOPE_SYSTEM");        \
-        if (0                                                                            \
-            != pthread_attr_setdetachstate (&SAC_MT_thread_attribs,                      \
-                                            PTHREAD_CREATE_DETACHED))                    \
-            SAC_RuntimeError ("Multi Thread Error: could not set detachstate to "        \
-                              "PTHREAD_CREATE_DETACHED");                                \
-        SAC_TR_MT_PRINT (("Creating worker thread #1 of class 0"));                      \
-        if (0                                                                            \
-            != pthread_create (&tmp, &SAC_MT_thread_attribs,                             \
-                               (void *(*)(void *))THREAD_CONTROL (), NULL))              \
-            SAC_RuntimeError ("Multi Thread Error: could not create worker thread #1");  \
-    }
-
-#if SAC_DO_TRACE_MT
-#define THREAD_CONTROL() SAC_TRMT_ThreadControl
-#else /* SAC_DO_TRACE_MT */
-#define THREAD_CONTROL() SAC_MT_ThreadControl
-#endif /* SAC_DO_TRACE_MT */
-
-#if SAC_MT_CACHE_LINE_MAX()
-
-#define SAC_MT_SETUP_BARRIER()                                                           \
-    {                                                                                    \
-        SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)         \
-                                              - ((unsigned long int)SAC_MT_barrier_space \
-                                                 % SAC_MT_BARRIER_OFFSET ()));           \
-                                                                                         \
-        SAC_TR_MT_PRINT (("Barrier base address is %p", SAC_MT_barrier));                \
-    }
-
-#else /* SAC_MT_CACHE_LINE_MAX() */
-
-#define SAC_MT_SETUP_BARRIER()                                                           \
-    {                                                                                    \
-        SAC_MT_barrier = SAC_MT_barrier_space;                                           \
-        SAC_TR_MT_PRINT (("Barrier base address is %p", SAC_MT_barrier));                \
-    }
-
-#endif /* SAC_MT_CACHE_LINE_MAX() */
-
-#if SAC_DO_TRACE_MT
-
-#define SAC_MT_SETUP_TRACE()                                                             \
-    {                                                                                    \
-        pthread_key_create (&SAC_TRMT_threadid_key, NULL);                               \
-        pthread_setspecific (SAC_TRMT_threadid_key, &SAC_TRMT_master_id);                \
-    }
-
-#else /* SAC_DO_TRACE_MT */
-
-#define SAC_MT_SETUP_TRACE()
-
-#endif /* SAC_DO_TRACE_MT */
+    SAC_MT_TR_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET ());
+#else
+#define SAC_MT_SETUP() SAC_MT_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET ());
+#endif
 
 /*
  *  Definition of macro implemented ICMs for handling of spmd-function
@@ -392,6 +353,10 @@ typedef union {
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
+
+#define SAC_MT_DETERMINE_THREAD_ID()                                                     \
+    const unsigned int SAC_MT_mythread                                                   \
+      = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
 
 #define SAC_MT_SPMD_SPECIAL_FRAME(spmdname)                                              \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().##spmdname
@@ -697,16 +662,38 @@ typedef union {
 #endif /* 0 */
 
 /*
- *  Declarations of global variables and functions defined in libsac_mt.c
+ * Definition of macros implementing a general locking mechanism
+ */
+
+#define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER
+
+#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name
+
+#define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name)
+
+#define SAC_MT_RELEASE_LOCK(name) pthread_mutex_unlock (&name)
+/*
+ * Warning:
+ *
+ * At least on Solaris 2.5 - 2.7 the static initialization of mutex locks causes
+ * warnings upon compilation. The reason is that in the corresponding file
+ * pthread.h, the definition of PTHREAD_MUTEX_INITIALIZER does NOT fit the
+ * type definition of pthread_mutex_t.
+ *
+ * However, so far it works  :-)))
+ */
+
+/*
+ *  Declarations of global variables and functions defined in libsac/mt.c
  */
 
 extern pthread_attr_t SAC_MT_thread_attribs;
 
-extern SAC_MT_barrier_t *SAC_MT_barrier;
+extern volatile SAC_MT_barrier_t *SAC_MT_barrier;
 
 extern volatile unsigned int SAC_MT_master_flag;
 
-extern unsigned int SAC_MT_not_yet_parallel;
+extern volatile unsigned int SAC_MT_not_yet_parallel;
 
 extern unsigned int SAC_MT_masterclass;
 
@@ -715,21 +702,24 @@ extern unsigned int SAC_MT_threads;
 extern volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int,
                                                       const unsigned int, unsigned int);
 
-extern void SAC_MT_ThreadControl (void *arg);
+extern void SAC_MT_Setup (int cache_line_max, int barrier_offset);
+extern void SAC_MT_TR_Setup (int cache_line_max, int barrier_offset);
+
+extern void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
+                                 unsigned int max_threads);
+
+extern void SAC_MT_TR_SetupInitial (int argc, char *argv[], unsigned int num_threads,
+                                    unsigned int max_threads);
 
 extern int atoi (const char *str);
 
-#if SAC_DO_TRACE_MT
+extern pthread_key_t SAC_MT_threadid_key;
 
-extern void SAC_TRMT_ThreadControl (void *arg);
+extern unsigned int SAC_MT_master_id;
 
-extern pthread_mutex_t SAC_TRMT_array_memcnt_lock;
-extern pthread_mutex_t SAC_TRMT_hidden_memcnt_lock;
+SAC_MT_DECLARE_LOCK (SAC_MT_output_lock);
 
-extern pthread_key_t SAC_TRMT_threadid_key;
-extern const unsigned int SAC_TRMT_master_id;
-
-#endif /* SAC_DO_TRACE_MT */
+SAC_MT_DECLARE_LOCK (SAC_MT_init_lock);
 
 /*****************************************************************************/
 
@@ -744,25 +734,6 @@ extern const unsigned int SAC_TRMT_master_id;
 
 #define SAC_MT_MASTERCLASS() SAC_SET_MASTERCLASS
 
-#define SAC_MT_SETUP_NUMTHREADS()                                                        \
-    {                                                                                    \
-        SAC_MT_threads = SAC_SET_THREADS;                                                \
-    }
-
-#define SAC_MT_SETUP_MASTERCLASS()                                                       \
-    {                                                                                    \
-        SAC_MT_masterclass = SAC_SET_MASTERCLASS;                                        \
-    }
-
-#define SAC_MT_SETUP_MASTER()                                                            \
-    {                                                                                    \
-        unsigned int i;                                                                  \
-                                                                                         \
-        for (i = 1; i <= SAC_SET_MASTERCLASS; i <<= 1) {                                 \
-            SAC_MT_CLEAR_BARRIER (i);                                                    \
-        }                                                                                \
-    }
-
 /*****************************************************************************/
 
 #else /* SAC_DO_THREADS_STATIC */
@@ -776,38 +747,6 @@ extern const unsigned int SAC_TRMT_master_id;
 
 #define SAC_MT_MASTERCLASS() SAC_MT_masterclass
 
-#define SAC_MT_SETUP_NUMTHREADS()                                                        \
-    {                                                                                    \
-        unsigned int i;                                                                  \
-                                                                                         \
-        for (i = 1; i < __argc - 1; i++) {                                               \
-            if ((__argv[i][0] == '-') && (__argv[i][1] == 'm') && (__argv[i][2] == 't')  \
-                && (__argv[i][3] == '\0')) {                                             \
-                SAC_MT_threads = atoi (__argv[i + 1]);                                   \
-                break;                                                                   \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        if ((SAC_MT_threads <= 0) || (SAC_MT_threads > SAC_SET_THREADS_MAX)) {           \
-            SAC_RuntimeError (                                                           \
-              "Number of threads is unspecified or exceeds legal range (1 to %d).\n"     \
-              "    Use option '-mt <num>'.",                                             \
-              SAC_SET_THREADS_MAX);                                                      \
-        }                                                                                \
-    }
-
-#define SAC_MT_SETUP_MASTERCLASS()                                                       \
-    {                                                                                    \
-        for (SAC_MT_masterclass = 1; SAC_MT_masterclass < SAC_MT_threads;                \
-             SAC_MT_masterclass <<= 1) {                                                 \
-            SAC_MT_CLEAR_BARRIER (SAC_MT_masterclass);                                   \
-        }                                                                                \
-                                                                                         \
-        SAC_MT_masterclass >>= 1;                                                        \
-    }
-
-#define SAC_MT_SETUP_MASTER()
-
 #endif /* SAC_DO_THREADS_STATIC */
 
 /*****************************************************************************/
@@ -820,7 +759,10 @@ extern const unsigned int SAC_TRMT_master_id;
 
 #define SAC_MT_THREADS() 1
 
+#define SAC_MT_MYTHREAD() 0
+
 #define SAC_MT_SETUP()
+#define SAC_MT_SETUP_INITIAL()
 
 #define SAC_MT_DEFINE()
 
@@ -833,6 +775,14 @@ extern const unsigned int SAC_TRMT_master_id;
 #define SAC_MT_DEFINE_ARG_BUFFER_ENTRY_END(name)
 
 #define SAC_MT_DEFINE_ARG_BUFFER_ENTRY_ITEM(type, item)
+
+#define SAC_MT_DEFINE_LOCK(name)
+
+#define SAC_MT_DECLARE_LOCK(name)
+
+#define SAC_MT_ACQUIRE_LOCK(name)
+
+#define SAC_MT_RELEASE_LOCK(name)
 
 /*****************************************************************************/
 
