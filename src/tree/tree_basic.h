@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.192  2004/07/01 12:31:05  skt
+ * FUNDEF_EXECMODE corrected
+ *
  * Revision 3.191  2004/07/01 12:29:21  skt
  * FUNDEF_EXECMODE added
  *
@@ -1295,7 +1298,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
 
 /* multithreading: */
-#define FUNDEF_EXDECMODE(n) (n->lineno)
+#define FUNDEF_EXECMODE(n) (n->lineno)
 /* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
