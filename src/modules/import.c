@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/10/26 16:13:25  cg
+ * Revision 1.27  1995/10/31 09:41:02  cg
+ * Now, SIB information will be retrieved for functions which themselves
+ * are only needed by other imported inline functions.
+ *
+ * Revision 1.26  1995/10/26  16:13:25  cg
  *  new function ImportOwnDeclaration used to check the declaration file
  * when compiling a module/class implementation.
  * error messages improved.
@@ -1509,7 +1513,7 @@ EnsureExistTypes (node *type, node *modul)
 nodelist *
 EnsureExistFuns (node *fundef, node *modul)
 {
-    node *find_fun, *next;
+    node *find_fun, *next, *last;
     nodelist *funlist = NULL;
 
     DBUG_ENTER ("EnsureExistFuns");
@@ -1517,7 +1521,10 @@ EnsureExistFuns (node *fundef, node *modul)
     while (fundef != NULL) /* search function */
     {
         find_fun = modul->node[2];
+        last = find_fun;
+
         while ((find_fun != NULL) && (!CMP_FUNDEF (fundef, find_fun))) {
+            last = find_fun;
             find_fun = find_fun->node[1];
         }
 
@@ -1527,12 +1534,17 @@ EnsureExistFuns (node *fundef, node *modul)
         {
             find_fun = fundef;
 
-            find_fun->node[1] = modul->node[2];
+            find_fun->node[1] = NULL;
+            find_fun->nnode = 1;
 
             FUNDEF_NEEDOBJS (find_fun) = EnsureExistObjects (find_fun->node[4], modul);
 
-            find_fun->nnode = (modul->node[2] == NULL) ? 1 : 2;
-            modul->node[2] = find_fun;
+            if (modul->node[2] == NULL) {
+                modul->node[2] = find_fun;
+            } else {
+                last->nnode += 1;
+                last->node[1] = find_fun;
+            }
 
             /*
                   if (FindModul(fundef->ID_MOD) == NULL)
