@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2003/09/20 14:17:10  dkr
+ * some CAT?? macros added
+ *
  * Revision 3.8  2002/11/26 00:17:56  dkr
  * several superfluous concat-operators removed in macro definitions
  *
@@ -192,6 +195,15 @@
 
 #define CAT19(x, y) xCAT19 (x, y)
 #define xCAT19(x, y) x##y
+
+#define CAT20(x, y) xCAT20 (x, y)
+#define xCAT20(x, y) x##y
+
+#define CAT21(x, y) xCAT21 (x, y)
+#define xCAT21(x, y) x##y
+
+#define CAT22(x, y) xCAT22 (x, y)
+#define xCAT22(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (a)
