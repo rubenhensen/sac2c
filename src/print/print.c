@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2001/04/26 09:23:36  dkr
+ * DoPrintAST: minor modifications done
+ *
  * Revision 3.54  2001/04/26 01:39:51  dkr
  * some minor changes done
  *
@@ -4065,9 +4068,10 @@ DoPrintIdsAST (ids *vars, bool print_status)
         if (IDS_VARDEC (vars) != NULL) {
             DoPrintTypesAST (IDS_TYPE (vars), TRUE);
             PRINT_POINTER_BRACKETS (outfile, IDS_VARDEC (vars));
-
-            fprintf (outfile, " ");
+        } else {
+            fprintf (outfile, "/*no decl*/");
         }
+        fprintf (outfile, " ");
 
         PRINT_STRING (outfile, IDS_NAME (vars));
 
@@ -4436,9 +4440,10 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             if (ID_VARDEC (arg_node) != NULL) {
                 DoPrintTypesAST (ID_TYPE (arg_node), TRUE);
                 PRINT_POINTER_BRACKETS (outfile, ID_VARDEC (arg_node));
-
-                fprintf (outfile, " ");
+            } else {
+                fprintf (outfile, "/*no decl*/");
             }
+            fprintf (outfile, " ");
 
             PRINT_STRING (outfile, ID_NAME (arg_node));
 
