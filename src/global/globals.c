@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/03/16 14:28:25  dkr
+ * do_lac_fun_transformation replaced by do_lac2fun, do_fun2lac
+ * phase_info.mac used
+ *
  * Revision 2.25  2000/03/02 18:50:04  cg
  * Added new option -lac2fun that activates lac2fun conversion and
  * vice versa between psi optimizations and precompiling.
@@ -89,7 +93,6 @@
  *
  * Revision 1.1  1998/02/25 09:10:20  cg
  * Initial revision
- *
  *
  */
 
@@ -409,62 +412,33 @@ char break_specifier[MAX_BREAK_SPECIFIER] = "";
  *  glorious SAC2C compile time information system
  */
 
-int errors = 0;
-/* counter for number of errors   */
+int errors = 0; /* counter for number of errors   */
 
-int warnings = 0;
-/* counter for number of warnings */
+int warnings = 0; /* counter for number of warnings */
 
 #ifdef PRODUCTION
-int verbose_level = 1;
-#else  /* PRODUCTION */
+int verbose_level = 1; /* controls compile time output   */
+#else                  /* PRODUCTION */
 int verbose_level = 3;
-#endif /* PRODUCTION */
-       /* controls compile time output   */
+#endif                 /* PRODUCTION */
 
-compiler_phase_t compiler_phase = PH_setup;
-/* counter for compilation phases */
+compiler_phase_t compiler_phase = PH_setup; /* counter for compilation phases */
 
 int message_indent = 0;  /* used for formatting compile time output */
 int last_indent = 0;     /* used for formatting compile time output */
 int current_line_length; /* used for formatting compile time output */
 
-char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 /* buffer for generating formatted message */
+char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 
-int linenum = 1;
-/* current line number */
+int linenum = 1; /* current line number */
 
-char *filename;
-/* current file name */
+char *filename; /* current file name */
 
-char *compiler_phase_name[] = {"",
-                               "Setting up sac2c compiler environment",
-                               "Loading SAC program",
-                               "Resolving imports from modules and classes",
-                               "Checking required libraries",
-                               "Generating generic types and functions",
-                               "Simplifying source code",
-                               "Running type inference system",
-                               "Checking module/class declaration file",
-                               "Resolving implicit types",
-                               "Analysing functions and global objects",
-                               "Generating SAC-Information-Block",
-                               "Resolving global objects and reference parameters",
-                               "Checking uniqueness property of objects",
-                               "Generating purely functional code",
-                               "Running SAC optimizations",
-                               "Running PSI optimizations",
-                               "Running reference count inference system",
-                               "Transforming with-loop representation",
-                               "Generating SPMD- and SYNC-regions",
-                               "Preparing C code generation",
-                               "Generating C code",
-                               "Creating C file",
-                               "Invoking C compiler",
-                               "Creating SAC library",
-                               "Writing dependencies to stdout",
-                               "Unknown compiler phase"};
+#define PH_SELtext(it_text) it_text
+char *compiler_phase_name[PH_final + 1] = {
+#include "phase_info.mac"
+};
 
 /*
  * DBug options
@@ -478,7 +452,21 @@ char *my_dbug_str = NULL;
 #ifdef SHOW_MALLOC
 int malloc_align_step;
 #endif
-int do_lac_fun_conversion = 0;
+
+/*
+ * lac2fun, fun2lac conversion
+ */
+
+/* (do_lac2fun[i] > 0): do lac2fun conversion before phase i */
+#define PH_SELlac2fun(it_lac2fun) it_lac2fun
+int do_lac2fun[PH_final + 1] = {
+#include "phase_info.mac"
+};
+/* (do_fun2lac[i] > 0): do fun2lac conversion after phase i */
+#define PH_SELfun2lac(it_fun2lac) it_fun2lac
+int do_fun2lac[PH_final + 1] = {
+#include "phase_info.mac"
+};
 
 /*
  * Memory counters
