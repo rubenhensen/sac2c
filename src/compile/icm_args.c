@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/05/04 11:42:34  sbs
+ * Revision 1.4  1995/05/24 15:17:26  sbs
+ * one more DBUG_ASSERT
+ *
+ * Revision 1.3  1995/05/04  11:42:34  sbs
  * trf inserted in ICM-macros
  *
  * Revision 1.2  1995/04/03  13:58:57  sbs
@@ -35,6 +38,7 @@
     {                                                                                    \
         int i, num;                                                                      \
         v = (char **)malloc (sizeof (char *) * dim);                                     \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
         for (i = 0; i < dim; i++)                                                        \
             switch (ex->node[0]->nodetype) {                                             \
             case N_id:                                                                   \
