@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/08/06 18:35:12  srs
+ * removed comments (cleanup)
+ *
  * Revision 1.70  1998/07/23 10:02:46  srs
  * fixed bug from version 1.69 again
  *
@@ -736,7 +739,7 @@ CFid (node *arg_node, node *arg_info)
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
             INC_VAR (ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), ID_VARNO (arg_node));
-            cf_expr++; /* srs: notice this action of CF, too. */
+            cf_expr++;
             break;
         case N_num:
         case N_float:
@@ -746,7 +749,7 @@ CFid (node *arg_node, node *arg_info)
             DEC_VAR (INFO_USE, ID_VARNO (arg_node));
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
-            cf_expr++; /* srs: notice this action of CF, too. */
+            cf_expr++;
             break;
         case N_prf:
         case N_array:
@@ -2102,11 +2105,9 @@ ArrayPrf (node *arg_node, node *arg_info)
          * constant array and we know that shape points to that
          * N_array-node.
          */
-        /*
-         * Substitute array
-         */
-        /* srs: part to enable folding arrays that are modified with
+        /* ths following procedure substitutes arrays that are modified with
          * prf modarray.
+         *
          * NOTE here, that this is NOT identical to CF for F_modarray
          * itself!!
          * Example:
@@ -2195,7 +2196,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
             MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), INFO_VARNO);
             FreeTree (arg_node);
-            /* srs: arg_info is modified within GenMasks. As least ->mask[0],
+            /* srs: arg_info is modified within GenMasks. At least ->mask[0],
                mask[1], nodetype and node[2]. Is this intended to happen? */
             arg_node = GenerateMasks (res_array, arg_info);
             cf_expr++;
