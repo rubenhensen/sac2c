@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.23  2004/11/23 19:56:28  ktr
+  Added ARG_ISARTIFICIAL
+
   Revision 1.22  2004/11/23 19:46:27  sbs
   traversal TS added.
 
@@ -269,7 +272,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="EMFRC" name="Filter Ref Counting" default="sons" include="filterrc.h" >
+      <traversal id="EMFRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
         <travuser>
           <node name="Ap" />
           <node name="Arg" />
@@ -500,7 +503,7 @@
       </traversal>
     </phase>
     <phase id="refcnt" name="Introducing explicit allocation instructions" >
-      <traversal id="EMRCO" name="RC Optimizations" default="sons" include="rcopt.h" >
+      <traversal id="EMRCO" name="Reference counting optimizations" default="sons" include="rcopt.h" >
         <travuser>
           <node name="Assign" />
           <node name="Block" />
@@ -516,7 +519,7 @@
         <traverror>
         </traverror>
       </traversal>
-      <traversal id="EMRC" name="Reference Counting Analysis" default="sons" include="refcounting.h" >
+      <traversal id="EMRC" name="Reference Counting Inference" default="sons" include="refcounting.h" >
         <travuser>
           <node name="Ap" />
           <node name="Arg" />
@@ -1148,6 +1151,7 @@
       <flags>
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
+        <flag name="IsArtificial" />
       </flags>
     </node>
     <node name="Block">
