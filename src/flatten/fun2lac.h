@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/03/04 21:21:42  cg
+ * Removed various traversal functions.
+ *
  * Revision 3.3  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
- * ,.
  *
  * Revision 3.2  2004/07/16 17:36:23  sah
  * switch to new INFO structure
@@ -35,13 +37,10 @@
  *   header file for fun2lac.c.
  *
  *****************************************************************************/
+
 extern node *F2LdoFun2Lac (node *syntax_tree);
 
 extern node *F2Lmodule (node *arg_node, info *arg_info);
 extern node *F2Lfundef (node *arg_node, info *arg_info);
-extern node *F2Lblock (node *arg_node, info *arg_info);
-extern node *F2Lassign (node *arg_node, info *arg_info);
-extern node *F2Llet (node *arg_node, info *arg_info);
-extern node *F2Lap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FUN2LAC_H_ */
