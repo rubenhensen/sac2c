@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/04/30 12:24:58  nmw
+ * comments corrected
+ *
  * Revision 1.7  2001/03/29 08:45:37  nmw
  * tabs2spaces done
  *
@@ -439,7 +442,7 @@ CMPTNcode (node *arg_node, node *arg_info)
  *
  * description:
  *   dummy function for all node types with missing implementation.
- *   sets compare-result to CMPT_UNKWN.
+ *   sets compare-result to CMPT_NEQ.
  *
  ******************************************************************************/
 node *
@@ -601,7 +604,6 @@ CMPTnodeType (node *arg_node, node *arg_info)
  *   the result is
  *        CMPT_EQ: tree1 == tree2 (means same operations, values and variables)
  *       CMPT_NEQ: tree1 != tree2 (at least one difference between the trees)
- *     CMPT_UNKNW: tree1 ?? tree2 (at least one unknown node in tree)
  *
  ******************************************************************************/
 cmptree_t

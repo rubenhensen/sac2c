@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/04/30 12:24:58  nmw
+ * comments corrected
+ *
  * Revision 1.4  2001/03/20 14:22:50  nmw
  * CMPTarray added, checks for equal types, too
  *
@@ -26,6 +29,10 @@
  *   this module implements a literal tree compare for two given parts of
  *   the ast. it compares for equal structre, identifiers and values.
  *   this modules is used by SSACSE to find common subexpressions.
+ *
+ * returns:
+ *    CMPT_EQ     tree1 == tree2
+ *    CMPT_NEQ    tree1 != tree2 (or some unsupported nodes in tree)
  *
  * remarks:
  *   identifier are compared by their avis pointers.
