@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 17:45:07  ktr
+ * COMPILES!
+ *
  * Revision 1.4  2004/11/23 17:38:25  jhb
  * compile
  *
@@ -69,9 +72,7 @@ EMSRStaticReuse (node *syntax_tree)
     DBUG_PRINT ("EMSR", ("Starting static reuse inference"));
 
     TRAVpush (TR_emsr);
-
     syntax_tree = TRAVdo (syntax_tree, NULL);
-
     TRAVpop ();
 
     DBUG_PRINT ("EMSR", ("Static reuse inference complete"));
