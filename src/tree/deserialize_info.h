@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/21 12:48:08  sah
+ * removed some old ast info
+ *
  * Revision 1.4  2004/11/14 15:26:05  sah
  * implemented support for udts
  *
@@ -29,6 +32,7 @@ struct INFO {
     node *fundefs;
     node *fundecs;
     node *typedefs;
+    node *objdefs;
     node *vardecs;
     node *args;
 };
@@ -42,6 +46,7 @@ struct INFO {
 #define INFO_DS_FUNDEFS(n) (n->fundefs)
 #define INFO_DS_FUNDECS(n) (n->fundecs)
 #define INFO_DS_TYPEDEFS(n) (n->typedefs)
+#define INFO_DS_OBJDEFS(n) (n->objdefs)
 #define INFO_DS_VARDECS(n) (n->vardecs)
 #define INFO_DS_ARGS(n) (n->args)
 

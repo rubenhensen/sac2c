@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2004/11/21 12:48:08  sah
+# removed some old ast info
+#
 # Revision 3.14  2004/10/04 17:18:29  sah
 # a different subset of files is compiled, depending
 # on the compiler version to create
@@ -77,10 +80,8 @@ INCS = -I../global -I../tree -I../../inc -I../compile -I../modules \
 
 OBJS :=
 
-ifeq ($(NEWAST),no)
-OBJS := print_interface.o map_cwrapper.o import_specialization.o \
-        print_interface_header.o print_interface_wrapper.o
-endif
+#OBJS := print_interface.o map_cwrapper.o import_specialization.o \
+        #print_interface_header.o print_interface_wrapper.o
 
 all: $(OBJS)
 

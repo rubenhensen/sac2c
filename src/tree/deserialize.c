@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/21 12:48:08  sah
+ * removed some old ast info
+ *
  * Revision 1.8  2004/11/17 19:50:13  sah
  * interface changes
  *
@@ -65,6 +68,7 @@ MakeInfo ()
     INFO_DS_FUNDEFS (result) = NULL;
     INFO_DS_FUNDECS (result) = NULL;
     INFO_DS_TYPEDEFS (result) = NULL;
+    INFO_DS_OBJDEFS (result) = NULL;
     INFO_DS_VARDECS (result) = NULL;
     INFO_DS_ARGS (result) = NULL;
 
@@ -128,6 +132,19 @@ InsertIntoState (node *item)
         CheckUdtAndSetBaseType (udt, NULL);
 
         INFO_DS_TYPEDEFS (DSstate) = AppendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
+        break;
+    case N_objdef:
+        /*
+         * reset the flags of the objdef
+         */
+        SET_FLAG (OBJDEF, item, IS_LOCAL, FALSE);
+        SET_FLAG (OBJDEF, item, IS_PROVIDED, FALSE);
+        SET_FLAG (OBJDEF, item, IS_EXPORTED, FALSE);
+
+        /*
+         * now insert it
+         */
+        INFO_DS_OBJDEFS (DSstate) = AppendObjdef (INFO_DS_OBJDEFS (DSstate), item);
         break;
     default:
         DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
@@ -270,6 +287,7 @@ AddEntryToAst (STentry_t *entry, STentrytype_t type, module_t *module)
         case SET_funhead:
         case SET_wrapperhead:
         case SET_typedef:
+        case SET_objdef:
             /* first check, whether it is already available */
             if (FindSymbolInAst (STEntryName (entry)) == NULL) {
                 serfun = GetDeSerializeFunction (STEntryName (entry), module);
@@ -418,9 +436,11 @@ DeserializeLookupFunction (const char *module, const char *symbol)
 static node *
 LoadFunctionBody (node *fundef)
 {
-    node *result;
+    node *result = NULL;
     module_t *module;
+    STtable_t *table;
     serfun_p serfun;
+    const char *serfunname;
 
     DBUG_ENTER ("LoadFunctionBody");
 
@@ -428,11 +448,18 @@ LoadFunctionBody (node *fundef)
                  "LoadFunctionBody called without calling InitDeserialize");
 
     module = LoadModule (FUNDEF_MOD (fundef));
+    table = GetSymbolTable (module);
 
-    serfun = GetDeSerializeFunction (GenerateSerFunName (SET_funbody, fundef), module);
+    serfunname = GenerateSerFunName (SET_funbody, fundef);
 
-    result = serfun (DSstate);
+    if (STContainsEntry (serfunname, table)) {
 
+        serfun = GetDeSerializeFunction (serfunname, module);
+
+        result = serfun (DSstate);
+    }
+
+    table = STDestroy (table);
     module = UnLoadModule (module);
 
     DBUG_RETURN (result);

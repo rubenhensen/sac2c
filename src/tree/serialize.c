@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2004/11/21 12:48:08  sah
+ * removed some old ast info
+ *
  * Revision 1.23  2004/11/17 19:49:46  sah
  * added visibility support
  *
@@ -589,7 +592,7 @@ SerializeObjdef (node *objdef, info *info)
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (objdef);
 
-    TYPEDEF_SYMBOLNAME (objdef) = StringCopy (GenerateSerFunName (SET_objdef, objdef));
+    OBJDEF_SYMBOLNAME (objdef) = StringCopy (GenerateSerFunName (SET_objdef, objdef));
 
     if (GET_FLAG (OBJDEF, objdef, IS_EXPORTED)) {
         vis = SVT_exported;
@@ -599,7 +602,7 @@ SerializeObjdef (node *objdef, info *info)
         vis = SVT_local;
     }
 
-    STAdd (TYPEDEF_NAME (objdef), vis, TYPEDEF_SYMBOLNAME (objdef), SET_objdef,
+    STAdd (OBJDEF_NAME (objdef), vis, OBJDEF_SYMBOLNAME (objdef), SET_objdef,
            INFO_SER_TABLE (info));
 
     GenerateSerFunHead (objdef, SET_objdef, info);
