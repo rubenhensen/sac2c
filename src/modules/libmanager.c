@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/26 20:01:01  sah
+ * *** empty log message ***
+ *
  * Revision 1.5  2004/11/08 19:43:37  sah
  * should work using dlcompat for Mac OS X now as well
  *
@@ -43,11 +46,11 @@ LibManagerError ()
 }
 
 dynlib_t
-LoadLibrary (const char *name)
+LIBMloadLibrary (const char *name)
 {
     dynlib_t result;
 
-    DBUG_ENTER ("LoadLibrary");
+    DBUG_ENTER ("LIBMloadLibrary");
 
     DBUG_PRINT ("LIB", ("Loading library `%s'", name));
 
@@ -67,11 +70,11 @@ LoadLibrary (const char *name)
 }
 
 dynlib_t
-UnLoadLibrary (dynlib_t lib)
+LIBMunLoadLibrary (dynlib_t lib)
 {
     int result;
 
-    DBUG_ENTER ("UnLoadLibrary");
+    DBUG_ENTER ("LIBMunLoadLibrary");
 
     DBUG_PRINT ("LIB", ("Unoading library"));
 
@@ -86,11 +89,11 @@ UnLoadLibrary (dynlib_t lib)
 }
 
 dynfun_t
-GetLibraryFunction (const char *name, dynlib_t lib)
+LIBMgetLibraryFunction (const char *name, dynlib_t lib)
 {
     dynfun_t result;
 
-    DBUG_ENTER ("GetLibraryFunction");
+    DBUG_ENTER ("LIBMgetLibraryFunction");
 
     DBUG_PRINT ("LIB", ("Getting library function `%s'", name));
 
