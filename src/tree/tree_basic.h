@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.69  2000/07/06 16:01:11  mab
+ * *** empty log message ***
+ *
  * Revision 1.68  2000/07/06 15:32:04  mab
  * added INFO_APT_ASSIGNMENTS
  *
@@ -2596,8 +2599,8 @@ extern node *MakeInfo ();
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
 #define INFO_APT_WITHOP_TYPE(n) (n->int_data)
 #define INFO_APT_WITH(n) (n->node[0])
-#define INFO_APT_FUNDEF(n) (m->node[1])
-#define INFO_APT_ASSIGNMENTS(n) (m->node[2])
+#define INFO_APT_FUNDEF(n) (n->node[1])
+#define INFO_APT_ASSIGNMENTS(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
