@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/19 10:18:14  sah
+ * updated objinit
+ *
  * Revision 3.5  2004/07/17 14:30:09  sah
  * switch to INFO structure
  * PHASE I
@@ -174,11 +177,18 @@ OImodul (node *arg_node, info *arg_info)
     if (MODUL_FILETYPE (arg_node) == F_classimp) {
         char *toclass;
         char *fromclass;
+#ifdef NEW_AST
+        types *oldtype = TYType2OldType (MODUL_CLASSTYPE (arg_node));
+#endif
 
         MODUL_TYPES (arg_node)
           = MakeTypedef (StringCopy (MODUL_NAME (arg_node)), MODUL_NAME (arg_node),
-                         DupAllTypes (MODUL_CLASSTYPE (arg_node)), ST_unique,
-                         MODUL_TYPES (arg_node));
+#ifndef NEW_AST
+                         DupAllTypes (MODUL_CLASSTYPE (arg_node)),
+#else
+                         MODUL_CLASSTYPE (arg_node),
+#endif
+                         ST_unique, MODUL_TYPES (arg_node));
 
         toclass = (char *)Malloc (MAX_FILE_NAME);
         fromclass = (char *)Malloc (MAX_FILE_NAME);
@@ -190,21 +200,31 @@ OImodul (node *arg_node, info *arg_info)
         strcat (fromclass, MODUL_NAME (arg_node));
 
         MODUL_FUNDECS (arg_node)
-          = MakeFundef (toclass, MODUL_NAME (arg_node),
+          = MakeFundef (toclass, StringCopy (MODUL_NAME (arg_node)),
                         MakeTypes (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
-                                   MODUL_NAME (arg_node)),
-                        MakeArg (NULL, DupAllTypes (MODUL_CLASSTYPE (arg_node)),
+                                   StringCopy (MODUL_NAME (arg_node))),
+                        MakeArg (StringCopy ("obj"),
+#ifndef NEW_AST
+                                 DupAllTypes (MODUL_CLASSTYPE (arg_node)),
+#else
+                                 DupAllTypes (oldtype),
+#endif
                                  ST_regular, ST_regular, NULL),
                         NULL, MODUL_FUNDECS (arg_node));
 
         FUNDEF_STATUS (MODUL_FUNDECS (arg_node)) = ST_classfun;
 
         MODUL_FUNDECS (arg_node)
-          = MakeFundef (fromclass, MODUL_NAME (arg_node), MODUL_CLASSTYPE (arg_node),
-                        MakeArg (NULL,
+          = MakeFundef (fromclass, StringCopy (MODUL_NAME (arg_node)),
+#ifndef NEW_AST
+                        MODUL_CLASSTYPE (arg_node),
+#else
+                        oldtype,
+#endif
+                        MakeArg (StringCopy ("obj"),
                                  MakeTypes (T_user, 0, NULL,
                                             StringCopy (MODUL_NAME (arg_node)),
-                                            MODUL_NAME (arg_node)),
+                                            StringCopy (MODUL_NAME (arg_node))),
                                  ST_regular, ST_regular, NULL),
                         NULL, MODUL_FUNDECS (arg_node));
 
@@ -284,7 +304,8 @@ OIobjdef (node *arg_node, info *arg_info)
 
         MODUL_FUNS (INFO_OBJINIT_MODUL (arg_info)) = new_node;
 
-        new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
+        new_node
+          = MakeAp (StringCopy (new_fun_name), StringCopy (OBJDEF_MOD (arg_node)), NULL);
         OBJDEF_EXPR (arg_node) = new_node;
 
         AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (INFO_OBJINIT_MODUL (arg_info));
