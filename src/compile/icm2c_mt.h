@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/08/07 16:04:25  dkr
+ * MT_SCHEDULER_BEGIN, MT_SCHEDULER_END added
+ *
  * Revision 1.6  1998/08/07 07:09:17  cg
  * added declaration of ICMCompileMT_ADJUST_SCHEDULER()
  *
@@ -67,6 +70,9 @@ extern void ICMCompileMT_SPMD_DYNAMIC_MODE_END (char *name);
 
 extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower,
                                            int unrolling, char *array);
+
+extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, int *vararg);
+extern void ICMCompileMT_SCHEDULER_END (int dim, int *vararg);
 
 extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *vararg);
 extern void ICMCompileMT_SCHEDULER_Block_END (int dim, int *vararg);

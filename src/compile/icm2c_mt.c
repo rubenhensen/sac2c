@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/08/07 16:04:41  dkr
+ * MT_SCHEDULER_BEGIN, MT_SCHEDULER_END added
+ *
  * Revision 1.15  1998/08/03 10:50:52  cg
  * added implementation of new ICM MT_ADJUST_SCHEDULER
  *
@@ -967,8 +970,59 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int un
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int narg, int *vararg)
- *   void ICMCompileMT_SCHEDULER_Block_END(int narg, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_BEGIN(int dim, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_END(int dim, int *vararg)
+ *
+ * description:
+ *
+ *   These two ICMs implement the default scheduling.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_BEGIN (int dim, int *varint)
+{
+    int *lower_bound = varint;
+    int *upper_bound = varint + dim;
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_BEGIN");
+
+#define MT_SCHEDULER_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BEGIN
+
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(%d) = %d;\n", i, lower_bound[i]);
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP(%d) = %d;\n", i, upper_bound[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMT_SCHEDULER_END (int dim, int *varint)
+{
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_END");
+
+#define MT_SCHEDULER_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_END
+
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int dim, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_END(int dim, int *vararg)
  *
  * description:
  *
