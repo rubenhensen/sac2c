@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/09/25 15:15:41  dkr
+ * IsBoxed() simplified (uses IsHidden() now)
+ *
  * Revision 1.17  2000/09/15 15:43:44  dkr
  * IsNonUniqueHidden() revisited
  *
@@ -252,19 +255,21 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 int
 IsBoxed (types *type)
 {
-    int ret = 0;
     node *tdef;
+    int ret = 0;
 
     DBUG_ENTER ("IsBoxed");
 
-    if (TYPES_DIM (type) != SCALAR) {
+    if (IsHidden (type)) {
+        ret = 1;
+    } else if (TYPES_DIM (type) != SCALAR) {
         ret = 1;
     } else {
         if (TYPES_BASETYPE (type) == T_user) {
             tdef = TYPES_TDEF (type);
             DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-            if ((TYPEDEF_DIM (tdef) != SCALAR) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
+            if (TYPEDEF_DIM (tdef) != SCALAR) {
                 ret = 1;
             }
         }
