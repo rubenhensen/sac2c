@@ -3,8 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.45  1995/02/02 14:57:46  hw
- * chnaged N_prf node
+ * Revision 1.46  1995/02/09 09:01:56  hw
+ * bug fixed in creation of cat, rotate & psi
+ *
+ * Revision 1.45  1995/02/02  14:57:46  hw
+ * changed N_prf node
  *
  * Revision 1.44  1995/01/25  16:01:45  sbs
  * Priority of cast changed to %right CAST
@@ -969,20 +972,29 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
          { $$=$2;
          }
       | expr SQBR_L expr SQBR_R 
-         { $$=MakeNode(N_prf);
-           $$->node[0]=$3;       /*  expression (shape)  */
+         { node *exprs1, *exprs2;
+           exprs2=MakeNode(N_exprs);
+           exprs2->node[0]=$1;      /* array */
+           exprs2->nnode=1;
+           exprs1=MakeNode(N_exprs);
+           exprs1->node[0]=$3;      /*  expression (shape)  */
+           exprs1->node[1]=exprs2;
+           exprs1->nnode=2;
+           
+           $$=MakeNode(N_prf);
+           $$->node[0]=exprs1;
            $$->info.prf=F_psi;
-           $$->node[1]=$1;       /* array */
-           $$->nnode=2;
+           $$->nnode=1;
            $$->lineno=$1->lineno;
            
            DBUG_PRINT("GENTREE",
                       ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT
                        ", %s " P_FORMAT,
                        mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$, 
-                       mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
-                       mdb_nodetype[ $$->node[0]->nodetype ],
-                       $$->node[0]));
+                       mdb_nodetype[$$->node[0]->node[0]->nodetype], 
+                       $$->node[0]->node[0],
+                       mdb_nodetype[ $$->node[0]->node[1]->node[0]->nodetype ],
+                       $$->node[0]->node[1]->node[0]));
          }
       | SQBR_L {$$=MakeNode(N_array);} exprs SQBR_R
          { $$=$<node>2;
@@ -1040,7 +1052,7 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
             exprs3->nnode=1;
             exprs2=MakeNode(N_exprs);
             exprs2->node[0]=$5;           /* 2. Argument  */
-            exprs2->node[1]=exprs1;
+            exprs2->node[1]=exprs3;
             exprs2->nnode=2;
             exprs1=MakeNode(N_exprs);
             exprs1->node[0]=$3;           /* 1. Argument  */
