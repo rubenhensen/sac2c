@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/06/28 09:42:43  sbs
+ * concat in definition of __PF_TIMER and __PF_TIMER_PERCENTAGE
+ * eliminated.
+ *
  * Revision 3.1  2000/11/20 18:02:46  sacbase
  * new release made
  *
@@ -61,11 +65,11 @@ typedef struct timeval __PF_TIMER;
 
 #define __PF_TIMER_FORMAT "%8.2f"
 
-#define __PF_TIMER(timer) timer##.tv_sec + timer##.tv_usec / 1000000.0
+#define __PF_TIMER(timer) timer.tv_sec + timer.tv_usec / 1000000.0
 
 #define __PF_TIMER_PERCENTAGE(timer1, timer2)                                            \
-    (timer1##.tv_sec + timer1##.tv_usec / 1000000.0) * 100                               \
-      / (timer2##.tv_sec + timer2##.tv_usec / 1000000.0)
+    (timer1.tv_sec + timer1.tv_usec / 1000000.0) * 100                                   \
+      / (timer2.tv_sec + timer2.tv_usec / 1000000.0)
 
 /*
  * Global variables
