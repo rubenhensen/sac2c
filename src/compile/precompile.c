@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/05/31 17:35:52  dkr
+ * bug about TAGGED_ARRAYS fixed
+ *
  * Revision 3.38  2002/05/31 17:26:14  dkr
  * new argtags for TAGGED_ARRAYS used
  *
@@ -2098,18 +2101,22 @@ PREC3let (node *arg_node, node *arg_info)
                             && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
                             && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
 #ifdef TAGGED_ARRAYS
-                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
-                                           || (argtab->tag[arg_idx] == ATG_in_nodesc),
+                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in_nodesc)
+                                           || (argtab->tag[arg_idx] == ATG_in),
                                          "illegal tag found!");
-#else
-                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
-                                           || (argtab->tag[arg_idx] == ATG_in_rc),
-                                         "illegal tag found!");
-#endif
 
                             if (argtab->tag[arg_idx] == ATG_in_nodesc) {
                                 new_id = LiftArg (let_ids, arg, new_id, arg_info);
                             }
+#else
+                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
+                                           || (argtab->tag[arg_idx] == ATG_in_rc),
+                                         "illegal tag found!");
+
+                            if (argtab->tag[arg_idx] == ATG_in) {
+                                new_id = LiftArg (let_ids, arg, new_id, arg_info);
+                            }
+#endif
                         }
                     }
                 }

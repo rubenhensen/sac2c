@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/05/31 17:38:08  dkr
+ * bug about TAGGED_ARRAYS fixed
+ *
  * Revision 1.12  2002/05/31 17:26:27  dkr
  * new argtags for TAGGED_ARRAYS used
  *
@@ -834,11 +837,13 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
                      "wrong argument in ND_FUN_DEC icm found!");
 
+#if TAGGED_ARRAYS
         EXPRS_NEXT (args)
           = MakeExprs (MakeId_Copy (mdb_argtag[ATG_in_nodesc]),
                        MakeExprs (MakeId_Copy ("unsigned int"),
                                   MakeExprs (MakeId_Copy ("SAC_MT_mythread"),
                                              EXPRS_NEXT (args))));
+#endif
 
         (NUM_VAL (EXPRS_EXPR (args)))++;
     }
@@ -877,9 +882,11 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
                      "wrong argument in ND_FUN_AP icm found!");
 
+#if TAGGED_ARRAYS
         EXPRS_NEXT (args)
           = MakeExprs (MakeId_Copy (mdb_argtag[ATG_in_nodesc]),
                        MakeExprs (MakeId_Copy ("SAC_MT_mythread"), EXPRS_NEXT (args)));
+#endif
 
         (NUM_VAL (EXPRS_EXPR (args)))++;
     }
@@ -969,7 +976,11 @@ MakeIcm_ND_FUN_DEC (node *fundef)
              * for ... arguments the name should expand to an empty string
              *  -> replace 'tag' and 'id'
              */
+#if TAGGED_ARRAYS
             tag = ATG_in_nodesc;
+#else
+            tag = ATG_notag;
+#endif
             id = FreeTree (id);
             id = MakeId_Copy ("");
         }
@@ -1329,6 +1340,7 @@ CheckAp (node *ap, node *arg_info)
                     let_ids = argtab->ptr_out[ids_idx];
                     if ((let_ids != NULL) && (ids_idx != arg_idx)
                         && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
+#if TAGGED_ARRAYS
                         DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
                                        || (argtab->tag[arg_idx] == ATG_in_nodesc),
                                      "illegal tag found!");
@@ -1336,6 +1348,7 @@ CheckAp (node *ap, node *arg_info)
                         if (argtab->tag[arg_idx] == ATG_in_nodesc) {
                             ok = FALSE;
                         }
+#endif
                     }
                 }
             }
@@ -2396,7 +2409,9 @@ COMPApIds (node *ap, node *arg_info)
                 ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                             IDS_REFCNT (let_ids),
                                             IDS_REFCNT (let_ids) - 1, ret_node);
-            } else if (argtab->tag[i] == ATG_out_nodesc) {
+            }
+#ifdef TAGGED_ARRAYS
+            else if (argtab->tag[i] == ATG_out_nodesc) {
                 /* function does no refcounting */
 
                 ret_node
@@ -2404,6 +2419,7 @@ COMPApIds (node *ap, node *arg_info)
                                     MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                   IDS_REFCNT (let_ids), ret_node));
             }
+#endif
         }
     }
 
@@ -2439,6 +2455,7 @@ COMPApArgs (node *ap, node *arg_info)
                          "no N_exprs node found in argtab");
             arg = EXPRS_EXPR (argtab->ptr_in[i]);
 
+#ifdef TAGGED_ARRAYS
             if ((argtab->tag[i] == ATG_in_nodesc)
                 || (argtab->tag[i] == ATG_inout_nodesc)) {
                 /* function does no refcounting */
@@ -2448,6 +2465,7 @@ COMPApArgs (node *ap, node *arg_info)
                                              ID_REFCNT (arg), 1, ret_node);
                 }
             }
+#endif
         }
     }
 
