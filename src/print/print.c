@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.173  1998/03/26 14:01:35  dkr
+ * PrintNodeTree now supports the WL... nodes
+ *
  * Revision 1.172  1998/03/25 15:01:34  dkr
  * PrintNodeTree:
  *    shows now NCODE_USED
@@ -2538,7 +2541,27 @@ PrintNodeTree (node *node)
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
             break;
         case N_Ncode:
-            fprintf (outfile, "(used: %d)", NCODE_USED (node));
+            fprintf (outfile, "(used: %d)\n", NCODE_USED (node));
+            break;
+        case N_WLblock:
+            fprintf (outfile, "(%d->%d block%d[%d] %d)\n", WLBLOCK_BOUND1 (node),
+                     WLBLOCK_BOUND2 (node), WLBLOCK_LEVEL (node), WLBLOCK_DIM (node),
+                     WLBLOCK_STEP (node));
+            break;
+        case N_WLublock:
+            fprintf (outfile, "(%d->%d ublock%d[%d] %d)\n", WLUBLOCK_BOUND1 (node),
+                     WLUBLOCK_BOUND2 (node), WLUBLOCK_LEVEL (node), WLUBLOCK_DIM (node),
+                     WLUBLOCK_STEP (node));
+            break;
+        case N_WLproj:
+            fprintf (outfile, "(%d->%d step%d[%d] %d)\n", WLPROJ_BOUND1 (node),
+                     WLPROJ_BOUND2 (node), WLPROJ_LEVEL (node), WLPROJ_DIM (node),
+                     WLPROJ_STEP (node));
+            break;
+        case N_WLgrid:
+            fprintf (outfile, "(%d->%d [%d])\n", WLUBLOCK_BOUND1 (node),
+                     WLUBLOCK_BOUND2 (node), WLUBLOCK_DIM (node));
+            break;
         default:
             fprintf (outfile, "\n");
         }
@@ -2546,11 +2569,13 @@ PrintNodeTree (node *node)
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
             if (node->node[i]) {
-                for (j = 0; j < indent; j++)
-                    if (j % 4)
+                for (j = 0; j < indent; j++) {
+                    if (j % 4) {
                         fprintf (outfile, "  ");
-                    else
+                    } else {
                         fprintf (outfile, "| ");
+                    }
+                }
 
                 fprintf (outfile, "%i-", i);
                 PrintNodeTree (node->node[i]);
