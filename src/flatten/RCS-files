@@ -1,5 +1,9 @@
 Makefile
+adjust_ids.c
+adjust_ids.h
 flatten.c
 flatten.h
+fun2lac.c
+fun2lac.h
 lac2fun.c
 lac2fun.h
