@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2000/03/21 13:12:16  jhs
+ * Added macros: INFO_DFA_xxx, MT_xxx, ST_xxx.
+ *
  * Revision 1.28  2000/03/19 15:47:01  dkr
  * type of INFO_CUD_REF changed
  *
@@ -2442,11 +2445,11 @@ extern node *MakeInfo ();
 /* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase!!! */
 #define INFO_MUTH_FUNDEF(n) (n->node[0])
 #define INFO_MUTH_DRIVER(n) ((funptr) (n->node[1]))
-#define INFO_MUTH_IGNORE(n) ((ignorefun) (n->node[4]))
+#define INFO_MUTH_IGNORE(n) ((ignorefun) (n->node[2]))
 
 /* multithread - schedule_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
-#define INFO_SCHIN_SCHEDULING(n) (n->node[2])
+#define INFO_SCHIN_SCHEDULING(n) (n->node[3])
 #define INFO_SCHIN_INNERWLS(n) (n->int_data)
 #define INFO_SCHIN_ALLOWED(n) (n->flag)
 
@@ -2465,7 +2468,17 @@ extern node *MakeInfo ();
 /* multithread - blocks_expand */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_BLKCO_CURRENTATTRIB(n) ((statustype) (n->int_data))
-#define INFO_BLKCO_THISASSIGN(n) (n->node[2])
+#define INFO_BLKCO_THISASSIGN(n) (n->node[3])
+
+/* multithread - blocks_expand */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_DFA_HEADING(n) (n->int_data)
+#define INFO_DFA_USEMASK(n) (n->dfmask[0])
+#define INFO_DFA_DEFMASK(n) (n->dfmask[1])
+#define INFO_DFA_NEEDCHAIN(n) ((DFMmask_t) (n->node[3]))
+#define INFO_DFA_NEEDBLOCK(n) ((DFMmask_t) (n->node[4]))
+#define INFO_DFA_CONT(n) (n->node[5])
+#define INFO_DFA_THISASSIGN(n) ((node *)(n->dfmask[2]))
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
@@ -2734,6 +2747,9 @@ extern node *MakeSync (node *region);
 extern node *MakeMT (node *region);
 
 #define MT_REGION(n) (n->node[0])
+#define MT_USEMASK(n) (n->dfmask[0])
+#define MT_DEFMASK(n) (n->dfmask[1])
+#define MT_NEEDLATER(n) (n->dfmask[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2747,6 +2763,10 @@ extern node *MakeMT (node *region);
 extern node *MakeST (node *region);
 
 #define ST_REGION(n) (n->node[0])
+#define ST_USEMASK(n) (n->dfmask[0])
+#define ST_DEFMASK(n) (n->dfmask[1])
+#define ST_NEEDLATER_ST(n) (n->dfmask[2])
+#define ST_NEEDLATER_MT(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
