@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.129  2004/02/03 15:25:41  skt
+ * chanced SCHINassign to SCHINlet
+ *
  * Revision 3.128  2003/12/23 10:41:53  khf
  * Number of sons in NWithop increased from 2 to 3 (node * next added)
  *
@@ -1364,7 +1367,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, WLAAassign, FMTravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons,
        TravSons, TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
-       TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
+       TravSons, TravSons, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
        TravSons, L2Fassign, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
        TravSons, TravSons, TravSons, PREC3assign, TravSons, APTassign,
 
@@ -1509,7 +1512,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAlet, TravSons, SPMDRMlet, SPMDROlet, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, NTClet, INFDFMSlet,
 
-       TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
+       TravSons, SCHINlet, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
        TravSons, TravSons, DFAlet, TravSons, CUDlet, TravSons, TravSons, TravSons,
        ADJCA2let, PREC3let, APClet, APTlet,
 
