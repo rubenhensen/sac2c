@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.75  2003/11/07 14:45:50  sbs
+# CLOCK_SKEW_ELIMINATION now applied to Makefile.Config as well.
+#
 # Revision 3.74  2003/09/20 14:15:43  dkr
 # icm2c_prf.o added
 #
@@ -250,6 +253,7 @@ tagged:
 
 tools/bin/cse:
 	$(MAKE) -C tools
+	$(CLOCK_SKEW_ELIMINATION) Makefile.Config
 
 
 check_os:
