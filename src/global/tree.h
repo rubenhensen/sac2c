@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/12/14 10:59:16  sbs
+ * Revision 1.8  1994/12/14 16:51:24  sbs
+ * type->name for T_user inserted
+ *
+ * Revision 1.7  1994/12/14  10:59:16  sbs
  * T_user inserted
  *
  * Revision 1.6  1994/12/14  10:48:25  asi
@@ -60,7 +63,8 @@ typedef struct SHPSEG {
 
 typedef struct TYPES {
     simpletype simpletype;
-    int dim; /* if (dim == 0) => simpletype */
+    char *name; /* only used for T_user !! */
+    int dim;    /* if (dim == 0) => simpletype */
     shpseg *shpseg;
     struct TYPES *next; /* only needed for fun-results */
     id *id;             /* Bezeichner  */
