@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2001/05/17 07:42:07  sbs
+ * FREE / MALLOC eliminated
+ *
  * Revision 3.60  2001/05/09 08:58:53  dkr
  * output for DBUG-string PRINT_RC corrected
  *
@@ -875,7 +878,7 @@ PrintModul (node *arg_node, node *arg_info)
             if (MODUL_CLASSTYPE (arg_node) != NULL) {
                 type_str = Type2String (MODUL_CLASSTYPE (arg_node), 0, TRUE);
                 fprintf (outfile, " *  classtype %s;\n", type_str);
-                FREE (type_str);
+                Free (type_str);
             }
             fprintf (outfile, " */\n");
             break;
@@ -1028,7 +1031,7 @@ PrintTypedef (node *arg_node, node *arg_info)
         || (NODE_TYPE (TYPEDEF_ICM (arg_node)) != N_icm)) {
         type_str = Type2String (TYPEDEF_TYPE (arg_node), 0, TRUE);
         fprintf (outfile, "typedef %s ", type_str);
-        FREE (type_str);
+        Free (type_str);
 
         if (TYPEDEF_MOD (arg_node) != NULL) {
             fprintf (outfile, "%s:", TYPEDEF_MOD (arg_node));
@@ -1099,7 +1102,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 
         type_str = Type2String (OBJDEF_TYPE (arg_node), 0, TRUE);
         fprintf (outfile, "%s ", type_str);
-        FREE (type_str);
+        Free (type_str);
 
         if (OBJDEF_MOD (arg_node) != NULL) {
             fprintf (outfile, "%s:", OBJDEF_MOD (arg_node));
@@ -1162,7 +1165,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     while (ret_types != NULL) {
         type_str = Type2String (ret_types, 0, FALSE);
         fprintf (outfile, "%s", type_str);
-        FREE (type_str);
+        Free (type_str);
 
         PrintStatus (TYPES_STATUS (FUNDEF_TYPES (arg_node)), FALSE);
 
@@ -1425,7 +1428,7 @@ PrintArg (node *arg_node, node *arg_info)
 
     type_str = Type2String (ARG_TYPE (arg_node), 0, TRUE);
     fprintf (outfile, " %s", type_str);
-    FREE (type_str);
+    Free (type_str);
 
     if (ARG_ATTRIB (arg_node) == ST_reference) {
         fprintf (outfile, " &");
@@ -1486,7 +1489,7 @@ PrintVardec (node *arg_node, node *arg_info)
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
         type_str = Type2String (VARDEC_TYPE (arg_node), 0, TRUE);
         fprintf (outfile, "%s ", type_str);
-        FREE (type_str);
+        Free (type_str);
 
         DBUG_EXECUTE ("PRINT_NT",
                       PrintNT (outfile, VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node));
@@ -1851,7 +1854,7 @@ PrintCast (node *arg_node, node *arg_info)
 
     type_str = Type2String (CAST_TYPE (arg_node), 0, TRUE);
     fprintf (outfile, "(: %s) ", type_str);
-    FREE (type_str);
+    Free (type_str);
 
     Trav (CAST_EXPR (arg_node), arg_info);
 
@@ -2151,7 +2154,7 @@ PrintFloat (node *arg_node, node *arg_info)
 
     tmp_string = Float2String (FLOAT_VAL (arg_node));
     fprintf (outfile, "%s", tmp_string);
-    FREE (tmp_string);
+    Free (tmp_string);
 
     DBUG_RETURN (arg_node);
 }
@@ -2175,7 +2178,7 @@ PrintDouble (node *arg_node, node *arg_info)
 
     tmp_string = Double2String (DOUBLE_VAL (arg_node));
     fprintf (outfile, "%s", tmp_string);
-    FREE (tmp_string);
+    Free (tmp_string);
 
     DBUG_RETURN (arg_node);
 }
@@ -2277,7 +2280,7 @@ PrintVectInfo (node *arg_node, node *arg_info)
         case IDX:
             type_str = Type2String (VINFO_TYPE (arg_node), 0, TRUE);
             fprintf (outfile, ":IDX(%s)", type_str);
-            FREE (type_str);
+            Free (type_str);
             break;
         default:
             DBUG_ASSERT (0, "illegal N_vinfo-flag!");
@@ -3599,7 +3602,7 @@ PrintCWrapper (node *arg_node, node *arg_info)
                 /* print results of function */
                 type_str = Type2String (FUNDEF_TYPES (fundef), 0, TRUE);
                 fprintf (outfile, "%s", type_str);
-                FREE (type_str);
+                Free (type_str);
 
                 fprintf (outfile, ")\n");
                 funlist = NODELIST_NEXT (funlist);
@@ -3828,7 +3831,7 @@ Print (node *syntax_tree)
 
     syntax_tree = PrintTrav (syntax_tree, arg_info);
 
-    FREE (arg_info);
+    Free (arg_info);
 
     /* if generating c library, invoke the headerfile generator */
     if ((generatelibrary & GENERATELIBRARY_C) && (compiler_phase == PH_genccode)) {
@@ -3861,7 +3864,7 @@ PrintNode (node *syntax_tree)
 
     syntax_tree = PrintTrav (syntax_tree, arg_info);
 
-    FREE (arg_info);
+    Free (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
