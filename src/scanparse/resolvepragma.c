@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/01/10 16:59:45  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 1.7  2004/12/19 23:16:52  sbs
  * TCcountFunctionParams replaced by TCcountArgs and TCcountRets
  *
@@ -36,7 +39,7 @@
 #include "traverse.h"
 #include "stringset.h"
 #include "free.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "dbug.h"
 
 /*
@@ -102,9 +105,10 @@ CheckRefReadNums (int line, int size, node *nums)
         DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
-            ERROR (line, ("Invalid argument of pragma 'readonly` or 'refcounting`:"));
-            CONT_ERROR (
-              ("Entry no.%d does not match a function parameter !", i, NUMS_VAL (tmp)));
+            CTIerrorLine (line,
+                          "Invalid argument of pragma 'readonly` or 'refcounting`: "
+                          "Entry no. %d does not match a function parameter",
+                          i, NUMS_VAL (tmp));
         }
 
         tmp = NUMS_NEXT (tmp);
@@ -126,15 +130,18 @@ CheckLinkSignNums (int line, int size, node *nums)
         DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) > size)) {
-            ERROR (line, ("Invalid argument of pragma 'linksign`"));
-            CONT_ERROR (
-              ("Entry no.%d does not match a valid parameter position !", i + 1));
+            CTIerrorLine (line,
+                          "Invalid argument of pragma 'linksign`: "
+                          "Entry no. %d does not match a valid parameter position",
+                          i + 1);
         }
     }
 
     if (i < size) {
-        ERROR (line, ("Invalid argument of pragma 'linksign`"));
-        CONT_ERROR (("Less entries (%d) than parameters of function (%d) !", i, size));
+        CTIerrorLine (line,
+                      "Invalid argument of pragma 'linksign` :"
+                      "Less entries (%d) than parameters of function (%d)",
+                      i, size);
     }
 
     if (tmp != NULL) {
@@ -146,8 +153,10 @@ CheckLinkSignNums (int line, int size, node *nums)
             tmp = NUMS_NEXT (tmp);
         } while (tmp != NULL);
 
-        ERROR (line, ("Invalid argument of pragma 'linksign`:"));
-        CONT_ERROR (("More entries (%d) than function parameters (%d) !", i, size));
+        CTIerrorLine (line,
+                      "Invalid argument of pragma 'linksign`: "
+                      "More entries (%d) than function parameters (%d)",
+                      i, size);
     }
 
     DBUG_VOID_RETURN;
@@ -346,12 +355,14 @@ RSPfundef (node *arg_node, info *arg_info)
           = TCcountArgs (FUNDEF_ARGS (arg_node)) + TCcountRets (FUNDEF_RETS (arg_node));
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
-            WARN (NODE_LINE (arg_node), ("Pragma 'freefun` has no effect on function"));
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Pragma 'freefun` has no effect on function");
             PRAGMA_FREEFUN (pragma) = ILIBfree (PRAGMA_FREEFUN (pragma));
         }
 
         if (PRAGMA_INITFUN (pragma) != NULL) {
-            WARN (NODE_LINE (arg_node), ("Pragma 'initfun` has no effect on function"));
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Pragma 'initfun` has no effect on function");
             PRAGMA_INITFUN (pragma) = ILIBfree (PRAGMA_INITFUN (pragma));
         }
 
@@ -374,7 +385,7 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_READONLY (pragma) != NULL) {
-            WARN (NODE_LINE (arg_node), ("Pragma 'readonly` has been disabled"));
+            CTIwarnLine (NODE_LINE (arg_node), "Pragma 'readonly` has been disabled");
             PRAGMA_INITFUN (pragma) = ILIBfree (PRAGMA_INITFUN (pragma));
         }
 
@@ -403,12 +414,14 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_TOUCH (pragma) != NULL) {
-            WARN (NODE_LINE (arg_node), ("Pragma 'touch` has no effect on function"));
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Pragma 'touch` has no effect on function");
             PRAGMA_TOUCH (pragma) = ILIBfree (PRAGMA_TOUCH (pragma));
         }
 
         if (PRAGMA_EFFECT (pragma) != NULL) {
-            WARN (NODE_LINE (arg_node), ("Pragma 'effect` has no effect on function"));
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Pragma 'effect` has no effect on function");
             PRAGMA_EFFECT (pragma) = ILIBfree (PRAGMA_EFFECT (pragma));
         }
 

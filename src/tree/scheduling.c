@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2005/01/10 16:59:06  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 3.46  2004/11/27 01:42:37  ktr
  * included renameidentifiers.h
  *
@@ -239,7 +242,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "traverse.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "wl_bounds.h"
 #include "dbug.h"
 #include "renameidentifiers.h"
@@ -389,9 +392,10 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
 
         if (exprs == NULL) {
-            ABORT (line, ("Scheduling discipline '%s` expects %d arguments"
+            CTIabortLine (line,
+                          "Scheduling discipline '%s` expects %d arguments "
                           "(too few specified)",
-                          sched->discipline, sched->num_args));
+                          sched->discipline, sched->num_args);
         }
 
         expr = EXPRS_EXPR (exprs);
@@ -401,9 +405,10 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             switch (arg_spec[0]) {
             case 'n':
                 if (NODE_TYPE (expr) != N_num) {
-                    ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
+                    CTIabortLine (line,
+                                  "Argument %d of scheduling discipline '%s` must be"
                                   " a number",
-                                  i, sched->discipline));
+                                  i, sched->discipline);
                 }
                 sched->args[i].arg_type = AT_num;
                 sched->args[i].arg.num = NUM_VAL (expr);
@@ -411,9 +416,10 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 
             case 'i':
                 if (NODE_TYPE (expr) != N_id) {
-                    ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
+                    CTIabortLine (line,
+                                  "Argument %d of scheduling discipline '%s` must be"
                                   " an identifier",
-                                  i, sched->discipline));
+                                  i, sched->discipline);
                 }
                 sched->args[i].arg_type = AT_id;
                 sched->args[i].arg.id = ILIBstringCopy (ID_NAME (expr));
@@ -430,9 +436,10 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                     sched->args[i].arg.id = ILIBstringCopy (ID_NAME (expr));
                     break;
                 default:
-                    ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
+                    CTIabortLine (line,
+                                  "Argument %d of scheduling discipline '%s` must be"
                                   " an identifier or a number",
-                                  i, sched->discipline));
+                                  i, sched->discipline);
                 }
                 break;
 
@@ -455,9 +462,10 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
     }
 
     if (exprs != NULL) {
-        ABORT (line, ("Scheduling discipline '%s` expects %d arguments "
+        CTIabortLine (line,
+                      "Scheduling discipline '%s` expects %d arguments "
                       "(too many specified)",
-                      sched->discipline, sched->num_args));
+                      sched->discipline, sched->num_args);
     }
 
     DBUG_RETURN (sched);
@@ -615,8 +623,8 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
                                      AP_ARGS (ap_node), line);
     } else {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "Scheduling(): Unknown scheduler"));
+        CTIabortLine (line, "Illegal argument in wlcomp-pragma found; "
+                            "Scheduling(): Unknown scheduler");
     }
 
     DBUG_RETURN (sched);
@@ -879,9 +887,10 @@ SCHcheckSuitabilityConstSeg (sched_t *sched)
     DBUG_ENTER ("SCHcheckSuitabilityConstSeg");
 
     if ((sched->class != SC_const_seg) && (sched->class != SC_var_seg)) {
-        ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
-                             "constant segments",
-                             sched->discipline));
+        CTIerrorLine (sched->line,
+                      "Scheduling discipline '%s` is not suitable for "
+                      "constant segments",
+                      sched->discipline);
     }
 
     DBUG_VOID_RETURN;
@@ -893,9 +902,10 @@ SCHcheckSuitabilityVarSeg (sched_t *sched)
     DBUG_ENTER ("SCHcheckSuitabilityVarSeg");
 
     if (sched->class != SC_var_seg) {
-        ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
-                             "variable segments",
-                             sched->discipline));
+        CTIerrorLine (sched->line,
+                      "Scheduling discipline '%s` is not suitable for "
+                      "variable segments",
+                      sched->discipline);
     }
 
     DBUG_VOID_RETURN;
@@ -907,9 +917,10 @@ SCHcheckSuitabilityWithloop (sched_t *sched)
     DBUG_ENTER ("SCHcheckSuitabilityWithloop");
 
     if (sched->class != SC_withloop) {
-        ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
-                             "with-loops",
-                             sched->discipline));
+        CTIerrorLine (sched->line,
+                      "Scheduling discipline '%s` is not suitable for "
+                      "with-loops",
+                      sched->discipline);
     }
 
     DBUG_VOID_RETURN;
@@ -1291,17 +1302,19 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
     for (i = 0; i < tasksel->num_args; i++) {
 
         if (exprs == NULL) {
-            ABORT (line, ("Taskselector discipline '%s` expects %d arguments"
+            CTIabortLine (line,
+                          "Taskselector discipline '%s` expects %d arguments "
                           "(too few specified)",
-                          tasksel->discipline, tasksel->num_args));
+                          tasksel->discipline, tasksel->num_args);
         }
 
         expr = EXPRS_EXPR (exprs);
 
         if (NODE_TYPE (expr) != N_num) {
-            ABORT (line, ("Argument %d of taskselector discipline '%s` must be"
+            CTIabortLine (line,
+                          "Argument %d of taskselector discipline '%s` must be"
                           " a number",
-                          i, tasksel->discipline));
+                          i, tasksel->discipline);
         }
 
         tasksel->arg[i] = NUM_VAL (expr);
@@ -1310,9 +1323,10 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
     }
 
     if (exprs != NULL) {
-        ABORT (line, ("Taskselector discipline '%s` expects %d arguments "
+        CTIabortLine (line,
+                      "Taskselector discipline '%s` expects %d arguments "
                       "(too many specified)",
-                      tasksel->discipline, tasksel->num_args));
+                      tasksel->discipline, tasksel->num_args);
     }
 
     DBUG_RETURN (tasksel);
@@ -1359,8 +1373,8 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
 
         tasksel = CheckTaskselArgs (tasksel, AP_ARGS (ap_node), line);
     } else {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "Tasksel(): Unknown Taskselector"));
+        CTIabortLine (line, "Illegal argument in wlcomp-pragma found; "
+                            "Tasksel(): Unknown Taskselector");
     }
 
     DBUG_RETURN (tasksel);

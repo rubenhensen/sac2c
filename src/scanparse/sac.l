@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2005/01/10 16:59:45  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 3.26  2004/10/08 17:38:46  cg
  * Removed various bugs in scanning and printing of character constants.
  *
@@ -112,7 +115,7 @@
 #include "free.h"
 #include "resource.h"
 #include "y.tab.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "globals.h"
 
 
@@ -456,7 +459,7 @@ int charpos = 0;
 
 
 "/*"                       { if (commlevel == 1) {
-                               WARN( linenum, ("Nested comment eleminated"));
+                               CTIwarnLine( linenum, "Nested comment eleminated");
                              }
                              commlevel++;
                              charpos += yyleng;

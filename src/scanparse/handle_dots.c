@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2005/01/10 16:59:45  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 1.43  2004/12/05 17:51:24  sah
  * bugfix
  *
@@ -29,7 +32,7 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "free.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "DupTree.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
@@ -274,9 +277,9 @@ BuildDotList (node *tree, dotinfo *info)
                     info->triplepos = info->selcnt;
                 } else {
                     /* there are multiple occurences of '...' */
-                    ERROR (global.linenum,
-                           ("Multiple occurences of ... are not allowed in a "
-                            "single select statement."));
+                    CTIerrorLine (global.linenum,
+                                  "Multiple occurences of ... are not allowed in a "
+                                  "single select statement.");
                 }
             }
         }
@@ -1056,7 +1059,7 @@ BuildIdTable (node *ids, idtable *appendto)
             idtable *newtab = ILIBmalloc (sizeof (idtable));
 
             if (NODE_TYPE (id) != N_spid) {
-                ERROR (global.linenum, ("found non-id as index in WL set notation"));
+                CTIerrorLine (global.linenum, "Found non-id as index in WL set notation");
 
                 /* we create a dummy entry within the idtable in order */
                 /* to go on and search for further errors.             */
@@ -1083,11 +1086,11 @@ BuildIdTable (node *ids, idtable *appendto)
     }
 #else
     {
-        ABORT (global.linenum, ("vector as index in WL set notation not allowed"));
+        CTIabortLine (global.linenum, "Vector as index in WL set notation not allowed");
     }
 #endif
     else {
-        ABORT (global.linenum, ("malformed index vector in WL set notation"));
+        CTIabortLine (global.linenum, "Malformed index vector in WL set notation");
     }
 
     DBUG_RETURN (result);
@@ -1358,7 +1361,8 @@ BuildWLShape (idtable *table, idtable *end)
             shpchain *handle = table->shapes;
 
             if (handle == NULL) {
-                ERROR (global.linenum, ("no shape information found for %s", table->id));
+                CTIerrorLine (global.linenum, "No shape information found for %s",
+                              table->id);
             } else {
                 shape = handle->shape;
                 handle = handle->next;
@@ -1378,7 +1382,7 @@ BuildWLShape (idtable *table, idtable *end)
 #ifdef HD_SETWL_VECTOR
     else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
-            ERROR (global.linenum, ("no shape information found for %s", table->id));
+            CTIerrorLine (global.linenum, "no shape information found for %s", table->id);
         } else {
             /*
              * do not build min-WL if there is only one shape
@@ -1417,7 +1421,7 @@ Exprs2Ids (node *exprs)
             newid = TBmakeSpids (ILIBstringCopy (SPID_NAME (EXPRS_EXPR (exprs))), NULL);
         } else {
             /* create dummy id in order to go on until end of phase */
-            ERROR (global.linenum, ("found non-id expression in index vector"));
+            CTIerrorLine (global.linenum, "Found non-id expression in index vector");
             newid = TBmakeSpids (ILIBstringCopy ("unknown_id"), NULL);
         }
 
@@ -1639,7 +1643,7 @@ HDdoEliminateSelDots (node *arg_node)
 
     arg_info = FreeInfo (arg_info);
 
-    ABORT_ON_ERROR;
+    CTIabortOnError ();
 
     DBUG_RETURN (arg_node);
 }
@@ -1808,7 +1812,8 @@ HDgenerator (node *arg_node, info *arg_info)
         if ((INFO_HD_DOTSHAPE (arg_info) == NULL)
             && (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))
                 || DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node)))) {
-            ABORT (global.linenum, ("dot notation is not allowed in fold with loops"));
+            CTIabortLine (global.linenum,
+                          "Dot notation is not allowed in fold with loops");
         }
 
         if (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))) {
@@ -1871,9 +1876,9 @@ HDdot (node *arg_node, info *arg_info)
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         if (DOT_NUM (arg_node) == 1) {
-            ERROR (global.linenum, ("'.' not allowed here."));
+            CTIerrorLine (global.linenum, "'.' not allowed here.");
         } else {
-            ERROR (global.linenum, ("'...' not allowed here."));
+            CTIerrorLine (global.linenum, "'...' not allowed here.");
         }
     }
 
@@ -2240,9 +2245,9 @@ HDspid (node *arg_node, info *arg_info)
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
         if (IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
-            WARN (global.linenum,
-                  ("cannot infer default value for %s in set notation, using 0",
-                   SPID_NAME (arg_node)));
+            CTIwarnLine (global.linenum,
+                         "Cannot infer default value for %s in set notation, using 0",
+                         SPID_NAME (arg_node));
 
             FREEdoFreeTree (arg_node);
             arg_node = TBmakeNum (0);

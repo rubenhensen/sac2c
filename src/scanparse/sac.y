@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2005/01/10 16:59:45  cg
+ * Converted error messages from Error.h to ctinfo.c
+ *
  * Revision 3.98  2004/08/11 17:33:43  sah
  * added some more macro calls
  *
@@ -223,7 +226,7 @@
 #include "typecheck.h"
 #include "DupTree.h"        /* for use of DupTree() */
 #include "my_debug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
 #include "globals.h"
 #include "handle_mops.h"
@@ -2817,11 +2820,9 @@ int yyerror( char *errname)
   DBUG_ENTER( "yyerror");
 
   charpos -= (strlen( yytext) - 1);
-  ERROR( linenum, ("%s at pos %d: '%s`", errname, charpos, yytext));
-  size_of_output = MAX_LINE_LENGTH -
-                   (((verbose_level > 1) ? 2 : 0) +
-                    strlen( filename) +
-                    NumberOfDigits( linenum) + 9);
+
+  size_of_output = CTIgetErrorMessageLineLength();
+  
   if (strlen( linebuf_ptr) > (size_t) size_of_output) {
     if (charpos >= size_of_output - 15) {
       offset = charpos - size_of_output + 15;
@@ -2830,10 +2831,12 @@ int yyerror( char *errname)
     strcpy( linebuf_ptr + offset + size_of_output - 4, " ...");
   }
 
-  CONT_ERROR(( "%s", linebuf_ptr + offset));
-  CONT_ERROR(( "%*s", charpos - offset, "^"));
-
-  ABORT_ON_ERROR;
+  CTIabortLine( linenum, "%s at pos %d: '%s`\n%s\n%*s",
+                errname, 
+                charpos, 
+                yytext,
+                linebuf_ptr + offset,
+                charpos - offset, "^");
 
   DBUG_RETURN( 0);
 }
