@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.73  1995/06/19 16:27:41  asi
+ * Revision 1.74  1995/06/28 15:54:22  hw
+ * changed PrintPrf( trunc & idx_psi added)
+ *
+ * Revision 1.73  1995/06/19  16:27:41  asi
  * debug option LINE modified
  *
  * Revision 1.72  1995/06/15  16:13:46  hw
@@ -584,7 +587,10 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_cat:
     case F_dim:
     case F_rotate:
-    case F_not: {
+    case F_not:
+    case F_trunc:
+    case F_trunc_A:
+    case F_idx_psi: {
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
         Trav (arg_node->node[0], arg_info);
