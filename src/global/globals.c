@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/04/25 11:53:06  sbs
+ * indent inserted.
+ *
  * Revision 1.10  1998/04/17 17:28:18  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -357,4 +360,11 @@ deps *dependencies = NULL;
  *
  *  The dependency table is built by import.c and readsib.c and used
  *  for several purposes, such as generating makefiles or link lists.
+ */
+
+int indent = 0;
+/*
+ *  This global variable is used for indenting while printing SAC-code.
+ *  It has to be made global since printing is not only done in the printing-
+ *  directory but from within icm2c_xxx.c as well!
  */
