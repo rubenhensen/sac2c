@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/09/30 19:50:48  sah
+ * renamed FreeCSEInfo to FreeCSEinfo
+ *
  * Revision 3.67  2004/09/29 17:27:59  sbs
  * now, ntypes - if present - are freed as well.
  *
@@ -2507,11 +2510,11 @@ FreeModspec (node *arg_node, info *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeCSEInfo (node *arg_node, info *arg_info)
+FreeCSEinfo (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("FreeCSEInfo");
+    DBUG_ENTER ("FreeCSEinfo");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_cseinfo node ..."));
 

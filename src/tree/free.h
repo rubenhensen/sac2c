@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/09/30 19:50:48  sah
+ * renamed FreeCSEInfo to FreeCSEinfo
+ *
  * Revision 3.24  2004/08/10 13:42:56  sah
  * renamed FreeNWithId to FreeNWithid and
  * added switch to new xml generated free
@@ -198,7 +201,7 @@ extern node *FreeWLgridVar (node *arg_node, info *arg_info);
 
 extern node *FreeCWrapper (node *arg_node, info *arg_info);
 extern node *FreeModspec (node *arg_node, info *arg_info);
-extern node *FreeCSEInfo (node *arg_node, info *arg_info);
+extern node *FreeCSEinfo (node *arg_node, info *arg_info);
 extern node *FreeSSAcnt (node *arg_node, info *arg_info);
 extern node *FreeAvis (node *arg_node, info *arg_info);
 extern node *FreeSSAstack (node *arg_node, info *arg_info);
