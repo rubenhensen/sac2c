@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/17 12:08:34  dkr
+ * FREE, MALLOC eliminated
+ *
  * Revision 3.22  2001/05/14 10:21:20  cg
  * Bug in indentation of SPMD_BEGIN/END ICMs fixed.
  *
@@ -493,7 +496,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
      * fetch code-elements for all fold-operations
      */
 #ifndef BEtest
-    foldcodes = (node **)MALLOC (narg * sizeof (node *));
+    foldcodes = (node **)Malloc (narg * sizeof (node *));
     for (i = 0; i < narg; i++) {
         foldop = vararg[(i * 4) + 3];
         DBUG_PRINT ("COMPi", ("%i %s", i, foldop));
@@ -669,7 +672,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     for (i = 0; i < narg; i++) {
         foldcodes[i] = FreeTree (foldcodes[i]);
     }
-    FREE (foldcodes);
+    foldcodes = Free (foldcodes);
 #endif /* BEtest */
 
     DBUG_VOID_RETURN;

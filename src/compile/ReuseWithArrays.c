@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/17 12:08:40  dkr
+ * FREE, MALLOC eliminated
+ *
  * Revision 3.1  2000/11/20 18:01:02  sacbase
  * new release made
  *
@@ -356,6 +359,7 @@ ReuseLet (node *arg_node, node *arg_info)
                 traverse = 0;
             }
             break;
+
         case F_idx_psi:
             arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
@@ -378,9 +382,11 @@ ReuseLet (node *arg_node, node *arg_info)
                  */
                 traverse = 0;
             }
-            FREE (idx_psi_name);
+            idx_psi_name = Free (idx_psi_name);
             break;
-        default:;
+
+        default:
+            break;
         }
     }
 

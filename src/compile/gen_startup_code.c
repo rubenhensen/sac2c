@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/17 12:08:44  dkr
+ * FREE, MALLOC eliminated
+ *
  * Revision 3.8  2001/05/14 10:21:20  cg
  * Added new setting SAC_SET_MAX_SCHEDULERS to make maximum number
  * of schedulings within single SPMD function available to macro
@@ -823,7 +826,7 @@ GSCPrintMainBegin ()
                  "  %s( __argc, __argv);\n\n",
                  funname);
     }
-    FREE (funname);
+    funname = Free (funname);
 
     DBUG_VOID_RETURN;
 }
