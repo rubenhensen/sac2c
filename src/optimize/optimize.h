@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/02/13 16:40:29  asi
+ * Revision 1.14  1995/02/16 15:50:07  asi
+ * MAlloc added
+ *
+ * Revision 1.13  1995/02/13  16:40:29  asi
  * functions for dead code removal and constant folding
  * moved in DeadCodeRemoval.c and ConstantFolding.c
  * global variables opt_cf and opt_dcr defined in main.c defined extern
@@ -73,6 +76,7 @@ extern long deadvar;
 
 extern node *Optimize (node *arg_node);
 
+extern void *MAlloc (int size);
 extern char *PrintMask (long *mask);
 extern long *GenMask ();
 extern void MinusMask (long *mask1, long *mask2);
