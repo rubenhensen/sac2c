@@ -4029,6 +4029,21 @@ _ACEOF
 
 fi
 
+if test "$GCC" = yes; then
+  echo "$as_me:$LINENO: checking existence of pthread flag" >&5
+echo $ECHO_N "checking existence of pthread flag... $ECHO_C" >&6
+  echo "int main(){return 0;}" > .sac_configure_temp.c
+  if test "`gcc -pthread .sac_configure_temp.c | grep "unknown option"`" = ""; then
+    echo "$as_me:$LINENO: result: supported" >&5
+echo "${ECHO_T}supported" >&6
+    GCC_PTHREADS="-pthread"
+  else
+    echo "$as_me:$LINENO: result: unsupported" >&5
+echo "${ECHO_T}unsupported" >&6
+    GCC_PTHREADS="-lpthread"
+  fi
+  rm -f .sac_configure_temp.c
+fi
 echo "$as_me:$LINENO: checking sac2crc compiler flags" >&5
 echo $ECHO_N "checking sac2crc compiler flags... $ECHO_C" >&6
 if  test "$GCC" = yes ; then
@@ -4054,7 +4069,7 @@ if  test "$GCC" = yes ; then
 
   CPPFILE="gcc -E -C -x c"
 
-  CCMTLINK="-pthread"
+  CCMTLINK=$GCC_PTHREADS
 
   echo "$as_me:$LINENO: result: gcc settings" >&5
 echo "${ECHO_T}gcc settings" >&6
