@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/09/22 18:41:24  ktr
+ * EMM is now activated for MT, too. (crossing fingers)
+ *
  * Revision 3.70  2004/08/30 13:02:12  skt
  * enabled emm for MT_mtstblock
  *
@@ -1113,13 +1116,6 @@ CheckOptionConsistency ()
         if (profileflag != PROFILE_NONE) {
             SYSERROR (("Profiling is not available for multi-threaded "
                        "program execution"));
-        }
-
-        if (emm && (mtmode != MT_mtstblock)) {
-            SYSWARN (("Explicit memory management is not available for multi-threaded "
-                      "program execution.\n"
-                      "EMM disabled"));
-            emm = FALSE;
         }
     }
 
