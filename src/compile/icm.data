@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/04/24 18:45:38  sbs
+ * ICM_END corrected in ND_PRF_MODARRAY_AxCxA_CHECK_REUSE and ND_PRF_MODARRAY_AxCxA
+ *
  * Revision 1.25  1996/08/04 14:40:12  sbs
  * modarray_AxVxA with and without reuse check inserted.
  *
@@ -320,7 +323,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, TRACE_PRF)
   ICM_STR( value)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_KD_DROP_CxA_A )
+ICM_END( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE )
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxA) || defined(ICM_ALL)
@@ -333,7 +336,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
   ICM_STR(value)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_KD_DROP_CxA_A )
+ICM_END( ND_PRF_MODARRAY_AxCxA )
 #endif
 
 #if defined(ND_BEGIN_GENARRAY) || defined(ICM_ALL)
