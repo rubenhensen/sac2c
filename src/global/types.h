@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/04/12 13:57:47  sbs
+ * info3 added as N_fundef was too crowded for a pointer to n-type to be added.
+ *
  * Revision 3.12  2002/03/01 02:33:36  dkr
  * types argtag_t and argtab_t added
  * type clsconv_t renamed into unqconv_t
@@ -412,6 +415,7 @@ typedef struct NODE {
     nodetype nodetype;           /* type of node */
     infotype info;               /* node dependent information */
     void *info2;                 /* any node dependent information */
+    void *info3;                 /* any node dependent information */
     int refcnt;                  /* reference count information */
     int flag;                    /* the flag is used for node-status */
                                  /* (loop invariant/not loop invariant,...) */
