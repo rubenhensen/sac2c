@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2001/03/29 16:30:47  nmw
+ * SSACFNgen added
+ *
  * Revision 3.38  2001/03/27 13:17:08  dkr
  * minor changes done
  *
@@ -1786,7 +1789,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, NoTrav,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTNgenerator, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CMPTNgenerator, TravSons, SSACFNgen, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, PrintNwithop, TravSons, TravSons,
