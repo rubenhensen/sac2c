@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2003/09/22 16:03:06  dkr
+# target icm_tester modified
+#
 # Revision 3.19  2003/09/22 15:22:22  dkr
 # new target icm_tester added
 #
@@ -148,7 +151,11 @@ icm_test: icm_test.C
 	@echo '!!! CPP output can be found in file >>icm_test.log<< !!!'
 
 icm_tester:
-	$(ICM_TESTER)
+	@ if [ ! -f $@ ];                                 \
+	    then ln -s $(PROJECT_ROOT)/tools/bin/$@;      \
+	         echo ln -s $(PROJECT_ROOT)/tools/bin/$@; \
+	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
