@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/08/26 17:03:54  skt
+ * value MUTH_MULTI_SPECIALIZED added to mtexecmode_t
+ *
  * Revision 3.31  2004/08/26 15:02:08  khf
  * extend wl_info for WithloopFusion
  *
@@ -300,7 +303,13 @@ typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
 typedef enum { MT_none = 0, MT_createjoin, MT_startstop, MT_mtstblock } mtmode_t;
 
 /* the possible executiomodes of mtmode 3 (mtstblock) */
-typedef enum { MUTH_ANY, MUTH_EXCLUSIVE, MUTH_SINGLE, MUTH_MULTI } mtexecmode_t;
+typedef enum {
+    MUTH_ANY,
+    MUTH_EXCLUSIVE,
+    MUTH_SINGLE,
+    MUTH_MULTI,
+    MUTH_MULTI_SPECIALIZED
+} mtexecmode_t;
 
 /*
  * new nodes for yacc and the syntax tree
