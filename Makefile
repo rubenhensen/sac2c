@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.92  1998/10/26 12:28:34  sbs
+# tar / floppy added
+#
 # Revision 1.91  1998/09/02 09:26:24  sbs
 # inserted floppy, %.gz, and src.tar - rules!
 #
@@ -449,7 +452,8 @@ src.tar:
 	$(TAR) -cvf src.tar    inc/*.h lib/src/*.c lib/src/Makefile \
 	                       src/*/*.[ch] src/*/*.mac src/*/Makefile \
 	                       src/*/*.inp src/*/*.data \
-	                       src/*/*.y src/*/*.l
+	                       src/*/*.y src/*/*.l Makefile \
+	                       src/runtime/sac2crc
 
 tags: 
 	ctags src/*/*.[ch] >/dev/null
