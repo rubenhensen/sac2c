@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1997/08/04 19:09:30  dkr
+ * added strcpy in FILTER7
+ *
  * Revision 1.40  1997/06/03 13:51:54  sbs
  * # line - capability integrated into sac2c.
  * Now, the line-number in error messages should be correct 8-)))
@@ -171,6 +174,9 @@
 
 #define FILTER7(token, name) if (0==commlevel)  {                       \
                                yylval.id=name;                          \
+                               yylval.id=(char *)Malloc(sizeof(char)    \
+                                                    *(strlen(name)+1)); \
+                               strcpy(yylval.id, name);                 \
                                return(token); }
 
 #define FILTER8(token) if (0==commlevel) {                              \
@@ -282,8 +288,8 @@ int start_token;
 "while"				{FILTER( WHILE );}
 "for"				{FILTER( FOR );}
 "with" 				{FILTER( WITH );}
-"genarray"			{FILTER7( GENARRAY,"_genarray" );}
-"modarray"			{FILTER7( MODARRAY,"_modarray" );}
+"genarray"			{FILTER7( GENARRAY,prf_name_str[F_genarray] );}
+"modarray"			{FILTER7( MODARRAY,prf_name_str[F_modarray] );}
 "fold"				{FILTER( FOLD );}
 "inline"			{FILTER( INLINE );}
 
