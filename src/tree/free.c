@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/15 12:59:37  dkr
+ * WLSEG_HOMSV added
+ *
  * Revision 1.2  2000/01/26 17:27:42  dkr
  * type of traverse-function-table changed.
  *
@@ -1796,6 +1799,7 @@ FreeNGenerator (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeNGenerator");
+
     DBUG_PRINT ("FREE", ("Removing N_NGenerator node ..."));
 
     FREETRAV (NGEN_BOUND1 (arg_node));
@@ -1816,14 +1820,18 @@ FreeNWithOp (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeNWithOp");
+
     DBUG_PRINT ("FREE", ("Removing N_Nwithop node ..."));
 
     FREETRAV (NWITHOP_NEUTRAL (arg_node)); /* removes _SHAPE or _ARRAY as well */
 
-    /* if WithOp is WO_foldfun the function name has to be freed.
-       The modul_name is shared. */
-    if (WO_foldfun == NWITHOP_TYPE (arg_node))
+    /*
+     * if WithOp is WO_foldfun the function name has to be freed.
+     * The modul_name is shared.
+     */
+    if (WO_foldfun == NWITHOP_TYPE (arg_node)) {
         FREE (NWITHOP_FUN (arg_node));
+    }
 
     /* free mem allocated in MakeNWithOp */
     FREE (arg_node->info2);
@@ -1838,7 +1846,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
 node *
 FreeNCode (node *arg_node, node *arg_info)
 {
-    node *tmp;
+    node *tmp = NULL;
 
     DBUG_ENTER ("FreeNCode");
     DBUG_PRINT ("FREE", ("Removing N_Ncode node ..."));
@@ -1903,6 +1911,7 @@ FreeWLseg (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLseg");
+
     DBUG_PRINT ("FREE", ("Removing N_WLseg node ..."));
 
     FREETRAV (WLSEG_CONTENTS (arg_node));
@@ -1916,16 +1925,12 @@ FreeWLseg (node *arg_node, node *arg_info)
             FREE (WLSEG_BV (arg_node, b));
         }
     }
-    if (WLSEG_UBV (arg_node) != NULL) {
-        FREE (WLSEG_UBV (arg_node));
-    }
-    if (WLSEG_SV (arg_node) != NULL) {
-        FREE (WLSEG_SV (arg_node));
-    }
-
+    FREE (WLSEG_UBV (arg_node));
+    FREE (WLSEG_SV (arg_node));
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
+    FREE (WLSEG_HOMSV (arg_node));
 
     FREE (arg_node);
 
@@ -1940,6 +1945,7 @@ FreeWLblock (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLblock");
+
     DBUG_PRINT ("FREE", ("Removing N_WLblock node ..."));
 
     FREETRAV (WLBLOCK_NEXTDIM (arg_node));
@@ -1959,6 +1965,7 @@ FreeWLublock (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLublock");
+
     DBUG_PRINT ("FREE", ("Removing N_WLublock node ..."));
 
     FREETRAV (WLUBLOCK_NEXTDIM (arg_node));
@@ -1978,6 +1985,7 @@ FreeWLstride (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLstride");
+
     DBUG_PRINT ("FREE", ("Removing N_WLstride node ..."));
 
     FREETRAV (WLSTRIDE_CONTENTS (arg_node));
@@ -1996,6 +2004,7 @@ FreeWLgrid (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLgrid");
+
     DBUG_PRINT ("FREE", ("Removing N_WLgrid node ..."));
 
     FREETRAV (WLGRID_NEXTDIM (arg_node));
@@ -2019,6 +2028,7 @@ FreeWLsegVar (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLsegVar");
+
     DBUG_PRINT ("FREE", ("Removing N_WLsegVar node ..."));
 
     FREETRAV (WLSEGVAR_CONTENTS (arg_node));
@@ -2028,16 +2038,10 @@ FreeWLsegVar (node *arg_node, node *arg_info)
     FREE (WLSEGVAR_IDX_MAX (arg_node));
 
     for (b = 0; b < WLSEGVAR_BLOCKS (arg_node); b++) {
-        if (WLSEGVAR_BV (arg_node, b) != NULL) {
-            FREE (WLSEGVAR_BV (arg_node, b));
-        }
+        FREE (WLSEGVAR_BV (arg_node, b));
     }
-    if (WLSEGVAR_UBV (arg_node) != NULL) {
-        FREE (WLSEGVAR_UBV (arg_node));
-    }
-    if (WLSEGVAR_SV (arg_node) != NULL) {
-        FREE (WLSEGVAR_SV (arg_node));
-    }
+    FREE (WLSEGVAR_UBV (arg_node));
+    FREE (WLSEGVAR_SV (arg_node));
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (arg_node)
@@ -2057,6 +2061,7 @@ FreeWLstriVar (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLstriVar");
+
     DBUG_PRINT ("FREE", ("Removing N_WLstriVar node ..."));
 
     FREETRAV (WLSTRIVAR_BOUND1 (arg_node));
@@ -2078,6 +2083,7 @@ FreeWLgridVar (node *arg_node, node *arg_info)
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLgridVar");
+
     DBUG_PRINT ("FREE", ("Removing N_WLgridVar node ..."));
 
     FREETRAV (WLGRIDVAR_BOUND1 (arg_node));
