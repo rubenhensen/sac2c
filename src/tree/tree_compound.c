@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/14 16:25:55  dkr
+ * some errors in comments corrected
+ *
  * Revision 3.13  2001/02/26 09:43:33  nmw
  * *** empty log message ***
  *
@@ -2888,7 +2891,7 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
 /******************************************************************************
  *
  * Function:
- *   node *NameOrVal_MakeNode( char *name, int val)
+ *   node *NameOrVal_MakeNode( char *name, int val, void *node_or_int)
  *
  * Description:
  *
@@ -2924,8 +2927,7 @@ NameOrVal_MakeNode (char *name, int val, void *node_or_int)
 /******************************************************************************
  *
  * Function:
- *   node *NodeOrInt_MakeNode( nodetype nt, void *node_or_int,
- *                             bool no_num)
+ *   node *NodeOrInt_MakeNode( nodetype nt, void *node_or_int)
  *
  * Description:
  *
@@ -2972,7 +2974,7 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
     char *str;
     node *index = NULL;
 
-    DBUG_ENTER ("NodeOrInt_MakeIndex");
+    DBUG_ENTER ("NodeOrVal_MakeIndex");
 
     if (name == NULL) {
         if (val == IDX_SHAPE) {
@@ -2999,7 +3001,8 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
  *
  * Function:
  *   node *NodeOrInt_MakeIndex( nodetype nt, void *node_or_int,
- *                              int dim, char *wl_name)
+ *                              int dim, char *wl_name,
+ *                              bool no_num)
  *
  * Description:
  *
