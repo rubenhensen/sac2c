@@ -1,3 +1,4 @@
 Makefile
 flatten.c
 flatten.h
+lac2fun.c
