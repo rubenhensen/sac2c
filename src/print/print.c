@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.176  2004/11/19 10:13:45  sah
+ * classtype is a ntype now
+ *
  * Revision 3.175  2004/11/14 15:19:31  sah
  * added printing of ntypes in new ast mode
  *
@@ -1352,7 +1355,11 @@ PrintModul (node *arg_node, info *arg_info)
                      " *  Class %s :\n",
                      MODUL_NAME (arg_node));
             if (MODUL_CLASSTYPE (arg_node) != NULL) {
+#ifndef NEW_AST
                 type_str = Type2String (MODUL_CLASSTYPE (arg_node), 0, TRUE);
+#else
+                type_str = TYType2String (MODUL_CLASSTYPE (arg_node), 0, TRUE);
+#endif
                 fprintf (outfile, " *  classtype %s;\n", type_str);
                 type_str = Free (type_str);
             }
