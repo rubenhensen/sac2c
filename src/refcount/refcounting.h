@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/07/17 10:26:04  ktr
+ * changed header guards to refcounting-something...
+ *
  * Revision 1.2  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -26,8 +29,8 @@
  *
  */
 
-#ifndef _sac_ssarefcount_h
-#define _sac_ssarefcount_h
+#ifndef _sac_refcounting_h
+#define _sac_refcounting_h
 
 extern node *SSARefCount (node *syntax_tree);
 
@@ -50,4 +53,4 @@ extern node *SSARCNwith2 (node *arg_node, info *arg_info);
 extern node *SSARCNcode (node *arg_node, info *arg_info);
 extern node *SSARCNwithid (node *arg_node, info *arg_info);
 extern node *SSARCicm (node *arg_node, info *arg_info);
-#endif /* _sac_ssarefcount_h */
+#endif /* _sac_refcounting_h */
