@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 12:05:13  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.2  2000/12/04 10:50:19  dkr
  * FreeShpseg: DBUG_ASSERT added
  *
@@ -1329,78 +1332,6 @@ FreeEmpty (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreePost (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreePost");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_post node %s ...", POST_ID (arg_node)));
-
-    FREE (POST_ID (arg_node));
-
-    DBUG_PRINT ("FREE", ("Removing N_post node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreePre (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreePre");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_pre node %s ...", PRE_ID (arg_node)));
-
-    FREE (PRE_ID (arg_node));
-
-    DBUG_PRINT ("FREE", ("Removing N_pre node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeInc (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeInc");
-
-    DBUG_PRINT ("FREE", ("Removing N_inc node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeDec (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeDec");
-
-    DBUG_PRINT ("FREE", ("Removing N_dec node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
 FreeIcm (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
@@ -1615,17 +1546,14 @@ FreeNWith (node *arg_node, node *arg_info)
     FREETRAV (NWITH_WITHOP (arg_node));
     FREE (arg_node->info2);
 
-    if (NWITH_IN (arg_node) != NULL) {
-        NWITH_IN (arg_node) = DFMRemoveMask (NWITH_IN (arg_node));
+    if (NWITH_IN_MASK (arg_node) != NULL) {
+        NWITH_IN_MASK (arg_node) = DFMRemoveMask (NWITH_IN_MASK (arg_node));
     }
-    if (NWITH_INOUT (arg_node) != NULL) {
-        NWITH_INOUT (arg_node) = DFMRemoveMask (NWITH_INOUT (arg_node));
+    if (NWITH_OUT_MASK (arg_node) != NULL) {
+        NWITH_OUT_MASK (arg_node) = DFMRemoveMask (NWITH_OUT_MASK (arg_node));
     }
-    if (NWITH_OUT (arg_node) != NULL) {
-        NWITH_OUT (arg_node) = DFMRemoveMask (NWITH_OUT (arg_node));
-    }
-    if (NWITH_LOCAL (arg_node) != NULL) {
-        NWITH_LOCAL (arg_node) = DFMRemoveMask (NWITH_LOCAL (arg_node));
+    if (NWITH_LOCAL_MASK (arg_node) != NULL) {
+        NWITH_LOCAL_MASK (arg_node) = DFMRemoveMask (NWITH_LOCAL_MASK (arg_node));
     }
 
     NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
@@ -1773,17 +1701,14 @@ FreeNwith2 (node *arg_node, node *arg_info)
     FREETRAV (NWITH2_CODE (arg_node));
     FREETRAV (NWITH2_WITHOP (arg_node));
 
-    if (NWITH2_IN (arg_node) != NULL) {
-        NWITH2_IN (arg_node) = DFMRemoveMask (NWITH2_IN (arg_node));
+    if (NWITH2_IN_MASK (arg_node) != NULL) {
+        NWITH2_IN_MASK (arg_node) = DFMRemoveMask (NWITH2_IN_MASK (arg_node));
     }
-    if (NWITH2_INOUT (arg_node) != NULL) {
-        NWITH2_INOUT (arg_node) = DFMRemoveMask (NWITH2_INOUT (arg_node));
+    if (NWITH2_OUT_MASK (arg_node) != NULL) {
+        NWITH2_OUT_MASK (arg_node) = DFMRemoveMask (NWITH2_OUT_MASK (arg_node));
     }
-    if (NWITH2_OUT (arg_node) != NULL) {
-        NWITH2_OUT (arg_node) = DFMRemoveMask (NWITH2_OUT (arg_node));
-    }
-    if (NWITH2_LOCAL (arg_node) != NULL) {
-        NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
+    if (NWITH2_LOCAL_MASK (arg_node) != NULL) {
+        NWITH2_LOCAL_MASK (arg_node) = DFMRemoveMask (NWITH2_LOCAL_MASK (arg_node));
     }
 
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
