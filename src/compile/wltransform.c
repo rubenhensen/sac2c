@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/01/25 13:41:46  dkr
+ * #include statements changed
+ *
  * Revision 2.9  2000/01/24 19:35:43  dkr
  * disjointness check added
  *
@@ -1368,7 +1371,6 @@ Internal representation in the abstract syntax tree:
 #include "internal_lib.h"
 #include "traverse.h"
 #include "DataFlowMask.h"
-#include "optimize.h"
 #include "wlpragma_funs.h"
 
 #include "DupTree.h"
