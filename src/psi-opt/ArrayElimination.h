@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/30 12:17:50  nmw
+ * AEap added
+ *
  * Revision 3.1  2000/11/20 18:01:38  sacbase
  * new release made
  *
@@ -32,5 +35,6 @@ extern node *AEcond (node *arg_node, node *arg_info);
 extern node *AEdo (node *arg_node, node *arg_info);
 extern node *AEwhile (node *arg_node, node *arg_info);
 extern node *AENwith (node *arg_node, node *arg_info);
+extern node *AEap (node *arg_node, node *arg_info);
 
 #endif /* _ArrayElimination_h */
