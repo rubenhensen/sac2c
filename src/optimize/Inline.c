@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/07/16 17:45:12  dkr
+ * *** empty log message ***
+ *
  * Revision 1.20  1998/07/16 17:20:58  sbs
  * InlineSingleApplication generated
  *
@@ -222,46 +225,6 @@ INLfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- *
- * function:
- *  node *InlineSingleApplication( node *let_node, node *fundef_node)
- *
- * description:
- *   this function allows a single function application to be inlined.
- *   It is ment for external calls only and preserves the actual fun_tab!
- *   <let_node> should point to the N_let node which RHS is to be unrolled,
- *   <fundef_node> should point to the N_fundef node of the function in which
- *      body the <let_node> is situated!! (needed for new vardecs only!)
- *   It returns an assignment-chain to be inserted for the N_assign node
- *   which has <let_node> as its body!
- *
- ******************************************************************************/
-
-node *
-InlineSingleApplication (node *let_node, node *fundef_node)
-{
-    node *arg_info, *assigns;
-    funptr *mem_tab;
-
-    DBUG_ENTER ("InlineSingleApplication");
-
-    mem_tab = act_tab;
-    act_tab = inline_tab;
-
-    arg_info = MakeNode (N_info);
-    INFO_INL_TYPES (arg_info) = FUNDEF_VARDEC (fundef_node);
-
-    assigns = DoInline (let_node, LET_EXPR (let_node), arg_info);
-
-    FUNDEF_VARDEC (fundef_node) = INFO_INL_TYPES (arg_info);
-    FREE (arg_info);
-
-    act_tab = mem_tab;
-
-    DBUG_RETURN (assigns);
-}
-
 /*
  *
  *  functionname  : DoInline
@@ -356,6 +319,46 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 
     inline_nr++;
     DBUG_RETURN (inl_nodes);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *InlineSingleApplication( node *let_node, node *fundef_node)
+ *
+ * description:
+ *   this function allows a single function application to be inlined.
+ *   It is ment for external calls only and preserves the actual fun_tab!
+ *   <let_node> should point to the N_let node which RHS is to be unrolled,
+ *   <fundef_node> should point to the N_fundef node of the function in which
+ *      body the <let_node> is situated!! (needed for new vardecs only!)
+ *   It returns an assignment-chain to be inserted for the N_assign node
+ *   which has <let_node> as its body!
+ *
+ ******************************************************************************/
+
+node *
+InlineSingleApplication (node *let_node, node *fundef_node)
+{
+    node *arg_info, *assigns;
+    funptr *mem_tab;
+
+    DBUG_ENTER ("InlineSingleApplication");
+
+    mem_tab = act_tab;
+    act_tab = inline_tab;
+
+    arg_info = MakeNode (N_info);
+    INFO_INL_TYPES (arg_info) = FUNDEF_VARDEC (fundef_node);
+
+    assigns = DoInline (let_node, LET_EXPR (let_node), arg_info);
+
+    FUNDEF_VARDEC (fundef_node) = INFO_INL_TYPES (arg_info);
+    FREE (arg_info);
+
+    act_tab = mem_tab;
+
+    DBUG_RETURN (assigns);
 }
 
 /*
