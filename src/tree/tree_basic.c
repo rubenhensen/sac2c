@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2000/11/17 16:19:03  sbs
+ * DEPS-structure extended by location field; access macros as well as
+ * Constructor Function adjusted accordingly.
+ *
  * Revision 1.29  2000/10/26 13:22:20  dkr
  * more access macros used
  *
@@ -317,8 +321,8 @@ MakeNums (int num, nums *next)
 /*--------------------------------------------------------------------------*/
 
 deps *
-MakeDeps (char *name, char *decname, char *libname, statustype status, deps *sub,
-          deps *next)
+MakeDeps (char *name, char *decname, char *libname, statustype status, locationtype loc,
+          deps *sub, deps *next)
 {
     deps *tmp;
     DBUG_ENTER ("MakeDeps");
@@ -328,6 +332,7 @@ MakeDeps (char *name, char *decname, char *libname, statustype status, deps *sub
     DEPS_DECNAME (tmp) = decname;
     DEPS_LIBNAME (tmp) = libname;
     DEPS_STATUS (tmp) = status;
+    DEPS_LOC (tmp) = loc;
     DEPS_SUB (tmp) = sub;
     DEPS_NEXT (tmp) = next;
 

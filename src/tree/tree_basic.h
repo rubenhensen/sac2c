@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.104  2000/11/17 16:19:03  sbs
+ * DEPS-structure extended by location field; access macros as well as
+ * Constructor Function adjusted accordingly.
+ *
  * Revision 1.103  2000/11/03 16:17:03  dkr
  * some superfluous INFO_COMP_... macro removed
  *
@@ -530,12 +534,13 @@ extern strings *MakeStrings (char *string, strings *next);
  ***
  ***  permanent attributes:
  ***
- ***    char*       NAME
- ***    char*       DECNAME
- ***    char*       LIBNAME
- ***    statustype  STATUS
- ***    deps*       SUB        (O)
- ***    deps*       NEXT       (O)
+ ***    char*        NAME
+ ***    char*        DECNAME
+ ***    char*        LIBNAME
+ ***    statustype   STATUS
+ ***    locationtype LOC
+ ***    deps*        SUB        (O)
+ ***    deps*        NEXT       (O)
  ***/
 
 /*
@@ -546,12 +551,13 @@ extern strings *MakeStrings (char *string, strings *next);
  */
 
 extern deps *MakeDeps (char *name, char *decname, char *libname, statustype status,
-                       deps *sub, deps *next);
+                       locationtype loc, deps *sub, deps *next);
 
 #define DEPS_NAME(d) (d->name)
 #define DEPS_DECNAME(d) (d->decname)
 #define DEPS_LIBNAME(d) (d->libname)
 #define DEPS_STATUS(d) (d->status)
+#define DEPS_LOC(d) (d->location)
 #define DEPS_SUB(d) (d->sub)
 #define DEPS_NEXT(d) (d->next)
 
