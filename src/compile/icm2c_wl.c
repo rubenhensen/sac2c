@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/06 14:49:08  dkr
+ * changed WL_ASSIGN
+ *
  * Revision 1.3  1998/05/04 15:35:29  dkr
  * added WL_ASSIGN
  *
@@ -125,8 +128,6 @@ void
 ICMCompileWL_ASSIGN (char *expr, char *array, char *offset, char *idx_vec, int dims,
                      char **idx_scalar)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileWL_ASSIGN");
 
 #define WL_ASSIGN
@@ -138,15 +139,19 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *offset, char *idx_vec, int d
     fprintf (outfile, "ND_A_FIELD(%s)[%s] = %s;\n", array, offset, expr);
 
 #if 0
-  fprintf( outfile, "fprintf( stderr, \"");
-  for (i = 0; i < dims; i++) {
-    fprintf( outfile, "idx%d=%%d ", i);
+  {
+    int i;
+
+    fprintf( outfile, "fprintf( stderr, \"");
+    for (i = 0; i < dims; i++) {
+      fprintf( outfile, "idx%d=%%d ", i);
+    }
+    fprintf( outfile, "\\n\"");
+    for (i = 0; i < dims; i++) {
+      fprintf( outfile, ", %s", idx_scalar[ i]);
+    }
+    fprintf( outfile, ");\n");
   }
-  fprintf( outfile, "\\n\"");
-  for (i = 0; i < dims; i++) {
-    fprintf( outfile, ", %s", idx_scalar[ i]);
-  }
-  fprintf( outfile, ");\n");
 #endif
 
     INDENT;
