@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2005/01/27 18:20:30  mwe
+ * new counter for type_upgrade added
+ *
  * Revision 3.13  2004/12/09 10:59:30  mwe
  * support for type_upgrade added
  *
@@ -83,7 +86,9 @@ extern int dl_expr;
 extern int sp_expr;
 extern int cvp_expr;
 extern int wlfs_expr;
-extern int tup_expr;
+extern int tup_tu_expr;
+extern int tup_wdp_expr;
+extern int tup_fdp_expr;
 
 extern node *OPTdoOptimize (node *arg_node);
 extern node *OPTmodule (node *arg_node, info *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2005/01/27 18:20:30  mwe
+ * new counter for type_upgrade added
+ *
  * Revision 3.74  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -456,7 +459,9 @@ int dl_expr;
 int sp_expr;
 int cvp_expr;
 int wlfs_expr;
-int tup_expr;
+int tup_tu_expr;
+int tup_wdp_expr;
+int tup_fdp_expr;
 
 /**
  *
@@ -513,7 +518,9 @@ ResetCounters ()
     sp_expr = 0;
     cvp_expr = 0;
     wlfs_expr = 0;
-    tup_expr = 0;
+    tup_tu_expr = 0;
+    tup_wdp_expr = 0;
+    tup_fdp_expr = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -529,6 +536,8 @@ ResetCounters ()
  *                          int off_ap_unsupported,
  *                          int off_wls_expr, int off_al_expr, int off_dl_expr,
  *                          int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
+ *                          int off_tup_tu_expr, int off_tup_wdp_expr,
+ *                          int off_tup_fdp_expr,
  *                          int flag)
  *
  *   @brief prints all counters - specified offset provided that the respective
@@ -546,7 +555,8 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
                  int off_dl_expr, int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
-                 int off_tup_expr, int flag)
+                 int off_tup_tu_expr, int off_tup_wdp_expr, int off_tup_fdp_expr,
+                 int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -653,11 +663,20 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
         CTInote ("%d with-loop(s) fused", diff);
     }
 
-    diff = tup_expr - off_tup_expr;
+    diff = tup_tu_expr - off_tup_tu_expr;
     if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0))) {
         CTInote ("%d type(s) upgraded", diff);
     }
 
+    diff = tup_wdp_expr - off_tup_wdp_expr;
+    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d wrapper function(s) specialized", diff);
+    }
+
+    diff = tup_fdp_expr - off_tup_fdp_expr;
+    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d user function(s) specialized or dispatched", diff);
+    }
     DBUG_VOID_RETURN;
 }
 
@@ -886,7 +905,7 @@ OPTmodule (node *arg_node, info *arg_info)
 
     CTInote ("\nOverall optimization statistics:");
     PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                     ALL);
+                     0, 0, ALL);
 
     /*
      * index vector elimination
@@ -982,7 +1001,9 @@ OPTfundef (node *arg_node, info *arg_info)
     int mem_sp_expr = sp_expr;
     int mem_cvp_expr = cvp_expr;
     int mem_wlfs_expr = wlfs_expr;
-    int mem_tup_expr = tup_expr;
+    int mem_tup_tu_expr = tup_tu_expr;
+    int mem_tup_wdp_expr = tup_wdp_expr;
+    int mem_tup_fdp_expr = tup_fdp_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -999,7 +1020,9 @@ OPTfundef (node *arg_node, info *arg_info)
     int old_dl_expr = dl_expr;
     int old_sp_expr = sp_expr;
     int old_cvp_expr = cvp_expr;
-    int old_tup_expr = tup_expr;
+    int old_tup_tu_expr = tup_tu_expr;
+    int old_tup_wdp_expr = tup_wdp_expr;
+    int old_tup_fdp_expr = tup_fdp_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1306,7 +1329,8 @@ OPTfundef (node *arg_node, info *arg_info)
                 || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
                 || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
                 || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr)
-                || (tup_expr != old_tup_expr))
+                || (tup_tu_expr != old_tup_tu_expr) || (tup_wdp_expr != old_tup_wdp_expr)
+                || (tup_fdp_expr != old_tup_fdp_expr))
                && (loop1 < global.max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1413,7 +1437,8 @@ OPTfundef (node *arg_node, info *arg_info)
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
                          mem_dl_expr, mem_sp_expr, mem_cvp_expr, mem_wlfs_expr,
-                         mem_tup_expr, NON_ZERO_ONLY);
+                         mem_tup_tu_expr, mem_tup_wdp_expr, mem_tup_fdp_expr,
+                         NON_ZERO_ONLY);
     }
 
     if (FUNDEF_NEXT (arg_node)) {
