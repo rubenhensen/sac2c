@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1995/01/06 17:51:45  sbs
+ * Revision 1.42  1995/01/06 19:05:51  sbs
+ * no_mod_ext pragma deleted & extern declaration inserted
+ *
+ * Revision 1.41  1995/01/06  17:51:45  sbs
  * no_mod_ext pragma inserted
  *
  * Revision 1.40  1995/01/05  12:46:51  sbs
@@ -160,6 +163,7 @@ static char *mod_name;
 %}
 
 %union {
+	 nodetype	 nodetype;
          id              *id;
          ids             *ids;
          types           *types;
@@ -177,12 +181,14 @@ static char *mod_name;
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS, OWN,
-       ARRAY,SC, TRUE, FALSE, PRAGMA_NO_MOD_EXT
+       ARRAY,SC, TRUE, FALSE, EXTERN
 %token <id> ID, STR
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR
 %token <cint> NUM
 %token <cfloat> FLOAT
 
+%type <nodetype> modclass
+%type <cint> evextern
 %type <ids> ids,
 %type <nums> nums;
 %type <types> localtype, type, types, simpletype, complextype;
@@ -192,8 +198,8 @@ static char *mod_name;
              selassign, forassign, retassignblock, 
              apl, expr, exprs, monop, binop, triop, 
              conexpr, generator, unaryop,
-             moddec, moddec1, expdesc, expdesc2, expdesc3, fundecs, fundec,
-	     exptypes, exptype,
+             moddec, expdesc, expdesc2, expdesc3, fundecs, fundec,
+	     exptypes, exptype, evimport
              imptypes, imptype, import, imports, impdesc, impdesc2, impdesc3;
 
 %left OR
@@ -215,66 +221,43 @@ file:   PARSE_PRG prg {syntax_tree=$2;}
 	| PARSE_DEC moddec {decl_tree=$2;}
 	;
 
-moddec: moddec1 PRAGMA_NO_MOD_EXT {mod_name=NULL;} OWN COLON expdesc
-	  { $$=$1;
-	    $$->info.fun_name.id_mod=NULL;
-	    $$->node[0]=$6;
-	  }
-	| moddec1 OWN COLON expdesc
-	  { $$=$1;
-	    $$->info.fun_name.id_mod= $$->info.fun_name.id;
-	    $$->node[0]=$4;
-	  }
-	;
-moddec1: MODDEC ID COLON
-          { mod_name=$2;
-
-	    $$=MakeNode(N_moddec);
-            $$->info.fun_name.id=$2;
-	    $$->nnode=1;
-
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name));
-          }
-	| MODDEC ID COLON imports
-          { mod_name=$2;
-
-	    $$=MakeNode(N_moddec);
-            $$->info.fun_name.id=$2;
-            $$->node[1]=$4;
-            $$->nnode=2;
-
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s , %s" P_FORMAT,
+moddec: modclass ID COLON evextern evimport OWN COLON expdesc
+	  { $$=MakeNode($1);
+	    $$->info.fun_name.id=$2;
+	    if($4 == 1)
+	      $$->info.fun_name.id_mod=mod_name=NULL;
+	    else
+	      $$->info.fun_name.id_mod=mod_name=$2;
+            $$->node[0]=$8;
+	    $$->node[1]=$5;
+            if($$->node[1] != NULL) {
+              $$->nnode=2;
+              DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
                         mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
-          }
-	| CLASSDEC ID COLON
-          { mod_name=$2;
-
-	    $$=MakeNode(N_classdec);
-            $$->info.fun_name.id=$2;
-            $$->nnode=1;
-
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id));
-          }
-	| CLASSDEC ID COLON imports
-          { mod_name=$2;
-
-	    $$=MakeNode(N_classdec);
-            $$->info.fun_name.id=$2;
-            $$->node[1]=$4;
-            $$->nnode=2;
-
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s , %s" P_FORMAT,
+	    }
+	    else {
+              $$->nnode=1;
+              DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
-                        mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
-          }
-	;
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+	    };
+	  }
+
+modclass: MODDEC {$$=N_moddec;}
+	  | CLASSDEC {$$=N_classdec;}
+	  ;
+
+evextern: EXTERN {$$=1;}
+	  | {$$=0;}
+	  ;
+
+evimport: imports {$$=$1;}
+	  | {$$=NULL;}
+	  ;
 
 imports: import imports { $1->node[0]=$2;
                           $1->nnode+=1;

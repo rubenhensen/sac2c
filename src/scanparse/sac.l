@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/01/06 17:51:45  sbs
+ * Revision 1.11  1995/01/06 19:05:51  sbs
+ * no_mod_ext pragma deleted & extern declaration inserted
+ *
+ * Revision 1.10  1995/01/06  17:51:45  sbs
  * no_mod_ext pragma inserted
  *
  * Revision 1.9  1995/01/05  12:46:51  sbs
@@ -145,7 +148,7 @@ int start_token;
 "true"                          {FILTER( TRUE );}
 "false"                         {FILTER( FALSE );}
 
-^#pragma[ ]*no_mod_ext[ ]*$     {FILTER( PRAGMA_NO_MOD_EXT );}
+extern                          {FILTER( EXTERN );}
 
 \"[^"\n]*\"			{FILTER2( STR );}
 [_A-Za-z][_A-Za-z0-9]*		{FILTER2( ID );}
