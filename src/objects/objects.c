@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/14 10:19:30  dkr
+ * no changes done
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -110,8 +113,6 @@
  * Revision 1.1  1995/10/31  17:22:05  cg
  * Initial revision
  *
- *
- *
  */
 
 #include "types.h"
@@ -138,11 +139,6 @@
  *                  are added in the function's return type list and in
  *                  the return-statement itself.
  *  global vars   : act_tab, obj_tab
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG
- *
- *  remarks       :
  *
  */
 
@@ -158,29 +154,7 @@ HandleObjects (node *syntax_tree)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-/*
- *
  *  functionname  : InsertIntoInitlist
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -227,14 +201,6 @@ InsertIntoInitlist (node *objdef, nodelist **already_done)
 /*
  *
  *  functionname  : RearrangeObjdefs
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -317,12 +283,6 @@ RearrangeObjdefs (node *objects)
  *  description   : traverses all global objects for adding varnames
  *                  and then the functions for adding additional parameters
  *                  and return values
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -566,10 +526,6 @@ OBJarg (node *arg_node, node *arg_info)
         } else {
             new_return_type = DupTypes (ARG_TYPE (arg_node));
             TYPES_STATUS (new_return_type) = ST_artificial;
-            /*
-             * DupTypes() duplicates the field 'attrib' :-((
-             */
-            new_return_type->attrib = ST_regular;
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;
 
@@ -591,12 +547,6 @@ OBJarg (node *arg_node, node *arg_info)
  *  description   : For each global object which is needed by the applied
  *                  function, a new current argument is added,
  *                  i.e. the global object is made local.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeId, MakeExprs, Trav
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -643,12 +593,6 @@ OBJap (node *arg_node, node *arg_info)
  *  description   : For all applied appearances of global objects, the
  *                  "varname" is used as name instead of the combination
  *                  object and  module name.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : TREE, DBUG
- *
- *  remarks       :
  *
  */
 
@@ -737,20 +681,6 @@ OBJlet (node *arg_node, node *arg_info)
 
                     old_ids = LET_IDS (arg_node);
 
-                    /*
-                     *  task done by uniqueness checker
-                     *
-                              while (old_ids!=NULL) {
-                                if (strcmp(IDS_NAME(old_ids), IDS_NAME(last_ids))==0) {
-                                  ERROR(NODE_LINE(arg_node),
-                                        ("Object '%s` already existing",
-                                         IDS_NAME(old_ids)));
-                                }
-
-                                old_ids=IDS_NEXT(old_ids);
-                              }
-                    */
-
                     IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
 
                     DBUG_PRINT ("OBJ",
@@ -772,17 +702,3 @@ OBJlet (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
