@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/05/14 21:35:45  dkr
+ * changed ComputeOneCube (not finished ...)
+ *
  * Revision 1.10  1998/05/12 22:42:54  dkr
  * added attributes NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
  * added ComputeIndexMinMax()
@@ -2275,70 +2278,97 @@ DupOutline (node *stride_var)
 /******************************************************************************
  *
  * function:
- *   node* ComputeOneCube( node *stride_var)
+ *   node* ComputeOneCube( node *stride_var, WithOpType wltype)
  *
  * description:
- *   In with-loops, which have one part/generator only, this generator
- *   possibly is not a complete cube but a grid (e.g. fold with generator
- *   (step < width)).
- *   The compilation-scheme can not handle these incomplete grids, therefore
- *   this function supplements missings parts of the grid to get a complete
- *   cube:
+ *   If the with-loop contains one part/generator only, we must supplement
+ *   new generators for the complement.
+ *   If the wl contains a fold operation, and the generator is not a complete
+ *   cube but a grid, we must supplement missings parts of the grid only:
+ *
  *         60 -> 200 step 50                  100 -> 200 step 50
  *                  40 -> 50: op0     =>>                0 -> 10: op0
  *                                                      40 -> 50: noop
  *
+ *   If the wl contains a non-fold operation, we must supplement generators
+ *   for the whole complement:
+ *
+ *                                              0 -> 100 step  1
+ *                                                       0 ->  1: init/copy
+ *         60 -> 200 step 50                  100 -> 200 step 50
+ *                  40 -> 50: op0     =>>                0 -> 10: op0
+ *                                                      40 -> 50: init/copy
+ *                                            200 -> 500 step  1:
+ *                                                       0 ->  1: init/copy
+ *
+ * remark:
+ *   The new generators contain no pointer to a code-block. We inspect the
+ *   type of the with-loop (WO_genarray, WO_modarray, WO_fold...) to decide
+ *   wheather we must ...
+ *     ... initialize the array-part with 0 (WO_genarray -> 'init'),
+ *     ... copy the source-array (WO_modarray -> 'copy'),
+ *     ... do nothing (WO_fold -> 'noop').
+ *
  ******************************************************************************/
 
 node *
-ComputeOneCube (node *stride_var)
+ComputeOneCube (node *stride_var, WithOpType wltype)
 {
-    node *grid_var;
+    node *grid_var, *cexpr_template;
 
     DBUG_ENTER ("ComputeOneCube");
 
-    if (stride_var != NULL) {
-        if (NODE_TYPE (stride_var) == N_WLstride) {
+    if (NODE_TYPE (stride_var) == N_WLstride) {
+        /*
+         * the generator params are all constant
+         */
 
-            grid_var = WLSTRIDE_CONTENTS (stride_var);
-            if (WLGRID_BOUND1 (grid_var) > 0) {
+        /*
+         * store any code expression
+         */
+        grid_var = WLSTRIDE_CONTENTS (stride_var);
+        while (WLGRID_NEXTDIM (grid_var) != NULL) {
+            grid_var = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (grid_var));
+        }
+        DBUG_ASSERT ((WLGRID_CODE (grid_var) != NULL), "no code found");
+        cexpr_template = NCODE_CEXPR (WLGRID_CODE (grid_var));
 
-                WLSTRIDE_BOUND1 (stride_var) += WLGRID_BOUND1 (grid_var);
-                WLGRID_BOUND2 (grid_var) -= WLGRID_BOUND1 (grid_var);
-                WLGRID_BOUND1 (grid_var) = 0;
+        if ((wltype == WO_genarray) || (wltype == WO_modarray)) {
 
-                WLGRID_NEXT (grid_var)
-                  = MakeWLgrid (WLGRID_LEVEL (grid_var), WLGRID_DIM (grid_var),
-                                WLGRID_BOUND2 (grid_var), WLSTRIDE_STEP (stride_var),
-                                WLGRID_UNROLLING (grid_var),
-                                DupOutline (WLGRID_NEXTDIM (grid_var)), NULL, NULL);
-            }
-            WLGRID_NEXTDIM (grid_var) = ComputeOneCube (WLGRID_NEXTDIM (grid_var));
+        } else { /* WO_fold... */
 
-        } else {
-
-            grid_var = WLSTRIVAR_CONTENTS (stride_var);
 #if 0
-      if (WLGRIDVAR_BOUND1( grid_var) > 0) {
-      
-        WLSTRIVAR_BOUND1( stride_var) += WLGRIDVAR_BOUND1( grid_var);
-        WLGRIDVAR_BOUND2( grid_var) -= WLGRIDVAR_BOUND1( grid_var);
-        WLGRIDVAR_BOUND1( grid_var) = 0;
+    if (stride_var != NULL) {
 
-        WLGRIDVAR_NEXT( grid_var)
-          = MakeWLgrid( WLGRIDVAR_LEVEL( grid_var),
-                        WLGRIDVAR_DIM( grid_var),
-                        WLGRIDVAR_BOUND2( grid_var),
-                        WLSTRIVAR_STEP( stride_var),
-                        WLGRIDVAR_UNROLLING( grid_var),
-                        DupOutline( WLGRIDVAR_NEXTDIM( grid_var)),
+      grid_var = WLSTRIDE_CONTENTS( stride_var);
+      if (WLGRID_BOUND1( grid_var) > 0) {
+      
+        WLSTRIDE_BOUND1( stride_var) += WLGRID_BOUND1( grid_var);
+        WLGRID_BOUND2( grid_var) -= WLGRID_BOUND1( grid_var);
+        WLGRID_BOUND1( grid_var) = 0;
+
+        WLGRID_NEXT( grid_var)
+          = MakeWLgrid( WLGRID_LEVEL( grid_var),
+                        WLGRID_DIM( grid_var),
+                        WLGRID_BOUND2( grid_var),
+                        WLSTRIDE_STEP( stride_var),
+                        WLGRID_UNROLLING( grid_var),
+                        DupOutline( WLGRID_NEXTDIM( grid_var)),
                         NULL,
                         NULL);
       }
-      WLGRIDVAR_NEXTDIM( grid_var)
-        = ComputeOneCube( WLGRIDVAR_NEXTDIM( grid_var));
+      WLGRID_NEXTDIM( grid_var)
+        = ComputeOneCube( WLGRID_NEXTDIM( grid_var), wltype);
+
+    }
 #endif
         }
+
+    } else {
+
+        /*
+         * the generator params are not all constant
+         */
     }
 
     DBUG_RETURN (stride_var);
@@ -2365,11 +2395,13 @@ ComputeCubes (node *strides)
 
     DBUG_ASSERT ((NODE_TYPE (strides) == N_WLstride), "wrong node type found");
 
-    /*
-     * first step:
-     *
-     * if a stride contains
-     */
+#if 0
+  /*
+   * first step:
+   *
+   * if a stride contains ...
+   */
+#endif
 
     /*
      * second step:
@@ -2616,17 +2648,35 @@ WLTRANwith (node *arg_node, node *arg_info)
     NWITH_OUT (arg_node) = NULL;
     NWITH_LOCAL (arg_node) = NULL;
 
+    /*
+     * convert parts of with-loop into new format
+     */
     DBUG_EXECUTE ("WLprec", NOTE (("step 0: converting parts to strides\n")));
     strides = Parts2Strides (NWITH_PART (arg_node), dims);
 
     /*
-     * the params of all generators are constant
+     * build the cubes
      */
-
     DBUG_EXECUTE ("WLprec", NOTE (("step 1: cube-building\n")));
     if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
-        cubes = ComputeOneCube (strides);
+        /*
+         * we have one part only.
+         *  -> the index-range of the generator is possibly a *strong* subset of
+         *     the index-vector-space.
+         *  -> the generator params are possibly vars.
+         */
+        cubes = ComputeOneCube (strides, NWITH2_TYPE (new_node));
     } else {
+        /*
+         * we have multiple parts.
+         *  -> the index-ranges of the generators partitionize the index-vector-space.
+         *  -> the generator params are constant.
+         *
+         * remark: for the time being these assertions are not a restriction, because
+         *         in a SAC-source we can specifiy one part only.
+         *         Therefore multiple parts are generated exclusiv by WLF, and these
+         *         multiple parts meet the above conditions.
+         */
         cubes = ComputeCubes (strides);
     }
     if ((WL_break_after == WL_PH_cube) || (NODE_TYPE (strides) != N_WLstride)) {
