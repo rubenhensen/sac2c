@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.64  1995/05/24 15:25:15  sbs
+ * Revision 1.65  1995/05/29 09:47:42  sbs
+ * braces around cond's predicates inserted.
+ *
+ * Revision 1.64  1995/05/24  15:25:15  sbs
  * trace.h included
  *
  * Revision 1.63  1995/05/22  18:08:19  sbs
@@ -726,7 +729,7 @@ PrintCond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintCond");
 
-    fprintf (outfile, "if ");
+    fprintf (outfile, "if (");
     indent++;
 
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
@@ -734,7 +737,7 @@ PrintCond (node *arg_node, node *arg_info)
                   free (text););
 
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, "\n");
+    fprintf (outfile, ")\n");
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - then\n");
                   PrintMasks (arg_node->node[1], arg_info););
