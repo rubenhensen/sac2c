@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/12/29 12:53:23  cg
+ * Revision 1.29  1995/12/29 14:49:00  asi
+ * added ID_VARNO
+ *
+ * Revision 1.28  1995/12/29  12:53:23  cg
  * added function StoreString
  *
  * Revision 1.27  1995/12/29  10:34:19  cg
@@ -266,6 +269,8 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 /***
  ***  IDS :
  ***/
+
+#define IDS_VARNO(n) VARDEC_VARNO (IDS_VARDEC (n))
 
 /*
  *
@@ -1189,6 +1194,18 @@ node *Shape2Array (shapes *shp);
 
 #define VINFO_DIM(n) SHAPES_DIM (VINFO_SHP (n))
 #define VINFO_SELEMS(n) SHAPES_SELEMS (VINFO_SHP (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_id :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define ID_VARNO(n) VARDEC_VARNO (ID_VARDEC (n))
 
 /*--------------------------------------------------------------------------*/
 
