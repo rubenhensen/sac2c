@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/05/10 13:28:23  sbs
+ * adjusted for bison usage...
+ *
  * Revision 2.10  1999/05/06 15:36:55  sbs
  * the global var filename now is copied whenever yyparse is called
  * or a line-pragma is found. This allows to attach the filename
@@ -325,6 +328,9 @@ static node *store_wlcomp_pragma_global=NULL;
 
 static file_type file_kind = F_prog;
 
+extern node *Append(node *target_node, node *append_node);
+extern node *string2array(char *str);
+extern types *GenComplexType( types *types, nums *numsp);
 
 %}
 

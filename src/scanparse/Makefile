@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/10 13:28:23  sbs
+# adjusted for bison usage...
+#
 # Revision 2.3  1999/03/11 18:18:20  dkr
 # make deps done
 #
@@ -94,8 +97,8 @@ cc_FLAGS  := -xsb
 
 CCL_FLAGS := $($(CC)_FLAGS) -g
 
-LEX       :=lex -n
-YACC      :=yacc -dv
+LEX       :=flex -n
+YACC      :=bison -y -dv
 LIBS      :=-ly -ll
 
 INCS=-I../global -I../../inc -I../modules -I../typecheck -I../optimize
