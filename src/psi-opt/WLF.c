@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/21 18:16:17  dkr
+ * DupTreeInfo replaced by DupTree_Type
+ *
  * Revision 3.3  2001/02/06 01:19:13  dkr
  * include of print.h removed
  *
@@ -929,11 +932,12 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
 static node *
 CreateCode (node *target, node *subst)
 {
-    node *coden, *new_arg_info, *dup_info;
+    node *coden, *new_arg_info;
 
     DBUG_ENTER ("CreateCode");
-    DBUG_ASSERT (N_Ncode == NODE_TYPE (target), ("wrong Parameter"));
-    DBUG_ASSERT (N_Ncode == NODE_TYPE (subst), ("wrong Parameter"));
+
+    DBUG_ASSERT ((N_Ncode == NODE_TYPE (target)), "wrong Parameter");
+    DBUG_ASSERT ((N_Ncode == NODE_TYPE (subst)), "wrong Parameter");
 
     wlf_mode = wlfm_replace;
 
@@ -947,17 +951,15 @@ CreateCode (node *target, node *subst)
     INFO_WLI_NEW_ID (new_arg_info) = NULL;
     new_arg_info->varno = ref_mode_arg_info->varno;
 
-    /* DupTree() shall fill ID_WL of Id nodes with special information. So
-       we have to call DupTree() with DUP_WLF. */
-    dup_info = MakeInfo ();
-    dup_info->flag = DUP_WLF; /* compare DUPTYPE in DupTree.h */
-
-    coden = DupTreeInfo (NCODE_CBLOCK (target), dup_info);
+    /*
+     * DupTree() shall fill ID_WL of Id nodes with special information.
+     * So we have to call DupTree() with DUP_WLF.
+     */
+    coden = DupTree_Type (NCODE_CBLOCK (target), DUP_WLF);
     coden = Trav (coden, new_arg_info);
-    coden = MakeNCode (coden, DupTreeInfo (NCODE_CEXPR (target), dup_info));
+    coden = MakeNCode (coden, DupTree_Type (NCODE_CEXPR (target), DUP_WLF));
 
     FreeNode (new_arg_info);
-    FreeNode (dup_info);
 
     wlf_mode = wlfm_search_ref;
 
