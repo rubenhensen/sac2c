@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/07/03 15:27:39  dkr
+ * RUNTIMECHECK_TYPE added (for TAGGED_ARRAYS)
+ *
  * Revision 3.22  2002/06/24 14:36:24  dkr
  * -intrinsic flag removed for TAGGED_ARRAYS
  *
@@ -355,15 +358,28 @@ AnalyseCommandline (int argc, char *argv[])
         break_arg = Free (break_arg);
     });
 
+#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("check", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', runtimecheck = RUNTIMECHECK_ALL);
-        ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
+        ARG_FLAGMASK ('t', runtimecheck |= RUNTIMECHECK_TYPE);
         ARG_FLAGMASK ('b', runtimecheck |= RUNTIMECHECK_BOUNDARY);
+        ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
         ARG_FLAGMASK ('e', runtimecheck |= RUNTIMECHECK_ERRNO);
         ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
         ARG_FLAGMASK_END ();
     });
+#else
+    ARGS_OPTION ("check", {
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', runtimecheck = RUNTIMECHECK_ALL);
+        ARG_FLAGMASK ('b', runtimecheck |= RUNTIMECHECK_BOUNDARY);
+        ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
+        ARG_FLAGMASK ('e', runtimecheck |= RUNTIMECHECK_ERRNO);
+        ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
+        ARG_FLAGMASK_END ();
+    });
+#endif
 
     ARGS_FLAG ("copyright", copyright (); exit (0));
 
@@ -869,7 +885,8 @@ CheckOptionConsistency ()
 
     if (runtimecheck & RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
         optimize &= ~OPT_AP;
-        SYSWARN (("Boundary check and array padding may not be used simultaneously.\n"
+        SYSWARN (("Boundary check and array padding may not be used"
+                  " simultaneously.\n"
                   "Array padding turned off"));
     }
 

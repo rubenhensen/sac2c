@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/07/03 15:28:01  dkr
+ * RUNTIMECHECK_TYPE added (for TAGGED_ARRAYS)
+ *
  * Revision 3.14  2002/06/02 21:39:47  dkr
  * support for TAGGED_ARRAYS added
  *
@@ -237,10 +240,14 @@ PrintGlobalSwitches ()
                       " *  Global Switches\n */\n\n");
 
     fprintf (outfile, "#define SAC_DO_CHECK           %d\n", runtimecheck ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
-             (runtimecheck & RUNTIMECHECK_MALLOC) ? 1 : 0);
+#ifdef TAGGED_ARRAYS
+    fprintf (outfile, "#define SAC_DO_CHECK_TYPE  %d\n",
+             (runtimecheck & RUNTIMECHECK_TYPE) ? 1 : 0);
+#endif
     fprintf (outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
              (runtimecheck & RUNTIMECHECK_BOUNDARY) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
+             (runtimecheck & RUNTIMECHECK_MALLOC) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
              (runtimecheck & RUNTIMECHECK_ERRNO) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
