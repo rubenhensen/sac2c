@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/02 12:15:37  sah
+ * namespaces are annotated correctly now
+ *
  * Revision 1.7  2004/11/01 21:49:31  sah
  * asdded adding of dependencies for directly referenced namespaces
  *
@@ -311,7 +314,8 @@ ANSAp (node *arg_node, info *arg_info)
          * this function comes from another namespace
          *  -> add the namespace to the dependency list
          */
-        SSAdd (AP_MOD (arg_node), MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+          = SSAdd (AP_MOD (arg_node), MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
     }
 
     arg_node = TravSons (arg_node, arg_info);
