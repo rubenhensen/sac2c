@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/11/24 17:32:14  khf
+ * SacDevCamp04
+ *
  * Revision 1.23  2004/11/24 13:29:55  khf
  * SacDevCamp04: Compiles
  *
@@ -1032,10 +1035,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
                                                   TCcreateZeroVector (dim, T_int),
                                                   DUPdoDupNode (array_shape), NULL, NULL),
                                  NULL),
-                     TBmakeCode (TBmakeBlock (TCmakeAssignLet (ILIBstringCopy (
-                                                                 ID_NAME (id)),
-                                                               vardecs, expr),
-                                              NULL),
+                     TBmakeCode (TBmakeBlock (TCmakeAssignLet (ID_AVIS (id), expr), NULL),
                                  TBmakeExprs (id, NULL)),
                      TBmakeGenarray (DUPdoDupNode (array_shape), NULL));
     CODE_USED (WITH_CODE (wl))++;
@@ -1221,7 +1221,7 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
         /*
          * create assignment 'tmp = [...];' and insert it into WL
          */
-        ass = TCmakeAssignLet (ILIBstringCopy (ID_NAME (id)), vardec, new_index);
+        ass = TCmakeAssignLet (ID_AVIS (id), new_index);
         ASSIGN_NEXT (ass) = BLOCK_INSTR (WITH_CBLOCK (sel));
         BLOCK_INSTR (WITH_CBLOCK (sel)) = ass;
     }
