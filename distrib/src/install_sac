@@ -90,14 +90,16 @@ insert_component() {
                           warn '"'$2'" neglected - using "'$3'"!'
                           warn '"'$2'" NOT INSTALLED AGAIN !!'
                         else
-                          mv $2 $3
+                          mv -f $2 $3
+                          chmod u+w $3
                           mess '"'$2'" INSTALLED !!'
                         fi
                       else
                         if [ $1 = "d" ] ; then
                           mkdir -p $3
                         fi
-                        mv $2 $3
+                        mv -f $2 $3
+                        chmod u+w $3
                         mess '"'$2'" INSTALLED !!'
                       fi
                     else
@@ -109,6 +111,19 @@ insert_component() {
                       fi
                     fi
                    }
+
+
+######################################################################
+# This is the beginning...
+######################################################################
+
+chmod -f u+w install_sac README LICENSE
+
+echo '**************************************************************************'
+echo
+echo 'SAC installation process started !'
+echo
+
 
 ######################################################################
 # sac2c
@@ -132,8 +147,9 @@ add_search_path $bin
 # ask_for_dir "Intended location for the documentation?" $doc
 # doc=$ask_res
 
-# mv doc.tar $doc/doc.tar
+# mv -f  doc.tar $doc/doc.tar
 # (cd $doc; tar xvf doc.tar; rm doc.tar)
+# chmod -R u+w $doc
 
 
 ######################################################################
@@ -152,11 +168,13 @@ fi
 insert_component d runtime.tar $base/runtime
 if [ -f $SACBASE/runtime/runtime.tar ] ; then
   (cd $SACBASE/runtime; tar xvf runtime.tar; rm runtime.tar)
+  chmod -R u+w $SACBASE/runtime
   mess "runtime.tar UNPACKED !!"
 else
   warn "runtime.tar NOT UNPACKED !!"
 fi
 insert_component f libsac.a $base/runtime/libsac.a
+insert_component f sac2crc $base/runtime/sac2crc
 
 echo
 ask 'How to call GNU-make?' $make
@@ -165,6 +183,7 @@ make=$ask_res
 insert_component d stdlib.tar $base/stdlib
 if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
   (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar; rm stdlib.tar )
+  chmod -R u+w $SACBASE/stdlib
   mess "stdlib.tar UNPACKED !!"
 else
   warn "stdlib.tar NOT UNPACKED !!"
@@ -176,7 +195,7 @@ if [ -f $SACBASE/stdlib/Makefile ] ; then
     mess "COMPILING stdlib !!"
     (cd $SACBASE/stdlib; $make )
   else
-    mess 'if you want to compile the stdlib later, use "cd $SACBASE/stdlib;'" $make"'"'
+    mess 'If you want to compile the stdlib later, use "cd $SACBASE/stdlib;'" $make"'"'
   fi
 fi
 
@@ -192,6 +211,7 @@ demo=$ask_res
 insert_component d demo.tar $demo/
 if [ -f $demo/demo.tar ] ; then
   (cd $demo; tar xvf demo.tar; rm demo.tar)
+  chmod -R u+w $demo
   mess "demo.tar UNPACKED !!"
 else
   warn "demo.tar NOT UNPACKED !!"
@@ -203,7 +223,7 @@ if [ -f $demo/Makefile ] ; then
     mess "COMPILING demo programs !!"
     (cd $demo; $make )
   else
-    mess 'if you want to compile the demo programs later, use "cd '"$demo; $make"'"'
+    mess 'If you want to compile the demo programs later, use "cd '"$demo; $make"'"'
   fi
 fi
 
@@ -212,11 +232,18 @@ fi
 ######################################################################
 
 
+echo '**************************************************************************'
+echo
+echo 'SAC installation process completed !'
 echo
 echo 'Make sure that "'$bin'" is part of your PATH!'
 echo 'Make sure that $SACBASE is set to "'$SACBASE'" BEFORE calling sac2c!'
 echo
 echo 'Enjoy sac2c !!'
 echo
-echo 'When encountering any problems please send email to'
+echo 'When encountering any problems, please have a look into the FAQs at'
+echo '          http://www.informatik.uni-kiel.de/~sacbase/'
+echo
+echo 'If you don't find your question in the FAQs, please send email to'
 echo '          sacbase@informatik.uni-kiel.de'
+echo  
