@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/28 16:25:17  dkr
+ * ICM-comment is indented now
+ *
  * Revision 1.7  1998/04/25 16:25:20  sbs
  *  new icm2c / BEtest mechanism implemented!
  *
@@ -32,7 +35,11 @@
 #define ICM_DEF(prf, trf)                                                                \
     {                                                                                    \
         int sep = 0;                                                                     \
-        fprintf (outfile, "\n/*\n * %s( ", #prf);
+        fprintf (outfile, "\n");                                                         \
+        INDENT;                                                                          \
+        fprintf (outfile, "/*\n");                                                       \
+        INDENT;                                                                          \
+        fprintf (outfile, " * %s( ", #prf);
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%s", name);                                                       \
@@ -51,7 +58,9 @@
         }                                                                                \
     }
 #define ICM_END(prf, args)                                                               \
-    fprintf (outfile, ")\n */\n");                                                       \
+    fprintf (outfile, ")\n");                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, " */\n");                                                          \
     }
 
 #include "icm.data"
