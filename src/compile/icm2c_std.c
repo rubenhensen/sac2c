@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/04/16 21:17:36  dkr
+ * ICMCompileND_FUN_DEC:
+ * no special treatment for main() function needed anymore
+ *
  * Revision 3.9  2002/03/07 20:22:47  dkr
  * - ND_FUN_DEC, ND_FUN_RET, ND_FUN_AP modified
  * - code brushed
@@ -232,12 +236,9 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg)
 
     INDENT;
     fprintf (outfile, "%s ", rettype);
-    if (strcmp (name, "main") == 0) {
+    if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
-    } else if (strcmp (name, "create_TheCommandLine") == 0) {
-        fprintf (outfile, "%s( int __argc, char *__argv[])", name);
-    } else if (strncmp (name, "SACf_GlobalObjInit_for_",
-                        strlen ("SACf_GlobalObjInit_for_"))
+    } else if (strncmp (name, "SACf_GlobalObjInit_", strlen ("SACf_GlobalObjInit_"))
                == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else {
