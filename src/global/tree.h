@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1995/06/30 11:54:52  hw
+ * Revision 1.46  1995/07/04 08:34:59  hw
+ * cdbl in union node.info inserted
+ *
+ * Revision 1.45  1995/06/30  11:54:52  hw
  * macros for module_name-access added( they are moved from
  * typecheck.c & convert.h
  *
@@ -255,11 +258,12 @@ typedef enum {
 typedef struct NODE {
     nodetype nodetype;
     union {
-        ids *ids;          /* Liste von Identifikatoren          */
-        id *id;            /* Identifikator                      */
-        types *types;      /* Typinformation                     */
-        int cint;          /* Integer-Wert                       */
-        float cfloat;      /* Float-Wert                         */
+        ids *ids;          /* list  of identifiers               */
+        id *id;            /* identifier                         */
+        types *types;      /* typeinformation                    */
+        int cint;          /* integer value                      */
+        float cfloat;      /* float value                        */
+        double cdbl;       /* double value                       */
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
         useflag use;       /* used in N_vect_info nodes          */
