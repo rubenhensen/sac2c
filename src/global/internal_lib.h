@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2005/02/14 14:15:04  cg
+ * ABORT_ON_ERROR macro replaced by new ctinfo function.
+ *
  * Revision 3.35  2005/02/11 14:40:30  jhb
  * added tree_check to PHASE_DONE_EPILOG
  *
@@ -173,6 +176,7 @@
 #include "dbug.h"
 #include "globals.h"
 #include "check_lib.h"
+#include "ctinfo.h"
 
 /*********************************
  *
@@ -260,7 +264,7 @@ extern void ILIBdbugMemoryLeakCheck (void);
     /* empty */
 
 #define PHASE_DONE_EPILOG                                                                \
-    ABORT_ON_ERROR;                                                                      \
+    CTIabortOnError ();                                                                  \
     DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););                              \
     if (global.treecheck) {                                                              \
         global.syntax_tree = CHKdoTreeCheck (global.syntax_tree);                        \
