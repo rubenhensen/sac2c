@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/22 16:10:11  sbs
+ * SACDevCamp04
+ *
  * Revision 3.5  2002/08/13 17:22:11  dkr
  * IntBytes2String: argument is unsigned now
  *
@@ -17,54 +20,25 @@
  * Revision 3.1  2000/11/20 17:59:44  sacbase
  * new release made
  *
- * Revision 2.2  2000/10/27 13:24:04  cg
- * Added new functions Basetype2String() and Shpseg2String().
- *
- * Revision 2.1  1999/02/23 12:40:22  sacbase
- * new release made
- *
- * Revision 1.10  1998/06/03 14:32:41  cg
- * implementation streamlined
- *
- * Revision 1.9  1998/04/25 15:56:55  sbs
- * tree.h included!
- *
- * Revision 1.8  1996/02/06 16:10:20  sbs
- * Double2String and Float2String inserted.
- *
- * Revision 1.7  1995/06/30  11:58:25  hw
- * mmoved macro MOD to tree.h
- *
- * Revision 1.6  1995/06/23  12:32:27  hw
- * macro SIMPLE4FUN_RENAME inserted
- * "extern char *rename_type[];" inserted
- *
- * Revision 1.5  1995/01/06  19:25:20  sbs
- * "__" inserted between modul and function name
- *
- * Revision 1.4  1995/01/05  11:51:25  sbs
- * MOD_NAME_CON macro inserted for mod-name generation for
- * types and functions.
+ * ....[ eliminated]....
  *
  * Revision 1.3  1994/12/14  16:35:39  sbs
  * userdef types integrated
  *
  */
 
-#ifndef _convert_h
-#define _convert_h
+#ifndef _SAC_CONVERT_H_
+#define _SAC_CONVERT_H_
 
 #include "types.h"
 
-extern char *type_string[];
+extern char *CVtype2String (types *type, int flag, bool all);
+extern char *CVdouble2String (double);
+extern char *CVfloat2String (float);
+extern char *CVbasetype2String (simpletype type);
+extern char *CVshpseg2String (int dim, shpseg *shape);
+extern char *CVintBytes2String (unsigned int bytes);
 
-extern char *Type2String (types *type, int flag, bool all);
-extern char *Double2String (double);
-extern char *Float2String (float);
-extern char *Basetype2String (simpletype type);
-extern char *Shpseg2String (int dim, shpseg *shape);
-extern char *IntBytes2String (unsigned int bytes);
+extern char *CVoldTypeSignature2String (node *fundef);
 
-extern char *OldTypeSignature2String (node *fundef);
-
-#endif /* _convert_h */
+#endif /* _SAC_CONVERT_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/11/22 16:10:11  sbs
+ * SACDevCamp04
+ *
  * Revision 3.27  2004/10/15 15:01:43  sah
  * added support for new module system nodes
  *
@@ -76,14 +79,10 @@
  *
  */
 
-#ifndef _sac_print_h
-#define _sac_print_h
+#ifndef _SAC_PRINT_H_
+#define _SAC_PRINT_H_
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
-#include "globals.h"
 
 #define INDENT_STR "  "
 
@@ -97,109 +96,103 @@
 
 #define INDENT DO_INDENT (indent)
 
-extern char *prf_symbol[];
-extern bool prf_is_infix[];
-
 /*
  * Functions for printing (parts of) the AST
  */
-extern node *Print (node *syntax_tree);
-extern node *PrintNode (node *node);
+extern node *PRTdoPrint (node *syntax_tree);
+extern node *PRTprintNode (node *node);
 
 /* debug output */
-extern void PrintAST (node *node);
-extern void PrintNodeAST (node *node);
+extern void PRTprintAST (node *node);
+extern void PRTprintNodeAST (node *node);
 
 /*
  * Functions for printing non-node parts of the AST
  */
-extern void PrintArgtab (argtab_t *argtab, bool is_def);
+extern void PRTprintArgtab (argtab_t *argtab, bool is_def);
 
 /*
  * Other functions for external use
  */
-extern void PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment);
+extern void PRTprintFunctionHeader (node *arg_node, info *arg_info, bool in_comment);
 
 /*
  * Functions for internal use during AST traversal only!
  */
-extern node *PrintModul (node *arg_node, info *arg_info);
-extern node *PrintImplist (node *arg_node, info *arg_info);
-extern node *PrintTypedef (node *arg_node, info *arg_info);
-extern node *PrintObjdef (node *arg_node, info *arg_info);
-extern node *PrintFundef (node *arg_node, info *arg_info);
-extern node *PrintAnnotate (node *arg_node, info *arg_info);
-extern node *PrintArg (node *arg_node, info *arg_info);
-extern node *PrintVardec (node *arg_node, info *arg_info);
-extern node *PrintBlock (node *arg_node, info *arg_info);
-extern node *PrintReturn (node *arg_node, info *arg_info);
-extern node *PrintAssign (node *arg_node, info *arg_info);
-extern node *PrintDo (node *arg_node, info *arg_info);
-extern node *PrintWhile (node *arg_node, info *arg_info);
-extern node *PrintCond (node *arg_node, info *arg_info);
-extern node *PrintCast (node *arg_node, info *arg_info);
-extern node *PrintLet (node *arg_node, info *arg_info);
-extern node *PrintPrf (node *arg_node, info *arg_info);
-extern node *PrintAp (node *arg_node, info *arg_info);
-extern node *PrintMop (node *arg_node, info *arg_info);
-extern node *PrintEmpty (node *arg_node, info *arg_info);
-extern node *PrintArray (node *arg_node, info *arg_info);
-extern node *PrintExprs (node *arg_node, info *arg_info);
-extern node *PrintId (node *arg_node, info *arg_info);
-extern node *PrintNum (node *arg_node, info *arg_info);
-extern node *PrintFloat (node *arg_node, info *arg_info);
-extern node *PrintDouble (node *arg_node, info *arg_info);
-extern node *PrintBool (node *arg_node, info *arg_info);
-extern node *PrintDot (node *arg_node, info *arg_info);
-extern node *PrintSetWL (node *arg_node, info *arg_info);
-extern node *PrintStr (node *arg_node, info *arg_info);
-extern node *PrintChar (node *arg_node, info *arg_info);
-extern node *PrintVectInfo (node *arg_node, info *arg_info);
-extern node *PrintIcm (node *arg_node, info *arg_info);
-extern node *PrintPragma (node *arg_node, info *arg_info);
-extern node *PrintSpmd (node *arg_node, info *arg_info);
-extern node *PrintSync (node *arg_node, info *arg_info);
-extern node *PrintEX (node *arg_node, info *arg_info);
-extern node *PrintMT (node *arg_node, info *arg_info);
-extern node *PrintST (node *arg_node, info *arg_info);
-extern node *PrintMTsignal (node *arg_node, info *arg_info);
-extern node *PrintMTsync (node *arg_node, info *arg_info);
-extern node *PrintMTalloc (node *arg_node, info *arg_info);
-extern node *PrintSSAcnt (node *arg_node, info *arg_info);
-extern node *PrintCSEinfo (node *arg_node, info *arg_info);
-extern node *PrintAvis (node *arg_node, info *arg_info);
-extern node *PrintInfo (node *arg_node, info *arg_info);
-extern node *PrintCWrapper (node *arg_node, info *arg_info);
-extern node *PrintFuncond (node *arg_node, info *arg_info);
-extern node *PrintDataflowgraph (node *arg_node, info *arg_info);
-extern node *PrintDataflownode (node *arg_node, info *arg_info);
+extern node *PRTmodul (node *arg_node, info *arg_info);
+extern node *PRTimplist (node *arg_node, info *arg_info);
+extern node *PRTtypedef (node *arg_node, info *arg_info);
+extern node *PRTobjdef (node *arg_node, info *arg_info);
+extern node *PRTfundef (node *arg_node, info *arg_info);
+extern node *PRTannotate (node *arg_node, info *arg_info);
+extern node *PRTarg (node *arg_node, info *arg_info);
+extern node *PRTvardec (node *arg_node, info *arg_info);
+extern node *PRTblock (node *arg_node, info *arg_info);
+extern node *PRTreturn (node *arg_node, info *arg_info);
+extern node *PRTassign (node *arg_node, info *arg_info);
+extern node *PRTdo (node *arg_node, info *arg_info);
+extern node *PRTwhile (node *arg_node, info *arg_info);
+extern node *PRTcond (node *arg_node, info *arg_info);
+extern node *PRTcast (node *arg_node, info *arg_info);
+extern node *PRTlet (node *arg_node, info *arg_info);
+extern node *PRTarf (node *arg_node, info *arg_info);
+extern node *PRTap (node *arg_node, info *arg_info);
+extern node *PRTmop (node *arg_node, info *arg_info);
+extern node *PRTempty (node *arg_node, info *arg_info);
+extern node *PRTarray (node *arg_node, info *arg_info);
+extern node *PRTexprs (node *arg_node, info *arg_info);
+extern node *PRTid (node *arg_node, info *arg_info);
+extern node *PRTnum (node *arg_node, info *arg_info);
+extern node *PRTfloat (node *arg_node, info *arg_info);
+extern node *PRTdouble (node *arg_node, info *arg_info);
+extern node *PRTbool (node *arg_node, info *arg_info);
+extern node *PRTdot (node *arg_node, info *arg_info);
+extern node *PRTsetwl (node *arg_node, info *arg_info);
+extern node *PRTstr (node *arg_node, info *arg_info);
+extern node *PRTchar (node *arg_node, info *arg_info);
+extern node *PRTvectinfo (node *arg_node, info *arg_info);
+extern node *PRTicm (node *arg_node, info *arg_info);
+extern node *PRTpragma (node *arg_node, info *arg_info);
+extern node *PRTspmd (node *arg_node, info *arg_info);
+extern node *PRTsync (node *arg_node, info *arg_info);
+extern node *PRTex (node *arg_node, info *arg_info);
+extern node *PRTmt (node *arg_node, info *arg_info);
+extern node *PRTst (node *arg_node, info *arg_info);
+extern node *PRTssacnt (node *arg_node, info *arg_info);
+extern node *PRTcseinfo (node *arg_node, info *arg_info);
+extern node *PRTavis (node *arg_node, info *arg_info);
+extern node *PRTinfo (node *arg_node, info *arg_info);
+extern node *PRTcwrapper (node *arg_node, info *arg_info);
+extern node *PRTfuncond (node *arg_node, info *arg_info);
+extern node *PRTdataflowgraph (node *arg_node, info *arg_info);
+extern node *PRTdataflownode (node *arg_node, info *arg_info);
 
 /* with-loop (frontend) */
-extern node *PrintNwith (node *arg_node, info *arg_info);
-extern node *PrintNwithid (node *arg_node, info *arg_info);
-extern node *PrintNcode (node *arg_node, info *arg_info);
-extern node *PrintNpart (node *arg_node, info *arg_info);
-extern node *PrintNgenerator (node *arg_node, info *arg_info);
-extern node *PrintNwithop (node *arg_node, info *arg_info);
+extern node *PRTwith (node *arg_node, info *arg_info);
+extern node *PRTwithid (node *arg_node, info *arg_info);
+extern node *PRTcode (node *arg_node, info *arg_info);
+extern node *PRTpart (node *arg_node, info *arg_info);
+extern node *PRTgenerator (node *arg_node, info *arg_info);
+extern node *PRTgenarray (node *arg_node, info *arg_info);
+extern node *PRTmodarray (node *arg_node, info *arg_info);
+extern node *PRTfold (node *arg_node, info *arg_info);
 
 /* with-loop (backend) */
-extern node *PrintNwith2 (node *arg_node, info *arg_info);
-extern node *PrintWLsegx (node *arg_node, info *arg_info);
-extern node *PrintWLxblock (node *arg_node, info *arg_info);
-extern node *PrintWLstridex (node *arg_node, info *arg_info);
-extern node *PrintWLgridx (node *arg_node, info *arg_info);
+extern node *PRTwith2 (node *arg_node, info *arg_info);
+extern node *PRTwlsegx (node *arg_node, info *arg_info);
+extern node *PRTwlxblock (node *arg_node, info *arg_info);
+extern node *PRTwlstridex (node *arg_node, info *arg_info);
+extern node *PRTwlgridx (node *arg_node, info *arg_info);
 
 /* pre- and post-processing during traversal */
-extern node *PrintTravPre (node *arg_node, info *arg_info);
-extern node *PrintTravPost (node *arg_node, info *arg_info);
+extern node *PRTtravPre (node *arg_node, info *arg_info);
+extern node *PRTtravPost (node *arg_node, info *arg_info);
 
-#ifdef NEW_AST
 /* new module system */
-extern node *PrintImport (node *arg_node, info *arg_info);
-extern node *PrintExport (node *arg_node, info *arg_info);
-extern node *PrintUse (node *arg_node, info *arg_info);
-extern node *PrintProvide (node *arg_node, info *arg_info);
-extern node *PrintSymbol (node *arg_node, info *arg_info);
-#endif /* NEW_AST */
+extern node *PRTimport (node *arg_node, info *arg_info);
+extern node *PRTexport (node *arg_node, info *arg_info);
+extern node *PRTuse (node *arg_node, info *arg_info);
+extern node *PRTprovide (node *arg_node, info *arg_info);
+extern node *PRTsymbol (node *arg_node, info *arg_info);
 
-#endif /* _sac_print_h */
+#endif /* _SAC_PRINT_H_ */
