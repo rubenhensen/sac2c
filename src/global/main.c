@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2004/11/26 23:30:41  sbs
+ * PrintAST call eliminated
+ *
  * Revision 3.83  2004/11/26 23:21:59  mwe
  * OIdoObjinit
  * deactivated
@@ -814,7 +817,6 @@ BREAK:
         if (global.compiler_phase < PH_scanparse) {
             RSCshowResources ();
         } else {
-            DBUG_EXECUTE ("AST", PRTdoPrintAST (syntax_tree););
             if (global.print_after_break && (global.compiler_phase <= PH_compile)) {
                 PRTdoPrint (syntax_tree);
             }
