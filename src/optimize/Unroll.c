@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1997/11/05 10:16:49  dkr
+ * with defined NEWTREE node.nnode is not used anymore
+ *
  * Revision 1.9  1997/04/25 12:13:00  sbs
  * MAlloc replaced by Malloc from internal.lib
  *
@@ -491,7 +494,9 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
             MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
             unroll = arg_node->node[1]->node[0];
             arg_node->node[1]->node[0] = NULL;
+#ifndef NEWTREE
             arg_node->node[1]->nnode = 0;
+#endif
             FreeTree (arg_node);
             arg_node = unroll;
             break;
