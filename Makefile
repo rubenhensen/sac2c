@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.47  2000/07/11 15:54:33  dkr
+# psi-opt.o removed
+#
 # Revision 2.46  2000/07/11 09:28:07  dkr
 # TAGGED_ARRAYS added (as a comment)
 #
@@ -256,12 +259,12 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/Inline.o \
           src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
           src/optimize/CSE.o
-PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o \
+PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
-	src/psi-opt/WLF.o src/psi-opt/pad.o src/psi-opt/pad_collect.o \
-	src/psi-opt/pad_infer.o src/psi-opt/pad_transform.o \
-	src/psi-opt/pad_info.o
+	src/psi-opt/WLF.o \
+	src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
+	src/psi-opt/pad_transform.o src/psi-opt/pad_info.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.22  2000/07/11 15:51:50  dkr
+# psi-opt.o removed
+#
 # Revision 2.21  2000/07/05 14:23:47  dkr
 # make deps done
 #
@@ -126,49 +129,12 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
      -I../print -I../optimize
 
-all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
+all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
+     WithloopFolding.o WLT.o WLI.o WLF.o \
+     pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
 
-index.o: index.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
-
-psi-opt.o: psi-opt.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o psi-opt.o -c psi-opt.c $(INCS)
-
-ArrayElimination.o: ArrayElimination.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o ArrayElimination.o -c ArrayElimination.c $(INCS)
-
-wl_access_analyze.o: wl_access_analyze.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o wl_access_analyze.o -c wl_access_analyze.c $(INCS)
-
-tile_size_inference.o: tile_size_inference.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o tile_size_inference.o -c tile_size_inference.c $(INCS)
-
-WithloopFolding.o: WithloopFolding.c WithloopFolding.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WithloopFolding.o -c WithloopFolding.c $(INCS)
-
-WLT.o: WLT.c WLT.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLT.o -c WLT.c $(INCS)
-
-WLI.o: WLI.c WLI.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLI.o -c WLI.c $(INCS)
-
-WLF.o: WLF.c WLF.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
-
-pad.o: pad.c pad.h pad_info.h pad_collect.o pad_infer.o pad_transform.o
-	$(CC) $(CCFLAGS) $(CFLAGS) -o pad.o -c pad.c $(INCS)
-
-pad_info.o: pad_info.c pad_info.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_info.o -c pad_info.c $(INCS)
-
-pad_collect.o: pad_collect.c pad_collect.h pad_info.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_collect.o -c pad_collect.c $(INCS)
-
-pad_infer.o: pad_infer.c pad_infer.h pad_info.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_infer.o -c pad_infer.c $(INCS)
-
-pad_transform.o: pad_transform.c pad_transform.h pad_info.h
-	$(CC) $(CCFLAGS) $(CFLAGS) -o pad_transform.o -c pad_transform.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -176,7 +142,6 @@ deps:
 clean:
 	$(RM) *.o *.bak *~
 	$(RM) -r .sb SunWS_cache
-
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
@@ -252,11 +217,10 @@ index.o: /usr/include/string.h ../../inc/dbug.h ../tree/tree.h
 index.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 index.o: ../global/internal_lib.h ../print/print.h ../tree/traverse.h
-index.o: ../tree/DupTree.h ../tree/LookUpTable.h index.h psi-opt.h
-index.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
-index.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-index.o: /usr/include/sys/int_types.h ../tree/access_macros.h
-index.o: ../compile/compile.h
+index.o: ../tree/DupTree.h ../tree/LookUpTable.h index.h ../tree/free.h
+index.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
+index.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+index.o: ../tree/access_macros.h ../compile/compile.h
 pad.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/feature_tests.h
 pad.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 pad.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../global/types.h
@@ -300,17 +264,7 @@ pad_transform.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 pad_transform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 pad_transform.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 pad_transform.o: ../tree/DupTree.h ../tree/LookUpTable.h pad_info.h
-pad_transform.o: pad_transform.h
-psi-opt.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-psi-opt.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-psi-opt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-psi-opt.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-psi-opt.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-psi-opt.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-psi-opt.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-psi-opt.o: /usr/include/malloc.h /usr/include/sys/types.h
-psi-opt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-psi-opt.o: ../tree/traverse.h psi-opt.h
+pad_transform.o: pad_transform.h ../tree/prf_node_info.mac
 tile_size_inference.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tile_size_inference.o: /usr/include/sys/isa_defs.h /usr/include/limits.h
 tile_size_inference.o: /usr/include/string.h ../../inc/dbug.h
