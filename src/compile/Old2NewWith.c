@@ -24,34 +24,38 @@
  */
 
 node *
-SeperateBlockReturn (node *block_node)
+SeperateBlockReturn (node **block_node)
 {
     node *last_assign;
     node *return_node;
+    node *free_node;
     node *tmp;
 
     DBUG_ENTER ("SeperateBlockReturn");
 
-    DBUG_ASSERT ((BLOCK_VARDEC (block_node) == NULL), "vardec in with-loop-block");
+    DBUG_ASSERT ((BLOCK_VARDEC ((*block_node)) == NULL), "vardec in with-loop-block");
 
     /* search for the last but one assign-node */
-    last_assign = BLOCK_INSTR (block_node);
+    last_assign = BLOCK_INSTR ((*block_node));
     if (ASSIGN_NEXT (last_assign) == NULL) {
-        last_assign = block_node;
+        /* the block contains only the return-expr */
+        tmp = ASSIGN_INSTR (last_assign);
+        free_node = last_assign = (*block_node);
+        (*block_node) = NULL;
     } else {
         while (ASSIGN_NEXT (ASSIGN_NEXT (last_assign)) != NULL)
             last_assign = ASSIGN_NEXT (last_assign);
+        tmp = ASSIGN_INSTR (ASSIGN_NEXT (last_assign));
+        free_node = ASSIGN_NEXT (last_assign);
     }
-    tmp = ASSIGN_NEXT (last_assign);
-    ASSIGN_NEXT (last_assign) = NULL; /* remove return-expr from block */
+    DBUG_ASSERT ((NODE_TYPE (tmp) == N_return), "Last expression of block is no return");
 
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (tmp)) == N_return),
-                 "Last expression of block is no return");
+    return_node = EXPRS_EXPR (RETURN_EXPRS (tmp)); /* get return-expr */
+    ASSIGN_NEXT (last_assign) = NULL;              /* remove return-expr from block */
+    EXPRS_EXPR (RETURN_EXPRS (tmp)) = NULL;        /* do not free return-expr */
 
-    return_node = EXPRS_EXPR (RETURN_EXPRS (ASSIGN_INSTR (tmp))); /* get return-expr */
-    EXPRS_EXPR (RETURN_EXPRS (ASSIGN_INSTR (tmp))) = NULL; /* do not free return-expr */
-
-    FreeAssign (tmp, tmp); /* free the nodes between return-expr and rest of block */
+    FreeAssign (free_node,
+                free_node); /* free the nodes between return-expr and rest of block */
 
     DBUG_RETURN (return_node);
 }
@@ -141,7 +145,7 @@ O2Nwith (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "Unknown type of with-loop-operator");
         break;
     }
-    new_expr = SeperateBlockReturn (new_block);
+    new_expr = SeperateBlockReturn (&new_block);
 
     new_code = MakeNCode (new_block, new_expr);
     new_part = MakeNPart (new_withid, new_generator);
