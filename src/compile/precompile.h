@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 2.5  2000/05/29 14:30:53  dkr
+ * functions PREC... renamed into PREC2...
+ * PREC1let added
+ *
  * Revision 2.4  2000/05/26 19:25:37  dkr
  * signature of AdjustFoldFundef() modified
  *
@@ -98,30 +101,31 @@
 
 #define _sac_precompile_h
 
-extern node *precompile (node *syntax_tree);
+extern node *Precompile (node *syntax_tree);
 
-extern node *PRECmodul (node *arg_node, node *arg_info);
-extern node *PRECobjdef (node *arg_node, node *arg_info);
-extern node *PRECfundef (node *arg_node, node *arg_info);
-extern node *PRECarg (node *arg_node, node *arg_info);
-extern node *PREClet (node *arg_node, node *arg_info);
-extern node *PRECap (node *arg_node, node *arg_info);
-extern node *PRECassign (node *arg_node, node *arg_info);
-extern node *PRECreturn (node *arg_node, node *arg_info);
-extern node *PRECid (node *arg_node, node *arg_info);
-extern node *PRECvardec (node *arg_node, node *arg_info);
-extern node *PRECtypedef (node *arg_node, node *arg_info);
-extern node *PRECgenerator (node *arg_node, node *arg_info);
-extern node *PRECNwithid (node *arg_node, node *arg_info);
-extern node *PRECdo (node *arg_node, node *arg_info);
-extern node *PRECwhile (node *arg_node, node *arg_info);
-extern node *PRECcond (node *arg_node, node *arg_info);
-extern node *PRECwith (node *arg_node, node *arg_info);
-extern node *PRECNwith2 (node *arg_node, node *arg_info);
-extern node *PRECNcode (node *arg_node, node *arg_info);
-extern node *PRECsync (node *arg_node, node *arg_info);
-extern node *PRECWLseg (node *arg_node, node *arg_info);
-extern node *PRECWLsegVar (node *arg_node, node *arg_info);
+extern node *PREC1let (node *arg_node, node *arg_info);
+
+extern node *PREC2modul (node *arg_node, node *arg_info);
+extern node *PREC2objdef (node *arg_node, node *arg_info);
+extern node *PREC2fundef (node *arg_node, node *arg_info);
+extern node *PREC2arg (node *arg_node, node *arg_info);
+extern node *PREC2let (node *arg_node, node *arg_info);
+extern node *PREC2ap (node *arg_node, node *arg_info);
+extern node *PREC2assign (node *arg_node, node *arg_info);
+extern node *PREC2return (node *arg_node, node *arg_info);
+extern node *PREC2id (node *arg_node, node *arg_info);
+extern node *PREC2vardec (node *arg_node, node *arg_info);
+extern node *PREC2typedef (node *arg_node, node *arg_info);
+extern node *PREC2generator (node *arg_node, node *arg_info);
+extern node *PREC2Nwithid (node *arg_node, node *arg_info);
+extern node *PREC2do (node *arg_node, node *arg_info);
+extern node *PREC2while (node *arg_node, node *arg_info);
+extern node *PREC2cond (node *arg_node, node *arg_info);
+extern node *PREC2Nwith2 (node *arg_node, node *arg_info);
+extern node *PREC2Ncode (node *arg_node, node *arg_info);
+extern node *PREC2sync (node *arg_node, node *arg_info);
+extern node *PREC2WLseg (node *arg_node, node *arg_info);
+extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
 
 extern node *AdjustFoldFundef (node *fundef, ids *acc, node *cexpr);
 
