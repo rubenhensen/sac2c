@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2004/07/14 15:24:49  ktr
+# alloc.o added.
+#
 # Revision 3.16  2004/04/21 16:41:45  ktr
 # Added SSARefCount.[ch]
 #
@@ -77,7 +80,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
        -I../optimize -I../compile -I../constants -I../print
 
 
-all: refcount.o SSARefCount.o
+all: alloc.o refcount.o
 
 
 %.o: %.c
