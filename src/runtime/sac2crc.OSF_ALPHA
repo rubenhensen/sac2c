@@ -92,7 +92,7 @@ CACHE3_MSCA      :=  0
  *
  */
 
-target dec_3000-800:
+target dec_3000_800:
 
 CACHE1_SIZE      :=  8
 CACHE1_LINE      :=  32
@@ -111,6 +111,6 @@ CACHE2_ASSOC     :=  1
  *
  */
 
-target scalar::dec_3000-800:
+target scalar::dec_3000_800:
 
 
