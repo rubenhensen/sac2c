@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2002/10/18 13:49:54  sbs
+ * SSATransformAllowGOs added.
+ *
  * Revision 1.6  2001/04/24 16:09:07  nmw
  * SSATransformSingleFundef renamed to SSATransformOneFunction
  *
@@ -45,6 +48,7 @@ extern node *SSAap (node *arg_node, node *arg_info);
 extern node *SSADummy (node *arg_node, node *arg_info);
 
 extern node *SSATransform (node *ast);
+extern node *SSATransformAllowGOs (node *ast);
 extern node *SSATransformOneFunction (node *fundef);
 extern node *SSATransformOneFundef (node *fundef);
 
