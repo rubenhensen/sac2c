@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/07/15 08:53:30  dkr
+ * PREC2ap added
+ *
  * Revision 3.12  2002/04/16 18:31:02  dkr
  * PREC4... functions added
  *
@@ -87,6 +90,7 @@ extern node *PREC2modul (node *arg_node, node *arg_info);
 extern node *PREC2fundef (node *arg_node, node *arg_info);
 extern node *PREC2assign (node *arg_node, node *arg_info);
 extern node *PREC2let (node *arg_node, node *arg_info);
+extern node *PREC2ap (node *arg_node, node *arg_info);
 
 extern node *PREC3fundef (node *arg_node, node *arg_info);
 extern node *PREC3block (node *arg_node, node *arg_info);
