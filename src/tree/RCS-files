@@ -12,7 +12,6 @@ LookUpTable.c
 LookUpTable.h
 Makefile
 SSATransform.c
-SSATransform.h
 adjust_ids.c
 adjust_ids.h
 change_signature.c
