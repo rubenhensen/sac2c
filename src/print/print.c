@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.91  1995/11/06 09:22:49  cg
+ * Revision 1.92  1995/11/10 15:02:51  cg
+ * new layout when writing to stdout to fit with compile time
+ * output sent to stderr.
+ *
+ * Revision 1.91  1995/11/06  09:22:49  cg
  * moved initialization of global variable indent to function Print
  *
  * Revision 1.90  1995/11/01  16:28:21  cg
@@ -1187,6 +1191,10 @@ Print (node *arg_node)
     mod_name_con = mod_name_con_1;
     indent = 0;
 
+    if (outfile == stdout) {
+        fprintf (outfile, "\n------------------------------------------------\n");
+    }
+
     if (show_icm == 0) {
         if (traceflag != 0) {
             fprintf (outfile, "#include <stdio.h>\n");
@@ -1201,5 +1209,11 @@ Print (node *arg_node)
         fprintf (outfile, "#include \"icm2c.h\"\n");
     }
 
-    DBUG_RETURN (Trav (arg_node, NULL));
+    arg_node = Trav (arg_node, NULL);
+
+    if (outfile == stdout) {
+        fprintf (outfile, "\n------------------------------------------------\n");
+    }
+
+    DBUG_RETURN (arg_node);
 }
