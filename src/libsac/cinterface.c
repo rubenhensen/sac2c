@@ -1,4 +1,11 @@
 /*
+ * $Log$
+ * Revision 1.7  2000/07/12 10:03:13  nmw
+ * RCS-Header added
+ * memory leak fixed
+ *
+ *
+ *
  * implementation of SAC <-> C interface functions,
  * implements prototypes from
  *     SAC_interface.h (external usage)
@@ -32,7 +39,7 @@ void
 SAC_InitRuntimeSystem ()
 {
     if (!SAC_CI_runtime_system_active) {
-        /* do some inits */
+        /* init directory of used SAC_args */
 
         SAC_CI_InitSACArgDirectory ();
 
@@ -56,7 +63,7 @@ void
 SAC_FreeRuntimeSystem ()
 {
     if (SAC_CI_runtime_system_active) {
-        /* do some cleanup */
+        /* free all used SAC_args */
         SAC_CI_FreeSACArgDirectory ();
         printf ("SAC-Runtime-System cleaned up!\n");
     }
@@ -68,7 +75,7 @@ SAC_FreeRuntimeSystem ()
  *   int SAC_isValid(SAC_arg sa)
  *
  * description:
- *   checks, if SAC_arg contains valid data (refcount>0)
+ *   checks, if SAC_arg contains valid data (local refcount>0)
  *
  ******************************************************************************/
 
@@ -147,6 +154,7 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
     if (newrc < 0)
         SAC_RuntimeError ("Illegal refcounter value specified!\n");
     if (SAC_ARG_LRC (sa) > 0) {
+        *(SAC_ARG_RC (sa)) = newrc;
         return ((SAC_ARG_LRC (sa)) = newrc);
     } else {
         return (SAC_ARG_LRC (sa));
@@ -156,10 +164,10 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
 /*
  *
  * functions converting c-datatypes to SAC_arg and SAC_arg to c-datatype
- *
+ * here: macros used for all types
  */
 
-/* macros used for all types */
+/* c-array -> SAC_arg */
 #define SAC_ARRAY2SAC(c_type, SAC_type)                                                  \
     va_list Argp;                                                                        \
     SAC_arg result;                                                                      \
@@ -206,6 +214,8 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
     result = SAC_CI_InitRefcounter (result, 1);                                          \
     return (result)
 
+/* c-simple type -> SAC_arg */
+
 #define SAC_SIMPLE2SAC(c_type, SAC_type)                                                 \
     SAC_arg result;                                                                      \
     result = SAC_CI_NewSACArg (SAC_type, 0, NULL);                                       \
@@ -214,6 +224,8 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
                                                                                          \
     result = SAC_CI_InitRefcounter (result, 1);                                          \
     return (result)
+
+/* SAC_arg -> c-array */
 
 #define SAC_SAC2ARRAY(c_type, SAC_type)                                                  \
     c_type *result;                                                                      \
@@ -233,14 +245,15 @@ SAC_SetRefcounter (SAC_arg sa, int newrc)
         result = (c_type *)SAC_MALLOC (elemscount * sizeof (c_type));                    \
         result = memcpy (result, SAC_ARG_ELEMS (sa), elemscount * sizeof (c_type));      \
     } else {                                                                             \
-        /* SAC_CONSUME_ARG */                                                            \
+        /* SAC_CONSUME_ARG - now sa is invalid */                                        \
         result = (c_type *)SAC_ARG_ELEMS (sa);                                           \
         SAC_ARG_LRC (sa) = 0;                                                            \
         SAC_FREE (SAC_ARG_RC (sa));                                                      \
-        printf ("*************** FREE **************************\n");                    \
     }                                                                                    \
     /* return value */                                                                   \
     return (result)
+
+/* SAC_arg -> c-simpletype */
 
 #define SAC_SAC2SIMPLE(c_type, SAC_type)                                                 \
     /* check for valid data */                                                           \
