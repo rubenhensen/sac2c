@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/23 22:27:23  ktr
+ * renaming.
+ *
  * Revision 1.8  2004/11/23 20:12:22  ktr
  * COMPILES!!!
  *
@@ -109,7 +112,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMREReuseElimination( node *syntax_tree)
+ * @fn node *EMREdoReuseElimination( node *syntax_tree)
  *
  * @brief
  *
@@ -119,11 +122,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMREReuseElimination (node *syntax_tree)
+EMREdoReuseElimination (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMREReuseElimination");
+    DBUG_ENTER ("EMREdoReuseElimination");
 
     DBUG_PRINT ("EMRE", ("Starting reuse elimination."));
 
