@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.180  1998/04/16 15:59:45  srs
+ * INLvar splitted into INLvardec and INLarg
+ *
  * Revision 1.179  1998/04/14 21:45:24  dkr
  * added CompModul
  *
@@ -657,7 +660,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TravSons, OPTvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, TravSons, CompVardec, TravSons, DupDec,
-       INLvar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintVardec,
+       INLvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintVardec,
        TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons, UNQvardec, TravSons,
        PRECvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        1),
@@ -669,7 +672,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, OPTarg, TravSons, TravSons,
-       FreeArg, TravSons, RCarg, CompArg, TravSons, DupDec, INLvar, TravSons, TravSons,
+       FreeArg, TravSons, RCarg, CompArg, TravSons, DupDec, INLarg, TravSons, TravSons,
        IdxArg, TravSons, TravSons, TravSons, PrintArg, OBJarg, TravSons, TravSons,
        TravSons, TravSons, WDECarg, UNQarg, TravSons, PRECarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 1),
