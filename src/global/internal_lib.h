@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/17 08:36:02  sbs
+ * PHASE_DONE_EPILOG added.
+ *
  * Revision 3.11  2001/04/24 13:19:49  dkr
  * FALSE, TRUE moved to types.h
  *
@@ -118,6 +121,10 @@ extern char *TmpVarName (char *postfix);
 extern void ComputeMallocAlignStep (void);
 #endif
 
+#ifndef DBUG_OFF
+extern void DbugMemoryLeakCheck ();
+#endif
+
 /*********************************
  * macro definitions
  *********************************/
@@ -167,7 +174,7 @@ extern void ComputeMallocAlignStep (void);
 
 #define MALLOC_VECT(vect, dims, type)                                                    \
     if (vect == NULL) {                                                                  \
-        (vect) = (type *)MALLOC ((dims) * sizeof (type));                                \
+        (vect) = (type *)Malloc ((dims) * sizeof (type));                                \
     }
 
 /* caution: 'val' should occur in the macro implementation only once! */
@@ -221,8 +228,11 @@ extern void ComputeMallocAlignStep (void);
     CHECK_DBUG_START;                                                                    \
     /* empty */
 
-#define PHASE_EPILOG                                                                     \
+#define PHASE_DONE_EPILOG                                                                \
     ABORT_ON_ERROR;                                                                      \
+    DBUG_EXECUTE ("MEM_LEAK_CHECK", DbugMemoryLeakCheck ();)
+
+#define PHASE_EPILOG                                                                     \
     if (do_fun2lac[compiler_phase]) {                                                    \
         syntax_tree = Fun2Lac (syntax_tree);                                             \
         ABORT_ON_ERROR;                                                                  \
