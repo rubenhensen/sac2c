@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 20:12:22  ktr
+ * COMPILES!!!
+ *
  * Revision 1.7  2004/11/23 20:08:48  jhb
  * compile
  *
@@ -127,9 +130,7 @@ EMREReuseElimination (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_emre);
-
     syntax_tree = TRAVdo (syntax_tree, info);
-
     TRAVpop ();
 
     info = FreeInfo (info);
@@ -463,7 +464,6 @@ EMREgenarray (node *arg_node, info *arg_info)
     avis = LUTsearchInLutPp (INFO_RE_LUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)));
 
     if (avis != ID_AVIS (GENARRAY_MEM (arg_node))) {
-
         GENARRAY_MEM (arg_node) = FREEdoFreeNode (GENARRAY_MEM (arg_node));
         GENARRAY_MEM (arg_node) = TBmakeId (avis);
     }
@@ -499,7 +499,6 @@ EMREmodarray (node *arg_node, info *arg_info)
     avis = LUTsearchInLutPp (INFO_RE_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)));
 
     if (avis != ID_AVIS (MODARRAY_MEM (arg_node))) {
-
         MODARRAY_MEM (arg_node) = FREEdoFreeNode (MODARRAY_MEM (arg_node));
         MODARRAY_MEM (arg_node) = TBmakeId (avis);
     }
