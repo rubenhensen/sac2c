@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1997/11/05 09:33:26  dkr
+ * usage of NIF-macro has changed
+ *
  * Revision 1.19  1996/01/16 16:45:45  cg
  * extended macro TYP_IF to 5 positions
  *
@@ -70,7 +73,7 @@
 */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar)                      \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
     s
 
 char *mdb_nodetype[] = {
