@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/09/11 22:55:05  dkr
+ * IsRelPrf added
+ *
  * Revision 3.2  2001/04/30 12:24:13  nmw
  * UNRap added
- * ,
  *
  * Revision 3.1  2000/11/20 18:00:36  sacbase
  * new release made
@@ -81,6 +83,7 @@ extern linfo *LoopIterations (linfo *loop_info);
 extern linfo *AnalyseLoop (linfo *loop_info, node *id_node, int level);
 extern node *DoUnroll (node *arg_node, node *arg_info, linfo *loop_info);
 extern prf ReversePrf (prf fun);
+extern bool IsRelPrf (prf fun);
 
 extern node *UNRfundef (node *arg_node, node *arg_info);
 extern node *UNRdo (node *arg_node, node *arg_info);
