@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2003/03/21 16:30:25  sbs
+# rule for sac2crc changed
+#
 # Revision 3.11  2003/03/20 23:18:22  sah
 # updated link sac2crc link creation
 # to confirm with new configure
@@ -90,11 +93,8 @@ lib%.a :
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
-sac2crc: 
-	@ if [ ! -f $@ ]; \
-	    then ln -s $@.$(OS)_$(ARCH) $@; \
-                 echo ln -s $@.$(OS)_$(ARCH) $@;  \
-	  fi
+sac2crc: sac2crc.in
+	(cd $(PROJECT_ROOT); ./configure)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
