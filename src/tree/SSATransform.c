@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2001/03/26 13:26:14  nmw
+ * SSANewVardec for general usage added
+ *
  * Revision 1.11  2001/03/23 09:31:19  nmw
  * SSAwhile/do removed SSADummy added
  *
@@ -123,8 +126,10 @@
 #define STACKFLAG_THEN 1
 #define STACKFLAG_ELSE 2
 
+/* global helper functions */
+node *SSANewVardec (node *old_vardec_or_arg);
+
 /* helper functions for internal usage */
-static node *SSANewVardec (node *old_vardec_or_arg);
 static void SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info);
 static node *SSAGetSSAcount (char *baseid, int initvalue, node *block);
 
@@ -245,7 +250,7 @@ SaveTopSSAstack (node *ssastack, node *avis, int flag)
 /******************************************************************************
  *
  * function:
- *  static node *SSANewVardec(node *old_vardec_or_arg)
+ *   node *SSANewVardec(node *old_vardec_or_arg)
  *
  * description:
  *   creates a new (renamed) vardec of the given original vardec. the global
@@ -253,7 +258,7 @@ SaveTopSSAstack (node *ssastack, node *avis, int flag)
  *   between all renamed instances of the original vardec.
  *
  ******************************************************************************/
-static node *
+node *
 SSANewVardec (node *old_vardec_or_arg)
 {
     char tmpstring[TMP_STRING_LEN];

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/26 13:26:14  nmw
+ * SSANewVardec for general usage added
+ *
  * Revision 1.3  2001/03/23 09:31:19  nmw
  * SSAwhile/do removed SSADummy added
  *
@@ -36,4 +39,5 @@ extern node *SSADummy (node *arg_node, node *arg_info);
 
 extern node *SSATransform (node *arg_node);
 
+extern node *SSANewVardec (node *old_vardec_or_arg);
 #endif /* _SSAtransform_h */
