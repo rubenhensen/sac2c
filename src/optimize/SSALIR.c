@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2004/11/26 21:58:36  mwe
+ * SacDevCamp: Compiles!!!!
+ *
  * Revision 1.33  2004/10/05 13:53:19  sah
  * fixed a bug using ARG_AVIS on vardec nodes!
  *
@@ -239,8 +242,6 @@
  *
  ******************************************************************************/
 
-#define NEW_INFO
-
 #include "dbug.h"
 #include "tree_basic.h"
 #include "internal_lib.h"
@@ -252,7 +253,10 @@
 #include "tree_compound.h"
 #include "LookUpTable.h"
 #include "change_signature.h"
+#include "node_basic.h"
+#include "globals.h"
 #include "SSATransform.h"
+#include "new_types.h"
 
 /*
  * INFO structure
@@ -271,9 +275,9 @@ struct INFO {
     int flag;
     node *extpreassign;
     node *extpostassign;
-    LUT_t movelut;
+    lut_t *movelut;
     node *apargchain;
-    ids *apreschain;
+    node *apreschain;
     node *extfundef;
     nodelist *resultmap;
     int maxdepth;
@@ -316,7 +320,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SSALIR_FUNDEF (result) = NULL;
     INFO_SSALIR_REMASSIGN (result) = FALSE;
@@ -348,7 +352,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -376,14 +380,12 @@ FreeInfo (info *info)
 #define DD_UNDEFINED -1
 
 /* functions for local usage only */
-static ids *SSALIRleftids (ids *arg_ids, info *arg_info);
-static ids *LIRMOVleftids (ids *arg_ids, info *arg_info);
 #ifndef CREATE_UNIQUE_BY_HEAP
-static bool ForbiddenMovement (ids *chain);
+static bool ForbiddenMovement (node *chain);
 #endif
 static node *CheckMoveDownFlag (node *instr, info *arg_info);
 static void CreateNewResult (node *avis, info *arg_info);
-static LUT_t InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings);
+static lut_t *InsertMappingsIntoLUT (lut_t *move_table, nodelist *mappings);
 static node *AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef);
 static nodelist *InsListPushFrame (nodelist *il);
 static nodelist *InsListPopFrame (nodelist *il);
@@ -396,7 +398,7 @@ static nodelist *InsListGetFrame (nodelist *il, int depth);
 /******************************************************************************
  *
  * function:
- *   bool ForbiddenMovement(ids *chain)
+ *   bool ForbiddenMovement(node *chain)
  *
  * description:
  *   Checks if there is any ids in chain with vardec marked as ST_unique so
@@ -405,14 +407,14 @@ static nodelist *InsListGetFrame (nodelist *il, int depth);
  *
  *****************************************************************************/
 static bool
-ForbiddenMovement (ids *chain)
+ForbiddenMovement (node *chain)
 {
     bool res;
 
     DBUG_ENTER ("ForbiddenMovement");
     res = FALSE;
     while ((chain != NULL) && (res == FALSE)) {
-        res |= (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (chain))) == ST_unique);
+        res |= AVIS_ISUNIQUE (IDS_AVIS (chain));
         chain = IDS_NEXT (chain);
     }
 
@@ -423,7 +425,7 @@ ForbiddenMovement (ids *chain)
 /******************************************************************************
  *
  * function:
- *   ids *CheckMoveDownFlag(node *instr)
+ *   node *CheckMoveDownFlag(node *instr)
  *
  * description:
  *   checks the given assign-instruction (should be a let) to have all results
@@ -434,7 +436,7 @@ ForbiddenMovement (ids *chain)
 static node *
 CheckMoveDownFlag (node *instr, info *arg_info)
 {
-    ids *result;
+    node *result;
     int non_move_down;
     int move_down;
 
@@ -500,65 +502,66 @@ CreateNewResult (node *avis, info *arg_info)
     DBUG_ENTER ("CreateNewResult");
 
     /* 1. create new vardec in external (calling) fundef */
-    if (NODE_TYPE (AVIS_VARDECORARG (avis)) == N_vardec) {
-        new_ext_vardec = DupNode (AVIS_VARDECORARG (avis));
-    } else if (NODE_TYPE (AVIS_VARDECORARG (avis)) == N_arg) {
-        new_ext_vardec = MakeVardecFromArg (AVIS_VARDECORARG (avis));
+    if (NODE_TYPE (AVIS_DECL (avis)) == N_vardec) {
+        new_ext_vardec = DUPdoDupNode (AVIS_DECL (avis));
+    } else if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
+        new_ext_vardec = TCmakeVardecFromArg (AVIS_DECL (avis));
     } else {
         new_ext_vardec = NULL;
         DBUG_ASSERT ((FALSE), "unsupported nodetype");
     }
 
     /* update duplicated avis node for usage in new fundef */
-    new_ext_avis = AdjustAvisData (new_ext_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
+    new_ext_avis = TCadjustAvisData (new_ext_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
 
     /* create new name */
-    new_name = TmpVarName (VARDEC_NAME (new_ext_vardec));
-    VARDEC_NAME (new_ext_vardec) = Free (VARDEC_NAME (new_ext_vardec));
-    VARDEC_NAME (new_ext_vardec) = new_name;
+    new_name = ILIBtmpVarName (VARDEC_NAME (new_ext_vardec));
+    AVIS_NAME (VARDEC_AVIS (new_ext_vardec))
+      = ILIBfree (AVIS_NAME (VARDEC_AVIS (new_ext_vardec)));
+    AVIS_NAME (VARDEC_AVIS (new_ext_vardec)) = new_name;
 
-    DBUG_PRINT ("SSALIR", ("create external vardec %s for %s", new_name,
-                           VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))));
+    DBUG_PRINT ("SSALIR",
+                ("create external vardec %s for %s", new_name, AVIS_NAME (avis)));
 
     /* add vardec to chain of vardecs (ext. fundef) */
     BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info)))
-      = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info))),
-                      new_ext_vardec);
+      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info))),
+                        new_ext_vardec);
 
     /* 2. add [avis -> new_ext_avis] to RESULTMAP nodelist */
     INFO_SSALIR_RESULTMAP (arg_info)
-      = NodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), avis, new_ext_avis);
+      = TCnodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), avis, new_ext_avis);
 
     /* mark variable as being a result of this function */
     AVIS_EXPRESULT (avis) = TRUE;
 
     /* 3. create new vardec in local fundef (as result in recursive call) */
-    new_int_vardec = SSANewVardec (AVIS_VARDECORARG (avis));
+    new_int_vardec = SSATnewVardec (AVIS_DECL (avis));
     BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
-      = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
-                      new_int_vardec);
+      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
+                        new_int_vardec);
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
-    new_pct_vardec = SSANewVardec (AVIS_VARDECORARG (avis));
+    new_pct_vardec = SSATnewVardec (AVIS_DECL (avis));
     BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
-      = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
-                      new_pct_vardec);
+      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
+                        new_pct_vardec);
 
     /* 5. modify functions signature (AddResult) */
     /* recursive call */
-    letlist
-      = NodeListAppend (NULL,
-                        ASSIGN_INSTR (FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))),
-                        new_int_vardec);
+    letlist = TCnodeListAppend (NULL,
+                                ASSIGN_INSTR (
+                                  FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))),
+                                new_int_vardec);
 
     /*external call */
-    letlist = NodeListAppend (letlist,
-                              ASSIGN_INSTR (NODELIST_NODE (
-                                FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)))),
-                              new_ext_vardec);
+    letlist = TCnodeListAppend (letlist,
+                                ASSIGN_INSTR (NODELIST_NODE (
+                                  FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)))),
+                                new_ext_vardec);
 
     INFO_SSALIR_FUNDEF (arg_info)
-      = CSAddResult (INFO_SSALIR_FUNDEF (arg_info), new_pct_vardec, letlist);
+      = CSaddResult (INFO_SSALIR_FUNDEF (arg_info), new_pct_vardec, letlist);
 
     /* set correct assign nodes */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_int_vardec))
@@ -578,27 +581,25 @@ CreateNewResult (node *avis, info *arg_info)
     cond = ASSIGN_INSTR (tmp);
 
     /* insert copy assignment in then block */
-    right_id = MakeId (StringCopy (VARDEC_OR_ARG_NAME (new_int_vardec)), NULL,
-                       VARDEC_OR_ARG_STATUS (new_int_vardec));
-    ID_VARDEC (right_id) = new_int_vardec;
-    ID_AVIS (right_id) = VARDEC_AVIS (new_int_vardec);
+    right_id
+      = TBmakeId (TBmakeAvis (ILIBstringCopy (AVIS_NAME (DECL_AVIS (new_int_vardec))),
+                              TYcopyType (AVIS_TYPE (DECL_AVIS (new_int_vardec)))));
 
     /* create one let assign for then part */
     assign_let
-      = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (new_pct_vardec)), new_pct_vardec,
-                       MakeFuncond (MakeExprs (DupTree (COND_COND (cond)), NULL),
-                                    MakeExprs (right_id, NULL), NULL));
+      = TCmakeAssignLet (DECL_AVIS (DUPdoDupNode (new_pct_vardec)),
+                         TBmakeFuncond (TBmakeExprs (DUPdoDupTree (COND_COND (cond)),
+                                                     NULL),
+                                        TBmakeExprs (right_id, NULL), NULL));
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = assign_let;
 
     /*  insert copy assignment in else block (the given result identifier) */
-    right_id = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))), NULL,
-                       VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (avis)));
-    ID_VARDEC (right_id) = AVIS_VARDECORARG (avis);
-    ID_AVIS (right_id) = avis;
+    right_id = TBmakeId (
+      TBmakeAvis (ILIBstringCopy (AVIS_NAME (avis)), TYcopyType (AVIS_TYPE (avis))));
 
     /* create one exprs for else part */
-    FUNCOND_ELSE (ASSIGN_RHS (assign_let)) = MakeExprs (right_id, NULL);
+    FUNCOND_ELSE (ASSIGN_RHS (assign_let)) = TBmakeExprs (right_id, NULL);
 
     /* append new phi function behind cond block */
     ASSIGN_NEXT (assign_let) = ASSIGN_NEXT (tmp);
@@ -610,7 +611,7 @@ CreateNewResult (node *avis, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   LUT_t InsertMappingsIntoLUT(LUT_t move_table, nodelist *mappings)
+ *   lut_t* InsertMappingsIntoLUT(lut_t* move_table, nodelist *mappings)
  *
  * description:
  *   update all mappings from nodelist for vardec/avis/name into LUT.
@@ -618,8 +619,8 @@ CreateNewResult (node *avis, info *arg_info)
  *
  *
  *****************************************************************************/
-static LUT_t
-InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
+static lut_t *
+InsertMappingsIntoLUT (lut_t *move_table, nodelist *mappings)
 {
     DBUG_ENTER ("InsertMappingsIntoLUT");
 
@@ -627,31 +628,29 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
     while (mappings != NULL) {
         /* vardec */
         move_table
-          = UpdateLUT_P (move_table, AVIS_VARDECORARG (NODELIST_NODE (mappings)),
-                         AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings))), NULL);
+          = LUTupdateLutP (move_table, AVIS_DECL (NODELIST_NODE (mappings)),
+                           AVIS_DECL (((node *)NODELIST_ATTRIB2 (mappings))), NULL);
 
         /* avis */
-        move_table = UpdateLUT_P (move_table, NODELIST_NODE (mappings),
-                                  ((node *)NODELIST_ATTRIB2 (mappings)), NULL);
+        move_table = LUTupdateLutP (move_table, NODELIST_NODE (mappings),
+                                    ((node *)NODELIST_ATTRIB2 (mappings)), NULL);
 
         /* id name */
         move_table
-          = UpdateLUT_S (move_table,
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (NODELIST_NODE (mappings))),
-                         VARDEC_OR_ARG_NAME (
-                           AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings)))),
-                         NULL);
+          = LUTupdateLutS (move_table,
+                           VARDEC_OR_ARG_NAME (AVIS_DECL (NODELIST_NODE (mappings))),
+                           VARDEC_OR_ARG_NAME (
+                             AVIS_DECL (((node *)NODELIST_ATTRIB2 (mappings)))),
+                           NULL);
 
         DBUG_PRINT ("SSALIR",
                     ("update %s(" F_PTR ", " F_PTR ")"
                      " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (NODELIST_NODE (mappings))),
-                     NODELIST_NODE (mappings),
-                     AVIS_VARDECORARG (NODELIST_NODE (mappings)),
-                     VARDEC_OR_ARG_NAME (
-                       AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings)))),
+                     VARDEC_OR_ARG_NAME (AVIS_DECL (NODELIST_NODE (mappings))),
+                     NODELIST_NODE (mappings), AVIS_DECL (NODELIST_NODE (mappings)),
+                     AVIS_NAME (((node *)NODELIST_ATTRIB2 (mappings))),
                      ((node *)NODELIST_ATTRIB2 (mappings)),
-                     AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings)))));
+                     AVIS_DECL (((node *)NODELIST_ATTRIB2 (mappings)))));
 
         mappings = NODELIST_NEXT (mappings);
     }
@@ -676,9 +675,9 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
 static node *
 AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
 {
-    ids *result_chain;
+    node *result_chain;
     node *new_vardec;
-    ids *new_ids;
+    node *new_ids;
 
     DBUG_ENTER ("AdjustExternalResult");
 
@@ -698,23 +697,22 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
             while (result_chain != NULL) {
                 if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
                     /* matching ids found - create new vardec and rename result_ids */
-                    new_vardec
-                      = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (result_chain)));
+                    new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (result_chain)));
                     BLOCK_VARDEC (FUNDEF_BODY (ext_fundef))
-                      = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)),
-                                      new_vardec);
+                      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)),
+                                        new_vardec);
 
                     /* rename ids */
-                    IDS_VARDEC (result_chain) = new_vardec;
-                    IDS_AVIS (result_chain) = VARDEC_AVIS (new_vardec);
+                    IDS_AVIS (result_chain) = DECL_AVIS (new_vardec);
 
 #ifndef NO_ID_NAME
                     /* for compatiblity only
                      * there is no real need for name string in ids structure because
                      * you can get it from vardec without redundancy.
                      */
-                    IDS_NAME (result_chain) = Free (IDS_NAME (result_chain));
-                    IDS_NAME (result_chain) = StringCopy (VARDEC_NAME (new_vardec));
+                    IDS_NAME (result_chain) = ILIBfree (IDS_NAME (result_chain));
+                    IDS_NAME (result_chain)
+                      = ILIBstringCopy (AVIS_NAME (DECL_AVIS (new_vardec)));
 #endif
                     /* stop seerching */
                     result_chain = NULL;
@@ -756,11 +754,11 @@ InsListPushFrame (nodelist *il)
 
     if (il == NULL) {
         /* new insert list, create level 0 */
-        il = MakeNodelistNode (NULL, NULL);
+        il = TBmakeNodelistNode (NULL, NULL);
         NODELIST_INT (il) = 0;
     } else {
         /* insert new frame in front of list, increment level */
-        il = MakeNodelistNode (NULL, il);
+        il = TBmakeNodelistNode (NULL, il);
         NODELIST_INT (il) = NODELIST_INT (NODELIST_NEXT (il)) + 1;
     }
 
@@ -783,7 +781,7 @@ InsListPopFrame (nodelist *il)
 
     DBUG_ASSERT ((il != NULL), "tried to pop of empty insert list");
 
-    il = FreeNodelistNode (il);
+    il = FREEfreeNodelistNode (il);
 
     DBUG_RETURN (il);
 }
@@ -805,7 +803,7 @@ InsListAppendAssigns (nodelist *il, node *assign, int depth)
     DBUG_ENTER ("InsListAppendAssigns");
 
     tmp = InsListGetFrame (il, depth);
-    NODELIST_NODE (tmp) = AppendAssign (NODELIST_NODE (tmp), assign);
+    NODELIST_NODE (tmp) = TCappendAssign (NODELIST_NODE (tmp), assign);
 
     DBUG_RETURN (il);
 }
@@ -890,7 +888,7 @@ InsListGetFrame (nodelist *il, int depth)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRfundef(node *arg_node, info *arg_info)
+ *   node* LIRfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses fundef two times:
@@ -899,9 +897,9 @@ InsListGetFrame (nodelist *il, int depth)
  *
  ******************************************************************************/
 node *
-SSALIRfundef (node *arg_node, info *arg_info)
+LIRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRfundef");
+    DBUG_ENTER ("LIRfundef");
 
     DBUG_PRINT ("SSALIR",
                 ("loop invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
@@ -909,8 +907,8 @@ SSALIRfundef (node *arg_node, info *arg_info)
     INFO_SSALIR_FUNDEF (arg_info) = arg_node;
 
     /* build up LUT for vardec move/rename operartions */
-    if (FUNDEF_IS_LOOPFUN (arg_node)) {
-        INFO_SSALIR_MOVELUT (arg_info) = GenerateLUT ();
+    if (FUNDEF_ISDOFUN (arg_node)) {
+        INFO_SSALIR_MOVELUT (arg_info) = LUTgenerateLut ();
     } else {
         INFO_SSALIR_MOVELUT (arg_info) = NULL;
     }
@@ -919,7 +917,7 @@ SSALIRfundef (node *arg_node, info *arg_info)
     INFO_SSALIR_RESULTMAP (arg_info) = NULL;
 
     /* traverse args of special (loop) functions to infere loop invariant args */
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_IS_LOOPFUN (arg_node))) {
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
 
         DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (arg_node) != NULL),
                      "missing external function application nodelist");
@@ -950,7 +948,7 @@ SSALIRfundef (node *arg_node, info *arg_info)
 
     /* traverse args */
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     /* top level (not [directly] contained in any withloop) */
@@ -961,26 +959,26 @@ SSALIRfundef (node *arg_node, info *arg_info)
 
     /* traverse function body */
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     /* start LIRMOV traversal of BODY to move out marked assignments */
-    act_tab = lirmov_tab;
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    act_tab = ssalir_tab;
+    TRAVpush (TR_lirmov);
+    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    TRAVpop ();
 
     /* clean up insert list */
     INFO_SSALIR_INSLIST (arg_info) = InsListPopFrame (INFO_SSALIR_INSLIST (arg_info));
 
     /* clean up LUT */
     if (INFO_SSALIR_MOVELUT (arg_info) != NULL) {
-        INFO_SSALIR_MOVELUT (arg_info) = RemoveLUT (INFO_SSALIR_MOVELUT (arg_info));
+        INFO_SSALIR_MOVELUT (arg_info) = LUTremoveLut (INFO_SSALIR_MOVELUT (arg_info));
     }
 
     /* clean up result map nodelist */
     if (INFO_SSALIR_RESULTMAP (arg_info) != NULL) {
         INFO_SSALIR_RESULTMAP (arg_info)
-          = NodeListFree (INFO_SSALIR_RESULTMAP (arg_info), 0);
+          = TCnodeListFree (INFO_SSALIR_RESULTMAP (arg_info), 0);
     }
 
     DBUG_RETURN (arg_node);
@@ -997,9 +995,9 @@ SSALIRfundef (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SSALIRarg (node *arg_node, info *arg_info)
+LIRarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRarg");
+    DBUG_ENTER ("LIRarg");
 
     /*
      * build up LUT between args and their corresponding calling vardecs
@@ -1014,28 +1012,29 @@ SSALIRarg (node *arg_node, info *arg_info)
         /* add internal->external pairs to LUT: */
         /* vardec */
         INFO_SSALIR_MOVELUT (arg_info)
-          = InsertIntoLUT_P (INFO_SSALIR_MOVELUT (arg_info), arg_node,
-                             ID_VARDEC (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))));
+          = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info), arg_node,
+                               AVIS_DECL (ID_AVIS (
+                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info)))));
 
         /* avis */
         INFO_SSALIR_MOVELUT (arg_info)
-          = InsertIntoLUT_P (INFO_SSALIR_MOVELUT (arg_info), ARG_AVIS (arg_node),
-                             ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))));
+          = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info), ARG_AVIS (arg_node),
+                               ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))));
 
         /* id name */
         INFO_SSALIR_MOVELUT (arg_info)
-          = InsertIntoLUT_S (INFO_SSALIR_MOVELUT (arg_info), ARG_NAME (arg_node),
-                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (
-                               EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))));
+          = LUTinsertIntoLutS (INFO_SSALIR_MOVELUT (arg_info), ARG_NAME (arg_node),
+                               AVIS_NAME (ID_AVIS (
+                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info)))));
 
-        DBUG_PRINT ("SSALIR",
-                    ("insert arg %s(" F_PTR ", " F_PTR ")"
-                     " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
-                     ARG_NAME (arg_node), ARG_AVIS (arg_node), arg_node,
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
-                       ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))),
-                     ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))),
-                     ID_VARDEC (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info)))));
+        DBUG_PRINT ("SSALIR", ("insert arg %s(" F_PTR ", " F_PTR ")"
+                               " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
+                               ARG_NAME (arg_node), ARG_AVIS (arg_node), arg_node,
+                               (AVIS_NAME (ID_AVIS (
+                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))),
+                               ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))),
+                               AVIS_DECL (ID_AVIS (
+                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))));
     }
 
     /* init avis data for argument */
@@ -1052,7 +1051,7 @@ SSALIRarg (node *arg_node, info *arg_info)
         }
 
         /* traverse to next arg */
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1068,9 +1067,9 @@ SSALIRarg (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRvardec (node *arg_node, info *arg_info)
+LIRvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRvardec");
+    DBUG_ENTER ("LIRvardec");
 
     AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) = 0;
     AVIS_DEFDEPTH (VARDEC_AVIS (arg_node)) = DD_UNDEFINED;
@@ -1080,7 +1079,7 @@ SSALIRvardec (node *arg_node, info *arg_info)
 
     /* traverse to next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1097,11 +1096,11 @@ SSALIRvardec (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRblock (node *arg_node, info *arg_info)
+LIRblock (node *arg_node, info *arg_info)
 {
     int old_flag;
 
-    DBUG_ENTER ("SSALIRblock");
+    DBUG_ENTER ("LIRblock");
 
     /* save block mode */
     old_flag = INFO_SSALIR_TOPBLOCK (arg_info);
@@ -1115,16 +1114,16 @@ SSALIRblock (node *arg_node, info *arg_info)
     }
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     /* in case of an empty block, insert at least the empty node */
     if (BLOCK_INSTR (arg_node) == NULL) {
-        BLOCK_INSTR (arg_node) = MakeEmpty ();
+        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
 
     /* restore block mode */
@@ -1145,7 +1144,7 @@ SSALIRblock (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRassign (node *arg_node, info *arg_info)
+LIRassign (node *arg_node, info *arg_info)
 {
     bool remove_assign;
     node *pre_assign;
@@ -1154,7 +1153,7 @@ SSALIRassign (node *arg_node, info *arg_info)
     node *old_assign;
     int wlir_move_up;
 
-    DBUG_ENTER ("SSALIRassign");
+    DBUG_ENTER ("LIRassign");
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node)), "missing instruction in assignment");
 
@@ -1168,7 +1167,7 @@ SSALIRassign (node *arg_node, info *arg_info)
     INFO_SSALIR_MAXDEPTH (arg_info) = 0;
 
     /* start traversal of instruction */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* analyse and store results of instruction traversal */
     INFO_SSALIR_ASSIGN (arg_info) = old_assign;
@@ -1191,7 +1190,7 @@ SSALIRassign (node *arg_node, info *arg_info)
      */
     if ((INFO_SSALIR_TOPBLOCK (arg_info) == TRUE)
         && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)) {
+        && (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) && (pre_assign != NULL)) {
         /* do not move this withloop in this opt cycle */
         AVIS_LIRMOVE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))) = LIRMOVE_STAY;
         LET_LIRFLAG (ASSIGN_INSTR (arg_node)) = LIRMOVE_STAY;
@@ -1202,7 +1201,7 @@ SSALIRassign (node *arg_node, info *arg_info)
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (ASSIGN_INSTR (arg_node))))
 #endif
-        && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)))) {
+        && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) && (pre_assign != NULL)))) {
         wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
 
         /*
@@ -1211,7 +1210,7 @@ SSALIRassign (node *arg_node, info *arg_info)
          * later on bottom up traversal (this gives us a correct chain).
          */
         tmp = arg_node;
-        arg_node = MakeAssign (NULL, ASSIGN_NEXT (arg_node));
+        arg_node = TBmakeAssign (NULL, ASSIGN_NEXT (arg_node));
 
         DBUG_ASSERT ((remove_assign == FALSE), "wlur expression must not be removed");
 
@@ -1249,13 +1248,13 @@ SSALIRassign (node *arg_node, info *arg_info)
     /* insert post-assign code */
     if (INFO_SSALIR_POSTASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
-          = AppendAssign (INFO_SSALIR_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+          = TCappendAssign (INFO_SSALIR_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
         INFO_SSALIR_POSTASSIGN (arg_info) = NULL;
     }
 
     /* traverse next assignment */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* in bottom-up traversal: */
@@ -1270,7 +1269,7 @@ SSALIRassign (node *arg_node, info *arg_info)
     if (remove_assign) {
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
-        FreeNode (tmp);
+        FREEdoFreeNode (tmp);
     }
 
     /*
@@ -1278,7 +1277,7 @@ SSALIRassign (node *arg_node, info *arg_info)
      * remark: the pre-assigned code will not be traversed during this cycle
      */
     if (pre_assign != NULL) {
-        arg_node = AppendAssign (pre_assign, arg_node);
+        arg_node = TCappendAssign (pre_assign, arg_node);
     }
 
     /* restore old maxdepth counter */
@@ -1301,9 +1300,9 @@ SSALIRassign (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRlet (node *arg_node, info *arg_info)
+LIRlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRlet");
+    DBUG_ENTER ("LIRlet");
 
     if (INFO_SSALIR_TOPBLOCK (arg_info)) {
         /* on toplevel: start counting non-lir args in expression */
@@ -1311,15 +1310,15 @@ SSALIRlet (node *arg_node, info *arg_info)
     }
 
     if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     if (INFO_SSALIR_TOPBLOCK (arg_info)) {
         /* in topblock mark let statement according to the infered data */
         if ((INFO_SSALIR_NONLIRUSE (arg_info) == 0)
             && (INFO_SSALIR_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND)
-            && (FUNDEF_STATUS (INFO_SSALIR_FUNDEF (arg_info)) == ST_dofun)
-            && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
+            && (FUNDEF_ISDOFUN (INFO_SSALIR_FUNDEF (arg_info)))
+            && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
                   && (INFO_SSALIR_PREASSIGN (arg_info) != NULL)))) {
 
             DBUG_PRINT ("SSALIR",
@@ -1356,7 +1355,7 @@ SSALIRlet (node *arg_node, info *arg_info)
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (arg_node)))
 #endif
-        && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
+        && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
               && (INFO_SSALIR_PREASSIGN (arg_info) != NULL)))) {
         /* set new target definition depth */
         INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_MAXDEPTH (arg_info);
@@ -1371,7 +1370,7 @@ SSALIRlet (node *arg_node, info *arg_info)
 
     /* traverse ids to mark them as loop-invariant/local or normal */
     if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = SSALIRleftids (LET_IDS (arg_node), arg_info);
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     /* step back to normal mode */
@@ -1400,11 +1399,11 @@ SSALIRlet (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRid (node *arg_node, info *arg_info)
+LIRid (node *arg_node, info *arg_info)
 {
     node *id;
 
-    DBUG_ENTER ("SSALIRid");
+    DBUG_ENTER ("LIRid");
 
     switch (INFO_SSALIR_FLAG (arg_info)) {
     case SSALIR_NORMAL:
@@ -1419,13 +1418,11 @@ SSALIRid (node *arg_node, info *arg_info)
               || (AVIS_LIRMOVE (ID_AVIS (arg_node)) & LIRMOVE_LOCAL))) {
             INFO_SSALIR_NONLIRUSE (arg_info) = INFO_SSALIR_NONLIRUSE (arg_info) + 1;
 
-            DBUG_PRINT ("SSALIR",
-                        ("non-loop-invariant or non-local id %s",
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
+            DBUG_PRINT ("SSALIR", ("non-loop-invariant or non-local id %s",
+                                   (AVIS_NAME (ID_AVIS (arg_node)))));
         } else {
-            DBUG_PRINT ("SSALIR",
-                        ("loop-invariant or local id %s",
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
+            DBUG_PRINT ("SSALIR", ("loop-invariant or local id %s",
+                                   (AVIS_NAME (ID_AVIS (arg_node)))));
         }
 
         /*
@@ -1440,7 +1437,7 @@ SSALIRid (node *arg_node, info *arg_info)
         break;
 
     case SSALIR_INRETURN:
-        if (isPhiFun (arg_node)) {
+        if (TCisPhiFun (arg_node)) {
             DBUG_ASSERT ((FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))))
                           != NULL),
                          "missing definition assignment in else part");
@@ -1468,8 +1465,8 @@ SSALIRid (node *arg_node, info *arg_info)
                              "missing external result ids");
 
                 INFO_SSALIR_RESULTMAP (arg_info)
-                  = NodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), ID_AVIS (id),
-                                    IDS_AVIS (INFO_SSALIR_APRESCHAIN (arg_info)));
+                  = TCnodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), ID_AVIS (id),
+                                      IDS_AVIS (INFO_SSALIR_APRESCHAIN (arg_info)));
 
                 /* mark variable as being a result of this function */
                 AVIS_EXPRESULT (ID_AVIS (id)) = TRUE;
@@ -1489,8 +1486,8 @@ SSALIRid (node *arg_node, info *arg_info)
                     DBUG_PRINT (
                       "SSALIR",
                       ("loop-invariant assignment (marked for move down) [%s, %s]",
-                       VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (id))),
-                       VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
+                       VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (id))),
+                       VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
 
                     (AVIS_LIRMOVE (ID_AVIS (id))) |= LIRMOVE_DOWN;
                 }
@@ -1516,23 +1513,24 @@ SSALIRid (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRap (node *arg_node, info *arg_info)
+LIRap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("SSALIRap");
+    DBUG_ENTER ("LIRap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
     /* traverse special fundef without recursion */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_SSALIR_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSALIR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         INFO_SSALIR_MODUL (arg_info)
-          = CheckAndDupSpecialFundef (INFO_SSALIR_MODUL (arg_info), AP_FUNDEF (arg_node),
-                                      INFO_SSALIR_ASSIGN (arg_info));
+          = DUPcheckAndDupSpecialFundef (INFO_SSALIR_MODUL (arg_info),
+                                         AP_FUNDEF (arg_node),
+                                         INFO_SSALIR_ASSIGN (arg_info));
 
         DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
                      "more than one instance of special function used.");
@@ -1545,7 +1543,7 @@ SSALIRap (node *arg_node, info *arg_info)
         INFO_SSALIR_EXTPOSTASSIGN (new_arg_info) = NULL;
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
         DBUG_PRINT ("SSALIR", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -1563,7 +1561,7 @@ SSALIRap (node *arg_node, info *arg_info)
 
     /* traverse args of function application */
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1584,21 +1582,21 @@ SSALIRap (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRcond (node *arg_node, info *arg_info)
+LIRcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRcond");
+    DBUG_ENTER ("LIRcond");
 
     /* traverse condition */
     INFO_SSALIR_CONDSTATUS (arg_info) = CONDSTATUS_NOCOND;
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     /* traverse then part */
     INFO_SSALIR_CONDSTATUS (arg_info) = CONDSTATUS_THENPART;
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
     /* traverse else part */
     INFO_SSALIR_CONDSTATUS (arg_info) = CONDSTATUS_ELSEPART;
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
     /* leaving conditional */
     INFO_SSALIR_CONDSTATUS (arg_info) = CONDSTATUS_NOCOND;
@@ -1616,11 +1614,11 @@ SSALIRcond (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRreturn (node *arg_node, info *arg_info)
+LIRreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRreturn");
+    DBUG_ENTER ("LIRreturn");
 
-    if (FUNDEF_STATUS (INFO_SSALIR_FUNDEF (arg_info)) == ST_dofun) {
+    if (FUNDEF_ISDOFUN (INFO_SSALIR_FUNDEF (arg_info))) {
         /* init INFO_SSALIR_APRESCHAIN with external result chain */
         DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
                      "missing link to external calling fundef");
@@ -1640,7 +1638,7 @@ SSALIRreturn (node *arg_node, info *arg_info)
 
     /* traverse results */
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
@@ -1662,9 +1660,9 @@ SSALIRreturn (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRNwith (node *arg_node, info *arg_info)
+LIRwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRNwith");
+    DBUG_ENTER ("LIRwith");
 
     /* clear current InsertListFrame */
     INFO_SSALIR_INSLIST (arg_info)
@@ -1678,13 +1676,13 @@ SSALIRNwith (node *arg_node, info *arg_info)
     INFO_SSALIR_INSLIST (arg_info) = InsListPushFrame (INFO_SSALIR_INSLIST (arg_info));
 
     /* traverse partition */
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     /* travserse code blocks */
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /* traverse withop */
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /* remove top InsertListFrame */
     INFO_SSALIR_INSLIST (arg_info) = InsListPopFrame (INFO_SSALIR_INSLIST (arg_info));
@@ -1694,9 +1692,9 @@ SSALIRNwith (node *arg_node, info *arg_info)
 
     /* move the assigns of this depth into PREASSIGN */
     INFO_SSALIR_PREASSIGN (arg_info)
-      = AppendAssign (INFO_SSALIR_PREASSIGN (arg_info),
-                      InsListGetAssigns (INFO_SSALIR_INSLIST (arg_info),
-                                         INFO_SSALIR_WITHDEPTH (arg_info)));
+      = TCappendAssign (INFO_SSALIR_PREASSIGN (arg_info),
+                        InsListGetAssigns (INFO_SSALIR_INSLIST (arg_info),
+                                           INFO_SSALIR_WITHDEPTH (arg_info)));
     /* clear this frame */
     INFO_SSALIR_INSLIST (arg_info)
       = InsListSetAssigns (INFO_SSALIR_INSLIST (arg_info), NULL,
@@ -1715,7 +1713,7 @@ SSALIRNwith (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRNwithid (node *arg_node, info *arg_info)
+LIRwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRNwithid");
 
@@ -1723,11 +1721,11 @@ SSALIRNwithid (node *arg_node, info *arg_info)
     INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
     INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info);
 
-    if (NWITHID_IDS (arg_node) != NULL) {
-        NWITHID_IDS (arg_node) = SSALIRleftids (NWITHID_IDS (arg_node), arg_info);
+    if (WITHID_IDS (arg_node) != NULL) {
+        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
     }
-    if (NWITHID_VEC (arg_node) != NULL) {
-        NWITHID_VEC (arg_node) = SSALIRleftids (NWITHID_VEC (arg_node), arg_info);
+    if (WITHID_VEC (arg_node) != NULL) {
+        WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
     }
 
     INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
@@ -1753,7 +1751,7 @@ SSALIRexprs (node *arg_node, info *arg_info)
 
     /* traverse expression */
     if (EXPRS_EXPR (arg_node) != NULL) {
-        EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     if (EXPRS_NEXT (arg_node) != NULL) {
@@ -1765,7 +1763,7 @@ SSALIRexprs (node *arg_node, info *arg_info)
         }
 
         /* traverse next exprs node */
-        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
+        EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1774,15 +1772,15 @@ SSALIRexprs (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *SSALIRleftids (ids *arg_ids, info *arg_info)
+ *   static node *SSALIRleftids (node *arg_ids, info *arg_info)
  *
  * description:
  *   set current withloop depth as ids definition depth
  *   set current movement flag as ids LIRMOV flag
  *
  *****************************************************************************/
-static ids *
-SSALIRleftids (ids *arg_ids, info *arg_info)
+node *
+LIRids (node *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("SSALIRleftids");
 
@@ -1796,15 +1794,14 @@ SSALIRleftids (ids *arg_ids, info *arg_info)
     switch (INFO_SSALIR_FLAG (arg_info)) {
     case SSALIR_MOVEUP:
         DBUG_PRINT ("SSALIR", ("mark: moving up vardec %s",
-                               VARDEC_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+                               VARDEC_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
         AVIS_SSALPINV (IDS_AVIS (arg_ids)) = TRUE;
 
         (AVIS_LIRMOVE (IDS_AVIS (arg_ids))) |= LIRMOVE_UP;
         break;
 
     case SSALIR_MOVELOCAL:
-        DBUG_PRINT ("SSALIR", ("mark: local vardec %s",
-                               VARDEC_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+        DBUG_PRINT ("SSALIR", ("mark: local vardec %s", AVIS_NAME (IDS_AVIS (arg_ids))));
 
         AVIS_LIRMOVE (IDS_AVIS (arg_ids)) = LIRMOVE_LOCAL;
         break;
@@ -1819,7 +1816,7 @@ SSALIRleftids (ids *arg_ids, info *arg_info)
 
     /* traverse to next expression */
     if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = SSALIRleftids (IDS_NEXT (arg_ids), arg_info);
+        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
     }
 
     DBUG_RETURN (arg_ids);
@@ -1855,7 +1852,7 @@ LIRMOVblock (node *arg_node, info *arg_info)
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     /* restore block mode */
@@ -1881,7 +1878,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
 {
     bool remove_assignment;
     node *tmp;
-    LUT_t move_table;
+    lut_t *move_table;
     node *moved_assignments;
 
     DBUG_ENTER ("LIRMOVassign");
@@ -1909,7 +1906,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
     }
 
     /* traverse expression */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_SSALIR_TOPBLOCK (arg_info)) {
         /*
@@ -1922,15 +1919,15 @@ LIRMOVassign (node *arg_node, info *arg_info)
          */
         switch (INFO_SSALIR_FLAG (arg_info)) {
         case SSALIR_MOVEUP:
-            move_table = DuplicateLUT (INFO_SSALIR_MOVELUT (arg_info));
+            move_table = LUTduplicateLut (INFO_SSALIR_MOVELUT (arg_info));
 
             /* move up to external preassign chain */
             INFO_SSALIR_EXTPREASSIGN (arg_info)
-              = AppendAssign (INFO_SSALIR_EXTPREASSIGN (arg_info),
-                              DupNodeLUT (arg_node, move_table));
+              = TCappendAssign (INFO_SSALIR_EXTPREASSIGN (arg_info),
+                                DUPdoDupNodeLut (arg_node, move_table));
 
             /* free temp. LUT */
-            move_table = RemoveLUT (move_table);
+            move_table = LUTremoveLut (move_table);
 
             /* one loop invarinat expression removed */
             lir_expr++;
@@ -1940,14 +1937,14 @@ LIRMOVassign (node *arg_node, info *arg_info)
             break;
 
         case SSALIR_MOVEDOWN:
-            move_table = DuplicateLUT (INFO_SSALIR_MOVELUT (arg_info));
+            move_table = LUTduplicateLut (INFO_SSALIR_MOVELUT (arg_info));
 
             /* init LUT result mappings */
             move_table
               = InsertMappingsIntoLUT (move_table, INFO_SSALIR_RESULTMAP (arg_info));
 
             /* duplicate move-down expressions with LUT */
-            moved_assignments = DupNodeLUT (arg_node, move_table);
+            moved_assignments = DUPdoDupNodeLut (arg_node, move_table);
 
             /* adjust external result ids (resolve duplicate definitions) */
             INFO_SSALIR_EXTFUNDEF (arg_info)
@@ -1958,10 +1955,10 @@ LIRMOVassign (node *arg_node, info *arg_info)
 
             /* move down to external postassign chain */
             INFO_SSALIR_EXTPOSTASSIGN (arg_info)
-              = AppendAssign (INFO_SSALIR_EXTPOSTASSIGN (arg_info), moved_assignments);
+              = TCappendAssign (INFO_SSALIR_EXTPOSTASSIGN (arg_info), moved_assignments);
 
             /* free temp. LUT */
-            move_table = RemoveLUT (move_table);
+            move_table = LUTremoveLut (move_table);
 
             /* one loop invarinat expression moved */
             lir_expr++;
@@ -1984,14 +1981,14 @@ LIRMOVassign (node *arg_node, info *arg_info)
 
     /* traverse to next assignment */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* on bottom up traversal remove marked assignments */
     if (remove_assignment) {
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
-        FreeNode (tmp);
+        FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -2011,10 +2008,10 @@ LIRMOVlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LIRMOVlet");
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = LIRMOVleftids (LET_IDS (arg_node), arg_info);
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2042,24 +2039,19 @@ LIRMOVid (node *arg_node, info *arg_info)
      */
     if ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
         && (INFO_SSALIR_FLAG (arg_info) != SSALIR_MOVEUP)) {
-        DBUG_PRINT ("SSALIR", ("substitution: %s -> %s",
-                               VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node))),
-                               VARDEC_OR_ARG_NAME (
-                                 AVIS_VARDECORARG (AVIS_SUBST (ID_AVIS (arg_node))))));
+        DBUG_PRINT ("SSALIR", ("substitution: %s -> %s", (AVIS_NAME (ID_AVIS (arg_node))),
+                               (AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node))))));
 
         /* do renaming to new ssa vardec */
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
-
-        /* restore all depended attributes with correct values */
-        ID_VARDEC (arg_node) = AVIS_VARDECORARG (ID_AVIS (arg_node));
 
 #ifndef NO_ID_NAME
         /* for compatiblity only
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        ID_NAME (arg_node) = Free (ID_NAME (arg_node));
-        ID_NAME (arg_node) = StringCopy (VARDEC_OR_ARG_NAME (ID_VARDEC (arg_node)));
+        ID_NAME (arg_node) = ILIBfree (ID_NAME (arg_node));
+        ID_NAME (arg_node) = ILIBstringCopy (AVIS_NAME (ID_AVIS (arg_node)));
 #endif
     }
 
@@ -2073,10 +2065,9 @@ LIRMOVid (node *arg_node, info *arg_info)
         && (AVIS_LIRMOVE (ID_AVIS (arg_node)) != LIRMOVE_LOCAL)
         && (AVIS_EXPRESULT (ID_AVIS (arg_node)) != TRUE)) {
 
-        DBUG_PRINT ("SSALIR",
-                    ("create new result in %s for %s",
-                     FUNDEF_NAME (INFO_SSALIR_FUNDEF (arg_info)),
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
+        DBUG_PRINT ("SSALIR", ("create new result in %s for %s",
+                               FUNDEF_NAME (INFO_SSALIR_FUNDEF (arg_info)),
+                               (AVIS_NAME (ID_AVIS (arg_node)))));
         /* this call modifies avis and arg_info */
         CreateNewResult (ID_AVIS (arg_node), arg_info);
     }
@@ -2099,22 +2090,22 @@ LIRMOVid (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-LIRMOVNwithid (node *arg_node, info *arg_info)
+LIRMOVwithid (node *arg_node, info *arg_info)
 {
     int old_flag;
 
-    DBUG_ENTER ("LIRMOVNwithid");
+    DBUG_ENTER ("LIRMOVwithid");
 
     if ((INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEUP)
         || (INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEDOWN)) {
-        if (NWITHID_VEC (arg_node) != NULL) {
+        if (WITHID_VEC (arg_node) != NULL) {
             /* traverse identifier in move_local variable mode */
             old_flag = INFO_SSALIR_FLAG (arg_info);
 
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
-            NWITHID_VEC (arg_node) = LIRMOVleftids (NWITHID_VEC (arg_node), arg_info);
-            if (NWITHID_IDS (arg_node) != NULL) {
-                NWITHID_IDS (arg_node) = LIRMOVleftids (NWITHID_IDS (arg_node), arg_info);
+            WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
+            if (WITHID_IDS (arg_node) != NULL) {
+                WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
             }
 
             /* switch back to previous mode */
@@ -2140,7 +2131,7 @@ LIRMOVreturn (node *arg_node, info *arg_info)
     DBUG_ENTER ("LIRMOVreturn");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2149,15 +2140,15 @@ LIRMOVreturn (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids* LIRMOVleftids(ids *arg_ids, info *arg_info)
+ *   node* LIRMOVleftids(node *arg_ids, info *arg_info)
  *
  * description:
  *   creates external references for moved identifiers and modifies the
  *   function signature according to the moved identifier (for non local id).
  *
  ******************************************************************************/
-static ids *
-LIRMOVleftids (ids *arg_ids, info *arg_info)
+node *
+LIRMOVids (node *arg_ids, info *arg_info)
 {
     node *new_vardec;
     node *new_vardec_id;
@@ -2167,7 +2158,7 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
     node *new_arg_id;
     nodelist *letlist;
 
-    DBUG_ENTER ("LIRMOVleftids");
+    DBUG_ENTER ("LIRMOVids");
 
     if ((INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEUP)
         || (INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVELOCAL)) {
@@ -2177,20 +2168,19 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
          */
 
         /* create new vardec */
-        new_vardec = DupNode (IDS_VARDEC (arg_ids));
-        new_avis = AdjustAvisData (new_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
-        new_name = TmpVarName (VARDEC_NAME (new_vardec));
-        VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
+        new_vardec = DUPdoDupNode (AVIS_DECL (IDS_AVIS (arg_ids)));
+        new_avis = TCadjustAvisData (new_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
+        new_name = ILIBtmpVarName (VARDEC_NAME (new_vardec));
+        VARDEC_NAME (new_vardec) = ILIBfree (VARDEC_NAME (new_vardec));
         VARDEC_NAME (new_vardec) = new_name;
 
-        DBUG_PRINT ("SSALIR",
-                    ("create external vardec %s for %s", new_name,
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+        DBUG_PRINT ("SSALIR", ("create external vardec %s for %s", new_name,
+                               (AVIS_NAME (IDS_AVIS (arg_ids)))));
 
         /* add vardec to chain of vardecs (ext. fundef) */
         BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info)))
-          = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info))),
-                          new_vardec);
+          = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info))),
+                            new_vardec);
 
         /*
          * setup LUT for later DupTree:
@@ -2198,21 +2188,23 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
          */
         /* vardec */
         INFO_SSALIR_MOVELUT (arg_info)
-          = InsertIntoLUT_P (INFO_SSALIR_MOVELUT (arg_info), IDS_VARDEC (arg_ids),
-                             new_vardec);
+          = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info),
+                               AVIS_DECL (IDS_AVIS (arg_ids)), new_vardec);
 
         /* avis */
-        INFO_SSALIR_MOVELUT (arg_info) = InsertIntoLUT_P (INFO_SSALIR_MOVELUT (arg_info),
-                                                          IDS_AVIS (arg_ids), new_avis);
+        INFO_SSALIR_MOVELUT (arg_info)
+          = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info), IDS_AVIS (arg_ids),
+                               new_avis);
 
         /* id name */
-        INFO_SSALIR_MOVELUT (arg_info) = InsertIntoLUT_S (INFO_SSALIR_MOVELUT (arg_info),
-                                                          IDS_NAME (arg_ids), new_name);
+        INFO_SSALIR_MOVELUT (arg_info)
+          = LUTinsertIntoLutS (INFO_SSALIR_MOVELUT (arg_info), IDS_NAME (arg_ids),
+                               new_name);
 
         DBUG_PRINT ("SSALIR", ("insert local %s(" F_PTR ", " F_PTR ")"
                                " -> ext. %s(" F_PTR ", " F_PTR ") into LUT for mapping",
-                               IDS_NAME (arg_ids), IDS_AVIS (arg_ids),
-                               IDS_VARDEC (arg_ids), new_name, new_avis, new_vardec));
+                               IDS_NAME (arg_ids), IDS_AVIS (arg_ids), IDS_DECL (arg_ids),
+                               new_name, new_avis, new_vardec));
 
         /*
          *  modify functions signature:
@@ -2222,19 +2214,15 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
         if ((INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEUP)
             && (INFO_SSALIR_TOPBLOCK (arg_info))) {
             /* make identifier for external function application */
-            new_vardec_id = MakeId (StringCopy (new_name), NULL, ST_regular);
-            ID_VARDEC (new_vardec_id) = new_vardec;
-            ID_AVIS (new_vardec_id) = new_avis;
+            new_vardec_id = TBmakeId (new_avis);
 
             /* make new arg for this functions (instead of vardec) */
-            new_arg = MakeArgFromVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
-            ARG_NAME (new_arg) = Free (ARG_NAME (new_arg));
-            ARG_NAME (new_arg) = StringCopy (new_name);
+            new_arg = TCmakeArgFromVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+            ARG_NAME (new_arg) = ILIBfree (ARG_NAME (new_arg));
+            ARG_NAME (new_arg) = ILIBstringCopy (new_name);
 
             /* make identifier for recursive function call */
-            new_arg_id = MakeId (StringCopy (new_name), NULL, ST_regular);
-            ID_VARDEC (new_arg_id) = new_arg;
-            ID_AVIS (new_arg_id) = ARG_AVIS (new_arg);
+            new_arg_id = TBmakeId (ARG_AVIS (new_arg));
 
             /* change functions signature, internal and external application */
             DBUG_ASSERT ((FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
@@ -2247,17 +2235,17 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
                          "more than one external call");
 
             /* recursive call */
-            letlist = NodeListAppend (NULL,
-                                      ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
-                                        INFO_SSALIR_FUNDEF (arg_info))),
-                                      new_arg_id);
-            letlist = NodeListAppend (letlist,
-                                      ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                        INFO_SSALIR_FUNDEF (arg_info)))),
-                                      new_vardec_id);
+            letlist = TCnodeListAppend (NULL,
+                                        ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
+                                          INFO_SSALIR_FUNDEF (arg_info))),
+                                        new_arg_id);
+            letlist = TCnodeListAppend (letlist,
+                                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
+                                          INFO_SSALIR_FUNDEF (arg_info)))),
+                                        new_vardec_id);
 
             INFO_SSALIR_FUNDEF (arg_info)
-              = CSAddArg (INFO_SSALIR_FUNDEF (arg_info), new_arg, letlist);
+              = CSaddArg (INFO_SSALIR_FUNDEF (arg_info), new_arg, letlist);
 
             /*
              * set renaming information: all old uses will be renamed to the new arg
@@ -2268,7 +2256,7 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
 
     /* traverse next ids */
     if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = LIRMOVleftids (IDS_NEXT (arg_ids), arg_info);
+        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
     }
 
     DBUG_RETURN (arg_ids);
@@ -2284,30 +2272,26 @@ LIRMOVleftids (ids *arg_ids, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALoopInvariantRemoval (node *fundef, node *modul)
+LIRdoLoopInvariantRemoval (node *fundef, node *modul)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSALoopInvariantRemoval");
+    DBUG_ENTER ("LIRdoLoopInvariantRemoval");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSALoopInvariantRemoval called for non-fundef node");
+                 "LIRdoLoopInvariantRemoval called for non-fundef node");
 
     DBUG_PRINT ("OPT", ("starting loop independent removal (ssa) in function %s",
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (fundef))) {
         arg_info = MakeInfo ();
         INFO_SSALIR_MODUL (arg_info) = modul;
 
-        old_tab = act_tab;
-        act_tab = ssalir_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_lir);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
