@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/07/06 16:13:26  asi
+ * Revision 1.32  1995/07/19 18:44:48  asi
+ * changed CFprf
+ * function call NoConstSkalarPrf moved to the end
+ *
+ * Revision 1.31  1995/07/06  16:13:26  asi
  * CFwhile and CFdo changed loop modification moved to Unroll.c
  *
  * Revision 1.30  1995/07/05  14:17:04  asi
@@ -1233,57 +1237,63 @@ NoConstSkalarPrf (node *arg_node, types *res_type, node *arg_info)
     /*
      * Calculate prim-functions with non constant arguments
      */
-    switch (arg_node->info.prf) {
-    case F_and:
-        arg_node = FoldExpr (arg_node, 0, 0, FALSE, arg_info); /* FALSE && x = FALSE */
-        if (N_prf == arg_node->nodetype)
+    if (N_prf == arg_node->nodetype) {
+        switch (arg_node->info.prf) {
+        case F_and:
             arg_node
-              = FoldExpr (arg_node, 1, 1, FALSE, arg_info); /* x && FALSE = FALSE */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 0, 1, TRUE, arg_info); /* x && TRUE = x */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 1, 0, TRUE, arg_info); /* TRUE && x = x */
-        break;
-    case F_or:
-        arg_node = FoldExpr (arg_node, 0, 0, TRUE, arg_info); /* TRUE || x = TRUE */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 1, 1, TRUE, arg_info); /* x || TRUE = TRUE */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 0, 1, FALSE, arg_info); /* x || FALSE = x */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 1, 0, FALSE, arg_info); /* FALSE || x = x */
-        break;
-    case F_mul:
-    case F_mul_AxS:
-    case F_mul_SxA:
-        arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 * x = 0 */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 1, 1, 0, arg_info); /* x * 0 = 0 */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 0, 1, 1, arg_info); /* 1 * x = x */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x * 1 = x */
-        break;
-    case F_div:
-    case F_div_SxA:
-        if (TRUE == FoundZero (arg_node->node[0]->node[1]->node[0])) {
-            WARNO (
-              ("%s, %d:WARNING: Devision by zero expected.", filename, arg_node->lineno));
+              = FoldExpr (arg_node, 0, 0, FALSE, arg_info); /* FALSE && x = FALSE */
+            if (N_prf == arg_node->nodetype)
+                arg_node
+                  = FoldExpr (arg_node, 1, 1, FALSE, arg_info); /* x && FALSE = FALSE */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 0, 1, TRUE, arg_info); /* x && TRUE = x */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, TRUE, arg_info); /* TRUE && x = x */
+            break;
+        case F_or:
+            arg_node = FoldExpr (arg_node, 0, 0, TRUE, arg_info); /* TRUE || x = TRUE */
+            if (N_prf == arg_node->nodetype)
+                arg_node
+                  = FoldExpr (arg_node, 1, 1, TRUE, arg_info); /* x || TRUE = TRUE */
+            if (N_prf == arg_node->nodetype)
+                arg_node
+                  = FoldExpr (arg_node, 0, 1, FALSE, arg_info); /* x || FALSE = x */
+            if (N_prf == arg_node->nodetype)
+                arg_node
+                  = FoldExpr (arg_node, 1, 0, FALSE, arg_info); /* FALSE || x = x */
+            break;
+        case F_mul:
+        case F_mul_AxS:
+        case F_mul_SxA:
+            arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 * x = 0 */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 1, 0, arg_info); /* x * 0 = 0 */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 0, 1, 1, arg_info); /* 1 * x = x */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x * 1 = x */
+            break;
+        case F_div:
+        case F_div_SxA:
+            if (TRUE == FoundZero (arg_node->node[0]->node[1]->node[0])) {
+                WARNO (("%s, %d:WARNING: Devision by zero expected.", filename,
+                        arg_node->lineno));
+            }
+            arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 / x = 0 */
+            break;
+        case F_add:
+        case F_add_AxS:
+        case F_add_SxA:
+        case F_sub:
+        case F_sub_AxS:
+        case F_sub_SxA:
+            arg_node = FoldExpr (arg_node, 0, 1, 0, arg_info); /* 0 [+-] x = x */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x [+-] 0 = x */
+            break;
+        default:
+            break;
         }
-        arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 / x = 0 */
-        break;
-    case F_add:
-    case F_add_AxS:
-    case F_add_SxA:
-    case F_sub:
-    case F_sub_AxS:
-    case F_sub_SxA:
-        arg_node = FoldExpr (arg_node, 0, 1, 0, arg_info); /* 0 [+-] x = x */
-        if (N_prf == arg_node->nodetype)
-            arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x [+-] 0 = x */
-        break;
-    default:
-        break;
     }
     DBUG_RETURN (arg_node);
 }
@@ -1772,11 +1782,6 @@ CFprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    /*
-     * Do some foldings like 1 * x = x, etc.
-     */
-    arg_node = NoConstSkalarPrf (arg_node, arg_info->info.types, arg_info);
-
     if (N_prf == arg_node->nodetype) {
         if (arg_node->info.prf <= F_neq) {
             /*
@@ -1815,6 +1820,11 @@ CFprf (node *arg_node, node *arg_info)
             arg_node = ArrayPrf (arg_node, arg_info->info.types, arg_info);
         }
     }
+
+    /*
+     * Do some foldings like 1 * x = x, etc.
+     */
+    arg_node = NoConstSkalarPrf (arg_node, arg_info->info.types, arg_info);
 
     DBUG_RETURN (arg_node);
 }
