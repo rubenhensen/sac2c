@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/06/30 11:09:37  hw
+ * Revision 1.17  1995/07/04 11:13:49  hw
+ * - scanning of 'double constants'( e.g. 3d, 3D, 3.0d, 3.0D) inserted
+ * - scanning of 'float constants'( e.g. 3f, 3F, 3.0, 3.0F, 3.0f) changed
+ * - scanning of primitive functions ifod, ftod, dtoi, dtof inserted.
+ *
+ * Revision 1.16  1995/06/30  11:09:37  hw
  * - tokens for new primitive functions "ftoi" & "itof" inserted
  * - token C_KEYWORD for not used c-keywords inserted
  * - identifiers have to begin with a letter.
@@ -66,6 +71,14 @@
 #define FILTER4(token) if (0==commlevel) {                              \
                          yylval.cfloat=atof(yytext);		       \
                          return(token); }
+#define FILTER5(token) if (0==commlevel) {                              \
+                         yytext[strlen(yytext)]='\0';                   \
+                         yylval.cdbl=atof(yytext);                      \
+                         return(token); }
+#define FILTER6(token) if (0==commlevel) {                              \
+                         yytext[strlen(yytext)]='\0';                   \
+                         yylval.cfloat=atof(yytext);                    \
+                         return(token); }
 
 extern int indent;
 extern int i;
@@ -78,7 +91,7 @@ int start_token;
 
 %}
 
-%p 3000 /* set positions to 3000 */
+%p 4000 /* set positions to 4000 */
 
 %%
 %{
@@ -136,7 +149,11 @@ int start_token;
 "cat"                           {FILTER( CAT );}
 "psi"                           {FILTER( PSI );}
 "ftoi"                          {FILTER( F2I );}
+"ftod"                          {FILTER( F2D );}
 "itof"                          {FILTER( I2F );}
+"itod"                          {FILTER( I2D );}
+"dtoi"                          {FILTER( D2I );}
+"dtof"                          {FILTER( D2F );}
 "typedef"			{FILTER( TYPEDEF );}
 "constdef"		        {FILTER( CONSTDEF );}
 "objdef"		        {FILTER( OBJDEF );}
@@ -203,8 +220,14 @@ int start_token;
 \"[^"\n]*\"			{FILTER2( STR );}
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*		{FILTER2( ID );}
 (0?|([1-9][0-9]*))	{FILTER3 ( NUM);}
-(0?|([1-9][0-9]*))[.][0-9]*(e([+]?|[-]?)[1-9][0-9]*)? \
+(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)? \
 				{FILTER4 ( FLOAT);}
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)?)?[fF] \
+                                {FILTER6 ( FLOAT);}
+
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)?)?[Dd] \
+                                {FILTER5 ( DOUBLE);}
+
 
 "/*"	{ if (commlevel++ == 1)
             fprintf(stderr,"Warning: recursive comment eleminated! \n"); }
