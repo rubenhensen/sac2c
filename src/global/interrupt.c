@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/27 02:00:52  cg
+ * final version
+ *
  * Revision 3.4  2004/11/25 17:53:48  cg
  * SacDevCamp 04
  *
@@ -62,6 +65,8 @@ CompilerErrorBreak (int sig)
     FILE *error_file;
     int i;
 
+    ERRcleanUp ();
+
     fprintf (stderr, "\n\nOOOPS your program crashed the compiler 8-((\n");
     fprintf (stderr, "Please send a bug report to bug@sac-home.org.\n\n");
     fprintf (stderr,
@@ -113,7 +118,7 @@ CompilerErrorBreak (int sig)
         fclose (error_file);
     }
 
-    EXIT (0);
+    exit (1);
 }
 
 /******************************************************************************
@@ -129,7 +134,8 @@ CompilerErrorBreak (int sig)
 static void
 UserForcedBreak (int sig)
 {
-    EXIT (0);
+    ERRcleanUp ();
+    exit (0);
 }
 
 /******************************************************************************
