@@ -1,10 +1,12 @@
-/* implementation of SAC <-> C interface functions,
+/*
+ * implementation of SAC <-> C interface functions,
  * implements prototypes from
  *     SAC_interface.h (external usage)
  */
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "sac.h"
 #include "sac_cinterface.h"
 
@@ -14,16 +16,8 @@ typedef enum {
 #include "../tree/type_info.mac"
 } SAC_ARG_simpletype_names;
 
-/* constants */
-#define SAC_CI_SIMPLETYPE 1
-#define SAC_CI_ARRAYTYPE 2
-
 /* global vars */
-static bool SAC_CI_runtime_system_active;
-
-/* functions with only local use */
-static void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype,
-                                     int arg_mode);
+static bool SAC_CI_runtime_system_active = 0;
 
 /******************************************************************************
  *
@@ -34,12 +28,15 @@ static void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype,
  *   do some init procedures for the SAC runtime system
  *
  ******************************************************************************/
-
 void
 SAC_InitRuntimeSystem ()
 {
     if (!SAC_CI_runtime_system_active) {
         /* do some inits */
+
+        SAC_CI_InitSACArgDirectory ();
+
+        printf ("SAC-runtimesystem ready...\n");
 
         SAC_CI_runtime_system_active = true;
     }
@@ -58,8 +55,101 @@ SAC_InitRuntimeSystem ()
 void
 SAC_FreeRuntimeSystem ()
 {
-    if (!SAC_CI_runtime_system_active) {
+    if (SAC_CI_runtime_system_active) {
         /* do some cleanup */
+        SAC_CI_FreeSACArgDirectory ();
+        printf ("SAC-Runtime-System cleaned up!\n");
+    }
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SAC_isValid(SAC_arg sa)
+ *
+ * description:
+ *   checks, if SAC_arg contains valid data (refcount>0)
+ *
+ ******************************************************************************/
+
+int
+SAC_isValid (SAC_arg sa)
+{
+    return (SAC_ARG_LRC (sa) > 0 ? 1 : 0);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SAC_GetDim(SAC_arg sa)
+ *
+ * description:
+ *   returns the dimension of the SAC_arg
+ *
+ ******************************************************************************/
+
+int
+SAC_GetDim (SAC_arg sa)
+{
+    return (SAC_ARG_DIM (sa));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SAC_GetShapeElement(SAC_arg sa, int pos)
+ *
+ * description:
+ *   returns the Shapevector element at position 1..dim of SAC_arg
+ *
+ ******************************************************************************/
+
+int
+SAC_GetShapeElement (SAC_arg sa, int pos)
+{
+    if (pos >= SAC_ARG_DIM (sa)) {
+        SAC_RuntimeError ("Access to illegal position in shape vector!\n");
+    }
+    return ((SAC_ARG_SHPVEC (sa))[pos - 1]);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SAC_GetRefcounter(SAC_arg sa)
+ *
+ * description:
+ *   returns the current refcounter value
+ *
+ ******************************************************************************/
+
+int
+SAC_GetRefcounter (SAC_arg sa)
+{
+    return (SAC_ARG_LRC (sa));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int SAC_SetRefcounter(SAC_arg sa, int newrc)
+ *
+ * description:
+ *   sets the refcounter to newrc, returns the new refcounter
+ *   does not change the refcounter is SAC_arg is invalid,
+ *   that means refcounter has already reached 0
+ *
+ ******************************************************************************/
+
+int
+SAC_SetRefcounter (SAC_arg sa, int newrc)
+{
+    if (newrc < 0)
+        SAC_RuntimeError ("Illegal refcounter value specified!\n");
+    if (SAC_ARG_LRC (sa) > 0) {
+        return ((SAC_ARG_LRC (sa)) = newrc);
+    } else {
+        return (SAC_ARG_LRC (sa));
     }
 }
 
@@ -89,7 +179,7 @@ SAC_FreeRuntimeSystem ()
         shpvec = NULL;                                                                   \
     }                                                                                    \
                                                                                          \
-    if (reuseflag == SAC_COPY_ARGS) {                                                    \
+    if (reuseflag == SAC_COPY_ARG) {                                                     \
         /*                                                                               \
          * create copy of args for internal usage                                        \
          * calculate number of data elements                                             \
@@ -126,10 +216,31 @@ SAC_FreeRuntimeSystem ()
     return (result)
 
 #define SAC_SAC2ARRAY(c_type, SAC_type)                                                  \
+    c_type *result;                                                                      \
+    int i;                                                                               \
+    int elemscount;                                                                      \
     /* check for valid data */                                                           \
     SAC_CI_ExitOnInvalidArg (sa, SAC_type, SAC_CI_ARRAYTYPE);                            \
+    if (reuseflag == SAC_COPY_ARG) {                                                     \
+        elemscount = 1;                                                                  \
+        for (i = 0; i < SAC_ARG_DIM (sa); i++)                                           \
+            elemscount *= (SAC_ARG_SHPVEC (sa))[i];                                      \
+                                                                                         \
+        if (elemscount <= 0) {                                                           \
+            SAC_RuntimeError ("Illegal shape vector!");                                  \
+        }                                                                                \
+                                                                                         \
+        result = (c_type *)SAC_MALLOC (elemscount * sizeof (c_type));                    \
+        result = memcpy (result, SAC_ARG_ELEMS (sa), elemscount * sizeof (c_type));      \
+    } else {                                                                             \
+        /* SAC_CONSUME_ARG */                                                            \
+        result = (c_type *)SAC_ARG_ELEMS (sa);                                           \
+        SAC_ARG_LRC (sa) = 0;                                                            \
+        SAC_FREE (SAC_ARG_RC (sa));                                                      \
+        printf ("*************** FREE **************************\n");                    \
+    }                                                                                    \
     /* return value */                                                                   \
-    return ((c_type *)SAC_ARG_ELEMS (sa))
+    return (result)
 
 #define SAC_SAC2SIMPLE(c_type, SAC_type)                                                 \
     /* check for valid data */                                                           \
@@ -140,9 +251,9 @@ SAC_FreeRuntimeSystem ()
 /******************************************************************************
  *
  * functions: here for type ???
- *   SAC_arg  SAC_???Array2Sac(SAC_reusetype reuseflag, ??? *array, int dim, ...)
- *   SAC_arg  SAC_Int2Sac(??? value)
- *   ???     *SAC_Sac2IntArray(SAC_arg sa)
+ *   SAC_arg  SAC_???Array2Sac(SAC_reusetype reuseflag,??? *array,int dim,...)
+ *   SAC_arg  SAC_???2Sac(??? value)
+ *   ???     *SAC_Sac2IntArray(SAC_reusetype reuseflag, SAC_arg sa)
  *   ???      SAC_Sac2Int(SAC_arg sa)
  *
  * description:
@@ -155,11 +266,17 @@ SAC_FreeRuntimeSystem ()
  *
  *   for the arraytype to SAC_arg you have to specify the dimension and its
  *   shape (as varargs after the dimension).
- *   When reuseflag is set to SAC_CONSUME_ARGS, the array is reused internally,
- *   and you are not allowed to access this array any more!!! Do not free this
- *   array!!!
- *   When reuseflag is set to SAC_COPY_ARGS, then the argument array is not
- *   touched and you might use it in the future.
+ *
+ * remarks:
+ *   When reuseflag is set to SAC_CONSUME_ARG, the array is shared internally,
+ *   between c-code and SAC. Therefore you are not allowed to access a c array
+ *   any more when convert it to SAC_arg!!! DO NOT FREE such a array!!!
+ *   On the other hand you are not allowed to access the SAC_arg any more,
+ *   when you have converted it to a c-array using SAC_CONSUME_ARG. And you
+ *   HAVE TO FREE this array.
+ *   When reuseflag is set to SAC_COPY_ARG, then the argument array is not
+ *   touched and you might use it in the future. This is valid for both
+ *   directions. A c-array you have to free on your own.
  *
  ******************************************************************************/
 
@@ -177,7 +294,7 @@ SAC_Int2Sac (int value)
 }
 
 int *
-SAC_Sac2IntArray (SAC_arg sa)
+SAC_Sac2IntArray (SAC_reusetype reuseflag, SAC_arg sa)
 {
     SAC_SAC2ARRAY (int, T_int);
 }
@@ -186,37 +303,4 @@ int
 SAC_Sac2Int (SAC_arg sa)
 {
     SAC_SAC2SIMPLE (int, T_int);
-}
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CI_ExitOnInvalidArg(SAC_arg sa,
- *                                SAC_ARG_simpletype basetype, int arg_mode)
- *
- * description:
- *   checks SAC_arg for valid content
- *   calls SAC_RuntimeError on error
- *
- ******************************************************************************/
-
-static void
-SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, int flag)
-{
-    if (SAC_ARG_LRC (sa) > 0) {
-        /* check basetype */
-        if (SAC_ARG_TYPE (sa) == basetype) {
-            if (flag == SAC_CI_SIMPLETYPE && SAC_ARG_DIM (sa) != 0) {
-                SAC_RuntimeError ("SAC_Sac2XXX: access to array as simple type!\n");
-            }
-            if (flag == SAC_CI_ARRAYTYPE && SAC_ARG_DIM (sa) < 1) {
-                SAC_RuntimeError ("SAC_Sac2XXX: access to simple type as array!\n");
-            }
-        } else {
-            SAC_RuntimeError ("SAC_Sac2XXX: access to wrong basetype!\n");
-        }
-    } else {
-        SAC_RuntimeError ("SAC_Sac2XXX: access to invalid SAC_arg data,\n"
-                          "maybe increase the reference counter!\n");
-    }
 }
