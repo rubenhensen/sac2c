@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 1.227  1998/05/15 23:51:59  dkr
+ * extended PrintNodeTree:
+ *   WLGRID.._CEXPR_TEMPLATE warning added.
+ * extended PrintWLgrid, PrintWLgridVar:
+ *   WLGRID.._CEXPR_TEMPLATE warning added.
+ * extended PrintWLgrid, PrintWLstride, PrintWLgridVar, PrintWLstriVar:
+ *   you can distinguish between grid/stride and gridVar/striVar now:
+ *     the former prints '->', the latter '=>'.
+ *
  * Revision 1.226  1998/05/15 15:43:08  cg
  * some bugs removed concerning spmd-functions
  *
@@ -2799,6 +2808,10 @@ PrintWLublock (node *arg_node, node *arg_info)
  * description:
  *   prints N_WLstride-nodes
  *
+ * remark:
+ *   N_WLstride, N_WLstriVar differs in output.
+ *   The former prints '->' the latter '=>' !!!
+ *
  ******************************************************************************/
 
 node *
@@ -2830,6 +2843,10 @@ PrintWLstride (node *arg_node, node *arg_info)
  * description:
  *   prints N_WLgrid-nodes
  *
+ * remark:
+ *   N_WLgrid, N_WLgridVar differs in output.
+ *   The first prints '->' the latter '=>' !!!
+ *
  ******************************************************************************/
 
 node *
@@ -2850,18 +2867,23 @@ PrintWLgrid (node *arg_node, node *arg_info)
         } else {
             switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
             case WO_genarray:
-                fprintf (outfile, "init\n");
+                fprintf (outfile, "init");
                 break;
             case WO_modarray:
-                fprintf (outfile, "copy\n");
+                fprintf (outfile, "copy");
                 break;
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                fprintf (outfile, "noop\n");
+                fprintf (outfile, "noop");
                 break;
             default:
                 DBUG_ASSERT ((0), "wrong with-loop type found");
+            }
+            if (WLGRID_CEXPR_TEMPLATE (arg_node) != NULL) {
+                fprintf (outfile, "\n");
+            } else {
+                fprintf (outfile, "?\n");
             }
         }
     }
@@ -2916,6 +2938,10 @@ PrintWLvar (node *arg_node, int dim)
  * description:
  *   prints N_WLstriVar-nodes
  *
+ * remark:
+ *   N_WLstride, N_WLstriVar differs in output.
+ *   The first prints '->' the latter '=>' !!!
+ *
  ******************************************************************************/
 
 node *
@@ -2926,7 +2952,7 @@ PrintWLstriVar (node *arg_node, node *arg_info)
     INDENT
     fprintf (outfile, "(");
     PrintWLvar (WLSTRIVAR_BOUND1 (arg_node), WLSTRIVAR_DIM (arg_node));
-    fprintf (outfile, " -> ");
+    fprintf (outfile, " => ");
     PrintWLvar (WLSTRIVAR_BOUND2 (arg_node), WLSTRIVAR_DIM (arg_node));
     fprintf (outfile, "), step[%d] ", WLSTRIVAR_DIM (arg_node));
     PrintWLvar (WLSTRIVAR_STEP (arg_node), WLSTRIVAR_DIM (arg_node));
@@ -2946,10 +2972,14 @@ PrintWLstriVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLgridVar(node *arg_node, node *arg_info)
+ *   node *PrintWLgridVar( node *arg_node, node *arg_info)
  *
  * description:
  *   prints N_WLgrid-nodes
+ *
+ * remark:
+ *   N_WLgrid, N_WLgridVar differs in output.
+ *   The first prints '->' the latter '=>' !!!
  *
  ******************************************************************************/
 
@@ -2961,7 +2991,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
     INDENT
     fprintf (outfile, "(");
     PrintWLvar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
-    fprintf (outfile, " -> ");
+    fprintf (outfile, " => ");
     PrintWLvar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
     fprintf (outfile, "): ");
 
@@ -2973,7 +3003,26 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         if (WLGRIDVAR_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
         } else {
-            fprintf (outfile, "noop\n");
+            switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
+            case WO_genarray:
+                fprintf (outfile, "init");
+                break;
+            case WO_modarray:
+                fprintf (outfile, "copy");
+                break;
+            case WO_foldfun:
+                /* here is no break missing! */
+            case WO_foldprf:
+                fprintf (outfile, "noop");
+                break;
+            default:
+                DBUG_ASSERT ((0), "wrong with-loop type found");
+            }
+            if (WLGRIDVAR_CEXPR_TEMPLATE (arg_node) != NULL) {
+                fprintf (outfile, "\n");
+            } else {
+                fprintf (outfile, "?\n");
+            }
         }
     }
     indent--;
@@ -3154,8 +3203,14 @@ PrintNodeTree (node *node)
                      WLSTRIDE_STEP (node));
             break;
         case N_WLgrid:
-            fprintf (outfile, "(%d->%d [%d])\n", WLUBLOCK_BOUND1 (node),
+            fprintf (outfile, "(%d->%d [%d])", WLUBLOCK_BOUND1 (node),
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_DIM (node));
+            if ((WLGRID_NEXTDIM (node) == NULL) && (WLGRID_CODE (node) == NULL)
+                && (WLGRID_CEXPR_TEMPLATE (node) == NULL)) {
+                fprintf (outfile, "?\n");
+            } else {
+                fprintf (outfile, "\n");
+            }
             break;
         case N_WLstriVar:
             fprintf (outfile, "(");
