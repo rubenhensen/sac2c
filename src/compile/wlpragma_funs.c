@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/03/28 09:23:21  dkr
+ * Pffff... typo in WLCOMP_NoBlocking corrected
+ *
  * Revision 3.16  2001/03/27 21:40:09  dkr
  * macro MALLOC_INIT_VECT used
  *
@@ -636,7 +639,7 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
              */
             WLSEG_BLOCKS (seg) = 3; /* three blocking levels */
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                MALLOC_INIT_VECT (WLSEG_UBV (segs), WLSEGX_DIMS (segs), int, 1);
+                MALLOC_INIT_VECT (WLSEG_BV (segs, b), WLSEGX_DIMS (segs), int, 1);
             }
         }
 
