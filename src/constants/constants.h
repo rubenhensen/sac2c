@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2001/05/03 16:52:55  nmw
+ * *** empty log message ***
+ *
  * Revision 1.7  2001/05/02 08:00:46  nmw
  * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
  *
@@ -122,8 +125,8 @@ extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
 extern constant *CODim (constant *a);
 extern constant *COShape (constant *a);
+extern constant *COModarray (constant *a, constant *idx, constant *elem);
 /* missing: not yet implemented
-extern constant *  COModarray( constant *a, constant *idx, constant *elem);
 extern constant *  COCat     ( constant *dim, constant *a, constant *b);
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
