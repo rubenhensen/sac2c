@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/02/21 15:03:13  cg
+ * Revision 1.39  1996/02/27 15:23:13  hw
+ * added macro IDS_VARDEC_TYPE
+ *
+ * Revision 1.38  1996/02/21  15:03:13  cg
  * added new function CopyNodelist
  *
  * Revision 1.37  1996/02/21  10:56:08  cg
@@ -298,6 +301,8 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
  ***/
 
 #define IDS_VARNO(n) VARDEC_VARNO (IDS_VARDEC (n))
+
+#define IDS_VARDEC_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
 
 /*
  *
