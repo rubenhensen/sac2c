@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/02/02 10:39:01  dkr
+# make deps done
+#
 # Revision 3.4  2001/01/17 10:13:02  dkr
 # make deps done
 #
@@ -166,8 +169,8 @@ prim_fun.o: ../global/types.h ../tree/tree.h ../tree/tree_basic.h
 prim_fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 prim_fun.o: ../global/internal_lib.h prim_fun.h ../../inc/dbug.h
 prim_fun.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
-prim_fun.o: ../tree/access_macros.h ../print/convert.h ../tree/free.h
-prim_fun.o: typecheck.h prim_fun_tt.mac prim_fun_ft.mac
+prim_fun.o: ../print/convert.h ../tree/free.h typecheck.h prim_fun_tt.mac
+prim_fun.o: prim_fun_ft.mac
 shape.o: /usr/include/stdarg.h /usr/include/varargs.h
 shape.o: /usr/include/sys/va_list.h ../../inc/dbug.h /usr/include/stdio.h
 shape.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -185,10 +188,9 @@ typecheck.o: /usr/include/stdio_impl.h ../global/globals.h
 typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h ../tree/traverse.h typecheck.h
 typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h ../tree/free.h
-typecheck.o: ../tree/access_macros.h ../tree/DupTree.h ../tree/LookUpTable.h
-typecheck.o: typecheck_WL.h gen_pseudo_fun.h
-typecheck.o: ../c-interface/import_specialization.h new_typecheck.h
-typecheck.o: prim_fun_tt.mac
+typecheck.o: ../tree/DupTree.h ../tree/LookUpTable.h typecheck_WL.h
+typecheck.o: gen_pseudo_fun.h ../c-interface/import_specialization.h
+typecheck.o: new_typecheck.h prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck_WL.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
 typecheck_WL.o: /usr/include/string.h ../tree/tree.h ../global/types.h

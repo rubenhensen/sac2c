@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/02/02 10:39:04  dkr
+# make deps done
+#
 # Revision 3.3  2001/01/17 10:13:06  dkr
 # make deps done
 #
@@ -177,8 +180,8 @@ index.o: /usr/include/string.h ../../inc/dbug.h ../tree/tree.h
 index.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 index.o: ../global/internal_lib.h ../print/print.h ../tree/traverse.h
-index.o: ../tree/DupTree.h ../tree/LookUpTable.h index.h ../tree/free.h
-index.o: ../global/my_debug.h ../tree/access_macros.h ../compile/compile.h
+index.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/free.h
+index.o: ../global/my_debug.h index.h
 pad.o: /usr/include/stdarg.h /usr/include/varargs.h
 pad.o: /usr/include/sys/va_list.h ../../inc/dbug.h /usr/include/stdio.h
 pad.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h

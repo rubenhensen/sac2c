@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/02/02 10:39:02  dkr
+# make deps done
+#
 # Revision 3.3  2001/01/17 10:13:04  dkr
 # make deps done
 #
@@ -162,7 +165,7 @@ import.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 import.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 import.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 import.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-import.o: ../tree/traverse.h ../tree/access_macros.h filemgr.h import.h
+import.o: ../tree/traverse.h filemgr.h import.h
 readsib.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 readsib.o: ../global/Error.h /usr/include/stdio.h
 readsib.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/02/02 10:39:01  dkr
+# make deps done
+#
 # Revision 3.3  2001/01/17 10:13:03  dkr
 # make deps done
 #
@@ -107,10 +110,9 @@ ConstantFolding.o: ../global/Error.h /usr/include/string.h
 ConstantFolding.o: ../global/globals.h ../global/internal_lib.h
 ConstantFolding.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 ConstantFolding.o: ../tree/prf.h ../print/print.h ../tree/traverse.h
-ConstantFolding.o: ../tree/access_macros.h ../typecheck/typecheck.h
-ConstantFolding.o: optimize.h generatemasks.h ../tree/DupTree.h
-ConstantFolding.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
-ConstantFolding.o: ConstantFolding.h
+ConstantFolding.o: ../typecheck/typecheck.h optimize.h generatemasks.h
+ConstantFolding.o: ../tree/DupTree.h ../tree/LookUpTable.h
+ConstantFolding.o: LoopInvariantRemoval.h ConstantFolding.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 DeadCodeRemoval.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -150,9 +152,8 @@ LoopInvariantRemoval.o: /usr/include/string.h ../global/globals.h
 LoopInvariantRemoval.o: ../global/internal_lib.h ../tree/free.h
 LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
 LoopInvariantRemoval.o: ../tree/traverse.h ../typecheck/typecheck.h
-LoopInvariantRemoval.o: ../tree/access_macros.h optimize.h generatemasks.h
-LoopInvariantRemoval.o: ../tree/DupTree.h ../tree/LookUpTable.h
-LoopInvariantRemoval.o: LoopInvariantRemoval.h
+LoopInvariantRemoval.o: optimize.h generatemasks.h ../tree/DupTree.h
+LoopInvariantRemoval.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -160,9 +161,8 @@ Unroll.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
 Unroll.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
 Unroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 Unroll.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-Unroll.o: ../tree/traverse.h ../tree/access_macros.h optimize.h
-Unroll.o: generatemasks.h ConstantFolding.h ../tree/DupTree.h
-Unroll.o: ../tree/LookUpTable.h Unroll.h WLUnroll.h
+Unroll.o: ../tree/traverse.h optimize.h generatemasks.h ConstantFolding.h
+Unroll.o: ../tree/DupTree.h ../tree/LookUpTable.h Unroll.h WLUnroll.h
 Unswitch.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unswitch.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unswitch.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -170,9 +170,8 @@ Unswitch.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
 Unswitch.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
 Unswitch.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 Unswitch.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-Unswitch.o: ../tree/traverse.h ../tree/access_macros.h optimize.h
-Unswitch.o: generatemasks.h ConstantFolding.h ../tree/DupTree.h
-Unswitch.o: ../tree/LookUpTable.h Unroll.h Unswitch.h
+Unswitch.o: ../tree/traverse.h optimize.h generatemasks.h ConstantFolding.h
+Unswitch.o: ../tree/DupTree.h ../tree/LookUpTable.h Unroll.h Unswitch.h
 WLUnroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLUnroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLUnroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -180,8 +179,8 @@ WLUnroll.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
 WLUnroll.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
 WLUnroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 WLUnroll.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-WLUnroll.o: ../tree/traverse.h ../typecheck/typecheck.h ../compile/compile.h
-WLUnroll.o: optimize.h Inline.h ../tree/DupTree.h ../tree/LookUpTable.h
+WLUnroll.o: ../tree/traverse.h ../typecheck/typecheck.h optimize.h Inline.h
+WLUnroll.o: ../tree/DupTree.h ../tree/LookUpTable.h
 WLUnroll.o: ../psi-opt/WithloopFolding.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WorkReduction.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h

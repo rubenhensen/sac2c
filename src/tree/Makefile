@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/02/02 10:39:11  dkr
+# make deps done
+#
 # Revision 3.5  2001/01/19 14:19:06  dkr
 # make deps done
 #
@@ -162,10 +165,11 @@ free.o: free.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-scheduling.o: /usr/include/string.h /usr/include/varargs.h ../global/types.h
-scheduling.o: tree_basic.h ../global/internal_lib.h free.h
-scheduling.o: /usr/include/stdlib.h ../../inc/dbug.h ../global/my_debug.h
-scheduling.o: ../global/globals.h traverse.h ../global/Error.h
+scheduling.o: /usr/include/string.h /usr/include/varargs.h
+scheduling.o: /usr/include/limits.h ../global/types.h tree_basic.h
+scheduling.o: tree_compound.h ../global/Error.h /usr/include/stdlib.h
+scheduling.o: ../global/globals.h ../global/internal_lib.h free.h
+scheduling.o: ../../inc/dbug.h ../global/my_debug.h traverse.h
 scheduling.o: ../compile/precompile.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h

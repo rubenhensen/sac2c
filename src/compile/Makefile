@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/02/02 10:39:03  dkr
+# make deps done
+#
 # Revision 3.5  2001/01/17 10:13:04  dkr
 # make deps done
 #
@@ -164,7 +167,7 @@ compile.o: ../print/print.h ../../inc/dbug.h ../global/my_debug.h
 compile.o: ../tree/traverse.h ../tree/DataFlowMask.h compile.h
 compile.o: ../print/convert.h ../tree/DupTree.h ../tree/LookUpTable.h
 compile.o: ReuseWithArrays.h ../tree/free.h ../typecheck/typecheck.h
-compile.o: ../refcount/refcount.h ../tree/scheduling.h precompile.h
+compile.o: ../tree/scheduling.h wltransform.h ../refcount/refcount.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
