@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/08/08 09:16:31  dkr
+ * some variables initialized to please the cc
+ *
  * Revision 3.19  2002/07/24 15:06:22  dkr
  * bug in RCicm() fixed
  *
@@ -844,20 +847,23 @@ RCloop (node *arg_node, node *arg_info)
              */
             if (DECL_MUST_REFCOUNT (vardec)) {
                 DBUG_PRINT ("RC", ("do_on_normal %i", i));
-                dumpcompare = ref_dump[i];
-                refcompare = VARDEC_OR_ARG_REFCNT (vardec);
                 do_on_ids = TRUE;
                 do_on_normal = (!INFO_RC_ONLYNAIVE (arg_info));
                 do_on_naive = TRUE;
+                dumpcompare = ref_dump[i];
+                refcompare = VARDEC_OR_ARG_REFCNT (vardec);
             } else if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
                 DBUG_PRINT ("RC", ("do_on_naive %i", i));
-                dumpcompare = naive_ref_dump[i];
-                refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
                 do_on_ids = TRUE;
                 do_on_normal = FALSE;
                 do_on_naive = TRUE;
+                dumpcompare = naive_ref_dump[i];
+                refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
             } else {
                 do_on_ids = FALSE;
+                do_on_normal = FALSE;
+                dumpcompare = (-1);
+                refcompare = (-1);
             }
 
             /*
@@ -1031,7 +1037,7 @@ RCloop (node *arg_node, node *arg_info)
             new_ids_ = usevars_;
             while (NULL != new_ids_) {
                 L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids_), 1);
-                /*   L_VARDEC_OR_ARG_NAIVE_REFCNT( IDS_VARDEC( new_ids_), 1); */
+                /* L_VARDEC_OR_ARG_NAIVE_REFCNT( IDS_VARDEC( new_ids_), 1); */
                 new_ids_ = IDS_NEXT (new_ids_);
             }
         }
@@ -1039,7 +1045,7 @@ RCloop (node *arg_node, node *arg_info)
             DBUG_PRINT ("RCi", ("naive_again"));
             naive_new_ids = naive_usevars;
             while (NULL != naive_new_ids) {
-                /*  L_VARDEC_OR_ARG_REFCNT( IDS_VARDEC( naive_new_ids), 1); */
+                /* L_VARDEC_OR_ARG_REFCNT( IDS_VARDEC( naive_new_ids), 1); */
                 L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (naive_new_ids), 1);
                 naive_new_ids = IDS_NEXT (naive_new_ids);
             }
@@ -1090,30 +1096,34 @@ RCloop (node *arg_node, node *arg_info)
             DBUG_ASSERT ((NULL != vardec), "variable not found");
 
             /*
-             *  Depending on which refcounters have to be done here normal and naive
-             *  ones, only naive-ones, or none. The following is only done in the
-             *  first two cases. We setup the values needed for some comparisons.
-             *  here it is necessary to know what is counted here, so we also set
-             *  a value, if some things are to do on normal-refcounters too (everything
-             *  is done on the naive refcounters without further switches).
+             * Depending on which refcounters have to be done here normal and naive
+             * ones, only naive-ones, or none. The following is only done in the
+             * first two cases. We setup the values needed for some comparisons.
+             * here it is necessary to know what is counted here, so we also set
+             * a value, if some things are to do on normal-refcounters too (everything
+             * is done on the naive refcounters without further switches).
              */
             if (DECL_MUST_REFCOUNT (vardec)) {
                 do_on_ids = TRUE;
                 do_on_normal = (!INFO_RC_ONLYNAIVE (arg_info));
+                do_again = again_;
                 refcompare = VARDEC_OR_ARG_REFCNT (vardec);
                 dumpcompare = ref_dump[i];
-                do_again = again_;
             } else if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
                 do_on_ids = TRUE;
                 do_on_normal = FALSE;
+                do_again = naive_again;
                 refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
                 dumpcompare = naive_ref_dump[i];
-                do_again = naive_again;
             } else {
                 do_on_ids = FALSE;
+                do_on_normal = FALSE;
+                do_again = FALSE;
+                refcompare = (-1);
+                dumpcompare = (-1);
             }
             if (do_on_ids) {
-                if ((used_mask[i] > 0) && (refcompare > 0) && (1 == do_again)) {
+                if ((used_mask[i] > 0) && (refcompare > 0) && (do_again)) {
                     /*
                      * update refcount of used variables (v1)
                      */
