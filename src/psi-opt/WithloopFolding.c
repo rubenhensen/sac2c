@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/10/24 13:24:26  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 2.15  2000/08/01 13:16:10  dkr
  * WithloopFolding(), WithloopFoldingWLT(): parameter arg_info removed
  * WithloopFolding(): paramter loop added in order to handle break
@@ -809,7 +812,7 @@ InternGen2Tree (node *wln, intern_gen *ig)
     /* create type for N_array nodes*/
     shpseg = MakeShpseg (
       MakeNums (ig->shape, NULL)); /* nums struct is freed inside MakeShpseg. */
-    type = MakeType (T_int, 1, shpseg, NULL, NULL);
+    type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
 
     while (ig) {
         /* create generator components */
@@ -1312,7 +1315,7 @@ CreateZeroVector (int dim, simpletype type)
         }
         shpseg = MakeShpseg (
           MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */
-        ARRAY_TYPE (resultn) = MakeType (type, 1, shpseg, NULL, NULL);
+        ARRAY_TYPE (resultn) = MakeTypes (type, 1, shpseg, NULL, NULL);
     }
 
     DBUG_RETURN (resultn);
