@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/11/10 13:23:33  sbs
+ * stdlib.h now included as well => strtol not known otherwise!
+ *
  * Revision 2.2  1999/05/18 12:51:33  cg
  * All macros are now prefixed with either ARGS or ARG.
  * Invalid command line entries not necessarily lead to an error
@@ -123,6 +126,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **option,
                              char **argument);
