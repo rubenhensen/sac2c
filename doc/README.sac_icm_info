@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.9  1995/04/26 14:59:40  sbs
- * dim_res inserted in END_WITH macros
+ * Revision 1.10  1995/04/26 16:58:47  sbs
+ * WITH-icms modified
  *
+# Revision 1.9  1995/04/26  14:59:40  sbs
+# dim_res inserted in END_WITH macros
+#
 # Revision 1.8  1995/04/26  14:02:13  hw
 # Macros for with-loop inserted
 #
@@ -133,8 +136,10 @@ Macros for PSI-primitves:
 Macros for WITH-loop:
 =====================
 
- ND_BEGIN_MODARRAY( res, dim_res, arg, from, to, index_vector)
- ND_BEGIN_GENARRAY( res, dim_res, form, to, index_vector)
+ ND_BEGIN_MODARRAY( res, dim_res, arg, from, to, index, indexlen)
+ ND_BEGIN_GENARRAY( res, dim_res, form, to, index, indexlen)
  
- ND_END_WITH_S( res, dim_res, value)
- ND_END_WITH_A( res, dim_res, array)
+ ND_END_MODARRAY_S( res, dim_res, value)
+ ND_END_MODARRAY_A( res, dim_res, array)
+ ND_END_GENARRAY_S( res, dim_res, value)
+ ND_END_GENARRAY_A( res, dim_res, array)
