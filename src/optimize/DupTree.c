@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/04/25 13:19:44  dkr
+ * added DupIcm
+ *
  * Revision 1.73  1998/04/25 12:58:44  dkr
  * fixed a bug in DupWLgrid: WLGRID_CODE could be NULL!!
  *
@@ -830,6 +833,21 @@ DupPragma (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
+DupIcm (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupIcm");
+
+    new_node = MakeIcm (ICM_NAME (arg_node), DUPTRAV (ICM_ARGS (arg_node)),
+                        DUPTRAV (ICM_NEXT (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DupSPMD (node *arg_node, node *arg_info)
 {
     node *new_node;
@@ -973,7 +991,6 @@ node *
 DupNcode (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DupNcode");
 

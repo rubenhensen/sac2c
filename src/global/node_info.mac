@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.191  1998/04/25 13:19:32  dkr
+ * added DupIcm
+ *
  * Revision 1.190  1998/04/25 12:33:30  dkr
  * added DupNwith2
  *
@@ -854,7 +857,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 0),
 
   NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, TravSons, TravSons,
-       TravSons, FreeIcm, TravSons, TravSons, NoTrav, TravSons, TravSons, TravSons,
+       TravSons, FreeIcm, TravSons, TravSons, NoTrav, TravSons, DupIcm, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
