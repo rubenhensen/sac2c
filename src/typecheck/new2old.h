@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/10/23 06:35:39  sbs
+ * NT2OTwithid added. It inserts scalar index variables whenever possible now.
+ *
  * Revision 1.5  2002/10/08 16:34:09  dkr
  * NT2OTreturn() removed
  *
@@ -33,5 +36,6 @@ extern node *NT2OTvardec (node *arg_node, node *arg_info);
 extern node *NT2OTarray (node *arg_node, node *arg_info);
 extern node *NT2OTlet (node *arg_node, node *arg_info);
 extern node *NT2OTwithop (node *arg_node, node *arg_info);
+extern node *NT2OTwithid (node *arg_node, node *arg_info);
 
 #endif /* _new2old_h_ */

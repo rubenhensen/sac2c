@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/10/23 06:35:39  sbs
+ * NT2OTwithid added. It inserts scalar index variables whenever possible now.
+ *
  * Revision 1.8  2002/10/08 16:36:24  dkr
  * NT2OTreturn() removed
  *
@@ -58,10 +61,12 @@
  *
  *   INFO_NT2OT_FOLDFUNS   -   list of the generated fold funs
  *   INFO_NT2OT_LAST_LET   -   poiner to the last N_let node
+ *   INFO_NT2OT_VARDECS    -   list of the generated vardecs
  */
 
 #define INFO_NT2OT_FOLDFUNS(n) (n->node[0])
 #define INFO_NT2OT_LAST_LET(n) (n->node[1])
+#define INFO_NT2OT_VARDECS(n) (n->node[2])
 
 /******************************************************************************
  *
@@ -167,8 +172,24 @@ NT2OTfundef (node *arg_node, node *arg_info)
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
+    INFO_NT2OT_VARDECS (arg_info) = NULL;
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (INFO_NT2OT_VARDECS (arg_info) != NULL) {
+        /*
+         * if some new vardecs have been built, insert them !
+         * this has to be done here rather than in NT2OTblock since blocks
+         * in general may not be top level.
+         * AFAIK, the only place where vardecs are in fact built is the
+         * extension of withloop ids in NT2OTwithid.
+         */
+        INFO_NT2OT_VARDECS (arg_info) = Trav (INFO_NT2OT_VARDECS (arg_info), arg_info);
+
+        FUNDEF_VARDEC (arg_node)
+          = AppendVardec (INFO_NT2OT_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+        INFO_NT2OT_VARDECS (arg_info) = NULL;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -336,6 +357,50 @@ NT2OTlet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     INFO_NT2OT_LAST_LET (arg_info) = old_last_let;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NT2OTwithid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NT2OTwithid (node *arg_node, node *arg_info)
+{
+    ids *new_ids, *tmp_ids;
+    node *new_vardecs;
+    int i, num_vars;
+    ntype *vec_type;
+
+    DBUG_ENTER ("NT2OTwithid");
+
+    vec_type = AVIS_TYPE (IDS_AVIS (NWITHID_VEC (arg_node)));
+
+    if ((NWITHID_IDS (arg_node) == NULL) && TYIsAKS (vec_type)) {
+        num_vars = SHGetExtent (TYGetShape (vec_type), 0);
+        new_ids = NULL;
+        new_vardecs = NULL;
+        for (i = 0; i < num_vars; i++) {
+            tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
+            new_vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)),
+                                      MakeTypes1 (T_unknown), new_vardecs);
+            AVIS_TYPE (VARDEC_AVIS (new_vardecs))
+              = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
+            IDS_VARDEC (tmp_ids) = new_vardecs;
+            IDS_AVIS (tmp_ids) = VARDEC_AVIS (new_vardecs);
+            IDS_NEXT (tmp_ids) = new_ids;
+            new_ids = tmp_ids;
+        }
+        NWITHID_IDS (arg_node) = new_ids;
+        INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
+    }
 
     DBUG_RETURN (arg_node);
 }
