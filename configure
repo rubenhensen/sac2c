@@ -4033,7 +4033,7 @@ if test "$GCC" = yes; then
   echo "$as_me:$LINENO: checking existence of pthread flag" >&5
 echo $ECHO_N "checking existence of pthread flag... $ECHO_C" >&6
   echo "int main(){return 0;}" > .sac_configure_temp.c
-  if test "`gcc -pthread .sac_configure_temp.c | grep "unknown option"`" = ""; then
+  if test "`gcc -pthread .sac_configure_temp.c 2>&1 | grep "unrecognized option"`" = ""; then
     echo "$as_me:$LINENO: result: supported" >&5
 echo "${ECHO_T}supported" >&6
     GCC_PTHREADS="-pthread"
