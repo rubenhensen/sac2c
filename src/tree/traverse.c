@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2004/11/28 22:15:57  ktr
+ * NODE_TYPE is rescued before traversal as it might return NULL.
+ *
  * Revision 3.117  2004/11/27 05:05:25  ktr
  * bugfix.
  *
@@ -42,6 +45,7 @@ static travstack_t *travstack = NULL;
 node *
 TRAVdo (node *arg_node, info *arg_info)
 {
+    nodetype arg_node_type;
     int old_linenum = global.linenum;
     char *old_filename = global.filename;
 
@@ -60,14 +64,19 @@ TRAVdo (node *arg_node, info *arg_info)
     global.linenum = NODE_LINE (arg_node);
     global.filename = NODE_FILE (arg_node);
 
-    if (pretable[NODE_TYPE (arg_node)] != NULL) {
-        arg_node = pretable[NODE_TYPE (arg_node)](arg_node, arg_info);
+    /*
+     * Save node type as it might be modified during traversal
+     */
+    arg_node_type = NODE_TYPE (arg_node);
+
+    if (pretable[arg_node_type] != NULL) {
+        arg_node = pretable[arg_node_type](arg_node, arg_info);
     }
 
-    arg_node = (travstack->funs[NODE_TYPE (arg_node)]) (arg_node, arg_info);
+    arg_node = (travstack->funs[arg_node_type]) (arg_node, arg_info);
 
-    if (posttable[NODE_TYPE (arg_node)] != NULL) {
-        arg_node = posttable[NODE_TYPE (arg_node)](arg_node, arg_info);
+    if (posttable[arg_node_type] != NULL) {
+        arg_node = posttable[arg_node_type](arg_node, arg_info);
     }
 
     global.linenum = old_linenum;
