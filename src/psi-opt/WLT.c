@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.4  1999/03/31 15:41:24  bs
+ * braces added.
+ *
  * Revision 2.3  1999/03/31 15:09:29  bs
  * I did some code cosmetics with the MRD_GET... macros.
  *
@@ -726,7 +729,7 @@ WLTlet (node *arg_node, node *arg_info)
          */
 
         exprn = LET_EXPR (arg_node);
-        if (N_prf == NODE_TYPE (exprn))
+        if (N_prf == NODE_TYPE (exprn)) {
             if (F_psi == PRF_PRF (exprn)) /* 3) */
                 CheckOptimizePsi (&LET_EXPR (arg_node), arg_info);
             else {
@@ -737,6 +740,7 @@ WLTlet (node *arg_node, node *arg_info)
                     tmpn = EXPRS_NEXT (tmpn);
                 }
             }
+        }
 
         if (N_array == NODE_TYPE (exprn)) /* 2) */
             CheckOptimizeArray (&LET_EXPR (arg_node), arg_info);
