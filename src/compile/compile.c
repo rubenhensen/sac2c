@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2002/09/09 17:37:59  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.92  2002/09/09 14:34:57  dkr
  * COMPPrfTypeError() added
  *
@@ -3432,7 +3435,7 @@ COMPPrf (node *arg_node, node *arg_info)
         break;
 
         /*
-         *  SCALAR_ARGS( PRF_PRF( arg_node))
+         *  scalar args
          */
 
     case F_toi:
@@ -3453,25 +3456,25 @@ COMPPrf (node *arg_node, node *arg_info)
         ret_node2 = COMPPrfIcm2 ("ND_MAX", arg_node, arg_info);
         break;
 
-    case F_not:
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
+    case F_add_SxS:
+    case F_sub_SxS:
+    case F_mul_SxS:
+    case F_div_SxS:
     case F_mod:
-    case F_and:
-    case F_or:
     case F_le:
     case F_lt:
     case F_eq:
     case F_neq:
     case F_ge:
     case F_gt:
+    case F_and:
+    case F_or:
+    case F_not:
         ret_node2 = arg_node;
         break;
 
         /*
-         *  ARRAY_ARGS_INTRINSIC( PRF_PRF( arg_node))
+         *  array args (intrinsics)
          */
 
     case F_genarray:
@@ -3534,7 +3537,7 @@ COMPPrf (node *arg_node, node *arg_info)
         break;
 
         /*
-         *  ARRAY_ARGS_NON_INTRINSIC( PRF_PRF( arg_node))
+         *  array args (non-intrinsics)
          */
 
     case F_toi_A:
@@ -3554,6 +3557,17 @@ COMPPrf (node *arg_node, node *arg_info)
 
     case F_rotate:
         ret_node2 = COMPPrfRotate (arg_node, arg_info);
+        break;
+
+        /*
+         *  otherwise
+         */
+
+    case F_add:
+    case F_sub:
+    case F_mul:
+    case F_div:
+        DBUG_ASSERT ((0), "generic prf without _?x? found!");
         break;
 
     default:

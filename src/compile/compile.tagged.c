@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2002/09/09 17:38:13  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 1.46  2002/09/09 14:35:04  dkr
  * COMPPrfTypeError() added
  *
@@ -4007,7 +4010,7 @@ COMP2Prf (node *arg_node, node *arg_info)
         break;
 
         /*
-         *  SCALAR_ARGS( PRF_PRF( arg_node))
+         *  scalar args
          */
 
     case F_toi:
@@ -4037,10 +4040,11 @@ COMP2Prf (node *arg_node, node *arg_info)
                                      &check_reuse2, &get_dim, &set_shape_icm);
         break;
 
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
+    case F_add_SxS:
+    case F_sub_SxS:
+    case F_mul_SxS:
+    case F_div_SxS:
+        /* here is no break missing */
     case F_mod:
         /* here is no break missing */
     case F_and:
@@ -4057,7 +4061,7 @@ COMP2Prf (node *arg_node, node *arg_info)
         break;
 
         /*
-         *  ARRAY_ARGS_INTRINSIC( PRF_PRF( arg_node))
+         *  array args (intrinsics)
          */
 
     case F_dim:
@@ -4112,7 +4116,7 @@ COMP2Prf (node *arg_node, node *arg_info)
         break;
 
         /*
-         *  ARRAY_ARGS_NON_INTRINSIC( PRF_PRF( arg_node))
+         *  array args (non-intrinsics)
          */
 
     case F_toi_A:
@@ -4129,6 +4133,17 @@ COMP2Prf (node *arg_node, node *arg_info)
         DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                           " Use array.lib instead!");
         ret_node = NULL;
+        break;
+
+        /*
+         *  otherwise
+         */
+
+    case F_add:
+    case F_sub:
+    case F_mul:
+    case F_div:
+        DBUG_ASSERT ((0), "generic prf without _?x? found!");
         break;
 
     default:
