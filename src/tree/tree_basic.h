@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/02/11 16:21:41  jhs
+ * Added RFINfundef, INFO_RFIN_xxx
+ *
  * Revision 1.12  2000/02/10 15:48:13  jhs
  * Added NWITH2_ISSCHEDULED.
  *
@@ -982,6 +985,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***    node*           LIFTEDFROM (O) (N_fundef) (liftspmd -> compile -> )
  ***
+ ***    node*           REPFUN (N_fundef)         (rfin only)
+ ***
  ***/
 
 /*
@@ -991,6 +996,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_generic      class conversion function
  *          ST_spmdfun      function containing lifted SPMD-region
  *          ST_loopfun      function represents a loop
+ *          ST_repfun       function replicated for multithreaded execution
  *
  *  ATTRIB: ST_regular      dimension-dependent or non-array function
  *          ST_independent  dimension-independent array function
@@ -1042,6 +1048,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
+#define FUNDEF_REPFUN(n) ((node *)(n->int_data))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2341,7 +2348,10 @@ extern node *MakePragma ();
  ***    int        INFO_SCHIN_ALLOWED
  ***
  ***  in (na), (nc):
- ***    int        INFO_RFIN_WITHINWITH
+ ***    int(bool)  INFO_RFIN_WITHINWITH
+ ***    node*      INFO_RFIN_FIRSTFUNDEF
+ ***    node*      INFO_RFIN_LASTFUNDEF
+ ***    int(bool)  INFO_RFIN_SEARCH
  ***
  ***  in (na), (nd):
  ***    [nothing]
@@ -2538,6 +2548,9 @@ extern node *MakeInfo ();
 /* multithread - repfuns_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_RFIN_WITHINWITH(n) (n->int_data)
+#define INFO_RFIN_FIRSTFUNDEF(n) (n->node[1])
+#define INFO_RFIN_LASTFUNDEF(n) (n->node[2])
+#define INFO_RFIN_SEARCH(n) (n->flag)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])

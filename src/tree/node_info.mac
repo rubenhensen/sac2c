@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/02/11 16:21:41  jhs
+ * Added RFINfundef, INFO_RFIN_xxx
+ *
  * Revision 1.13  2000/02/09 14:54:17  dkr
  * LAC2FUNcode added
  *
@@ -752,7 +755,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        OPTfundef, WLAAfundef, FMTravSons, TravSons, TravSons, TravSons, TSIfundef,
        TravSons, TravSons, TravSons, TravSons, TravSons, LAC2FUNfundef,
 
-       MUTHfundef, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       MUTHfundef, TravSons, TravSons, RFINfundef, TravSons, TravSons, TravSons, TravSons,
 
        3),
 
