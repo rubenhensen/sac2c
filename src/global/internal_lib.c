@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/12/11 17:38:25  ktr
+ * added memmory initialization iff CLEANMEM is set.
+ *
  * Revision 3.75  2004/12/01 18:46:37  sah
  * added some code to get notified in gdb
  * whenever a watched memory address is freed
@@ -307,6 +310,13 @@ ILIBmalloc (int size)
         *(int *)tmp = size;
         tmp = (char *)tmp + malloc_align_step;
 
+#ifdef CLEANMEM
+        /*
+         * Initialize memory
+         */
+        tmp = memset (tmp, 0, size);
+#endif
+
         if (global.current_allocated_mem + size < global.current_allocated_mem) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
         }
@@ -355,14 +365,14 @@ ILIBfree (void *address)
         DBUG_PRINT ("MEM_ALLOC",
                     ("Free memory: %d Bytes at adress: " F_PTR, size, address));
 
-#if 0
-    /*
-     * this code overwrites the memory prior to freeing it. This
-     * is very useful when watching a memory address in gdb, as
-     * one gets notified as soon as it is freed
-     */
-    
-    orig_address = memset( orig_address, 0, size);
+#if CLEANMEM
+        /*
+         * this code overwrites the memory prior to freeing it. This
+         * is very useful when watching a memory address in gdb, as
+         * one gets notified as soon as it is freed
+         */
+
+        orig_address = memset (orig_address, 0, size);
 #endif
 
         if (global.current_allocated_mem < global.current_allocated_mem - size) {
