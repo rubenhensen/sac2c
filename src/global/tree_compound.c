@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/11/01 16:25:01  cg
+ * Revision 1.15  1995/11/06 14:16:51  cg
+ * added new internal function 'CompatibleAttributes.
+ * used by function CmpDomain
+ *
+ * Revision 1.14  1995/11/01  16:25:01  cg
  * new function AppendIdsChain from tree.c and converted to new macros
  *
  * Revision 1.13  1995/10/31  09:40:31  cg
@@ -78,6 +82,28 @@ char mod_name_con_2[] = ":";
 char *mod_name_con = mod_name_con_1;
 
 /***
+ ***  CompatibleAttributes
+ ***/
+
+int
+CompatibleAttributes (statustype attrib1, statustype attrib2)
+{
+    int ret;
+
+    DBUG_ENTER ("CompatibleAttributes");
+
+    if ((attrib1 == ST_regular) && (attrib2 == ST_unique)) {
+        ret = 1;
+    } else if ((attrib2 == ST_regular) && (attrib1 == ST_unique)) {
+        ret = 1;
+    } else {
+        ret = (attrib1 == attrib2);
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/***
  ***  CmpDomain
  ***/
 
@@ -94,7 +120,7 @@ CmpDomain (node *arg1, node *arg2)
                 if (!CMP_TYPE_USER (ARG_TYPE (arg1), ARG_TYPE (arg2))) {
                     break;
                 }
-                if (ARG_ATTRIB (arg1) != ARG_ATTRIB (arg2)) {
+                if (!CompatibleAttributes (ARG_ATTRIB (arg1), ARG_ATTRIB (arg2))) {
                     break;
                 }
             }
