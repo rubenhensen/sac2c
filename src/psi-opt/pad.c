@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/07/05 09:12:34  mab
+ * fixed memory problem
+ *
  * Revision 1.5  2000/06/14 10:41:31  mab
  * comments added
  *
@@ -72,34 +75,39 @@ ArrayPadding (node *arg_node)
 
     /* collect information for inference phase */
 
-    /* APcollect(arg_node); */
+    /* collection phase is not implemented yet
+     * APcollect(arg_node);
+     */
 
     /* infer new array shapes */
 
     /* dumies only !!! */
 
-    tmp_old_shape = (shpseg *)malloc (sizeof (shpseg));
+    tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
     SHPSEG_SHAPE (tmp_old_shape, 1) = 3;
 
-    tmp_new_shape = (shpseg *)malloc (sizeof (shpseg));
+    tmp_new_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
 
     PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
-    tmp_old_shape = (shpseg *)malloc (sizeof (shpseg));
+    tmp_old_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_old_shape, 0) = 8;
     SHPSEG_SHAPE (tmp_old_shape, 1) = 9;
 
-    tmp_new_shape = (shpseg *)malloc (sizeof (shpseg));
+    tmp_new_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (tmp_new_shape, 0) = 10;
     SHPSEG_SHAPE (tmp_new_shape, 1) = 11;
 
     PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
     /* apply array padding */
-    /* APtransform(arg_node); */
+
+    /* transformation phase is not completed yet
+     * APtransform(arg_node);
+     */
 
     /* free pad_info structure */
     PIfree ();
