@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/21 16:05:00  khf
+ * no traverse in FUNDEF_NEXT in phase sacopt assured
+ *
  * Revision 1.7  2004/07/21 12:48:33  khf
  * switch to new INFO structure
  * take changes of sbs in SSAWLT.c over
@@ -1390,81 +1393,6 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 
 /** <!--********************************************************************-->
  *
- * @fn gen_prop_t CheckGeneratorBounds( node *wl, shape *max_shp)
- *
- *   @brief expects the bound expression for lb and ub to be constants!
- *          checks, whether these fit into the shape given by max_shp.
- *          If they exceed max_shp, they are "fitted"!
- *          Furthermore, it is checked whether the generator is empty
- *          (GPT_empty is returned) or may cover the entire range
- *          (GPT_full is returned). Otherwise GPT_partial is returned.
- *
- *   @param  node *wl        :  N_Nwith
- *           shape *max_shape:  shape of the wl
- *   @return gen_prob_t      :  GPT_empty, GPT_full, GPT_partial or GPT_unknown
- ******************************************************************************/
-
-static gen_prop_t
-CheckGeneratorBounds (node *wl, shape *max_shp)
-{
-    node *lbe, *ube;
-    int dim;
-    int lbnum, ubnum, tnum;
-    gen_prop_t res;
-
-    DBUG_ENTER ("CheckGeneratorBounds");
-
-    lbe = ARRAY_AELEMS (NWITH_BOUND1 (wl));
-    ube = ARRAY_AELEMS (NWITH_BOUND2 (wl));
-    res = GPT_full;
-
-    dim = 0;
-    while (lbe) {
-        DBUG_ASSERT ((ube != NULL), "dimensionality differs in lower and upper bound!");
-        DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
-                      && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
-                     "generator bounds must be constant!");
-        lbnum = NUM_VAL (EXPRS_EXPR (lbe));
-        ubnum = NUM_VAL (EXPRS_EXPR (ube));
-
-        if ((NWITH_TYPE (wl) == WO_modarray) || (NWITH_TYPE (wl) == WO_genarray)) {
-            DBUG_ASSERT ((dim < SHGetDim (max_shp)),
-                         "dimensionality of lb greater than that of the result!");
-            tnum = SHGetExtent (max_shp, dim);
-            if (lbnum < 0) {
-                lbnum = NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-                WARN (NODE_LINE (wl),
-                      ("lower bound of WL-generator in dim %d below zero: set to 0",
-                       dim));
-            } else if (lbnum > 0) {
-                res = GPT_partial;
-            }
-            if (ubnum > tnum) {
-                ubnum = NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-                WARN (NODE_LINE (wl),
-                      ("upper bound of WL-generator in dim %d greater than shape:"
-                       " set to %d",
-                       dim, tnum));
-            } else if (ubnum < tnum) {
-                res = GPT_partial;
-            }
-        }
-
-        if (lbnum >= ubnum) {
-            /* empty set of indices */
-            res = GPT_empty;
-            break;
-        }
-
-        dim++;
-        lbe = EXPRS_NEXT (lbe);
-        ube = EXPRS_NEXT (ube);
-    }
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *WLPGmodul(node *arg_node, info *arg_info)
  *
  *   @brief traverses function definitions only!
@@ -1536,10 +1464,6 @@ WLPGfundef (node *arg_node, info *arg_info)
         /* compiler_phase == PH_sacopt */
         if (FUNDEF_BODY (arg_node)) {
             FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
-        }
-
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
 
@@ -1850,7 +1774,7 @@ WLPGNpart (node *arg_node, info *arg_info)
 node *
 WLPGNgenerator (node *arg_node, info *arg_info)
 {
-    node *wln, *f_def, *nassigns, *step, *width;
+    node *wln, *f_def, *nassigns;
     ids *let_ids;
     shape *shp;
     bool check_bounds, check_stepwidth;
@@ -1916,25 +1840,6 @@ WLPGNgenerator (node *arg_node, info *arg_info)
     }
 
     check_stepwidth = (check_stepwidth && (current_shape <= GV_struct_constant));
-
-    /*
-     * check bound ranges
-     */
-    /*
-    let_ids = LET_IDS( INFO_WLPG_LET( arg_info));
-    if (check_bounds && (GetShapeDim( IDS_TYPE( let_ids)) >= 0)) {
-      shp = SHOldTypes2Shape( IDS_TYPE( let_ids));
-      gprop = CheckGeneratorBounds( wln, shp);
-      shp = SHFreeShape( shp);
-      if( (gprop == GPT_full) && ( NGEN_STEP( arg_node) != NULL)) {
-        gprop = GPT_partial;
-      }
-    } else if (gshape == GV_struct_constant){
-      gprop = GPT_partial;
-    } else{
-      gprop = GPT_unknown;
-    }
-    */
 
     /**
      * find out the generator properties:
