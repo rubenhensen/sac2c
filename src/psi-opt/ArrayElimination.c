@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/17 20:37:13  bs
+ * Function GenPsi modified: arrays with compact vector propagation will be generated.
+ *
  * Revision 2.1  1999/02/23 12:43:08  sacbase
  * new release made
  *
@@ -245,8 +248,11 @@ GenPsi (ids *ids_node, node *arg_info)
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeArray (exprn);
+        ARRAY_INTVEC (arg[0]) = Array2IntVec (exprn, NULL);
         /* srs: AE only works on arrays which have 1 dimension.
            type attribut was missing here. */
+        ARRAY_VECTYPE (arg[0]) = T_int;
+        ARRAY_VECLEN (arg[0]) = 1;
         ARRAY_TYPE (arg[0])
           = MakeType (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
 
