@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/11/22 16:40:08  hw
+ * Revision 1.8  1994/11/22 17:27:48  hw
+ * added function DuplicateNode
+ * call DuplicateNode in function FltnWhile to have only one referenze to each node
+ *
+ * Revision 1.7  1994/11/22  16:40:08  hw
  * added FltnDo
  *
  * Revision 1.6  1994/11/18  13:13:10  hw
@@ -44,6 +48,44 @@ extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
 extern char *mdb_nodetype[];      /* defined in my_debug.h */
 
 static int var_counter = 0;
+
+/*
+ *
+ *  functionname  : DuplicateNode
+ *  arguments     :  1) source node
+ *  description   : returns a duplicate of arg1
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeNode
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ */
+node *
+DuplicateNode (node *source_node)
+{
+    int i;
+    node *dest_node;
+
+    DBUG_ENTER ("DuplicateNode");
+
+    DBUG_PRINT ("DUPLICATE",
+                ("%s" P_FORMAT " number of nodes: %d",
+                 mdb_nodetype[source_node->nodetype], source_node, source_node->nnode));
+
+    dest_node = MakeNode (source_node->nodetype);
+    for (i = 0; i < source_node->nnode; i++)
+        dest_node->node[i] = DuplicateNode (source_node->node[i]);
+
+    dest_node->nnode = i;
+    dest_node->info = source_node->info;
+    dest_node->lineno = source_node->lineno;
+    DBUG_PRINT ("DUPLICATE",
+                ("return :%s" P_FORMAT, mdb_nodetype[dest_node->nodetype], dest_node));
+
+    DBUG_RETURN (dest_node);
+}
 
 /*
  *
@@ -382,7 +424,7 @@ FltnWhile (node *arg_node, node *arg_info)
 
         info_node->node[1] = MakeNode (N_assign);
         info_node->nnode = 2;
-        info_node->node[1]->node[0] = dest_node->node[0];
+        info_node->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
         info_node->node[1]->nnode = 1;
         info_node = info_node->node[1];
         dest_node = dest_node->node[1];
