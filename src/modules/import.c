@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/03/05 10:02:06  cg
+ * Revision 1.42  1996/09/11 06:25:15  cg
+ * Imported modules are stored in special structure to create libstat
+ * information later.
+ *
+ * Revision 1.41  1996/03/05  10:02:06  cg
  * implemented a better consistency check for pragmas
  * linksign, refcounting, and readonly
  *
@@ -182,6 +186,7 @@
 
 #include "filemgr.h"
 #include "import.h"
+#include "cccall.h"
 
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
@@ -1092,6 +1097,7 @@ GenMod (char *name, int checkdec)
     int i;
     mod *tmp;
     static char buffer[MAX_FILE_NAME];
+    static char libinfo[MAX_PATH_LEN];
     char *pathname;
 
     DBUG_ENTER ("GenMod");
@@ -1117,6 +1123,12 @@ GenMod (char *name, int checkdec)
         SYSABORT (("Unable to open file \"%s\"", buffer));
     } else {
         NOTE (("  Parsing file \"%s\" ...", pathname));
+
+        if (!checkdec) {
+            sprintf (libinfo, "  %-15sfound : %s", name, pathname);
+            imported_decs = MakeStrings (StringCopy (libinfo), imported_decs);
+            dependencies = MakeStrings (StringCopy (pathname), dependencies);
+        }
 
         filename = buffer;
 
@@ -1889,7 +1901,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
 {
     mod *modptr, *old_mod_tab;
     int i;
-    char buffer[MAX_FILE_NAME];
+    char buffer[MAX_FILE_NAME], libinfo[MAX_FILE_NAME];
     node *decl = NULL, *symbol;
     char *pathname;
 
@@ -1913,6 +1925,10 @@ ImportOwnDeclaration (char *name, file_type modtype)
     } else {
         NOTE (("Loading own declaration !"));
         NOTE (("  Parsing file \"%s\" ...", pathname));
+
+        sprintf (libinfo, "  %-15sfound : %s", name, pathname);
+        imported_decs = MakeStrings (StringCopy (libinfo), imported_decs);
+        dependencies = MakeStrings (StringCopy (pathname), dependencies);
 
         linenum = 1;
         start_token = PARSE_DEC;
