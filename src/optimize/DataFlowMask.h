@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/05 16:15:41  cg
+ * This module is now able to deal with compiled variable declarations (ICMs)
+ *
  * Revision 1.7  1998/06/03 14:35:05  cg
  * added function DFMUpdateMaskBaseAfterRenaming for special update
  * during precompiling .
@@ -52,6 +55,16 @@
  *   modified representations of parameters and local variables as well as
  *   the existing mask data base. Each data flow mask that belongs to the
  *   updated mask data base will be updated automatically.
+ *
+ *   Special update functions are provided for two particular situations.
+ *   DFMUpdateMaskBaseAfterRenaming() is used during precompilation. Here,
+ *   the variable names may change but their declaration nodes are otherwise
+ *   untouched. Additionally variable declarations may be removed but no
+ *   new declarations may occur. DFMUpdateMaskBaseAfterCompiling() may be
+ *   used after having compiled variable declarations. In this situation, the
+ *   number of variable declarations remains unchanged as well as the names
+ *   of identifiers. Only the representation of the declaration may have been
+ *   switched to an ICM.
  *
  *   An existing mask data base may also be removed by a call to the function
  *   DFMRemoveMaskBase() which always returns the NULL pointer.
@@ -129,6 +142,8 @@ extern DFMmask_base_t DFMUpdateMaskBase (DFMmask_base_t mask_base, node *argumen
                                          node *vardecs);
 extern DFMmask_base_t DFMUpdateMaskBaseAfterRenaming (DFMmask_base_t mask_base,
                                                       node *arguments, node *vardecs);
+extern DFMmask_base_t DFMUpdateMaskBaseAfterCompiling (DFMmask_base_t mask_base,
+                                                       node *arguments, node *vardecs);
 extern DFMmask_base_t DFMRemoveMaskBase (DFMmask_base_t mask_base);
 
 extern DFMmask_t DFMGenMaskClear (DFMmask_base_t mask_base);

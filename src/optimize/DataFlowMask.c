@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/06/05 16:15:41  cg
+ * This module is now able to deal with compiled variable declarations (ICMs)
+ *
  * Revision 1.9  1998/06/03 14:35:05  cg
  * added function DFMUpdateMaskBaseAfterRenaming for special update
  * during precompiling .
@@ -65,6 +68,7 @@
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 
 #ifndef DFMtest
 #include "internal_lib.h"
@@ -102,6 +106,18 @@ typedef struct {
 #define CHECK_MASK(mask)                                                                 \
     if (mask->num_bitfields < mask->mask_base->num_bitfields)                            \
         ExtendMask (mask);
+
+#define VARDEC_OR_ICM_NEXT(node)                                                         \
+    ((NODE_TYPE (node) == N_vardec) ? VARDEC_NEXT (node) : ASSIGN_NEXT (node))
+
+#define VARDEC_OR_ICM_NAME(node)                                                         \
+    ((NODE_TYPE (node) == N_vardec) ? VARDEC_NAME (node)                                 \
+                                    : ID_NAME (ICM_ARG2 (ASSIGN_INSTR (node))))
+
+/*
+ * The data flow masks are also used by compile.c.
+ * Thus, they ought to deal with compiled variable declarations (ICMs).
+ */
 
 /*
  * internal functions
@@ -178,7 +194,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
 
     while (tmp != NULL) {
         cnt += 1;
-        tmp = VARDEC_NEXT (tmp);
+        tmp = VARDEC_OR_ICM_NEXT (tmp);
     }
 
     /*
@@ -213,7 +229,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
 
     while (tmp != NULL) {
         base->decls[cnt] = tmp;
-        base->ids[cnt] = VARDEC_NAME (tmp);
+        base->ids[cnt] = VARDEC_OR_ICM_NAME (tmp);
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
     }
@@ -271,7 +287,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
         for (i = 0; i < mask_base->num_ids; i++) {
             if ((tmp == mask_base->decls[i])
-                && (0 == strcmp (VARDEC_NAME (tmp), mask_base->ids[i]))) {
+                && (0 == strcmp (VARDEC_OR_ICM_NAME (tmp), mask_base->ids[i]))) {
                 old_decls[i] = mask_base->decls[i];
                 goto old_vardec_found;
             }
@@ -280,7 +296,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
         cnt += 1;
 
     old_vardec_found:
-        tmp = ARG_NEXT (tmp);
+        tmp = VARDEC_OR_ICM_NEXT (tmp);
     }
 
     /*
@@ -309,10 +325,11 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
     for (i = 0; i < old_num_ids; i++) {
         mask_base->decls[i] = old_decls[i];
-        mask_base->ids[i] = (old_decls[i] == NULL) ? NULL
-                                                   : (NODE_TYPE (old_decls[i]) == N_arg
-                                                        ? ARG_NAME (old_decls[i])
-                                                        : VARDEC_NAME (old_decls[i]));
+        mask_base->ids[i]
+          = (old_decls[i] == NULL)
+              ? NULL
+              : (NODE_TYPE (old_decls[i]) == N_arg ? ARG_NAME (old_decls[i])
+                                                   : VARDEC_OR_ICM_NAME (old_decls[i]));
     }
 
     FREE (old_decls);
@@ -351,11 +368,11 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
         }
 
         mask_base->decls[cnt] = tmp;
-        mask_base->ids[cnt] = VARDEC_NAME (tmp);
+        mask_base->ids[cnt] = VARDEC_OR_ICM_NAME (tmp);
         cnt += 1;
 
     vardec_found:
-        tmp = ARG_NEXT (tmp);
+        tmp = VARDEC_OR_ICM_NEXT (tmp);
     }
 
     DBUG_RETURN (mask_base);
@@ -415,6 +432,38 @@ DFMUpdateMaskBaseAfterRenaming (mask_base_t *mask_base, node *arguments, node *v
              */
             mask_base->ids[i] = ARG_NAME (mask_base->decls[i]);
         }
+    }
+
+    DBUG_RETURN (mask_base);
+}
+
+mask_base_t *
+DFMUpdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *vardecs)
+{
+    node *tmp;
+    int i;
+
+    DBUG_ENTER ("DFMUpdateMaskBaseAfterCompiling");
+
+    /*
+     * Because arguments are not compiled, we may start with the vardecs.
+     */
+
+    tmp = vardecs;
+
+    while (tmp != NULL) {
+        for (i = 0; i < mask_base->num_ids; i++) {
+            if ((tmp == mask_base->decls[i])
+                || (0 == strcmp (VARDEC_OR_ICM_NAME (tmp), mask_base->ids[i]))) {
+                mask_base->decls[i] = tmp;
+                goto vardec_found;
+            }
+        }
+
+        DBUG_ASSERT (0, "Variable declration removed during compilation");
+
+    vardec_found:
+        tmp = VARDEC_OR_ICM_NEXT (tmp);
     }
 
     DBUG_RETURN (mask_base);
