@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/03/01 19:02:15  dkr
+ * WLSTRIVAR_INNERSTEP removed
+ *
  * Revision 1.8  2000/02/22 15:45:58  jhs
  * Fixed misspelling.
  *
@@ -1817,7 +1820,7 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
     WLGRID_NEXT (new_node) = next;
 
     if (code != NULL) {
-        NCODE_USED (code)++;
+        NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
     }
     WLGRID_CODE (new_node) = code;
 
@@ -1881,8 +1884,6 @@ MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node *step, node 
     WLSTRIVAR_CONTENTS (new_node) = contents;
     WLSTRIVAR_NEXT (new_node) = next;
 
-    WLSTRIVAR_INNERSTEP (new_node) = -1;
-
     DBUG_RETURN (new_node);
 }
 
@@ -1906,7 +1907,7 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, no
     WLGRIDVAR_NEXT (new_node) = next;
 
     if (code != NULL) {
-        NCODE_USED (code)++;
+        NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
     }
     WLGRIDVAR_CODE (new_node) = code;
 
