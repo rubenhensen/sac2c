@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/25 15:23:40  khf
+ * SacDevCamp04
+ *
  * Revision 1.4  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -34,7 +37,10 @@ extern node *INSVDdoInsertVardec (node *syntaxtree);
 
 extern node *INSVDfundef (node *arg_node, info *arg_info);
 extern node *INSVDid (node *arg_node, info *arg_info);
-extern node *INSVDwithid (node *arg_node, info *arg_info);
+extern node *INSVDids (node *arg_node, info *arg_info);
+extern node *INSVDwith (node *arg_node, info *arg_info);
+extern node *INSVDpart (node *arg_node, info *arg_info);
+extern node *INSVDcode (node *arg_node, info *arg_info);
 extern node *INSVDlet (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_VARDEC_H_ */
