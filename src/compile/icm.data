@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/04/18 11:02:40  sbs
- * ND_KD_ROT_SxSxA_A eliminated
+ * Revision 1.11  1995/04/18 14:49:08  sbs
+ * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated
  *
+# Revision 1.10  1995/04/18  11:02:40  sbs
+# ND_KD_ROT_SxSxA_A eliminated
+#
 # Revision 1.9  1995/04/13  09:12:59  sbs
 # ND_KD_ROT_SxSxA_A inserted
 #
@@ -59,7 +62,6 @@ ICM_END( ND_FUN_RET)
 
 #if defined(ND_CREATE_CONST_ARRAY) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE_CONST_ARRAY)
-  ICM_STR(type)
   ICM_STR(name)
   ICM_INT(dim)
   ICM_VAR( dim, s)
