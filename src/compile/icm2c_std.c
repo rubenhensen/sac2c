@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/04/15 14:17:44  dkr
+ * ICMCompileND_CHECK_REUSE(): \n added
+ *
  * Revision 3.43  2003/04/14 15:16:50  dkr
  * IS_REUSED__BLOCK_... icms used
  *
@@ -820,7 +823,7 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         fprintf (outfile, "SAC_NOOP()\n");
     } else {
         INDENT;
-        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s) ", from_nt);
+        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_nt);
         indent++;
         ICMCompileND_ASSIGN (to_nt, to_sdim, from_nt, from_sdim, copyfun);
 
