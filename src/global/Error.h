@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/05/04 11:39:51  sbs
+ * Revision 1.8  1995/05/16 09:05:03  hw
+ * changed ERROR1 & WARN1 ( no '\n' is required at beginning or end of
+ *                          formatstring anymore )
+ *
+ * Revision 1.7  1995/05/04  11:39:51  sbs
  * DoPrint implemented by vfprintf!
  *
  * Revision 1.6  1994/12/20  14:01:14  hw
@@ -39,12 +43,13 @@
 #define WARN1(s)                                                                         \
     if (!silent) {                                                                       \
         warnings += 1;                                                                   \
+        fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
     }
 #define ERROR1(s)                                                                        \
     {                                                                                    \
-        DoPrint s;                                                                       \
         fprintf (stderr, "\n");                                                          \
+        DoPrint s;                                                                       \
         errors += 1;                                                                     \
     }
 
