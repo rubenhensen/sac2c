@@ -1,6 +1,9 @@
-/*
+*
  *
  * $Log$
+ * Revision 1.41  1997/10/09 14:00:07  srs
+ * new ICMs for prfs min and max
+ *
  * Revision 1.40  1997/09/14 13:19:33  dkr
  * eliminated an error in comments
  *
@@ -100,43 +103,21 @@
  * *** empty log message ***
  *
  * Revision 1.12  1995/04/18  14:44:57  sbs
- * ND_ALLOC_ARRAY modified; initial rc parameter
- *
- * Revision 1.11  1995/04/18  14:09:33  sbs
- * args of BINOP_AxS_A exchanged
- *
- * Revision 1.10  1995/04/12  15:14:00  sbs
- * cat & rot inserted.
- *
- * Revision 1.9  1995/04/12  07:02:53  sbs
- * separation of IN and OUT arrays added
- *
- * Revision 1.8  1995/04/07  09:29:39  sbs
- * ND_KS_ASSIGN_ARRAY( name, res) inserted
- *
- * Revision 1.7  1995/04/06  14:23:25  sbs
- * some bugs fixed
- *
- * Revision 1.6  1995/04/05  15:35:39  sbs
- * malloc.h included
- *
- * Revision 1.5  1995/04/03  13:58:57  sbs
- * first "complete" version
- *
- * Revision 1.4  1995/03/31  13:57:34  sbs
- * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
- *
- * Revision 1.3  1995/03/10  17:24:37  sbs
- * New macros develloped; psi, take & drop integrated
- *
- * Revision 1.2  1995/03/07  18:19:10  sbs
- * PSI-macros done.
- *
- * Revision 1.1  1995/03/03  14:43:46  sbs
- * Initial revision
- *
- *
- */
+ * ND_ALLOC_ARRAY modified;
+ initial rc parameter **Revision 1.11 1995 / 04
+   / 18 14 : 09 : 33 sbs *args of BINOP_AxS_A exchanged **Revision 1.10 1995 / 04
+   / 12 15 : 14 : 00 sbs *cat &rot inserted.**Revision 1.9 1995 / 04
+   / 12 07 : 02 : 53 sbs *separation of IN and OUT arrays added **Revision 1.8 1995 / 04
+   / 07 09 : 29 : 39 sbs *ND_KS_ASSIGN_ARRAY (name, res) inserted **Revision 1.7 1995 / 04
+   / 06 14 : 23 : 25 sbs *some bugs fixed **Revision 1.6 1995 / 04
+   / 05 15 : 35 : 39 sbs *malloc.h included **Revision 1.5 1995 / 04
+   / 03 13 : 58 : 57 sbs *first "complete" version **Revision 1.4 1995 / 03
+   / 31 13 : 57 : 34 sbs *ND_CREATE_CONST_ARRAY,
+   ND_KS_ARG_ARRAY &ND_KS_RET_ARRAY inserted **Revision 1.3 1995 / 03
+     / 10 17 : 24 : 37 sbs *New macros develloped;
+ psi,
+   take &drop integrated **Revision 1.2 1995 / 03 / 07 18 : 19 : 10 sbs *PSI
+     - macros done.**Revision 1.1 1995 / 03 / 03 14 : 43 : 46 sbs *Initial revision *** /
 
 #ifndef _sac_icm2c_h
 
@@ -147,30 +128,30 @@
 
 #include "libsac.h"
 
-/*
- *  README: The difference between 'type' and 'basetype'
- *
- *  'type' and 'basetype' both specify a string containing a type.
- *
- *  'basetype' is used in all icms dedicated to arrays and simply means
- *  the base type of the array, e.g. 'int'.
- *
- *  'type' is used in all icms not specific to arrays and must
- *  specify the actual type, e.g. 'int *' for an integer array,
- *  'int' for an integer, 'void*' for a hidden, etc.
- *
- */
+ /*
+  *  README: The difference between 'type' and 'basetype'
+  *
+  *  'type' and 'basetype' both specify a string containing a type.
+  *
+  *  'basetype' is used in all icms dedicated to arrays and simply means
+  *  the base type of the array, e.g. 'int'.
+  *
+  *  'type' is used in all icms not specific to arrays and must
+  *  specify the actual type, e.g. 'int *' for an integer array,
+  *  'int' for an integer, 'void*' for a hidden, etc.
+  *
+  */
 
-/*
- * Macros for array access:
- * ========================
- *
- * ND_A_FIELD : for accessing elements of the array
- * ND_A_SIZE  : accesses the size of the unrolling (in elements)
- * ND_A_DIM   : accesses the dimension of the array
- * ND_A_SHAPE : accesses one shape component of an array
- *
- */
+ /*
+  * Macros for array access:
+  * ========================
+  *
+  * ND_A_FIELD : for accessing elements of the array
+  * ND_A_SIZE  : accesses the size of the unrolling (in elements)
+  * ND_A_DIM   : accesses the dimension of the array
+  * ND_A_SHAPE : accesses one shape component of an array
+  *
+  */
 
 #define ND_A_FIELD(name) name
 #define ND_A_SIZE(name) __##name##_sz
@@ -178,32 +159,32 @@
 #define ND_KD_A_SHAPE(name, dim) __##name##_s##dim
 #define ND_A_SHAPE(name, dim) __##name##_s[dim]
 
-/*
- * Macros for refcount access:
- * ===========================
- *
- * ND_A_RC(name)   : accesses the refcnt
- * ND_A_RCP(name)  : accesses the pointer to the refcnt
- *
- */
+ /*
+  * Macros for refcount access:
+  * ===========================
+  *
+  * ND_A_RC(name)   : accesses the refcnt
+  * ND_A_RCP(name)  : accesses the pointer to the refcnt
+  *
+  */
 
 #define ND_A_RC(name) *__##name##_rc
 #define ND_A_RCP(name) __##name##_rc
 
-/*
- * Macros for declaring refcounted data:
- * =====================================
- *
- * ND_KD_DECL_ARRAY(basetype, name, dim)
- *   declares an array with dimension but without shape information
- *
- * ND_DECL_ARRAY(basetype, name)
- *   declares an array without dimension and shape information
- *
- * ND_DECL_RC(type, name)
- *   declares a refcounted variable in general
- *
- */
+ /*
+  * Macros for declaring refcounted data:
+  * =====================================
+  *
+  * ND_KD_DECL_ARRAY(basetype, name, dim)
+  *   declares an array with dimension but without shape information
+  *
+  * ND_DECL_ARRAY(basetype, name)
+  *   declares an array without dimension and shape information
+  *
+  * ND_DECL_RC(type, name)
+  *   declares a refcounted variable in general
+  *
+  */
 
 #define ND_DECL_RC(type, name)                                                           \
     type name;                                                                           \
@@ -221,23 +202,23 @@
     int __##name##_d;                                                                    \
     int *__##name##_s;
 
-/*
- * Macros for removing refcounted data :
- * =====================================
- *
- * ND_FREE_HIDDEN(name, freefun)
- *   frees hidden data
- *
- * ND_NO_RC_FREE_HIDDEN(name, freefun)
- *   frees hidden data to whom a refcount is not yet assigned.
- *
- * ND_FREE_ARRAY(name)
- *   removes an array
- *
- * ND_NO_RC_FREE_ARRAY(name)
- *   removes an array to whom a refcount is not yet assigned
- *
- */
+ /*
+  * Macros for removing refcounted data :
+  * =====================================
+  *
+  * ND_FREE_HIDDEN(name, freefun)
+  *   frees hidden data
+  *
+  * ND_NO_RC_FREE_HIDDEN(name, freefun)
+  *   frees hidden data to whom a refcount is not yet assigned.
+  *
+  * ND_FREE_ARRAY(name)
+  *   removes an array
+  *
+  * ND_NO_RC_FREE_ARRAY(name)
+  *   removes an array to whom a refcount is not yet assigned
+  *
+  */
 
 #define ND_FREE_HIDDEN(name, freefun)                                                    \
     freefun (name);                                                                      \
@@ -268,29 +249,29 @@
     DEC_ARRAY_MEMCNT (ND_A_SIZE (name));                                                 \
     PRINT_ARRAY_MEM (name);
 
-/*
- * Macros for assigning refcounted data :
- * ====================================
- *
- * ND_ASSIGN_HIDDEN(old, new)
- *  copies the pointer to a hidden (including refcount)
- *
- * ND_NO_RC_ASSIGN_HIDDEN(old, new)
- *  copies the pointer to a hidden (without refcount)
- *
- * ND_COPY_HIDDEN(old, new, copyfun)
- *  copies hidden data using given function
- *
- * ND_KS_ASSIGN_ARRAY(name, res)
- *   copies pointer to array field (including refcount)
- *
- * ND_KS_NO_RC_ASSIGN_ARRAY(name, res)
- *   copies pointer to array field (without refcount)
- *
- * ND_KS_COPY_ARRAY(old, new, basetypesize)
- *   copies the array, doesn't care about refcount
- *
- */
+ /*
+  * Macros for assigning refcounted data :
+  * ====================================
+  *
+  * ND_ASSIGN_HIDDEN(old, new)
+  *  copies the pointer to a hidden (including refcount)
+  *
+  * ND_NO_RC_ASSIGN_HIDDEN(old, new)
+  *  copies the pointer to a hidden (without refcount)
+  *
+  * ND_COPY_HIDDEN(old, new, copyfun)
+  *  copies hidden data using given function
+  *
+  * ND_KS_ASSIGN_ARRAY(name, res)
+  *   copies pointer to array field (including refcount)
+  *
+  * ND_KS_NO_RC_ASSIGN_ARRAY(name, res)
+  *   copies pointer to array field (without refcount)
+  *
+  * ND_KS_COPY_ARRAY(old, new, basetypesize)
+  *   copies the array, doesn't care about refcount
+  *
+  */
 
 #define ND_ASSIGN_HIDDEN(old, new)                                                       \
     new = old;                                                                           \
@@ -318,26 +299,26 @@
     INC_ARRAY_MEMCNT (ND_A_SIZE (old));                                                  \
     PRINT_ARRAY_MEM (new);
 
-/*
- * Macros for creating refcounted data:
- * ====================================
- *
- * ND_ALLOC_ARRAY(basetype, name, rc)
- *   allocates memory needed
- *
- * ND_SET_SIZE( name, num)
- *   sets the size of the unrolling in elements
- *
- * ND_SET_DIM( name, num)
- *   sets the dimension of the array
- *
- * ND_SET_SHAPE( name, dim, s)
- *   sets one shape component of an array
- *
- * ND_ALLOC_RC(name)
- *   allocates memory for refcount (no initialization)
- *
- */
+ /*
+  * Macros for creating refcounted data:
+  * ====================================
+  *
+  * ND_ALLOC_ARRAY(basetype, name, rc)
+  *   allocates memory needed
+  *
+  * ND_SET_SIZE( name, num)
+  *   sets the size of the unrolling in elements
+  *
+  * ND_SET_DIM( name, num)
+  *   sets the dimension of the array
+  *
+  * ND_SET_SHAPE( name, dim, s)
+  *   sets one shape component of an array
+  *
+  * ND_ALLOC_RC(name)
+  *   allocates memory for refcount (no initialization)
+  *
+  */
 
 #define ND_ALLOC_RC(name)                                                                \
     ND_A_RCP (name) = (int *)MALLOC (sizeof (int));                                      \
@@ -360,49 +341,49 @@
 
 #define ND_SET_SHAPE(name, dim, s) ND_A_SHAPE (name, dim) = s;
 
-/*
- * Macros for reference counting :
- * ===============================
- *
- * ND_SET_RC(name, num)
- *   sets the refcnt
- *
- * ND_INC_RC(name, num)
- *   increments the refcnt
- *
- * ND_DEC_RC(name, num)
- *   decrements the refcnt
- *
- * ND_DEC_RC_FREE_ARRAY(name, num)
- *   decrements the refcnt AND frees the array if refcnt becomes zero!
- *
- * ND_DEC_RC_FREE_HIDDEN(name, num, freefun)
- *   decrements the refcnt AND frees the hidden object if refcnt becomes zero!
- *
- * ND_CHECK_REUSE_ARRAY(old, new)
- *   tries to reuse old array for new
- *
- * ND_CHECK_REUSE_HIDDEN(old, new, copyfun)
- *   tries to reuse old hidden data for new, copies if impossible
- *
- * ND_KS_MAKE_UNIQUE_ARRAY(old, new, basetypesize)
- *   assigns old to new if refcount is zero and copies the array otherwise
- *   A new refcount is allocated if necessary
- *
- * ND_MAKE_UNIQUE_HIDDEN(old, new, copyfun)
- *   assigns old to new if refcount is zero and copies the hidden otherwise
- *   A new refcount is allocated if necessary
- *
- * ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(old, new, basetypesize)
- *   assigns old to new if refcount is zero and copies the array otherwise
- *   No new refcount is allocated, the old one is freed when not copying
- *
- * ND_NO_RC_MAKE_UNIQUE_HIDDEN(old, new, copyfun)
- *   assigns old to new if refcount is zero and copies the hidden otherwise
- *   No new refcount is allocated, the old one is freed when not copying
- *
- *
- */
+ /*
+  * Macros for reference counting :
+  * ===============================
+  *
+  * ND_SET_RC(name, num)
+  *   sets the refcnt
+  *
+  * ND_INC_RC(name, num)
+  *   increments the refcnt
+  *
+  * ND_DEC_RC(name, num)
+  *   decrements the refcnt
+  *
+  * ND_DEC_RC_FREE_ARRAY(name, num)
+  *   decrements the refcnt AND frees the array if refcnt becomes zero!
+  *
+  * ND_DEC_RC_FREE_HIDDEN(name, num, freefun)
+  *   decrements the refcnt AND frees the hidden object if refcnt becomes zero!
+  *
+  * ND_CHECK_REUSE_ARRAY(old, new)
+  *   tries to reuse old array for new
+  *
+  * ND_CHECK_REUSE_HIDDEN(old, new, copyfun)
+  *   tries to reuse old hidden data for new, copies if impossible
+  *
+  * ND_KS_MAKE_UNIQUE_ARRAY(old, new, basetypesize)
+  *   assigns old to new if refcount is zero and copies the array otherwise
+  *   A new refcount is allocated if necessary
+  *
+  * ND_MAKE_UNIQUE_HIDDEN(old, new, copyfun)
+  *   assigns old to new if refcount is zero and copies the hidden otherwise
+  *   A new refcount is allocated if necessary
+  *
+  * ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(old, new, basetypesize)
+  *   assigns old to new if refcount is zero and copies the array otherwise
+  *   No new refcount is allocated, the old one is freed when not copying
+  *
+  * ND_NO_RC_MAKE_UNIQUE_HIDDEN(old, new, copyfun)
+  *   assigns old to new if refcount is zero and copies the hidden otherwise
+  *   No new refcount is allocated, the old one is freed when not copying
+  *
+  *
+  */
 
 #define ND_SET_RC(name, num)                                                             \
     PRINT_TRACEHEADER_REF (("ND_SET_RC(%s, %d)", #name, num));                           \
@@ -492,48 +473,48 @@
         ND_DEC_RC (old, 1);                                                              \
     }
 
-/*
- * Macros for passing refcounted data to functions :
- * =================================================
- *
- *
- * ND_KS_DEC_IN_RC( type, name)
- *   macro for prototyping refcounted data as "in" parameter
- *
- * ND_KS_DEC_OUT_RC( type, name)
- *   macro for prototyping refcounted data as "out" parameter
- *
- * ND_KS_DEC_INOUT_RC( type, name)
- *   macro for prototyping refcounted data as "inout" parameter
- *
- * ND_KS_DEC_IMPORT_IN_RC( type)
- *   macro for prototyping refcounted data as "in" parameter
- *   (imported functions only )
- *
- * ND_KS_DEC_IMPORT_OUT_RC( type)
- *   macro for prototyping refcounted data as "out" parameter
- *   (imported functions only )
- *
- * ND_KS_DEC_IMPORT_INOUT_RC( type)
- *   macro for prototyping refcounted data as "inout" parameter
- *   (imported functions only )
- *
- * ND_KS_AP_IN_RC( name)
- *   macro for giving refcounted data as argument
- *
- * ND_KS_AP_OUT_RC( name)
- *   macro for getting refcounted data as result
- *
- * ND_KS_AP_INOUT_RC( name)
- *   macro for giving refcounted data as "inout" argument
- *
- * ND_KS_RET_OUT_RC( name)
- *   macro for returning refcounted data
- *
- * ND_KS_RET_INOUT_RC( name)
- *   macro for returning "inout" refcounted data
- *
- */
+ /*
+  * Macros for passing refcounted data to functions :
+  * =================================================
+  *
+  *
+  * ND_KS_DEC_IN_RC( type, name)
+  *   macro for prototyping refcounted data as "in" parameter
+  *
+  * ND_KS_DEC_OUT_RC( type, name)
+  *   macro for prototyping refcounted data as "out" parameter
+  *
+  * ND_KS_DEC_INOUT_RC( type, name)
+  *   macro for prototyping refcounted data as "inout" parameter
+  *
+  * ND_KS_DEC_IMPORT_IN_RC( type)
+  *   macro for prototyping refcounted data as "in" parameter
+  *   (imported functions only )
+  *
+  * ND_KS_DEC_IMPORT_OUT_RC( type)
+  *   macro for prototyping refcounted data as "out" parameter
+  *   (imported functions only )
+  *
+  * ND_KS_DEC_IMPORT_INOUT_RC( type)
+  *   macro for prototyping refcounted data as "inout" parameter
+  *   (imported functions only )
+  *
+  * ND_KS_AP_IN_RC( name)
+  *   macro for giving refcounted data as argument
+  *
+  * ND_KS_AP_OUT_RC( name)
+  *   macro for getting refcounted data as result
+  *
+  * ND_KS_AP_INOUT_RC( name)
+  *   macro for giving refcounted data as "inout" argument
+  *
+  * ND_KS_RET_OUT_RC( name)
+  *   macro for returning refcounted data
+  *
+  * ND_KS_RET_INOUT_RC( name)
+  *   macro for returning "inout" refcounted data
+  *
+  */
 
 #define ND_KS_DEC_IN_RC(type, name) type name, int *__##name##_rc
 
@@ -567,15 +548,15 @@
     type name = *##name##__p;                                                            \
     int *__##name##_rc = *__##name##_rc__p;
 
-/*
- * Macros for primitve arithmetic operations:
- * ==========================================
- *
- * ND_BINOP_SxA_A( op, s, a2, res)        : realizes res=(s op a2)
- * ND_BINOP_AxS_A( op, s, a2, res)        : realizes res=(a2 op s)
- * ND_BINOP_AxA_A( op, a1, a2, res)       : realizes res=(a1 op a2)
- *
- */
+ /*
+  * Macros for primitve arithmetic operations:
+  * ==========================================
+  *
+  * ND_BINOP_SxA_A( op, s, a2, res)        : realizes res=(s op a2)
+  * ND_BINOP_AxS_A( op, s, a2, res)        : realizes res=(a2 op s)
+  * ND_BINOP_AxA_A( op, a1, a2, res)       : realizes res=(a1 op a2)
+  *
+  */
 
 #define ND_BINOP_AxA_A(op, a1, a2, res)                                                  \
     PRINT_PRF (("ND_BINOP_AxA_A( %s, %s, %s, %s)\n", #op, #a1, #a2, #res));              \
@@ -601,10 +582,10 @@
             ND_A_FIELD (res)[__i] = s op ND_A_FIELD (a2)[__i];                           \
     };
 
-/*
- * Macros used for primitive function idx_psi:
- * ===========================================
- */
+ /*
+  * Macros used for primitive function idx_psi:
+  * ===========================================
+  */
 
 #define ND_IDX_PSI_S(s, a, res)                                                          \
     PRINT_PRF (("ND_IDX_PSI_S( %s, %s, %s)\n", #s, #a, #res));                           \
@@ -618,10 +599,10 @@
             ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__s++];                               \
     };
 
-/*
- * Macros used for primitive function idx_modarray:
- * ================================================
- */
+ /*
+  * Macros used for primitive function idx_modarray:
+  * ================================================
+  */
 
 #define ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(line, basetype, res, a, s, val)                \
     PRINT_PRF (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n", #line,   \
@@ -680,26 +661,26 @@
 
 #define ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
 
-/*
- * Macros used for compilation of do-loop:
- * =======================================
- */
+ /*
+  * Macros used for compilation of do-loop:
+  * =======================================
+  */
 
 #define ND_GOTO(label) goto label;
 #define ND_LABEL(label)                                                                  \
     label:
 
-/*
- * Macro for typedefs of arrays:
- * =============================
- */
+ /*
+  * Macro for typedefs of arrays:
+  * =============================
+  */
 
 #define ND_TYPEDEF_ARRAY(basetype, name) typedef basetype name;
 
-/*
- * Macro for primitive function itof & ftoi:
- * ===================================
- */
+ /*
+  * Macro for primitive function itof & ftoi:
+  * ===================================
+  */
 
 #define ND_F2I_A(a1, res)                                                                \
     {                                                                                    \
@@ -714,10 +695,10 @@
 #define ND_D2I_A(a1, res) ND_F2I_A (a1, res)
 #define ND_D2F_A(a1, res) ND_F2I_A (a1, res)
 
-/*
- * Macro for primitive function itof & ftoi:
- * =========================================
- */
+ /*
+  * Macro for primitive function itof & ftoi:
+  * =========================================
+  */
 
 #define ND_2I_A(a1, res)                                                                 \
     {                                                                                    \
@@ -730,10 +711,18 @@
 
 #define ND_2D_A(a1, res) ND_2I_A (a1, res)
 
-/*
- * and now some macros that don't belong to N_icm
- * ==============================================
- */
+ /*
+  * Macros for primitive functions min and max
+  * ==========================================
+  */
+
+#define ND_MIN(a1, a2) a1 < a2 ? a1 : a2
+#define ND_MAX(a1, a2) a1 > a2 ? a1 : a2
+
+ /*
+  * and now some macros that don't belong to N_icm
+  * ==============================================
+  */
 
 #define OUT_OF_BOUND(line, prf, size, idx)                                               \
     {                                                                                    \
