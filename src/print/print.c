@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.50  2000/02/23 21:01:00  dkr
+ * a missing \n added
+ *
  * Revision 2.49  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -1235,6 +1238,8 @@ PrintFundef (node *arg_node, node *arg_info)
             if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
                 && (compiler_phase == PH_genccode)) {
                 fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
+            } else {
+                fprintf (outfile, "\n");
             }
 
             if (INFO_PRINT_SEPARATE (arg_info)) {
