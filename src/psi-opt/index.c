@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.11  1997/05/02 14:38:31  sbs
+ * Revision 1.12  1997/05/02 15:40:54  sbs
+ * IdxId reverted but IdxPrf case Psi adapted for arrays of unknown shape
+ *
+ * Revision 1.11  1997/05/02  14:38:31  sbs
  * IdxId : set vect   also if the array (of a psi application for example)
  * is of unknown shape!!
  * That can happen if an external function is involved that returns an
@@ -826,10 +829,19 @@ IdxPrf (node *arg_node, node *arg_info)
             type = ID_TYPE (arg2);
         else
             type = ARRAY_TYPE (arg2);
-        vinfo = MakeVinfo (IDX, type, NULL);
-        PRF_ARG1 (arg_node) = Trav (arg1, vinfo);
-        FREE (vinfo);
-        PRF_PRF (arg_node) = F_idx_psi;
+        /*
+         * if the shape of the array is unknown, do not(!) replace
+         * psi by idx_psi but mark the selecting vector as VECT !
+         * this is done by traversal with NULL instead of vinfo!
+         */
+        if (TYPES_SHPSEG (type) != NULL) {
+            vinfo = MakeVinfo (IDX, type, NULL);
+            PRF_ARG1 (arg_node) = Trav (arg1, vinfo);
+            FREE (vinfo);
+            PRF_PRF (arg_node) = F_idx_psi;
+        } else {
+            PRF_ARG1 (arg_node) = Trav (arg1, NULL);
+        }
         PRF_ARG2 (arg_node) = Trav (arg2, NULL);
         break;
     case F_add_SxA:
@@ -886,7 +898,7 @@ IdxPrf (node *arg_node, node *arg_info)
  *  arguments     :
  *  description   : examines whether variable is a one-dimensional array;
  *                  if so, examine arg_info:
- *                    if NULL or the shape of arg_info is unknown(NULL) :
+ *                    if NULL :
  *                        SetVect on "N_vardec" belonging to the "N_id" node.
  *                    otherwise: change varname according to shape from arg_info!
  *  global vars   :
@@ -911,7 +923,7 @@ IdxId (node *arg_node, node *arg_info)
                  "non vardec/arg node as backref in N_id!");
     if (NODE_TYPE (vardec) == N_vardec) {
         if (VARDEC_DIM (vardec) == 1) {
-            if (arg_info == NULL || VINFO_SHPSEG (arg_info) == NULL) {
+            if (arg_info == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
                 VARDEC_COLCHN (vardec) = SetVect (VARDEC_COLCHN (vardec));
@@ -929,7 +941,7 @@ IdxId (node *arg_node, node *arg_info)
         }
     } else {
         if (ARG_DIM (vardec) == 1) {
-            if (arg_info == NULL || VINFO_SHPSEG (arg_info) == NULL) {
+            if (arg_info == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
                 ARG_COLCHN (vardec) = SetVect (ARG_COLCHN (vardec));
