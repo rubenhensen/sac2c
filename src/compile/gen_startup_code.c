@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/11 23:14:17  dkr
+ * renaming of function names modified
+ *
  * Revision 3.19  2002/08/07 10:07:25  dkr
  * bug in GSCPrintMain() fixed: SAC_argc/v renamed into __argc/v
  *
@@ -854,10 +857,10 @@ GSCPrintMain ()
 
 #ifdef TAGGED_ARRAYS
     nt = CreateNtTag ("SAC_res", MakeTypes1 (T_int));
-    fprintf (outfile, "  SACf_main_( SAC_ND_ARG_out( %s)", nt);
+    fprintf (outfile, "  SACf_main( SAC_ND_ARG_out( %s)", nt);
     nt = Free (nt);
 #else
-    fprintf (outfile, "  SAC_res = SACf_main_(");
+    fprintf (outfile, "  SAC_res = SACf_main(");
 #endif
     if (print_thread_id) {
         fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
