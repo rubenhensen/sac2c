@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.68  2004/11/25 12:57:14  khf
+  added USSAT
+
   Revision 1.67  2004/11/25 12:09:09  skt
   Cleanup Declaration Traversal added
 
@@ -168,6 +171,19 @@
 	  <node name="Let" />
 	  <node name="Ap" />
 	  <node name="Block" />
+	</travuser>
+      </traversal>
+      <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Let" />
+	  <node name="Arg" />
+	  <node name="Block" />
+          <node name="Vardec" />
+          <node name="Ids" />
+          <node name="With" />
 	</travuser>
       </traversal>
     </general>
