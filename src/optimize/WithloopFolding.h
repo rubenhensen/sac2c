@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.15  1998/05/12 09:46:46  srs
+ * added TRANSF_TRUE_PERMUTATIONS
+ *
  * Revision 1.14  1998/04/24 17:32:31  srs
  * changed comments and added export of MakeNullVec()
  *
@@ -137,6 +140,10 @@ extern intern_gen *FreeInternGenChain (intern_gen *ig);
  * defines
  *
  ******************************************************************************/
+
+/* if not defined, indexes with more than one occurence of an
+   index scalar are allowed to be valid transformations, e.g. [i,i,j] */
+/* #define TRANSF_TRUE_PERMUTATIONS */
 
 /* general macros */
 #define DEF_MASK 0
