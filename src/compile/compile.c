@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2004/08/04 17:10:04  ktr
+ * Descriptor of A_sub is now only built if some runtimechecks are done
+ *
  * Revision 3.121  2004/08/04 12:04:58  ktr
  * substituted eacc by emm
  *
@@ -6638,8 +6641,13 @@ COMPWith2 (node *arg_node, info *arg_info)
         node *icm_args;
         int i;
 
-        if ((NWITH2_TYPE (arg_node) == WO_genarray)
-            || (NWITH2_TYPE (arg_node) == WO_modarray)) {
+        /*
+         * The descriptor of A_sub must only be built if it is
+         * actually used (shape checks are done)
+         */
+        if ((runtimecheck != RUNTIMECHECK_NONE)
+            && ((NWITH2_TYPE (arg_node) == WO_genarray)
+                || (NWITH2_TYPE (arg_node) == WO_modarray))) {
 
             sub_name = StringConcat (IDS_NAME (wlids), "_sub");
             sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
