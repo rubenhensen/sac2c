@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.10  1999/05/20 14:16:29  cg
+ * All simulation parameters may now be set dynamically, including
+ * global/blocked simulation.
+ *
  * Revision 2.9  1999/05/10 10:57:54  her
  * SAC_CS_CheckArguments got a new parameter: profilinglevel
  *
@@ -40,9 +44,25 @@
 #include "libsac_cachesim.h"
 #include "sac_message.h"
 
-/* BEGIN: The folowing variables are declared as extern in the
+#include "main_args.h"
+
+/*
+ * The following defines are copied from globals.h for usage in function
+ * SAC_CS_CheckArguments().
+ */
+#define CACHESIM_NO 0x0000
+#define CACHESIM_YES 0x0001
+#define CACHESIM_ADVANCED 0x0002
+#define CACHESIM_FILE 0x0004
+#define CACHESIM_PIPE 0x0008
+#define CACHESIM_IMMEDIATE 0x0010
+#define CACHESIM_BLOCK 0x0020
+
+/*
+ * BEGIN: The folowing variables are declared as extern in the
  * ´libsac_cachesim_access.c´-file. Changes here have to be done there
- * too!!!  */
+ * too!!!
+ */
 tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1]; /* SAC_CS_cachelevel[0] is unused */
 
 ULINT SAC_CS_hit[MAX_CACHELEVEL + 1], SAC_CS_invalid[MAX_CACHELEVEL + 1],
@@ -52,6 +72,9 @@ ULINT SAC_CS_hit[MAX_CACHELEVEL + 1], SAC_CS_invalid[MAX_CACHELEVEL + 1],
 
 int SAC_CS_level = 1;
 FILE *SAC_CS_pipehandle;
+
+char SAC_CS_separator[]
+  = "==============================================================\n";
 
 void (*SAC_CS_Finalize) (void);
 void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
@@ -66,8 +89,9 @@ tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
    SAC_CS_xxx_access_table[MAX_CACHELEVEL+1] for dummy/MainMem */
 /* END: */
 static int sim_incarnation = 0;
-static char *starttag;
+static char starttag[MAX_TAG_LENGTH];
 static tProfilingLevel profiling_level;
+static int global_simulation;
 
 /* forward declarations */
 static void Finalize (void);
@@ -234,20 +258,20 @@ static char *
 ProfilingLevelShortName (tProfilingLevel level)
 {
     switch (level) {
-    case SAC_CS_default:
-        return ("d");
     case SAC_CS_simple:
-        return ("s");
+        return ("is");
     case SAC_CS_advanced:
-        return ("a");
+        return ("ia");
     case SAC_CS_piped_simple:
         return ("ps");
     case SAC_CS_piped_advanced:
         return ("pa");
     case SAC_CS_file:
         return ("f");
-    default:
+    case SAC_CS_none:
         return ("n");
+    default:
+        return ("");
     }
 } /* ProfilingLevelShortName */
 
@@ -263,7 +287,7 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
     field = strtok (spec, "/");
 
     if (field == NULL) {
-        SAC_RuntimeError ("Invalid cache parameter specification: '%s`", full_spec);
+        SAC_RuntimeError ("Invalid cache parameter specification: '%s`.", full_spec);
     }
 
     *cachesize = atoi (field);
@@ -296,11 +320,11 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
                         *writepolicy = SAC_CS_write_around;
                         break;
                     default:
-                        SAC_RuntimeError ("Invalid cache parameter specification: '%s`",
+                        SAC_RuntimeError ("Invalid cache parameter specification: '%s`.",
                                           full_spec);
                     }
                 } else {
-                    SAC_RuntimeError ("Invalid cache parameter specification: '%s`",
+                    SAC_RuntimeError ("Invalid cache parameter specification: '%s`.",
                                       full_spec);
                 }
             }
@@ -312,53 +336,88 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
 
 void
 SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
-                       unsigned long int *cachesize1, int *cachelinesize1,
+                       int *cs_global, unsigned long int *cachesize1, int *cachelinesize1,
                        int *associativity1, tWritePolicy *writepolicy1,
                        unsigned long int *cachesize2, int *cachelinesize2,
                        int *associativity2, tWritePolicy *writepolicy2,
                        unsigned long int *cachesize3, int *cachelinesize3,
                        int *associativity3, tWritePolicy *writepolicy3)
 {
-    int i;
+    unsigned int cachesim = CACHESIM_NO;
 
-    for (i = 1; i < argc - 1; i++) {
-        /* extracting parameters for each cachelevel */
-        if ((argv[i][0] == '-') && (argv[i][1] == 'c') && (argv[i][2] == 's')
-            && (argv[i][4] == '\0')) {
-            switch (argv[i][3]) {
-            case '1':
-                ResetCacheParms (argv[i + 1], cachesize1, cachelinesize1, associativity1,
-                                 writepolicy1);
-                break;
-            case '2':
-                ResetCacheParms (argv[i + 1], cachesize2, cachelinesize2, associativity2,
-                                 writepolicy2);
-                break;
-            case '3':
-                ResetCacheParms (argv[i + 1], cachesize3, cachelinesize3, associativity3,
-                                 writepolicy3);
-                break;
-            default:
-                break;
-            } /* switch */
-        }     /* if */
+    switch (*profilinglevel) {
+    case SAC_CS_simple:
+        cachesim |= CACHESIM_IMMEDIATE;
+        break;
+    case SAC_CS_advanced:
+        cachesim |= CACHESIM_IMMEDIATE | CACHESIM_ADVANCED;
+        break;
+    case SAC_CS_piped_simple:
+        cachesim |= CACHESIM_PIPE;
+        break;
+    case SAC_CS_piped_advanced:
+        cachesim |= CACHESIM_PIPE | CACHESIM_ADVANCED;
+        break;
+    case SAC_CS_file:
+        cachesim |= CACHESIM_FILE;
+        break;
+    case SAC_CS_none:
+        break;
+    default:
+        break;
+    }
 
-        /* extracting general parameters for the cachesimulation */
-        if (!strcmp (argv[i], "-csg")) {
-            if (!strcmp (argv[i + 1], "s")) {
-                *profilinglevel = SAC_CS_simple;
-            } else if (!strcmp (argv[i + 1], "a")) {
-                *profilinglevel = SAC_CS_advanced;
-            } else if (!strcmp (argv[i + 1], "ps")) {
-                *profilinglevel = SAC_CS_piped_simple;
-            } else if (!strcmp (argv[i + 1], "pa")) {
-                *profilinglevel = SAC_CS_piped_advanced;
-            } else {
-            }
+    ARGS_BEGIN (argc, argv);
 
-        } /* if */
+    ARGS_OPTION ("cs1", {
+        ResetCacheParms (ARG, cachesize1, cachelinesize1, associativity1, writepolicy1);
+    });
 
-    } /* for */
+    ARGS_OPTION ("cs2", {
+        ResetCacheParms (ARG, cachesize2, cachelinesize2, associativity2, writepolicy2);
+    });
+
+    ARGS_OPTION ("cs3", {
+        ResetCacheParms (ARG, cachesize3, cachelinesize3, associativity3, writepolicy3);
+    });
+
+    ARGS_OPTION ("cs", {
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('s', cachesim &= ~CACHESIM_ADVANCED);
+        ARG_FLAGMASK ('a', cachesim |= CACHESIM_ADVANCED);
+        ARG_FLAGMASK ('g', *cs_global = 1);
+        ARG_FLAGMASK ('b', *cs_global = 0);
+        ARG_FLAGMASK ('f', cachesim |= CACHESIM_FILE; cachesim &= ~CACHESIM_PIPE;
+                      cachesim &= ~CACHESIM_IMMEDIATE);
+        ARG_FLAGMASK ('p', cachesim |= CACHESIM_PIPE; cachesim &= ~CACHESIM_FILE;
+                      cachesim &= ~CACHESIM_IMMEDIATE);
+        ARG_FLAGMASK ('i', cachesim |= CACHESIM_IMMEDIATE; cachesim &= ~CACHESIM_PIPE;
+                      cachesim &= ~CACHESIM_FILE);
+        ARG_FLAGMASK_END ();
+    });
+
+    ARGS_END ();
+
+    if (cachesim & CACHESIM_FILE) {
+        *profilinglevel = SAC_CS_file;
+    } else if (cachesim & CACHESIM_IMMEDIATE) {
+        if (cachesim & CACHESIM_ADVANCED) {
+            *profilinglevel = SAC_CS_advanced;
+        } else {
+            *profilinglevel = SAC_CS_simple;
+        }
+    } else if (cachesim & CACHESIM_PIPE) {
+        if (cachesim & CACHESIM_ADVANCED) {
+            *profilinglevel = SAC_CS_piped_advanced;
+        } else {
+            *profilinglevel = SAC_CS_piped_simple;
+        }
+    } else {
+        /*
+         * profilinglevel remains unchanged if no changes are specified on the
+         * command line.
+         */
+    }
 } /* SAC_CS_CheckArguments */
 
 static void
@@ -506,30 +565,38 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
 }
 
 void
-SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesize1,
-                   int cachelinesize1, int associativity1, tWritePolicy writepolicy1,
-                   ULINT cachesize2, int cachelinesize2, int associativity2,
-                   tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
-                   int associativity3, tWritePolicy writepolicy3)
+SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
+                   ULINT cachesize1, int cachelinesize1, int associativity1,
+                   tWritePolicy writepolicy1, ULINT cachesize2, int cachelinesize2,
+                   int associativity2, tWritePolicy writepolicy2, ULINT cachesize3,
+                   int cachelinesize3, int associativity3, tWritePolicy writepolicy3)
 {
-    char filename[255];
+    char filename[1024];
 
     profiling_level = profilinglevel;
+    global_simulation = cs_global;
+    /*
+     * profiling_level and global_simulation are global variables!
+     */
 
     if (nr_of_cpu > 1) {
-        SAC_RuntimeError ("Cache simulation does not support multi-threaded execution");
+        SAC_RuntimeError ("Cache simulation does not support multi-threaded execution.");
     }
 
     if ((cachesize3 != 0) && ((cachesize1 == 0) || (cachesize2 == 0))) {
-        SAC_RuntimeError ("L3 cache specified but L1 or L2 cache missing");
+        SAC_RuntimeError ("L3 cache specified but L1 or L2 cache missing.");
     }
 
     if ((cachesize2 != 0) && (cachesize1 == 0)) {
-        SAC_RuntimeError ("L2 cache specified but L1 cache missing");
+        SAC_RuntimeError ("L2 cache specified but L1 cache missing.");
     }
 
     if (cachesize1 == 0) {
-        SAC_RuntimeError ("No caches specified for cache simulation");
+        SAC_RuntimeError ("No caches specified for cache simulation.");
+    }
+
+    if (profilinglevel == SAC_CS_file) {
+        SAC_RuntimeError ("Sorry, cache simulation via file not yet implemented.");
     }
 
     /*
@@ -552,20 +619,25 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
 
         sprintf (filename,
                  "$SACBASE/runtime/CacheSimAnalyser"
-                 " -csg %s"
+                 " -cs %s%s"
                  " -cs1 %lu/%d/%d/%s"
                  " -cs2 %lu/%d/%d/%s"
                  " -cs3 %lu/%d/%d/%s",
-                 ProfilingLevelShortName (profilinglevel), cachesize1, cachelinesize1,
-                 associativity1, WritePolicyShortName (writepolicy1), cachesize2,
-                 cachelinesize2, associativity2, WritePolicyShortName (writepolicy2),
-                 cachesize3, cachelinesize3, associativity3,
-                 WritePolicyShortName (writepolicy3));
-        printf ("%s\n", filename);
-        SAC_CS_pipehandle = stdout;
+                 ProfilingLevelShortName (profilinglevel), global_simulation ? "g" : "b",
+                 cachesize1, cachelinesize1, associativity1,
+                 WritePolicyShortName (writepolicy1), cachesize2, cachelinesize2,
+                 associativity2, WritePolicyShortName (writepolicy2), cachesize3,
+                 cachelinesize3, associativity3, WritePolicyShortName (writepolicy3));
+
         SAC_CS_pipehandle = popen (filename, "w");
-        /*SAC_CS_pipehandle = stdout;*/
-        /* set all other function-variables to the piped version
+
+        if (SAC_CS_pipehandle == NULL) {
+            SAC_RuntimeError ("Unable to invoke external cache simulation analyser:\n%s",
+                              filename);
+        }
+
+        /*
+         * set all other function-variables to the piped version.
          */
         SAC_CS_Finalize = &Piped_Finalize;
         SAC_CS_RegisterArray = &Piped_RegisterArray;
@@ -602,44 +674,45 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
         SAC_CS_UnregisterArray = &UnregisterArray;
         SAC_CS_Start = &Start;
         SAC_CS_Stop = &Stop;
+
+        fprintf (stderr,
+                 "%s"
+                 "SAC program running with %s cache simulation enabled.\n"
+                 "This might delay program execution significantly !!\n"
+                 "%s"
+                 "L1 cache:  cache size        : %lu KByte\n"
+                 "           cache line size   : %d Byte\n"
+                 "           associativity     : %d\n"
+                 "           write miss policy : %s\n",
+                 SAC_CS_separator, ProfilingLevelName (profiling_level), SAC_CS_separator,
+                 cachesize1, cachelinesize1, associativity1,
+                 WritePolicyName (writepolicy1));
+
+        if (cachesize2 > 0) {
+            fprintf (stderr,
+                     "%s\n"
+                     "L2 cache:  cache size        : %lu KByte\n"
+                     "           cache line size   : %d Byte\n"
+                     "           associativity     : %d\n"
+                     "           write miss policy : %s\n",
+                     SAC_CS_separator, cachesize2, cachelinesize2, associativity2,
+                     WritePolicyName (writepolicy2));
+        }
+
+        if (cachesize3 > 0) {
+            fprintf (stderr,
+                     "%s"
+                     "L3 cache:  cache size        : %lu KByte\n"
+                     "           cache line size   : %d Byte\n"
+                     "           associativity     : %d\n"
+                     "           write miss policy : %s\n",
+                     SAC_CS_separator, cachesize3, cachelinesize3, associativity3,
+                     WritePolicyName (writepolicy3));
+        }
+
+        printf ("%s", SAC_CS_separator);
+
     } /* if-else (piped) */
-
-    fprintf (stderr,
-             "====================================================\n"
-             "SAC program running with cache simulation enabled!\n"
-             "(at profiling_level: %s)\n"
-             "This might delay program execution significantly.\n"
-             "====================================================\n"
-             "L1 cache:  cache size        : %lu KByte\n"
-             "           cache line size   : %d Byte\n"
-             "           associativity     : %d\n"
-             "           write miss policy : %s\n",
-             ProfilingLevelName (profiling_level), cachesize1, cachelinesize1,
-             associativity1, WritePolicyName (writepolicy1));
-
-    if (cachesize2 > 0) {
-        fprintf (stderr,
-                 "====================================================\n"
-                 "L2 cache:  cache size        : %lu KByte\n"
-                 "           cache line size   : %d Byte\n"
-                 "           associativity     : %d\n"
-                 "           write miss policy : %s\n",
-                 cachesize2, cachelinesize2, associativity2,
-                 WritePolicyName (writepolicy2));
-    }
-
-    if (cachesize3 > 0) {
-        fprintf (stderr,
-                 "====================================================\n"
-                 "L3 cache:  cache size        : %lu KByte\n"
-                 "           cache line size   : %d Byte\n"
-                 "           associativity     : %d\n"
-                 "           write miss policy : %s\n",
-                 cachesize3, cachelinesize3, associativity3,
-                 WritePolicyName (writepolicy3));
-    }
-
-    printf ("====================================================\n");
 
 } /* SAC_CS_Initialize */
 
@@ -710,9 +783,8 @@ RegisterArray (void *baseaddress, int size /* in byte */)
             } else {
                 if (!error_msg_done) {
                     error_msg_done = 1;
-                    SAC_RuntimeError ("libsac_cachesim: more "
-                                      "than %d registered arrays (baseaddress: %lu)\n",
-                                      MAX_SHADOWARRAYS, (ULINT)baseaddress);
+                    SAC_RuntimeError ("libsac_cachesim: more than %d registered arrays.",
+                                      MAX_SHADOWARRAYS);
                 } /* if: !error_msg_done */
             }     /* if-else: i<MAX_SHADOWARRAYS */
         }         /* if: cl != NULL */
@@ -777,15 +849,17 @@ SAC_CS_ShowResults (void)
     long unsigned int accesses;
     float hit_ratio;
 
-    fprintf (stderr, "\n"
-                     "====================================================\n"
-                     "SAC cache simulation results:\n");
+    fprintf (stderr,
+             "\n"
+             "%s"
+             "SAC cache simulation results:\n",
+             SAC_CS_separator);
 
-    if (starttag != NULL) {
+    if (starttag[0] != '#') {
         fprintf (stderr, "Block: %s\n", starttag);
     }
 
-    fprintf (stderr, "====================================================\n");
+    fprintf (stderr, "%s", SAC_CS_separator);
 
     digits = (int)ceil (log10 ((double)SAC_CS_hit[1] + SAC_CS_miss[1]));
 
@@ -823,7 +897,7 @@ SAC_CS_ShowResults (void)
                          SAC_CS_invalid[i],
                          ((float)SAC_CS_invalid[i] / (float)SAC_CS_miss[i]) * 100.0);
             } /* if */
-            fprintf (stderr, "====================================================\n");
+            fprintf (stderr, "%s", SAC_CS_separator);
         } /* if */
     }     /* for: i */
 } /* SAC_CS_ShowResults */
@@ -834,25 +908,29 @@ Start (char *tag)
     int i;
 
     if (sim_incarnation == 0) {
-        starttag = tag;
-        /* set all counters to 0 */
-        for (i = 1; i <= MAX_CACHELEVEL; i++) {
-            SAC_CS_hit[i] = 0;
-            SAC_CS_miss[i] = 0;
-            SAC_CS_cold[i] = 0;
-            SAC_CS_self[i] = 0;
-            SAC_CS_cross[i] = 0;
-            SAC_CS_invalid[i] = 0;
-        } /* for */
+        if (((tag[0] == '#') && global_simulation) || (tag[0] != '#')) {
+            strncpy (starttag, tag, MAX_TAG_LENGTH - 1);
+            sim_incarnation++;
+            /* set all counters to 0 */
+            for (i = 1; i <= MAX_CACHELEVEL; i++) {
+                SAC_CS_hit[i] = 0;
+                SAC_CS_miss[i] = 0;
+                SAC_CS_cold[i] = 0;
+                SAC_CS_self[i] = 0;
+                SAC_CS_cross[i] = 0;
+                SAC_CS_invalid[i] = 0;
+            } /* for */
+        }
     } else {
-        fprintf (stderr,
-                 "Cachesim warning:\n"
-                 "Simulation \"%s\" ignored:\n"
-                 "Simulation \"%s\" still running !\n",
-                 tag, starttag);
+        sim_incarnation++;
+        if (starttag[0] != '#') {
+            fprintf (stderr,
+                     "Cachesim warning:\n"
+                     "Simulation \"%s\" ignored:\n"
+                     "Simulation \"%s\" still running !\n",
+                     tag, starttag);
+        }
     }
-
-    sim_incarnation++;
 
 } /* Start */
 
@@ -863,7 +941,7 @@ Stop (void)
 
     if (sim_incarnation == 0) {
         SAC_CS_ShowResults ();
-        starttag = NULL;
+        starttag[0] = '\0';
     }
 } /* Stop  */
 
@@ -908,7 +986,7 @@ Piped_WriteAccess (void *baseaddress, void *elemaddress)
 static void
 Piped_Start (char *tag)
 {
-    fprintf (SAC_CS_pipehandle, "B %s\n", (tag == NULL) ? "" : tag);
+    fprintf (SAC_CS_pipehandle, "B %s\n", tag);
 } /* Piped_Start */
 
 static void
