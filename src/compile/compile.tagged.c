@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  2002/09/13 23:23:01  dkr
+ * COMPPrfTypeError() corrected
+ *
  * Revision 1.48  2002/09/11 23:09:33  dkr
  * rf_node_info.mac modified.
  *
@@ -3957,6 +3960,8 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
  *
  * Function:
  *   node *COMPPrfTypeError( node *arg_node, node *arg_info)
+ *                           node **check_reuse1, node **check_reuse2,
+ &                           node **get_dim, node **set_shape_icm)
  *
  * Description:
  *
@@ -3964,11 +3969,17 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
  ******************************************************************************/
 
 static node *
-COMPPrfTypeError (node *arg_node, node *arg_info)
+COMPPrfTypeError (node *arg_node, node *arg_info, node **check_reuse1,
+                  node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfTypeError");
+
+    (*check_reuse1) = (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeIcm0 ("NOOP");
+    (*set_shape_icm) = MakeIcm0 ("NOOP");
 
     ret_node = MakeAssignIcm2 ("TYPE_ERROR", MakeNum (CountExprs (PRF_ARGS (arg_node))),
                                DupTree (PRF_ARGS (arg_node)), NULL);
@@ -4009,7 +4020,8 @@ COMP2Prf (node *arg_node, node *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_type_error:
-        ret_node2 = COMPPrfTypeError (arg_node, arg_info);
+        ret_node = COMPPrfTypeError (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                     &get_dim, &set_shape_icm);
         break;
 
         /*
@@ -4150,6 +4162,7 @@ COMP2Prf (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (((ret_node != NULL) && (NODE_TYPE (ret_node) == N_assign)),
                  "no assignment chain found!");
+    DBUG_ASSERT ((get_dim != NULL), "no GET_DIM icm found!");
     DBUG_ASSERT ((set_shape_icm != NULL), "no SET_SHAPE icm found!");
 
     ret_node2 = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
