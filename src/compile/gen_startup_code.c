@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/10/31 18:12:18  cg
+ * Added support for new function tag ST_exported.
+ *
  * Revision 2.28  2000/08/17 10:11:23  dkr
  * *** empty log message ***
  *
@@ -750,6 +753,7 @@ GSCfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_STATUS (arg_node) == ST_regular)
         /*      || (FUNDEF_STATUS(arg_node) == ST_foldfun) */
+        || (FUNDEF_STATUS (arg_node) == ST_exported)
         || (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
              || (FUNDEF_STATUS (arg_node) == ST_imported_class))
             && (FUNDEF_BODY (arg_node) != NULL))) {

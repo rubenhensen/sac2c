@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.5  2000/10/31 18:10:58  cg
+ * Added support for new function tag ST_exported.
+ *
  * Revision 2.4  2000/05/30 12:35:36  dkr
  * functions for old with-loop removed
  *
@@ -118,11 +121,6 @@ FindAllNeededObjects (node *arg_node)
 
     DBUG_ENTER ("FindAllNeededObjects");
 
-#if 0
-  if ((FUNDEF_STATUS(arg_node)==ST_regular)
-      || ((FUNDEF_STATUS(arg_node)==ST_objinitfun)
-          && (FUNDEF_BODY(arg_node)!=NULL))) {
-#endif
     if ((FUNDEF_STATUS (arg_node) != ST_imported_mod)
         && (FUNDEF_STATUS (arg_node) != ST_imported_class)
         && (FUNDEF_BODY (arg_node) != NULL)) {
@@ -143,9 +141,9 @@ FindAllNeededObjects (node *arg_node)
             StoreNeededNodes (FUNDEF_NEEDOBJS (NODELIST_NODE (tmp)), arg_node,
                               ST_artificial);
 
-            if ((FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_regular)
-                || ((FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_objinitfun)
-                    && (FUNDEF_BODY (NODELIST_NODE (tmp)) != NULL))) {
+            if ((FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_imported_mod)
+                && (FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_imported_class)
+                && (FUNDEF_BODY (NODELIST_NODE (tmp)) != NULL)) {
                 /*
                  *  If the called function is not imported, its called functions
                  *  are added to this function's list of needed functions.
