@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 15:23:18  sbs
+ * SacDevCamp04 done
+ *
  * Revision 1.7  2004/08/08 16:05:08  sah
  * fixed some includes.
  *
@@ -26,11 +29,11 @@
  *
  */
 
-#include "types.h"
-#include "new_types.h"
-#include "Error.h"
-
 #include "ssi.h"
+#include "dbug.h"
+#include "new_types.h"
+#include "internal_lib.h"
+#include "Error.h"
 
 /**
  *
@@ -97,7 +100,7 @@ static tvar_ass_handle_fun ass_fix_handle = NULL;
  ***
  ***/
 
-bool
+static bool
 IsIn (tvar *var, int num, tvar **list)
 {
     bool res = FALSE;
@@ -112,7 +115,7 @@ IsIn (tvar *var, int num, tvar **list)
     DBUG_RETURN (res);
 }
 
-void
+static void
 AddBigger (tvar *small, tvar *big)
 {
     tvar **new;
@@ -121,11 +124,11 @@ AddBigger (tvar *small, tvar *big)
     DBUG_ENTER ("AddBigger");
     if (TVAR_MBIG (small) == TVAR_NBIG (small)) {
         TVAR_MBIG (small) += CHUNK_SIZE;
-        new = (tvar **)Malloc (sizeof (tvar *) * TVAR_MBIG (small));
+        new = (tvar **)ILIBmalloc (sizeof (tvar *) * TVAR_MBIG (small));
         for (i = 0; i < TVAR_MBIG (small) - CHUNK_SIZE; i++) {
             new[i] = TVAR_BIG (small, i);
         }
-        Free (TVAR_BIGS (small));
+        ILIBfree (TVAR_BIGS (small));
         TVAR_BIGS (small) = new;
     }
     /*
@@ -137,7 +140,7 @@ AddBigger (tvar *small, tvar *big)
     DBUG_VOID_RETURN;
 }
 
-void
+static void
 AddSmaller (tvar *big, tvar *small)
 {
     tvar **new;
@@ -146,11 +149,11 @@ AddSmaller (tvar *big, tvar *small)
     DBUG_ENTER ("AddSmaller");
     if (TVAR_MSMALL (big) == TVAR_NSMALL (big)) {
         TVAR_MSMALL (big) += CHUNK_SIZE;
-        new = (tvar **)Malloc (sizeof (tvar *) * TVAR_MSMALL (big));
+        new = (tvar **)ILIBmalloc (sizeof (tvar *) * TVAR_MSMALL (big));
         for (i = 0; i < TVAR_MSMALL (big) - CHUNK_SIZE; i++) {
             new[i] = TVAR_SMALL (big, i);
         }
-        Free (TVAR_SMALLS (big));
+        ILIBfree (TVAR_SMALLS (big));
         TVAR_SMALLS (big) = new;
     }
     /*
@@ -162,7 +165,7 @@ AddSmaller (tvar *big, tvar *small)
     DBUG_VOID_RETURN;
 }
 
-void
+static void
 AddHandle (tvar *var, sig_dep *handle)
 {
     sig_dep **new;
@@ -171,11 +174,11 @@ AddHandle (tvar *var, sig_dep *handle)
     DBUG_ENTER ("AddHandle");
     if (TVAR_MASS (var) == TVAR_NASS (var)) {
         TVAR_MASS (var) += CHUNK_SIZE;
-        new = (sig_dep **)Malloc (sizeof (sig_dep *) * TVAR_MASS (var));
+        new = (sig_dep **)ILIBmalloc (sizeof (sig_dep *) * TVAR_MASS (var));
         for (i = 0; i < TVAR_MASS (var) - CHUNK_SIZE; i++) {
             new[i] = TVAR_HAND (var, i);
         }
-        Free (TVAR_HANDS (var));
+        ILIBfree (TVAR_HANDS (var));
         TVAR_HANDS (var) = new;
     }
     /*
@@ -197,7 +200,7 @@ AddHandle (tvar *var, sig_dep *handle)
 /******************************************************************************
  *
  * function:
- *    tvar  * SSIMakeVariable()
+ *    tvar  * SSImakeVariable()
  *
  * description:
  *
@@ -205,13 +208,13 @@ AddHandle (tvar *var, sig_dep *handle)
  ******************************************************************************/
 
 tvar *
-SSIMakeVariable ()
+SSImakeVariable ()
 {
     tvar *res;
 
-    DBUG_ENTER ("SSIMakeVariable");
+    DBUG_ENTER ("SSImakeVariable");
 
-    res = (tvar *)Malloc (sizeof (tvar));
+    res = (tvar *)ILIBmalloc (sizeof (tvar));
     TVAR_NO (res) = var_cntr++;
     TVAR_MAX (res) = NULL;
     TVAR_MIN (res) = NULL;
@@ -236,7 +239,7 @@ SSIMakeVariable ()
 /******************************************************************************
  *
  * function:
- *    bool    SSINewMax( tvar *var, ntype *cmax)
+ *    bool    SSInewMax( tvar *var, ntype *cmax)
  *
  * description:
  *    Note here, that cmax is inspected only!!
@@ -248,7 +251,7 @@ static bool
 NewMax (tvar *var, ntype *cmax, bool outer)
 {
     bool res;
-    CT_res cmp;
+    ct_res cmp;
     int i = 0;
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -256,9 +259,9 @@ NewMax (tvar *var, ntype *cmax, bool outer)
 
     DBUG_ENTER ("NewMax");
 
-    DBUG_EXECUTE ("SSI", tmp_str = TYType2String (cmax, FALSE, 0););
+    DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (cmax, FALSE, 0););
     DBUG_PRINT ("SSI", ("    new max for #%d: %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
 
     if (cmax == NULL) {
         res = TRUE;
@@ -267,13 +270,13 @@ NewMax (tvar *var, ntype *cmax, bool outer)
             /*
              * we did not have a maximum yet
              */
-            TVAR_MAX (var) = TYCopyType (cmax);
+            TVAR_MAX (var) = TYcopyType (cmax);
             res = TRUE;
         } else {
             /*
              * we do have a maximum
              */
-            cmp = TYCmpTypes (cmax, TVAR_MAX (var));
+            cmp = TYcmpTypes (cmax, TVAR_MAX (var));
             if (cmp == TY_dis) {
                 res = FALSE;
             } else {
@@ -283,13 +286,13 @@ NewMax (tvar *var, ntype *cmax, bool outer)
                      * Therefore, we have to check compatibility with the minimum!
                      */
                     if (TVAR_MIN (var) == NULL) {
-                        TYFreeType (TVAR_MAX (var));
-                        TVAR_MAX (var) = TYCopyType (cmax);
+                        TYfreeType (TVAR_MAX (var));
+                        TVAR_MAX (var) = TYcopyType (cmax);
                         res = TRUE;
                     } else {
-                        if (TYLeTypes (TVAR_MIN (var), cmax)) {
-                            TYFreeType (TVAR_MAX (var));
-                            TVAR_MAX (var) = TYCopyType (cmax);
+                        if (TYleTypes (TVAR_MIN (var), cmax)) {
+                            TYfreeType (TVAR_MAX (var));
+                            TVAR_MAX (var) = TYcopyType (cmax);
                             res = TRUE;
                         } else {
                             res = FALSE;
@@ -319,11 +322,11 @@ NewMax (tvar *var, ntype *cmax, bool outer)
 }
 
 bool
-SSINewMax (tvar *var, ntype *cmax)
+SSInewMax (tvar *var, ntype *cmax)
 {
     bool res;
 
-    DBUG_ENTER ("SSINewMax");
+    DBUG_ENTER ("SSInewMax");
 
     res = NewMax (var, cmax, TRUE);
 
@@ -353,7 +356,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
 
     if ((TVAR_NASS (var) > 0) && ass_system_active
         && ((old_min == NULL)
-            || ((old_min != NULL) && (TYCmpTypes (old_min, new_min) == TY_lt)))) {
+            || ((old_min != NULL) && (TYcmpTypes (old_min, new_min) == TY_lt)))) {
 
         TVAR_MIN (var) = new_min;
         for (i = 0; i < TVAR_NASS (var); i++) {
@@ -362,13 +365,13 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
         }
 
         if (!ok) {
-            ABORT (linenum, ("ugly squad type contradiction"));
+            ABORT (global.linenum, ("ugly squad type contradiction"));
         }
     } else {
         TVAR_MIN (var) = new_min;
     }
     if (old_min != NULL) {
-        TYFreeType (old_min);
+        TYfreeType (old_min);
     }
 
     DBUG_VOID_RETURN;
@@ -377,7 +380,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
 /******************************************************************************
  *
  * function:
- *    bool    SSINewMin( tvar *var, ntype *cmin)
+ *    bool    SSInewMin( tvar *var, ntype *cmin)
  *
  * description:
  *
@@ -396,9 +399,9 @@ NewMin (tvar *var, ntype *cmin, bool outer)
 
     DBUG_ENTER ("NewMin");
 
-    DBUG_EXECUTE ("SSI", tmp_str = TYType2String (cmin, FALSE, 0););
+    DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (cmin, FALSE, 0););
     DBUG_PRINT ("SSI", ("    new min for #%d: %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
 
     if (cmin == NULL) {
         res = TRUE;
@@ -407,25 +410,25 @@ NewMin (tvar *var, ntype *cmin, bool outer)
             /*
              * we did not have a minimum yet
              */
-            tmp = TYCopyType (cmin);
+            tmp = TYcopyType (cmin);
         } else {
             /*
              * we do have a minimum
              */
-            tmp = TYLubOfTypes (cmin, TVAR_MIN (var));
+            tmp = TYlubOfTypes (cmin, TVAR_MIN (var));
         }
 
         /*
          * Now, we check whether tmp can be used as new minimum:
          */
-        if ((tmp != NULL) /* TYLubOfTypes may return NULL iff TY_dis! */
+        if ((tmp != NULL) /* TYlubOfTypes may return NULL iff TY_dis! */
             && ((TVAR_MAX (var) == NULL)
-                || ((TVAR_MAX (var) != NULL) && (TYLeTypes (tmp, TVAR_MAX (var)))))) {
+                || ((TVAR_MAX (var) != NULL) && (TYleTypes (tmp, TVAR_MAX (var)))))) {
             /*
              * tmp is a subtype of the existing maximum
              * Therefore, tmp can replace the old minimum (iff it exists)
              */
-            InsertMinAndCheckAssumption (var, TYCopyType (tmp));
+            InsertMinAndCheckAssumption (var, TYcopyType (tmp));
             /*
              * if the min has been changed we have to enforce new mins to all BIGs
              */
@@ -435,7 +438,7 @@ NewMin (tvar *var, ntype *cmin, bool outer)
                     i++;
                 }
             }
-            TYFreeType (tmp);
+            TYfreeType (tmp);
         } else {
             res = FALSE;
         }
@@ -445,11 +448,11 @@ NewMin (tvar *var, ntype *cmin, bool outer)
 }
 
 bool
-SSINewMin (tvar *var, ntype *cmin)
+SSInewMin (tvar *var, ntype *cmin)
 {
     bool res;
 
-    DBUG_ENTER ("SSINewMin");
+    DBUG_ENTER ("SSInewMin");
     res = NewMin (var, cmin, TRUE);
     DBUG_RETURN (res);
 }
@@ -457,7 +460,7 @@ SSINewMin (tvar *var, ntype *cmin)
 /******************************************************************************
  *
  * function:
- *    bool    SSINewRel( tvar *small, tvar *big)
+ *    bool    SSInewRel( tvar *small, tvar *big)
  *
  * description:
  *
@@ -465,12 +468,12 @@ SSINewMin (tvar *var, ntype *cmin)
  ******************************************************************************/
 
 bool
-SSINewRel (tvar *small, tvar *big)
+SSInewRel (tvar *small, tvar *big)
 {
     bool res;
     int i;
 
-    DBUG_ENTER ("SSINewRel");
+    DBUG_ENTER ("SSInewRel");
 
     DBUG_PRINT ("SSI", ("    new rel #%d <= #%d", TVAR_NO (small), TVAR_NO (big)));
 
@@ -501,8 +504,8 @@ SSINewRel (tvar *small, tvar *big)
             }
         }
 
-        res = SSINewMax (small, TVAR_MAX (big));
-        res = (res && SSINewMin (big, TVAR_MIN (small)));
+        res = SSInewMax (small, TVAR_MAX (big));
+        res = (res && SSInewMin (big, TVAR_MIN (small)));
     }
     DBUG_RETURN (res);
 }
@@ -510,7 +513,7 @@ SSINewRel (tvar *small, tvar *big)
 /******************************************************************************
  *
  * function:
- *    bool    SSINewTypeRel( tvar *small, tvar *big)
+ *    bool    SSInewTypeRel( tvar *small, tvar *big)
  *
  * description:
  *
@@ -518,23 +521,23 @@ SSINewRel (tvar *small, tvar *big)
  ******************************************************************************/
 
 bool
-SSINewTypeRel (ntype *small, ntype *big)
+SSInewTypeRel (ntype *small, ntype *big)
 {
     bool res;
 
-    DBUG_ENTER ("SSINewTypeRel");
+    DBUG_ENTER ("SSInewTypeRel");
 
-    if (TYIsAlpha (small)) {
-        if (TYIsAlpha (big)) {
-            res = SSINewRel (TYGetAlpha (small), TYGetAlpha (big));
+    if (TYisAlpha (small)) {
+        if (TYisAlpha (big)) {
+            res = SSInewRel (TYgetAlpha (small), TYgetAlpha (big));
         } else {
-            res = SSINewMax (TYGetAlpha (small), big);
+            res = SSInewMax (TYgetAlpha (small), big);
         }
     } else {
-        if (TYIsAlpha (big)) {
-            res = SSINewMin (TYGetAlpha (big), small);
+        if (TYisAlpha (big)) {
+            res = SSInewMin (TYgetAlpha (big), small);
         } else {
-            res = TYLeTypes (small, big);
+            res = TYleTypes (small, big);
         }
     }
 
@@ -544,7 +547,7 @@ SSINewTypeRel (ntype *small, ntype *big)
 /******************************************************************************
  *
  * function:
- *    bool     SSIInitAssumptionSystem( tvar_ass_handle_fun HandleContra,
+ *    bool     SSIinitAssumptionSystem( tvar_ass_handle_fun HandleContra,
  *                                         tvar_ass_handle_fun HandleFix)
  *
  * description:
@@ -553,11 +556,11 @@ SSINewTypeRel (ntype *small, ntype *big)
  ******************************************************************************/
 
 bool
-SSIInitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun HandleFix)
+SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun HandleFix)
 {
     bool res;
 
-    DBUG_ENTER ("SSIInitAssumptionSystem");
+    DBUG_ENTER ("SSIinitAssumptionSystem");
 
     ass_contra_handle = HandleContra;
     ass_fix_handle = HandleFix;
@@ -572,7 +575,7 @@ SSIInitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun H
 /******************************************************************************
  *
  * function:
- *    bool     SSIAssumeLow( tvar *var, sig_dep *handle)
+ *    bool     SSIassumeLow( tvar *var, sig_dep *handle)
  *
  * description:
  *
@@ -580,9 +583,9 @@ SSIInitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun H
  ******************************************************************************/
 
 bool
-SSIAssumeLow (tvar *var, sig_dep *handle)
+SSIassumeLow (tvar *var, sig_dep *handle)
 {
-    DBUG_ENTER ("SSIAssumeLow");
+    DBUG_ENTER ("SSIassumeLow");
 
     DBUG_PRINT ("SSI",
                 ("adding assumption for variable #%d, handle %p", TVAR_NO (var), handle));
@@ -593,7 +596,7 @@ SSIAssumeLow (tvar *var, sig_dep *handle)
 /******************************************************************************
  *
  * function:
- *    bool    SSIFixLow( tvar *var)
+ *    bool    SSIfixLow( tvar *var)
  *
  * description:
  *
@@ -601,7 +604,7 @@ SSIAssumeLow (tvar *var, sig_dep *handle)
  ******************************************************************************/
 
 bool
-SSIFixLow (tvar *var)
+SSIfixLow (tvar *var)
 {
     sig_dep **hands;
     bool res;
@@ -610,15 +613,15 @@ SSIFixLow (tvar *var)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SSIFixLow");
+    DBUG_ENTER ("SSIfixLow");
 
-    DBUG_EXECUTE ("SSI", tmp_str = TYType2String (TVAR_MIN (var), FALSE, 0););
+    DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0););
     DBUG_PRINT ("SSI", ("fixing variable #%d to %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
 
-    SSINewMax (var, SSIGetMin (var));
+    SSInewMax (var, SSIgetMin (var));
 
-    res = (SSIGetMin (var) != NULL);
+    res = (SSIgetMin (var) != NULL);
 
     hands = TVAR_HANDS (var);
     n = TVAR_NASS (var);
@@ -633,7 +636,7 @@ SSIFixLow (tvar *var)
             res = res && ass_fix_handle (hands[i]);
         }
 
-        hands = Free (hands);
+        hands = ILIBfree (hands);
     }
 
     DBUG_RETURN ((res && ass_system_active));
@@ -642,52 +645,52 @@ SSIFixLow (tvar *var)
 /******************************************************************************
  *
  * function:
- *    bool    SSIIsFix( tvar *var)
- *    bool    SSIIsLe( tvar *var1, tvar *var2)
- *    ntype * SSIGetMax( tvar *var)
- *    ntype * SSIGetMin( tvar *var)
+ *    bool    SSIisFix( tvar *var)
+ *    bool    SSIisLe( tvar *var1, tvar *var2)
+ *    ntype * SSIgetMax( tvar *var)
+ *    ntype * SSIgetMin( tvar *var)
  *
  * description:
  *    functions for retrieving the type restrictions imposed sofar.
- *    SSIIsFix checks whether MAX and MIN are identical, SSIGetMax
- *    and SSIGetMin, respectively, yield the MAX and the MIN type
+ *    SSIisFix checks whether MAX and MIN are identical, SSIgetMax
+ *    and SSIgetMin, respectively, yield the MAX and the MIN type
  *    attached.
  *
  ******************************************************************************/
 
 bool
-SSIIsFix (tvar *var)
+SSIisFix (tvar *var)
 {
-    DBUG_ENTER ("SSIIsFix");
+    DBUG_ENTER ("SSIisFix");
     DBUG_RETURN ((TVAR_MIN (var) != NULL) && (TVAR_MAX (var) != NULL)
-                 && TYEqTypes (TVAR_MAX (var), TVAR_MIN (var)));
+                 && TYeqTypes (TVAR_MAX (var), TVAR_MIN (var)));
 }
 
 bool
-SSIIsLe (tvar *var1, tvar *var2)
+SSIisLe (tvar *var1, tvar *var2)
 {
-    DBUG_ENTER ("SSIIsLe");
+    DBUG_ENTER ("SSIisLe");
     DBUG_RETURN (IsIn (var2, TVAR_NBIG (var1), TVAR_BIGS (var1)));
 }
 
 ntype *
-SSIGetMax (tvar *var)
+SSIgetMax (tvar *var)
 {
-    DBUG_ENTER ("SSIGetMax");
+    DBUG_ENTER ("SSIgetMax");
     DBUG_RETURN (TVAR_MAX (var));
 }
 
 ntype *
-SSIGetMin (tvar *var)
+SSIgetMin (tvar *var)
 {
-    DBUG_ENTER ("SSIGetMin");
+    DBUG_ENTER ("SSIgetMin");
     DBUG_RETURN (TVAR_MIN (var));
 }
 
 /******************************************************************************
  *
  * function:
- *    char  * SSIVariable2String( tvar *var)
+ *    char  * SSIvariable2String( tvar *var)
  *
  * description:
  *
@@ -695,30 +698,30 @@ SSIGetMin (tvar *var)
  ******************************************************************************/
 
 char *
-SSIVariable2String (tvar *var)
+SSIvariable2String (tvar *var)
 {
     char buf[4096];
     char *tmp = &buf[0];
     char *tmp_str, *tmp_str2;
 
-    DBUG_ENTER ("SSIVariable2String");
+    DBUG_ENTER ("SSIvariable2String");
     if (var == NULL) {
         tmp += sprintf (tmp, "--");
     } else {
-        tmp_str = TYType2String (TVAR_MIN (var), FALSE, 0);
-        tmp_str2 = TYType2String (TVAR_MAX (var), FALSE, 0);
+        tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0);
+        tmp_str2 = TYtype2String (TVAR_MAX (var), FALSE, 0);
         tmp += sprintf (tmp, "#%d in [ %s, %s]", TVAR_NO (var), tmp_str, tmp_str2);
-        tmp_str = Free (tmp_str);
-        tmp_str2 = Free (tmp_str2);
+        tmp_str = ILIBfree (tmp_str);
+        tmp_str2 = ILIBfree (tmp_str2);
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    DBUG_RETURN (ILIBstringCopy (buf));
 }
 
 /******************************************************************************
  *
  * function:
- *    char  * SSIVariable2DebugString( tvar *var)
+ *    char  * SSIvariable2DebugString( tvar *var)
  *
  * description:
  *
@@ -726,22 +729,22 @@ SSIVariable2String (tvar *var)
  ******************************************************************************/
 
 char *
-SSIVariable2DebugString (tvar *var)
+SSIvariable2DebugString (tvar *var)
 {
     char buf[256];
     char *tmp = &buf[0];
     char *tmp_str, *tmp_str2;
     int i;
 
-    DBUG_ENTER ("SSIVariable2DebugString");
+    DBUG_ENTER ("SSIvariable2DebugString");
     if (var == NULL) {
         tmp += sprintf (tmp, "--");
     } else {
-        tmp_str = TYType2String (TVAR_MIN (var), FALSE, 0);
-        tmp_str2 = TYType2String (TVAR_MAX (var), FALSE, 0);
+        tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0);
+        tmp_str2 = TYtype2String (TVAR_MAX (var), FALSE, 0);
         tmp += sprintf (tmp, "#%d: in [ %s, %s] le <", TVAR_NO (var), tmp_str, tmp_str2);
-        tmp_str = Free (tmp_str);
-        tmp_str2 = Free (tmp_str2);
+        tmp_str = ILIBfree (tmp_str);
+        tmp_str2 = ILIBfree (tmp_str2);
 
         for (i = 0; i < TVAR_NBIG (var); i++) {
             tmp += sprintf (tmp, " %d", TVAR_NO (TVAR_BIG (var, i)));
@@ -753,7 +756,7 @@ SSIVariable2DebugString (tvar *var)
         tmp += sprintf (tmp, ">");
     }
 
-    DBUG_RETURN (StringCopy (buf));
+    DBUG_RETURN (ILIBstringCopy (buf));
 }
 
 /* @} */ /* addtogroup ntc */
