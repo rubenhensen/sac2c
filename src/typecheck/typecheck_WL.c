@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 3.3  2001/03/05 17:02:39  sbs
+ * switched from CF to CO for prf_add_AxA.
+ *
  * Revision 3.2  2001/02/23 18:04:22  sbs
  * extended for negative take's and drop's in genarray
  *
@@ -183,7 +186,8 @@ TCWLprf (node *arg_node, node *arg_info)
                 || N_num == NODE_TYPE (PRF_ARG2 (arg_node)))) {
             /* CF prf now. */
             if ((PRF_PRF (arg_node) == F_psi) || (PRF_PRF (arg_node) == F_reshape)
-                || (PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)) {
+                || (PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)
+                || (PRF_PRF (arg_node) == F_add_AxA)) {
                 if (IsConstArray (PRF_ARG1 (arg_node))
                     && IsConstArray (PRF_ARG2 (arg_node))) {
                     arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
@@ -194,8 +198,10 @@ TCWLprf (node *arg_node, node *arg_info)
                         res = COReshape (arg1, arg2);
                     } else if (PRF_PRF (arg_node) == F_take) {
                         res = COTake (arg1, arg2);
-                    } else {
+                    } else if (PRF_PRF (arg_node) == F_drop) {
                         res = CODrop (arg1, arg2);
+                    } else {
+                        res = COAdd (arg1, arg2);
                     }
                     arg1 = COFreeConstant (arg1);
                     arg2 = COFreeConstant (arg2);
