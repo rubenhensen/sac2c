@@ -9,7 +9,6 @@ insert_vardec.c
 insert_vardec.h
 lac2fun.c
 lac2fun.h
-while2do.h
 SSATransform.h
 SSATransform.c
 UndoSSATransform.c
