@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/11/15 18:06:29  dkr
+ * VARNO replaced, INFO_VARNO with changed signature
+ * INFO_DCR_VARNO replaced
+ *
  * Revision 2.2  1999/04/19 11:36:03  jhs
  * TRUE and FALSE from internal_lib.h will be used from now on.
  *
@@ -40,9 +44,6 @@
  *
  * Revision 1.16  1997/04/23  12:52:36  cg
  * decleration changed to declaration
- *
- * Revision 1.15  1996/09/11  14:25:55  asi
- * *** empty log message ***
  *
  * Revision 1.14  1996/09/11  14:13:08  asi
  * DFRmodul added
@@ -184,7 +185,7 @@ DeadCodeRemoval (node *arg_node, node *info_node)
  *  global vars   : --
  *  internal funs : --
  *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
- *  macros        : VARNO, FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_VARDEC,
+ *  macros        : FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_VARDEC,
  *                  FUNDEF_NEXT, FUNDEF_VARNO, FREE, INFO_DEF, INFO_USE, INFO_ACT,
  *
  *  remarks       : --
@@ -195,20 +196,20 @@ DCRfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DCRfundef");
     DBUG_PRINT ("DCR", ("Dead Code Removal in function: %s", FUNDEF_NAME (arg_node)));
-    INFO_VARNO = FUNDEF_VARNO (arg_node);
+    INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
     INFO_DEF = FUNDEF_DEFMASK (arg_node);
     INFO_USE = FUNDEF_USEMASK (arg_node);
-    INFO_VARNO = FUNDEF_VARNO (arg_node);
+    INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
     if (FUNDEF_BODY (arg_node))
         FUNDEF_VARDEC (arg_node) = OPTTrav (FUNDEF_VARDEC (arg_node), arg_info, arg_node);
     INFO_DEF = NULL;
     INFO_USE = NULL;
-    INFO_VARNO = 0;
+    INFO_VARNO (arg_info) = 0;
 
     DBUG_RETURN (arg_node);
 }
@@ -238,10 +239,10 @@ ACTfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("DCR",
                 ("Active Asssignment Search in function: %s", FUNDEF_NAME (arg_node)));
 
-    INFO_DCR_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
+    INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
     INFO_DCR_TRAVTYPE (arg_info) = N_assign;
-    INFO_DCR_ACT (arg_info) = GenMask (VARNO);
+    INFO_DCR_ACT (arg_info) = GenMask (INFO_VARNO (arg_info));
     if (NULL != FUNDEF_BODY (arg_node) && NULL != FUNDEF_INSTR (arg_node))
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
     FREE (INFO_ACT);
@@ -328,8 +329,8 @@ DCRassign (node *arg_node, node *arg_info)
                 break;
             }
         }
-        MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO);
-        MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
+        MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO (arg_info));
+        MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO (arg_info));
         arg_node = FreeNode (arg_node);
         dead_expr++;
     } else
@@ -396,7 +397,7 @@ ACTassign (node *arg_node, node *arg_info)
              */
             if (!((instrtype == N_let) && (NODE_TYPE (LET_EXPR (instr)) == N_id)
                   && (LET_VARNO (instr) == ID_VARNO (LET_EXPR (instr))))) {
-                for (i = 0; i < INFO_DCR_VARNO (arg_info); i++) {
+                for (i = 0; i < INFO_VARNO (arg_info); i++) {
                     if (ASSIGN_DEFMASK (arg_node)[i] && INFO_DCR_ACT (arg_info)[i]) {
                         ASSIGN_STATUS (arg_node) = active;
                         INFO_DCR_NEWACT (arg_info) = TRUE;
@@ -435,7 +436,7 @@ ACTassign (node *arg_node, node *arg_info)
              *    mark vars on the LHS as passive (a,b)
              *    mark vars on the RHS as active  (c,d,e)
              */
-            for (i = 0; i < VARNO; i++) {
+            for (i = 0; i < INFO_VARNO (arg_info); i++) {
                 if (ASSIGN_DEFMASK (arg_node)[i])
                     INFO_DCR_ACT (arg_info)[i] = FALSE;
                 if (ASSIGN_USEMASK (arg_node)[i])
@@ -469,19 +470,19 @@ ACTcond (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("ACTcond");
-    old_INFO_ACT = DupMask (INFO_ACT, INFO_VARNO);
+    old_INFO_ACT = DupMask (INFO_ACT, INFO_VARNO (arg_info));
     DBUG_PRINT ("DCR", ("Travers cond-then-body BEGIN"));
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     DBUG_PRINT ("DCR", ("Travers cond-then-body END"));
     then_ACT = INFO_ACT;
-    INFO_ACT = DupMask (old_INFO_ACT, INFO_VARNO);
+    INFO_ACT = DupMask (old_INFO_ACT, INFO_VARNO (arg_info));
     DBUG_PRINT ("DCR", ("Travers cond-else-body BEGIN"));
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
     DBUG_PRINT ("DCR", ("Travers cond-else-body END"));
     else_ACT = INFO_ACT;
     INFO_ACT = old_INFO_ACT;
 
-    for (i = 0; i < VARNO; i++) {
+    for (i = 0; i < INFO_VARNO (arg_info); i++) {
         INFO_ACT[i]
           = ((INFO_ACT[i]
               && !(COND_THENDEFMASK (arg_node)[i] || COND_ELSEDEFMASK (arg_node)[i]))
@@ -541,7 +542,7 @@ ACTdo (node *arg_node, node *arg_info)
     nodetype old_nodetype;
 
     DBUG_ENTER ("ACTdo");
-    for (i = 0; i < INFO_VARNO; i++) {
+    for (i = 0; i < INFO_VARNO (arg_info); i++) {
         if (0 < DO_TERMMASK (arg_node)[i])
             INFO_ACT[i] = TRUE;
     }
@@ -614,9 +615,9 @@ ACTwhile (node *arg_node, node *arg_info)
     long *old_INFOACT;
 
     DBUG_ENTER ("ACTwhile");
-    old_INFOACT = DupMask (INFO_ACT, INFO_VARNO);
+    old_INFOACT = DupMask (INFO_ACT, INFO_VARNO (arg_info));
 
-    for (i = 0; i < INFO_VARNO; i++) {
+    for (i = 0; i < INFO_VARNO (arg_info); i++) {
         if (0 < WHILE_TERMMASK (arg_node)[i])
             INFO_ACT[i] = TRUE;
     }
@@ -636,7 +637,7 @@ ACTwhile (node *arg_node, node *arg_info)
         INFO_TRAVTYPE = N_while;
     } while (INFO_NEWACT);
 
-    for (i = 0; i < INFO_VARNO; i++)
+    for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i] = INFO_ACT[i] || WHILE_TERMMASK (arg_node)[i] || old_INFOACT[i];
 
     FREE (old_INFOACT);
@@ -691,7 +692,7 @@ ACTwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("ACTwith");
     old_INFOACT = INFO_ACT;
-    INFO_ACT = GenMask (INFO_VARNO);
+    INFO_ACT = GenMask (INFO_VARNO (arg_info));
 
     DBUG_PRINT ("DCR", ("Travers with-body BEGIN"));
     switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
@@ -717,7 +718,7 @@ ACTwith (node *arg_node, node *arg_info)
     }
     DBUG_PRINT ("DCR", ("Travers with-body END"));
 
-    /*   for(i=0;i<INFO_VARNO;i++) { */
+    /*   for(i=0;i<INFO_VARNO(arg_info);i++) { */
     /*     INFO_ACT[i] = INFO_ACT[i]  */
     /*       || (old_INFOACT[i] && !(WITH_GENDEFMASK(arg_node)[i])) */
     /*       || WITH_GENUSEMASK(arg_node)[i]  */
@@ -747,7 +748,7 @@ ACTwith (node *arg_node, node *arg_info)
         the index vector will keep it's name but iv is not active while
         processing the WL. */
 
-    for (i = 0; i < INFO_VARNO; i++)
+    for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i] || WITH_GENUSEMASK (arg_node)[i]
                       || WITH_OPERATORUSEMASK (arg_node)[i];
 
@@ -828,7 +829,7 @@ ACTNwith (node *arg_node, node *arg_info)
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
     /* activate variables used in N_Nwithop (neutral elt,...) */
-    for (i = 0; i < INFO_VARNO; i++)
+    for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i] = INFO_ACT[i] || NWITHOP_MASK (NWITH_WITHOP (arg_node), 1)[i];
 
     DBUG_RETURN (arg_node);
@@ -864,7 +865,7 @@ ACTNpart (node *arg_node, node *arg_info)
 
     /* create new scope */
     old_INFOACT = INFO_ACT;
-    INFO_ACT = GenMask (INFO_VARNO);
+    INFO_ACT = GenMask (INFO_VARNO (arg_info));
 
     /* activate all used vars in body. */
     /* if code is shared between Nparts this code will be traversed
@@ -872,14 +873,14 @@ ACTNpart (node *arg_node, node *arg_info)
        differ. (Well, practically the index variables will be identical.) */
     NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
 
-    for (i = 0; i < INFO_VARNO; i++)
+    for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i]
           = (INFO_ACT[i] && !NPART_MASK (arg_node, 0)[i]) || /* deactivate withid vars */
             NPART_MASK (arg_node,
                         1)[i]; /* activate all vars which are used in the generator */
 
     /* merge ACT lists */
-    for (i = 0; i < INFO_VARNO; i++)
+    for (i = 0; i < INFO_VARNO (arg_info); i++)
         INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i];
 
     FREE (old_INFOACT);
