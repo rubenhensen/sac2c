@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2004/11/25 11:17:17  mwe
+ * copy FUNDEF_WRAPPERTYPE
+ *
  * Revision 3.120  2004/11/24 18:37:11  mwe
  * new DUP-functions added
  * only few functions implemented, other functions contain DBUG_ASSERT
@@ -1184,6 +1187,11 @@ DUPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ISLACFUN (new_node)) {
         FUNDEF_INT_ASSIGN (new_node)
           = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
+    }
+
+    if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
+
+        FUNDEF_WRAPPERTYPE (new_node) = TYcopyType (FUNDEF_WRAPPERTYPE (arg_node));
     }
 
     INFO_DUP_FUNDEF (arg_info) = old_fundef;
