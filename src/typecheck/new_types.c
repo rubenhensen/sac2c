@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/04/01 17:12:57  sbs
+ * started integrating TY_akv i.e. constant types ....
+ *
  * Revision 3.43  2003/03/17 19:45:03  dkr
  * CreateWrapperCode() modified: [+] is handled correctly now
  *
@@ -113,54 +116,25 @@
  * Revision 3.11  2002/08/09 13:01:18  dkr
  * TYType2WrapperCode() added
  *
- * Revision 3.10  2002/08/06 08:41:48  sbs
- * just to please gcc...
- *
- * Revision 3.9  2002/08/06 08:26:49  sbs
- * some vars initialized to please gcc for the product version.
- *
- * Revision 3.8  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker!!
- *
- * Revision 3.7  2002/05/31 14:51:54  sbs
- * intermediate version to ensure compilable overall state.
- *
- * Revision 3.6  2002/03/12 15:14:15  sbs
- * AUDGZ types added functions for handling function types added
- * type comparison as well as Type2String implemented.
- *
- * Revision 3.5  2001/05/17 11:34:07  sbs
- * return value of Free now used ...
- *
- * Revision 3.4  2001/05/17 09:20:42  sbs
- * MALLOC FREE aliminated
- *
- * Revision 3.3  2001/03/22 20:38:52  dkr
- * include of tre.h eliminated
- *
- * Revision 3.2  2001/03/15 15:17:47  dkr
- * signature of Type2String modified
- *
- * Revision 3.1  2000/11/20 18:00:09  sacbase
- * new release made
- *
- * Revision 1.4  2000/11/14 13:19:29  dkr
- * no '... might be used uninitialized' warnings anymore
- *
- * Revision 1.3  2000/10/24 11:46:10  dkr
- * MakeType renamed into MakeTypes
- *
- * Revision 1.2  1999/10/20 15:45:10  sbs
- * some code brushing done.
+ * [eliminated] ....
  *
  * Revision 1.1  1999/10/20 12:52:00  sbs
  * Initial revision
  *
  */
 
-/*
+/**
  *
- * This module implements a new abstract data type for representing
+ * @addtogroup ntc
+ *
+ * @{
+ */
+
+/**
+ *
+ * @file new_types.c
+ *
+ * This file implements a new abstract data type for representing
  * types. This file describes the interface to that module.
  * Unfortunately, it is not yet used in all parts of the compiler 8-(.
  * In fact, the only part where it is used is the new typechecker.
@@ -262,6 +236,7 @@ typedef union {
     usertype a_user;
     shape *a_aks;
     attr_akd a_akd;
+    constant *a_akv;
     struct NTYPE *a_ibase;
     int a_idim;
     shape *a_ishape;
@@ -313,6 +288,7 @@ struct NTYPE {
 #define SYMBOL_MOD(n) (n->typeattr.a_symbol.mod)
 #define SYMBOL_NAME(n) (n->typeattr.a_symbol.name)
 #define USER_TYPE(n) (n->typeattr.a_user)
+#define AKV_CONST(n) (n->typeattr.a_akv)
 #define AKS_SHP(n) (n->typeattr.a_aks)
 #define AKD_SHP(n) (n->typeattr.a_akd.shp)
 #define AKD_DOTS(n) (n->typeattr.a_akd.dots)
@@ -333,6 +309,7 @@ struct NTYPE {
 /*
  * Macros for accessing the sons...
  */
+#define AKV_BASE(n) (n->sons[0])
 #define AKS_BASE(n) (n->sons[0])
 #define AKD_BASE(n) (n->sons[0])
 #define AUDGZ_BASE(n) (n->sons[0])
@@ -626,6 +603,7 @@ TYGetMod (ntype *symb)
 /******************************************************************************
  *
  * function:
+ *   ntype * TYMakeAKV( ntype *scalar, constant *val)
  *   ntype * TYMakeAKS( ntype *scalar, shape *shp)
  *   ntype * TYMakeAKD( ntype *scalar, int dots, shape *shp)
  *   ntype * TYMakeAUD( ntype *scalar)
@@ -637,6 +615,20 @@ TYGetMod (ntype *symb)
  *   Several functions for creating array-types.
  *
  ******************************************************************************/
+
+ntype *
+TYMakeAKV (ntype *scalar, constant *val)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TYMakeAKV");
+
+    res = MakeNtype (TC_akv, 1);
+    AKV_CONST (res) = val;
+    AKV_BASE (res) = scalar;
+
+    DBUG_RETURN (res);
+}
 
 ntype *
 TYMakeAKS (ntype *scalar, shape *shp)
@@ -723,9 +715,12 @@ TYGetDim (ntype *array)
     int res;
 
     DBUG_ENTER ("TYGetDim");
-    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akd),
-                 "TYGetDim applied to ther than AKS or AKD type!");
-    if (NTYPE_CON (array) == TC_aks) {
+    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
+                   || (NTYPE_CON (array) == TC_akd),
+                 "TYGetDim applied to ther than AKV, AKS or AKD type!");
+    if (NTYPE_CON (array) == TC_akv) {
+        res = COGetDim (AKV_CONST (array));
+    } else if (NTYPE_CON (array) == TC_aks) {
         res = SHGetDim (AKS_SHP (array));
     } else {
         shp = AKD_SHP (array);
@@ -745,9 +740,12 @@ TYGetShape (ntype *array)
     shape *res;
 
     DBUG_ENTER ("TYGetShape");
-    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akd),
-                 "TYGetShape applied to ther than AKS or AKD type!");
-    if (NTYPE_CON (array) == TC_aks) {
+    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
+                   || (NTYPE_CON (array) == TC_akd),
+                 "TYGetShape applied to ther than AKV, AKS or AKD type!");
+    if (NTYPE_CON (array) == TC_akv) {
+        res = COGetShape (AKV_CONST (array));
+    } else if (NTYPE_CON (array) == TC_aks) {
         res = AKS_SHP (array);
     } else {
         res = AKD_SHP (array);
@@ -760,8 +758,9 @@ ntype *
 TYGetScalar (ntype *array)
 {
     DBUG_ENTER ("TYGetScalar");
-    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akd)
-                   || (NTYPE_CON (array) == TC_audgz) || (NTYPE_CON (array) == TC_aud),
+    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
+                   || (NTYPE_CON (array) == TC_akd) || (NTYPE_CON (array) == TC_audgz)
+                   || (NTYPE_CON (array) == TC_aud),
                  "TYGetScalar applied to other than array type!");
     DBUG_RETURN (NTYPE_SON (array, 0));
 }
@@ -2499,6 +2498,7 @@ TYGetAlpha (ntype *type)
  *    bool TYIsAlpha( ntype *type)
  *    bool TYIsFixedAlpha( ntype *type)
  *    bool TYIsNonFixedAlpha( ntype *type)
+ *    bool TYIsAKV( ntype *type)
  *    bool TYIsAKS( ntype *type)
  *    bool TYIsAKD( ntype *type)
  *    bool TYIsAUDGZ( ntype *type)
@@ -2565,6 +2565,13 @@ TYIsNonFixedAlpha (ntype *type)
 }
 
 bool
+TYIsAKV (ntype *type)
+{
+    DBUG_ENTER ("TYIsAKV");
+    DBUG_RETURN (NTYPE_CON (type) == TC_akv);
+}
+
+bool
 TYIsAKS (ntype *type)
 {
     DBUG_ENTER ("TYIsAKS");
@@ -2597,7 +2604,8 @@ TYIsArray (ntype *type)
 {
     DBUG_ENTER ("TYIsArray");
     DBUG_RETURN ((NTYPE_CON (type) == TC_aud) || (NTYPE_CON (type) == TC_audgz)
-                 || (NTYPE_CON (type) == TC_akd) || (NTYPE_CON (type) == TC_aks));
+                 || (NTYPE_CON (type) == TC_akd) || (NTYPE_CON (type) == TC_aks)
+                 || (NTYPE_CON (type) == TC_akv));
 }
 
 bool
@@ -5323,3 +5331,5 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
     DBUG_RETURN (assigns);
 }
+
+/* @} */ /* addtogroup ntc */

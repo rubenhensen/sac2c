@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/04/01 17:12:57  sbs
+ * started integrating TY_akv i.e. constant types ....
+ *
  * Revision 3.14  2002/11/04 13:21:22  sbs
  * TYDeNestTypes added !
  *
@@ -196,6 +199,7 @@ typedef struct NTYPE ntype;
 #include "types.h"
 #include "free.h"
 
+#include "constants.h"
 #include "shape.h"
 #include "ssi.h"
 
@@ -228,6 +232,7 @@ extern char *TYGetMod (ntype *symb);
 /*
  * Array Types: AKS / AKD / AUDGZ / AUD
  */
+extern ntype *TYMakeAKV (ntype *scalar, constant *val);
 extern ntype *TYMakeAKS (ntype *scalar, shape *shp);
 extern ntype *TYMakeAKD (ntype *scalar, int dots, shape *shp);
 extern ntype *TYMakeAUDGZ (ntype *scalar);
@@ -299,6 +304,7 @@ extern bool TYIsScalar (ntype *);
 extern bool TYIsAlpha (ntype *);
 extern bool TYIsFixedAlpha (ntype *);
 extern bool TYIsNonFixedAlpha (ntype *);
+extern bool TYIsAKV (ntype *);
 extern bool TYIsAKS (ntype *);
 extern bool TYIsAKD (ntype *);
 extern bool TYIsAUDGZ (ntype *);
