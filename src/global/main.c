@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/07/30 17:24:35  sbs
+ * switch between old and new tc lifted into main
+ *
  * Revision 3.49  2004/07/23 15:53:50  ktr
  * - removed OPT_BLIR
  * - removed -ktr
@@ -438,7 +441,12 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = Typecheck (syntax_tree); /* type_tab */
+
+    if (sbs == 1) {
+        syntax_tree = NewTypeCheck (syntax_tree); /* ntc_tab */
+    } else {
+        syntax_tree = Typecheck (syntax_tree); /* type_tab */
+    }
     PHASE_DONE_EPILOG;
 
     if (profileflag != 0) {
