@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/26 09:32:36  sah
+ * changed functiontype for serialize functions
+ *
  * Revision 1.3  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -21,7 +24,7 @@
 #include "symboltable.h"
 
 typedef struct MODULE_T module_t;
-typedef node *(*serfun_p) ();
+typedef node *(*serfun_p) (info *);
 
 extern module_t *LoadModule (const char *name);
 extern module_t *UnLoadModule (module_t *module);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/26 09:32:36  sah
+ * changed functiontype for serialize functions
+ *
  * Revision 1.4  2004/10/25 11:58:47  sah
  * major code cleanup
  *
