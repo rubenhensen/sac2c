@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/27 21:54:24  dkr
+ * comment added
+ *
  * Revision 3.4  2001/03/27 21:39:09  dkr
  * macros ..._VECT added
  *
@@ -142,12 +145,14 @@ extern void ComputeMallocAlignStep (void);
  * macros for handling vectors
  */
 
+/* caution: 'val' should occur in the macro implementation only once! */
 #define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
     if (vect != NULL) {                                                                  \
         (vect) = (type *)MALLOC (dims * sizeof (type));                                  \
     }                                                                                    \
     INIT_VECT (vect, dims, type, val)
 
+/* caution: 'val' should occur in the macro implementation only once! */
 #define INIT_VECT(vect, dims, type, val)                                                 \
     {                                                                                    \
         int d;                                                                           \
