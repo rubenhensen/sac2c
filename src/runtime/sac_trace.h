@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/03 17:29:48  dkr
+ * some ; shifted in macros
+ *
  * Revision 3.3  2002/04/30 08:18:24  dkr
  * some comments added
  *
@@ -73,7 +76,7 @@ extern void SAC_TR_DecArrayMemcnt (int size);
 extern void SAC_TR_IncHiddenMemcnt (int size);
 extern void SAC_TR_DecHiddenMemcnt (int size);
 
-#define SAC_TR_PRINT(msg) SAC_TR_Print msg
+#define SAC_TR_PRINT(msg) SAC_TR_Print msg;
 
 #else /* SAC_DO_TRACE */
 
@@ -106,7 +109,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_REF_PRINT(msg) SAC_TR_PRINT (msg)
 
 #define SAC_TR_REF_PRINT_RC(name)                                                        \
-    SAC_TR_REF_PRINT (("refcnt of %s: %d", #name, SAC_ND_A_RC (name)));
+    SAC_TR_REF_PRINT (("refcnt of %s: %d", #name, SAC_ND_A_RC (name)))
 
 #else /* SAC_DO_TRACE_REF */
 
