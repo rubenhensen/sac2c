@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/02/23 17:27:01  cg
+ * The entry TYPES_TDEF of the TYPES data structure now contains a
+ * reference to the corresponding N_typedef node for all user-defined
+ * types.
+ * Therefore, most calls to LookupType() are eliminated.
+ * Please, keep the back references up to date!!
+ *
  * Revision 2.12  2000/01/25 13:38:07  dkr
  * function FindVardec renamed to FindVardec_Varno and moved to
  * tree_compound.c
@@ -107,7 +114,6 @@
 #include "my_debug.h"
 #include "dbug.h"
 #include "DupTree.h"
-#include "typecheck.h" /* to use LookupType */
 #include "DataFlowMask.h"
 #include "traverse.h"
 #include "optimize.h"
@@ -190,7 +196,7 @@ IsBoxed (types *type)
         ret = 1;
     } else {
         if (TYPES_BASETYPE (type) == T_user) {
-            tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
+            tdef = TYPES_TDEF (type);
             DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
             if ((TYPEDEF_DIM (tdef) != 0) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
@@ -225,7 +231,7 @@ IsUnique (types *type)
     DBUG_ENTER ("IsUnique");
 
     if (TYPES_BASETYPE (type) == T_user) {
-        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
+        tdef = TYPES_TDEF (type);
         DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
         if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
@@ -243,7 +249,7 @@ IsUnique (types *type)
  *  description   : checks whether 1) is a declaration of an array or not
  *  global vars   :
  *  internal funs :
- *  external funs : LookupType
+ *  external funs :
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -262,8 +268,7 @@ IsArray (types *type)
         ret = 1;
     } else {
         if (T_user == TYPES_BASETYPE (type)) {
-            tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
-            /* 042 is only a dummy argument */
+            tdef = TYPES_TDEF (type);
             DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
             if ((SCALAR != TYPEDEF_DIM (tdef))
@@ -283,7 +288,7 @@ IsArray (types *type)
  *  description   : checks if the type is a non-unique void* one
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : LookupType
+ *  external funs : ---
  *  macros        : DBUG, TREE
  *
  *  remarks       : used to detect non-array variables which have to be
@@ -300,8 +305,7 @@ IsNonUniqueHidden (types *type)
     DBUG_ENTER ("IsNonUniqueHidden");
 
     if (TYPES_BASETYPE (type) == T_user) {
-        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
-        /* 042 is only a dummy argument */
+        tdef = TYPES_TDEF (type);
         DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
         if ((TYPEDEF_BASETYPE (tdef) == T_hidden)
@@ -311,7 +315,7 @@ IsNonUniqueHidden (types *type)
                     ret = 1;
                 }
             } else {
-                tdef = LookupType (TYPEDEF_TNAME (tdef), TYPEDEF_TMOD (tdef), 042);
+                tdef = TYPES_TDEF (TYPEDEF_TYPE (tdef));
                 DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
                 if (TYPEDEF_ATTRIB (tdef) == ST_regular) {

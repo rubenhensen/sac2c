@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/02/23 17:27:01  cg
+ * The entry TYPES_TDEF of the TYPES data structure now contains a
+ * reference to the corresponding N_typedef node for all user-defined
+ * types.
+ * Therefore, most calls to LookupType() are eliminated.
+ * Please, keep the back references up to date!!
+ *
  * Revision 2.1  1999/02/23 12:43:21  sacbase
  * new release made
  *
@@ -90,6 +97,7 @@
 #include "traverse.h"
 #include "internal_lib.h"
 #include "Error.h"
+#include "DupTree.h"
 
 #include <string.h>
 
@@ -261,24 +269,12 @@ RearrangeObjdefs (node *objects)
 
     DBUG_PRINT ("OBJ", ("Rearranging object %s", ItemName (first)));
 
-    /***************************************/
-#ifndef NEWTREE
-    last->nnode = 1;
-#endif
-    /***************************************/
-
     while (already_done != NULL) {
         first = NODELIST_NODE (already_done);
 
         DBUG_PRINT ("OBJ", ("Rearranging object %s", ItemName (first)));
 
         OBJDEF_NEXT (first) = last;
-
-        /***************************************/
-#ifndef NEWTREE
-        last->nnode = 2;
-#endif
-        /***************************************/
 
         last = first;
 
@@ -336,7 +332,7 @@ OBJmodul (node *arg_node, node *arg_info)
  *                  Afterwards, the modified parameter list is traversed.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : MakeType, MakeArg, Trav
+ *  external funs : DupTypes, MakeArg, Trav
  *  macros        : TREE, DBUG
  *
  *  remarks       : The function body is traversed twice, because for
@@ -375,26 +371,20 @@ OBJfundef (node *arg_node, node *arg_info)
 
     while (need_objs != NULL) {
         obj = NODELIST_NODE (need_objs);
-
-        new_type
-          = MakeType (OBJDEF_BASETYPE (obj), OBJDEF_DIM (obj),
-                      CopyShpseg (OBJDEF_SHPSEG (obj)), StringCopy (OBJDEF_TNAME (obj)),
-                      StringCopy (OBJDEF_TMOD (obj)));
+        /*
+        new_type=MakeType(OBJDEF_BASETYPE(obj),
+                          OBJDEF_DIM(obj),
+                          CopyShpseg(OBJDEF_SHPSEG(obj)),
+                          StringCopy(OBJDEF_TNAME(obj)),
+                          StringCopy(OBJDEF_TMOD(obj)));
+        */
+        new_type = DupTypes (OBJDEF_TYPE (obj));
 
         new_arg = MakeArg (StringCopy (OBJDEF_VARNAME (obj)), new_type, ST_artificial,
                            ST_reference, FUNDEF_ARGS (arg_node));
 
         NODE_LINE (new_arg) = NODE_LINE (arg_node);
         ARG_OBJDEF (new_arg) = obj;
-
-#ifndef NEWTREE
-        /*-------------------------------------------------------------*/
-        if (FUNDEF_ARGS (arg_node) == NULL) {
-            arg_node->nnode += 1;
-            new_arg->nnode = 0;
-        }
-        /*-------------------------------------------------------------*/
-#endif
 
         FUNDEF_ARGS (arg_node) = new_arg;
         OBJDEF_ARG (obj) = new_arg;
@@ -508,7 +498,7 @@ OBJobjdef (node *arg_node, node *arg_info)
  *                  to the function's list of return types
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : MakeId, MakeExprs, MakeType, Trav
+ *  external funs : MakeId, MakeExprs, DupTypes, Trav
  *  macros        : DBUG, TREE
  *
  *  remarks       :
@@ -541,15 +531,6 @@ OBJarg (node *arg_node, node *arg_info)
             new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
             NODE_LINE (new_return_expr) = NODE_LINE (ret);
 
-#ifndef NEWTREE
-            /*-------------------------------------------------------------*/
-            if (RETURN_EXPRS (ret) == NULL) {
-                ret->nnode += 1;
-                new_return_expr->nnode = 1;
-            }
-            /*-------------------------------------------------------------*/
-#endif
-
             RETURN_EXPRS (ret) = new_return_expr;
         }
 
@@ -563,10 +544,14 @@ OBJarg (node *arg_node, node *arg_info)
             DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
                                 FUNDEF_TMOD (arg_info), FUNDEF_TNAME (arg_info)));
         } else {
-            new_return_type
-              = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node),
-                          CopyShpseg (ARG_SHPSEG (arg_node)),
-                          StringCopy (ARG_TNAME (arg_node)), ARG_TMOD (arg_node));
+            /*
+            new_return_type=MakeType(ARG_BASETYPE(arg_node),
+                                     ARG_DIM(arg_node),
+                                     CopyShpseg(ARG_SHPSEG(arg_node)),
+                                     StringCopy(ARG_TNAME(arg_node)),
+                                     ARG_TMOD(arg_node));
+            */
+            new_return_type = DupTypes (ARG_TYPE (arg_node));
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;
 
@@ -623,15 +608,6 @@ OBJap (node *arg_node, node *arg_info)
         DBUG_PRINT ("OBJ", ("Adding new argument: %s", OBJDEF_VARNAME (obj)));
 
         new_arg = MakeExprs (new_arg, AP_ARGS (arg_node));
-
-#ifndef NEWTREE
-        /*-------------------------------------------------------------*/
-        if (AP_ARGS (arg_node) == NULL) {
-            arg_node->nnode += 1;
-            new_arg->nnode = 1;
-        }
-        /*-------------------------------------------------------------*/
-#endif
 
         AP_ARGS (arg_node) = new_arg;
 

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/02/23 17:27:01  cg
+ * The entry TYPES_TDEF of the TYPES data structure now contains a
+ * reference to the corresponding N_typedef node for all user-defined
+ * types.
+ * Therefore, most calls to LookupType() are eliminated.
+ * Please, keep the back references up to date!!
+ *
  * Revision 2.33  2000/02/22 15:41:02  jhs
  * Adapted NODE_TEXT.
  * Filled some comments for functions I wrote months ago ...
@@ -1812,6 +1819,86 @@ node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
 }
 #endif /* 0 */
 
+/******************************************************************************
+ *
+ * function:
+ *   node *TypecheckFunctionDeclarations(node *fundef)
+ *
+ * description:
+ *
+ *   Function declarations (N_fundef nodes without body) are usually not
+ *   typechecked. However, since user-defined types now have a back reference
+ *   to the corresponding N_typedef node, function declarations have to be
+ *   checked for user-defined types.
+ *
+ ******************************************************************************/
+
+static node *
+TypecheckFunctionDeclarations (node *fundef)
+{
+    types *type;
+    node *tdef, *arg, *fun;
+
+    DBUG_ENTER ("TypecheckFunctionDeclarations");
+
+    fun = fundef;
+
+    while (fun != NULL) {
+
+        if (FUNDEF_BODY (fun) == NULL) {
+
+            /*
+             * First, the return types are checked.
+             */
+
+            type = FUNDEF_TYPES (fun);
+
+            while (type != NULL) {
+                if (TYPES_BASETYPE (type) == T_user) {
+                    tdef
+                      = LookupType (TYPES_NAME (type), TYPES_MOD (type), NODE_LINE (fun));
+                    if (tdef == NULL) {
+                        ERROR (
+                          NODE_LINE (fun),
+                          ("Unknown type '%s` in declaration of imported function %s",
+                           ModName (TYPES_MOD (type), TYPES_NAME (type)),
+                           ItemName (fun)));
+                    }
+                    TYPES_TDEF (type) = tdef;
+                }
+                type = TYPES_NEXT (type);
+            }
+
+            /*
+             * Second, the argument types are checked.
+             */
+
+            arg = FUNDEF_ARGS (fun);
+
+            while (arg != NULL) {
+                if (TYPES_BASETYPE (ARG_TYPE (arg)) == T_user) {
+                    tdef = LookupType (TYPES_NAME (ARG_TYPE (arg)),
+                                       TYPES_MOD (ARG_TYPE (arg)), NODE_LINE (fun));
+                    if (tdef == NULL) {
+                        ERROR (
+                          NODE_LINE (fun),
+                          ("Unknown type '%s` in declaration of imported function %s",
+                           ModName (TYPES_MOD (ARG_TYPE (arg)),
+                                    TYPES_NAME (ARG_TYPE (arg))),
+                           ItemName (fun)));
+                    }
+                    TYPES_TDEF (ARG_TYPE (arg)) = tdef;
+                }
+                arg = ARG_NEXT (arg);
+            }
+        }
+
+        fun = FUNDEF_NEXT (fun);
+    }
+
+    DBUG_RETURN (fundef);
+}
+
 /*
  *
  *  functionname  : TI_fun
@@ -2217,6 +2304,7 @@ CheckKnownTypes (node *arg_node)
                         ModName (arg_node->ID_MOD, arg_node->ID),
                         ModName (fun_type->name_mod, fun_type->name)));
             } else {
+                TYPES_TDEF (fun_type) = t_node;
                 fun_type->name_mod = t_node->ID_MOD;
 
                 if (FUNDEF_INLINE (arg_node)) {
@@ -2246,6 +2334,7 @@ CheckKnownTypes (node *arg_node)
                         arg->ID, ModName (arg_node->ID_MOD, arg_node->ID),
                         ModName (arg->NAME_MOD, arg->NAME)));
             } else {
+                TYPES_TDEF (ARG_TYPE (arg)) = t_node;
                 arg->NAME_MOD = t_node->ID_MOD;
 
                 if ((TYPEDEF_ATTRIB (t_node) == ST_unique)
@@ -3210,10 +3299,12 @@ Typecheck (node *arg_node)
         }
     }
 
-    if (N_modul == arg_node->nodetype)
-        arg_node->node[2] = top_fundef;
-    else
-        arg_node = top_fundef;
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+                 "Typecheck() not called with N_modul node.");
+
+    arg_node->node[2] = top_fundef;
+
+    MODUL_FUNS (arg_node) = TypecheckFunctionDeclarations (MODUL_FUNS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -3270,10 +3361,15 @@ CmpTypes (types *type_one, types *type_two)
                 else if ((NULL == type_one->name_mod) && (NULL == type_two->name_mod))
                     ok = 1;
                 else {
+                    node *t_node;
+
                     char *mod_name = (NULL != type_one->name_mod) ? type_one->name_mod
                                                                   : type_two->name_mod;
+                    t_node = TYPES_TDEF (type_one);
+                    if (t_node == NULL) {
+                        t_node = LookupType (type_one->name, NULL, -064);
+                    }
 
-                    node *t_node = LookupType (type_one->name, NULL, -064);
                     ok = !(
                       strcmp (mod_name, (NULL != t_node->ID_MOD) ? t_node->ID_MOD : ""));
                 }
@@ -3425,7 +3521,11 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
 #endif
 
     if (T_user == TYPES_BASETYPE (type_one)) {
-        t_node = LookupType (type_one->name, type_one->name_mod, line);
+        t_node = TYPES_TDEF (type_one);
+        if (t_node == NULL) {
+            t_node = LookupType (type_one->name, type_one->name_mod, line);
+        }
+
         if (NULL == t_node) {
             ABORT (line, ("Type '%s` is unknown",
                           ModName (type_one->name_mod, type_one->name)));
@@ -3453,7 +3553,11 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
         type_1 = type_one;
 
     if (T_user == TYPES_BASETYPE (type_two)) {
-        t_node = LookupType (type_two->name, type_two->name_mod, line);
+        t_node = TYPES_TDEF (type_two);
+        if (t_node == NULL) {
+            t_node = LookupType (type_two->name, type_two->name_mod, line);
+        }
+
         if (NULL == t_node) {
             ABORT (line, ("Type '%s` is unknown",
                           ModName (type_two->name_mod, type_two->name)));
@@ -3634,7 +3738,11 @@ UpdateType (types *type_one, types *type_two, int line)
 #endif
 
     if ((T_user != TYPES_BASETYPE (t_unknown)) && (T_user == TYPES_BASETYPE (t_known))) {
-        t_node = LookupType (t_known->name, t_known->name_mod, line);
+        t_node = TYPES_TDEF (t_known);
+        if (t_node == NULL) {
+            t_node = LookupType (type_two->name, type_two->name_mod, line);
+        }
+
         if (NULL == t_node)
             ABORT (line, ("Type '%s` is unknown",
                           ModName (t_unknown->name_mod, t_unknown->name)));
@@ -3652,7 +3760,11 @@ UpdateType (types *type_one, types *type_two, int line)
         }
     } else if ((T_user == TYPES_BASETYPE (t_unknown))
                && (T_user != TYPES_BASETYPE (t_known))) {
-        t_node = LookupType (t_unknown->name, t_unknown->name_mod, line);
+        t_node = TYPES_TDEF (t_unknown);
+        if (t_node == NULL) {
+            t_node = LookupType (t_unknown->name, t_unknown->name_mod, line);
+        }
+
         if (NULL == t_node)
             ABORT (line,
                    ("Type '%s` is unknown", ModName (t_known->name_mod, t_known->name)));
@@ -6389,6 +6501,7 @@ TI_cast (node *arg_node, node *arg_info)
                   ret_type->name));
          } else {
             type->name_mod=t_node->ID_MOD;
+            TYPES_TDEF(type) = t_node;
             cast_node->NAME_MOD=t_node->ID_MOD;
          }
       }
@@ -6992,6 +7105,7 @@ TCobjdef (node *arg_node, node *arg_info)
                        ("Type of global object '%s` must be a class",
                         ModName (OBJDEF_MOD (arg_node), OBJDEF_NAME (arg_node))));
             }
+            TYPES_TDEF (OBJDEF_TYPE (arg_node)) = tdef;
         }
     }
 

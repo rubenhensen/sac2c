@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.44  2000/02/23 17:27:01  cg
+ * The entry TYPES_TDEF of the TYPES data structure now contains a
+ * reference to the corresponding N_typedef node for all user-defined
+ * types.
+ * Therefore, most calls to LookupType() are eliminated.
+ * Please, keep the back references up to date!!
+ *
  * Revision 2.43  2000/02/21 13:36:12  jhs
  * Removed some direct (->) accesses to nodes.
  * nodeline >> NODE_LINE
@@ -103,10 +110,10 @@
 #include "convert.h"
 #include "DupTree.h"
 #include "refcount.h"
-#include "typecheck.h" /* to use 'LookupType()' */
 #include "ReuseWithArrays.h"
 #include "free.h"
 #include "scheduling.h"
+#include "typecheck.h" /* to use some ugly old macros ... */
 
 /******************************************************************************
  *
@@ -350,14 +357,13 @@ GenericFun (int which, types *type)
     DBUG_PRINT ("COMP", ("Looking for generic fun %d (0==copy/1==free)"));
 
     if (TYPES_BASETYPE (type) == T_user) {
-        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
-        /* 042 is only a dummy argument */
+        tdef = TYPES_TDEF (type);
         DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
         if ((TYPEDEF_BASETYPE (tdef) == T_hidden)
             || (TYPEDEF_BASETYPE (tdef) == T_user)) {
             if (TYPEDEF_TNAME (tdef) != NULL) {
-                tdef = LookupType (TYPEDEF_TNAME (tdef), TYPEDEF_TMOD (tdef), 042);
+                tdef = TYPES_TDEF (TYPEDEF_TYPE (tdef));
                 DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
             }
 
@@ -1021,7 +1027,7 @@ BasetypeSize (types *type)
     DBUG_ENTER ("BasetypeSize");
 
     if (TYPES_BASETYPE (type) == T_user) {
-        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
+        tdef = TYPES_TDEF (type);
         DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
         ret = basetype_size[TYPEDEF_BASETYPE (tdef)];
@@ -1810,9 +1816,9 @@ ShapeToArray (node *vardec_node)
             tmp = EXPRS_NEXT (tmp);
         }
     } else {
-        basic_type_node = LookupType (TYPES_NAME (VARDEC_TYPE (vardec_node)),
-                                      TYPES_MOD (VARDEC_TYPE (vardec_node)),
-                                      042); /* 042 is dummy argument */
+        basic_type_node = TYPES_TDEF (VARDEC_TYPE (vardec_node));
+        DBUG_ASSERT ((basic_type_node != NULL), "Failed attempt to look up typedef");
+
         if (1 <= TYPES_DIM (VARDEC_TYPE (vardec_node))) {
             ret_node = MakeNode (N_exprs);
             EXPRS_EXPR (ret_node)

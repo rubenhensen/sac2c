@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/23 17:27:01  cg
+ * The entry TYPES_TDEF of the TYPES data structure now contains a
+ * reference to the corresponding N_typedef node for all user-defined
+ * types.
+ * Therefore, most calls to LookupType() are eliminated.
+ * Please, keep the back references up to date!!
+ *
  * Revision 2.2  1999/06/08 08:32:42  cg
  * The print phase now always carries an N_info node with it in order
  * to distinguish between different layouts. The distinction between
@@ -96,7 +103,6 @@
 #include "convert.h"
 #include "filemgr.h"
 #include "print.h"
-#include "typecheck.h" /* for LookupType  */
 
 #define PRINTMODNAME(mod, name)                                                          \
     if (mod == NULL) {                                                                   \
@@ -254,7 +260,9 @@ StoreExportNode (node *insert, node *info)
 
         case N_objdef:
             INFO_WSIB_EXPORTOBJS (info) = MakeNodelist (insert, ST_regular, NULL);
-            obj_tdef = LookupType (OBJDEF_TNAME (insert), OBJDEF_TMOD (insert), 042);
+            obj_tdef = TYPES_TDEF (OBJDEF_TYPE (insert));
+            DBUG_ASSERT ((obj_tdef != NULL), "Failed attempt to look up typedef");
+
             StoreExportNode (obj_tdef, info);
             break;
 
@@ -278,7 +286,8 @@ StoreExportNode (node *insert, node *info)
             NODELIST_NEXT (last) = MakeNodelist (insert, ST_regular, NULL);
 
             if (NODE_TYPE (insert) == N_objdef) {
-                obj_tdef = LookupType (OBJDEF_TNAME (insert), OBJDEF_TMOD (insert), 042);
+                obj_tdef = TYPES_TDEF (OBJDEF_TYPE (insert));
+                DBUG_ASSERT ((obj_tdef != NULL), "Failed attempt to look up typedef");
                 StoreExportNode (obj_tdef, info);
             }
         }

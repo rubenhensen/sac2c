@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/02/23 17:27:01  cg
+ * The entry TYPES_TDEF of the TYPES data structure now contains a
+ * reference to the corresponding N_typedef node for all user-defined
+ * types.
+ * Therefore, most calls to LookupType() are eliminated.
+ * Please, keep the back references up to date!!
+ *
  * Revision 2.30  2000/01/26 17:29:42  dkr
  * type of traverse-function-table changed.
  *
@@ -254,9 +261,9 @@
 #include "globals.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "typecheck.h"
 #include "internal_lib.h"
 #include "access_macros.h"
+#include "typecheck.h" /* to use some ugly old macros ... */
 
 #include "optimize.h"
 #include "generatemasks.h"
@@ -637,7 +644,7 @@ CFassign (node *arg_node, node *arg_info)
  *  description   : determines real type
  *  global vars   : syntax_tree
  *  internal funs : --
- *  external funs : LookupType (typcheck.h)
+ *  external funs : --
  *  macros        : TYPES_BASETYPE, TYPES_NAME, TYPES_MOD, TYPEDEF_TYPE
  *
  *  remarks       : --
@@ -650,7 +657,8 @@ GetType (types *type)
 
     DBUG_ENTER ("GetType");
     if (T_user == TYPES_BASETYPE (type)) {
-        tnode = LookupType (TYPES_NAME (type), TYPES_MOD (type), 0);
+        tnode = TYPES_TDEF (type);
+        DBUG_ASSERT ((tnode != NULL), "Failed attempt to look up typedef");
         type = TYPEDEF_TYPE (tnode);
     }
     DBUG_RETURN (type);
