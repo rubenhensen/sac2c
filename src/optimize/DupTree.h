@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/07 15:04:25  sbs
+ * DupVinfo added; it implicitly generates consistent VINFO_DOLLAR
+ * pointers!!!
+ *
  * Revision 2.4  1999/04/13 14:01:48  cg
  * added function DupBlock for duplication of N_block nodes.
  *
@@ -92,6 +96,7 @@
 extern node *DupTree (node *arg_node, node *arg_info);
 extern node *DupNode (node *arg_node);
 
+extern node *DupVinfo (node *arg_node, node *arg_info);
 extern node *DupInt (node *arg_node, node *arg_info);
 extern node *DupChar (node *arg_node, node *arg_info);
 extern node *DupFloat (node *arg_node, node *arg_info);

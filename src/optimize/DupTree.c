@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/07/07 15:04:25  sbs
+ * DupVinfo added; it implicitly generates consistent VINFO_DOLLAR
+ * pointers!!!
+ *
  * Revision 2.11  1999/05/17 11:21:26  jhs
  * CopyConstVec will be called only if ID/ARRAY_ISCONST.
  *
@@ -324,6 +328,31 @@ DupInt (node *arg_node, node *arg_info)
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.cint = arg_node->info.cint;
     DUP (arg_node, new_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupVinfo (node *arg_node, node *arg_info)
+{
+    node *new_node, *rest;
+
+    DBUG_ENTER ("DupVinfo");
+
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    rest = NULL;
+    if (VINFO_NEXT (arg_node) != NULL)
+        rest = Trav (VINFO_NEXT (arg_node), arg_info);
+
+    if (VINFO_FLAG (arg_node) == DOLLAR) {
+        new_node = MakeVinfoDollar (rest);
+    } else {
+        new_node = MakeVinfo (VINFO_FLAG (arg_node), VINFO_TYPE (arg_node), rest,
+                              VINFO_DOLLAR (rest));
+    }
+    VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
     DBUG_RETURN (new_node);
 }
