@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/10/08 00:59:22  dkr
+ * TmpVar(): nt2ot_tab added
+ *
  * Revision 3.29  2002/09/11 23:19:24  dkr
  * NumberOfDigits() used
  *
@@ -890,6 +893,8 @@ PrefixForTmpVar (void)
         s = "ntc";
     } else if (act_tab == al_tab) {
         s = "al";
+    } else if (act_tab == nt2ot_tab) {
+        s = "nt2ot";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
