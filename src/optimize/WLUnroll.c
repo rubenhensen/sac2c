@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/10/09 02:07:38  dkr
+ * code for SSA moved to SSAWLUnroll.c
+ *
  * Revision 3.11  2002/06/21 12:31:36  dkr
  * new function CreateZeroFromType() used now
  *
@@ -56,77 +59,7 @@
  * Revision 2.15  2000/10/20 15:36:09  dkr
  * macro GET_LENGTH replaced by function GetLength
  *
- * Revision 2.14  2000/10/18 09:44:07  dkr
- * fixed a bug with user-defined types in DoUnrollGenarray
- *
- * Revision 2.13  2000/06/23 15:21:10  dkr
- * signature of function DupTree changed
- *
- * Revision 2.12  2000/06/23 14:10:45  dkr
- * nodetype N_with removed
- *
- * Revision 2.11  2000/05/26 21:57:44  dkr
- * minor changes in CreateFold() done
- *
- * Revision 2.10  2000/05/26 11:34:43  dkr
- * bug fixed: fold-with-loops are now folded correctly even if multiple
- * generators/code-blocks are present :-)
- *
- * Revision 2.9  2000/05/11 11:16:06  dkr
- * Function MakeNullVec renamed into CreateZeroVector
- *
- * Revision 2.8  2000/02/23 19:08:50  cg
- * The optimizations LUR and WLUR now issue a notification if
- * the setting of -maxlur or -maxwlur, respectively, prevents
- * the unrolling of an otherwise unrollable loop or with-loop.
- * Currently the upper boundary for issuing such a note is set to 32.
- *
- * Revision 2.7  1999/11/11 20:05:48  dkr
- * signature and name of function IsConstantArray changed
- *
- * Revision 2.6  1999/07/15 20:37:30  sbs
- * DBUG_ASSERTs in CountElements inserted.
- *
- * Revision 2.5  1999/07/14 16:11:37  bs
- * Bug fixed in CountElements.
- *
- * Revision 2.4  1999/05/12 09:56:54  jhs
- * Adjusted macros to access constant vectors.
- *
- * Revision 2.3  1999/04/21 15:36:00  jhs
- * DoUnrollGenarray now fit for emty arrays.
- *
- * Revision 2.2  1999/03/19 09:47:16  bs
- * Every Call of MakeArray will also create a compact vector propagation.
- *
- * Revision 2.1  1999/02/23 12:41:39  sacbase
- * new release made
- *
- * Revision 1.7  1998/11/19 12:53:45  srs
- * WLUnrolling now works with the new WL-body-syntax (empty
- * bodies contain N_empty nodes).
- *
- * Revision 1.6  1998/07/16 17:22:44  sbs
- * unrolling of WL-fold-loops now inlines the pseudo-funs generated
- * by the typechecker!
- *
- * Revision 1.5  1998/07/16 11:39:13  sbs
- * tried to tackle the inlining of pseudo-fold-funs for unrolled WLs
- * commented it out again since problems concerning the masks
- * arose....8-(((((
- *
- * Revision 1.4  1998/06/02 17:09:17  sbs
- * some comments added
- *
- * Revision 1.3  1998/05/30 19:44:46  dkr
- * fixed a bug in CreateFold:
- *   funname is no longer shared
- *
- * Revision 1.2  1998/05/15 14:43:16  srs
- * functions for WL unrolling
- *
- * Revision 1.1  1998/05/13 13:47:44  srs
- * Initial revision
+ * [...]
  *
  */
 
@@ -152,7 +85,6 @@
 #include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "typecheck.h"
 
 #include "optimize.h"
 #include "Inline.h"
@@ -214,7 +146,7 @@ CreateBodyCode (node *partn, node *index)
         res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)));
 
     /* index vector */
-    if ((use_ssaform) || (coden->mask[1][IDS_VARNO (NPART_VEC (partn))])) {
+    if (coden->mask[1][IDS_VARNO (NPART_VEC (partn))]) {
         letn = MakeLet (DupTree (index), DupOneIds (NPART_VEC (partn)));
         res = MakeAssign (letn, res);
     }
@@ -224,7 +156,7 @@ CreateBodyCode (node *partn, node *index)
     index = ARRAY_AELEMS (index);
 
     while (_ids) {
-        if ((use_ssaform) || (coden->mask[1][IDS_VARNO (_ids)])) {
+        if (coden->mask[1][IDS_VARNO (_ids)]) {
             letn = MakeLet (DupTree (EXPRS_EXPR (index)), DupOneIds (_ids));
             res = MakeAssign (letn, res);
         }
@@ -387,8 +319,9 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
         if (dim + 1 == maxdim) {
             /* create index */
             index = NULL;
-            for (i = maxdim; i > 0; i--)
+            for (i = maxdim; i > 0; i--) {
                 index = MakeExprs (MakeNum (ind[i - 1]), index);
+            }
             index = MakeArray (index);
             /* nums struct is freed inside MakeShpseg. */
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
@@ -403,7 +336,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
         }
 
         /* advance to next element */
-        if (w && act_w + 1 < w[dim]) {
+        if (w && (act_w + 1 < w[dim])) {
             act_w++;
         } else {
             act_w = 0;
@@ -466,7 +399,6 @@ ForEachElement (node *partn, node *assignn)
  *
  ******************************************************************************/
 
-#define ELT(n) NUM_VAL (EXPRS_EXPR (n))
 static int
 CountElements (node *genn)
 {
@@ -573,7 +505,6 @@ CountElements (node *genn)
 
     DBUG_RETURN (elts);
 }
-#undef ELT
 
 /******************************************************************************
  *
