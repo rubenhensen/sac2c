@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/09/24 20:21:53  sah
+ * intermediate version
+ *
  * Revision 1.4  2004/09/23 21:12:25  sah
  * ongoing implementation
  *
@@ -26,6 +29,9 @@
 #include "serialize_stack.h"
 #include "traverse.h"
 #include "symboltable.h"
+#include "precompile.h"
+#include "convert.h"
+#include <strings.h>
 
 #define MAX_FUN_NAME_LEN 255
 
@@ -59,6 +65,14 @@ FreeInfo (info *info)
     info = Free (info);
 
     DBUG_RETURN (info);
+}
+
+node *
+SerializeLookupFunction (const char *module, const char *name)
+{
+    DBUG_ENTER ("SerializeLookupFunction");
+
+    DBUG_RETURN (NULL);
 }
 
 static node *
@@ -175,27 +189,60 @@ GenerateSerFileHead (info *info)
     DBUG_VOID_RETURN;
 }
 
-static const char *
+static void
+GenerateSerFunTypeSignature (char *funname, node *args)
+{
+    DBUG_ENTER ("GenerateSerFunTypeSignature");
+
+    while (args != NULL) {
+        strcat (funname, "_");
+        strcat (funname, Type2String (ARG_TYPE (args), 2, TRUE));
+
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+const char *
 GenerateSerFunName (symbolentrytype_t type, node *node)
 {
     static char result[MAX_FUN_NAME_LEN];
+    char *tmp;
 
     DBUG_ENTER ("GenerateSerFunName");
 
     switch (type) {
     case STE_funbody:
-        snprintf (result, MAX_FUN_NAME_LEN, "__SER_FUNBDY__%s__%s__%d", FUNDEF_MOD (node),
+        snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), FUNDEF_STATUS (node));
+
+        GenerateSerFunTypeSignature (result, FUNDEF_ARGS (node));
+
         break;
     case STE_funhead:
-        snprintf (result, MAX_FUN_NAME_LEN, "__SER_FUNHD__%s__%s__%d", FUNDEF_MOD (node),
+        snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), FUNDEF_STATUS (node));
+
+        GenerateSerFunTypeSignature (result, FUNDEF_ARGS (node));
+
         break;
     case STE_typedef:
+        result[0] = '\0';
         break;
     case STE_objdef:
+        result[0] = '\0';
         break;
     }
+
+    DBUG_PRINT ("SER", ("Generated new function name: %s", result));
+
+    tmp = ReplaceSpecialCharacters (result);
+    strcpy (result, tmp);
+
+    tmp = Free (tmp);
+
+    DBUG_PRINT ("SER", ("Final function name: %s", result));
 
     DBUG_RETURN (result);
 }
@@ -336,7 +383,7 @@ SERFundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("SER", ("Serializing function %s", FUNDEF_NAME (arg_node)));
 
     SerializeFundefHead (arg_node, arg_info);
-    SerializeFundefBody (arg_node, arg_info);
+    /* SerializeFundefBody( arg_node, arg_info); */
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/09/24 20:21:53  sah
+ * intermediate version
+ *
  * Revision 1.3  2004/09/23 21:12:25  sah
  * ongoing implementation
  *
@@ -32,6 +35,7 @@
 #include "serialize_attribs.h"
 #include "serialize_info.h"
 #include "serialize_stack.h"
+#include "serialize.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "dbug.h"
@@ -341,7 +345,14 @@ SerializeApLinkAttrib (char *vname, info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeApLinkAttrib");
 
-    fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    } else {
+        fprintf (INFO_SER_FILE (info),
+                 "%s = SHLPLookupFunction( "
+                 "\"%s\", \"%s\");\n",
+                 vname, FUNDEF_MOD (attr), GenerateSerFunName (STE_funhead, attr));
+    }
 
     DBUG_VOID_RETURN;
 }
