@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2000/10/26 14:04:27  dkr
+ * MakeShpseg used in Array2Shpseg
+ *
  * Revision 1.25  2000/10/26 13:57:37  dkr
  * CopyShpseg replaced by DupShpseg (DupTree.[ch])
  *
@@ -667,22 +670,22 @@ CopyConstVec (simpletype vectype, int veclen, void *const_vec)
         case T_bool:
         case T_int:
             n = veclen * sizeof (int);
-            res = Malloc (n);
+            res = MALLOC (n);
             res = memcpy (res, const_vec, n);
             break;
         case T_float:
             n = veclen * sizeof (float);
-            res = Malloc (n);
+            res = MALLOC (n);
             res = memcpy (res, const_vec, n);
             break;
         case T_double:
             n = veclen * sizeof (double);
-            res = Malloc (n);
+            res = MALLOC (n);
             res = memcpy (res, const_vec, n);
             break;
         case T_char:
             n = veclen * sizeof (char);
-            res = Malloc (n);
+            res = MALLOC (n);
             res = memcpy (res, const_vec, n);
             break;
         default:
@@ -715,16 +718,16 @@ AllocConstVec (simpletype vectype, int veclen)
         switch (vectype) {
         case T_bool:
         case T_int:
-            res = Malloc (veclen * sizeof (int));
+            res = MALLOC (veclen * sizeof (int));
             break;
         case T_float:
-            res = Malloc (veclen * sizeof (float));
+            res = MALLOC (veclen * sizeof (float));
             break;
         case T_double:
-            res = Malloc (veclen * sizeof (double));
+            res = MALLOC (veclen * sizeof (double));
             break;
         case T_char:
-            res = Malloc (veclen * sizeof (int));
+            res = MALLOC (veclen * sizeof (int));
             break;
         default:
             DBUG_ASSERT ((0), "AllocConstVec called with non-const-type!");
@@ -1974,10 +1977,11 @@ Array2IntVec (node *aelems, int *length)
     /*
      *  if the length of the vector is not of interrest length may be NULL
      */
-    if (length != NULL)
+    if (length != NULL) {
         *length = i;
+    }
 
-    intvec = Malloc (i * sizeof (int));
+    intvec = MALLOC (i * sizeof (int));
 
     for (j = 0; j < i; j++) {
         intvec[j] = NUM_VAL (EXPRS_EXPR (tmp));
@@ -2004,10 +2008,11 @@ Array2BoolVec (node *aelems, int *length)
     /*
      *  if the length of the vector is not of interrest length may be NULL
      */
-    if (length != NULL)
+    if (length != NULL) {
         *length = i;
+    }
 
-    intvec = Malloc (i * sizeof (int));
+    intvec = MALLOC (i * sizeof (int));
 
     for (j = 0; j < i; j++) {
         intvec[j] = BOOL_VAL (EXPRS_EXPR (tmp));
@@ -2035,10 +2040,11 @@ Array2CharVec (node *aelems, int *length)
     /*
      *  if the length of the vector is not of interrest length may be NULL
      */
-    if (length != NULL)
+    if (length != NULL) {
         *length = i;
+    }
 
-    charvec = Malloc (i * sizeof (char));
+    charvec = MALLOC (i * sizeof (char));
 
     for (j = 0; j < i; j++) {
         charvec[j] = CHAR_VAL (EXPRS_EXPR (tmp));
@@ -2066,10 +2072,11 @@ Array2FloatVec (node *aelems, int *length)
     /*
      *  if the length of the vector is not of interrest length may be NULL
      */
-    if (length != NULL)
+    if (length != NULL) {
         *length = i;
+    }
 
-    floatvec = Malloc (i * sizeof (float));
+    floatvec = MALLOC (i * sizeof (float));
 
     for (j = 0; j < i; j++) {
         floatvec[j] = FLOAT_VAL (EXPRS_EXPR (tmp));
@@ -2097,10 +2104,11 @@ Array2DblVec (node *aelems, int *length)
     /*
      *  if the length of the vector is not of interrest length may be NULL
      */
-    if (length != NULL)
+    if (length != NULL) {
         *length = i;
+    }
 
-    dblvec = Malloc (i * sizeof (double));
+    dblvec = MALLOC (i * sizeof (double));
 
     for (j = 0; j < i; j++) {
         dblvec[j] = DOUBLE_VAL (EXPRS_EXPR (tmp));
@@ -2130,7 +2138,7 @@ Array2Shpseg (node *array)
 
     DBUG_ENTER ("Array2Shpseg");
 
-    shape = (shpseg *)MALLOC (sizeof (shpseg));
+    shape = MakeShpseg (NULL);
 
     tmp = ARRAY_AELEMS (array);
     while (tmp != NULL) {
