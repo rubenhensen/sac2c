@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2000/08/02 14:29:22  nmw
+ * include for print_interface_* added
+ *
  * Revision 1.27  2000/07/21 08:22:18  nmw
  * impspec_tab added
  *
@@ -262,7 +265,8 @@
 #include "adjust_calls.h"
 #include "pad_collect.h"
 #include "pad_transform.h"
-#include "print_interface.h"
+#include "print_interface_header.h"
+#include "print_interface_wrapper.h"
 #include "map_cwrapper.h"
 #include "import_specialization.h"
 
