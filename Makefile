@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.34  2000/03/23 14:04:54  jhs
+# Added echoing of OS at begin of compilation.
+#
 # Revision 2.33  2000/03/22 17:38:17  jhs
 # Added barrier_init.o
 #
@@ -274,6 +277,9 @@ check_os:
                $(ECHO) "OSF_ALPHA"; \
 	       exit 1; \
 	  fi
+	@ $(ECHO)
+	@ $(ECHO) "Building for $(OS).";
+	@ $(ECHO)
 
 dummy:
 	(cd lib/src; $(MAKE_NORM) )
