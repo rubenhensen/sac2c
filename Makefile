@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.123  2004/10/21 17:21:09  sah
+# added resolveall.o
+#
 # Revision 3.122  2004/10/21 16:21:15  ktr
 # added src/refcount/staticreuse.o
 #
@@ -297,7 +300,8 @@ ifeq ($(NEWAST),yes)
                src/modules/modulemanager.o src/modules/libmanager.o \
                src/tree/deserialize.o src/tree/serialize_buildstack.o \
                src/modules/export.o src/modules/ccmanager.o \
-               src/modules/libbuilder.o src/tree/serialize_helper.o
+               src/modules/libbuilder.o src/tree/serialize_helper.o \
+               src/modules/resolveall.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
