@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/05/14 20:00:39  ktr
+ * TmpVarName now avoids to prepend the same prefix twice.
+ *
  * Revision 3.34  2003/04/26 20:48:47  mwe
  * esd_tab added
  *
@@ -1011,10 +1014,22 @@ TmpVarName (char *postfix)
 
     DBUG_ENTER ("TmpVarName");
 
+    /* avoid chains of same prefixes */
+    tmp = PrefixForTmpVar ();
+
+    if ((strlen (postfix) > (strlen (tmp) + 1)) && (*postfix == '_')
+        && (strncmp ((postfix + 1), tmp, strlen (tmp)) == 0)) {
+        postfix = postfix + strlen (tmp) + 2;
+        while (*postfix++ != '_')
+            ;
+    }
     tmp = TmpVar ();
+
     result = (char *)Malloc ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
     sprintf (result, "%s_%s", tmp, postfix);
     tmp = Free (tmp);
+
+    printf ("%s\n", result);
 
     DBUG_RETURN (result);
 }
