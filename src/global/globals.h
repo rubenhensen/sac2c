@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1997/10/09 13:54:12  srs
+ * counter for memory allocation
+ *
  * Revision 1.12  1997/06/03 10:14:46  sbs
  * -D option integrated
  *
@@ -115,5 +118,7 @@ extern int print_objdef_for_header_file;
 extern int function_counter;
 
 extern deps *dependencies;
+
+extern unsigned int total_allocated_mem;
 
 #endif /* _sac_globals_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1997/10/09 13:53:49  srs
+ * counter for memory allocation
+ *
  * Revision 1.16  1997/08/04 15:11:18  dkr
  * changed DBUG_PRINT-strings in Malloc
  *
@@ -70,6 +73,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "internal_lib.h"
+#include "globals.h"
 
 #define MAX_SYSCALL 1000
 
@@ -99,6 +103,7 @@ Malloc (int size)
     tmp = malloc (size);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
+    total_allocated_mem += size;
 
     DBUG_PRINT ("MEMALLOC", ("new memory: " P_FORMAT, tmp));
 

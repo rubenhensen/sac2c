@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.99  1997/10/09 13:53:25  srs
+ * counter for memory allocation
+ *
  * Revision 1.98  1997/08/07 13:53:30  dkr
  * *** empty log message ***
  *
@@ -434,6 +437,8 @@ int dbug_from = 0;
 int dbug_to = 0;
 int dbug_active = 0;
 char *dbug_str = "";
+
+unsigned int total_allocated_mem;
 
 int print_objdef_for_header_file = 0;
 /*
@@ -1272,6 +1277,7 @@ MAIN
         if (break_compilation) {
             NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
         }
+        NOTE2 (("*** allocated memory (bytes): %u", total_allocated_mem));
 
         NOTE2 (("*** Exit code 0"));
         NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
