@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/03/07 20:07:49  dkr
+ * ND_FUN_RET: parameter arg_info removed
+ *
  * Revision 3.27  2002/03/07 15:55:20  dkr
  * ND_FUN_DEC: parameter renamed
  *
@@ -137,10 +140,6 @@
  *   static variables for them in icm2c.c and BEtest.c
  *   which has to be made in order to spare a second traversal
  *   of icm.data (-> icm2c.c!).
- * 
- * The following ICM's have extra arguments in the argument list
- * specified as second argument of ICM_END :
- *  - ND_FUN_RET : arg_info !
  */
 
 #if defined(ND_FUN_DEC) || defined(ICM_ALL)
@@ -166,7 +165,7 @@ ICM_DEF( ND_FUN_RET, TRACE_FUN)
   ICM_STR(retname)
   ICM_INT(narg)
   ICM_VAR((3*narg), arg)
-ICM_END( ND_FUN_RET, (retname, narg, arg, arg_info))
+ICM_END( ND_FUN_RET, (retname, narg, arg))
 #endif
 
 #if defined(ND_CREATE_CONST_ARRAY_S) || defined(ICM_ALL)
