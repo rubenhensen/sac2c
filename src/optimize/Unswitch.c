@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.4  2001/02/02 10:21:55  dkr
+ * import of access_macros.h removed
+ *
  * Revision 3.3  2000/12/01 14:37:26  sbs
  * warnings eliminated.
  *
@@ -79,6 +83,7 @@
  *
  * Revision 1.1  1995/07/07  13:40:15  asi
  * Initial revision
+ *
  */
 
 #include <stdio.h>
@@ -91,7 +96,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "access_macros.h"
 #include "internal_lib.h"
 
 #include "optimize.h"
@@ -511,25 +515,25 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
     if (NULL != loop_info) {
         if (N_id == cond_var->nodetype) {
             test = cond_var->info.ids->def;
-            if ((NULL != test) && (N_prf == test->nodetype)
+            if ((NULL != test) && (N_prf == NODE_TYPE (test))
                 && (F_le <= (test_prf = test->info.prf)) && (F_neq >= test_prf)
                 && (test->flag == level)) {
 
                 /* the constant value shall be on the right side of the expression */
                 /* i.e. cond = Num op i will be changed to cond = i op Num         */
-                if (IsConst (test->ARG2)) {
-                    arg[0] = test->ARG1;
-                    arg[1] = test->ARG2;
+                if (IsConst (PRF_ARG2 (test))) {
+                    arg[0] = PRF_ARG1 (test);
+                    arg[1] = PRF_ARG2 (test);
                 } else {
                     test_prf = ReversePrf (test_prf);
-                    arg[0] = test->ARG2;
-                    arg[1] = test->ARG1;
+                    arg[0] = PRF_ARG2 (test);
+                    arg[1] = PRF_ARG1 (test);
                 }
 
                 /* adjust definition of conditional variable */
                 test->info.prf = test_prf;
-                test->ARG1 = arg[0];
-                test->ARG2 = arg[1];
+                PRF_ARG1 (test) = arg[0];
+                PRF_ARG2 (test) = arg[1];
 
                 /* do i have the same variable and is the calculations  */
                 /* of the condition in  the loop ?                      */
@@ -738,7 +742,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         /* modify first loop */
         cond_info->insert_node->node[0] = cond_info->chain1;
         ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->info.prf = cond_info->test_prf;
-        ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->ARG2->info.cint = cond_info->test_num;
+        PRF_ARG2 (ID_DEF (DO_COND (ASSIGN_INSTR (arg_node))))->info.cint
+          = cond_info->test_num;
 
         /* Generate masks */
         arg_node = GenerateMasks (arg_node, arg_info);
@@ -812,7 +817,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         /* Again, the UGLY TRICK is used here!! (see above) */
         cond_info->insert_node->node[0] = cond_info->chain1;
         ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->info.prf = cond_info->test_prf;
-        ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->ARG2->info.cint = cond_info->test_num;
+        PRF_ARG2 (ID_DEF (DO_COND (ASSIGN_INSTR (arg_node))))->info.cint
+          = cond_info->test_num;
 
         /* Generate masks */
         arg_node = GenerateMasks (arg_node, arg_info);
