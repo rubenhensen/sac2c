@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/08/04 18:07:31  dkr
+ * -mt reactivated for TAGGED_ARRAYS
+ *
  * Revision 3.43  2003/07/28 15:35:06  cg
  * Added short version identification option (-V).
  * Full version information is now available with -VV
@@ -1012,13 +1015,15 @@ CheckOptionConsistency ()
 #endif
 
 #ifdef TAGGED_ARRAYS
-    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
-        gen_mt_code = GEN_MT_NONE;
-        num_threads = 1;
-        SYSWARN (("Code generation for multi-threaded program execution not"
-                  " yet available for TAGGED_ARRAYS.\n"
-                  "Code for sequential execution generated instead"));
-    }
+#if 0
+  if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+    gen_mt_code = GEN_MT_NONE;
+    num_threads = 1;
+    SYSWARN( ("Code generation for multi-threaded program execution not"
+              " yet available for TAGGED_ARRAYS.\n"
+              "Code for sequential execution generated instead"));
+  }
+#endif
     if (optimize & OPT_RCAO) {
         SYSWARN (("Refcount allocation optimization (RCAO) of private heap"
                   " management is not yet available for TAGGED_ARRAYS.\n"
