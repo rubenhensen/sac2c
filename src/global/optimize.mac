@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/11 14:46:48  ktr
+ * UIP is now enabled by default.
+ *
  * Revision 1.5  2004/12/08 12:16:37  mwe
  * type_upgrade added
  *
@@ -60,7 +63,7 @@ OPTIMIZE ("ive", ive, FALSE, FALSE, "index vector elimination")
 OPTIMIZE ("ae", ae, FALSE, FALSE, "array elimination")
 OPTIMIZE ("dl", dl, FALSE, FALSE, "distributive law")
 OPTIMIZE ("rco", rco, TRUE, TRUE, "reference count optimization")
-OPTIMIZE ("uip", uip, FALSE, FALSE, "update-in-place analysis")
+OPTIMIZE ("uip", uip, TRUE, TRUE, "update-in-place analysis")
 OPTIMIZE ("tsi", tsi, FALSE, FALSE, "with-loop tile size inference")
 OPTIMIZE ("tsp", tsp, FALSE, FALSE, "with-loop tile size pragmas")
 OPTIMIZE ("wlpg", wlpg, FALSE, FALSE, "with-loop partition generation")
