@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/11/25 23:25:57  cg
+ * Added global vars from convert.c
+ *
  * Revision 1.15  2004/11/25 17:27:28  cg
  * Added global variables for scan/parse.
  *
@@ -746,6 +749,13 @@ GLOBAL (const char **, mdb_nodetype, mdb_nodetype_init)
 GLOBAL (const char **, mdb_prf, mdb_prf_init)
 GLOBAL (const char **, mdb_type, mdb_type_init)
 GLOBAL (const char **, mdb_statustype, mdb_statustype_init)
+
+/*
+ * Type to string conversion tables
+ */
+
+GLOBAL (const char **, type_string, type_string_init);
+GLOBAL (const char **, rename_type, rename_type_init);
 
 /*
  * Resource / configuration management

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/11/25 23:25:57  cg
+ * Added global vars from convert.c
+ *
  * Revision 3.80  2004/11/25 14:44:25  cg
  * Reintroduced spec_mode_str.
  *
@@ -494,6 +497,16 @@ static const char *mdb_statustype_init[] = {
 #define SELECTtext(it_text) it_text
 #include "status_info.mac"
 #undef SELECTtext
+};
+
+static char *type_string_init[] = {
+#define TYP_IFpr_str(str) str
+#include "type_info.mac"
+};
+
+static char *rename_type_init[] = {
+#define TYP_IFfunr_str(str) str
+#include "type_info.mac"
 };
 
 static configuration_t config_init;
