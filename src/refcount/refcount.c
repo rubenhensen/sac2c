@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/05/18 15:46:17  hw
+ * Revision 1.14  1995/05/19 13:29:59  hw
+ * - bug fixed in RCloop ( refcounts of variables that are used before they
+ *   will be defined will be increased)
+ *
+ * Revision 1.13  1995/05/18  15:46:17  hw
  * - changed RCwith ( increase refcount of array that will be modified
  *    in modarray_with-loop in all cases (used or not used in the
  *    with-loop body))
@@ -436,8 +440,11 @@ RCassign (node *arg_node, node *arg_info)
  *  external funs :
  *  macros        : DBUG...
  *
- *  remarks       : - all vars that are not used in the rest of
- *
+ *  remarks       : - v1: set of vars that are used before they will be defined
+ *                        in the body of the loop
+ *                  - v2: set of vars that are defined in the body of the loop
+ *                        and are used in the rest of the program
+ *                  ( array-vars are only considered )
  */
 node *
 RCloop (node *arg_node, node *arg_info)
@@ -541,19 +548,6 @@ RCloop (node *arg_node, node *arg_info)
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
             if (1 == IsArray (var_dec->TYPES)) {
-#if 0
-            if((defined_mask[i]>0) &&( ref_dump[i] >0))
-            {
-               /* store refcount of defined variables in new_info->node[1] (v2)
-                */
-               VAR_DEC_2_ID_NODE(id_node, var_dec);
-               id_node->ID_REF=ref_dump[i];
-               id_node->node[0]=new_info->node[1];
-               new_info->node[1]=id_node;
-               DBUG_PRINT("RC",("(v2) %s:%d",
-                                id_node->ID, id_node->ID_REF));
-            }
-#endif
                 if ((used_mask[i] > 0) && (0 < var_dec->refcnt) && (1 == again)) {
                     /* update refcount of used variables  (v1)
                      */
@@ -563,15 +557,20 @@ RCloop (node *arg_node, node *arg_info)
                     id_node->ID_REF = var_dec->refcnt;
                     DBUG_PRINT ("RC", ("(v1) %s:%d", id_node->ID, id_node->ID_REF));
                 }
-                /* now compute new refcounts, because of 'virtuell function
+                /* now compute new refcounts, because of 'virtuall function
                  * application'
                  */
                 if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
+                    /* these will be the return-values of the virtual function */
                     if (N_do == arg_node->nodetype) {
                         /* check whether current variable is an argument of
-                         * 'virtuell function'
+                         * 'virtual function'
                          */
                         if (0 == var_dec->refcnt)
+                            /* in this case the variable will be defined before it
+                             * will be used, so we don't need it as argument of
+                             * the virtual function (it can be freed earlier)
+                             */
                             ref_dump[i] = 0;
                         else
                             ref_dump[i] = 1;
@@ -580,7 +579,8 @@ RCloop (node *arg_node, node *arg_info)
 
                     DBUG_PRINT ("RC", ("set refcount of %s(%d) to: %d",
                                        var_dec->info.types->id, i, ref_dump[i]));
-                } else if ((used_mask[i] > 0) && (ref_dump[i] > 0)) {
+                } else if ((used_mask[i] > 0) && (0 < var_dec->refcnt)) {
+                    /* these variables are arguments of the virtual function */
                     ref_dump[i] += 1;
                     DBUG_PRINT ("RC", ("increased  refcount of %s(%d) to: %d",
                                        var_dec->info.types->id, i, ref_dump[i]));
