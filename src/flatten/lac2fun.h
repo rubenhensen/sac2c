@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2005/03/04 21:21:42  cg
+ * L2FgetLacFunName removed; made static to compiler module.
+ *
  * Revision 3.7  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -64,7 +67,6 @@
  *
  *****************************************************************************/
 extern node *L2FdoLac2Fun (node *syntaxtree);
-extern char *L2FgetLacFunName (char *suffix);
 
 extern node *L2Ffundef (node *arg_node, info *arg_info);
 extern node *L2Fcond (node *arg_node, info *arg_info);
