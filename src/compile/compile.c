@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2002/02/21 12:08:56  dkr
+ * some further code brushing done
+ *
  * Revision 3.71  2002/02/06 20:15:20  dkr
  * code for compilation of PRFs brushed
  *
@@ -10,9 +13,6 @@
  * ICMs).
  *
  * Revision 3.69  2001/12/17 12:36:51  dkr
- * code brushed
- *
- * Revision 3.68  2001/12/13 15:47:56  dkr
  * code brushed
  *
  * Revision 3.67  2001/12/11 17:29:18  dkr
@@ -91,151 +91,6 @@
  * Revision 3.47  2001/04/26 17:10:08  dkr
  * COMPCast reactivated
  *
- * Revision 3.46  2001/04/26 12:28:25  dkr
- * GetExprsLength() renamed into CountExprs()
- *
- * Revision 3.45  2001/04/26 11:56:25  nmw
- * CreateIcmND_FUN_AP() sets ICM_FUNDEF attribute
- *
- * Revision 3.44  2001/04/25 13:55:58  dkr
- * COMPFundef: ST_zombiefun added
- *
- * Revision 3.43  2001/04/24 09:39:50  dkr
- * CHECK_NULL renamed into STR_OR_EMPTY
- *
- * Revision 3.42  2001/04/06 17:17:15  dkr
- * CheckAp() removed by preprocessor if DBUG_OFF is set
- *
- * Revision 3.41  2001/04/06 16:58:29  dkr
- * CreateFundefIcm: no warning about uninitialized variable anymore
- *
- * Revision 3.40  2001/04/05 14:52:36  dkr
- * COMPAp() brushed
- *
- * Revision 3.39  2001/04/05 01:45:41  dkr
- * bug in COMPAp fixed:
- * mapping of a return value and an argument to the same argument position
- * works correctly now
- *
- * Revision 3.38  2001/04/04 23:08:41  dkr
- * - COMPFundef brushed
- * - special fold-funs are always compiled first now :-)
- *
- * Revision 3.37  2001/04/04 00:09:24  dkr
- * fixed a bug in COMPSync: fold type tag is generated correctly now even
- * for user defined types.
- *
- * Revision 3.36  2001/04/03 22:43:19  dkr
- * GetFoldCode: DBUG_ASSERT condition corrected
- *
- * Revision 3.35  2001/04/03 22:30:21  dkr
- * signature for MT_ADJUST_SCHEDULER modified
- *
- * Revision 3.34  2001/04/03 09:31:20  dkr
- * bug in InsertIcm_WL_SET_OFFSET() fixed
- *
- * Revision 3.33  2001/04/02 11:43:56  dkr
- * include of wl_bounds.h added
- *
- * Revision 3.32  2001/03/29 14:48:16  dkr
- * SYNC_SCHEDULING removed
- *
- * Revision 3.31  2001/03/29 01:36:00  dkr
- * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
- *
- * Revision 3.30  2001/03/27 10:53:02  dkr
- * minor changes done
- *
- * Revision 3.29  2001/03/22 19:15:58  dkr
- * include of tree.h elimiated
- *
- * Revision 3.28  2001/03/15 21:25:35  dkr
- * signature of NodeOr..._MakeIndex() modified
- *
- * Revision 3.27  2001/03/15 11:59:42  dkr
- * ST_inout replaced by ST_reference
- *
- * Revision 3.26  2001/03/14 16:25:16  dkr
- * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
- *
- * Revision 3.25  2001/03/14 15:55:04  dkr
- * ups, typo in InsertIcm_MT_ADJUST_SCHEDULER corrected ...
- *
- * Revision 3.24  2001/03/14 15:38:08  ben
- * actual parameters for MT_ADJUST_SCHEDULER icm corrected
- *
- * Revision 3.23  2001/03/05 16:42:11  dkr
- * no macros NWITH???_IS_FOLD used
- *
- * Revision 3.22  2001/03/02 16:11:27  dkr
- * some comments and DBUG_ASSERTs added
- *
- * Revision 3.21  2001/02/22 12:51:19  nmw
- * check for empty assignment chain in blocks after removing
- * artificial variables in precompile
- *
- * Revision 3.20  2001/02/09 13:34:09  dkr
- * COMPIcm added in order to RC the arguments of ICMs correctly
- *
- * Revision 3.19  2001/02/06 01:48:45  dkr
- * with-loop: NOOP nodes added
- *
- * Revision 3.18  2001/02/02 09:42:14  dkr
- * COMPWLgrid, COMPWLgridVar, COMPWLstride, COMPWLstrideVar, COMPWLseg,
- * COMPWLsegVar removed.
- *
- * Revision 3.17  2001/01/30 16:41:25  dkr
- * rcs header compressed
- *
- * Revision 3.16  2001/01/30 12:22:28  dkr
- * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
- *
- * Revision 3.15  2001/01/29 18:34:58  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.14  2001/01/24 23:46:37  dkr
- * WLGRIDX_FITTED used
- * ICMs SAC_WL_GRIDVAR_... renamed into SAC_WL_GRID_FIT_...
- *
- * Revision 3.13  2001/01/22 15:55:47  dkr
- * bug in COMPWLgridx fixed
- *
- * Revision 3.12  2001/01/22 13:46:24  dkr
- * signature of MT_ADJUST_SCHEDULER modified
- *
- * Revision 3.11  2001/01/19 11:58:12  dkr
- * some with-loop ICMs renamed
- *
- * Revision 3.9  2001/01/10 14:28:04  dkr
- * fixed a bug with multiple segments
- *
- * Revision 3.8  2001/01/09 19:59:18  dkr
- * code for WL-nodes brushed
- * support for naive compilation extended (not finished yet)
- *
- * Revision 3.7  2001/01/08 21:59:03  dkr
- * support for naive compilation of with-loops added (not finished yet)
- *
- * Revision 3.6  2000/12/29 14:24:41  cg
- * When compiling for multithreaded execution, any function gets one additional
- * parameter to hold the thread ID, which is needed for heap management.
- * Thread-specific data is only used by malloc().
- *
- * Revision 3.5  2000/12/12 15:32:28  dkr
- * functions Make...RcIcms() are not static anymore
- *
- * Revision 3.4  2000/12/06 19:24:45  dkr
- * minor changes done
- *
- * Revision 3.3  2000/11/29 13:57:15  dkr
- * no '... might be used uninitialized' warnings anymore
- *
- * Revision 3.2  2000/11/27 21:07:35  cg
- * Added generation of new ICM ND_ALLOC_ARRAY_PLACE.
- *
- * Revision 3.1  2000/11/20 18:01:07  sacbase
- * new release made
- *
  * [ eliminated ]
  *
  */
@@ -281,7 +136,7 @@
  *                          0 <= INFO_COMP_CNTPARAM < m    for return values
  *                          m <= INFO_COMP_CNTPARAM < m+n  for arguments
  *
- *   INFO_COMP_MERGE    : [written by ???, read by COMPAp()]
+ *   INFO_COMP_MERGE    : [written by COMPApArgs(), read by COMPAp()]
  *     If a return value and an argument are mapped to the same argument
  *     position, possibly a merge assignment is needed. It can be found here.
  *
@@ -335,6 +190,14 @@ static node *wlstride = NULL;
 
 /* postfix for goto labels */
 #define LABEL_POSTFIX "SAC__label"
+
+#define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
+    ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
+
+#define FUNDEF_WANTS_REFCOUNT(n, idx)                                                    \
+    ((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                       \
+     && (FUNDEF_REFCOUNTING (n) != NULL) && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx) \
+     && (FUNDEF_REFCOUNTING (n)[idx]))
 
 /*
  * This macro indicates whether there are multiple segments present or not.
@@ -981,14 +844,14 @@ DFM2AllocArrayIcm_CheckReuse (char *name, types *type, int rc, node *pragma,
 /******************************************************************************
  *
  * Function:
- *   node *AdjustAddedAssigns( node *after_ass, node *before_ass)
+ *   node *AdjustAddedAssigns( node *before_ass, node *after_ass)
  *
  * Description:
  *   Removes icms from 'after' that are obsolete because of the merging
  *   assignments/icms found in 'before':
  *
- *      r = fun( a);         ->          // 'before' assignments
- *                         (comp)        ND_FUN_AP( fun, r, a)
+ *      b = fun( a);         ->          // 'before' assignments
+ *                         (comp)        ND_FUN_AP( fun, b, a)
  *                                       // 'after' assignments
  *
  *   Example:
@@ -1002,7 +865,7 @@ DFM2AllocArrayIcm_CheckReuse (char *name, types *type, int rc, node *pragma,
  ******************************************************************************/
 
 static node *
-AdjustAddedAssigns (node *after_ass, node *before_ass)
+AdjustAddedAssigns (node *before_ass, node *after_ass)
 {
     node *after, *before;
 
@@ -1027,18 +890,19 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
 
                     if (NODE_TYPE (after) == N_icm) {
                         char *after_name = ICM_NAME (after);
+                        char *after_arg1_name = ID_NAME (ICM_ARG1 (after));
 
                         if (((!strcmp (after_name, "ND_DEC_RC_FREE_HIDDEN"))
-                             && (!strcmp (ID_NAME (ICM_ARG1 (after)), old_name)))
+                             && (!strcmp (after_arg1_name, old_name)))
                             || ((!strcmp (after_name, "ND_DEC_RC_FREE_ARRAY"))
-                                && (!strcmp (ID_NAME (ICM_ARG1 (after)), old_name)))
+                                && (!strcmp (after_arg1_name, old_name)))
                             || ((!strcmp (after_name, "ND_ALLOC_RC"))
-                                && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name)))) {
+                                && (!strcmp (after_arg1_name, new_name)))) {
                             ASSIGN_NEXT (last_after_ass)
                               = FreeNode (ASSIGN_NEXT (last_after_ass));
                         } else {
                             if ((!strcmp (after_name, "ND_NO_RC_FREE_ARRAY"))
-                                && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name))) {
+                                && (!strcmp (after_arg1_name, new_name))) {
                                 /*
                                  * icm names are static!
                                  *
@@ -1046,8 +910,7 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
                                  */
                                 ICM_NAME (before) = "ND_KS_NO_RC_MAKE_UNIQUE_ARRAY";
                             } else if ((!strcmp (after_name, "ND_NO_RC_FREE_HIDDEN"))
-                                       && (!strcmp (ID_NAME (ICM_ARG1 (after)),
-                                                    new_name))) {
+                                       && (!strcmp (after_arg1_name, new_name))) {
                                 /*
                                  * icm names are static!
                                  *
@@ -1057,7 +920,7 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
                             } else if (((!strcmp (after_name, "ND_NO_RC_ASSIGN_HIDDEN"))
                                         || (!strcmp (after_name,
                                                      "ND_KS_NO_RC_ASSIGN_ARRAY")))
-                                       && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name))
+                                       && (!strcmp (after_arg1_name, new_name))
                                        && (!strcmp (ID_NAME (ICM_ARG2 (after)),
                                                     old_name))) {
                                 Free (ID_NAME (ICM_ARG2 (before)));
@@ -1086,7 +949,7 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
 /******************************************************************************
  *
  * Function:
- *   node *MergeIcmsAp( node *out_icm, node *in_icm,
+ *   node *MergeApArgs( node *out_icm, node *in_icm,
  *                      types *type, int rc,
  *                      int line)
  *
@@ -1096,8 +959,8 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
  *              the mapping was detected.
  *   'type'   : type of parameter
  *   'rc'     : refcount of in-parameter
- *   Returns a N_assign node containing ICM code needed to merge the given
- *   parameters.
+ *   Merges application arguments if a proper linksign-pragma is given.
+ *   Returns a N_assign node containing additional ICMs needed for the merging.
  *
  * Example:
  *   signature of external C-function:  cfun( type *a);
@@ -1112,12 +975,12 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
  ******************************************************************************/
 
 static node *
-MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
+MergeApArgs (node *out_icm, node *in_icm, types *type, int rc, int line)
 {
     node *out_id, *in_id;
     node *new_assign = NULL;
 
-    DBUG_ENTER ("MergeIcmsAp");
+    DBUG_ENTER ("MergeApArgs");
 
     DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (out_icm)) == N_id), "no out-tag found!");
     DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (in_icm)) == N_id), "no in-tag found!");
@@ -1146,7 +1009,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
 
         if (IsArray (type)) {
             if (IsUnique (type)) {
-                DBUG_PRINT ("COMP", ("Merging ICM-args: unique array %s - %s",
+                DBUG_PRINT ("COMP", ("Merging ap-args: unique array %s - %s",
                                      ID_NAME (in_id), ID_NAME (out_id)));
 
                 if (strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
@@ -1154,7 +1017,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
                                                  DupNode (in_id), DupNode (out_id), NULL);
                 }
             } else if (rc == 1) {
-                DBUG_PRINT ("COMP", ("Merging ICM-args non-unique array with rc==1"
+                DBUG_PRINT ("COMP", ("Merging ap-args: non-unique array with rc==1"
                                      " %s - %s",
                                      ID_NAME (in_id), ID_NAME (out_id)));
 
@@ -1162,7 +1025,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
                                              DupNode (out_id),
                                              MakeNum (GetBasetypeSize (type)), NULL);
             } else {
-                DBUG_PRINT ("COMP", ("Merging ICM-args non-unique array with rc>1"
+                DBUG_PRINT ("COMP", ("Merging ap-args: non-unique array with rc>1"
                                      " %s - %s",
                                      ID_NAME (in_id), ID_NAME (out_id)));
 
@@ -1170,43 +1033,48 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
                   = MakeAssignIcm3 ("ND_KS_COPY_ARRAY", DupNode (in_id), DupNode (out_id),
                                     MakeNum (GetBasetypeSize (type)), NULL);
             }
-        } else if (IsUnique (type)) {
-            DBUG_PRINT ("COMP", ("Merging ICM-args unique hidden %s - %s",
-                                 ID_NAME (in_id), ID_NAME (out_id)));
-
-            if (strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
-                new_assign = MakeAssignIcm2 ("ND_NO_RC_ASSIGN_HIDDEN", DupNode (in_id),
-                                             DupNode (out_id), NULL);
-            }
-        } else if (rc == 1) {
-            DBUG_PRINT ("COMP", ("Merging ICM-args non-unique hidden %s - %s"
-                                 " with rc==1",
-                                 ID_NAME (in_id), ID_NAME (out_id)));
-
-            new_assign = MakeAssignIcm3 ("ND_MAKE_UNIQUE_HIDDEN", DupNode (in_id),
-                                         DupNode (out_id),
-                                         MakeId_Copy (GenericFun (0, type)), NULL);
         } else {
-            DBUG_PRINT ("COMP", ("Merging ICM-args non-unique hidden %s - %s"
-                                 " with rc>1",
-                                 ID_NAME (in_id), ID_NAME (out_id)));
+            DBUG_ASSERT ((IsHidden (type)),
+                         "boxed object is neither an array nor an hidden object");
 
-            new_assign
-              = MakeAssignIcm3 ("ND_KS_COPY_HIDDEN", DupNode (in_id), DupNode (out_id),
-                                MakeId_Copy (GenericFun (0, type)), NULL);
+            if (IsUnique (type)) {
+                DBUG_PRINT ("COMP", ("Merging ap-args: unique hidden %s - %s",
+                                     ID_NAME (in_id), ID_NAME (out_id)));
+
+                if (strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
+                    new_assign = MakeAssignIcm2 ("ND_NO_RC_ASSIGN_HIDDEN",
+                                                 DupNode (in_id), DupNode (out_id), NULL);
+                }
+            } else if (rc == 1) {
+                DBUG_PRINT ("COMP", ("Merging ap-args: non-unique hidden %s - %s"
+                                     " with rc==1",
+                                     ID_NAME (in_id), ID_NAME (out_id)));
+
+                new_assign = MakeAssignIcm3 ("ND_MAKE_UNIQUE_HIDDEN", DupNode (in_id),
+                                             DupNode (out_id),
+                                             MakeId_Copy (GenericFun (0, type)), NULL);
+            } else {
+                DBUG_PRINT ("COMP", ("Merging ap-args: non-unique hidden %s - %s"
+                                     " with rc>1",
+                                     ID_NAME (in_id), ID_NAME (out_id)));
+
+                new_assign = MakeAssignIcm3 ("ND_KS_COPY_HIDDEN", DupNode (in_id),
+                                             DupNode (out_id),
+                                             MakeId_Copy (GenericFun (0, type)), NULL);
+            }
         }
     } else {
         FreeTree (EXPRS_EXPR (out_icm));
         EXPRS_EXPR (out_icm) = MakeId_Copy ("upd");
 
-        DBUG_PRINT ("COMP", ("Merging ICM-args unboxed %s", ID_NAME (out_id)));
+        DBUG_PRINT ("COMP", ("Merging ap-args: unboxed %s", ID_NAME (out_id)));
 
         if ((NODE_TYPE (in_id) != N_id) || strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
             new_assign = MakeAssign (MakeLet (DupNode (in_id), DupId_Ids (out_id)), NULL);
         }
     }
 
-    DBUG_PRINT ("COMP", ("Merging icm args of ND_FUN_AP, new tag=\"%s\"",
+    DBUG_PRINT ("COMP", ("Merging ap-args: new tag for ND_FUN_AP = \"%s\"",
                          ID_NAME (EXPRS_EXPR (out_icm))));
 
     DBUG_RETURN (new_assign);
@@ -1215,18 +1083,18 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
 /******************************************************************************
  *
  * Function:
- *   void MergeIcmsFundef( node *out_icm, node *in_icm,
+ *   void MergeFundefArgs( node *out_icm, node *in_icm,
  *                         types *out_type, types *in_type, int line)
  *
  * Description:
- *
+ *   Merges fundef arguments if a proper linksign-pragma is given.
  *
  ******************************************************************************/
 
 static void
-MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, int line)
+MergeFundefArgs (node *out_icm, node *in_icm, types *out_type, types *in_type, int line)
 {
-    DBUG_ENTER ("MergeIcmsFundef");
+    DBUG_ENTER ("MergeFundefArgs");
 
     if ((strcmp ("out", ID_NAME (EXPRS_EXPR (out_icm))))
         || (strcmp ("in", ID_NAME (EXPRS_EXPR (in_icm))))) {
@@ -1246,7 +1114,7 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
             EXPRS_EXPR (out_icm) = MakeId_Copy ("upd");
         }
 
-        DBUG_PRINT ("COMP", ("Merging icm args of ND_FUN_DEC, new tag=\"%s\"",
+        DBUG_PRINT ("COMP", ("Merging fundef-args: new tag for ND_FUN_DEC = \"%s\"",
                              ID_NAME (EXPRS_EXPR (out_icm))));
     } else {
         ERROR (line, ("Pragma 'linksign' illegal"));
@@ -1840,7 +1708,7 @@ InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc, int *links
             icm_tab[linksign[cnt_param] + 1] = icm_arg;
         } else {
             icm_node
-              = MergeIcmsAp (icm_tab[linksign[cnt_param] + 1], icm_arg, type, rc, line);
+              = MergeApArgs (icm_tab[linksign[cnt_param] + 1], icm_arg, type, rc, line);
         }
     }
 
@@ -1947,7 +1815,7 @@ InsertFundefArgParam (node **icm_tab, node *icm_args, types **type_tab, types *t
         if (icm_tab[linksign[cnt_param] + 1] == NULL) {
             icm_tab[linksign[cnt_param] + 1] = icm_args;
         } else {
-            MergeIcmsFundef (icm_tab[linksign[cnt_param] + 1], icm_args,
+            MergeFundefArgs (icm_tab[linksign[cnt_param] + 1], icm_args,
                              type_tab[linksign[cnt_param] + 1], type_args, line);
         }
     }
@@ -2162,6 +2030,7 @@ CheckApPrf (ids *let_ids, node *ap_prf, node *arg_info)
  *
  *
  * ### CODE NOT BRUSHED YET ###
+ * ### USED BY NEW MT ONLY ####
  *
  ******************************************************************************/
 
@@ -2229,6 +2098,7 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
  *
  *
  * ### CODE NOT BRUSHED YET ###
+ * ### USED BY NEW MT ONLY ####
  *
  ******************************************************************************/
 
@@ -2291,6 +2161,7 @@ MakeParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_ar
  *
  *
  * ### CODE NOT BRUSHED YET ###
+ * ### USED BY NEW MT ONLY ####
  *
  ******************************************************************************/
 
@@ -2301,12 +2172,12 @@ DoSomeReallyUglyTransformations_MT2 (node *fundef)
     node *vardec;
     node *assigns, *assign;
 
-    DBUG_ENTER ("*DoSomeReallyUglyTransformations");
+    DBUG_ENTER ("DoSomeReallyUglyTransformations");
 
     /*
      * dkr:
      * The following code is unbelievable UGLY!!!!
-     * But I do not want to rewrite the hole shit now :-/
+     * But I do not want to rewrite the whole shit now :-/
      */
 
     front = MakeIcm4 ("MT2_WORKER_RECEIVE", MakeId_Copy ("SYNC"),
@@ -2352,7 +2223,7 @@ DoSomeReallyUglyTransformations_MT2 (node *fundef)
 
     while (vardec != NULL) {
         /*
-         * !!!!!!!!! THIS PART NEEDS RECODING !!!!!!!!!
+         * !!!!!!!!! THIS PART MUST BE RECODED !!!!!!!!!
          *
          * dkr: OUCH, this code will possibly fail with a modified tree
          *      implementation!!!
@@ -2675,9 +2546,9 @@ COMPFundef (node *arg_node, node *arg_info)
 
         /*
          * During compilation of a N_sync, the prior N_sync (if exists) is needed.
-         * INFO_COMP_LASTSYNC provides these information, it is initialized here with
-         * NULL and will be updated by each compilation of a N_sync (one needs to
-         * compile them ordered!), this includes the destruction of such a
+         * INFO_COMP_LASTSYNC provides these information, it is initialized here
+         * with NULL and will be updated by each compilation of a N_sync (one needs
+         * to compile them ordered!), this includes the destruction of such a
          * N_sync-tree.
          * After compilation of the function the last known sync is destroyed then.
          */
@@ -2691,9 +2562,9 @@ COMPFundef (node *arg_node, node *arg_info)
 
         /*
          * For each scheduler a specific initialization ICM is created during the
-         * traversal of an SPMD function. They are chained by means of N_assign nodes
-         * and will later be inserted into the code which sets up the environment
-         * for multithreaded execution.
+         * traversal of an SPMD function. They are chained by means of N_assign
+         * nodes and will later be inserted into the code which sets up the
+         * environment for multithreaded execution.
          */
         INFO_COMP_SCHEDULERINIT (arg_info) = NULL;
 
@@ -2716,8 +2587,8 @@ COMPFundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * Destruction of last known N_sync is done here, all others have been killed
-         * while traversing.
+         * Destruction of last known N_sync is done here, all others have been
+         * killed while traversing.
          */
         if (INFO_COMP_LASTSYNC (arg_info) != NULL) {
             INFO_COMP_LASTSYNC (arg_info) = FreeTree (INFO_COMP_LASTSYNC (arg_info));
@@ -3160,8 +3031,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
          *                       out_rc, int*, A,
          *                       out_rc, int*, A_1,
          *                       in_rc,  int*, A)
-         *       {
-         *         ...
+         *       { ...
          *         SAC_ND_FUN_RET( , 3, out_rc, A, A, out_rc, A, A_1)
          *       }
          *   Note, that the second out-argument (A) must be renamed in the
@@ -3767,7 +3637,7 @@ COMPAp (node *arg_node, node *arg_info)
 
     ret_node = AppendAssign (assigns1, assigns2);
 
-    ret_node = AdjustAddedAssigns (ret_node, INFO_COMP_MERGE (arg_info));
+    ret_node = AdjustAddedAssigns (INFO_COMP_MERGE (arg_info), ret_node);
 
     /* create new icm */
     new_icm = MakeIcm_ND_FUN_AP (fundef, INFO_COMP_ICMTAB (arg_info),
@@ -4868,7 +4738,7 @@ COMPIdFromClass (node *arg_node, node *arg_info)
  * Description:
  *   Compiles let expression with a N_id node representing an application of
  *   the to_class() conversion function on RHS.
- *   The return value is a (possibly empty) N_assign chain of ICMs.
+ *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
