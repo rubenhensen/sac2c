@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/05/11 10:36:33  dkr
+ * Bug in ReduceGenarrayShape fixed: arg_info is no longer dumped.
+ * Macro SHAPE_2_ARRAY replaced by function Types2Array.
+ *
  * Revision 2.36  2000/05/03 06:07:01  sbs
  * warning inserted when maxspecialize is exceeded!
  *
@@ -567,6 +571,71 @@ static int imported_fun; /* is used to check whether to look behind a "hidden"
  */
 #define IMPORTED 1
 #define NOT_IMPORTED 0
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *Types2Array( types *type, types *res_type)
+ *
+ * Description:
+ *   Creates and computes the basic-shape out of a types struct as N_array.
+ *   NOTE: If the type is not the type of an array, NULL will be returned.
+ *
+ ******************************************************************************/
+
+node *
+Types2Array (types *type, types *res_type)
+{
+    node *shape_array = NULL;
+    int i;
+
+    DBUG_ENTER ("Types2Array");
+
+    if (T_user == type->simpletype) {
+        types *b_type = LookupType (type->name, type->name_mod, 042)->info.types;
+        if (0 < b_type->dim + type->dim) {
+            node *dummy = MakeNode (N_exprs);
+            shape_array = MakeNode (N_array);
+            ARRAY_TYPE (shape_array) = DuplicateTypes (res_type, 0);
+            shape_array->node[0] = dummy;
+            for (i = 0; i < type->dim - 1; i++) {
+                dummy->node[0] = MakeNum (type->shpseg->shp[i]);
+                dummy->node[1] = MakeNode (N_exprs);
+                dummy = dummy->node[1];
+            }
+            if (0 < type->dim) {
+                dummy->node[0] = MakeNum (type->shpseg->shp[i]);
+                if (0 < b_type->dim) {
+                    dummy->node[1] = MakeNode (N_exprs);
+                    dummy = dummy->node[1];
+                }
+            }
+            for (i = 0; i < b_type->dim - 1; i++) {
+                dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);
+                dummy->node[1] = MakeNode (N_exprs);
+                dummy = dummy->node[1];
+            }
+            if (0 < b_type->dim) {
+                dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);
+            }
+        }
+    } else {
+        if (0 < type->dim) {
+            node *dummy = MakeNode (N_exprs);
+            shape_array = MakeNode (N_array);
+            ARRAY_TYPE (shape_array) = DuplicateTypes (res_type, 0);
+            shape_array->node[0] = dummy;
+            for (i = 0; i < type->dim - 1; i++) {
+                dummy->node[0] = MakeNum (type->shpseg->shp[i]);
+                dummy->node[1] = MakeNode (N_exprs);
+                dummy = dummy->node[1];
+            }
+            dummy->node[0] = MakeNum (type->shpseg->shp[i]);
+        }
+    }
+
+    DBUG_RETURN (shape_array);
+}
 
 /******************************************************************************
  *
@@ -1941,6 +2010,9 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #endif
 
     DBUG_ENTER ("TI_fun");
+
+    DBUG_ASSERT ((INFO_TC_FUNDEF (arg_info) != NULL),
+                 "TI_fun(): INFO_TC_FUNDEF( arg_info) is missing!");
 
     if (fun_p->node == INFO_TC_FUNDEF (arg_info)) {
         if (BODY == INFO_TC_STATUS (arg_info)) {
@@ -4512,7 +4584,7 @@ TCfundef (node *arg_node, node *arg_info)
                      ? IMPORTED
                      : NOT_IMPORTED;
 
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
     info_node->node[0] = MakeNode (N_ok); /* status 0 = beginning of function */
     INFO_TC_STATUS (info_node) = 0;
 
@@ -4586,8 +4658,7 @@ TCfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("TYPE",
                     ("set tag of function %s to %s", fun->id, CHECK_NAME (fun->tag)));
     }
-    FREE (info_node->node[0]);
-    FREE (info_node);
+    info_node = FreeTree (info_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -5333,20 +5404,6 @@ TClet (node *arg_node, node *arg_info)
          FREE_TYPES(type);
          */
         FreeAllTypes (tmp);
-
-#ifdef TEST_GET_SHAPE
-        /* to test the macro GET_SHAPE */
-        if (N_prf == arg_node->node[0]->nodetype)
-            if (F_shape == arg_node->node[0]->info.prf) {
-                node *arg = arg_node->node[0]->node[0]->node[0];
-                if (arg->nodetype == N_array)
-                    SHAPE_2_ARRAY (arg_node->node[0], arg->TYPES);
-                else {
-                    DBUG_ASSERT (arg->nodetype == N_id, "N_id expected");
-                    SHAPE_2_ARRAY (LET_EXPR (arg_node), arg->info.ids->node->TYPES);
-                }
-            }
-#endif
     }
 
     DBUG_RETURN (arg_node);
@@ -7949,7 +8006,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
      * or CF would be too complex (masks, mrd, name clashed when including
      * optimize.h to patch masks and mrd).
      */
-    tmpn = ReduceGenarrayShape (arg_node, expr_type);
+    tmpn = ReduceGenarrayShape (arg_node, arg_info, expr_type);
     if (tmpn) {
         arg_node = tmpn;
         /*
