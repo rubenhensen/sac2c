@@ -164,6 +164,16 @@ CACHE2_SIZE    :=  512
 CACHE2_LINE    :=  64
 CACHE2_ASSOC   :=  1
 
+target ultra2i:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  2048
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
 
 target ultra3:
 
@@ -283,9 +293,9 @@ CCMTLINK        +=  -lglib
  *   
  */
 
-target tummy::sparc_5:
+target tummy::ultra2i:
 
-target cheops::sparc_20_61:
+target cheops::ultra2i:
 
 target twice::sparc_20_71:
 
@@ -307,12 +317,12 @@ target idefix:: ultra2_entr450:
 
 target tummy_cc::suncc::sparc_5:
 
-CCFLAGS        +=  "-xtarget=ss5"
+CCFLAGS        +=  "-xtarget=ultra2i -xcache=16/32/1:2048/64/1"
 
 
 target cheops_cc::suncc::sparc_20_61:
 
-CCFLAGS        +=  "-xtarget=ss20/71 -xcache=16/32/4"
+CCFLAGS        +=  "-xtarget=ultra2i -xcache=16/32/1:2048/64/1"
 
 
 target twice_cc::suncc::sparc_20_71:
@@ -322,7 +332,7 @@ CCFLAGS        +=  "-xtarget=ss20/71"
 
 target dali_cc::suncc::ultra2:
 
-CCFLAGS        +=  "-xtarget=ultra2"
+CCFLAGS        +=  "-xtarget=ultra2i"
 
 
 target blitz_cc::suncc::ultra_entr3000:
@@ -335,7 +345,7 @@ target picard_cc::suncc::ultra2_entr4000:
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
 
 
-target picard_cc::suncc::ultra2_entr450:
+target idefix_cc::suncc::ultra2_entr450:
 
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:4096/64/1"
 
