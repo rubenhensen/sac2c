@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/11/02 14:33:18  sbs
+ * SAC_ND_DEC_RC_FREE_ARRAY added at the end of the code for ND_KS_VECT2OFFSET!
+ * This makes sure, all index-vectors that will be no longer used are actually freed!
+ *
  * Revision 2.12  1999/07/22 10:03:41  cg
  * Added const annotations for external declarations of global arrays.
  *
@@ -2233,6 +2237,8 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims, 
     fprintf (outfile, "%s = ", off_name);
     VectToOffset2 (dim, AccessVect (arr_name, i), dims, AccessConst (s, i));
     fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "SAC_ND_DEC_RC_FREE_ARRAY( %s, 1)\n", arr_name);
 
     DBUG_VOID_RETURN;
 }
