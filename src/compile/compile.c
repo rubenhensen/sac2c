@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.49  1995/06/16 15:29:11  hw
+ * Revision 1.50  1995/06/23 13:13:53  hw
+ * - functions will be renamed now, so overloading of userdefined
+ *   functions can be done.
+ *   ( new function RenameFunName inserted)
+ * -  added argument to call of 'DuplicateTypes'
+ *
+ * Revision 1.49  1995/06/16  15:29:11  hw
  * bug fixed in CompVardec( rmoveing of vardec-nodes)
  *
  * Revision 1.48  1995/06/14  15:32:25  hw
@@ -227,6 +233,26 @@ extern int malloc_debug (int level);
 
 #define DUMMY_NAME "__OUT_"
 #define LABEL_NAME "__Label" /* basic-name for goto label */
+#define FUN_NAME_LENGTH 256
+
+/* following macros are only temporay (they are copied from typecheck.c) */
+#define MOD(a) (NULL == a) ? "" : a
+#define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
+#define MOD_NAME(a) MOD (a), MOD_CON (a)
+
+#ifndef DBUG_OFF
+
+#define MDB_VAR(var) var
+#define MDB_DECLARE(type, var) type var
+#define MDB_ASSIGN(var, value) var = value
+
+#else
+
+#define MDB_VAR(var)
+#define MDB_DECLARE(type, var)
+#define MDB_ASSIGN(var, value)
+
+#endif /* DBUG_OFF */
 
 /* the following macros are used to generate N_icms */
 #define MAKE_ICM_ARG(var, new_node)                                                      \
@@ -490,24 +516,27 @@ extern int malloc_debug (int level);
     }
 
 #define FREE(a)                                                                          \
-    DBUG_PRINT ("FREE", (P_FORMAT, a));                                                  \
-    free (a)
+    {                                                                                    \
+        DBUG_PRINT ("FREE", (P_FORMAT, a));                                              \
+        free (a);                                                                        \
+    }
 
 #define FREE_TYPE(a)                                                                     \
-    if (NULL != a->shpseg) {                                                             \
-        FREE (a->shpseg);                                                                \
-    }                                                                                    \
+    if (NULL != a->shpseg)                                                               \
+        FREE (a->shpseg)                                                                 \
     FREE (a)
 
 #define FREE_VARDEC(a)                                                                   \
-    FREE_TYPE (a->TYPES);                                                                \
+    FREE_TYPE (a->TYPES)                                                                 \
     FREE (a)
 
 #define FREE_TREE(a) FreeTree (a)
 
 #define FREE_IDS(a)                                                                      \
-    DBUG_PRINT ("FREE", (P_FORMAT, a));                                                  \
-    FreeIds (a)
+    {                                                                                    \
+        DBUG_PRINT ("FREE", (P_FORMAT, a));                                              \
+        FreeIds (a);                                                                     \
+    }
 
 #if 0
 #define FREE(a)
@@ -546,6 +575,57 @@ RenameVar (char *string, int i)
     }
 
     DBUG_RETURN (new_name);
+}
+
+/*
+ *
+ *  functionname  : RenameFunName
+ *  arguments     : 1) N_fundef node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Malloc, strlen, sprintf, sizeof, Type2String
+ *  macros        : DBUG..., NULL, ID_MOD, ID, FUN_NAME_LENGTH,
+ *                  MDB_DECLARE, MDB_ASSIGN, FREE
+ *
+ *  remarks       : imported "non sac" functions and functions without
+ *                  arguments and modul-name will NOT be renamed
+ *
+ */
+node *
+RenameFunName (node *fun_node)
+{
+    node *tmp_fun_node, *args;
+    char *arg_type, *new_name;
+    MDB_DECLARE (int, length);
+
+    DBUG_ENTER ("RenameFunName");
+    tmp_fun_node = fun_node;
+    do {
+        if (((NULL != tmp_fun_node->node[0])
+             || ((NULL != tmp_fun_node->ID_MOD) && (NULL == tmp_fun_node->node[0])))
+            && ((NULL != tmp_fun_node->node[2]) || (NULL != tmp_fun_node->ID_MOD))) {
+            args = tmp_fun_node->node[2];
+            new_name = (char *)Malloc (sizeof (char) * FUN_NAME_LENGTH);
+            sprintf (new_name, "%s%s%s_", MOD_NAME (tmp_fun_node->ID_MOD),
+                     tmp_fun_node->ID);
+            MDB_ASSIGN (length, strlen (new_name));
+            while (NULL != args) {
+                arg_type = Type2String (args->TYPES, 2);
+                MDB_ASSIGN (length, length + strlen (arg_type));
+                DBUG_ASSERT (length < FUN_NAME_LENGTH, "new fun_name is to long");
+                strcat (new_name, arg_type);
+                args = args->node[0];
+            }
+            FREE (tmp_fun_node->ID);
+            /* don't free tmp_fun_node->ID_MOD, because it is shared !! */
+            tmp_fun_node->ID = new_name;
+            tmp_fun_node->ID_MOD = NULL;
+        }
+        tmp_fun_node = tmp_fun_node->node[1];
+    } while (NULL != tmp_fun_node);
+
+    DBUG_RETURN (fun_node);
 }
 
 /*
@@ -609,7 +689,8 @@ RenameReturn (node *return_node, node *arg_info)
                 let->nnode = 1;
                 new_id = let->node[0]->IDS_ID;
                 new_vardec = MakeNode (N_vardec);
-                new_vardec->TYPES = DuplicateTypes (tmp_exprs->node[0]->IDS_NODE->TYPES);
+                new_vardec->TYPES
+                  = DuplicateTypes (tmp_exprs->node[0]->IDS_NODE->TYPES, 0);
                 new_vardec->ID = StringCopy (new_id); /* set new variable name */
                 let->node[0]->IDS_NODE = new_vardec;  /* set pointer to vardec */
 
@@ -809,9 +890,12 @@ Compile (node *arg_node)
     act_tab = comp_tab; /* set new function-table for traverse */
     info = MakeNode (N_info);
     if (N_modul == arg_node->nodetype) {
-        if (NULL != arg_node->node[2])
+        if (NULL != arg_node->node[2]) {
+            /* first rename function names */
+            arg_node->node[2] = RenameFunName (arg_node->node[2]);
             /* traverse functions */
             arg_node->node[2] = Trav (arg_node->node[2], info);
+        }
         if (NULL != arg_node->node[1])
             /* traverse typedefs */
             arg_node->node[1] = Trav (arg_node->node[1], info);
@@ -1034,7 +1118,7 @@ CompPrf (node *arg_node, node *arg_info)
                             insert_vardec = 1;
                         if (1 == insert_vardec) {
                             new_vardec = MakeNode (N_vardec);
-                            new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES);
+                            new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES, 0);
                             new_vardec->ID = RenameVar (let_ids->id, 0);
                             new_vardec->node[0] = vardec_p->node[0];
                             vardec_p->node[0] = new_vardec;
@@ -2042,7 +2126,11 @@ CompAp (node *arg_node, node *arg_info)
 
     /* put function_name in front */
     exprs = MakeNode (N_exprs);
-    MAKENODE_ID (id_node, GenFunName (arg_node->FUN_NAME, arg_node->FUN_MOD_NAME));
+#if 0
+   MAKENODE_ID(id_node, GenFunName(arg_node->FUN_NAME, 
+                                   arg_node->FUN_MOD_NAME) );
+#endif
+    MAKENODE_ID (id_node, arg_node->node[1]->ID);
     exprs->node[0] = id_node;
     exprs->node[1] = outs;
     exprs->nnode = 2;
@@ -2487,6 +2575,9 @@ CompWith (node *arg_node, node *arg_info)
         fun_node = MakeNode (N_ap);
         fun_node->FUN_NAME = old_arg_node->node[1]->FUN_NAME;
         fun_node->FUN_MOD_NAME = old_arg_node->node[1]->FUN_MOD_NAME;
+        fun_node->node[1] = old_arg_node->node[1]->node[2];
+        DBUG_ASSERT (N_fundef == fun_node->node[1]->nodetype,
+                     "wrong nodetype != N_fundef ");
         arg_info->node[2]->node[2] = fun_node;
 
         APPEND_ASSIGNS (first_assign, next_assign);
