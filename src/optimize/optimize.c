@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2005/02/11 12:13:11  mwe
+ * position of sisi changed
+ *
  * Revision 3.77  2005/02/03 18:28:22  mwe
  * new counter added
  * order of intrafunctional optimization changed
@@ -706,7 +709,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     }
 
     diff = tup_wdp_expr - off_tup_wdp_expr;
-    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0))) {
+    if ((global.optimize.dofsp) && ((ALL == flag) || (diff > 0))) {
         CTInote ("%d wrapper function(s) specialized", diff);
     }
 
@@ -721,7 +724,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     }
 
     diff = sisi_expr - off_sisi_expr;
-    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0))) {
+    if ((global.optimize.dosisi) && ((ALL == flag) || (diff > 0))) {
         CTInote ("%d constant argument(s) from function signatures removed", diff);
     }
 
@@ -890,7 +893,7 @@ OPTmodule (node *arg_node, info *arg_info)
     /*
      * apply intrafunctional optimizations
      */
-    if (MODULE_FUNS (arg_node)) {
+    if (MODULE_FUNS (arg_node) != NULL) {
         /*
          * Now, we apply the intra-procedural optimizations function-wise!
          * The result of Trav is MUST NOT BE STORED in MODUL_FUNS, because
@@ -917,6 +920,31 @@ OPTmodule (node *arg_node, info *arg_info)
             INFO_OPT_CONTINUE (arg_info) = FALSE;
             INFO_OPT_PASSESLOOP1 (arg_info) = loop1;
             MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+
+            /*
+             * apply DFR (dead function removal)
+             */
+            if (global.optimize.dodfr) {
+                arg_node = DFRdoDeadFunctionRemoval (arg_node);
+            }
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "dfrcyc1"))) {
+                goto DONE;
+            }
+
+            /*
+             * apply SISI (signature simplification)
+             */
+            if (global.optimize.dosisi) {
+                arg_node = SISIdoSignatureSimplification (arg_node);
+
+                if ((global.break_after == PH_sacopt)
+                    && (0 == strcmp (global.break_specifier, "sisi"))) {
+                    goto DONE;
+                }
+            }
+
         } while ((INFO_OPT_CONTINUE (arg_info)) && (loop1 < global.max_optcycles));
 
         /*-------------------------------------------------------------------*/
@@ -968,19 +996,6 @@ OPTmodule (node *arg_node, info *arg_info)
 
     CTIstate (" ");
     CTIstate ("  Starting final interfunctional optimizations");
-
-    /*
-     * apply SISI (signature simplification)
-     */
-    if ((global.optimize.dosisi) && (global.optimize.docf) && (global.optimize.dotup)
-        && (global.sigspec_mode == SSP_akv)) {
-        arg_node = SISIdoSignatureSimplification (arg_node);
-
-        if ((global.break_after == PH_sacopt)
-            && (0 == strcmp (global.break_specifier, "sisi"))) {
-            goto DONE;
-        }
-    }
 
     /*
      * apply USSA (undo ssa transformation)
@@ -1042,8 +1057,8 @@ OPTmodule (node *arg_node, info *arg_info)
         goto DONE;
     }
 
-    CTIstate (" ");
-    CTInote ("\nOverall optimization statistics:");
+    CTInote (" ");
+    CTInote ("Overall optimization statistics:");
     PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                      0, 0, 0, 0, 0, ALL);
 
@@ -1199,7 +1214,7 @@ OPTfundef (node *arg_node, info *arg_info)
          * optimizations
          */
         if ((INFO_OPT_OPTSTAGE (arg_info) != OS_cycle1)
-            || (FUNDEF_ISSPECIALIZED (arg_node))) {
+            || (FUNDEF_WASOPTIMIZED (arg_node))) {
 
             arg = FUNDEF_ARGS (arg_node);
             while ((arg != NULL) && (buffer_space > 5)) {
@@ -1262,10 +1277,10 @@ OPTfundef (node *arg_node, info *arg_info)
             }
 
             /*
-             * set FUNDEF_ISSPECIALIZED flag TRUE, so all fundefs will be traversed in
+             * set FUNDEF_WASOPTIMIZED flag TRUE, so all fundefs will be traversed in
              * cycle1
              */
-            FUNDEF_ISSPECIALIZED (arg_node) = TRUE;
+            FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
 
             /*
              * END OF OS_INITIAL
@@ -1306,12 +1321,12 @@ OPTfundef (node *arg_node, info *arg_info)
              * try to optimize this function only if it was optimized in the last cycle
              * pass otherwise try only typeupgrade
              */
-            if (FUNDEF_ISSPECIALIZED (arg_node)) {
+            if (FUNDEF_WASOPTIMIZED (arg_node)) {
 
                 /*
-                 * unset FUNDEF_ISSPECIALIZED
+                 * unset FUNDEF_WASOPTIMIZED
                  */
-                FUNDEF_ISSPECIALIZED (arg_node) = FALSE;
+                FUNDEF_WASOPTIMIZED (arg_node) = FALSE;
 
                 /*
                  * apply CSE (common subexpression elimination)
@@ -1646,7 +1661,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 || (tup_fsp_expr != old_tup_fsp_expr) || (sisi_expr != old_sisi_expr)) {
 
                 INFO_OPT_CONTINUE (arg_info) = TRUE;
-                FUNDEF_ISSPECIALIZED (arg_node) = TRUE;
+                FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
             }
 
             /*
