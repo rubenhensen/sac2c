@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/12/19 19:55:42  sbs
+ * TNT called prior refconting now
+ *
  * Revision 3.93  2004/12/19 14:29:51  sbs
  * TOT header included
  *
@@ -80,6 +83,7 @@
 #include "export.h"
 #include "traverse.h"
 #include "ToOldTypes.h"
+#include "ToNewTypes.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -385,6 +389,7 @@ main (int argc, char *argv[])
      */
     syntax_tree = TOTdoToOldTypes (syntax_tree);
     syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
+    syntax_tree = TNTdoToNewTypes (syntax_tree);
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
