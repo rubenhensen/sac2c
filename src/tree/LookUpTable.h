@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/17 18:31:06  dkr
+ * type lut_t* replaced by LUT_t
+ *
  * Revision 1.3  2000/02/03 08:35:10  dkr
  * GenLUT renamed to GenerateLUT
  *
@@ -15,12 +18,12 @@
 #ifndef _sac_LookUpTable_h
 #define _sac_LookUpTable_h
 
-typedef void *lut_t;
+typedef void *LUT_t;
 
-extern lut_t *GenerateLUT (void);
-extern lut_t *RemoveLUT (lut_t *lut);
-extern lut_t *InsertIntoLUT (lut_t *lut, void *old_entry, void *new_entry);
-extern void *SearchInLUT (lut_t *lut, void *old_entry);
-extern void PrintLUT (FILE *handle, lut_t *lut);
+extern LUT_t GenerateLUT (void);
+extern LUT_t RemoveLUT (LUT_t lut);
+extern LUT_t InsertIntoLUT (LUT_t lut, void *old_entry, void *new_entry);
+extern void *SearchInLUT (LUT_t *lut, void *old_entry);
+extern void PrintLUT (FILE *handle, LUT_t lut);
 
 #endif /* _sac_LookUpTable_h */

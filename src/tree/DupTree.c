@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/03/17 18:30:53  dkr
+ * type lut_t* replaced by LUT_t
+ *
  * Revision 1.15  2000/03/15 12:59:16  dkr
  * macro DUPVECT added
  * WL..._INNERSTEP removed
@@ -206,7 +209,7 @@
 
 /******************************************************************************/
 
-static lut_t *dup_lut;
+static LUT_t dup_lut;
 
 /******************************************************************************
  *
@@ -214,7 +217,7 @@ static lut_t *dup_lut;
  *   static node *DupTreeOrNodeLUT( int NodeOnly,
  *                                  node *arg_node,
  *                                  node *arg_info,
- *                                  lut_t *lut)
+ *                                  LUT_t lut)
  *
  * description:
  *   This routine starts a duplication-traversal, it duplicates a whole sub
@@ -249,7 +252,7 @@ static lut_t *dup_lut;
  ******************************************************************************/
 
 static node *
-DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, lut_t *lut)
+DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
 {
     funtab *old_tab;
     DFMmask_base_t old_base;
@@ -330,9 +333,9 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, lut_t *lut)
 /******************************************************************************
  *
  * functions:
- *   node *DupTreeLUT( node *arg_node, node *arg_info, lut_t *lut)
+ *   node *DupTreeLUT( node *arg_node, node *arg_info, LUT_t lut)
  *   node *DupTree( node *arg_node, node *arg_info)
- *   node *DupNodeLUT( node *arg_node, lut_t *lut)
+ *   node *DupNodeLUT( node *arg_node, LUT_t lut)
  *   node *DupNode( node *arg_node)
  *
  * description:
@@ -357,7 +360,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, lut_t *lut)
  ******************************************************************************/
 
 node *
-DupTreeLUT (node *arg_node, node *arg_info, lut_t *lut)
+DupTreeLUT (node *arg_node, node *arg_info, LUT_t lut)
 {
     node *new_node;
 
@@ -383,7 +386,7 @@ DupTree (node *arg_node, node *arg_info)
 
 /* see comment above */
 node *
-DupNodeLUT (node *arg_node, lut_t *lut)
+DupNodeLUT (node *arg_node, LUT_t lut)
 {
     node *new_node;
 

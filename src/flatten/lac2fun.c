@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/03/17 18:30:36  dkr
+ * type lut_t* replaced by LUT_t
+ *
  * Revision 1.16  2000/03/17 16:34:28  dkr
  * some superfluous local vars eliminated
  *
@@ -860,7 +863,8 @@ static node *
 MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
                  node *funcall_let, DFMmask_t in, DFMmask_t out, DFMmask_t local)
 {
-    lut_t *lut;
+
+    LUT_t lut;
     DFMmask_t tmp_mask;
     node *args, *vardecs, *ret, *fundef, *assigns, *new_body, *let, *tmp;
 

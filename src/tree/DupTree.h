@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/03/17 18:30:44  dkr
+ * type lut_t* replaced by LUT_t
+ *
  * Revision 1.8  2000/03/15 12:58:46  dkr
  * macro DUPVECT added
  *
@@ -78,9 +81,9 @@
         }                                                                                \
     }
 
-extern node *DupTreeLUT (node *arg_node, node *arg_info, lut_t *lut);
+extern node *DupTreeLUT (node *arg_node, node *arg_info, LUT_t lut);
 extern node *DupTree (node *arg_node, node *arg_info);
-extern node *DupNodeLUT (node *arg_node, lut_t *lut);
+extern node *DupNodeLUT (node *arg_node, LUT_t lut);
 extern node *DupNode (node *arg_node);
 
 extern node *DupTreePre (node *arg_node, node *arg_info);
