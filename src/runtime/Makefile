@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2003/09/22 15:22:22  dkr
+# new target icm_tester added
+#
 # Revision 3.18  2003/09/22 11:17:23  dkr
 # target icm_test modified
 #
@@ -39,24 +42,6 @@
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
 # global setup included via Makefile.Config
-#
-# Revision 3.6  2001/03/12 12:25:49  dkr
-# make deps done
-#
-# Revision 3.5  2001/03/09 11:53:43  sbs
-# make deps done
-#
-# Revision 3.4  2001/03/02 16:13:59  dkr
-# make deps done
-#
-# Revision 3.3  2001/03/02 14:46:01  sbs
-# make deps done
-#
-# Revision 3.2  2000/12/06 20:09:07  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:02:06  sacbase
-# new release made
 #
 # ... [eliminated] ...
 #
@@ -161,6 +146,9 @@ icm_test: icm_test.C
 	-grep NT icm_test.log
 	-grep Item icm_test.log
 	@echo '!!! CPP output can be found in file >>icm_test.log<< !!!'
+
+icm_tester:
+	$(ICM_TESTER)
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
