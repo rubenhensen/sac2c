@@ -1,21 +1,12 @@
 /*
  *
  * $Log$
- * Revision 3.8  2002/07/03 15:56:21  dkr
- * some more ICMs added
- *
- * Revision 3.7  2002/06/28 13:25:20  dkr
- * major changes done
+ * Revision 3.9  2002/07/10 19:27:44  dkr
+ * some macros added
  *
  * Revision 3.6  2002/06/07 16:09:59  dkr
  * - some new ICMs added
  * - some bugs fixed
- *
- * Revision 3.5  2002/06/06 18:13:55  dkr
- * some more bugs fixed
- *
- * Revision 3.4  2002/06/02 21:50:04  dkr
- * some bugs fixed
  *
  * Revision 3.3  2002/05/03 13:57:09  dkr
  * macros updated
@@ -513,7 +504,26 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  ******************************************************************************/
 
-/* ND_ALLOC( ...)  is a C-ICM */
+/*
+ * for the time being this ICM is not used :-( because 'set_shape_icm' is
+ * usually a C-ICM but this macro support H-ICMs only:
+ */
+#define SAC_ND_ALLOC(nt, rc, set_shape_icm)                                              \
+    {                                                                                    \
+        SAC_ND_ALLOC__DESC (nt)                                                          \
+        SAC_ND_SET__RC (nt, rc)                                                          \
+        set_shape_icm SAC_ND_ALLOC__DATA (nt)                                            \
+    }
+/*
+ * these two macros are used instead:
+ */
+#define SAC_ND_ALLOC_BEGIN(nt, rc)                                                       \
+    {                                                                                    \
+        SAC_ND_ALLOC__DESC (nt)                                                          \
+        SAC_ND_SET__RC (nt, rc)
+#define SAC_ND_ALLOC_END(nt, rc)                                                         \
+    SAC_ND_ALLOC__DATA (nt)                                                              \
+    }
 
 #define SAC_ND_FREE(nt, freefun)                                                         \
     {                                                                                    \
@@ -552,45 +562,53 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * AKS
  */
 
+/*
+ * CAUTION:
+ * The test (SAC_ND_A_SIZE( nt) != 0) is needed to prevent a malloc(0)
+ */
 #define SAC_ND_ALLOC__DATA__AKS(nt)                                                      \
     {                                                                                    \
         if (SAC_ND_A_SIZE (nt) != 0) {                                                   \
             SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (nt),                               \
                                       SAC_ND_A_SIZE (nt)                                 \
-                                        * sizeof (*SAC_ND_A_FIELD (nt)));                \
+                                        * sizeof (*SAC_ND_A_FIELD (nt)))                 \
         } else {                                                                         \
             SAC_ND_A_FIELD (nt) = NULL;                                                  \
         }                                                                                \
-        SAC_TR_MEM_PRINT (                                                               \
-          ("ND_ALLOC__DATA( %s) at addr: %p", #nt, SAC_ND_A_FIELD (nt)));                \
-        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt));                                    \
-        SAC_TR_REF_PRINT_RC (nt);                                                        \
-        SAC_CS_REGISTER_ARRAY (nt);                                                      \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", #nt, SAC_ND_A_FIELD (nt))) \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt))                                     \
+        SAC_TR_REF_PRINT_RC (nt)                                                         \
+        SAC_CS_REGISTER_ARRAY (nt)                                                       \
     }
 
+/*
+ * CAUTION:
+ * The test (SAC_ND_A_SIZE( nt) != 0) is needed to prevent a malloc(0)
+ * (see ALLOC__DATA-icm)
+ */
 #define SAC_ND_FREE__DATA__AKS(nt, freefun)                                              \
     {                                                                                    \
         if (SAC_ND_A_SIZE (nt) != 0) {                                                   \
             SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                 \
-                                    SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt))); \
+                                    SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)))  \
         }                                                                                \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)));   \
-        SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt));                                    \
-        SAC_CS_UNREGISTER_ARRAY (nt);                                                    \
+          ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)))    \
+        SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt))                                     \
+        SAC_CS_UNREGISTER_ARRAY (nt)                                                     \
     }
 
 #define SAC_ND_ALLOC__DESC__AKS_NUQ(nt)                                                  \
     {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)));     \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt))); \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)))      \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))  \
     }
 #define SAC_ND_ALLOC__DESC__AKS_UNQ(nt) SAC_ND_ALLOC__DESC__AKS_NUQ (nt)
 
 #define SAC_ND_FREE__DESC__AKS_NUQ(nt)                                                   \
     {                                                                                    \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)));       \
-        SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)));  \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)))        \
+        SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))   \
     }
 #define SAC_ND_FREE__DESC__AKS_UNQ(nt) SAC_ND_FREE__DESC__AKS_NUQ (nt)
 
@@ -626,14 +644,14 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * HID
  */
 
-#define SAC_ND_ALLOC__DATA__HID(nt) SAC_ICM_UNDEF ();
+#define SAC_ND_ALLOC__DATA__HID(nt) SAC_NOOP ()
 
 #define SAC_ND_FREE__DATA__HID(nt, freefun)                                              \
     {                                                                                    \
         freefun (SAC_ND_A_FIELD (nt));                                                   \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)));   \
-        SAC_TR_DEC_HIDDEN_MEMCNT (1);                                                    \
+          ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)))    \
+        SAC_TR_DEC_HIDDEN_MEMCNT (1)                                                     \
     }
 
 #define SAC_ND_ALLOC__DESC__HID_NUQ(nt) SAC_ND_ALLOC__DESC__AKS_NUQ (nt)
@@ -649,7 +667,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  * ND_SET__RC( nt, rc) :
  *   sets the refcount (in the descriptor) of a data object
- * ND_SET__SHAPE( nt, dim, ...shp...) :
+ * ND_SET__SHAPE( to_nt, to_sdim, dim, ...shp...) :
  *   sets the shape information (descriptor *and* mirror) of a data object
  *
  ******************************************************************************/
@@ -869,16 +887,16 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *   assigns a data object to another one
  * ND_ASSIGN__DATA( to_nt, from_nt) :
  *   assigns a data object to another one (without mirror)
- * ND_ASSIGN__DESC( to_nt, to_sdim, from_nt) :
+ * ND_ASSIGN__DESC( to_nt, from_nt) :
  *   assigns a descriptor to another one
- * ND_ASSIGN__MIRROR( to_nt, to_sdim, from_nt) :
- *   assigns a mirror to another one
+ * ND_ASSIGN__SHAPE( to_nt, to_sdim, from_nt, from_sdim) :
+ *   assigns a shape information (descriptor *and* mirror) to another one
  *
- * ND_COPY( to_nt, to_sdim, from_nt, copyfun) :
+ * ND_COPY( to_nt, to_sdim, from_nt, from_sdim, copyfun) :
  *   copies a data object to another one
  * ND_COPY__DATA( to_nt, from_nt, copyfun) :
  *   copies a data object to another one (without mirror)
- * ND_COPY__SHAPE( to_nt, to_sdim, from_nt) :
+ * ND_COPY__SHAPE( to_nt, to_sdim, from_nt, from_sdim) :
  *   copies a shape information (descriptor *and* mirror) to another one
  *
  * ND_MAKE_UNIQUE( to_nt, to_sdim, from_nt, copyfun) :
@@ -895,7 +913,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 /* ND_ASSIGN__DESC( ...)  is a C-ICM */
 
-/* ND_ASSIGN__MIRROR( ...)  is a C-ICM */
+/* ND_ASSIGN__SHAPE( ...)  is a C-ICM */
 
 /* ND_COPY( ...)  is a C-ICM */
 
@@ -926,13 +944,13 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 #define SAC_ND_COPY__DATA__SCL_SCL(to_nt, from_nt, copyfun)                              \
     {                                                                                    \
-        SAC_ND_A_FIELD (to_nt) = SAC_ND_A_FIELD (from_nt);                               \
+        SAC_ND_WRITE (to_nt, 0) = SAC_ND_READ (from_nt, 0);                              \
     }
 #define SAC_ND_COPY__DATA__SCL_AKS(to_nt, from_nt, copyfun) SAC_ICM_UNDEF ();
 #define SAC_ND_COPY__DATA__SCL_AKD(to_nt, from_nt, copyfun) SAC_ICM_UNDEF ();
 #define SAC_ND_COPY__DATA__SCL_AUD(to_nt, from_nt, copyfun)                              \
     {                                                                                    \
-        SAC_ND_A_FIELD (to_nt) = SAC_ND_READ (from_nt, 0);                               \
+        SAC_ND_WRITE (to_nt, 0) = SAC_ND_READ (from_nt, 0);                              \
     }
 #define SAC_ND_COPY__DATA__SCL_HID(to_nt, from_nt, copyfun) SAC_ICM_UNDEF ();
 
@@ -955,12 +973,13 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_COPY__DATA__AKS_AKS(to_nt, from_nt, copyfun)                              \
     {                                                                                    \
         int SAC__i;                                                                      \
-        SAC_ND_ALLOC__DATA (to_nt)                                                       \
         for (SAC__i = 0; SAC__i < SAC_ND_A_SIZE (from_nt); SAC__i++) {                   \
-            SAC_ND_WRITE_ARRAY (to_nt, SAC__i) = SAC_ND_READ_ARRAY (from_nt, SAC__i);    \
+            SAC_ND_WRITE (to_nt, SAC__i) = SAC_ND_READ (from_nt, SAC__i);                \
         }                                                                                \
+        SAC_ASSURE_TYPE ((SAC_ND_A_SIZE (to_nt) == SAC_ND_A_SIZE (from_nt)),             \
+                         "Assignment with incompatible types found!")                    \
         SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s) at addr: %p", #from_nt, #to_nt,   \
-                           #copyfun, SAC_ND_A_FIELD (to_nt)));                           \
+                           #copyfun, SAC_ND_A_FIELD (to_nt)))                            \
     }
 #define SAC_ND_COPY__DATA__AKS_AKD(to_nt, from_nt, copyfun)                              \
     SAC_ND_COPY__DATA__AKS_AKS (to_nt, from_nt, copyfun)
@@ -1008,7 +1027,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 #define SAC_ND_COPY__DATA__AUD_SCL(to_nt, from_nt, copyfun)                              \
     {                                                                                    \
-        SAC_ND_WRITE (to_nt, 0) = SAC_ND_A_FIELD (from_nt);                              \
+        SAC_ND_WRITE (to_nt, 0) = SAC_ND_READ (from_nt, 0);                              \
     }
 #define SAC_ND_COPY__DATA__AUD_AKS(to_nt, from_nt, copyfun)                              \
     SAC_ND_COPY__DATA__AKS_AKS (to_nt, from_nt, copyfun)
@@ -1038,9 +1057,9 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_COPY__DATA__HID_HID(to_nt, from_nt, copyfun)                              \
     {                                                                                    \
         SAC_ND_A_FIELD (to_nt) = copyfun (SAC_ND_A_FIELD (from_nt));                     \
-        SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s)", #to_nt, #from_nt, #copyfun));   \
-        SAC_TR_MEM_PRINT (("new hidden object at addr: %p", SAC_ND_A_FIELD (to_nt)));    \
-        SAC_TR_INC_HIDDEN_MEMCNT (1);                                                    \
+        SAC_TR_MEM_PRINT (("ND_COPY__DATA( %s, %s, %s)", #to_nt, #from_nt, #copyfun))    \
+        SAC_TR_MEM_PRINT (("new hidden object at addr: %p", SAC_ND_A_FIELD (to_nt)))     \
+        SAC_TR_INC_HIDDEN_MEMCNT (1)                                                     \
     }
 
 /******************************************************************************
@@ -1099,7 +1118,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_SET__RC__AKS_NUQ(nt, rc)                                                  \
     {                                                                                    \
         SAC_ND_A_RC (nt) = rc;                                                           \
-        SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", #nt, rc));                             \
+        SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", #nt, rc))                              \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
     }
 #define SAC_ND_SET__RC__AKS_UNQ(nt, rc) SAC_NOOP ()
@@ -1107,7 +1126,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_INC_RC__AKS_NUQ(nt, rc)                                                   \
     {                                                                                    \
         SAC_ND_A_RC (nt) += rc;                                                          \
-        SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", #nt, rc));                              \
+        SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", #nt, rc))                               \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
     }
 #define SAC_ND_INC_RC__AKS_UNQ(nt, rc) SAC_NOOP ()
@@ -1115,19 +1134,19 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_DEC_RC__AKS_NUQ(nt, rc)                                                   \
     {                                                                                    \
         SAC_ND_A_RC (nt) -= rc;                                                          \
-        SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", #nt, rc));                              \
+        SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", #nt, rc))                               \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
     }
 #define SAC_ND_DEC_RC__AKS_UNQ(nt, rc) SAC_NOOP ()
 
 #define SAC_ND_DEC_RC_FREE__AKS_NUQ(nt, rc, freefun)                                     \
     {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE( %s, %d, %s)", #nt, rc, #freefun));           \
+        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE( %s, %d, %s)", #nt, rc, #freefun))            \
         if ((SAC_ND_A_RC (nt) -= rc) == 0) {                                             \
-            SAC_TR_REF_PRINT_RC (nt);                                                    \
-            SAC_ND_FREE (nt, freefun);                                                   \
+            SAC_TR_REF_PRINT_RC (nt)                                                     \
+            SAC_ND_FREE (nt, freefun)                                                    \
         } else {                                                                         \
-            SAC_TR_REF_PRINT_RC (nt);                                                    \
+            SAC_TR_REF_PRINT_RC (nt)                                                     \
         }                                                                                \
     }
 #define SAC_ND_DEC_RC_FREE__AKS_UNQ(nt, rc, freefun) SAC_NOOP ()
@@ -1189,33 +1208,95 @@ typedef int SAC_hidden_descriptor; /* reference count */
 /******************************************************************************
  *
  * ICMs for creating refcounted objects:
- * ====================================
+ * =====================================
  *
- * ND_ASSIGN__SCALAR__DATA( nt, val) :
+ * ND_CREATE__SCALAR__DATA( nt, val) :
  *   creates data of a constant scalar
  *
- * ND_ASSIGN__STRING__DATA( nt, str) :
+ * ND_CREATE__STRING__DATA( nt, str) :
  *   creates data of a constant character array (string)
  *
- * ND_ASSIGN__VECT__SHAPE( nt, copyfun, len, ...elem...) :
+ * ND_CREATE__VECT__SHAPE( nt, sdim, len, ...elem..., copyfun) :
  *   creates shape of a constant vector
- * ND_ASSIGN__VECT__DATA( nt, copyfun, len, ...elem...) :
+ * ND_CREATE__VECT__DATA( nt, sdim, len, ...elem..., copyfun) :
  *   creates data of a constant vector
  *
  ******************************************************************************/
 
-#define SAC_ND_ASSIGN__SCALAR__DATA(nt, val)                                             \
+#define SAC_ND_CREATE__SCALAR__DATA(nt, val)                                             \
     {                                                                                    \
         SAC_ND_WRITE (nt, 0) = val;                                                      \
     }
 
-#define SAC_ND_ASSIGN__STRING__DATA(nt, str)                                             \
+#define SAC_ND_CREATE__STRING__DATA(nt, str)                                             \
     {                                                                                    \
         SAC_String2Array (SAC_ND_A_FIELD (nt), str);                                     \
     }
 
-/* ND_ASSIGN__VECT__SHAPE( ...) is a C-ICM */
-/* ND_ASSIGN__VECT__DATA( ...) is a C-ICM */
+/* ND_CREATE__VECT__SHAPE( ...) is a C-ICM */
+/* ND_CREATE__VECT__DATA( ...) is a C-ICM */
+
+/******************************************************************************
+ *
+ * ICMs for refcount-sensitive operations:
+ * =======================================
+ *
+ * IS_LASTREF__THEN( nt)
+ * IS_LASTREF__ELSE( nt)
+ *
+ * IS_LASTREF__BLOCK_BEGIN( nt)
+ * IS_LASTREF__BLOCK_ELSE( nt)
+ * IS_LASTREF__BLOCK_END( nt)
+ *
+ ******************************************************************************/
+
+#define SAC_IS_LASTREF__THEN(nt)                                                         \
+    CAT1 (SAC_IS_LASTREF__THEN__, CAT1 (NT_DATA (nt), CAT1 (_, CAT1 (NT_UNQ (nt), (nt)))))
+#define SAC_IS_LASTREF__ELSE(nt) else
+
+#define SAC_IS_LASTREF__BLOCK_BEGIN(nt)                                                  \
+    IS_LASTREF__THEN (nt)                                                                \
+    {
+#define SAC_IS_LASTREF__BLOCK_ELSE(nt)                                                   \
+    }                                                                                    \
+    IS_LASTREF__ELSE (nt)                                                                \
+    {
+#define SAC_IS_LASTREF__BLOCK_END(nt) }
+
+/*
+ * SCL
+ */
+
+#define SAC_IS_LASTREF__THEN__SCL_NUQ(nt) if (0)
+#define SAC_IS_LASTREF__THEN__SCL_UNQ(nt) SAC_IS_LASTREF__THEN__SCL_NUQ (nt)
+
+/*
+ * AKS
+ */
+
+#define SAC_IS_LASTREF__THEN__AKS_NUQ(nt) if (SAC_ND_A_RC (% s) == 1)
+#define SAC_IS_LASTREF__THEN__AKS_UNQ(nt) SAC_IS_LASTREF__THEN__SCL_UNQ (nt)
+
+/*
+ * AKD
+ */
+
+#define SAC_IS_LASTREF__THEN__AKD_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
+#define SAC_IS_LASTREF__THEN__AKD_UNQ(nt) SAC_IS_LASTREF__THEN__AKS_UNQ (nt)
+
+/*
+ * AUD
+ */
+
+#define SAC_IS_LASTREF__THEN__AUD_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
+#define SAC_IS_LASTREF__THEN__AUD_UNQ(nt) SAC_IS_LASTREF__THEN__AKS_UNQ (nt)
+
+/*
+ * HID
+ */
+
+#define SAC_IS_LASTREF__THEN__HID_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
+#define SAC_IS_LASTREF__THEN__HID_UNQ(nt) SAC_IS_LASTREF__THEN__AKS_UNQ (nt)
 
 /******************************************************************************
  *
@@ -1224,50 +1305,39 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  * ND_PRF_DIM__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
- * ND_PRF_SHAPE__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
  * ND_PRF_SHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
- * ND_PRF_RESHAPE__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
- * ND_PRF_RESHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_RESHAPE__SHAPE_C( to_nt, to_sdim, dim, ...shp...)
+ * ND_PRF_RESHAPE__SHAPE_V( to_nt, to_sdim, shp)
  *
  * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
  * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
- * ND_PRF_IDX_MODARRAY__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
- * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
  *
  * ND_PRF_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
  * ND_PRF_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
- * ND_PRF_MODARRAY__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
- * ND_PRF_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
  *
  ******************************************************************************/
 
 #define SAC_ND_PRF_DIM__DATA(to_nt, to_sdim, from_nt, from_sdim)                         \
-    SAC_ND_ASSIGN__SCALAR__DATA (to_nt, SAC_ND_A_DIM (from_nt))
+    SAC_ND_CREATE__SCALAR__DATA (to_nt, SAC_ND_A_DIM (from_nt))
 
-#define SAC_ND_PRF_SHAPE__SHAPE(to_nt, to_sdim, from_nt, from_sdim)
-#define SAC_ND_PRF_SHAPE__DATA(to_nt, to_sdim, from_nt, from_sdim)
+/* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
 
 #define SAC_ND_PRF_RESHAPE__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
-#define SAC_ND_PRF_RESHAPE__DATA(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
 
-#define SAC_ND_PRF_IDX_SEL__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
-#define SAC_ND_PRF_IDX_SEL__DATA(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
+#define SAC_ND_PRF_IDX_SEL__SHAPE(to_nt, to_sdim, from_nt, from_sdim)
+#define SAC_ND_PRF_IDX_SEL__DATA(to_nt, to_sdim, from_nt, from_sdim)
 
-#define SAC_ND_PRF_IDX_MODARRAY__SHAPE(to_nt, to_sdim, a_nt, a_sdim, b_nt, b_sdim,       \
-                                       from_nt, from_sdim)
-#define SAC_ND_PRF_IDX_MODARRAY__DATA(to_nt, to_sdim, a_nt, a_sdim, b_nt, b_sdim,        \
-                                      from_nt, from_sdim)
+/* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
 
 #define SAC_ND_PRF_SEL__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
 #define SAC_ND_PRF_SEL__DATA(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
 
-#define SAC_ND_PRF_MODARRAY__SHAPE(to_nt, to_sdim, a_nt, a_sdim, b_nt, b_sdim, from_nt,  \
-                                   from_sdim)
-#define SAC_ND_PRF_MODARRAY__DATA(to_nt, to_sdim, a_nt, a_sdim, b_nt, b_sdim, from_nt,   \
-                                  from_sdim)
+/* ND_PRF_MODARRAY__DATA( ...) is a C-ICM */
 
 /******************************************************************************
  *
