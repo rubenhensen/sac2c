@@ -8,6 +8,12 @@
 #include "sac.h"
 #include "sac_cinterface.h"
 
+/* Typenames used internally */
+typedef enum {
+#define TYP_IFname(name) name
+#include "../tree/type_info.mac"
+};
+
 /* constants */
 #define SAC_CI_SIMPLETYPE 1
 #define SAC_CI_ARRAYTYPE 2
@@ -98,6 +104,7 @@ SAC_IntArray2Sac (int *array, int dim, int *shape, SAC_reusetype reuseflag)
     SAC_ARG_ELEMS (result) = elems;
     SAC_ARG_RC (result) = (int *)SAC_MALLOC (sizeof (int));
     *SAC_ARG_RC (result) = 1; /* init refcounter */
+    SAC_ARG_LRC (result) = 1; /* init local refcounter */
     return (result);
 }
 
@@ -109,6 +116,7 @@ SAC_Int2Sac (int value)
     SAC_ARG_ELEMS (result) = (int *)SAC_MALLOC (sizeof (int));
     SAC_ARG_RC (result) = (int *)SAC_MALLOC (sizeof (int));
     *SAC_ARG_RC (result) = 1; /* init refcounter */
+    SAC_ARG_LRC (result) = 1; /* init local refcounter */
     return (result);
 }
 
