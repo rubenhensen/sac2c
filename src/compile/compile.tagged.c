@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.93  2003/12/11 22:02:12  dkrHH
+ * DBUG_ASSERT added: NCODE_CBLOCK should be a N_block node!
+ *
  * Revision 1.92  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -6391,6 +6394,8 @@ COMP2WLcode (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL),
                      "no code block found in N_Ncode node");
+        DBUG_ASSERT ((NODE_TYPE (NCODE_CBLOCK (arg_node)) == N_block),
+                     "NCODE_CBLOCK is not a N_block node");
         DBUG_ASSERT ((NCODE_CBLOCK_INSTR (arg_node) != NULL),
                      "first instruction of block is NULL"
                      " (should be a N_empty node)");
