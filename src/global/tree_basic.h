@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.197  1998/08/07 14:35:24  dkr
+ * stuff for N_WLsegVar added
+ *
  * Revision 1.196  1998/07/16 15:55:55  srs
  * added INFO_UNR_FUNDEF
  *
@@ -3236,15 +3239,18 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***  sons:
  ***
- ***    ???
+ ***    node*      CONTENTS       (N_WLstride, N_WLstriVar)
+ ***    node*      NEXT           (N_WLsegVar)
  ***
  ***  permanent attributes:
  ***
- ***    ???
+ ***    int        DIMS      (number of dims)
  ***
  ***  temporary attributes:
  ***
- ***    SCHsched_t SCHEDULING    (O)                 (wltransform -> compile )
+ ***    ???
+ ***
+ ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
  ***
  ***  remarks:
@@ -3252,8 +3258,14 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***    This node is not yet implemented.
  ***/
 
+extern node *MakeWLsegVar (int dims, node *contents, node *next);
+
+#define WLSEGVAR_DIMS(n) (n->refcnt)
+#define WLSEGVAR_CONTENTS(n) (n->node[0])
+#define WLSEGVAR_NEXT(n) (n->node[1])
+
 #define WLSEGVAR_SCHEDULING(n) ((SCHsched_t)n->node[5])
-#define WLSEG_MAXHOMDIM(n) (n->varno)
+#define WLSEGVAR_MAXHOMDIM(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1998/08/07 14:36:33  dkr
+ * stuff for N_WLsegVar added
+ *
  * Revision 1.78  1998/08/03 10:49:59  cg
  * added initialization of WLSEG_MAXHOMDIM
  *
@@ -1860,6 +1863,32 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
     WLGRID_CODE (new_node) = code;
 
     WLGRID_MODIFIED (new_node) = 0;
+
+    DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLsegVar (int dims, node *contents, node *next)
+{
+    node *new_node;
+    int b, d;
+
+    DBUG_ENTER ("MakeWLsegVar");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLsegVar;
+    WLSEGVAR_DIMS (new_node) = dims;
+
+    WLSEGVAR_CONTENTS (new_node) = contents;
+    WLSEGVAR_NEXT (new_node) = next;
+
+    WLSEGVAR_MAXHOMDIM (new_node) = -1;
+    /*
+     * By default, no dimension is homogenious. Since dimensions are counted
+     * starting by 0, we must set  MAXHOMDIM to -1 here.
+     */
 
     DBUG_RETURN (new_node);
 }
