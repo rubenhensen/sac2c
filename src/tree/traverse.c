@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/09/21 12:39:48  sah
+ * spmdemm traversal disabled in NEW_AST mode
+ *
  * Revision 3.75  2004/09/21 11:09:07  sah
  * added SET (serialize traverse) traversal
  *
@@ -465,7 +468,7 @@ static funtab free_tab_rec = {{
                               NULL,
                               NULL};
 funtab *free_tab = &free_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (9) spmdemm_tab
  */
@@ -475,8 +478,8 @@ static funtab spmdemm_tab_rec = {{
                                  },
                                  NULL,
                                  NULL};
+
 funtab *spmdemm_tab = &spmdemm_tab_rec;
-#ifndef NEW_AST
 /*
  *  (10) refcnt_tab
  */
