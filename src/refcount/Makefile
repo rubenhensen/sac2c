@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2002/09/25 14:23:14  sbs
+# dangerous space eliminated 8-)
+#
 # Revision 3.13  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -64,7 +67,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../global -I../tree -I../../inc -I ../flatten -I../typecheck \
+INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
        -I../optimize -I../compile
 
 
