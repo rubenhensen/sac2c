@@ -342,6 +342,7 @@
 	  <node name="SPId" />
 	  <node name="Let" />
 	  <node name="With" />
+	  <node name="Fold" />
 	  <node name="Module" />
 	</travuser>
       </traversal>
@@ -368,6 +369,7 @@
           <node name="Let" />
           <node name="Part" />
           <node name="Code" />
+          <node name="Do" />
 	</travuser>
       </traversal>
       <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
