@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/22 18:10:19  sbs
+ * SacDevCamp04
+ *
  * Revision 1.5  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -24,7 +27,7 @@
  *
  * file:   SSACSE.h
  *
- * prefix: SSACSE
+ * prefix: CSE
  *
  * description:
  *
@@ -34,23 +37,24 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_SSACSE_H
+#ifndef _SAC_CSE_H_
+#define _SAC_CSE_H_
 
-#define SAC_SSACSE_H
+#include "types.h"
 
-extern node *SSACSE (node *fundef, node *modul);
+extern node *CSEdoCSE (node *fundef, node *modul);
 
-extern node *SSACSEfundef (node *arg_node, info *arg_info);
-extern node *SSACSEarg (node *arg_node, info *arg_info);
-extern node *SSACSEblock (node *arg_node, info *arg_info);
-extern node *SSACSEvardec (node *arg_node, info *arg_info);
-extern node *SSACSEassign (node *arg_node, info *arg_info);
-extern node *SSACSEcond (node *arg_node, info *arg_info);
-extern node *SSACSEreturn (node *arg_node, info *arg_info);
-extern node *SSACSElet (node *arg_node, info *arg_info);
-extern node *SSACSEap (node *arg_node, info *arg_info);
-extern node *SSACSEid (node *arg_node, info *arg_info);
-extern node *SSACSENwith (node *arg_node, info *arg_info);
-extern node *SSACSENcode (node *arg_node, info *arg_info);
+extern node *CSEfundef (node *arg_node, info *arg_info);
+extern node *CSEarg (node *arg_node, info *arg_info);
+extern node *CSEblock (node *arg_node, info *arg_info);
+extern node *CSEvardec (node *arg_node, info *arg_info);
+extern node *CSEassign (node *arg_node, info *arg_info);
+extern node *CSEcond (node *arg_node, info *arg_info);
+extern node *CSEreturn (node *arg_node, info *arg_info);
+extern node *CSElet (node *arg_node, info *arg_info);
+extern node *CSEap (node *arg_node, info *arg_info);
+extern node *CSEid (node *arg_node, info *arg_info);
+extern node *CSEwith (node *arg_node, info *arg_info);
+extern node *CSEcode (node *arg_node, info *arg_info);
 
-#endif /* SAC_SSACSE_H */
+#endif /* _SAC_CSE_H_ */

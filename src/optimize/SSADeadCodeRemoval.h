@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/22 18:10:19  sbs
+ * SacDevCamp04
+ *
  * Revision 1.5  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -20,25 +23,26 @@
 
  */
 
-#ifndef _SAC_SSADEADCODEREMOVAL_H
+#ifndef _SAC_SSADEADCODEREMOVAL_H_
+#define _SAC_SSADEADCODEREMOVAL_H_
 
-#define _SAC_SSADEADCODEREMOVAL_H
+#include "types.h"
 
-extern node *SSADeadCodeRemoval (node *fundef, node *modul);
+extern node *DCRdoDeadCodeRemoval (node *fundef, node *modul);
 
-extern node *SSADCRfundef (node *arg_node, info *arg_info);
-extern node *SSADCRarg (node *arg_node, info *arg_info);
-extern node *SSADCRblock (node *arg_node, info *arg_info);
-extern node *SSADCRvardec (node *arg_node, info *arg_info);
-extern node *SSADCRassign (node *arg_node, info *arg_info);
-extern node *SSADCRlet (node *arg_node, info *arg_info);
-extern node *SSADCRid (node *arg_node, info *arg_info);
-extern node *SSADCRcond (node *arg_node, info *arg_info);
-extern node *SSADCRreturn (node *arg_node, info *arg_info);
-extern node *SSADCRap (node *arg_node, info *arg_info);
-extern node *SSADCRNwith (node *arg_node, info *arg_info);
-extern node *SSADCRNpart (node *arg_node, info *arg_info);
-extern node *SSADCRNcode (node *arg_node, info *arg_info);
-extern node *SSADCRNwithid (node *arg_node, info *arg_info);
+extern node *DCRfundef (node *arg_node, info *arg_info);
+extern node *DCRarg (node *arg_node, info *arg_info);
+extern node *DCRblock (node *arg_node, info *arg_info);
+extern node *DCRvardec (node *arg_node, info *arg_info);
+extern node *DCRassign (node *arg_node, info *arg_info);
+extern node *DCRlet (node *arg_node, info *arg_info);
+extern node *DCRid (node *arg_node, info *arg_info);
+extern node *DCRcond (node *arg_node, info *arg_info);
+extern node *DCRreturn (node *arg_node, info *arg_info);
+extern node *DCRap (node *arg_node, info *arg_info);
+extern node *DCRwith (node *arg_node, info *arg_info);
+extern node *DCRpart (node *arg_node, info *arg_info);
+extern node *DCRcode (node *arg_node, info *arg_info);
+extern node *DCRwithid (node *arg_node, info *arg_info);
 
-#endif /* SAC_SSADEADCODEREMOVAL_H */
+#endif /* SAC_SSADEADCODEREMOVAL_H_ */

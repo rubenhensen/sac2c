@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/11/22 18:10:19  sbs
+ * SacDevCamp04
+ *
  * Revision 1.10  2004/09/25 14:35:52  ktr
  * Whenever a generator is known to cover just one index, the withid is assumed
  * to be constant inside thate corresponding code.
@@ -47,44 +50,41 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_SSAConstantFolding_h_
-#define _SAC_SSAConstantFolding_h_
+#ifndef _SAC_ConstantFolding_h_
+#define _SAC_ConstantFolding_h_
 
-/*
- * structural constant (SCO) should be integrated in constants.[ch] in future
- */
-typedef struct STRUCT_CONSTANT struct_constant;
+include "types.h"
 
-/*
- * functions to handle SCOs
- */
-struct_constant *SCOExpr2StructConstant (node *expr);
-struct_constant *SCOArray2StructConstant (node *expr);
-struct_constant *SCOWithidVec2StructConstant (node *expr);
-struct_constant *SCOScalar2StructConstant (node *expr);
-node *SCODupStructConstant2Expr (struct_constant *struc_co);
-struct_constant *SCOFreeStructConstant (struct_constant *struc_co);
+  /*
+   * functions to handle SCOs
+   */
+  struct_constant *
+  SCOexpr2StructConstant (node *expr);
+struct_constant *SCOarray2StructConstant (node *expr);
+struct_constant *SCOwithidVec2StructConstant (node *expr);
+struct_constant *SCOscalar2StructConstant (node *expr);
+node *SCOdupStructConstant2Expr (struct_constant *struc_co);
+struct_constant *SCOfreeStructConstant (struct_constant *struc_co);
 
-extern node *SSAConstantFolding (node *fundef, node *modul);
+extern node *CFdoConstantFolding (node *fundef, node *modul);
 
-/* traversal functions */
-extern node *SSACFfundef (node *arg_node, info *arg_info);
-extern node *SSACFblock (node *arg_node, info *arg_info);
-extern node *SSACFarg (node *arg_node, info *arg_info);
-extern node *SSACFassign (node *arg_node, info *arg_info);
-extern node *SSACFcond (node *arg_node, info *arg_info);
-extern node *SSACFreturn (node *arg_node, info *arg_info);
-extern node *SSACFlet (node *arg_node, info *arg_info);
-extern node *SSACFap (node *arg_node, info *arg_info);
-extern node *SSACFid (node *arg_node, info *arg_info);
-extern node *SSACFarray (node *arg_node, info *arg_info);
-extern node *SSACFprf (node *arg_node, info *arg_info);
-extern node *SSACFNwith (node *arg_node, info *arg_info);
-extern node *SSACFNpart (node *arg_node, info *arg_info);
-extern node *SSACFNcode (node *arg_node, info *arg_info);
-extern node *SSACFNgen (node *arg_node, info *arg_info);
-extern node *SSACFfuncond (node *arg_node, info *arg_info);
+extern node *CFfundef (node *arg_node, info *arg_info);
+extern node *CFblock (node *arg_node, info *arg_info);
+extern node *CFarg (node *arg_node, info *arg_info);
+extern node *CFassign (node *arg_node, info *arg_info);
+extern node *CFcond (node *arg_node, info *arg_info);
+extern node *CFreturn (node *arg_node, info *arg_info);
+extern node *CFlet (node *arg_node, info *arg_info);
+extern node *CFap (node *arg_node, info *arg_info);
+extern node *CFid (node *arg_node, info *arg_info);
+extern node *CFarray (node *arg_node, info *arg_info);
+extern node *CFprf (node *arg_node, info *arg_info);
+extern node *CFwith (node *arg_node, info *arg_info);
+extern node *CFpart (node *arg_node, info *arg_info);
+extern node *CFcode (node *arg_node, info *arg_info);
+extern node *CFgen (node *arg_node, info *arg_info);
+extern node *CFfuncond (node *arg_node, info *arg_info);
 
-extern node *SSACFFoldPrfExpr (prf op, node **arg_expr);
+extern node *CFfoldPrfExpr (prf op, node **arg_expr);
 
-#endif /* SAC_SSAConstantFolding_h */
+#endif /* SAC_ConstantFolding_h */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 18:10:19  sbs
+ * SacDevCamp04
+ *
  * Revision 1.2  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -22,11 +25,12 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_RMCASTS_H
+#ifndef SAC_RMCASTS_H_
+#define SAC_RMCASTS_H_
 
-#define SAC_RMCASTS_H
+#include "types.h"
 
-extern node *RemoveCasts (node *ast);
-
+extern node *RCdoRemoveCasts (node *ast);
 extern node *RCcast (node *arg_node, info *arg_info);
-#endif /* SAC_RMCASTS_H */
+
+#endif /* SAC_RMCASTS_H_ */

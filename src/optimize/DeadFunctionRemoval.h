@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 18:10:19  sbs
+ * SacDevCamp04
+ *
  * Revision 3.2  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -23,15 +26,17 @@
  *
  */
 
-#ifndef _sac_DeadFunctionRemoval_h
-#define _sac_DeadFunctionRemoval_h
+#ifndef _SAC_DEADFUNCTIONREMOVAL_H_
+#define _SAC_DEADFUNCTIONREMOVAL_H_
 
-extern node *DeadFunctionRemoval (node *arg_node);
+#include "types.h"
 
-extern node *DFRmodul (node *arg_node, info *arg_info);
+extern node *DFRdoDeadFunctionRemoval (node *arg_node);
+
+extern node *DFRmodule (node *arg_node, info *arg_info);
 extern node *DFRfundef (node *arg_node, info *arg_info);
 extern node *DFRblock (node *arg_node, info *arg_info);
 extern node *DFRap (node *arg_node, info *arg_info);
-extern node *DFRwithop (node *arg_node, info *arg_info);
+extern node *DFRfold (node *arg_node, info *arg_info);
 
-#endif /* _DeadFunctionRemoval_h */
+#endif /* _DEADFUNCTIONREMOVAL_H_ */
