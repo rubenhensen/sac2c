@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2003/09/20 14:38:28  dkr
+ * C-ICMs for F_take_SxV, F_drop_SxV, F_cat_VxV added
+ *
  * Revision 1.1  2003/09/20 14:20:18  dkr
  * Initial revision
  *
@@ -20,6 +23,13 @@
 #include "globals.h"
 #include "print.h"
 #include "gen_startup_code.h"
+
+#ifdef BEtest
+#define Free(x)                                                                          \
+    x;                                                                                   \
+    free (x)
+#define Malloc(x) malloc (x)
+#endif /* BEtest */
 
 #ifndef TAGGED_ARRAYS
 
@@ -348,7 +358,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
              to_NT, to_sdim);
 
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
-                     , fprintf (outfile, "1st argument of F_reshape has (dim != 1)!"););
+                     , fprintf (outfile, "1st argument of F_reshape is not a vector!"););
 
     PrfReshape_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, ReadId);
 
@@ -397,7 +407,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
         if (shp_ANY[i][0] == '(') {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", shp_ANY[i]);
                              , fprintf (outfile,
-                                        "1st argument of F_reshape has (dim != 1)!"););
+                                        "1st argument of F_reshape is not a vector!"););
         }
     }
 
@@ -448,7 +458,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
         if (to_dim != 0) {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
                                       from_NT, idx_NT);
-                             , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
+                             , fprintf (outfile, "Result of F_sel is not a scalar!"););
         }
         ICMCompileND_SET__SHAPE (to_NT, 0, NULL);
         break;
@@ -520,7 +530,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
         if (to_dim != 0) {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
                                       idx_size);
-                             , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
+                             , fprintf (outfile, "Result of F_sel is not a scalar!"););
         }
         ICMCompileND_SET__SHAPE (to_NT, 0, NULL);
         break;
@@ -627,7 +637,7 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from
              to_NT, to_sdim, from_NT, from_sdim);
 
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
-                     , fprintf (outfile, "1st argument of F_sel has (dim != 1)!"););
+                     , fprintf (outfile, "1st argument of F_sel is not a vector!"););
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_NT,
                               idx_NT);
                      , fprintf (outfile, "1st argument of F_sel has illegal size!"););
@@ -682,8 +692,8 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
     for (i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]);
-                             ,
-                             fprintf (outfile, "1st argument of F_sel has (dim != 1)!"););
+                             , fprintf (outfile,
+                                        "1st argument of F_sel is not a vector!"););
         }
     }
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size);
@@ -869,7 +879,7 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
              to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
-                     , fprintf (outfile, "2nd argument of F_modarray has (dim != 1)!"););
+                     , fprintf (outfile, "2nd argument of F_modarray is not a vector!"););
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_NT,
                               idx_NT);
                      ,
@@ -930,7 +940,7 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
         if (idxs_ANY[i][0] == '(') {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]);
                              , fprintf (outfile,
-                                        "2nd argument of F_modarray has (dim != 1)"););
+                                        "2nd argument of F_modarray is not a vector"););
         }
     }
     ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size);
@@ -1033,8 +1043,8 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
 
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
-                         ,
-                         fprintf (outfile, "1st argument of F_idx_sel has (dim != 0)!"););
+                         , fprintf (outfile,
+                                    "1st argument of F_idx_sel is not a scalar!"););
     }
 
     /*
@@ -1112,11 +1122,297 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
     if (idx_ANY[0] == '(') {
         ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (outfile,
-                                    "2nd argument of F_modarray has (dim != 0)!"););
+                                    "2nd argument of F_modarray is not a scalar!"););
     }
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
                       ReadScalar, val_ANY, copyfun);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_TAKE__SHAPE( char *to_NT, int to_sdim,
+ *                                      char *from_NT, int from_sdim,
+ *                                      char *cnt_ANY)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_TAKE__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                              char *cnt_ANY)
+{
+    char **shp;
+
+    DBUG_ENTER ("ICMCompileND_PRF_TAKE__SHAPE");
+
+#define ND_PRF_TAKE__SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_TAKE__SHAPE
+
+    /*
+     * CAUTION:
+     * 'cnt_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_TAKE__SHAPE( %s, %d, %s, %d, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
+
+    if (cnt_ANY[0] == '(') {
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
+                         , fprintf (outfile,
+                                    "1st argument of F_take_SxV is not a scalar!"););
+    }
+
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
+                     , fprintf (outfile, "2nd argument of F_take_SxV is not a vector!"););
+
+    shp = (char **)Malloc (sizeof (char *));
+    shp[0] = (char *)Malloc ((strlen (cnt_ANY) + 20) * sizeof (char));
+    if (cnt_ANY[0] == '(') {
+        sprintf (shp[0], "SAC_ND_A_FIELD( %s)", cnt_ANY);
+    } else {
+        sprintf (shp[0], "%s", cnt_ANY);
+    }
+    ICMCompileND_SET__SHAPE (to_NT, 1, shp);
+    shp[0] = Free (shp[0]);
+    shp = Free (shp);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_TAKE__DATA( char *to_NT, int to_sdim,
+ *                                     char *from_NT, int from_sdim,
+ *                                     char *cnt_ANY)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_TAKE__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                             char *cnt_ANY)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_TAKE__DATA");
+
+#define ND_PRF_TAKE__DATA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_TAKE__DATA
+
+    /*
+     * CAUTION:
+     * 'cnt_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_TAKE__DATA( %s, %d, %s, %d, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
+
+    ASSURE_TYPE_ASS (ReadScalar (cnt_ANY, NULL, 0); fprintf (outfile, " >= 0");
+                     , fprintf (outfile, "1st argument of F_take_SxV is out of range!"););
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) >= ", from_NT);
+                     ReadScalar (cnt_ANY, NULL, 0);
+                     , fprintf (outfile, "1st argument of F_take_SxV is out of range!"););
+
+    FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
+                         , ReadScalar (cnt_ANY, NULL, 0);, INDENT;
+                         fprintf (outfile,
+                                  "SAC_ND_WRITE( %s, SAC_i) = "
+                                  "SAC_ND_READ( %s, SAC_i);\n",
+                                  to_NT, from_NT););
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_DROP__SHAPE( char *to_NT, int to_sdim,
+ *                                      char *from_NT, int from_sdim,
+ *                                      char *cnt_ANY)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_DROP__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                              char *cnt_ANY)
+{
+    char **shp;
+
+    DBUG_ENTER ("ICMCompileND_PRF_DROP__SHAPE");
+
+#define ND_PRF_DROP__SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_DROP__SHAPE
+
+    /*
+     * CAUTION:
+     * 'cnt_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_DROP__SHAPE( %s, %d, %s, %d, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
+
+    if (cnt_ANY[0] == '(') {
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
+                         , fprintf (outfile,
+                                    "1st argument of F_drop_SxV is not a scalar!"););
+    }
+
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
+                     , fprintf (outfile, "2nd argument of F_drop_SxV is not a vector!"););
+
+    shp = (char **)Malloc (sizeof (char *));
+    shp[0] = (char *)Malloc ((strlen (from_NT) + strlen (cnt_ANY) + 40) * sizeof (char));
+    if (cnt_ANY[0] == '(') {
+        sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ND_A_FIELD( %s)", from_NT, cnt_ANY);
+    } else {
+        sprintf (shp[0], "SAC_ND_A_SIZE( %s) - %s", from_NT, cnt_ANY);
+    }
+    ICMCompileND_SET__SHAPE (to_NT, 1, shp);
+    shp[0] = Free (shp[0]);
+    shp = Free (shp);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_DROP__DATA( char *to_NT, int to_sdim,
+ *                                     char *from_NT, int from_sdim,
+ *                                     char *cnt_ANY)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_DROP__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                             char *cnt_ANY)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_DROP__DATA");
+
+#define ND_PRF_DROP__DATA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_DROP__DATA
+
+    /*
+     * CAUTION:
+     * 'cnt_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_DROP__DATA( %s, %d, %s, %d, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
+
+    ASSURE_TYPE_ASS (ReadScalar (cnt_ANY, NULL, 0); fprintf (outfile, " >= 0");
+                     , fprintf (outfile, "1st argument of F_drop_SxV is out of range!"););
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) >= ", from_NT);
+                     ReadScalar (cnt_ANY, NULL, 0);
+                     , fprintf (outfile, "1st argument of F_drop_SxV is out of range!"););
+
+    FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
+                         , fprintf (outfile, "SAC_ND_A_SIZE( %s) - ", from_NT);
+                         ReadScalar (cnt_ANY, NULL, 0);, INDENT;
+                         fprintf (outfile,
+                                  "SAC_ND_WRITE( %s, SAC_i) = SAC_ND_READ( %s, SAC_i + ",
+                                  to_NT, from_NT);
+                         ReadScalar (cnt_ANY, NULL, 0); fprintf (outfile, ");\n"););
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_CAT__SHAPE( char *to_NT, int to_sdim,
+ *                                     char *from1_NT, int from1_sdim,
+ *                                     char *from2_NT, int from2_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_CAT__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1_sdim,
+                             char *from2_NT, int from2_sdim)
+{
+    char **shp;
+
+    DBUG_ENTER ("ICMCompileND_PRF_CAT__SHAPE");
+
+#define ND_PRF_CAT__SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_CAT__SHAPE
+
+    /*
+     * CAUTION:
+     * 'cnt_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_CAT__SHAPE( %s, %d, %s, %d, %s, %d)\"))\n",
+             to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim);
+
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from1_NT);
+                     , fprintf (outfile, "1st argument of F_cat_VxV is not a vector!"););
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from2_NT);
+                     , fprintf (outfile, "2nd argument of F_cat_VxV is not a vector!"););
+
+    shp = (char **)Malloc (sizeof (char *));
+    shp[0]
+      = (char *)Malloc ((strlen (from1_NT) + strlen (from2_NT) + 40) * sizeof (char));
+    sprintf (shp[0], "SAC_ND_A_SIZE( %s) + SAC_ND_A_SIZE( %s)", from1_NT, from2_NT);
+    ICMCompileND_SET__SHAPE (to_NT, 1, shp);
+    shp[0] = Free (shp[0]);
+    shp = Free (shp);
 
     DBUG_VOID_RETURN;
 }
