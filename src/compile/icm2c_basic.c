@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/07/31 15:36:29  dkr
+ * types for NT tags reorganized
+ *
  * Revision 1.8  2002/07/24 14:34:29  dkr
  * WriteScalar() added
  *
@@ -54,7 +57,7 @@ WriteScalar (char *scl)
 
     if (scl[0] == '(') {
         /* 'scl' is a tagged id */
-        data_class_t dc = ICUGetDataClass (scl);
+        shape_class_t dc = ICUGetShapeClass (scl);
 
         DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
         fprintf (outfile, "SAC_ND_WRITE( %s, 0)", scl);
@@ -110,9 +113,9 @@ ReadScalar (void *scl, char *idx_str, int idx)
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */
-        data_class_t dc = ICUGetDataClass (scl);
+        shape_class_t sc = ICUGetShapeClass (scl);
 
-        DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
+        DBUG_ASSERT (((sc == C_scl) || (sc == C_aud)), "tagged id is no scalar!");
         ReadId (scl, idx_str, idx);
     } else {
         if (idx_str == NULL) {
@@ -143,10 +146,10 @@ ReadScalar_Check (void *scl, char *idx_str, int idx)
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */
-        data_class_t dc = ICUGetDataClass (scl);
+        shape_class_t sc = ICUGetShapeClass (scl);
 
-        DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
-        if (dc == C_aud) {
+        DBUG_ASSERT (((sc == C_scl) || (sc == C_aud)), "tagged id is no scalar!");
+        if (sc == C_aud) {
             fprintf (outfile, "\n");
             indent++;
             INDENT;
@@ -292,67 +295,67 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
             fprintf (outfile, "{\n");
             indent++;
             INDENT;
-            fprintf (outfile, "int SAC__start;\n");
+            fprintf (outfile, "int SAC_start;\n");
             INDENT;
-            fprintf (outfile, "int SAC__rest = 1;\n");
+            fprintf (outfile, "int SAC_rest = 1;\n");
             INDENT;
-            fprintf (outfile, "int SAC__i;\n");
+            fprintf (outfile, "int SAC_i;\n");
 
             /*
-             * compute SAC__rest
+             * compute SAC_rest
              */
             INDENT;
-            fprintf (outfile, "for (SAC__i = ");
+            fprintf (outfile, "for (SAC_i = ");
             v_size_fun (v_any);
-            fprintf (outfile, "; SAC__i < ");
+            fprintf (outfile, "; SAC_i < ");
             a_dim_fun (a_any);
-            fprintf (outfile, "; SAC__i++) {\n");
+            fprintf (outfile, "; SAC_i++) {\n");
             indent++;
             INDENT;
-            fprintf (outfile, "SAC__rest *= ");
-            a_shape_fun (a_any, "SAC__i", -1);
+            fprintf (outfile, "SAC_rest *= ");
+            a_shape_fun (a_any, "SAC_i", -1);
             fprintf (outfile, ";\n");
             indent--;
             INDENT;
             fprintf (outfile, "}\n");
 
             /*
-             * compute SAC__start
+             * compute SAC_start
              */
             if (v_size < 0) {
                 INDENT;
-                fprintf (outfile, "SAC__start = 0;\n");
+                fprintf (outfile, "SAC_start = 0;\n");
                 INDENT;
-                fprintf (outfile, "for (SAC__i = 0; SAC__i < ");
+                fprintf (outfile, "for (SAC_i = 0; SAC_i < ");
                 v_size_fun (v_any);
-                fprintf (outfile, "; SAC__i++) {\n");
+                fprintf (outfile, "; SAC_i++) {\n");
                 indent++;
                 INDENT;
-                fprintf (outfile, "int SAC__tmp = 1;\n");
+                fprintf (outfile, "int SAC_tmp = 1;\n");
                 INDENT;
-                fprintf (outfile, "int SAC__j;\n");
+                fprintf (outfile, "int SAC_j;\n");
                 INDENT;
-                fprintf (outfile, "for (SAC__j = ");
+                fprintf (outfile, "for (SAC_j = ");
                 v_size_fun (v_any);
-                fprintf (outfile, " - 1; SAC__j > SAC__i;  SAC__j--) {\n");
+                fprintf (outfile, " - 1; SAC_j > SAC_i;  SAC_j--) {\n");
                 indent++;
                 INDENT;
-                fprintf (outfile, "SAC__tmp *= ");
-                a_shape_fun (a_any, "SAC__i", -1);
+                fprintf (outfile, "SAC_tmp *= ");
+                a_shape_fun (a_any, "SAC_i", -1);
                 fprintf (outfile, ";\n");
                 indent--;
                 INDENT;
                 fprintf (outfile, "}\n");
                 INDENT;
-                fprintf (outfile, "SAC__start += SAC__tmp * ");
-                v_read_fun (v_any, "SAC__i", -1);
+                fprintf (outfile, "SAC_start += SAC_tmp * ");
+                v_read_fun (v_any, "SAC_i", -1);
                 fprintf (outfile, ";\n");
                 indent--;
                 INDENT;
                 fprintf (outfile, "}\n");
             } else {
                 INDENT;
-                fprintf (outfile, "SAC__start = ");
+                fprintf (outfile, "SAC_start = ");
                 for (i = v_size - 1; i > 0; i--) {
                     fprintf (outfile, "( ");
                     a_shape_fun (a_any, NULL, i);
@@ -369,7 +372,7 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
 
             INDENT;
             WriteScalar (off_any);
-            fprintf (outfile, " = SAC__start * SAC__rest;\n");
+            fprintf (outfile, " = SAC_start * SAC_rest;\n");
             indent--;
             INDENT;
             fprintf (outfile, "}\n");
