@@ -1,8 +1,9 @@
 /*
- *
  * $Log$
- * Revision 1.1  2004/11/26 22:10:23  sah
- * Initial revision
+ * Revision 1.2  2004/11/26 23:13:36  sah
+ * *** empty log message ***
+ * Revision 1.1  2004/11/26 22:10:23  sah Initial
+ * revision
  *
  *
  *
@@ -186,11 +187,9 @@ FPCmodule (node *arg_node, info *arg_info)
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
-
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -221,8 +220,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
         argtag = ATG_out;
 
         /*
-         * as this return value needs a descriptor, it cannot be returned
-         * using the c return expression
+         * as this return value needs a descriptor, it cannot be returned using
+         * the c return expression
          */
         if (idx == 0) {
             ERROR (line, ("Pragma 'linksign' or 'refcounting' illegal"));
@@ -243,9 +242,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
         RET_ISCRETURN (ret) = TRUE;
 
         /*
-         * lookup the return N_exprs node corresponding to the
-         * current ret node and save it as the c return expression
-         * for later use in compile
+         * lookup the return N_exprs node corresponding to the current ret node
+         * and save it as the c return expression for later use in compile
          */
 
         DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL),
@@ -267,22 +265,21 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 
         RETURN_CRET (ret) = retexprs;
     }
-
     /*
      * update the argtab
      */
     if ((idx >= 0) && (idx < argtab->size)) {
         /*
          * as the ptr_in chain will be filled while traversing the arg chain
-         * there should be no values there at this stage. The handling
-         * of args has to be performed after handling ret values to handle in/out
+         * there should be no values there at this stage. The handling of args
+         * has to be performed after handling ret values to handle in/out
          * parameters correctly.
          */
         DBUG_ASSERT ((argtab->ptr_in[idx] == NULL), "argtab is inconsistent");
 
         /*
-         * check whether this entry already is in use
-         * and produce an error message
+         * check whether this entry already is in use and produce an error
+         * message
          */
         if (argtab->tag[idx] == ATG_notag) {
             DBUG_ASSERT ((argtab->ptr_out[idx] == NULL), "argtab is inconsistent");
@@ -354,8 +351,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
     } else {
         if ((idx > 0) && (idx < argtab->size)) {
             /*
-             * this is a in only argument, as no
-             * outptr is set
+             * this is a in only argument, as no outptr is set
              */
             if (argtab->ptr_in[idx] == NULL) {
                 if (argtab->ptr_out[idx] == NULL) {
@@ -373,8 +369,8 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
                                  argtab->ptr_out[idx], global.argtag_string[argtag]));
                 } else {
                     /*
-                     * there is already an outptr, so both must have no
-                     * descriptor and the types must be equal
+                     * there is already an outptr, so both must have no descriptor and
+                     * the types must be equal
                      */
                     if ((argtab->tag[idx] == ATG_out_nodesc)
                         && (argtag == ATG_in_nodesc)) {
@@ -445,11 +441,9 @@ FPCfundef (node *arg_node, info *arg_info)
         if (FUNDEF_RETS (arg_node) != NULL) {
             FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
         }
-
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
-
         ABORT_ON_ERROR;
 
         FUNDEF_ARGTAB (arg_node) = CompressArgtab (FUNDEF_ARGTAB (arg_node));
@@ -460,10 +454,8 @@ FPCfundef (node *arg_node, info *arg_info)
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
-
         /*
-         * all FUNDEF_ARGTABs are build now
-         *  -> traverse body
+         * all FUNDEF_ARGTABs are build now -> traverse body
          */
         INFO_FPC_POSTASSIGNS (arg_info) = NULL;
         INFO_FPC_PREASSIGNS (arg_info) = NULL;
@@ -471,7 +463,6 @@ FPCfundef (node *arg_node, info *arg_info)
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -539,7 +530,6 @@ FPCassign (node *arg_node, info *arg_info)
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
-
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_FPC_POSTASSIGNS (arg_info) != NULL) {
@@ -551,7 +541,6 @@ FPCassign (node *arg_node, info *arg_info)
         arg_node = TCappendAssign (INFO_FPC_PREASSIGNS (arg_info), arg_node);
         INFO_FPC_PREASSIGNS (arg_info) = NULL;
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -671,7 +660,6 @@ FPClet (node *arg_node, info *arg_info)
                  */
                 idx = GetArgtabIndexOut (args, argtab);
             }
-
             DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
 
             DBUG_ASSERT ((idx < argtab->size), "illegal index");
@@ -685,8 +673,8 @@ FPClet (node *arg_node, info *arg_info)
                 rets = RET_NEXT (rets);
 
                 /*
-                 * if we have reached the last ret, all following
-                 * return values are ... return values
+                 * if we have reached the last ret, all following return values are
+                 * ... return values
                  */
                 if (rets == NULL) {
                     idx = argtab->size - 1;
@@ -706,7 +694,6 @@ FPClet (node *arg_node, info *arg_info)
             if (dots_offset == 0) {
                 idx = GetArgtabIndexIn (args, argtab);
             }
-
             DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
 
             DBUG_ASSERT ((idx < argtab->size), "illegal index");
@@ -735,7 +722,6 @@ FPClet (node *arg_node, info *arg_info)
 
         AP_ARGTAB (LET_EXPR (arg_node)) = CompressArgtab (ap_argtab);
     }
-
     DBUG_RETURN (arg_node);
 }
 
