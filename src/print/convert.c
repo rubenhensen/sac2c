@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/05/13 14:18:58  hw
+ * Revision 1.19  1997/04/24 16:43:16  sbs
+ * converted malloc to Malloc
+ *
+ * Revision 1.18  1996/05/13  14:18:58  hw
  * deleted DBUG_PRINTs in Type2String
  * .
  *
@@ -70,6 +73,7 @@
 #include <math.h>
 
 #include "tree.h"
+#include "internal_lib.h"
 #include "dbug.h"
 #include "convert.h"
 
@@ -101,7 +105,7 @@ char *rename_type[] = {
  *                  2) will be recognized as float from any C-Compiler!
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : malloc, sprintf
+ *  external funs : Malloc, sprintf
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -114,7 +118,7 @@ Float2String (float val)
 
     DBUG_ENTER ("Float2String");
 
-    tmp_string = (char *)malloc (sizeof (char) * 256);
+    tmp_string = (char *)Malloc (sizeof (char) * 256);
     if (val == floor (val))
         sprintf (tmp_string, "%.256g.0f", val);
     else
@@ -131,7 +135,7 @@ Float2String (float val)
  *                  2) will be recognized as double from any C-Compiler!
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : malloc, sprintf
+ *  external funs : Malloc, sprintf
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -144,7 +148,7 @@ Double2String (double val)
 
     DBUG_ENTER ("Double2String");
 
-    tmp_string = (char *)malloc (sizeof (char) * 256);
+    tmp_string = (char *)Malloc (sizeof (char) * 256);
     if (val == floor (val))
         sprintf (tmp_string, "%.256g.0", val);
     else
@@ -165,7 +169,7 @@ Double2String (double val)
  *                  flag ==3: the module name is not included into string
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : strcat, malloc, sprintf
+ *  external funs : strcat, Malloc, sprintf
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -178,7 +182,7 @@ Type2String (types *type, int flag)
 
     DBUG_ENTER ("Type2String");
 
-    tmp_string = (char *)malloc (sizeof (char) * TYPE_LENGTH);
+    tmp_string = (char *)Malloc (sizeof (char) * TYPE_LENGTH);
     tmp_string[0] = '\0';
 
     do {
