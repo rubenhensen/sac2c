@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/25 12:21:27  cg
+ * Used unsigned long int instead of unsigned int for converting
+ * pointers into numerical data.
+ *
  * Revision 3.1  2000/11/20 18:02:45  sacbase
  * new release made
  *
@@ -166,8 +170,8 @@ ThreadControl (void *arg)
 {
     unsigned int worker_flag = 0;
     unsigned int i;
-    unsigned int my_worker_class = ((unsigned int)arg) >> 17;
-    const unsigned int my_thread_id = ((unsigned int)arg) & 0xFFFF;
+    unsigned int my_worker_class = ((unsigned long int)arg) >> 17;
+    const unsigned int my_thread_id = ((unsigned long int)arg) & 0xFFFF;
     pthread_t tmp;
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
@@ -189,7 +193,8 @@ ThreadControl (void *arg)
         if (0
             != pthread_create (&tmp, &SAC_MT_thread_attribs,
                                (void *(*)(void *))ThreadControl,
-                               (void *)((i << 16) + (my_thread_id + i)))) {
+                               (void *)((unsigned long int)((i << 16)
+                                                            + (my_thread_id + i))))) {
 
             SAC_RuntimeError ("Multi Thread Error: worker thread #%u failed to create"
                               "worker thread #%u",
@@ -248,7 +253,7 @@ ThreadControlInitialWorker (void *arg)
         if (0
             != pthread_create (&tmp, &SAC_MT_thread_attribs,
                                (void *(*)(void *))ThreadControl,
-                               (void *)((i << 16) + i))) {
+                               (void *)((unsigned long int)((i << 16) + i)))) {
 
             SAC_RuntimeError ("Multi Thread Error: worker thread #1 failed to create"
                               "worker thread #%u",
