@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.113  1998/03/13 13:13:28  dkr
+ * removed a bug with flag _DBUG
+ *
  * Revision 1.112  1998/03/04 16:21:00  cg
  * C compiler invocations and file handling converted to new
  * configuration files.
@@ -455,19 +458,22 @@ MAIN
             (*argv) += 4;
 
             if (**argv != 0) {
-                dbug_from = (compiler_phase_t)strtol (*argv, argv, 10);
+                my_dbug_from = (compiler_phase_t)strtol (*argv, argv, 10);
 
                 if (**argv == '/') {
                     (*argv)++;
 
                     if (**argv != 0) {
-                        dbug_to = (compiler_phase_t)strtol (*argv, argv, 10);
+                        my_dbug_to = (compiler_phase_t)strtol (*argv, argv, 10);
 
                         if (**argv == '/') {
                             (*argv)++;
 
                             if (**argv != 0) {
-                                dbug_str = StringCopy (*argv);
+                                my_dbug_str = StringCopy (*argv);
+
+                                if ((my_dbug_str != NULL) && (my_dbug_str != ""))
+                                    my_dbug = 1;
                             } else
                                 SYSWARN (("Third _DBUG option is missing"));
                         } else
@@ -480,9 +486,6 @@ MAIN
                 SYSWARN (("First _DBUG option is missing"));
         } else
             SYSWARN (("Unknown command line option '_%s`", *argv));
-
-        if (*dbug_str == 0)
-            dbug_from = dbug_to = 0;
     }
     NEXTOPT
     ARG 'D' : PARM
