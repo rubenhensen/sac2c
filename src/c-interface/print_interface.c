@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2000/07/13 15:34:09  nmw
+ * add comments in generated headerfile
+ *
  * Revision 1.9  2000/07/13 14:52:39  nmw
  * handling for global objects and startup code generation added
  *
@@ -971,21 +974,61 @@ PrintDepEntry (deps *depends, statustype stat, strings *done)
     DBUG_RETURN (done);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    void PIHModuleInitFunction(char *modname)
+ *
+ * description:
+ *   prints headefile code with comment for SAC_Init<mod>()
+ *
+ ******************************************************************************/
+
 static void
 PIHModuleInitFunction (char *modname)
 {
     DBUG_ENTER ("PIHModuleInitFunction");
-    fprintf (outfile, "extern void SAC_Init%s();\n", modname);
+    fprintf (outfile,
+             "/* call this function before you use any\n"
+             " * functions of this module\n"
+             " */\n"
+             "extern void SAC_Init%s();\n\n",
+             modname);
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    void PIHModuleFreeFunction(char *modname)
+ *
+ * description:
+ *   prints headefile code with comment for SAC_Free<mod>()
+ *
+ ******************************************************************************/
 
 static void
 PIHModuleFreeFunction (char *modname)
 {
     DBUG_ENTER ("PIHModuleExitFunction");
-    fprintf (outfile, "extern void SAC_Free%s();\n", modname);
+    fprintf (outfile,
+             "/* call this function when you have finished using the\n"
+             " * functions of this module\n"
+             " */\n"
+             "extern void SAC_Free%s();\n\n",
+             modname);
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    void PIWModuleInitFunction(char *modname)
+ *
+ * description:
+ *   prints code in cwrapper.c for SAC_Free<mod>()
+ *
+ ******************************************************************************/
 
 static void
 PIWModuleInitFunction (char *modname)
@@ -996,6 +1039,16 @@ PIWModuleInitFunction (char *modname)
     fprintf (outfile, "\n}\n\n\n");
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    void PIWModuleFreeFunction(char *modname)
+ *
+ * description:
+ *   prints code in cwrapper.c for SAC_Free<mod>()
+ *
+ ******************************************************************************/
 
 static void
 PIWModuleFreeFunction (char *modname)
