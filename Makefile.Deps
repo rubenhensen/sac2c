@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.6  2003/04/01 11:34:17  sbs
+# CLOCK_SKEW_ELIMINATION disabled for .d files as this may lead
+# to a recursion problem!!
+#
 # Revision 1.5  2002/02/22 13:06:11  sbs
 # CCDEPS_FLAGS added
 #
@@ -46,5 +50,4 @@ YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
 	 else $(RM) $@d ; \
 	      exit 1 ;  \
 	 fi
-	$(CLOCK_SKEW_ELIMINATION) $@
 
