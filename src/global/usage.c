@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/03/31 13:56:11  dkr
+ * new break specifiers for precompile
+ *
  * Revision 1.58  1998/03/02 13:59:02  cg
  * added new option -target
  *
@@ -259,9 +262,20 @@ usage ()
             "\tBreak specifiers allow you to stop the compilation process\n"
             "\twithin a particular phase.\n\n"
             "\tCurrently supported:\n\n"
-            "\t-bo:inl\t-b15:inl\tstop after function inlining\n"
-            "\t-bo:ae \t-b15:ae \tstop after array elimination\n"
-            "\t-bo:cyc\t-b15:cyc\tstop after one complete optimization cycle\n");
+
+            "\t-bo:inl   \t-b15:inl   \tstop after function inlining\n"
+            "\t-bo:ae    \t-b15:ae    \tstop after array elimination\n"
+            "\t-bo:cyc   \t-b15:cyc   \tstop after one complete optimization cycle\n\n"
+
+            "\t-bl:cube  \t-b18:cube  \tstop after cube-building\n"
+            "\t-bl:seg   \t-b18:seg   \tstop after choice of segments\n"
+            "\t-bl:split \t-b18:split \tstop after splitting\n"
+            "\t-bl:block \t-b18:block \tstop after hierarchical blocking\n"
+            "\t-bl:ublock\t-b18:ublock\tstop after unrolling-blocking\n"
+            "\t-bl:merge \t-b18:merge \tstop after merging\n"
+            "\t-bl:opt   \t-b18:opt   \tstop after optimization\n"
+            "\t-bl:fit   \t-b18:fit   \tstop after fitting\n"
+            "\t-bl:norm  \t-b18:norm  \tstop after normalization\n");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
