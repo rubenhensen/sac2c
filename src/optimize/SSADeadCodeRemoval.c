@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2001/05/25 08:43:34  nmw
+ * comments added
+ *
  * Revision 1.16  2001/05/17 12:05:53  nmw
  * MALLOC/FREE changed to Malloc/Free (using Free() result)
  *
@@ -55,10 +58,21 @@
  * prefix: SSADCR
  *
  * description:
- *    this module traverses ONE FUNCTION (and its liftet special funtions)
- *    and removes all dead code.
- *    this transformation is NOT conservative (it might remove
- *    endless loops)!
+ *    this module traverses one function (and its liftet special fundefs)
+ *    and removes all dead code. this transformation is NOT conservative
+ *    (it might remove endless loops, if they are not necessary to compute
+ *     the result)
+ *
+ * implementation:
+ *    we start at the return statement and do a bottom-up traversal marking
+ *    all needed identifier. if we find a call to a special fundef, we remove
+ *    all results not needed before traversing the special fundef. when we
+ *    reach the top of a special fundef, we look for the unused args and
+ *    remove them, too.
+ *    These signature changes are only possible for special fundefs where we
+ *    know that there is always exactly on calling application that we can
+ *    modifiy, too.
+ *    the flags if we need an identifier are stored in the avis nodes
  *
  *****************************************************************************/
 
@@ -97,7 +111,7 @@ static bool SSADCRCondIsEmpty (node *cond);
  * description:
  *   inits flags needed for this module in all vardec and args.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static void
 SSADCRInitAvisFlags (node *fundef)
 {
@@ -133,7 +147,7 @@ SSADCRInitAvisFlags (node *fundef)
  *   checks if conditional "cond" is empty, that means then and else blocks
  *   contain no assignments or are missing.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static bool
 SSADCRCondIsEmpty (node *cond)
 {
@@ -164,6 +178,7 @@ SSADCRCondIsEmpty (node *cond)
     DBUG_RETURN (result);
 }
 
+/* traversal fundefs for SSADeadCodeRemoval */
 /******************************************************************************
  *
  * function:
@@ -171,12 +186,12 @@ SSADCRCondIsEmpty (node *cond)
  *
  * description:
  *   Starts the traversal of a given fundef. Does NOT traverse to
- *   next fundef in chain! The traversal mode (on toplevel, in special function)
- *   is annotated in the stacked INFO_SSADCR_DEPTH attribute.
+ *   next fundef in chain! The traversal mode (on toplevel, in special
+ *   function) is annotated in the stacked INFO_SSADCR_DEPTH attribute.
  *   If not on toplevel, the unused arguments are cleared. For the toplevel
  *   functions changes of the signature are not possible.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRfundef (node *arg_node, node *arg_info)
 {
@@ -185,10 +200,10 @@ SSADCRfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("SSADCR",
                 ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
 
-    /* store cuurent vardec for later access */
+    /* store current vardec for later access */
     INFO_SSADCR_FUNDEF (arg_info) = arg_node;
 
-    /* init of needed-mask for all vardecs/args of this fundef */
+    /* init of needed-flag for all vardecs/args of this fundef */
     SSADCRInitAvisFlags (arg_node);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -217,7 +232,7 @@ SSADCRfundef (node *arg_node, node *arg_info)
  *   function.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRarg (node *arg_node, node *arg_info)
 {
@@ -233,7 +248,7 @@ SSADCRarg (node *arg_node, node *arg_info)
 
     /*
      * process arg and remove it, if not needed anymore in code
-     * or the arg is tagged as loop-invariant, that means it
+     * or the arg is tagged as loop-invariant with one use, that means it
      * occurs at least once in the recursive call. If the argument
      * ONLY appears there, it is dead code, too.
      */
@@ -288,7 +303,7 @@ SSADCRarg (node *arg_node, node *arg_info)
  * description:
  *   traverses instructions and vardecs in this order.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRblock (node *arg_node, node *arg_info)
 {
@@ -317,7 +332,7 @@ SSADCRblock (node *arg_node, node *arg_info)
  * description:
  *  traverses vardecs and removes unused ones.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRvardec (node *arg_node, node *arg_info)
 {
@@ -334,8 +349,9 @@ SSADCRvardec (node *arg_node, node *arg_info)
     if (AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) == SSADCR_NOTNEEDED) {
 
         /* count eliminated arrays from ArrayElimination */
-        if (VARDEC_FLAG (arg_node))
+        if (VARDEC_FLAG (arg_node)) {
             elim_arrays++;
+        }
         dead_var++;
 
         DBUG_PRINT ("SSADCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
@@ -356,7 +372,7 @@ SSADCRvardec (node *arg_node, node *arg_info)
  *  traverses assignment chain bottom-up and removes all assignments not
  *  needed (marked by INFO_SSADCR_REMASSIGN)
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRassign (node *arg_node, node *arg_info)
 {
@@ -396,9 +412,9 @@ SSADCRassign (node *arg_node, node *arg_info)
  *  let is needed.
  *  a functions application of a special function requieres a special
  *  handling because you can remove parts of the results an modify the
- *  functions signature!
+ *  functions signature
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRlet (node *arg_node, node *arg_info)
 {
@@ -467,7 +483,7 @@ SSADCRlet (node *arg_node, node *arg_info)
  * description:
  *   "traverses" the contained ids structure.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRid (node *arg_node, node *arg_info)
 {
@@ -489,7 +505,7 @@ SSADCRid (node *arg_node, node *arg_info)
  *  parts are empty else traverse condition.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRcond (node *arg_node, node *arg_info)
 {
@@ -531,7 +547,7 @@ SSADCRcond (node *arg_node, node *arg_info)
  * description:
  *   starts traversal of return expressions to mark them as needed.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRreturn (node *arg_node, node *arg_info)
 {
@@ -557,7 +573,7 @@ SSADCRreturn (node *arg_node, node *arg_info)
  *   function except for recursive calls of the current function.
  *   traverse all arguments to marks them as needed
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRap (node *arg_node, node *arg_info)
 {
@@ -618,7 +634,7 @@ SSADCRap (node *arg_node, node *arg_info)
  * description:
  *   traverses withop, code and partitions of withloop
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRNwith (node *arg_node, node *arg_info)
 {
@@ -650,7 +666,7 @@ SSADCRNwith (node *arg_node, node *arg_info)
  * description:
  *   traverses generator, withid and next part
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRNpart (node *arg_node, node *arg_info)
 {
@@ -681,7 +697,7 @@ SSADCRNpart (node *arg_node, node *arg_info)
  * description:
  *   traverses expr, block and next in this order
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRNcode (node *arg_node, node *arg_info)
 {
@@ -711,12 +727,12 @@ SSADCRNcode (node *arg_node, node *arg_info)
  *   node *SSADCRNwithid(node *arg_node , node *arg_info)
  *
  * description:
- *   marks index vector and identifier as needed to prevent their removal
+ *   marks index vector and identifier as needed to preserve them
  *   if they are not explicit used in Withloop.
  *   to do so these identifier are handeld like ids on the RIGHT side of
  *   an assignment.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADCRNwithid (node *arg_node, node *arg_info)
 {
@@ -742,10 +758,10 @@ SSADCRNwithid (node *arg_node, node *arg_info)
  *
  * description:
  *   checks if ids is marked as needed and increments counter.
- *   if results of a special function, unused results are removed.
+ *   if results of a special function application, unused results are removed.
  *   traverses to next ids.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 SSADCRleftids (ids *arg_ids, node *arg_info)
 {
@@ -761,7 +777,7 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
     if (AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) == SSADCR_NOTNEEDED) {
         /*
          * result is not needed
-         * if result of special function - remove this result
+         * if result of special function application - remove this result
          * but first: save next ids in chain
          */
 
@@ -832,13 +848,14 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
                          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
 
             /*
-             * variable is not needed, but mark variable as needed to preserve vardec to
-             * avoid problems with mutiple results in a function application that is not
-             * removed but where are some unused results. in this case the vardecs od the
-             * unused identifiers must not removed, because the hole application will stay
-             * in the programm.
-             * only if this identifier is a phi copy target, we can remove the vardec,
-             * because phi-copy-assignments contains only ONE assigned identifier.
+             * variable is not needed, but mark variable as needed to preserve
+             * vardec to avoid problems with multiple results in a function
+             * application that is not removed but where are some unused results.
+             * in this case the vardecs of the unused identifiers must not removed,
+             * because the hole application will stay in the programm.
+             * only if this identifier is a phi copy target, we can remove the
+             * vardec, because phi-copy-assignments contains only ONE assigned
+             * identifier.
              */
             if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
                 AVIS_NEEDCOUNT (IDS_AVIS (arg_ids))
@@ -875,7 +892,7 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
  * description:
  *  increments the counter for each identifier usage
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 SSADCRrightids (ids *arg_ids, node *arg_info)
 {
@@ -900,9 +917,10 @@ SSADCRrightids (ids *arg_ids, node *arg_info)
  *   static ids *TravLeftIDS(ids *arg_ids, node *arg_info)
  *
  * description:
+ *  implements a similar traversal mechanism like Trav() for IDS chains.
+ *  Here for LHS identifier.
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 TravLeftIDS (ids *arg_ids, node *arg_info)
 {
@@ -920,9 +938,10 @@ TravLeftIDS (ids *arg_ids, node *arg_info)
  *   static ids *TravRightIDS(ids *arg_ids, node *arg_info)
  *
  * description:
+ *  implements a similar traversal mechanism like Trav() for IDS chains.
+ *  Here for RHS identifier.
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 TravRightIDS (ids *arg_ids, node *arg_info)
 {
@@ -942,11 +961,11 @@ TravRightIDS (ids *arg_ids, node *arg_info)
  * description:
  *   starting point of DeadCodeRemoval for SSA form.
  *   Starting fundef must not be a special fundef (do, while, cond) created by
- *   lac2fun transformation. These "inline" functions will be traversed in their
- *   order of usage. The traversal mode (on toplevel, in special function) is
- *   annotated in the stacked INFO_SSADCR_DEPTH attribute.
+ *   lac2fun transformation. These "inline" functions will be traversed in
+ *   their order of usage. The traversal mode (on toplevel, in special
+ *   function) is annotated in the stacked INFO_SSADCR_DEPTH attribute.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSADeadCodeRemoval (node *fundef, node *modul)
 {
