@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.11  1998/12/17 09:50:28  cg
+# File libsac.a will no longer be added to runtime.tar because
+# it depends on the target architecture.
+#
 # Revision 1.10  1998/11/04 18:22:41  dkr
 # make deps done
 #
@@ -41,12 +45,13 @@ CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
 INCS := -I../global -I../../inc
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o
 
-RTINCS := $(wildcard *.h)
 
-.PHONY: all
+.PHONY: all tar
 
 
 all:  libsac.a
+
+tar: runtime.tar
 
 libsac.a: $(OBJS)
 	ar rc libsac.a $(OBJS)
@@ -58,8 +63,8 @@ libsac_trace_mt.o: libsac_mt.c
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
-runtime.tar: libsac.a $(RTINCS)
-	tar cvf runtime.tar libsac.a $(RTINCS) sac2crc
+runtime.tar: *.h sac2crc
+	tar cvf $@ $^
 
 deps:
 	makedepend $(INCS) *.c
