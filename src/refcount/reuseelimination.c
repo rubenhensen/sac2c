@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/24 14:08:15  ktr
+ * MakeLet permutation.
+ *
  * Revision 1.9  2004/11/23 22:27:23  ktr
  * renaming.
  *
@@ -354,9 +357,9 @@ EMREprf (node *arg_node, info *arg_info)
             DBUG_ASSERT (NUM_VAL (PRF_ARG1 (arg_node)) > 1, "Illegal rc value");
 
             arg_node
-              = TBmakeLet (TCmakePrf2 (F_inc_rc, DUPdoDupNode (PRF_ARG2 (arg_node)),
-                                       TBmakeNum (NUM_VAL (PRF_ARG1 (arg_node)) - 1)),
-                           NULL);
+              = TBmakeLet (NULL,
+                           TCmakePrf2 (F_inc_rc, DUPdoDupNode (PRF_ARG2 (arg_node)),
+                                       TBmakeNum (NUM_VAL (PRF_ARG1 (arg_node)) - 1)));
         }
         break;
 

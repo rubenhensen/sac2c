@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/24 14:06:43  ktr
+ * MakeLet permutation.
+ *
  * Revision 1.8  2004/11/24 12:57:12  ktr
  * COMPILES!!!
  *
@@ -365,11 +368,11 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
                  * create FUNCOND
                  */
                 res
-                  = TBmakeAssign (TBmakeLet (TBmakeFuncond (DUPdoDupNode (cond),
+                  = TBmakeAssign (TBmakeLet (cids,
+                                             TBmakeFuncond (DUPdoDupNode (cond),
                                                             TBmakeId (IDS_AVIS (thenids)),
                                                             TBmakeId (
-                                                              IDS_AVIS (elseids))),
-                                             cids),
+                                                              IDS_AVIS (elseids)))),
                                   res);
                 AVIS_SSAASSIGN (IDS_AVIS (cids)) = res;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/11/24 14:10:12  ktr
+ * MakeLet permutation.
+ *
  * Revision 1.25  2004/11/24 11:27:01  ktr
  * COMPILES!!!
  *
@@ -905,7 +908,7 @@ MakeAdjustRC (node *avis, int count, node *next_node)
             prf = TCmakePrf2 (F_dec_rc, TBmakeId (avis), TBmakeNum (-count));
         }
 
-        n = TBmakeAssign (TBmakeLet (prf, NULL),
+        n = TBmakeAssign (TBmakeLet (NULL, prf),
                           (((next_node != NULL) && (NODE_TYPE (next_node) == N_assign))
                              ? next_node
                              : NULL));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/24 14:04:08  ktr
+ * MakeLet permutation.
+ *
  * Revision 1.9  2004/11/24 14:00:58  ktr
  * MakeLet permuted
  *
@@ -58,6 +61,7 @@
 #include "LookUpTable.h"
 #include "internal_lib.h"
 #include "free.h"
+#include "new_types.h"
 
 #include <string.h>
 

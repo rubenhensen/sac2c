@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/24 14:05:19  ktr
+ * MakeLet permutation.
+ *
  * Revision 1.4  2004/11/23 22:15:12  ktr
  * renaming done.
  *
@@ -156,7 +159,7 @@ CreateCopyId (node *oldid, info *arg_info)
      * Create copy operation
      */
     INFO_EMEC_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (TCmakePrf1 (F_copy, oldid), TBmakeIds (avis, NULL)),
+      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TCmakePrf1 (F_copy, oldid)),
                       INFO_EMEC_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (avis) = INFO_EMEC_PREASSIGN (arg_info);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/24 14:04:08  ktr
+ * MakeLet permutation.
+ *
  * Revision 1.4  2004/11/23 22:20:18  ktr
  * COMPILES!!!
  *
@@ -254,12 +257,12 @@ EMLRap (node *arg_node, info *arg_info)
                  *   a_val = fill( copy( a), a_mem);
                  */
                 INFO_EMLR_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TCmakePrf2 (F_fill,
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
+                                             TCmakePrf2 (F_fill,
                                                          TCmakePrf1 (F_copy,
                                                                      DUPdoDupNode (
                                                                        oldarg)),
-                                                         TBmakeId (memavis)),
-                                             TBmakeIds (valavis, NULL)),
+                                                         TBmakeId (memavis))),
                                   INFO_EMLR_PREASSIGN (arg_info));
                 AVIS_SSAASSIGN (valavis) = INFO_EMLR_PREASSIGN (arg_info);
 
@@ -282,14 +285,14 @@ EMLRap (node *arg_node, info *arg_info)
                  *   b     = do( a_val);
                  */
                 INFO_EMLR_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TCmakePrf3 (F_alloc_or_reuse,
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
+                                             TCmakePrf3 (F_alloc_or_reuse,
                                                          TCmakePrf1 (F_dim, DUPdoDupNode (
                                                                               oldarg)),
                                                          TCmakePrf1 (F_shape,
                                                                      DUPdoDupNode (
                                                                        oldarg)),
-                                                         oldarg),
-                                             TBmakeIds (memavis, NULL)),
+                                                         oldarg)),
                                   INFO_EMLR_PREASSIGN (arg_info));
                 AVIS_SSAASSIGN (memavis) = INFO_EMLR_PREASSIGN (arg_info);
             }
