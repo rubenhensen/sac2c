@@ -27,3 +27,11 @@ SelectionPropagation.c
 SelectionPropagation.h
 ConstVarPropagation.c
 ConstVarPropagation.h
+SSACSE.c
+SSACSE.h
+SSAConstantFolding.c
+SSAConstantFolding.h
+SSADeadCodeRemoval.c
+SSADeadCodeRemoval.h
+SSAWLUnroll.c
+SSAWLUnroll.h
