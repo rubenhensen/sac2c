@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/22 19:24:35  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 3.6  2004/11/22 15:42:55  ktr
  * SACDevCamp 04 Ismop
  *
@@ -85,16 +88,6 @@
 #define _SAC_RESOURCE_H_
 
 #include "types.h"
-
-/*****************************************************************************
- *
- * Declarations of global variables
- *
- ******************************************************************************/
-
-extern target_list_t *target_list;
-
-extern configuration_t config;
 
 /*****************************************************************************
  *

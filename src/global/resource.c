@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/11/22 19:24:35  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 3.10  2004/10/17 17:48:42  sah
  * added LD_DYNAMIC
  *
@@ -145,33 +148,7 @@
 /******************************************************************************
  *
  * global variable:
- *  target_list_t *target_list
- *
- * description:
- *  When the configuration files are parsed, a dynamic tree like structure
- *  is generated and its root is stored in target_list. This dynamic structure
- *  is afterwards processed, the relevant information is stored in the static
- *  structure config, and the target_list is finally released.
- *
- ******************************************************************************/
-
-target_list_t *target_list;
-
-/******************************************************************************
- *
- * global variable:
- *  configuration_t config
- *
- * This global variable permanently stores the desired configuration.
- *
- ******************************************************************************/
-
-configuration_t config;
-
-/******************************************************************************
- *
- * global variable:
- *  struct {...} resource_table[]
+ *  static struct {...} resource_table[]
  *
  * description:
  *  This static table defines the configurable resources. For each resource
