@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/09/06 10:03:34  sbs
+ * V2Opatch added
+ *
  * Revision 3.22  2002/07/24 15:07:09  dkr
  * TAGGED_ARRAYS: VECT2OFFSET and USE_GENVAR_OFFSET icms modified
  *
@@ -570,6 +573,8 @@ int ive_expr, ive_op;
  *                                                  already present
  */
 
+#define V2Opatch 1
+
 /*
  *
  *  functionname  : FindVect
@@ -1002,6 +1007,9 @@ MergeCopyTop (node *actchn)
  *  node *VardecIdx(node *vardec, types *type)       for finding / creating V_vardecs
  *                                                   for "shapely" iv's.
  *
+ *  node *CreateIdxs2OffsetIcm(node *vardec, types *type)  for creating Idxs2Offset
+ *                                                   that initialize "shapely" iv's.
+ *
  *  node *CreateVect2OffsetIcm(node *vardec, types *type)  for creating Vect2Offset
  *                                                   that initialize "shapely" iv's.
  */
@@ -1091,6 +1099,73 @@ VardecIdx (node *vardec, types *type)
                         VARDEC_NAME (VINFO_VARDEC (vinfo))));
 
     DBUG_RETURN (VINFO_VARDEC (vinfo));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *CreateIdxs2OffsetIcm(node * vardec, ids *idxs, types *type)
+ *
+ * description:
+ *    'vardec' points to the N_vardec/ N_arg node of the original
+ *    declaration, i.e. the "VECT"-version, of an index variable.
+ *    'idxs' points to the "IDS"-version of an index variable set.
+ *    'type' indicates which IDX(type) version has to be computed.
+ *    CreateIdxs2OffsetIcm creates the required  ND_IDXS2OFFSET-ICM, e.g.,
+ *    if  vardec -> int[2] iv    idxs ->  i, j    and   type -> double [4,5,6],
+ *    an icm ND_IDXS2OFFSET( iv_4_5_6__, 2, i, j, 3, 4, 5, 6)  is created.
+ *    While doing so it makes sure, that a vardec for iv_3_4_5__ exists and
+ *    it insertes back-refs from the N_id nodes of the icm to the respective
+ *    vardecs!
+ *
+ ******************************************************************************/
+
+node *
+CreateIdxs2OffsetIcm (node *vardec, ids *idxs, types *type)
+{
+    node *shp_exprs, *ids_exprs, *icm, *iv_off_id;
+#ifdef TAGGED_ARRAYS
+    node *exprs;
+#endif
+    char *iv_name;
+
+    DBUG_ENTER ("CreateIdxs2OffsetIcm");
+
+    /*
+     * First, we create an N_exprs-chain containing the shape of type!
+     */
+    shp_exprs = Type2Exprs (type);
+
+    /*
+     * Now, we create an N_id node containing the name of the shapely
+     * version of the index vector (iv in the example above).
+     */
+    iv_name = VARDEC_OR_ARG_NAME (vardec);
+
+    iv_off_id = MakeId (IdxChangeId (iv_name, type), NULL, ST_regular);
+    ID_VARDEC (iv_off_id) = VardecIdx (vardec, type);
+
+    /*
+     * Then, we create an N_exprs-chain containing the N_ids of the idxs:
+     */
+    ids_exprs = Ids2Exprs (idxs);
+
+    /*
+     * Now, we create the desired icm:
+     */
+#ifdef TAGGED_ARRAYS
+    iv_off_id = AddNtTag (iv_off_id);
+    exprs = ids_exprs;
+    while (exprs != NULL) {
+        EXPRS_EXPR (exprs) = AddNtTag (EXPRS_EXPR (exprs));
+        exprs = EXPRS_NEXT (exprs);
+    }
+#endif
+
+    icm = MakeIcm5 ("ND_IDXS2OFFSET", iv_off_id, MakeNum (CountIds (idxs)), ids_exprs,
+                    MakeNum (GetShapeDim (type)), shp_exprs);
+
+    DBUG_RETURN (MakeAssign (icm, NULL));
 }
 
 /******************************************************************************
@@ -1391,7 +1466,7 @@ IdxVardec (node *arg_node, node *arg_info)
         /*
          * This is the second traversal which is done after traversing the body
          * and is used to eliminate index vectors which are no longer needed.
-         * As criterium for need the existance of VECT in the COLCHN is taken.
+         * As criterium for need, the existance of VECT in the COLCHN is taken.
          * I hope that this is sufficient, since I add VECT whenever Vect2Offset
          * is introduced ( see "CreateVect2OffsetIcm").
          */
@@ -2196,6 +2271,7 @@ IdxNcode (node *arg_node, node *arg_info)
 {
     node *with, *idx_decl, *vinfo, *withop_arr, *col_vinfo, *new_assign, *let_node,
       *current_assign, *new_id, *array_id;
+    ids *idxs;
     types *arr_type;
 
     DBUG_ENTER ("IdxNcode");
@@ -2225,6 +2301,7 @@ IdxNcode (node *arg_node, node *arg_info)
 
     with = LET_EXPR (let_node);
     idx_decl = IDS_VARDEC (NWITH_VEC (with));
+    idxs = NWITH_IDS (with);
     vinfo = VARDEC_OR_ARG_ACTCHN (idx_decl);
     NCODE_USE (arg_node) = vinfo;
     L_VARDEC_OR_ARG_ACTCHN (idx_decl, MakeVinfoDollar (CutVinfoChn (vinfo)));
@@ -2308,12 +2385,22 @@ IdxNcode (node *arg_node, node *arg_info)
                                              NULL);
 #endif
                 } else {
+#if V2Opatch
+                    /*
+                     * we have to instanciate the idx-variable by an ICM of the form:
+                     *   ND_IDXS2OFFSET( <off-name>, <num idxs>, idx-names,
+                     *                               <dim of array>, shape_elems)
+                     */
+                    new_assign
+                      = CreateIdxs2OffsetIcm (idx_decl, idxs, VINFO_TYPE (vinfo));
+#else
                     /*
                      * we have to instanciate the idx-variable by an ICM of the form:
                      *   ND_VECT2OFFSET( <off-name>, <var-name>,
                      *                   <dim of var>, <dim of array>, shape_elems)
                      */
                     new_assign = CreateVect2OffsetIcm (idx_decl, VINFO_TYPE (vinfo));
+#endif
                 }
 
                 ASSIGN_NEXT (new_assign) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
