@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.81  1998/08/11 00:04:41  dkr
+ * MakeWLsegVar changed
+ *
  * Revision 1.80  1998/08/10 12:45:11  dkr
  * removed unused vars in MakeWLsegVar
  *
@@ -1748,6 +1751,9 @@ MakeWLseg (int dims, node *contents, node *next)
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
 
+    WLSEG_IDX_MIN (new_node) = (int *)MALLOC (dims * sizeof (int));
+    WLSEG_IDX_MAX (new_node) = (int *)MALLOC (dims * sizeof (int));
+
     WLSEG_BLOCKS (new_node) = 3; /* three blocking levels */
     for (b = 0; b < WLSEG_BLOCKS (new_node); b++) {
         WLSEG_BV (new_node, b) = (long *)MALLOC (sizeof (long) * dims);
@@ -1876,6 +1882,7 @@ node *
 MakeWLsegVar (int dims, node *contents, node *next)
 {
     node *new_node;
+    int b;
 
     DBUG_ENTER ("MakeWLsegVar");
     INIT_NODE (new_node);
@@ -1885,6 +1892,15 @@ MakeWLsegVar (int dims, node *contents, node *next)
 
     WLSEGVAR_CONTENTS (new_node) = contents;
     WLSEGVAR_NEXT (new_node) = next;
+
+    WLSEGVAR_IDX_MIN (new_node) = (int *)MALLOC (dims * sizeof (int));
+    WLSEGVAR_IDX_MAX (new_node) = (int *)MALLOC (dims * sizeof (int));
+
+    WLSEGVAR_BLOCKS (new_node) = 3; /* three blocking levels */
+    for (b = 0; b < WLSEGVAR_BLOCKS (new_node); b++) {
+        WLSEGVAR_BV (new_node, b) = (long *)MALLOC (sizeof (long) * dims);
+    }
+    WLSEGVAR_UBV (new_node) = (long *)MALLOC (sizeof (long) * dims);
 
     WLSEGVAR_MAXHOMDIM (new_node) = -1;
     /*
