@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/02/14 14:39:58  dkr
+ * DoPrintStatusAST modified
+ *
  * Revision 3.21  2001/02/14 10:22:13  dkr
  * PrintAST extended: FUNDEF_TYPES, ..._STATUS, ..._ATTRIB are printed
  * now, too
@@ -543,7 +546,7 @@ TSIprintInfo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   void PrintRC( int rc, int nrc, int show_rc)
+ *   void PrintRC( int rc, int nrc, bool show_rc)
  *
  * Description:
  *
@@ -551,7 +554,7 @@ TSIprintInfo (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static void
-PrintRC (int rc, int nrc, int show_rc)
+PrintRC (int rc, int nrc, bool show_rc)
 {
     bool do_it = show_rc;
 
@@ -3745,72 +3748,26 @@ DoIndentAST (void)
     DBUG_VOID_RETURN;
 }
 
-/* forward declaration */
-static void DoPrintAST (node *arg_node, bool skip_next, bool print_attr);
-
 /******************************************************************************
  *
- * function:
- *   void DoPrintSonAST( int num, node *arg_node,
- *                       bool skip_node, bool print_attr)
+ * Function:
+ *   void DoPrintStatusAST( statustype status)
  *
- * description:
- *   This function is called from 'DoPrintAST' only.
- *   Prints a son containing a hole sub-tree.
+ * Description:
+ *
  *
  ******************************************************************************/
 
 static void
-DoPrintSonAST (int num, node *arg_node, bool skip_node, bool print_attr)
+DoPrintStatusAST (statustype status)
 {
-    DBUG_ENTER ("DoPrintSonAST");
+    DBUG_ENTER ("DoPrintStatusAST");
 
-    DoIndentAST ();
-
-    if (num >= 0) {
-        fprintf (outfile, "%i=", num);
+    fprintf (outfile, ":");
+    if (status != ST_regular) {
+        fprintf (outfile, "%s", mdb_statustype[status]);
     } else {
-        fprintf (outfile, "+=");
-    }
-
-    if (skip_node) {
-        fprintf (outfile, "(NEXT)\n");
-    } else {
-        /* inner node -> do not skip NEXT-nodes */
-        DoPrintAST (arg_node, FALSE, print_attr);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void DoPrintAttrAST( int num, node *arg_node)
- *
- * description:
- *   This function is called from 'DoPrintAST' only.
- *   Prints an attribute containing a node-pointer.
- *
- ******************************************************************************/
-
-static void
-DoPrintAttrAST (int num, node *arg_node)
-{
-    DBUG_ENTER ("DoPrintAttrAST");
-
-    DoIndentAST ();
-
-    if (num >= 0) {
-        fprintf (outfile, "%i-", num);
-    } else {
-        fprintf (outfile, "+-");
-    }
-
-    if (arg_node != NULL) {
-        fprintf (outfile, F_PTR "\n", arg_node);
-    } else {
-        fprintf (outfile, "NULL\n");
+        fprintf (outfile, "-");
     }
 
     DBUG_VOID_RETURN;
@@ -3882,7 +3839,7 @@ DoPrintBasicTypeAST (types *type)
 /******************************************************************************
  *
  * Function:
- *   void DoPrintAllTypeAST( types *type)
+ *   void DoPrintAllTypeAST( types *type, bool print_status)
  *
  * Description:
  *   Prints a single types-structure.
@@ -3891,7 +3848,7 @@ DoPrintBasicTypeAST (types *type)
  ******************************************************************************/
 
 static void
-DoPrintAllTypeAST (types *type)
+DoPrintAllTypeAST (types *type, bool print_status)
 {
     node *tdef;
 
@@ -3921,9 +3878,13 @@ DoPrintAllTypeAST (types *type)
         DoPrintBasicTypeAST (type);
     }
 
+    if (print_status) {
+        DoPrintStatusAST (TYPES_STATUS (type));
+    }
+
     if (TYPES_NEXT (type) != NULL) {
         fprintf (outfile, " ");
-        DoPrintAllTypeAST (TYPES_NEXT (type));
+        DoPrintAllTypeAST (TYPES_NEXT (type), print_status);
     }
 
     DBUG_VOID_RETURN;
@@ -3932,7 +3893,7 @@ DoPrintAllTypeAST (types *type)
 /******************************************************************************
  *
  * Function:
- *   void DoPrintTypesAST( types *type)
+ *   void DoPrintTypesAST( types *type, bool print_status)
  *
  * Description:
  *   Prints all the data of a types-structure.
@@ -3940,7 +3901,7 @@ DoPrintAllTypeAST (types *type)
  ******************************************************************************/
 
 static void
-DoPrintTypesAST (types *type)
+DoPrintTypesAST (types *type, bool print_status)
 {
     DBUG_ENTER ("DoPrintTypesAST");
 
@@ -3948,7 +3909,7 @@ DoPrintTypesAST (types *type)
         if (TYPES_NEXT (type) != NULL) {
             fprintf (outfile, "{ ");
         }
-        DoPrintAllTypeAST (type);
+        DoPrintAllTypeAST (type, print_status);
         if (TYPES_NEXT (type) != NULL) {
             fprintf (outfile, " }");
         }
@@ -3978,20 +3939,88 @@ DoPrintIdsAST (ids *vars, bool print_status)
     fprintf (outfile, "{ ");
     while (vars != NULL) {
         fprintf (outfile, "%s<" F_PTR ">", IDS_NAME (vars), IDS_NAME (vars));
-        PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), 1);
+        PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), TRUE);
 
         if (print_status) {
-            fprintf (outfile, " (");
-            fprintf (outfile, "attr: %s", mdb_statustype[IDS_ATTRIB (vars)]);
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[IDS_STATUS (vars)]);
-            fprintf (outfile, ")");
+            DoPrintStatusAST (IDS_ATTRIB (vars));
+            DoPrintStatusAST (IDS_STATUS (vars));
         }
 
         fprintf (outfile, " ");
         vars = IDS_NEXT (vars);
     }
     fprintf (outfile, "}");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void DoPrintAttrAST( int num, node *arg_node)
+ *
+ * description:
+ *   This function is called from 'DoPrintAST' only.
+ *   Prints an attribute containing a node-pointer.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintAttrAST (int num, node *arg_node)
+{
+    DBUG_ENTER ("DoPrintAttrAST");
+
+    DoIndentAST ();
+
+    if (num >= 0) {
+        fprintf (outfile, "%i-", num);
+    } else {
+        fprintf (outfile, "+-");
+    }
+
+    if (arg_node != NULL) {
+        fprintf (outfile, F_PTR "\n", arg_node);
+    } else {
+        fprintf (outfile, "NULL\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/* forward declaration */
+static void DoPrintAST (node *arg_node, bool skip_next, bool print_attr);
+
+/******************************************************************************
+ *
+ * function:
+ *   void DoPrintSonAST( int num, node *arg_node,
+ *                       bool skip_node, bool print_attr)
+ *
+ * description:
+ *   This function is called from 'DoPrintAST' only.
+ *   Prints a son containing a hole sub-tree.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintSonAST (int num, node *arg_node, bool skip_node, bool print_attr)
+{
+    DBUG_ENTER ("DoPrintSonAST");
+
+    DoIndentAST ();
+
+    if (num >= 0) {
+        fprintf (outfile, "%i=", num);
+    } else {
+        fprintf (outfile, "+=");
+    }
+
+    if (skip_node) {
+        fprintf (outfile, "(NEXT)\n");
+    } else {
+        /* inner node -> do not skip NEXT-nodes */
+        DoPrintAST (arg_node, FALSE, print_attr);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -4033,15 +4062,14 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_typedef:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (TYPEDEF_TYPE (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">",
-                     STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"), TYPEDEF_NAME (arg_node));
+            DoPrintTypesAST (TYPEDEF_TYPE (arg_node), TRUE);
+            fprintf (outfile, " ");
 
-            fprintf (outfile, ", ");
-            fprintf (outfile, "attr: %s", mdb_statustype[TYPEDEF_ATTRIB (arg_node)]);
+            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"),
+                     TYPEDEF_NAME (arg_node));
 
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[TYPEDEF_STATUS (arg_node)]);
+            DoPrintStatusAST (TYPEDEF_ATTRIB (arg_node));
+            DoPrintStatusAST (TYPEDEF_STATUS (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4051,15 +4079,14 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_objdef:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (OBJDEF_TYPE (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (OBJDEF_NAME (arg_node), "?"),
+            DoPrintTypesAST (OBJDEF_TYPE (arg_node), TRUE);
+            fprintf (outfile, " ");
+
+            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (OBJDEF_NAME (arg_node), "?"),
                      OBJDEF_NAME (arg_node));
 
-            fprintf (outfile, ", ");
-            fprintf (outfile, "attr: %s", mdb_statustype[OBJDEF_ATTRIB (arg_node)]);
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[OBJDEF_STATUS (arg_node)]);
+            DoPrintStatusAST (OBJDEF_ATTRIB (arg_node));
+            DoPrintStatusAST (OBJDEF_STATUS (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4069,15 +4096,14 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_fundef:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (FUNDEF_TYPES (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">", FUNDEF_NAME (arg_node),
+            DoPrintTypesAST (FUNDEF_TYPES (arg_node), TRUE);
+            fprintf (outfile, " ");
+
+            fprintf (outfile, "%s<" F_PTR ">", FUNDEF_NAME (arg_node),
                      FUNDEF_NAME (arg_node));
 
-            fprintf (outfile, ", ");
-            fprintf (outfile, "attr: %s", mdb_statustype[FUNDEF_ATTRIB (arg_node)]);
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[FUNDEF_STATUS (arg_node)]);
+            DoPrintStatusAST (OBJDEF_ATTRIB (arg_node));
+            DoPrintStatusAST (OBJDEF_STATUS (arg_node));
 
             fprintf (outfile, ")");
 
@@ -4097,20 +4123,19 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_arg:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
+            DoPrintTypesAST (ARG_TYPE (arg_node), TRUE);
+            fprintf (outfile, " ");
+
+            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
                      ARG_NAME (arg_node));
 
-            PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
+            DoPrintStatusAST (ARG_ATTRIB (arg_node));
+            DoPrintStatusAST (ARG_STATUS (arg_node));
+
+            PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), TRUE);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "varno: %i", ARG_VARNO (arg_node));
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "attr: %s", mdb_statustype[ARG_ATTRIB (arg_node)]);
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[ARG_STATUS (arg_node)]);
 
             fprintf (outfile, ")");
 
@@ -4124,20 +4149,19 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_vardec:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
+            DoPrintTypesAST (VARDEC_TYPE (arg_node), TRUE);
+            fprintf (outfile, " ");
+
+            fprintf (outfile, "%s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
                      VARDEC_NAME (arg_node));
 
-            PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
+            DoPrintStatusAST (VARDEC_ATTRIB (arg_node));
+            DoPrintStatusAST (VARDEC_STATUS (arg_node));
+
+            PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), TRUE);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "varno: %i", VARDEC_VARNO (arg_node));
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "attr: %s", mdb_statustype[VARDEC_ATTRIB (arg_node)]);
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[VARDEC_STATUS (arg_node)]);
 
             fprintf (outfile, ")");
 
@@ -4176,18 +4200,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             if (ID_VARDEC (arg_node) != NULL) {
-                DoPrintTypesAST (ID_TYPE (arg_node));
+                DoPrintTypesAST (ID_TYPE (arg_node), TRUE);
                 fprintf (outfile, " ");
             }
+
             fprintf (outfile, "%s<" F_PTR ">", ID_NAME (arg_node), ID_NAME (arg_node));
 
-            PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), 1);
+            DoPrintStatusAST (ID_ATTRIB (arg_node));
+            DoPrintStatusAST (ID_STATUS (arg_node));
 
-            fprintf (outfile, ", ");
-            fprintf (outfile, "attr: %s", mdb_statustype[ID_ATTRIB (arg_node)]);
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "stat: %s", mdb_statustype[ID_STATUS (arg_node)]);
+            PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), TRUE);
 
             fprintf (outfile, ")");
             break;
@@ -4203,7 +4225,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_array:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (ARRAY_TYPE (arg_node));
+            DoPrintTypesAST (ARRAY_TYPE (arg_node), TRUE);
 
             fprintf (outfile, ")");
             break;
@@ -4236,7 +4258,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
                 fprintf (outfile, "%s<" F_PTR ">", withid, withid);
 
                 PrintRC (IDS_REFCNT (NWITHID_VEC (arg_node)),
-                         IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)), 1);
+                         IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)), TRUE);
             } else {
                 fprintf (outfile, "?");
             }
