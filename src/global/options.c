@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/06/04 14:33:46  cg
+ * Added new option -cshost.
+ * Added missing options -noMTO and -noSBE
+ *
  * Revision 2.7  1999/06/02 15:39:39  cg
  * Bug fixed in break option: show_idx and show_refcnt are now triggered correctly.
  *
@@ -156,6 +160,8 @@ AnalyseCommandline (int argc, char *argv[])
                       cachesim &= ~CACHESIM_FILE);
         ARG_FLAGMASK_END ();
     });
+
+    ARGS_OPTION ("-cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
 
     ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
 
@@ -372,6 +378,12 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("tsp", optimize &= ~OPT_TSP);
         ARG_CHOICE ("TSP", optimize &= ~OPT_TSP);
+
+        ARG_CHOICE ("mto", optimize &= ~OPT_MTO);
+        ARG_CHOICE ("MTO", optimize &= ~OPT_MTO);
+
+        ARG_CHOICE ("sbe", optimize &= ~OPT_SBE);
+        ARG_CHOICE ("SBE", optimize &= ~OPT_SBE);
 
         ARG_CHOICE_END ();
     });
