@@ -2,8 +2,14 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/23 09:54:26  cg
+ * undefs inserted.
+ *
  * Revision 1.2  2004/11/22 16:26:43  cg
  * First complete revision.
+ *
+ * Revision 1.1  2004/11/22 11:21:25  cg
+ * Initial revision.
  *
  */
 
@@ -489,7 +495,7 @@ GLOBAL (char *, filename, NULL)
  * Current file name
  */
 
-GLOBAL (char *, compiler_phase_name[], compiler_phase_name_init)
+GLOBAL (char **, compiler_phase_name, compiler_phase_name_init)
 /*
  * Names of compiler phases
  */
@@ -514,12 +520,12 @@ GLOBAL (unsigned int, max_allocated_mem, 0)
  * lac2fun, fun2lac conversion
  */
 
-GLOBAL (int, do_lac2fun[], do_lac2fun_init)
+GLOBAL (int *, do_lac2fun, do_lac2fun_init)
 /*
  * do_lac2fun[i] > 0: do lac2fun conversion before phase i
  */
 
-GLOBAL (int, do_fun2lac[], do_fun2lac_init)
+GLOBAL (int *, do_fun2lac, do_fun2lac_init)
 /*
  * do_fun2lac[i] > 0: do fun2lac conversion after phase i
  */
@@ -528,13 +534,13 @@ GLOBAL (int, do_fun2lac[], do_fun2lac_init)
  * for arg tags
  */
 
-GLOBAL (bool, ATG_has_shp[], ATG_has_shp_init)
-GLOBAL (bool, ATG_has_rc[], ATG_has_rc_init)
-GLOBAL (bool, ATG_has_desc[], ATG_has_desc_init)
-GLOBAL (bool, ATG_is_in[], ATG_is_in_init)
-GLOBAL (bool, ATG_is_out[], ATG_is_out_init)
-GLOBAL (bool, ATG_is_inout[], ATG_is_inout_init)
-GLOBAL (char *, ATG_string[], ATG_string_init)
+GLOBAL (bool *, ATG_has_shp, ATG_has_shp_init)
+GLOBAL (bool *, ATG_has_rc, ATG_has_rc_init)
+GLOBAL (bool *, ATG_has_desc, ATG_has_desc_init)
+GLOBAL (bool *, ATG_is_in, ATG_is_in_init)
+GLOBAL (bool *, ATG_is_out, ATG_is_out_init)
+GLOBAL (bool *, ATG_is_inout, ATG_is_inout_init)
+GLOBAL (char *, ATG_string, ATG_string_init)
 
 /*
  * Special purpose global variables
@@ -569,13 +575,13 @@ GLOBAL (int, indent, 0)
  *  directory but from within icm2c_xxx.c as well!
  */
 
-GLOBAL (const int, basetype_size[], basetype_size_init)
+GLOBAL (const int *, basetype_size, basetype_size_init)
 /*
  * This array of integers keeps the lengths of all simpletypes.
  * It at least is used in compile.c, tile_size_inference.c, and constants.c!
  */
 
-GLOBAL (const char *, prf_string[], prf_string_init)
+GLOBAL (const char **, prf_string, prf_string_init)
 /*
  * This array maintains debug print names of primitive functions.
  */
@@ -590,17 +596,100 @@ GLOBAL (int, min_array_rep, MIN_ARRAY_REP_SCL_AKS)
  * Name tuples
  */
 
-GLOBAL (char *, nt_shape_string[], nt_shape_string_init)
-GLOBAL (char *, nt_hidden_string[], nt_hidden_string_init)
-GLOBAL (char *, nt_unique_string[], nt_unique_string_init)
+GLOBAL (char **, nt_shape_string, nt_shape_string_init)
+GLOBAL (char **, nt_hidden_string, nt_hidden_string_init)
+GLOBAL (char **, nt_unique_string, nt_unique_string_init)
 /*
  * These character arrays are the macro-name-parts used to select
  * array class and array uniqueness properties.
  */
 
 /*
- * unknown, new typecheck
+ * Unknown, new typecheck
  */
 
-GLOBAL (static const ct_funptr, NTCPRF_funtab[], NTCPRF_funtab_info)
-GLOBAL (static const void *, NTCPRF_cffuntab[], NTCPRF_cffuntab_info)
+GLOBAL (const ct_funptr *, NTCPRF_funtab, NTCPRF_funtab_info)
+GLOBAL (const void **, NTCPRF_cffuntab, NTCPRF_cffuntab_info)
+
+/*
+ * Primitive zip function tables, previously defined in zipcv.c
+ */
+
+GLOBAL (const zipcvfunptr *, zipcv_plus, zipcv_plus_init)
+GLOBAL (const zipcvfunptr *, zipcv_minus, zipcv_minus_init)
+GLOBAL (const zipcvfunptr *, zipcv_mul, zipcv_mul_init)
+GLOBAL (const zipcvfunptr *, zipcv_div, zipcv_divinit)
+GLOBAL (const zipcvfunptr *, zipcv_mod, zipcv_mod_init)
+GLOBAL (const zipcvfunptr *, zipcv_min, zipcv_min_init)
+GLOBAL (const zipcvfunptr *, zipcv_max, zipcv_max_init)
+GLOBAL (const zipcvfunptr *, zipcv_and, zipcv_and_init)
+GLOBAL (const zipcvfunptr *, zipcv_or, zipcv_or_init)
+GLOBAL (const zipcvfunptr *, zipcv_eq, zipcv_eqinit)
+GLOBAL (const zipcvfunptr *, zipcv_neq, zipcv_neq_init)
+GLOBAL (const zipcvfunptr *, zipcv_le, zipcv_le_init)
+GLOBAL (const zipcvfunptr *, zipcv_lt, zipcv_lt_init)
+GLOBAL (const zipcvfunptr *, zipcv_gt, zipcv_gt_init)
+GLOBAL (const zipcvfunptr *, zipcv_ge, zipcv_ge_init)
+GLOBAL (const zipcvfunptr *, zipcv_not, zipcv_not_init)
+GLOBAL (const zipcvfunptr *, zipcv_toi, zipcv_toi_init)
+GLOBAL (const zipcvfunptr *, zipcv_tof, zipcv_tof_init)
+GLOBAL (const zipcvfunptr *, zipcv_tod, zipcv_tod_init)
+GLOBAL (const zipcvfunptr *, zipcv_abs, zipcv_abs_init)
+GLOBAL (const zipcvfunptr *, zipcv_neg, zipcv_neg_init)
+
+/*
+ * Primitive base function tables, previously defined in basecv.c
+ */
+
+GLOBAL (const basecvfunptr *, basecv_zero, basecv_zero_init)
+GLOBAL (const basecvfunptr *, basecv_one, basecv_one_init)
+
+/*
+ * Constant vector copying function table, previously defined in cv2cv.c
+ */
+
+GLOBAL (const cv2cvfunptr *, cv2cv, cv2cvinit)
+
+/*
+ * Constant vector to scalar conversion function table, previously defined in cv2scalar.c
+ */
+
+GLOBAL (const cv2scalarfunptr *, cv2scalar, cv2scalar_init)
+
+/*
+ * Constant vector to string conversion function table, previously defined in cv2str.c
+ */
+
+GLOBAL (const cv2strfunptr *, cv2str, cv2str_init)
+
+/*
+ * Debug string tables
+ */
+
+GLOBAL (const char **, mdb_nodetype, mdb_nodetype_init)
+GLOBAL (const char **, mdb_prf, mdb_prf_init)
+GLOBAL (const char **, mdb_type, mdb_type_init)
+GLOBAL (const char **, mdb_statustype, mdb_statustype_init)
+
+/*
+ * Resource / configuration management
+ */
+
+GLOBAL (target_list_t *, target_list, NULL)
+/*
+ * When the configuration files are parsed, a dynamic tree like structure
+ * is generated and its root is stored in target_list. This dynamic structure
+ * is afterwards processed, the relevant information is stored in the static
+ * structure config, and the target_list is finally released.
+ */
+
+GLOBAL (configuration_t, config, )
+/*
+ * This global variable permanently stores the desired configuration
+ * which is read from the sac2crc file.
+ */
+
+#undef GLOBALtype
+#undef GLOBALid
+#undef GLOBALinit
+#undef GLOBAL
