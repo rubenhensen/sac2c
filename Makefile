@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2001/02/22 12:52:22  nmw
+# UndoSSATransform added
+#
 # Revision 3.12  2001/02/13 15:19:45  nmw
 # SSATransform added
 #
@@ -166,7 +169,7 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
       src/tree/cleanup_decls.o src/tree/adjust_ids.o src/tree/scheduling.o \
-      src/tree/CheckAvis.o src/tree/SSATransform.o
+      src/tree/CheckAvis.o src/tree/SSATransform.o src/tree/UndoSSATransform.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
