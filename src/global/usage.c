@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/04/21 16:38:56  ktr
+ * Added SSA-based refcounting
+ *
  * Revision 3.56  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -463,8 +466,8 @@ Usage ()
       "                      - associative law optimization,\n"
       "                      - segmentation and tiling of fold-with-loops.\n"
       "\n"
-      "    -ssa            Apply optimizations based on ssa-form, instead of using the\n"
-      "                    old non-ssa based implementations.\n"
+      "    -nossa          Apply old optimizations not based on ssa-form, instead of\n"
+      "                    using the new ssa based implementations.\n"
       "                    NOTE:\n"
       "                    Some optimizations are exclusively implemented in ssa style.\n"
       "                    Support for non-ssa based implementations will be removed in\n"

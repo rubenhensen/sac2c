@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/04/21 16:38:56  ktr
+ * Added SSA-based refcounting
+ *
  * Revision 3.5  2004/02/26 13:09:47  khf
  * PH_wlpartgen added
  *
@@ -89,6 +92,8 @@ PH_SEL (PH_initial, "", 0, 0),
   PH_SEL (PH_multithread, "Generating annotations for MT", 0, 0),
 
   PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
+
+  PH_SEL (PH_ssarefcnt, "Running SSA reference count inference system", 0, 0),
 
   PH_SEL (PH_precompile, "Preparing C code generation", 0, 0),
 

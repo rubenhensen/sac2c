@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/04/21 16:38:56  ktr
+ * Added SSA-based refcounting
+ *
  * Revision 3.35  2004/04/08 11:24:34  skt
  * Position of SYSABORT for mtmode 3 moved
  *
@@ -152,6 +155,7 @@
 #include "filemgr.h"
 #include "import.h"
 #include "refcount.h"
+#include "SSARefCount.h"
 #include "scnprs.h"
 #include "writesib.h"
 #include "readsib.h"
@@ -494,7 +498,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (mtmode != MT_mtstblock) {
+    if ((!ktr) && (mtmode != MT_mtstblock)) {
         compiler_phase += 2;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -523,7 +527,19 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if ((use_ssaform) && (optimize & OPT_BLIR)) {
+    if ((ktr) && (use_ssaform)) {
+        compiler_phase += 1;
+        PHASE_PROLOG;
+        NOTE_COMPILER_PHASE;
+        syntax_tree = DoSSA (syntax_tree);
+        syntax_tree = SSARefCount (syntax_tree);
+        PHASE_DONE_EPILOG;
+        PHASE_EPILOG;
+        goto BREAK;
+        compiler_phase -= 1;
+    }
+
+    if ((ktr) && (use_ssaform) && (optimize & OPT_BLIR)) {
         /* Perform Backend Withloop Invariant Removal */
         syntax_tree = Blir (syntax_tree);
         goto BREAK;
