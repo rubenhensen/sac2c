@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/06/04 17:03:29  cg
+ * switched to new variable names.
+ *
  * Revision 1.4  1998/05/12 09:03:42  cg
  * The new macro SAC_MT_CURRENT_FUN() is now set before each function definition.
  *
@@ -39,10 +42,10 @@
     fprintf (outfile, "{ int __i;\n\n");                                                 \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "for(__i=0; __i<SAC_ND_A_SIZE(%s); __i++)\n", a);                  \
+    fprintf (outfile, "for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", a);            \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr++]=SAC_ND_A_FIELD(%s)[__i];\n",    \
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr++]=SAC_ND_A_FIELD(%s)[SAC_i];\n",  \
              res, res, a);                                                               \
     indent--;                                                                            \
     INDENT;                                                                              \
@@ -62,7 +65,7 @@
         int i, j;                                                                        \
         for (i = 0; i < idxlen; i++) {                                                   \
             INDENT;                                                                      \
-            fprintf (outfile, "int lim_%d;\n", i);                                       \
+            fprintf (outfile, "int SAC_lim_%d;\n", i);                                   \
             INDENT;                                                                      \
             fprintf (outfile, "int %s__offset%d_left=", res, i);                         \
             fprintf (outfile, "SAC_ND_A_FIELD(%s)[%d]", from, i);                        \
@@ -84,11 +87,11 @@
             int i;                                                                       \
             for (i = 0; i < idxlen; i++) {                                               \
                 INDENT;                                                                  \
-                fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_left;\n", i, res,     \
+                fprintf (outfile, "SAC_lim_%d=%s__destptr+%s__offset%d_left;\n", i, res, \
                          res, i);                                                        \
                 INDENT;                                                                  \
-                fprintf (outfile, "for(; %s__destptr<lim_%d; %s__destptr++) {\n", res,   \
-                         i, res);                                                        \
+                fprintf (outfile, "for(; %s__destptr<SAC_lim_%d; %s__destptr++) {\n",    \
+                         res, i, res);                                                   \
                 indent++;                                                                \
                 INDENT;                                                                  \
                 fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]=", res, res);         \
@@ -110,37 +113,6 @@
         fprintf (outfile, "\n");                                                         \
     }
 
-#ifdef OLD_FOLD
-#define BeginFoldWith(res, dimres, neutral, form, to, idx, idixlen, fun_tag)             \
-    INDENT;                                                                              \
-    fprintf (outfile, "{ int __i;\n");                                                   \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    if (0 < dimres) {                                                                    \
-        fprintf (outfile, "for(__i=0; __i < SAC_ND_A_SIZE(%s); __i++)\n", res);          \
-        indent++;                                                                        \
-        INDENT;                                                                          \
-        if (1 == fun_tag)                                                                \
-            fprintf (outfile, " %s[__i]=%s;\n", res, neutral[0]);                        \
-        else                                                                             \
-            fprintf (outfile, " %s[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, neutral[0]);   \
-        indent--;                                                                        \
-    } else                                                                               \
-        fprintf (outfile, " %s=%s;\n", res, neutral[0]);                                 \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = 0; i < idxlen; i++) {                                                   \
-            INDENT;                                                                      \
-            fprintf (outfile,                                                            \
-                     "for( SAC_ND_A_FIELD(%s)[%d]=SAC_ND_A_FIELD(%s)[%d]; "              \
-                     "SAC_ND_A_FIELD(%s)[%d]<=SAC_ND_A_FIELD(%s)[%d]; "                  \
-                     "SAC_ND_A_FIELD(%s)[%d]++) {\n",                                    \
-                     idx, i, from, i, idx, i, to, i, idx, i);                            \
-            indent++;                                                                    \
-        }                                                                                \
-    }                                                                                    \
-    fprintf (outfile, "\n")
-#else
 #define BeginFoldWith(res, sizeres, form, to, idx, idixlen, n_neutral, neutral)          \
     INDENT;                                                                              \
     fprintf (outfile, "{ PROFILE_BEGIN_WITH( fold );\n");                                \
@@ -182,8 +154,6 @@
     }                                                                                    \
     fprintf (outfile, "\n")
 
-#endif
-
 #define EndWith(res, dimres, idxlen, fillstr, withkind)                                  \
     {                                                                                    \
         int i;                                                                           \
@@ -192,11 +162,11 @@
             INDENT;                                                                      \
             fprintf (outfile, "}\n");                                                    \
             INDENT;                                                                      \
-            fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_right;\n", i, res, res,   \
-                     i);                                                                 \
+            fprintf (outfile, "SAC_lim_%d=%s__destptr+%s__offset%d_right;\n", i, res,    \
+                     res, i);                                                            \
             INDENT;                                                                      \
-            fprintf (outfile, "for(; %s__destptr<lim_%d; %s__destptr++) {\n", res, i,    \
-                     res);                                                               \
+            fprintf (outfile, "for(; %s__destptr<SAC_lim_%d; %s__destptr++) {\n", res,   \
+                     i, res);                                                            \
             indent++;                                                                    \
             INDENT;                                                                      \
             fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]=", res, res);             \
@@ -213,17 +183,6 @@
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
 
-#ifdef OLD_FOLD
-#define EndFoldWith(idxlen)                                                              \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = 0; i <= idxlen; i++) {                                                  \
-            indent--;                                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "}\n");                                                    \
-        }                                                                                \
-    }
-#else
 #define EndFoldWith(idxlen)                                                              \
     {                                                                                    \
         int i;                                                                           \
@@ -238,7 +197,6 @@
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
-#endif
 
 #define ScanArglist(arg, n, bin, bout, binout, bupd, bupdbox, binrc, boutrc, binoutrc,   \
                     sepstr)                                                              \
@@ -288,11 +246,11 @@
 
 #define InitPtr(src, dest)                                                               \
     INDENT;                                                                              \
-    fprintf (outfile, "int __isrc=");                                                    \
+    fprintf (outfile, "int SAC_isrc=");                                                  \
     src;                                                                                 \
     fprintf (outfile, ";\n");                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "int __idest=");                                                   \
+    fprintf (outfile, "int SAC_idest=");                                                 \
     dest;                                                                                \
     fprintf (outfile, ";\n\n")
 
@@ -307,9 +265,9 @@
         }                                                                                \
     }
 
-#define InitIMaxs(from, to, v_i_str) InitVecs (from, to, "__imax", v_i_str)
+#define InitIMaxs(from, to, v_i_str) InitVecs (from, to, "SAC_imax", v_i_str)
 
-#define InitSrcOffs(from, to, v_i_str) InitVecs (from, to, "__srcoff", v_i_str)
+#define InitSrcOffs(from, to, v_i_str) InitVecs (from, to, "SAC_srcoff", v_i_str)
 
 #define FillRes(res, body)                                                               \
     INDENT;                                                                              \
@@ -320,7 +278,7 @@
     INDENT;                                                                              \
     fprintf (outfile, "}\n");                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "while( __idest<SAC_ND_A_SIZE(%s));\n", res)
+    fprintf (outfile, "while( SAC_idest<SAC_ND_A_SIZE(%s));\n", res)
 
 #define AccessSeg(dim, body)                                                             \
     {                                                                                    \
@@ -330,11 +288,12 @@
         indent++;                                                                        \
         for (i = 1; i < dim; i++) {                                                      \
             INDENT;                                                                      \
-            fprintf (outfile, "int __i%d;\n", i);                                        \
+            fprintf (outfile, "int SAC_i%d;\n", i);                                      \
         }                                                                                \
         for (i = 1; i < dim; i++) {                                                      \
             INDENT;                                                                      \
-            fprintf (outfile, "for( __i%d=0; __i%d<__imax%d; __i%d++) {\n", i, i, i, i); \
+            fprintf (outfile, "for( SAC_i%d=0; SAC_i%d<SAC_imax%d; SAC_i%d++) {\n", i,   \
+                     i, i, i);                                                           \
             indent++;                                                                    \
         }                                                                                \
         body;                                                                            \
@@ -343,7 +302,7 @@
             INDENT;                                                                      \
             fprintf (outfile, "}\n");                                                    \
             INDENT;                                                                      \
-            fprintf (outfile, "__isrc += __srcoff%d;\n", i);                             \
+            fprintf (outfile, "SAC_isrc += SAC_srcoff%d;\n", i);                         \
         }                                                                                \
         indent--;                                                                        \
         INDENT;                                                                          \
@@ -355,12 +314,13 @@
               FillRes (                                                                  \
                 res, INDENT; if (check_boundary) {                                       \
                     fprintf (outfile,                                                    \
-                             "if((0 <= __isrc)&&( __isrc < SAC_ND_A_SIZE(%s)))\n", a);   \
+                             "if((0 <= SAC_isrc)&&( SAC_isrc < SAC_ND_A_SIZE(%s)))\n",   \
+                             a);                                                         \
                     indent++;                                                            \
                     INDENT;                                                              \
                 } fprintf (outfile,                                                      \
-                           "SAC_ND_A_FIELD(%s)[__idest++]=SAC_ND_A_FIELD(%s)[__isrc++];" \
-                           "\n",                                                         \
+                           "SAC_ND_A_FIELD(%s)[SAC_idest++]=SAC_ND_A_FIELD(%s)[SAC_"     \
+                           "isrc++];\n",                                                 \
                            res, a);                                                      \
                 if (check_boundary) {                                                    \
                     indent--;                                                            \
@@ -370,7 +330,7 @@
                     INDENT;                                                              \
                     fprintf (outfile,                                                    \
                              "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), "         \
-                             "__isrc);\n",                                               \
+                             "SAC_isrc);\n",                                             \
                              line, a);                                                   \
                     indent--;                                                            \
                     INDENT;                                                              \
@@ -400,8 +360,8 @@
                 }) InitSrcOffs (dimi, dima, fprintf (outfile, "0")),                     \
               FillRes (res, AccessSeg (dima, INDENT;                                     \
                                        fprintf (outfile,                                 \
-                                                "SAC_ND_A_FIELD(%s)[__idest++]=SAC_ND_"  \
-                                                "A_FIELD(%s)[__isrc++];\n",              \
+                                                "SAC_ND_A_FIELD(%s)[SAC_idest++]=SAC_"   \
+                                                "ND_A_FIELD(%s)[SAC_isrc++];\n",         \
                                                 res, a);)))
 
 /******************************************************************************
@@ -617,7 +577,7 @@ ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s)
         int i;
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "%s[%d]=%s;\n", name, i, s[i]);
+            fprintf (outfile, "SAC_ND_A_FIELD(%s)[%d]=%s;\n", name, i, s[i]);
         }
     }
 
@@ -720,9 +680,9 @@ ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
     INDENT;
     fprintf (outfile, "%s *%s;\n", type, name);
     INDENT;
-    fprintf (outfile, "int *__%s_rc;\n", name);
+    fprintf (outfile, "int SAC_ND_A_RC(%s);\n", name);
     INDENT;
-    fprintf (outfile, "int __%s_sz=", name);
+    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", name);
     fprintf (outfile, "%s", s[0]);
     {
         int i;
@@ -730,10 +690,10 @@ ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
             fprintf (outfile, "*%s", s[i]);
         fprintf (outfile, ";\n");
         INDENT;
-        fprintf (outfile, "int __%s_d=%d;\n", name, dim);
+        fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+            fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
         }
     }
     fprintf (outfile, "\n");
@@ -767,16 +727,16 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "extern %s *%s;\n", type, name);
         INDENT;
-        fprintf (outfile, "extern int *__%s_rc;\n", name);
+        fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
         INDENT;
-        fprintf (outfile, "extern int __%s_sz;\n", name);
+        fprintf (outfile, "extern int SAC_ND_A_SIZE(%s);\n", name);
         {
             int i;
             INDENT;
-            fprintf (outfile, "extern int __%s_d;\n", name);
+            fprintf (outfile, "extern int SAC_ND_A_DIM(%s);\n", name);
             for (i = 0; i < dim; i++) {
                 INDENT;
-                fprintf (outfile, "extern int __%s_s%d;\n", name, i);
+                fprintf (outfile, "extern int SAC_ND_KD_A_SHAPE(%s, %d);\n", name, i);
             }
         }
         fprintf (outfile, "\n");
@@ -784,9 +744,9 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "%s *%s;\n", type, name);
         INDENT;
-        fprintf (outfile, "int *__%s_rc;\n", name);
+        fprintf (outfile, "int SAC_ND_A_RC(%s);\n", name);
         INDENT;
-        fprintf (outfile, "int __%s_sz=", name);
+        fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", name);
         fprintf (outfile, "%s", s[0]);
         {
             int i;
@@ -794,10 +754,10 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
                 fprintf (outfile, "*%s", s[i]);
             fprintf (outfile, ";\n");
             INDENT;
-            fprintf (outfile, "int __%s_d=%d;\n", name, dim);
+            fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
             for (i = 0; i < dim; i++) {
                 INDENT;
-                fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+                fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
             }
         }
         fprintf (outfile, "\n");
@@ -832,16 +792,16 @@ ICMCompileND_KD_DECL_EXTERN_ARRAY (char *type, char *name, int dim)
     INDENT;
     fprintf (outfile, "extern %s *%s;\n", type, name);
     INDENT;
-    fprintf (outfile, "extern int *__%s_rc;\n", name);
+    fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
     INDENT;
-    fprintf (outfile, "extern int __%s_sz;\n", name);
+    fprintf (outfile, "extern int SAC_ND_A_SIZE(%s);\n", name);
     {
         int i;
         INDENT;
-        fprintf (outfile, "extern int __%s_d;\n", name);
+        fprintf (outfile, "extern int SAC_ND_A_DIM(%s);\n", name);
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "extern int __%s_s%d;\n", name, i);
+            fprintf (outfile, "extern int SAC_ND_KD_A_SHAPE(%s, %d);\n", name, i);
         }
     }
     fprintf (outfile, "\n");
@@ -873,7 +833,7 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
 #undef ND_KS_DECL_ARRAY_ARG
 
     INDENT;
-    fprintf (outfile, "int __%s_sz=", name);
+    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", name);
     fprintf (outfile, "%s", s[0]);
     {
         int i;
@@ -881,10 +841,10 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
             fprintf (outfile, "*%s", s[i]);
         fprintf (outfile, ";\n");
         INDENT;
-        fprintf (outfile, "int __%s_d=%d;\n", name, dim);
+        fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+            fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
         }
     }
     fprintf (outfile, "\n");
@@ -952,20 +912,20 @@ ICMCompileND_KD_PSI_CxA_S (int line, char *a, char *res, int dim, char **vi)
 
     INDENT;
     if (check_boundary) {
-        fprintf (outfile, "{ int __idx=");
+        fprintf (outfile, "{ int SAC_idx=");
         VectToOffset (dim, AccessConst (vi, i), dim, a);
         fprintf (outfile, ";\n");
         INDENT;
-        fprintf (outfile, "if((0 <= __idx) && (__idx < SAC_ND_A_SIZE(%s)) )\n", a);
+        fprintf (outfile, "if((0 <= SAC_idx) && (SAC_idx < SAC_ND_A_SIZE(%s)) )\n", a);
         indent++;
         INDENT;
-        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[__idx];\n", res, a);
+        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[SAC_idx];\n", res, a);
         indent--;
         INDENT;
         fprintf (outfile, "else\n");
         indent++;
         INDENT;
-        fprintf (outfile, "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), __idx);\n",
+        fprintf (outfile, "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
                  line, a);
         indent--;
         INDENT;
@@ -1004,20 +964,20 @@ ICMCompileND_KD_PSI_VxA_S (int line, char *a, char *res, int dim, char *v)
 
     INDENT;
     if (check_boundary) {
-        fprintf (outfile, "{ int __idx=");
+        fprintf (outfile, "{ int SAC_idx=");
         VectToOffset (dim, AccessVect (v, i), dim, a);
         fprintf (outfile, ";\n");
         INDENT;
-        fprintf (outfile, "if ((0 <= __idx) && (__idx < SAC_ND_A_SIZE(%s)) )\n", a);
+        fprintf (outfile, "if ((0 <= SAC_idx) && (SAC_idx < SAC_ND_A_SIZE(%s)) )\n", a);
         indent++;
         INDENT;
-        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[__idx];\n", res, a);
+        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[SAC_idx];\n", res, a);
         indent--;
         INDENT;
         fprintf (outfile, "else\n");
         indent++;
         INDENT;
-        fprintf (outfile, "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), __idx);\n",
+        fprintf (outfile, "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
                  line, a);
         indent--;
         INDENT;
@@ -1187,9 +1147,9 @@ ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int catdim)
 
     INDENT;
     NewBlock (InitPtr (fprintf (outfile, "0"), fprintf (outfile, "0"));
-              InitVecs (1, 2, "__isrc", fprintf (outfile, "0"));
-              InitVecs (0, 2, "__i", fprintf (outfile, "0"));
-              InitVecs (0, 2, "__bl",
+              InitVecs (1, 2, "SAC_isrc", fprintf (outfile, "0"));
+              InitVecs (0, 2, "SAC_i", fprintf (outfile, "0"));
+              InitVecs (0, 2, "SAC_bl",
                         {
                             int j;
                             for (j = catdim; j < dima; j++)
@@ -1197,17 +1157,17 @@ ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int catdim)
                             fprintf (outfile, "1");
                         }),
               FillRes (res, INDENT;
-                       fprintf (outfile, "for(__i0=0; __i0<__bl0; __i0++)\n"); indent++;
-                       INDENT; fprintf (outfile,
-                                        "SAC_ND_A_FIELD(%s)[__idest++] = "
-                                        "SAC_ND_A_FIELD(%s)[__isrc++];\n",
-                                        res, ar[0]);
+                       fprintf (outfile, "for(SAC_i0=0; SAC_i0<SAC_bl0; SAC_i0++)\n");
+                       indent++; INDENT; fprintf (outfile,
+                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
+                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc++];\n",
+                                                  res, ar[0]);
                        indent--; INDENT;
-                       fprintf (outfile, "for(__i1=0; __i1<__bl1; __i1++)\n"); indent++;
-                       INDENT; fprintf (outfile,
-                                        "SAC_ND_A_FIELD(%s)[__idest++] = "
-                                        "SAC_ND_A_FIELD(%s)[__isrc1++];\n",
-                                        res, ar[1]);
+                       fprintf (outfile, "for(SAC_i1=0; SAC_i1<SAC_bl1; SAC_i1++)\n");
+                       indent++; INDENT; fprintf (outfile,
+                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
+                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc1++];\n",
+                                                  res, ar[1]);
                        indent--; INDENT));
     fprintf (outfile, "\n\n");
 
@@ -1238,7 +1198,7 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
 #undef ND_KD_ROT_CxSxA_A
 
     INDENT;
-    NewBlock (InitVecs (0, 1, "__shift",
+    NewBlock (InitVecs (0, 1, "SAC_shift",
                         {
                             int j;
                             for (j = rotdim + 1; j < dima; j++)
@@ -1251,27 +1211,27 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
                             fprintf (outfile, "%s %% SAC_ND_KD_A_SHAPE(%s, %d))",
                                      numstr[0], a, rotdim);
                         });
-              InitVecs (0, 1, "__bl",
+              InitVecs (0, 1, "SAC_bl",
                         {
                             int j;
                             for (j = rotdim + 1; j < dima; j++)
                                 fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)*", a, j);
                             fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)", a, rotdim);
                         });
-              InitVecs (0, 1, "__i", fprintf (outfile, "0"));
-              InitPtr (fprintf (outfile, "-__shift0"), fprintf (outfile, "0")),
-              FillRes (res, INDENT; fprintf (outfile, "__isrc+=__bl0;\n"); INDENT;
-                       fprintf (outfile, "for(__i0=0; __i0<__shift0; __i0++)\n");
+              InitVecs (0, 1, "SAC_i", fprintf (outfile, "0"));
+              InitPtr (fprintf (outfile, "-SAC_shift0"), fprintf (outfile, "0")),
+              FillRes (res, INDENT; fprintf (outfile, "SAC_isrc+=SAC_bl0;\n"); INDENT;
+                       fprintf (outfile, "for(SAC_i0=0; SAC_i0<SAC_shift0; SAC_i0++)\n");
                        indent++; INDENT; fprintf (outfile,
-                                                  "SAC_ND_A_FIELD(%s)[__idest++] = "
-                                                  "SAC_ND_A_FIELD(%s)[__isrc++];\n",
+                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
+                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc++];\n",
                                                   res, a);
-                       indent--; INDENT; fprintf (outfile, "__isrc-=__bl0;\n"); INDENT;
-                       fprintf (outfile, "for(; __i0<__bl0; __i0++)\n"); indent++; INDENT;
-                       fprintf (outfile,
-                                "SAC_ND_A_FIELD(%s)[__idest++] = "
-                                "SAC_ND_A_FIELD(%s)[__isrc++];\n",
-                                res, a);
+                       indent--; INDENT; fprintf (outfile, "SAC_isrc-=SAC_bl0;\n");
+                       INDENT; fprintf (outfile, "for(; SAC_i0<SAC_bl0; SAC_i0++)\n");
+                       indent++; INDENT; fprintf (outfile,
+                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
+                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc++];\n",
+                                                  res, a);
                        indent--));
     fprintf (outfile, "\n\n");
 
@@ -1308,21 +1268,22 @@ ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (int line, char *res_type, int dimre
 
     fprintf (outfile, " SAC_ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "{ int __i;\n");
+    fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(__i=0; __i<SAC_ND_A_SIZE(%s); __i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
     if (check_boundary) {
-        fprintf (outfile, "{  int __idx=");
+        fprintf (outfile, "{  int SAC_idx=");
         VectToOffset (dimv, AccessConst (vi, i), dimres, res);
         fprintf (outfile, ";\n");
         indent++;
         INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > __idx) && (0 <= __idx))\n", res);
+        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
         indent++;
         INDENT;
     }
@@ -1335,8 +1296,8 @@ ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (int line, char *res_type, int dimre
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), __idx);\n", line,
-                 res);
+                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
+                 line, res);
         indent -= 2;
         INDENT;
         fprintf (outfile, "}\n");
@@ -1372,21 +1333,22 @@ ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxS
 
-    fprintf (outfile, "{ int __i;\n");
+    fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(__i=0; __i<SAC_ND_A_SIZE(%s); __i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
     if (check_boundary) {
-        fprintf (outfile, "{  int __idx=");
+        fprintf (outfile, "{  int SAC_idx=");
         VectToOffset (dimv, AccessConst (vi, i), dimres, res);
         fprintf (outfile, ";\n");
         indent++;
         INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > __idx) && (0 <= __idx))\n", res);
+        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
         indent++;
         INDENT;
     }
@@ -1399,8 +1361,8 @@ ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), __idx);\n", line,
-                 res);
+                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
+                 line, res);
         indent -= 2;
         INDENT;
         fprintf (outfile, "}\n");
@@ -1440,21 +1402,22 @@ ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (int line, char *res_type, int dimre
 
     fprintf (outfile, " SAC_ND_CHECK_REUSE_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "{ int __i;\n");
+    fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(__i=0; __i<SAC_ND_A_SIZE(%s); __i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
     if (check_boundary) {
-        fprintf (outfile, "{  int __idx=");
+        fprintf (outfile, "{  int SAC_idx=");
         VectToOffset (dim, AccessVect (v, i), dimres, res);
         fprintf (outfile, ";\n");
         indent++;
         INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > __idx) && (0 <= __idx))\n", res);
+        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
         indent++;
         INDENT;
     }
@@ -1467,8 +1430,8 @@ ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (int line, char *res_type, int dimre
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), __idx);\n", line,
-                 res);
+                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
+                 line, res);
         indent -= 2;
         INDENT;
         fprintf (outfile, "}\n");
@@ -1503,21 +1466,22 @@ ICMCompileND_PRF_MODARRAY_AxVxS (int line, char *res_type, int dimres, char *res
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxVxS
 
-    fprintf (outfile, "{ int __i;\n");
+    fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(__i=0; __i<SAC_ND_A_SIZE(%s); __i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
     if (check_boundary) {
-        fprintf (outfile, "{  int __idx=");
+        fprintf (outfile, "{  int SAC_idx=");
         VectToOffset (dim, AccessVect (v, i), dimres, res);
         fprintf (outfile, ";\n");
         indent++;
         INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > __idx) && (0 <= __idx))\n", res);
+        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
         indent++;
         INDENT;
     }
@@ -1530,8 +1494,8 @@ ICMCompileND_PRF_MODARRAY_AxVxS (int line, char *res_type, int dimres, char *res
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), __idx);\n", line,
-                 res);
+                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
+                 line, res);
         indent -= 2;
         INDENT;
         fprintf (outfile, "}\n");
@@ -1567,29 +1531,34 @@ ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimres, char *res
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxA
 
-    fprintf (outfile, "{ int __i, __j;\n");
-    fprintf (outfile, "  int __idx=");
+    fprintf (outfile, "{ int SAC_i, SAC_j;\n");
+    fprintf (outfile, "  int SAC_idx=");
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
     if (check_boundary) {
         fprintf (outfile,
-                 "if( (SAC_ND_A_SIZE(%s) > (__idx+SAC_ND_A_SIZE(%s)))"
-                 "&& (0 <= (__idx+SAC_ND_A_SIZE(%s))) ){\n",
+                 "if( (SAC_ND_A_SIZE(%s) > (SAC_idx+SAC_ND_A_SIZE(%s)))"
+                 "&& (0 <= (SAC_idx+SAC_ND_A_SIZE(%s))) ){\n",
                  res, val, val);
         indent++;
         INDENT;
     }
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(__i=0; __i<__idx-1; __i++)");
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)");
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
     INDENT;
-    fprintf (outfile, "  for(__i=__idx,__j=0; __j<SAC_ND_A_SIZE(%s); __i++,__j++)", val);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__j];\n", res, val);
+    fprintf (outfile,
+             "  for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)",
+             val);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res,
+             val);
     INDENT;
-    fprintf (outfile, " for(; __i<SAC_ND_A_SIZE(%s); __i++)\n", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, " for(; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
 
     if (check_boundary) {
         indent--;
@@ -1600,8 +1569,8 @@ ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimres, char *res
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), __idx);\n", line,
-                 res);
+                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
+                 line, res);
         indent -= 2;
         INDENT;
         fprintf (outfile, "}\n");
@@ -1642,16 +1611,16 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
 #include "icm_trace.c"
 #undef ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
 
-    fprintf (outfile, "{  int __i, __j;\n");
+    fprintf (outfile, "{  int SAC_i, SAC_j;\n");
     INDENT;
-    fprintf (outfile, "  int __idx=");
+    fprintf (outfile, "  int SAC_idx=");
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
     if (check_boundary) {
         fprintf (outfile,
-                 "if( (SAC_ND_A_SIZE(%s) > (__idx+SAC_ND_A_SIZE(%s)))"
-                 "&& (0 <= (__idx+SAC_ND_A_SIZE(%s))) ){\n",
+                 "if( (SAC_ND_A_SIZE(%s) > (SAC_idx+SAC_ND_A_SIZE(%s)))"
+                 "&& (0 <= (SAC_idx+SAC_ND_A_SIZE(%s))) ){\n",
                  res, val, val);
         indent++;
         INDENT;
@@ -1661,10 +1630,13 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
     INDENT;
     fprintf (outfile, "SAC_ND_KS_ASSIGN_ARRAY(%s,%s)\n", old, res);
     INDENT;
-    fprintf (outfile, "for(__i=__idx,__j=0; __j<SAC_ND_A_SIZE(%s); __i++,__j++)\n", val);
+    fprintf (outfile,
+             "for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
+             val);
     indent++;
     INDENT;
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__j];\n", res, val);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res,
+             val);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
@@ -1674,22 +1646,25 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
     INDENT;
     fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "for(__i=0; __i<__idx-1; __i++)\n");
+    fprintf (outfile, "for(SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
     indent++;
     INDENT;
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
+             old);
     indent--;
     INDENT;
-    fprintf (outfile, "for(__i=__idx,__j=0; __j<SAC_ND_A_SIZE(%s); __i++,__j++)\n", val);
+    fprintf (outfile,
+             "for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
+             val);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__j];\n", res, val);
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res, val);
     indent--;
     INDENT;
-    fprintf (outfile, "for(; __i<SAC_ND_A_SIZE(%s); __i++)\n", res);
+    fprintf (outfile, "for(; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[__i]=SAC_ND_A_FIELD(%s)[__i];\n", res, old);
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res, old);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
@@ -1702,8 +1677,8 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
         indent++;
         INDENT;
         fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), __idx);\n", line,
-                 res);
+                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
+                 line, res);
         indent -= 2;
         INDENT;
     }
@@ -2011,7 +1986,7 @@ ICMCompileND_KS_VECT2OFFSET (char *name, int dim, int dims, char **s)
     indent += idxlen + 1;
 #endif /* TEST_BACKEND */
 
-    fprintf (outfile, "__%s", name);
+    fprintf (outfile, "SAC_%s", name);
     {
         int i;
         for (i = 0; i < dims; i++) {
