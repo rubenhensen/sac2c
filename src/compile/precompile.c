@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/10/30 19:23:10  dkr
+ * bug in PREC2ap fixed:
+ * applications of class conversion functions to scalar values are
+ * excepted now.
+ *
  * Revision 2.31  2000/10/26 12:49:36  dkr
  * signature of DupOneIds changed
  *
@@ -1447,7 +1452,7 @@ PREC2exprs_return (node *ret_exprs, node *ret_node)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2ap(node *arg_node, node *arg_info)
+ *   node *PREC2ap( node *arg_node, node *arg_info)
  *
  * Description:
  *   Traverses the current arguments using function PREC2exprs_ap that is given
@@ -1466,23 +1471,29 @@ PREC2ap (node *arg_node, node *arg_info)
         ap = arg_node;
         arg_node = EXPRS_EXPR (AP_ARGS (arg_node));
 
-        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id),
-                     "Argument of class conversion function must be a N_id node");
+        if (NODE_TYPE (arg_node) == N_id) {
+            if (!strncmp (AP_NAME (ap), "to_", 3)) {
+                arg_node = RenameId (arg_node);
+                DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
+                             "Argument of to_class function is unique already!");
 
-        if (!strncmp (AP_NAME (ap), "to_", 3)) {
-            arg_node = RenameId (arg_node);
-            DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
-                         "Argument of to_class function is unique already!");
+                ID_CLSCONV (arg_node) = TO_CLASS;
+            } else {
+                /*
+                 * This must be a "from" function. So, the argument is of a class
+                 * type which implies that it is an identifier.
+                 */
+                arg_node = RenameId (arg_node);
 
-            ID_CLSCONV (arg_node) = TO_CLASS;
+                ID_CLSCONV (arg_node) = FROM_CLASS;
+            }
         } else {
-            /*
-             * This must be a "from" function. So, the argument is of a class
-             * type which implies that it is an identifier.
-             */
-            arg_node = RenameId (arg_node);
+            /* argument of class conversion function is no N_id node */
 
-            ID_CLSCONV (arg_node) = FROM_CLASS;
+            /*
+             * -> argument is a scalar value
+             * -> simply remove the conversion function
+             */
         }
 
         FREE (AP_NAME (ap));
