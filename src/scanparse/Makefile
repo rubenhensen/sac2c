@@ -1,11 +1,15 @@
 #
 # $Log$
-# Revision 1.2  1994/11/10 15:22:47  sbs
+# Revision 1.3  1994/11/17 13:18:05  sbs
+# local gcc call for lex output!!
+#
+# Revision 1.2  1994/11/10  15:22:47  sbs
 # RCS-header inserted
 #
 #
 
 CC=gcc -ansi -g 
+CCL=gcc -ansi -g 
 LEX=lex
 YACC=yacc -dv
 LIBS=-ly -ll
@@ -18,7 +22,7 @@ y.tab.o: y.tab.c
 	$(CC) -o y.tab.o -c y.tab.c $(INCS)
 
 lex.yy.o: lex.yy.c y.tab.h
-	$(CC) -o lex.yy.o -c lex.yy.c $(INCS)
+	$(CCL) -o lex.yy.o -c lex.yy.c $(INCS)
 
 lex.yy.c: sac.l
 	$(LEX) sac.l
