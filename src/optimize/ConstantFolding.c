@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/07/05 14:17:04  asi
+ * Revision 1.31  1995/07/06 16:13:26  asi
+ * CFwhile and CFdo changed loop modification moved to Unroll.c
+ *
+ * Revision 1.30  1995/07/05  14:17:04  asi
  * bug fixed in ArrayPrf - F_psi
  *
  * Revision 1.29  1995/07/04  16:32:58  asi
@@ -644,50 +647,22 @@ node *
 CFwhile (node *arg_node, node *arg_info)
 {
     int i;
-    node *cond_value;
+    long *used_while;
 
     DBUG_ENTER ("CFwhile");
 
+    used_while = arg_node->node[1]->mask[0];
+    for (i = 0; i < TOS.vl_len; i++) {
+        if (ReadMask (used_while, i) != 0) {
+            VAR (i) = NULL;
+        }
+    }
+    PushDupVL ();
+
     arg_node = OptTrav (arg_node, arg_info, 0); /* Trav while-condition */
 
-    switch (arg_node->node[0]->nodetype) {
-    case N_bool:
-        if (!arg_node->node[0]->info.cint) {
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
-            FreeTree (arg_node);
-            DBUG_PRINT ("CF", ("while-loop eliminated in line %d", arg_info->lineno));
-            cf_expr++;
-            arg_node = MakeNode (N_empty);
-        }
-        break;
-    case N_id:
-        cond_value = VAR (arg_node->node[0]->info.ids->node->varno);
-        if (1 == IsConst (cond_value)) {
-            if (cond_value->info.cint) {
-                DBUG_PRINT ("CF", ("while-loop changed to do-loop %d", arg_info->lineno));
-                arg_node->nodetype = N_do;
-            }
-        }
-    default: {
-        long *used_while;
-
-        used_while = arg_node->node[1]->mask[0];
-        PushDupVL ();
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (used_while, i) != 0) {
-                VAR (i) = NULL;
-            }
-        }
-        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
-        PopVL ();
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (used_while, i) != 0) {
-                VAR (i) = NULL;
-            }
-        }
-    } break;
-    }
+    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
+    PopVL ();
 
     DBUG_RETURN (arg_node);
 }
@@ -711,10 +686,9 @@ node *
 CFdo (node *arg_node, node *arg_info)
 {
     int i;
-    node *a_node, *tmp;
+    node *a_node;
 
     DBUG_ENTER ("CFdo");
-    PushDupVL ();
     a_node = arg_info->node[0];
     for (i = 0; i < TOS.vl_len; i++) {
         if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
@@ -726,23 +700,6 @@ CFdo (node *arg_node, node *arg_info)
 
     arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
 
-    if ((arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
-        /*
-         WARNO(("WARNING in line %d: endless loop expected.",arg_info->lineno));
-        */
-    }
-    if ((!arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
-        PopVL ();
-        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
-        DBUG_PRINT ("CF", ("do-loop eliminated in line %d", arg_info->lineno));
-        cf_expr++;
-        tmp = arg_node;
-        arg_node = arg_node->node[1]->node[0];
-        tmp->node[1]->nnode = 0;
-        FreeTree (tmp);
-    } else {
-        PopVL2 ();
-    }
     DBUG_RETURN (arg_node);
 }
 
