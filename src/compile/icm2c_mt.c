@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/19 09:20:26  cg
+ * works with BEtest now.
+ *
  * Revision 1.4  1998/05/15 15:43:56  cg
  * first bugs removed
  *
@@ -42,8 +45,11 @@
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
-#include "scnprs.h" /* for big magic access to syntax tree */
-#include "traverse.h"
+
+#ifndef BEtest
+#include "scnprs.h"   /* for big magic access to syntax tree      */
+#include "traverse.h" /* for traversal of fold operation function */
+#endif                /* BEtest */
 
 /******************************************************************************
  *
@@ -73,6 +79,7 @@ static int barrier_id = 0;
  *
  ******************************************************************************/
 
+#ifndef BEtest
 static node *
 SearchFoldImplementation (char *foldop)
 {
@@ -91,6 +98,7 @@ SearchFoldImplementation (char *foldop)
 
     DBUG_RETURN (FUNDEF_BODY (fundef));
 }
+#endif /* BEtest */
 
 /******************************************************************************
  *
@@ -331,7 +339,9 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 void
 ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *foldop)
 {
+#ifndef BEtest
     node *fold_code;
+#endif /* BEtest */
 
     DBUG_ENTER ("ICMCompileMT_SYNC_ONEFOLD");
 
@@ -340,19 +350,31 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 #include "icm_trace.c"
 #undef MT_SYNC_ONEFOLD
 
+#ifndef BEtest
     fold_code = SearchFoldImplementation (foldop);
+#endif /* BEtest */
 
     INDENT;
     fprintf (outfile, "MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
              barrier_id);
 
+#ifdef BEtest
+    INDENT;
+    fprintf (outfile, "/* fold operation: %s */\n", foldop);
+#else  /* BEtest */
     Trav (fold_code, NULL);
+#endif /* BEtest */
 
     INDENT;
     fprintf (outfile, "MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
              barrier_id);
 
+#ifdef BEtest
+    INDENT;
+    fprintf (outfile, "/* fold operation: %s */\n", foldop);
+#else  /* BEtest */
     Trav (fold_code, NULL);
+#endif /* BEtest */
 
     INDENT;
     fprintf (outfile, "MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
