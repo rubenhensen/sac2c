@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2000/08/01 13:25:24  nmw
+ * startup-code generation modified to handle PHM in c-library
+ *
  * Revision 1.16  2000/07/28 14:47:07  nmw
  * handling of void functions added
  * handling of T_users types added
@@ -138,6 +141,7 @@ static strings *PrintDepEntry (deps *depends, statustype stat, strings *done);
 static void PIWModuleInitFlag (char *modname);
 static void PIWModuleInitFunction (char *modname);
 static void PIWModuleFreeFunction (char *modname);
+static void PrintInternalRuntimeInit (node *arg_node);
 
 /******************************************************************************
  *
@@ -179,6 +183,25 @@ PIHmodul (node *arg_node, node *arg_info)
              MODUL_NAME (arg_node), MODUL_NAME (arg_node));
     done = PrintDepEntry (dependencies, ST_external, NULL);
     done = PrintDepEntry (dependencies, ST_system, NULL);
+
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+        if (optimize & OPT_PHM) {
+            if (runtimecheck & RUNTIMECHECK_HEAP) {
+                fprintf (outfile, " * -lsac_heapmgr_mt_diag\n");
+            } else {
+                fprintf (outfile, " * -lsac_heapmgr_mt\n");
+            }
+        }
+    } else {
+        if (optimize & OPT_PHM) {
+            if (runtimecheck & RUNTIMECHECK_HEAP) {
+                fprintf (outfile, " * -lsac_heapmgr_diag\n");
+            } else {
+                fprintf (outfile, " * -lsac_heapmgr\n");
+            }
+        }
+    }
+
     fprintf (outfile, " * -lsac\n"
                       " *\n */\n\n");
 
@@ -444,6 +467,8 @@ PIWmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PIWmodul");
 
+    PrintInternalRuntimeInit (arg_node);
+
     old_outfile = outfile; /* save, might be in use */
 
     /* open <module>_wrapper.c in tmpdir for writing*/
@@ -454,7 +479,10 @@ PIWmodul (node *arg_node, node *arg_info)
              " the c-library lib%s.a */\n\n",
              modulename);
 
-    /* declarations for external SAC functions */
+    /* general preload for codefile */
+    fprintf (outfile, "/* startup functions and global code */\n");
+
+    /* declarations for external SAC functions  */
     fprintf (outfile,
              "#include \"header.h\"\n"
              "#include \"sac.h\"\n"
@@ -465,9 +493,6 @@ PIWmodul (node *arg_node, node *arg_info)
              "\n",
              MODUL_NAME (arg_node));
 
-    /* general preload for codefile */
-    fprintf (outfile, "/* startup functions and global code */\n");
-    GSCPrintFileHeader (arg_node);
     PIWModuleInitFlag (MODUL_NAME (arg_node));
     PIWModuleInitFunction (MODUL_NAME (arg_node));
     PIWModuleFreeFunction (MODUL_NAME (arg_node));
@@ -1178,7 +1203,57 @@ PIWModuleFreeFunction (char *modname)
 {
     DBUG_ENTER ("PIWModuleExitFunction");
     fprintf (outfile, "static void SAC_Free%s()\n{\n", modname);
-    GSCPrintMainEnd ();
+    /* unfortunately there is nothing to free for a module, jet*/
     fprintf (outfile, "\n}\n\n\n");
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void PrintInternalRuntimeInit(node *arg_node)
+ *
+ * description:
+ *   prints code in internal_runtime_init.c which inits the heapmanager
+ *   and the multithreading parts of the runtime system
+ *   this function is called by SAC_InitRuntimeSystem
+ *
+ ******************************************************************************/
+static void
+PrintInternalRuntimeInit (node *arg_node)
+{
+    FILE *old_outfile;
+
+    DBUG_ENTER ("PrintInternalRuntimeInit");
+
+    old_outfile = outfile; /* save, might be in use */
+
+    /* open internal_runtime_init.c in tmpdir for writing*/
+    outfile = WriteOpen ("%s/internal_runtime_init.c", tmp_dirname);
+    fprintf (outfile, "/* Interface SAC <-> C \n");
+    fprintf (outfile, " * this code initializes the internal data structures\n"
+                      " * of the SAC runtime system */\n\n");
+
+    /* general preload for codefile */
+    fprintf (outfile, "/* startup functions and global code */\n\n");
+    GSCPrintInternalInitFileHeader (arg_node);
+    fprintf (outfile, "void SAC_InternalRuntimeInit(int __argc, char **__argv)\n"
+                      "{\n"
+                      "  SAC_MT_SETUP_INITIAL();\n"
+                      "  SAC_PF_SETUP();\n"
+                      "  SAC_HM_SETUP();\n"
+                      "  SAC_MT_SETUP();\n"
+                      "  SAC_CS_SETUP();\n"
+                      "}\n\n");
+    fprintf (outfile, "void SAC_InternalRuntimeExit()\n"
+                      "{\n");
+    GSCPrintMainEnd ();
+    fprintf (outfile, "\n}\n\n");
+
+    fprintf (outfile, "/* generated codefile, please do not modify */\n");
+    fclose (outfile);
+
+    outfile = old_outfile; /* restore old filehandle */
+
     DBUG_VOID_RETURN;
 }
