@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2003/06/17 20:26:27  sbs
+ * changed the generation of fold funs for the new TC.
+ * Now, a SSA safe form is generated (no surplus assignment).
+ *
  * Revision 3.10  2002/10/18 14:30:58  sbs
  * several FLAGS set appropriately after creating fresh N_id nodes
  *
@@ -198,8 +202,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
  *                                                     <elem_type> <cexpr_name>)
  *      {
  *        tmp__<res_name> = <fold_fun>( <res_name>, <cexpr_name>)
- *        <res_name> = tmp__<res_name>;
- *        return( <res_name>);
+ *        return( tmp__<res_name>);
  *      }
  *    NOTE, that all(!) arguments are NOT inserted in the new AST!
  *    Instead, copied versions are used only!
@@ -236,7 +239,7 @@ CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name
     SET_FLAG (ID, cexpr_id, IS_REFERENCE, FALSE);
     ID_VARDEC (cexpr_id) = ARG_NEXT (formal_args);
 
-    args = MakeExprs (DupNode (res_id), MakeExprs (cexpr_id, NULL));
+    args = MakeExprs (res_id, MakeExprs (cexpr_id, NULL));
 
     if (fold_fundef != NULL) {
         application = MakeAp (StringCopy (FUNDEF_NAME (fold_fundef)), NULL, args);
@@ -269,15 +272,13 @@ CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name
     SET_FLAG (ID, tmp_res_id, IS_REFERENCE, FALSE);
     ID_VARDEC (tmp_res_id) = tmp_res_vardec;
 
-    ret_ass = MakeReturn (MakeExprs (res_id, NULL));
+    ret_ass = MakeReturn (MakeExprs (tmp_res_id, NULL));
 
     new_fundef
       = MakeFundef (pseudo_fold_fun_name, PSEUDO_MOD_FOLD, DupAllTypes (elem_type),
                     formal_args,
                     MakeBlock (MakeAssign (MakeLet (application, DupId_Ids (tmp_res_id)),
-                                           MakeAssign (MakeLet (tmp_res_id,
-                                                                DupId_Ids (res_id)),
-                                                       MakeAssign (ret_ass, NULL))),
+                                           MakeAssign (ret_ass, NULL)),
                                tmp_res_vardec),
                     NULL);
     FUNDEF_STATUS (new_fundef) = ST_foldfun;
