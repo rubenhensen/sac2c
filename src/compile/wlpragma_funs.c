@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/04/29 17:14:03  dkr
+ * includes now wltransform.h instead of precompile.h
+ *
  * Revision 1.9  1998/04/24 18:29:33  dkr
  * added comment
  *
@@ -31,7 +34,7 @@
 #include "tree.h"
 #include "free.h"
 #include "DupTree.h"
-#include "precompile.h"
+#include "wltransform.h"
 
 #include "wlpragma_funs.h"
 
