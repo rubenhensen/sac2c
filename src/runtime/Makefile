@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.10  1998/11/04 18:22:41  dkr
+# make deps done
+#
 # Revision 1.9  1998/10/28 20:35:18  sbs
 # Now, sac2crc will be part of runtime.tar as well 8-))
 #
@@ -77,7 +80,8 @@ libsac_mt.o: /usr/include/pthread.h /usr/include/sys/types.h
 libsac_mt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 libsac_mt.o: /usr/include/sys/machtypes.h /usr/include/sys/signal.h
 libsac_mt.o: /usr/include/sys/unistd.h /usr/include/sys/time.h
-libsac_mt.o: /usr/include/sched.h
+libsac_mt.o: /usr/include/sched.h /usr/include/stdio.h
+libsac_mt.o: /usr/include/sys/va_list.h
 libsac_profile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_profile.o: /usr/include/sys/va_list.h /usr/include/sys/time.h
 libsac_profile.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.35  1998/11/04 18:22:35  dkr
+# make deps done
+#
 # Revision 1.34  1998/07/03 14:34:10  cg
 # added ../compile as include directory
 #
@@ -163,7 +166,7 @@ cccall.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
 cccall.o: ../global/globals.h ../../inc/dbug.h ../global/internal_lib.h
 cccall.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
 cccall.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-cccall.o: filemgr.h ../global/traverse.h
+cccall.o: filemgr.h ../global/traverse.h ../compile/gen_startup_code.h
 checkdec.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 checkdec.o: ../global/types.h ../global/tree_basic.h
 checkdec.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

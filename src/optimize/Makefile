@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.53  1998/11/04 18:22:34  dkr
+# make deps done
+#
 # Revision 1.52  1998/06/23 11:42:10  cg
 # make deps done
 #
@@ -246,8 +249,6 @@ ConstantFolding.o: ../print/print.h ../global/traverse.h
 ConstantFolding.o: ../typecheck/typecheck.h ../global/access_macros.h
 ConstantFolding.o: optimize.h DupTree.h LoopInvariantRemoval.h
 ConstantFolding.o: ConstantFolding.h
-DFMtest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-DFMtest.o: /usr/include/sys/va_list.h DataFlowMask.h ../global/types.h
 DataFlowMask.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DataFlowMask.o: /usr/include/sys/va_list.h /usr/include/string.h
 DataFlowMask.o: ../../inc/dbug.h ../global/types.h ../global/tree_basic.h
@@ -338,7 +339,8 @@ WLUnroll.o: ../global/tree_basic.h ../global/tree_compound.h
 WLUnroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
 WLUnroll.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 WLUnroll.o: /usr/include/malloc.h ../global/traverse.h
-WLUnroll.o: ../typecheck/typecheck.h optimize.h DupTree.h WithloopFolding.h
+WLUnroll.o: ../typecheck/typecheck.h ../compile/compile.h optimize.h Inline.h
+WLUnroll.o: DupTree.h WithloopFolding.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h

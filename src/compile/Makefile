@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.65  1998/11/04 18:22:36  dkr
+# make deps done
+#
 # Revision 1.64  1998/06/23 11:42:12  cg
 # make deps done
 #
@@ -302,16 +305,16 @@ ReuseWithArrays.o: /usr/include/stdlib.h ../global/globals.h
 ReuseWithArrays.o: ../global/traverse.h ../optimize/DataFlowMask.h
 ReuseWithArrays.o: ../psi-opt/index.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-compile.o: /usr/include/string.h /usr/include/limits.h
-compile.o: /usr/include/sys/isa_defs.h ../global/tree.h ../global/types.h
+compile.o: /usr/include/string.h ../global/tree.h ../global/types.h
 compile.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 compile.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
 compile.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-compile.o: ../optimize/DataFlowMask.h compile.h ../print/convert.h
+compile.o: ../optimize/DataFlowMask.h ../optimize/optimize.h ../global/free.h
+compile.o: /usr/include/malloc.h compile.h ../print/convert.h
 compile.o: ../optimize/DupTree.h ../refcount/refcount.h
-compile.o: ../typecheck/typecheck.h ReuseWithArrays.h ../global/free.h
-compile.o: /usr/include/malloc.h ../concurrent/scheduling.h
+compile.o: ../typecheck/typecheck.h ReuseWithArrays.h
+compile.o: ../concurrent/scheduling.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/va_list.h /usr/include/string.h
 gen_startup_code.o: ../../inc/dbug.h ../global/globals.h ../global/types.h

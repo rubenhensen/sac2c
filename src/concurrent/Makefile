@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.16  1998/11/04 18:22:43  dkr
+# make deps done
+#
 # Revision 1.15  1998/06/23 11:42:17  cg
 # make deps done
 #
@@ -90,8 +93,11 @@ scheduling.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 scheduling.o: ../compile/precompile.h
 spmd_init.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-spmd_init.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
-spmd_init.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
+spmd_init.o: ../global/types.h ../global/tree_basic.h
+spmd_init.o: ../global/tree_compound.h ../global/Error.h
+spmd_init.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+spmd_init.o: ../global/traverse.h ../optimize/DupTree.h
+spmd_init.o: ../optimize/DataFlowMask.h
 spmd_lift.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 spmd_lift.o: ../global/types.h ../global/tree_basic.h

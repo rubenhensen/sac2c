@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.68  1998/11/04 18:22:30  dkr
+# make deps done
+#
 # Revision 1.67  1998/10/26 12:32:59  cg
 # new mechanism implemented that stores sac2c build information
 # which may later be retrieved by the -h or -i option, repsectively.
@@ -325,8 +328,8 @@ main.o: ../compile/Old2NewWith.h
 my_debug.o: node_info.mac prf_node_info.mac type_info.mac
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 resource.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-resource.o: /usr/include/string.h ../../inc/dbug.h resource.h
-resource.o: ../scanparse/scnprs.h types.h ../scanparse/y.tab.h
+resource.o: /usr/include/string.h types.h tree_basic.h ../../inc/dbug.h
+resource.o: resource.h ../scanparse/scnprs.h ../scanparse/y.tab.h
 resource.o: ../modules/filemgr.h free.h my_debug.h /usr/include/malloc.h
 resource.o: internal_lib.h globals.h Error.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
