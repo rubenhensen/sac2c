@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/29 16:25:04  nmw
+ * detailed runtime error messages for missing
+ * specializations added
+ *
  * Revision 3.1  2000/11/20 18:03:44  sacbase
  * new release made
  *
@@ -171,9 +175,26 @@ PIWcwrapper (node *arg_node, node *arg_info)
         funlist = NODELIST_NEXT (funlist);
     }
 
-    /* no specialized function found matching the args -> error */
+    /* no specialized function found matching the args -> generate error */
     fprintf (outfile,
              "{\n"
+             "  char SAC_CI_tempcharbuffer[256];\n"
+             "  SAC_Print(\"\\n\\n\\n*** function called with:\\n\");\n"
+             "  SAC_Print(\"*** %s(\");\n",
+             CWRAPPER_NAME (arg_node));
+
+    for (i = 1; i <= CWRAPPER_ARGCOUNT (arg_node); i++) {
+        fprintf (outfile,
+                 "  SAC_CI_SACArg2string(in%d, SAC_CI_tempcharbuffer);\n"
+                 "  SAC_Print(\"%%s\", SAC_CI_tempcharbuffer);\n",
+                 i);
+        if (i < CWRAPPER_ARGCOUNT (arg_node)) {
+            fprintf (outfile, "  SAC_Print(\", \");\n");
+        }
+    }
+
+    fprintf (outfile,
+             "  SAC_Print(\")\\n\");\n"
              "  SAC_RuntimeError(\"ERROR - no matching specialized function!\\n\");\n"
              "  return(1); /* error - code */\n"
              "}\n"
