@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/04/06 14:54:33  dkr
+ * DupVardec,DupArg: call of DupAvis() replaced by DUPTRAV()
+ *
  * Revision 3.39  2001/04/04 13:11:42  nmw
  * AVIS_SSACOUNT is now set via look-up-table
  *
@@ -152,9 +155,6 @@
  *   NODELIST_ATTRIB is duplicated now, too.
  *
  * [ ... ]
- *
- * Revision 1.1  1995/05/01  15:32:27  asi
- * Initial revision
  *
  */
 
@@ -980,7 +980,7 @@ DupArg (node *arg_node, node *arg_info)
     if (ARG_AVIS (arg_node) != NULL) {
         /* we have to duplicate the containing avis node */
         FreeAvis (ARG_AVIS (new_node), arg_info);
-        ARG_AVIS (new_node) = DupAvis (ARG_AVIS (arg_node), arg_info);
+        ARG_AVIS (new_node) = DUPTRAV (ARG_AVIS (arg_node));
         /* correct backreferece */
         AVIS_VARDECORARG (ARG_AVIS (new_node)) = new_node;
     } else {
@@ -1114,7 +1114,7 @@ DupVardec (node *arg_node, node *arg_info)
     if (VARDEC_AVIS (arg_node) != NULL) {
         /* we have to duplicate the containing avis node */
         FreeAvis (VARDEC_AVIS (new_node), arg_info);
-        VARDEC_AVIS (new_node) = DupAvis (VARDEC_AVIS (arg_node), arg_info);
+        VARDEC_AVIS (new_node) = DUPTRAV (VARDEC_AVIS (arg_node));
         /* correct backreference */
         AVIS_VARDECORARG (VARDEC_AVIS (new_node)) = new_node;
     } else {
