@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/02/22 15:41:02  jhs
+ * Adapted NODE_TEXT.
+ * Filled some comments for functions I wrote months ago ...
+ * Done some brushings.
+ *
  * Revision 2.32  2000/02/17 16:17:53  cg
  * Function DuplicateTypes() moved to DupTree.c.
  *
@@ -294,12 +299,13 @@ static node *top_fundef;
 
 #define GEN_TYPE_NODE(node, type) node = MakeType (type, 0, NULL, NULL, NULL)
 
-/* The following defines are only used in function TI_prf.
- * They are used to select the function that computes the result type
- * of the belonging primitive function.
- * The informtion is stored in prim_fun_tt.mac
+/*
+ *  The following defines are *only* used in function TI_prf,
+ *  USAGES CANNOT BE FOUND IN THIS FILE (typecheck.c)!!!
+ *  They are used to select the function that computes the result type
+ *  of the belonging primitive function.
+ *  The informtion is stored in prim_fun_tt.mac
  */
-
 #define TT1(t, t_c, t1, res)                                                             \
     case (t):                                                                            \
         ret_type = res;                                                                  \
@@ -555,7 +561,6 @@ static int imported_fun; /* is used to check whether to look behind a "hidden"
  *   builds an N_array alike shape of types
  *
  ******************************************************************************/
-
 static node *
 Type2Vec (types *type)
 {
@@ -583,6 +588,15 @@ Type2Vec (types *type)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   static node *ArrayOfZeros (int count)
+ *
+ * description:
+ *   Produces an Array (N_array) with count elements, which are all zero (0).
+ *
+ ******************************************************************************/
 static node *
 ArrayOfZeros (int count)
 {
@@ -601,11 +615,19 @@ ArrayOfZeros (int count)
 }
 
 #if 0
-/*
- * What is this function needed for???
- * Where are the comments????
- * SBS.
- */
+/******************************************************************************
+ *
+ * function:
+ *   static node *TypeToZeros (types *type)
+ *  
+ * description:
+ *   type has to be an array-type.
+ *   Produces an Array (N_array) with as many elements as the dimension
+ *   of the given type, all elements are zero (0).
+ *   This one does only work for known shape, not if only the dimension is 
+ *   known, perhaps this can be expanded ... (jhs)
+ *
+ ******************************************************************************/
 static node *TypeToZeros (types *type)
 {
   node *res;
@@ -619,6 +641,16 @@ static node *TypeToZeros (types *type)
 }
 #endif
 
+/******************************************************************************
+ *
+ * function:
+ *   static int TypeToCount (types *type)
+ *
+ * description:
+ *   type has to be an array-type.
+ *   Calculates how many Elements are contained in an array of Type type.
+ *
+ ******************************************************************************/
 static int
 TypeToCount (types *type)
 {
@@ -628,7 +660,6 @@ TypeToCount (types *type)
     DBUG_ASSERT ((TYPES_DIM (type) > 0), "TypeToCount() called with type dim <= 0");
 
     res = 1;
-
     for (i = 0; i < TYPES_DIM (type); i++) {
         res = res * (TYPES_SHAPE (type, i));
     }
@@ -1228,37 +1259,25 @@ node *LookupObject(char *name, char *mod, int line)
   
   tmp=object_table;
 
-  if ((mod!=NULL) && (strcmp(mod, module_name)!=0))
-  {
+  if ((mod!=NULL) && (strcmp(mod, module_name)!=0)) {
     prefix=ModulePrefix(mod);
   }
 
-  while ((tmp!=NULL) 
-         && (CMP_OBJ_OBJDEF(name, prefix, tmp)==0))
-  {
+  while ((tmp!=NULL) && (CMP_OBJ_OBJDEF(name, prefix, tmp)==0)) {
     tmp=OBJDEF_NEXT(tmp);
   }
     
-  if (tmp!=NULL)
-  {
+  if (tmp!=NULL) {
     found=tmp;
-  }
-  else  
-  {
-    if (mod==NULL)
-    {
+  } else {
+    if (mod==NULL) {
       tmp=object_table;
 
-      while (tmp!=NULL)
-      {
-        if (strcmp(name, OBJDEF_NAME(tmp))==0)
-        {
-          if (found==NULL)
-          {
+      while (tmp!=NULL) {
+        if (strcmp(name, OBJDEF_NAME(tmp))==0) {
+          if (found==NULL) {
             found=tmp;
-          }
-          else
-          {
+          } else {
             ERROR(line,
                   ("Identifier '%s` matches more than one global object",
                    name));
@@ -1266,23 +1285,15 @@ node *LookupObject(char *name, char *mod, int line)
         }
         tmp=OBJDEF_NEXT(tmp);
       }
-    }
-    else
-    {
+    } else {
       mods_avail=FindSymbolInModul(mod, name, 3, NULL, 1);
-      while (mods_avail!=NULL)
-      {
+      while (mods_avail!=NULL) {
         tmp=object_table;
-        while (tmp!=NULL)
-        {
-          if (CMP_OBJ_OBJDEF(name, mods_avail->mod->prefix, tmp)==1)
-          {
-            if (found==NULL)
-            {
+        while (tmp!=NULL) {
+          if (CMP_OBJ_OBJDEF(name, mods_avail->mod->prefix, tmp)==1) {
+            if (found==NULL) {
               found=tmp;
-            }
-            else
-            {
+            } else {
               ERROR(line,
                     ("Identifier '%s` matches more than one global object",
                      name));
@@ -1835,7 +1846,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 
     DBUG_ENTER ("TI_fun");
 
-    if (fun_p->node == INFO_TC_FUNDEF (arg_info))
+    if (fun_p->node == INFO_TC_FUNDEF (arg_info)) {
         if (BODY == INFO_TC_STATUS (arg_info)) {
             ABORT (NODE_LINE (arg_node),
                    ("Nonterminated recursion in function '%s`", arg_node->info.id));
@@ -1864,7 +1875,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #endif
             }
         }
-    else {
+    } else {
         /* it is not a recursive call of current function */
         if ((NOT_CHECKED == fun_p->tag) || (PLEASE_CHECK == fun_p->tag)) {
             /* applied function is not typechecked yet, so do it now */
@@ -1918,22 +1929,17 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
     DBUG_RETURN (return_type);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : LookupVardec
- *  arguments     : 1) variable to look for
- *                  2) pointer to variable declarations
- *  description   : looks for 1) in 2)
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcmp
- *  macros        :
+ * function:
+ *   static node *LookupVardec(char *id, node *vardec)
  *
- *  remarks       :
+ * description:
+ *   Searches the next vardec (begining from given vardec itself) with
+ *   VARDEC_NAME( vardec) == id.
  *
- */
-
-node *
+ ******************************************************************************/
+static node *
 LookupVardec (char *id, node *vardec)
 {
     DBUG_ENTER ("LookupVardec");
@@ -1945,21 +1951,16 @@ LookupVardec (char *id, node *vardec)
     DBUG_RETURN (vardec);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : LookupArg
- *  arguments     : 1) variable to look for
- *                  2) pointer to argument list
- *  description   : looks for 1) in 2)
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcmp
- *  macros        :
+ * function:
+ *   static node *LookupArg(char *id, node *arg)
  *
- *  remarks       : equivalent to LookupVardec
+ * description:
+ *   Searches the next arg (begining from given arg itself) with
+ *   ARG_NAME( arg) == id.
  *
- */
-
+ ******************************************************************************/
 node *
 LookupArg (char *id, node *arg)
 {
@@ -1988,6 +1989,12 @@ LookupArg (char *id, node *arg)
  *  remarks       : So far, no global objects are allowed on the left
  *                  hand side of a let-construct.
  *
+ *     this function seems to be used only to produce error messages,
+ *     the ret_value is predefined as 1 in it's declaration,
+ *     changed (but not really) only once to 1, so ...
+ *                                             IT ALWAYS RETURNS 1!!!
+ *                                             (or produces an error)
+ *     (jhs)
  */
 int
 CheckIds (ids *arg_ids, node *vardec, int line)
@@ -2014,7 +2021,6 @@ CheckIds (ids *arg_ids, node *vardec, int line)
                 tmp = tmp->next;
             }
         }
-
         if (LookupVar (current_id) == NULL) {
             if (LookupVardec (current_id, vardec) == NULL) {
                 if (LookupObject (current_id, NULL, line) != NULL) {
@@ -2024,7 +2030,6 @@ CheckIds (ids *arg_ids, node *vardec, int line)
                 }
             }
         }
-
         not_checked_ids = not_checked_ids->next;
     }
 
@@ -2168,11 +2173,7 @@ CmpFunParams (node *arg1, node *arg2)
             break;
     }
 
-    if ((NULL == arg1) && (NULL == arg2)) {
-        is_equal = 1;
-    } else {
-        is_equal = 0;
-    }
+    is_equal = ((arg1 == NULL) && (arg2 == NULL));
 
     DBUG_RETURN (is_equal);
 }
@@ -2523,38 +2524,27 @@ IsNameInMods (char *name, mods *mods)
     int found = 0;
 
     DBUG_ENTER ("IsNameInMods");
+
     if (NULL != name) {
         DBUG_PRINT ("TYPE", ("looking for module %s", name));
         if (0 == strcmp (name, (NULL != module_name ? module_name : ""))) {
             found = 1;
             DBUG_PRINT ("TYPE", ("module-name found "));
-        } else if (NULL != name)
+        } else if (NULL != name) {
             while (NULL != mods) {
                 DBUG_PRINT ("TYPE", ("current module-name: %s", mods->mod->name));
                 if ((!strcmp (name, mods->mod->name))) {
                     found = 1;
                     DBUG_PRINT ("TYPE", ("module-name found "));
                     break;
-                } else
+                } else {
                     mods = mods->next;
+                }
             }
+        }
     }
     DBUG_RETURN (found);
 }
-
-/*
- *
- *  functionname  : CheckObjdefs
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
@@ -2593,14 +2583,14 @@ InitTypeTab (node *modul_node)
     /* first insert all typedefs that are constructed from primitive types */
     i = 0;
     while (i < type_tab_size)
-        if (T_user == TYPES_BASETYPE (TYPEDEF_TYPE (tmp)))
-            if (NULL == TYPEDEF_NEXT (tmp))
+        if (T_user == TYPES_BASETYPE (TYPEDEF_TYPE (tmp))) {
+            if (NULL == TYPEDEF_NEXT (tmp)) {
                 break;
-            else {
+            } else {
                 last_node = tmp;
                 tmp = TYPEDEF_NEXT (tmp);
             }
-        else {
+        } else {
             /* insert node into type tabel (tab) and remove it from chain */
             if (-1 != TYPEDEF_TYPE (tmp)->dim) {
                 name = TYPEDEF_TYPE (tmp)->id;
@@ -2635,17 +2625,17 @@ InitTypeTab (node *modul_node)
                              tmp->TYPES->id, tmp->TYPES, tmp));
                 i++;
                 if (NULL == TYPEDEF_NEXT (tmp)) {
-                    if (N_modul == last_node->nodetype)
+                    if (N_modul == last_node->nodetype) {
                         last_node->node[1] = NULL;
-                    else {
+                    } else {
                         last_node->node[0] = NULL;
                     }
                     break;
                 } else {
                     tmp = tmp->node[0];
-                    if (N_modul == last_node->nodetype)
+                    if (N_modul == last_node->nodetype) {
                         last_node->node[1] = tmp;
-                    else {
+                    } else {
                         DBUG_ASSERT ((N_typedef == last_node->nodetype), "wrong node");
                         last_node->node[0] = tmp;
                     }
@@ -4544,7 +4534,7 @@ TI (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TI");
 
-    DBUG_PRINT ("TYPE", ("Nodetype is %s.", mdb_nodetype[arg_node->nodetype]));
+    DBUG_PRINT ("TYPE", ("Nodetype is %s.", NODE_TEXT (arg_node)));
 
     switch (NODE_TYPE (arg_node)) {
     case N_prf:
@@ -4626,11 +4616,7 @@ TI (node *arg_node, node *arg_info)
             ID_OBJDEF (arg_node) = odef; /* link to object definition */
 
             return_type = DuplicateTypes (OBJDEF_TYPE (odef), 1);
-        }
-
-        else
-
-        {
+        } else {
             /*
              *  The identifier may be a local variable or a global object.
              */
@@ -4701,8 +4687,7 @@ TI (node *arg_node, node *arg_info)
         GEN_TYPE_NODE (return_type, T_char);
         break;
     default: {
-        ABORT (0, ("Type inference for %s isn't implemented yet",
-                   mdb_nodetype[arg_node->nodetype]));
+        ABORT (0, ("Type inference for %s isn't implemented yet", NODE_TEXT (arg_node)));
         break;
     }
     }
@@ -4757,8 +4742,7 @@ TClet (node *arg_node, node *arg_info)
         ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is inferable,"
                                       " but illegal (e.g. an untyped empty array)"));
 
-    DBUG_PRINT ("STOP",
-                ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
+    DBUG_PRINT ("STOP", ("arg_info->node[0]: %s", NODE_TEXT (arg_info->node[0])));
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         switch (PRF_PRF (LET_EXPR (arg_node))) {
@@ -5394,8 +5378,7 @@ TCreturn (node *arg_node, node *arg_info)
         return_type = MakeTypes (T_void);
     }
 
-    DBUG_PRINT ("STOP",
-                ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
+    DBUG_PRINT ("STOP", ("arg_info->node[0]: %s", NODE_TEXT (arg_info->node[0])));
 
     if (NULL == arg_info->node[2]) {
         return_tmp = return_type;
@@ -5412,8 +5395,7 @@ TCreturn (node *arg_node, node *arg_info)
             }
 
             DBUG_ASSERT ((NULL != return_tmp), "return_tmp is NULL");
-            DBUG_PRINT ("STOP", ("arg_info->node[0]: %s",
-                                 mdb_nodetype[arg_info->node[0]->nodetype]));
+            DBUG_PRINT ("STOP", ("arg_info->node[0]: %s", NODE_TEXT (arg_info->node[0])));
 
             exprs = exprs->node[1];
         }
@@ -5962,8 +5944,7 @@ TCcond (node *arg_node, node *arg_info)
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
     }
     DBUG_ASSERT ((NULL != expr_type), "expr_type is NULL ");
-    DBUG_PRINT ("STOP",
-                ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
+    DBUG_PRINT ("STOP", ("arg_info->node[0]: %s", NODE_TEXT (arg_info->node[0])));
 
     if ((T_bool != TYPES_BASETYPE (expr_type)) || (TYPES_DIM (expr_type) != SCALAR)) {
         ERROR (NODE_LINE (arg_node),
@@ -6397,21 +6378,16 @@ TI_cast (node *arg_node, node *arg_info)
 #if 0
    type=ret_type;
    cast_node=CAST_EXPR(arg_node);
-   while( N_cast == NODE_TYPE(cast_node))
-   {
+   while( N_cast == NODE_TYPE(cast_node)) {
       type->next=DuplicateTypes(cast_node->TYPES, 1);
       type=type->next;
-      if( (T_user == TYPES_BASETYPE(type)) && (NULL == type->name_mod))
-      {
+      if( (T_user == TYPES_BASETYPE(type)) && (NULL == type->name_mod)) {
          t_node=LookupType(type->name, NULL, NODE_LINE(cast_node));
-         if(NULL == t_node)
-         {
+         if(NULL == t_node) {
            ABORT(NODE_LINE(cast_node),
                  ("Type '%s` unknown",
                   ret_type->name));
-         }
-         else
-         {
+         } else {
             type->name_mod=t_node->ID_MOD;
             cast_node->NAME_MOD=t_node->ID_MOD;
          }
@@ -6438,8 +6414,8 @@ TI_cast (node *arg_node, node *arg_info)
             break;
         }
         default: {
-            ABORT (NODE_LINE (arg_node), ("Type of expression '%s` not inferable",
-                                          mdb_nodetype[arg_node->nodetype]));
+            ABORT (NODE_LINE (arg_node),
+                   ("Type of expression '%s` not inferable", NODE_TEXT (arg_node)));
             break;
         }
         }
@@ -6449,8 +6425,7 @@ TI_cast (node *arg_node, node *arg_info)
     tmp = inf_type;
     while (NULL != tmp) {
         is_comp = CompatibleTypes (type, tmp, 0, NODE_LINE (arg_node));
-        if (CMP_incompatible == is_comp) /* 0 */
-        {
+        if (CMP_incompatible == is_comp) /* 0 */ {
             ERROR (NODE_LINE (arg_node), ("%d. cast has incompatible type", i));
         } else if (CMP_one_unknown_shape == is_comp) /* 2 */ {
             /* change type for return  (infered type of N_cast) */
@@ -6527,8 +6502,8 @@ TI_genarray (node *arg_node, types *generator_type, types *w_return_type, node *
         TYPES_NEXT (ret_type) = NULL;
 
         tmp = ARRAY_AELEMS (arg_node);
-        while (tmp)
-            if (dim < SHP_SEG_SIZE)
+        while (tmp) {
+            if (dim < SHP_SEG_SIZE) {
                 if (N_num == NODE_TYPE (EXPRS_EXPR (tmp))) {
                     SHAPES_SELEMS (ret_type)[dim] = NUM_VAL (EXPRS_EXPR (tmp));
                     tmp = EXPRS_NEXT (tmp);
@@ -6537,9 +6512,10 @@ TI_genarray (node *arg_node, types *generator_type, types *w_return_type, node *
                     ABORT (NODE_LINE (arg_node),
                            ("%d. element of shape vector not a constant", dim + 1));
                 }
-            else {
+            } else {
                 ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
             }
+        }
 
         TYPES_DIM (ret_type) = dim;
 
@@ -6547,7 +6523,7 @@ TI_genarray (node *arg_node, types *generator_type, types *w_return_type, node *
          * information form generator and with_return fit
          */
         length = generator_type->shpseg->shp[0];
-        if ((length + w_return_type->dim) == dim)
+        if ((length + w_return_type->dim) == dim) {
             for (i = length; i < dim; i++) {
                 if (ret_type->shpseg->shp[i] != w_return_type->shpseg->shp[i - length]) {
                     ABORT (NODE_LINE (arg_node),
@@ -6557,7 +6533,7 @@ TI_genarray (node *arg_node, types *generator_type, types *w_return_type, node *
                             Type2String (w_return_type, 0)));
                 }
             }
-        else {
+        } else {
             ABORT (NODE_LINE (arg_node),
                    ("Type of shape vector (%s) does not match "
                     "type of index vector (%s) and return statement (%s)",
@@ -6611,7 +6587,7 @@ TI_modarray (node *arg_node, types *generator_type, types *w_return_type, node *
                 Type2String (ret_type, 0), Type2String (w_return_type, 0)))
 
     length = generator_type->shpseg->shp[0];
-    if ((length + w_return_type->dim) == ret_type->dim)
+    if ((length + w_return_type->dim) == ret_type->dim) {
         for (i = length; i < ret_type->dim; i++) {
             if (ret_type->shpseg->shp[i] != w_return_type->shpseg->shp[i - length])
                 ABORT (NODE_LINE (arg_node),
@@ -6620,15 +6596,17 @@ TI_modarray (node *arg_node, types *generator_type, types *w_return_type, node *
                         Type2String (ret_type, 0), Type2String (generator_type, 0),
                         Type2String (w_return_type, 0)));
         }
-    else
+    } else {
         ABORT (NODE_LINE (arg_node),
                ("Type of shape vector (%s) does not match "
                 "type of index vector (%s) and return statement (%s)",
                 Type2String (ret_type, 0), Type2String (generator_type, 0),
                 Type2String (w_return_type, 0)));
+    }
 
     DBUG_RETURN (ret_type);
 }
+
 /*
  *
  *  functionname  : TI_foldprf
@@ -6702,11 +6680,12 @@ TI_foldprf (node *arg_node, types *generator_type, types *w_return_type, node *a
                    ("Function '%s` has return type '%s` != '%s`",
                     ModName (arg_node->FUN_MOD_NAME, arg_node->FUN_NAME),
                     Type2String (ret_type, 0), Type2String (w_return_type, 0)));
-        } else
+        } else {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
                     prf_string[arg_node->info.prf], Type2String (ret_type, 0),
                     Type2String (w_return_type, 0)));
+        }
     }
     if (FOLDPRF_NEUTRAL (arg_node)) {
         types *neutral_type = TI (arg_node->node[1], arg_info);
@@ -6767,16 +6746,14 @@ TI_foldfun (node *arg_node, types *generator_type, types *w_return_type, node *a
     } else {
         types *neutral_type;
 
-        if (CMP_equal != CmpTypes (w_return_type, ret_type)) /* 1*/
-        {
+        if (CMP_equal != CmpTypes (w_return_type, ret_type)) /* 1 */ {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
                     ModName (arg_node->FUN_MOD_NAME, arg_node->FUN_NAME),
                     Type2String (ret_type, 0), Type2String (w_return_type, 0)));
         }
         neutral_type = TI (arg_node->node[1], arg_info);
-        if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */
-        {
+        if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */ {
             ABORT (NODE_LINE (arg_node),
                    ("2. argument of 'fold` has wrong type '%s` != '%s`",
                     Type2String (neutral_type, 0), Type2String (ret_type, 0)));
@@ -7002,7 +6979,6 @@ TCobjdef (node *arg_node, node *arg_info)
         ABORT (NODE_LINE (arg_node),
                ("Type of global object '%s` must be a class",
                 ModName (OBJDEF_MOD (arg_node), OBJDEF_NAME (arg_node))));
-
     } else {
         tdef = LookupType (OBJDEF_TNAME (arg_node), OBJDEF_TMOD (arg_node),
                            NODE_LINE (arg_node));
@@ -7010,7 +6986,6 @@ TCobjdef (node *arg_node, node *arg_info)
             ABORT (NODE_LINE (arg_node),
                    ("Type of global object '%s` unknown",
                     ModName (OBJDEF_MOD (arg_node), OBJDEF_NAME (arg_node))));
-
         } else {
             if (TYPEDEF_ATTRIB (tdef) != ST_unique) {
                 ABORT (NODE_LINE (arg_node),
@@ -7048,7 +7023,6 @@ TCobjdef (node *arg_node, node *arg_info)
  *    arg_node is needed only for the line number in abort.
  *
  ******************************************************************************/
-
 int
 isBoundEmpty (node *arg_node, node *bound_node)
 {
