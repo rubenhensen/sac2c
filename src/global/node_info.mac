@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.87  1995/07/24 11:45:53  asi
- * added OPTmodul, AEfundef, AEassign and AEprf for ae_tab (array elimination)
+ * Revision 1.88  1995/07/25 10:20:37  cg
+ * new status ST_readonly_reference.
  *
+;; Revision 1.87  1995/07/24  11:45:53  asi
+;; added OPTmodul, AEfundef, AEassign and AEprf for ae_tab (array elimination)
+;;
 ;; Revision 1.86  1995/07/12  15:21:56  asi
 ;; added UNSid and UNRid
 ;;
@@ -434,6 +437,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_isclass, "N_isclass", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_sib, "N_sib", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_ok, "N_ok", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
