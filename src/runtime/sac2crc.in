@@ -34,8 +34,7 @@ OPT_O3           :=  "@OPT_O3@"
 OPT_g            :=  "@OPT_g@"
  
 CPP_STDIN        :=  "@CPP@"
-CPP_FILE         :=  "@CC@ -E -C -x c"
-/*CPP_FILE         :=  "cpp -C"          (mac)*/
+CPP_FILE         :=  "@CPPFILE@"
 OPT_D            :=  -D
 OPT_I            :=  -I
 TAR_CREATE       :=  "tar cf"
