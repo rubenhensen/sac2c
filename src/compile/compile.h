@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.8  2000/05/26 19:25:13  dkr
+ * signature of GetAdjustedFoldCode() modified
+ *
  * Revision 2.7  2000/05/25 23:04:20  dkr
  * Prototype for GetAdjustedFoldCode() added
  * GetFoldCode() renamed into GetUnadjustedFoldCode()
@@ -61,7 +64,7 @@ extern node *COMPMTalloc (node *arg_node, node *arg_info);
 extern node *COMPMTsync (node *arg_node, node *arg_info);
 
 extern node *GetUnadjustedFoldCode (node *fundef);
-extern node *GetAdjustedFoldCode (node *fundef, ids *acc, char *funname, node *cexpr);
+extern node *GetAdjustedFoldCode (node *fundef, ids *acc, node *cexpr);
 extern node *GetFoldVardecs (node *fundef);
 
 /*
