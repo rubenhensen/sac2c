@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/02/03 17:03:10  dkr
+ * CHECK_DBUG_START/STOP for call of LaC2Fun added
+ *
  * Revision 2.12  2000/01/24 12:23:08  jhs
  * Added options to activate/dactivate printing after a break
  * (-noPAB, -doPAB).
@@ -389,7 +392,10 @@ main (int argc, char *argv[])
     compiler_phase++;
 
 #if 0
+  CHECK_DBUG_START;
   syntax_tree = LaC2Fun( syntax_tree);
+  CHECK_DBUG_STOP;
+  ABORT_ON_ERROR;
 #endif
 
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
