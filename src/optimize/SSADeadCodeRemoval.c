@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/03/23 09:30:33  nmw
+ * SSADCRdo/while removed
+ *
  * Revision 1.8  2001/03/22 21:13:33  dkr
  * include of tree.h eliminated
  *
@@ -485,44 +488,6 @@ SSADCRcond (node *arg_node, node *arg_info)
 
         INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
     }
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSADCRdo(node *arg_node , node *arg_info)
- *
- * description:
- *   must not be executed in traversal of ssa-form
- *
- ******************************************************************************/
-node *
-SSADCRdo (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSADCRdo");
-
-    DBUG_ASSERT ((FALSE), "there must not be any do-statement in ssa-form!");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSADCRwhile(node *arg_node , node *arg_info)
- *
- * description:
- *   must not be executed in traversal of ssa-form
- *
- ******************************************************************************/
-node *
-SSADCRwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSADCRwhile");
-
-    DBUG_ASSERT ((FALSE), "there must not be any while statement in ssa-form!");
-
     DBUG_RETURN (arg_node);
 }
 
