@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.134  1998/04/19 23:24:04  dkr
+ * INFO_PREC_LETVARS renamed to INFO_PREC_LETIDS
+ *
  * Revision 1.133  1998/04/19 23:17:35  dkr
  * added macro INFO_PREC_LETVARS
  *
@@ -2210,7 +2213,7 @@ extern node *MakeInfo ();
 #define INFO_PREC_MODUL(n) (n->node[0])
 #define INFO_PREC_FUNDEF(n) (n->node[1])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
-#define INFO_PREC_LETVARS(n) (n->node[2])
+#define INFO_PREC_LETIDS(n) (n->node[2])
 
 /* compile */
 #define INFO_COMP_LASTASSIGN(n) (n->node[0])
