@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/03/17 11:41:16  dkr
+ * fixed a bug in macro LAC_FUN
+ *
  * Revision 2.32  2000/03/17 10:38:50  dkr
  * comment for -lac2fun and -fun2lac added
  *
@@ -414,7 +417,7 @@ AnalyseCommandline (int argc, char *argv[])
                 break;                                                                   \
             } else {                                                                     \
                 if (new_s != old_s) {                                                    \
-                    do_lac2fun[phase] = 1;                                               \
+                    array[phase] = 1;                                                    \
                 } else {                                                                 \
                     ARGS_ERROR ("no phase number found");                                \
                     break;                                                               \
