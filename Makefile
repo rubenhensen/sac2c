@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.76  1998/04/28 15:43:07  srs
+# added typecheck_WL.o to TYPECHECK
+#
 # Revision 1.75  1998/04/25 16:27:55  sbs
 # icm2c_std.o added in link-list
 #
@@ -273,7 +276,8 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
-TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
+TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
+           src/typecheck/typecheck_WL.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
