@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.202  1998/08/13 22:20:23  dkr
+ * WLNODE_INNERSTEP added
+ *
  * Revision 1.201  1998/08/11 14:32:56  dkr
  * some WL... stuff changed
  *
@@ -3032,6 +3035,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLNODE_STEP(n) (n->varno)
 #define WLNODE_NEXTDIM(n) (n->node[0])
 #define WLNODE_NEXT(n) (n->node[1])
+#define WLNODE_INNERSTEP(n) (n->info.prf_dec.tag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3123,7 +3127,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_CONTENTS(n) (n->node[2])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
 
-#define WLBLOCK_INNERSTEP(n) (n->info.prf_dec.tag)
+#define WLBLOCK_INNERSTEP(n) (WLNODE_INNERSTEP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3167,7 +3171,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 #define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
 
-#define WLUBLOCK_INNERSTEP(n) (n->info.prf_dec.tag)
+#define WLUBLOCK_INNERSTEP(n) (WLNODE_INNERSTEP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3209,13 +3213,13 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 #define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLSTRIDE_STEP(n) (WLNODE_STEP (n))
-#define WLSTRIDE_UNROLLING(n) (n->info.prf_dec.tag)
+#define WLSTRIDE_UNROLLING(n) (n->info.prf_dec.tc)
 #define WLSTRIDE_CONTENTS(n) (n->node[0])
 #define WLSTRIDE_NEXT(n) (WLNODE_NEXT (n))
 
 #define WLSTRIDE_PART(n) (n->node[4])
 #define WLSTRIDE_MODIFIED(n) (n->node[5])
-#define WLSTRIDE_INNERSTEP(n) (n->info.prf_dec.tc)
+#define WLSTRIDE_INNERSTEP(n) (WLNODE_INNERSTEP (n))
 
 /*--------------------------------------------------------------------------*/
 
