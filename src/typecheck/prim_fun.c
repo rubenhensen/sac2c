@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.37  1999/01/08 11:32:51  sbs
+ * enabled rotate only...
+ *
  * Revision 1.36  1999/01/07 17:53:53  sbs
  * some breaks were missing in GenPrimTabEntries!
  * => rotate and friends couldn't be used from the stdlib!
@@ -466,21 +469,21 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
              || (wanted && (type_c == AxA_A || type_c == SxA_A || type_c == AxS_A))
              || (!wanted && (type_c == VxV_V || type_c == VxS_V || type_c == SxV_V)));
         break;
-    case F_psi:
-        intrinsic = (INTRINSIC_PSI & intrinsics);
-        break;
-    case F_take:
-        intrinsic = (INTRINSIC_TAKE & intrinsics);
-        break;
-    case F_drop:
-        intrinsic = (INTRINSIC_DROP & intrinsics);
-        break;
-    case F_cat:
-        intrinsic = (INTRINSIC_CAT & intrinsics);
-        break;
     case F_rotate:
         intrinsic = (INTRINSIC_ROT & intrinsics);
         break;
+    case F_psi:
+        intrinsic = (INTRINSIC_PSI & intrinsics);
+        /* break; */
+    case F_take:
+        intrinsic = (INTRINSIC_TAKE & intrinsics);
+        /* break; */
+    case F_drop:
+        intrinsic = (INTRINSIC_DROP & intrinsics);
+        /* break; */
+    case F_cat:
+        intrinsic = (INTRINSIC_CAT & intrinsics);
+        /* break; */
     default:
         intrinsic = 1;
     }
