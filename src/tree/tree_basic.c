@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.21  2000/07/11 15:44:14  jhs
+ * Added ST_ALLOC and ST_SYNC.
+ * DFMfoldmask changed name to vardec.
+ *
  * Revision 1.20  2000/07/11 10:24:11  dkr
  * definition of macro ALLOCATE changed
  *
@@ -24,7 +28,7 @@
  * Make...() functions for old with-loop removed
  *
  * Revision 1.13  2000/03/23 14:03:33  jhs
- * Added macros for DFMmfoldmask_t (DFMFM) ann MakeDFMfoldmask.
+ * Added macros for DFMfoldmask_t (DFMFM) ann MakeDFMfoldmask.
  *
  * Revision 1.12  2000/03/22 17:37:28  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync macros.
@@ -369,7 +373,7 @@ MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 /*--------------------------------------------------------------------------*/
 
 DFMfoldmask_t *
-MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next)
+MakeDFMfoldmask (node *vardec, node *foldop, DFMfoldmask_t *next)
 {
     DFMfoldmask_t *tmp;
 
@@ -377,7 +381,7 @@ MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next)
 
     tmp = ALLOCATE (DFMfoldmask_t);
 
-    DFMFM_NAME (tmp) = name;
+    DFMFM_VARDEC (tmp) = vardec;
     DFMFM_FOLDOP (tmp) = foldop;
     DFMFM_NEXT (tmp) = next;
 
@@ -394,7 +398,7 @@ CopyDFMfoldmask (DFMfoldmask_t *mask)
     if (mask != NULL) {
         tmp = ALLOCATE (DFMfoldmask_t);
 
-        DFMFM_NAME (tmp) = DFMFM_NAME (mask);
+        DFMFM_VARDEC (tmp) = DFMFM_VARDEC (mask);
         DFMFM_FOLDOP (tmp) = DFMFM_FOLDOP (mask);
         DFMFM_NEXT (tmp) = CopyDFMfoldmask (DFMFM_NEXT (mask));
     } else {

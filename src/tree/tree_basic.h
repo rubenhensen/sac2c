@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.73  2000/07/11 15:44:14  jhs
+ * Added ST_ALLOC and ST_SYNC.
+ * DFMfoldmask changed name to vardec.
+ *
  * Revision 1.72  2000/07/10 14:22:57  cg
  * Added new field type_status in types struct as a dedicated status field
  * for the type itself.
@@ -128,7 +132,7 @@
  * INFO_DUP_LUT added
  *
  * Revision 1.33  2000/03/23 14:03:33  jhs
- * Added macros for DFMmfoldmask_t (DFMFM) ann MakeDFMfoldmask.
+ * Added macros for DFMfoldmask_t (DFMFM) ann MakeDFMfoldmask.
  *
  * Revision 1.32  2000/03/22 17:37:28  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync macros.
@@ -527,10 +531,10 @@ extern access_t *MakeAccess (node *array, node *iv, accessclass_t class, shpseg 
  ***
  ***/
 
-extern DFMfoldmask_t *MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next);
+extern DFMfoldmask_t *MakeDFMfoldmask (node *vardec, node *foldop, DFMfoldmask_t *next);
 extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
 
-#define DFMFM_NAME(n) (n->name)
+#define DFMFM_VARDEC(n) (n->vardec)
 #define DFMFM_FOLDOP(n) (n->foldop)
 #define DFMFM_NEXT(n) (n->next)
 
@@ -902,8 +906,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    long*           MASK[x]                   (optimize -> )
  ***    int             INLREC                    (inl !!)
  ***
- ***    DFMmask_base_t  DFM_BASE                  (lac2fun/refcount -> spmd -> compile ->
- *)
+ ***    DFMmask_base_t  DFM_BASE              (lac2fun/refcount -> spmd -> compile -> )
  ***
  ***
  ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
@@ -2772,6 +2775,8 @@ extern node *MakeST (node *region);
 #define ST_DEFMASK(n) (n->dfmask[1])
 #define ST_NEEDLATER_ST(n) (n->dfmask[2])
 #define ST_NEEDLATER_MT(n) (n->dfmask[3])
+#define ST_ALLOC(n) (n->dfmask[4])
+#define ST_SYNC(n) (n->dfmask[5])
 
 /*--------------------------------------------------------------------------*/
 
