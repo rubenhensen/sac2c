@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/10/28 19:05:01  dkr
+ * type conversion for applications of external functions added
+ *
  * Revision 3.65  2002/10/18 16:53:35  dkr
  * support for (..._MOD == EXTERN_MOD_NAME) finished 8-)
  *
@@ -1831,7 +1834,9 @@ PREC2let (node *arg_node, node *arg_info)
             if (TYPES_BASETYPE (rettypes) != T_dots) {
                 actual_cls = GetShapeClassFromTypes (IDS_TYPE (ap_ids));
                 formal_cls = GetShapeClassFromTypes (rettypes);
-                if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
+                if ((actual_cls != formal_cls)
+                    && (ATG_has_shp[argtab->tag[idx]] || (actual_cls == C_scl)
+                        || (formal_cls == C_scl))) {
                     DBUG_PRINT ("PREC",
                                 ("Return value with inappropriate shape class found:"));
                     DBUG_PRINT ("PREC", ("   ... %s ... = %s( ... ), %s instead of %s",
@@ -1872,7 +1877,9 @@ PREC2let (node *arg_node, node *arg_info)
             if (ARG_BASETYPE (args) != T_dots) {
                 formal_cls = GetShapeClassFromTypes (ARG_TYPE (args));
                 actual_cls = GetShapeClassFromTypes (ID_TYPE (ap_id));
-                if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
+                if ((actual_cls != formal_cls)
+                    && (ATG_has_shp[argtab->tag[idx]] || (actual_cls == C_scl)
+                        || (formal_cls == C_scl))) {
                     DBUG_PRINT ("PREC",
                                 ("Argument with inappropriate shape class found:"));
                     DBUG_PRINT ("PREC", ("   ... = %s( ... %s ...), %s instead of %s",
@@ -2687,6 +2694,7 @@ ReplaceSpecialCharacters (char *name)
 static char *
 RenameFunName (char *mod, char *name, statustype status, node *args)
 {
+    char *prefix;
     char *tmp_name;
     char *new_name;
 
@@ -2707,18 +2715,16 @@ RenameFunName (char *mod, char *name, statustype status, node *args)
             arg = ARG_NEXT (arg);
         }
 
+        prefix = (status == ST_wrapperfun) ? "SACwf" : "SACf";
+
         if (!strcmp (mod, MAIN_MOD_NAME)) {
-            length += (strlen (tmp_name) + 6);
+            length += (strlen (prefix) + strlen (tmp_name) + 2);
             new_name = (char *)Malloc (length * sizeof (char));
-            sprintf (new_name, "SACf_%s", tmp_name);
-        } else if (status == ST_wrapperfun) {
-            length += (strlen (mod) + strlen (tmp_name) + 9);
-            new_name = (char *)Malloc (length * sizeof (char));
-            sprintf (new_name, "SACwf_%s__%s", mod, tmp_name);
+            sprintf (new_name, "%s_%s", prefix, tmp_name);
         } else {
-            length += (strlen (mod) + strlen (tmp_name) + 8);
+            length += (strlen (prefix) + strlen (mod) + strlen (tmp_name) + 4);
             new_name = (char *)Malloc (length * sizeof (char));
-            sprintf (new_name, "SACf_%s__%s", mod, tmp_name);
+            sprintf (new_name, "%s_%s__%s", prefix, mod, tmp_name);
         }
 
         arg = args;
