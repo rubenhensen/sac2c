@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.6  1999/07/05 11:58:45  her
+ * changes to seperate read from writecounters
+ *
  * Revision 2.5  1999/07/02 12:10:28  her
  * bug in write back strategy write_around fixed
  *
@@ -71,7 +74,7 @@
  *
  * description:
  *   Removes an address given by removepos and adds a new address at the
- *   end of the queue.
+ *   end of the LRU-queue (Last Recently Used-queue).
  *   The LRU-queue and the set belonging to a cacheline are the same, because
  *   it is never neccessary to know in which element of the set a address
  *   has been found!!!
@@ -205,6 +208,7 @@
  * (for simple analysis) or an ending 'D' (for detailed analysis)
  */
 #define CONCAT(functionname, type) functionname##type
+
 #define SAC_CS_ACCESS_DMREAD(type) CONCAT (SAC_CS_Access_DMRead_, type)
 #define SAC_CS_ACCESS_DMFOW(type) CONCAT (SAC_CS_Access_DMFOW_, type)
 #define SAC_CS_ACCESS_DMWV(type) CONCAT (SAC_CS_Access_DMWV_, type)
@@ -213,33 +217,21 @@
 #define SAC_CS_ACCESS_AS4FOW(type) CONCAT (SAC_CS_Access_AS4FOW_, type)
 #define SAC_CS_ACCESS_AS4WV(type) CONCAT (SAC_CS_Access_AS4WV_, type)
 #define SAC_CS_ACCESS_AS4WA(type) CONCAT (SAC_CS_Access_AS4WA_, type)
+
+#define SAC_CS_DETAILEDANALYSIS(type) CONCAT (SAC_CS_DetailedAnalysis_, type)
 /* the macro TYPE will be defined in commandline of gcc:
  * gcc ... -D TYPE=x ...
  */
+
+/* this forwadrdeclaration is necessary: DetailedAnalysis_Write is
+ * declared and will be used in libsac_cachesim_access_advanced.o  but
+ * DetailedAnalysis_Read is declared in libsac_cachesim_access.o but
+ * will also be used in libsac_cachesim_access_advanced.o */
+extern void SAC_CS_DetailedAnalysis_Read (tCacheLevel *act_cl, void *baseaddress,
+                                          ULINT aligned_addr, unsigned cacheline);
 #ifndef TYPE
 #define TYPE S
 #endif
-
-/* BEGIN: The folowing variables are declared in the
- * ´libsac_cachesim_basic.c´-file. Changes there have to be done here
- * too!!!  */
-extern tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1];
-/* SAC_CS_cachelevel[0] is unused */
-
-extern ULINT SAC_CS_hit[MAX_CACHELEVEL + 1], SAC_CS_invalid[MAX_CACHELEVEL + 1],
-  SAC_CS_miss[MAX_CACHELEVEL + 1], SAC_CS_cold[MAX_CACHELEVEL + 1],
-  SAC_CS_cross[MAX_CACHELEVEL + 1], SAC_CS_self[MAX_CACHELEVEL + 1];
-/* SAC_CS_xxx[0] is unused */
-
-extern int SAC_CS_level;
-
-extern tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
-  SAC_CS_read_access_table[MAX_CACHELEVEL + 2],
-  SAC_CS_write_access_table[MAX_CACHELEVEL + 2];
-/* SAC_CS_xxx_access_table[0] is unused,
- * SAC_CS_xxx_access_table[MAX_CACHELEVEL+1]
- *   for dummy/MainMem */
-/* END: */
 
 /******************************************************************************
  *
@@ -293,9 +285,12 @@ GetPosWithinSet (int *pWas_invalid, tCacheLevel *act_cl, ULINT *pElm0, ULINT ali
  *
  *****************************************************************************/
 #ifdef DETAILED
-static void
-DetailedAnalysis (tCacheLevel *act_cl, void *baseaddress, ULINT aligned_addr,
-                  unsigned cacheline)
+#define SAC_CS_READORWRITE Write
+#else
+#define SAC_CS_READORWRITE Read
+#endif
+void SAC_CS_DETAILEDANALYSIS (SAC_CS_READORWRITE) (tCacheLevel *act_cl, void *baseaddress,
+                                                   ULINT aligned_addr, unsigned cacheline)
 {
     ULINT entry_addr, delta_entry_addr, nr_cachelines;
     unsigned i, idx;
@@ -322,26 +317,26 @@ DetailedAnalysis (tCacheLevel *act_cl, void *baseaddress, ULINT aligned_addr,
             p2Entry = GET_SH_PTR_2ENTRY (act_sh_ary, idx);
             entry = GET_SH_ENTRY (p2Entry, idx);
             if (aligned_addr == entry_addr) {
-#if 1
-                SAC_CS_cold[SAC_CS_level] += !L_BIT (entry);
-                SAC_CS_cross[SAC_CS_level] += C_BIT (entry);
-                SAC_CS_self[SAC_CS_level] += S_BIT (entry);
+#ifdef DETAILED
+                SAC_CS_wcold[SAC_CS_level] += !L_BIT (entry);
+                SAC_CS_wcross[SAC_CS_level] += C_BIT (entry);
+                SAC_CS_wself[SAC_CS_level] += S_BIT (entry);
+#else
+                SAC_CS_rcold[SAC_CS_level] += !L_BIT (entry);
+                SAC_CS_rcross[SAC_CS_level] += C_BIT (entry);
+                SAC_CS_rself[SAC_CS_level] += S_BIT (entry);
 #endif
-#if 1
                 entry = 4 /*%00000100*/; /* set only l-bit */
-#endif
             } else {
                 entry
                   = entry
                     | (L_BIT (entry) << ((ULINT)baseaddress != act_cl->shadowbases[i]));
             } /* if */
-#if 1
             if (p2Entry == NULL) {
                 printf ("p2Entry ==NULL\n");
                 exit (1);
             }
             *p2Entry = SETABLE_SH_ENTRY (p2Entry, idx, entry);
-#endif
             entry_addr += delta_entry_addr;
             idx += nr_cachelines;
         } /* while:entry_addr */
@@ -350,7 +345,6 @@ DetailedAnalysis (tCacheLevel *act_cl, void *baseaddress, ULINT aligned_addr,
       /* END: run through all shadowarrays and their affected entries */
       /*printf("DetailedAnalysis: exit\n");*/
 } /* DetailedAnalysis */
-#endif
 
 void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
 {
@@ -370,19 +364,19 @@ void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
     was_invalid = CACHE_INVALID (pElm0, 0);
     if ((CACHE_CONTENTS (pElm0, 0) == aligned_addr) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_rhit[SAC_CS_level]++;
 
         SAC_CS_level = 1; /* next access has to seek in cachelevel 1 again */
         return;           /* leave function here */
     } else {
         /*printf("RDM: enter miss-case\n");*/
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_rmiss[SAC_CS_level]++;
+        SAC_CS_rinvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Read (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         /* set new cachecontents */
@@ -415,19 +409,19 @@ void SAC_CS_ACCESS_DMFOW (TYPE) (void *baseaddress, void *elemaddress)
     was_invalid = CACHE_INVALID (pElm0, 0);
     if ((CACHE_CONTENTS (pElm0, 0) == aligned_addr) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_whit[SAC_CS_level]++;
 
         SAC_CS_level = 1; /* next access has to seek in cachelevel 1 again */
         return;           /* leave function here */
     } else {
         /*printf("WFOW: enter miss-case\n");*/
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_wmiss[SAC_CS_level]++;
+        SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         /* set new cachecontents */
@@ -460,18 +454,18 @@ void SAC_CS_ACCESS_DMWV (TYPE) (void *baseaddress, void *elemaddress)
     was_invalid = CACHE_INVALID (pElm0, 0);
     if ((CACHE_CONTENTS (pElm0, 0) == aligned_addr) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_whit[SAC_CS_level]++;
 
         SAC_CS_level = 1; /* next access has to seek in cachelevel 1 again */
         return;           /* leave function here */
     } else {
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_wmiss[SAC_CS_level]++;
+        SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         /* set new cachecontents */
@@ -503,18 +497,18 @@ void SAC_CS_ACCESS_DMWA (TYPE) (void *baseaddress, void *elemaddress)
     was_invalid = CACHE_INVALID (pElm0, 0);
     if ((CACHE_CONTENTS (pElm0, 0) == aligned_addr) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_whit[SAC_CS_level]++;
 
         SAC_CS_level = 1; /* next access has to seek in cachelevel 1 again */
         return;           /* leave function here */
     } else {
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_wmiss[SAC_CS_level]++;
+        SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         return; /* leave function here */
@@ -539,7 +533,7 @@ void SAC_CS_ACCESS_AS4READ (TYPE) (void *baseaddress, void *elemaddress)
     pos = GetPosWithinSet (&was_invalid, act_cl, pElm0, aligned_addr);
     if ((pos >= 0) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_rhit[SAC_CS_level]++;
         /* update LRU-order */
         newvalue = *(pElm0 + pos);
         UPDATE_LRU_QUEUE (pElm0, pos, newvalue);
@@ -548,12 +542,12 @@ void SAC_CS_ACCESS_AS4READ (TYPE) (void *baseaddress, void *elemaddress)
         return;           /* leave function here */
     } else {
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_rmiss[SAC_CS_level]++;
+        SAC_CS_rinvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Read (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         /* update LRU-order and set new cachecontents */
@@ -588,7 +582,7 @@ void SAC_CS_ACCESS_AS4FOW (TYPE) (void *baseaddress, void *elemaddress)
     pos = GetPosWithinSet (&was_invalid, act_cl, pElm0, aligned_addr);
     if ((pos >= 0) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_whit[SAC_CS_level]++;
         /* update LRU-order */
         newvalue = *(pElm0 + pos);
         UPDATE_LRU_QUEUE (pElm0, pos, newvalue);
@@ -597,12 +591,12 @@ void SAC_CS_ACCESS_AS4FOW (TYPE) (void *baseaddress, void *elemaddress)
         return;           /* leave function here */
     } else {
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_wmiss[SAC_CS_level]++;
+        SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         /* update LRU-order and set new cachecontents */
@@ -637,7 +631,7 @@ void SAC_CS_ACCESS_AS4WV (TYPE) (void *baseaddress, void *elemaddress)
     pos = GetPosWithinSet (&was_invalid, act_cl, pElm0, aligned_addr);
     if ((pos >= 0) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_whit[SAC_CS_level]++;
         /* update LRU-order */
         newvalue = *(pElm0 + pos);
         UPDATE_LRU_QUEUE (pElm0, pos, newvalue);
@@ -646,12 +640,12 @@ void SAC_CS_ACCESS_AS4WV (TYPE) (void *baseaddress, void *elemaddress)
         return;           /* leave function here */
     } else {
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_wmiss[SAC_CS_level]++;
+        SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
 #ifdef DETAILED
         /* run through all shadowarrays and their affected entries */
-        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+        SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
 
         /* update LRU-order and set new cachecontents */
@@ -686,7 +680,7 @@ void SAC_CS_ACCESS_AS4WA (TYPE) (void *baseaddress, void *elemaddress)
     pos = GetPosWithinSet (&was_invalid, act_cl, pElm0, aligned_addr);
     if ((pos >= 0) && !was_invalid) {
         /* we have a hit */
-        SAC_CS_hit[SAC_CS_level]++;
+        SAC_CS_whit[SAC_CS_level]++;
         /* update LRU-order */
         newvalue = *(pElm0 + pos);
         UPDATE_LRU_QUEUE (pElm0, pos, newvalue);
@@ -695,8 +689,13 @@ void SAC_CS_ACCESS_AS4WA (TYPE) (void *baseaddress, void *elemaddress)
         return;           /* leave function here */
     } else {
         /* we have a miss */
-        SAC_CS_miss[SAC_CS_level]++;
-        SAC_CS_invalid[SAC_CS_level] += was_invalid;
+        SAC_CS_wmiss[SAC_CS_level]++;
+        SAC_CS_winvalid[SAC_CS_level] += was_invalid;
+
+#ifdef DETAILED
+        /* run through all shadowarrays and their affected entries */
+        SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
+#endif
 
         return; /* leave function here */
     }           /* if-else:hit or miss */

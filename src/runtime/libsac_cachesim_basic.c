@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.15  1999/07/05 11:58:30  her
+ * changes to seperate read from writecounters
+ *
  * Revision 2.14  1999/07/02 10:05:51  cg
  * Result presentation beautified.
  *
@@ -74,27 +77,24 @@
 
 /*
  * BEGIN: The folowing variables are declared as extern in the
- * ´libsac_cachesim_access.c´-file. Changes here have to be done there
+ * ´libsac_cachesim.h´-file. Changes here have to be done there
  * too!!!
  */
-tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1]; /* SAC_CS_cachelevel[0] is unused */
-
-ULINT SAC_CS_hit[MAX_CACHELEVEL + 1], SAC_CS_invalid[MAX_CACHELEVEL + 1],
-  SAC_CS_miss[MAX_CACHELEVEL + 1], SAC_CS_cold[MAX_CACHELEVEL + 1],
-  SAC_CS_cross[MAX_CACHELEVEL + 1], SAC_CS_self[MAX_CACHELEVEL + 1];
-/* SAC_CS_XXX[0] is unused */
-
-int SAC_CS_level = 1;
-FILE *SAC_CS_pipehandle;
-
 char SAC_CS_separator[]
   = "#=============================================================================\n";
 
-void (*SAC_CS_Finalize) (void);
-void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
-void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
-void (*SAC_CS_Start) (char * /*tag*/);
-void (*SAC_CS_Stop) (void);
+tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1];
+/* SAC_CS_cachelevel[0] is unused */
+
+ULINT SAC_CS_rhit[MAX_CACHELEVEL + 1], SAC_CS_rinvalid[MAX_CACHELEVEL + 1],
+  SAC_CS_rmiss[MAX_CACHELEVEL + 1], SAC_CS_rcold[MAX_CACHELEVEL + 1],
+  SAC_CS_rcross[MAX_CACHELEVEL + 1], SAC_CS_rself[MAX_CACHELEVEL + 1],
+  SAC_CS_whit[MAX_CACHELEVEL + 1], SAC_CS_winvalid[MAX_CACHELEVEL + 1],
+  SAC_CS_wmiss[MAX_CACHELEVEL + 1], SAC_CS_wcold[MAX_CACHELEVEL + 1],
+  SAC_CS_wcross[MAX_CACHELEVEL + 1], SAC_CS_wself[MAX_CACHELEVEL + 1];
+/* SAC_CS_XYYY[0] is unused */
+
+int SAC_CS_level = 1;
 
 tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
   SAC_CS_read_access_table[MAX_CACHELEVEL + 2],
@@ -102,6 +102,15 @@ tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
 /* SAC_CS_xxx_access_table[0] is unused,
    SAC_CS_xxx_access_table[MAX_CACHELEVEL+1] for dummy/MainMem */
 /* END: */
+
+FILE *SAC_CS_pipehandle;
+
+void (*SAC_CS_Finalize) (void);
+void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
+void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
+void (*SAC_CS_Start) (char * /*tag*/);
+void (*SAC_CS_Stop) (void);
+
 static int sim_incarnation = 0;
 static char starttag[MAX_TAG_LENGTH];
 static tProfilingLevel profiling_level;
@@ -956,7 +965,7 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
 
             if (cachesize2 > 0) {
                 fprintf (stderr,
-                         "%s\n"
+                         "%s"
                          "# L2 cache:  cache size        : %lu KByte\n"
                          "#            cache line size   : %d Byte\n"
                          "#            associativity     : %d\n"
@@ -1107,12 +1116,69 @@ SAC_CS_Access_MM (void *baseaddress, void *elemaddress)
     SAC_CS_level = 1;
 } /* SAC_CS_Access_MM */
 
+static void
+PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT cold,
+               ULINT cross, ULINT self, ULINT invalid)
+{
+    ULINT accesses, both;
+    float hit_ratio;
+
+    accesses = hit + miss;
+    hit_ratio = (accesses == 0) ? (0) : (((float)hit / (float)accesses) * 100.0);
+
+    fprintf (stderr,
+             "# %s:  accesses:  %*lu\n"
+             "#            hits:      %*lu  (%5.1f%%)\n"
+             "#            misses:    %*lu  (%5.1f%%)\n",
+             cachelevel_str, digits, accesses, digits, hit, hit_ratio, digits, miss,
+             100.0 - hit_ratio);
+
+    if ((profiling_level == SAC_CS_advanced)) {
+
+        /*
+         * A self- and cross interference (for one access) will be counted
+         * in SAC_CS_self and also in SAC_CS_cross! The following computations
+         * correct this!
+         */
+        both = self + cross
+               + cold
+               /* + invalid */
+               - miss;
+        self -= both;
+        cross -= both;
+
+        fprintf (stderr,
+                 "#              cold start:                 %*lu  ( %5.1f %%)  ( %5.1f "
+                 "%%)\n"
+                 "#              cross interference:         %*lu  ( %5.1f %%)  ( %5.1f "
+                 "%%)\n"
+                 "#              self interference:          %*lu  ( %5.1f %%)  ( %5.1f "
+                 "%%)\n"
+                 "#              self & cross interference:  %*lu  ( %5.1f %%)  ( %5.1f "
+                 "%%)\n"
+                 "#              invalidation:               %*lu  ( %5.1f %%)  ( %5.1f "
+                 "%%)\n",
+                 digits, cold, (miss == 0) ? (0) : (((float)cold / (float)miss) * 100.0),
+                 (accesses == 0) ? (0) : (((float)cold / (float)accesses) * 100.0),
+                 digits, cross,
+                 (miss == 0) ? (0) : (((float)cross / (float)miss) * 100.0),
+                 (accesses == 0) ? (0) : (((float)cross / (float)accesses) * 100.0),
+                 digits, self, (miss == 0) ? (0) : (((float)self / (float)miss) * 100.0),
+                 (accesses == 0) ? (0) : (((float)self / (float)accesses) * 100.0),
+                 digits, both, (miss == 0) ? (0) : (((float)both / (float)miss) * 100.0),
+                 (accesses == 0) ? (0) : (((float)both / (float)accesses) * 100.0),
+                 digits, invalid,
+                 (miss == 0) ? (0) : (((float)invalid / (float)miss) * 100.0),
+                 (accesses == 0) ? (0) : (((float)invalid / (float)accesses) * 100.0));
+    } /* if */
+    fprintf (stderr, "%s", SAC_CS_separator);
+} /* PrintCounters */
+
 void
 SAC_CS_ShowResults (void)
 {
     int i, digits;
-    long unsigned int accesses, both;
-    float hit_ratio;
+    char str[20];
 
     fprintf (stderr,
              "\n"
@@ -1126,68 +1192,25 @@ SAC_CS_ShowResults (void)
 
     fprintf (stderr, "%s", SAC_CS_separator);
 
-    digits = (int)ceil (log10 ((double)SAC_CS_hit[1] + SAC_CS_miss[1]));
+    digits = (int)ceil (log10 ((double)SAC_CS_rhit[1] + SAC_CS_rmiss[1]));
 
     for (i = 1; i <= MAX_CACHELEVEL; i++) {
         if (SAC_CS_cachelevel[i] != NULL) {
-            accesses = SAC_CS_hit[i] + SAC_CS_miss[i];
-            hit_ratio = ((float)SAC_CS_hit[i] / (float)accesses) * 100.0;
-
-            fprintf (stderr,
-                     "# L%d cache:  accesses:  %*lu\n"
-                     "#            hits:      %*lu  (%5.1f%%)\n"
-                     "#            misses:    %*lu  (%5.1f%%)\n",
-                     i, digits, accesses, digits, SAC_CS_hit[i], hit_ratio, digits,
-                     SAC_CS_miss[i], 100.0 - hit_ratio);
-
-            if ((profiling_level == SAC_CS_advanced)) {
-                if (SAC_CS_miss[i] == 0) {
-                    /*
-                     * This is to avoid printing of NaN in percentages.
-                     */
-                    SAC_CS_miss[i] = 1;
-                }
-
-                /*
-                 * A self- and cross interference (for one access) will be counted
-                 * in SAC_CS_self and also in SAC_CS_cross! The following computations
-                 * correct this!
-                 */
-                both = SAC_CS_self[i] + SAC_CS_cross[i]
-                       + SAC_CS_cold[i] /* + SAC_CS_invalid[i] */
-                       - SAC_CS_miss[i];
-                SAC_CS_self[i] -= both;
-                SAC_CS_cross[i] -= both;
-
-                fprintf (stderr,
-                         "#              cold start:                 %*lu  ( %5.1f %%)  "
-                         "( %5.1f %%)\n"
-                         "#              cross interference:         %*lu  ( %5.1f %%)  "
-                         "( %5.1f %%)\n"
-                         "#              self interference:          %*lu  ( %5.1f %%)  "
-                         "( %5.1f %%)\n"
-                         "#              self & cross interference:  %*lu  ( %5.1f %%)  "
-                         "( %5.1f %%)\n"
-                         "#              invalidation:               %*lu  ( %5.1f %%)  "
-                         "( %5.1f %%)\n",
-                         digits, SAC_CS_cold[i],
-                         ((float)SAC_CS_cold[i] / (float)SAC_CS_miss[i]) * 100.0,
-                         ((float)SAC_CS_cold[i] / (float)accesses) * 100.0, digits,
-                         SAC_CS_cross[i],
-                         ((float)SAC_CS_cross[i] / (float)SAC_CS_miss[i]) * 100.0,
-                         ((float)SAC_CS_cross[i] / (float)accesses) * 100.0, digits,
-                         SAC_CS_self[i],
-                         ((float)SAC_CS_self[i] / (float)SAC_CS_miss[i]) * 100.0,
-                         ((float)SAC_CS_self[i] / (float)accesses) * 100.0, digits, both,
-                         ((float)both / (float)SAC_CS_miss[i]) * 100.0,
-                         ((float)both / (float)accesses) * 100.0, digits,
-                         SAC_CS_invalid[i],
-                         ((float)SAC_CS_invalid[i] / (float)SAC_CS_miss[i]) * 100.0,
-                         ((float)SAC_CS_invalid[i] / (float)accesses) * 100.0);
-            } /* if */
-            fprintf (stderr, "%s", SAC_CS_separator);
+            sprintf (str, "L%d READ ", i);
+            PrintCounters (str, digits, SAC_CS_rhit[i], SAC_CS_rmiss[i], SAC_CS_rcold[i],
+                           SAC_CS_rcross[i], SAC_CS_rself[i], SAC_CS_rinvalid[i]);
+            sprintf (str, "L%d WRITE", i);
+            PrintCounters (str, digits, SAC_CS_whit[i], SAC_CS_wmiss[i], SAC_CS_wcold[i],
+                           SAC_CS_wcross[i], SAC_CS_wself[i], SAC_CS_winvalid[i]);
+            sprintf (str, "L%d R & W", i);
+            PrintCounters (str, digits, SAC_CS_rhit[i] + SAC_CS_whit[i],
+                           SAC_CS_rmiss[i] + SAC_CS_wmiss[i],
+                           SAC_CS_rcold[i] + SAC_CS_wcold[i],
+                           SAC_CS_rcross[i] + SAC_CS_wcross[i],
+                           SAC_CS_rself[i] + SAC_CS_wself[i],
+                           SAC_CS_winvalid[i] + SAC_CS_winvalid[i]);
         } /* if */
-    }     /* for: i */
+    }     /* for i */
 } /* SAC_CS_ShowResults */
 
 static void
@@ -1201,12 +1224,18 @@ Start (char *tag)
             sim_incarnation++;
             /* set all counters to 0 */
             for (i = 1; i <= MAX_CACHELEVEL; i++) {
-                SAC_CS_hit[i] = 0;
-                SAC_CS_miss[i] = 0;
-                SAC_CS_cold[i] = 0;
-                SAC_CS_self[i] = 0;
-                SAC_CS_cross[i] = 0;
-                SAC_CS_invalid[i] = 0;
+                SAC_CS_rhit[i] = 0;
+                SAC_CS_rmiss[i] = 0;
+                SAC_CS_rcold[i] = 0;
+                SAC_CS_rself[i] = 0;
+                SAC_CS_rcross[i] = 0;
+                SAC_CS_rinvalid[i] = 0;
+                SAC_CS_whit[i] = 0;
+                SAC_CS_wmiss[i] = 0;
+                SAC_CS_wcold[i] = 0;
+                SAC_CS_wself[i] = 0;
+                SAC_CS_wcross[i] = 0;
+                SAC_CS_winvalid[i] = 0;
             } /* for */
         }
     } else {
