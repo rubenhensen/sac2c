@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/26 14:25:47  sbs
+ * change run
+ *
  * Revision 1.24  2004/11/09 14:03:00  mwe
  * code for type upgrade added
  * use ntype-structure instead of types-structure
@@ -10,67 +13,9 @@
  * unnecessary comment removed.
  *
  * Revision 1.22  2003/09/26 10:14:23  sbs
- * COIsEmptyVect added
+ * COisEmptyVect added
  *
- * Revision 1.21  2003/06/11 22:05:36  ktr
- * Added support for multidimensional arrays
- *
- * Revision 1.20  2003/05/22 10:04:49  ktr
- * Even commenting needs training... :(
- *
- * Revision 1.19  2003/05/22 09:43:46  ktr
- * Multidimensional N_array nodes are no longer encapsulated by a
- * reshape-Operation. (COConstant2AST)
- *
- * Revision 1.18  2003/04/11 17:55:41  sbs
- * COConstant2Shape added.
- *
- * Revision 1.17  2003/04/07 14:26:20  sbs
- * COMakeConstantFromShape, COCopyScalar2OneElementVector, COConstantData2String, and
- * COConstant2String added.
- *
- * Revision 1.16  2002/10/07 23:45:18  dkr
- * signature of COGetDataVec() corrected
- *
- * Revision 1.15  2002/09/03 11:52:56  dkr
- * COAST2Constant() modified for new typechecker
- *
- * Revision 1.14  2002/06/21 14:05:25  dkr
- * COConstant2AST() modified:
- * arrays with (dim > 1) are embedded into F_reshape now
- *
- * Revision 1.13  2001/05/25 14:57:34  nmw
- * Access to Basetypes via GetBasetype instead of TYPES_BASETYPE
- *
- * Revision 1.12  2001/05/17 12:57:46  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 1.11  2001/05/09 15:53:03  nmw
- * COCompareConstants() added
- *
- * Revision 1.10  2001/05/08 13:15:34  nmw
- * signature for IsZero... changed
- *
- * Revision 1.9  2001/05/07 09:07:35  nmw
- * AST2Constant uses type information when called for an id node
- *
- * Revision 1.8  2001/05/03 16:53:43  nmw
- * COIsZero/COIsOne compares ALL elements
- *
- * Revision 1.7  2001/05/02 08:01:24  nmw
- * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
- *
- * Revision 1.6  2001/04/30 12:29:15  nmw
- * GetDataVec() added
- *
- * Revision 1.5  2001/04/19 07:49:26  dkr
- * macro F_PTR used as format string for pointers
- *
- * Revision 1.3  2001/03/26 08:22:07  sbs
- * new_co in COAST2Constant now also initialized in default case as well
- *
- * Revision 1.2  2001/03/22 14:25:41  nmw
- * COAST2Constant, COIsConstant, DebugPrint added
+ * [eliminated]
  *
  * Revision 1.1  2001/03/02 14:32:55  sbs
  * Initial revision
@@ -109,7 +54,7 @@
  *   returned or used within a data structure that serves as a result!
  *   There are EXACTLY ONE CLASS OF FUNCTIONS that is an EXEPTION OF
  *   THIS RULE: - the GETxyz - functions for extracting components of constants
- * - The only function for freeing a shape structure is COFreeConstant!
+ * - The only function for freeing a shape structure is COfreeConstant!
  * - If the result is a shape structure, it has been freshly allocated!
  */
 
@@ -123,6 +68,7 @@
 #include "cv2scalar.h"
 #include "cv2cv.h"
 #include "cv2str.h"
+#include "tree_basic.h"
 #include "tree_compound.h"
 #include "basecv.h"
 
@@ -158,7 +104,7 @@
  *    most generic function for creating constant structures. It simply assembles
  *    a constant from the function's arguments. However, if vlen - the length
  *    of the unrolling - is not yet known, one should use the exported version
- *    of this function, i.e. COMakeConstant, which is almost identical but does
+ *    of this function, i.e. COmakeConstant, which is almost identical but does
  *    require vlen to be specified explicitly!
  *
  ******************************************************************************/
@@ -170,7 +116,7 @@ MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 
     DBUG_ENTER ("MakeConstant");
 
-    res = (constant *)Malloc (sizeof (constant));
+    res = (constant *)ILIBmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = shp;
     CONSTANT_ELEMS (res) = elems;
@@ -196,7 +142,7 @@ AllocCV (simpletype type, int length)
 
     DBUG_ENTER ("AllocCV");
 
-    res = (void *)Malloc (basetype_size[type] * length);
+    res = (void *)ILIBmalloc (basetype_size[type] * length);
 
     DBUG_RETURN (res);
 }
@@ -274,11 +220,11 @@ DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
     DBUG_ENTER ("DbugPrintBinOp");
 
     fprintf (stderr, "%s applied to\n ", fun);
-    COPrintConstant (stderr, arg1);
+    COprintConstant (stderr, arg1);
     fprintf (stderr, " ");
-    COPrintConstant (stderr, arg2);
+    COprintConstant (stderr, arg2);
     fprintf (stderr, "results in: ");
-    COPrintConstant (stderr, res);
+    COprintConstant (stderr, res);
 
     DBUG_VOID_RETURN;
 }
@@ -305,9 +251,9 @@ DbugPrintUnaryOp (char *fun, constant *arg1, constant *res)
     DBUG_ENTER ("DbugPrintUnaryOp");
 
     fprintf (stderr, "%s applied to\n ", fun);
-    COPrintConstant (stderr, arg1);
+    COprintConstant (stderr, arg1);
     fprintf (stderr, "results in: ");
-    COPrintConstant (stderr, res);
+    COprintConstant (stderr, res);
 
     DBUG_VOID_RETURN;
 }
@@ -338,9 +284,9 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
 
     DBUG_ENTER ("MakeScalarConstantFromCV");
 
-    res = (constant *)Malloc (sizeof (constant));
+    res = (constant *)ILIBmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
-    CONSTANT_SHAPE (res) = SHMakeShape (0);
+    CONSTANT_SHAPE (res) = SHmakeShape (0);
     CONSTANT_ELEMS (res) = cv;
     CONSTANT_VLEN (res) = 1;
 
@@ -356,7 +302,7 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
 /******************************************************************************
  *
  * function:
- *    constant *COMakeConstant( simpletype type, shape * shp, void *elems)
+ *    constant *COmakeConstant( simpletype type, shape * shp, void *elems)
  *
  * description:
  *    most generic (exported) function for creating constant structures. It
@@ -368,17 +314,17 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
  ******************************************************************************/
 
 constant *
-COMakeConstant (simpletype type, shape *shp, void *elems)
+COmakeConstant (simpletype type, shape *shp, void *elems)
 {
     constant *res;
 
-    DBUG_ENTER ("COMakeConstant");
+    DBUG_ENTER ("COmakeConstant");
 
-    res = (constant *)Malloc (sizeof (constant));
+    res = (constant *)ILIBmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = shp;
     CONSTANT_ELEMS (res) = elems;
-    CONSTANT_VLEN (res) = SHGetUnrLen (shp);
+    CONSTANT_VLEN (res) = SHgetUnrLen (shp);
 
     DBUG_RETURN (res);
 }
@@ -386,7 +332,7 @@ COMakeConstant (simpletype type, shape *shp, void *elems)
 /******************************************************************************
  *
  * function:
- *    constant *COMakeConstantFromInt( int val)
+ *    constant *COmakeConstantFromInt( int val)
  *
  * description:
  *    creates an integer constant from a C-integer value.
@@ -394,17 +340,17 @@ COMakeConstant (simpletype type, shape *shp, void *elems)
  ******************************************************************************/
 
 constant *
-COMakeConstantFromInt (int val)
+COmakeConstantFromInt (int val)
 {
     constant *res;
     int *intelems;
 
-    DBUG_ENTER ("COMakeConstantFromInt");
+    DBUG_ENTER ("COmakeConstantFromInt");
 
-    res = (constant *)Malloc (sizeof (constant));
+    res = (constant *)ILIBmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = T_int;
-    CONSTANT_SHAPE (res) = SHMakeShape (0);
-    intelems = (int *)Malloc (sizeof (int));
+    CONSTANT_SHAPE (res) = SHmakeShape (0);
+    intelems = (int *)ILIBmalloc (sizeof (int));
     intelems[0] = val;
     CONSTANT_ELEMS (res) = intelems;
     CONSTANT_VLEN (res) = 1;
@@ -415,7 +361,7 @@ COMakeConstantFromInt (int val)
 /******************************************************************************
  *
  * function:
- *    constant *COMakeConstantFromArray( node *a)
+ *    constant *COmakeConstantFromArray( node *a)
  *
  * description:
  *    translates an N_array node into a constant. It checks, whether a indeed
@@ -425,13 +371,13 @@ COMakeConstantFromInt (int val)
  ******************************************************************************/
 
 constant *
-COMakeConstantFromArray (node *a)
+COmakeConstantFromArray (node *a)
 {
 #ifdef MWE_NTYPE_READY
     ntype *type;
     constant *res;
 
-    DBUG_ENTER ("COMakeConstantFromArray");
+    DBUG_ENTER ("COmakeConstantFromArray");
 
     type = ARRAY_NTYPE (a);
 
@@ -439,13 +385,13 @@ COMakeConstantFromArray (node *a)
      * This implementation does not yet comply to its desired functionality!
      * We assume here that a is a constant integer vector!
      */
-    res = COMakeConstant (TYGetBasetype (type), TYTypes2Shape (type),
+    res = COmakeConstant (TYgetBasetype (type), TYtypes2Shape (type),
                           Array2IntVec (ARRAY_AELEMS (a), NULL));
 #else
     types *type;
     constant *res;
 
-    DBUG_ENTER ("COMakeConstantFromArray");
+    DBUG_ENTER ("COmakeConstantFromArray");
 
     type = ARRAY_TYPE (a);
 
@@ -453,7 +399,7 @@ COMakeConstantFromArray (node *a)
      * This implementation does not yet comply to its desired functionality!
      * We assume here that a is a constant integer vector!
      */
-    res = COMakeConstant (TYPES_BASETYPE (type), SHOldTypes2Shape (type),
+    res = COmakeConstant (TYPES_BASETYPE (type), SHOldTypes2Shape (type),
                           Array2IntVec (ARRAY_AELEMS (a), NULL));
 #endif
     DBUG_RETURN (res);
@@ -461,7 +407,7 @@ COMakeConstantFromArray (node *a)
 
 /** <!--********************************************************************-->
  *
- * @fn constant *COMakeConstantFromShape( shape *shp)
+ * @fn constant *COmakeConstantFromShape( shape *shp)
  *
  *   @brief  create a constant from a shape structure.
  *           ATTENTION: shp is NOT REUSED here!!!
@@ -472,18 +418,18 @@ COMakeConstantFromArray (node *a)
  ******************************************************************************/
 
 constant *
-COMakeConstantFromShape (shape *shp)
+COmakeConstantFromShape (shape *shp)
 {
     constant *res;
     int vlen;
 
-    DBUG_ENTER ("COMakeConstantFromShape");
+    DBUG_ENTER ("COmakeConstantFromShape");
 
-    vlen = SHGetDim (shp);
-    res = (constant *)Malloc (sizeof (constant));
+    vlen = SHgetDim (shp);
+    res = (constant *)ILIBmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = T_int;
     CONSTANT_SHAPE (res) = SHCreateShape (1, vlen);
-    CONSTANT_ELEMS (res) = SHShape2IntVec (shp);
+    CONSTANT_ELEMS (res) = SHshape2IntVec (shp);
     CONSTANT_VLEN (res) = vlen;
 
     DBUG_RETURN (res);
@@ -492,9 +438,9 @@ COMakeConstantFromShape (shape *shp)
 /******************************************************************************
  *
  * function:
- *    simpletype COGetType( constant *a)
- *    int COGetDim( constant *a)
- *    shape *COGetShape( constant *a)
+ *    simpletype COgetType( constant *a)
+ *    int COgetDim( constant *a)
+ *    shape *COgetShape( constant *a)
  *    void *GetDataVec( constant *a)
  *
  * description:
@@ -503,33 +449,33 @@ COMakeConstantFromShape (shape *shp)
  ******************************************************************************/
 
 simpletype
-COGetType (constant *a)
+COgetType (constant *a)
 {
-    DBUG_ENTER ("COGetType");
+    DBUG_ENTER ("COgetType");
 
     DBUG_RETURN (CONSTANT_TYPE (a));
 }
 
 int
-COGetDim (constant *a)
+COgetDim (constant *a)
 {
-    DBUG_ENTER ("COGetDim");
+    DBUG_ENTER ("COgetDim");
 
-    DBUG_RETURN (SHGetDim (CONSTANT_SHAPE (a)));
+    DBUG_RETURN (SHgetDim (CONSTANT_SHAPE (a)));
 }
 
 shape *
-COGetShape (constant *a)
+COgetShape (constant *a)
 {
-    DBUG_ENTER ("COGetShape");
+    DBUG_ENTER ("COgetShape");
 
     DBUG_RETURN (CONSTANT_SHAPE (a));
 }
 
 void *
-COGetDataVec (constant *a)
+COgetDataVec (constant *a)
 {
-    DBUG_ENTER ("COGetDataVec");
+    DBUG_ENTER ("COgetDataVec");
 
     DBUG_RETURN (CONSTANT_ELEMS (a));
 }
@@ -557,7 +503,7 @@ COCopyConstant (constant *a)
 
     DBUG_ENTER ("COCopyConstant");
 
-    res = MakeConstant (CONSTANT_TYPE (a), SHCopyShape (CONSTANT_SHAPE (a)),
+    res = MakeConstant (CONSTANT_TYPE (a), SHcopyShape (CONSTANT_SHAPE (a)),
                         PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), 0,
                                           CONSTANT_VLEN (a)),
                         CONSTANT_VLEN (a));
@@ -636,16 +582,16 @@ COConstant2String (constant *a)
     DBUG_ENTER ("COConstant2String");
 
     if (buf == NULL) {
-        buf = StrBufCreate (64);
+        buf = ILIBstrBufCreate (64);
     }
-    tmp_str = SHShape2String (0, CONSTANT_SHAPE (a));
+    tmp_str = SHshape2String (0, CONSTANT_SHAPE (a));
     tmp2_str = COConstantData2String (10000, a);
-    buf = StrBufprintf (buf, "reshape( %s, [%s])", tmp_str, tmp2_str);
-    tmp_str = Free (tmp_str);
-    tmp2_str = Free (tmp2_str);
+    buf = ILIBstrBufprintf (buf, "reshape( %s, [%s])", tmp_str, tmp2_str);
+    tmp_str = ILIBfree (tmp_str);
+    tmp2_str = ILIBfree (tmp2_str);
 
-    res = StrBuf2String (buf);
-    StrBufFlush (buf);
+    res = ILIBstrBuf2String (buf);
+    ILIBstrBufFlush (buf);
 
     DBUG_RETURN (res);
 }
@@ -675,14 +621,14 @@ COConstant2Shape (constant *a)
 
     DBUG_ASSERT (CONSTANT_TYPE (a) == T_int,
                  "COConstant2Shape applied to non int array!");
-    DBUG_ASSERT (SHGetDim (CONSTANT_SHAPE (a)) == 1,
+    DBUG_ASSERT (SHgetDim (CONSTANT_SHAPE (a)) == 1,
                  "COConstant2Shape applied to non vector!");
 
     dim = CONSTANT_VLEN (a);
-    shp = SHMakeShape (dim);
+    shp = SHmakeShape (dim);
     dv = (int *)CONSTANT_ELEMS (a);
     for (i = 0; i < dim; i++) {
-        shp = SHSetExtent (shp, i, dv[i]);
+        shp = SHsetExtent (shp, i, dv[i]);
     }
 
     DBUG_RETURN (shp);
@@ -691,7 +637,7 @@ COConstant2Shape (constant *a)
 /******************************************************************************
  *
  * function:
- *    void COPrintConstant( FILE *file, constant *a)
+ *    void COprintConstant( FILE *file, constant *a)
  *
  * description:
  *    prints the value of a to file
@@ -699,16 +645,16 @@ COConstant2Shape (constant *a)
  ******************************************************************************/
 
 void
-COPrintConstant (FILE *file, constant *a)
+COprintConstant (FILE *file, constant *a)
 {
     char *tmp_str;
-    DBUG_ENTER ("COPrintConstant");
+    DBUG_ENTER ("COprintConstant");
 
     fprintf (file, "constant at " F_PTR ": %s ", a, mdb_type[CONSTANT_TYPE (a)]);
-    SHPrintShape (file, CONSTANT_SHAPE (a));
+    SHprintShape (file, CONSTANT_SHAPE (a));
     tmp_str = COConstantData2String (10000, a);
     fprintf (file, " [%s]\n", tmp_str);
-    tmp_str = Free (tmp_str);
+    tmp_str = ILIBfree (tmp_str);
 
     DBUG_VOID_RETURN;
 }
@@ -716,7 +662,7 @@ COPrintConstant (FILE *file, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COFreeConstant( constant *a)
+ *    constant *COfreeConstant( constant *a)
  *
  * description:
  *    frees a including all of its sub-structures.
@@ -724,13 +670,13 @@ COPrintConstant (FILE *file, constant *a)
  ******************************************************************************/
 
 constant *
-COFreeConstant (constant *a)
+COfreeConstant (constant *a)
 {
-    DBUG_ENTER ("COFreeConstant");
+    DBUG_ENTER ("COfreeConstant");
 
-    CONSTANT_SHAPE (a) = SHFreeShape (CONSTANT_SHAPE (a));
-    CONSTANT_ELEMS (a) = Free (CONSTANT_ELEMS (a));
-    a = Free (a);
+    CONSTANT_SHAPE (a) = SHfreeShape (CONSTANT_SHAPE (a));
+    CONSTANT_ELEMS (a) = ILIBfree (CONSTANT_ELEMS (a));
+    a = ILIBfree (a);
 
     DBUG_RETURN (a);
 }
@@ -760,7 +706,7 @@ COConstant2AST (constant *a)
 
     DBUG_ENTER ("COConstant2AST");
 
-    dim = COGetDim (a);
+    dim = COgetDim (a);
     if (dim == 0) {
         res = cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0);
     } else {
@@ -768,10 +714,10 @@ COConstant2AST (constant *a)
         exprs = NULL;
         for (i = CONSTANT_VLEN (a) - 1; i >= 0; i--) {
             exprs
-              = MakeExprs (cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), i), exprs);
+              = TBmakeExprs (cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), i), exprs);
         }
         /* Finally, the N_array node is created! */
-        res = MakeArray (exprs, SHCopyShape (COGetShape (a)));
+        res = MakeArray (exprs, SHcopyShape (COgetShape (a)));
         /*
          * After creating the array, we have to create a types-node to preserve
          * the shape of the array!
@@ -781,14 +727,14 @@ COConstant2AST (constant *a)
         DBUG_ASSERT ((ARRAY_NTYPE (a) != NULL),
                      "no ntype-structure found in ARRAY_NTYPE");
         ARRAY_NTYPE (res)
-          = TYMakeAKV (TYMakeSimpleType (CONSTANT_TYPE (a)),
-                       COMakeConstant (CONSTANT_TYPE (a), CONSTANT_SHAPE (a),
+          = TYmakeAKV (TYmakeSimpleType (CONSTANT_TYPE (a)),
+                       COmakeConstant (CONSTANT_TYPE (a), CONSTANT_SHAPE (a),
                                        Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res),
                                                   NULL)));
 
 #else
         ARRAY_TYPE (res) = MakeTypes (CONSTANT_TYPE (a), CONSTANT_DIM (a),
-                                      SHShape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
+                                      SHshape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
 #endif
         /*
          * Note here, that in some situation the calling function has to add
@@ -828,44 +774,44 @@ COAST2Constant (node *n)
 
     DBUG_ENTER ("COAST2Constant");
 
-    if ((n != NULL) && (COIsConstant (n))) {
+    if ((n != NULL) && (COisConstant (n))) {
         /* convert the given constant node */
 
         switch (NODE_TYPE (n)) {
         case N_num:
-            element = (int *)Malloc (sizeof (int));
+            element = (int *)ILIBmalloc (sizeof (int));
             *((int *)element) = NUM_VAL (n);
-            new_co = COMakeConstant (T_int, SHMakeShape (0), element);
+            new_co = COmakeConstant (T_int, SHmakeShape (0), element);
             break;
 
         case N_double:
-            element = (double *)Malloc (sizeof (double));
+            element = (double *)ILIBmalloc (sizeof (double));
             *((double *)element) = DOUBLE_VAL (n);
-            new_co = COMakeConstant (T_double, SHMakeShape (0), element);
+            new_co = COmakeConstant (T_double, SHmakeShape (0), element);
             break;
 
         case N_float:
-            element = (float *)Malloc (sizeof (float));
+            element = (float *)ILIBmalloc (sizeof (float));
             *((float *)element) = FLOAT_VAL (n);
-            new_co = COMakeConstant (T_float, SHMakeShape (0), element);
+            new_co = COmakeConstant (T_float, SHmakeShape (0), element);
             break;
 
         case N_bool:
-            element = (bool *)Malloc (sizeof (bool));
+            element = (bool *)ILIBmalloc (sizeof (bool));
             *((bool *)element) = BOOL_VAL (n);
-            new_co = COMakeConstant (T_bool, SHMakeShape (0), element);
+            new_co = COmakeConstant (T_bool, SHmakeShape (0), element);
             break;
 
         case N_array:
 #ifdef MWE_NTYPE_READY
             DBUG_ASSERT ((ARRAY_NTYPE (n) != NULL),
                          "no ntype-structure found in ARRAY_NTYPE");
-            new_co = COMakeConstant (TYGetBasetype (ARRAY_NTYPE (n)),
-                                     TYGetShape (ARRAY_NTYPE (n)),
-                                     Array2Vec (TYGetBasetype (ARRAY_NTYPE (n)),
+            new_co = COmakeConstant (TYgetBasetype (ARRAY_NTYPE (n)),
+                                     TYgetShape (ARRAY_NTYPE (n)),
+                                     Array2Vec (TYgetBasetype (ARRAY_NTYPE (n)),
                                                 ARRAY_AELEMS (n), NULL));
 #else
-            new_co = COMakeConstant (GetBasetype (ARRAY_TYPE (n)),
+            new_co = COmakeConstant (GetBasetype (ARRAY_TYPE (n)),
                                      SHOldTypes2Shape (ARRAY_TYPE (n)),
                                      Array2Vec (GetBasetype (ARRAY_TYPE (n)),
                                                 ARRAY_AELEMS (n), NULL));
@@ -877,7 +823,7 @@ COAST2Constant (node *n)
 
             /* update constants shape info according to type info */
 #ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((TYGetBasetype (AVIS_TYPE (ID_AVIS (n)))
+            DBUG_ASSERT ((TYgetBasetype (AVIS_TYPE (ID_AVIS (n)))
                           == CONSTANT_TYPE (new_co)),
                          "different basetype in id and assigned array");
 #else
@@ -897,9 +843,9 @@ COAST2Constant (node *n)
                  * the backend will take care of it and generate a runtime check if
                  * necessary!!!!
                  */
-                CONSTANT_SHAPE (new_co) = SHFreeShape (CONSTANT_SHAPE (new_co));
+                CONSTANT_SHAPE (new_co) = SHfreeShape (CONSTANT_SHAPE (new_co));
 #ifdef MWE_NTYPE_READY
-                CONSTANT_SHAPE (new_co) = TYType2Shape (AVIS_TYPE (ID_AVIS (n)));
+                CONSTANT_SHAPE (new_co) = TYtype2Shape (AVIS_TYPE (ID_AVIS (n)));
 #else
                 CONSTANT_SHAPE (new_co) = SHOldTypes2Shape (
                   VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))));
@@ -922,7 +868,7 @@ COAST2Constant (node *n)
 /******************************************************************************
  *
  * function:
- *    bool COIsConstant( node *n)
+ *    bool COisConstant( node *n)
  *
  * description:
  *    checks if a given node is constant
@@ -935,11 +881,11 @@ COAST2Constant (node *n)
  ******************************************************************************/
 
 bool
-COIsConstant (node *n)
+COisConstant (node *n)
 {
     bool res;
 
-    DBUG_ENTER ("COIsConstant");
+    DBUG_ENTER ("COisConstant");
 
     if (n != NULL) {
         switch (NODE_TYPE (n)) {
@@ -973,10 +919,10 @@ COIsConstant (node *n)
 /******************************************************************************
  *
  * function:
- *   constant *COMakeZero( simpletype type, shape *shp)
- *   constant *COMakeOne( simpletype type, shape *shp)
- *   constant *COMakeTrue( simpletype type, shape *shp)
- *   constant *COMakeFalse( simpletype type, shape *shp)
+ *   constant *COmakeZero( simpletype type, shape *shp)
+ *   constant *COmakeOne( simpletype type, shape *shp)
+ *   constant *COmakeTrue( simpletype type, shape *shp)
+ *   constant *COmakeFalse( simpletype type, shape *shp)
  *
  * description:
  *   create a constant of the given basetype and shape filled with 0 or 1
@@ -985,33 +931,33 @@ COIsConstant (node *n)
  *
  ******************************************************************************/
 constant *
-COMakeZero (simpletype type, shape *shp)
+COmakeZero (simpletype type, shape *shp)
 {
-    DBUG_ENTER ("COMakeZero");
+    DBUG_ENTER ("COmakeZero");
 
     DBUG_RETURN (basecv_zero[type](shp));
 }
 
 constant *
-COMakeOne (simpletype type, shape *shp)
+COmakeOne (simpletype type, shape *shp)
 {
-    DBUG_ENTER ("COMakeOne");
+    DBUG_ENTER ("COmakeOne");
 
     DBUG_RETURN (basecv_one[type](shp));
 }
 
 constant *
-COMakeTrue (shape *shp)
+COmakeTrue (shape *shp)
 {
-    DBUG_ENTER ("COMakeTrue");
+    DBUG_ENTER ("COmakeTrue");
 
     DBUG_RETURN (basecv_one[T_bool](shp));
 }
 
 constant *
-COMakeFalse (shape *shp)
+COmakeFalse (shape *shp)
 {
-    DBUG_ENTER ("COMakeFalse");
+    DBUG_ENTER ("COmakeFalse");
 
     DBUG_RETURN (basecv_zero[T_bool](shp));
 }
@@ -1019,10 +965,10 @@ COMakeFalse (shape *shp)
 /******************************************************************************
  *
  * function:
- *   bool COIsZero( constant *a, bool all)
- *   bool COIsOne( constant *a, bool all)
- *   bool COIsTrue( constant *a, bool all)
- *   bool COIsFalse( constant *a, bool all)
+ *   bool COisZero( constant *a, bool all)
+ *   bool COisOne( constant *a, bool all)
+ *   bool COisTrue( constant *a, bool all)
+ *   bool COisFalse( constant *a, bool all)
  *
  * description:
  *   checks if the given constant consists of 0 or 1 elements (TRUE/FALSE).
@@ -1032,19 +978,19 @@ COMakeFalse (shape *shp)
  ******************************************************************************/
 
 bool
-COIsZero (constant *a, bool all)
+COisZero (constant *a, bool all)
 {
     bool result;
     constant *zero;
     constant *eq;
     int i;
 
-    DBUG_ENTER ("COIsZero");
+    DBUG_ENTER ("COisZero");
 
-    DBUG_ASSERT ((a != NULL), "COIsZero called with NULL pointer");
+    DBUG_ASSERT ((a != NULL), "COisZero called with NULL pointer");
 
     /* create a zero constant with one element */
-    zero = COMakeZero (COGetType (a), SHMakeShape (0));
+    zero = COmakeZero (COgetType (a), SHmakeShape (0));
 
     /* check for correct constant */
     if (zero != NULL) {
@@ -1063,8 +1009,8 @@ COIsZero (constant *a, bool all)
                 result = result || ((bool *)(CONSTANT_ELEMS (eq)))[i];
             }
         }
-        eq = COFreeConstant (eq);
-        zero = COFreeConstant (zero);
+        eq = COfreeConstant (eq);
+        zero = COfreeConstant (zero);
     } else {
         result = FALSE;
     }
@@ -1073,19 +1019,19 @@ COIsZero (constant *a, bool all)
 }
 
 bool
-COIsOne (constant *a, bool all)
+COisOne (constant *a, bool all)
 {
     bool result;
     constant *one;
     constant *eq;
     int i;
 
-    DBUG_ENTER ("COIsOne");
+    DBUG_ENTER ("COisOne");
 
-    DBUG_ASSERT ((a != NULL), "COIsOne called with NULL pointer");
+    DBUG_ASSERT ((a != NULL), "COisOne called with NULL pointer");
 
     /* create a "one" constant with one element */
-    one = COMakeOne (COGetType (a), SHMakeShape (0));
+    one = COmakeOne (COgetType (a), SHmakeShape (0));
 
     /* check for correct constant */
     if (one != NULL) {
@@ -1104,8 +1050,8 @@ COIsOne (constant *a, bool all)
                 result = result || ((bool *)(CONSTANT_ELEMS (eq)))[i];
             }
         }
-        eq = COFreeConstant (eq);
-        one = COFreeConstant (one);
+        eq = COfreeConstant (eq);
+        one = COfreeConstant (one);
     } else {
         result = FALSE;
     }
@@ -1114,27 +1060,27 @@ COIsOne (constant *a, bool all)
 }
 
 bool
-COIsTrue (constant *a, bool all)
+COisTrue (constant *a, bool all)
 {
-    DBUG_ENTER ("COIsTrue");
+    DBUG_ENTER ("COisTrue");
 
-    DBUG_RETURN (COIsOne (a, all));
+    DBUG_RETURN (COisOne (a, all));
 }
 
 bool
-COIsFalse (constant *a, bool all)
+COisFalse (constant *a, bool all)
 {
-    DBUG_ENTER ("COIsFalse");
+    DBUG_ENTER ("COisFalse");
 
-    DBUG_RETURN (COIsZero (a, all));
+    DBUG_RETURN (COisZero (a, all));
 }
 
 bool
-COIsEmptyVect (constant *a)
+COisEmptyVect (constant *a)
 {
     bool result;
-    DBUG_ENTER ("COIsEmptyVect");
-    result = ((COGetDim (a) == 1) && (SHGetExtent (COGetShape (a), 0) == 0));
+    DBUG_ENTER ("COisEmptyVect");
+    result = ((COgetDim (a) == 1) && (SHgetExtent (COgetShape (a), 0) == 0));
     DBUG_RETURN (result);
 }
 
@@ -1160,8 +1106,8 @@ COCompareConstants (constant *c1, constant *c2)
     result = FALSE;
 
     /* compare structural data */
-    if ((COGetType (c1) == COGetType (c1)) && (COGetDim (c1) == COGetDim (c1))
-        && (SHCompareShapes (COGetShape (c1), COGetShape (c2)))) {
+    if ((COgetType (c1) == COgetType (c1)) && (COgetDim (c1) == COgetDim (c1))
+        && (SHcompareShapes (COgetShape (c1), COgetShape (c2)))) {
 
         /* compare constant elements */
         eq = COEq (c1, c2);
@@ -1171,7 +1117,7 @@ COCompareConstants (constant *c1, constant *c2)
         for (i = 0; i < CONSTANT_VLEN (eq); i++) {
             result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
         }
-        eq = COFreeConstant (eq);
+        eq = COfreeConstant (eq);
 
     } else {
         result = FALSE;

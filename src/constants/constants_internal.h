@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/26 14:34:03  sbs
+ * change run
+ *
  * Revision 1.4  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -44,9 +47,9 @@ struct CONSTANT {
 #define CONSTANT_ELEMS(c) (c->elems)
 #define CONSTANT_VLEN(c) (c->vlen)
 
-#define CONSTANT_DIM(c) (SHGetDim (CONSTANT_SHAPE (c)))
+#define CONSTANT_DIM(c) (SHgetDim (CONSTANT_SHAPE (c)))
 #define CONSTANT_ELEMDIM(c) (SHSubarrayDim (CONSTANT_SHAPE (c), CONSTANT_VLEN (c)))
-#define CONSTANT_ELEMSIZE(c) (SHGetUnrLen (CONSTANT_SHAPE (c)) / CONSTANT_VLEN (c))
+#define CONSTANT_ELEMSIZE(c) (SHgetUnrLen (CONSTANT_SHAPE (c)) / CONSTANT_VLEN (c))
 
 /*
  * here some extern decls for helper functions defined in constants_basic.c

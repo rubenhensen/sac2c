@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/11/26 14:27:02  sbs
+ * change run
+ *
  * Revision 1.18  2004/11/26 14:14:29  sbs
  * change run
  *
@@ -219,7 +222,7 @@ SHcopyShape (shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn void SHPrintShape( FILE *file, shape *shp)
+ * @fn void SHprintShape( FILE *file, shape *shp)
  *
  * @brief prints the contents of shp to file.
  *
@@ -229,12 +232,12 @@ SHcopyShape (shape *shp)
  ******************************************************************************/
 
 void
-SHPrintShape (FILE *file, shape *shp)
+SHprintShape (FILE *file, shape *shp)
 {
     int i;
 
-    DBUG_ENTER ("SHPrintShape");
-    DBUG_ASSERT ((shp != NULL), ("SHPrintShape called with NULL shape!"));
+    DBUG_ENTER ("SHprintShape");
+    DBUG_ASSERT ((shp != NULL), ("SHprintShape called with NULL shape!"));
 
     fprintf (file, "[ ");
     if (SHAPE_DIM (shp) > 0) {
@@ -843,7 +846,7 @@ SHshape2Array (shape *shp)
     /*  ARRAY_NTYPE(array) = TYmakeAKS(TYmakeSimpleType(T_int), SHmakeShape(1,dim)); */
     ARRAY_NTYPE (array)
       = TYmakeAKV (TYmakeSimpleType (T_int),
-                   COMakeConstant (T_int, SHmakeShape (1, dim),
+                   COmakeConstant (T_int, SHmakeShape (1, dim),
                                    Array2IntVec (Array_AELEMS (a), NULL)));
 #else
     shp_seg = MakeShpseg (NULL);

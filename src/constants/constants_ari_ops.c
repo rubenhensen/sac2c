@@ -1,10 +1,13 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/26 14:29:53  sbs
+ * change run
+ *
  * Revision 1.6  2003/04/09 15:38:14  sbs
  * CONeg added.
  *
  * Revision 1.5  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
  *
  * Revision 1.4  2001/03/22 14:25:08  nmw
  * primitive ari ops implemented
@@ -77,11 +80,11 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
          * a is a scalar so the result has the same shape as b:
          */
         if (target_type != T_unknown) {
-            res
-              = COMakeConstant (target_type, SHCopyShape (COGetShape (b)),
-                                Malloc (CONSTANT_VLEN (b) * basetype_size[target_type]));
+            res = COmakeConstant (target_type, SHcopyShape (COgetShape (b)),
+                                  ILIBmalloc (CONSTANT_VLEN (b)
+                                              * basetype_size[target_type]));
         } else {
-            res = COCopyConstant (b);
+            res = COcopyConstant (b);
         }
         cv = CONSTANT_ELEMS (res);
         for (i = 0; i < CONSTANT_VLEN (res); i++) {
@@ -95,11 +98,11 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
              * b is a scalar so the result has the same shape as a:
              */
             if (target_type != T_unknown) {
-                res = COMakeConstant (target_type, SHCopyShape (COGetShape (a)),
-                                      Malloc (CONSTANT_VLEN (a)
-                                              * basetype_size[target_type]));
+                res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
+                                      ILIBmalloc (CONSTANT_VLEN (a)
+                                                  * basetype_size[target_type]));
             } else {
-                res = COCopyConstant (a);
+                res = COcopyConstant (a);
             }
 
             cv = CONSTANT_ELEMS (res);
@@ -113,13 +116,13 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
              * a and b are both non-scalars, so we have to compare the shapes.
              * Iff the are identical, the given operation is applied elementwise.
              */
-            if (SHCompareShapes (CONSTANT_SHAPE (a), CONSTANT_SHAPE (b)) == TRUE) {
+            if (SHcompareShapes (CONSTANT_SHAPE (a), CONSTANT_SHAPE (b)) == TRUE) {
                 if (target_type != T_unknown) {
-                    res = COMakeConstant (target_type, SHCopyShape (COGetShape (a)),
-                                          Malloc (CONSTANT_VLEN (a)
-                                                  * basetype_size[target_type]));
+                    res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
+                                          ILIBmalloc (CONSTANT_VLEN (a)
+                                                      * basetype_size[target_type]));
                 } else {
-                    res = COCopyConstant (a);
+                    res = COcopyConstant (a);
                 }
                 cv = CONSTANT_ELEMS (res);
                 for (i = 0; i < CONSTANT_VLEN (res); i++) {
@@ -163,10 +166,11 @@ COZipUnary (zipcvfunptr *fun_arr, constant *a, simpletype target_type)
     DBUG_ENTER ("COZipUnary");
 
     if (target_type != T_unknown) {
-        res = COMakeConstant (target_type, SHCopyShape (COGetShape (a)),
-                              Malloc (CONSTANT_VLEN (a) * basetype_size[target_type]));
+        res
+          = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
+                            ILIBmalloc (CONSTANT_VLEN (a) * basetype_size[target_type]));
     } else {
-        res = COCopyConstant (a);
+        res = COcopyConstant (a);
     }
 
     cv = CONSTANT_ELEMS (res);
