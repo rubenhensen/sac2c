@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/04 07:47:29  ben
+ * SAC_MT_SCHEDULER_Select_Block modified for better tasksizes
+ *
  * Revision 3.17  2001/04/03 19:39:28  dkr
  * Fixed a bug in SAC_MT_ADJUST_SCHEDULER: now, upper bound also adjusted.
  * This is crucial in case of variable with-loop bounds!
@@ -792,15 +795,20 @@ typedef union {
 #define SAC_MT_SCHEDULER_Select_Block(sched_dim, lower, upper, num_tasks, next_taskid)   \
     {                                                                                    \
         const int iterations_per_thread = (upper - lower) / (num_tasks);                 \
+        const int iterations_rest = (upper - lower) % (num_tasks);                       \
                                                                                          \
-        SAC_WL_MT_SCHEDULE_START (sched_dim)                                             \
-          = lower + iterations_per_thread * (next_taskid);                               \
+        if (next_taskid < iterations_rest) {                                             \
+            SAC_WL_MT_SCHEDULE_START (sched_dim)                                         \
+              = lower + (iterations_per_thread + 1) * (next_taskid);                     \
                                                                                          \
-        if (((next_taskid) + 1) != (num_tasks)) {                                        \
+            SAC_WL_MT_SCHEDULE_STOP (sched_dim)                                          \
+              = SAC_WL_MT_SCHEDULE_START (sched_dim) + iterations_per_thread + 1;        \
+        } else {                                                                         \
+            SAC_WL_MT_SCHEDULE_START (sched_dim)                                         \
+              = lower + iterations_rest + (iterations_per_thread) * (next_taskid);       \
+                                                                                         \
             SAC_WL_MT_SCHEDULE_STOP (sched_dim)                                          \
               = SAC_WL_MT_SCHEDULE_START (sched_dim) + iterations_per_thread;            \
-        } else {                                                                         \
-            SAC_WL_MT_SCHEDULE_STOP (sched_dim) = upper;                                 \
         }                                                                                \
         SAC_TR_MT_PRINT (("'Select_Block': dim %d: %d -> %d, Task: %d", sched_dim,       \
                           SAC_WL_MT_SCHEDULE_START (sched_dim),                          \
@@ -825,6 +833,7 @@ typedef union {
 #define SAC_MT_SCHEDULER_Afs_next_task(param)                                            \
     {                                                                                    \
         worktodo = 0;                                                                    \
+        taskid = 0;                                                                      \
                                                                                          \
         /* first look if MYTHREAD has work to do */                                      \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (SAC_MT_MYTHREAD ()));                      \
