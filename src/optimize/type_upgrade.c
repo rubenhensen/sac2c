@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.3  2004/12/08 17:31:44  mwe
+ * starting to implement TryToSpecializeFunction
+ *
  * Revision 1.2  2004/12/08 13:59:24  mwe
  * work continued ...
  *
@@ -40,10 +43,14 @@
 struct INFO {
     node *fundef;
     node *withid;
+    bool corrlf;
+    bool chklf;
 };
 
 #define INFO_TUP_FUNDEF(n) (n->fundef)
 #define INFO_TUP_WITHID(n) (n->withid)
+#define INFO_TUP_CORRECTFUNCTION(n) (n->corrlf)
+#define INFO_TUP_CHECKLOOPFUN(n) (n->chklf)
 
 static info *
 MakeInfo ()
@@ -55,6 +62,8 @@ MakeInfo ()
 
     INFO_TUP_FUNDEF (result) = NULL;
     INFO_TUP_WITHID (result) = NULL;
+    INFO_TUP_CORRECTFUNCTION (result) = TRUE;
+    INFO_TUP_CHECKLOOPFUN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -67,6 +76,40 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
+}
+
+static node *
+TryToDoTypeUpgrade (node *fundef)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("TryToDoTypeUpgrade");
+    INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
+    INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
+
+    if (fundef != NULL) {
+
+        arg_info = MakeInfo ();
+
+        INFO_TUP_FUNDEF (arg_info) = fundef;
+
+        TRAVpush (TR_tup);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
+    }
+
+    if (!(INFO_TUP_CORRECTFUNCTION (arg_info))) {
+
+        /*
+         * Wrong types for recursive call
+         */
+
+        fundef = FREEdoFreeTree (fundef);
+        fundef = NULL;
+    }
+
+    arg_info = FreeInfo (arg_info);
+    DBUG_RETURN (fundef);
 }
 
 /***********************************************************************
@@ -194,10 +237,165 @@ IsArgumentOfSpecialFunction (node *arg)
     DBUG_RETURN (result);
 }
 
+/***************************************************************************************
+ *
+ *
+ *
+ **************************************************************************************/
+static node *
+AdjustSignatureToArgs (node *signature, node *args)
+{
+    node *tmp = signature;
+    DBUG_ENTER ("AdjustSignatureToArgs");
+
+    while (tmp != NULL) {
+
+        AVIS_TYPE (ARG_AVIS (signature)) = TYfreeType (AVIS_TYPE (ARG_AVIS (signature)));
+        AVIS_TYPE (ARG_AVIS (signature))
+          = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
+
+        args = EXPRS_NEXT (args);
+        tmp = ARG_NEXT (tmp);
+    }
+
+    DBUG_RETURN (signature);
+}
+
+/****************************************************************************
+ *
+ * function:
+ *   node *TryToSpecializeFunction(node* fundef, node* args, info *arg_info)
+ *
+ * description:
+ *   fundef is a pointer to the fundef-node of the function, which should be
+ *   specialized and args are the arguments of the current function call.
+ *   If the types of the arguments are more special then the types of the
+ *   function, we can try to specialize.
+ *   If the function is a condfun we can specialize immidiately.
+ *   If the function is a loopfun we have to try:
+ *      - copy the function and specialize the copied function
+ *      - update all types inside the function
+ *      - check if types in recursive function call fit to specialization
+ *      - if yes: keep copy and delete original
+ *      - if no: delete copy and keep original
+ *   Every other kind of function:
+ *
+ ***************************************************************************/
 static node *
 TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
 {
+
+    node *fun_args, *given_args;
+    bool leave = FALSE;
+    bool is_more_special = FALSE;
+
     DBUG_ENTER ("TryToSpecializeFunction");
+
+    /*
+     * check if args are more special the signature of function
+     */
+
+    given_args = args;
+    fun_args = FUNDEF_ARGS (fundef);
+
+    while ((!leave) && (NULL != fun_args)) {
+
+        switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (fun_args)),
+                            AVIS_TYPE (ID_AVIS (EXPRS_EXPR (given_args))))) {
+
+        case TY_eq: /* same types: nothing to do */
+            break;
+
+        case TY_gt: /* ? found a supertype of function signature in 'args': not allowed
+                       until now ? */
+            is_more_special = FALSE;
+            DBUG_ASSERT ((FALSE), "Argument of function is supertype of signature!");
+            break;
+
+        case TY_hcs:
+        case TY_dis: /* arguments did not fit to signature, should never happen */
+            DBUG_ASSERT ((FALSE), "Argument of function did not fit to signature!");
+            break;
+
+        case TY_lt: /* found a more special type in argument than in signature */
+            is_more_special = TRUE;
+            break;
+
+        default: /* all cases are listed above, so this should never happen */
+            DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+        }
+
+        given_args = EXPRS_NEXT (given_args);
+        fun_args = EXPRS_NEXT (fun_args);
+    }
+
+    if (is_more_special) {
+
+        /*
+         * more special types in 'args' found
+         */
+
+        if (FUNDEF_ISCONDFUN (fundef)) {
+
+            /*
+             * function is a conditional function
+             */
+
+            FUNDEF_ARGS (fundef) = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
+
+            fundef = TUPdoTypeUpgrade (fundef);
+
+        } else if (FUNDEF_ISDOFUN (fundef)) {
+
+            /*
+             * function is a loop function
+             */
+
+            node *tmp, *result;
+
+            tmp = DUPdoDupNode (fundef);
+            FUNDEF_ARGS (tmp) = AdjustSignatureToArgs (FUNDEF_ARGS (tmp), args);
+
+            /*
+             * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
+             * prüft be N_ap auf rekursiven Aufruf und prüft auf passende Typen
+             * Typen passen: Ergebnis ist 'upgegradete' Funktion
+             * Typen passen nicht: Ergebnis ist NULL
+             */
+            result = TryToDoTypeUpgrade (tmp);
+
+            if (result != NULL) {
+                /*
+                 * it is possible to specialiaze loop function
+                 */
+
+                FUNDEF_RETS (fundef) = FREEdoFreeTree (FUNDEF_RETS (fundef));
+                FUNDEF_RETS (fundef) = FUNDEF_RETS (tmp);
+                FUNDEF_RETS (tmp) = NULL;
+
+                FUNDEF_ARGS (fundef) = FREEdoFreeTree (FUNDEF_ARGS (fundef));
+                FUNDEF_ARGS (fundef) = FUNDEF_ARGS (tmp);
+                FUNDEF_ARGS (tmp) = NULL;
+
+                FUNDEF_BODY (fundef) = FREEdoFreeTree (FUNDEF_BODY (fundef));
+                FUNDEF_BODY (fundef) = FUNDEF_BODY (tmp);
+                FUNDEF_BODY (tmp) = NULL;
+
+                FREEdoFreeTree (tmp);
+            } else {
+                /*
+                 * it is not possible to specialize loop function
+                 */
+                FREEdoFreeTree (tmp);
+            }
+
+        } else {
+
+            /*
+             * function is no special function
+             */
+        }
+    }
 
     DBUG_RETURN (fundef);
 }
@@ -388,50 +586,62 @@ TUPlet (node *arg_node, info *arg_info)
          *  expression is a function application
          */
 
-        /* first of all, try to specialize function */
-        AP_FUNDEF (LET_EXPR (arg_node))
-          = TryToSpecializeFunction (AP_FUNDEF (LET_EXPR (arg_node)),
-                                     AP_ARGS (LET_EXPR (arg_node)), arg_info);
+        if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
 
-        /* now we have the possibility to do an static dispatch */
-        AP_FUNDEF (LET_EXPR (arg_node))
-          = TryStaticDispatch (AP_FUNDEF (LET_EXPR (arg_node)), arg_info);
+            /*
+             * at the moment we are checking, if the rucursive call of a loop function
+             * will work with specialized signature
+             */
 
-        /*
-         * update left side
-         * here is the only possibility for multiple ids on left side
-         */
+        } else {
 
-        ret = FUNDEF_RETS (AP_FUNDEF (LET_EXPR (arg_node)));
-        ids = LET_IDS (arg_node);
+            /* first of all, try to specialize function */
+            AP_FUNDEF (LET_EXPR (arg_node))
+              = TryToSpecializeFunction (AP_FUNDEF (LET_EXPR (arg_node)),
+                                         AP_ARGS (LET_EXPR (arg_node)), arg_info);
 
-        while (ret != NULL) {
+            /* now we have the possibility to do an static dispatch */
+            AP_FUNDEF (LET_EXPR (arg_node))
+              = TryStaticDispatch (AP_FUNDEF (LET_EXPR (arg_node)), arg_info);
+        }
 
-            switch (TYcmpTypes (RET_TYPE (ret), AVIS_TYPE (IDS_AVIS (ids)))) {
+        if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
+            /*
+             * update left side
+             * here is the only possibility for multiple ids on left side
+             */
 
-            case TY_eq: /* same types, nothing changed */
-                break;
+            ret = FUNDEF_RETS (AP_FUNDEF (LET_EXPR (arg_node)));
+            ids = LET_IDS (arg_node);
 
-            case TY_gt: /* lost type information, should not happen */
-                DBUG_ASSERT ((FALSE), "lost type information");
-                break;
+            while (ret != NULL) {
 
-            case TY_hcs:
-            case TY_dis: /* both types are unrelated, should not be possible */
-                DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
-                break;
+                switch (TYcmpTypes (RET_TYPE (ret), AVIS_TYPE (IDS_AVIS (ids)))) {
 
-            case TY_lt: /* return type is more special: update */
-                AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
-                AVIS_TYPE (IDS_AVIS (ids)) = TYcopyType (RET_TYPE (ret));
-                break;
+                case TY_eq: /* same types, nothing changed */
+                    break;
 
-            default: /* no other cases exist */
-                DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                case TY_gt: /* lost type information, should not happen */
+                    DBUG_ASSERT ((FALSE), "lost type information");
+                    break;
+
+                case TY_hcs:
+                case TY_dis: /* both types are unrelated, should not be possible */
+                    DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                    break;
+
+                case TY_lt: /* return type is more special: update */
+                    AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
+                    AVIS_TYPE (IDS_AVIS (ids)) = TYcopyType (RET_TYPE (ret));
+                    break;
+
+                default: /* no other cases exist */
+                    DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                }
+
+                ret = RET_NEXT (ret);
+                ids = IDS_NEXT (ids);
             }
-
-            ret = RET_NEXT (ret);
-            ids = IDS_NEXT (ids);
         }
     } else if (N_with == NODE_TYPE (LET_EXPR (arg_node))) {
 
