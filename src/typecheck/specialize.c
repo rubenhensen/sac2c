@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/04/01 16:37:37  sbs
+ * some doxygen added.
+ *
  * Revision 1.5  2002/10/18 14:28:45  sbs
  * specialization of external functions suppressed 8-))
  *
@@ -24,6 +27,20 @@
 #include "ct_fun.h"
 #include "create_wrappers.h"
 #include "DupTree.h"
+
+/**
+ *
+ * @addtogroup ntc
+ *
+ * @{
+ */
+
+/**
+ *
+ * @file specialize.c
+ *
+ * This file provides all functions related to function specialization.
+ */
 
 /*
  * OPEN PROBLEMS:
@@ -328,3 +345,5 @@ SPECResetSpecChain ()
 
     DBUG_RETURN (res);
 }
+
+/* @} */ /* addtogroup ntc */
