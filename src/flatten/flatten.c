@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/05/12 15:30:16  jhs
+ * Annotate... added; const-annotation dbugged.
+ *
  * Revision 2.15  1999/05/12 08:42:26  sbs
  * brushed handling of CONSTVECs; adjusted to new macros.
  *
@@ -408,9 +411,6 @@ CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
  *        __flat_<n> = <expr>;
  *     end prepands it to LASTASSIGN from arg_info
  *   - returns a freshly created N_id node holding  __flat_<n>
- *   - if <expr> is an N_array-node (which may be pre-ceeded by casts!!)
- *     and the array is constant, then the new N_id node is decorated
- *     accordingly.
  *
  ******************************************************************************/
 
@@ -418,7 +418,7 @@ node *
 Abstract (node *arg_node, node *arg_info)
 {
     char *tmp;
-    node *res, *node_behind_cast;
+    node *res;
 
     DBUG_ENTER ("Abstract");
 
@@ -433,21 +433,52 @@ Abstract (node *arg_node, node *arg_info)
 
     res = MakeId (StringCopy (tmp), NULL, ST_regular);
 
-    node_behind_cast = arg_node;
-    while (NODE_TYPE (node_behind_cast) == N_cast) {
-        node_behind_cast = CAST_EXPR (node_behind_cast);
-    }
-
-    if ((NODE_TYPE (node_behind_cast) == N_array) && (ARRAY_ISCONST (node_behind_cast))) {
-        ID_ISCONST (res) = TRUE;
-        ID_VECTYPE (res) = ARRAY_VECTYPE (node_behind_cast);
-        ID_VECLEN (res) = ARRAY_VECLEN (node_behind_cast);
-        ID_CONSTVEC (res) = CopyConstVec (ARRAY_VECTYPE (node_behind_cast),
-                                          ARRAY_VECLEN (node_behind_cast),
-                                          ARRAY_CONSTVEC (node_behind_cast));
-    }
-
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *AnnotateIdWithConstvec(node *expr, node *id)
+ *
+ * description:
+ *   - if expr is an N_array-node or an N_id-node,
+ *     the const-array decoration from expr is copied to id.
+ *   - leading casts will be ignored.
+ *   - returns the id-node.
+ *
+ ******************************************************************************/
+
+node *
+AnnotateIdWithConstvec (node *expr, node *id)
+{
+    node *behind_casts = expr;
+
+    DBUG_ENTER ("AnnotateIdWithConstvec");
+
+    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+                 "AnnotateIdWithConstvec called with non-compliant arguments!");
+
+    while (NODE_TYPE (behind_casts) == N_cast)
+        behind_casts = CAST_EXPR (behind_casts);
+
+    if (NODE_TYPE (behind_casts) == N_array) {
+        ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
+        ID_VECTYPE (id) = ARRAY_VECTYPE (behind_casts);
+        ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
+        ID_CONSTVEC (id)
+          = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
+                          ARRAY_CONSTVEC (behind_casts));
+    } else if (NODE_TYPE (behind_casts) == N_id) {
+        ID_ISCONST (id) = ID_ISCONST (behind_casts);
+        ID_VECTYPE (id) = ID_VECTYPE (behind_casts);
+        ID_VECLEN (id) = ID_VECLEN (behind_casts);
+        ID_CONSTVEC (id)
+          = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
+                          ID_CONSTVEC (behind_casts));
+    }
+
+    DBUG_RETURN (id);
 }
 
 /******************************************************************************
@@ -1082,9 +1113,12 @@ FltnExprs (node *arg_node, node *arg_info)
          *  if we leave them, empty arrays will be left uncasted and thus untyped.
          */
         EXPRS_EXPR (arg_node) = Abstract (casts_expr, arg_info);
-    }
+        expr2 = Trav (expr, arg_info);
+        AnnotateIdWithConstvec (expr, EXPRS_EXPR (arg_node));
 
-    expr2 = Trav (expr, arg_info);
+    } else {
+        expr2 = Trav (expr, arg_info);
+    }
 
     DBUG_ASSERT ((expr == expr2),
                  "return-node differs from arg_node while flattening an expr!");
@@ -1495,6 +1529,7 @@ FltnGen (node *arg_node, node *arg_info)
             *bound = Abstract (bound_expr, arg_info);
         }
         bound_expr2 = Trav (bound_expr, arg_info);
+        AnnotateIdWithConstvec (bound_expr, *bound);
 
         DBUG_ASSERT ((bound_expr == bound_expr2),
                      "return-node differs from arg_node while flattening an expr!");
@@ -1533,7 +1568,17 @@ FltnCon (node *arg_node, node *arg_info)
         if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
             || (NODE_TYPE (expr) == N_array)) {
             MODARRAY_ARRAY (arg_node) = Abstract (expr, arg_info);
+            tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
+            expr2 = Trav (expr, arg_info);
+            tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
+            AnnotateIdWithConstvec (expr, MODARRAY_ARRAY (arg_node));
+        } else {
+            tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
+            expr2 = Trav (expr, arg_info);
+            tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
         }
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
         body = &MODARRAY_BODY (arg_node);
         break;
     }
@@ -1541,15 +1586,25 @@ FltnCon (node *arg_node, node *arg_info)
 /*
  * in old with-loop 'compile' can handle unflattened neutral elements only!!
  */
-#if 1
-        expr = NULL;
-#else
-        expr = FOLDFUN_NEUTRAL (arg_node);
-        if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-            || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
-            || (NODE_TYPE (expr) == N_Nwith)) {
-            FOLDFUN_NEUTRAL (arg_node) = Abstract (expr, arg_info);
-        }
+#if 0
+       expr = FOLDFUN_NEUTRAL( arg_node);
+       if(( NODE_TYPE( expr) == N_prf)   ||
+          ( NODE_TYPE( expr) == N_ap)    ||
+          ( NODE_TYPE( expr) == N_array) ||
+          ( NODE_TYPE( expr) == N_with)  ||
+          ( NODE_TYPE( expr) == N_Nwith)  ) {
+         FOLDFUN_NEUTRAL( arg_node) = Abstract( expr, arg_info);
+         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
+         expr2 = Trav( expr, arg_info);
+         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
+         AnnotateIdWithConstvec( expr, FOLDFUN_NEUTRAL( arg_node));
+       } else {
+         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
+         expr2 = Trav( expr, arg_info);
+         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
+       }
+       DBUG_ASSERT( (expr == expr2),
+         "return-node differs from arg_node while flattening an expr!");
 #endif
         body = &FOLDFUN_BODY (arg_node);
         break;
@@ -1558,22 +1613,31 @@ FltnCon (node *arg_node, node *arg_info)
 /*
  * in old with-loop 'compile' can handle unflattened neutral elements only!!
  */
-#if 1
-        expr = NULL;
-#else
-        expr = FOLDPRF_NEUTRAL (arg_node);
-        if ((expr != NULL)
-            && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
-                || (NODE_TYPE (expr) == N_Nwith))) {
-            FOLDPRF_NEUTRAL (arg_node) = Abstract (expr, arg_info);
-        }
+#if 0
+       expr = FOLDPRF_NEUTRAL( arg_node);
+       if((expr != NULL) &&
+          ( ( NODE_TYPE( expr) == N_prf)   ||
+            ( NODE_TYPE( expr) == N_ap)    ||
+            ( NODE_TYPE( expr) == N_array) ||
+            ( NODE_TYPE( expr) == N_with)  ||
+            ( NODE_TYPE( expr) == N_Nwith)) ) {
+         FOLDPRF_NEUTRAL( arg_node) = Abstract( expr, arg_info);
+         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
+         expr2 = Trav( expr, arg_info);
+         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
+         AnnotateIdWithConstvec( expr, FOLDPRF_NEUTRAL( arg_node));
+       } else {
+         tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
+         expr2 = Trav( expr, arg_info);
+         tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
+       }
+       DBUG_ASSERT( (expr == expr2),
+         "return-node differs from arg_node while flattening an expr!");
 #endif
         body = &FOLDPRF_BODY (arg_node);
         break;
     }
     case N_genarray: {
-        expr = NULL;
         body = &GENARRAY_BODY (arg_node);
         break;
     }
@@ -1581,19 +1645,11 @@ FltnCon (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "wrong nodetype in WL constructor!");
         /*
          * the following assignment is used only for convincing the C compiler
-         * that expr & body will be initialized in any case!
+         * that body will be initialized in any case!
          */
-        expr = NULL;
         body = NULL;
         break;
     }
-    }
-    if (expr != NULL) {
-        tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
-        expr2 = Trav (expr, arg_info);
-        DBUG_ASSERT ((expr == expr2),
-                     "return-node differs from arg_node while flattening an expr!");
-        tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
     }
 
     mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
@@ -1670,7 +1726,13 @@ FltnNwithop (node *arg_node, node *arg_info)
         if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
             || (NODE_TYPE (expr) == N_array)) {
             NWITHOP_ARRAY (arg_node) = Abstract (expr, arg_info);
+            expr2 = Trav (expr, arg_info);
+            AnnotateIdWithConstvec (expr, NWITHOP_ARRAY (arg_node));
+        } else {
+            expr2 = Trav (expr, arg_info);
         }
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
         break;
     case WO_genarray:
         expr = NULL;
@@ -1684,7 +1746,13 @@ FltnNwithop (node *arg_node, node *arg_info)
                 || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
                 || (NODE_TYPE (expr) == N_Nwith))) {
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
+            expr2 = Trav (expr, arg_info);
+            AnnotateIdWithConstvec (expr, NWITHOP_NEUTRAL (arg_node));
+        } else {
+            expr2 = Trav (expr, arg_info);
         }
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
         break;
     default:
         DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
@@ -1697,9 +1765,6 @@ FltnNwithop (node *arg_node, node *arg_info)
     }
 
     if (expr != NULL) {
-        expr2 = Trav (expr, arg_info);
-        DBUG_ASSERT ((expr == expr2),
-                     "return-node differs from arg_node while flattening an expr!");
     }
 
     DBUG_RETURN (arg_node);
@@ -1832,20 +1897,31 @@ FltnNgenerator (node *arg_node, node *arg_info)
 
         act_son_expr = *act_son;
 
-        /* flatten evreything but Ids and constant arrays */
+#if 0
+    /* flatten evreything but Ids and constant arrays */
+    if( act_son_expr != NULL) {
+      if( (N_id != NODE_TYPE(act_son_expr)) && 
+          !IsConstantArray(act_son_expr,N_num) ) {
+        *act_son = Abstract( act_son_expr, arg_info);
+      }
+      act_son_expr2 = Trav( act_son_expr, arg_info);
+#else
         if (act_son_expr != NULL) {
-            if ((N_id != NODE_TYPE (act_son_expr))
-                && !IsConstantArray (act_son_expr, N_num)) {
+            if (N_id != NODE_TYPE (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
+                act_son_expr2 = Trav (act_son_expr, arg_info);
+                AnnotateIdWithConstvec (act_son_expr, *act_son);
+            } else {
+                act_son_expr2 = Trav (act_son_expr, arg_info);
             }
-            act_son_expr2 = Trav (act_son_expr, arg_info);
+#endif
 
-            DBUG_ASSERT ((act_son_expr == act_son_expr2),
-                         "return-node differs from arg_node while flattening an expr!");
-        }
+        DBUG_ASSERT ((act_son_expr == act_son_expr2),
+                     "return-node differs from arg_node while flattening an expr!");
     }
+}
 
-    DBUG_RETURN (arg_node);
+DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -1901,8 +1977,11 @@ FltnNcode (node *arg_node, node *arg_info)
     expr = NCODE_CEXPR (arg_node);
     if (NODE_TYPE (expr) != N_id) {
         NCODE_CEXPR (arg_node) = Abstract (expr, arg_info);
+        expr2 = Trav (expr, arg_info);
+        AnnotateIdWithConstvec (expr, NCODE_CEXPR (arg_node));
+    } else {
+        expr2 = Trav (expr, arg_info);
     }
-    expr2 = Trav (expr, arg_info);
     DBUG_ASSERT ((expr == expr2),
                  "return-node differs from arg_node while flattening an expr!");
     /*
