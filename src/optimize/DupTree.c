@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.86  1998/05/12 18:46:06  dkr
+ * removed ???_VARINFO
+ *
  * Revision 1.85  1998/05/12 18:43:25  srs
  * inserted DUP_WLF
  *
@@ -610,7 +613,6 @@ DupCond (node *arg_node, node *arg_info)
 
     DUP (arg_node, new_node);
 
-    COND_VARINFO (new_node) = MakeInfo ();
     COND_THENVARS (arg_node) = DUPTRAV (COND_THENVARS (arg_node));
     COND_ELSEVARS (arg_node) = DUPTRAV (COND_ELSEVARS (arg_node));
 
@@ -635,7 +637,6 @@ DupLoop (node *arg_node, node *arg_info)
 
     DUP (arg_node, new_node);
 
-    DO_VARINFO (new_node) = MakeInfo ();
     DO_USEVARS (new_node) = DUPTRAV (DO_USEVARS (arg_node));
     DO_DEFVARS (new_node) = DUPTRAV (DO_DEFVARS (arg_node));
 
