@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/03/03 17:22:29  asi
+ * Revision 1.38  1995/03/08 14:02:20  hw
+ * changed PrintPrf
+ *
+ * Revision 1.37  1995/03/03  17:22:29  asi
  * debug-output for Generator added
  *
  * Revision 1.36  1995/03/01  16:29:50  hw
@@ -342,25 +345,6 @@ PrintPrf (node *arg_node, node *arg_info)
                           mdb_prf[arg_node->info.prf], arg_node));
 
     switch (arg_node->info.prf) {
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
-    case F_and:
-    case F_or:
-    case F_le:
-    case F_lt:
-    case F_eq:
-    case F_ge:
-    case F_gt:
-    case F_neq: {
-        fprintf (outfile, "(");
-        Trav (arg_node->node[0]->node[0], arg_info);
-        fprintf (outfile, " %s ", prf_string[arg_node->info.prf]);
-        Trav (arg_node->node[0]->node[1]->node[0], arg_info);
-        fprintf (outfile, ")");
-        break;
-    }
     case F_take:
     case F_drop:
     case F_psi:
@@ -370,9 +354,19 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dim:
     case F_rotate:
     case F_not: {
+        /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
         Trav (arg_node->node[0], arg_info);
         fprintf (outfile, " )");
+        break;
+    }
+    default: {
+        /* primitive functions in infix notation */
+        fprintf (outfile, "(");
+        Trav (arg_node->node[0]->node[0], arg_info);
+        fprintf (outfile, " %s ", prf_string[arg_node->info.prf]);
+        Trav (arg_node->node[0]->node[1]->node[0], arg_info);
+        fprintf (outfile, ")");
         break;
     }
     }
