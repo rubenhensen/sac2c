@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.2  1998/03/22 18:19:30  srs
+ * *** empty log message ***
+ *
  * Revision 1.1  1998/03/22 18:17:26  srs
  * Initial revision
  *
