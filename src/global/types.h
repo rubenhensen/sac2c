@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/05/10 13:28:57  sbs
+ * changed struct TYPES into struct TYPESS
+ * due to collisions with the TYPES-token of sac.l
+ *
  * Revision 2.8  1999/05/06 15:01:06  sbs
  * src_file added to node-struct.
  *
@@ -425,20 +429,20 @@ typedef struct IDS {
     struct IDS *next;
 } ids;
 
-typedef struct TYPES {
+typedef struct TYPESS {
     simpletype simpletype;
     char *name;        /* only used for T_user !! */
     char *name_mod;    /* name of modul belonging to 'name' */
     struct NODE *tdef; /* typedef of user-defined type */
     int dim;           /* if (dim == 0) => simpletype */
     shpseg *shpseg;
-    struct TYPES *next; /* only needed for fun-results  */
-                        /* and implementation of implicit types */
-    char *id;           /* identifier of function, object, ...  */
-    char *id_mod;       /* SAC module where id is defined */
-    char *id_cmod;      /* C module where id is defined */
-    statustype attrib;  /* uniqueness attribute */
-    statustype status;  /* regular or artificial */
+    struct TYPESS *next; /* only needed for fun-results  */
+                         /* and implementation of implicit types */
+    char *id;            /* identifier of function, object, ...  */
+    char *id_mod;        /* SAC module where id is defined */
+    char *id_cmod;       /* C module where id is defined */
+    statustype attrib;   /* uniqueness attribute */
+    statustype status;   /* regular or artificial */
 } types;
 
 /*
