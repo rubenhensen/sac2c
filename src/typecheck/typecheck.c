@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2002/08/03 01:16:36  dkr
+ * *very* dirty hack for TAGGED_ARRAYS
+ *
  * Revision 3.41  2002/07/03 13:02:47  sah
  * changed assert due to incorrect module compiling.
  *
@@ -1628,13 +1631,12 @@ LookupPrf (int prf, char *mod_name)
  ******************************************************************************/
 
 static node *
-ComputeNeutralElem (prf prf_fun, types *neutral_type)
+ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
 {
     node *neutral_elem = NULL;
     node *neutral_base = NULL;
 
-    node *tmp;
-    int i, length;
+    int length;
     simpletype stype;
 
     DBUG_ENTER ("ComputeNeutralElem");
@@ -1724,6 +1726,38 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type)
     }
 
     if (length > 0) {
+#ifdef TAGGED_ARRAYS
+        shpseg *shape;
+        int dim;
+
+        shape = Type2Shpseg (neutral_type, &dim);
+        neutral_elem
+          = CreateScalarWith (dim, shape, stype, neutral_base, INFO_TC_FUNDEF (arg_info));
+        if (NODE_TYPE (neutral_elem) == N_Nwith) {
+            node *new_assigns = NULL;
+            neutral_elem = LiftArg (neutral_elem, INFO_TC_FUNDEF (arg_info), neutral_type,
+                                    FALSE, &new_assigns);
+            if (FUNDEF_VARDEC (INFO_TC_FUNDEF (arg_info)) != NULL) {
+                INFO_TC_VARDEC (arg_info)
+                  = AppendVardec (INFO_TC_VARDEC (arg_info),
+                                  FUNDEF_VARDEC (INFO_TC_FUNDEF (arg_info)));
+            }
+            if (new_assigns != NULL) {
+                if (NODE_TYPE (INFO_TC_LASSIGN (arg_info)) == N_block) {
+                    new_assigns = AppendAssign (new_assigns,
+                                                BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)));
+                    BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)) = new_assigns;
+                } else {
+                    new_assigns = AppendAssign (new_assigns,
+                                                ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info)));
+                    ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info)) = new_assigns;
+                }
+            }
+        }
+#else
+        node *tmp;
+        int i;
+
         tmp = MakeExprs (neutral_base, NULL);
 
         for (i = 1; i < length; i++) {
@@ -1733,6 +1767,7 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type)
         neutral_elem = MakeArray (tmp);
 
         GET_BASIC_TYPE (ARRAY_TYPE (neutral_elem), neutral_type, -64);
+#endif
     } else {
         neutral_elem = neutral_base;
     }
@@ -6363,8 +6398,9 @@ TCassign (node *arg_node, node *arg_info)
     INFO_TC_CURRENTASSIGN (arg_info) = arg_node;
     INFO_TC_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         if (N_stop != arg_info->node[0]->nodetype) {
             INFO_TC_LASSIGN (arg_info) = arg_node;
             /* For the traversal of the next assignments I have to
@@ -6374,8 +6410,6 @@ TCassign (node *arg_node, node *arg_info)
              */
             Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
-    } else {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     /* restore the xxxASSIGN of arg_info, see comment while storing */
@@ -7740,8 +7774,9 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
                     Type2String (neutral_type, 0, TRUE),
                     Type2String (ret_type, 0, TRUE)));
         }
-    } else
-        NWITHOP_NEUTRAL (arg_node) = ComputeNeutralElem (old_prf, body_type);
+    } else {
+        NWITHOP_NEUTRAL (arg_node) = ComputeNeutralElem (old_prf, body_type, arg_info);
+    }
 
     arg_type = Free (arg_type);
     DBUG_RETURN (ret_type);
