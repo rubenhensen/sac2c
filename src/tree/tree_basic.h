@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2002/02/21 18:16:43  dkr
+ * TYPEDEF_LINKMOD added
+ *
  * Revision 3.106  2002/02/12 15:42:45  dkr
  * implementation of ARG_AVIS and VARDEC_AVIS modified
  *
@@ -721,9 +724,10 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_TYPE(n) (n->info.types)
 #define TYPEDEF_NAME(n) (n->info.types->id)
 #define TYPEDEF_MOD(n) (n->info.types->id_mod)
+#define TYPEDEF_LINKMOD(n) (n->info.types->id_cmod)
 #define TYPEDEF_ATTRIB(n) (n->info.types->attrib)
 #define TYPEDEF_STATUS(n) (n->info.types->status)
-#define TYPEDEF_IMPL(n) (n->info.types->next)
+#define TYPEDEF_IMPL(n) ((types *)(n->dfmask[0]))
 #define TYPEDEF_NEXT(n) (n->node[0])
 #define TYPEDEC_DEF(n) (n->node[1])
 #define TYPEDEF_PRAGMA(n) (n->node[2])
@@ -1650,7 +1654,7 @@ extern node *MakeId_Num (int val);
 #define ID_NAME(n) (IDS_NAME (ID_IDS (n)))
 #define ID_AVIS(n) (IDS_AVIS (ID_IDS (n)))
 #define ID_VARDEC(n) (IDS_VARDEC (ID_IDS (n)))
-#define ID_OBJDEF(n) (ID_IDS (n)->node)
+#define ID_OBJDEF(n) (IDS_VARDEC (ID_IDS (n)))
 #define ID_MOD(n) (IDS_MOD (ID_IDS (n)))
 #define ID_ATTRIB(n) (IDS_ATTRIB (ID_IDS (n)))
 #define ID_STATUS(n) (IDS_STATUS (ID_IDS (n)))
