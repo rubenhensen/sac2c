@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/07/06 15:52:57  nmw
+ * SAC_CI_InitRefcounter() added
+ *
  * Revision 1.3  2000/07/06 09:23:32  nmw
  * reference to type_info.mac removed
  *
@@ -42,5 +45,6 @@ extern SAC_arg SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpv
 extern SAC_arg SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...);
 extern bool SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...);
 extern void SAC_CI_FreeSACArg (SAC_arg sa);
+extern SAC_arg SAC_CI_InitRefcounter (SAC_arg sa, int initvalue);
 
 #endif
