@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.204  2004/08/02 17:18:01  sah
+ * removed all the WLxxxX_xxx macros from tree_basic.h
+ * and wrote new ones in tree_compound.h
+ * unfortunately these can only be used as r-values!
+ *
  * Revision 3.203  2004/07/31 16:11:35  sah
  * moved MakeId_xxx functions to tree_compund
  *
@@ -4084,50 +4089,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLNODE_NEXTDIM(n) ((n)->node[0])
 #define WLNODE_NEXT(n) ((n)->node[1])
 
-/*
- * some macros for N_WLseg, N_WLsegVar nodes
- */
-
-#define WLSEGX_DIMS(n) ((n)->refcnt)
-#define WLSEGX_CONTENTS(n) ((n)->node[0])
-#define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
-#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
-#define WLSEGX_TASKSEL(n) ((SCHtasksel_t *)((n)->node[4]))
-
-/*
- * some macros for N_WLblock, N_WLublock nodes
- */
-
-#define WLXBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLXBLOCK_DIM(n) (WLNODE_DIM (n))
-#define WLXBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLXBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLXBLOCK_STEP(n) (WLNODE_STEP (n))
-#define WLXBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
-#define WLXBLOCK_CONTENTS(n) ((n)->node[2])
-#define WLXBLOCK_NEXT(n) (WLNODE_NEXT (n))
-
-/*
- * some macros for N_WLstride, N_WLstrideVar nodes
- */
-
-#define WLSTRIDEX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLSTRIDEX_DIM(n) (WLNODE_DIM (n))
-#define WLSTRIDEX_CONTENTS(n) ((n)->node[0])
-#define WLSTRIDEX_NEXT(n) (WLNODE_NEXT (n))
-
-/*
- * some macros for N_WLgrid, N_WLgridVar nodes
- */
-
-#define WLGRIDX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLGRIDX_DIM(n) (WLNODE_DIM (n))
-#define WLGRIDX_FITTED(n) ((bool)((n)->varno))
-#define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
-#define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
-#define WLGRIDX_CODE(n) ((n)->node[4])
-#define WLGRIDX_NOOP(n) ((bool)((n)->info.prf_dec.tag))
-
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -4171,9 +4132,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 extern node *MakeWLseg (int dims, node *contents, node *next);
 
-#define WLSEG_DIMS(n) (WLSEGX_DIMS (n))
-#define WLSEG_CONTENTS(n) (WLSEGX_CONTENTS (n))
-#define WLSEG_NEXT(n) (WLSEGX_NEXT (n))
+#define WLSEG_DIMS(n) ((n)->refcnt)
+#define WLSEG_CONTENTS(n) ((n)->node[0])
+#define WLSEG_NEXT(n) ((n)->node[1])
 
 #define WLSEG_UBV(n) ((int *)((n)->dfmask[0]))
 #define WLSEG_BLOCKS(n) ((n)->flag)
@@ -4184,8 +4145,8 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_IDX_MIN(n) (*((int **)(&((n)->node[2])))) /* needed for cc */
 #define WLSEG_IDX_MAX(n) (*((int **)(&((n)->node[3])))) /* needed for cc */
 
-#define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
-#define WLSEG_TASKSEL(n) (WLSEGX_TASKSEL (n))
+#define WLSEG_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
+#define WLSEG_TASKSEL(n) ((SCHtasksel_t *)((n)->node[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -4216,15 +4177,15 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 extern node *MakeWLsegVar (int dims, node *contents, node *next);
 
-#define WLSEGVAR_DIMS(n) (WLSEGX_DIMS (n))
-#define WLSEGVAR_CONTENTS(n) (WLSEGX_CONTENTS (n))
-#define WLSEGVAR_NEXT(n) (WLSEGX_NEXT (n))
+#define WLSEGVAR_DIMS(n) ((n)->refcnt)
+#define WLSEGVAR_CONTENTS(n) ((n)->node[0])
+#define WLSEGVAR_NEXT(n) ((n)->node[1])
 
 #define WLSEGVAR_IDX_MIN(n) ((node **)((n)->node[2]))
 #define WLSEGVAR_IDX_MAX(n) ((node **)((n)->node[3]))
 
-#define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
-#define WLSEGVAR_TASKSEL(n) (WLSEGX_TASKSEL (n))
+#define WLSEGVAR_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
+#define WLSEGVAR_TASKSEL(n) ((SCHtasksel_t *)((n)->node[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -4257,14 +4218,14 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
                           node *nextdim, node *contents, node *next);
 
-#define WLBLOCK_LEVEL(n) (WLXBLOCK_LEVEL (n))
-#define WLBLOCK_DIM(n) (WLXBLOCK_DIM (n))
-#define WLBLOCK_BOUND1(n) (WLXBLOCK_BOUND1 (n))
-#define WLBLOCK_BOUND2(n) (WLXBLOCK_BOUND2 (n))
-#define WLBLOCK_STEP(n) (WLXBLOCK_STEP (n))
-#define WLBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
-#define WLBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
-#define WLBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
+#define WLBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLBLOCK_DIM(n) (WLNODE_DIM (n))
+#define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
+#define WLBLOCK_STEP(n) (WLNODE_STEP (n))
+#define WLBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLBLOCK_CONTENTS(n) ((n)->node[2])
+#define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -4297,14 +4258,14 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
                            node *nextdim, node *contents, node *next);
 
-#define WLUBLOCK_LEVEL(n) (WLXBLOCK_LEVEL (n))
-#define WLUBLOCK_DIM(n) (WLXBLOCK_DIM (n))
-#define WLUBLOCK_BOUND1(n) (WLXBLOCK_BOUND1 (n))
-#define WLUBLOCK_BOUND2(n) (WLXBLOCK_BOUND2 (n))
-#define WLUBLOCK_STEP(n) (WLXBLOCK_STEP (n))
-#define WLUBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
-#define WLUBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
-#define WLUBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
+#define WLUBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLUBLOCK_DIM(n) (WLNODE_DIM (n))
+#define WLUBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLUBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
+#define WLUBLOCK_STEP(n) (WLNODE_STEP (n))
+#define WLUBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLUBLOCK_CONTENTS(n) ((n)->node[2])
+#define WLUBLOCK_NEXT(n) (WLNODE_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -4336,14 +4297,14 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
                            bool unrolling, node *contents, node *next);
 
-#define WLSTRIDE_LEVEL(n) (WLSTRIDEX_LEVEL (n))
-#define WLSTRIDE_DIM(n) (WLSTRIDEX_DIM (n))
+#define WLSTRIDE_LEVEL(n) ((n)->int_data)
+#define WLSTRIDE_DIM(n) ((n)->refcnt)
 #define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLSTRIDE_STEP(n) (WLNODE_STEP (n))
 #define WLSTRIDE_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
-#define WLSTRIDE_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
-#define WLSTRIDE_NEXT(n) (WLSTRIDEX_NEXT (n))
+#define WLSTRIDE_CONTENTS(n) ((n)->node[0])
+#define WLSTRIDE_NEXT(n) ((n)->node[1])
 
 #define WLSTRIDE_PART(n) ((n)->node[2])
 #define WLSTRIDE_MODIFIED(n) ((n)->node[3])
@@ -4374,13 +4335,13 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
                               node *contents, node *next);
 
-#define WLSTRIDEVAR_LEVEL(n) (WLSTRIDEX_LEVEL (n))
-#define WLSTRIDEVAR_DIM(n) (WLSTRIDEX_DIM (n))
+#define WLSTRIDEVAR_LEVEL(n) ((n)->int_data)
+#define WLSTRIDEVAR_DIM(n) ((n)->refcnt)
 #define WLSTRIDEVAR_BOUND1(n) ((n)->node[2])
 #define WLSTRIDEVAR_BOUND2(n) ((n)->node[3])
 #define WLSTRIDEVAR_STEP(n) ((n)->node[4])
-#define WLSTRIDEVAR_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
-#define WLSTRIDEVAR_NEXT(n) (WLSTRIDEX_NEXT (n))
+#define WLSTRIDEVAR_CONTENTS(n) ((n)->node[0])
+#define WLSTRIDEVAR_NEXT(n) ((n)->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -4422,16 +4383,16 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
 extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling,
                          node *nextdim, node *next, node *code);
 
-#define WLGRID_LEVEL(n) (WLGRIDX_LEVEL (n))
-#define WLGRID_DIM(n) (WLGRIDX_DIM (n))
+#define WLGRID_LEVEL(n) ((n)->int_data)
+#define WLGRID_DIM(n) ((n)->refcnt)
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLGRID_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
-#define WLGRID_FITTED(n) (WLGRIDX_FITTED (n))
-#define WLGRID_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
-#define WLGRID_NEXT(n) (WLGRIDX_NEXT (n))
-#define WLGRID_CODE(n) (WLGRIDX_CODE (n))
-#define WLGRID_NOOP(n) (WLGRIDX_NOOP (n))
+#define WLGRID_FITTED(n) ((bool)((n)->varno))
+#define WLGRID_NEXTDIM(n) ((n)->node[0])
+#define WLGRID_NEXT(n) ((n)->node[1])
+#define WLGRID_CODE(n) ((n)->node[4])
+#define WLGRID_NOOP(n) ((bool)((n)->info.prf_dec.tag))
 
 #define WLGRID_MODIFIED(n) ((n)->node[2])
 
@@ -4474,15 +4435,15 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
 extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim,
                             node *next, node *code);
 
-#define WLGRIDVAR_LEVEL(n) (WLGRIDX_LEVEL (n))
-#define WLGRIDVAR_DIM(n) (WLGRIDX_DIM (n))
+#define WLGRIDVAR_LEVEL(n) ((n)->int_data)
+#define WLGRIDVAR_DIM(n) ((n)->refcnt)
 #define WLGRIDVAR_BOUND1(n) ((n)->node[2])
 #define WLGRIDVAR_BOUND2(n) ((n)->node[3])
-#define WLGRIDVAR_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
-#define WLGRIDVAR_NEXT(n) (WLGRIDX_NEXT (n))
-#define WLGRIDVAR_CODE(n) (WLGRIDX_CODE (n))
-#define WLGRIDVAR_FITTED(n) (WLGRIDX_FITTED (n))
-#define WLGRIDVAR_NOOP(n) (WLGRIDX_NOOP (n))
+#define WLGRIDVAR_NEXTDIM(n) ((n)->node[0])
+#define WLGRIDVAR_NEXT(n) ((n)->node[1])
+#define WLGRIDVAR_CODE(n) ((n)->node[4])
+#define WLGRIDVAR_FITTED(n) ((bool)((n)->varno))
+#define WLGRIDVAR_NOOP(n) ((bool)((n)->info.prf_dec.tag))
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/08/02 17:18:01  sah
+ * removed all the WLxxxX_xxx macros from tree_basic.h
+ * and wrote new ones in tree_compound.h
+ * unfortunately these can only be used as r-values!
+ *
  * Revision 3.84  2004/07/31 16:11:35  sah
  * moved MakeId_xxx functions to tree_compund
  *
@@ -2307,6 +2312,19 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define WLSEGX_IDX_MAX(n)                                                                \
     ((NODE_TYPE (n) == N_WLseg) ? WLSEG_IDX_MAX (n) : WLSEGVAR_IDX_MAX (n))
 
+#define WLSEGX_DIMS(n) ((NODE_TYPE (n) == N_WLseg) ? WLSEG_DIMS (n) : WLSEGVAR_DIMS (n))
+
+#define WLSEGX_CONTENTS(n)                                                               \
+    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_CONTENTS (n) : WLSEGVAR_CONTENTS (n))
+
+#define WLSEGX_NEXT(n) ((NODE_TYPE (n) == N_WLseg) ? WLSEG_NEXT (n) : WLSEGVAR_NEXT (n))
+
+#define WLSEGX_SCHEDULING(n)                                                             \
+    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_SCHEDULING (n) : WLSEGVAR_SCHEDULING (n))
+
+#define WLSEGX_TASKSEL(n)                                                                \
+    ((NODE_TYPE (n) == N_WLseg) ? WLSEG_TASKSEL (n) : WLSEGVAR_TASKSEL (n))
+
 #define WLSEGX_IDX_GET_ADDR(n, field, dim)                                               \
     ((NODE_TYPE (n) == N_WLseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
                                 : ((NODE_TYPE (n) == N_WLsegVar)                         \
@@ -2348,6 +2366,30 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 #define WLXBLOCK_NOOP(n)                                                                 \
     ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_NOOP (n) : WLUBLOCK_NOOP (n))
 
+#define WLXBLOCK_LEVEL(n)                                                                \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_LEVEL (n) : WLUBLOCK_LEVEL (n))
+
+#define WLXBLOCK_DIM(n)                                                                  \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_DIM (n) : WLUBLOCK_DIM (n))
+
+#define WLXBLOCK_BOUND1(n)                                                               \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_BOUND1 (n) : WLUBLOCK_BOUND1 (n))
+
+#define WLXBLOCK_BOUND2(n)                                                               \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_BOUND2 (n) : WLUBLOCK_BOUND2 (n))
+
+#define WLXBLOCK_STEP(n)                                                                 \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_STEP (n) : WLUBLOCK_STEP (n))
+
+#define WLXBLOCK_NEXTDIM(n)                                                              \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_NEXTDIM (n) : WLUBLOCK_NEXTDIM (n))
+
+#define WLXBLOCK_CONTENTS(n)                                                             \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_CONTENTS (n) : WLUBLOCK_CONTENTS (n))
+
+#define WLXBLOCK_NEXT(n)                                                                 \
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_NEXT (n) : WLUBLOCK_NEXT (n))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -2378,6 +2420,18 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 #define WLSTRIDEX_NOOP(n)                                                                \
     ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_NOOP (n) : WLSTRIDEVAR_NOOP (n))
 
+#define WLSTRIDEX_LEVEL(n)                                                               \
+    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_LEVEL (n) : WLSTRIDEVAR_LEVEL (n))
+
+#define WLSTRIDEX_DIM(n)                                                                 \
+    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_DIM (n) : WLSTRIDEVAR_DIM (n))
+
+#define WLSTRIDEX_CONTENTS(n)                                                            \
+    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_CONTENTS (n) : WLSTRIDEVAR_CONTENTS (n))
+
+#define WLSTRIDEX_NEXT(n)                                                                \
+    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_NEXT (n) : WLSTRIDEVAR_NEXT (n))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -2405,6 +2459,26 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 /***
  ***  N_WLgrid :  *and*  N_WLgridVar :
  ***/
+
+#define WLGRIDX_LEVEL(n)                                                                 \
+    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_LEVEL (n) : WLGRIDVAR_LEVEL (n))
+
+#define WLGRIDX_DIM(n) ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_DIM (n) : WLGRIDVAR_DIM (n))
+
+#define WLGRIDX_FITTED(n)                                                                \
+    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_FITTED (n) : WLGRIDVAR_FITTED (n))
+
+#define WLGRIDX_NEXTDIM(n)                                                               \
+    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_NEXTDIM (n) : WLGRIDVAR_NEXTDIM (n))
+
+#define WLGRIDX_NEXT(n)                                                                  \
+    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_NEXT (n) : WLGRIDVAR_NEXT (n))
+
+#define WLGRIDX_CODE(n)                                                                  \
+    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_CODE (n) : WLGRIDVAR_CODE (n))
+
+#define WLGRIDX_NOOP(n)                                                                  \
+    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_NOOP (n) : WLGRIDVAR_NOOP (n))
 
 #define WLGRIDX_CBLOCK(n) (NCODE_CBLOCK (WLGRIDX_CODE (n)))
 #define WLGRIDX_CEXPR(n) (NCODE_CEXPR (WLGRIDX_CODE (n)))
