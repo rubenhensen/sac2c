@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/03/12 12:45:56  srs
+ * fixed IsConstArray()
+ *
  * Revision 1.36  1998/03/10 11:13:43  srs
  * changed parameters of IsConstantArray()
  *
@@ -770,34 +773,23 @@ IsConstantArray (node *array, nodetype type)
     else
         ok = 0;
 
-    while (ok) {
+    while (ok && array) {
         switch (NODE_TYPE (EXPRS_EXPR (array))) {
         case N_num:
-            if (N_ok != type && type != N_num)
-                ok = 0;
         case N_char:
-            if (N_ok != type && type != N_char)
-                ok = 0;
         case N_float:
-            if (N_ok != type && type != N_float)
-                ok = 0;
         case N_double:
-            if (N_ok != type && type != N_double)
-                ok = 0;
         case N_bool:
-            if (N_ok != type && type != N_bool)
+            if (N_ok != type && type != NODE_TYPE (EXPRS_EXPR (array)))
                 ok = 0;
+            elems++;
+            array = EXPRS_NEXT (array);
 
-            if (ok) {
-                elems++;
-                array = EXPRS_NEXT (array);
-                break;
-            }
+            break;
         default:
-            elems = 0;
             ok = 0;
         }
     }
 
-    DBUG_RETURN (elems);
+    DBUG_RETURN (ok ? elems : 0);
 }
