@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.26  2000/01/28 13:49:23  jhs
+# Added blocks_init.
+#
 # Revision 2.25  2000/01/28 12:47:08  dkr
 # added LookUpTable.o
 #
@@ -205,7 +208,8 @@ CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/sync_opt.o src/concurrent/schedule.o      \
             src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o    \
             src/concurrent/concurrent_lib.o
-MULTITHREAD= src/multithread/multithread.o
+MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
+             src/multithread/blocks_init.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
