@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/05/12 08:38:14  sbs
+ * ID_CONSTARRAY changed into ID_ISCONST
+ *
  * Revision 2.6  1999/04/26 10:53:59  bs
  * Function 'IsConstantArray' modified.
  * These changes are only temporary ones!!
@@ -1055,7 +1058,7 @@ IsConstantArray (node *array, nodetype type)
     } else if (NODE_TYPE (array) == N_id) {
         elems = ID_VECLEN (array);
         if (elems == 0)
-            elems = ID_CONSTARRAY (array);
+            elems = ID_ISCONST (array);
     } else
         elems = 0;
 
@@ -1121,7 +1124,8 @@ Array2IntVec (node *aelems, int *length)
 char *
 Array2CharVec (node *aelems, int *length)
 {
-    char *charvec, i = 0, j;
+    char *charvec;
+    int i = 0, j;
     node *tmp = aelems;
 
     DBUG_ENTER ("Array2CharVec");
