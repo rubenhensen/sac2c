@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1995/06/02 12:15:25  sbs
+ * Revision 1.42  1995/06/06 14:06:28  cg
+ * statustype modified.
+ *
+ * Revision 1.41  1995/06/02  12:15:25  sbs
  * NIF macro prolongated
  *
  * Revision 1.40  1995/06/02  10:02:52  sbs
@@ -160,7 +163,15 @@ typedef enum { E_int, E_float, E_bool, E_prf, E_id, E_ap, E_with, E_sel } exprty
 typedef enum { L_for, L_do, L_while } looptype;
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 typedef enum { C_gen, C_mod } contype;
-typedef enum { ST_regular, ST_hidden, ST_unique, ST_artificial } statustype;
+typedef enum {
+    ST_regular,      /* normal types */
+    ST_hidden,       /* implicit type imported from module     */
+    ST_known_hidden, /* implicit type in module implementation */
+    ST_unique,       /* implicit type imported from class      */
+    ST_known_unique, /* implicit type in class implementation  */
+    ST_artificial    /* unique type inserted during            */
+                     /* signature expansion                    */
+} statustype;
 typedef enum { VECT, IDX } useflag;
 
 typedef char id;
