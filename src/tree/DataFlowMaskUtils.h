@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/03/23 17:37:06  dkr
+ * DFM2Types() renamed to DFM2ReturnTypes()
+ *
  * Revision 1.5  2000/03/17 20:57:25  dkr
  * IsEmptyDFMstack() added
  *
@@ -36,7 +39,7 @@ extern DFMmask_t PopDFMstack (DFMstack_t *stack);
 extern void ForeachDFMstack (DFMstack_t stack, fun_t fun, char *id, node *decl);
 extern void WhileDFMstack (DFMstack_t stack, fun_t fun, char *id, node *decl);
 
-extern types *DFM2Types (DFMmask_t mask);
+extern types *DFM2ReturnTypes (DFMmask_t mask);
 extern node *DFM2Vardecs (DFMmask_t mask, LUT_t lut);
 extern node *DFM2Args (DFMmask_t mask, LUT_t lut);
 extern node *DFM2Exprs (DFMmask_t mask, LUT_t lut);
