@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/07/11 15:41:31  jhs
+ * Added lut-entries of args while lifting.
+ *
  * Revision 1.7  2000/07/05 14:21:35  dkr
  * DupTree.h is included only once now :-)
  *
@@ -253,6 +256,9 @@ BLKLImt (node *arg_node, node *arg_info)
 
             DBUG_PRINT ("BLKLI", ("inserted arg %s", ARG_NAME (vardec)));
         }
+
+        lut = InsertIntoLUT (lut, vardec, new_arg);
+
         new_args = new_arg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
