@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.228  2004/10/26 12:13:38  ktr
+ * Added TravNone for objdef in interface analysis.
+ *
  * Revision 3.227  2004/10/26 11:28:20  sah
  * extended DS traversal
  *
@@ -1473,7 +1476,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, SELObjdef, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, NTCobjdef, TravSons,
+       TravSons, TravNone, NTCobjdef, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
