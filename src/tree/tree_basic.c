@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/06/14 12:05:37  jhs
+ * Added ST_IDENTIFIER and MT_IDENTIFIER.
+ * Each new N_mt and N_st will be provided with an unique id.
+ *
  * Revision 1.14  2000/06/13 13:41:27  dkr
  * Make...() functions for old with-loop removed
  *
@@ -1429,6 +1433,23 @@ MakeSync (node *region)
 
 /*--------------------------------------------------------------------------*/
 
+int global_MT_counter = 1;
+
+#define MT_STEP 1
+
+static int
+GetNewMTIdentifier ()
+{
+    int result;
+
+    DBUG_ENTER ("GetNewMTIdentifier");
+
+    result = global_MT_counter;
+    global_MT_counter = global_MT_counter + MT_STEP;
+
+    DBUG_RETURN (result);
+}
+
 node *
 MakeMT (node *region)
 {
@@ -1438,11 +1459,29 @@ MakeMT (node *region)
 
     tmp = CreateCleanNode (N_mt);
     MT_REGION (tmp) = region;
+    MT_IDENTIFIER (tmp) = GetNewMTIdentifier ();
 
     DBUG_RETURN (tmp);
 }
 
 /*--------------------------------------------------------------------------*/
+
+int global_ST_counter = 1;
+
+#define ST_STEP 1
+
+static int
+GetNewSTIdentifier ()
+{
+    int result;
+
+    DBUG_ENTER ("GetNewStIdentifier");
+
+    result = global_ST_counter;
+    global_ST_counter = global_ST_counter + ST_STEP;
+
+    DBUG_RETURN (result);
+}
 
 node *
 MakeST (node *region)
@@ -1453,6 +1492,7 @@ MakeST (node *region)
 
     tmp = CreateCleanNode (N_st);
     ST_REGION (tmp) = region;
+    ST_IDENTIFIER (tmp) = GetNewSTIdentifier ();
 
     DBUG_RETURN (tmp);
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.48  2000/06/14 12:05:37  jhs
+ * Added ST_IDENTIFIER and MT_IDENTIFIER.
+ * Each new N_mt and N_st will be provided with an unique id.
+ *
  * Revision 1.47  2000/06/13 13:41:20  dkr
  * Make...() functions for old with-loop removed
  *
@@ -2684,7 +2688,9 @@ extern node *MakeSync (node *region);
  ***    node*      REGION     (N_block)
  ***
  ***  permanent attributes:
- ***    int        IDENTIFIER
+ ***    int        IDENTIFIER             Will be created by MakeMT, an copied
+ ***                                      within DupTree, to identfy
+ ***                                      corresponding blocks
  ***
  ***  temporary attributes:
  ***    DFMmask_t  USEMASK                (multithread.dfa   ->)
@@ -2713,7 +2719,9 @@ extern node *MakeMT (node *region);
  ***    node*     REGION      (N_block)
  ***
  ***  permanent attributes:
- ***    int        IDENTIFIER
+ ***    int        IDENTIFIER             Will be created by MakeST, an copied
+ ***                                      within DupTree, to identfy
+ ***                                      corresponding blocks
  ***
  ***  temporary attributes:
  ***    DFMmask_t  USEMASK        (multithread.dfa ->)
