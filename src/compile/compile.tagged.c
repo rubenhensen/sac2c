@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2002/07/15 15:26:27  dkr
+ * - some bugs fixed
+ * - COMPPrfArray(), COMPPrfConvertArray() added
+ *
  * Revision 1.26  2002/07/12 23:33:39  dkr
  * AddReadIcms() corrected and renamed into DupAndAddReadIcms()
  *
@@ -454,10 +458,14 @@ GetIndexIds (ids *index_ids, int dim)
     DBUG_RETURN (index_ids);
 }
 
+static /* forward declaration */
+  node *
+  DupExprs_AddReadIcms (node *exprs);
+
 /******************************************************************************
  *
  * Function:
- *   node *DupAndAddReadIcms( node *exprs)
+ *   node *DupExpr_AddReadIcms( node *expr)
  *
  * Description:
  *
@@ -465,26 +473,48 @@ GetIndexIds (ids *index_ids, int dim)
  ******************************************************************************/
 
 static node *
-DupAndAddReadIcms (node *exprs)
+DupExpr_AddReadIcms (node *expr)
 {
-    node *expr, *new_expr;
+    node *new_expr = NULL;
+
+    DBUG_ENTER ("DupExpr_AddReadIcms");
+
+    DBUG_ASSERT (((expr != NULL) && (NODE_TYPE (expr) != N_exprs)),
+                 "Illegal argument for DupExpr_AddReadIcms() found!");
+
+    if (NODE_TYPE (expr) == N_prf) {
+        new_expr = MakePrf (PRF_PRF (expr), DupExprs_AddReadIcms (PRF_ARGS (expr)));
+    } else if (NODE_TYPE (expr) == N_id) {
+        new_expr = MakeIcm2 ("ND_READ", DupId_NT (expr), MakeNum (0));
+    } else {
+        new_expr = DupNode (expr);
+    }
+
+    DBUG_RETURN (new_expr);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DupExprs_AddReadIcms( node *exprs)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+DupExprs_AddReadIcms (node *exprs)
+{
     node *new_exprs = NULL;
 
-    DBUG_ENTER ("DupAndAddReadIcms");
+    DBUG_ENTER ("DupExprs_AddReadIcms");
 
     if (exprs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
-        expr = EXPRS_EXPR (exprs);
 
-        if (NODE_TYPE (expr) == N_prf) {
-            new_expr = MakePrf (PRF_PRF (expr), DupAndAddReadIcms (PRF_ARGS (expr)));
-        } else if (NODE_TYPE (expr) == N_id) {
-            new_expr = MakeIcm2 ("ND_READ", DupId_NT (expr), MakeNum (0));
-        } else {
-            new_expr = DupNode (expr);
-        }
-
-        new_exprs = MakeExprs (new_expr, DupAndAddReadIcms (EXPRS_NEXT (exprs)));
+        new_exprs = MakeExprs (DupExpr_AddReadIcms (EXPRS_EXPR (exprs)),
+                               DupExprs_AddReadIcms (EXPRS_NEXT (exprs)));
     }
 
     DBUG_RETURN (new_exprs);
@@ -2535,7 +2565,13 @@ COMPApIds (node *ap, node *arg_info)
                 if (!ATG_has_shp[tag]) {
                     /* function sets no shape information */
 #if 1
-                    SYSWARN (("return value with unknown shape/dimension found"));
+                    data_class_t dc
+                      = GetDataClassFromTypes (IDS_TYPE (((ids *)argtab->ptr_out[i])));
+                    DBUG_ASSERT ((dc != C_unknownd), "illegal data class found!");
+                    if ((dc == C_akd) || (dc == C_aud)) {
+                        WARN (NODE_LINE (ap),
+                              ("Return value with unknown shape/dimension found"));
+                    }
 #endif
                 }
 
@@ -3183,7 +3219,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
         ret_node = MakeAssignIcm3 ("ND_COPY__DATA", DupIds_Id_NT (let_ids),
                                    DupId_NT (arg2), MakeId_Copy (NULL), NULL);
 #if 1
-        SYSWARN (("F_reshape found which copies an array"));
+        WARN (NODE_LINE (arg_node), ("F_reshape found which copies an array"));
 #endif
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
@@ -3475,7 +3511,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **set_shape_icm)
 
     if (NODE_TYPE (arg) == N_id) {
         ret_node
-          = MakeAssignIcm1 ("ND_COPY",
+          = MakeAssignIcm1 ("ND_COPY__DATA",
                             MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                           TRUE, FALSE,
                                           MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
@@ -3487,6 +3523,47 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **set_shape_icm)
         ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
                                    DupNode (arg), NULL);
     }
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPPrfConvertArray( node *arg_node, node *arg_info,
+ *                              node **set_shape_icm)
+ *
+ * Description:
+ *   Compiles N_prf node of type F_toi, F_tod, F_tof:
+ *   We can simply remove the conversion function :-)
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfConvertArray (node *arg_node, node *arg_info, node **set_shape_icm)
+{
+    node *arg;
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfConvertArray");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_to?_A is no N_id!");
+
+    (*set_shape_icm) = MakeIcm1 ("ND_COPY__SHAPE",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)));
+
+    ret_node
+      = MakeAssignIcm1 ("ND_PRF_CONV_A",
+                        MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                      FALSE, MakeExprs (DupId_NT (arg), NULL)),
+                        NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3527,7 +3604,7 @@ COMPPrfScalar (node *arg_node, node *arg_info, node **set_shape_icm)
      */
     ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
                                MakePrf (PRF_PRF (arg_node),
-                                        DupAndAddReadIcms (PRF_ARGS (arg_node))),
+                                        DupExprs_AddReadIcms (PRF_ARGS (arg_node))),
                                NULL);
 
     DBUG_RETURN (ret_node);
@@ -3569,8 +3646,79 @@ COMPPrfScalarIcm (char *icm_name, node *arg_node, node *arg_info, node **set_sha
      */
     ret_node
       = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
-                        MakeIcm (icm_name, DupAndAddReadIcms (PRF_ARGS (arg_node))),
+                        MakeIcm (icm_name, DupExprs_AddReadIcms (PRF_ARGS (arg_node))),
                         NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPPrfArray( node *arg_node, node *arg_info,
+ *                       node **set_shape_icm)
+ *
+ * Description:
+ *   Compiles a N_prf node into a ND_PRF_ARRAY2__DATA-icm.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfArray (node *arg_node, node *arg_info, node **set_shape_icm)
+{
+    node *arg1, *arg2, *arg;
+    ids *let_ids;
+    char *icm_name;
+    bool arg1_is_scalar, arg2_is_scalar;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfArray");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    arg1_is_scalar
+      = ((NODE_TYPE (arg1) != N_id) || (GetDataClassFromTypes (ID_TYPE (arg1)) == C_scl));
+    arg2_is_scalar
+      = ((NODE_TYPE (arg2) != N_id) || (GetDataClassFromTypes (ID_TYPE (arg2)) == C_scl));
+
+    if ((!arg1_is_scalar) && (!arg2_is_scalar)) {
+        arg = arg1;
+        arg1 = DupNode_NT (arg1);
+        arg2 = DupNode_NT (arg2);
+        icm_name = "ND_PRF_AxA__DATA";
+    } else if ((!arg1_is_scalar) && arg2_is_scalar) {
+        arg = arg1;
+        arg1 = DupNode_NT (arg1);
+        arg2 = DupExpr_AddReadIcms (arg2);
+        icm_name = "ND_PRF_AxS__DATA";
+    } else if (arg1_is_scalar && (!arg2_is_scalar)) {
+        arg = arg2;
+        arg1 = DupExpr_AddReadIcms (arg1);
+        arg2 = DupNode_NT (arg2);
+        icm_name = "ND_PRF_SxA__DATA";
+    } else {
+        DBUG_ASSERT ((0), "illegal arguments found!");
+        arg = arg1 = arg2 = NULL;
+        icm_name = NULL;
+    }
+
+    (*set_shape_icm) = MakeIcm1 ("ND_COPY__SHAPE",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)));
+
+    ret_node
+      = MakeAssignIcm4 (icm_name, DupIds_Id_NT (let_ids),
+                        MakeId_Copy (prf_string[PRF_PRF (arg_node)]), arg1, arg2, NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3694,9 +3842,40 @@ COMP2Prf (node *arg_node, node *arg_info)
         ret_node = COMPPrfModarray (arg_node, arg_info, &set_shape_icm);
         break;
 
+    case F_toi_A:
+    case F_tof_A:
+    case F_tod_A:
+        ret_node = COMPPrfConvertArray (arg_node, arg_info, &set_shape_icm);
+        break;
+
+    case F_add_SxA:
+    case F_add_AxS:
+    case F_add_AxA:
+    case F_sub_SxA:
+    case F_sub_AxS:
+    case F_sub_AxA:
+    case F_mul_SxA:
+    case F_mul_AxS:
+    case F_mul_AxA:
+    case F_div_SxA:
+    case F_div_AxS:
+    case F_div_AxA:
+        check_reuse1 = PRF_ARG1 (arg_node);
+        check_reuse2 = PRF_ARG2 (arg_node);
+        ret_node = COMPPrfArray (arg_node, arg_info, &set_shape_icm);
+        break;
+
         /*
          *  ARRAY_ARGS_NON_INTRINSIC( PRF_PRF( arg_node))
          */
+
+    case F_take:
+    case F_drop:
+    case F_cat:
+    case F_rotate:
+        DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
+                          " Use array.lib instead!");
+        break;
 
     default:
         DBUG_ASSERT ((0), "unknown prf found!");
@@ -4139,12 +4318,11 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
         MakeExprs (DupIds_Id (GetIndexIds (NWITH2_IDS (wlnode), dim)),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLNODE_GET_ADDR (arg_node, BOUND1),
-                                                   dim, IDS_NAME (wlids), FALSE, FALSE),
+                                                   dim, wlids),
                               MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                               WLNODE_GET_ADDR (arg_node,
                                                                                BOUND2),
-                                                              dim, IDS_NAME (wlids),
-                                                              FALSE, FALSE),
+                                                              dim, wlids),
                                          NULL)))));
 
     DBUG_RETURN (args);
@@ -4171,8 +4349,7 @@ MakeIcmArgs_WL_LOOP2 (node *arg_node)
       = MakeExprs (MakeIcmArgs_WL_LOOP1 (arg_node),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLBLOCKSTR_GET_ADDR (arg_node, STEP),
-                                                   WLNODE_DIM (arg_node),
-                                                   IDS_NAME (wlids), FALSE, FALSE),
+                                                   WLNODE_DIM (arg_node), wlids),
                               NULL));
 
     DBUG_RETURN (args);
@@ -4280,13 +4457,13 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
                             MakeNum (dim),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, BOUND1),
-                                                 dim, IDS_NAME (wlids), TRUE, TRUE),
+                                                 dim, wlids),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, BOUND2),
-                                                 dim, IDS_NAME (wlids), TRUE, TRUE),
+                                                 dim, wlids),
                             NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                  WLBLOCKSTR_GET_ADDR (arg_node, STEP),
-                                                 dim, IDS_NAME (wlids), TRUE, TRUE),
+                                                 dim, wlids),
                             assigns);
     }
 
@@ -4735,7 +4912,7 @@ COMP2WLsegx (node *arg_node, node *arg_info)
         INFO_COMP_SCHEDULERINIT (arg_info)
           = MakeAssign (SCHCompileSchedulingWithTaskselInit (INFO_COMP_SCHEDULERID (
                                                                arg_info),
-                                                             IDS_NAME (wlids),
+                                                             wlids,
                                                              WLSEGX_SCHEDULING (arg_node),
                                                              WLSEGX_TASKSEL (arg_node),
                                                              arg_node),
@@ -4747,7 +4924,7 @@ COMP2WLsegx (node *arg_node, node *arg_info)
     ret_node
       = MakeAssigns4 (SCHCompileSchedulingWithTaskselBegin (INFO_COMP_SCHEDULERID (
                                                               arg_info),
-                                                            IDS_NAME (wlids),
+                                                            wlids,
                                                             WLSEGX_SCHEDULING (arg_node),
                                                             WLSEGX_TASKSEL (arg_node),
                                                             arg_node),
@@ -4755,7 +4932,7 @@ COMP2WLsegx (node *arg_node, node *arg_info)
                                                               arg_info)),
                       SCHCompileSchedulingWithTaskselEnd (INFO_COMP_SCHEDULERID (
                                                             arg_info),
-                                                          IDS_NAME (wlids),
+                                                          wlids,
                                                           WLSEGX_SCHEDULING (arg_node),
                                                           WLSEGX_TASKSEL (arg_node),
                                                           arg_node),
