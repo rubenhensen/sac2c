@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/18 09:43:57  dkr
+ * fixed a bug in SAC_ND_IDX_MODARRAY_AxVxA_CHECK_REUSE
+ *   'i' renamed to '__i'
+ *
  * Revision 1.4  1998/05/07 14:16:02  cg
  * converted to new naming conventions
  *
@@ -63,7 +67,7 @@
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
         for (__i = 0; __i < s; __i++)                                                    \
             SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
-        for (i = i + SAC_ND_A_SIZE (val); __i < SAC_ND_A_SIZE (res); __i++)              \
+        for (__i = __i + SAC_ND_A_SIZE (val); __i < SAC_ND_A_SIZE (res); __i++)          \
             SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
     }                                                                                    \
     {                                                                                    \
