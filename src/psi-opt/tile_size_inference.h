@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/12 18:01:46  bs
+ * Two functions added: TSIprintAccesses and TSIprintFestures.
+ *
  * Revision 2.3  1999/04/08 12:50:48  bs
  * The TSI is analysing withloops now.
  *
@@ -55,5 +58,8 @@ extern node *TSIwhile (node *arg_node, node *arg_info);
 extern node *TSIdo (node *arg_node, node *arg_info);
 extern node *TSIcond (node *arg_node, node *arg_info);
 extern node *TSIprf (node *arg_node, node *arg_info);
+
+extern void TSIprintAccesses (node *arg_node, node *arg_info);
+extern void TSIprintFeatures (node *arg_node, node *arg_info);
 
 #endif /* _tile_size_inference_h  */
