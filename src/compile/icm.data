@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/07/13 16:35:27  hw
- * - changed N_icm ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
+ * Revision 1.21  1995/08/15 14:41:41  hw
+ * added ICMs ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, ND_PRF_MODARRAY_AxCxS,
+ * ND_PRF_MODARRAY_AxCxA and  ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
  *
+# Revision 1.20  1995/07/13  16:35:27  hw
+# - changed N_icm ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
+#
 # Revision 1.19  1995/06/09  15:29:19  hw
 # changed PSI N_icm's (linenumber inserted)
 #
@@ -209,6 +213,58 @@ ICM_DEF( ND_KD_ROT_CxSxA_A, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
 ICM_END( ND_KD_ROT_CxSxA_A )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxCxS_CHECK_REUSE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_VAR( 1, value)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
+ICM_END( ND_KD_DROP_CxA_A )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxCxS) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_VAR( 1, value)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
+ICM_END( ND_KD_DROP_CxA_A )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxCxA_CHECK_REUSE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_STR( value)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
+ICM_END( ND_KD_DROP_CxA_A )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxCxA) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_STR(value)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
+ICM_END( ND_KD_DROP_CxA_A )
 #endif
 
 #if defined(ND_BEGIN_GENARRAY) || defined(ICM_ALL)

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/07/13 16:42:39  hw
+ * Revision 1.27  1995/08/15 14:38:22  hw
+ * added ICMs ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, ND_PRF_MODARRAY_AxCxS,
+ * ND_PRF_MODARRAY_AxCxA and  ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
+ *
+ * Revision 1.26  1995/07/13  16:42:39  hw
  * - changed N_icm ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
  * - changed ND_FUN_DEC to handel declaration of imported functions
  *   ( imported function do not have formal paramter names anymore !!!)
@@ -535,6 +539,7 @@ MAIN
     char *numstr[] = {"rotnum"};
     char *valstr[] = {"ret-val"};
     char *neutral[] = {"neutral"};
+    char *value[] = {"value"};
     char v[] = "vector";
     char a[] = "arg";
     char reta[] = "ret-array";
@@ -544,6 +549,9 @@ MAIN
     char idx[] = "idxvar";
     char a2[] = "arg2";
     char res[] = "result";
+    char old[] = "old";
+    char res_type[] = "type";
+    char a_value[] = "array";
     char *A[] = {"B", "C", "D"};
     int idxlen = 3;
     int i;
@@ -1200,6 +1208,267 @@ NewBlock (
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_ROT_CxSxA_A
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_PRF_MODARRAY_AxCxS_CHECK_REUSE( res_type, dimres, res, old, value, dimv,
+ *                                    v0,..., vn):
+ */
+
+#define ND_PRF_MODARRAY_AxCxS_CHECK_REUSE
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+fprintf (outfile, " ND_CHECK_REUSE(%s,%s)\n", res, old);
+INDENT;
+fprintf (outfile, "{ int __i;\n");
+fprintf (outfile, "  ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+INDENT;
+fprintf (outfile, "  for(__i=0; __i<ND_A_SIZE(%s); __i++)", res);
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
+INDENT;
+fprintf (outfile, "}\n");
+INDENT;
+if (check_boundary) {
+    fprintf (outfile, "{  int __idx=");
+    VectToOffset (dimv, AccessConst (vi, i), dimres, res);
+    fprintf (outfile, ";\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "if( ND_A_SIZE(%s) >= __idx)\n", res);
+    indent++;
+    INDENT;
+}
+fprintf (outfile, "ND_A_FIELD(%s)[", res);
+VectToOffset (dimv, AccessConst (vi, i), dimres, res);
+fprintf (outfile, "]=%s;\n", value[0]);
+INDENT;
+if (check_boundary) {
+    fprintf (outfile, "else\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"modarray\", ND_A_SIZE(%s), __idx);\n", line,
+             res);
+    indent -= 2;
+    INDENT;
+    fprintf (outfile, "}\n");
+}
+fprintf (outfile, "\n\n");
+
+#undef ND_PRF_MODARRAY_AxCxS_CHECK_REUSE
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_PRF_MODARRAY_AxCxS( res_type, dimres, res, old, value, dimv,
+ *                                    v0,..., vn):
+ */
+
+#define ND_PRF_MODARRAY_AxCxS
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+fprintf (outfile, "{ int __i;\n");
+fprintf (outfile, "  ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+INDENT;
+fprintf (outfile, "  for(__i=0; __i<ND_A_SIZE(%s); __i++)", res);
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
+INDENT;
+fprintf (outfile, "}\n");
+INDENT;
+if (check_boundary) {
+    fprintf (outfile, "{  int __idx=");
+    VectToOffset (dimv, AccessConst (vi, i), dimres, res);
+    fprintf (outfile, ";\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "if( ND_A_SIZE(%s) >= __idx)\n", res);
+    indent++;
+    INDENT;
+}
+fprintf (outfile, "ND_A_FIELD(%s)[", res);
+VectToOffset (dimv, AccessConst (vi, i), dimres, res);
+fprintf (outfile, "]=%s;\n", value[0]);
+INDENT;
+if (check_boundary) {
+    fprintf (outfile, "else\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"modarray\", ND_A_SIZE(%s), __idx);\n", line,
+             res);
+    indent -= 2;
+    INDENT;
+    fprintf (outfile, "}\n");
+}
+fprintf (outfile, "\n\n");
+
+#undef ND_PRF_MODARRAY_AxCxS
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_PRF_MODARRAY_AxCxA( res_type, dimres, res, old, a_value, dimv,
+ *                                    v0,..., vn):
+ */
+
+#define ND_PRF_MODARRAY_AxCxA
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+fprintf (outfile, "{ int __i, __j;\n");
+fprintf (outfile, "  int __idx=");
+VectToOffset (dimv, AccessConst (vi, i), dimres, res);
+fprintf (outfile, ";\n");
+INDENT;
+if (check_boundary) {
+    fprintf (outfile, "if( ND_A_SIZE(%s) >= (__idx+ND_A_SIZE(%s))) {\n", res, value);
+    indent++;
+    INDENT;
+}
+fprintf (outfile, "  ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+INDENT;
+fprintf (outfile, "  for(__i=0; __i<__idx-1; __i++)");
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
+INDENT;
+fprintf (outfile, "  for(__i=__idx,__j=0; __j<ND_A_SIZE(%s); __i++,__j++)", value);
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__j];\n", res, value);
+INDENT;
+fprintf (outfile, " for(; __i<ND_A_SIZE(%s); __i++)", res);
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
+
+if (check_boundary) {
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+    INDENT;
+    fprintf (outfile, "else\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"modarray\", ND_A_SIZE(%s), __idx);\n", line,
+             res);
+    indent -= 2;
+    INDENT;
+    fprintf (outfile, "}\n");
+} else {
+    INDENT;
+    fprintf (outfile, "}\n");
+}
+fprintf (outfile, "\n\n");
+
+#undef ND_PRF_MODARRAY_AxCxA
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_PRF_MODARRAY_AxCxA_CHECK_REUSE( res_type, dimres, res, old, a_value, dimv,
+ *                                    v0,..., vn):
+ */
+
+#define ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+fprintf (outfile, "{  int __i, __j;\n");
+INDENT;
+fprintf (outfile, "  int __idx=");
+VectToOffset (dimv, AccessConst (vi, i), dimres, res);
+fprintf (outfile, ";\n");
+INDENT;
+if (check_boundary) {
+    fprintf (outfile, "if( ND_A_SIZE(%s) >= (__idx+ND_A_SIZE(%s))) {\n", res, value);
+    indent++;
+    INDENT;
+}
+fprintf (outfile, "if(ND_A_RC(%s)==1){\n", old);
+indent++;
+INDENT;
+fprintf (outfile, "ND_REUSE(%s,%s)\n", old, res);
+INDENT;
+fprintf (outfile, "for(__i=__idx,__j=0; __j<ND_A_SIZE(%s); __i++,__j++)\n", value);
+indent++;
+INDENT;
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__j];\n", res, value);
+indent -= 2;
+INDENT;
+fprintf (outfile, "}\n");
+INDENT;
+fprintf (outfile, "else{\n");
+indent++;
+INDENT;
+fprintf (outfile, "ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+INDENT;
+fprintf (outfile, "for(__i=0; __i<__idx-1; __i++)\n");
+indent++;
+INDENT;
+fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
+indent--;
+INDENT;
+fprintf (outfile, "for(__i=__idx,__j=0; __j<ND_A_SIZE(%s); __i++,__j++)\n", value);
+indent++;
+INDENT;
+fprintf (outfile, "ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__j];\n", res, value);
+indent--;
+INDENT;
+fprintf (outfile, "for(; __i<ND_A_SIZE(%s); __i++)\n", res);
+indent++;
+INDENT;
+fprintf (outfile, "ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
+indent -= 2;
+INDENT;
+fprintf (outfile, "}\n");
+INDENT;
+
+if (check_boundary) {
+    fprintf (outfile, "}\n");
+    INDENT;
+    fprintf (outfile, "else\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"modarray\", ND_A_SIZE(%s), __idx);\n", line,
+             res);
+    indent -= 2;
+    INDENT;
+}
+fprintf (outfile, "}\n");
+fprintf (outfile, "\n\n");
+
+#undef ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
 
 #ifndef TEST_BACKEND
 DBUG_VOID_RETURN;
