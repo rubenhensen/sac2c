@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/11/10 15:44:34  sbs
+ * Revision 1.3  1994/12/01 17:41:40  hw
+ * added funptr type_tab[]
+ * changed parameters of NIF
+ *
+ * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
  *
@@ -17,6 +21,8 @@
 
 #include "flatten.h"
 #include "print.h"
+#include "typecheck.h"
+
 #include "traverse.h"
 
 funptr *act_tab;
@@ -29,7 +35,7 @@ funptr *act_tab;
 **
 */
 
-#define NIF(n, s, x, y, z) x
+#define NIF(n, s, f, p, t, z) f
 
 funptr flat_tab[] = {
 #include "node_info.mac"
@@ -41,9 +47,21 @@ funptr flat_tab[] = {
 **  2) print_tab
 */
 
-#define NIF(n, s, x, y, z) y
+#define NIF(n, s, f, p, t, z) p
 
 funptr print_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 3) type_tab
+ */
+
+#define NIF(n, s, f, p, t, z) t
+
+funptr type_tab[] = {
 #include "node_info.mac"
 };
 
