@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.17  2004/11/23 12:06:05  sbs
+# global INCS setting crdeated
+#
 # Revision 1.16  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -95,6 +98,9 @@ MAKEFLAGS    += --no-print-directory
 LDDYNFLAG    := @LDDYNFLAG@
 
 TAR          :=tar
+EXCLUDE_INCS :=libsac runtime xml tools
+INCS         :=-I../../inc $(patsubst %,-I../%,$(filter-out $(EXCLUDE_INCS),\
+                                  $(notdir $(wildcard ../*))))
 LIBS         :=@LIBS@@LEXLIB@
 EFLIBS       :=-L/home/sacbase/efence -lefence
 RM           :=rm -f
