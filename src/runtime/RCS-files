@@ -8,6 +8,7 @@ sac_bool.h
 sac_boundcheck.h
 sac_cachesim.h
 sac_cinterface.h
+sac_cwrapper.h
 sac_heapmgr.h
 sac_icm.h
 sac_idx.h
