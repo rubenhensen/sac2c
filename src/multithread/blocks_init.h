@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/02 17:22:47  jhs
+ * BlocksInit improved.
+ *
  * Revision 1.2  2000/02/02 12:27:13  jhs
  * Added INFO_MUTH_FUNDEF, improved BLKIN.
  *
@@ -24,5 +27,7 @@
 #define BLOCKS_INIT_H
 
 extern node *BlocksInit (node *arg_node, node *arg_info);
+
+extern node *BLKINassign (node *arg_node, node *arg_info);
 
 #endif /* BLOCKS_INIT_H */

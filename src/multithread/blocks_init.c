@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/02 17:22:47  jhs
+ * BlocksInit improved.
+ *
  * Revision 1.2  2000/02/02 12:27:13  jhs
  * Added INFO_MUTH_FUNDEF, improved BLKIN.
  *
@@ -45,9 +48,23 @@
 node *
 BlocksInit (node *arg_node, node *arg_info)
 {
+    funtab *old_tab;
+
     DBUG_ENTER ("BlocksInit");
 
-    /* ... */
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "ScheduleInit expects a N_fundef as arg_node");
+
+    old_tab = act_tab;
+    act_tab = blkin_tab;
+
+    /* push info ... */
+
+    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+    /* pop info ... */
+
+    act_tab = old_tab;
 
     DBUG_RETURN (arg_node);
 }
@@ -65,9 +82,36 @@ BlocksInit (node *arg_node, node *arg_info)
 static int
 MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 {
+    int result;
+    node *instr;
+
     DBUG_ENTER ("MustExecuteSingleThreeaded");
 
-    DBUG_RETURN (FALSE);
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is not a N_assign");
+
+    instr = ASSIGN_INSTR (arg_node);
+
+    if (NODE_TYPE (instr) == N_let) {
+        /* test lhs if arrays > threshold */
+
+    } else if (NODE_TYPE (instr) == N_while) {
+        /* ??? #### */
+        result = FALSE;
+    } else if (NODE_TYPE (instr) == N_do) {
+        /* ??? #### */
+        result = FALSE;
+    } else if (NODE_TYPE (instr) == N_cond) {
+        /* ??? #### */
+        result = FALSE;
+    } else if (NODE_TYPE (instr) == N_return) {
+        /* ??? #### */
+        result = FALSE;
+    } else {
+        DBUG_ASSERT (0, "unknown type of instr");
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
