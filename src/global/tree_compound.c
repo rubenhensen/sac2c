@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/10/31 08:54:43  cg
+ * Revision 1.13  1995/10/31 09:40:31  cg
+ * bug fixed: free.h now included.
+ *
+ * Revision 1.12  1995/10/31  08:54:43  cg
  * added new functions FreeNodelist and TidyUpNodelist.
  *
  * Revision 1.11  1995/10/26  15:59:54  cg
@@ -58,6 +61,8 @@
 
 #include "dbug.h"
 #include "my_debug.h"
+
+#include <malloc.h>
 
 /***
  ***  mod_name_con
@@ -427,7 +432,9 @@ FreeNodelist (nodelist *list)
         free (tmp);
     }
 
-    DBUG_RETURN (NULL);
+    tmp = NULL;
+
+    DBUG_RETURN (tmp);
 }
 
 /***
