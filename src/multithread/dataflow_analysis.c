@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/07 12:56:42  dkr
+ * nothings changed
+ *
  * Revision 3.1  2000/11/20 18:03:08  sacbase
  * new release made
  *
@@ -35,9 +38,6 @@
  * Revision 1.1  2000/03/09 19:49:54  jhs
  * Initial revision
  *
- *
- *
- * constructed by jhs@dArtagnan at home
  */
 
 /******************************************************************************
