@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/06/09 09:19:01  asi
+ * Revision 1.22  1995/06/09 13:29:15  asi
+ * now reallocating stack, if it sac-program has more than 50 levels
+ *
+ * Revision 1.21  1995/06/09  09:19:01  asi
  * *** empty log message ***
  *
  * Revision 1.20  1995/05/16  09:14:09  asi
@@ -119,6 +122,33 @@ stack *cf_stack;
 
 /*
  *
+ *  functionname  : CheckStack
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+void
+CheckStack (stack *my_stack)
+{
+    DBUG_ENTER ("CheckStack");
+    if (cf_stack->tos == ((cf_stack->st_len) - 1)) {
+        cf_stack->stack
+          = realloc (cf_stack->stack, (sizeof (stelm) * (2 * cf_stack->st_len)));
+        if (NULL == cf_stack->stack)
+            Error ("out of memory", 1);
+        cf_stack->st_len *= 2;
+    }
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  : PushVL
  *  arguments     : 1) number of variables in new list
  *  description   : a new entry will be pushed on the cf_stack. The entry is a pointer
@@ -146,11 +176,7 @@ PushVL (long NumVar)
     cf_stack->stack[cf_stack->tos].vl_len = NumVar;
     for (i = 0; i < NumVar; i++)
         cf_stack->stack[cf_stack->tos].varlist[i] = NULL;
-    if (cf_stack->tos == cf_stack->st_len) {
-        if (NULL != (cf_stack->stack = realloc (cf_stack->stack, 2 * cf_stack->st_len)))
-            Error ("out of memory", 1);
-        cf_stack->st_len *= 2;
-    }
+    CheckStack (cf_stack);
     DBUG_VOID_RETURN;
 }
 
@@ -182,6 +208,7 @@ PushDupVL ()
         cf_stack->stack[cf_stack->tos].varlist[i]
           = cf_stack->stack[cf_stack->tos - 1].varlist[i];
     cf_stack->stack[cf_stack->tos].vl_len = cf_stack->stack[cf_stack->tos - 1].vl_len;
+    CheckStack (cf_stack);
     DBUG_VOID_RETURN;
 }
 
