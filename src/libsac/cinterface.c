@@ -4,6 +4,7 @@
  */
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include "sac.h"
 #include "sac_cinterface.h"
 
