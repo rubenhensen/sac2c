@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/30 12:24:13  nmw
+ * UNRap added
+ * ,
+ *
  * Revision 3.1  2000/11/20 18:00:36  sacbase
  * new release made
  *
@@ -86,5 +90,6 @@ extern node *UNRid (node *arg_node, node *arg_info);
 extern node *UNRlet (node *arg_node, node *arg_info);
 extern node *UNRassign (node *arg_node, node *arg_info);
 extern node *UNRNwith (node *arg_node, node *arg_info);
+extern node *UNRap (node *arg_node, node *arg_info);
 
 #endif /* _Unroll_h */
