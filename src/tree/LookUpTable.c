@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/08/14 11:59:51  dkr
+ * DBUG-output in ComputeHashDiff() modified
+ *
  * Revision 3.19  2002/08/13 17:29:31  dkr
  * comment corrected
  *
@@ -177,7 +180,7 @@
  * size of a collision table fragment
  * (== # pairs of data that can be stored in the table)
  */
-#define LUT_SIZE 4
+#define LUT_SIZE 5
 
 /*
  * number of different hash keys
@@ -351,15 +354,24 @@ ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
 {
     int min_k, max_k, k;
     int min, max;
-    int size, diff;
+    int size, diff, sum;
 
     DBUG_ENTER ("ComputeHashDiff");
 
     if (lut != NULL) {
+        DBUG_PRINT ("LUT", ("%s ---", note));
+        DBUG_EXECUTE ("LUT", fprintf (stderr, "  key:  ");
+                      for (k = min_key; k < max_key; k++) {
+                          fprintf (stderr, "%4i ", k);
+                      } fprintf (stderr, "\n  size: "););
+
+        sum = 0;
         min = max = lut[min_key].size;
         min_k = max_k = 0;
-        for (k = min_key + 1; k < max_key; k++) {
-            size = lut[k].size;
+        for (k = min_key; k < max_key; k++) {
+            sum += size = lut[k].size;
+            DBUG_EXECUTE ("LUT", fprintf (stderr, "%4i ", size););
+
             if (min > size) {
                 min = size;
                 min_k = k;
@@ -371,9 +383,16 @@ ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
         }
         diff = max - min;
 
-        DBUG_PRINT ("LUT", ("%s --- min: |lut[%i]| = %i, max: |lut[%i]| = %i,"
-                            " diff: %i/%i",
-                            note, min_k, min, max_k, max, diff, LUT_SIZE));
+        DBUG_EXECUTE ("LUT",
+                      fprintf (stderr,
+                               "\n  "
+                               "sum size = %i, opt size = %1.1f, lutfrag size = %i",
+                               sum, sum / ((double)max_key - min_key), LUT_SIZE);
+                      fprintf (stderr,
+                               "\n  "
+                               "min size (key %i) = %i, max size (key %i) = %i,"
+                               " diff = %i\n",
+                               min_k, min, max_k, max, diff););
 
         DBUG_ASSERT ((diff <= LUT_SIZE), "LUT: unballanced collision tables detected!");
     } else {
