@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.100  1999/01/14 13:13:21  sacbase
+# in clean: rm src.tar.gz added .
+#
 # Revision 1.99  1999/01/07 13:59:23  sbs
 # NEWTREE turned off + generatemasks.o, DeadFunctionRemoval added
 #
@@ -310,6 +313,7 @@ clean:
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb
+	$(RM) src.tar.gz
 
 floppy: src.tar.gz
 	$(TAR) -cvf /dev/rfd0c src.tar.gz
