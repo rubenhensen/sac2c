@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.69  2000/07/11 15:45:21  jhs
+ * Added homework ...
+ * containing BuildParamsByDFMfold, compilations of N_mt, N_st,
+ * N_MTalloc, N_MTsignal, N_MTsync, ...
+ *
  * Revision 2.68  2000/07/11 11:29:16  dkr
  * minor changes done
  *
@@ -2061,7 +2066,7 @@ COMPFundef (node *arg_node, node *arg_info)
     }
 
     /*
-     *  Destruction of last known N_sync is done here, all others have be killed
+     *  Destruction of last known N_sync is done here, all others have been killed
      *  while traversing.
      */
     if (INFO_COMP_LAST_SYNC (arg_info) != NULL) {
@@ -2132,7 +2137,6 @@ COMPFundef (node *arg_node, node *arg_info)
 #else
             var_name_node = MakeId1 ("");
 #endif
-
         } else {
             DBUG_ASSERT ((return_node != NULL), "no return icm found");
             DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (return_node))),
@@ -2207,7 +2211,16 @@ COMPFundef (node *arg_node, node *arg_info)
         ReorganizeReturnIcm (ICM_ARGS (FUNDEF_RETURN (arg_node)));
     }
 
-    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
+    /*
+     *  if mtn(==mt2) is set, we check if this is a lifted mt-function inspecting
+     *  FUNDEF_ATTRIB, otherwise we check FUNDEF_STATUS to see if this is
+     *  an spmd-function (old mt==mto) or decide it is a "normal" function.
+     */
+    if ((gen_mt_code == GEN_MT_NEW) && (FUNDEF_ATTRIB (arg_node) == ST_call_mtlift)) {
+        /* DBUG_ASSERT( 0, "cannot compile!!!"); */
+        FUNDEF_ICM (arg_node)
+          = CreateIcmND_FUN_DEC (FUNDEF_NAME (arg_node), icm_tab, tab_size);
+    } else if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
         FUNDEF_ICM (arg_node)
           = CreateIcmMT_SPMD_FUN_DEC (FUNDEF_NAME (arg_node),
                                       FUNDEF_NAME (FUNDEF_LIFTEDFROM (arg_node)), icm_tab,
@@ -5358,6 +5371,7 @@ COMPObjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static
  *   node *BuildParamsByDFM( DFMmask_t *mask,
  *                           char *tag, int *num_args, node *icm_args)
  *
@@ -5368,17 +5382,15 @@ COMPObjdef (node *arg_node, node *arg_info)
  *   at the end of this chain icm_args will be concatenated.
  *
  ******************************************************************************/
-
-node *
+static node *
 BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 {
     node *vardec;
     char *rc_tag;
-#if 0
-  char *this_tag;
-#endif
+    char *this_tag;
 
     DBUG_ENTER ("BuildParamsByDFM");
+    DBUG_PRINT ("JHS", ("begin %s", tag));
 
     rc_tag = StringConcat (tag, "_rc");
 
@@ -5387,34 +5399,95 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
         DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
         DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
-#if 0
-    if (VARDEC_OR_ARG_REFCNT( vardec) >= 0) {
-      this_tag = rc_tag;
-    } else {
-      this_tag = tag;
-    }
-    icm_args = MakeExprs( MakeId1( this_tag),
-               MakeExprs( MakeId1( MakeTypeString(VARDEC_OR_ARG_TYPE( vardec))),
-               MakeExprs( MakeId1( VARDEC_OR_ARG_NAME( vardec)),
-                          icm_args)));
-    if (num_args != NULL) {
-      *num_args = *num_args + 1;
-    }
 
-    if (num_args != NULL) {
-      DBUG_PRINT("SPMD", ("bpbdfm num_args:%i %s", 
-                          *num_args, VARDEC_OR_ARG_NAME( vardec )));
-    } else {
-      DBUG_PRINT("SPMD", ("bpbdfm num_args:- %s", 
-                          VARDEC_OR_ARG_NAME( vardec )));
-    }
-#endif
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            this_tag = rc_tag;
+        } else {
+            this_tag = tag;
+        }
+        icm_args
+          = MakeExprs (MakeId1 (this_tag),
+                       MakeExprs (MakeId1 (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec))),
+                                  MakeExprs (MakeId1 (VARDEC_OR_ARG_NAME (vardec)),
+                                             icm_args)));
+        if (num_args != NULL) {
+            *num_args = *num_args + 1;
+        }
+
+        if (num_args != NULL) {
+            DBUG_PRINT ("SPMD", ("bpbdfm num_args:%i %s", *num_args,
+                                 VARDEC_OR_ARG_NAME (vardec)));
+        } else {
+            DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
+        }
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
     free (rc_tag);
 
+    DBUG_RETURN (icm_args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static
+ *   node *BuildParamsByDFMfold( DFMmask_t *mask,
+ *                               char *tag, int *num_args, node *icm_args)
+ *
+ * description:
+ *   Builds tuple-chain (tag, type, name, fun) from dfm-foldmask mask,
+ *   tag will we used as base for the tags (used raw or _rc is added),
+ *   num_args will be incremented for each triplet added (maybe NULL),
+ *   at the end of this chain icm_args will be concatenated.
+ *
+ ******************************************************************************/
+static node *
+BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_args)
+{
+    node *vardec;
+    char *rc_tag;
+    char *this_tag;
+
+    DBUG_ENTER ("BuildParamsByDFMfold");
+    DBUG_PRINT ("JHS", ("begin %s", tag));
+
+    rc_tag = StringConcat (tag, "_rc");
+
+    vardec = DFMGetMaskEntryDeclSet (mask);
+    while (vardec != NULL) {
+
+        DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
+        DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
+
+        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+            this_tag = rc_tag;
+        } else {
+            this_tag = tag;
+        }
+        icm_args
+          = MakeExprs (MakeId1 (this_tag),
+                       MakeExprs (MakeId1 (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec))),
+                                  MakeExprs (MakeId1 (VARDEC_OR_ARG_NAME (vardec)),
+                                             icm_args)));
+        if (num_args != NULL) {
+            *num_args = *num_args + 1;
+        }
+
+        if (num_args != NULL) {
+            DBUG_PRINT ("SPMD", ("bpbdfm num_args:%i %s", *num_args,
+                                 VARDEC_OR_ARG_NAME (vardec)));
+        } else {
+            DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
+        }
+
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    free (rc_tag);
+
+    DBUG_PRINT ("JHS", ("end"));
     DBUG_RETURN (icm_args);
 }
 
@@ -7485,6 +7558,14 @@ MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
       MakeAssign (part1, MakeAssigns7 (part2, part3, part4, part5, part6, part7, part8)));
 }
 
+node *
+MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6, node *part7, node *part8, node *part9)
+{
+    return (MakeAssign (part1, MakeAssigns8 (part2, part3, part4, part5, part6, part7,
+                                             part8, part9)));
+}
+
 /*
  *  jhs ####
  */
@@ -7499,7 +7580,6 @@ MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
  *   compiles an N_mt-node
  *
  ******************************************************************************/
-
 node *
 COMPMt (node *arg_node, node *arg_info)
 {
@@ -7519,8 +7599,8 @@ COMPMt (node *arg_node, node *arg_info)
     /*
      *  Part 1 - Allocate
      */
-    allocate = MakeIcm0 ("ALLOCATE"); /* #### */
-
+    allocate = MakeIcm2 ("MT2_ALLOCATE", MakeNum (DFMTestMask (MT_ALLOC (arg_node))),
+                         BuildParamsByDFM (MT_ALLOC (arg_node), "alloc", NULL, NULL));
     /*
      *  Part 2 - Broadcast
      */
@@ -7564,19 +7644,28 @@ COMPMt (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *COMPMt( node *arg_node, node *arg_info)
+ *   node *COMPSt( node *arg_node, node *arg_info)
  *
  * description:
- *   compiles an N_mt-node
+ *   compiles an N_st-node
  *
  ******************************************************************************/
-
 node *
 COMPSt (node *arg_node, node *arg_info)
 {
     node *result;
     node *fundef;
-    node *barrier, *code, *allocate, *broadcast, *activate, *suspend, *receive;
+    node *barrier;
+    node *code;
+    node *allocate;
+    node *broadcast;
+    node *activate;
+    node *suspend;
+    node *receive;
+    DFMmask_t dfm_flat; /*  expression cannot be written in one assignment
+                         *  so it was made flat
+                         */
+    DFMmask_t bset;     /* broadcast-set*/
 
     DBUG_ENTER ("COMPSt");
 
@@ -7584,34 +7673,46 @@ COMPSt (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot compile this"));
 #endif
 
+    dfm_flat = DFMGenMaskAnd (ST_SYNC (arg_node), ST_NEEDLATER_MT (arg_node));
+    bset = DFMGenMaskOr (ST_ALLOC (arg_node), dfm_flat);
+    dfm_flat = DFMRemoveMask (dfm_flat);
+
     fundef = INFO_COMP_FUNDEF (arg_info);
     DBUG_PRINT ("COMPjhs", ("compiling %s attrib: %s status: %s", FUNDEF_NAME (fundef),
                             mdb_statustype[FUNDEF_ATTRIB (fundef)],
                             mdb_statustype[FUNDEF_STATUS (fundef)]));
 
     if (FUNDEF_ATTRIB (fundef) == ST_call_mt_master) {
-        barrier = MakeIcm0 ("MTN_MASTER_BARRIER");
+        barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
         code = MakeIcm0 ("CODE");
-        allocate = MakeIcm0 ("ALLOCATE");
-        broadcast = MakeIcm0 ("MTN_MASTER_BROADCAST");
-        activate = MakeIcm0 ("MTN_ACTIVATE");
+        allocate = MakeIcm2 ("MT2_ALLOCATE", MakeNum (DFMTestMask (ST_ALLOC (arg_node))),
+                             BuildParamsByDFM (ST_ALLOC (arg_node), "alloc", NULL, NULL));
+        broadcast
+          = MakeIcm4 ("MT2_MASTER_BROADCAST", MakeId1 ("SYNC"),
+                      MakeNum (MT_IDENTIFIER (arg_node)), MakeNum (DFMTestMask (bset)),
+                      BuildParamsByDFM (bset, "bset", NULL, NULL));
+        activate = MakeIcm2 ("MT2_ACTIVATE", MakeId1 ("SYNC"), MakeId1 ("NULL"));
 
         result = MakeAssigns5 (barrier, code, allocate, broadcast, activate);
     } else if (FUNDEF_ATTRIB (fundef) == ST_call_mt_worker) {
-        barrier = MakeIcm0 ("MTN_WORKER_BARRIER");
-        suspend = MakeIcm0 ("MTN_SUSPEND");
-        receive = MakeIcm0 ("MTN_MASTER_RECEIVE");
+        barrier = MakeIcm1 ("MT2_WORKER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
+        suspend = MakeIcm1 ("MT2_SUSPEND", MakeId1 ("SYNC"));
+        receive
+          = MakeIcm4 ("MT2_MASTER_RECEIVE", MakeId1 ("SYNC"),
+                      MakeNum (MT_IDENTIFIER (arg_node)), MakeNum (DFMTestMask (bset)),
+                      BuildParamsByDFM (bset, "bset", NULL, NULL));
 
         result = MakeAssigns3 (barrier, suspend, receive);
     } else {
         DBUG_ASSERT (0, "can not handle such a function");
     }
 
+    bset = DFMRemoveMask (bset);
+
     arg_node = FreeTree (arg_node);
 
     DBUG_RETURN (result);
 }
-
 /******************************************************************************
  *
  * function:
@@ -7621,7 +7722,6 @@ COMPSt (node *arg_node, node *arg_info)
  *   ####
  *
  ******************************************************************************/
-
 node *
 COMPMTsignal (node *arg_node, node *arg_info)
 {
@@ -7633,9 +7733,9 @@ COMPMTsignal (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
 #endif
 
-    assigns
-      = MakeAssigns1 (MakeIcm1 ("MT2_SIGNAL", BuildParamsByDFM (MTSIGNAL_IDSET (arg_node),
-                                                                "ids", NULL, NULL)));
+    assigns = MakeAssigns1 (
+      MakeIcm2 ("MT2_SIGNAL_DATA", MakeNum (DFMTestMask (MTSIGNAL_IDSET (arg_node))),
+                BuildParamsByDFM (MTSIGNAL_IDSET (arg_node), "ids", NULL, NULL)));
 
     arg_node = FreeTree (arg_node);
 
@@ -7651,7 +7751,6 @@ COMPMTsignal (node *arg_node, node *arg_info)
  *   ####
  *
  ******************************************************************************/
-
 node *
 COMPMTalloc (node *arg_node, node *arg_info)
 {
@@ -7690,19 +7789,15 @@ COMPMTalloc (node *arg_node, node *arg_info)
 
     if_ = MakeIcm0 ("MT2_IF_I_AM_FIRST");
     alloc = MakeIcm0 ("ALLOC");
-
-    /*
-      DFMPrintMaskDetailed (stdout, MTALLOC_IDSET( arg_node));
-    */
-    printf ("\n");
-
     broadcast
-      = MakeIcm2 (broadcast_icm, MakeId1 ("ALLOC"),
+      = MakeIcm3 (broadcast_icm, MakeId1 ("ALLOC"),
+                  MakeNum (DFMTestMask (MTALLOC_IDSET (arg_node))),
                   BuildParamsByDFM (MTALLOC_IDSET (arg_node), "alloc", NULL, NULL));
     activate = MakeIcm2 ("MT2_ACTIVATE", MakeId1 ("ALLOC"), MakeId1 ("NULL"));
     else_ = MakeIcm0 ("MT2_ELSE_IF_I_AM_NOT_FIRST");
     suspend = MakeIcm1 ("MT2_SUSPEND", MakeId1 ("ALLOC"));
-    receive = MakeIcm2 (receive_icm, MakeId1 ("ALLOC"),
+    receive = MakeIcm3 (receive_icm, MakeId1 ("ALLOC"),
+                        MakeNum (DFMTestMask (MTALLOC_IDSET (arg_node))),
                         BuildParamsByDFM (MTALLOC_IDSET (arg_node), "alloc", NULL, NULL));
     end_ = MakeIcm0 ("MT2_END_I_AM_FIRST");
 
@@ -7718,6 +7813,20 @@ node *
 COMPMTsync (node *arg_node, node *arg_info)
 {
     node *result;
+    node *fundef;
+    node *if_;
+    node *wait;
+    node *broadcast;
+    node *activate;
+    node *else_;
+    node *end_;
+    node *args;
+    node *suspend;
+    node *receive;
+    node *alloc;
+    int nums;
+    char *broadcast_icm;
+    char *receive_icm;
 
     DBUG_ENTER ("COMPMTsync");
 
@@ -7725,7 +7834,51 @@ COMPMTsync (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMTsync not implemented yet, cannot compile this"));
 #endif
 
-    result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_SYNC"));
+    fundef = INFO_COMP_FUNDEF (arg_info);
+    if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
+        || (FUNDEF_ATTRIB (fundef) == ST_call_st)) {
+        broadcast_icm = "MT2_MASTER_BROADCAST";
+        receive_icm = "MT2_MASTER_RECEIVE";
+    } else if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_worker)
+               || (FUNDEF_ATTRIB (fundef) == ST_call_mtlift)) {
+        broadcast_icm = "MT2_WORKER_BROADCAST";
+        receive_icm = "MT2_WORKER_RECEIVE";
+    } else {
+        DBUG_PRINT ("JHS", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
+        DBUG_ASSERT (0, "can not handle such a function");
+    }
+
+    /* if */
+    if_ = MakeIcm0 ("MT2_IF_I_AM_FIRST");
+    /* alloc */
+    alloc = MakeIcm0 ("ALLOC");
+    /* wait */
+    nums = 0;
+    args = BuildParamsByDFMfold (MTSYNC_FOLD (arg_node), "sync", &nums, NULL);
+    wait = MakeIcm2 ("MT2_WAIT_DATA", MakeNum (nums), args);
+    /* broadcast */
+    nums = 0;
+    args = BuildParamsByDFMfold (MTSYNC_FOLD (arg_node), "sync", &nums,
+                                 BuildParamsByDFM (MTSYNC_ALLOC (arg_node), "sync", &nums,
+                                                   NULL));
+    broadcast = MakeIcm3 (broadcast_icm, MakeId1 ("SYNC"), MakeNum (nums), args);
+    /* activate */
+    activate = MakeIcm2 ("MT2_ACTIVATE", MakeId1 ("SYNC"), MakeId1 ("NULL"));
+    /* else */
+    else_ = MakeIcm0 ("MT2_ELSE_IF_I_AM_NOT_FIRST");
+    /* suspend */
+    suspend = MakeIcm1 ("MT2_SUSPEND", MakeId1 ("SYNC"));
+    /* receive */
+    nums = 0;
+    args = BuildParamsByDFMfold (MTSYNC_FOLD (arg_node), "sync", &nums,
+                                 BuildParamsByDFM (MTSYNC_ALLOC (arg_node), "sync", &nums,
+                                                   NULL));
+    receive = MakeIcm3 (receive_icm, MakeId1 ("SYNC"), MakeNum (nums), args);
+    /* end */
+    end_ = MakeIcm0 ("MT2_END_I_AM_FIRST");
+
+    result = MakeAssigns9 (if_, alloc, wait, broadcast, activate, else_, suspend, receive,
+                           end_);
 
     arg_node = FreeTree (arg_node);
 
