@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/03/23 09:45:01  nmw
+ * SSA<XYZ>do/while functions replaced by SSADummy
+ *
  * Revision 3.35  2001/03/21 16:47:53  dkr
  * INLvardec, INLarg removed
  *
@@ -831,7 +834,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
      TravSons, TravSons, TravSons, TravSons,
 
      TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-     TravSons, TravSons, CMPTnum, TravSons, SSACFnum, TravSons, TravSons, TravSons,
+     TravSons, TravSons, CMPTnum, TravSons, TravSons, TravSons, TravSons, TravSons,
      TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_char, "N_char", TravSons, TravSons, PrintChar, TravSons, TravSons, TravSons,
@@ -851,7 +854,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTchar, TravSons, SSACFchar, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CMPTchar, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_bool, "N_bool", TravSons, TravSons, PrintBool, TravSons, TravSons, TravSons,
@@ -871,7 +874,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTbool, TravSons, SSACFbool, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CMPTbool, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_str, "N_str", TravSons, TravSons, PrintStr, TravSons, TravSons, TravSons,
@@ -891,7 +894,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTstr, TravSons, SSACFstr, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CMPTstr, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_id, "N_id", TravSons, FltnId, PrintId, TravSons, GNMid, TravSons, WLFid, FreeId,
@@ -931,7 +934,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTfloat, TravSons, SSACFfloat, TravSons, TravSons, TravSons,
+       TravSons, TravSons, CMPTfloat, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_double, "N_double", TravSons, TravSons, PrintDouble, TravSons, TravSons,
@@ -951,8 +954,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CMPTdouble, TravSons, SSACFdouble, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 0),
+       TravSons, TravSons, CMPTdouble, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_typedef, "N_typedef", IMtypedef, TravSons, PrintTypedef, TravSons, TravSons,
        TravSons, TravSons, FreeTypedef, TravSons, TravSons, COMPTypedef, TravSons,
@@ -1333,8 +1336,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        L2Fdo, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSAdo, TravSons, TravSons,
-       SSADCRdo, SSACSEdo, CMPTTravSons, TravSons, SSACFdo, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSADummy, TravSons, SSADummy,
+       SSADummy, SSADummy, CMPTTravSons, TravSons, SSADummy, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_while, "N_while", TravSons, FltnWhile, PrintWhile, TCwhile, GNMloop, DCRwhile,
@@ -1353,9 +1356,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        L2Fwhile, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, SSAwhile, TravSons, TravSons,
-       SSADCRwhile, SSACSEwhile, CMPTTravSons, TravSons, SSACFwhile, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSADummy, TravSons, SSADummy,
+       SSADummy, SSADummy, CMPTTravSons, TravSons, SSADummy, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
