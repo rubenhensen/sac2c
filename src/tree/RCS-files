@@ -2,3 +2,4 @@ DataFlowMask.c
 DataFlowMask.h
 DupTree.c
 DupTree.h
+Makefile
