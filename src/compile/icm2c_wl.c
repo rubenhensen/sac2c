@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/07 08:10:02  cg
+ * C implemented ICMs converted to new naming conventions.
+ *
  * Revision 1.4  1998/05/06 14:49:08  dkr
  * changed WL_ASSIGN
  *
@@ -136,7 +139,7 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *offset, char *idx_vec, int d
 #undef WL_ASSIGN
 
     INDENT;
-    fprintf (outfile, "ND_A_FIELD(%s)[%s] = %s;\n", array, offset, expr);
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s] = %s;\n", array, offset, expr);
 
 #if 0
   {

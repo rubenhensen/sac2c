@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/07 08:10:02  cg
+ * C implemented ICMs converted to new naming conventions.
+ *
  * Revision 1.6  1998/04/25 16:25:20  sbs
  *  new icm2c / BEtest mechanism implemented!
  *
@@ -28,29 +31,29 @@
 #define SEP                                                                              \
     if (sep) {                                                                           \
         INDENT;                                                                          \
-        fprintf (outfile, "_SAC_Print( \", \");\n");                                     \
+        fprintf (outfile, "SAC_Print( \", \");\n");                                      \
     }
 
 #define ICM_DEF(prf, trf)                                                                \
     if (trf & traceflag) {                                                               \
         int sep = 0;                                                                     \
         INDENT;                                                                          \
-        fprintf (outfile, "_SAC_Print( \"%s( \");\n", #prf);
+        fprintf (outfile, "SAC_Print( \"%s( \");\n", #prf);
 
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
     if (name[0] == '"') {                                                                \
-        fprintf (outfile, "_SAC_Print( %s );\n", name);                                  \
+        fprintf (outfile, "SAC_Print( %s );\n", name);                                   \
     } else {                                                                             \
-        fprintf (outfile, "_SAC_Print( \"%s \");\n", name);                              \
+        fprintf (outfile, "SAC_Print( \"%s \");\n", name);                               \
     }                                                                                    \
     sep = 1;
 
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "_SAC_Print( \"%d \");\n", name);                                  \
+    fprintf (outfile, "SAC_Print( \"%d \");\n", name);                                   \
     sep = 1;
 
 #define ICM_VAR(dim, name)                                                               \
@@ -60,9 +63,9 @@
             SEP;                                                                         \
             INDENT;                                                                      \
             if (name[i][0] == '"') {                                                     \
-                fprintf (outfile, "_SAC_Print( \"\\%s\"\\\"\" );\n", name[i]);           \
+                fprintf (outfile, "SAC_Print( \"\\%s\"\\\"\" );\n", name[i]);            \
             } else {                                                                     \
-                fprintf (outfile, "_SAC_Print( \"%s \");\n", name[i]);                   \
+                fprintf (outfile, "SAC_Print( \"%s \");\n", name[i]);                    \
             }                                                                            \
             sep = 1;                                                                     \
         }                                                                                \
@@ -70,7 +73,7 @@
 
 #define ICM_END(prf, args)                                                               \
     INDENT;                                                                              \
-    fprintf (outfile, "_SAC_Print( \")\\n\");\n");                                       \
+    fprintf (outfile, "SAC_Print( \")\\n\");\n");                                        \
     }                                                                                    \
     ;
 
