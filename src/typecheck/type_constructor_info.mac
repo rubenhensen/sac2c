@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2003/04/01 16:51:28  sbs
+ * TC_akv added.
+ *
  * Revision 3.4  2002/09/06 17:29:31  sbs
  * TC_poly added.
  *
@@ -54,10 +57,10 @@
       TCIVariableArity (variable_arity)
 
 TCI (TC_simple, 0, "Simple", 0), TCI (TC_symbol, 0, "Symbol", 0),
-  TCI (TC_user, 0, "User", 0), TCI (TC_aks, 1, "AKS", 0), TCI (TC_akd, 1, "AKD", 0),
-  TCI (TC_aud, 1, "AUD", 0), TCI (TC_audgz, 1, "AUDGZ", 0), TCI (TC_prod, 0, "PROD", 1),
-  TCI (TC_union, 2, "UNION", 1), TCI (TC_fun, 1, "FUN", 1), TCI (TC_ibase, 3, "IBASE", 0),
-  TCI (TC_iarr, 1, "IARR", 1), TCI (TC_idim, 1, "IDIM", 1),
+  TCI (TC_user, 0, "User", 0), TCI (TC_akv, 1, "AKV", 0), TCI (TC_aks, 1, "AKS", 0),
+  TCI (TC_akd, 1, "AKD", 0), TCI (TC_aud, 1, "AUD", 0), TCI (TC_audgz, 1, "AUDGZ", 0),
+  TCI (TC_prod, 0, "PROD", 1), TCI (TC_union, 2, "UNION", 1), TCI (TC_fun, 1, "FUN", 1),
+  TCI (TC_ibase, 3, "IBASE", 0), TCI (TC_iarr, 1, "IARR", 1), TCI (TC_idim, 1, "IDIM", 1),
   TCI (TC_ishape, 1, "ISHAPE", 0), TCI (TC_ires, 1, "IRES", 0),
   TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_poly, 0, "POLY", 0),
   TCI (TC_dummy, 0, "LastTCI", 0)
