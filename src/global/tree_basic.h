@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/12/21 10:07:33  cg
+ * Revision 1.29  1995/12/21 13:24:16  asi
+ * added OPERATOR_MASK for N_genarray, N_modarray, N_foldprf and N_foldfun - nodes
+ *
+ * Revision 1.28  1995/12/21  10:07:33  cg
  * now MakePragma has no argument at all, new macros PRAGMA_LINKSIGNNUMS etc.
  * for temporary storage of pragma as list of nums instead of array.
  *
@@ -1103,12 +1106,17 @@ extern node *MakeGenerator (node *left, node *right, char *id);
  ***
  ***    node*  ARRAY  (N_array)
  ***    node*  BODY   (N_block)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    long*  MASK[x]                 (optimize -> )
  ***/
 
 extern node *MakeGenarray (node *array, node *body);
 
 #define GENARRAY_ARRAY(n) (n->node[0])
 #define GENARRAY_BODY(n) (n->node[1])
+#define OPERATOR_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1119,6 +1127,10 @@ extern node *MakeGenarray (node *array, node *body);
  ***
  ***    node*  ARRAY  (N_array)
  ***    node*  BODY   (N_block)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
 extern node *MakeModarray (node *array, node *body);
@@ -1139,6 +1151,10 @@ extern node *MakeModarray (node *array, node *body);
  ***  permanent attributes:
  ***
  ***    prf    PRF
+ ***
+ ***  temporary attributes:
+ ***
+ ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
 extern node *MakeFoldprf (prf prf, node *body, node *neutral);
@@ -1165,6 +1181,7 @@ extern node *MakeFoldprf (prf prf, node *body, node *neutral);
  ***  temporary attributes:
  ***
  ***    node*  FUNDEF        (N_fundef)  (typecheck -> )
+ ***    long*  MASK[x]                   (optimize -> )  (see N_genarray)
  ***/
 
 extern node *MakeFoldfun (char *name, char *mod, node *body, node *neutral);
