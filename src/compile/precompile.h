@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/04/17 02:14:24  dkr
+ * exported GridOffset()
+ *
  * Revision 1.9  1998/04/02 18:47:08  dkr
  * added PRECconc
  *
@@ -57,5 +60,7 @@ extern node *PRECtypedef (node *arg_node, node *arg_info);
 extern node *PRECconc (node *arg_node, node *arg_info);
 extern node *PRECnwith (node *arg_node, node *arg_info);
 extern node *PRECncode (node *arg_node, node *arg_info);
+
+extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
 
 #endif /* _sac_precompile_h */
