@@ -107,6 +107,7 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
 #define DBUG_RETURN(a1) return (a1)
 #define DBUG_VOID_RETURN return
 #define DBUG_EXECUTE(keyword, a1)
+#define DBUG_DO_NOT_EXECUTE(keyword, a1) a1
 #define DBUG_PRINT(keyword, arglist)
 #define DBUG_PUSH(a1)
 #define DBUG_POP()
@@ -147,6 +148,11 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
     }
 #define DBUG_EXECUTE(keyword, a1)                                                        \
     if ((_db_on_ && _db_keyword_ (keyword))) {                                           \
+        a1                                                                               \
+    } else                                                                               \
+        NOOP
+#define DBUG_DO_NOT_EXECUTE(keyword, a1)                                                 \
+    if ((_db_on_ && !_db_keyword_ (keyword))) {                                          \
         a1                                                                               \
     } else                                                                               \
         NOOP
