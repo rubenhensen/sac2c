@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/01/30 16:41:25  dkr
+ * rcs header compressed
+ *
  * Revision 3.16  2001/01/30 12:22:28  dkr
  * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
  *
@@ -130,72 +133,6 @@
  * Revision 2.82  2000/08/17 10:15:07  dkr
  * comment about IdOrNumToIndex corrected
  *
- * Revision 2.81  2000/07/31 10:45:52  cg
- * Eventually, the son ICM_NEXT is removed from the N_icm node.
- * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 2.80  2000/07/28 17:17:10  cg
- * Compilation of N_vardec nodes modified: ICM now is temporary
- * attribute of N_vardec node which is no longer removed during
- * code generation.
- *
- * Revision 2.79  2000/07/28 12:30:48  cg
- * N_typedef nodes are no longer replaced by N_icm node during
- * code generation. Instead a N_icm node is added to the N_typedef
- * node as additional temporary attribute when necessary.
- *
- * Revision 2.78  2000/07/28 11:41:21  cg
- * Added code to handle dummy parts of iteration spaces due to
- * array padding efficiently, i.e. to perform no action at all.
- *
- * Revision 2.77  2000/07/24 16:41:18  dkr
- * superfluous 'line' parameter of ICMs for array-prfs removed
- *
- * Revision 2.76  2000/07/21 11:26:03  jhs
- * Added CreateIcmMT2_FUN_DEC.
- * Building RECEIVE/BARRIER combination around functions lifted
- * by mt2; rearrange their args as vardec.
- * Using MT2_FUN_DEC, MT2_FUN_RET for mt2 connected functions.
- *
- * Revision 2.75  2000/07/17 14:34:56  jhs
- * all allocs of mt2 are now done by MakeAllocs.
- *
- * Revision 2.74  2000/07/14 14:43:11  nmw
- * free changed to FREE, when used with StringConcat()
- *
- * Revision 2.73  2000/07/13 13:33:46  jhs
- * Modified creation of allocs for new mt.
- *
- * Revision 2.72  2000/07/13 11:59:07  jhs
- * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
- *
- * Revision 2.71  2000/07/12 17:17:44  jhs
- * Fixed params.
- *
- * Revision 2.70  2000/07/12 15:15:15  dkr
- * function DuplicateTypes renamed into DupTypes
- *
- * Revision 2.69  2000/07/11 15:45:21  jhs
- * Added homework ...
- * containing BuildParamsByDFMfold, compilations of N_mt, N_st,
- * N_MTalloc, N_MTsignal, N_MTsync, ...
- *
- * Revision 2.68  2000/07/11 11:29:16  dkr
- * minor changes done
- *
- * Revision 2.67  2000/07/10 14:23:26  cg
- * The return type of a function that will become the actual return
- * type of the corresponding compiled C function is tagged as ST_crettype.
- *
- * Revision 2.66  2000/07/06 17:34:04  dkr
- * some obsolete TAGGED_ARRAY stuff removed
- *
- * Revision 2.65  2000/07/05 12:24:12  dkr
- * unused variable hidden now
- *
- * Revision 2.64  2000/07/04 14:55:57  jhs
- * Added mtn-stuff.
- *
  * [ eliminated ]
  *
  * Revision 1.1  1995/03/29  12:38:10  hw
@@ -223,11 +160,10 @@
 #include "DupTree.h"
 #include "ReuseWithArrays.h"
 #include "free.h"
-#include "typecheck.h" /* for some ugly old macros ... */
+#include "typecheck.h"
+#include "scheduling.h"
 #include "wltransform.h"
 #include "refcount.h"
-#include "scheduling.h"
-#include "precompile.h"
 
 /******************************************************************************
  *
@@ -254,7 +190,8 @@ static node *wl_node = NULL;
 static node *wl_seg = NULL;
 static node *wl_stride = NULL;
 
-#define LABEL_NAME "SAC__Label" /* basic-name for goto label */
+/* postfix for goto labels */
+#define LABEL_POSTFIX "SAC__label"
 
 /*
  * This macro indicates whether there are multiple segments present or not.
@@ -1815,13 +1752,13 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
  *   (== dim, if no blocking is performed). This value is needed as a parameter
  *   for the WL_SET_OFFSET-ICM.
  *
- *   Neither blocking nor naive compilation is activated:
- *     The WL_SET_OFFSET-icm is needed, if the offset is used in the wl-code
+ *   Blocking is inactive:
+ *     The WL_SET_OFFSET-icm is needed, if the offset is needed in the wl-code
  *     and the next dimension is the last one, for which the segment's domain
  *     is not the full index range.
  *
- *   Blocking or naive compilation is activated:
- *     The WL_SET_OFFSET-icm is needed, if the offset is used in the wl-code
+ *   Blocking is active:
+ *     The WL_SET_OFFSET-icm is needed, if the offset is needed in the wl-code
  *     and the next dimension is the last one.
  *
  ******************************************************************************/
@@ -1841,15 +1778,6 @@ GetDim_WL_SET_OFFSET (int dim, node *wl, node *seg)
 
         if (NODE_TYPE (seg) == N_WLseg) {
             /*
-             * infer first blocking dimension
-             */
-            d = 0;
-            while ((d < dims) && ((WLSEG_BV (seg, 0))[d] == 1)) {
-                d++;
-            }
-            first_block_dim = d;
-
-            /*
              * infer first unrolling-blocking dimension
              */
             d = 0;
@@ -1857,6 +1785,15 @@ GetDim_WL_SET_OFFSET (int dim, node *wl, node *seg)
                 d++;
             }
             first_ublock_dim = d;
+
+            /*
+             * infer first blocking dimension
+             */
+            d = 0;
+            while ((d < dims) && ((WLSEG_BV (seg, 0))[d] == 1)) {
+                d++;
+            }
+            first_block_dim = d;
 
             first_block_dim = MIN (first_block_dim, first_ublock_dim);
         } else {
@@ -1880,7 +1817,7 @@ GetDim_WL_SET_OFFSET (int dim, node *wl, node *seg)
         last_frac_dim = d;
 
         /*
-         * check whether 'WL_SET_OFFSET' is needed or not
+         * check whether 'WL_SET_OFFSET' is needed in the current dimension or not
          */
         if (first_block_dim < dims) {
             /*
@@ -4917,7 +4854,7 @@ COMPLoop (node *arg_node, node *arg_info)
      * See explanations above.
      */
     if (NODE_TYPE (arg_node) == N_do) {
-        label_str = TmpVarName (LABEL_NAME);
+        label_str = TmpVarName (LABEL_POSTFIX);
         icm_node = MakeAssignIcm1 ("ND_LABEL", MakeId_Copy (label_str));
         last_node = ASSIGN_NEXT (last_node) = icm_node;
     }
