@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.10  1998/04/29 12:49:06  srs
+ * changed macro name
+ *
  * Revision 1.9  1998/04/24 17:30:20  srs
  * invalid bounds are transformed now
  *
@@ -214,8 +217,7 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
  *   generates full partition if possible:
  *    - if withop is genarray and index vector has as much elements as
  *      dimension of resulting WL.
- *    - if withop is modarray and index vector has as much elements as
- *      generator of base WL.
+ *    - if withop is modarray: always (needed for compilation phase).
  *   Returns wln.
  *
  * parameters:
@@ -932,8 +934,8 @@ WLTNgenerator (node *arg_node, node *arg_info)
                                      - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
                                                       INFO_WLI_WL (arg_info))),
                                                     0));
-                    ASSIGN_MASK (assignn, 0) = GenMask (VARNO);
-                    ASSIGN_MASK (assignn, 1) = GenMask (VARNO);
+                    ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
+                    ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
                 } else {
                     /* replace WL with the base array (modarray). */
                     /* replace WL with neutral element (fold). */
