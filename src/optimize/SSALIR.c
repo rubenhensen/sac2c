@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2001/05/22 14:53:14  nmw
+ * code movement of WLIR code improved, now moving surrouding code, too
+ *
  * Revision 1.21  2001/05/17 12:09:02  nmw
  * missing FreeTree added
  *
@@ -944,9 +947,29 @@ SSALIRassign (node *arg_node, node *arg_info)
         remove_assign = TRUE;
         ASSIGN_NEXT (tmp) = NULL;
 
-        /* append to InsertList on movement target level */
+        /*
+         * append assignment and surrounding code
+         * to InsertList on movement target level
+         */
+        /* first the preassign code */
+        if (pre_assign != NULL) {
+            INFO_SSALIR_INSLIST (arg_info)
+              = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info), pre_assign,
+                                      wlir_move_up);
+            pre_assign = NULL;
+        }
+
+        /* append this assignment */
         INFO_SSALIR_INSLIST (arg_info)
           = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info), tmp, wlir_move_up);
+
+        /* and now the postassogn code */
+        if (INFO_SSALIR_POSTASSIGN (arg_info) != NULL) {
+            INFO_SSALIR_INSLIST (arg_info)
+              = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info),
+                                      INFO_SSALIR_POSTASSIGN (arg_info), wlir_move_up);
+            INFO_SSALIR_POSTASSIGN (arg_info) = NULL;
+        }
 
         /* increment statistic counter */
         wlir_expr++;
@@ -956,7 +979,7 @@ SSALIRassign (node *arg_node, node *arg_info)
     if (INFO_SSALIR_POSTASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
           = AppendAssign (INFO_SSALIR_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_SSALIR_POSTASSIGN (arg_node) = NULL;
+        INFO_SSALIR_POSTASSIGN (arg_info) = NULL;
     }
 
     /* traverse next assignment */
