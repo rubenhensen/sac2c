@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2002/10/16 11:07:30  sbs
+ * VARDEC_OR_ARG_OR_OBJDEF_AVIS and L_VARDEC_OR_ARG_OR_OBJDEF_AVIS added.
+ *
  * Revision 3.70  2002/10/11 15:58:52  sbs
  * FUNDEF_IS_EXTERNAL added.
  *
@@ -1179,6 +1182,31 @@ extern int CmpDomain (node *args1, node *args2);
     }
 
 extern node *SearchDecl (char *name, node *decl_node);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_vardec :  *and*  N_arg :  *and*  N_objdef :
+ ***/
+
+/*
+ * CAUTION: Do not use the following macros as l-values!!!
+ *          (this is *no* ANSI C style!)
+ *          Use the L_VARDEC_OR_... macros instead!!
+ */
+#define VARDEC_OR_ARG_OR_OBJDEF_AVIS(n)                                                  \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_AVIS (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
+
+#define L_VARDEC_OR_ARG_OR_OBJDEF_AVIS(n, rhs)                                           \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_AVIS (n) = (rhs);                                                            \
+    } else if (NODE_TYPE (n) == N_vardec) {                                              \
+        VARDEC_AVIS (n) = (rhs);                                                         \
+    } else {                                                                             \
+        OBJDEF_AVIS (n) = (rhs);                                                         \
+    }
 
 /*--------------------------------------------------------------------------*/
 
