@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2004/10/28 17:16:55  sah
+ * added stringset_t
+ *
  * Revision 3.34  2004/10/20 08:04:09  khf
  * modified wl_info
  *
@@ -316,6 +319,9 @@ typedef enum {
     MUTH_MULTI,
     MUTH_MULTI_SPECIALIZED
 } mtexecmode_t;
+
+/* string sets, see stringset.h */
+typedef struct STRINGSET_T stringset_t;
 
 /*
  * new nodes for yacc and the syntax tree
