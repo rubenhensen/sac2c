@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/10/26 13:51:52  dkr
+ * PushDupMRDL simplified
+ *
  * Revision 2.6  1999/10/25 17:10:48  dkr
  * some comments added
  *
@@ -214,8 +217,7 @@ PushDupMRDL ()
     for (i = 0; i < NumVar; i++)
         mrdl_stack->stack[mrdl_stack->tos].varlist[i]
           = mrdl_stack->stack[mrdl_stack->tos - 1].varlist[i];
-    mrdl_stack->stack[mrdl_stack->tos].vl_len
-      = mrdl_stack->stack[mrdl_stack->tos - 1].vl_len;
+    mrdl_stack->stack[mrdl_stack->tos].vl_len = NumVar;
     CheckStack (mrdl_stack);
     DBUG_VOID_RETURN;
 }
