@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/11/23 21:34:35  jhb
+ * ismop
+ *
  * Revision 1.23  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -142,6 +145,8 @@
  */
 #define NEW_INFO
 
+#include "refcounting.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -152,8 +157,8 @@
 #include "DupTree.h"
 #include "print.h"
 #include "ssa.h"
-#include "refcounting.h"
 #include "ReuseWithArrays.h"
+#include <string.h>
 
 /** <!--******************************************************************-->
  *
@@ -213,7 +218,7 @@ struct INFO {
     bool cond;
     bool mustcount;
     node *fundef;
-    ids *lhs;
+    node *lhs;
     node *condargs;
     node *retvals;
     node *retvals2;
@@ -249,7 +254,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_EMRC_MODE (result) = rc_default;
     INFO_EMRC_DEPTH (result) = 0;
@@ -273,7 +278,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -297,15 +302,21 @@ EMRefCount (node *syntax_tree)
 
     DBUG_PRINT ("EMRC", ("Starting annotating C-functions..."));
 
-    act_tab = emacf_tab;
-    syntax_tree = Trav (syntax_tree, NULL);
+    TRAVpush (TR_emacf);
+
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+
+    TRAVpop ();
 
     DBUG_PRINT ("EMRC", ("Annotating C-functions done."));
 
     DBUG_PRINT ("EMRC", ("Starting reference counting inference..."));
 
-    act_tab = emrefcnt_tab;
-    syntax_tree = Trav (syntax_tree, NULL);
+    TRAVpush (TR_emrefcnt);
+
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+
+    TRAVpop ();
 
     DBUG_PRINT ("EMRC", ("Reference counting inference complete."));
 
@@ -348,7 +359,7 @@ MakeRCList (node *avis, int counter, rc_list_struct *next)
 
     DBUG_ENTER ("MakeRCList");
 
-    rcls = Malloc (sizeof (rc_list_struct));
+    rcls = ILIBmalloc (sizeof (rc_list_struct));
 
     rcls->avis = avis;
     rcls->count = counter;
@@ -485,7 +496,7 @@ UseListPopNext (rc_list_struct *uselist)
     DBUG_ENTER ("UseListPopNext");
 
     res = uselist->next;
-    Free (uselist);
+    ILIBfree (uselist);
 
     DBUG_RETURN (res);
 }
@@ -519,7 +530,7 @@ MakeRCCounter (int depth, int count, rc_counter *next)
 
     DBUG_ENTER ("MakeRCCounter");
 
-    rcc = Malloc (sizeof (rc_counter));
+    rcc = ILIBmalloc (sizeof (rc_counter));
     rcc->depth = depth;
     rcc->count = count;
     rcc->next = next;
@@ -721,7 +732,7 @@ PopEnvironment (node *avis, int codelevel)
     while ((AVIS_EMRC_COUNTER (avis) != NULL)
            && (AVIS_EMRC_COUNTER (avis)->depth >= codelevel)) {
         tmp = AVIS_EMRC_COUNTER (avis)->next;
-        Free (AVIS_EMRC_COUNTER (avis));
+        ILIBfree (AVIS_EMRC_COUNTER (avis));
         AVIS_EMRC_COUNTER (avis) = tmp;
     }
 
@@ -847,7 +858,7 @@ DefListPopNext (rc_list_struct *deflist)
     DBUG_ENTER ("DefListPopNext");
 
     res = deflist->next;
-    Free (deflist);
+    ILIBfree (deflist);
 
     DBUG_RETURN (res);
 }
@@ -895,33 +906,28 @@ static node *
 MakeAdjustRC (node *avis, int count, node *next_node)
 {
     node *n, *prf;
-    ids *ids1;
 
     if (!RCOracle (avis, count)) {
         n = next_node;
     } else {
-        ids1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
-                        ST_regular);
-        IDS_AVIS (ids1) = avis;
-        IDS_VARDEC (ids1) = AVIS_VARDECORARG (avis);
 
         if (count > 0) {
             /*
              * Make INC_RC
              */
-            prf = MakePrf2 (F_inc_rc, MakeIdFromIds (ids1), MakeNum (count));
+            prf = TCmakePrf2 (F_inc_rc, TBmakeId (avis), TBmakeNum (count));
 
         } else {
             /*
              * Make DEC_RC
              */
-            prf = MakePrf2 (F_dec_rc, MakeIdFromIds (ids1), MakeNum (-count));
+            prf = TCmakePrf2 (F_dec_rc, TBmakeId (avis), TBmakeNum (-count));
         }
 
-        n = MakeAssign (MakeLet (prf, NULL),
-                        (((next_node != NULL) && (NODE_TYPE (next_node) == N_assign))
-                           ? next_node
-                           : NULL));
+        n = TBmakeAssign (TBmakeLet (prf, NULL),
+                          (((next_node != NULL) && (NODE_TYPE (next_node) == N_assign))
+                             ? next_node
+                             : NULL));
     }
     return (n);
 }
@@ -946,7 +952,7 @@ MakeAdjustRCFromRLS (rc_list_struct *rls, node *next_node)
     DBUG_ENTER ("MakeAdjustRCFromRLS");
 
     res = MakeAdjustRC (rls->avis, rls->count, next_node);
-    Free (rls);
+    ILIBfree (rls);
 
     DBUG_RETURN (res);
 }
@@ -1039,8 +1045,8 @@ MakeDefAssignments (info *arg_info, node *next_node)
  *  @return arg_ids
  *
  ***************************************************************************/
-static ids *
-TravRightIds (ids *arg_ids, info *arg_info)
+static node *
+TravRightIds (node *arg_ids, info *arg_info)
 {
     node *avis;
 
@@ -1104,7 +1110,7 @@ TravRightIds (ids *arg_ids, info *arg_info)
          */
         avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
                                NUM_VAL (EXPRS_EXPR (INFO_EMRC_CONDARGS (arg_info))));
-        INFO_EMRC_CONDARGS (arg_info) = FreeNode (INFO_EMRC_CONDARGS (arg_info));
+        INFO_EMRC_CONDARGS (arg_info) = FREEdoFreeNode (INFO_EMRC_CONDARGS (arg_info));
         break;
 
     case rc_retuse:
@@ -1114,7 +1120,7 @@ TravRightIds (ids *arg_ids, info *arg_info)
          */
         avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
                                NUM_VAL (EXPRS_EXPR (INFO_EMRC_RETVALS (arg_info))));
-        INFO_EMRC_RETVALS (arg_info) = FreeNode (INFO_EMRC_RETVALS (arg_info));
+        INFO_EMRC_RETVALS (arg_info) = FREEdoFreeNode (INFO_EMRC_RETVALS (arg_info));
         break;
 
     case rc_prfuse:
@@ -1173,7 +1179,7 @@ node *
 EMRCap (node *arg_node, info *arg_info)
 {
     node *args;
-    ids *let_ids;
+    node *let_ids;
     int argc;
 
     DBUG_ENTER ("EMRCap");
@@ -1181,13 +1187,13 @@ EMRCap (node *arg_node, info *arg_info)
     /*
      * CONDFUNs are traversed in order of appearance
      */
-    if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         /*
          * Pass the environments of the expected return values
          */
         node *avis;
         int rc;
-        ids *_ids = INFO_EMRC_LHS (arg_info);
+        node *_ids = INFO_EMRC_LHS (arg_info);
 
         while (_ids != NULL) {
             avis = IDS_AVIS (_ids);
@@ -1195,7 +1201,8 @@ EMRCap (node *arg_node, info *arg_info)
             avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
             INFO_EMRC_RETENV (arg_info)
-              = AppendExprs (INFO_EMRC_RETENV (arg_info), MakeExprs (MakeNum (rc), NULL));
+              = TCappendExprs (INFO_EMRC_RETENV (arg_info),
+                               TBmakeExprs (TBmakeNum (rc), NULL));
 
             _ids = IDS_NEXT (_ids);
         }
@@ -1210,12 +1217,13 @@ EMRCap (node *arg_node, info *arg_info)
             avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
             INFO_EMRC_ARGENV (arg_info)
-              = AppendExprs (INFO_EMRC_ARGENV (arg_info), MakeExprs (MakeNum (rc), NULL));
+              = TCappendExprs (INFO_EMRC_ARGENV (arg_info),
+                               TBmakeExprs (TBmakeNum (rc), NULL));
 
             args = EXPRS_NEXT (args);
         }
 
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         INFO_EMRC_MUSTCOUNT (arg_info) = FALSE;
     }
 
@@ -1243,7 +1251,7 @@ EMRCap (node *arg_node, info *arg_info)
             && (FUNDEF_EXT_NOT_REFCOUNTED (AP_FUNDEF (arg_node), argc))) {
             INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         } else {
-            if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+            if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
                 INFO_EMRC_COUNTMODE (arg_info) = rc_conduse;
             } else {
                 INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
@@ -1251,7 +1259,7 @@ EMRCap (node *arg_node, info *arg_info)
         }
 
         if (EXPRS_EXPR (args) != NULL) {
-            EXPRS_EXPR (args) = Trav (EXPRS_EXPR (args), arg_info);
+            EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
         }
 
         if (VARDEC_OR_ARG_STATUS (ID_VARDEC (EXPRS_EXPR (args))) != ST_artificial) {
@@ -1286,13 +1294,13 @@ EMRCarg (node *arg_node, info *arg_info)
 
     if (INFO_EMRC_ARGENV (arg_info) != NULL) {
         env = NUM_VAL (EXPRS_EXPR (INFO_EMRC_ARGENV (arg_info)));
-        INFO_EMRC_ARGENV (arg_info) = FreeNode (INFO_EMRC_ARGENV (arg_info));
+        INFO_EMRC_ARGENV (arg_info) = FREEdoFreeNode (INFO_EMRC_ARGENV (arg_info));
     }
 
     ARG_AVIS (arg_node) = InitializeEnvironment (ARG_AVIS (arg_node), 0, env);
 
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1318,7 +1326,7 @@ EMRCarray (node *arg_node, info *arg_info)
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1345,7 +1353,7 @@ node *
 EMRCassign (node *arg_node, info *arg_info)
 {
     node *n;
-    ids *i;
+    node *i;
 
     DBUG_ENTER ("EMRCassign");
 
@@ -1372,10 +1380,10 @@ EMRCassign (node *arg_node, info *arg_info)
      * Annotate memory management instructions
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /*
      * If this node happens to be a conditional,
@@ -1402,10 +1410,10 @@ EMRCassign (node *arg_node, info *arg_info)
         INFO_EMRC_RETVALS2 (arg_info) = NULL;
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
 
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         INFO_EMRC_COND (arg_info) = FALSE;
         INFO_EMRC_MODE (arg_info) = rc_default;
@@ -1448,13 +1456,13 @@ EMRCblock (node *arg_node, info *arg_info)
      * Traverse vardecs in order to initialize RC-Counters
      */
     if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL), "first instruction of block is NULL"
                                                    " (should be a N_empty node)");
 
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1535,11 +1543,11 @@ EMRCcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRCcond");
 
     if (INFO_EMRC_MODE (arg_info) == rc_default) {
-        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (COND_COND (arg_node) != NULL) {
-            COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+            COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
         }
 
         /*
@@ -1549,11 +1557,11 @@ EMRCcond (node *arg_node, info *arg_info)
           = MakeUseAssignments (arg_info, BLOCK_INSTR (COND_THEN (arg_node)));
 
     } else {
-        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (COND_COND (arg_node) != NULL) {
-            COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+            COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
         }
 
         /*
@@ -1606,7 +1614,7 @@ EMRCfuncond (node *arg_node, info *arg_info)
 
     switch (INFO_EMRC_MODE (arg_info)) {
     case rc_default:
-        FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
 
         IDS_AVIS (INFO_EMRC_LHS (arg_info))
           = PopEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)),
@@ -1617,7 +1625,7 @@ EMRCfuncond (node *arg_node, info *arg_info)
         break;
 
     case rc_else:
-        FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
+        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
 
         IDS_AVIS (INFO_EMRC_LHS (arg_info))
           = PopEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)),
@@ -1647,13 +1655,13 @@ EMRCfundef (node *fundef, info *arg_info)
 {
     DBUG_ENTER ("EMRCfundef");
 
-    DBUG_ASSERT ((arg_info == NULL) || (FUNDEF_IS_CONDFUN (fundef)), "Illegal arguments");
+    DBUG_ASSERT ((arg_info == NULL) || (FUNDEF_ISCONDFUN (fundef)), "Illegal arguments");
 
     /*
      * The body must be traversed if fundef is a regular function
      * or this is a nested traversal of a CONDFUN
      */
-    if ((!FUNDEF_IS_CONDFUN (fundef)) || (arg_info != NULL)) {
+    if ((!FUNDEF_ISCONDFUN (fundef)) || (arg_info != NULL)) {
         node *arg;
         node *avis;
 
@@ -1666,7 +1674,7 @@ EMRCfundef (node *fundef, info *arg_info)
          * Traverse block
          */
         if (FUNDEF_BODY (fundef) != NULL) {
-            if (FUNDEF_IS_CONDFUN (fundef)) {
+            if (FUNDEF_ISCONDFUN (fundef)) {
                 /*
                  * CONDFUN:
                  * Initial counters of arguments and return values are
@@ -1684,7 +1692,7 @@ EMRCfundef (node *fundef, info *arg_info)
                 int i = CountTypes (FUNDEF_TYPES (fundef));
                 while (i > 0) {
                     INFO_EMRC_RETVALS (info)
-                      = MakeExprs (MakeNum (1), INFO_EMRC_RETVALS (info));
+                      = TBmakeExprs (TBmakeNum (1), INFO_EMRC_RETVALS (info));
                     i -= 1;
                 }
             }
@@ -1693,18 +1701,18 @@ EMRCfundef (node *fundef, info *arg_info)
              * In case there is a conditional inside the function,
              * prepare a copy of the return RCs
              */
-            if (FUNDEF_IS_LACFUN (fundef)) {
-                INFO_EMRC_RETVALS2 (info) = DupTree (INFO_EMRC_RETVALS (info));
+            if (FUNDEF_ISLACFUN (fundef)) {
+                INFO_EMRC_RETVALS2 (info) = DUPdoDupTree (INFO_EMRC_RETVALS (info));
             }
 
             /*
-             * Traverse args in order to initialize refcounting environment
+             * TRAVdoerse args in order to initialize refcounting environment
              */
             if (FUNDEF_ARGS (fundef) != NULL) {
-                FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), info);
+                FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), info);
             }
 
-            FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), info);
+            FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
 
             /*
              * Annotate missing ADJUST_RCs
@@ -1713,15 +1721,15 @@ EMRCfundef (node *fundef, info *arg_info)
             while (arg != NULL) {
                 avis = ARG_AVIS (arg);
 
-                if (FUNDEF_IS_CONDFUN (fundef)) {
+                if (FUNDEF_ISCONDFUN (fundef)) {
                     /*
                      * CONDFUN:
                      * Counter states of function arguments are returned via CONDARGS
                      */
                     INFO_EMRC_CONDARGS (arg_info)
-                      = AppendExprs (INFO_EMRC_CONDARGS (arg_info),
-                                     MakeExprsNum (
-                                       GetEnvironment (avis, INFO_EMRC_DEPTH (info))));
+                      = TCappendExprs (INFO_EMRC_CONDARGS (arg_info),
+                                       TCmakeExprsNum (
+                                         GetEnvironment (avis, INFO_EMRC_DEPTH (info))));
 
                     avis = PopEnvironment (avis, INFO_EMRC_DEPTH (info));
 
@@ -1756,7 +1764,7 @@ EMRCfundef (node *fundef, info *arg_info)
      * Traverse other fundefs if this is a regular fundef traversal
      */
     if ((arg_info == NULL) && (FUNDEF_NEXT (fundef) != NULL)) {
-        FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
+        FUNDEF_NEXT (fundef) = TRAVdo (FUNDEF_NEXT (fundef), arg_info);
     }
 
     DBUG_RETURN (fundef);
@@ -1777,7 +1785,7 @@ EMRCfundef (node *fundef, info *arg_info)
 node *
 EMRClet (node *arg_node, info *arg_info)
 {
-    ids *ids;
+    node *ids;
 
     DBUG_ENTER ("EMRClet");
 
@@ -1786,7 +1794,7 @@ EMRClet (node *arg_node, info *arg_info)
     INFO_EMRC_LHS (arg_info) = LET_IDS (arg_node);
 
     if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     if (INFO_EMRC_MUSTCOUNT (arg_info)) {
@@ -1843,7 +1851,7 @@ EMRCicm (node *arg_node, info *arg_info)
          * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
          *   -> do NOT traverse the second argument (used)
          */
-        ICM_EXPRS1 (arg_node) = Trav (ICM_EXPRS1 (arg_node), arg_info);
+        ICM_EXPRS1 (arg_node) = TRAVdo (ICM_EXPRS1 (arg_node), arg_info);
     } else {
         if (strstr (name, "VECT2OFFSET") != NULL) {
             /*
@@ -1853,7 +1861,7 @@ EMRCicm (node *arg_node, info *arg_info)
              * where 'off_nt' is a scalar variable.
              *  -> handle ICM like a prf (RCO)
              */
-            ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
+            ICM_ARGS (arg_node) = TRAVdo (ICM_ARGS (arg_node), arg_info);
         } else {
             if (strstr (name, "IDXS2OFFSET") != NULL) {
                 /*
@@ -1863,7 +1871,7 @@ EMRCicm (node *arg_node, info *arg_info)
                  * where 'off_nt' is a scalar variable.
                  *  -> handle ICM like a prf (RCO)
                  */
-                ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
+                ICM_ARGS (arg_node) = TRAVdo (ICM_ARGS (arg_node), arg_info);
             } else {
                 DBUG_ASSERT ((0), "unknown ICM found during EMRC");
             }
@@ -1900,7 +1908,7 @@ EMRCid (node *arg_node, info *arg_info)
  * @fn EMRCNcode
  *
  *  @brief traverses a with-loop's code and inserts ADJUST_RCs before and
- *         after (in NCODE_EPILOGUE) the code block
+ *         after (in CODE_EPILOGUE) the code block
  *
  *  @param arg_node
  *  @param arg_ino
@@ -1918,10 +1926,10 @@ EMRCNcode (node *arg_node, info *arg_info)
 
     /*
      * Traverse CEXPRS and insert adjust_rc operations into
-     * NCODE_EPILOGUE
+     * CODE_EPILOGUE
      */
     INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
-    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /*
      * Insert ADJUST_RC prfs from DECLIST
@@ -1929,9 +1937,9 @@ EMRCNcode (node *arg_node, info *arg_info)
     epicode = MakeUseAssignments (arg_info, NULL);
     DBUG_ASSERT (epicode == NULL, "Epicode should not contain antything!");
 
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-      = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), epicode);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    BLOCK_INSTR (CODE_CBLOCK (arg_node))
+      = AppendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), epicode);
 
     /*
      * Prepend block with Adjust_RC prfs
@@ -1944,8 +1952,8 @@ EMRCNcode (node *arg_node, info *arg_info)
         INFO_EMRC_DEFLIST (arg_info)
           = DefListInsert (INFO_EMRC_DEFLIST (arg_info), ARG_AVIS (n), env);
 
-        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-          = MakeDefAssignments (arg_info, BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+        BLOCK_INSTR (CODE_CBLOCK (arg_node))
+          = MakeDefAssignments (arg_info, BLOCK_INSTR (CODE_CBLOCK (arg_node)));
 
         n = ARG_NEXT (n);
     }
@@ -1958,8 +1966,8 @@ EMRCNcode (node *arg_node, info *arg_info)
         INFO_EMRC_DEFLIST (arg_info)
           = DefListInsert (INFO_EMRC_DEFLIST (arg_info), VARDEC_AVIS (n), env);
 
-        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-          = MakeDefAssignments (arg_info, BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+        BLOCK_INSTR (CODE_CBLOCK (arg_node))
+          = MakeDefAssignments (arg_info, BLOCK_INSTR (CODE_CBLOCK (arg_node)));
 
         n = VARDEC_NEXT (n);
     }
@@ -1967,8 +1975,8 @@ EMRCNcode (node *arg_node, info *arg_info)
     /*
      * count the references in next code
      */
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1994,24 +2002,24 @@ EMRCNwith (node *arg_node, info *arg_info)
 
     INFO_EMRC_DEPTH (arg_info) += 1;
 
-    NWITH_WITHID (arg_node) = Trav (NWITH_WITHID (arg_node), arg_info);
+    WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
     /*
      * index vector needs an extra traversal because it is
      * definitely needed in AUD with-loops
      */
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-    NWITH_VEC (arg_node) = TravRightIds (NWITH_VEC (arg_node), arg_info);
+    WITH_VEC (arg_node) = TravRightIds (WITH_VEC (arg_node), arg_info);
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     INFO_EMRC_DEPTH (arg_info) -= 1;
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
 
@@ -2038,28 +2046,28 @@ EMRCNwith2 (node *arg_node, info *arg_info)
 
     INFO_EMRC_DEPTH (arg_info) += 1;
 
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
-    NWITHID_VECNEEDED (NWITH2_WITHID (arg_node))
-      = GetEnvironment (IDS_AVIS (NWITHID_VEC (NWITH2_WITHID (arg_node))),
-                        GetDefLevel (IDS_AVIS (NWITHID_VEC (NWITH2_WITHID (arg_node)))))
+    WITHID_VECNEEDED (WITH2_WITHID (arg_node))
+      = GetEnvironment (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node))),
+                        GetDefLevel (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node)))))
         > 0;
 
-    if (!NWITHID_VECNEEDED (NWITH2_WITHID (arg_node))) {
+    if (!WITHID_VECNEEDED (WITH2_WITHID (arg_node))) {
         DBUG_PRINT ("EMRC", ("Index vector %s will not be built!\n",
-                             IDS_NAME (NWITHID_VEC (NWITH2_WITHID (arg_node)))));
+                             IDS_NAME (WITHID_VEC (WITH2_WITHID (arg_node)))));
     }
 
     INFO_EMRC_DEPTH (arg_info) -= 1;
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
 
@@ -2085,8 +2093,8 @@ EMRCNwithid (node *arg_node, info *arg_info)
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
 
-    if (NWITHID_IDS (arg_node) != NULL) {
-        NWITHID_IDS (arg_node) = TravRightIds (NWITHID_IDS (arg_node), arg_info);
+    if (WITHID_IDS (arg_node) != NULL) {
+        WITHID_IDS (arg_node) = TravRightIds (WITHID_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2094,7 +2102,7 @@ EMRCNwithid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNwithop
+ * @fn EMRCNgenarray
  *
  *  @brief
  *
@@ -2105,59 +2113,92 @@ EMRCNwithid (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNwithop (node *arg_node, info *arg_info)
+EMRCNgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCNwithop");
+    DBUG_ENTER ("EMRCNgenarray");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        /*
-         * genarray( shp, def, mem)
-         *
-         * - shp, def must be refcounted like a prf use
-         * - mem must be refcounted like a funap use
-         */
-        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
-        NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
-        break;
+    /*
+     * genarray( shp, def, mem)
+     *
+     * - shp, def must be refcounted like a prf use
+     * - mem must be refcounted like a funap use
+     */
+    INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
+    INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+    GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
 
-    case WO_modarray:
-        /*
-         * modarray( A, mem);
-         *
-         * - A must be refcounted like a prf use
-         * - mem must be refcoutned like a funap use
-         */
-        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
-        NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
-        break;
-
-    case WO_foldfun:
-    case WO_foldprf:
-        /*
-         * fold( op, n);
-         *
-         * - op is not a variable
-         * - n must be refcoutned like a funap use
-         */
-        INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
-        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        break;
-
-    case WO_unknown:
-        DBUG_ASSERT (FALSE, "non initialised WithOpType found.");
-        break;
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
-    if (NWITHOP_NEXT (arg_node) != NULL) {
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+/** <!--******************************************************************-->
+ *
+ * @fn EMRCNmodarray
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ ***************************************************************************/
+node *
+EMRCNmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRCNmodarray");
+
+    /*
+     * modarray( A, mem);
+     *
+     * - A must be refcounted like a prf use
+     * - mem must be refcoutned like a funap use
+     */
+    INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+    INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+    MODARRAY_MEM (arg_node) = TRAVdo (MODARRAY_MEM (arg_node), arg_info);
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMRCNfold
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ ***************************************************************************/
+node *
+EMRCNfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRCNfold");
+
+    /*
+     * fold( op, n);
+     *
+     * - op is not a variable
+     * - n must be refcoutned like a funap use
+     */
+    INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2196,9 +2237,9 @@ EMRCprf (node *arg_node, info *arg_info)
          * - expr must be traversed
          * - a must be counted like a funap use of a
          */
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
-        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
     case F_accu:
@@ -2219,14 +2260,14 @@ EMRCprf (node *arg_node, info *arg_info)
          *
          * - initialize rc with 1
          */
-        PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
+        PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
 
         /*
          * Traverse reuse candidates
          */
         if (PRF_EXPRS4 (arg_node) != NULL) {
             INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-            PRF_EXPRS4 (arg_node) = Trav (PRF_EXPRS4 (arg_node), arg_info);
+            PRF_EXPRS4 (arg_node) = TRAVdo (PRF_EXPRS4 (arg_node), arg_info);
         }
         break;
 
@@ -2236,13 +2277,13 @@ EMRCprf (node *arg_node, info *arg_info)
          *
          * - initialize rc with 1
          */
-        PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
+        PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
 
         /*
          * Traverse reused variable
          */
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
     case F_suballoc:
@@ -2263,12 +2304,12 @@ EMRCprf (node *arg_node, info *arg_info)
          * - iv must not be counted as it is already counted by WITHID traversal
          */
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         break;
     default:
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
     }
 
@@ -2296,7 +2337,7 @@ EMRCreturn (node *arg_node, info *arg_info)
     INFO_EMRC_COUNTMODE (arg_info) = rc_retuse;
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2322,7 +2363,7 @@ EMRCvardec (node *arg_node, info *arg_info)
     VARDEC_AVIS (arg_node) = InitializeEnvironment (VARDEC_AVIS (arg_node), -1, 0);
 
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2369,7 +2410,7 @@ EMACFfundef (node *fundef, info *arg_info)
     }
 
     if (FUNDEF_NEXT (fundef) != NULL) {
-        FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
+        FUNDEF_NEXT (fundef) = TRAVdo (FUNDEF_NEXT (fundef), arg_info);
     }
 
     DBUG_RETURN (fundef);
