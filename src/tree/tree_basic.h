@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/02/02 10:46:53  dkr
+ * some comments for WL nodes updated
+ *
  * Revision 3.18  2001/01/29 18:32:18  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -3330,7 +3333,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***  sons:
  ***
  ***    node*      CONTENTS       (N_WLblock, N_WLublock, N_WLstride)
- ***    node*      NEXT           (N_WLseg)
+ ***    node*      NEXT           (N_WLseg, N_WLsegVar)
  ***
  ***  permanent attributes:
  ***
@@ -3388,7 +3391,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***  sons:
  ***
  ***    node*      CONTENTS       (N_WLstride, N_WLstrideVar)
- ***    node*      NEXT           (N_WLsegVar)
+ ***    node*      NEXT           (N_WLseg, N_WLsegVar)
  ***
  ***  permanent attributes:
  ***
@@ -3504,8 +3507,8 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS     (N_WLgrid)
- ***    node*    NEXT         (N_WLstride)
+ ***    node*    CONTENTS         (N_WLgrid, N_WLgridVar)
+ ***    node*    NEXT             (N_WLstride, N_WLstrideVar)
  ***
  ***  permanent attributes:
  ***
@@ -3545,11 +3548,11 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS      (N_WLgridVar, N_WLgrid)
- ***    node*    NEXT          (N_WLstrideVar)
- ***    node*    BOUND1        (N_num, N_id)
- ***    node*    BOUND2        (N_num, N_id)
- ***    node*    STEP          (N_num, N_id)
+ ***    node*    BOUND1          (N_num, N_id)
+ ***    node*    BOUND2          (N_num, N_id)
+ ***    node*    STEP            (N_num, N_id)
+ ***    node*    CONTENTS        (N_WLgrid, N_WLgridVar)
+ ***    node*    NEXT            (N_WLstride, N_WLstrideVar)
  ***
  ***  permanent attributes:
  ***
@@ -3626,10 +3629,10 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM         (N_WLstrideVar)
- ***    node*    NEXT            (N_WLgridVar, N_WLgrid)
  ***    node*    BOUND1          (N_num, N_id)
  ***    node*    BOUND2          (N_num, N_id)
+ ***    node*    NEXTDIM         (N_WLstride, N_WLstrideVar)
+ ***    node*    NEXT            (N_WLgrid, N_WLgridVar)
  ***
  ***  permanent attributes:
  ***
@@ -3657,10 +3660,10 @@ extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool
 #define WLGRIDVAR_DIM(n) (WLGRIDX_DIM (n))
 #define WLGRIDVAR_BOUND1(n) ((n)->node[2])
 #define WLGRIDVAR_BOUND2(n) ((n)->node[3])
-#define WLGRIDVAR_FITTED(n) (WLGRIDX_FITTED (n))
 #define WLGRIDVAR_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
 #define WLGRIDVAR_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRIDVAR_CODE(n) (WLGRIDX_CODE (n))
+#define WLGRIDVAR_FITTED(n) (WLGRIDX_FITTED (n))
 
 /*--------------------------------------------------------------------------*/
 
