@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1996/01/21 14:00:29  cg
+ * Revision 1.13  1996/01/26 15:34:11  cg
+ * added macro TRI_ICM_REUSE
+ *
+ * Revision 1.12  1996/01/21  14:00:29  cg
  * added APPEND_ICM_ARG, new DBUG_PRINTs in CREATE_1_ARY_ICM
  *
  * Revision 1.11  1995/12/18  16:20:52  cg
@@ -141,6 +144,15 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
     MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
     icm_arg = reuse->node[0];                                                            \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2)
+
+#define TRI_ICM_REUSE(reuse, str, arg1, arg2, arg3)                                      \
+    reuse->nodetype = N_icm;                                                             \
+    reuse->nnode = 1;                                                                    \
+    MAKE_ICM_NAME (reuse, str);                                                          \
+    MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
+    icm_arg = reuse->node[0];                                                            \
+    MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
+    MAKE_NEXT_ICM_ARG (icm_arg, arg3);
 
 #define APPEND_ASSIGNS(first, next)                                                      \
     first->node[1] = next;                                                               \
