@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.73  1995/07/14 14:51:34  sbs
+ * Revision 1.74  1995/07/17 14:03:16  hw
+ * - the module name will be added to all type definitions
+ * - functions can be declared in a module/class declaration
+ *   with or without the name of the formal parameters
+ *
+ * Revision 1.73  1995/07/14  14:51:34  sbs
  * module_name inserted in fundec:
  *
  * Revision 1.72  1995/07/14  11:58:30  sbs
@@ -570,6 +575,20 @@ fundec: returntypes fun_name BRACKET_L argtypes BRACKET_R SEMIC
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
           }
+    | returntypes fun_name BRACKET_L args BRACKET_R SEMIC
+          { $$=MakeNode(N_fundef);
+            $$->node[0]=NULL;	/* there is no function body here! */
+            $$->node[2]=$4;	/* argument declarations */
+            $$->nnode=1;
+            $$->info.types=$1;
+            $$->info.types->id=$2; /* function name */
+            $$->info.types->id_mod=mod_name; /* modul name */
+
+            DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
+          }
 	| returntypes fun_name BRACKET_L BRACKET_R SEMIC
           { $$=MakeNode(N_fundef);
             $$->node[0]=NULL;   /* there is no function body here! */
@@ -637,6 +656,7 @@ typedef: TYPEDEF type ID SEMIC
           { $$=MakeNode(N_typedef);
             $$->info.types=$2;
             $$->info.types->id=$3;
+            $$->info.types->id_mod=mod_name;
             if ((file_kind==F_classimp) && (!strcmp((char*) $3, mod_name)))
                $$->info.types->attrib=ST_unique;
             
@@ -1834,7 +1854,9 @@ types:   type COMMA types
        | type {$$=$1;}
        ;
 
-type: localtype {$$=$1;}
+type: localtype 
+       { $$=$1;
+       }
       | ID COLON localtype {
 			$$=$3;
 			$$->name_mod=$1;
