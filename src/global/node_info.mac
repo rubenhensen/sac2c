@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.58  1995/04/11 15:57:47  asi
- * NIF macro enlarged
+ * Revision 1.59  1995/04/21 12:34:31  hw
+ * added FltnId, FltnLet & FltnArgs to flat_tab
  *
+;; Revision 1.58  1995/04/11  15:57:47  asi
+;; NIF macro enlarged
+;;
 ;; Revision 1.57  1995/04/07  13:42:12  hw
 ;; FltnAp, FltnReturn inserted
 ;; NoTrav for N_ap (in cf_tab) inserted
@@ -201,7 +204,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_str, "N_str", DummyFun, DummyFun, PrintId, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_id, "N_id", DummyFun, DummyFun, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
+  NIF (N_id, "N_id", DummyFun, FltnId, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
        FreeInfoId, CFid, RCid, CompId, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -233,7 +236,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DEADblock,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_arg, "N_arg", DummyFun, DummyFun, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
+  NIF (N_arg, "N_arg", DummyFun, FltnArgs, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
        FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
@@ -251,7 +254,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPTcond, DEADcond,
        DummyFun, FreeNoInfo, CFcond, RCcond, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_let, "N_let", DummyFun, DummyFun, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
+  NIF (N_let, "N_let", DummyFun, FltnLet, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
        FreeInfoIds, CFlet, RClet, CompLet, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun),
   NIF (N_addon, "N_addon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
