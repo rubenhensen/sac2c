@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/24 15:21:03  ktr
+ * COMPILES!
+ *
  * Revision 1.2  2004/10/11 19:08:05  ktr
  * removed an unused variable.
  *
@@ -81,8 +84,7 @@
  *    scalarized version of that with-loop
  *
  */
-
-#define NEW_INFO
+#include "wls.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -91,7 +93,7 @@
 #include "dbug.h"
 #include "new_types.h"
 #include "print.h"
-#include "wls.h"
+#include "internal_lib.h"
 
 /**
  * INFO structure
@@ -115,7 +117,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_WLS_FUNDEF (result) = fundef;
 
@@ -127,7 +129,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -147,20 +149,15 @@ FreeInfo (info *info)
 node *
 WLSWithloopScalarization (node *fundef)
 {
-    funtab *old_tab;
-
     DBUG_ENTER ("WLSWithloopScalarization");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "WLSWithloopScalarization called for non-fundef node");
 
-    if (!FUNDEF_IS_LACFUN (fundef)) {
-        old_tab = act_tab;
-        act_tab = wls_tab;
-
-        fundef = Trav (fundef, NULL);
-
-        act_tab = old_tab;
+    if (!FUNDEF_ISLACFUN (fundef)) {
+        TRAVpush (TR_wls);
+        fundef = TRAVdo (fundef, NULL);
+        TRAVpop ();
     }
 
     DBUG_RETURN (fundef);
@@ -194,10 +191,10 @@ WLSap (node *arg_node, info *arg_info)
     /*
      * special functions must be traversed when they are used
      */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_WLS_FUNDEF (arg_info))) {
 
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -224,13 +221,13 @@ WLSassign (node *arg_node, info *arg_info)
      * Bottom-up traversal
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /*
      * Traverse RHS
      */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -266,7 +263,7 @@ WLSfundef (node *arg_node, info *arg_info)
         /*
          * traverse block of fundef
          */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /*
          * Free INFO structure
@@ -310,29 +307,29 @@ WLSwith (node *arg_node, info *arg_info)
      * First, traverse all the codes in order to apply WLS
      * to inner with-loops
      */
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /*
      * Afterwards, try to scalarize the current with-loop
      */
-    DBUG_EXECUTE ("WLS", PrintNode (arg_node););
+    DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
 
     /*
      * Scalarization is possible iff WLSCheck does not return 0
      */
-    innerdims = WLSCheck (arg_node);
+    innerdims = WLSCdoCheck (arg_node);
 
     if (innerdims > 0) {
 
         /*
          * Apply withloopification
          */
-        arg_node = WLSWithloopify (arg_node, INFO_WLS_FUNDEF (arg_info), innerdims);
+        arg_node = WLSWdoWithloopify (arg_node, INFO_WLS_FUNDEF (arg_info), innerdims);
 
         /*
          * Build the new with-loop
          */
-        arg_node = WLSBuild (arg_node, INFO_WLS_FUNDEF (arg_info));
+        arg_node = WLSBdoBuild (arg_node, INFO_WLS_FUNDEF (arg_info));
     }
 
     DBUG_RETURN (arg_node);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/24 15:21:03  ktr
+ * COMPILES!
+ *
  * Revision 1.2  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -72,7 +75,7 @@ extern node *WLSWwithid (node *arg_node, info *arg_info);
 extern node *WLSBdoBuild (node *with, node *fundef);
 
 extern node *WLSBcode (node *arg_node, info *arg_info);
-extern node *WLSBgen (node *arg_node, info *arg_info);
+extern node *WLSBgenerator (node *arg_node, info *arg_info);
 extern node *WLSBpart (node *arg_node, info *arg_info);
 extern node *WLSBwith (node *arg_node, info *arg_info);
 extern node *WLSBwithid (node *arg_node, info *arg_info);
