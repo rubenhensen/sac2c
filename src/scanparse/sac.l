@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/02/23 14:26:44  cg
+ * Identifiers with a single trailing underscore are now supported.
+ *
  * Revision 2.10  2000/01/07 13:04:30  dkr
  * tabs in source code replaced by spaces
  *
@@ -344,7 +347,7 @@ int start_token;
                                   FREE(yylval.id);
                                 }
 
-[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])* {
+[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
                                   yylval.id=StringCopy(yytext);
                                   FILTER( ID );
                                   FREE(yylval.id);
