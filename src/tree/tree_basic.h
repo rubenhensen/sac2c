@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2002/06/19 07:48:58  ktr
+ * Set INFO_WLS_FUNDEF to n->node[3] to gain compatibility with SSAWLT
+ *
  * Revision 3.126  2002/06/18 10:18:08  ktr
  * INFO_WLS_DIMS, INFO_WLS_BLOCK added
  *
@@ -3077,7 +3080,7 @@ extern node *MakeInfo ();
 /* when used in WithloopScalarization.c */
 #define INFO_WLS_POSSIBLE(n) (n->flag)
 #define INFO_WLS_PHASE(n) (n->lineno)
-#define INFO_WLS_FUNDEF(n) (n->node[0])
+#define INFO_WLS_FUNDEF(n) (n->node[3])
 #define INFO_WLS_PARTS(n) (n->counter)
 #define INFO_WLS_WITHVEC(n) (n->info.ids)
 #define INFO_WLS_WITHOP(n) (n->node[1])
