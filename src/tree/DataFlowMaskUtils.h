@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/09/27 10:40:26  sah
+ * Added DFM2ProductType and DFM2FunctionType
+ * both are needed by lac2fun to generate the
+ * ntype function signature for fresh generated
+ * LaC-funs
+ *
  * Revision 3.2  2001/02/14 14:38:08  dkr
  * some DFM2... functions renamed
  *
@@ -46,6 +52,8 @@ extern void ForeachDFMstack (DFMstack_t stack, fun_t fun, char *id, node *decl);
 extern void WhileDFMstack (DFMstack_t stack, fun_t fun, char *id, node *decl);
 
 extern types *DFM2ReturnTypes (DFMmask_t mask);
+extern ntype *DFM2ProductType (DFMmask_t mask);
+extern ntype *DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef);
 extern node *DFM2Vardecs (DFMmask_t mask, LUT_t lut);
 extern node *DFM2Args (DFMmask_t mask, LUT_t lut);
 extern node *DFM2ReturnExprs (DFMmask_t mask, LUT_t lut);

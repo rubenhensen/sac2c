@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/09/27 10:40:26  sah
+ * Added DFM2ProductType and DFM2FunctionType
+ * both are needed by lac2fun to generate the
+ * ntype function signature for fresh generated
+ * LaC-funs
+ *
  * Revision 3.9  2002/10/18 13:48:58  sbs
  * several flag settings for freshly made N_id nodes inserted.
  *
@@ -335,6 +341,85 @@ DFM2ReturnTypes (DFMmask_t mask)
     }
 
     DBUG_RETURN (rettypes);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *DFM2ProductType( DFMmask_t mask)
+ *
+ * @brief Creates the product type of all types attached to to given mask
+ *
+ * @param mask in or out mask of a function
+ *
+ ******************************************************************************/
+ntype *
+DFM2ProductType (DFMmask_t mask)
+{
+    node *decl;
+    ntype *result = NULL;
+
+    DBUG_ENTER ("DFM2ProductType");
+
+    decl = DFMGetMaskEntryDeclSet (mask);
+
+    while (decl != NULL) {
+        if (result == NULL) {
+            result
+              = TYMakeProductType (1, TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl))));
+        } else {
+            int cnt;
+            ntype *new = TYMakeEmptyProductType (TYGetProductSize (result) + 1);
+
+            for (cnt = 0; cnt < TYGetProductSize (result); cnt++) {
+                TYSetProductMember (new, cnt,
+                                    TYCopyType (TYGetProductMember (result, cnt)));
+            }
+
+            TYSetProductMember (new, TYGetProductSize (result),
+                                TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl))));
+
+            result = TYFreeType (result);
+
+            result = new;
+        }
+
+        decl = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *DFM2FunctionType( DFMMask_t in, DFMMask_t out, node *fundef)
+ *
+ * @brief Creates the type of the function given as arguments
+ *
+ * @param in in mask of the given function
+ * @param out out mask of the given function
+ * @param fundef fundef node to process
+ *
+ ******************************************************************************/
+ntype *
+DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
+{
+    ntype *result;
+    node *decl;
+
+    DBUG_ENTER ("DFM2FunctionType");
+
+    result = DFM2ProductType (out);
+
+    decl = DFMGetMaskEntryDeclSet (in);
+
+    while (decl != NULL) {
+        result = TYMakeFunType (TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl))),
+                                result, fundef);
+
+        decl = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
