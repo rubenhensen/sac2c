@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/11/05 13:40:02  dkr
+ * arg_info is removed now after finishing traversal
+ *
  * Revision 2.4  2000/10/31 23:17:58  dkr
  * Trav: NWITH2_CODE might be NULL
  *
@@ -66,6 +69,8 @@
  *   +) "C" is found in 'NWITH2_DEC_RC_IDS'!!!!!
  *      [Otherwise "C" is not consumed by the with-loop because of RCO
  *       --- it is not the last occur --- therefore must not be reused!!!]
+ *
+ * The arrays that are identified to be reuseable are stored in NWITH2_REUSE.
  *
  ******************************************************************************/
 
@@ -432,6 +437,8 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
     act_tab = reuse_tab;
     syntax_tree = Trav (syntax_tree, info);
     act_tab = old_tab;
+
+    info = FreeTree (info);
 
     DBUG_RETURN (syntax_tree);
 }
