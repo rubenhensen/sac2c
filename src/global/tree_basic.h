@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.160  1998/05/12 13:46:18  srs
+ * added INFO_AE_TYPES and ID_IDS
+ *
  * Revision 1.159  1998/05/12 13:17:37  dkr
  * added SYNC_RC_IDS, SPMD_LIFTED_FROM
  *
@@ -1863,6 +1866,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    char*       MOD     (O)
  ***    statustype  ATTRIB
  ***    statustype  STATUS
+ ***    ids*        IDS
  ***
  ***  temporary attributes:
  ***
@@ -1878,7 +1882,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
  ***    the copy's WL_ID with a pointer to it's original N_id node. The function
  ***    SearchWL() can define ID_WL in another way (pointer to N_assign node
- ***   of WL which is referenced by this Id).
+ ***    of WL which is referenced by this Id).
  ***
  ***/
 
@@ -1905,6 +1909,7 @@ extern node *MakeId (char *name, char *mod, statustype status);
 
 extern node *MakeId2 (ids *ids_node);
 
+#define ID_IDS(n) (n->info.ids)
 #define ID_NAME(n) (n->info.ids->id)
 #define ID_DEF(n) (n->info.ids->def)
 #define ID_VARDEC(n) (n->info.ids->node)
@@ -2312,6 +2317,9 @@ extern node *MakeInfo ();
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
+
+/* ArrayElemination */
+#define INFO_AE_TYPES(n) (n->node[1])
 
 /* compile */
 #define INFO_COMP_LASTASSIGN(n) (n->node[0])
