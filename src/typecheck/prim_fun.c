@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.38  1999/01/15 15:27:39  cg
+ * Usage of INTRINSIC_PSI removed.
+ *
  * Revision 1.37  1999/01/08 11:32:51  sbs
  * enabled rotate only...
  *
@@ -428,6 +431,14 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
      * intrinsic function!!
      */
 
+    /*
+     * For the time being the primitive functions take, drop, and cat
+     * are left intrinsic. However, if their intrinsic implementation
+     * is not explicitly requested by the -intrinsic option, applications
+     * of these functions are subsequently expanded to equivalent with-loops.
+     * See function TClet() in file typecheck.c for details.
+     */
+
     switch (prf_old) {
     case F_add_AxA:
     case F_add_AxS:
@@ -472,9 +483,6 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
     case F_rotate:
         intrinsic = (INTRINSIC_ROT & intrinsics);
         break;
-    case F_psi:
-        intrinsic = (INTRINSIC_PSI & intrinsics);
-        /* break; */
     case F_take:
         intrinsic = (INTRINSIC_TAKE & intrinsics);
         /* break; */
