@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2003/09/09 14:57:00  sbs
+ * act_info_chn for extended type error reporting added
+ *
  * Revision 3.29  2003/08/16 08:38:03  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -174,6 +177,7 @@
 
 #include <stdio.h>
 #include "types.h"
+#include "type_errors.h"
 
 #define MAIN_MOD_NAME "_MAIN"
 #define EXTERN_MOD_NAME "_EXT"
@@ -403,6 +407,8 @@ extern bool show_syscall;
 
 extern int errors_cnt;
 extern int warnings_cnt;
+
+extern te_info *act_info_chn;
 
 extern int verbose_level;
 extern compiler_phase_t compiler_phase;

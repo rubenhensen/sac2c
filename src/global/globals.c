@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/09/09 14:57:00  sbs
+ * act_info_chn for extended type error reporting added
+ *
  * Revision 3.37  2003/08/19 17:20:41  ktr
  * SelectionPropagation os now activated by default.
  *
@@ -264,6 +267,7 @@
 #include "globals.h"
 #include "Error.h"
 #include "internal_lib.h"
+#include "type_errors.h"
 
 /*
  * special hidden options!
@@ -594,6 +598,8 @@ int apdiag_limit = 20000;
 
 int errors_cnt = 0;   /* counter for number of errors   */
 int warnings_cnt = 0; /* counter for number of warnings */
+
+te_info *act_info_chn; /* info chain for extended error messages during TC */
 
 #ifdef PRODUCTION
 int verbose_level = 1; /* controls compile time output   */
