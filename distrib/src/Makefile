@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.8  2000/11/15 17:32:07  dkr
+# dependency for Makefile.Config.for.% added
+#
 # Revision 2.7  2000/11/15 17:12:25  dkr
 # system specific Makefile.Config added
 # .SECONDARY added to avoid removal of temporary files
@@ -264,11 +267,11 @@ stdlib.tar:
 	cp $(STDLIBDIR)/$@ .
 
 
-Makefile.Config.for.%:
+Makefile.Config.for.%: $(STDLIBDIR)/Makefiles/Makefile.Config
 	@echo "**************************************************************"
 	@echo "*  Creating Makefile.Config for $*"
 	@echo "**************************************************************"
-	sed -e 's/^[ ]*OS[ ]*:=[ ]*[_A-Za-z0-9]*/OS := $*/g' $(STDLIBDIR)/Makefiles/Makefile.Config > ./$@
+	sed -e 's/^[ ]*OS[ ]*:=[ ]*[_A-Za-z0-9]*/OS := $*/g' $< > ./$@
 
 
 demo.tar:
