@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.20  2000/10/31 16:27:13  dkr
+ * Parts2Strides: empty parts are detected now.
+ * If all parts are empty a single stride over the whole domain is
+ * generated.
+ *
  * Revision 2.19  2000/07/05 14:28:05  dkr
  * CheckWithids() added
  *
@@ -1701,11 +1706,13 @@ CompareWLnode (node *node1, node *node2, int outline)
 /******************************************************************************
  *
  * Function:
- *   node *NormalizeStride_1( node *stride)
+ *   int NormalizeStride_1( node *stride, bool error_if_empty)
  *
  * Description:
- *   Returns the IN THE FIRST DIMENSION normalized N_WLstride-node 'stride'.
- *   a possibly present next node in 'stride' is ignored.
+ *   Normalizes the given stride in the FIRST dimension.
+ *   A possibly present next node in 'stride' is ignored.
+ *   The return value is TRUE iff the stride is non-empty.
+ *   But iff 'error_if_empty' is set empty strides are not allowed!!!
  *
  *   This normalization has two major goals:
  *     * every stride has a unambiguous form
@@ -1724,11 +1731,12 @@ CompareWLnode (node *node1, node *node2, int outline)
  *
  ******************************************************************************/
 
-static node *
-NormalizeStride_1 (node *stride)
+static int
+NormalizeStride_1 (node *stride, bool error_if_empty)
 {
     node *grid;
     int bound1, bound2, step, grid_b1, grid_b2, new_bound1, new_bound2;
+    bool non_empty = TRUE;
 
     DBUG_ENTER ("NormalizeStride_1");
 
@@ -1754,7 +1762,7 @@ NormalizeStride_1 (node *stride)
      * assure, that the stride is legal!
      */
     DBUG_ASSERT ((0 <= bound1), "given stride has illegal lower bound (<= 0)");
-    DBUG_ASSERT ((bound1 < bound2),
+    DBUG_ASSERT (((!error_if_empty) || (bound1 < bound2)),
                  "given stride is empty (lower bound >= upper bound)!");
     DBUG_ASSERT ((0 < step), "given step is illegal (<= 0)");
     DBUG_ASSERT ((0 <= grid_b1), "given grid has illegal lower bound (<= 0)");
@@ -1787,7 +1795,7 @@ NormalizeStride_1 (node *stride)
      * assure, that the stride is still legal!
      */
     DBUG_ASSERT ((0 <= bound1), "modified stride has illegal lower bound (<= 0)");
-    DBUG_ASSERT ((bound1 < bound2),
+    DBUG_ASSERT (((!error_if_empty) || (bound1 < bound2)),
                  "modified stride is empty (lower bound >= upper bound)!");
     DBUG_ASSERT ((0 < step), "modified step is illegal (<= 0)");
     DBUG_ASSERT ((0 <= grid_b1), "modified grid has illegal lower bound (<= 0)");
@@ -1813,7 +1821,14 @@ NormalizeStride_1 (node *stride)
     WLGRID_BOUND1 (grid) = grid_b1 + (bound1 - new_bound1);
     WLGRID_BOUND2 (grid) = grid_b2 + (bound1 - new_bound1);
 
-    DBUG_RETURN (stride);
+    if (bound1 >= bound2) {
+        /*
+         * stride is empty!!!
+         */
+        non_empty = FALSE;
+    }
+
+    DBUG_RETURN (non_empty);
 }
 
 /******************************************************************************
@@ -2037,6 +2052,7 @@ Parts2Strides (node *parts, int dims)
     node *parts_stride, *stride, *new_stride, *new_grid, *last_grid, *gen, *bound1,
       *bound2, *step, *width, *curr_bound1, *curr_bound2, *curr_step, *curr_width;
     int dim, curr_step_, curr_width_;
+    bool part_is_empty;
 
     DBUG_ENTER ("Parts2Strides");
 
@@ -2062,6 +2078,7 @@ Parts2Strides (node *parts, int dims)
 
         while (parts != NULL) {
             stride = NULL;
+            part_is_empty = FALSE;
 
             gen = NPART_GEN (parts);
             DBUG_ASSERT ((NGEN_OP1 (gen) == F_le), "op1 in generator is not <=");
@@ -2090,15 +2107,19 @@ Parts2Strides (node *parts, int dims)
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
 
-                new_stride = NormalizeStride_1 (new_stride);
-
-                /* append 'new_stride' to 'stride' */
-                if (dim == 0) {
-                    stride = new_stride;
+                if (NormalizeStride_1 (new_stride, FALSE)) {
+                    /* append 'new_stride' to 'stride' */
+                    if (dim == 0) {
+                        stride = new_stride;
+                    } else {
+                        WLGRID_NEXTDIM (last_grid) = new_stride;
+                    }
+                    last_grid = WLSTRIDE_CONTENTS (new_stride);
                 } else {
-                    WLGRID_NEXTDIM (last_grid) = new_stride;
+                    new_stride = FreeTree (new_stride);
+                    part_is_empty = TRUE;
+                    break;
                 }
-                last_grid = WLSTRIDE_CONTENTS (new_stride);
 
                 /* go to next dim */
                 bound1 = EXPRS_NEXT (bound1);
@@ -2111,9 +2132,11 @@ Parts2Strides (node *parts, int dims)
                 }
             }
 
-            WLGRID_CODE (last_grid) = NPART_CODE (parts);
-            NCODE_USED (NPART_CODE (parts))++;
-            parts_stride = InsertWLnodes (parts_stride, stride);
+            if (!part_is_empty) {
+                WLGRID_CODE (last_grid) = NPART_CODE (parts);
+                NCODE_USED (NPART_CODE (parts))++;
+                parts_stride = InsertWLnodes (parts_stride, stride);
+            }
 
             parts = NPART_NEXT (parts);
         }
@@ -4815,8 +4838,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride1b)) -= offset;
 
                 result = 1;
-                trav_d_stride1a = NormalizeStride_1 (trav_d_stride1a);
-                trav_d_stride1b = NormalizeStride_1 (trav_d_stride1b);
+                NormalizeStride_1 (trav_d_stride1a, TRUE);
+                NormalizeStride_1 (trav_d_stride1b, TRUE);
             } else {
                 if (i_bound1 + grid2_b1 - i_offset2 >= i_bound2) {
                     /*
@@ -4834,8 +4857,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                     WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride2b)) -= offset;
 
                     result = 2;
-                    trav_d_stride2a = NormalizeStride_1 (trav_d_stride2a);
-                    trav_d_stride2b = NormalizeStride_1 (trav_d_stride2b);
+                    NormalizeStride_1 (trav_d_stride2a, TRUE);
+                    NormalizeStride_1 (trav_d_stride2b, TRUE);
                 }
             }
 
@@ -5012,7 +5035,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                 WLSTRIDE_BOUND2 (trav_i_stride1) = i_bound2;
                 WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_i_stride1)) = grid1_b1 - i_offset1;
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_i_stride1)) = grid1_b2 - i_offset1;
-                trav_i_stride1 = NormalizeStride_1 (trav_i_stride1);
+                NormalizeStride_1 (trav_i_stride1, TRUE);
             }
 
             /* intersect 'stride2' with the outline of 'stride1' */
@@ -5021,7 +5044,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                 WLSTRIDE_BOUND2 (trav_i_stride2) = i_bound2;
                 WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_i_stride2)) = grid2_b1 - i_offset2;
                 WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_i_stride2)) = grid2_b2 - i_offset2;
-                trav_i_stride2 = NormalizeStride_1 (trav_i_stride2);
+                NormalizeStride_1 (trav_i_stride2, TRUE);
             }
 
         } else {
@@ -5186,7 +5209,7 @@ AdjustBounds (node **stride1, node **stride2)
                 if (IndexRearStride (new_stride1) > bound12) { /* bound21 > bound12 */
                     res = 1;
                     WLSTRIDE_BOUND2 (new_stride1) = bound12;
-                    new_stride1 = NormalizeStride_1 (new_stride1);
+                    NormalizeStride_1 (new_stride1, TRUE);
                 }
                 break;
             } else {
@@ -5195,7 +5218,7 @@ AdjustBounds (node **stride1, node **stride2)
                     if (IndexRearStride (new_stride2) > bound11) { /* bound22 > bound11 */
                         res = 2;
                         WLSTRIDE_BOUND2 (new_stride2) = bound11;
-                        new_stride2 = NormalizeStride_1 (new_stride2);
+                        NormalizeStride_1 (new_stride2, TRUE);
                     }
                     break;
                 } else {
@@ -6035,6 +6058,14 @@ WLTRAwith (node *arg_node, node *arg_info)
      */
     DBUG_EXECUTE ("WLprec", NOTE (("step 0.1: converting parts to strides\n")));
     strides = Parts2Strides (NWITH_PART (arg_node), dims);
+
+    if (strides == NULL) {
+        /*
+         * all parts are empty
+         *  -> generate a single stride over the whole domain
+         */
+        strides = GenerateShapeStrides (0, dims, INFO_WL_SHPSEG (arg_info));
+    }
 
     /*
      * consistence check: ensures that the strides are pairwise disjoint
