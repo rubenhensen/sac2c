@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.104  2004/09/18 16:06:37  ktr
+# added src/concurrent/spmd_emm.c
+#
 # Revision 3.103  2004/09/02 16:07:19  skt
 # support for consolidate_cells added
 #
@@ -299,7 +302,7 @@ CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
             src/concurrent/sync_opt.o src/concurrent/schedule.o \
             src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o \
-            src/concurrent/concurrent_lib.o
+            src/concurrent/concurrent_lib.o src/concurrent/spmd_emm.o
 MULTITHREAD= src/multithread/multithread.o src/multithread/multithread_lib.o \
              src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
              src/multithread/create_cells.o src/multithread/create_dataflowgraph.o \
