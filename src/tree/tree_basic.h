@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2000/03/15 16:07:11  dkr
+ * definition of FUNDEF_COMPANION changed
+ *
  * Revision 1.25  2000/03/15 15:04:26  dkr
  * WL..._INNERSTEP removed
  * WLSEG_HOMSV added
@@ -835,7 +838,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    node*           COMPANION (N_fundef)         (rfin and mtfin)
  ***                                      FLAG WILL BE CLEANED before these phases!!!
- ***
  ***/
 
 /*
@@ -903,7 +905,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
-#define FUNDEF_COMPANION(n) ((node *)(n->int_data))
+#define FUNDEF_COMPANION(n) ((node *)(n->dfmask[6]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1401,7 +1403,6 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***    ids*   USEVARS                 (refcount -> compile ->)
  ***
  ***  remark (srs): the 'body' of MakeWith() can be reached by WITH_OPERATOR.
- ***
  ***/
 
 /*
@@ -1440,7 +1441,6 @@ extern node *MakeWith (node *gen, node *body);
  ***    node*  USE     (O) (N_vinfo)   (psi-optimize -> )
  ***
  ***  remark: IDS->id == ID
- ***
  ***/
 
 extern node *MakeGenerator (node *left, node *right, char *id);
@@ -1633,7 +1633,6 @@ extern node *MakeArray (node *aelems);
  ***    types*   TYPE     (O)
  ***    node*    DOLLAR   (O)  (N_vinfo)
  ***    node*    VARDEC   (O)  (N_vardec)
- ***
  ***/
 
 extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
@@ -1962,7 +1961,6 @@ extern node *MakePre (nodetype incdec, char *id);
  ***
  ***    INDENT is used for indenting ICMs in output. This value is set
  ***    by 'MakeIcm' and used by 'PrintIcm'.
- ***
  ***/
 
 extern node *MakeIcm (char *name, node *args, node *next);
@@ -2001,7 +1999,6 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***    nums*  LINKSIGNNUMS     (O)   (scanparse -> import !!)
  ***    nums*  REFCOUNTINGNUMS  (O)   (scanparse -> import !!)
  ***    nums*  READONLYNUMS     (O)   (scanparse -> import !!)
- ***
  ***/
 
 /*
@@ -2312,10 +2309,9 @@ extern node *MakeInfo ();
  *
  * INFO_DUP_DFMBASE carries the information of a new DFMbase for DFMmasks to be
  *                  copied, when the body of a function is duplicated (jhs)
- *
  */
 #define INFO_DUP_CONT(n) (n->node[1])
-/*      INFO_INL_TYPES(n)                     (n->node[2])   See comment!!! */
+/*      INFO_INL_TYPES(n)                      (n->node[2])   See comment!!! */
 #define INFO_DUP_DFMBASE(n) ((DFMmask_base_t) (n->node[3]))
 #define INFO_DUP_FUNDEF(n) (n->node[4])
 #define INFO_DUP_TYPE(n) (n->flag)
@@ -2654,7 +2650,6 @@ extern node *MakeInfo ();
  ***    STATIC is a flag used to distinguish between static spmd-blocks, i.e.
  ***    the decision whether to execute in parallel or not is done at compile
  ***    time, and dynamic ones.
- ***
  ***/
 
 extern node *MakeSpmd (node *region);
@@ -2701,9 +2696,6 @@ extern node *MakeSpmd (node *region);
  ***
  ***    node*      WITH_PTRS   (N_exprs)   (syncinit -> syncopt -> compile ! )
  ***    SCHsched_t SCHEDULING              (syncinit (O) -> sched -> compile ! )
- ***
- ***  remarks:
- ***
  ***/
 
 extern node *MakeSync (node *region);
@@ -2727,7 +2719,6 @@ extern node *MakeSync (node *region);
  ***
  ***  sons:
  ***    node*     REGION      (N_block)
- ***
  ***/
 
 extern node *MakeMT (node *region);
@@ -2741,7 +2732,6 @@ extern node *MakeMT (node *region);
  ***
  ***  sons:
  ***    node*     REGION      (N_block)
- ***
  ***/
 
 extern node *MakeST (node *region);
@@ -2824,8 +2814,6 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***    long*  MASK          (optimize -> )
  ***    int    COPY          (Unroll!)
- ***
- ***
  ***/
 
 extern node *MakeNPart (node *withid, node *generator, node *code);
@@ -2876,7 +2864,6 @@ extern node *MakeNWithid (ids *vec, ids *scalars);
  ***    the BOUNDs are NULL if upper or lower bounds are not specified.
  ***    if STEP is NULL, step 1 is assumed (no grid)
  ***    if WIDTH is NULL, width 1 is assumed
- ***
  ***/
 
 extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step,
@@ -2920,7 +2907,6 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***
  ***    - WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
  ***    - FUNDEF-node is used if (TYPE == WO_foldfun, WO_foldprf).
- ***
  ***/
 
 extern node *MakeNWithOp (WithOpType WithOp);
@@ -3064,11 +3050,11 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_ISSCHEDULED(n) (n->int_data)
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
-#define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
-#define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
-#define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
-#define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
-#define NWITH2_REUSE(n) ((DFMmask_t)n->dfmask[4])
+#define NWITH2_IN(n) ((DFMmask_t) (n->dfmask[0]))
+#define NWITH2_INOUT(n) ((DFMmask_t) (n->dfmask[1]))
+#define NWITH2_OUT(n) ((DFMmask_t) (n->dfmask[2]))
+#define NWITH2_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
+#define NWITH2_REUSE(n) ((DFMmask_t) (n->dfmask[4]))
 
 /*--------------------------------------------------------------------------*/
 
