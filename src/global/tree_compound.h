@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/07/13 16:41:17  sbs
+ * VARDEC_OR_ARG_COLCHN added.
+ * ./
+ *
  * Revision 2.10  1999/07/13 16:27:16  sbs
  * VARDEC_OR_ARG_SHAPE added.
  *
@@ -587,6 +591,9 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
 
 #define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
+
+#define VARDEC_OR_ARG_COLCHN(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
 
 #define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 
