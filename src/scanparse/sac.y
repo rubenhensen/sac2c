@@ -4,8 +4,9 @@
 /*
  *
  * $Log$
- * Revision 3.50  2002/08/13 15:28:06  sbs
- * id / id COLON id    substituted by fun_id  in sib-funs
+ * Revision 3.51  2002/08/13 16:21:43  sbs
+ * now, prefix notation of the overloaded unary and binary operators
+ * such as +, - , ... works as well
  *
  * Revision 3.49  2002/08/13 15:15:33  sbs
  * error in constructing unary ops eliminated.
@@ -1153,6 +1154,14 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
     | MINUS expr                  { $$ = MakeAp1( "-", NULL, $2);}    %prec MM_OP
     | TILDE expr                  { $$ = MakeAp1( "~", NULL, $2);}    %prec MM_OP
     | EXCL expr                   { $$ = MakeAp1( "!", NULL, $2);}    %prec MM_OP
+    | PLUS BRACKET_L expr COMMA exprs BRACKET_R
+      { $$ = MakeAp( "+", NULL, MakeExprs( $3, $5));}
+    | MINUS BRACKET_L expr COMMA exprs BRACKET_R
+      { $$ = MakeAp( "-", NULL, MakeExprs( $3, $5));}
+    | TILDE BRACKET_L expr COMMA exprs BRACKET_R
+      { $$ = MakeAp( "~", NULL, MakeExprs( $3, $5));}
+    | EXCL BRACKET_L expr COMMA exprs BRACKET_R
+      { $$ = MakeAp( "!", NULL, MakeExprs( $3, $5));}
     | expr_sel                    { $$ = $1;}  /* bracket notation      */
     | expr_ap                     { $$ = $1;}  /* prefix function calls */
     | expr_ar                     { $$ = $1;}  /* constant arrays       */
@@ -1355,7 +1364,7 @@ fun_ids: fun_id COMMA fun_ids
        ;
 
 fun_id: local_fun_id { $$ = $1; }
-      | id COLON id  { $$ = MakeIds( $3, $1, ST_regular); }
+      | id COLON local_fun_id  { $$ = $3; IDS_MOD( $$) = $1; }
       ; 
 
 local_fun_id: id          { $$ = MakeIds( $1, NULL, ST_regular); }
