@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 2.9  2000/02/08 16:23:33  dkr
+ * fixed a bug in IdxNcode: declaration of index vector variable might
+ * be a N_arg node!!
+ *
  * Revision 2.8  1999/09/27 06:43:03  sbs
  * bug in index,.c fixed
  *
@@ -2160,7 +2164,7 @@ IdxNwith (node *arg_node, node *arg_info)
 node *
 IdxNpart (node *arg_node, node *arg_info)
 {
-    node *vardec, *mem_transform;
+    node *decl, *mem_transform;
 
     DBUG_ENTER ("IdxNpart");
 
@@ -2183,8 +2187,8 @@ IdxNpart (node *arg_node, node *arg_info)
          * IF REFCOUNT_PROBLEM_SOLVED this can be spared since the one in the
          * generator would be deleted anyways ( see above)!!
          */
-        vardec = IDS_VARDEC (NPART_VEC (arg_node));
-        SET_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_COLCHN (vardec)));
+        decl = IDS_VARDEC (NPART_VEC (arg_node));
+        SET_VARDEC_OR_ARG_COLCHN (decl, SetVect (VARDEC_OR_ARG_COLCHN (decl)));
     }
 #endif
 
@@ -2223,7 +2227,7 @@ IdxNpart (node *arg_node, node *arg_info)
 node *
 IdxNcode (node *arg_node, node *arg_info)
 {
-    node *with, *idx_vardec, *vinfo, *withop_arr, *col_vinfo, *new_assign, *let_node,
+    node *with, *idx_decl, *vinfo, *withop_arr, *col_vinfo, *new_assign, *let_node,
       *current_assign, *new_id, *array_id;
     types *arr_type;
 
@@ -2248,10 +2252,10 @@ IdxNcode (node *arg_node, node *arg_info)
      */
 
     with = LET_EXPR (let_node);
-    idx_vardec = IDS_VARDEC (NWITH_VEC (with));
-    vinfo = VARDEC_ACTCHN (idx_vardec);
+    idx_decl = IDS_VARDEC (NWITH_VEC (with));
+    vinfo = VARDEC_OR_ARG_ACTCHN (idx_decl);
     NCODE_USE (arg_node) = vinfo;
-    VARDEC_ACTCHN (idx_vardec) = MakeVinfoDollar (CutVinfoChn (vinfo));
+    VARDEC_OR_ARG_ACTCHN (idx_decl) = MakeVinfoDollar (CutVinfoChn (vinfo));
 
     if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
         while (VINFO_FLAG (vinfo) != DOLLAR) {
@@ -2293,7 +2297,7 @@ IdxNcode (node *arg_node, node *arg_info)
 
                     new_id = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)), arr_type),
                                      NULL, ST_regular);
-                    col_vinfo = FindIdx (VARDEC_COLCHN (idx_vardec), arr_type);
+                    col_vinfo = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_type);
                     DBUG_ASSERT (((col_vinfo != NULL)
                                   && (VINFO_VARDEC (col_vinfo) != NULL)),
                                  "missing vardec for IDX variable");
@@ -2318,7 +2322,7 @@ IdxNcode (node *arg_node, node *arg_info)
                      * ND_KS_VECT2OFFSET( <off-name>, <var-name>,
                      *                    <dim of var>, <dim of array>, shape_elems)
                      */
-                    new_assign = CreateVect2OffsetIcm (idx_vardec, VINFO_TYPE (vinfo));
+                    new_assign = CreateVect2OffsetIcm (idx_decl, VINFO_TYPE (vinfo));
                 }
 
                 ASSIGN_NEXT (new_assign) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
