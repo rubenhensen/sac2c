@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.133  2004/11/24 14:04:53  skt
+ * ID_VARDEC added
+ *
  * Revision 3.132  2004/11/24 13:51:35  mwe
  * DECL_AVIS added
  *
@@ -1463,6 +1466,8 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
+
+#define ID_VARDEC(n) (AVIS_DECL (ID_AVIS (n)))
 
 extern node *TCmakeId_Copy_NT (char *str, types *type);
 
