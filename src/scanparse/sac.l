@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/02/14 12:00:42  sbs
+ * Revision 1.14  1995/05/22 15:03:43  hw
+ * comments will not be printed anymore
+ *
+ * Revision 1.13  1995/02/14  12:00:42  sbs
  * fold inserted
  *
  * Revision 1.12  1995/02/14  10:11:10  hw
@@ -43,18 +46,15 @@
 #include "tree.h"
 #include "y.tab.h"
 
-#define FILTER(token) if (commlevel) ECHO; else return(token)
-#define FILTER2(token) if (commlevel) ECHO;                             \
-                       else {                                           \
+#define FILTER(token) if (0==commlevel)  return(token)
+#define FILTER2(token) if (0==commlevel)  {                             \
                          yylval.id=(char *)malloc(strlen(yytext));      \
                          strcpy(yylval.id, yytext);  	                \
                          return(token); }
-#define FILTER3(token) if (commlevel) ECHO;                            \
-                       else {                                          \
-                         yylval.cint=atoi(yytext);		       \
+#define FILTER3(token) if (0==commlevel) {                              \
+                         yylval.cint=atoi(yytext);		        \
                          return(token); }
-#define FILTER4(token) if (commlevel) ECHO;                            \
-                       else {                                          \
+#define FILTER4(token) if (0==commlevel) {                              \
                          yylval.cfloat=atof(yytext);		       \
                          return(token); }
 
@@ -165,12 +165,10 @@ extern                          {FILTER( EXTERN );}
 				{FILTER4 ( FLOAT);}
 
 "/*"	{ if (commlevel++ == 1)
-            fprintf(stderr,"Warning: recursive comment eleminated! \n");
-          else printf("/*"); }
-"*/"	{ if (commlevel) commlevel--; else return(SC);
-          if (commlevel == 0) {printf("*/\n"); for(i=0; i<indent; i++) printf(" ");} }
-"\n"	{linenum++; if (commlevel) printf("\n");}
-[ \t]	if (commlevel) ECHO;
+            fprintf(stderr,"Warning: recursive comment eleminated! \n"); }
+"*/"	{ if (commlevel) commlevel--; else return(SC); }
+"\n"	{linenum++;}
+[ \t]	{}
 .	{FILTER( SC ); }
 
 %%
