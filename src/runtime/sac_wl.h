@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/08 16:35:33  dkr
+ * comments modifed
+ *
  * Revision 3.1  2000/11/20 18:02:23  sacbase
  * new release made
  *
@@ -282,7 +285,7 @@
  ***/
 
 /*
- * BEGIN: if (STRIDE_LEVEL == 0), (STRIDE_UNROLLING == 0)
+ * BEGIN: if (STRIDE_LEVEL == 0), (STRIDE_UNROLLING == FALSE)
  *
  *******
  *
@@ -303,7 +306,7 @@
         for (idx_sca = bnd1; idx_sca < bnd2;) {
 
 /*
- * BEGIN: if (STRIDE_LEVEL > 0), (STRIDE_UNROLLING == 0)
+ * BEGIN: if (STRIDE_LEVEL > 0), (STRIDE_UNROLLING == FALSE)
  */
 
 #define SAC_WL_MT_STRIDE_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)             \
@@ -315,7 +318,7 @@
              idx_sca < SAC_WL_VAR (stop, idx_sca);) {
 
 /*
- * BEGIN: if (STRIDE_UNROLLING == 1)
+ * BEGIN: if (STRIDE_UNROLLING == TRUE)
  */
 
 #define SAC_WL_MT_STRIDE_UNROLL_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)           \
@@ -325,7 +328,7 @@
     idx_sca = SAC_WL_VAR (start, idx_sca) + bnd1;
 
 /*
- * END: if (STRIDE_UNROLLING == 0)
+ * END: if (STRIDE_UNROLLING == FALSE)
  */
 
 #define SAC_WL_MT_STRIDE_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)               \
@@ -336,7 +339,7 @@
     }
 
 /*
- * END: if (STRIDE_UNROLLING == 1)
+ * END: if (STRIDE_UNROLLING == TRUE)
  */
 
 #define SAC_WL_MT_STRIDE_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)             \
@@ -388,7 +391,7 @@
  */
 
 /*
- * BEGIN: if (GRID_UNROLLING == 0)
+ * BEGIN: if (GRID_UNROLLING == FALSE)
  *
  *******
  *
@@ -405,7 +408,7 @@
         for (; idx_sca < SAC_WL_VAR (grid_stop, idx_sca); idx_sca++) {
 
 /*
- * BEGIN: if (GRID_UNROLLING == 1)
+ * BEGIN: if (GRID_UNROLLING == TRUE)
  */
 
 #define SAC_WL_MT_GRID_UNROLL_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
@@ -414,7 +417,7 @@
 #define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2) /* empty */
 
 /*
- * END: if (GRID_UNROLLING == 0)
+ * END: if (GRID_UNROLLING == FALSE)
  */
 
 #define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
@@ -425,7 +428,7 @@
     }
 
 /*
- * END: if (GRID_UNROLLING == 1)
+ * END: if (GRID_UNROLLING == TRUE)
  */
 
 #define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
