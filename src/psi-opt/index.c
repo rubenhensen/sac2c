@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/03/25 15:12:05  sbs
+ * doxygenic again
+ *
  * Revision 3.36  2003/03/25 14:52:51  sbs
  * EqTypes doxigenized.
  *
@@ -169,8 +172,10 @@
  *
  * @file index.c
  *
- * This file contains the implementation of IVE (index vector elimination).
+ * @brief This file contains the implementation of IVE (index vector elimination).
  *
+ *
+ * <pre>
  *
  * 1) Basics
  * ---------
@@ -604,13 +609,17 @@
  *                            In these situations the length of the non-scalar
  *                            argument has to be known when traversing the
  *                            scalar argument (cf. IdxNum).
+ *
+ * </pre>
  */
 
 int ive_expr, ive_op;
 
-/*
- * Some functions for handling N_vinfo nodes:
- * ------------------------------------------
+/**
+ *
+ * @defgroup Some functions for handling N_vinfo nodes
+ *
+ *
  * node * FindVect( node *N_vinfo_chain)	: checks whether VECT is in
  *                                                  the chain of N_vinfo nodes
  * node * FindIdx( node *chain, types *shape)	: dito for a specific shape
@@ -620,6 +629,7 @@ int ive_expr, ive_op;
  * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
  *                                                  already present
  */
+/*@{*/
 
 /******************************************************************************
  *
@@ -645,17 +655,18 @@ FindVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/**
+/** *
  *
  * @fn  bool EqTypes( types *type1, types *type2)
  *
  * description:
- *   @brief  compares two types with respect to the shape.
- *           In case of UDFs the implementation-type is compared.
- *           This is a helper function needed from FindIdx only!
  *   @param  type1
  *   @param  type2
  *   @return 1 iff the types are equal, 0 otherwise
+ *   @brief  compares two types with respect to the shape.
+ *
+ *           In case of UDFs the implementation-type is compared.
+ *           This is a helper function needed from FindIdx only!
  *
  ******************************************************************************/
 
@@ -769,6 +780,8 @@ SetIdx (node *chain, types *vartype)
 
     DBUG_RETURN (chain);
 }
+
+/*@}*/
 
 /*
  *
