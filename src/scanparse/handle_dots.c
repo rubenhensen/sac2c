@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2003/11/12 14:32:30  sbs
+ * HDpart inserted.
+ *
  * Revision 1.29  2003/11/05 16:31:52  sah
  * solves bug #30
  *
@@ -1702,6 +1705,25 @@ HDwithop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+HDpart (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("HDpart");
+
+    arg_node = TravSons (arg_node, arg_info);
+
+    /**
+     * the shape info in INFO_HD_DOTSHAPE(arg_info) has been used now!
+     * Note here, that it may not be consumed in HDgenerator, as there may exist
+     * more than one generators for a single WL now!
+     */
+    if (INFO_HD_DOTSHAPE (arg_info) != NULL) {
+        INFO_HD_DOTSHAPE (arg_info) = FreeTree (INFO_HD_DOTSHAPE (arg_info));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /**
  * replaces dots in generators and normalizes the generator.
  * A dot as left boundary is replaced by 0 * shape, a right boundary
@@ -1752,23 +1774,20 @@ HDgenerator (node *arg_node, node *arg_info)
                 /* make < from <= and replace "." by "shp"  */
                 NGEN_OP2 (arg_node) = F_lt;
                 NGEN_BOUND2 (arg_node) = FreeTree (NGEN_BOUND2 (arg_node));
-                NGEN_BOUND2 (arg_node) = INFO_HD_DOTSHAPE (arg_info);
+                NGEN_BOUND2 (arg_node) = DupTree (INFO_HD_DOTSHAPE (arg_info));
             } else {
                 /* replace "." by "shp - 1"  */
                 NGEN_BOUND2 (arg_node) = FreeTree (NGEN_BOUND2 (arg_node));
                 NGEN_BOUND2 (arg_node)
-                  = MakePrf2 (F_sub_AxS, INFO_HD_DOTSHAPE (arg_info), MakeNum (1));
+                  = MakePrf2 (F_sub_AxS, DupTree (INFO_HD_DOTSHAPE (arg_info)),
+                              MakeNum (1));
             }
-            INFO_HD_DOTSHAPE (arg_info) = NULL; /* has been consumed ! */
         } else {
             if (NGEN_OP2 (arg_node) == F_le) {
                 /* make < from <= and add 1 to bound */
                 NGEN_OP2 (arg_node) = F_lt;
                 NGEN_BOUND2 (arg_node)
                   = MakePrf2 (F_add_AxS, NGEN_BOUND2 (arg_node), MakeNum (1));
-            }
-            if (INFO_HD_DOTSHAPE (arg_info) != NULL) {
-                INFO_HD_DOTSHAPE (arg_info) = FreeTree (INFO_HD_DOTSHAPE (arg_info));
             }
         }
     }

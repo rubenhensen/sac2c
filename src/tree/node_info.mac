@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2003/11/12 14:32:02  sbs
+ * HDpart inserted.
+ *
  * Revision 3.125  2003/11/12 12:33:22  sbs
  * number of sons in NWithop increased from 1 to 2 (default-expr!)
  *
@@ -1849,7 +1852,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, SSAWLTNpart, SSAWLINpart, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, WLSNpart, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       HDpart, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        SPpart, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,

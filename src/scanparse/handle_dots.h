@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/11/12 14:32:30  sbs
+ * HDpart inserted.
+ *
  * Revision 1.5  2002/09/06 11:45:32  sah
  * added support for N_selwl.
  *
@@ -30,6 +33,7 @@
 extern node *EliminateSelDots (node *arg_node);
 extern node *HDwith (node *arg_node, node *arg_info);
 extern node *HDwithop (node *arg_node, node *arg_info);
+extern node *HDpart (node *arg_node, node *arg_info);
 extern node *HDgenerator (node *arg_node, node *arg_info);
 extern node *HDdot (node *arg_node, node *arg_info);
 extern node *HDap (node *arg_node, node *arg_info);
