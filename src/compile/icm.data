@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/03 19:40:02  dkr
+ * MT_ADJUST_SCHEDULER__OFFSET added.
+ * MT_ADJUST_SCHEDULER is a h-icm now.
+ *
  * Revision 3.17  2001/03/28 12:49:48  ben
  * For MT_SCHEDULER_Cyclic_..., MT_SCHEDULER_Self_..., MT_SCHEDULER_Afs_...  ICM_INT(param) added
  *
@@ -665,18 +669,16 @@ ICM_DEF( MT_SPMD_PRESET, TRACE_NONE)
 ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 #endif
 
-#if defined(MT_ADJUST_SCHEDULER) || defined(ICM_ALL)
-ICM_DEF( MT_ADJUST_SCHEDULER, TRACE_NONE)
-  ICM_INT(current_dim)
+#if defined(MT_ADJUST_SCHEDULER__OFFSET) || defined(ICM_ALL)
+ICM_DEF( MT_ADJUST_SCHEDULER__OFFSET, TRACE_NONE)
+  ICM_STR(array)
   ICM_INT(array_dim)
+  ICM_INT(current_dim)
   ICM_STR(lower)
   ICM_STR(upper)
   ICM_STR(unrolling)
-  ICM_STR(array)
-  ICM_INT(adjust_offset)
-ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, upper, unrolling, array, adjust_offset))
+ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (array, array_dim, current_dim, lower, upper, unrolling))
 #endif
-
 
 
 /*
@@ -701,14 +703,14 @@ ICM_END( MT_SCHEDULER_END, (dim, vararg))
 #if defined(MT_SCHEDULER_Block_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_BEGIN, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Block_BEGIN, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Block_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_END, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Block_END, (dim, vararg))
 #endif
 
@@ -716,28 +718,28 @@ ICM_END( MT_SCHEDULER_Block_END, (dim, vararg))
 #if defined(MT_SCHEDULER_BlockVar_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_BlockVar_BEGIN, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_BlockVar_BEGIN, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_BlockVar_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_BlockVar_END, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_BlockVar_END, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Even_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Even_BEGIN, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Even_BEGIN, ( dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Even_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Even_END, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Even_END, ( dim, vararg))
 #endif
 
@@ -745,7 +747,7 @@ ICM_END( MT_SCHEDULER_Even_END, ( dim, vararg))
 ICM_DEF( MT_SCHEDULER_Cyclic_BEGIN, TRACE_NONE)
   ICM_INT(param)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Cyclic_BEGIN, (param, dim, vararg))
 #endif
 
@@ -753,7 +755,7 @@ ICM_END( MT_SCHEDULER_Cyclic_BEGIN, (param, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Cyclic_END, TRACE_NONE)
   ICM_INT(param)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Cyclic_END, (param, dim, vararg))
 #endif
 
@@ -761,7 +763,7 @@ ICM_END( MT_SCHEDULER_Cyclic_END, (param, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Self_BEGIN, TRACE_NONE)
   ICM_INT(param)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Self_BEGIN, (param, dim, vararg))
 #endif
 
@@ -769,7 +771,7 @@ ICM_END( MT_SCHEDULER_Self_BEGIN, (param, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Self_END, TRACE_NONE)
   ICM_INT(param)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Self_END, (param, dim, vararg))
 #endif
 
@@ -777,7 +779,7 @@ ICM_END( MT_SCHEDULER_Self_END, (param, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Afs_BEGIN, TRACE_NONE)
   ICM_INT(param)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Afs_BEGIN, (param, dim, vararg))
 #endif
 
@@ -785,6 +787,6 @@ ICM_END( MT_SCHEDULER_Afs_BEGIN, (param, dim, vararg))
 ICM_DEF( MT_SCHEDULER_Afs_END, TRACE_NONE)
   ICM_INT(param)
   ICM_INT(dim)
-  ICM_VAR((4*dim), vararg)
+  ICM_VAR((3*dim), vararg)
 ICM_END( MT_SCHEDULER_Afs_END, (param, dim, vararg))
 #endif
