@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1999/01/07 13:58:55  sbs
+ * *** empty log message ***
+ *
  * Revision 1.62  1998/12/21 10:50:43  sbs
  * error in RCloop:
  * when traversing the loop body "again", the masks are re-generated!
@@ -44,186 +47,7 @@
  * added RCicm:
  *   no refcounting of ICM-args
  *
- * Revision 1.49  1998/05/08 00:43:25  dkr
- * RC for index-vector now correct.
- * added RCO for with-loop-arguments :)
- *
- * Revision 1.48  1998/05/07 17:13:15  dkr
- * fixed a bug in RCNcode:
- *   NCODE_RC_IDS is now initialized with NULL
- *
- * Revision 1.47  1998/05/07 10:15:08  dkr
- * changed refcounting in new with-loop
- *
- * Revision 1.46  1998/05/05 11:26:28  dkr
- * added RCNwithop
- *
- * Revision 1.45  1998/05/03 14:02:03  dkr
- * fixed a bug in RCNcode: traverses NEXT-node now
- *
- * Revision 1.44  1998/05/02 17:45:30  dkr
- * changed RCNwithid:
- *   RCs of NWITHID_IDS are now set correctly
- *
- * Revision 1.43  1998/04/28 13:22:35  dkr
- * added RCblock, RCvardec
- * VARDEC_REFCNT is now (-1) for non-RC-objects :-))
- *
- * Revision 1.42  1998/04/23 19:13:40  dkr
- * changed RCnwith
- *
- * Revision 1.41  1998/04/19 21:19:09  dkr
- * changed FindVardec
- *
- * Revision 1.40  1998/04/14 21:43:29  dkr
- * fixed a bug with COND_VARINFO, DO_VARINFO, ...
- *
- * Revision 1.39  1998/04/04 21:06:38  dkr
- * fixed a bug in FindVardec
- *
- * Revision 1.38  1998/03/25 18:10:05  srs
- * renamed IDS_VARDEC_TYPE to IDS_TYPE
- *
- * Revision 1.37  1998/03/02 22:24:30  dkr
- * changed RCloop(), RCcond():
- *   DO_VARINFO contains now a N_expr-chain
- *
- * Revision 1.36  1998/03/01 00:16:56  dkr
- * added DBUG_ASSERTs for info-node in RCloop(), RCcond()
- *
- * Revision 1.35  1998/02/28 23:35:53  dkr
- * RCcond() uses now COND_THENVARS(arg_node), COND_ELSEVARS() instead of arg_node->node[3]
- *
- * Revision 1.34  1998/02/27 13:21:14  dkr
- * RCloop(): changed usage of arg_node->node[2]:
- *   uses now DO_USEDVARS, DO_DEFVARS and works together with MakeDo(), MakeWidth()
- *
- * Revision 1.33  1998/02/11 17:21:25  srs
- * removed unused var new_info.
- * changed NPART_IDX to NPART_WITHID
- *
- * Revision 1.32  1998/02/10 14:58:50  dkr
- * bugfix in RCNpart()
- *
- * Revision 1.31  1998/02/09 17:41:31  dkr
- * declaration of function GenerateMasks is now taken from optimize.h
- *
- * Revision 1.29  1998/02/06 18:49:14  dkr
- * new function RCNwithid()
- *
- * Revision 1.28  1998/02/05 15:33:15  dkr
- * adjusted refcnt in N_pre and N_post
- *
- * Revision 1.27  1998/01/28 19:42:18  dkr
- * added dummy-implementations of RC-funs for new with-loop
- *
- * Revision 1.26  1997/08/29 09:07:44  sbs
- * RCprf modified!
- * if N_prf == F_reshape  do NOT set arg_info to N_prf!
- * Since F_reshape is compiled in exactly the same way as an assignment,
- * it has to be refcounted in the same manner!
- *
- * Revision 1.25  1997/05/02 09:30:51  cg
- * IsArray(): Arrays with known dimension but unknown shape are now recognized.
- *
- * Revision 1.24  1997/03/19  15:29:59  cg
- * Now, module/class implementations without any functions are supported
- *
- * Revision 1.23  1996/09/02  17:41:51  sbs
- * commented ref_dump in RefLoop
- *
- * Revision 1.22  1996/05/29  16:48:11  sbs
- * -Inserted tree-macros in RCfundef, RCassign, RCid, RClet
- * -Inserted Comments in RCfundef, RCassign, RCid, RClet
- *
- * -N_info node in Refcount deleted.
- * -Inserted RCprf. RCprf traverse the args with arg_info pointing to the N_prf!
- * -arg_info is relevant for N_id nodes only:
- *    NULL  indicates a normal use i.e. in user-defined
- *          functions or aliasing.
- *    *node indicates a use as argument to a primitive
- *          function. *node points to the respective N_prf
- *          node
- *
- * if opt_rco==1 (default) all ids in arg-pos of a prf are either set to 1
- * (= last usage of the id) or -1 (=non-last usage of the id).
- *
- * Revision 1.21  1996/01/22  17:34:14  cg
- * IsBoxed and IsUnique moved to refcount.c
- *
- * Revision 1.20  1996/01/21  14:18:12  cg
- * new macro MUST_REFCOUNT to distinguish between refcounted
- * and not refcounted variables.
- *
- * Revision 1.19  1995/12/06  09:48:22  cg
- * external implicit types (void*) are now refcounted too.
- *
- * Revision 1.18  1995/10/06  17:08:34  cg
- * adjusted calls to function MakeIds (now 3 parameters)
- *
- * Revision 1.17  1995/06/26  13:04:02  hw
- * DBUG_ASSERT in RCwith inserted
- *
- * Revision 1.16  1995/06/26  08:12:35  asi
- * parameter for GenerateMasks changed
- *
- * Revision 1.15  1995/06/07  14:26:49  asi
- * inserted call of function GenerateMasks in function Refcount
- *
- * Revision 1.14  1995/05/19  13:29:59  hw
- * - bug fixed in RCloop ( refcounts of variables that are used before they
- *   will be defined will be increased)
- *
- * Revision 1.13  1995/05/18  15:46:17  hw
- * - changed RCwith ( increase refcount of array that will be modified
- *    in modarray_with-loop in all cases (used or not used in the
- *    with-loop body))
- *
- * Revision 1.12  1995/05/17  14:37:58  hw
- * bug fixed in RCloop ( refcounts of variables that belongs to
- *  'virtual function application' will be set correctly now, i hope ;-)
- *
- * Revision 1.11  1995/05/09  14:46:06  hw
- * bug fixed in RCwith ( set refcount of used variables correctly )
- *
- * Revision 1.10  1995/05/03  07:46:17  hw
- * bug fixed in Store, StoreAndInit & Restore (now refcounting will
- *  work after optimization ; eliminated variable declarations don't
- *  matter anymore )
- *
- * Revision 1.9  1995/04/28  17:27:34  hw
- * - added RCgen
- * - store information about used before defined variables
- *   only arrays) of a with_loop in arg_node->node[2] od N_with
- * - bug fixed in RCwith (set new refcount correctly )
- *
- * Revision 1.8  1995/04/11  15:10:55  hw
- * changed args of functio IsArray
- *
- * Revision 1.7  1995/04/04  16:21:04  hw
- * changed IsArray   (now arrays with unknown shapes will be treated as arrays)
- *
- * Revision 1.6  1995/03/28  12:09:38  hw
- * added #include "internal_lib.h"
- *
- * Revision 1.5  1995/03/16  17:40:35  hw
- * RCwith and RCcon (used for N_genarray and N_modarray) inserted
- * bug fixed in RCfundef
- *
- * Revision 1.4  1995/03/16  14:04:51  hw
- * changed mechanism of refcounting
- *  - refcounts are counted in var-decs and are stored and restored
- *    when necessary
- *  - refcounts in loops and conditionals correctly (i hope )
- *  - with-statements are still missing
- *
- * Revision 1.3  1995/03/14  18:45:21  hw
- * renamed RCwhile to RCloop
- * this version handles do- and while-loops correctly.
- * conditionals are not implemente correctly
- *
- * Revision 1.2  1995/03/13  15:18:47  hw
- * RCfundef and Refcount inserted
+ * ... [eliminated]
  *
  * Revision 1.1  1995/03/09  16:17:01  hw
  * Initial revision
@@ -241,6 +65,7 @@
 #include "DataFlowMask.h"
 #include "traverse.h"
 #include "optimize.h"
+#include "generatemasks.h"
 #include "internal_lib.h"
 #include "free.h"
 

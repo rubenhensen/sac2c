@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1999/01/07 14:02:15  sbs
+ * *** empty log message ***
+ *
  * Revision 1.34  1998/08/20 12:09:00  srs
  * removed upper allocation bound in Malloc (maybe this was inserted
  * for debugging).
@@ -469,8 +472,8 @@ TmpVar ()
     if (act_tab == type_tab) {
         s = "type";
     }
-    if (act_tab == opt_tab) {
-        s = "opt";
+    if (act_tab == genmask_tab) {
+        s = "gnm";
     }
     if (act_tab == dcr_tab) {
         s = "dcr";
