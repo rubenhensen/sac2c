@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.48  2000/02/23 14:06:32  dkr
+ * superfluous indentation of loop- and cond-bodies removed
+ *
  * Revision 2.47  2000/02/21 12:49:48  jhs
  * Removed superfluous variable nametab and replaced it's only usage with
  * mdb_nodetype, already used at other places within this file
@@ -779,7 +782,7 @@ PrintBlock (node *arg_node, node *arg_info)
 
     indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (outfile, "}");
 
     DBUG_RETURN (arg_node);
 }
@@ -1590,7 +1593,7 @@ PrintDo (node *arg_node, node *arg_info)
                   PrintDefUseMask (outfile, DO_TERMMASK (arg_node),
                                    INFO_PRINT_VARNO (arg_info)););
 
-    fprintf (outfile, "do\n");
+    fprintf (outfile, "do \n");
 
     DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
                   PrintIds (DO_DEFVARS (arg_node)); fprintf (outfile, "\n");
@@ -1608,15 +1611,13 @@ PrintDo (node *arg_node, node *arg_info)
                       PrintMrdMask (outfile, DO_MRDMASK (arg_node),
                                     INFO_PRINT_VARNO (arg_info)););
 
-        indent++;
         Trav (DO_BODY (arg_node), arg_info); /* traverse body of loop */
-        indent--;
     }
 
     INDENT;
-    fprintf (outfile, "while( ");
+    fprintf (outfile, "while (");
     Trav (DO_COND (arg_node), arg_info);
-    fprintf (outfile, " );\n");
+    fprintf (outfile, ");\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -1645,9 +1646,9 @@ PrintWhile (node *arg_node, node *arg_info)
                   PrintDefUseMask (outfile, WHILE_TERMMASK (arg_node),
                                    INFO_PRINT_VARNO (arg_info)););
 
-    fprintf (outfile, "while( ");
+    fprintf (outfile, "while (");
     Trav (WHILE_COND (arg_node), arg_info);
-    fprintf (outfile, " )\n");
+    fprintf (outfile, ") \n");
 
     DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
                   PrintIds (WHILE_DEFVARS (arg_node)); fprintf (outfile, "\n");
@@ -1665,9 +1666,7 @@ PrintWhile (node *arg_node, node *arg_info)
                       PrintMrdMask (outfile, WHILE_MRDMASK (arg_node),
                                     INFO_PRINT_VARNO (arg_info)););
 
-        indent++;
         Trav (WHILE_BODY (arg_node), arg_info); /* traverse body of loop */
-        indent--;
     }
 
     DBUG_RETURN (arg_node);
@@ -1687,7 +1686,7 @@ PrintCond (node *arg_node, node *arg_info)
                                    INFO_PRINT_VARNO (arg_info)););
 
     Trav (COND_COND (arg_node), arg_info);
-    fprintf (outfile, ")\n");
+    fprintf (outfile, ") \n");
 
     if (COND_THEN (arg_node) != NULL) {
 
@@ -1702,6 +1701,7 @@ PrintCond (node *arg_node, node *arg_info)
                       fprintf (outfile, "\n"););
 
         Trav (COND_THEN (arg_node), arg_info);
+        fprintf (outfile, "\n");
     }
 
     INDENT;
