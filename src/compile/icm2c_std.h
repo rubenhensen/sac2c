@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/09/25 13:47:08  dkr
+ * ASSIGN__DIMSHP replaced by UPDATE__DESC, UPDATE__MIRROR
+ *
  * Revision 3.28  2003/09/20 14:23:15  dkr
  * prf ICMs moved to icm2c_prf.h
  *
@@ -139,17 +142,20 @@ extern void ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT,
 
 extern void ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY);
 
-extern void ICMCompileND_REFRESH_MIRROR (char *var_NT, int sdim);
+extern void ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim);
 
-extern void ICMCompileND_CHECK_MIRROR (char *to_NT, int to_sdim, char *from_NT,
-                                       int from_sdim);
+extern void ICMCompileND_CHECK__MIRROR (char *to_NT, int to_sdim, char *from_NT,
+                                        int from_sdim);
 
 extern void ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  char *copyfun);
 
 extern void ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT);
 
-extern void ICMCompileND_ASSIGN__DIMSHP (char *to_NT, int to_sdim, char *from_NT,
+extern void ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT,
+                                       int from_sdim);
+
+extern void ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT,
                                          int from_sdim);
 
 extern void ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
