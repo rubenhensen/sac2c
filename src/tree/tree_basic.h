@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.93  2000/08/24 16:43:39  dkr
+ * INFO_PRINT_ACCESS removed
+ *
  * Revision 1.92  2000/08/24 12:26:37  dkr
  * INFO_PRINT_RET no longer needed and thus removed
  *
@@ -2606,7 +2609,6 @@ extern node *MakeInfo ();
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
 #define INFO_PRINT_NWITH(n) (n->node[4])
-#define INFO_PRINT_ACCESS(n) (n->node[5])
 #define INFO_PRINT_SIB(n) (n->flag)
 #define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->counter)
 #define INFO_PRINT_VARNO(n) (n->varno)
