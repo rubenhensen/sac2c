@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/03/13 15:48:57  dkr
+ * option -minarrayrep added
+ *
  * Revision 3.34  2003/03/09 19:15:43  dkr
  * TRACE_AA added
  *
@@ -390,6 +393,8 @@ AnalyseCommandline (int argc, char *argv[])
         break_arg = Free (break_arg);
     });
 
+    ARGS_FLAG ("c", break_after = PH_genccode);
+
 #ifdef TAGGED_ARRAYS
     ARGS_OPTION ("check", {
         ARG_FLAGMASK_BEGIN ();
@@ -415,6 +420,8 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("copyright", copyright (); exit (0));
 
+    ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
+
     ARGS_OPTION ("csdefaults", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('s', cachesim &= ~CACHESIM_ADVANCED);
@@ -430,15 +437,20 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_OPTION ("cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("csdir", strncpy (cachesim_dir, ARG, MAX_FILE_NAME - 1));
 
     ARGS_OPTION ("csfile", strncpy (cachesim_file, ARG, MAX_FILE_NAME - 1));
 
-    ARGS_OPTION ("csdir", strncpy (cachesim_dir, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
 
-    ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
-
-    ARGS_FLAG ("c", break_after = PH_genccode);
+    ARGS_OPTION ("d", {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("efence", use_efence = TRUE);
+        ARG_CHOICE ("nocleanup", cleanup = FALSE);
+        ARG_CHOICE ("syscall", show_syscall = TRUE);
+        ARG_CHOICE ("cccall", gen_cccall = TRUE; cleanup = FALSE);
+        ARG_CHOICE_END ();
+    });
 
     ARGS_FLAG ("ds", dynamic_shapes = TRUE);
 
@@ -544,16 +556,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE_END ();
     });
 
-    ARGS_OPTION ("d", {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("efence", use_efence = TRUE);
-        ARG_CHOICE ("nocleanup", cleanup = FALSE);
-        ARG_CHOICE ("syscall", show_syscall = TRUE);
-        ARG_CHOICE ("cccall", gen_cccall = TRUE; cleanup = FALSE);
-        ARG_CHOICE_END ();
-    });
-
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
+
+    ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
 
     ARGS_FLAG ("g", cc_debug = TRUE);
 
@@ -603,6 +608,8 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
+    ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
+
     ARGS_FLAG ("libstat", libstat = TRUE);
 
 #define LAC_FUN(array)                                                                   \
@@ -648,8 +655,6 @@ AnalyseCommandline (int argc, char *argv[])
     /* "-fun2lac 8:21" means: call Fun2lac() after phases 8 and 21 */
     ARGS_OPTION ("fun2lac", LAC_FUN (do_fun2lac));
 
-    ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
-
     ARGS_OPTION ("L", {
         AppendPath (MODIMP_PATH, AbsolutePathname (ARG));
         AppendPath (SYSTEMLIB_PATH, AbsolutePathname (ARG));
@@ -676,6 +681,15 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("minmtsize", ARG_NUM (min_parallel_size));
 
     ARGS_OPTION ("maxrepsize", ARG_NUM (max_replication_size));
+
+    ARGS_OPTION ("minarrayrep", {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("s", min_array_rep = MIN_ARRAY_REP_SCL_AKS);
+        ARG_CHOICE ("d", min_array_rep = MIN_ARRAY_REP_SCL_AKD);
+        ARG_CHOICE ("+", min_array_rep = MIN_ARRAY_REP_SCL_AUD);
+        ARG_CHOICE ("*", min_array_rep = MIN_ARRAY_REP_AUD);
+        ARG_CHOICE_END ();
+    });
 
     ARGS_FLAG ("mt", {
         gen_mt_code = GEN_MT_OLD;
@@ -812,12 +826,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE_END ();
     });
 
-    ARGS_FLAG ("ssa", use_ssaform = TRUE);
-
-    ARGS_FLAG ("wls_aggressive", wls_aggressive = TRUE);
-
-    ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
-
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);
         /*
@@ -844,6 +852,8 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("sbs", sbs = TRUE);
 
+    ARGS_FLAG ("ssa", use_ssaform = TRUE);
+
     ARGS_OPTION ("target", target_name = ARG);
 
     ARGS_OPTION ("trace", {
@@ -860,11 +870,13 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_FLAG ("wlpatch", patch_with = TRUE);
-
     ARGS_OPTION ("v", ARG_RANGE (verbose_level, 0, 3));
 
     ARGS_FLAG ("V", version (); exit (0));
+
+    ARGS_FLAG ("wls_aggressive", wls_aggressive = TRUE);
+
+    ARGS_FLAG ("wlpatch", patch_with = TRUE);
 
     ARGS_OPTION ("#", {
         if (NULL == strchr (ARG, '/')) {
