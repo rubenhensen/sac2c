@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/12/18 16:27:39  cg
+ * Revision 1.29  1996/01/21 14:11:49  cg
+ * added new icms for refcounting external implicit types
+ *
+ * Revision 1.28  1995/12/18  16:27:39  cg
  * Some new macros for implicit types,
  * some array macros have new names.
  *
@@ -101,6 +104,7 @@
 #define _sac_icm2c_h
 
 #include <malloc.h>
+#include <memory.h>
 
 /*
  *  README: The difference between 'type' and 'basetype'
@@ -124,64 +128,54 @@
 
 #if (defined(TRACE_MEM) || defined(TRACE_REF))
 
-#define PRINT_TRACE_BUFFER fprintf (stderr, "%-40s -> ", __trace_buffer)
-#define PRINT_TRACE_INDENT fprintf (stderr, "%-40s    ", " ")
+#define PRINT_TRACEHEADER(text) __SAC__Runtime_PrintTraceHeader text
+#define PRINT_FREE(name) __SAC__RuntimePrintTraceInfo ("freeing %s", #name)
+
+#else
+
+#define PRINT_TRACEHEADER(text)
+#define PRINT_FREE(name)
 
 #endif /* TRACE_MEM || TRACE_REF */
 
 #ifdef TRACE_REF
 
-#define PRINTREF(name) fprintf (stderr, "refcnt of %s: %d\n", #name, ND_A_RC (name))
+#define PRINT_REF(name)                                                                  \
+    __SAC__Runtime_PrintTraceInfo ("refcnt of %s: %d", #name, ND_A_RC (name))
+
+#else
+
+#define PRINT_REF(name)
 
 #endif /* TRACE_REF */
 
 #ifdef TRACE_MEM
 
-#define PRINTMEM(name)                                                                   \
-    fprintf (stderr, "adr: %p, size: %d elements\n", ND_A_FIELD (name),                  \
-             ND_A_SIZE (name));                                                          \
-    PRINT_TRACE_INDENT;                                                                  \
-    fprintf (stderr, "total # of elements: %d\n", __trace_mem_cnt)
+#define PRINT_MEM(name)                                                                  \
+    __SAC__Runtime_PrintTraceInfo ("adr: %p, size: %d elements", ND_A_FIELD (name),      \
+                                   ND_A_SIZE (name));                                    \
+    __SAC__Runtime_PrintTraceInfo ("total # of elements: %d", __SAC__Runtime_trace_memcnt)
+
+#define INC_MEMCNT(size) __SAC__Runtime_trace_memcnt += size
+#define DEC_MEMCNT(size) __SAC__Runtime_trace_memcnt -= size
+
+#else
+
+#define PRINT_MEM(name)
+#define INC_MEMCNT(size)
+#define DEC_MEMCNT(size)
 
 #endif /* TRACE_MEM */
 
-/*
- * Macros for declaring refcounted data:
- * =====================================
- *
- * ND_DECL_ARRAY(basetype, name) : declares an array
- *
- * ND_DECL_RC(type, name)    : declares a refcounted variable
- *
- */
+#ifdef CHECK_MALLOC
 
-#define ND_DECL_RC(type, name)                                                           \
-    type name;                                                                           \
-    int *__##name##_rc;
+#define MALLOC(size) __SAC__Runtime_malloc (size)
 
-#define ND_DECL_ARRAY(basetype, name)                                                    \
-    ND_DECL_RC (basetype *, name)                                                        \
-    int __##name##_sz;                                                                   \
-    int __##name##_d;                                                                    \
-    int *__##name##_s;
+#else /* CHECK_MALLOC  */
 
-/*
- * Macros for implicit types (hidden) :
- * ====================================
- *
- * ND_FREE_HIDDEN(name, freefun) : frees hidden data
- *
- * ND_REUSE_HIDDEN(old, new)     : reuses hidden data
- *
- */
+#define MALLOC(size) malloc (size)
 
-#define ND_FREE_HIDDEN(name, freefun)                                                    \
-    freefun (name);                                                                      \
-    free (__##name##_rc);
-
-#define ND_REUSE_HIDDEN(old, new)                                                        \
-    new = old;                                                                           \
-    ND_A_RCP (old) = ND_A_RCP (new);
+#endif /* CHECK_MALLOC  */
 
 /*
  * Macros for array access:
@@ -213,14 +207,65 @@
 #define ND_A_RCP(name) __##name##_rc
 
 /*
+ * Macros for declaring refcounted data:
+ * =====================================
+ *
+ * ND_DECL_ARRAY(basetype, name) : declares an array
+ *
+ * ND_DECL_RC(type, name)    : declares a refcounted variable
+ *
+ */
+
+#define ND_DECL_RC(type, name)                                                           \
+    type name;                                                                           \
+    int ND_A_RC (name);
+
+#define ND_DECL_ARRAY(basetype, name)                                                    \
+    ND_DECL_RC (basetype *, name)                                                        \
+    int __##name##_sz;                                                                   \
+    int __##name##_d;                                                                    \
+    int *__##name##_s;
+
+/*
+ * Macros for implicit types (hidden) :
+ * ====================================
+ *
+ * ND_FREE_HIDDEN(name, freefun)
+ *   frees hidden data
+ *
+ * ND_NO_RC_FREE_HIDDEN(name, freefun)
+ *   frees hidden data to whom a refcount is not yet assigned.
+ *
+ * ND_COPY_HIDDEN(old, new, copyfun)
+ *   copies hidden data using given fun
+ *
+ */
+
+#define ND_FREE_HIDDEN(name, freefun)                                                    \
+    freefun (name);                                                                      \
+    free (ND_A_RCP (name));
+
+#define ND_NO_RC_FREE_HIDDEN(name, freefun) freefun (name);
+
+#define ND_COPY_HIDDEN(old, new, copyfun) new = copyfun (old);
+
+/*
+ * Macros for reusing refcounted data :
+ * ====================================
+ */
+
+#define ND_REUSE_RC(old, new)                                                            \
+    new = old;                                                                           \
+    ND_A_RCP (new) = ND_A_RCP (old);
+
+#define ND_RENAME_RC(old, new) new = old;
+
+/*
  * Macros for creating and removing an array:
  * ==========================================
  *
  * ND_ALLOC_ARRAY(basetype, name, rc)
  *   allocates memory needed
- *
- * ND_REUSE_ARRAY( old, new)
- *   reuses old array for new
  *
  * ND_SET_SIZE( name, num)
  *   sets the size of the unrolling in elements
@@ -234,76 +279,26 @@
  * ND_KS_ASSIGN_ARRAY(name, res)
  *   copy pointer(s) for "res=name;"
  *
+ * ND_KS_COPY_ARRAY(old, new, basetypesize)
+ *   copies the array, doesn't care about refcount
+ *
  * ND_FREE_ARRAY(name)
  *   removes an array
  *
+ * ND_NO_RC_FREE_ARRAY(name)
+ *   removes an array to whom a refcount is not yet assigned
+ *
  */
 
-/*--------------------------------------------------------------------------*/
-#if (defined(TRACE_MEM) && !defined(TRACE_REF))
-
 #define ND_ALLOC_ARRAY(basetype, name, rc)                                               \
     {                                                                                    \
-        sprintf (__trace_buffer, "ND_ALLOC_ARRAY(%s, %s, %d)", #basetype, #name, rc);    \
-        PRINT_TRACE_BUFFER;                                                              \
-        ND_A_FIELD (name) = (basetype *)malloc (sizeof (basetype) * ND_A_SIZE (name));   \
-        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
+        PRINT_TRACEHEADER (("ND_ALLOC_ARRAY(%s, %s, %d)", #basetype, #name, rc));        \
+        ND_A_FIELD (name) = (basetype *)MALLOC (sizeof (basetype) * ND_A_SIZE (name));   \
+        ND_A_RCP (name) = (int *)MALLOC (sizeof (int));                                  \
         ND_A_RC (name) = rc;                                                             \
-        __trace_mem_cnt += ND_A_SIZE (name);                                             \
-        PRINTMEM (name);                                                                 \
-    }
-
-#endif /* TRACE_MEM && !TRACE_REF */
-
-/*--------------------------------------------------------------------------*/
-#if (defined(TRACE_MEM) && defined(TRACE_REF))
-
-#define ND_ALLOC_ARRAY(basetype, name, rc)                                               \
-    {                                                                                    \
-        sprintf (__trace_buffer, "ND_ALLOC_ARRAY(%s, %s, %d)", #basetype, #name, rc);    \
-        PRINT_TRACE_BUFFER;                                                              \
-        ND_A_FIELD (name) = (basetype *)malloc (sizeof (basetype) * ND_A_SIZE (name));   \
-        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
-        ND_A_RC (name) = rc;                                                             \
-        PRINTREF (name);                                                                 \
-        PRINT_TRACE_INDENT;                                                              \
-        PRINTMEM (name);                                                                 \
-    }
-
-#endif /* TRACE_MEM && TRACE_REF */
-
-/*--------------------------------------------------------------------------*/
-#if (!defined(TRACE_MEM) && defined(TRACE_REF))
-
-#define ND_ALLOC_ARRAY(basetype, name, rc)                                               \
-    {                                                                                    \
-        sprintf (__trace_buffer, "ND_ALLOC_ARRAY(%s, %s, %d)", #basetype, #name, rc);    \
-        PRINT_TRACE_BUFFER;                                                              \
-        ND_A_FIELD (name) = (basetype *)malloc (sizeof (basetype) * ND_A_SIZE (name));   \
-        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
-        ND_A_RC (name) = rc;                                                             \
-        PRINTREF (name);                                                                 \
-    }
-
-#endif /* !TRACE_MEM && TRACE_REF */
-
-/*--------------------------------------------------------------------------*/
-#if (!defined(TRACE_MEM) && !defined(TRACE_REF))
-
-#define ND_ALLOC_ARRAY(basetype, name, rc)                                               \
-    {                                                                                    \
-        ND_A_FIELD (name) = (basetype *)malloc (sizeof (basetype) * ND_A_SIZE (name));   \
-        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
-        ND_A_RC (name) = rc;                                                             \
-    }
-
-#endif /* !TRACE_MEM && !TRACE_REF */
-/*--------------------------------------------------------------------------*/
-
-#define ND_REUSE_ARRAY(old, new)                                                         \
-    {                                                                                    \
-        new = old;                                                                       \
-        __##new##_rc = __##old##_rc;                                                     \
+        INC_MEMCNT (sizeof (basetype) * ND_A_SIZE (name));                               \
+        PRINT_REF (name);                                                                \
+        PRINT_MEM (name);                                                                \
     }
 
 #define ND_SET_SIZE(name, num) ND_A_SIZE (name) = num;
@@ -320,6 +315,12 @@
     free (ND_A_FIELD (name));                                                            \
     free (ND_A_RCP (name));
 
+#define ND_NO_RC_FREE_ARRAY(name) free (ND_A_FIELD (name));
+
+#define ND_KS_COPY_ARRAY(old, new, basetypesize)                                         \
+    ND_A_FIELD (new) = MALLOC (basetypesize * ND_A_SIZE (old));                          \
+    memcpy (ND_A_FIELD (new), ND_A_FIELD (old), basetypesize *ND_A_SIZE (old));
+
 /*
  * Macros for reference counting :
  * ===============================
@@ -327,8 +328,8 @@
  * ND_SET_RC(name, num)
  *   sets the refcnt
  *
- * ND_INIT_RC(name)
- *   allocates memory for refcount and initializes with 1
+ * ND_ALLOC_RC(name)
+ *   allocates memory for refcount (no initialization)
  *
  * ND_INC_RC(name, num)
  *   increments the refcnt
@@ -350,135 +351,99 @@
  *
  */
 
-#ifdef TRACE_REF
-
 #define ND_SET_RC(name, num)                                                             \
-    sprintf (__trace_buffer, "ND_SET_RC(%s, %d)", #name, num);                           \
-    PRINT_TRACE_BUFFER;                                                                  \
+    PRINT_TRACEHEADER (("ND_SET_RC(%s, %d)", #name, num));                               \
     ND_A_RC (name) = num;                                                                \
-    PRINTREF (name);
+    PRINT_REF (name);
 
 #define ND_INC_RC(name, num)                                                             \
-    sprintf (__trace_buffer, "ND_INC_RC(%s, %d)", #name, num);                           \
-    PRINT_TRACE_BUFFER;                                                                  \
+    PRINT_TRACEHEADER (("ND_INC_RC(%s, %d)", #name, num));                               \
     ND_A_RC (name) += num;                                                               \
-    PRINTREF (name);
+    PRINT_REF (name);
 
 #define ND_DEC_RC(name, num)                                                             \
-    sprintf (__trace_buffer, "ND_DEC_RC(%s, %d)", #name, num);                           \
-    PRINT_TRACE_BUFFER;                                                                  \
+    PRINT_TRACEHEADER (("ND_DEC_RC(%s, %d)", #name, num));                               \
     ND_A_RC (name) -= num;                                                               \
-    PRINTREF (name);
+    PRINT_REF (name);
 
-#else /* TRACE_REF */
-
-#define ND_SET_RC(name, num) ND_A_RC (name) = num;
-#define ND_INC_RC(name, num) ND_A_RC (name) += num;
-#define ND_DEC_RC(name, num) ND_A_RC (name) -= num;
-
-#endif /* TRACE_REF */
-
-#define ND_INIT_RC(name)                                                                 \
-    ND_A_RCP (name) = (int *)malloc (sizeof (int));                                      \
-    SET_RC (name, 1);
-
-/*--------------------------------------------------------------------------*/
-#if (defined(TRACE_MEM) && !defined(TRACE_REF))
+#define ND_ALLOC_RC(name) ND_A_RCP (name) = (int *)MALLOC (sizeof (int));
 
 #define ND_DEC_RC_FREE_ARRAY(name, num)                                                  \
+    PRINT_TRACEHEADER (("ND_DEC_RC_FREE(%s, %d)", #name, num));                          \
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                  \
-        PRINT_TRACE_BUFFER;                                                              \
+        PRINT_FREE (name);                                                               \
         ND_FREE_ARRAY (name);                                                            \
-        __trace_mem_cnt -= ND_A_SIZE (name);                                             \
-        PRINTMEM (name);                                                                 \
+        PRINT_MEM (name);                                                                \
+    } else {                                                                             \
+        PRINT_REF (name);                                                                \
     }
 
 #define ND_DEC_RC_FREE_HIDDEN(name, num, freefun)                                        \
+    PRINT_TRACEHEADER (("ND_DEC_RC_FREE(%s, %d)", #name, num));                          \
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                  \
-        PRINT_TRACE_BUFFER;                                                              \
+        PRINT_FREE (name);                                                               \
+        PRINT_MEM (name);                                                                \
         ND_FREE_HIDDEN (name, freefun);                                                  \
-        __trace_mem_cnt -= ND_A_SIZE (name);                                             \
-        PRINTMEM (name);                                                                 \
+    } else {                                                                             \
+        PRINT_REF (name);                                                                \
     }
-
-#endif /* TRACE_MEM && !TRACE_REF */
-
-/*--------------------------------------------------------------------------*/
-#if (defined(TRACE_MEM) && defined(TRACE_REF))
-
-#define ND_DEC_RC_FREE_ARRAY(name, num)                                                  \
-    sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                      \
-    PRINT_TRACE_BUFFER;                                                                  \
-    if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        fprintf (stderr, "freeing %s\n", #name);                                         \
-        PRINT_TRACE_INDENT;                                                              \
-        ND_FREE_ARRAY (name);                                                            \
-        PRINTMEM (name);                                                                 \
-        else PRINTREF (name);
-
-#define ND_DEC_RC_FREE_HIDDEN(name, num, freefun)                                        \
-    sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                      \
-    PRINT_TRACE_BUFFER;                                                                  \
-    if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        fprintf (stderr, "freeing %s\n", #name);                                         \
-        PRINT_TRACE_INDENT;                                                              \
-        PRINTMEM (name);                                                                 \
-        ND_FREE_HIDDEN (name, freefun);                                                  \
-        else PRINTREF (name);
-
-#endif /* TRACE_MEM && TRACE_REF */
-
-/*--------------------------------------------------------------------------*/
-#if (!defined(TRACE_MEM) && defined(TRACE_REF))
-
-#define ND_DEC_RC_FREE_ARRAY(name, num)                                                  \
-    sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                      \
-    PRINT_TRACE_BUFFER;                                                                  \
-    if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        fprintf (stderr, "freeing %s\n", #name);                                         \
-        ND_FREE_ARRAY (name);                                                            \
-    } else                                                                               \
-        PRINTREF (name);
-
-#define ND_DEC_RC_FREE_HIDDEN(name, num, freefun)                                        \
-    sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                      \
-    PRINT_TRACE_BUFFER;                                                                  \
-    if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        fprintf (stderr, "freeing %s\n", #name);                                         \
-        ND_FREE_HIDDEN (name, freefun);                                                  \
-    } else                                                                               \
-        PRINTREF (name);
-
-#endif /* !TRACE_MEM && TRACE_REF */
-
-/*--------------------------------------------------------------------------*/
-#if (!defined(TRACE_MEM) && !defined(TRACE_REF))
-
-#define ND_DEC_RC_FREE_ARRAY(name, num)                                                  \
-    if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        ND_FREE_ARRAY (name);                                                            \
-    }
-
-#define ND_DEC_RC_FREE_HIDDEN(name, num, freefun)                                        \
-    if ((ND_A_RC (name) -= num) == 0) {                                                  \
-        ND_FREE_HIDDEN (name, freefun);                                                  \
-    }
-
-#endif /* !TRACE_MEM && !TRACE_REF */
-/*--------------------------------------------------------------------------*/
 
 #define ND_CHECK_REUSE_ARRAY(old, new)                                                   \
-    if (ND_A_RC (old) == 1)                                                              \
-    ND_REUSE_ARRAY (old, new) else
-
-#define ND_CHECK_REUSE_HIDDEN(old, new, copyfun)                                         \
     if (ND_A_RC (old) == 1) {                                                            \
-        ND_REUSE_HIDDEN (old, new)                                                       \
+        ND_REUSE_RC (old, new);                                                          \
+    } else
+
+/*
+#define ND_CHECK_REUSE_HIDDEN(name, copyfun)   \
+  (ND_A_RC(name)==1?name:copyfun(name))
+*/
+
+#define ND_PREPARE_UPDATE_HIDDEN(old, new, copyfun)                                      \
+    PRINT_TRACEHEADER (("ND_PREPARE_UPDATE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));  \
+    PRINT_REF (old);                                                                     \
+    if (ND_A_RC (old) == 1) {                                                            \
+        new = old;                                                                       \
+        ND_A_RCP (new) = ND_A_RCP (old);                                                 \
     } else {                                                                             \
-        new = copyfun (old);                                                             \
-        INIT_RC (new);                                                                   \
+        ND_COPY_HIDDEN (old, new, copyfun);                                              \
+        ND_ALLOC_RC (new);                                                               \
+        ND_DEC_RC (old, 1);                                                              \
+    }
+
+#define ND_PREPARE_UPDATE_ARRAY(old, new, basetypesize)                                  \
+    PRINT_TRACEHEADER (                                                                  \
+      ("ND_PREPARE_UPDATE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));                \
+    PRINT_REF (old);                                                                     \
+    if ((ND_A_RC (old)) == 1) {                                                          \
+        ND_A_FIELD (new) = ND_A_FIELD (old);                                             \
+        ND_A_RCP (new) = ND_A_RCP (old);                                                 \
+    } else {                                                                             \
+        ND_KS_COPY_ARRAY (old, new, basetypesize);                                       \
+        ND_ALLOC_RC (new);                                                               \
+        ND_DEC_RC (old, 1);                                                              \
+    }
+
+#define ND_PREPARE_UPDATE_HIDDEN_NO_RC(old, new, copyfun)                                \
+    PRINT_TRACEHEADER (("ND_PREPARE_UPDATE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));  \
+    PRINT_REF (old);                                                                     \
+    if (ND_A_RC (old) == 1) {                                                            \
+        new = old;                                                                       \
+        free (ND_A_RCP (old));                                                           \
+    } else {                                                                             \
+        ND_COPY_HIDDEN (old, new, copyfun);                                              \
+        ND_DEC_RC (old, 1);                                                              \
+    }
+
+#define ND_PREPARE_UPDATE_ARRAY_NO_RC(old, new, basetypesize)                            \
+    PRINT_TRACEHEADER (                                                                  \
+      ("ND_PREPARE_UPDATE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));                \
+    PRINT_REF (old);                                                                     \
+    if ((ND_A_RC (old)) == 1) {                                                          \
+        ND_A_FIELD (new) = ND_A_FIELD (old);                                             \
+        free (ND_A_RCP (old));                                                           \
+    } else {                                                                             \
+        ND_KS_COPY_ARRAY (old, new, basetypesize);                                       \
+        ND_DEC_RC (old, 1);                                                              \
     }
 
 /*
@@ -660,18 +625,14 @@
 
 #define OUT_OF_BOUND(line, prf, size, idx)                                               \
     {                                                                                    \
-        fprintf (stderr,                                                                 \
-                 "runtime error in line %d: access in function %s is out"                \
-                 " of range (size: %d, index:%d)\n",                                     \
-                 line, prf, size, idx);                                                  \
-        exit (1);                                                                        \
+        __SAC__RuntimeError ("%d: access in function %s is out"                          \
+                             " of range (size: %d, index:%d)",                           \
+                             line, prf, size, idx);                                      \
     }
 
 #define true 1
 #define false 0
 
 typedef int bool;
-
-#include <stdio.h>
 
 #endif /* _sac_icm2c_h */

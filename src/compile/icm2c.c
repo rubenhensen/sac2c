@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/12/18 16:27:17  cg
+ * Revision 1.32  1996/01/21 14:11:49  cg
+ * added new icms for refcounting external implicit types
+ *
+ * Revision 1.31  1995/12/18  16:27:17  cg
  * ICMs ND_FUN_DEC, ND_FUN_AP and ND_FUN_RET modified
  * new ICMs ND_KS_DECL_GLOBAL_ARRAY and ND_KD_DECL_EXTERN_ARRAY for
  * arrays as global objects.
@@ -314,7 +317,8 @@
     }
 #endif
 
-#define ScanArglist(arg, n, bin, bout, binout, bina, bouta, binouta, sepstr)             \
+#define ScanArglist(arg, n, bin, bout, binout, bupd, bupdbox, binrc, boutrc, binoutrc,   \
+                    sepstr)                                                              \
     {                                                                                    \
         int i = 0;                                                                       \
         int sep = 0;                                                                     \
@@ -331,18 +335,25 @@
             } else if (strcmp (arg[i], "inout") == 0) {                                  \
                 i++;                                                                     \
                 binout;                                                                  \
+            } else if (strcmp (arg[i], "upd") == 0) {                                    \
+                i++;                                                                     \
+                bupd;                                                                    \
+            } else if (strcmp (arg[i], "upd_bx") == 0) {                                 \
+                i++;                                                                     \
+                bupdbox;                                                                 \
             } else if (strcmp (arg[i], "in_rc") == 0) {                                  \
                 i++;                                                                     \
-                bina;                                                                    \
+                binrc;                                                                   \
             } else if (strcmp (arg[i], "out_rc") == 0) {                                 \
                 i++;                                                                     \
-                bouta;                                                                   \
+                boutrc;                                                                  \
             } else {                                                                     \
                 i++;                                                                     \
-                binouta;                                                                 \
+                binoutrc;                                                                \
             }                                                                            \
         }                                                                                \
     }
+
 #define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i]", v, i)
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
@@ -561,6 +572,8 @@ MAIN
     char res_type[] = "type";
     char a_value[] = "array";
     char *A[] = {"B", "C", "D"};
+    char copyfun[] = "copy_xyz";
+
     int idxlen = 3;
     int i;
     int narg = 5;
@@ -617,6 +630,8 @@ extern int check_boundary; /* defined in main.c */
       tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
       sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
       sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+      sep = 1, fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
+      sep = 1, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
       sep = 1,
 
       if (NULL != (tyarg[i + 1])[0])
@@ -680,6 +695,8 @@ fprintf (outfile, "%s( ", name);
 ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]);
              sep = 1, fprintf (outfile, " &%s", arg[i++]);
              sep = 1, fprintf (outfile, " &%s", arg[i++]);
+             sep = 1, fprintf (outfile, " &%s", arg[i++]);
+             sep = 1, fprintf (outfile, " %s", arg[i++]);
              sep = 1, fprintf (outfile, " ND_KS_AP_IN_RC(%s)", arg[i++]);
              sep = 1, fprintf (outfile, " ND_KS_AP_OUT_RC(%s)", arg[i++]);
              sep = 1, fprintf (outfile, " ND_KS_AP_INOUT_RC(%s)", arg[i++]);
@@ -715,7 +732,7 @@ INDENT;
 ScanArglist (arg, 2 * narg, i++;
              sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
              sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
-             sep = 1, i++;
+             sep = 1, i++; sep = 0, i++; sep = 0, i++;
              sep = 0, fprintf (outfile, "ND_KS_RET_OUT_RC(%s);\n", arg[i++]); INDENT;
              sep = 1, fprintf (outfile, "ND_KS_RET_INOUT_RC(%s);\n", arg[i++]); INDENT;
              sep = 1, "");
@@ -730,7 +747,8 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_CREATE_CONST_ARRAY_S( name, dim, s0,..., sn)  : generates a constant array
+ * ND_CREATE_CONST_ARRAY_S( name, dim, s0,..., sn)
+ *   generates a constant array
  *
  * char *name;
  * int dim;
@@ -756,6 +774,42 @@ DBUG_VOID_RETURN;
 }
 
 #undef ND_CREATE_CONST_ARRAY_S
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_CREATE_CONST_ARRAY_H( name, copyfun, dim, s0,..., sn)
+ *   generates a constant array of refcounted hidden values
+ *
+ * char *name;
+ * char *copyfun;
+ * int dim;
+ * char **A;
+ */
+
+#define ND_CREATE_CONST_ARRAY_H
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+{
+    int i;
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "ND_PREPARE_UPDATE_HIDDEN(%s, %s[%d], %s);\n", A[i], name, i,
+                 copyfun);
+    }
+}
+
+#undef ND_CREATE_CONST_ARRAY_H
 
 #ifndef TEST_BACKEND
 DBUG_VOID_RETURN;
