@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.51  2000/04/18 14:00:48  jhs
+ * Added COMPSt and COMPMt.
+ *
  * Revision 2.50  2000/04/13 09:00:03  jhs
  * Beautified.
  *
@@ -7369,4 +7372,24 @@ COMPWLgridVar (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (assigns);
+}
+
+node *
+COMPMt (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPMt");
+
+    DBUG_ASSERT (0, ("COMPMt not implemented yet, cannot coimpile mt-block"));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+COMPSt (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMPSt");
+
+    DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot coimpile st-block"));
+
+    DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/04/18 14:00:48  jhs
+ * Added COMPSt and COMPMt.
+ *
  * Revision 2.4  2000/03/21 15:46:43  dkr
  * ICM_INDENT explcitly set to 0 if nodes are reused as icm-nodes
  *
@@ -145,6 +148,8 @@ extern node *COMPWLgrid (node *arg_node, node *arg_info);
 extern node *COMPWLsegVar (node *arg_node, node *arg_info);
 extern node *COMPWLstriVar (node *arg_node, node *arg_info);
 extern node *COMPWLgridVar (node *arg_node, node *arg_info);
+extern node *COMPMt (node *arg_node, node *arg_info);
+extern node *COMPSt (node *arg_node, node *arg_info);
 
 extern node *GetFoldCode (node *fundef);
 extern node *GetFoldVardecs (node *fundef);
