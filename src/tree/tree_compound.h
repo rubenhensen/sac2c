@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/04/02 15:20:03  dkr
+ * macros FUNDEF_IS_LACFUN, FUNDEF_IS_CONDFUN, FUNDEF_IS_LOOPFUN added
+ *
  * Revision 3.31  2001/04/02 14:42:57  dkr
  * WLSEGVAR_IDX_PRINT modified
  * WLSEGX_IDX_MIN, WLSEGX_IDX_MAX added
@@ -661,6 +664,15 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_PRATYPES(n) (PRAGMA_NEEDTYPES (FUNDEF_PRAGMA (n)))
 #define FUNDEF_PRAFUNS(n) (PRAGMA_NEEDFUNS (FUNDEF_PRAGMA (n)))
 #define FUNDEF_PRALINKMOD(n) (PRAGMA_LINKMOD (FUNDEF_PRAGMA (n)))
+
+#define FUNDEF_IS_LACFUN(n)                                                              \
+    ((FUNDEF_STATUS (n) == ST_condfun) || (FUNDEF_STATUS (n) == ST_dofun)                \
+     || (FUNDEF_STATUS (n) == ST_whilefun))
+
+#define FUNDEF_IS_CONDFUN(n) (FUNDEF_STATUS (n) == ST_condfun)
+
+#define FUNDEF_IS_LOOPFUN(n)                                                             \
+    ((FUNDEF_STATUS (n) == ST_dofun) || (FUNDEF_STATUS (n) == ST_whilefun))
 
 /*
  *  The following compound access macros are useful whenever a fundef
