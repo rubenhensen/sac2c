@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/04/21 10:06:13  bs
+ * Some access macros added.
+ * Function ArrayPrf modified: F_shape
+ *
  * Revision 2.9  1999/03/31 15:12:02  bs
  * CFid modified. Now we are using a new access macro MRD_GETCFID
  *
@@ -1960,35 +1964,36 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Count array length
              */
             i = 0;
-            tmp = arg[0]->node[0];
+            tmp = ARRAY_AELEMS (arg[0]);
             do {
                 i++;
-                tmp = tmp->node[1];
-            } while (NULL != tmp);
+                tmp = EXPRS_NEXT (tmp);
+            } while (tmp != NULL);
 
             /*
              * Store result in this array
              */
-            arg[0]->node[0]->node[0]->info.cint = i;
-            NODE_TYPE (arg[0]->node[0]->node[0]) = N_num;
+            NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (arg[0]))) = i;
+            NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg[0]))) = N_num;
 
             /*
              * Free rest of array and prf-node
              */
-            if (NULL != arg[0]->node[0]->node[1])
-                FreeTree (arg[0]->node[0]->node[1]);
-            arg[0]->node[0]->node[1] = NULL; /* ??? */
-            FREE (arg_node);
-
-            /*
-             * Gives Array the correct type
-             */
+            if (EXPRS_NEXT (ARRAY_AELEMS (arg[0])) != NULL)
+                FreeTree (EXPRS_NEXT (ARRAY_AELEMS (arg[0])));
+            EXPRS_NEXT (ARRAY_AELEMS (arg[0])) = NULL; /* ??? */
+                                                       /*
+                                                        * Gives Array the correct type
+                                                        */
             ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
             ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_CF_TYPE (arg_info), 0);
-
+            ARRAY_VECLEN (arg[0]) = 1;
+            ARRAY_INTVEC (arg[0]) = Array2IntVec (ARRAY_AELEMS (arg[0]), NULL);
+            ARRAY_VECTYPE (arg[0]) = T_int;
             /*
              * Store result
              */
+            FREE (arg_node);
             arg_node = arg[0];
             cf_expr++;
             break;
@@ -2012,6 +2017,9 @@ ArrayPrf (node *arg_node, node *arg_info)
                  */
                 if (arg_info->mask[1])
                     DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+                ARRAY_INTVEC (tmp)
+                  = Array2IntVec (ARRAY_AELEMS (tmp), &ARRAY_VECLEN (tmp));
+                ARRAY_VECTYPE (tmp) = T_int;
 
                 FreeTree (arg_node);
                 arg_node = tmp;
@@ -2373,8 +2381,14 @@ ArrayPrf (node *arg_node, node *arg_info)
     if (NODE_TYPE (arg_node) == N_array) {
         switch (ARRAY_VECTYPE (arg_node)) {
         case T_int:
+        case T_bool:
             FREE (ARRAY_INTVEC (arg_node));
             ARRAY_INTVEC (arg_node) = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            ARRAY_VECLEN (arg_node) = tmp_len;
+            break;
+        case T_char:
+            FREE (ARRAY_CHARVEC (arg_node));
+            ARRAY_CHARVEC (arg_node) = Array2CharVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             break;
         case T_float:
