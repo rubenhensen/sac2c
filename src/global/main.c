@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1995/06/02 16:42:22  sbs
+ * Revision 1.47  1995/06/06 09:50:44  sbs
+ * max... opts inserted.
+ *
+ * Revision 1.46  1995/06/02  16:42:22  sbs
  * show_idx and sac_optimise inserted
  *
  * Revision 1.45  1995/06/02  09:53:31  sbs
@@ -179,6 +182,7 @@ int optimize = 1;
 int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
 int optvar = 50;
+int inlnum = 1;
 
 int psi_optimize = 1;
 int psi_opt_ive = 1;
@@ -354,6 +358,20 @@ MAIN
             psi_opt_ive = 0;
         if (!strncmp (*argv, "oIVE", 3))
             psi_opt_ive = 0;
+    }
+    NEXTOPT
+    ARG 'm' : PARM
+    {
+        if (!strncmp (*argv, "axoptvar", 8)) {
+            ++argv;
+            --argc;
+            optvar = atoi (*argv);
+        }
+        if (!strncmp (*argv, "axinline", 8)) {
+            ++argv;
+            --argc;
+            inlnum = atoi (*argv);
+        }
     }
     NEXTOPT
     ARG 'v' : PARM
