@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/08/04 18:08:06  dkr
+ * sac_mt.tagged.h, sac_heapmgr.tagged.h added
+ *
  * Revision 3.5  2003/03/14 15:41:35  dkr
  * sac_wl.tagged.h added
  *
@@ -94,15 +97,17 @@
 #ifdef TAGGED_ARRAYS
 #include "sac_std.tagged.h"
 #include "sac_wl.tagged.h"
+#include "sac_mt.tagged.h"
+#include "sac_heapmgr.tagged.h"
 #else /* TAGGED_ARRAYS */
 #include "sac_std.h"
 #include "sac_wl.h"
+#include "sac_mt.h"
+#include "sac_heapmgr.h"
 #endif /* TAGGED_ARRAYS */
 
 #include "sac_idx.h"
 #include "sac_prf.h"
-#include "sac_mt.h"
-#include "sac_heapmgr.h"
 #include "sac_trace.h"
 #include "sac_profile.h"
 #include "sac_cachesim.h"
