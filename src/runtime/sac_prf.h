@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2003/09/18 14:43:18  dkr
+ * support for F_neg added
+ *
  * Revision 3.11  2003/09/15 13:00:04  dkr
  * SAC_MIN, SAC_MAX used
  *
@@ -70,19 +73,13 @@
  * core ICMs for arithmetical operations
  * =====================================
  *
- * ND_BINOP( op, arg1, arg2)
- * ND_MIN( arg1, arg2)
- * ND_MAX( arg1, arg2)
  * ND_UNIOP( op, arg)
- * ND_ABS( arg)
+ * ND_BINOP( op, arg1, arg2)
  *
  ******************************************************************************/
 
-#define SAC_ND_BINOP(op, arg1, arg2) ((arg1)op (arg2))
-#define SAC_ND_MIN(arg1, arg2) SAC_MIN (arg1, arg2)
-#define SAC_ND_MAX(arg1, arg2) SAC_MAX (arg1, arg2)
 #define SAC_ND_UNIOP(op, arg) (op (arg))
-#define SAC_ND_ABS(arg) (((arg) < 0) ? (-(arg)) : (arg))
+#define SAC_ND_BINOP(op, arg1, arg2) ((arg1)op (arg2))
 
 #ifdef TAGGED_ARRAYS
 
@@ -91,19 +88,23 @@
  * internal ICMs for arithmetical operations
  * =========================================
  *
+ * ND_PRF_UNIOP( op, arg)
+ * ND_PRF_NEG( dummy, arg)
+ * ND_PRF_ABS( dummy, arg)
+ *
  * ND_PRF_BINOP( op, arg1, arg2)
  * ND_PRF_MIN( dummy, arg1, arg2)
  * ND_PRF_MAX( dummy, arg1, arg2)
- * ND_PRF_UNIOP( op, arg)
- * ND_PRF_ABS( dummy, arg)
  *
  ******************************************************************************/
 
-#define SAC_PRF_BINOP(op, arg1, arg2) SAC_ND_BINOP (op, arg1, arg2)
-#define SAC_PRF_MIN(dummy, arg1, arg2) SAC_ND_MIN (arg1, arg2)
-#define SAC_PRF_MAX(dummy, arg1, arg2) SAC_ND_MAX (arg1, arg2)
 #define SAC_PRF_UNIOP(op, arg) SAC_ND_UNIOP (op, arg)
-#define SAC_PRF_ABS(dummy, arg) SAC_ND_ABS (arg)
+#define SAC_PRF_NEG(dummy, arg) (-(arg))
+#define SAC_PRF_ABS(dummy, arg) (((arg) < 0) ? (-(arg)) : (arg))
+
+#define SAC_PRF_BINOP(op, arg1, arg2) SAC_ND_BINOP (op, arg1, arg2)
+#define SAC_PRF_MIN(dummy, arg1, arg2) SAC_MIN (arg1, arg2)
+#define SAC_PRF_MAX(dummy, arg1, arg2) SAC_MAX (arg1, arg2)
 
 /******************************************************************************
  *
@@ -223,6 +224,11 @@
     }
 
 #else /* TAGGED_ARRAYS */
+
+#define SAC_ND_ABS(arg) (((arg) < 0) ? (-(arg)) : (arg))
+
+#define SAC_ND_MIN(arg1, arg2) SAC_MIN (arg1, arg2)
+#define SAC_ND_MAX(arg1, arg2) SAC_MAX (arg1, arg2)
 
 /*
  * Macros for primitve arithmetic operations:
