@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/07/30 14:12:39  jhs
+ * Bug removed in DBUG_PRINT arguments.
+ *
  * Revision 1.3  1999/07/30 13:48:35  jhs
  * Brushed DBUG_PRINTs.
  *
@@ -90,7 +93,7 @@ SPMDCspmd (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (first_sync != NULL, "first sync not found");
 
-    CONLDisplayMask ("SPMDC", "sync-inout", SYNC_INOUT (arg_node));
+    CONLDisplayMask ("SPMDC", "sync-inout", SYNC_INOUT (first_sync));
     CONLDisplayMask ("SPMDC", "spmd-in", SPMD_IN (arg_node));
 
     /*
@@ -129,7 +132,7 @@ SPMDCspmd (node *arg_node, node *arg_info)
     BLOCK_VARDEC (FUNDEF_BODY (fundef)) = new_vardec;
     FUNDEF_ARGS (fundef) = new_args;
 
-    CONLDisplayMask ("SPMDC", "sync-inout", SYNC_INOUT (arg_node));
+    CONLDisplayMask ("SPMDC", "sync-inout", SYNC_INOUT (first_sync));
     CONLDisplayMask ("SPMDC", "spmd-in", SPMD_IN (arg_node));
 
     if (own_arg_info) {
