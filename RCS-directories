@@ -7,3 +7,4 @@ src/print
 src/scanparse
 src/typecheck
 src/optimize
+src/modules
