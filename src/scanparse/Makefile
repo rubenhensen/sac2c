@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.20  1997/12/16 16:01:16  sbs
+# typecheck included into incs
+#
 # Revision 1.19  1997/11/20 15:02:05  dkr
 # make deps done
 #
@@ -71,7 +74,7 @@ LEX       :=lex -n
 YACC      :=yacc -dv
 LIBS      :=-ly -ll
 
-INCS=-I../global -I../../inc -I../modules
+INCS=-I../global -I../../inc -I../modules -I../typecheck
 
 all: y.tab.o lex.yy.o scnprs.o
 
