@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.198  1998/08/10 18:04:16  dkr
+ * changed a comment for N_Nwithop
+ *
  * Revision 1.197  1998/08/07 14:35:24  dkr
  * stuff for N_WLsegVar added
  *
@@ -2852,8 +2855,9 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    long*  MASK                        (optimize -> )
  ***
  ***  remarks:
- ***    WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
- ***    FUNDEF-node is used if TYPE == WO_foldfun.
+ ***
+ ***    - WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
+ ***    - FUNDEF-node is used if (TYPE == WO_foldfun, WO_foldprf).
  ***
  ***/
 
