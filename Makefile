@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.46  2002/01/18 12:00:23  sacbase
+# dependencies check_os and tools/bin/cse added for distrib_product!
+#
 # Revision 3.45  2001/12/10 15:33:14  dkr
 # compile.tagged.o added
 #
@@ -175,7 +178,7 @@ efence: check_os tools/bin/cse dummy sac2c.efence
 
 product: check_os tools/bin/cse clean prod sac2c.prod
 
-distrib_product: prod sac2c.prod
+distrib_product: check_os tools/bin/cse prod sac2c.prod
 
 tools/bin/cse:
 	$(MAKE) -C tools
