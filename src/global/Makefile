@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.26  2000/06/13 13:38:40  dkr
+# path -I../Old2NewWith removed
+#
 # Revision 2.25  2000/05/29 14:36:35  dkr
 # make deps done
 #
@@ -118,8 +121,7 @@ ECHO      := echo -n
 
 INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects -I../concurrent -I../Old2NewWith \
-     -I../multithread
+     -I../psi-opt -I../objects -I../concurrent -I../multithread
 
 all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types.h \
      build.o interrupt.o options.o
@@ -225,7 +227,7 @@ main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
 main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
 main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
-main.o: ../compile/Old2NewWith.h interrupt.h options.h
+main.o: ../compile/PatchWith.h interrupt.h options.h
 main.o: ../multithread/multithread.h
 options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 options.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h /usr/include/stdio.h
