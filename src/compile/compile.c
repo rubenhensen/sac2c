@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2004/07/28 10:01:50  khf
+ * turned off some parts for fold withloops if eacc is turned on
+ *
  * Revision 3.114  2004/07/28 09:33:49  ktr
  * even loops work with emm now.
  *
@@ -6181,27 +6184,30 @@ COMPWith2 (node *arg_node, info *arg_info)
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
 
-    /*
-     * fold with-loop:
-     *
-     * Insert the vardecs of all special fold-funs into the vardec-chain of the
-     * current function. Afterwards an update of the DFM-base is needed.
-     * (This must be done here, because 'COMPSync()' needs the corrected masks)
-     */
-    if ((NWITH2_TYPE (arg_node) == WO_foldprf)
-        || (NWITH2_TYPE (arg_node) == WO_foldfun)) {
-        node *fundef = INFO_COMP_FUNDEF (arg_info);
-        node *fold_vardecs = GetFoldVardecs (NWITH2_FUNDEF (arg_node));
+    if (!eacc) {
+        /*
+         * fold with-loop:
+         *
+         * Insert the vardecs of all special fold-funs into the vardec-chain of the
+         * current function. Afterwards an update of the DFM-base is needed.
+         * (This must be done here, because 'COMPSync()' needs the corrected masks)
+         */
+        if ((NWITH2_TYPE (arg_node) == WO_foldprf)
+            || (NWITH2_TYPE (arg_node) == WO_foldfun)) {
+            node *fundef = INFO_COMP_FUNDEF (arg_info);
+            node *fold_vardecs = GetFoldVardecs (NWITH2_FUNDEF (arg_node));
 
-        if (fold_vardecs != NULL) {
-            FUNDEF_VARDEC (fundef) = AppendVardec (FUNDEF_VARDEC (fundef), fold_vardecs);
+            if (fold_vardecs != NULL) {
+                FUNDEF_VARDEC (fundef)
+                  = AppendVardec (FUNDEF_VARDEC (fundef), fold_vardecs);
 
-            /*
-             * update DFM-base
-             */
-            FUNDEF_DFM_BASE (fundef)
-              = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                                   FUNDEF_VARDEC (fundef));
+                /*
+                 * update DFM-base
+                 */
+                FUNDEF_DFM_BASE (fundef)
+                  = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                                       FUNDEF_VARDEC (fundef));
+            }
         }
     }
 
@@ -7098,11 +7104,14 @@ COMPWLgridx (node *arg_node, info *arg_info)
                     }
                     icm_args = MakeIcmArgs_WL_OP2 (arg_node);
 
-                    /*
-                     * insert code of the special fold-fun
-                     */
-                    node_icms
-                      = AppendAssign (node_icms, GetFoldCode (NWITH2_FUNDEF (wlnode)));
+                    if (!eacc) {
+                        /*
+                         * insert code of the special fold-fun
+                         */
+                        node_icms = AppendAssign (node_icms,
+                                                  GetFoldCode (NWITH2_FUNDEF (wlnode)));
+                    }
+
                     break;
 
                 default:
@@ -7122,12 +7131,18 @@ COMPWLgridx (node *arg_node, info *arg_info)
      * create ICMs for grid loop               *
      *******************************************/
 
-    /*
-     * if the index-vector is needed somewhere in the code-blocks and this is
-     * not a dummy grid (init, copy, noop), we must add the ICM 'WL_SET_IDXVEC'.
-     */
-    if ((RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (wlnode)))) && (!WLGRIDX_NOOP (arg_node))
-        && ((WLGRIDX_CODE (arg_node) != NULL) || (WLGRIDX_NEXTDIM (arg_node) != NULL))) {
+    if (!emm) {
+        /*
+         * if the index-vector is needed somewhere in the code-blocks and this is
+         * not a dummy grid (init, copy, noop), we must add the ICM 'WL_SET_IDXVEC'.
+         */
+        if ((RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (wlnode)))) && (!WLGRIDX_NOOP (arg_node))
+            && ((WLGRIDX_CODE (arg_node) != NULL)
+                || (WLGRIDX_NEXTDIM (arg_node) != NULL))) {
+            node_icms = MakeAssignIcm1 ("WL_SET_IDXVEC", MakeIcmArgs_WL_LOOP1 (arg_node),
+                                        node_icms);
+        }
+    } else {
         node_icms
           = MakeAssignIcm1 ("WL_SET_IDXVEC", MakeIcmArgs_WL_LOOP1 (arg_node), node_icms);
     }
