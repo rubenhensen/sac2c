@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/02/13 13:59:53  asi
+ * Revision 1.4  1996/02/14 14:12:27  asi
+ * bug fixed: compares identifiers if mrd-nodes are equal
+ *
+ * Revision 1.3  1996/02/13  13:59:53  asi
  * basic algorithm added
  *
  * Revision 1.1  1996/01/17  15:54:09  asi
@@ -232,13 +235,21 @@ int
 Equal (node *arg1, node *arg2, node *arg_info)
 {
     int equal = FALSE;
+    int varno1, varno2;
 
     DBUG_ENTER ("Equal");
-    if (N_id == NODE_TYPE (arg1))
+
+    if (N_id == NODE_TYPE (arg1)) {
+        varno1 = ID_VARNO (arg1);
         arg1 = MRD_GETCSE (ID_DEF (arg1), ID_VARNO (arg1), INFO_VARNO);
-    if (N_id == NODE_TYPE (arg2))
+    }
+
+    if (N_id == NODE_TYPE (arg2)) {
+        varno2 = ID_VARNO (arg2);
         arg2 = ID_DEF (arg2);
-    if (arg1 == arg2) {
+    }
+
+    if ((arg1 == arg2) && (varno1 == varno2)) {
         equal = TRUE;
         DBUG_PRINT ("CSE", (">Arguments are equal, same node"));
     } else {
@@ -360,6 +371,24 @@ FindCS (node *arg1, node *arg2, node *arg_info)
 }
 
 node *
+GenNodes4Ap (ids *ids1, ids *ids2, node *arg_info)
+{
+    node *new_node = NULL;
+    node *id_node, *let_node;
+
+    DBUG_ENTER ("GenNodes4Ap");
+    if (NULL != IDS_NEXT (ids1)) {
+        new_node = GenNodes4Ap (IDS_NEXT (ids1), IDS_NEXT (ids2), arg_info);
+        IDS_NEXT (ids1) = NULL;
+        IDS_NEXT (ids2) = NULL;
+    }
+    id_node = MakeId2 (ids2);
+    let_node = MakeLet (id_node, ids1);
+    new_node = AppendNodeChain (1, MakeAssign (let_node, NULL), new_node);
+    DBUG_RETURN (new_node);
+}
+
+node *
 Eliminate (node *arg_node, node *equal_node, node *arg_info)
 {
     node *new_node;
@@ -391,11 +420,11 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
         break;
     case N_ap:
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO, TRUE)) {
-            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
-            id_node = MakeId2 (ids_node);
-            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
-            let_node = MakeLet (id_node, ids_node);
-            new_node = MakeAssign (let_node, NULL);
+            ids *ids1, *ids2;
+
+            ids1 = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
+            ids2 = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
+            new_node = GenNodes4Ap (ids1, ids2, arg_info);
         } else
             new_node = NULL;
         break;
@@ -454,7 +483,7 @@ CSEassign (node *arg_node, node *arg_info)
                 MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO);
                 MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
                 new_node = GenerateMasks (new_node, arg_info);
-                ASSIGN_NEXT (new_node) = ASSIGN_NEXT (arg_node);
+                AppendNodeChain (1, new_node, ASSIGN_NEXT (arg_node));
 /*-----------------------------------------------------------------------------------*/
 #ifndef NEWTREE
                 if (NULL == ASSIGN_NEXT (new_node))
