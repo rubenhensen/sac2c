@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 16:31:06  nmw
+ * trace option -trace c added
+ *
  * Revision 3.1  2000/11/20 17:59:41  sacbase
  * new release made
  *
@@ -533,7 +536,9 @@ usage ()
             "\t\t\t\t  p: trace primitive function calls.\n"
             "\t\t\t\t  o: trace old with-loop execution.\n"
             "\t\t\t\t  w: trace new with-loop execution.\n"
-            "\t\t\t\t  t: trace multi-threading specific operations.\n");
+            "\t\t\t\t  t: trace multi-threading specific operations.\n"
+            "\t\t\t\t  c: trace runtime enviroment init/exit when using\n"
+            "\t\t\t\t     sac-libraries in c programms.\n");
 
     printf ("\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
