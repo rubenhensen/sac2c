@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/04/02 14:11:47  srs
+ * removed Warnings
+ * Conditional
+ *
  * Revision 1.20  1998/02/26 12:34:40  srs
  * changed traversal of new WL
  *
@@ -349,15 +353,15 @@ DCRassign (node *arg_node, node *arg_info)
         if ((tmp = GetCompoundNode (arg_node))) {
             switch (NODE_TYPE (tmp)) {
             case N_cond:
-                WARN (NODE_LINE (tmp), ("Conditional removed"));
+                /* 	WARN(NODE_LINE(tmp), ("Conditional removed")); */
                 break;
             case N_with:
             case N_Nwith:
-                WARN (NODE_LINE (tmp), ("With-expression removed"));
+                /* 	WARN(NODE_LINE(tmp), ("With-expression removed")); */
                 break;
             case N_do:
             case N_while:
-                WARN (NODE_LINE (tmp), ("Loop removed"));
+                /* 	WARN(NODE_LINE(tmp), ("Loop removed")); */
                 break;
             default:
                 break;
