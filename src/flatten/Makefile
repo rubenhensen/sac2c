@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.18  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.17  2001/11/13 20:32:40  dkr
 # make deps done
 #
@@ -52,46 +57,7 @@
 # Revision 3.1  2000/11/20 17:59:15  sacbase
 # new release made
 #
-# Revision 2.23  2000/11/02 14:23:58  dkr
-# header compressed
-#
-# Revision 2.14  2000/03/17 15:56:56  dkr
-# cleanup_decls.o added
-#
-# Revision 2.12  2000/02/18 16:32:31  cg
-# Added -I../print
-#
-# Revision 2.11  2000/02/17 16:16:55  cg
-# Added compilation of adjust_ids.c and fun2lac.c.
-#
-# Revision 2.8  2000/01/21 12:53:35  dkr
-# target clean changed
-#
-# Revision 2.7  2000/01/21 12:02:30  dkr
-# lac2fun.o added
-#
-# Revision 2.6  2000/01/17 18:37:49  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 1.16  1998/05/20 20:16:07  sbs
-# since flatten.c uses DupNode ../optimize had to be added
-# to the include-paths!
-#
-# Revision 1.15  1998/03/04 00:09:44  dkr
-# 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.14  1998/02/05 17:08:35  dkr
-# make deps done
-#
-# Revision 1.13  1997/11/20 15:02:02  dkr
-# make deps done
-#
-# Revision 1.12  1997/11/12 15:59:49  sbs
-# CC+CCFLAGS handling changed.
-# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
-# Otherwise, gcc is set with -Wall and -ansi
+# ... [eliminated] ...
 #
 # Revision 1.3  1994/11/10  15:39:42  sbs
 # RCS-header inserted
@@ -99,21 +65,18 @@
 #
 
 
+#######################################################################################
 #
-# OS setup:
+# include general setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+
+include ../../Makefile.Config
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
-CFLAGS    := -D__EXTENSIONS__
-
+#######################################################################################
+#
+# local settings:
+#
 
 INCS = -I../global -I../../inc -I../tree -I../print -I../optimize
 
@@ -122,53 +85,18 @@ all: flatten.o lac2fun.o fun2lac.o while2do.o
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
-deps:
-	makedepend $(INCS) *.c
-
 clean:
-	$(RM) *.o *.bak *~
+	$(RM) *.o *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
 
-flatten.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-flatten.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-flatten.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-flatten.o: /usr/include/stdio_impl.h ../global/globals.h ../global/types.h
-flatten.o: ../global/Error.h /usr/include/string.h
-flatten.o: /usr/include/iso/string_iso.h /usr/include/stdlib.h
-flatten.o: /usr/include/iso/stdlib_iso.h ../../inc/dbug.h
-flatten.o: ../global/my_debug.h ../global/internal_lib.h ../tree/tree_basic.h
-flatten.o: ../tree/tree_compound.h ../tree/traverse.h ../tree/free.h
-flatten.o: ../tree/DupTree.h ../tree/LookUpTable.h flatten.h
-fun2lac.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-fun2lac.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-fun2lac.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-fun2lac.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-fun2lac.o: /usr/include/iso/stdlib_iso.h ../global/types.h
-fun2lac.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-fun2lac.o: /usr/include/string.h /usr/include/iso/string_iso.h
-fun2lac.o: ../global/globals.h ../global/internal_lib.h ../tree/traverse.h
-fun2lac.o: ../tree/free.h ../global/my_debug.h ../tree/DupTree.h
-fun2lac.o: ../tree/LookUpTable.h ../print/print.h ../optimize/Inline.h
-lac2fun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-lac2fun.o: ../global/Error.h /usr/include/stdio.h
-lac2fun.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
-lac2fun.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-lac2fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-lac2fun.o: /usr/include/string.h /usr/include/iso/string_iso.h
-lac2fun.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-lac2fun.o: ../global/globals.h ../global/internal_lib.h ../tree/traverse.h
-lac2fun.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-lac2fun.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-lac2fun.o: ../tree/DataFlowMaskUtils.h ../tree/InferDFMs.h
-lac2fun.o: ../tree/cleanup_decls.h lac2fun.h
-while2do.o: ../../inc/dbug.h /usr/include/stdio.h
-while2do.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
-while2do.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-while2do.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-while2do.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-while2do.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
-while2do.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/free.h
-while2do.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
-while2do.o: while2do.h
+include ../../Makefile.Deps
+
+
+

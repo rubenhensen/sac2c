@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.6  2001/03/12 12:25:49  dkr
 # make deps done
 #
@@ -19,76 +24,7 @@
 # Revision 3.1  2000/11/20 18:02:06  sacbase
 # new release made
 #
-# Revision 2.20  2000/11/02 14:21:47  dkr
-# header compressed
-#
-# Revision 2.19  2000/01/17 18:37:49  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.18  2000/01/17 16:25:58  cg
-# New handling of heap manager library in new directory.
-#
-# Revision 2.16  1999/07/16 09:45:19  cg
-# Added -libsac variant for heap management diagnostics.
-#
-# Revision 2.14  1999/07/08 12:34:12  cg
-# Complete implementation of libsac is now moved to new directory
-# src/libsac; implementation of CacheSimAnalyser is moved to new
-# directory /src/tools.
-#
-# Revision 2.13  1999/07/05 14:40:26  sbs
-# sac2crc rule corrected.
-# Now, a make after make clean will "automatically" create
-# a link from sac2crc to sac2crc.$OS .
-#
-# Revision 2.12  1999/06/23 10:28:07  rob
-# Insert make target of sac2crc.
-#
-# Revision 2.11  1999/06/02 16:55:39  dkr
-# path to main_args.o is now correct
-#
-# Revision 2.8  1999/05/20 14:13:44  cg
-# Compilation of CacheSimAnalyser streamlined:
-# it is now linked with the SAC runtime library.
-#
-# Revision 2.6  1999/04/26 11:42:05  her
-# modifications for the piped-cachesimulation
-#
-# Revision 2.5  1999/04/09 09:40:53  her
-# added libsac_message.o to the CacheSimTest target
-#
-# Revision 2.4  1999/03/19 11:09:04  her
-# new OBJS (libsac_cachesim_access_detailed.o) added
-# new targets (CacheSimTest.o, CacheSimTest) added
-#
-# Revision 1.14  1999/01/14 13:16:19  sacbase
-# clean: rm sac2crc    added
-#
-# Revision 1.13  1998/12/21 15:46:21  cg
-# File sac2crc no longer added to runtime.tar because system dependent
-# variants do exist now. File sac2c.README added instead.
-#
-# Revision 1.12  1998/12/17 15:49:43  cg
-# added rm runtime.tar for phony target clean
-#
-# Revision 1.11  1998/12/17 09:50:28  cg
-# File libsac.a will no longer be added to runtime.tar because
-# it depends on the target architecture.
-#
-# Revision 1.9  1998/10/28 20:35:18  sbs
-# Now, sac2crc will be part of runtime.tar as well 8-))
-#
-# Revision 1.8  1998/10/28 19:32:10  sbs
-# runtime.tar rule inserted
-#
-# Revision 1.7  1998/06/29 09:16:42  cg
-# The SAC runtime library is now compiled with optimizations and
-# debug options.
-#
-# Revision 1.2  1998/03/24 13:51:04  cg
-# additional include directory specified
+# ... [eliminated] ...
 #
 # Revision 1.1  1998/03/19 16:32:50  cg
 # Initial revision
@@ -96,29 +32,23 @@
 # 
 
 
+#######################################################################################
+#
+# include general setup:
+#
 
-#
-# OS setup:
-#
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+include ../../Makefile.Config
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g  -DSAC_FOR_$(OS)
+#######################################################################################
+#
+# local settings:
+#
+
 
 INCS := 
 LIBS := 
 
-
-#
-# just in case we want to make sac2crc locally!!
-#
-OS        := SOLARIS_SPARC
 
 .PHONY: all tar deps clean
 
@@ -157,13 +87,18 @@ CacheSimAnalyser:
 runtime.tar: *.h sac2crc.README
 	tar cvf $@ $^
 
-deps:
-	makedepend $(INCS) *.c
-
 clean:
-	$(RM) *.o *.a *.bak *.old *~
+	$(RM) *.o *.a *.bak *.old *~ .*.d
 	$(RM) -r .sb  SunWS_cache
 	$(RM) runtime.tar
 	$(RM) sac2crc CacheSimAnalyser
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+

@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.9  2001/11/13 20:32:41  dkr
 # make deps done
 #
@@ -51,34 +56,7 @@
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
 #
-# Revision 1.29  1998/06/18 13:28:22  cg
-# added ../concurrent as include directory
-#
-# Revision 1.28  1998/05/21 09:51:51  dkr
-# make deps done
-#
-# Revision 1.23  1998/03/04 00:10:33  dkr
-# 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.21  1997/11/12 15:59:49  sbs
-# CC+CCFLAGS handling changed.
-# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
-# Otherwise, gcc is set with -Wall and -ansi
-#
-# Revision 1.17  1996/07/18  12:22:08  sbs
-# convert.o included in clean-line
-#
-# Revision 1.15  1996/01/05  12:31:29  cg
-# Now, we look even in ../modules for include files
-#
-# Revision 1.8  1995/04/03  14:02:12  sbs
-# ../compile inserted for icm.data-access
-#
-# Revision 1.7  1995/02/28  18:27:34  asi
-# added optimize-dir to include-path
-#
-# Revision 1.5  1994/12/05  11:16:46  hw
-# added rule for conver.o
+# ... [eliminated] ...
 #
 # Revision 1.4  1994/11/10  15:35:50  sbs
 # RCS-header inserted
@@ -86,20 +64,18 @@
 #
 
 
+#######################################################################################
 #
-# OS setup:
+# include general setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+
+include ../../Makefile.Config
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
-CFLAGS    := -D__EXTENSIONS__
+#######################################################################################
+#
+# local settings:
+#
 
 
 INCS = -I../global -I../tree -I../compile -I../modules -I../refcount \
@@ -123,38 +99,18 @@ print.c: ../tree/prf_node_info.mac
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
-deps:
-	makedepend $(INCS) *.c
-
 clean:
-	$(RM) print.o convert.o *.bak
+	$(RM) print.o convert.o *.bak .*.d
 	$(RM) -r .sb SunWS_cache
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
 
-convert.o: /usr/include/string.h /usr/include/iso/string_iso.h
-convert.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-convert.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-convert.o: /usr/include/math.h /usr/include/iso/math_iso.h
-convert.o: ../global/internal_lib.h ../global/types.h ../../inc/dbug.h
-convert.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-convert.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-convert.o: /usr/include/stdio_impl.h ../tree/tree_basic.h
-convert.o: ../tree/tree_compound.h ../global/Error.h ../global/globals.h
-convert.o: ../tree/type_info.mac
-print.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-print.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-print.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-print.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-print.o: /usr/include/iso/stdlib_iso.h /usr/include/string.h
-print.o: /usr/include/iso/string_iso.h ../global/types.h ../tree/tree_basic.h
-print.o: ../tree/tree_compound.h ../global/Error.h ../global/globals.h
-print.o: ../global/internal_lib.h print.h ../c-interface/print_interface.h
-print.o: ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h convert.h
-print.o: ../tree/DataFlowMask.h ../optimize/optimize.h ../tree/free.h
-print.o: ../optimize/generatemasks.h ../modules/filemgr.h
-print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
-print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
-print.o: ../psi-opt/tile_size_inference.h ../global/NameTuples.h
-print.o: ../compile/wltransform.h ../tree/wl_bounds.h ../refcount/refcount.h
-print.o: ../compile/icm.data ../tree/prf_node_info.mac
+include ../../Makefile.Deps
+
+
+

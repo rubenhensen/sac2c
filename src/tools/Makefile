@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.3  2001/11/13 20:32:49  dkr
 # make deps done
 #
@@ -31,20 +36,19 @@
 #
 
 
+#######################################################################################
+#
+# include general setup:
+#
 
-#
-# OS setup:
-#
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+include ../../Makefile.Config
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
+#######################################################################################
+#
+# local settings:
+#
+
 
 LIBDIR    := ../libsac
   # Here, we cannot use the links in ../runtime because after a gmake clean
@@ -70,24 +74,20 @@ CacheSimTest: CacheSimTest.o $(LIBDIR)/libsac.a
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 
-deps:
-	makedepend $(INCS) *.c
-
-
 clean:
-	$(RM) *.o *.a *.bak *.old *~
+	$(RM) *.o *.a *.bak *.old *~ .*.d
 	$(RM) -r .sb SunWS_cache
 	$(RM) CacheSimTest CacheSimAnalyser
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
-CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-CacheSimAnalyser.o: /usr/include/sys/feature_tests.h
-CacheSimAnalyser.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-CacheSimAnalyser.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CacheSimAnalyser.o: ../runtime/sac_cachesim.h ../runtime/sac_message.h
-CacheSimAnalyser.o: ../libsac/cachesim.h
-CacheSimTest.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-CacheSimTest.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-CacheSimTest.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-CacheSimTest.o: /usr/include/stdio_impl.h ../runtime/sac_cachesim.h
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+
+
+

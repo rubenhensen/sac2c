@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 3.11  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.10  2001/11/13 20:32:41  dkr
 # make deps done
 #
@@ -38,23 +43,18 @@
 #
 #
 
-
+#######################################################################################
 #
-# OS setup:
+# include general setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
+
+include ../../Makefile.Config
+
+
+#######################################################################################
 #
-OS        := SOLARIS_SPARC
-
-
-CC        := gcc
-CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
-CFLAGS    := -D__EXTENSIONS__
-
-ECHO      := echo -n
+# local settings:
+#
 
 INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
@@ -99,101 +99,19 @@ build.o: build.c
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
-deps:
-	makedepend $(INCS) *.c
-
 clean:
-	$(RM) *.o *.bak *~
+	$(RM) *.o *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: /usr/include/stdarg.h /usr/include/varargs.h
-Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
-Error.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
-Error.o: /usr/include/sys/isa_defs.h /usr/include/stdio_tag.h
-Error.o: /usr/include/stdio_impl.h /usr/include/string.h
-Error.o: /usr/include/iso/string_iso.h ../../inc/dbug.h /usr/include/stdlib.h
-Error.o: /usr/include/iso/stdlib_iso.h types.h ../tree/tree_basic.h
-Error.o: internal_lib.h globals.h ../modules/filemgr.h resource.h Error.h
-NameTuples.o: ../../inc/dbug.h /usr/include/stdio.h
-NameTuples.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
-NameTuples.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-NameTuples.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-NameTuples.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h types.h
-NameTuples.o: ../tree/tree_basic.h ../tree/tree_compound.h Error.h
-NameTuples.o: /usr/include/string.h /usr/include/iso/string_iso.h globals.h
-NameTuples.o: NameTuples.h
-globals.o: ../modules/filemgr.h /usr/include/stdio.h
-globals.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
-globals.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-globals.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h types.h
-globals.o: globals.h Error.h /usr/include/string.h
-globals.o: /usr/include/iso/string_iso.h /usr/include/stdlib.h
-globals.o: /usr/include/iso/stdlib_iso.h internal_lib.h
-internal_lib.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-internal_lib.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-internal_lib.o: /usr/include/math.h /usr/include/iso/math_iso.h
-internal_lib.o: /usr/include/string.h /usr/include/iso/string_iso.h
-internal_lib.o: /usr/include/stdarg.h /usr/include/varargs.h
-internal_lib.o: /usr/include/sys/va_list.h /usr/include/ctype.h
-internal_lib.o: /usr/include/iso/ctype_iso.h Error.h /usr/include/stdio.h
-internal_lib.o: /usr/include/iso/stdio_iso.h /usr/include/stdio_tag.h
-internal_lib.o: /usr/include/stdio_impl.h types.h globals.h ../tree/DupTree.h
-internal_lib.o: ../tree/LookUpTable.h ../tree/free.h ../../inc/dbug.h
-internal_lib.o: my_debug.h internal_lib.h ../scanparse/scnprs.h resource.h
-internal_lib.o: ../scanparse/y.tab.h ../tree/traverse.h ../tree/tree_basic.h
-internal_lib.o: ../tree/tree_compound.h ../print/convert.h
-interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
-interrupt.o: /usr/include/sys/isa_defs.h /usr/include/iso/signal_iso.h
-interrupt.o: /usr/include/sys/iso/signal_iso.h /usr/include/sys/unistd.h
-interrupt.o: /usr/include/sys/signal.h /usr/include/stdio.h
-interrupt.o: /usr/include/iso/stdio_iso.h /usr/include/sys/va_list.h
-interrupt.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h Error.h
-interrupt.o: /usr/include/string.h /usr/include/iso/string_iso.h
-interrupt.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h types.h
-interrupt.o: globals.h interrupt.h internal_lib.h build.h
-main.o: ../print/convert.h types.h ../tree/tree_basic.h
-main.o: ../tree/tree_compound.h Error.h /usr/include/stdio.h
-main.o: /usr/include/iso/stdio_iso.h /usr/include/sys/feature_tests.h
-main.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-main.o: /usr/include/string.h /usr/include/iso/string_iso.h
-main.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h globals.h
-main.o: internal_lib.h ../tree/free.h ../../inc/dbug.h my_debug.h
-main.o: ../tree/DupTree.h ../tree/LookUpTable.h usage.h ../flatten/lac2fun.h
-main.o: ../flatten/fun2lac.h ../flatten/flatten.h ../print/print.h
-main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
-main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
-main.o: resource.h ../scanparse/y.tab.h ../modules/writesib.h
-main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
-main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
-main.o: ../objects/uniquecheck.h ../compile/wltransform.h
-main.o: ../concurrent/concurrent.h ../compile/precompile.h
-main.o: ../compile/compile.h ../profile/annotate_fun_calls.h
-main.o: ../modules/cccall.h ../compile/PatchWith.h interrupt.h options.h
-main.o: ../multithread/multithread.h
-options.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-options.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-options.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-options.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-options.o: /usr/include/stdio_impl.h ../../inc/main_args.h
-options.o: /usr/include/string.h /usr/include/iso/string_iso.h usage.h
-options.o: ../modules/filemgr.h types.h globals.h internal_lib.h
-options.o: ../tree/free.h my_debug.h Error.h
-resource.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-resource.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-resource.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-resource.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-resource.o: /usr/include/stdio_impl.h /usr/include/string.h
-resource.o: /usr/include/iso/string_iso.h types.h ../tree/tree_basic.h
-resource.o: ../../inc/dbug.h resource.h ../scanparse/scnprs.h globals.h
-resource.o: ../scanparse/y.tab.h ../modules/filemgr.h ../tree/free.h
-resource.o: my_debug.h internal_lib.h Error.h
-usage.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-usage.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-usage.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-usage.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-usage.o: /usr/include/iso/stdlib_iso.h /usr/include/string.h
-usage.o: /usr/include/iso/string_iso.h globals.h types.h build.h
-usage.o: internal_lib.h ../../inc/dbug.h usage.h
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+
+
+

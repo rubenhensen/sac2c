@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.11  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.10  2001/11/13 20:32:45  dkr
 # make deps done
 #
@@ -31,30 +36,7 @@
 # Revision 3.1  2000/11/20 18:01:34  sacbase
 # new release made
 #
-# Revision 2.16  2000/11/02 14:23:00  dkr
-# header compressed
-#
-# Revision 2.13  2000/07/24 14:46:34  dkr
-# suffix rule for .c.o added
-#
-# Revision 2.6  2000/01/21 12:03:36  dkr
-# directory tree added
-#
-# Revision 2.5  2000/01/17 18:37:49  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 1.13  1998/03/04 00:10:18  dkr
-# 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.11  1998/02/09 17:40:31  dkr
-# added INCS: -I../optimize (function GenerateMasks)
-#
-# Revision 1.9  1997/11/12 15:59:49  sbs
-# CC+CCFLAGS handling changed.
-# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
-# Otherwise, gcc is set with -Wall and -ansi
+# ... [eliminated] ...
 #
 # Revision 1.1  1995/03/09  16:17:01  hw
 # Initial revision
@@ -63,21 +45,18 @@
 
 
 
+#######################################################################################
 #
-# OS setup:
+# include general setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+
+include ../../Makefile.Config
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
-CFLAGS    := -D__EXTENSIONS__
-
+#######################################################################################
+#
+# local settings:
+#
 
 INCS = -I../global -I../tree -I../../inc -I ../flatten -I../typecheck \
        -I../optimize -I../compile
@@ -87,24 +66,18 @@ all: refcount.o
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
-deps:
-	makedepend $(INCS) *.c
-
 clean:
-	$(RM) refcount.o *.bak
+	$(RM) refcount.o *.bak .*.d
 	$(RM) -r .sb SunWS_cache
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
-refcount.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-refcount.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-refcount.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-refcount.o: ../global/Error.h /usr/include/stdio.h
-refcount.o: /usr/include/iso/stdio_iso.h /usr/include/sys/va_list.h
-refcount.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-refcount.o: /usr/include/string.h /usr/include/iso/string_iso.h
-refcount.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
-refcount.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
-refcount.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-refcount.o: ../tree/InferDFMs.h ../optimize/generatemasks.h
-refcount.o: ../optimize/optimize.h refcount.h
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+
+

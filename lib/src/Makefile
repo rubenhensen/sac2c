@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 3.7  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.6  2001/11/13 20:32:46  dkr
 # make deps done
 #
@@ -18,72 +23,25 @@
 # Revision 3.1  2000/11/20 18:02:04  sacbase
 # new release made
 #
-# Revision 2.14  2000/08/17 10:17:35  dkr
-# make deps done
-#
-# Revision 2.13  2000/07/28 09:16:25  mab
-# make deps done
-#
-# Revision 2.12  2000/07/11 15:56:31  dkr
-# make deps done
-#
-# Revision 2.11  2000/05/29 14:36:43  dkr
-# make deps done
-#
-# Revision 2.10  2000/05/29 14:35:20  dkr
-# make deps done
-#
-# Revision 2.9  2000/03/31 09:33:46  jhs
-# make deps done
-#
-# Revision 2.8  1999/07/09 11:38:58  cg
-# make deps done
-#
-# Revision 2.7  1999/07/05 14:24:34  sbs
-# CCFLAGS changed into CFLAGS
-#
-# Revision 2.6  1999/07/05 13:50:04  sbs
-# made -ansi compileable...
-#
-# Revision 2.5  1999/07/05 12:34:48  sbs
-# debugging enabled with -g!
-#
-# Revision 2.4  1999/05/12 14:36:50  cg
-# added compilation of main_args.c
-#
-# Revision 2.3  1999/03/11 18:18:26  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:44  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:43:30  sacbase
-# new release made
-#
-# Revision 1.5  1998/02/05 17:08:45  dkr
-# make deps done
-#
-# Revision 1.4  1997/12/04 15:28:30  srs
-# removed generation of debug information for dbug.c
-#
-# Revision 1.3  1997/12/02 18:47:53  dkr
-# now uses his own CFLAGS!!
-#
-# Revision 1.2  1997/11/28 13:11:07  dkr
-# changed CCFLAGS
+# .... [eliminated] ....
 #
 # Revision 1.1  1997/11/25 13:44:09  dkr
 # Initial revision
 #
 #
+
+#######################################################################################
 #
-OS	:= SOLARIS_SPARC
+# include general setup:
+#
 
-CC        := gcc
-CFLAGS  := -ansi -Wall -DSAC_FOR_$(OS)
-MYFLAGS   := -g
-# MYFLAGS   := 
+include ../../Makefile.Config
 
+
+#######################################################################################
+#
+# local settings:
+#
 
 INCS= -I../../inc
 
@@ -95,25 +53,19 @@ all: ../dbug.o ../main_args.o
 ../main_args.o: main_args.c
 	$(CC) $(CFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
 
-deps:
-	makedepend $(INCS) *.c
-
 clean:
-	$(RM) ../dbug.o ../main_args.o *.bak *~
+	$(RM) ../dbug.o ../main_args.o *.bak *~ .*.d
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
-dbug.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-dbug.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-dbug.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-dbug.o: /usr/include/stdio_impl.h /usr/include/string.h
-dbug.o: /usr/include/iso/string_iso.h /usr/include/stdlib.h
-dbug.o: /usr/include/iso/stdlib_iso.h /usr/include/unistd.h
-dbug.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-dbug.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
-dbug.o: ../../inc/dbug.h
-main_args.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-main_args.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-main_args.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-main_args.o: /usr/include/stdio_impl.h /usr/include/string.h
-main_args.o: /usr/include/iso/string_iso.h
+
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+
+
+

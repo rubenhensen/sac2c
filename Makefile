@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.38  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.37  2001/11/13 21:31:39  dkr
 # OSX_MAC_LIBS corrected
 #
@@ -82,38 +87,6 @@
 # Revision 3.11  2001/02/12 17:08:33  nmw
 # CheckAvis in /src/tree added to sac2c
 #
-# Revision 3.10  2000/12/15 18:16:58  dkr
-# cleanup_decls.* adjust_ids.* infer_dfms.* moved from flatten to tree
-#
-# Revision 3.9  2000/12/15 14:08:55  sbs
-# -D_OSF_SOURCE for ALPHA => eliminates inconsistencies in times.h
-#
-# Revision 3.8  2000/12/13 17:00:38  sbs
-# on solaris -D__STDC__ is set now for preventing wrong initialization of mutex locks.
-#
-# Revision 3.7  2000/12/13 16:37:01  dkr
-# -g flag added to gcc_PROD_FLAGS
-#
-# Revision 3.6  2000/12/13 15:10:27  sbs
-# -D_BSD_SOURCE added .
-#
-# Revision 3.5  2000/12/13 11:11:57  sbs
-# -D_SVID_SOURCE added when compiling on linux; this makes several
-# system functions available such as popen, tempnam, or sbrk.
-#
-# Revision 3.4  2000/12/08 10:43:01  cg
-# Option "-w" removed again.
-#
-# Revision 3.3  2000/12/06 19:51:22  dkr
-# src/flatten/infer_dfms.o added
-#
-# Revision 3.2  2000/12/06 17:39:57  cg
-# Added new gcc option "-w" in order to disable nasty compiler warnings
-# with respect to missing braces in the static initialization of mutex
-# locks.
-#
-# Revision 3.1  2000/11/20 17:59:10  sacbase
-# new release made
 #
 #
 # ... [eliminated] 
@@ -123,111 +96,15 @@
 #
 #
 
-
-
-# CC=gcc -ansi -Wall -pedantic -g 
+#######################################################################################
 #
-# -pedantic switched off to avoid those disgusting warnings about
-# casts in lvalues (-erroff=E_CAST_DOESNT_YIELD_LVALUE for cc)
+# include general setup:
 #
 
-################################################################################
-#
-# C compiler setup:
-#
-# legal values for CC and CCPROD currently are:
-#    gcc
-#    cc
-#
-CC           := gcc
-CCPROD       := gcc
+include Makefile.Config
 
-#
-# gcc specific flags:
-#
-gcc_FLAGS      := -ansi -Wall -g
-gcc_PROD_FLAGS := -ansi -Wall -g -O3
-
-#
-# cc specific flags:
-#
-cc_FLAGS      := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g
-cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4
-
-################################################################################
-#
-# OS setup:
-#
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#    OSX_MAC
-#
-# to allow easy changes: 
-# do not delete os lines, but "comment" all not used lines
-#
-OS        := SOLARIS_SPARC
-#OS        := LINUX_X86
-#OS        := OSF_ALPHA
-#OS        := OSX_MAC
-
-#
-# SOLARIS_SPARC specific flags and libraries:
-#
-#
-# The switch __EXTENSIONS__ must be set under Solaris in order to avoid warnings
-# when using non-ANSI-compliant functions.
-# Currently, these are popen(), pclose(), tempnam(), and strdup().
-#
-SOLARIS_SPARC_FLAGS := -D__EXTENSIONS__ -D__STDC__=0
-SOLARIS_SPARC_LIBS  := -ll
-
-#
-# LINUX_X86 specific flags and libraries:
-#
-LINUX_X86_FLAGS     := -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE
-LINUX_X86_LIBS      := -lfl
-
-#
-# OSF_ALPHA specific flags and libraries:
-#
-OSF_ALPHA_FLAGS    := -D_OSF_SOURCE 
-OSF_ALPHA_LIBS     := -ll
-
-#
-# OSX_MAC specific flags and libraries:
-#
-OSX_MAC_FLAGS    := 
-OSX_MAC_LIBS     := -ll
-
-################################################################################
-#
-# general setup:
-#
-
-CCFLAGS      := $($(CC)_FLAGS) $($(OS)_FLAGS)
-CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS) 
-
-CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS)
-CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
-
-MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)" OS="$(OS)"
-MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)" OS="$(OS)"
-MAKEFLAGS    += --no-print-directory
-
-TAR          :=tar
-LEX          :=lex
-YACC         :=yacc -dv
-LIBS         :=-lm $($(OS)_LIBS)
-EFLIBS       :=-L/home/sacbase/efence -lefence
-RM           :=rm -f
-GZIP         :=gzip -f
-ECHO         :=echo
 
 LIB          :=lib/dbug.o lib/main_args.o
-# /usr/lib/debug/malloc.o
-
 
 #
 # Collection of source files
@@ -413,30 +290,6 @@ sac2c.efence: $(OBJ) $(LIB)
 
 sac2c.prod:  $(OBJ) $(LIB)
 	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
-
-deps:
-	(cd lib/src; $(MAKE) deps)
-	(cd src/scanparse; $(MAKE) deps)
-	(cd src/global; $(MAKE) deps)
-	(cd src/tree; $(MAKE) deps)
-	(cd src/print; $(MAKE) deps)
-	(cd src/flatten; $(MAKE) deps)
-	(cd src/typecheck; $(MAKE) deps)
-	(cd src/constants; $(MAKE) deps)
-	(cd src/optimize; $(MAKE) deps)
-	(cd src/modules; $(MAKE) deps)
-	(cd src/objects; $(MAKE) deps)
-	(cd src/refcount; $(MAKE) deps)
-	(cd src/concurrent; $(MAKE) deps)
-	(cd src/multithread; $(MAKE) deps)
-	(cd src/compile; $(MAKE) deps)
-	(cd src/profile; $(MAKE) deps)
-	(cd src/psi-opt; $(MAKE) deps)
-	(cd src/libsac; $(MAKE) deps)
-	(cd src/heapmgr; $(MAKE) deps)
-	(cd src/tools; $(MAKE) deps)
-	(cd src/runtime; $(MAKE) deps)
-	(cd src/c-interface; $(MAKE) deps)
 
 clean:
 	(cd lib/src; $(MAKE) clean)

@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.6  2001/11/13 20:32:50  dkr
 # make deps done
 #
@@ -21,17 +26,7 @@
 # Revision 3.1  2000/11/20 18:02:50  sacbase
 # new release made
 #
-# Revision 1.10  2000/11/02 14:22:25  dkr
-# header compressed
-#
-# Revision 1.3  2000/01/17 18:37:49  cg
-# Handling of target platform unified: One of the following
-# is always defined:
-# SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 1.2  2000/01/17 16:25:58  cg
-# Reorganzied compilation of heap manager library with respect
-# to the integration of a multi-threaded heap manager
+# ... [eliminated] ...
 #
 # Revision 1.1  2000/01/03 17:33:17  cg
 # Initial revision
@@ -40,20 +35,19 @@
 
 
 
+#######################################################################################
 #
-# OS setup:
+# include general setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+
+include ../../Makefile.Config
 
 
-CC          := gcc
-CCFLAGS     := -ansi -Wall -w -D__EXTENSIONS__ -g  -DSAC_FOR_$(OS)
-CCFLAGSPROD := -ansi -Wall -w -D__EXTENSIONS__ -O3 -DSAC_FOR_$(OS)
+#######################################################################################
+#
+# local settings:
+#
+
 
 INCS := -I../runtime -I../../inc
 LIBS := -L.
@@ -108,63 +102,25 @@ libsac_heapmgr_mt_diag.a: $(OBJS_HEAPMGR_MT_DIAG)
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 
-deps:
-	makedepend $(INCS) *.c
-
 prod:
-	$(MAKE) CCFLAGS="$(CCFLAGSPROD)"
+	$(MAKE) CCFLAGS="$(CCPROD_FLAGS)"
 
 
 clean:
-	$(RM) *.o *.a *.bak *.old *~
+	$(RM) *.o *.a *.bak *.old *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
-calloc.o: /usr/include/string.h /usr/include/iso/string_iso.h
-calloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-calloc.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-diagnostics.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-diagnostics.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-diagnostics.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-diagnostics.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-diagnostics.o: /usr/include/iso/stdlib_iso.h heapmgr.h ../runtime/sac_mt.h
-diagnostics.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
-internal.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
-internal.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
-internal.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-internal.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
-internal.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
-large_chunks.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-large_chunks.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-large_chunks.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-large_chunks.o: ../runtime/sac_message.h
-malloc.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-malloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-malloc.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-memalign.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
-memalign.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
-memalign.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-memalign.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
-memalign.o: ../runtime/sac_heapmgr.h
-placement.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-placement.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-placement.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-placement.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-placement.o: /usr/include/stdio_impl.h heapmgr.h ../runtime/sac_mt.h
-placement.o: ../runtime/sac_heapmgr.h
-realloc.o: /usr/include/string.h /usr/include/iso/string_iso.h
-realloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-realloc.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-setup.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
-setup.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
-setup.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-setup.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
-setup.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
-small_chunks.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-small_chunks.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-small_chunks.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
-wrapper.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-wrapper.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-wrapper.o: heapmgr.h ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+
+
+

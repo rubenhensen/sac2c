@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/11/14 12:59:48  sbs
+# deps line replaced by inclusion of Makefile.Deps
+# ( .xxx.d mechanism)
+# global setup included via Makefile.Config
+#
 # Revision 3.8  2001/11/13 20:32:42  dkr
 # make deps done
 #
@@ -34,38 +39,23 @@
 #
 
 
+#######################################################################################
 #
-# OS setup:
+# include general setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#
-OS        := SOLARIS_SPARC
+
+include ../../Makefile.Config
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
-CFLAGS    := -D__EXTENSIONS__
-
-ifeq ($(OS),OSF_ALPHA)
-  LEX     := flex -n
-  YACC    := yacc -dv
-else
-  LEX     := flex -n
-  YACC    := bison -y -dv
-endif
+#######################################################################################
+#
+# local settings:
+#
 
 LIBS      := -ly -ll
 
 INCS = -I../global -I../tree -I../../inc -I../modules -I../typecheck
 
-ifeq ($(OS),SOLARIS_SPARC)
-  YYFLAGS   := -DYYDEBUG
-else
-  YYFLAGS   :=
-endif
 
 all: y.tab.o lex.yy.o scnprs.o
 
@@ -86,43 +76,20 @@ y.tab.c y.tab.h: sac.y
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 
-deps: y.tab.c lex.yy.c
-	makedepend $(INCS) *.c
-
-
 clean:
-	$(RM) y.tab.h y.tab.c lex.yy.c *.o *.bak y.output
+	$(RM) y.tab.h y.tab.c lex.yy.c *.o *.bak y.output .*.d
 	$(RM) -r .sb SunWS_cache
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
 
-lex.yy.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-lex.yy.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-lex.yy.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-lex.yy.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-lex.yy.o: /usr/include/iso/stdlib_iso.h ../global/types.h
-lex.yy.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-lex.yy.o: /usr/include/string.h /usr/include/iso/string_iso.h
-lex.yy.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
-lex.yy.o: ../../inc/dbug.h ../global/my_debug.h ../global/resource.h y.tab.h
-scnprs.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-scnprs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-scnprs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-scnprs.o: /usr/include/stdio_impl.h /usr/include/string.h
-scnprs.o: /usr/include/iso/string_iso.h ../global/types.h
-scnprs.o: ../tree/tree_basic.h ../global/internal_lib.h ../global/Error.h
-scnprs.o: /usr/include/stdlib.h /usr/include/iso/stdlib_iso.h
-scnprs.o: ../global/globals.h ../../inc/dbug.h ../modules/filemgr.h
-scnprs.o: ../global/resource.h scnprs.h y.tab.h
-y.tab.o: /usr/include/stdio.h /usr/include/iso/stdio_iso.h
-y.tab.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-y.tab.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-y.tab.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-y.tab.o: /usr/include/iso/stdlib_iso.h /usr/include/memory.h
-y.tab.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-y.tab.o: /usr/include/sys/int_types.h ../global/types.h ../tree/tree_basic.h
-y.tab.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-y.tab.o: /usr/include/iso/string_iso.h ../global/globals.h
-y.tab.o: ../global/internal_lib.h ../../inc/dbug.h ../typecheck/typecheck.h
-y.tab.o: ../tree/DupTree.h ../tree/LookUpTable.h ../global/my_debug.h
-y.tab.o: ../tree/free.h ../modules/readsib.h ../global/resource.h
+
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include ../../Makefile.Deps
+
+
+
