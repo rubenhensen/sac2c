@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.124  1998/04/16 11:44:06  srs
+ * new INFO_WLI* macros,
+ * new section of INFO_PRINT* macros
+ *
  * Revision 1.123  1998/04/14 22:46:55  dkr
  * new macros:
  *   INFO_COMP_...
@@ -1790,11 +1794,11 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_NAME(n) (n->info.ids->id)
 #define ID_DEF(n) (n->info.ids->def)
 #define ID_VARDEC(n) (n->info.ids->node)
-#define ID_REFCNT(n) (n->refcnt)
+#define ID_OBJDEF(n) (n->info.ids->node)
 #define ID_MOD(n) (n->info.ids->mod)
 #define ID_ATTRIB(n) (n->info.ids->attrib)
 #define ID_STATUS(n) (n->info.ids->status)
-#define ID_OBJDEF(n) (n->info.ids->node)
+#define ID_REFCNT(n) (n->refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_WL(n) (n->node[0])
 
@@ -2138,6 +2142,7 @@ extern node *MakePragma ();
  ***    node*      FUNDEF             (N_fundef)
  ***    int        FLAG               (0/1)
  ***    node*      ID                 (N_id)
+ ***    node*      NCA                (N_assign) (new code assignments)
  ***
  ***  when used in ConstantFolding.c :
  ***    node*      ASSIGN             (N_assign)
@@ -2203,15 +2208,21 @@ extern node *MakeInfo ();
 #define INFO_WLI_NEW_ID(n) (n->node[1])
 #define INFO_WLI_ASSIGN(n) (n->node[2])
 #define INFO_WLI_FUNDEF(n) (n->node[3])
-#define INFO_WLI_FLAG(n) (n->flag)
 #define INFO_WLI_ID(n) (n->node[4])
+#define INFO_WLI_NCA(n) (n->node[5])
+#define INFO_WLI_FLAG(n) (n->flag)
 
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
 
-/* Print, Icm2c, ... */
+/* Icm2c, ... */
 #define INFO_FUNDEF(n) (n->node[0])
+
+/* Print */
+#define INFO_PRINT_FUNDEF(n) (n->node[0])
+#define INFO_PRINT_INT_SYN(n) (n->node[2])
+#define INFO_PRINT_WITH_RET(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
