@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 12:25:35  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.1  2000/11/20 18:03:32  sacbase
  * new release made
  *
@@ -1184,76 +1187,6 @@ MakeEmpty ()
     DBUG_ENTER ("MakeEmpty");
 
     tmp = CreateCleanNode (N_empty);
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakePost (int incdec, char *id)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakePost");
-
-    tmp = CreateCleanNode (N_post);
-
-    POST_ID (tmp) = id;
-
-    /*
-     *  The following lines contain the new representation for INCDEC.
-     *  The access macro POST_INCDEC may not be used until its definition in
-     *  tree_basic.h is converted to the new representation.
-     */
-
-    /*  POST_INCDEC(tmp)=incdec;  */
-    tmp->varno = incdec;
-
-    /*
-     *  The following lines contain the old representation for INCDEC.
-     *  This is needed until all files are converted to the new representation.
-     */
-
-    tmp->node[0] = CreateCleanNode (0 == incdec ? N_dec : N_inc);
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakePre (nodetype incdec, char *id)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakePre");
-
-    tmp = CreateCleanNode (N_pre);
-
-    PRE_ID (tmp) = id;
-
-    /*
-     *  The following lines contain the new representation for INCDEC.
-     *  The access macro PRE_INCDEC may not be used until its definition in
-     *  tree_basic.h is converted to the new representation.
-     */
-
-    /*  PRE_INCDEC(tmp)=incdec;  */
-    tmp->varno = incdec;
-
-    /*
-     *  The following lines contain the old representation for INCDEC.
-     *  This is needed until all files are converted to the new representation.
-     */
-
-    tmp->node[0] = CreateCleanNode (0 == incdec ? N_dec : N_inc);
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
