@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/03/09 21:26:41  dkr
+ * SAC_TR_AA_PRINT modified
+ *
  * Revision 3.6  2003/03/09 19:16:30  dkr
  * TRACE_AA added
  *
@@ -83,7 +86,12 @@ extern void SAC_TR_DecArrayMemcnt (int size);
 extern void SAC_TR_IncHiddenMemcnt (int size);
 extern void SAC_TR_DecHiddenMemcnt (int size);
 
-#define SAC_TR_PRINT(msg) SAC_TR_Print msg;
+/*
+ * CAUTION!
+ * This should be an expression (due to SAC_TR_AA_PRINT), therefore,
+ * no ; at the end!
+ */
+#define SAC_TR_PRINT(msg) SAC_TR_Print msg
 
 #else /* SAC_DO_TRACE */
 
@@ -93,7 +101,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #if SAC_DO_TRACE_FUN
 
-#define SAC_TR_FUN_PRINT(msg) SAC_TR_PRINT (msg)
+#define SAC_TR_FUN_PRINT(msg) SAC_TR_PRINT (msg);
 
 #else /* SAC_DO_TRACE_FUN */
 
@@ -103,7 +111,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #if SAC_DO_TRACE_PRF
 
-#define SAC_TR_PRF_PRINT(msg) SAC_TR_PRINT (msg)
+#define SAC_TR_PRF_PRINT(msg) SAC_TR_PRINT (msg);
 
 #else /* SAC_DO_TRACE_PRF */
 
@@ -113,7 +121,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #if SAC_DO_TRACE_REF
 
-#define SAC_TR_REF_PRINT(msg) SAC_TR_PRINT (msg)
+#define SAC_TR_REF_PRINT(msg) SAC_TR_PRINT (msg);
 
 #define SAC_TR_REF_PRINT_RC(name)                                                        \
     SAC_TR_REF_PRINT (("refcnt of %s: %d", #name, SAC_ND_A_RC (name)))
@@ -127,7 +135,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #if SAC_DO_TRACE_WL
 
-#define SAC_TR_WL_PRINT(msg) SAC_TR_PRINT (msg)
+#define SAC_TR_WL_PRINT(msg) SAC_TR_PRINT (msg);
 
 #else /* SAC_DO_TRACE_WL */
 
@@ -138,7 +146,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #if SAC_DO_TRACE_AA
 
 #define SAC_TR_AA_PRINT(str, array, pos)                                                 \
-    SAC_TR_PRINT (("%s access %s[%d]", str, #array, pos))
+    SAC_TR_PRINT (("%s access to array %s at position %d", str, #array, pos))
 
 #else /* SAC_DO_TRACE_AA */
 
@@ -157,7 +165,7 @@ typedef enum {
     SAC_TR_foldres_hidden
 } SAC_TR_foldres_t;
 
-#define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg)
+#define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg);
 
 #define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)                                 \
     {                                                                                    \
@@ -193,7 +201,7 @@ typedef enum {
 
 #if SAC_DO_TRACE_MEM
 
-#define SAC_TR_MEM_PRINT(msg) SAC_TR_PRINT (msg)
+#define SAC_TR_MEM_PRINT(msg) SAC_TR_PRINT (msg);
 
 #define SAC_TR_INC_ARRAY_MEMCNT(size) SAC_TR_IncArrayMemcnt (size);
 
