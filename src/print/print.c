@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.104  1996/01/05 14:34:22  cg
+ * Revision 1.105  1996/01/07 16:55:50  cg
+ * pragmas of typedefs and objdefs are no longer printed
+ *
+ * Revision 1.104  1996/01/05  14:34:22  cg
  * modified functions for printing genarray, modarray, foldfun, and
  * foldprf. Corresponding return is now infered.
  *
@@ -610,9 +613,6 @@ PrintTypedef (node *arg_node, node *arg_info)
         fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
     fprintf (outfile, "%s;\n", arg_node->info.types->id);
 
-    if (TYPEDEF_PRAGMA (arg_node) != NULL)
-        Trav (TYPEDEF_PRAGMA (arg_node), NULL);
-
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
 
@@ -646,10 +646,6 @@ PrintObjdef (node *arg_node, node *arg_info)
             }
 
             fprintf (outfile, ";\n");
-        }
-
-        if (OBJDEF_PRAGMA (arg_node) != NULL) {
-            Trav (OBJDEF_PRAGMA (arg_node), NULL);
         }
     }
 
