@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 13:29:53  dkr
+ * InsertIntoLUT renamed into InsertIntoLUT_P
+ * SearchInLUT renamed into SearchInLUT_P
+ *
  * Revision 3.2  2001/02/14 14:37:56  dkr
  * DFM2...(): STATUS and ATTRIB are set correctly now
  *
@@ -350,7 +354,7 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
                              mdb_statustype[VARDEC_ATTRIB (vardecs)],
                              mdb_statustype[VARDEC_STATUS (vardecs)]));
 
-        lut = InsertIntoLUT (lut, decl, vardecs);
+        lut = InsertIntoLUT_P (lut, decl, vardecs);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
@@ -395,7 +399,7 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
                              mdb_statustype[ARG_ATTRIB (args)],
                              mdb_statustype[ARG_STATUS (args)]));
 
-        lut = InsertIntoLUT (lut, decl, args);
+        lut = InsertIntoLUT_P (lut, decl, args);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
@@ -428,7 +432,7 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
-        ID_VARDEC (id) = SearchInLUT (lut, decl);
+        ID_VARDEC (id) = SearchInLUT_P (lut, decl);
 
         /*
          * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
@@ -482,7 +486,7 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
         /*
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
-        ID_VARDEC (id) = SearchInLUT (lut, decl);
+        ID_VARDEC (id) = SearchInLUT_P (lut, decl);
 
         ID_ATTRIB (id) = VARDEC_OR_ARG_ATTRIB (decl);
         ID_STATUS (id) = VARDEC_OR_ARG_STATUS (decl);
@@ -524,7 +528,7 @@ DFM2LetIds (DFMmask_t mask, LUT_t lut)
     while (decl != NULL) {
         tmp = _ids;
         _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
-        IDS_VARDEC (_ids) = SearchInLUT (lut, decl);
+        IDS_VARDEC (_ids) = SearchInLUT_P (lut, decl);
         IDS_NEXT (_ids) = tmp;
 
         /*

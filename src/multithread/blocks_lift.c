@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/22 13:28:54  dkr
+ * InsertIntoLUT renamed into InsertIntoLUT_P
+ * SearchInLUT renamed into SearchInLUT_P
+ *
  * Revision 3.1  2000/11/20 18:03:05  sacbase
  * new release made
  *
@@ -226,7 +230,7 @@ BLKLImt (node *arg_node, node *arg_info)
     while (old_vardecs != NULL) {
         if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_vardecs)) {
             new_vardecs = DupNodeVardec (old_vardecs, new_vardecs);
-            lut = InsertIntoLUT (lut, old_vardecs, new_vardecs);
+            lut = InsertIntoLUT_P (lut, old_vardecs, new_vardecs);
         }
         old_vardecs = VARDEC_NEXT (old_vardecs);
     }
@@ -239,7 +243,7 @@ BLKLImt (node *arg_node, node *arg_info)
     while (old_args != NULL) {
         if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_args)) {
             new_vardecs = DupNodeArgToVardec (old_args, new_vardecs);
-            lut = InsertIntoLUT (lut, old_args, new_vardecs);
+            lut = InsertIntoLUT_P (lut, old_args, new_vardecs);
         }
         old_args = ARG_NEXT (old_args);
     }
@@ -271,7 +275,7 @@ BLKLImt (node *arg_node, node *arg_info)
             DBUG_PRINT ("BLKLI", ("inserted arg %s", ARG_NAME (vardec)));
         }
 
-        lut = InsertIntoLUT (lut, vardec, new_arg);
+        lut = InsertIntoLUT_P (lut, vardec, new_arg);
 
         new_args = new_arg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -329,7 +333,7 @@ BLKLImt (node *arg_node, node *arg_info)
 
     new_base = DFMGenMaskBase (new_args, new_vardecs);
 
-    lut = InsertIntoLUT (lut, FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)), new_base);
+    lut = InsertIntoLUT_P (lut, FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)), new_base);
 
     new_block = DupNodeLUT (MT_REGION (arg_node), lut);
     BLOCK_VARDEC (new_block) = new_vardecs;
