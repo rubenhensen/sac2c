@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2005/01/11 12:30:42  jhb
+ * node CHK included
+ *
  * Revision 3.139  2004/12/20 12:46:33  ktr
  * call to TBmakeWlgridvar corrected.
  *
@@ -2848,6 +2851,28 @@ DUPssacnt (node *arg_node, info *arg_info)
 
     INFO_DUP_LUT (arg_info)
       = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *Dupchk( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Duplicates a N_ssacnt node.
+ *
+ ******************************************************************************/
+
+node *
+DUPchk (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPchk");
+
+    new_node = TBmakeChk ();
 
     DBUG_RETURN (new_node);
 }

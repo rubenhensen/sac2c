@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2005/01/11 12:30:42  jhb
+ * node CHK included
+ *
  * Revision 3.41  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -250,6 +253,7 @@ extern node *DUPlinklist (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
+extern node *DUPchk (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);
