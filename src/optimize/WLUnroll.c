@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/10/26 23:09:06  dkr
+ * fixed a bug in DoUnrollGenarray:
+ * function GetBasetype() used instead of TYPE_BASETYPE in order to get
+ * correct results even for user-defined types.
+ *
  * Revision 2.18  2000/10/26 17:39:42  dkr
  * CreateZeroVector moved to tree_compound.[ch]
  *
@@ -760,7 +765,7 @@ DoUnrollGenarray (node *wln, node *arg_info)
 
     type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
     elements = GetTypesLength (type);
-    stype = TYPES_BASETYPE (type);
+    stype = GetBasetype (type);
 
 #if 0
   /* drop reshape() */
