@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2002/08/09 14:11:03  dkr
+ * printing of wrapper functions with non-empty body added
+ *
  * Revision 3.108  2002/08/09 10:00:52  dkr
  * DBUG-string PRINT_NTY added
  *
@@ -1299,7 +1302,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   void PrintFunctionHeader( node *arg_node, node *arg_info )
+ *   void PrintFunctionHeader( node *arg_node, node *arg_info, bool in_comment)
  *
  * Description:
  *
@@ -1307,14 +1310,13 @@ PrintObjdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 void
-PrintFunctionHeader (node *arg_node, node *arg_info)
+PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
 {
     types *ret_types;
     char *type_str;
     bool print_old = TRUE;
     bool print_new = FALSE;
     bool print_argtab = FALSE;
-    bool in_comment = FALSE;
 
     DBUG_ENTER ("PrintFunctionHeader");
 
@@ -1338,7 +1340,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     if (print_new) {
         node *tmp = Argtab2Fundef (arg_node);
 
-        PrintFunctionHeader (tmp, arg_info);
+        PrintFunctionHeader (tmp, arg_info, in_comment);
         tmp = FreeZombie (FreeTree (tmp));
 
         fprintf (outfile, " ");
@@ -1399,12 +1401,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
     /* Now, we print the new type signature, iff present */
     fprintf (outfile, "\n");
     INDENT;
-    in_comment = (FUNDEF_STATUS (arg_node) == ST_wrapperfun);
-    if (in_comment) {
-        fprintf (outfile, " *\n");
-    } else {
-        fprintf (outfile, "/*\n");
-    }
+    fprintf (outfile, (in_comment) ? " *\n" : "/*\n");
     fprintf (outfile, " *  ");
     if (FUNDEF_NAME (arg_node) != NULL) {
         fprintf (outfile, "%s :: ", FUNDEF_NAME (arg_node));
@@ -1419,11 +1416,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
         }
     }
     INDENT;
-    if (in_comment) {
-        fprintf (outfile, " *");
-    } else {
-        fprintf (outfile, " */");
-    }
+    fprintf (outfile, (in_comment) ? " *" : " */");
 
     DBUG_VOID_RETURN;
 }
@@ -1474,7 +1467,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
-                    PrintFunctionHeader (arg_node, arg_info);
+                    PrintFunctionHeader (arg_node, arg_info, FALSE);
                 } else {
                     /* print N_icm ND_FUN_DEC */
                     fprintf (outfile, "\n");
@@ -1502,7 +1495,7 @@ PrintFundef (node *arg_node, node *arg_info)
                 fprintf (outfile, " * zombie function:\n");
                 INDENT;
                 fprintf (outfile, " *   ");
-                PrintFunctionHeader (arg_node, arg_info);
+                PrintFunctionHeader (arg_node, arg_info, FALSE);
                 fprintf (outfile, "\n");
                 INDENT;
                 fprintf (outfile, " */\n\n");
@@ -1512,24 +1505,23 @@ PrintFundef (node *arg_node, node *arg_info)
                  * do not generate separate files
                  */
             }
-        } else if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
-            if (compiler_phase < PH_genccode) {
-                fprintf (outfile, "/*\n");
-                INDENT;
-                fprintf (outfile, " * wrapper function:\n");
-                INDENT;
-                fprintf (outfile, " *   ");
-                PrintFunctionHeader (arg_node, arg_info);
-                fprintf (outfile, "\n");
-                INDENT;
-                fprintf (outfile, " */\n\n");
-            } else {
-                /*
-                 * do not print wrapper code in header files,
-                 * do not generate separate files
-                 */
-            }
         } else {
+
+            if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+                if (FUNDEF_BODY (arg_node) == NULL) {
+                    fprintf (outfile, "/*\n");
+                    INDENT;
+                    fprintf (outfile, " * wrapper function:\n");
+                    INDENT;
+                    fprintf (outfile, " *   ");
+                    PrintFunctionHeader (arg_node, arg_info, TRUE);
+                    fprintf (outfile, "\n");
+                    INDENT;
+                    fprintf (outfile, " */\n\n");
+                } else {
+                    fprintf (outfile, "/* wrapper function */\n");
+                }
+            }
 
             if (FUNDEF_BODY (arg_node) != NULL) {
                 if (INFO_PRINT_SEPARATE (arg_info)) {
@@ -1551,7 +1543,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
-                    PrintFunctionHeader (arg_node, arg_info);
+                    PrintFunctionHeader (arg_node, arg_info, FALSE);
                 } else {
                     /* print N_icm ND_FUN_DEC */
                     Trav (FUNDEF_ICM (arg_node), arg_info);
