@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/10/31 18:16:36  cg
+ * MakeNode() now initializes the new field int_data in node data structure.
+ *
  * Revision 1.5  2000/10/24 14:46:01  dkr
  * MakeTypes removed
  *
@@ -199,6 +202,7 @@ MakeNode (nodetype nodetype)
     tmp->src_file = filename;
     tmp->refcnt = 0;
     tmp->counter = 0;
+    tmp->int_data = 0;
     tmp->info2 = NULL;
     for (i = 0; i < MAX_MASK; i++) {
         tmp->mask[i] = NULL;
