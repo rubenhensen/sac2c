@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1994/11/17 16:53:57  hw
+ * Revision 1.12  1994/11/18 14:54:56  hw
+ * changed function Append
+ * added function MakeEmptyBlock
+ *
+ * Revision 1.11  1994/11/17  16:53:57  hw
  * bug fixed in Append
  * all N_return nodes are children of N_assign nodes now.
  *
@@ -182,7 +186,7 @@ exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R
 
             }
          | BRACE_L assigns retassign COLON BRACE_R 
-            { node *tmp;
+            { 
               $$=MakeNode(N_block);
               $$->node[0]=Append($2,$3); /* append retassign node($4) to assigns nodes */
               $$->nnode=1;
@@ -213,15 +217,16 @@ exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R
            ;
 
 assignblock: COLON     
-              {  $$=MakeNode(N_empty);
+              {  $$=MakeEmptyBlock();
               }
 
              | BRACE_L assigns BRACE_R 
-                { $$=MakeNode(N_block);
-                  $$->node[0]=$2;
-                  $$->nnode=1;
+                { $$=MakeEmptyBlock();
+  
                 }
-             | BRACE_L BRACE_R  { $$=MakeNode(N_empty); }
+             | BRACE_L BRACE_R  
+                {  $$=MakeEmptyBlock();
+                }
              | assign  
                 { $$=MakeNode(N_block);
                   $$->node[0]=$1;
@@ -230,7 +235,7 @@ assignblock: COLON
              ;
 
 retassignblock: BRACE_L assigns retassign COLON BRACE_R
-                  { node *tmp;
+                  { 
                     $$=MakeNode(N_block);
                     /* append retassign node($3) to assigns nodes($2)
                      */
@@ -955,22 +960,73 @@ node *Append(node *target_node, node *append_node)
       tmp=target_node->node[0];
    else
       tmp=target_node;
-   while( NULL != tmp->node[1] )      /* look for last N_assign node */
+   if (N_assign == target_node->nodetype) 
+   {
+      while( 1 != tmp->nnode )      /* look for last N_assign node */
       tmp=tmp->node[1];
    
-   if (N_assign != append_node->nodetype)
-   {
-      tmp->node[1]=MakeNode(N_assign);
-      tmp->node[1]->node[0]=append_node;
-      tmp->node[1]->nnode=1;
+      if (N_assign != append_node->nodetype)
+      {
+         tmp->node[1]=MakeNode(N_assign);
+         tmp->node[1]->node[0]=append_node;
+         tmp->node[1]->nnode=1;
+      }
+      else
+         tmp->node[1]=append_node;
+      
+      tmp->nnode=2;     /* previous last N_assign node has a new child */
    }
    else
-      tmp->node[1]=append_node;
-   
-   tmp->nnode=2;
+   {  /* target_node has type N_empty */
+
+         free(tmp);                               /* delete node of type N_empty */
+      if (N_assign != append_node->nodetype)
+      {
+         tmp=MakeNode(N_assign);  
+         tmp->node[0]=append_node;
+         tmp->nnode=1;
+      }
+      else
+         tmp=append_node;
+   }
+         
    DBUG_PRINT("APPEND",("return node :%s"P_FORMAT,
                         mdb_nodetype[target_node->nodetype],target_node));
    
    
    DBUG_RETURN(target_node);
 }
+
+/*
+ *
+ *  functionname  : MakeEmptyNode
+ *  arguments     : ---
+ *  description   : genarates an tree that describes an empty block
+ *  global vars   : ---
+ *  internal funs : MakeNode
+ *  external funs : ---
+ *  macros        : DBUG..., P_FORMAT
+ *
+ *  remarks       :
+ *
+ */
+node *MakeEmptyBlock()
+{   
+   node *return_node;
+   
+   DBUG_ENTER("MakeEmptyBlock");
+   
+   return_node=MakeNode(N_block);
+   return_node->node[0]=MakeNode(N_empty);
+   return_node->nnode=1;
+   
+   
+   DBUG_PRINT("GENTREE",
+              ("%s"P_FORMAT", %s"P_FORMAT,
+               mdb_nodetype[return_node->nodetype], return_node,
+               mdb_nodetype[return_node->node[0]->nodetype], return_node->node[0]));
+   
+   DBUG_RETURN(return_node);
+}
+
+   
