@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/01/26 15:32:21  cg
+ * Revision 1.9  1996/02/12 18:03:47  cg
+ * bug fixed in CopyUnqstate: Historylist is now copied and not shared
+ *
+ * Revision 1.8  1996/01/26  15:32:21  cg
  * function status ST_classfun now supported
  *
  * Revision 1.7  1995/12/20  08:19:59  cg
@@ -40,6 +43,7 @@
 #include "traverse.h"
 #include "internal_lib.h"
 #include "Error.h"
+#include "free.h"
 
 #include <malloc.h>
 
@@ -205,6 +209,36 @@ MakeHistory (historytype history, historylist *old)
 
 /*
  *
+ *  functionname  : CopyHistoryList
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+historylist *
+CopyHistoryList (historylist *old)
+{
+    historylist *new;
+
+    DBUG_ENTER ("CopyHistoryList");
+
+    if (NULL != old) {
+        new = MakeHistory (HL_HISTORY (old), CopyHistoryList (HL_NEXT (old)));
+    } else {
+        new = NULL;
+    }
+
+    DBUG_RETURN (new);
+}
+
+/*
+ *
  *  functionname  : InitUnqstate
  *  arguments     : ---
  *  description   : generates a 1-element unqstatelist
@@ -273,15 +307,17 @@ FreeUnqstate (unqstatelist *unqstate)
         tmp = unqstate;
         unqstate = UNQ_NEXT (unqstate);
         hist = UNQ_HISTORY (tmp);
+        DBUG_PRINT ("UNQ", ("outer while of FreeUnqstate"));
 
         while (hist != NULL) {
             tmp_hist = hist;
             hist = HL_NEXT (hist);
-            free (tmp_hist);
+            FREE (tmp_hist);
+            DBUG_PRINT ("UNQ", ("inner while of FreeUnqstate"));
         }
 
-        free (UNQ_STATE (tmp));
-        free (tmp);
+        FREE (UNQ_STATE (tmp));
+        FREE (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -342,7 +378,7 @@ CopyUnqstate (unqstatelist *unqstate)
 
     new = (unqstatelist *)Malloc (sizeof (unqstatelist));
 
-    UNQ_HISTORY (new) = UNQ_HISTORY (unqstate);
+    UNQ_HISTORY (new) = CopyHistoryList (UNQ_HISTORY (unqstate));
 
     UNQ_STATE (new) = (int *)Malloc (varno * sizeof (int));
 
