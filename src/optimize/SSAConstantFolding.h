@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/05/23 15:48:11  nmw
+ * comments added, code beautified
+ *
  * Revision 1.4  2001/05/15 15:52:05  nmw
  * access to PrfFolding for external modules implemented SSACFFoldPrfExpr
  *
@@ -36,7 +39,6 @@ extern node *SSAConstantFolding (node *fundef, node *modul);
 extern node *SSACFfundef (node *arg_node, node *arg_info);
 extern node *SSACFblock (node *arg_node, node *arg_info);
 extern node *SSACFarg (node *arg_node, node *arg_info);
-extern node *SSACFvardec (node *arg_node, node *arg_info);
 extern node *SSACFassign (node *arg_node, node *arg_info);
 extern node *SSACFcond (node *arg_node, node *arg_info);
 extern node *SSACFreturn (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2001/05/23 15:48:11  nmw
+ * comments added, code beautified
+ *
  * Revision 1.17  2001/05/17 12:05:53  nmw
  * MALLOC/FREE changed to Malloc/Free (using Free() result)
  *
@@ -61,8 +64,47 @@
  * prefix: SSACF
  *
  * description:
- *   this module does constant folding on code in ssa form.
+ *   this module implementes constant folding on code in ssa form. for
+ *   constant expressions we compute primitive functions at compile time
+ *   so we need not to compute them at runtime. this simplyfies the code
+ *   and allows further optimizations.
  *
+ *   each computed constant expression is stored in the AVIS_SSACONST(avis)
+ *   attribute of the assigned identifier for later access.
+ *
+ *   when traversing into a special fundef we propagate constant information
+ *   for all args (in loops only the loop-invariant ones) by storing the
+ *   AVIS_SSACONST() in the corresponding args. constant results are propagted
+ *   back in the calling context by inserting a assignment to the constant
+ *   value. The removal of unused function args and result values is done
+ *   later by the dead code removal.
+ *
+ *   at this time the following primitive operations are implemented:
+ *     for full constants (scalar value, arrays with known values):
+ *       toi, tof, tod, abs, not, dim, shape, min, max, add, sub, mul, div,
+ *       mod, and, le, lt, eq, ge, neq, reshape, psi, take, drop, modarray
+ *
+ *     structural constant, with full constant iv (array with ids as values):
+ *       reshape, psi, take, drop, modarray
+ *
+ *     shape constant (array with known shape, scalar id):
+ *       shape, sub
+ *
+ *     dim constants (expression with known dimension):
+ *       dim, eq
+ *
+ *  arithmetic optimizations:
+ *    add (x+0->x, 0+x->x),
+ *    sub (x-0->x),
+ *    mul (x*0->0, 0*x->0, x*1->x, 1*x->x),
+ *    div (x/0->err, 0/x->0, x/1->x),
+ *    and (x&&1->x, 1&&x->x, x&&0->0, 0&&x->0),
+ *    or  (x||1->1, 1||x->1, x||0->x, 0||x->x)
+ *
+ *  special psi-modarray optimization:
+ *    looking up in a modarray chain for setting the psi referenced value
+ *
+ *  not yet implemented: cat, rotate
  *
  *****************************************************************************/
 
@@ -83,7 +125,8 @@
 
 /*
  * constant identifiers should be substituted by its constant value
- * also in the arg-chain of N_ap and N_prf nodes.
+ * also in the arg-chain of N_ap and N_prf nodes (not for applications
+ * of special fundefs! there must always be identifers).
  */
 #define SUBST_ID_WITH_CONSTANT_IN_AP_ARGS TRUE
 
@@ -91,7 +134,7 @@
 #define SUBST_SCALAR 1
 #define SUBST_SCALAR_AND_ARRAY 2
 
-/* Prf-function name for debug output */
+/* prf-function name for debug output */
 #ifndef DBUG_OFF
 #define PRF_IF(n, s, x, y) x
 static char *prf_string[] = {
@@ -100,10 +143,10 @@ static char *prf_string[] = {
 #undef PRF_IF
 #endif
 
-/* macros used in SSACFprf to handle arguments selecttions */
 /* maximum of supported args for primitive functions */
 #define PRF_MAX_ARGS 3
 
+/* macros used in SSACFFoldPrfExpr to handle arguments selections */
 #define ONE_CONST_ARG(arg) (arg[0] != NULL)
 
 #define TWO_CONST_ARG(arg) ((arg[0] != NULL) && (arg[1] != NULL))
@@ -126,12 +169,13 @@ static char *prf_string[] = {
 #define SECOND_CONST_ARG_OF_THREE(arg, arg_expr)                                         \
     ((arg_expr[0] != NULL) && (arg[1] != NULL) && (arg_expr[2] != NULL))
 
+/* structural constant StructCO should be integrated in constants in future */
 /* special constant version used for structural constants */
 typedef struct {
-    simpletype simpletype;
-    char *name;     /* only used for T_user !! */
-    char *name_mod; /* name of modul belonging to 'name' */
-    constant *hidden_co;
+    simpletype simpletype; /* basetype of struct constant */
+    char *name;            /* only used for T_user !! */
+    char *name_mod;        /* name of modul belonging to 'name' */
+    constant *hidden_co;   /* pointer to constant of pointers */
 } struc_constant;
 
 /* access macros for structural constant type */
@@ -140,6 +184,13 @@ typedef struct {
 #define SCO_MOD(n) (n->name_mod)
 #define SCO_HIDDENCO(n) (n->hidden_co)
 
+/* functions to handle StructCO constants */
+static struc_constant *SSACFExpr2StructConstant (node *expr);
+static struc_constant *SSACFArray2StructConstant (node *expr);
+static struc_constant *SSACFScalar2StructConstant (node *expr);
+static node *SSACFDupStructConstant2Expr (struc_constant *struc_co);
+static struc_constant *SCOFreeStructConstant (struc_constant *struc_co);
+
 /* local used helper functions */
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *SSACFids (ids *arg_ids, node *arg_info);
@@ -147,11 +198,6 @@ static node *SSACFPropagateConstants2Args (node *arg_chain, node *param_chain);
 static ids *SSACFSetSSAASSIGN (ids *chain, node *assign);
 static node **SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args);
-static struc_constant *SSACFExpr2StructConstant (node *expr);
-static struc_constant *SSACFArray2StructConstant (node *expr);
-static struc_constant *SSACFScalar2StructConstant (node *expr);
-static node *SSACFDupStructConstant2Expr (struc_constant *struc_co);
-static struc_constant *SCOFreeStructConstant (struc_constant *struc_co);
 static shape *SSACFGetShapeOfExpr (node *expr);
 
 /*
@@ -171,10 +217,13 @@ static constant *SSACFShape (node *expr);
 /* implements: psi, reshape, take, drop */
 static node *SSACFStructOpWrapper (prf op, constant *idx, node *expr);
 
-/* implements arithmetical for add, sub, mul, div, and, or */
+/* implements: arithmetical opt. for add, sub, mul, div, and, or */
 static node *SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr);
 
-/* some primitive functions that allows special optimizations in gerneric cases */
+/*
+ * some primitive functions that allows special optimizations in more
+ * generic cases
+ */
 static node *SSACFEq (node *expr1, node *expr2);
 static node *SSACFSub (node *expr1, node *expr2);
 static node *SSACFModarray (node *a, constant *idx, node *elem);
@@ -192,7 +241,7 @@ static node *SSACFPsi (node *idx_expr, node *array_expr);
  *   function, this functions does a parallel traversal of the function args
  *   (stored in arg_chain) and the calling parameters (stored param_chain)
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
 {
@@ -209,7 +258,7 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
             AVIS_SSACONST (ARG_AVIS (arg)) = COAST2Constant (EXPRS_EXPR (param_chain));
         }
 
-        /* traverse both chains */
+        /* traverse to next element in both chains */
         arg = ARG_NEXT (arg);
         param_chain = EXPRS_NEXT (param_chain);
     }
@@ -227,7 +276,7 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
  *   the backrefs may be wrong after Inlining, because DupTree is not able
  *   to correct them when dubbing an assignment chain only.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 SSACFSetSSAASSIGN (ids *chain, node *assign)
 {
@@ -264,7 +313,7 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
  *   fills an pointer array of len max_args with the args from an exprs chain
  *   or NULL if there are no more args.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node **
 SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
 {
@@ -289,12 +338,15 @@ SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
 /******************************************************************************
  *
  * function:
- *   constant **SSACFArgs2Const(constant **co_array, node **arg_expr, int max_args)
+ *   constant **SSACFArgs2Const(constant **co_array,
+ *                              node **arg_expr,
+ *                              int max_args)
  *
  * description:
- *   converts all expr nodes to constant node and store them in an array.
+ *   converts all expr nodes to constant node and store them in an array of
+ *   constants (co_array).
  *
- ******************************************************************************/
+ *****************************************************************************/
 static constant **
 SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
 {
@@ -322,7 +374,7 @@ SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
  *   tries computes the dimension of an identifier and returns it as
  *   constant for later usage or NULL if the dimension is not known.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static constant *
 SSACFDim (node *expr)
 {
@@ -352,8 +404,9 @@ SSACFDim (node *expr)
  * description:
  *   computes the shape of a given identifier. returns the shape as expression
  *   or NULL if no constant shape can be infered.
+ *   for userdefined types the result is the shape in simpletype elements.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static constant *
 SSACFShape (node *expr)
 {
@@ -391,8 +444,11 @@ SSACFShape (node *expr)
  *
  * description:
  *   computes structural ops on array expressions with constant index vector.
+ *   the array elements are stored as pointer in a constant of type T_hidden.
+ *   the structural operation is performed on this hidden constant and
+ *   the resulting elements are copied in a new result array.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFStructOpWrapper (prf op, constant *idx, node *expr)
 {
@@ -402,11 +458,12 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
 
     DBUG_ENTER ("SSACFStructOpWrapper");
 
+    /* tries to convert expr(especially arrays) into a structual constant */
     struc_co = SSACFExpr2StructConstant (expr);
 
     /* given expressession could be converted to struc_constant */
     if (struc_co != NULL) {
-        /* save internal hidden constant */
+        /* save internal hidden input constant */
         old_hidden_co = SCO_HIDDENCO (struc_co);
 
         /* perform struc-op on hidden constant */
@@ -430,14 +487,16 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
         default:
             DBUG_ASSERT ((FALSE), "primitive function on arrays not implemented");
         }
+
         /* return modified array */
         result = SSACFDupStructConstant2Expr (struc_co);
 
-        DBUG_PRINT ("SSACFOPT",
-                    ("op %s computed on structural constant", prf_string[op]));
+        DBUG_PRINT ("SSACF", ("op %s computed on structural constant", prf_string[op]));
+
+        /* free tmp. struct constant */
         struc_co = SCOFreeStructConstant (struc_co);
 
-        /* free internal constant */
+        /* free internal input constant */
         old_hidden_co = COFreeConstant (old_hidden_co);
     } else {
         result = NULL;
@@ -455,9 +514,14 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
  *   builds an constant of type T_hidden from an array or scalar in the AST.
  *   this allows to operate on structural constants like full constants.
  *
- *   this should later be integrated in the constants module.
+ *   this should later be integrated in a more powerful constants module.
  *
- ******************************************************************************/
+ *   be careful:
+ *     the created structural constant contain pointers to elements of the
+ *     array, so you MUST NEVER FREE the original expression before you
+ *     have dupped the structural constant into a array!
+ *
+ *****************************************************************************/
 static struc_constant *
 SSACFExpr2StructConstant (node *expr)
 {
@@ -468,7 +532,7 @@ SSACFExpr2StructConstant (node *expr)
     struc_co = NULL;
 
     if (NODE_TYPE (expr) == N_array) {
-        /* is this expression an array */
+        /* this expression is an array */
         struc_co = SSACFArray2StructConstant (expr);
 
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
@@ -496,7 +560,7 @@ SSACFExpr2StructConstant (node *expr)
  *   a structural constant. To convert an array to a structural constant
  *   all array elements must be scalars!
  *
- ******************************************************************************/
+ *****************************************************************************/
 static struc_constant *
 SSACFArray2StructConstant (node *expr)
 {
@@ -561,7 +625,7 @@ SSACFArray2StructConstant (node *expr)
 
         /* create struc_constant */
         struc_co = (struc_constant *)Malloc (sizeof (struc_constant));
-        SCO_BASETYPE (struc_co) = TYPES_BASETYPE (atype);
+        SCO_BASETYPE (struc_co) = GetBasetype (atype);
         SCO_NAME (struc_co) = TYPES_NAME (atype);
         SCO_MOD (struc_co) = TYPES_MOD (atype);
         SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
@@ -603,7 +667,7 @@ SSACFScalar2StructConstant (node *expr)
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
         || ((nt == N_id)
             && (GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)))) == 0))) {
-        /* create structural constant od scalar */
+        /* create structural constant of scalar */
         ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
 
         /* alloc hidden vector */
@@ -635,9 +699,9 @@ SSACFScalar2StructConstant (node *expr)
  * description:
  *   builds an array of the given strucural constant and duplicate
  *   elements in it. therfore the original array must not be freed before
- *   the target array is build up from the elements of the original.
+ *   the target array is build up from the elements of the original array.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFDupStructConstant2Expr (struc_constant *struc_co)
 {
@@ -649,7 +713,7 @@ SSACFDupStructConstant2Expr (struc_constant *struc_co)
 
     DBUG_ENTER ("SSACFDupStructConstant2Expr");
 
-    /* build up elems chain */
+    /* build up elements chain */
     node_vec = (node **)COGetDataVec (SCO_HIDDENCO (struc_co));
 
     if (COGetDim (SCO_HIDDENCO (struc_co)) == 0) {
@@ -669,8 +733,7 @@ SSACFDupStructConstant2Expr (struc_constant *struc_co)
         ARRAY_TYPE (expr)
           = MakeTypes (SCO_BASETYPE (struc_co), COGetDim (SCO_HIDDENCO (struc_co)),
                        SHShape2OldShpseg (COGetShape (SCO_HIDDENCO (struc_co))),
-                       StringCopy (SCO_NAME (struc_co)),
-                       StringCopy (SCO_NAME (struc_co)));
+                       StringCopy (SCO_NAME (struc_co)), SCO_MOD (struc_co));
     }
     DBUG_RETURN (expr);
 }
@@ -683,7 +746,7 @@ SSACFDupStructConstant2Expr (struc_constant *struc_co)
  * description:
  *   frees the struc_constant data structure and the internal constant element.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static struc_constant *
 SCOFreeStructConstant (struc_constant *struc_co)
 {
@@ -708,10 +771,10 @@ SCOFreeStructConstant (struc_constant *struc_co)
  *                              node **arg_expr)
  *
  * description:
- * implements arithmetical operations for add, sub, mul, div, and, or on one
+ * implements arithmetical optimizations for add, sub, mul, div, and, or on one
  * constant arg and one other expression.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 {
@@ -724,7 +787,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 
     DBUG_ENTER ("SSACFArithmOpWrapper");
 
-    /* get constant and expression */
+    /* get constant and expression, maybe we have to swap the arguments */
     if (arg_co[0] != NULL) {
         swap = FALSE;
         co = arg_co[0];
@@ -833,7 +896,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
  *   try to calculate the shape of the given expression. this can be a
  *   identifier or an array node. returns NULL if no shape can be computed.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static shape *
 SSACFGetShapeOfExpr (node *expr)
 {
@@ -871,7 +934,7 @@ SSACFGetShapeOfExpr (node *expr)
  *   try to get the basetype of the given expression. this can be a
  *   identifier or an array node. returns NULL if no type can be computed.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static simpletype
 SSACFGetBasetypeOfExpr (node *expr)
 {
@@ -882,13 +945,13 @@ SSACFGetBasetypeOfExpr (node *expr)
     switch (NODE_TYPE (expr)) {
     case N_id:
         /* get basetype from type info */
-        stype = TYPES_BASETYPE (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        stype = GetBasetype (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
         break;
 
     case N_array:
         /* get shape from array type attribute */
         DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
-        stype = TYPES_BASETYPE (ARRAY_TYPE (expr));
+        stype = GetBasetype (ARRAY_TYPE (expr));
         break;
 
     default:
@@ -906,7 +969,7 @@ SSACFGetBasetypeOfExpr (node *expr)
  * description:
  *   implements the F_eq primitive function for two expressions via a cmptree.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFEq (node *expr1, node *expr2)
 {
@@ -917,7 +980,7 @@ SSACFEq (node *expr1, node *expr2)
     if (CompareTree (expr1, expr2) == CMPT_EQ) {
         result = MakeBool (TRUE);
     } else {
-        result = NULL; /* no concrete answer for compare operation possible */
+        result = NULL; /* no concrete answer for equal operation possible */
     }
 
     DBUG_RETURN (result);
@@ -931,7 +994,7 @@ SSACFEq (node *expr1, node *expr2)
  * description:
  *   implements special optimization for x - x -> 0
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFSub (node *expr1, node *expr2)
 {
@@ -963,7 +1026,9 @@ SSACFSub (node *expr1, node *expr2)
  *
  * description:
  *   implement Modarray on gerneric structural constant arrays with given
- *   full constant index vector.
+ *   full constant index vector. This works like SSACFStructOpWrapper() but
+ *   has been moved to a separate function because of different function
+ *   signature.
  *
  ******************************************************************************/
 static node *
@@ -991,7 +1056,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
         /* return modified array */
         result = SSACFDupStructConstant2Expr (struc_a);
 
-        DBUG_PRINT ("SSACFOPT", ("op computed on structural constant"));
+        DBUG_PRINT ("SSACF", ("op computed on structural constant"));
 
         /* free internal constant */
         old_hidden_co = COFreeConstant (old_hidden_co);
@@ -1031,7 +1096,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
  *
  *   maybe this allows to eliminate some arrays at all.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACFPsi (node *idx_expr, node *array_expr)
 {
@@ -1055,7 +1120,9 @@ SSACFPsi (node *idx_expr, node *array_expr)
         && (AVIS_SSAASSIGN (ID_AVIS (array_expr)) != NULL)
         && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == N_prf)
         && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == F_modarray)) {
+
         prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
+
         /* get parameter of modarray */
         DBUG_ASSERT ((PRF_ARGS (prf_mod) != NULL), "missing 1. arg for modarray");
         mod_arr_expr = EXPRS_EXPR (PRF_ARGS (prf_mod));
@@ -1075,20 +1142,24 @@ SSACFPsi (node *idx_expr, node *array_expr)
         if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
             || ((idx_co != NULL) && (mod_idx_co != NULL)
                 && (COCompareConstants (idx_co, mod_idx_co)))) {
-            /* idx vectors in psi and modarray are equal - replace psi with element */
+            /*
+             * idx vectors in psi and modarray are equal
+             * - replace psi() with element
+             */
             result = DupTree (mod_elem_expr);
 
-            DBUG_PRINT ("SSACFOPT", ("psi-modarray optimization done"));
+            DBUG_PRINT ("SSACF", ("psi-modarray optimization done"));
+
         } else {
             /* index vector does not match, but if both are constant, we can try
              * to look up futher in a modarray chain to find a matching one.
              * to avoid wrong decisions we need constant vectors in both idx
-             * expressions
+             * expressions.
              */
             if ((idx_co != NULL) && (mod_idx_co != NULL)) {
                 result = SSACFPsi (idx_expr, mod_arr_expr);
             } else {
-                /* no further analysis possible */
+                /* no further analysis possible, because of non constant idx expr */
                 result = NULL;
             }
         }
@@ -1105,7 +1176,7 @@ SSACFPsi (node *idx_expr, node *array_expr)
     DBUG_RETURN (result);
 }
 
-/* traversal functions */
+/* traversal functions for SSACF traversal*/
 /******************************************************************************
  *
  * function:
@@ -1113,10 +1184,10 @@ SSACFPsi (node *idx_expr, node *array_expr)
  *
  * description:
  *   traverses args and block in this order.
- *   the args are only traversed in do/while special functions to remove
+ *   the args are only traversed in loop special functions to remove
  *   propagated constants from loop dependend arguments.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFfundef (node *arg_node, node *arg_info)
 {
@@ -1146,20 +1217,13 @@ SSACFfundef (node *arg_node, node *arg_info)
  *   node* SSACFblock(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses vardecs and instructions in this order.
+ *   traverses instructions only
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSACFblock");
-
-    /*
-    if (BLOCK_VARDEC(arg_node) != NULL) {
-      BLOCK_VARDEC(arg_node) = Trav(BLOCK_VARDEC(arg_node), arg_info);
-    }
-    */
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
@@ -1174,17 +1238,16 @@ SSACFblock (node *arg_node, node *arg_info)
  *   node* SSACFarg(node *arg_node, node *arg_info)
  *
  * description:
- *   checks if only loop invariant arguments are constant (if special do-loop
- *   or while-loop fundef).
+ *   checks if only loop invariant arguments are constant
+ *   SSACFarg is only called for  special loop fundefs
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSACFarg");
 
-    /* constants for non loop invarinat args are useless */
+    /* constants for non loop invariant args are useless */
     if ((!(AVIS_SSALPINV (ARG_AVIS (arg_node)))
          && (AVIS_SSACONST (ARG_AVIS (arg_node)) != NULL))) {
         /* free constant */
@@ -1202,33 +1265,14 @@ SSACFarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFvardec(node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-node *
-SSACFvardec (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSACFvardec");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node* SSACFassign(node *arg_node, node *arg_info)
  *
  * description:
  *   top-down traversal of assignments. in bottom-up return traversal remove
  *   marked assignment-nodes from chain and insert moved assignments (e.g.
- *   from constant conditionals)
+ *   from constant, inlined conditionals)
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFassign (node *arg_node, node *arg_info)
 {
@@ -1238,7 +1282,7 @@ SSACFassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SSACFassign");
 
-    /* stack currect assignment */
+    /* stack current assignment */
     old_assign = INFO_SSACF_ASSIGN (arg_info);
 
     /* init flags for possible code removal/movement */
@@ -1252,7 +1296,7 @@ SSACFassign (node *arg_node, node *arg_info)
     /* restore old assignment */
     INFO_SSACF_ASSIGN (arg_info) = old_assign;
 
-    /* save removal flag for bottom-up traversal */
+    /* save removal flag for modifications in bottom-up traversal */
     remove_assignment = INFO_SSACF_REMASSIGN (arg_info);
 
     /* integrate post assignments after current assignment */
@@ -1283,11 +1327,12 @@ SSACFassign (node *arg_node, node *arg_info)
  *   node* SSACFcond(node *arg_node, node *arg_info)
  *
  * description:
- *   checks for constant conditional - removes corresponding of the
- *   conditional.
+ *   checks for constant conditional - removes corresponding counterpart
+ *   of the conditional.
+ *
  *   traverses conditional and optional then-part, else-part
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFcond (node *arg_node, node *arg_info)
 {
@@ -1310,8 +1355,9 @@ SSACFcond (node *arg_node, node *arg_info)
     if (NODE_TYPE (COND_COND (arg_node)) == N_bool) {
         if (BOOL_VAL (COND_COND (arg_node)) == TRUE) {
             DBUG_PRINT ("SSACF",
-                        ("found condition with condition == true, select then part"));
-            /* select then part */
+                        ("found condition with condition==true, select then part"));
+
+            /* select then-part for later insertion in assignment chain */
             INFO_SSACF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
 
             if (NODE_TYPE (INFO_SSACF_POSTASSIGN (arg_info)) == N_empty) {
@@ -1327,7 +1373,9 @@ SSACFcond (node *arg_node, node *arg_info)
         } else {
             /* select else part */
             DBUG_PRINT ("SSACF",
-                        ("found condition with condition == false, select else part"));
+                        ("found condition with condition==false, select else part"));
+
+            /* select else-part for later insertion in assignment chain */
             INFO_SSACF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
 
             if (NODE_TYPE (INFO_SSACF_POSTASSIGN (arg_info)) == N_empty) {
@@ -1361,10 +1409,11 @@ SSACFcond (node *arg_node, node *arg_info)
                 || (FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) == ST_whilefun))) {
             WARN (NODE_LINE (arg_node),
                   ("infinite loop detected, program may not terminate"));
-            /* ex special function cannot be inlined */
+
+            /* ex special function cannot be inlined and is now a regular one */
             FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_regular;
         } else {
-            /* ex special function can be simply inlined */
+            /* ex special function can be simply inlined in calling context */
             INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
         }
 
@@ -1392,10 +1441,9 @@ SSACFcond (node *arg_node, node *arg_info)
  *   node* SSACFreturn(node *arg_node, node *arg_info)
  *
  * description:
- *   do NOT substitute identifiers in return statement with their values!
+ *   do NOT substitute identifiers in return statement with their value!
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFreturn (node *arg_node, node *arg_info)
 {
@@ -1421,7 +1469,7 @@ SSACFreturn (node *arg_node, node *arg_info)
  *   if constant folding has eliminated the condtional in a special function
  *   this function can be inlined here, because it is no longer a special one.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFlet (node *arg_node, node *arg_info)
 {
@@ -1433,13 +1481,13 @@ SSACFlet (node *arg_node, node *arg_info)
     /* remove tag SSAPHITARGET if conditional has been removed */
     if ((INFO_SSACF_INLFUNDEF (arg_info) == TRUE)
         && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) != PHIT_NONE)) {
-        /* normal variable */
+        /* phi-copy-target is now normal identifier */
         AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) = PHIT_NONE;
     }
 
     /*
      * left side is not marked as constant -> compute expression
-     * if there is a special function application with mutiple results
+     * if there is a special function application with multiple results
      * the constant results will be removed by dead code removal
      * so this conditions holds here, too. for a general function
      * application there is no constant propagation allowed.
@@ -1453,11 +1501,11 @@ SSACFlet (node *arg_node, node *arg_info)
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
             /*
              * handling for constant back-propagation from special fundefs
-             * traverse ids chain and result chain of the concering return
+             * traverse ids chain and result chain of the concerning return
              * statement. for each constant identifier add a separate
              * assignent and substitute the result identifier in the
              * function application with a dummy identifier (that will be
-             * removed by the dead code removal)
+             * removed by the next dead code removal)
              */
             if (INFO_SSACF_RESULTS (arg_info) != NULL) {
                 LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
@@ -1477,7 +1525,7 @@ SSACFlet (node *arg_node, node *arg_info)
 
                 FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) = ST_regular;
 
-                /* remove this assignment */
+                /* remove this assignment and reset the inline flag */
                 INFO_SSACF_REMASSIGN (arg_info) = TRUE;
 
                 INFO_SSACF_INLINEAP (arg_info) = FALSE;
@@ -1491,7 +1539,10 @@ SSACFlet (node *arg_node, node *arg_info)
             /*
              * do not set SSACONST in phi target variables due to two different
              * definitions of this variable in one conditional.
-             * maybe check for two equal constants?
+             * the phi-copy-target definition in loop then parts are never constant
+             * because they are defined as result of the recursive call.
+             * the assignments in the else part of a tail-end recursive loop can be
+             * used without any problems.
              */
             if (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_COND) {
                 new_co = NULL;
@@ -1530,7 +1581,7 @@ SSACFlet (node *arg_node, node *arg_info)
  * description:
  *   propagate constants and traverse in special function
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFap (node *arg_node, node *arg_info)
 {
@@ -1540,7 +1591,7 @@ SSACFap (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-    /* substitute scalar constants in arguments (if no special function)*/
+    /* substitute scalar constants in arguments (if no special function) */
     if (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node))) {
         INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
     } else {
@@ -1573,7 +1624,7 @@ SSACFap (node *arg_node, node *arg_info)
         INFO_SSACF_MODUL (new_arg_info) = INFO_SSACF_MODUL (arg_info);
         INFO_SSACF_INLFUNDEF (new_arg_info) = FALSE;
 
-        /* propagate constant args to called special function */
+        /* propagate constant args into called special function */
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
           = SSACFPropagateConstants2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                           AP_ARGS (arg_node));
@@ -1614,11 +1665,11 @@ SSACFap (node *arg_node, node *arg_info)
  * description:
  *   substitute identifers with their computed constant
  *   ( only when INFO_SSACF_INSCONST flag is set)
- *   in EXPRS chain of N_ap ARGS ( if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
- *      EXPRS chain of N_prf ARGS (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
+ *   in EXPRS chain of N_ap ARGS (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
+ *      EXPRS chain of N_prf ARGS(if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
  *      EXPRS chain of N_array AELEMS
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFid (node *arg_node, node *arg_info)
 {
@@ -1626,13 +1677,14 @@ SSACFid (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSACFid");
 
     /* check for constant scalar identifier */
-    if ((((TYPES_DIM (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))))
-           == SCALAR)
-          && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
-         || ((TYPES_DIM (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))))
-              > SCALAR)
-             && (INFO_SSACF_INSCONST (arg_info)) == SUBST_SCALAR_AND_ARRAY))
-        && (AVIS_SSACONST (ID_AVIS (arg_node)) != NULL)) {
+    if ((AVIS_SSACONST (ID_AVIS (arg_node)) != NULL)
+        && (((GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))))
+              == SCALAR)
+             && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
+            || ((GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))))
+                 > SCALAR)
+                && (INFO_SSACF_INSCONST (arg_info)) == SUBST_SCALAR_AND_ARRAY))) {
+
         DBUG_PRINT ("SSACF",
                     ("substitue identifier %s through its value",
                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
@@ -1653,7 +1705,6 @@ SSACFid (node *arg_node, node *arg_info)
  *
  * description:
  *   traverses array elements to propagate constant identifiers
- *
  *
  ******************************************************************************/
 node *
@@ -1678,9 +1729,9 @@ SSACFarray (node *arg_node, node *arg_info)
  *
  * description:
  *   evaluates primitive function with constant paramters and substitutes
- *   the function application with its value.
+ *   the function application by its value.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFprf (node *arg_node, node *arg_info)
 {
@@ -1692,15 +1743,17 @@ SSACFprf (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("SSACF", ("evaluating prf %s", prf_string[PRF_PRF (arg_node)]));
 
-    /* substitute constant identifiers in arguments */
+    /* substitute constant identifiers in prf. arguments */
     INFO_SSACF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
     if (PRF_ARGS (arg_node) != NULL) {
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
     }
     INFO_SSACF_INSCONST (arg_info) = FALSE;
 
+    /* look up arguments */
     arg_expr = SSACFGetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
 
+    /* try some constant folding */
     new_node = SSACFFoldPrfExpr (PRF_PRF (arg_node), arg_expr);
 
     if (new_node != NULL) {
@@ -1727,7 +1780,7 @@ SSACFprf (node *arg_node, node *arg_info)
  *   INFO_SSACF_POSTASSIGN) and substituted in the function application with
  *   a new dummy identifier that can be removed by constant folding later.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 SSACFids (ids *arg_ids, node *arg_info)
 {
@@ -1758,6 +1811,7 @@ SSACFids (ids *arg_ids, node *arg_info)
         /* append new copy assignment to then-part block */
         INFO_SSACF_POSTASSIGN (arg_info)
           = AppendAssign (INFO_SSACF_POSTASSIGN (arg_info), assign_let);
+
         /* store definition assignment */
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = assign_let;
 
@@ -1769,6 +1823,8 @@ SSACFids (ids *arg_ids, node *arg_info)
         new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
         BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info))
           = AppendVardec (BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info)), new_vardec);
+
+        AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_SSACF_ASSIGN (arg_info);
 
         /* rename this identifier */
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
@@ -1800,7 +1856,7 @@ SSACFids (ids *arg_ids, node *arg_info)
  *   similar implementation of trav mechanism as used for nodes
  *   here used for ids.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 TravIDS (ids *arg_ids, node *arg_info)
 {
@@ -1822,7 +1878,7 @@ TravIDS (ids *arg_ids, node *arg_info)
  *   with their array representation to allow constant folding on known
  *   shape information.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFNgen (node *arg_node, node *arg_info)
 {
@@ -1854,13 +1910,13 @@ SSACFNgen (node *arg_node, node *arg_info)
  *   node *SSACFFoldPrfExpr(prf op, node **arg_expr)
  *
  * description:
- *   tries to compute the primitive function for the given args.
+ *   try to compute the primitive function for the given args.
  *   args must be a (static) node* array with len PRF_MAX_ARGS.
  *
  * returns:
  *   a computed result node or NULL if no computing is possible.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACFFoldPrfExpr (prf op, node **arg_expr)
 {
@@ -1879,7 +1935,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
     /* fill static arrays with converted constants */
     arg_co = SSACFArgs2Const (arg_co, arg_expr, PRF_MAX_ARGS);
 
-    /* do constant folding on primitive functions */
+    /* do constant folding for selected primitive function */
     switch (op) {
         /* one-argument functions */
     case F_toi:
@@ -2273,8 +2329,7 @@ SSAConstantFolding (node *fundef, node *modul)
                 ("starting constant folding (ssa) in function %s", FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)
-        && (FUNDEF_STATUS (fundef) != ST_whilefun)) {
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
         arg_info = MakeInfo ();
 
         INFO_SSACF_MODUL (arg_info) = modul;
