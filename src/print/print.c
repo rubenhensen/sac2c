@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2002/10/10 11:21:35  sbs
+ * Now, sel applied to other than two args will be printed correctly as well.
+ *
  * Revision 3.122  2002/10/09 02:04:26  dkr
  * PrintNgen(): correct N_Nwithid used now 8-)
  *
@@ -2236,7 +2239,7 @@ PrintPrf (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s (%s)" F_PTR, mdb_nodetype[NODE_TYPE (arg_node)],
                           mdb_prf[prf], arg_node));
 
-    if (prf == F_sel) {
+    if ((prf == F_sel) && (CountExprs (PRF_ARGS (arg_node)) == 2)) {
         /*
          * F_sel is printed with special [] notation:
          * first the array argument is printed, then a leading '[' followed by
