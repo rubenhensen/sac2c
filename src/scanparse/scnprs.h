@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/02 10:00:56  dkr
+ * no changes done
+ *
  * Revision 3.2  2000/11/24 11:57:56  sbs
  * export of yyparse eliminated My_yyparse should be used instead.
  *
@@ -44,17 +47,14 @@
  * Revision 1.1  1994/11/22  13:47:03  sbs
  * Initial revision
  *
- *
  */
 
 /*
  * This file contains external declarations for all functions/global variables
  * provided by the scanner/parser which are used from outside.
- *
  */
 
 #ifndef _scnprs_h
-
 #define _scnprs_h
 
 #include "resource.h"
