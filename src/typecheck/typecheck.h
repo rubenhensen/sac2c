@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/23 16:41:31  sbs
+ * TI made external
+ *
  * Revision 3.3  2000/12/12 11:40:47  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -89,6 +92,7 @@ extern node *TCobjdef (node *arg_node, node *arg_info);
 extern node *TCNcode (node *arg_node, node *arg_info);
 
 extern types *TI_array (node *arg_node, node *arg_info);
+extern types *TI (node *arg_node, node *arg_info);
 
 extern node *Types2Array (types *type, types *res_type);
 extern node *LookupType (char *type_name, char *mod_name, int line);
