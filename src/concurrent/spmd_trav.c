@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 3.5  2001/05/08 12:48:33  dkr
+ * Revision 3.6  2001/05/08 12:49:42  dkr
  * new RC macros used
  *
  * Revision 3.3  2000/12/12 12:12:45  dkr
@@ -9,9 +9,6 @@
  * interpretation of NWITH_IN changed:
  * the LHS of a with-loop assignment is now longer included in
  * NWITH_IN!!!
- *
- * Revision 3.2  2000/12/07 12:57:02  dkr
- * nothing changed
  *
  * Revision 3.1  2000/11/20 18:02:33  sacbase
  * new release made
@@ -36,9 +33,6 @@
  * traversals were needed and added in spmd_trav.
  *
  * Revision 2.5  1999/08/03 11:44:02  jhs
- * Comments.
- *
- * Revision 2.4  1999/07/30 13:48:12  jhs
  * Added comments.
  *
  * Revision 2.3  1999/07/28 13:07:45  jhs
@@ -69,14 +63,13 @@
 #include <stdio.h>
 
 #include "dbug.h"
-
 #include "DataFlowMask.h"
 #include "traverse.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
-
+#include "refcount.h"
 #include "spmd_trav.h"
 
 /******************************************************************************
