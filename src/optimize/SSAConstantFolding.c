@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/04/18 12:55:42  nmw
+ * debug output for OPT traversal added
+ *
  * Revision 1.5  2001/04/18 10:06:17  dkr
  * signature of InlineSingleApplication() modified
  *
@@ -1072,7 +1075,7 @@ SSACFNgen (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSAConstantFolding(node* fundef)
+ *   node* SSAConstantFolding(node* fundef, node* modul)
  *
  * description:
  *   starts the DeadCodeRemoval for the given fundef. This fundef must not be
@@ -1091,8 +1094,8 @@ SSAConstantFolding (node *fundef, node *modul)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "SSAConstantFolding called for non-fundef node");
 
-    DBUG_PRINT ("SSACF",
-                ("starting constant folding in function %s", FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("OPT",
+                ("starting constant folding (ssa) in function %s", FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
     if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2001/04/18 13:00:29  nmw
+ * debug output for OPT traversal added
+ *
  * Revision 1.11  2001/04/05 12:31:32  nmw
  * re-renaming of global objects improved (works for inlined code, too)
  *
@@ -810,6 +813,8 @@ UndoSSATransform (node *modul)
     funtab *old_tab;
 
     DBUG_ENTER ("UndoSSATransform");
+
+    DBUG_PRINT ("OPT", ("starting UNDO ssa transformation"));
 
     arg_info = MakeInfo ();
 

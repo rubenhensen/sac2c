@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2001/04/18 12:55:42  nmw
+ * debug output for OPT traversal added
+ *
  * Revision 1.12  2001/04/17 15:49:43  nmw
  * removal of phi-copy-targets improved (removes both assignments in one traversal)
  *
@@ -949,6 +952,9 @@ SSADeadCodeRemoval (node *fundef, node *modul)
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "SSADeadCodeRemoval called for non-fundef node");
+
+    DBUG_PRINT ("OPT", ("starting dead code removal (ssa) in function %s",
+                        FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
     if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)

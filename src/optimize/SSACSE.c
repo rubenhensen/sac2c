@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2001/04/18 12:55:42  nmw
+ * debug output for OPT traversal added
+ *
  * Revision 1.10  2001/04/02 12:00:09  nmw
  * set INFO_SSACSE_ASSIGN in SSACSEassign
  *
@@ -792,8 +795,8 @@ SSACSE (node *fundef, node *modul)
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "SSACSE called for non-fundef node");
 
-    DBUG_PRINT ("SSACSE", ("starting common subexpression elimination in function %s",
-                           FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("OPT", ("starting common subexpression elimination (ssa) in function %s",
+                        FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
     if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)

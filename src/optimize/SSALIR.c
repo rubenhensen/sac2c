@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/04/18 12:55:42  nmw
+ * debug output for OPT traversal added
+ *
  * Revision 1.8  2001/04/17 15:55:44  nmw
  * move down of expressions implemented (recursion is still buggy)
  *
@@ -944,12 +947,15 @@ SSALIRap (node *arg_node, node *arg_info)
          * if there are new preassigns to this function application
          * traverse them first, to infere loop invariant expressions
          * in this function to move this function application out of this
-         * function
+         * function ##nmw## leads to recursice problem - ignore!
          */
-        if (INFO_SSALIR_PREASSIGN (arg_info) != NULL) {
-            INFO_SSALIR_PREASSIGN (arg_info)
-              = Trav (INFO_SSALIR_PREASSIGN (arg_info), arg_info);
+        /* if (tmp_pre_assigns != NULL) {
+          INFO_SSALIR_PREASSIGN(arg_info)  = NULL;
+          INFO_SSALIR_POSTASSIGN(arg_info) = NULL;
+          tmp_pre_assigns = Trav(tmp_pre_assigns, arg_info);
         }
+        INFO_SSALIR_PREASSIGN(arg_info)  = tmp_pre_assigns;
+        INFO_SSALIR_POSTASSIGN(arg_info) = tmp_post_assigns; */
     } else {
         /* no traversal into a normal fundef */
         DBUG_PRINT ("SSALIR", ("do not traverse in normal fundef %s",
@@ -1625,8 +1631,8 @@ SSALoopInvariantRemoval (node *fundef, node *modul)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "SSALoopInvariantRemoval called for non-fundef node");
 
-    DBUG_PRINT ("SSALIR", ("starting loop independent removal in function %s",
-                           FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("OPT", ("starting loop independent removal (ssa) in function %s",
+                        FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
     if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)
