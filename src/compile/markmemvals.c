@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/07/31 21:29:15  ktr
+ * moved treatment of F_fill, F_accu und F_suballoc into seperate functions.
+ *
  * Revision 1.5  2004/07/28 12:26:24  khf
  * F_accu will be removed in compile.c
  *
@@ -93,6 +96,7 @@
 #include "LookUpTable.h"
 #include "print.h"
 #include "DupTree.h"
+#include "free.h"
 
 /**
  * INFO structure
@@ -198,6 +202,7 @@ MMVfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_EXECUTE ("MMV", PrintNode (arg_node););
+
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
         DBUG_EXECUTE ("MMV", PrintNode (arg_node););
@@ -297,6 +302,156 @@ MMVlet (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVprfFill
+ *
+ *  @brief Adds the current LHS and the MEM-variable into LUT
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MMVprfFill (node *arg_node, info *arg_info)
+{
+    node *temp;
+
+    DBUG_ENTER ("MMVprfFill");
+
+    /*
+     * a = fill( ..., b')
+     *
+     * rename: b' -> b
+     */
+    PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+
+    /*
+     * a = fill( ..., b)
+     *
+     * rename: a -> b
+     */
+    InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                     VARDEC_NAME (ID_VARDEC (PRF_ARG2 (arg_node))));
+
+    InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                     ID_VARDEC (PRF_ARG2 (arg_node)));
+
+    /*
+     * eliminate the fill operation
+     *
+     * b = ...;
+     */
+    temp = PRF_ARG1 (arg_node);
+    PRF_ARG1 (arg_node) = NULL;
+    arg_node = FreeTree (arg_node);
+    arg_node = temp;
+
+    /*
+     * Traverse the new rhs
+     */
+    if (arg_node != NULL) {
+        arg_node = Trav (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVprfAccu
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MMVprfAccu (node *arg_node, info *arg_info)
+{
+    node *withop;
+    ids *ids_assign, *ids_wl;
+
+    DBUG_ENTER ("MMVprfAccu");
+
+    /* A,B = with(iv)
+     *        gen:{
+     *             a = accu( iv);
+     *             ...
+     *             }...
+     *            fold( op1, n1)
+     *            ...
+     *
+     *     rename: a -> A
+     */
+
+    ids_assign = INFO_MMV_LHS (arg_info);
+    ids_wl = INFO_MMV_LHS_WL (arg_info);
+    withop = INFO_MMV_WITHOP (arg_info);
+
+    DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
+
+    while (withop != NULL) {
+        if (NWITHOP_IS_FOLD (withop)) {
+            DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
+            DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+
+            InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (ids_assign),
+                             IDS_NAME (ids_wl));
+
+            InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (ids_assign),
+                             IDS_VARDEC (ids_wl));
+
+            ids_assign = IDS_NEXT (ids_assign);
+        }
+        ids_wl = IDS_NEXT (ids_wl);
+        withop = NWITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVprfSuballoc
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MMVprfSuballoc (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVprfSuballoc");
+
+    /*
+     * a = suballoc( A, iv)
+     *
+     * 1. remove iv
+     * => a = suballoc( A);
+     */
+    PRF_EXPRS2 (arg_node) = FreeTree (PRF_EXPRS2 (arg_node));
+
+    /*
+     * rename RHS
+     */
+    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+
+    /*
+     *
+     */
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVprf
  *
  *  @brief Adds the current LHS and the MEM-variable into LUT if this
@@ -313,76 +468,22 @@ MMVlet (node *arg_node, info *arg_info)
 node *
 MMVprf (node *arg_node, info *arg_info)
 {
-    node *temp, *withop;
-    ids *ids_assign, *ids_wl;
-
     DBUG_ENTER ("MMVprf");
 
-    if (PRF_PRF (arg_node) == F_fill) {
-        /*
-         * a = fill( ..., b)
-         *
-         * rename: a -> b
-         */
-        InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                         VARDEC_NAME (ID_VARDEC (PRF_ARG2 (arg_node))));
+    switch (PRF_PRF (arg_node)) {
+    case F_fill:
+        arg_node = MMVprfFill (arg_node, arg_info);
+        break;
 
-        InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
-                         ID_VARDEC (PRF_ARG2 (arg_node)));
+    case F_accu:
+        arg_node = MMVprfAccu (arg_node, arg_info);
+        break;
 
-        /*
-         * eliminate the fill operation
-         *
-         * b = ...;
-         */
-        temp = PRF_ARG1 (arg_node);
-        PRF_ARG1 (arg_node) = NULL;
-        arg_node = FreeTree (arg_node);
-        arg_node = temp;
+    case F_suballoc:
+        arg_node = MMVprfSuballoc (arg_node, arg_info);
+        break;
 
-        /*
-         * Traverse the new rhs
-         */
-        if (arg_node != NULL) {
-            arg_node = Trav (arg_node, arg_info);
-        }
-    } else if (PRF_PRF (arg_node) == F_accu) {
-
-        /* A,B = with(iv)
-         *        gen:{
-         *             a = accu( iv);
-         *             ...
-         *             }...
-         *            fold( op1, n1)
-         *            ...
-         *
-         *     rename: a -> A
-         */
-
-        ids_assign = INFO_MMV_LHS (arg_info);
-        ids_wl = INFO_MMV_LHS_WL (arg_info);
-        withop = INFO_MMV_WITHOP (arg_info);
-
-        DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
-
-        while (withop != NULL) {
-            if (NWITHOP_IS_FOLD (withop)) {
-                DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
-                DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
-
-                InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (ids_assign),
-                                 IDS_NAME (ids_wl));
-
-                InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (ids_assign),
-                                 IDS_VARDEC (ids_wl));
-
-                ids_assign = IDS_NEXT (ids_assign);
-            }
-            ids_wl = IDS_NEXT (ids_wl);
-            withop = NWITHOP_NEXT (withop);
-        }
-
-    } else {
+    default:
         if (PRF_ARGS (arg_node) != NULL) {
             PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         }
@@ -518,6 +619,7 @@ MMVwithop (node *arg_node, info *arg_info)
                              IDS_VARDEC (INFO_MMV_LHS (arg_info)),
                              ID_VARDEC (NWITHOP_MEM (arg_node)));
         }
+
         break;
 
     case WO_modarray:
