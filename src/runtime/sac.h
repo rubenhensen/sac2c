@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/07 08:26:08  cg
+ * sac_rc.h renamed to sac_std.h
+ *
  * Revision 1.4  1998/05/07 08:17:51  cg
  * SAC header files converted to new naming conventions.
  *
@@ -37,7 +40,7 @@
 #include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_bool.h"
-#include "sac_rc.h"
+#include "sac_std.h"
 #include "sac_idx.h"
 #include "sac_prf.h"
 #include "sac_mt.h"
