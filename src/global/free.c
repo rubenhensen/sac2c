@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/04/10 02:23:24  dkr
+ * removed a typo in FreeWLseg
+ *
  * Revision 1.46  1998/04/10 02:21:57  dkr
  * changed FreeWLseg
  *
@@ -1748,8 +1751,7 @@ FreeWLseg (node *arg_node, node *arg_info)
     if (WLSEG_UBV (arg_node) != NULL) {
         FREE (WLSEG_UBV (arg_node));
     }
-    IF (WLSEG_SV (arg_node) != NULL)
-    {
+    if (WLSEG_SV (arg_node) != NULL) {
         FREE (WLSEG_SV (arg_node));
     }
 
