@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/08/01 18:44:21  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.12  2003/11/18 17:12:58  dkr
  * no changes done
  *
@@ -52,6 +56,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -62,8 +68,56 @@
 #include "compare_tree.h"
 #include "typecheck.h"
 
-static ids *TravIDS (ids *arg_ids, node *arg_info);
-static ids *CMPTids (ids *arg_ids, node *arg_info);
+/*
+ * INFO structure
+ */
+struct INFO {
+    cmptree_t eqflag;
+    node *tree;
+    LUT_t lut;
+    int writelut;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_CMPT_EQFLAG(n) (n->eqflag)
+#define INFO_CMPT_TREE(n) (n->tree)
+#define INFO_CMPT_LUT(n) (n->lut)
+#define INFO_CMPT_WRITELUT(n) (n->writelut)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CMPT_EQFLAG (result) = CMPT_UKNWN;
+    INFO_CMPT_TREE (result) = NULL;
+    INFO_CMPT_LUT (result) = NULL;
+    INFO_CMPT_WRITELUT (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
+static ids *TravIDS (ids *arg_ids, info *arg_info);
+static ids *CMPTids (ids *arg_ids, info *arg_info);
 
 /*
  * flag = CMP_TEST( flag, testcond ):
@@ -76,14 +130,14 @@ static ids *CMPTids (ids *arg_ids, node *arg_info);
 /******************************************************************************
  *
  * function:
- *   node* CMPTnum(node *arg_node, node *arg_info)
+ *   node* CMPTnum(node *arg_node, info *arg_info)
  *
  * description:
  *   compares value of num node
  *
  ******************************************************************************/
 node *
-CMPTnum (node *arg_node, node *arg_info)
+CMPTnum (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTnum");
 
@@ -97,14 +151,14 @@ CMPTnum (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTchar(node *arg_node, node *arg_info)
+ *   node* CMPTchar(node *arg_node, info *arg_info)
  *
  * description:
  *   compares value of char node
  *
  ******************************************************************************/
 node *
-CMPTchar (node *arg_node, node *arg_info)
+CMPTchar (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTchar");
 
@@ -118,14 +172,14 @@ CMPTchar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTbool(node *arg_node, node *arg_info)
+ *   node* CMPTbool(node *arg_node, info *arg_info)
  *
  * description:
  *   compares value of bool node
  *
  ******************************************************************************/
 node *
-CMPTbool (node *arg_node, node *arg_info)
+CMPTbool (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTbool");
 
@@ -139,14 +193,14 @@ CMPTbool (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTstr(node *arg_node, node *arg_info)
+ *   node* CMPTstr(node *arg_node, info *arg_info)
  *
  * description:
  *   compares string of str node
  *
  ******************************************************************************/
 node *
-CMPTstr (node *arg_node, node *arg_info)
+CMPTstr (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTstr");
 
@@ -161,14 +215,14 @@ CMPTstr (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTid(node *arg_node, node *arg_info)
+ *   node* CMPTid(node *arg_node, info *arg_info)
  *
  * description:
  *   compares avis link of id node
  *
  ******************************************************************************/
 node *
-CMPTid (node *arg_node, node *arg_info)
+CMPTid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTid");
 
@@ -192,14 +246,14 @@ CMPTid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTfloat(node *arg_node, node *arg_info)
+ *   node* CMPTfloat(node *arg_node, info *arg_info)
  *
  * description:
  *   compares value of float node
  *
  ******************************************************************************/
 node *
-CMPTfloat (node *arg_node, node *arg_info)
+CMPTfloat (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTfloat");
 
@@ -213,14 +267,14 @@ CMPTfloat (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTdouble(node *arg_node, node *arg_info)
+ *   node* CMPTdouble(node *arg_node, info *arg_info)
  *
  * description:
  *   compares value of double node
  *
  ******************************************************************************/
 node *
-CMPTdouble (node *arg_node, node *arg_info)
+CMPTdouble (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTdouble");
 
@@ -234,14 +288,14 @@ CMPTdouble (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTarray(node *arg_node, node *arg_info)
+ *   node* CMPTarray(node *arg_node, info *arg_info)
  *
  * description:
  *   compares two arrays
  *
  ******************************************************************************/
 node *
-CMPTarray (node *arg_node, node *arg_info)
+CMPTarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTarray");
 
@@ -260,7 +314,7 @@ CMPTarray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTlet(node *arg_node, node *arg_info)
+ *   node* CMPTlet(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses IDS chain and expr
@@ -268,7 +322,7 @@ CMPTarray (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CMPTlet (node *arg_node, node *arg_info)
+CMPTlet (node *arg_node, info *arg_info)
 {
     node *let_node2;
 
@@ -298,14 +352,14 @@ CMPTlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTprf(node *arg_node, node *arg_info)
+ *   node* CMPTprf(node *arg_node, info *arg_info)
  *
  * description:
  *   check for equal primitive function and equal args.
  *
  ******************************************************************************/
 node *
-CMPTprf (node *arg_node, node *arg_info)
+CMPTprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTprf");
 
@@ -322,14 +376,14 @@ CMPTprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTap(node *arg_node, node *arg_info)
+ *   node* CMPTap(node *arg_node, info *arg_info)
  *
  * description:
  *   check for equal called function and equal args
  *
  ******************************************************************************/
 node *
-CMPTap (node *arg_node, node *arg_info)
+CMPTap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTap");
 
@@ -346,14 +400,14 @@ CMPTap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNwithid(node *arg_node, node *arg_info)
+ *   node* CMPTNwithid(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse ids chains (VEC and IDS)
  *
  ******************************************************************************/
 node *
-CMPTNwithid (node *arg_node, node *arg_info)
+CMPTNwithid (node *arg_node, info *arg_info)
 {
     node *withid_node2;
 
@@ -386,14 +440,14 @@ CMPTNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNgenerator(node *arg_node, node *arg_info)
+ *   node* CMPTNgenerator(node *arg_node, info *arg_info)
  *
  * description:
  *   checks all attributes and traverses sons
  *
  ******************************************************************************/
 node *
-CMPTNgenerator (node *arg_node, node *arg_info)
+CMPTNgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTNgenerator");
 
@@ -422,14 +476,14 @@ CMPTNgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNwithop(node *arg_node, node *arg_info)
+ *   node* CMPTNwithop(node *arg_node, info *arg_info)
  *
  * description:
  *
  *
  ******************************************************************************/
 node *
-CMPTNwithop (node *arg_node, node *arg_info)
+CMPTNwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTNwithop");
 
@@ -458,14 +512,14 @@ CMPTNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNcode(node *arg_node, node *arg_info)
+ *   node* CMPTNcode(node *arg_node, info *arg_info)
  *
  * description:
  *
  *
  ******************************************************************************/
 node *
-CMPTNcode (node *arg_node, node *arg_info)
+CMPTNcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTNcode");
 
@@ -484,7 +538,7 @@ CMPTNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTunknown(node *arg_node, node *arg_info)
+ *   node* CMPTunknown(node *arg_node, info *arg_info)
  *
  * description:
  *   dummy function for all node types with missing implementation.
@@ -492,7 +546,7 @@ CMPTNcode (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CMPTunknown (node *arg_node, node *arg_info)
+CMPTunknown (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTunknown");
 
@@ -504,7 +558,7 @@ CMPTunknown (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *CMPTids(ids *arg_ids, node *arg_info)
+ *   static ids *CMPTids(ids *arg_ids, info *arg_info)
  *
  * description:
  *   there are some ugly casts between node* and ids* to handle ids chain
@@ -512,7 +566,7 @@ CMPTunknown (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 static ids *
-CMPTids (ids *arg_ids, node *arg_info)
+CMPTids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("CMPTids");
 
@@ -554,7 +608,7 @@ CMPTids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
+ *   ids *TravIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *   similar implementation of trav mechanism as used for nodes
@@ -562,7 +616,7 @@ CMPTids (ids *arg_ids, node *arg_info)
  *
  ******************************************************************************/
 static ids *
-TravIDS (ids *arg_ids, node *arg_info)
+TravIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravIDS");
 
@@ -575,7 +629,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CMPTTravSons(node *arg_node, node *arg_info)
+ *   node *CMPTTravSons(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses all sons of the given node and sets the corresponding
@@ -587,7 +641,7 @@ TravIDS (ids *arg_ids, node *arg_info)
  *
  ******************************************************************************/
 node *
-CMPTTravSons (node *arg_node, node *arg_info)
+CMPTTravSons (node *arg_node, info *arg_info)
 {
     node *arg_node2;
     int i;
@@ -622,7 +676,7 @@ CMPTTravSons (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTnodeType(node *arg_node, node *arg_info)
+ *   node* CMPTnodeType(node *arg_node, info *arg_info)
  *
  * description:
  *   This PRE-Traversal function checks both trees for equal node types
@@ -630,7 +684,7 @@ CMPTTravSons (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-CMPTnodeType (node *arg_node, node *arg_info)
+CMPTnodeType (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTnodeType");
 
@@ -668,7 +722,7 @@ cmptree_t
 CompareTree (node *tree1, node *tree2)
 {
     cmptree_t result;
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("CompareTree");
@@ -706,7 +760,7 @@ CompareTree (node *tree1, node *tree2)
         result = INFO_CMPT_EQFLAG (arg_info);
 
         act_tab = old_tab;
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (result);
@@ -736,7 +790,7 @@ cmptree_t
 CompareTreeLUT (node *tree1, node *tree2, LUT_t lut)
 {
     cmptree_t result;
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("CompareTree");
@@ -774,7 +828,7 @@ CompareTreeLUT (node *tree1, node *tree2, LUT_t lut)
         result = INFO_CMPT_EQFLAG (arg_info);
 
         act_tab = old_tab;
-        arg_info = FreeTree (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (result);

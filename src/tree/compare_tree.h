@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/01 18:44:21  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.6  2003/01/28 18:16:22  ktr
  * CompareTreeLUT added to compare_tree
  *
@@ -51,23 +55,23 @@
 extern cmptree_t CompareTreeLUT (node *tree1, node *tree2, LUT_t lut);
 extern cmptree_t CompareTree (node *tree1, node *tree2);
 
-extern node *CMPTnum (node *arg_node, node *arg_info);
-extern node *CMPTchar (node *arg_node, node *arg_info);
-extern node *CMPTbool (node *arg_node, node *arg_info);
-extern node *CMPTstr (node *arg_node, node *arg_info);
-extern node *CMPTid (node *arg_node, node *arg_info);
-extern node *CMPTfloat (node *arg_node, node *arg_info);
-extern node *CMPTdouble (node *arg_node, node *arg_info);
-extern node *CMPTarray (node *arg_node, node *arg_info);
-extern node *CMPTlet (node *arg_node, node *arg_info);
-extern node *CMPTprf (node *arg_node, node *arg_info);
-extern node *CMPTap (node *arg_node, node *arg_info);
-extern node *CMPTNwithid (node *arg_node, node *arg_info);
-extern node *CMPTNgenerator (node *arg_node, node *arg_info);
-extern node *CMPTNwithop (node *arg_node, node *arg_info);
-extern node *CMPTNcode (node *arg_node, node *arg_info);
-extern node *CMPTunknown (node *arg_node, node *arg_info);
-extern node *CMPTTravSons (node *arg_node, node *arg_info);
-extern node *CMPTnodeType (node *arg_node, node *arg_info);
+extern node *CMPTnum (node *arg_node, info *arg_info);
+extern node *CMPTchar (node *arg_node, info *arg_info);
+extern node *CMPTbool (node *arg_node, info *arg_info);
+extern node *CMPTstr (node *arg_node, info *arg_info);
+extern node *CMPTid (node *arg_node, info *arg_info);
+extern node *CMPTfloat (node *arg_node, info *arg_info);
+extern node *CMPTdouble (node *arg_node, info *arg_info);
+extern node *CMPTarray (node *arg_node, info *arg_info);
+extern node *CMPTlet (node *arg_node, info *arg_info);
+extern node *CMPTprf (node *arg_node, info *arg_info);
+extern node *CMPTap (node *arg_node, info *arg_info);
+extern node *CMPTNwithid (node *arg_node, info *arg_info);
+extern node *CMPTNgenerator (node *arg_node, info *arg_info);
+extern node *CMPTNwithop (node *arg_node, info *arg_info);
+extern node *CMPTNcode (node *arg_node, info *arg_info);
+extern node *CMPTunknown (node *arg_node, info *arg_info);
+extern node *CMPTTravSons (node *arg_node, info *arg_info);
+extern node *CMPTnodeType (node *arg_node, info *arg_info);
 
 #endif /* SAC_CHECKAVIS_H */
