@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/04/01 19:07:51  dkr
+ * renamed break specifiers for precompile
+ *
  * Revision 1.59  1998/03/31 13:56:11  dkr
  * new break specifiers for precompile
  *
@@ -267,8 +270,8 @@ usage ()
             "\t-bo:ae    \t-b15:ae    \tstop after array elimination\n"
             "\t-bo:cyc   \t-b15:cyc   \tstop after one complete optimization cycle\n\n"
 
-            "\t-bl:cube  \t-b18:cube  \tstop after cube-building\n"
-            "\t-bl:seg   \t-b18:seg   \tstop after choice of segments\n"
+            "\t-bl:cubes \t-b18:cubes \tstop after cube-building\n"
+            "\t-bl:segs  \t-b18:segs  \tstop after choice of segments\n"
             "\t-bl:split \t-b18:split \tstop after splitting\n"
             "\t-bl:block \t-b18:block \tstop after hierarchical blocking\n"
             "\t-bl:ublock\t-b18:ublock\tstop after unrolling-blocking\n"
