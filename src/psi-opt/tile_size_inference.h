@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/30 13:35:23  bs
+ * Access macros added.
+ *
  * Revision 2.6  1999/08/04 14:36:45  bs
  *  reinitial revision
  *
@@ -44,6 +47,9 @@
 #define _tile_size_inference_h
 
 #define NUM_OF_CACHEPARAM 3
+#define CSIZE_INDEX 0
+#define LSIZE_INDEX 1
+#define DTYPE_INDEX 2
 
 extern node *TileSizeInference (node *arg_node);
 extern node *TSIfundef (node *arg_node, node *arg_info);
