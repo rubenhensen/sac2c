@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/02/13 15:16:34  nmw
+ * CheckAvis traversal implemented
+ *
  * Revision 1.1  2001/02/12 16:58:52  nmw
  * Initial revision
  *
@@ -30,5 +33,7 @@ extern node *CAVarg (node *arg_node, node *arg_info);
 extern node *CAVvardec (node *arg_node, node *arg_info);
 extern node *CAVid (node *arg_node, node *arg_info);
 extern node *CAVlet (node *arg_node, node *arg_info);
-
+extern node *CAVfundef (node *arg_node, node *arg_info);
+extern node *CAVblock (node *arg_node, node *arg_info);
+extern node *CAVNwithid (node *arg_node, node *arg_info);
 #endif /* SAC_CHECKAVIS_H */
