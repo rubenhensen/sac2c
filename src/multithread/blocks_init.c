@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/22 15:50:07  jhs
+ * dummy handling for identifing unique types
+ *
  * Revision 1.7  2000/02/21 17:52:53  jhs
  * Test on N_aps done, some code left ...
  *
@@ -126,15 +129,18 @@ CheckLHSforBigArrays (node *let, int max_small_size)
     DBUG_RETURN (result);
 }
 
+/* #### returns bool */
 static int
 CheckLHSforHeavyTypes (node *let)
 {
+    int result; /* bool */
     ids *letids;
     node *vardec;
     types *type;
 
     DBUG_ENTER ("CheckLHSforHeavyTypes");
 
+    result = FALSE;
     letids = LET_IDS (let);
     while (letids != NULL) {
         vardec = IDS_VARDEC (letids);
@@ -146,10 +152,14 @@ CheckLHSforHeavyTypes (node *let)
             DBUG_PRINT ("BLKIN", ("wrf"));
         }
 
+        if (TYPES_BASETYPE (type) == T_user) {
+            result = TRUE;
+        }
+
         letids = IDS_NEXT (letids);
     }
 
-    DBUG_RETURN (FALSE);
+    DBUG_RETURN (result);
 }
 
 static int
@@ -205,6 +215,8 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
     if (NODE_TYPE (instr) == N_let) {
         if ((NODE_TYPE (LET_EXPR (instr)) == N_ap)
             && (FUNDEF_BODY (AP_FUNDEF (LET_EXPR (instr))) == NULL)) {
+            DBUG_PRINT ("BLKIN", ("N_ap with unknown body"));
+
             /*
              *  it is a function with unknown body,
              *  is any array-result > threshold?
@@ -212,8 +224,9 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
             result = testfun (AP_FUNDEF (LET_EXPR (instr)));
 
             result = CheckLHSforHeavyTypes (instr)
-                     && CheckLHSforBigArrays (instr, max_replication_size);
+                     || CheckLHSforBigArrays (instr, max_replication_size);
         } else if ((NODE_TYPE (LET_EXPR (instr)) == N_ap)) {
+            DBUG_PRINT ("BLKIN", ("N_ap with known body"));
 
             /* #### */
 
@@ -221,6 +234,7 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 
             result = CheckLHSforHeavyTypes (instr);
         } else if (NODE_TYPE (LET_EXPR (instr)) == N_prf) {
+            DBUG_PRINT ("BLKIN", ("N_prf"));
             /*
              *  it is a primitive function with no body
              *  is any array-result > threshold?
