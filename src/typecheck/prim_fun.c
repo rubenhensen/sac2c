@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.10  1999/05/31 16:54:54  sbs
+ * bug in Genarray_S eliminated :
+ * instead of checking for ID_VECLEN> SCALAR we now check for
+ * ID_ISCONST(v_node).
+ *
  * Revision 2.9  1999/05/18 12:06:21  jhs
  * Deleted a warning occuring while compiling -O3 (e.g. Linux),
  * but there are still some in the code ...
@@ -2243,7 +2248,7 @@ Genarray_S (node *v_node, types *vec, types *scalar)
             else
                 ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
 
-        } else if ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR)) {
+        } else if ((NODE_TYPE (v_node) == N_id) && ID_ISCONST (v_node)) {
             /*
              * create shpseg of resulting type
              */
