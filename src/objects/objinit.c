@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/12/01 20:30:51  cg
+ * Revision 1.6  1996/01/22 18:38:56  cg
+ * Now, an object initialization expression is always generated
+ * with respect to pragma initfun.
+ *
+ * Revision 1.5  1995/12/01  20:30:51  cg
  * extern declarations are now generated for generic object init
  * functions if it is a SAC-program (not module implementation)
  *
@@ -33,6 +37,7 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "free.h"
 
 /*
  *
@@ -155,33 +160,47 @@ OIobjdef (node *arg_node, node *arg_info)
         AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
 
     } else {
-        if (MODUL_FILETYPE (arg_info) == F_prog) {
-            new_fun_type
-              = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                          CopyShpseg (OBJDEF_SHPSEG (arg_node)),
-                          StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
+        new_fun_type
+          = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
+                      CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                      StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
+        if (OBJDEF_INITFUN (arg_node) != NULL) {
+            new_fun_name = OBJDEF_INITFUN (arg_node);
+            PRAGMA_INITFUN (OBJDEF_PRAGMA (arg_node)) = NULL;
+        } else {
             new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
 
-            new_fun_name = strcpy (new_fun_name, "CREATE__");
-            new_fun_name = strcat (new_fun_name, OBJDEF_NAME (arg_node));
+            if (OBJDEF_MOD (arg_node) == NULL) {
+                strcpy (new_fun_name, "create_");
+            } else {
+                strcpy (new_fun_name, "CREATE__");
+            }
 
-            new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type,
-                                   NULL, NULL, MODUL_FUNS (arg_info));
-
-            /*------------------------------------------------------------------*/
-            new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
-            /*------------------------------------------------------------------*/
-
-            FUNDEF_STATUS (new_node) = ST_imported;
-
-            MODUL_FUNS (arg_info) = new_node;
-
-            new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
-            OBJDEF_EXPR (arg_node) = new_node;
-
-            AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
+            strcat (new_fun_name, OBJDEF_NAME (arg_node));
         }
+
+        new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
+                               NULL, MODUL_FUNS (arg_info));
+
+        /*------------------------------------------------------------------*/
+#ifndef NEWTREE
+        new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
+#endif
+        /*------------------------------------------------------------------*/
+
+        FUNDEF_STATUS (new_node) = ST_imported;
+
+        MODUL_FUNS (arg_info) = new_node;
+
+        new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
+        OBJDEF_EXPR (arg_node) = new_node;
+
+        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
+    }
+
+    if (OBJDEF_LINKNAME (arg_node) == NULL) {
+        OBJDEF_PRAGMA (arg_node) = FreeNode (OBJDEF_PRAGMA (arg_node));
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
