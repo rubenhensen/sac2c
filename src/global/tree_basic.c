@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/29 07:32:26  bs
+ * Definition of MakeAccess modified
+ *
  * Revision 2.1  1999/02/23 12:39:53  sacbase
  * new release made
  *
@@ -520,7 +523,8 @@ MakeNodelistNode (node *node, nodelist *next)
 /*--------------------------------------------------------------------------*/
 
 access_t *
-MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset, access_t *next)
+MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
+            accessdir_t direction, access_t *next)
 {
     access_t *tmp;
 
@@ -532,6 +536,7 @@ MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset, access_t
     ACCESS_IV (tmp) = iv;
     ACCESS_CLASS (tmp) = class;
     ACCESS_OFFSET (tmp) = offset;
+    ACCESS_DIR (tmp) = direction;
     ACCESS_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
