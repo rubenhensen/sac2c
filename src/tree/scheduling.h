@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/06/13 13:06:09  ben
+ * SCHMakeTaskselByPragma, SCHRemoveTasksel, SCHCopyTasksel,
+ * SCHPrecompileTasksel, SCHPrintTasksel added
+ *
  * Revision 3.5  2001/05/09 15:13:00  cg
  * All scheduling ICMs get an additional first parameter,
  * i.e. the segment ID. This is required to identify the appropriate
@@ -87,5 +91,14 @@ extern node *SCHCompileSchedulingEnd (int seg_id, char *wl_name, SCHsched_t sche
                                       node *arg_node);
 extern node *SCHCompileSchedulingInit (int seg_id, char *wl_name, SCHsched_t sched,
                                        node *arg_node);
+
+typedef void *SCHtasksel_t;
+
+extern SCHtasksel_t SCHMakeTaskselByPragma (node *ap_node, int line);
+
+extern SCHtasksel_t SCHRemoveTasksel (SCHtasksel_t tasksel);
+extern SCHtasksel_t SCHCopyTasksel (SCHtasksel_t tasksel);
+extern SCHtasksel_t SCHPrecompileTasksel (SCHtasksel_t tasksel);
+extern void SCHPrintTasksel (FILE *outfile, SCHtasksel_t *tasksel);
 
 #endif /* _SAC_SCHEDULING_H_ */
