@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/02/02 09:42:54  dkr
+ * COMPWLgrid, COMPWLgridVar replaced by COMPWLgridx.
+ * COMPWLstride, COMPWLstrideVar replaced by COMPWLstridex.
+ * COMPWLseg, COMPWLsegVar replaced by COMPWLsegx.
+ *
  * Revision 3.12  2001/01/29 16:07:04  dkr
  * PrintWLstrideVar and PrintWLstride replaced by PrintWLstridex
  * PrintWLgridVar and PrintWLgrid replaced by PrintWLgridx
@@ -1690,7 +1695,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLsegx, TravSons, TravSons, TravSons,
-       TravSons, FreeWLseg, TravSons, TravSons, COMPWLseg, TravSons, DupWLseg, TravSons,
+       TravSons, FreeWLseg, TravSons, TravSons, COMPWLsegx, TravSons, DupWLseg, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1708,8 +1713,27 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
+  NIF (N_WLsegVar, "N_WLsegVar", TravSons, TravSons, PrintWLsegx, TravSons, TravSons,
+       TravSons, TravSons, FreeWLsegVar, TravSons, TravSons, COMPWLsegx, TravSons,
+       DupWLsegVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, PREC2WLsegx, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, SCHEDwlsegVar, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, SCHINwlsegVar, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 2),
+
   NIF (N_WLblock, "N_WLblock", TravSons, TravSons, PrintWLxblock, TravSons, TravSons,
-       TravSons, TravSons, FreeWLblock, TravSons, TravSons, COMPWLblock, TravSons,
+       TravSons, TravSons, FreeWLblock, TravSons, TravSons, COMPWLxblock, TravSons,
        DupWLblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1728,7 +1752,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLxblock, TravSons, TravSons,
-       TravSons, TravSons, FreeWLublock, TravSons, TravSons, COMPWLublock, TravSons,
+       TravSons, TravSons, FreeWLublock, TravSons, TravSons, COMPWLxblock, TravSons,
        DupWLublock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1747,7 +1771,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_WLstride, "N_WLstride", TravSons, TravSons, PrintWLstridex, TravSons, TravSons,
-       TravSons, TravSons, FreeWLstride, TravSons, TravSons, COMPWLstride, TravSons,
+       TravSons, TravSons, FreeWLstride, TravSons, TravSons, COMPWLstridex, TravSons,
        DupWLstride, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1765,46 +1789,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgridx, TravSons, TravSons,
-       TravSons, TravSons, FreeWLgrid, TravSons, TravSons, COMPWLgrid, TravSons,
-       DupWLgrid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 2),
-
-  NIF (N_WLsegVar, "N_WLsegVar", TravSons, TravSons, PrintWLsegx, TravSons, TravSons,
-       TravSons, TravSons, FreeWLsegVar, TravSons, TravSons, COMPWLsegVar, TravSons,
-       DupWLsegVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, PREC2WLsegx, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, SCHEDwlsegVar, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, SCHINwlsegVar, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 2),
-
   NIF (N_WLstrideVar, "N_WLstrideVar", TravSons, TravSons, PrintWLstridex, TravSons,
-       TravSons, TravSons, TravSons, FreeWLstrideVar, TravSons, TravSons, COMPWLstrideVar,
+       TravSons, TravSons, TravSons, FreeWLstrideVar, TravSons, TravSons, COMPWLstridex,
        TravSons, DupWLstrideVar, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons,
 
@@ -1823,8 +1809,27 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 5),
 
+  NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgridx, TravSons, TravSons,
+       TravSons, TravSons, FreeWLgrid, TravSons, TravSons, COMPWLgridx, TravSons,
+       DupWLgrid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, 2),
+
   NIF (N_WLgridVar, "N_WLgridVar", TravSons, TravSons, PrintWLgridx, TravSons, TravSons,
-       TravSons, TravSons, FreeWLgridVar, TravSons, TravSons, COMPWLgridVar, TravSons,
+       TravSons, TravSons, FreeWLgridVar, TravSons, TravSons, COMPWLgridx, TravSons,
        DupWLgridVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
