@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.98  2004/08/13 18:02:34  skt
+# several mtmode 3 traversals removed
+#
 # Revision 3.97  2004/08/10 13:32:33  ktr
 # added src/refcount/reuse.o
 #
@@ -281,16 +284,12 @@ CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/sync_opt.o src/concurrent/schedule.o \
             src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o \
             src/concurrent/concurrent_lib.o
-MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
-             src/multithread/repfuns_init.o src/multithread/blocks_init.o \
-             src/multithread/blocks_expand.o src/multithread/multithread_lib.o \
-             src/multithread/mtfuns_init.o src/multithread/blocks_cons.o \
-             src/multithread/blocks_propagate.o \
-             src/multithread/dataflow_analysis.o \
-             src/multithread/barriers_init.o src/multithread/blocks_lift.o \
-             src/multithread/adjust_calls.o src/multithread/assignments_rearrange.o \
+MULTITHREAD= src/multithread/multithread.o src/multithread/multithread_lib.o \
              src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
-            src/multithread/create_cells.o src/multithread/create_dataflowgraph.o
+             src/multithread/create_cells.o src/multithread/create_dataflowgraph.o \
+             src/multithread/assignments_rearrange.o
+
+
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \

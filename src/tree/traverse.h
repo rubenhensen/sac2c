@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/08/13 18:02:34  skt
+ * several mtmode 3 traversals removed
+ *
  * Revision 3.52  2004/08/10 13:32:03  ktr
  * EMM reuse inference (emri) added.
  *
@@ -305,6 +308,7 @@ extern funtab *precomp2_tab;
 extern funtab *precomp3_tab;
 extern funtab *precomp4_tab;
 extern funtab *readsib_tab;
+extern funtab *unused_tab39;
 extern funtab *ea_tab;
 extern funtab *dfr_tab;
 extern funtab *tcwl_tab;
@@ -331,23 +335,23 @@ extern funtab *spmdpm_tab;
 extern funtab *spmdco_tab;
 extern funtab *ntc_tab;
 extern funtab *muth_tab;
-extern funtab *schin_tab;
-extern funtab *blkin_tab;
-extern funtab *rfin_tab;
+extern funtab *unused_tab38;
+extern funtab *unused_tab32;
+extern funtab *unused_tab37;
 extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
-extern funtab *blkex_tab;
-extern funtab *mtfin_tab;
+extern funtab *unused_tab31;
+extern funtab *unused_tab36;
 extern funtab *infdfms_tab;
 extern funtab *l2f_tab;
-extern funtab *blkco_tab;
-extern funtab *dfa_tab;
-extern funtab *blkpp_tab;
+extern funtab *unused_tab30;
+extern funtab *unused_tab35;
+extern funtab *unused_tab34;
 extern funtab *cudecls_tab;
-extern funtab *barin_tab;
-extern funtab *blkli_tab;
-extern funtab *adjca1_tab;
-extern funtab *adjca2_tab;
+extern funtab *unused_tab29;
+extern funtab *unused_tab33;
+extern funtab *unused_tab27;
+extern funtab *unused_tab28;
 extern funtab *apc_tab;
 extern funtab *apt_tab;
 extern funtab *mapcw_tab;

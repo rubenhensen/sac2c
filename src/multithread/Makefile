@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.20  2004/08/13 18:02:34  skt
+# several mtmode 3 traversals removed
+#
 # Revision 3.19  2004/07/29 00:40:54  skt
 # added support for creation of dataflowgraph (mtmode 3)
 #
@@ -81,10 +84,10 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatt
        -I../print -I../compile -I../refcount -I../constants
 
 
-all: multithread.o multithread_lib.o schedule_init.o repfuns_init.o mtfuns_init.o \
-     blocks_init.o blocks_propagate.o blocks_expand.o blocks_cons.o blocks_lift.o \
-     dataflow_analysis.o barriers_init.o adjust_calls.o assignments_rearrange.o \
-     tag_executionmode.o propagate_executionmode.o create_cells.o create_dataflowgraph.o
+all: multithread.o multithread_lib.o assignments_rearrange.o \
+    tag_executionmode.o propagate_executionmode.o create_cells.o create_dataflowgraph.o
+
+ 
 
 
 %.o: %.c 
