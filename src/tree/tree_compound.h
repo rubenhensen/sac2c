@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.29  2000/07/14 09:37:52  dkr
+ * CopyNodelist renamed into DupNodelist and moved to DupTree.[ch]
+ *
  * Revision 1.28  2000/07/12 15:19:51  dkr
  * function SearchDecl moved from Inline.h to tree_compound.h
  *
@@ -343,16 +346,6 @@ extern nodelist *TidyUpNodelist (nodelist *list);
  */
 
 extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
-
-/*
- *
- *  functionname  : CopyNodelist
- *  arguments     : 1) node list
- *  description   : copies an entire node list
- *
- */
-
-extern nodelist *CopyNodelist (nodelist *nl);
 
 /******************************************************************************
  *

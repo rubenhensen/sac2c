@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/07/14 09:37:45  dkr
+ * CopyNodelist renamed into DupNodelist and moved to DupTree.[ch]
+ *
  * Revision 1.13  2000/07/12 15:19:40  dkr
  * function SearchDecl moved from Inline.c to tree_compound.c
  *
@@ -777,24 +780,6 @@ ConcatNodelist (nodelist *first, nodelist *second)
     }
 
     DBUG_RETURN (first);
-}
-
-extern nodelist *
-CopyNodelist (nodelist *nl)
-{
-    nodelist *copy;
-
-    DBUG_ENTER ("CopyNodelist");
-
-    if (nl == NULL) {
-        copy = NULL;
-    } else {
-        copy = MakeNodelist (NODELIST_NODE (nl), NODELIST_STATUS (nl),
-                             CopyNodelist (NODELIST_NEXT (nl)));
-        NODELIST_ATTRIB (copy) = NODELIST_ATTRIB (nl);
-    }
-
-    DBUG_RETURN (copy);
 }
 
 /******************************************************************************
