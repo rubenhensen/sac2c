@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/03/04 16:24:27  cg
+ * Bug fixed in scanning configuration file resource 'cat'
+ * (same as primitive array function), fixed by new filter
+ *
  * Revision 1.51  1998/02/27 16:30:05  cg
  * added lexical analysis for sac2crc files
  *
@@ -277,6 +281,21 @@
 
 
 
+#define FILTER15(token, name) 						\
+ if (0==commlevel)  { 							\
+   if (compiler_phase==PH_setup) {					\
+     yylval.id=(char *)Malloc(sizeof(char) * (strlen(yytext)+1));	\
+     strcpy(yylval.id, yytext);						\
+     return(ID);							\
+   }									\
+   else {								\
+     yylval.id=(char *)Malloc(sizeof(char) * (strlen(name)+1));		\
+     strcpy(yylval.id, name);						\
+     return(token);							\
+   }									\
+ }
+ 
+
 extern int indent;
 extern int i;
 
@@ -348,7 +367,7 @@ int start_token;
 "drop"				{FILTER7( DROP,prf_name_str[F_drop] );}
 "dim"				{FILTER7( DIM,prf_name_str[F_dim] );}
 "rotate"			{FILTER7( ROTATE,prf_name_str[F_rotate] );}
-"cat"                           {FILTER7( CAT,prf_name_str[F_cat] );}
+"cat"                           {FILTER15( CAT,prf_name_str[F_cat] );}
 "psi"                           {FILTER7( PSI,prf_name_str[F_psi] );}
 "toi"                           {FILTER7( TOI,prf_name_str[F_toi] );}
 "tof"                           {FILTER7( TOF,prf_name_str[F_tof] );}
