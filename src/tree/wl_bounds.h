@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/25 16:23:43  skt
+ * sone debugging ...
+ *
  * Revision 1.11  2004/11/25 15:25:56  skt
  * made the function names consistent
  *
@@ -43,7 +46,6 @@
 #define _SAC_WL_BOUNDS_H_
 
 #include "types.h"
-#include "tree_basic.h"
 
 /******************************************************************************
  *
@@ -68,25 +70,24 @@
 #define IDX_SHAPE (-1) /* equals the shape */
 #define IDX_OTHER (-2) /* other */
 
-extern bool WLBnameOrValCheckConsistency (char *name, int val);
+extern bool WLBnameOrValCheckConsistency (const char *name, int val);
 
-extern bool WLBnameOrValIsInt (char *name, int val);
+extern bool WLBnameOrValIsInt (const char *name, int val);
 extern bool WLBnodeOrIntIsInt (nodetype nt, void *node_or_int);
 
 extern void WLBnodeOrIntGetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                       void *node_or_int);
 
-extern void WLBnameOrValSetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
-                                      int val);
 extern void WLBnodeOrIntSetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, nodetype nt,
                                       void *node_or_int);
 
-extern node *WLBnameOrValMakeNode (char *name, int val);
 extern node *WLBnodeOrIntMakeNode (nodetype nt, void *node_or_int);
 
-extern node *WLBnodeOrIntMakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids);
+extern node *WLBnodeOrIntMakeIndex (nodetype nt, void *node_or_int, int dim,
+                                    node *wl_ids);
 
-extern bool WLBnameOrValEq (char *name1, int val1, char *name2, int val2, int shape);
+extern bool WLBnameOrValEq (const char *name1, int val1, const char *name2, int val2,
+                            int shape);
 extern bool WLBnodeOrIntEq (nodetype nt1, void *node_or_int1, nodetype nt2,
                             void *node_or_int2, int shape);
 extern bool WLBnodeOrIntIntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
