@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/04/10 15:43:44  dkr
+ * bug in CheckOptimizeArray() fixed
+ *
  * Revision 3.18  2003/04/10 11:59:23  dkr
  * check_genarray_full_part(): DBUG_ASSERT messages corrected
  *
@@ -576,7 +579,7 @@ CheckOptimizeArray (node *array, node *arg_info)
                     tmpn = EXPRS_NEXT (tmpn);
                 } else {
                     tmpn = NULL;
-                    elts = 0;
+                    elts = (-1);
                 }
             }
 

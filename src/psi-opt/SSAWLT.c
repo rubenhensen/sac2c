@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2003/04/10 15:43:50  dkr
+ * bug in CheckOptimizeArray() fixed
+ *
  * Revision 1.21  2003/04/10 12:02:01  dkr
  * CreateFullPartition(): code reordered. the checks which determine the
  * correct value for the variable do_create are performed in correct
@@ -612,7 +615,7 @@ CheckOptimizeArray (node *array, node *arg_info)
                     tmpn = EXPRS_NEXT (tmpn);
                 } else {
                     tmpn = NULL;
-                    elts = 0;
+                    elts = (-1);
                 }
             }
 
