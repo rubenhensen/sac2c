@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2000/12/13 15:10:27  sbs
+# -D_BSD_SOURCE added .
+#
 # Revision 3.5  2000/12/13 11:11:57  sbs
 # -D_SVID_SOURCE added when compiling on linux; this makes several
 # system functions available such as popen, tempnam, or sbrk.
@@ -88,7 +91,7 @@ SOLARIS_SPARC_LIBS  := -ll
 #
 # LINUX_X86 specific flags and libraries:
 #
-LINUX_X86_FLAGS     := -D_POSIX_SOURCE -D_SVID_SOURCE
+LINUX_X86_FLAGS     := -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE
 LINUX_X86_LIBS      := -lfl
 
 #
