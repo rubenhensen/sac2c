@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/18 12:54:13  cg
+ * Option -minae renamed to -maxae.
+ * No default value printed for option -numthreads
+ *
  * Revision 2.4  1999/05/12 14:28:54  cg
  * command line options streamlined.
  *
@@ -365,9 +369,9 @@ usage ()
             "\t\t\t\telements.\n"
             "\t\t\t\t  Default: -maxwlur %d\n",
             wlunrnum);
-    printf ("\t -minae <no>        \ttry array elimination for arrays with length\n"
+    printf ("\t -maxae <no>        \ttry array elimination for arrays with length\n"
             "\t\t\t\tless than or equal <no>.\n"
-            "\t\t\t\t  Default: -minae %d\n",
+            "\t\t\t\t  Default: -maxae %d\n",
             minarray);
     printf ("\t -maxspecialize <no>\tfunctions with unknown shape will at most\n"
             "\t\t\t\t<no> times be specialized.\n"
@@ -381,8 +385,8 @@ usage ()
             "\t\t\t\tspecified statically using the option \"-numthreads\"\n"
             "\t\t\t\tor dynamically upon application startup using the\n"
             "\t\t\t\tgeneric command line option \"-mt <no>\".\n\n"
-            "\t -numthreads <no>\tspecify exact number of threads to be used.\n"
-            "\t\t\t\t  Default: -numthreads %d.\n"
+            "\t -numthreads <no>\tstatically specify exact number of threads\n"
+            "\t\t\t\tto be used.\n"
             "\t -maxthreads <no>\tmaximum number of threads to be used when exact\n"
             "\t\t\t\t  number is specified dynamically.\n"
             "\t\t\t\t  Default: -maxthreads %d.\n"
@@ -392,7 +396,7 @@ usage ()
             "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
             "\t\t\t\tof with-loops.\n"
             "\t\t\t\t  Default: -minmtsize %d.\n",
-            num_threads, max_threads, max_sync_fold, min_parallel_size);
+            max_threads, max_sync_fold, min_parallel_size);
 
     printf (
 
