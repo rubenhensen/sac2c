@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/16 14:36:40  ktr
+ * added ipc and dr
+ *
  * Revision 1.6  2004/12/11 14:46:48  ktr
  * UIP is now enabled by default.
  *
@@ -64,6 +67,8 @@ OPTIMIZE ("ae", ae, FALSE, FALSE, "array elimination")
 OPTIMIZE ("dl", dl, FALSE, FALSE, "distributive law")
 OPTIMIZE ("rco", rco, TRUE, TRUE, "reference count optimization")
 OPTIMIZE ("uip", uip, TRUE, TRUE, "update-in-place analysis")
+OPTIMIZE ("dr", dr, TRUE, TRUE, "data reuse")
+OPTIMIZE ("ipc", ipc, TRUE, TRUE, "Inplace Computation")
 OPTIMIZE ("tsi", tsi, FALSE, FALSE, "with-loop tile size inference")
 OPTIMIZE ("tsp", tsp, FALSE, FALSE, "with-loop tile size pragmas")
 OPTIMIZE ("wlpg", wlpg, FALSE, FALSE, "with-loop partition generation")
