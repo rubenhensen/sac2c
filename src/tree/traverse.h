@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/09 11:50:06  sbs
+ * profile_tab added.
+ *
  * Revision 3.8  2001/03/06 13:17:41  nmw
  * compare_tree added
  *
@@ -223,6 +226,7 @@ extern funtab *undossa_tab;
 extern funtab *ssadcr_tab;
 extern funtab *ssacse_tab;
 extern funtab *cmptree_tab;
+extern funtab *profile_tab;
 
 extern int nnode[];
 

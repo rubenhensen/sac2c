@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/03/09 11:49:32  sbs
+ * profile_tab added.
+ *
  * Revision 3.29  2001/03/07 10:02:30  nmw
  * cmptree traversal modified
  *
@@ -326,7 +329,7 @@
  *
  *   mapcw_tab       pih_tab         piw_tab         impspec_tab
  *   tcpp_tab        ssafrm_tab      chkavis_tab     undossa_tab
- *   ssadcr_tab      ssacse_tab      cmptree_tab     unused_tab4
+ *   ssadcr_tab      ssacse_tab      cmptree_tab     profile_tab
  *   unused_tab5     unused_tab6     unused_tab7     unused_tab8
  *
  *   nnode
@@ -672,8 +675,8 @@
 #ifndef NIFcmptree
 #define NIFcmptree(it_cmptree)
 #endif
-#ifndef NIFunused4
-#define NIFunused4(it_unused4)
+#ifndef NIFprofile
+#define NIFprofile(it_profile)
 #endif
 
 #ifndef NIFunused5
@@ -718,7 +721,7 @@
   it_precomp1, it_apc, it_apt,                                                           \
                                                                                          \
   it_mapcw, it_pih, it_piw, it_impspec, it_tccp, it_ssafrm, it_chkavis, it_undossa,      \
-  it_ssadcr, it_ssacse, it_cmptree, it_unused4, it_unused5, it_unused6, it_unused7,      \
+  it_ssadcr, it_ssacse, it_cmptree, it_profile, it_unused5, it_unused6, it_unused7,      \
   it_unused8,                                                                            \
                                                                                          \
   nnode)                                                                                 \
@@ -765,7 +768,7 @@
                                                     it_undossa) NIFssadcr (it_ssadcr)    \
                                                     NIFssacse (it_ssacse)                \
                                                       NIFcmptree (it_cmptree)            \
-                                                        NIFunused4 (it_unused4)          \
+                                                        NIFprofile (it_profile)          \
                                                           NIFunused5 (it_unused5)        \
                                                             NIFunused6 (it_unused6)      \
                                                               NIFunused7 (it_unused5)    \
@@ -1073,7 +1076,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        APTfundef,
 
        MCWfundef, PIHfundef, PIWfundef, IMPSPECfundef, TCCPfundef, SSAfundef, CAVfundef,
-       USSAfundef, SSADCRfundef, SSACSEfundef, CMPTunknown, TravSons, TravSons, TravSons,
+       USSAfundef, SSADCRfundef, SSACSEfundef, CMPTunknown, PFfundef, TravSons, TravSons,
        TravSons, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
@@ -1253,7 +1256,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, PREC1assign, TravSons, APTassign,
 
        TravSons, TravSons, TravSons, TravSons, TCCPassign, SSAassign, TravSons, TravSons,
-       SSADCRassign, SSACSEassign, CMPTTravSons, TravSons, TravSons, TravSons, TravSons,
+       SSADCRassign, SSACSEassign, CMPTTravSons, PFassign, TravSons, TravSons, TravSons,
        TravSons, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
@@ -1412,7 +1415,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCap, APTap,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       SSADCRap, SSACSEap, CMPTap, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
+       SSADCRap, SSACSEap, CMPTap, PFap, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
        TravSons, FreeCast, TravSons, TravSons, TravSons, TravSons, DupCast, TravSons,
@@ -2237,6 +2240,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFssadcr
 #undef NIFssacse
 #undef NIFcmptree
+#undef NIFprofile
 
 #undef NIFnnode
 

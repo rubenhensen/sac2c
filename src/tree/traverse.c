@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/09 11:50:06  sbs
+ * profile_tab added.
+ *
  * Revision 3.12  2001/03/07 10:03:06  nmw
  * pretraversal function for cmptree_tab added
  *
@@ -40,180 +43,6 @@
  * Revision 3.1  2000/11/20 18:03:29  sacbase
  * new release made
  *
- * Revision 1.28  2000/08/02 14:29:22  nmw
- * include for print_interface_* added
- *
- * Revision 1.27  2000/07/21 08:22:18  nmw
- * impspec_tab added
- *
- * Revision 1.26  2000/06/28 15:12:16  nmw
- * funtabs for PIH and PIW modified
- *
- * Revision 1.25  2000/06/23 16:40:35  nmw
- * pih and pih changed to mapcw and printi
- *
- * Revision 1.24  2000/06/13 13:40:38  dkr
- * O2NWith_tab renamed into patchwith_tab
- *
- * Revision 1.23  2000/06/08 15:47:34  nmw
- * missing include added
- *
- * Revision 1.22  2000/06/08 15:28:59  nmw
- * pih and piw added, counting comments corrected
- *
- * Revision 1.21  2000/06/07 14:08:28  dkr
- * DBUG-string 'TRAVjhs' renamed into 'TRAV'
- *
- * Revision 1.20  2000/05/31 14:38:22  mab
- * renamed tables for array padding
- *
- * Revision 1.19  2000/05/31 11:26:29  mab
- * added includes and traversal tables for array padding
- *
- * Revision 1.18  2000/05/29 14:29:57  dkr
- * a second traversal-table for precompile added
- *
- * Revision 1.17  2000/03/30 15:13:13  jhs
- * Added adjustcalls
- *
- * Revision 1.16  2000/03/29 16:10:31  jhs
- * blkli_tab added
- *
- * Revision 1.15  2000/03/22 17:36:19  jhs
- * Added N_MTsignal, N_MTalloc, N_MTsync and barin_tab.
- *
- * Revision 1.14  2000/03/17 16:31:41  dkr
- * include of cleanup_decls.h added
- *
- * Revision 1.13  2000/03/17 15:57:37  dkr
- * cudecls_tab added
- *
- * Revision 1.12  2000/03/09 18:37:00  jhs
- * dfa, blkpp
- *
- * Revision 1.11  2000/03/02 13:05:38  jhs
- * Added blkco_tab, added functiobns for BLKCO and MTFIN.
- *
- * Revision 1.10  2000/02/23 23:03:26  dkr
- * second traversal table for LAC2FUN added
- *
- * Revision 1.9  2000/02/22 11:57:24  jhs
- * Adapted NODE_TEXT.
- * /
- *
- * Revision 1.8  2000/02/21 17:55:39  jhs
- * Added blkex_tab.
- * Added LOST OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
- *
- * Revision 1.7  2000/02/17 16:21:13  cg
- * Added new tree traversal function tables fun2lac_tab and ai_tab.
- *
- * Revision 1.6  2000/02/04 14:46:53  jhs
- * Added rfin_tab and it's functions.
- * Added INFO_RFIN_xxx.
- *
- * Revision 1.5  2000/02/03 17:47:38  dkr
- * Trav(): instruction DBUG_ASSERT(arg_node==NULL) now *before* the first
- * access to arg_node :)
- *
- * Revision 1.4  2000/02/02 17:22:07  jhs
- * Added blkin_tab.
- *
- * Revision 1.3  2000/01/26 23:22:59  dkr
- * traverse-mechanism enhanced:
- * to each traverse-function-table a preprocessing- and a postprecesing-function
- * is added. These functions are called in Trav() just before and after the
- * traversal of each node.
- *
- * Revision 1.2  2000/01/24 18:21:51  jhs
- * Added new traversal and functions for schedule_init.[ch].
- *
- * Revision 1.1  2000/01/21 15:38:52  dkr
- * Initial revision
- *
- * Revision 2.14  2000/01/21 14:27:29  jhs
- * Added muth_tab ...
- *
- * Revision 2.13  2000/01/21 12:42:14  dkr
- * new traverse table for lac2fun added
- *
- * Revision 2.12  1999/10/19 17:09:50  sbs
- * ntc_tab added
- *
- * Revision 2.11  1999/08/27 11:05:59  jhs
- * Added spmdco_tab.
- * Deleted hundreds of disgusting blank lines making the code totally
- * unreadable and ugly.
- *
- * Revision 2.10  1999/08/05 13:34:25  jhs
- * Added spmdlc, spmddn and spmdpm.
- *
- * Revision 2.9  1999/08/04 14:28:38  bs
- * traverse funtab entry for tsi added.
- *
- * Revision 2.8  1999/07/28 13:00:09  jhs
- * Added: funptr spmdcons_tab[].
- *
- * Revision 2.7  1999/07/23 17:17:46  jhs
- * Restructured node_info.mac and simplified it's usage.
- *
- * Revision 2.6  1999/06/25 14:58:34  jhs
- * Splitted spmdtrav_tab into spmdrmtrav_tab and spmdrotrav_tab.
- *
- * Revision 2.5  1999/06/16 10:18:22  jhs
- * Added spmdtrav_tab.
- *
- * Revision 2.4  1999/05/10 10:54:13  bs
- * tsi_tab renamed to wlaa_tab
- *
- * Revision 2.3  1999/05/06 15:35:42  sbs
- * filename- mechanism added for creating better error-messages
- * when multiple files are involved!
- *
- * Revision 2.2  1999/05/06 12:10:12  sbs
- * implicit linenum-setting mechanism added to Trav !!
- * => Makexxx-calls might yield better line-numbers now...
- *
- * Revision 2.1  1999/02/23 12:39:44  sacbase
- * new release made
- *
- * Revision 1.71  1999/01/15 17:00:19  sbs
- * freemask_tab added
- *
- * Revision 1.70  1999/01/15 15:14:32  cg
- * added tsi_tab for new compiler module tile size inference.
- *
- * Revision 1.69  1999/01/07 14:02:33  sbs
- * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
- *
- * Revision 1.68  1998/10/29 16:56:31  cg
- * Implementation of Trav() slightly modified in order to
- * simplify debugging.
- *
- * Revision 1.67  1998/06/18 13:42:11  cg
- * added traversal function tables conc_tab and sched_tab
- *
- * Revision 1.66  1998/06/07 18:36:36  dkr
- * added new fun_tab (reuse_tab)
- *
- * Revision 1.65  1998/05/11 09:43:44  cg
- * added syntax tree traversal for generating startup code.
- *
- * Revision 1.64  1998/04/29 19:53:22  dkr
- * added funptr tabs
- *
- * Revision 1.63  1998/04/28 15:43:52  srs
- * added tcwl_tab
- *
- * Revision 1.62  1998/04/23 18:58:33  dkr
- * added tabs
- * changed usage of NIF
- *
- * Revision 1.61  1998/04/17 17:28:29  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.60  1998/04/03 11:27:55  dkr
- * concregs renamed to concregions
  *
  * ... [eliminated] ...
  *
@@ -314,6 +143,7 @@
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
 #include "compare_tree.h"
+#include "annotate_fun_calls.h"
 
 #include "traverse.h"
 
@@ -1323,6 +1153,17 @@ static funtab cmptree_tab_rec = {{
                                  CMPTnodeType,
                                  NULL};
 funtab *cmptree_tab = &cmptree_tab_rec;
+
+/*
+ *  (92) profile_tab
+ */
+static funtab profile_tab_rec = {{
+#define NIFprofile(it_profile) it_profile
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *profile_tab = &profile_tab_rec;
 
 /*
  *  nnode
