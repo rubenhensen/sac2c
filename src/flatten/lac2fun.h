@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/09 14:54:08  dkr
+ * LAC2FUNcode added
+ *
  * Revision 1.5  2000/02/08 16:40:16  dkr
  * LAC2FUNwith() and LAC2FUNwith2() added
  *
@@ -25,6 +28,7 @@ extern node *LAC2FUNassign (node *arg_node, node *arg_info);
 extern node *LAC2FUNlet (node *arg_node, node *arg_info);
 extern node *LAC2FUNid (node *arg_node, node *arg_info);
 extern node *LAC2FUNwithid (node *arg_node, node *arg_info);
+extern node *LAC2FUNcode (node *arg_node, node *arg_info);
 extern node *LAC2FUNwith (node *arg_node, node *arg_info);
 extern node *LAC2FUNwith2 (node *arg_node, node *arg_info);
 extern node *LAC2FUNcond (node *arg_node, node *arg_info);
