@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/27 21:11:20  cg
+ * Added new attribute PRAGMA for Nwith2 nodes.
+ * Added new attribute APL for N_pragma nodes.
+ *
  * Revision 3.1  2000/11/20 18:03:34  sacbase
  * new release made
  *
@@ -2025,6 +2029,7 @@ extern node *MakeIcm (char *name, node *args);
  ***    char*  INITFUN          (O)
  ***
  ***    node*  WLCOMP_APS       (0)      (N_exprs)
+ ***    node*  APL              (0)      (N_ap)
  ***
  ***  temporary attributes:
  ***
@@ -2075,6 +2080,7 @@ extern node *MakePragma ();
 #define PRAGMA_NEEDTYPES(n) ((ids *)(n->node[1]))
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
 #define PRAGMA_WLCOMP_APS(n) (n->node[4])
+#define PRAGMA_APL(n) (n->node[5])
 
 #define PRAGMA_LINKSIGN(n) ((int *)(n->mask[0]))
 #define PRAGMA_LINKSIGNNUMS(n) ((nums *)(n->mask[0]))
@@ -3247,6 +3253,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***    DFMmask_t  OUT
  ***    DFMmask_t  LOCAL
  ***    bool       MT
+ ***    node*      PRAGMA        (N_pragma)
  ***
  ***
  ***  temporary attributes:
@@ -3269,8 +3276,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_SEGS(n) ((n)->node[1])
 #define NWITH2_CODE(n) ((n)->node[2])
 #define NWITH2_WITHOP(n) ((n)->node[3])
-
-#define NWITH2_SCHEDULING(n) ((SCHsched_t) ((n)->node[4]))
+#define NWITH2_PRAGMA(n) ((n)->node[4])
+#define NWITH2_SCHEDULING(n) ((SCHsched_t) ((n)->info2))
 #define NWITH2_ISSCHEDULED(n) ((n)->int_data)
 #define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
 
