@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/12 11:36:31  dkr
+ * nodes N_inc, N_dec, N_pre, N_post removed
+ *
  * Revision 3.4  2000/12/06 11:06:00  dkr
  * NODE_LINE for with-loops is set correctly now
  *
@@ -1813,28 +1816,6 @@ letassign: ids LET {$<cint>$=linenum;} expr
            }
 
 /* left for later BRUSHING BEGIN */
-/*
-         | id unaryop 
-            { $$=MakeNode(N_post);
-              $$->info.ids=MakeIds($1, NULL, ST_regular);
-              $$->node[0]=$2;
-              
-              DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT": %s "P_FORMAT,
-                          mdb_nodetype[$$->nodetype], $$, $$->info.ids->id,
-                          mdb_nodetype[$$->node[0]->nodetype] ));
-           }
-         | unaryop id
-            {  $$=MakeNode(N_pre);
-               $$->info.ids=MakeIds($2, NULL, ST_regular);    
-               $$->node[0]=$1;
-
-               DBUG_PRINT("GENTREE",
-                          ("%s "P_FORMAT": %s "P_FORMAT,
-                           mdb_nodetype[$$->nodetype], $$, $$->info.ids->id,
-                           mdb_nodetype[$$->node[0]->nodetype] )); 
-            }
-*/
          | id INC { $$=MAKE_INCDEC_LET($1,F_add); }
          | INC id { $$=MAKE_INCDEC_LET($2,F_add); }
          | id DEC { $$=MAKE_INCDEC_LET($1,F_sub); }
@@ -2152,18 +2133,6 @@ monop: ABS   { $$=F_abs;   }
      | TOF   { $$=F_tof;   }
      | TOD   { $$=F_tod;   }
      ;
-
-/* left for later BRUSHING BEGIN */
-/*
-unaryop: INC
-         { $$=MakeNode(N_inc);
-         }
-       | DEC
-         { $$=MakeNode(N_dec);
-         }
-       ;
-*/
-/* left for later BRUSHING END */
 
 binop: PSI      { $$=F_psi;      }
      | TAKE     { $$=F_take;     }
