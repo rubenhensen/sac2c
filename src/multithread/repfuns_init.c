@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/21 17:54:20  jhs
+ * Testing ...
+ *
  * Revision 1.3  2000/02/11 16:21:01  jhs
  * Expanded traversals ...
  *
@@ -147,6 +150,9 @@ ReplicateFundef (node *fundef, node *arg_info)
          */
         FUNDEF_NEXT (result) = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = result;
+
+        result = Trav (result, arg_info);
+
         /*
             if (INFO_RFIN_FIRSTFUNDEF( arg_info) == NULL) {
               INFO_RFIN_FIRSTFUNDEF( arg_info) = result;
@@ -257,7 +263,7 @@ RFINfundef (node *arg_node, node *arg_info)
               FUNDEF_NEXT( arg_node) = INFO_RFIN_FIRSTFUNDEF( arg_info);
             } */
     } else {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
