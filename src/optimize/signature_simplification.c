@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/02/03 18:28:22  mwe
+ * counter added
+ * simplification-rules improved
+ *
  * Revision 1.2  2005/02/02 21:09:25  mwe
  * corrected traversal
  *
@@ -120,14 +124,11 @@ SISIfundef (node *arg_node, info *arg_info)
     }
 
     INFO_SISI_FUNDEF (arg_info) = arg_node;
-    if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
 
-    if (FUNDEF_RETS (arg_node) == NULL) {
-        /*
-         * TODO: create N_empty?
-         */
+    if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
+        && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
+        && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (arg_node)))) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)
@@ -197,6 +198,7 @@ SISIarg (node *arg_node, info *arg_info)
                                                          SHcopyShape (TYgetShape (old)));
             old = TYfreeType (old);
         }
+        sisi_expr++;
     }
     DBUG_RETURN (arg_node);
 }
@@ -312,7 +314,9 @@ SISIap (node *arg_node, info *arg_info)
                 curr_args = EXPRS_NEXT (curr_args);
                 EXPRS_NEXT (tmp) = NULL;
                 tmp = FREEdoFreeNode (tmp);
-                EXPRS_NEXT (new_args) = NULL;
+                if (new_args != NULL) {
+                    EXPRS_NEXT (new_args) = NULL;
+                }
             }
             fun_args = ARG_NEXT (fun_args);
         }
@@ -380,6 +384,8 @@ SISIids (node *arg_node, info *arg_info)
         IDS_AVIS (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = succ;
+
+        sisi_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -393,7 +399,10 @@ SISIreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIreturn");
 
-    if (!FUNDEF_ISLACFUN (INFO_SISI_FUNDEF (arg_info))) {
+    if ((!FUNDEF_ISLACFUN (INFO_SISI_FUNDEF (arg_info)))
+        && (!ILIBstringCompare ("main", FUNDEF_NAME (INFO_SISI_FUNDEF (arg_info))))
+        && (!ILIBstringCompare (MAIN_MOD_NAME,
+                                FUNDEF_MOD (INFO_SISI_FUNDEF (arg_info))))) {
 
         INFO_SISI_RETURNEXPRS (arg_info) = TRUE;
 
