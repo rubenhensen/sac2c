@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/08/15 18:47:11  dkr
+ * uses LUT now
+ *
  * Revision 1.6  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker !!
+ * first alpha version of the new type checker!!
  *
  * Revision 1.5  2002/05/31 14:43:06  sbs
  * CRTWRPlet added
@@ -10,15 +13,11 @@
  * Revision 1.4  2002/03/12 15:13:32  sbs
  * CRTWRPxxxx traversal function added.
  *
- * Revision 1.3  2002/03/05 15:51:17  sbs
- * *** empty log message ***
- *
  * Revision 1.2  2002/03/05 15:40:40  sbs
  * CRTWRP traversal embedded.
  *
  * Revision 1.1  2002/03/05 13:59:27  sbs
  * Initial revision
- *
  *
  */
 
@@ -39,26 +38,27 @@
 
 #include "create_wrappers.h"
 
-#define INFO_CRTWRP_WRAPPERS(n) (n->node[0])
-#define INFO_CRTWRP_EXPRETS(n) (n->flag)
+#define INFO_CRTWRP_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
+#define INFO_CRTWRP_EXPRETS(n) ((n)->flag)
 
 /******************************************************************************
  *
  * function:
- *    node *CreateWrappers(node *arg_node)
+ *   node *CreateWrappers( node *arg_node)
  *
  * description:
- *    creates wrapper functions for all functions found. These wrapper functions
+ *   Creates wrapper functions for all functions found. These wrapper functions
  *     - obtain generic argument / result types (old types): _unknown_[*]
  *     - obtain overloaded function types (new types) that include all
  *       function definitions found
  *     - get a STATUS ST_wrapperfun
  *     - have a NULL BODY
  *     - are inserted into the N_fundef chain
- *    Furthermore,
+ *   Furthermore,
  *     - all fundefs obtain a non-overloaded function type (new type)
  *     - all fundefs obtain a copy of their return type (product type) attached
- *       to the fundef node directly. (Redundant but convenient in new_typecheck.c!)
+ *       to the fundef node directly.
+ *       (Redundant but convenient in new_typecheck.c!)
  *     - all function applications obtain a backref to the wrapper function
  *       responsible for the function dspatch
  *
@@ -76,9 +76,7 @@ CreateWrappers (node *arg_node)
     act_tab = crtwrp_tab;
 
     info_node = MakeInfo ();
-
     arg_node = Trav (arg_node, info_node);
-
     info_node = FreeNode (info_node);
 
     act_tab = tmp_tab;
@@ -89,64 +87,72 @@ CreateWrappers (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *FindWrapper(char *name, int num_args, int num_rets, node *wrappers)
+ *   node *FindWrapper( char *name, int num_args, int num_rets, LUT_t lut)
  *
  * description:
- *    searches for a wrapper function in the N_fundef chain "wrappers" that
- *    matches the given name (name), the given number of arguments (num_args),
- *    and the given number of return values (num_rets). This matching mechanism
- *    does allow for dots to be used "on both sides", i.e., for non-fixed numbers
- *    of arguments and non-fixed numbers of return values.
- *    Once a matching wrapper function is found, its N_fundef is returned.
- *    Otherwise, FindWrapper returns NULL.
+ *   Searches for a wrapper function in the given look-up-table (lut) that
+ *   matches the given name (name), the given number of arguments (num_args),
+ *   and the given number of return values (num_rets). This matching mechanism
+ *   does allow for dots to be used "on both sides", i.e., for non-fixed numbers
+ *   of arguments and non-fixed numbers of return values.
+ *   Once a matching wrapper function is found, its N_fundef is returned.
+ *   Otherwise, FindWrapper returns NULL.
  *
- *    NOTE HERE, that only the first match is returned! There is no check that
- *    ensures the "best fit"! For example, assuming the following chain of wrappers:
- *      (ptr_a) ->  <alpha> tutu( <beta> x, ...)
- *      (ptr_b) ->  <alpha> tutu( <beta> a, <gamma> b)
- *
- *    FindWrapper( "tutu", 2, 1, (ptr_a))     yields (ptr_a)!!!  Only a call
- *    FindWrapper( "tutu", 2, 1, (ptr_b))     yields (ptr_b)!
+ *   NOTE HERE, that only the first match is returned! There is no check that
+ *   ensures the "best fit"! For example, assuming a lut containing the
+ *   following wrappers:
+ *      ("tutu", ptr_a), where  (ptr_a)  ->  <alpha> tutu( <beta> x, ...)
+ *      ("tutu", ptr_b), where  (ptr_b)  ->  <alpha> tutu( <beta> a, <gamma> b)
+ *   Then,   FindWrapper( "tutu", 2, 1, lut)   yields (ptr_a)!!!
  *
  ******************************************************************************/
 
 static node *
-FindWrapper (char *name, int num_args, int num_rets, node *wrappers)
+FindWrapper (char *name, int num_args, int num_rets, LUT_t lut)
 {
-    int found = FALSE;
-    int last_parm_is_dots = FALSE;
-    int last_res_is_dots = FALSE;
+    int last_parm_is_dots;
+    int last_res_is_dots;
     int num_parms, num_res;
+    node **wrapper_p;
+    node *wrapper = NULL;
+    bool found = FALSE;
 
     DBUG_ENTER ("FindWrapper");
 
     DBUG_PRINT ("CRTWRP", ("Searching for %s %d args %d rets", name, num_args, num_rets));
 
-    while (wrappers && !found) {
-        num_parms = CountArgs (FUNDEF_ARGS (wrappers));
-        num_res = CountTypes (FUNDEF_TYPES (wrappers));
-        last_parm_is_dots = HasDotArgs (FUNDEF_ARGS (wrappers));
-        last_res_is_dots = HasDotTypes (FUNDEF_TYPES (wrappers));
+    /* initial search for wrapper in LUT */
+    wrapper_p = (node **)SearchInLUT_S (lut, name);
+    while ((wrapper_p != NULL) && (!found)) {
+        wrapper = *wrapper_p;
+        num_parms = CountArgs (FUNDEF_ARGS (wrapper));
+        num_res = CountTypes (FUNDEF_TYPES (wrapper));
+        last_parm_is_dots = HasDotArgs (FUNDEF_ARGS (wrapper));
+        last_res_is_dots = HasDotTypes (FUNDEF_TYPES (wrapper));
         DBUG_PRINT ("CRTWRP", (" ... checking %s %s%d args %s%d rets",
-                               FUNDEF_NAME (wrappers), (last_parm_is_dots ? ">=" : ""),
+                               FUNDEF_NAME (wrapper), (last_parm_is_dots ? ">=" : ""),
                                num_parms, (last_res_is_dots ? ">=" : ""), num_res));
-        if ((strcmp (name, FUNDEF_NAME (wrappers)) == 0)
-            && ((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
+        if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
             && ((num_parms == num_args)
                 || (last_parm_is_dots && (num_parms <= num_args)))) {
             found = TRUE;
         } else {
-            wrappers = FUNDEF_NEXT (wrappers);
+            /* search for next wrapper in LUT */
+            wrapper_p = (node **)SearchInLUT_NextS ();
         }
     }
 
-    DBUG_RETURN (wrappers);
+    if (wrapper_p == NULL) {
+        wrapper = NULL;
+    }
+
+    DBUG_RETURN (wrapper);
 }
 
 /******************************************************************************
  *
  * function:
- *    node *CreateWrapperFor(node *fundef)
+ *    node *CreateWrapperFor( node *fundef)
  *
  * description:
  *   using a given fundef (fundef) as a template, a wrapper function is
@@ -225,7 +231,7 @@ CreateWrapperFor (node *fundef)
 /******************************************************************************
  *
  * function:
- *    ntype *CreateFuntype(node *fundef)
+ *    ntype *CreateFuntype( node *fundef)
  *
  * description:
  *    creates a function type from the given arg/return types. While doing so,
@@ -258,6 +264,7 @@ CreateFuntype (node *fundef)
     int i;
 
     DBUG_ENTER ("CreateFuntype");
+
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "CreateFuntype applied to non-fundef node!");
 
@@ -288,18 +295,31 @@ CreateFuntype (node *fundef)
  *
  ******************************************************************************/
 
+static node *
+ConsFundefs (node *fundefs, node *fundef)
+{
+    DBUG_ENTER ("ConsFundefs");
+
+    FUNDEF_NEXT (fundef) = fundefs;
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 CRTWRPmodul (node *arg_node, node *arg_info)
 {
-    node *wrappers;
-
     DBUG_ENTER ("CRTWRPmodul");
+
+    DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) == NULL),
+                 "MODUL_WRAPPERFUNS is not NULL!");
+    INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node) = GenerateLUT ();
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
-    wrappers = INFO_CRTWRP_WRAPPERS (arg_info);
-    MODUL_FUNS (arg_node) = AppendFundef (wrappers, MODUL_FUNS (arg_node));
+    MODUL_FUNS (arg_node)
+      = FoldLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODUL_FUNS (arg_node),
+                   (void *(*)(void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
 }
@@ -325,11 +345,12 @@ CRTWRPfundef (node *arg_node, node *arg_info)
     num_args = CountArgs (FUNDEF_ARGS (arg_node));
     wrapper = FindWrapper (FUNDEF_NAME (arg_node), num_args,
                            CountTypes (FUNDEF_TYPES (arg_node)),
-                           INFO_CRTWRP_WRAPPERS (arg_info));
+                           INFO_CRTWRP_WRAPPERFUNS (arg_info));
     if (wrapper == NULL) {
         wrapper = CreateWrapperFor (arg_node);
-        FUNDEF_NEXT (wrapper) = INFO_CRTWRP_WRAPPERS (arg_info);
-        INFO_CRTWRP_WRAPPERS (arg_info) = wrapper;
+        INFO_CRTWRP_WRAPPERFUNS (arg_info)
+          = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), FUNDEF_NAME (arg_node),
+                             wrapper);
     }
 
     FUNDEF_TYPE (arg_node) = CreateFuntype (arg_node);
@@ -408,12 +429,12 @@ CRTWRPap (node *arg_node, node *arg_info)
 
     num_args = CountExprs (AP_ARGS (arg_node));
     wrapper = FindWrapper (AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info),
-                           INFO_CRTWRP_WRAPPERS (arg_info));
+                           INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
     if (wrapper == NULL) {
         ABORT (NODE_LINE (arg_node),
-               ("No definition found for a function \"%s\" that expects %i argument(s)"
-                " and yields %i return value(s)",
+               ("No definition found for a function \"%s\" that expects"
+                " %i argument(s) and yields %i return value(s)",
                 AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info)));
     } else {
         AP_FUNDEF (arg_node) = wrapper;
@@ -452,13 +473,13 @@ CRTWRPNwithop (node *arg_node, node *arg_info)
         NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
 
         num_args = 2;
-        wrapper
-          = FindWrapper (NWITHOP_FUN (arg_node), 2, 1, INFO_CRTWRP_WRAPPERS (arg_info));
+        wrapper = FindWrapper (NWITHOP_FUN (arg_node), 2, 1,
+                               INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
         if (wrapper == NULL) {
             ABORT (NODE_LINE (arg_node),
-                   ("No definition found for a function \"%s\" that expects 2 arguments"
-                    " and yields 1 return value",
+                   ("No definition found for a function \"%s\" that expects"
+                    " 2 arguments and yields 1 return value",
                     NWITHOP_FUN (arg_node)));
         } else {
             NWITHOP_FUNDEF (arg_node) = wrapper;
