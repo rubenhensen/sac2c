@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 13:11:01  ktr
+ * ismop^2
+ *
  * Revision 1.3  2004/11/21 20:42:14  ktr
  * Ismop
  *
@@ -30,6 +33,7 @@ extern node *EMIAarg (node *arg_node, info *arg_info);
 extern node *EMIAassign (node *arg_node, info *arg_info);
 extern node *EMIAblock (node *arg_node, info *arg_info);
 extern node *EMIAcond (node *arg_node, info *arg_info);
+extern node *EMIAfold (node *arg_node, info *arg_info);
 extern node *EMIAfuncond (node *arg_node, info *arg_info);
 extern node *EMIAfundef (node *arg_node, info *arg_info);
 extern node *EMIAid (node *arg_node, info *arg_info);
@@ -38,7 +42,6 @@ extern node *EMIAreturn (node *arg_node, info *arg_info);
 extern node *EMIAvardec (node *arg_node, info *arg_info);
 extern node *EMIAwith (node *arg_node, info *arg_info);
 extern node *EMIAwith2 (node *arg_node, info *arg_info);
-extern node *EMIAfold (node *arg_node, info *arg_info);
 
 /****************************************************************************
  *
