@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/04 09:36:19  dkr
+ * changed WL_BEGIN
+ *
  * Revision 1.1  1998/05/03 14:06:09  dkr
  * Initial revision
  *
@@ -56,6 +59,12 @@ ICMCompileWL_BEGIN (char *array, char *offset, int dims, char **idx_scalar)
         INDENT;
         fprintf (outfile, "int __stop_%s = ", idx_scalar[i]);
         AccessShape (array, i);
+        fprintf (outfile, ";\n");
+    }
+    for (i = 0; i < dims; i++) {
+        INDENT;
+        fprintf (outfile, "%s = ", idx_scalar[i]);
+        fprintf (outfile, "0");
         fprintf (outfile, ";\n");
     }
 
