@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/27 01:24:31  ktr
+ * SPMDEMMdoSpmdEmm
+ *
  * Revision 1.3  2004/11/24 19:29:17  skt
  * Compiler Switch during SACDevCampDK 2k4
  *
@@ -100,7 +103,7 @@ FreeInfo (info *info)
 
 /******************************************************************************
  *
- * @fn SpmdEmm
+ * @fn SPMDEMMdoSpmdEmm
  *
  *  @brief
  *
@@ -110,12 +113,12 @@ FreeInfo (info *info)
  *
  ******************************************************************************/
 node *
-SpmdEmm (node *arg_node)
+SPMDEMMdoSpmdEmm (node *arg_node)
 {
     info *info;
     trav_t traversaltable;
 
-    DBUG_ENTER ("SPMDEMMfundef");
+    DBUG_ENTER ("SPMDEMMdoSpmdEmm");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "Illegal argument node!!!");
 
