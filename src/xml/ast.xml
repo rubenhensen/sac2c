@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.117  2004/11/27 00:59:08  sbs
+  *** empty log message ***
+
   Revision 1.116  2004/11/27 00:09:25  cg
   changed default behaviour of traversal PRT from sons to user.
 
@@ -259,7 +262,13 @@
           <node name="Icm" />
         </travuser>
       </traversal>
-      <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" />
+      <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" >
+        <travsons>
+          <node name="Vinfo" />
+          <node name="Prf" />
+          <node name="Ssastack" />
+        </travsons>
+      </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
       <traversal id="FREE" name="Free Tree" default="sons" include="free_node.h" />
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
