@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/21 11:49:26  ben
+ * one renaming Bug for  MT_SCHEDULER_Even_... fixed
+ *
  * Revision 3.12  2001/03/20 16:10:46  ben
  * Just implemented Static renamed to Even, because of existing Static scheduling
  *
@@ -713,14 +716,14 @@ ICM_END( MT_SCHEDULER_BlockVar_END, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Even_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Static_BEGIN, TRACE_NONE)
+ICM_DEF( MT_SCHEDULER_Even_BEGIN, TRACE_NONE)
   ICM_INT(dim)
   ICM_VAR((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Even_BEGIN, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Even_END) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Static_END, TRACE_NONE)
+ICM_DEF( MT_SCHEDULER_Even_END, TRACE_NONE)
   ICM_INT(dim)
   ICM_VAR((4*dim), vararg)
 ICM_END( MT_SCHEDULER_Even_END, (dim, vararg))
