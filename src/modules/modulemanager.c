@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/10/28 17:18:07  sah
+ * added support for dependency tables
+ *
  * Revision 1.5  2004/10/26 09:32:36  sah
  * changed functiontype for serialize functions
  *
@@ -37,6 +40,7 @@ struct MODULE_T {
 static module_t *modulepool = NULL;
 
 typedef STtable_t *(*symtabfun_p) ();
+typedef stringset_t *(*deptabfun_p) ();
 
 static module_t *
 LookupModuleInPool (const char *name)
@@ -177,6 +181,37 @@ GetSymbolTable (module_t *module)
     symtabfun = GetSymbolTableFunction (module);
 
     result = symtabfun ();
+
+    DBUG_RETURN (result);
+}
+
+static deptabfun_p
+GetDependencyTableFunction (module_t *module)
+{
+    deptabfun_p result;
+    char *name;
+
+    DBUG_ENTER ("GetDependencyTableFunction");
+
+    name = Malloc (sizeof (char) * (strlen (module->name) + 11));
+    sprintf (name, "__%s__DEPTAB", module->name);
+
+    result = (deptabfun_p)GetLibraryFunction (name, module->lib);
+
+    DBUG_RETURN (result);
+}
+
+stringset_t *
+GetDependencyTable (module_t *module)
+{
+    deptabfun_p deptabfun;
+    stringset_t *result;
+
+    DBUG_ENTER ("GetDependencyTable");
+
+    deptabfun = GetDependencyTableFunction (module);
+
+    result = deptabfun ();
 
     DBUG_RETURN (result);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/28 17:18:07  sah
+ * added support for dependency tables
+ *
  * Revision 1.4  2004/10/26 09:32:36  sah
  * changed functiontype for serialize functions
  *
@@ -22,6 +25,7 @@
 
 #include "types.h"
 #include "symboltable.h"
+#include "stringset.h"
 
 typedef struct MODULE_T module_t;
 typedef node *(*serfun_p) (info *);
@@ -32,6 +36,8 @@ extern module_t *UnLoadModule (module_t *module);
 extern const char *GetModuleName (module_t *module);
 
 extern STtable_t *GetSymbolTable (module_t *module);
+extern stringset_t *GetDependencyTable (module_t *module);
+
 extern serfun_p GetDeSerializeFunction (const char *symbol, module_t *module);
 
 #endif /* _MODULEMANAGER_H */
