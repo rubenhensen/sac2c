@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/05/25 20:32:17  dkr
+ * all global vars are static now
+ *
  * Revision 1.8  2001/05/22 14:57:03  nmw
  * comments corrected
  *
@@ -143,24 +146,32 @@ typedef struct CODE_CONSTRUCTION {
  *
  ******************************************************************************/
 
-wlf_mode_type wlf_mode;
-code_constr_type *code_constr; /* list of combinded code blocks */
-node *new_codes;               /* list of created N_Ncode nodes */
-node *ref_mode_arg_info;       /* saves arg_info for CreateCode(). Else
-                                  we would have to pass arg_info through
-                                  many functions (which costs time) */
+static wlf_mode_type wlf_mode;
 
-intern_gen *new_ig;     /* new generators derived by a traversel
-                           of one Ncode block. */
-intern_gen *all_new_ig; /* new generators derived from all Ncode
-                           nodes. */
+static code_constr_type *code_constr; /* list of combinded code blocks */
+
+static node *new_codes; /* list of created N_Ncode nodes */
+
+static node *ref_mode_arg_info; /* saves arg_info for CreateCode(). Else
+                                   we would have to pass arg_info through
+                                   many functions (which costs time) */
+
+static intern_gen *new_ig; /* new generators derived by a traversel
+                              of one Ncode block. */
+
+static intern_gen *all_new_ig; /* new generators derived from all Ncode
+                                  nodes. */
 
 /* global vars to speed up function call of IntersectGrids(). They are only used
    to transfer information between IntersectGrids() and IntersectInternGen(). */
-int *intersect_grids_ot; /* grid offsets used by IntersectGrids() */
-int *intersect_grids_os;
-intern_gen *intersect_grids_tig, *intersect_grids_sig, *intersect_grids_baseig;
-intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen. */
+
+static int *intersect_grids_ot; /* grid offsets used by IntersectGrids() */
+
+static int *intersect_grids_os;
+
+static intern_gen *intersect_grids_tig, *intersect_grids_sig, *intersect_grids_baseig;
+
+static intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen. */
 
 /******************************************************************************
  *
