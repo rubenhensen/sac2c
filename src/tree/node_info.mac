@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/03/02 16:10:22  dkr
+ * PREC1withop added
+ *
  * Revision 3.23  2001/02/28 15:45:03  nmw
  *  L2Fassign included in traversal to set correct FUNDEF_EXT_ASSIGN
  *
@@ -1658,7 +1661,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, PREC2Nwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, PREC2withid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, SPMDLnwithid, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1706,7 +1709,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, APCwithop, APTwithop,
+       TravSons, PREC1withop, APCwithop, APTwithop,
 
        TravSons, TravSons, TravSons, TravSons, TCCPnwithop, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
@@ -1716,8 +1719,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, IdxNcode, TravSons, WLINcode, TravSons,
 
        PrintNcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, PREC2Ncode, ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons,
+       TravSons, PREC2code, TravSons, TravSons,
 
        TravSons, WLTRAcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAncode, FMTravSons, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
@@ -1740,7 +1743,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, PREC2Nwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, PREC2with2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, SPMDLnwith2, TravSons,
 
        TravSons, TravSons, TravSons, ReuseNwith2, TravSons, SCHEDnwith2, TravSons,
@@ -1749,7 +1752,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, SCHINnwith2, TravSons, RFINnwith2, TravSons, AIwith2, TravSons, TravSons,
        TravSons, TravSons, DFAnwith2, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, PREC1with2, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),

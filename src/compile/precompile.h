@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/02 16:10:31  dkr
+ * PREC1withop added
+ *
  * Revision 3.3  2001/01/19 11:55:32  dkr
  * PREC2WLseg() and PREC2WLsegVar() replaced by PREC2WLsegx()
  *
@@ -108,6 +111,8 @@ extern node *PREC1fundef (node *arg_node, node *arg_info);
 extern node *PREC1block (node *arg_node, node *arg_info);
 extern node *PREC1assign (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
+extern node *PREC1with2 (node *arg_node, node *arg_info);
+extern node *PREC1withop (node *arg_node, node *arg_info);
 
 extern node *PREC2modul (node *arg_node, node *arg_info);
 extern node *PREC2typedef (node *arg_node, node *arg_info);
@@ -124,11 +129,10 @@ extern node *PREC2ap (node *arg_node, node *arg_info);
 extern node *PREC2return (node *arg_node, node *arg_info);
 extern node *PREC2id (node *arg_node, node *arg_info);
 extern node *PREC2array (node *arg_node, node *arg_info);
-extern node *PREC2generator (node *arg_node, node *arg_info);
-extern node *PREC2Nwithid (node *arg_node, node *arg_info);
-extern node *PREC2Nwith2 (node *arg_node, node *arg_info);
-extern node *PREC2Ncode (node *arg_node, node *arg_info);
+extern node *PREC2with2 (node *arg_node, node *arg_info);
+extern node *PREC2withid (node *arg_node, node *arg_info);
 extern node *PREC2WLsegx (node *arg_node, node *arg_info);
+extern node *PREC2code (node *arg_node, node *arg_info);
 extern node *PREC2sync (node *arg_node, node *arg_info);
 
 extern char *ObjInitFunctionName ();
