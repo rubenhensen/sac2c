@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/06/09 09:46:14  cg
+ * added command line options -mt-static, -mt-dynamic, and -maxsyncfold.
+ *
  * Revision 1.68  1998/05/15 15:44:31  srs
  * added -maxoptcycles
  *
@@ -344,6 +347,19 @@ usage ()
       "\t -maxoverload <no>\tfunctions with unknown shape will <no> times overloaded\n"
       "\t\t\t\t  Default: -maxoverload %d\n",
       max_overload);
+
+    printf (
+      "\n\nMULTI-THREAD OPTIONS:\n\n"
+
+      "\t -mt-static <no>\tcompile program for multi-threaded execution with exact\n"
+      "\t\t\t\tnumber of threads specified.\n"
+      "\t -mt-dynamic <no>\tcompile program for multi-threaded execution with upper\n"
+      "\t\t\t\tbound for the number of threads specified. The exact\n"
+      "\t\t\t\tnumber of threads must be given upon application startup\n"
+      "\t\t\t\tusing the generic command line option '-threads=<no>`.\n"
+      "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
+      "\t\t\t\tsynchronisation block.\n");
+    printf ("\t\t\t\t Default: -maxsyncfold %d.\n", max_sync_fold);
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.129  1998/06/09 09:46:14  cg
+ * added command line options -mt-static, -mt-dynamic, and -maxsyncfold.
+ *
  * Revision 1.128  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -884,44 +887,50 @@ MAIN
     NEXTOPT
     ARG 'm' : PARM
     {
-        if (!strncmp (*argv, "axoptvar", 8)) {
+        if (0 == strncmp (*argv, "axoptvar", 8)) {
             ++argv;
             --argc;
             optvar = atoi (*argv);
+        } else if (0 == strncmp (*argv, "axinline", 8)) {
+            ++argv;
+            --argc;
+            inlnum = atoi (*argv);
+        } else if (0 == strncmp (*argv, "axunroll", 8)) {
+            ++argv;
+            --argc;
+            unrnum = atoi (*argv);
+        } else if (0 == strncmp (*argv, "axwlunroll", 10)) {
+            ++argv;
+            --argc;
+            wlunrnum = atoi (*argv);
+        } else if (0 == strncmp (*argv, "axoverload", 10)) {
+            ++argv;
+            --argc;
+            max_overload = atoi (*argv);
+        } else if (0 == strncmp (*argv, "axoptcycles", 10)) {
+            ++argv;
+            --argc;
+            max_optcycles = atoi (*argv);
+        } else if (0 == strncmp (*argv, "inarray", 10)) {
+            ++argv;
+            --argc;
+            minarray = atoi (*argv);
+        } else if (0 == strncmp (*argv, "t-static", 8)) {
+            ++argv;
+            --argc;
+            num_threads = atoi (*argv);
+            max_threads = num_threads;
+        } else if (0 == strncmp (*argv, "t-dynamic", 9)) {
+            ++argv;
+            --argc;
+            max_threads = atoi (*argv);
+            num_threads = 0;
+        } else if (0 == strncmp (*argv, "axsyncfold", 10)) {
+            ++argv;
+            --argc;
+            max_sync_fold = atoi (*argv);
         } else {
-            if (!strncmp (*argv, "axinline", 8)) {
-                ++argv;
-                --argc;
-                inlnum = atoi (*argv);
-            } else {
-                if (!strncmp (*argv, "axunroll", 8)) {
-                    ++argv;
-                    --argc;
-                    unrnum = atoi (*argv);
-                } else if (!strncmp (*argv, "axwlunroll", 10)) {
-                    ++argv;
-                    --argc;
-                    wlunrnum = atoi (*argv);
-                } else {
-                    if (!strncmp (*argv, "axoverload", 10)) {
-                        ++argv;
-                        --argc;
-                        max_overload = atoi (*argv);
-                    } else {
-                        if (!strncmp (*argv, "axoptcycles", 10)) {
-                            ++argv;
-                            --argc;
-                            max_optcycles = atoi (*argv);
-                        } else {
-                            if (!strncmp (*argv, "inarray", 10)) {
-                                ++argv;
-                                --argc;
-                                minarray = atoi (*argv);
-                            }
-                        }
-                    }
-                }
-            }
+            SYSWARN (("Unknown command line option '-m%s`", *argv));
         }
     }
     NEXTOPT
@@ -940,17 +949,17 @@ MAIN
     NEXTOPT
     ARG 'd' : PARM
     {
-        if (!strncmp (*argv, "check_boundary", 14))
+        if (0 == strncmp (*argv, "check_boundary", 14))
             check_boundary = 1;
-        else if (!strncmp (*argv, "CB", 2))
+        else if (0 == strncmp (*argv, "CB", 2))
             check_boundary = 1;
-        else if (!strncmp (*argv, "check_malloc", 12))
+        else if (0 == strncmp (*argv, "check_malloc", 12))
             check_malloc = 1;
-        else if (!strncmp (*argv, "CM", 2))
+        else if (0 == strncmp (*argv, "CM", 2))
             check_malloc = 1;
-        else if (!strncmp (*argv, "nocleanup", 9))
+        else if (0 == strncmp (*argv, "nocleanup", 9))
             cleanup = 0;
-        else if (!strncmp (*argv, "NC", 2))
+        else if (0 == strncmp (*argv, "NC", 2))
             cleanup = 0;
         else
             SYSWARN (("Unknown debug option '-d%s`", *argv));
@@ -966,7 +975,7 @@ MAIN
             linkstyle = 2;
             break;
         default:
-            if (!strncmp (*argv, "ibstat", 6))
+            if (0 == strncmp (*argv, "ibstat", 6))
                 libstat = 1;
             else
                 SYSWARN (("Unknown command line option '-l%s`", *argv));
