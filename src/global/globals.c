@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/10/16 13:59:37  cg
+ * Associative Law optimization enabled by default.
+ *
  * Revision 3.19  2002/06/10 09:17:45  dkr
  * some structures for argtags added
  *
@@ -392,11 +395,11 @@ bool patch_with = FALSE;
  */
 
 #ifdef PRODUCTION
-unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_WLS) & (~OPT_AL);
+unsigned int optimize
+  = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
 #else /* PRODUCTION */
 unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS) & (~OPT_AL);
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
 
 #endif /* PRODUCTION */
 
