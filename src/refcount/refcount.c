@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/05/07 17:13:15  dkr
+ * fixed a bug in RCNcode:
+ *   NCODE_RC_IDS is now initialized with NULL
+ *
  * Revision 1.47  1998/05/07 10:15:08  dkr
  * changed refcounting in new with-loop
  *
@@ -1695,8 +1699,12 @@ RCNcode (node *arg_node, node *arg_info)
      * In 'IDS_REFCNT' we store (RC - 1) --- because we started the refcounting
      *  of these vars with (RC == 1)!!!
      * 'compile' generates for each var in NCODE_RC_IDS a 'ND_INC_RC' ICM!
+     *
+     * CAUTION: we must initialize NCODE_RC_IDS because some subtrees (e.g.
+     *  bodies of while-loops) are traversed two times!!!
      */
 
+    NCODE_RC_IDS (arg_node) = NULL;
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 0) {
         new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
         IDS_VARDEC (new_ids) = vardec;
