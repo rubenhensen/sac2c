@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/05/16 16:38:26  dkr
+ * WL_END is now a h-icm
+ *
  * Revision 1.10  1998/05/16 00:09:24  dkr
  * changed some macros
  * added PRINT_INDEX_CODE, PRINT_INDEX macros, to log the values of the
@@ -191,36 +194,6 @@ ICMCompileWL_FOLDVAR_BEGIN (char *target, char *idx_vec, int dims, char **args)
         INDENT;
         fprintf (outfile, "int __stop_%s = %d;\n", args[i], INT_MAX);
     }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileWL_END( char *target, char *idx_vec,
- *                          int dims, char **args)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   WL_END( target, idx_vec, dims, [ idx_scalars, idx_min, idx_max ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileWL_END (char *target, char *idx_vec, int dims, char **args)
-{
-    DBUG_ENTER ("ICMCompileWL_END");
-
-#define WL_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_END
-
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }

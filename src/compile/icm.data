@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/05/16 16:38:07  dkr
+ * WL_END is now a h-icm
+ *
  * Revision 1.37  1998/05/15 23:54:58  dkr
  * changed signature of WL_... macros
  *
@@ -519,15 +522,6 @@ ICM_DEF( WL_FOLDVAR_BEGIN, TRACE_UDF)
   ICM_INT(dims)
   ICM_VAR( dims, args)
 ICM_END( WL_FOLDVAR_BEGIN, (target, idx_vec, dims, args))
-#endif
-
-#if defined(WL_END) || defined(ICM_ALL)
-ICM_DEF( WL_END, TRACE_UDF)
-  ICM_STR(target)
-  ICM_STR(idx_vec)
-  ICM_INT(dims)
-  ICM_VAR( (3*dims), args)
-ICM_END( WL_END, (target, idx_vec, dims, args))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)

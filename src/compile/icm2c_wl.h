@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/16 16:38:44  dkr
+ * WL_END is now a h-icm
+ *
  * Revision 1.7  1998/05/15 23:56:03  dkr
  * changed signature and name of some macros
  *
@@ -36,8 +39,6 @@ extern void ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char 
 
 extern void ICMCompileWL_FOLDVAR_BEGIN (char *array, char *idx_vec, int dims,
                                         char **args);
-
-extern void ICMCompileWL_END (char *array, char *idx_vec, int dims, char **args);
 
 extern void ICMCompileWL_ASSIGN (char *array, char *idx_vec, int dims, char **idx_scalars,
                                  int dim_expr, char *expr);
