@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/05/06 11:40:45  cg
+ * added globals max_sync_fold and max_threads
+ *
  * Revision 1.13  1998/05/05 12:33:03  srs
  * inserted opt_wlt
  *
@@ -123,6 +126,17 @@ int num_threads = 1;
  *       on application program startup.
  *  1  : sequential program
  *  >1 : exact number of threads to be started
+ */
+
+int max_sync_fold = 3;
+/*
+ * maximum number of fold operations in a single synchronisation block,
+ * should always be 2**n-1
+ */
+
+int max_threads = 32;
+/*
+ * maximum number of threads if exact number is determined dynamically.
  */
 
 /*

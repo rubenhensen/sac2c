@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/05/06 11:40:45  cg
+ * added globals max_sync_fold and max_threads
+ *
  * Revision 1.25  1998/05/05 12:32:27  srs
  * inserted opt_wlt
  *
@@ -122,6 +125,8 @@ extern char *tmp_dirname;
 extern char target_name[];
 
 extern int num_threads;
+extern int max_sync_fold;
+extern int max_threads;
 
 extern char *cppvars[];
 extern int num_cpp_vars;
