@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2002/08/09 14:50:46  dkr
+ * CWCap added
+ *
  * Revision 1.2  2002/08/09 13:15:29  dkr
  * CWCmodul, CWCfundef added
  *
@@ -15,5 +18,6 @@ node *CreateWrapperCode (node *ast);
 
 node *CWCmodul (node *arg_node, node *arg_info);
 node *CWCfundef (node *arg_node, node *arg_info);
+node *CWCap (node *arg_node, node *arg_info);
 
 #endif /* _create_wrapper_code_h_ */
