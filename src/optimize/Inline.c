@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.21  1998/07/16 17:45:12  dkr
- * *** empty log message ***
+ * Revision 1.22  1998/08/07 21:46:22  dkr
+ * comment added
  *
  * Revision 1.20  1998/07/16 17:20:58  sbs
  * InlineSingleApplication generated
@@ -199,9 +199,8 @@ InlineNo (node *first)
  *  macros        : FUNDEF_BODY, FUNDEF_INLINE, FUNDEF_NAME, FIRST_FUNC, INL_TYPES,
  *                  FUNDEF_INSTR, FUNDEF_VARDEC, FUNDEF_NEXT
  *
- *  remarks       : ---
- *
  */
+
 node *
 INLfundef (node *arg_node, node *arg_info)
 {
@@ -243,9 +242,8 @@ INLfundef (node *arg_node, node *arg_info)
  *                  DUPTYPE, DUP_NORMAL, ARG_NAME, INL_TYPES, ASSIGN_INSTR, VARDEC_NEXT,
  *                  EXPRS_NEXT, NEWTREE, IDS_NEXT, DUP_INLINE,
  *
- *  remarks       : ---
- *
  */
+
 node *
 DoInline (node *let_node, node *ap_node, node *arg_info)
 {
