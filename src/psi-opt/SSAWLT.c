@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2003/04/11 17:48:35  sbs
+ * genshape in CreateFullPartition initialized to NULL, just to please gcc 8-)
+ *
  * Revision 1.22  2003/04/10 15:43:50  dkr
  * bug in CheckOptimizeArray() fixed
  *
@@ -343,7 +346,7 @@ CreateFullPartition (node *wln, node *arg_info)
     types *type;
     char *varname;
     int *array_null, *array_shape;
-    int dim, gen_shape;
+    int dim, gen_shape = NULL;
     bool do_create;
 
     DBUG_ENTER ("CreateFullPartition");
