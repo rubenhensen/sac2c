@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.12  2002/10/25 16:02:55  mwe
+ * implement usage of enforce_ieee-option
+ *
  * Revision 1.11  2002/10/23 15:34:25  mwe
  * remove bug - store pointer to block node in function AssociativeLaw() and not in
  *ALblock()
@@ -270,6 +273,7 @@ ALprf (node *arg_node, node *arg_info)
 {
     int anz_const;
     int anz_all;
+    nodetype nodetype;
 
     DBUG_ENTER ("AssociativeLawOptimize");
 
@@ -290,18 +294,28 @@ ALprf (node *arg_node, node *arg_info)
 
             if ((anz_const > 1) && (anz_all > 2)) {
 
-                /* start optimize */
-                CreateNAssignNodes (arg_info);
+                nodetype = NODE_TYPE (NODELIST_NODE (INFO_AL_CONSTANTLIST (arg_info)));
+                if (!(enforce_ieee)
+                    || ((nodetype != N_float) && (nodetype != N_double))) {
 
-                anz_const = CountConst (arg_info);
+                    /* start optimize */
+                    CreateNAssignNodes (arg_info);
 
-                if (anz_const > 0) {
-                    CommitNAssignNodes (arg_info);
+                    anz_const = CountConst (arg_info);
+
+                    if (anz_const > 0) {
+                        CommitNAssignNodes (arg_info);
+                    } else {
+                        INFO_AL_NUMBEROFVARIABLES (arg_info) = 2;
+                        INFO_AL_NUMBEROFCONSTANTS (arg_info) = 2;
+                    }
                 } else {
-                    INFO_AL_NUMBEROFVARIABLES (arg_info) = 2;
-                    INFO_AL_NUMBEROFCONSTANTS (arg_info) = 2;
+                    /* nothing to optimize */
+                    FreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
+                    FreeNodelist (INFO_AL_VARIABLELIST (arg_info));
+                    INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
+                    INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
                 }
-
             } else {
                 /* nothing to optimize */
                 FreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
@@ -327,6 +341,8 @@ ALprf (node *arg_node, node *arg_info)
 int
 IsAssociativeAndCommutative (node *arg_node)
 {
+
+    int return_bool;
     DBUG_ENTER ("IsAssociativeAndCommutative");
     switch (PRF_PRF (arg_node)) {
     case F_add_SxS:
@@ -335,11 +351,14 @@ IsAssociativeAndCommutative (node *arg_node)
     case F_min:
     case F_and:
     case F_or:
-        DBUG_RETURN (1);
+        return_bool = 1;
+        break;
 
     default:
-        DBUG_RETURN (0);
+        return_bool = 0;
     }
+
+    DBUG_RETURN (return_bool);
 }
 
 /*****************************************************************************
