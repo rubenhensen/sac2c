@@ -1,8 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2001/05/28 09:03:58  nmw
+ * CSE now removes duplicated results from special fundefs
+ *
  * Revision 1.18  2001/05/25 08:43:13  nmw
- * *** empty log message ***
  *
  * Revision 1.17  2001/05/23 15:47:55  nmw
  * comments added
@@ -144,6 +146,7 @@ static node *FindCSE (node *cselist, node *let);
 static bool ForbiddenSubstitution (ids *chain);
 static bool CmpIdsTypes (ids *ichain1, ids *ichain2);
 static node *SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
+static ids *SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain);
 static nodelist *SSACSEBuildSubstNodelist (node *return_exprs, node *fundef);
 static node *GetResultArgAvis (node *id, condpart cp);
 static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef);
@@ -463,11 +466,12 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
                 /* compare identifiers via their avis pointers */
                 DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_ap_arg)) == N_id),
                              "non N_id node as arg in special function application");
-                if (ID_AVIS (EXPRS_EXPR (search_ap_arg)) == ext_ap_avis) {
+                if ((ID_AVIS (EXPRS_EXPR (search_ap_arg)) == ext_ap_avis)
+                    && (AVIS_SSALPINV (ARG_AVIS (search_fun_arg)))) {
                     /*
-                     * if we find a matching identical id in application, we mark it
-                     * for being substituted with the one we found and stop the
-                     * further searching.
+                     * if we find a matching identical loop invariant id
+                     * in application, we mark it for being substituted
+                     * with the one we found and stop the further searching.
                      */
                     found_match = TRUE;
                     AVIS_SUBST (ARG_AVIS (act_fun_arg)) = ARG_AVIS (search_fun_arg);
@@ -573,6 +577,81 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
     }
 
     DBUG_RETURN (nl);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *SSACSEPropagateReturn2Results(node *ap_fundef, ids *ids_chain)
+ *
+ * description:
+ *   searches in the return statement of loops (here the then-part phi-copy-
+ *   targets) for identical result expressions and propagates this
+ *   information into the result ids_chain by setting the AVIS_SUBST attribute
+ *   for later substitutions.
+ *
+ *****************************************************************************/
+static ids *
+SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain)
+{
+    ids *act_result;
+    node *act_exprs;
+    ids *search_result;
+    node *search_exprs;
+
+    bool found_match;
+
+    DBUG_ENTER ("SSACSEPropagateReturn2Results");
+
+    /* process all identifier of result chain of a loop special fundef */
+    act_result = ids_chain;
+    act_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
+
+    while ((FUNDEF_IS_LOOPFUN (ap_fundef)) && (act_result != NULL)) {
+        /* search the the processed results for identical results */
+        search_result = ids_chain;
+        search_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
+        found_match = FALSE;
+
+        while ((search_result != act_result) && (found_match == FALSE)) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_exprs)) == N_id),
+                         "non id node in return of special fundef (act)");
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_exprs)) == N_id),
+                         "non id node in return of special fundef (search)");
+
+            /*
+             * check if both definitions in the else-part are pointing to the
+             * same identifier (here compared via the avis node) - if there is
+             * already an subst entry (set by the arg-result bypassing) we do
+             * not need to set the AVIS_SUBST attribute again.
+             */
+            if ((AVIS_SUBST (IDS_AVIS (act_result)) == NULL)
+                && (NODE_TYPE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (act_exprs)))))
+                    == N_id)
+                && (NODE_TYPE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (search_exprs)))))
+                    == N_id)
+                && (ID_AVIS (
+                      ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (act_exprs)))))
+                    == ID_AVIS (ASSIGN_RHS (
+                         AVIS_SSAASSIGN2 (ID_AVIS (EXPRS_EXPR (search_exprs))))))) {
+                /* stop further searching */
+                found_match = TRUE;
+                AVIS_SUBST (IDS_AVIS (act_result)) = IDS_AVIS (search_result);
+            }
+
+            /* do a parallel traversal */
+            search_result = IDS_NEXT (search_result);
+            search_exprs = EXPRS_NEXT (search_exprs);
+        }
+
+        /* do a parallel traversal in ids chain and exprs chain */
+        act_result = IDS_NEXT (act_result);
+        act_exprs = EXPRS_NEXT (act_exprs);
+    }
+
+    DBUG_RETURN (ids_chain);
 }
 
 /******************************************************************************
@@ -979,11 +1058,21 @@ SSACSElet (node *arg_node, node *arg_info)
 
     } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
                && (FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
+
         /*
          * traverse the result ids to set the infered subst information stored
          * in INFO_SSACSE_RESULTARG nodelist
          */
         LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
+
+        /*
+         * propagate identical results into calling fundef,
+         * set according AVIS_SUBST information for duplicate results.
+         * DeadCodeRemoval() will remove the unused result later.
+         */
+        LET_IDS (arg_node)
+          = SSACSEPropagateReturn2Results (AP_FUNDEF (LET_EXPR (arg_node)),
+                                           LET_IDS (arg_node));
 
     } else {
         /* new expression found */
@@ -1065,7 +1154,10 @@ SSACSEap (node *arg_node, node *arg_info)
         DBUG_PRINT ("SSACSE", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-        /* save RESULTARG nodelist for processing in surrounding let */
+        /*
+         * save RESULTARG nodelist for processing bypassed identifiers
+         * in surrounding let
+         */
         INFO_SSACSE_RESULTARG (arg_info) = INFO_SSACSE_RESULTARG (new_arg_info);
 
         new_arg_info = FreeTree (new_arg_info);
@@ -1175,7 +1267,7 @@ SSACSENcode (node *arg_node, node *arg_info)
  *   INFO_SSACSE_RECFUNAP() == TRUE),
  *
  *   if we have some nodelist stored in INFO_SSACSE_RESULTARG annotate the
- *   stored subst avis information after processing, so futher uses will be
+ *   stored subst avis information after processing, so further uses will be
  *   renamed according to this information.
  *
  *****************************************************************************/
@@ -1291,6 +1383,8 @@ SSACSE (node *fundef, node *modul)
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_IS_LACFUN (fundef))) {
+        DBUG_ASSERT ((optimize & OPT_DCR), "SSACSE requiers SSADCR");
+
         arg_info = MakeInfo ();
 
         INFO_SSACSE_CSE (arg_info) = NULL;
