@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 1.31  2003/03/26 15:46:20  sbs
  * group wls added
  *
@@ -270,6 +273,14 @@ typedef struct CODE_T {
  */
 #define NPART_LETEXPR(n) (LET_EXPR (ASSIGN_INSTR (NPART_SSAASSIGN (n))))
 
+/**
+ * returns the dimensionality of an N_array's elements.
+ */
+#define ARRAY_AELEM_DIM(n)                                                               \
+    (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (n))) == N_id                                   \
+       ? ID_DIM (EXPRS_EXPR (ARRAY_AELEMS (n)))                                          \
+       : 0)
+
 /****************************************************************************
  *
  * Helper functions
@@ -332,34 +343,6 @@ MakeExprsIdChain (ids *idschain)
         res = MakeExprs (id, MakeExprsIdChain (IDS_NEXT (idschain)));
     } else
         res = NULL;
-
-    DBUG_RETURN (res);
-}
-
-/**
- * concatenates two vectors.
- *
- * @param vec1 A N_array node containing the first vector
- * @param vec2 A N_array node containing the second vector
- *
- * @return The concatenation vec1++vec2 as an N_array node
- */
-node *
-ConcatVecs (node *vec1, node *vec2)
-{
-    node *res;
-
-    DBUG_ENTER ("CONCAT_VECS");
-
-    DBUG_ASSERT (((NODE_TYPE (vec1) == N_array) && (NODE_TYPE (vec2) == N_array)),
-                 "ConcatVecs called with not N_array nodes");
-
-    res = CreateZeroVector (ARRAY_SHAPE (vec1, 0) + ARRAY_SHAPE (vec2, 0), T_int);
-
-    ARRAY_AELEMS (res)
-      = CombineExprs (DupTree (ARRAY_AELEMS (vec1)), DupTree (ARRAY_AELEMS (vec2)));
-
-    ((int *)ARRAY_CONSTVEC (res)) = Array2IntVec (ARRAY_AELEMS (res), NULL);
 
     DBUG_RETURN (res);
 }
@@ -962,7 +945,7 @@ CreateArrayWithloop (node *array, node *fundef)
     DBUG_ENTER ("CreateArrayWithloop");
 
     if (NODE_TYPE (array) == N_array) {
-        dim = 1;
+        dim = ARRAY_DIM (array);
         shpmax = ARRAY_SHPSEG (array);
     } else {
         /* reshape */
@@ -970,9 +953,9 @@ CreateArrayWithloop (node *array, node *fundef)
         DBUG_ASSERT (NODE_TYPE (PRF_ARGS (array)) == N_exprs,
                      "NODE_TYPE(PRF_ARGS(array)) != N_exprs");
 
-        dim = ARRAY_SHAPE (EXPRS_EXPR (PRF_ARGS (array)), 0);
         shpmax = Array2Shpseg (EXPRS_EXPR (PRF_ARGS (array)), NULL);
         array = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (array)));
+        dim = ARRAY_DIM (array);
     }
 
     vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
@@ -1100,7 +1083,7 @@ insertIndexDefinition (node *arg_node, node *arg_info)
 
     AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
 
-    array = MakeArray (
+    array = MakeFlatArray (
       MakeExprsIdChain (DupAllIds (NWITHID_IDS (INFO_WLS_WITHID (arg_node)))));
 
     ARRAY_TYPE (array)
@@ -1231,7 +1214,7 @@ Nid2Narray (node *nid, node *arg_info)
 
         assign
           = MakeAssignLet (StringCopy (newname), vardec,
-                           MakePrf2 (F_sel, MakeArray (MakeExprs (MakeNum (i), NULL)),
+                           MakePrf2 (F_sel, MakeFlatArray (MakeExprs (MakeNum (i), NULL)),
                                      nid));
 
         assign_chain = AppendAssign (assign_chain, assign);
@@ -1466,7 +1449,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 
     /* the new code consinst of... */
     /* the definitions of the two old withvecs */
-    array = MakeArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
+    array = MakeFlatArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
 
     ARRAY_TYPE (array)
       = MakeTypes (T_int, 1,
@@ -1483,7 +1466,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
         oldids = IDS_NEXT (oldids);
     }
 
-    array = MakeArray (MakeExprsIdChain (DupAllIds (newids)));
+    array = MakeFlatArray (MakeExprsIdChain (DupAllIds (newids)));
 
     ARRAY_TYPE (array)
       = MakeTypes (T_int, 1,

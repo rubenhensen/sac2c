@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2003/06/11 21:47:29  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 3.12  2002/10/09 02:07:38  dkr
  * code for SSA moved to SSAWLUnroll.c
  *
@@ -322,7 +325,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             for (i = maxdim; i > 0; i--) {
                 index = MakeExprs (MakeNum (ind[i - 1]), index);
             }
-            index = MakeArray (index);
+            index = MakeFlatArray (index);
             /* nums struct is freed inside MakeShpseg. */
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
             type = MakeTypes (T_int, 1, shpseg, NULL, NULL);

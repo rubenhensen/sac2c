@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 3.14  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -813,7 +816,7 @@ node *
 APTwithop (node *arg_node, node *arg_info)
 {
 
-    shpseg *shape;
+    shpseg *shpseg;
     int dim;
     int simpletype;
     types *oldtype = NULL;
@@ -832,11 +835,11 @@ APTwithop (node *arg_node, node *arg_info)
     case WO_genarray:
         DBUG_PRINT ("APT", (" genarray-loop"));
 
-        shape = Array2Shpseg (NWITHOP_SHAPE (arg_node), NULL);
+        shpseg = Array2Shpseg (NWITHOP_SHAPE (arg_node), NULL);
         /* constant array has dim=1
          * => number of elements is stored in shpseg[0]
          */
-        dim = ARRAY_SHAPE ((NWITHOP_SHAPE (arg_node)), 0);
+        dim = SHGetUnrLen (ARRAY_SHAPE (NWITHOP_SHAPE (arg_node)));
         /* all elements have the same type
          * => use simpletype of first code-node
          */
@@ -845,7 +848,7 @@ APTwithop (node *arg_node, node *arg_info)
         /* infer result of with-loop
            Attention: only elements with scalar types are supported yet !!!
         */
-        oldtype = MakeTypes (simpletype, dim, shape, NULL, NULL);
+        oldtype = MakeTypes (simpletype, dim, shpseg, NULL, NULL);
         newtype = PIgetNewType (DupAllTypes (oldtype));
 
         if (newtype != NULL) {

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 1.12  2003/04/10 11:56:03  dkr
  * SSAArrayST2ArrayInt modified: returns NULL if argument is a structural
  * constant only
@@ -549,7 +552,7 @@ SSACreateArrayFromInternGen (int *source, int number, types *type)
     for (i = number - 1; i >= 0; i--) {
         tmpn = MakeExprs (MakeNum (source[i]), tmpn);
     }
-    arrayn = MakeArray (tmpn);
+    arrayn = MakeFlatArray (tmpn);
     ARRAY_TYPE (arrayn) = DupAllTypes (type);
 
     DBUG_RETURN (arrayn);

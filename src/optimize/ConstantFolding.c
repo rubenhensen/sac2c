@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/06/11 21:47:29  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 3.24  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -517,21 +520,14 @@ CalculateArrayOffset (types *array, node *index)
 int
 CompareNumArrayType (node *array1, node *array2)
 {
-    int ok, i;
+    int ok;
 
     DBUG_ENTER ("CompareNumArrayType");
 
-    /* check misc */
+    /* check everything */
     ok = ((N_array == NODE_TYPE (array1)) && (N_array == NODE_TYPE (array2))
           && (T_int == ARRAY_BASETYPE (array1)) && (T_int == ARRAY_BASETYPE (array2))
-          && (ARRAY_DIM (array1) == ARRAY_DIM (array2)));
-
-    /* compare shape */
-    for (i = 0; i < ARRAY_DIM (array1); i++) {
-        if (ARRAY_SHAPE (array1, i) != ARRAY_SHAPE (array2, i)) {
-            ok = 0;
-        }
-    }
+          && (SHCompareShapes (ARRAY_SHAPE (array1), ARRAY_SHAPE (array2))));
 
     DBUG_RETURN (ok);
 }
@@ -1522,7 +1518,7 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
         }
 
     } else {
-        new_node = MakeArray (NULL);
+        new_node = MakeFlatArray (NULL);
     }
 
     DBUG_RETURN (new_node);

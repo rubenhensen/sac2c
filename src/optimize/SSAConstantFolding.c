@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2003/06/11 21:47:29  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 1.42  2003/05/23 16:24:59  ktr
  * A multidimensional array is created if an array is found that contains
  * arrays itself.
@@ -186,6 +189,7 @@ struct STRUCT_CONSTANT {
     simpletype simpletype; /* basetype of struct constant */
     char *name;            /* only used for T_user !! */
     char *name_mod;        /* name of modul belonging to 'name' */
+    shape *shape;          /* shape of struct constant */
     constant *hidden_co;   /* pointer to constant of pointers */
 };
 
@@ -193,7 +197,9 @@ struct STRUCT_CONSTANT {
 #define SCO_BASETYPE(n) (n->simpletype)
 #define SCO_NAME(n) (n->name)
 #define SCO_MOD(n) (n->name_mod)
+#define SCO_SHAPE(n) (n->shape)
 #define SCO_HIDDENCO(n) (n->hidden_co)
+#define SCO_ELEMDIM(n) (SHGetDim (SCO_SHAPE (n)) - COGetDim (SCO_HIDDENCO (n)))
 
 /* local used helper functions */
 static ids *TravIDS (ids *arg_ids, node *arg_info);
@@ -301,6 +307,7 @@ SCOArray2StructConstant (node *expr)
     struct_constant *struc_co;
     node *array;
     types *atype;
+    shape *realshape;
     shape *ashape;
     node **node_vec;
     node *tmp;
@@ -339,7 +346,10 @@ SCOArray2StructConstant (node *expr)
     /* build an abstract structural constant of type (void*) T_hidden */
     if (array != NULL) {
         /* alloc hidden vector */
-        ashape = SHOldTypes2Shape (atype);
+        realshape = SHOldTypes2Shape (atype);
+        ashape = ARRAY_SHAPE (array);
+
+        /* ktr: before it was SHGetUnrLen(realshape); */
         elem_count = SHGetUnrLen (ashape);
         node_vec = (node **)Malloc (elem_count * sizeof (node *));
 
@@ -362,6 +372,8 @@ SCOArray2StructConstant (node *expr)
         SCO_BASETYPE (struc_co) = GetBasetype (atype);
         SCO_NAME (struc_co) = TYPES_NAME (atype);
         SCO_MOD (struc_co) = TYPES_MOD (atype);
+        SCO_SHAPE (struc_co) = realshape;
+
         SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
 
         /* remove invalid structural arrays */
@@ -418,6 +430,7 @@ SCOScalar2StructConstant (node *expr)
         SCO_BASETYPE (struc_co) = TYPES_BASETYPE (ctype);
         SCO_NAME (struc_co) = TYPES_NAME (ctype);
         SCO_MOD (struc_co) = TYPES_MOD (ctype);
+        SCO_SHAPE (struc_co) = SHCopyShape (cshape);
         SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, cshape, elem);
 
     } else {
@@ -454,7 +467,7 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
     node_vec = (node **)COGetDataVec (SCO_HIDDENCO (struc_co));
 
     if (COGetDim (SCO_HIDDENCO (struc_co)) == 0) {
-        /* result is a scalar */
+        /* result is a single node */
         expr = DupNode (node_vec[0]);
     } else {
         /* result is a new array */
@@ -466,10 +479,11 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
         }
 
         /* build array node */
-        expr = MakeArray (aelems);
+        expr = MakeArray (aelems, COGetShape (SCO_HIDDENCO (struc_co)));
+
         ARRAY_TYPE (expr)
-          = MakeTypes (SCO_BASETYPE (struc_co), COGetDim (SCO_HIDDENCO (struc_co)),
-                       SHShape2OldShpseg (COGetShape (SCO_HIDDENCO (struc_co))),
+          = MakeTypes (SCO_BASETYPE (struc_co), SHGetDim (SCO_SHAPE (struc_co)),
+                       SHShape2OldShpseg (SCO_SHAPE (struc_co)),
                        StringCopy (SCO_NAME (struc_co)), SCO_MOD (struc_co));
     }
     DBUG_RETURN (expr);
@@ -491,6 +505,12 @@ SCOFreeStructConstant (struct_constant *struc_co)
     DBUG_ENTER ("SCOFreeStructConstant");
 
     DBUG_ASSERT ((struc_co != NULL), "SCOFreeStructConstant: NULL pointer");
+
+    DBUG_ASSERT ((SCO_SHAPE (struc_co) != NULL),
+                 "SCOFreeStructConstant: SCO_SHAPE is NULL");
+
+    /* free shape */
+    SCO_SHAPE (struc_co) = SHFreeShape (SCO_SHAPE (struc_co));
 
     /* free substructure */
     SCO_HIDDENCO (struc_co) = COFreeConstant (SCO_HIDDENCO (struc_co));
@@ -738,6 +758,9 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
     struct_constant *struc_co;
     node *result;
     constant *old_hidden_co;
+    int arrdim;
+    constant *tmpidx, *tmp;
+    shape *tmpshp, *tmpshp2, *tmpshp3;
 
     DBUG_ENTER ("SSACFStructOpWrapper");
 
@@ -749,30 +772,64 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
         /* save internal hidden input constant */
         old_hidden_co = SCO_HIDDENCO (struc_co);
 
+        arrdim = SHGetDim (SCO_SHAPE (struc_co)) - COGetDim (SCO_HIDDENCO (struc_co));
         /* perform struc-op on hidden constant */
         switch (op) {
         case F_sel:
-            SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
+            if (arrdim < SHGetUnrLen (COGetShape (idx))) {
+                tmp = COMakeConstantFromInt (arrdim);
+                tmpidx = COTake (tmp, idx);
+                SCO_HIDDENCO (struc_co) = COSel (tmpidx, SCO_HIDDENCO (struc_co));
+                tmpidx = COFreeConstant (tmpidx);
+                tmpidx = CODrop (tmp, idx);
+                tmp = COFreeConstant (tmp);
+                result
+                  = MakePrf (F_sel,
+                             MakeExprs (COConstant2AST (tmpidx),
+                                        MakeExprs (SCODupStructConstant2Expr (struc_co),
+                                                   NULL)));
+                tmpidx = COFreeConstant (tmpidx);
+            } else {
+                SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
+                result = SCODupStructConstant2Expr (struc_co);
+            }
             break;
 
         case F_reshape:
-            SCO_HIDDENCO (struc_co) = COReshape (idx, SCO_HIDDENCO (struc_co));
+            tmpshp = SHDropFromShape (arrdim, SCO_SHAPE (struc_co));
+            tmpshp2 = COConstant2Shape (idx);
+            if (SHGetUnrLen (COGetShape (idx)) >= SHGetDim (tmpshp))
+                tmpshp3 = SHTakeFromShape (-1 * SHGetDim (tmpshp), tmpshp3);
+
+            if (SHCompareShapes (tmpshp, tmpshp3)) {
+                SCO_HIDDENCO (struc_co) = COReshape (idx, SCO_HIDDENCO (struc_co));
+                result = SCODupStructConstant2Expr (struc_co);
+            } else
+                result = NULL;
+            tmpshp = SHFreeShape (tmpshp);
+            tmpshp2 = SHFreeShape (tmpshp2);
+            tmpshp3 = SHFreeShape (tmpshp3);
             break;
 
         case F_take:
-            SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
+            if (SHGetUnrLen (COGetShape (idx)) >= arrdim) {
+                SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
+                result = SCODupStructConstant2Expr (struc_co);
+            } else
+                result = NULL;
             break;
 
         case F_drop:
-            SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
+            if (SHGetUnrLen (COGetShape (idx)) >= arrdim) {
+                SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
+                result = SCODupStructConstant2Expr (struc_co);
+            } else
+                result = NULL;
             break;
 
         default:
             DBUG_ASSERT ((FALSE), "primitive function on arrays not implemented");
         }
-
-        /* return modified array */
-        result = SCODupStructConstant2Expr (struc_co);
 
         DBUG_PRINT ("SSACF", ("op %s computed on structural constant", mdb_prf[op]));
 
@@ -1064,6 +1121,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
     struct_constant *struc_a;
     struct_constant *struc_elem;
     constant *old_hidden_co;
+    node *newarray;
 
     DBUG_ENTER ("SSACFModarray");
 
@@ -1072,20 +1130,35 @@ SSACFModarray (node *a, constant *idx, node *elem)
 
     /* given expressession could be converted to struct_constant */
     if ((struc_a != NULL) && (struc_elem != NULL)) {
-        /* save internal hidden constant */
-        old_hidden_co = SCO_HIDDENCO (struc_a);
 
-        /* perform modarray operation on structural constant */
-        SCO_HIDDENCO (struc_a)
-          = COModarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
+        if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
+            newarray = MakeFlatArray (MakeExprs (elem, NULL));
+            ARRAY_TYPE (newarray)
+              = MakeTypes (COGetType (SCO_HIDDENCO (struc_elem)),
+                           SHGetDim (SCO_SHAPE (struc_elem)),
+                           SHShape2OldShpseg (SCO_SHAPE (struc_elem)),
+                           SCO_NAME (struc_elem), SCO_MOD (struc_elem));
+            struc_elem = SCOFreeStructConstant (struc_elem);
+            struc_elem = SCOArray2StructConstant (newarray);
+        }
 
-        /* return modified array */
-        result = SCODupStructConstant2Expr (struc_a);
+        if (SCO_ELEMDIM (struc_a) == SCO_ELEMDIM (struc_elem)) {
+            /* save internal hidden constant */
+            old_hidden_co = SCO_HIDDENCO (struc_a);
 
-        DBUG_PRINT ("SSACF", ("op computed on structural constant"));
+            /* perform modarray operation on structural constant */
+            SCO_HIDDENCO (struc_a)
+              = COModarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
 
-        /* free internal constant */
-        old_hidden_co = COFreeConstant (old_hidden_co);
+            /* return modified array */
+            result = SCODupStructConstant2Expr (struc_a);
+
+            DBUG_PRINT ("SSACF", ("op computed on structural constant"));
+
+            /* free internal constant */
+            old_hidden_co = COFreeConstant (old_hidden_co);
+        } else
+            result = NULL;
     } else {
         result = NULL;
     }
@@ -1816,7 +1889,9 @@ SSACFarray (node *arg_node, node *arg_info)
 {
     node *newelems = NULL;
     node *oldelems, *tmp;
-    int subarrdim = 0, dim;
+    types *newarrtypes;
+
+    shape *shp = NULL, *newshp;
 
     DBUG_ENTER ("SSACFarray");
 
@@ -1838,17 +1913,15 @@ SSACFarray (node *arg_node, node *arg_info)
                 break;
             }
             oldelems = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp)));
-            dim = ARRAY_DIM (oldelems)
-                  - (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (oldelems))) == N_id
-                       ? ID_DIM (EXPRS_EXPR (ARRAY_AELEMS (oldelems)))
-                       : 0);
-            if (subarrdim == 0)
-                subarrdim = dim;
-            else if (dim != subarrdim)
+
+            if (shp == NULL)
+                shp = ARRAY_SHAPE (oldelems);
+            else if (!SHCompareShapes (shp, ARRAY_SHAPE (oldelems)))
                 break;
+
             tmp = EXPRS_NEXT (tmp);
         }
-        if ((tmp == NULL) && (subarrdim > 0)) {
+        if (tmp == NULL) {
             /* Merge subarrays into this arrays */
             oldelems = ARRAY_AELEMS (arg_node);
             tmp = oldelems;
@@ -1857,8 +1930,13 @@ SSACFarray (node *arg_node, node *arg_info)
                                                     ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
                 tmp = EXPRS_NEXT (tmp);
             }
-            oldelems = FreeTree (oldelems);
-            ARRAY_AELEMS (arg_node) = newelems;
+            newarrtypes = DupOneTypes (ARRAY_TYPE (arg_node));
+            newshp = SHAppendShapes (ARRAY_SHAPE (arg_node), shp);
+
+            FreeTree (arg_node);
+
+            arg_node = MakeArray (newelems, newshp);
+            ARRAY_TYPE (arg_node) = newarrtypes;
         }
     }
     INFO_SSACF_INSCONST (arg_info) = FALSE;

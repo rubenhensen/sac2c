@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 3.16  2002/02/21 13:43:00  dkr
  * access macros used
  *
@@ -233,7 +236,7 @@ GenSel (ids *ids_node, node *arg_info)
     length = GetTypesLength (type);
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
-        arg[0] = MakeArray (exprn);
+        arg[0] = MakeFlatArray (exprn);
         ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (exprn, NULL);
         /* srs: AE only works on arrays which have 1 dimension.
            type attribut was missing here. */

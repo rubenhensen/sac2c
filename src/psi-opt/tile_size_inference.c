@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 3.5  2001/11/19 15:32:13  sbs
  * fixed some wrong comments concerning access macros 8-((
  *
@@ -601,7 +604,8 @@ TSIMakePragmaWLComp (int tilesize, node *arg_info)
             ap_name = Malloc (6 * sizeof (char));
             ap_name = strcpy (ap_name, "BvL0");
             PRAGMA_WLCOMP_APS (pragma)
-              = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
+              = MakeExprs (MakeAp (ap_name, NULL,
+                                   MakeExprs (MakeFlatArray (aelems), NULL)),
                            NULL);
         } else {
             /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 3.14  2002/09/09 17:56:46  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -1587,7 +1590,7 @@ Modarray2Genarray (node *wln, node *substwln)
     for (i = dimensions - 1; i >= 0; i--)
         eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
 
-    shape = MakeArray (eltn);
+    shape = MakeFlatArray (eltn);
     ARRAY_ISCONST (shape) = TRUE;
     ARRAY_VECTYPE (shape) = T_int;
     ARRAY_VECLEN (shape) = dimensions;
@@ -1698,7 +1701,7 @@ WLFassign (node *arg_node, node *arg_info)
                     for (i = TYPES_DIM (idt); i > 0; i--)
                         tmpn = MakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
                                           tmpn); /* Array elements */
-                    tmpn = MakeArray (tmpn);     /* N_Array */
+                    tmpn = MakeFlatArray (tmpn); /* N_Array */
                     ARRAY_TYPE (tmpn)
                       = MakeTypes (T_int, 1,
                                    SHShape2OldShpseg (SHCreateShape (1, TYPES_DIM (idt))),
@@ -1876,7 +1879,7 @@ WLFid (node *arg_node, node *arg_info)
                      (and DC-removing) some new variables. */
                 if (!NCODE_USEMASK (coden) /* mask does not exist */
                     || NCODE_USEMASK (coden)[IDS_VARNO (subst_wl_ids)]) {
-                    arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
+                    arrayn = MakeFlatArray (MakeExprs (MakeNum (count), NULL));
                     ARRAY_ISCONST (arrayn) = TRUE;
                     ARRAY_VECTYPE (arrayn) = T_int;
                     ARRAY_VECLEN (arrayn) = 1;

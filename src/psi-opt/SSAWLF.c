@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2003/06/11 21:52:05  ktr
+ * Added support for multidimensional arrays.
+ *
  * Revision 1.15  2003/03/03 13:56:18  ktr
  * SSAWLFassign now only applies its "DCR" if the withloop's basetype is not a
  * Usertype.
@@ -1299,7 +1302,7 @@ Modarray2Genarray (node *wln, node *substwln)
         eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
     }
 
-    shape = MakeArray (eltn);
+    shape = MakeFlatArray (eltn);
 
     shpseg = MakeShpseg (
       MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
@@ -1402,7 +1405,7 @@ SSAWLFassign (node *arg_node, node *arg_info)
                     for (i = TYPES_DIM (idt); i > 0; i--)
                         tmpn = MakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
                                           tmpn); /* Array elements */
-                    tmpn = MakeArray (tmpn);     /* N_Array */
+                    tmpn = MakeFlatArray (tmpn); /* N_Array */
                     ARRAY_TYPE (tmpn)
                       = MakeTypes (T_int, 1,
                                    SHShape2OldShpseg (SHCreateShape (1, TYPES_DIM (idt))),
@@ -1561,7 +1564,7 @@ SSAWLFid (node *arg_node, node *arg_info)
                      but I guess that would cost more time than speculatively inserting
                      (and DC-removing) some new variables. */
 
-                arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
+                arrayn = MakeFlatArray (MakeExprs (MakeNum (count), NULL));
                 shpseg = MakeShpseg (
                   MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
                 ARRAY_TYPE (arrayn) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
