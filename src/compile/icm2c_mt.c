@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/21 11:55:42  ben
+ * Bugs fixed in ICMs MT_SCHEDULER_Even_..., SelectTask
+ *
  * Revision 3.9  2001/03/20 16:11:46  ben
  * Just implemented Static renamed to Even, because of existing Static scheduling
  *
@@ -1591,8 +1594,8 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Static_BEGIN(int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Staic_END(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Even_BEGIN(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Even_END(int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement the scheduling for withloops
@@ -1608,12 +1611,12 @@ void
 ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
 {
 
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_BEGIN");
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Even_BEGIN");
 
-#define MT_SCHEDULER_Static_BEGIN
+#define MT_SCHEDULER_Even_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SCHEDULER_Static_BEGIN
+#undef MT_SCHEDULER_Even_BEGIN
 
     SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()", "SAC_MT_MYTHREAD()");
 
@@ -1623,12 +1626,12 @@ ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
 void
 ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_END");
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Even_END");
 
-#define MT_SCHEDULER_Block_END
+#define MT_SCHEDULER_Even_END
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SCHEDULER_Block_END
+#undef MT_SCHEDULER_Even_END
 
     fprintf (outfile, "\n");
 
