@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/11/10 15:34:26  sbs
+ * Revision 1.7  1994/11/10 16:59:34  hw
+ * added makro INDENT to have a nice output
+ *
+ * Revision 1.6  1994/11/10  15:34:26  sbs
  * RCS-header inserted
  *
  *
@@ -19,10 +22,19 @@
 #define FUN_HEAD_LENGTH 120 /* dimension of array of char */
 #define INT_STRING_LENGTH 5 /* dimension of array of char */
 
+#define INDENT                                                                           \
+    {                                                                                    \
+        int j;                                                                           \
+        for (j = 0; j < indent; j++)                                                     \
+            fprintf (outfile, "  ");                                                     \
+    }
+
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 extern funptr print_tab[];
 
 char *type_string[] = {"int", "float", "bool"};
+
+static int indent = 0;
 
 #define PRF_IF(n, s, x) x
 
@@ -111,9 +123,10 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
     for (i = 0; i < arg_node->nnode; i++) {
+        INDENT;
         if (1 == i)
             fprintf (outfile, "\n");
-        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+        Trav (arg_node->node[i], arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -128,10 +141,15 @@ PrintBlock (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
+    INDENT;
     fprintf (outfile, "{ \n");
+    indent++;
     for (i = arg_node->nnode - 1; 0 <= i; i--)
         Trav (arg_node->node[i], arg_info);
-    fprintf (outfile, "\n} \n");
+    indent--;
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, "}\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -278,6 +296,7 @@ PrintReturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintReturn");
 
+    INDENT;
     fprintf (outfile, "return( ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " );\n");
@@ -332,6 +351,7 @@ PrintVardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintVardec");
 
+    INDENT;
     fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info);
@@ -348,6 +368,7 @@ PrintFor (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintFor");
 
+    INDENT;
     fprintf (outfile, "for( ");
     for (i = 0; arg_node->nnode > i; i++) {
         Trav (arg_node->node[i], arg_info);
@@ -389,6 +410,7 @@ node *
 PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
+
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
@@ -466,10 +488,11 @@ PrintConexpr (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintConexpr");
 
+    INDENT;
     if (N_genarray == arg_node->nodetype)
         fprintf (outfile, "genarray( %s )", arg_node->info.id);
     else
-        fprintf (outfile, "modaray( %s )", arg_node->info.id);
+        fprintf (outfile, "modaray( %s )\n", arg_node->info.id);
     Trav (arg_node->node[0], arg_info);
 
     DBUG_RETURN (arg_node);
