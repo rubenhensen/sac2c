@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.1  1995/10/16 12:07:18  cg
+# Revision 1.2  1995/10/25 15:18:16  cg
+# bug fixed, now make clean with rm -f
+#
+# Revision 1.1  1995/10/16  12:07:18  cg
 # Initial revision
 #
 #
@@ -9,7 +12,7 @@
 
 MAKE=make
 CC=gcc -ansi -g
-RM=rm
+RM=rm -f
 
 INCS=-I../global -I../../inc 
 
