@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/01 21:52:40  sah
+ * NWITHID_VEC ids are processed now as well
+ *
  * Revision 1.4  2004/10/28 17:20:46  sah
  * now deserialize as an internal state
  *
@@ -339,9 +342,17 @@ DSIds (ids *arg_ids, info *arg_info)
         IDS_VARDEC (arg_ids) = LookUpArg (arg_ids, INFO_DS_ARGS (arg_info));
     }
 
+    DBUG_ASSERT ((IDS_VARDEC (arg_ids) != NULL), "Cannot find vardec or arg for ids!");
+
+    /* now update the avis link of the ids node to the vardecs avis */
     if (IDS_AVIS (arg_ids) == NULL) {
         IDS_AVIS (arg_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
     }
+
+    /* Finally make sure, that the backref avis->vardec is correct */
+    DBUG_ASSERT ((AVIS_VARDECORARG (VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids)))
+                  == IDS_VARDEC (arg_ids)),
+                 "backref from avis to vardec is wrong!");
 
     DBUG_RETURN (arg_ids);
 }
@@ -450,6 +461,7 @@ DSNWithid (node *arg_node, info *arg_info)
 
     /* Trav into Ids */
     NWITHID_IDS (arg_node) = DSIds (NWITHID_IDS (arg_node), arg_info);
+    NWITHID_VEC (arg_node) = DSIds (NWITHID_VEC (arg_node), arg_info);
 
     arg_node = TravSons (arg_node, arg_info);
 
