@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/04/29 11:55:05  cg
+ * Added function SAC_RuntimeWarning in analogy to SAC_RuntimeError.
+ *
  * Revision 3.1  2000/11/20 18:02:44  sacbase
  * new release made
  *
@@ -105,6 +108,25 @@ SAC_RuntimeError (char *format, ...)
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
     exit (1);
+}
+
+void
+SAC_RuntimeWarning (char *format, ...)
+{
+    va_list arg_p;
+
+    SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+    fprintf (stderr, "\n\n*** SAC runtime warning\n");
+    fprintf (stderr, "*** ");
+
+    va_start (arg_p, format);
+    vfprintf (stderr, format, arg_p);
+    va_end (arg_p);
+
+    fprintf (stderr, "\n\n");
+
+    SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 }
 
 void

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/04/29 11:55:05  cg
+ * Added function SAC_RuntimeWarning in analogy to SAC_RuntimeError.
+ *
  * Revision 3.2  2002/04/30 08:05:18  dkr
  * no changes done
  *
@@ -37,6 +40,7 @@
 #define _SAC_MESSAGE_H
 
 extern void SAC_RuntimeError (char *format, ...);
+extern void SAC_RuntimeWarning (char *format, ...);
 extern void SAC_Print (char *format, ...);
 
 #endif /* _SAC_MESSAGE_H */
