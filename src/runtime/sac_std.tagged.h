@@ -1,18 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.11  2002/07/11 17:29:52  dkr
- * ND_USE_GENVAR_OFFSET added
- *
- * Revision 3.10  2002/07/10 20:06:29  dkr
- * some bugs modified
- *
- * Revision 3.9  2002/07/10 19:27:44  dkr
- * some macros added
- *
- * Revision 3.6  2002/06/07 16:09:59  dkr
- * - some new ICMs added
- * - some bugs fixed
+ * Revision 3.12  2002/07/12 15:50:27  dkr
+ * first complete revision 8-))
  *
  * Revision 3.3  2002/05/03 13:57:09  dkr
  * macros updated
@@ -1257,7 +1247,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
  ******************************************************************************/
 
 #define SAC_IS_LASTREF__THEN(nt)                                                         \
-    CAT1 (SAC_IS_LASTREF__THEN__, CAT1 (NT_DATA (nt), CAT1 (_, CAT1 (NT_UNQ (nt), (nt)))))
+    CAT3 (SAC_IS_LASTREF__THEN__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
 #define SAC_IS_LASTREF__ELSE(nt) else
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN(nt)                                                  \
@@ -1280,7 +1270,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * AKS
  */
 
-#define SAC_IS_LASTREF__THEN__AKS_NUQ(nt) if (SAC_ND_A_RC (% s) == 1)
+#define SAC_IS_LASTREF__THEN__AKS_NUQ(nt) if (SAC_ND_A_RC (nt) == 1)
 #define SAC_IS_LASTREF__THEN__AKS_UNQ(nt) SAC_IS_LASTREF__THEN__SCL_UNQ (nt)
 
 /*
@@ -1313,13 +1303,22 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  * ND_PRF_SHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
- * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp)
- * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, dim, ...shp...)
+ * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp_nt)
+ * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, shp_size, ...shpa_any...)
  *
- * ND_PRF_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
- * ND_PRF_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim,
+ *                       idx_size, idx_nt)
+ * ND_PRF_SEL__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
+ *                      idx_size, idx_nt)
+ * ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
+ *                        idx_size, idxa_any)
+ * ND_PRF_SEL__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
+ *                       idx_size, idxa_any)
  *
- * ND_PRF_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
+ * ND_PRF_MODARRAY__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
+ *                           idx_size, idx_nt, val_any)
+ * ND_PRF_MODARRAY__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
+ *                            idx_size, ...idxa_any..., val_any)
  *
  ******************************************************************************/
 
@@ -1330,11 +1329,13 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 /* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
 
-#define SAC_ND_PRF_RESHAPE__SHAPE_id(to_nt, to_sdim, shp)
+/* ND_PRF_RESHAPE__SHAPE_id( ...) is a C-ICM */
 /* ND_PRF_RESHAPE__SHAPE_arr( ...) is a C-ICM */
 
-#define SAC_ND_PRF_SEL__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
-#define SAC_ND_PRF_SEL__DATA(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
+/* ND_PRF_SEL__SHAPE_id( ...) is a C-ICM */
+/* ND_PRF_SEL__DATA_id( ...) is a C-ICM */
+/* ND_PRF_SEL__SHAPE_arr( ...) is a C-ICM */
+/* ND_PRF_SEL__DATA_arr( ...) is a C-ICM */
 
 /* ND_PRF_MODARRAY__DATA( ...) is a C-ICM */
 
@@ -1343,8 +1344,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * ICMs for IVE
  * ============
  *
- * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
- * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any)
+ * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any)
  *
  * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
  *
@@ -1352,8 +1353,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  ******************************************************************************/
 
-#define SAC_ND_PRF_IDX_SEL__SHAPE(to_nt, to_sdim, from_nt, from_sdim)
-#define SAC_ND_PRF_IDX_SEL__DATA(to_nt, to_sdim, from_nt, from_sdim)
+/* ND_PRF_IDX_SEL__SHAPE( ...) is a C-ICM */
+/* ND_PRF_IDX_SEL__DATA( ...) is a C-ICM */
 
 /* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
 
