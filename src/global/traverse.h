@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/04/07 10:16:26  hw
+ * Revision 1.14  1995/04/11 15:57:47  asi
+ * NIF macro enlarged
+ *
+ * Revision 1.13  1995/04/07  10:16:26  hw
  * added function NoTrav
  *
  * Revision 1.12  1995/04/05  15:52:38  asi
@@ -81,5 +84,7 @@ extern funptr refcnt_tab[];
 extern funptr comp_tab[];
 
 extern funptr lir_tab[];
+
+extern funptr lir_mov_tab[];
 
 #endif /* _sac_traverse_h */

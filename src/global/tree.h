@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/04/11 11:34:45  asi
+ * Revision 1.34  1995/04/11 15:57:47  asi
+ * NIF macro enlarged
+ *
+ * Revision 1.33  1995/04/11  11:34:45  asi
  * added 'flag' to struct 'node'
  *
  * Revision 1.32  1995/04/07  05:56:42  sbs
@@ -179,7 +182,7 @@ typedef struct FUN_NAME {
  *
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) n
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) n
 
 typedef enum {
 #include "node_info.mac"
