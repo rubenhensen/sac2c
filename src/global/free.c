@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/01/28 18:02:05  srs
+ * *** empty log message ***
+ *
  * Revision 1.29  1997/11/24 16:12:38  sbs
  * usage of NWITHOP_FUN in FreeNWithOp adapted to the changed tree_basic.h
  *
@@ -218,27 +221,21 @@ FreeOneTypes (types *fr)
 {
     types *tmp;
 
-    DBUG_ENTER ("FreeTypes");
+    DBUG_ENTER ("FreeOneTypes");
 
     if (fr != NULL) {
         DBUG_PRINT ("FREE", ("Removing types: %s", mdb_type[TYPES_BASETYPE (fr)]));
-
         tmp = fr;
         fr = TYPES_NEXT (fr);
-
         if (TYPES_DIM (tmp) > 0) {
             FreeShpseg (TYPES_SHPSEG (tmp));
         }
-
         FREE (TYPES_NAME (tmp));
-
         /*
          *  fr->id is not freed by purpose !!
          */
-
         FREE (tmp);
     }
-
     DBUG_RETURN (fr);
 }
 
