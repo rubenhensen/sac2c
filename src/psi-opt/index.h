@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/06/06 15:18:10  sbs
+ * Revision 1.4  1995/06/26 09:59:28  sbs
+ * preliminary version
+ *
+ * Revision 1.3  1995/06/06  15:18:10  sbs
  * first usable version ; does not include conditional stuff
  *
  * Revision 1.2  1995/06/02  17:05:15  sbs
@@ -19,8 +22,12 @@
 
 extern node *IdxModul (node *, node *);
 extern node *IdxAssign (node *, node *);
+extern node *IdxWith (node *, node *);
+extern node *IdxGenerator (node *, node *);
 extern node *IdxLet (node *, node *);
 extern node *IdxPrf (node *, node *);
 extern node *IdxId (node *, node *);
+extern node *IdxNum (node *, node *);
+extern node *IdxArray (node *, node *);
 
 #endif /* sac_index_h */
