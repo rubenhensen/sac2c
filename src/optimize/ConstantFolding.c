@@ -1,13 +1,18 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/15 15:43:14  bs
+ * Comments added.
+ *
  * Revision 2.3  1999/03/15 14:25:46  bs
  * Access macros renamed (take a look at tree_basic.h).
  * Function ArrayPrf modified.
  *
  * Revision 2.2  1999/03/09 11:30:45  bs
- * Now the compact propagation of constant integer vectors will remain after constant
- * folding.
+ * Now the compact propagation of constant integer vectors will remain
+ * after constant folding. Therefore the following functions were modified:
+ * CompareNumArrayElts, IsConst, DupPartialArray, FetchNum, CalcPsi,
+ * ArrayPrf and CFprf.
  *
  * Revision 2.1  1999/02/23 12:41:05  sacbase
  * new release made
