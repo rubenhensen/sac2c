@@ -1,12 +1,12 @@
 #
 # $Log$
+# Revision 2.7  2000/01/21 12:04:08  dkr
+# *** empty log message ***
+#
 # Revision 2.6  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.5  1999/12/13 11:27:44  dkr
-# *** empty log message ***
 #
 # Revision 2.4  1999/05/12 15:13:23  cg
 # make deps done
@@ -89,7 +89,8 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../optimize -I../psi-opt -I../compile -I../modules -I../concurrent
+INCS=-I../global -I../tree -I../../inc -I../compile -I../modules -I../concurrent \
+     -I../psi-opt -I../optimize
 
 all: print.o convert.o
 
@@ -122,7 +123,7 @@ print.o: /usr/include/stdlib.h /usr/include/string.h ../global/tree.h
 print.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 print.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
 print.o: print.h ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
-print.o: convert.h ../optimize/DataFlowMask.h ../optimize/optimize.h
+print.o: convert.h ../tree/DataFlowMask.h ../optimize/optimize.h
 print.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
 print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 print.o: ../optimize/generatemasks.h ../modules/filemgr.h
