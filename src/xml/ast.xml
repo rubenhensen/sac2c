@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.118  2004/11/27 01:26:21  sah
+  __..--..__
+
   Revision 1.117  2004/11/27 00:59:08  sbs
   *** empty log message ***
 
@@ -1606,6 +1609,23 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
+        <travuser>
+	  <node name="Module" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Vardec" />
+	  <node name="Return" />
+	  <node name="Ap" />
+	  <node name="Icm" />
+	  <node name="Array" />
+	  <node name="WLseg" />
+	  <node name="WLsegVar" />
+	  <node name="Avis" />
+	</travuser>
+      </traversal>
     </phase>
     <phase id="compile" name="Generating C code" >
       <traversal id="COMP" name="Compile" default="sons" include="compile.h">
@@ -1923,6 +1943,12 @@
             <all />
           </phases>
         </attribute>
+        <attribute name="LinkName" default="NULL" mandatory="no">
+          <type name="String" />
+          <phases>
+            <range from="respragma" to="final" />
+          </phases>
+        </attribute>
         <attribute name="VarName" mandatory="yes">
           <type name="String" />
           <phases>
@@ -1970,6 +1996,7 @@
         <flag name="IsExported" />
         <flag name="IsProvided" />
 	<flag name="IsLocal" default="TRUE"/>
+        <flag name="IsExtern" />
       </flags>
     </node>
 <!--
@@ -2022,6 +2049,12 @@
           <type name="String" />
           <phases>
             <range from="export" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="LinkName" default="NULL" mandatory="no">
+          <type name="String" />
+          <phases>
+            <range from="respragma" to="final" />
           </phases>
         </attribute>
         <attribute name="WrapperType" default="NULL" mandatory="yes">
