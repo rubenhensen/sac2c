@@ -35,3 +35,4 @@ tagdependencies.c
 tagdependencies.h
 wls.c
 wls.h
+wlsbuild.c
