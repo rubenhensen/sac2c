@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/08/07 14:39:45  dkr
+ * PRECWLsegVar added
+ *
  * Revision 1.22  1998/07/03 10:14:49  cg
  * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
  *
@@ -109,6 +112,7 @@ extern node *PRECNwith2 (node *arg_node, node *arg_info);
 extern node *PRECNcode (node *arg_node, node *arg_info);
 extern node *PRECsync (node *arg_node, node *arg_info);
 extern node *PRECWLseg (node *arg_node, node *arg_info);
+extern node *PRECWLsegVar (node *arg_node, node *arg_info);
 
 extern char *PRECRenameLocalIdentifier (char *id);
 
