@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/10/13 15:41:33  dkrHH
+ * SAC_HM_FREE_DESC for noPHM added
+ *
  * Revision 1.6  2003/10/09 16:51:18  dkrHH
  * syntax error fixed
  *
@@ -649,8 +652,6 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 /*
  * Note, that due to DAO the size of the allocated chunk might be larger than
  * actually required by the size of the data object to be stored.
- *
- * dkr: how must this macro be defined???
  */
 
 #define SAC_HM_FREE_DESC(addr)                                                           \
@@ -794,15 +795,17 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size) SAC_HM_MALLOC (var, size)
 
-#define SAC_HM_FREE(addr) free (addr);
-
-#define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
-
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var, (size))                                           \
         SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim))                     \
     }
+
+#define SAC_HM_FREE(addr) free (addr);
+
+#define SAC_HM_FREE_DESC(addr) SAC_HM_FREE (addr)
+
+#define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
 
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
 
