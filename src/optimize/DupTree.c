@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/04/24 17:16:12  dkr
+ * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
+ *
  * Revision 1.70  1998/04/24 12:12:23  dkr
  * changed DupSPMD
  *
@@ -827,10 +830,10 @@ DupSPMD (node *arg_node, node *arg_info)
 
     new_node = MakeSPMD (DUPTRAV (SPMD_REGION (arg_node)));
 
-    SPMD_IN (new_node) = DUPTRAV (SPMD_IN (arg_node));
-    SPMD_OUT (new_node) = DUPTRAV (SPMD_OUT (arg_node));
-    SPMD_INOUT (new_node) = DUPTRAV (SPMD_INOUT (arg_node));
-    SPMD_LOCAL (new_node) = DUPTRAV (SPMD_LOCAL (arg_node));
+    SPMD_IN (new_node) = DupIds (SPMD_IN (arg_node), arg_info);
+    SPMD_OUT (new_node) = DupIds (SPMD_OUT (arg_node), arg_info);
+    SPMD_INOUT (new_node) = DupIds (SPMD_INOUT (arg_node), arg_info);
+    SPMD_LOCAL (new_node) = DupIds (SPMD_LOCAL (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -846,7 +849,7 @@ DupSync (node *arg_node, node *arg_info)
 
     new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)));
 
-    SYNC_INOUT (new_node) = DUPTRAV (SYNC_INOUT (arg_node));
+    SYNC_INOUT (new_node) = DupIds (SYNC_INOUT (arg_node), arg_info);
 
     DBUG_RETURN (new_node);
 }
@@ -967,13 +970,16 @@ node *
 DupNwithid (node *arg_node, node *arg_info)
 {
     node *new_node;
-    ids *vec, *_ids;
+    ids *_vec, *_ids;
 
     DBUG_ENTER ("DupNwithid");
 
-    vec = NWITHID_VEC (arg_node) ? DupIds (NWITHID_VEC (arg_node), arg_info) : NULL;
-    _ids = NWITHID_IDS (arg_node) ? DupIds (NWITHID_IDS (arg_node), arg_info) : NULL;
-    new_node = MakeNWithid (vec, _ids);
+    _vec = (NWITHID_VEC (arg_node) != NULL) ? DupIds (NWITHID_VEC (arg_node), arg_info)
+                                            : NULL;
+    _ids = (NWITHID_IDS (arg_node) != NULL) ? DupIds (NWITHID_IDS (arg_node), arg_info)
+                                            : NULL;
+
+    new_node = MakeNWithid (_vec, _ids);
 
     DBUG_RETURN (new_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.201  1998/04/24 17:16:23  dkr
+ * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
+ *
  * Revision 1.200  1998/04/24 12:11:48  dkr
  * changed PrintSPMD
  *
@@ -2110,7 +2113,7 @@ PrintSPMD (node *arg_node, node *arg_info)
     fprintf (outfile, " *** in:    ");
 
     if (SPMD_IN (arg_node) != NULL) {
-        SPMD_IN (arg_node) = Trav (SPMD_IN (arg_node), arg_info);
+        PrintIds (SPMD_IN (arg_node));
     }
 
     fprintf (outfile, "\n");
@@ -2118,7 +2121,7 @@ PrintSPMD (node *arg_node, node *arg_info)
     fprintf (outfile, " *** out:   ");
 
     if (SPMD_OUT (arg_node) != NULL) {
-        SPMD_OUT (arg_node) = Trav (SPMD_OUT (arg_node), arg_info);
+        PrintIds (SPMD_OUT (arg_node));
     }
 
     fprintf (outfile, "\n");
@@ -2126,7 +2129,7 @@ PrintSPMD (node *arg_node, node *arg_info)
     fprintf (outfile, " *** inout: ");
 
     if (SPMD_INOUT (arg_node) != NULL) {
-        SPMD_INOUT (arg_node) = Trav (SPMD_INOUT (arg_node), arg_info);
+        PrintIds (SPMD_INOUT (arg_node));
     }
 
     fprintf (outfile, "\n");
@@ -2134,7 +2137,7 @@ PrintSPMD (node *arg_node, node *arg_info)
     fprintf (outfile, " *** local: ");
 
     if (SPMD_LOCAL (arg_node) != NULL) {
-        SPMD_LOCAL (arg_node) = Trav (SPMD_LOCAL (arg_node), arg_info);
+        PrintIds (SPMD_LOCAL (arg_node));
     }
 
     fprintf (outfile, "\n");
@@ -2165,7 +2168,7 @@ PrintSync (node *arg_node, node *arg_info)
     fprintf (outfile, " *** inout: ");
 
     if (SYNC_INOUT (arg_node) != NULL) {
-        SYNC_INOUT (arg_node) = Trav (SYNC_INOUT (arg_node), arg_info);
+        PrintIds (SYNC_INOUT (arg_node));
     }
 
     fprintf (outfile, "\n");

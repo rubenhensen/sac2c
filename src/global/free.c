@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/04/24 17:15:47  dkr
+ * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
+ *
  * Revision 1.54  1998/04/24 12:12:45  dkr
  * changed FreeSPMD
  *
@@ -1589,10 +1592,10 @@ FreeSPMD (node *arg_node, node *arg_info)
 
     FREETRAV (SPMD_REGION (arg_node));
 
-    FREETRAV (SPMD_IN (arg_node));
-    FREETRAV (SPMD_OUT (arg_node));
-    FREETRAV (SPMD_INOUT (arg_node));
-    FREETRAV (SPMD_LOCAL (arg_node));
+    FreeAllIds (SPMD_IN (arg_node));
+    FreeAllIds (SPMD_OUT (arg_node));
+    FreeAllIds (SPMD_INOUT (arg_node));
+    FreeAllIds (SPMD_LOCAL (arg_node));
 
     FREEMASK (SPMD_MASK);
 
@@ -1616,7 +1619,7 @@ FreeSync (node *arg_node, node *arg_info)
 
     FREETRAV (SYNC_REGION (arg_node));
 
-    FREETRAV (SYNC_INOUT (arg_node));
+    FreeAllIds (SYNC_INOUT (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
 
