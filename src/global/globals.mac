@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/01/29 21:40:38  mwe
+ * sigspec compiler switch added
+ *
  * Revision 1.19  2004/11/27 05:02:55  ktr
  * Some Bugfixes.
  *
@@ -342,6 +345,12 @@ GLOBAL (bool, enforce_ieee, FALSE)
 GLOBAL (int, maxspec, 20)
 /*
  * Maximum number of specializations per function
+ */
+
+GLOBAL (sigspec_mode_t, sigspec_mode, SSP_aks)
+GLOBAL (char **, sigspec_mode_str, sigspec_mode_str_init)
+/*
+ * strategy for specilization of function signatures
  */
 
 GLOBAL (spec_mode_t, spec_mode, SS_aks)

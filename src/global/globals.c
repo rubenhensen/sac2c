@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2005/01/29 21:40:38  mwe
+ * sigspec compiler switch added
+ *
  * Revision 3.82  2004/11/26 11:10:25  cg
  * Added string conversion tables.
  *
@@ -649,6 +652,12 @@ static bool prf_is_infix_init[] = {
  */
 
 static char *spec_mode_str_init[] = {"aks", "akd", "aud"};
+
+/*
+ * Initialize signature specialization mode string representations
+ */
+
+static char *sigspec_mode_str_init[] = {"akv", "aks", "akd", "aud"};
 
 /*
  * Initialization helper functions

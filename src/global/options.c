@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/01/29 21:40:38  mwe
+ * sigspec compiler switch added
+ *
  * Revision 3.80  2005/01/07 19:54:13  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -603,6 +606,26 @@ OPTanalyseCommandline (int argc, char *argv[])
         }
     }
     ARGS_OPTION_END ("#");
+
+    ARGS_OPTION_BEGIN ("sigspec")
+    {
+        ARG_CHOICE_BEGIN ();
+
+        ARG_CHOICE ("akv", global.sigspec_mode = SSP_akv);
+        ARG_CHOICE ("AKV", global.sigspec_mode = SSP_akv);
+
+        ARG_CHOICE ("aks", global.sigspec_mode = SSP_aks);
+        ARG_CHOICE ("AKS", global.sigspec_mode = SSP_aks);
+
+        ARG_CHOICE ("akd", global.sigspec_mode = SSP_akd);
+        ARG_CHOICE ("AKD", global.sigspec_mode = SSP_akd);
+
+        ARG_CHOICE ("aud", global.sigspec_mode = SSP_aud);
+        ARG_CHOICE ("AUD", global.sigspec_mode = SSP_aud);
+
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("sigspec");
 
     ARGS_ARGUMENT ({
         if (global.sacfilename == NULL) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2005/01/29 21:40:38  mwe
+ * sigspec compiler switch added
+ *
  * Revision 3.70  2004/12/19 23:31:50  sbs
  * cha break speciiers eliminated
  *
@@ -399,6 +402,7 @@ USGprintUsage ()
       "        APS     arena preselection           (in conjunction with PHM)\n"
       "        DAO     descriptor allocation opt.   (in conjunction with PHM)\n"
       "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
+      "        TUP     type upgrade, function dispatch and function specialization\n"
       "\n"
       "        OPT     enables/disables all optimizations at once.\n"
       "\n"
@@ -494,8 +498,17 @@ USGprintUsage ()
             "    -maxnewgens <n> Set the maximum number of new created generators while\n"
             "                    intersection of generatorsets from two with-loops in\n"
             "                    with-loop fusion to <n>.\n"
-            "                      (default: %d)\n",
+            "                      (default: %d)\n\n",
             global.max_newgens);
+
+    printf ("    -sigspec <strat>   Specify strategy for specialization of function "
+            "sigantures:\n"
+            "                          akv: try to infer all values statically,\n"
+            "                          aks: try to infer all shapes statically,\n"
+            "                          akd: try to infer all ranks statically,\n"
+            "                          aud: do not specialize at all.\n"
+            "                          (default: %s)\n",
+            global.sigspec_mode_str[global.sigspec_mode]);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
