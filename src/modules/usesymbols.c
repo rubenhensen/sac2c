@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/07 18:06:05  sah
+ * fixed a minor bug
+ *
  * Revision 1.4  2004/10/28 17:20:09  sah
  * now deserialisation has an internal state
  * ,
@@ -83,6 +86,8 @@ USSAp (node *arg_node, info *arg_info)
 
         AddSymbolToAst (AP_NAME (arg_node), module);
     }
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
