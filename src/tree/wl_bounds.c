@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/05/17 11:33:25  dkr
+ * MALLOC/FREE eliminated
+ *
  * Revision 1.3  2001/04/02 16:01:56  dkr
  * NodeOrInt_MakeIndex modified
  * NameOrVal_MakeIndex removed
@@ -336,7 +339,7 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, boo
     if (NameOrVal_IsInt (name, val)) {
         if (val == IDX_SHAPE) {
             if (no_icm) {
-                str = (char *)MALLOC ((strlen (wl_name) + 40) * sizeof (char));
+                str = (char *)Malloc ((strlen (wl_name) + 40) * sizeof (char));
                 sprintf (str, "SAC_ND_A_SHAPE( %s, %d)", wl_name, dim);
                 index = MakeId (str, NULL, ST_regular);
             } else {
@@ -356,7 +359,7 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, boo
             index = DupNode (*((node **)node_or_int));
         } else {
             if (no_icm) {
-                str = (char *)MALLOC ((strlen (name) + 43) * sizeof (char));
+                str = (char *)Malloc ((strlen (name) + 43) * sizeof (char));
                 sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
                 index = MakeId (str, NULL, ST_regular);
             } else {
