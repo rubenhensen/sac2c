@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2001/11/19 14:54:24  sbs
+ * WLARRAY and WLINDEXVAR now printed in WLAAprintAccesses as well.
+ *
  * Revision 3.66  2001/11/13 19:55:19  dkr
  * PRINT_CONT: macro is no longer called with an empty second argument
  * (this might irritate some preprocessors ...)
@@ -458,6 +461,14 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
     fprintf (outfile, "/*\n");
     INDENT;
     fprintf (outfile, " * WITH-LOOP features:\n");
+
+    INDENT;
+    fprintf (outfile, " *   array: %s\n", VARDEC_NAME (NCODE_WLAA_WLARRAY (arg_node)));
+
+    INDENT;
+    fprintf (outfile, " *   index-var: %s\n",
+             VARDEC_NAME (NCODE_WLAA_INDEXVAR (arg_node)));
+
     if (feature == FEATURE_NONE) {
         INDENT;
         fprintf (outfile, " *   no special features\n");
@@ -511,6 +522,9 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
         INDENT;
         fprintf (outfile, " *   primitive function sel with unknown indexvector\n");
     }
+
+    INDENT;
+    fprintf (outfile, " *\n");
 
     dim = SHP_SEG_SIZE;
     access = NCODE_WLAA_ACCESS (arg_node);
