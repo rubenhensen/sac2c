@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.3  2000/07/11 09:56:19  dkr
  * minor changed for TAGGED ARRAYS done
  *
@@ -1027,7 +1031,7 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
-    icm = MakeIcm (name, CompileSchedulingArgs (sched, general_args), NULL);
+    icm = MakeIcm (name, CompileSchedulingArgs (sched, general_args));
 
     DBUG_RETURN (icm);
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.15  2000/07/21 14:17:53  mab
  * added EqualShpseg
  *
@@ -2166,7 +2170,7 @@ MakeIcm0 (char *name)
 
     DBUG_ENTER ("MakeIcm0");
 
-    icm = MakeIcm (name, NULL, NULL);
+    icm = MakeIcm (name, NULL);
 
     DBUG_RETURN (icm);
 }
@@ -2179,7 +2183,7 @@ MakeIcm1 (char *name, node *arg1)
     DBUG_ENTER ("MakeIcm1");
 
     arg1 = CombineExprs (arg1, NULL);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }
@@ -2193,7 +2197,7 @@ MakeIcm2 (char *name, node *arg1, node *arg2)
 
     arg2 = CombineExprs (arg2, NULL);
     arg1 = CombineExprs (arg1, arg2);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }
@@ -2208,7 +2212,7 @@ MakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
     arg3 = CombineExprs (arg3, NULL);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }
@@ -2224,7 +2228,7 @@ MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
     arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }
@@ -2241,7 +2245,7 @@ MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
     arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }
@@ -2260,7 +2264,7 @@ MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
     arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }
@@ -2280,7 +2284,7 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
     arg3 = CombineExprs (arg3, arg4);
     arg2 = CombineExprs (arg2, arg3);
     arg1 = CombineExprs (arg1, arg2);
-    icm = MakeIcm (name, arg1, NULL);
+    icm = MakeIcm (name, arg1);
 
     DBUG_RETURN (icm);
 }

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.62  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.61  2000/07/28 08:32:11  mab
  * removed unused trav-functions fpr APC and APT
  *
@@ -1388,7 +1392,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintIcm, PrintIcm, TravSons, TravSons, 2),
+       PrintIcm, PrintIcm, TravSons, TravSons, 1),
 
   NIF (N_vinfo, "N_vinfo", TravSons, TravSons, PrintVectInfo, TravSons, TravSons,
        TravSons, TravSons, FreeVinfo, TravSons, TravSons, TravSons, TravSons, DupVinfo,

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.4  2000/07/04 14:36:43  jhs
  * Added DFMGetMaskBase and used it in DFMDuplicateMask
  *
@@ -140,18 +144,6 @@ typedef struct {
     if (mask->num_bitfields < mask->mask_base->num_bitfields)                            \
         ExtendMask (mask);
 
-#define VARDEC_OR_ICM_NEXT(node)                                                         \
-    ((NODE_TYPE (node) == N_vardec) ? VARDEC_NEXT (node) : ASSIGN_NEXT (node))
-
-#define VARDEC_OR_ICM_NAME(node)                                                         \
-    ((NODE_TYPE (node) == N_vardec) ? VARDEC_NAME (node)                                 \
-                                    : ID_NAME (ICM_ARG2 (ASSIGN_INSTR (node))))
-
-/*
- * The data flow masks are also used by compile.c.
- * Thus, they ought to deal with compiled variable declarations (ICMs).
- */
-
 /*
  * internal functions
  */
@@ -228,7 +220,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
 
     while (tmp != NULL) {
         cnt += 1;
-        tmp = VARDEC_OR_ICM_NEXT (tmp);
+        tmp = VARDEC_NEXT (tmp);
     }
 
     /*
@@ -263,7 +255,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
 
     while (tmp != NULL) {
         base->decls[cnt] = tmp;
-        base->ids[cnt] = VARDEC_OR_ICM_NAME (tmp);
+        base->ids[cnt] = VARDEC_NAME (tmp);
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
     }
@@ -323,7 +315,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
         for (i = 0; i < mask_base->num_ids; i++) {
             if ((tmp == mask_base->decls[i])
-                && (0 == strcmp (VARDEC_OR_ICM_NAME (tmp), mask_base->ids[i]))) {
+                && (0 == strcmp (VARDEC_NAME (tmp), mask_base->ids[i]))) {
                 old_decls[i] = mask_base->decls[i];
                 goto old_vardec_found;
             }
@@ -332,7 +324,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
         cnt += 1;
 
     old_vardec_found:
-        tmp = VARDEC_OR_ICM_NEXT (tmp);
+        tmp = VARDEC_NEXT (tmp);
     }
 
     /*
@@ -361,11 +353,10 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
     for (i = 0; i < old_num_ids; i++) {
         mask_base->decls[i] = old_decls[i];
-        mask_base->ids[i]
-          = (old_decls[i] == NULL)
-              ? NULL
-              : (NODE_TYPE (old_decls[i]) == N_arg ? ARG_NAME (old_decls[i])
-                                                   : VARDEC_OR_ICM_NAME (old_decls[i]));
+        mask_base->ids[i] = (old_decls[i] == NULL) ? NULL
+                                                   : (NODE_TYPE (old_decls[i]) == N_arg
+                                                        ? ARG_NAME (old_decls[i])
+                                                        : VARDEC_NAME (old_decls[i]));
     }
 
     FREE (old_decls);
@@ -404,11 +395,11 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
         }
 
         mask_base->decls[cnt] = tmp;
-        mask_base->ids[cnt] = VARDEC_OR_ICM_NAME (tmp);
+        mask_base->ids[cnt] = VARDEC_NAME (tmp);
         cnt += 1;
 
     vardec_found:
-        tmp = VARDEC_OR_ICM_NEXT (tmp);
+        tmp = VARDEC_NEXT (tmp);
     }
 
     DBUG_RETURN (mask_base);
@@ -507,7 +498,7 @@ DFMUpdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *
         for (i = 0; i < mask_base->num_ids; i++) {
             if ((mask_base->ids[i] != NULL)
                 && ((tmp == mask_base->decls[i])
-                    || (0 == strcmp (VARDEC_OR_ICM_NAME (tmp), mask_base->ids[i])))) {
+                    || (0 == strcmp (VARDEC_NAME (tmp), mask_base->ids[i])))) {
                 mask_base->decls[i] = tmp;
                 goto vardec_found;
             }
@@ -516,7 +507,7 @@ DFMUpdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *
         DBUG_ASSERT (0, "Variable declration removed during compilation");
 
     vardec_found:
-        tmp = VARDEC_OR_ICM_NEXT (tmp);
+        tmp = VARDEC_NEXT (tmp);
     }
 
     DBUG_RETURN (mask_base);

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.88  2000/07/31 10:49:31  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.87  2000/07/28 17:17:10  cg
  * Added temporary attribute VARDEC_ICM.
  *
@@ -1917,14 +1921,13 @@ extern node *MakePre (nodetype incdec, char *id);
  ***  sons:
  ***
  ***    node*  ARGS  (O)  (N_exprs)
- ***    node*  NEXT  (O)  (N_icm)
  ***
  ***  permanent attributes:
  ***
  ***    char*  NAME
  ***    int    INDENT_BEFORE
  ***    int    INDENT_AFTER
- ***    bool   END_OF_STATEMENT (if true, adds a semicolon after ICM )
+ ***    bool   END_OF_STATEMENT
  ***
  *** remarks:
  ***    NEXT at least (!) is used for the compilation of N_typedef's
@@ -1933,15 +1936,16 @@ extern node *MakePre (nodetype incdec, char *id);
  ***    INDENT is used for indenting ICMs in output. This value is set
  ***    by 'MakeIcm' and used by 'PrintIcm'.
  ***
+ ***    The END_OF_STATEMENT flag causes a semicolon to be printed behind
+ ***    the ICM or not.
  ***/
 
-extern node *MakeIcm (char *name, node *args, node *next);
+extern node *MakeIcm (char *name, node *args);
 
 #define ICM_NAME(n) (n->info.fun_name.id)
 #define ICM_INDENT_BEFORE(n) (n->flag)
 #define ICM_INDENT_AFTER(n) (n->int_data)
 #define ICM_ARGS(n) (n->node[0])
-#define ICM_NEXT(n) (n->node[1])
 #define ICM_END_OF_STATEMENT(n) ((bool)(n->counter))
 
 /*--------------------------------------------------------------------------*/

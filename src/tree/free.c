@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.8  2000/07/21 08:19:44  nmw
  * FreeModspec added
  *
@@ -1364,8 +1368,6 @@ FreeIcm (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeIcm");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_icm node %s ...", ICM_NAME (arg_node)));
-
-    tmp = FREECONT (ICM_NEXT (arg_node));
 
     /*
      * In 'compile' arguments of ICMs are often shared 8-(

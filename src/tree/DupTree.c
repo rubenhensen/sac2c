@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.33  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 1.32  2000/07/24 14:57:55  nmw
  * bug in DupTypes fixed. TYPES_STATUS was missing
  *
@@ -1539,8 +1543,13 @@ DupIcm (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupIcm");
 
-    new_node = MakeIcm (ICM_NAME (arg_node), DUPTRAV (ICM_ARGS (arg_node)),
-                        DUPCONT (ICM_NEXT (arg_node)));
+    new_node = MakeIcm (ICM_NAME (arg_node), DUPTRAV (ICM_ARGS (arg_node)));
+
+    /*
+     * The ICM name is not copied here because ICM names are predominantly static
+     * string constants and therefore aren't freed anyway.
+     */
+
     ICM_INDENT_BEFORE (new_node) = ICM_INDENT_BEFORE (arg_node);
     ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
 

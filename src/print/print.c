@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.93  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 2.92  2000/07/28 20:07:13  dkr
  * PrintIcm:
  * For expanded C-ICMs the indentation via ICM_INDENT_... is undone in
@@ -1954,26 +1958,6 @@ PrintIcm (node *arg_node, node *arg_info)
         if (ICM_END_OF_STATEMENT (arg_node)) {
             fprintf (outfile, ";");
         }
-
-        if (NULL != ICM_NEXT (arg_node)) {
-            DBUG_ASSERT (0, "ICM_NEXT reached");
-
-            if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
-                /*
-                 * ICM's within the typedef-chain are connected via ICM_NEXT!
-                 */
-                fprintf (outfile, "\n");
-                INDENT;
-            } else {
-                /*
-                 * ICM's that handle the arguments in fun-decl's are linked
-                 * via ICM_NEXT as well!! These have to be connected by colons!
-                 */
-                fprintf (outfile, ", ");
-            }
-
-            PRINT_CONT (Trav (ICM_NEXT (arg_node), arg_info), );
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -3513,7 +3497,7 @@ DoPrintIdsAST (ids *vars)
  *
  * description:
  *   This function prints the syntax tree without any interpretation.
- *   Some attribues of interest are printed inside of parenthesizes behind
+ *   Some attribues of interest are printed within parentheses behind
  *   the node name.
  *
  ******************************************************************************/
@@ -3525,6 +3509,8 @@ DoPrintAST (node *arg_node, int skip_next)
     int i;
 
     DBUG_ENTER ("DoPrintAST");
+
+    skip = NULL;
 
     outfile = stdout;
 
@@ -3776,8 +3762,6 @@ DoPrintAST (node *arg_node, int skip_next)
 
         case N_icm:
             fprintf (outfile, "(%s)\n", ICM_NAME (arg_node));
-
-            skip = ICM_NEXT (arg_node);
             break;
 
         default:

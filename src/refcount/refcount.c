@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.23  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 2.22  2000/06/13 14:18:53  dkr
  * macros L_NWITH_OR_NWITH2_... used (for the cc-compiler)
  *
@@ -1383,10 +1387,6 @@ RCicm (node *arg_node, node *arg_info)
         INFO_RC_PRF (arg_info) = arg_node;
         ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
         INFO_RC_PRF (arg_info) = NULL;
-    }
-
-    if (ICM_NEXT (arg_node) != NULL) {
-        ICM_NEXT (arg_node) = Trav (ICM_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

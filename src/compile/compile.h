@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.10  2000/07/31 10:45:52  cg
+ * Eventually, the son ICM_NEXT is removed from the N_icm node.
+ * The creation function MakeIcm is adjusted accordingly.
+ *
  * Revision 2.9  2000/07/13 11:59:07  jhs
  * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
  *
@@ -95,7 +99,7 @@ extern node *GetFoldVardecs (node *fundef);
  */
 
 #define CREATE_1_ARY_ICM(assign, str, arg)                                               \
-    assign = MakeAssign (MakeIcm (str, NULL, NULL), NULL);                               \
+    assign = MakeAssign (MakeIcm (str, NULL), NULL);                                     \
     ICM_ARGS (ASSIGN_INSTR (assign)) = MakeExprs (arg, NULL);                            \
     icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
 
