@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.65  1995/10/18 16:47:58  cg
+ * Revision 1.66  1995/10/20 09:22:51  cg
+ * added compiler phase 'analysis`
+ *
+ * Revision 1.65  1995/10/18  16:47:58  cg
  * some beautifications
  *
  * Revision 1.64  1995/10/18  13:45:49  cg
@@ -230,6 +233,7 @@
 #include "sib.h"
 #include "implicittypes.h"
 #include "objinit.h"
+#include "analysis.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -269,7 +273,8 @@ MAIN
     int set_outfile = 0;
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0;
+        breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
+        breakanalysis = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -358,6 +363,9 @@ MAIN
             break;
         case 'm':
             breakimpltype = 1;
+            break;
+        case 'y':
+            breakanalysis = 1;
             break;
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
@@ -617,34 +625,41 @@ MAIN
                         ABORT_ON_ERROR;
 
                         if (!breakimpltype) {
-                            NOTE (("\nWriting SIB: ..."));
+                            NOTE (("\nAnalysing functions: ..."));
                             compiler_phase++;
-                            syntax_tree = WriteSib (syntax_tree);
+                            syntax_tree = Analysis (syntax_tree);
                             ABORT_ON_ERROR;
 
-                            if (!breaksib) {
-                                NOTE (("\nOptimizing: ..."));
+                            if (!breakanalysis) {
+                                NOTE (("\nWriting SIB: ..."));
                                 compiler_phase++;
-                                syntax_tree = Optimize (syntax_tree);
+                                syntax_tree = WriteSib (syntax_tree);
                                 ABORT_ON_ERROR;
 
-                                if (!breakopt) {
-                                    NOTE (("\nPsi-Optimizing: ..."));
+                                if (!breaksib) {
+                                    NOTE (("\nOptimizing: ..."));
                                     compiler_phase++;
-                                    syntax_tree = PsiOpt (syntax_tree);
+                                    syntax_tree = Optimize (syntax_tree);
                                     ABORT_ON_ERROR;
 
-                                    if (!breakpsiopt) {
-                                        NOTE (("\nRefcounting: ..."));
+                                    if (!breakopt) {
+                                        NOTE (("\nPsi-Optimizing: ..."));
                                         compiler_phase++;
-                                        syntax_tree = Refcount (syntax_tree);
+                                        syntax_tree = PsiOpt (syntax_tree);
                                         ABORT_ON_ERROR;
 
-                                        if (!breakref) {
-                                            NOTE (("\nCompiling: ..."));
+                                        if (!breakpsiopt) {
+                                            NOTE (("\nRefcounting: ..."));
                                             compiler_phase++;
-                                            syntax_tree = Compile (syntax_tree);
+                                            syntax_tree = Refcount (syntax_tree);
                                             ABORT_ON_ERROR;
+
+                                            if (!breakref) {
+                                                NOTE (("\nCompiling: ..."));
+                                                compiler_phase++;
+                                                syntax_tree = Compile (syntax_tree);
+                                                ABORT_ON_ERROR;
+                                            }
                                         }
                                     }
                                 }
