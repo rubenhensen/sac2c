@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 14:47:45  nmw
+ * ST_ignore added
+ * to mark fundefs of generic templates after specialization
+ *
  * Revision 3.1  2000/11/20 17:59:39  sacbase
  * new release made
  *
@@ -160,7 +164,10 @@ SELECT (ST_sac, "ST_sac",
           /* fundef: default flag, used during inferation                    */),
 
   SELECT (ST_call_mtlift, "ST_call_mtlift",
-          /* fundef: lifted from N_mt                                        */)
+          /* fundef: lifted from N_mt                                        */),
+
+  SELECT (ST_ignore, "ST_ignore",
+          /* fundef: unused generic fundef when compiling for c library      */)
 
 #undef SELECT
 
