@@ -27,3 +27,4 @@ types.h
 usage.c
 usage.h
 config.h.in
+globals.mac
