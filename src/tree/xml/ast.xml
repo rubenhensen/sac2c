@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.37  2004/11/02 16:12:32  sah
+  added SymbolName attribute to Fundef and Objdef
+
   Revision 1.36  2004/11/02 10:38:59  sah
   fixed a typoe
 
@@ -436,6 +439,12 @@
             <range from="compile" to="final" />
           </phases>
         </attribute>
+	<attribute name="SymbolName" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="export" to="final" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -560,6 +569,12 @@
             <range from="compile" to="final" />
           </phases>
         </attribute>
+	<attribute name="SymbolName" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="export" to="final" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
