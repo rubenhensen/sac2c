@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/11/23 11:21:53  sbs
+ * node_info.mac excluded
+ *
  * Revision 3.60  2004/11/23 09:38:55  cg
  * Fixed various typos.
  * Remove DFMfoldmask_t.
@@ -264,6 +267,8 @@
 #include <stdio.h>
 
 #include "config.h"
+#include "types_nodetype.h"
+#include "types_trav.h"
 
 /*
  * bool values
@@ -389,16 +394,6 @@ typedef enum {
 
 /* string sets, see stringset.h */
 typedef struct STRINGSET_T stringset_t;
-
-/*
- * new nodes for yacc and the syntax tree
- */
-
-typedef enum {
-#define NIFNode_name(Node_name) Node_name
-#include "node_info.mac"
-#undef NIFNode_name
-} nodetype; /* Type of nodes of syntax tree */
 
 typedef enum {
 #define PRF_IF(a, b, c, d, e, f, g, h) a
@@ -682,7 +677,7 @@ typedef struct argtab_t {
     int size;
     node **ptr_in;  /* N_arg or N_exprs node */
     void **ptr_out; /* 'types*' or 'ids*' */
-    struct argtag_t *tag;
+    argtag_t *tag;
 } argtab_t;
 
 /*
