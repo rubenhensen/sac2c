@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/03/02 10:36:22  dkr
+# /home/dkr/sac/BASE/sac2c/src/psi-opt/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.5  2001/02/06 01:52:44  dkr
 # make deps done
 #
@@ -101,13 +104,13 @@ all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
 # recognize the dependency between *.[ch] and the .mac files!
 #
 pad_collect.c: ../tree/prf_node_info.mac
-	touch pad_collect.c
+	touch $@
 
 pad_infer.c: ../tree/type_info.mac
-	touch pad_infer.c
+	touch $@
 
 pad_transform.c: ../tree/prf_node_info.mac
-	touch pad_transform.c
+	touch $@
 
 
 %.o: %.c
