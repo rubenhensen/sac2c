@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/25 10:18:38  dkr
+ * -b21 added
+ *
  * Revision 3.6  2000/12/14 17:48:13  dkr
  * internal flag 'dkr' replaced by 'xxx'
  *
@@ -263,7 +266,7 @@ AnalyseCommandline (int argc, char *argv[])
         char *break_arg = StringCopy (ARG);
 
         ARG = strtok (ARG, ":");
-        ARG_RANGE (break_after, 1, 20);
+        ARG_RANGE (break_after, 1, 21);
         switch (break_after) {
         case PH_sacopt:
             show_idx = 1;

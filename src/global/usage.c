@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/25 10:17:29  dkr
+ * -b21 added
+ *
  * Revision 3.5  2001/01/08 12:03:52  dkr
  * compiler phases renumbered
  *
@@ -275,7 +278,7 @@ usage ()
             "\t\t-noPAB\tdeactivates print\n"
             "\t\t-doPAB\tactivates print\n\n");
 
-    for (ph = 1; ph <= PH_compile; ph++) {
+    for (ph = 1; ph <= PH_genccode; ph++) {
         printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
     }
 
