@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.163  2004/09/27 19:12:34  sbs
+ * ntype information now is printed irrespective of the phase
+ * where Print is called.
+ *
  * Revision 3.162  2004/08/26 17:02:24  skt
  * printing of FUNDEF_EXECMODE enabled during availability of the information
  *
@@ -2031,11 +2035,9 @@ PrintVardec (node *arg_node, info *arg_info)
 
         fprintf (outfile, "; ");
 
-        if (compiler_phase == PH_typecheck) {
-            type_str = TYType2String (AVIS_TYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
-            fprintf (outfile, "/* %s */", type_str);
-            type_str = Free (type_str);
-        }
+        type_str = TYType2String (AVIS_TYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
+        fprintf (outfile, "/* %s */", type_str);
+        type_str = Free (type_str);
 
         Trav (VARDEC_AVIS (arg_node), arg_info);
 
