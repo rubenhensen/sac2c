@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  1999/06/30 12:59:59  jhs
+ * Added INFO_SPMD_LAST.
+ *
  * Revision 2.31  1999/06/30 07:53:35  jhs
  * Added INFO_COMP_LAST_SYNC to the Mmacros of N_info.
  *
@@ -2201,6 +2204,7 @@ extern node *MakePragma ();
  ***
  ***    node*      INFO_SPMD_FUNDEF   (N_fundef)
  ***    int        INFO_SPMD_FIRST
+ ***    int        INFO_SPMD_LAST
  ***    int        INFO_SPMD_MT
  ***
  ***    node*      ACTUAL_FUNDEF
@@ -2324,6 +2328,7 @@ extern node *MakeInfo ();
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 #define INFO_SPMD_FIRST(n) (n->flag)
+#define INFO_SPMD_LAST(n) (n->int_data)
 #define INFO_SPMD_MT(n) (n->counter)
 
 #define INFO_SPMDT_ACTUAL_FUNDEF(n) (n->node[0])
@@ -2514,6 +2519,8 @@ extern node *MakeSpmd (node *region);
  ***
  ***    int        FIRST            (is the sync-region the first one
  ***                                 of the current SPMD-region?)
+ ***    int        LAST             (is the sync-region the last one
+ ***                                 of the current SPMD-region?)
  ***
  ***    DFMmask_t  IN
  ***    DFMmask_t  OUT
@@ -2535,6 +2542,7 @@ extern node *MakeSpmd (node *region);
 extern node *MakeSync (node *region, int first);
 
 #define SYNC_FIRST(n) (n->flag)
+#define SYNC_LAST(n) (n->int_data)
 #define SYNC_REGION(n) (n->node[0])
 #define SYNC_WITH_PTRS(n) (n->node[1])
 #define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[2]))
