@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/15 11:15:16  dkr
+ * fixed a bug in ICMCompileMT_ADJUST_SCHEDULER:
+ * right format string used now ... :-/
+ *
  * Revision 3.6  2001/03/15 10:24:38  dkr
  * icm SAC_MT_ADJUST_SCHEDULER_OFFSET renamed into
  * SAC_MT_ADJUST_SCHEDULER__OFFSET
@@ -1334,7 +1338,7 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower, char
     if (adjust_offset) {
         fprintf (outfile, "__OFFSET");
     }
-    fprintf (outfile, "(%s, %d, %d, %d, %d, (", array, current_dim, lower, upper,
+    fprintf (outfile, "(%s, %d, %s, %s, %s, (", array, current_dim, lower, upper,
              unrolling);
 
     if (current_dim == array_dim - 1) {
