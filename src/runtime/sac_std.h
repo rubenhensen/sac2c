@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.1  1999/02/23 12:43:59  sacbase
  * new release made
  *
@@ -67,11 +72,18 @@
  * ICMs for array access:
  * ========================
  *
- * ND_A_FIELD : for accessing elements of the array
- * ND_A_SIZE  : accesses the size of the unrolling (in elements)
- * ND_A_DIM   : accesses the dimension of the array
- * ND_A_SHAPE : accesses one shape component of an array
+ * ND_A_FIELD     : for accessing elements of the array
+ * ND_A_SIZE      : accesses the size of the unrolling (in elements)
+ * ND_A_DIM       : accesses the dimension of the array
+ * ND_KD_A_SHAPE  : accesses the shape in a specified dimension
+ * ND_A_SHAPE     : accesses one shape component of an array
+ * ND_A_SHAPEP    : accesses the shape vector of an array
  *
+ * ND_WRITE_ARRAY : write access at specified index position
+ * ND_READ_ARRAY  : read access at specified index position
+ *
+ * Only the latter two ICMs should be used to access the elements of an array
+ * as they selectively enable boundary checking and cache simulation !
  */
 
 #define SAC_ND_A_FIELD(name) name
@@ -80,6 +92,12 @@
 #define SAC_ND_KD_A_SHAPE(name, dim) name##__s##dim
 #define SAC_ND_A_SHAPEP(name) name##__s
 #define SAC_ND_A_SHAPE(name, dim) name##__s[dim]
+
+#define SAC_ND_WRITE_ARRAY(name, pos)                                                    \
+    SAC_BC_WRITE (name, pos) SAC_CS_WRITE_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos]
+
+#define SAC_ND_READ_ARRAY(name, pos)                                                     \
+    (SAC_BC_READ (name, pos) SAC_CS_READ_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos])
 
 /*
  * ICMs for refcount access:
@@ -158,12 +176,14 @@
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
     SAC_FREE (SAC_ND_A_RCP (name));                                                      \
     SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
-    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));
+    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
+    SAC_CS_UNREGISTER_ARRAY (name);
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
     SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
-    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));
+    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
+    SAC_CS_UNREGISTER_ARRAY (name);
 
 /*
  * ICMs for assigning refcounted data :
@@ -219,8 +239,9 @@
     {                                                                                    \
         int __i;                                                                         \
         SAC_ND_A_FIELD (new) = SAC_MALLOC (basetypesize * SAC_ND_A_SIZE (old));          \
+        SAC_CS_REGISTER_ARRAY (new);                                                     \
         for (__i = 0; __i < SAC_ND_A_SIZE (old); __i++) {                                \
-            SAC_ND_A_FIELD (new)[__i] = SAC_ND_A_FIELD (old)[__i];                       \
+            SAC_ND_WRITE_ARRAY (new, __i) = SAC_ND_READ_ARRAY (old, __i);                \
         }                                                                                \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_KS_COPY_ARRAY(%s, %s) at addr: %p", #old, #new, SAC_ND_A_FIELD (new)));   \
@@ -264,6 +285,7 @@
                            rc, SAC_ND_A_FIELD (name)));                                  \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                  \
         SAC_TR_REF_PRINT_RC (name);                                                      \
+        SAC_CS_REGISTER_ARRAY (name);                                                    \
     }
 
 #define SAC_ND_SET_SIZE(name, num) SAC_ND_A_SIZE (name) = num;

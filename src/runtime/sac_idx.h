@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.1  1999/02/23 12:43:51  sacbase
  * new release made
  *
@@ -50,14 +55,14 @@
 
 #define SAC_ND_IDX_PSI_S(s, a, res)                                                      \
     SAC_TR_PRF_PRINT (("ND_IDX_PSI_S( %s, %s, %s)\n", #s, #a, #res));                    \
-    res = SAC_ND_A_FIELD (a)[s];
+    res = SAC_ND_READ_ARRAY (a, s);
 
 #define SAC_ND_IDX_PSI_A(s, a, res)                                                      \
     SAC_TR_PRF_PRINT (("ND_IDX_PSI_A( %s, %s, %s)\n", #s, #a, #res));                    \
     {                                                                                    \
-        int __i, __s = s;                                                                \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__s++];                       \
+        int __i, __s;                                                                    \
+        for (__i = 0, __s = s; __i < SAC_ND_A_SIZE (res); __i++, __s++)                  \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __s);                  \
     };
 
 /*
@@ -73,14 +78,14 @@
         int __i;                                                                         \
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
         for (__i = 0; __i < s; __i++)                                                    \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
         for (__i = __i + SAC_ND_A_SIZE (val); __i < SAC_ND_A_SIZE (res); __i++)          \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
     }                                                                                    \
     {                                                                                    \
         int __i, __s;                                                                    \
         for (__s = 0, __i = s; __s < SAC_ND_A_SIZE (val); __i++, __s++)                  \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (val)[__s];                       \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
     }
 
 #define SAC_ND_IDX_MODARRAY_AxVxA(line, basetype, res, a, s, val)                        \
@@ -90,11 +95,11 @@
         int __i, __s;                                                                    \
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
         for (__i = 0; __i < s; __i++)                                                    \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
         for (__s = 0; __s < SAC_ND_A_SIZE (val); __i++, __s++)                           \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (val)[__s];                       \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (val, __s);                \
         for (; __i < SAC_ND_A_SIZE (res); __i++)                                         \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
     }
 
 #define SAC_ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(line, basetype, res, a, s, val)            \
@@ -105,9 +110,9 @@
         int __i;                                                                         \
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
         for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
     }                                                                                    \
-    SAC_ND_A_FIELD (res)[s] = val;
+    SAC_ND_WRITE_ARRAY (res, s) = val;
 
 #define SAC_ND_IDX_MODARRAY_AxVxS(line, basetype, res, a, s, val)                        \
     SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s, %s)\n", #line,        \
@@ -116,9 +121,9 @@
         int __i;                                                                         \
         SAC_ND_ALLOC_ARRAY (basetype, res, 0);                                           \
         for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a)[__i];                         \
+            SAC_ND_WRITE_ARRAY (res, __i) = SAC_ND_READ_ARRAY (a, __i);                  \
     }                                                                                    \
-    SAC_ND_A_FIELD (res)[s] = val;
+    SAC_ND_WRITE_ARRAY (res, s) = val;
 
 #define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
 

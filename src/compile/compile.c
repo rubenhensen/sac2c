@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.3  1999/03/15 14:06:42  bs
  * Access macros renamed (take a look at tree_basic.h).
  *
@@ -1255,7 +1260,7 @@ IdOrNumToIndex (node *id_or_num, int dim)
 
     if (NODE_TYPE (id_or_num) == N_id) {
         str = (char *)Malloc ((strlen (ID_NAME (id_or_num)) + 25) * sizeof (char));
-        sprintf (str, "SAC_ND_A_FIELD( %s)[ %d]", ID_NAME (id_or_num), dim);
+        sprintf (str, "SAC_ND_READ_ARRAY( %s,  %d)", ID_NAME (id_or_num), dim);
         index = MakeId (str, NULL, ST_regular);
     } else {
         DBUG_ASSERT ((NODE_TYPE (id_or_num) == N_num), "wrong node type found");

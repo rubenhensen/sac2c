@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.1  1999/02/23 12:42:37  sacbase
  * new release made
  *
@@ -17,7 +22,7 @@
 #ifndef _icm2c_basic_h
 #define _icm2c_basic_h
 
-#define AccessVect(v, i) fprintf (outfile, "SAC_ND_A_FIELD(%s)[%i]", v, i)
+#define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %i)", v, i)
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 

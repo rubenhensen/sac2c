@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.1  1999/02/23 12:42:41  sacbase
  * new release made
  *
@@ -66,19 +71,27 @@
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr++]=%s;\n", res, res, val[0]);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %s__destptr) = %s;\n", res, res, val[0]);  \
+    INDENT;                                                                              \
+    fprintf (outfile, "%s__destptr++;\n", res);
 
 #define RetWithArray(res, a)                                                             \
     INDENT;                                                                              \
     fprintf (outfile, "{ int SAC_i;\n\n");                                               \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", a);            \
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++) {\n", a);         \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr++]=SAC_ND_A_FIELD(%s)[SAC_i];\n",  \
+    fprintf (outfile,                                                                    \
+             "SAC_ND_WRITE_ARRAY(%s, %s__destptr)"                                       \
+             " = SAC_ND_READ_ARRAY(%s, SAC_i);\n",                                       \
              res, res, a);                                                               \
+    INDENT;                                                                              \
+    fprintf (outfile, "%s__destptr++;\n", res);                                          \
     indent--;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n");                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_DEC_RC_FREE_ARRAY( %s, 1);\n", a);                         \
     indent--;                                                                            \
@@ -99,13 +112,15 @@
             fprintf (outfile, "int SAC_lim_%d;\n", i);                                   \
             INDENT;                                                                      \
             fprintf (outfile, "int %s__offset%d_left=", res, i);                         \
-            fprintf (outfile, "SAC_ND_A_FIELD(%s)[%d]", from, i);                        \
+            fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %d)", from, i);                     \
             for (j = (i + 1); j < dimres; j++)                                           \
                 fprintf (outfile, " *SAC_ND_KD_A_SHAPE(%s, %d)", res, j);                \
             fprintf (outfile, ";\n");                                                    \
             INDENT;                                                                      \
             fprintf (outfile, "int %s__offset%d_right=", res, i);                        \
-            fprintf (outfile, "(SAC_ND_KD_A_SHAPE(%s, %d)-SAC_ND_A_FIELD(%s)[%d]-1)",    \
+            fprintf (outfile,                                                            \
+                     "(SAC_ND_KD_A_SHAPE(%s, %d)"                                        \
+                     " - SAC_ND_READ_ARRAY(%s, %d) - 1)",                                \
                      res, i, to, i);                                                     \
             for (j = (i + 1); j < dimres; j++)                                           \
                 fprintf (outfile, " *SAC_ND_KD_A_SHAPE(%s, %d)", res, j);                \
@@ -125,7 +140,7 @@
                          res, i, res);                                                   \
                 indent++;                                                                \
                 INDENT;                                                                  \
-                fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]=", res, res);         \
+                fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %s__destptr) = ", res, res);   \
                 fillstr;                                                                 \
                 fprintf (outfile, ";\n");                                                \
                 indent--;                                                                \
@@ -134,10 +149,10 @@
                                                                                          \
                 INDENT;                                                                  \
                 fprintf (outfile,                                                        \
-                         "for( SAC_ND_A_FIELD(%s)[%d]=SAC_ND_A_FIELD(%s)[%d]; "          \
-                         "SAC_ND_A_FIELD(%s)[%d]<=SAC_ND_A_FIELD(%s)[%d]; "              \
-                         "SAC_ND_A_FIELD(%s)[%d]++) {\n",                                \
-                         idx, i, from, i, idx, i, to, i, idx, i);                        \
+                         "for( SAC_ND_WRITE_ARRAY(%s, %d)=SAC_ND_READ_ARRAY(%s, %d); "   \
+                         "SAC_ND_READ_ARRAY(%s,%d)<=SAC_ND_READ_ARRAY(%s,%d); "          \
+                         "SAC_ND_WRITE_ARRAY(%s,%d)=SAC_ND_READ_ARRAY(%s,%d)+1) {\n",    \
+                         idx, i, from, i, idx, i, to, i, idx, i, idx, i);                \
                 indent++;                                                                \
             }                                                                            \
         }                                                                                \
@@ -156,18 +171,14 @@
             int i, j;                                                                    \
             if (sizeres == n_neutral)                                                    \
                 for (i = 0; i < n_neutral; i += 1)                                       \
-                    if (1 == isdigit ((neutral[i])[0]))                                  \
-                        fprintf (outfile, "SAC_ND_A_FIELD(%s)[%d]=%s;\n", res, i,        \
-                                 neutral[i]);                                            \
-                    else                                                                 \
-                        fprintf (outfile,                                                \
-                                 "SAC_ND_A_FIELD(%s)[%d]=SAC_ND_A_FIELD(%s);\n", res, i, \
-                                 neutral[i]);                                            \
+                    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %d) = %s;\n", res, i,      \
+                             neutral[i]);                                                \
             else                                                                         \
                 for (i = 0, j = 0; i < n_neutral; i += 1, j = i / n_neutral)             \
                     fprintf (outfile,                                                    \
-                             " SAC_ND_A_FIELD(%s)[%d]=SAC_ND_A_FIELD(%s)[%d];\n", res,   \
-                             i, neutral[j], i - n_neutral * j);                          \
+                             " SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, "      \
+                             "%d);\n",                                                   \
+                             res, i, neutral[j], i - n_neutral * j);                     \
         }                                                                                \
     } else                                                                               \
         fprintf (outfile, " %s=%s;\n", res, neutral[0]);                                 \
@@ -176,10 +187,10 @@
         for (i = 0; i < idxlen; i++) {                                                   \
             INDENT;                                                                      \
             fprintf (outfile,                                                            \
-                     "for( SAC_ND_A_FIELD(%s)[%d]=SAC_ND_A_FIELD(%s)[%d]; "              \
-                     "SAC_ND_A_FIELD(%s)[%d]<=SAC_ND_A_FIELD(%s)[%d]; "                  \
-                     "SAC_ND_A_FIELD(%s)[%d]++) {\n",                                    \
-                     idx, i, from, i, idx, i, to, i, idx, i);                            \
+                     "for( SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d); "     \
+                     "SAC_ND_READ_ARRAY(%s, %d)<=SAC_ND_READ_ARRAY(%s, %d); "            \
+                     "SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d) + 1)\n",    \
+                     idx, i, from, i, idx, i, to, i, idx, i, idx, i);                    \
             indent++;                                                                    \
         }                                                                                \
     }                                                                                    \
@@ -200,7 +211,7 @@
                      i, res);                                                            \
             indent++;                                                                    \
             INDENT;                                                                      \
-            fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]=", res, res);             \
+            fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %s__destptr) = ", res, res);       \
             fillstr;                                                                     \
             fprintf (outfile, ";\n");                                                    \
             indent--;                                                                    \
@@ -342,30 +353,11 @@
 
 #define CopyBlock(a, offset, res, line)                                                  \
     NewBlock (InitPtr (offset, fprintf (outfile, "0")),                                  \
-              FillRes (                                                                  \
-                res, INDENT; if (check_boundary) {                                       \
-                    fprintf (outfile,                                                    \
-                             "if((0 <= SAC_isrc)&&( SAC_isrc < SAC_ND_A_SIZE(%s)))\n",   \
-                             a);                                                         \
-                    indent++;                                                            \
-                    INDENT;                                                              \
-                } fprintf (outfile,                                                      \
-                           "SAC_ND_A_FIELD(%s)[SAC_idest++]=SAC_ND_A_FIELD(%s)[SAC_"     \
-                           "isrc++];\n",                                                 \
-                           res, a);                                                      \
-                if (check_boundary) {                                                    \
-                    indent--;                                                            \
-                    INDENT;                                                              \
-                    fprintf (outfile, "else\n");                                         \
-                    indent++;                                                            \
-                    INDENT;                                                              \
-                    fprintf (outfile,                                                    \
-                             "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), "         \
-                             "SAC_isrc);\n",                                             \
-                             line, a);                                                   \
-                    indent--;                                                            \
-                    INDENT;                                                              \
-                }))
+              FillRes (res, INDENT; fprintf (outfile,                                    \
+                                             "SAC_ND_WRITE_ARRAY(%s, SAC_idest)"         \
+                                             " = SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",    \
+                                             res, a);                                    \
+                       INDENT; fprintf (outfile, "SAC_idest++; SAC_isrc++;\n");))
 
 /*
  * TakeSeg(a, dima, offset, dimi, sz_i_str, off_i_str, res)
@@ -389,11 +381,14 @@
                     for (j = i + 1; j < dima; j++)                                       \
                         fprintf (outfile, "*SAC_ND_KD_A_SHAPE(%s, %d)", a, j);           \
                 }) InitSrcOffs (dimi, dima, fprintf (outfile, "0")),                     \
-              FillRes (res, AccessSeg (dima, INDENT;                                     \
-                                       fprintf (outfile,                                 \
-                                                "SAC_ND_A_FIELD(%s)[SAC_idest++]=SAC_"   \
-                                                "ND_A_FIELD(%s)[SAC_isrc++];\n",         \
-                                                res, a);)))
+              FillRes (res,                                                              \
+                       AccessSeg (dima, INDENT;                                          \
+                                  fprintf (outfile,                                      \
+                                           "SAC_ND_WRITE_ARRAY(%s, SAC_idest) "          \
+                                           "= SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",       \
+                                           res, a);                                      \
+                                  INDENT;                                                \
+                                  fprintf (outfile, "SAC_idest++;  SAC_isrc++;\n");)))
 
 /******************************************************************************
  *
@@ -605,7 +600,7 @@ ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s)
         int i;
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "SAC_ND_A_FIELD(%s)[%d]=%s;\n", name, i, s[i]);
+            fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, %d) = %s;\n", name, i, s[i]);
         }
     }
 
@@ -939,30 +934,9 @@ ICMCompileND_KD_PSI_CxA_S (int line, char *a, char *res, int dim, char **vi)
 #undef ND_KD_PSI_CxA_S
 
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "{ int SAC_idx=");
-        VectToOffset (dim, AccessConst (vi, i), dim, a);
-        fprintf (outfile, ";\n");
-        INDENT;
-        fprintf (outfile, "if((0 <= SAC_idx) && (SAC_idx < SAC_ND_A_SIZE(%s)) )\n", a);
-        indent++;
-        INDENT;
-        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[SAC_idx];\n", res, a);
-        indent--;
-        INDENT;
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, a);
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-    } else {
-        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[", res, a);
-        VectToOffset (dim, AccessConst (vi, i), dim, a);
-        fprintf (outfile, "];\n\n");
-    }
+    fprintf (outfile, "%s = SAC_ND_READ_ARRAY(%s, ", res, a);
+    VectToOffset (dim, AccessConst (vi, i), dim, a);
+    fprintf (outfile, ");\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -991,30 +965,9 @@ ICMCompileND_KD_PSI_VxA_S (int line, char *a, char *res, int dim, char *v)
 #undef ND_KD_PSI_VxA_S
 
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "{ int SAC_idx=");
-        VectToOffset (dim, AccessVect (v, i), dim, a);
-        fprintf (outfile, ";\n");
-        INDENT;
-        fprintf (outfile, "if ((0 <= SAC_idx) && (SAC_idx < SAC_ND_A_SIZE(%s)) )\n", a);
-        indent++;
-        INDENT;
-        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[SAC_idx];\n", res, a);
-        indent--;
-        INDENT;
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "SAC_OUT_OF_BOUND(%d, \"psi\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, a);
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-    } else {
-        fprintf (outfile, "%s=SAC_ND_A_FIELD(%s)[", res, a);
-        VectToOffset (dim, AccessVect (v, i), dim, a);
-        fprintf (outfile, "];\n\n");
-    }
+    fprintf (outfile, "%s = SAC_ND_READ_ARRAY(%s, ", res, a);
+    VectToOffset (dim, AccessVect (v, i), dim, a);
+    fprintf (outfile, ");\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1185,16 +1138,18 @@ ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int catdim)
                             fprintf (outfile, "1");
                         }),
               FillRes (res, INDENT;
-                       fprintf (outfile, "for(SAC_i0=0; SAC_i0<SAC_bl0; SAC_i0++)\n");
+                       fprintf (outfile, "for (SAC_i0=0; SAC_i0<SAC_bl0; "
+                                         "SAC_i0++,SAC_idest++,SAC_isrc++)\n");
                        indent++; INDENT; fprintf (outfile,
-                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
-                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc++];\n",
+                                                  "SAC_ND_WRITE_ARRAY(%s, SAC_idest) "
+                                                  "= SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",
                                                   res, ar[0]);
                        indent--; INDENT;
-                       fprintf (outfile, "for(SAC_i1=0; SAC_i1<SAC_bl1; SAC_i1++)\n");
+                       fprintf (outfile, "for (SAC_i1=0; SAC_i1<SAC_bl1; "
+                                         "SAC_i1++,SAC_idest++,SAC_isrc1++)\n");
                        indent++; INDENT; fprintf (outfile,
-                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
-                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc1++];\n",
+                                                  "SAC_ND_WRITE_ARRAY(%s, SAC_idest) "
+                                                  "= SAC_ND_READ_ARRAY(%s, SAC_isrc1);\n",
                                                   res, ar[1]);
                        indent--; INDENT));
     fprintf (outfile, "\n\n");
@@ -1249,16 +1204,18 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
               InitVecs (0, 1, "SAC_i", fprintf (outfile, "0"));
               InitPtr (fprintf (outfile, "-SAC_shift0"), fprintf (outfile, "0")),
               FillRes (res, INDENT; fprintf (outfile, "SAC_isrc+=SAC_bl0;\n"); INDENT;
-                       fprintf (outfile, "for(SAC_i0=0; SAC_i0<SAC_shift0; SAC_i0++)\n");
+                       fprintf (outfile, "for (SAC_i0=0; SAC_i0<SAC_shift0; "
+                                         "SAC_i0++,SAC_idest++,SAC_isrc++)\n");
                        indent++; INDENT; fprintf (outfile,
-                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
-                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc++];\n",
+                                                  "SAC_ND_WRITE_ARRAY(%s, SAC_idest) "
+                                                  "= SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",
                                                   res, a);
                        indent--; INDENT; fprintf (outfile, "SAC_isrc-=SAC_bl0;\n");
-                       INDENT; fprintf (outfile, "for(; SAC_i0<SAC_bl0; SAC_i0++)\n");
+                       INDENT; fprintf (outfile, "for (; SAC_i0<SAC_bl0; "
+                                                 "SAC_i0++,SAC_idest++,SAC_isrc++)\n");
                        indent++; INDENT; fprintf (outfile,
-                                                  "SAC_ND_A_FIELD(%s)[SAC_idest++] = "
-                                                  "SAC_ND_A_FIELD(%s)[SAC_isrc++];\n",
+                                                  "SAC_ND_WRITE_ARRAY(%s, SAC_idest) "
+                                                  "= SAC_ND_READ_ARRAY(%s, SAC_isrc);\n",
                                                   res, a);
                        indent--));
     fprintf (outfile, "\n\n");
@@ -1299,37 +1256,19 @@ ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (int line, char *res_type, int dimre
     fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    INDENT;
+    fprintf (outfile,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "{  int SAC_idx=");
-        VectToOffset (dimv, AccessConst (vi, i), dimres, res);
-        fprintf (outfile, ";\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[", res);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, ", res);
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
-    fprintf (outfile, "]=%s;\n", value[0]);
+    fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-        fprintf (outfile, "}\n");
-    }
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1364,37 +1303,19 @@ ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res
     fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    INDENT;
+    fprintf (outfile,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i];\n",
+             res, old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "{  int SAC_idx=");
-        VectToOffset (dimv, AccessConst (vi, i), dimres, res);
-        fprintf (outfile, ";\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[", res);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, ", res);
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
-    fprintf (outfile, "]=%s;\n", value[0]);
+    fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-        fprintf (outfile, "}\n");
-    }
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1433,37 +1354,19 @@ ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (int line, char *res_type, int dimre
     fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    INDENT;
+    fprintf (outfile,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "{  int SAC_idx=");
-        VectToOffset (dim, AccessVect (v, i), dimres, res);
-        fprintf (outfile, ";\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[", res);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, ", res);
     VectToOffset (dim, AccessVect (v, i), dimres, res);
-    fprintf (outfile, "]=%s;\n", value[0]);
+    fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-        fprintf (outfile, "}\n");
-    }
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1497,37 +1400,19 @@ ICMCompileND_PRF_MODARRAY_AxVxS (int line, char *res_type, int dimres, char *res
     fprintf (outfile, "{ int SAC_i;\n");
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    INDENT;
+    fprintf (outfile,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "{  int SAC_idx=");
-        VectToOffset (dim, AccessVect (v, i), dimres, res);
-        fprintf (outfile, ";\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "if( (SAC_ND_A_SIZE(%s) > SAC_idx) && (0 <= SAC_idx))\n", res);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[", res);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY(%s, ", res);
     VectToOffset (dim, AccessVect (v, i), dimres, res);
-    fprintf (outfile, "]=%s;\n", value[0]);
+    fprintf (outfile, ") = %s;\n", value[0]);
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-        fprintf (outfile, "}\n");
-    }
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1564,49 +1449,33 @@ ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimres, char *res
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile,
-                 "if( (SAC_ND_A_SIZE(%s) > (SAC_idx+SAC_ND_A_SIZE(%s)))"
-                 "&& (0 <= (SAC_idx+SAC_ND_A_SIZE(%s))) ){\n",
-                 res, val, val);
-        indent++;
-        INDENT;
-    }
     fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)");
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile, "  for (SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
     INDENT;
     fprintf (outfile,
-             "  for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)",
-             val);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
+    INDENT;
+    fprintf (outfile,
+             "  for (SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
              val);
     INDENT;
-    fprintf (outfile, " for(; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_j);\n",
+             res, val);
+    INDENT;
+    fprintf (outfile, "  for (; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    INDENT;
+    fprintf (outfile,
+             "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
 
-    if (check_boundary) {
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-        INDENT;
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-        fprintf (outfile, "}\n");
-    } else {
-        INDENT;
-        fprintf (outfile, "}\n");
-    }
-    fprintf (outfile, "\n\n");
+    INDENT;
+    fprintf (outfile, "}\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1640,31 +1509,26 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
 #undef ND_PRF_MODARRAY_AxCxA_CHECK_REUSE
 
     fprintf (outfile, "{  int SAC_i, SAC_j;\n");
+    indent++;
     INDENT;
-    fprintf (outfile, "  int SAC_idx=");
+    fprintf (outfile, "int SAC_idx = ");
     VectToOffset (dimv, AccessConst (vi, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile,
-                 "if( (SAC_ND_A_SIZE(%s) > (SAC_idx+SAC_ND_A_SIZE(%s)))"
-                 "&& (0 <= (SAC_idx+SAC_ND_A_SIZE(%s))) ){\n",
-                 res, val, val);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "if(SAC_ND_A_RC(%s)==1){\n", old);
+    fprintf (outfile, "if (SAC_ND_A_RC(%s)==1) {\n", old);
     indent++;
     INDENT;
     fprintf (outfile, "SAC_ND_KS_ASSIGN_ARRAY(%s,%s)\n", old, res);
     INDENT;
     fprintf (outfile,
-             "for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
+             "for (SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
              val);
     indent++;
     INDENT;
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res,
-             val);
+    fprintf (outfile,
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_j);\n",
+             res, val);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
@@ -1674,44 +1538,39 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
     INDENT;
     fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "for(SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
     indent++;
     INDENT;
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile,
+             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
     indent--;
     INDENT;
     fprintf (outfile,
-             "for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
+             "for (SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
              val);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res, val);
+    fprintf (outfile,
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_j);\n",
+             res, val);
     indent--;
     INDENT;
-    fprintf (outfile, "for(; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "for (; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res, old);
+    fprintf (outfile,
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i];\n",
+             res, old);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
 
-    if (check_boundary) {
-        fprintf (outfile, "}\n");
-        INDENT;
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-    }
-    fprintf (outfile, "}\n");
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "}\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1742,53 +1601,39 @@ ICMCompileND_PRF_MODARRAY_AxVxA (int line, char *res_type, int dimres, char *res
 #undef ND_PRF_MODARRAY_AxVxA
 
     fprintf (outfile, "{ int SAC_i, SAC_j;\n");
-    fprintf (outfile, "  int SAC_idx=");
+    indent++;
+    INDENT;
+    fprintf (outfile, "int SAC_idx=");
     VectToOffset (dim, AccessVect (v, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile,
-                 "if( (SAC_ND_A_SIZE(%s) > (SAC_idx+SAC_ND_A_SIZE(%s)))"
-                 "&& (0 <= (SAC_idx+SAC_ND_A_SIZE(%s))) ){\n",
-                 res, val, val);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "  SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
+    fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
     INDENT;
-    fprintf (outfile, "  for(SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)");
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile, "for (SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
     INDENT;
     fprintf (outfile,
-             "  for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)",
-             val);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res,
+             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
+    INDENT;
+    fprintf (outfile,
+             "for (SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
              val);
     INDENT;
-    fprintf (outfile, " for(; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
-
-    if (check_boundary) {
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-        INDENT;
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-        fprintf (outfile, "}\n");
-    } else {
-        INDENT;
-        fprintf (outfile, "}\n");
-    }
-    fprintf (outfile, "\n\n");
+    fprintf (outfile,
+             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_j);\n",
+             res, val);
+    INDENT;
+    fprintf (outfile, "for (; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    INDENT;
+    fprintf (outfile,
+             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1822,31 +1667,26 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (int line, char *res_type, int dimre
 #undef ND_PRF_MODARRAY_AxVxA_CHECK_REUSE
 
     fprintf (outfile, "{  int SAC_i, SAC_j;\n");
+    indent++;
     INDENT;
-    fprintf (outfile, "  int SAC_idx=");
+    fprintf (outfile, "int SAC_idx=");
     VectToOffset (dim, AccessVect (v, i), dimres, res);
     fprintf (outfile, ";\n");
     INDENT;
-    if (check_boundary) {
-        fprintf (outfile,
-                 "if( (SAC_ND_A_SIZE(%s) > (SAC_idx+SAC_ND_A_SIZE(%s)))"
-                 "&& (0 <= (SAC_idx+SAC_ND_A_SIZE(%s))) ){\n",
-                 res, val, val);
-        indent++;
-        INDENT;
-    }
-    fprintf (outfile, "if(SAC_ND_A_RC(%s)==1){\n", old);
+    fprintf (outfile, "if (SAC_ND_A_RC(%s)==1) {\n", old);
     indent++;
     INDENT;
     fprintf (outfile, "SAC_ND_KS_ASSIGN_ARRAY(%s,%s)\n", old, res);
     INDENT;
     fprintf (outfile,
-             "for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
+             "for (SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
              val);
     indent++;
     INDENT;
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res,
-             val);
+    fprintf (outfile,
+             " SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_j);\n",
+             res, val);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
@@ -1859,41 +1699,36 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (int line, char *res_type, int dimre
     fprintf (outfile, "for(SAC_i=0; SAC_i<SAC_idx-1; SAC_i++)\n");
     indent++;
     INDENT;
-    fprintf (outfile, " SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res,
-             old);
+    fprintf (outfile,
+             "  SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
     indent--;
     INDENT;
     fprintf (outfile,
-             "for(SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
+             "for (SAC_i=SAC_idx,SAC_j=0; SAC_j<SAC_ND_A_SIZE(%s); SAC_i++,SAC_j++)\n",
              val);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_j];\n", res, val);
+    fprintf (outfile,
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_j);\n",
+             res, val);
     indent--;
     INDENT;
-    fprintf (outfile, "for(; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
+    fprintf (outfile, "for (; SAC_i<SAC_ND_A_SIZE(%s); SAC_i++)\n", res);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[SAC_i]=SAC_ND_A_FIELD(%s)[SAC_i];\n", res, old);
+    fprintf (outfile,
+             "SAC_ND_WRITE_ARRAY(%s, SAC_i) "
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
+             res, old);
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
 
-    if (check_boundary) {
-        fprintf (outfile, "}\n");
-        INDENT;
-        fprintf (outfile, "else\n");
-        indent++;
-        INDENT;
-        fprintf (outfile,
-                 "SAC_OUT_OF_BOUND(%d, \"modarray\", SAC_ND_A_SIZE(%s), SAC_idx);\n",
-                 line, res);
-        indent -= 2;
-        INDENT;
-    }
-    fprintf (outfile, "}\n");
-    fprintf (outfile, "\n\n");
+    fprintf (outfile, "}\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1957,7 +1792,8 @@ ICMCompileND_BEGIN_MODARRAY (char *res, int dimres, char *a, char *from, char *t
 #undef ND_BEGIN_MODARRAY
 
     BeginWith (res, dimres, from, to, idx, idxlen,
-               fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]", a, res), "modarray");
+               fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %s__destptr)", a, res),
+               "modarray");
 
 #ifdef TEST_BACKEND
     indent -= idxlen + 1;
@@ -1991,11 +1827,7 @@ ICMCompileND_BEGIN_FOLDPRF (char *res, int dimres, char *from, char *to, char *i
 #include "icm_trace.c"
 #undef ND_BEGIN_FOLDPRF
 
-#ifdef OLD_FOLD
-    BeginFoldWith (res, dimres, neutral, from, to, idx, idxlen, 1);
-#else
     BeginFoldWith (res, dimres, from, to, idx, idxlen, n_neutral, neutral);
-#endif
 
 #ifdef TEST_BACKEND
     indent -= idxlen + 1;
@@ -2029,11 +1861,7 @@ ICMCompileND_BEGIN_FOLDFUN (char *res, int dimres, char *from, char *to, char *i
 #include "icm_trace.c"
 #undef ND_BEGIN_FOLDFUN
 
-#ifdef OLD_FOLF
-    BeginFoldWith (res, dimres, neutral, from, to, idx, idxlen, 0);
-#else
     BeginFoldWith (res, dimres, from, to, idx, idxlen, n_neutral, neutral);
-#endif
 
 #ifdef TEST_BACKEND
     indent -= idxlen + 1;
@@ -2134,7 +1962,7 @@ ICMCompileND_END_MODARRAY_S (char *res, int dimres, char *a, char **valstr)
 
     RetWithScal (res, valstr);
     EndWith (res, dimres, dimres,
-             fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]", a, res), "modarray");
+             fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %s__destptr)", a, res), "modarray");
 
     DBUG_VOID_RETURN;
 }
@@ -2234,7 +2062,7 @@ ICMCompileND_END_MODARRAY_A (char *res, int dimres, char *a, char *reta, int idx
 
     RetWithArray (res, reta);
     EndWith (res, dimres, idxlen,
-             fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr]", a, res), "modarray");
+             fprintf (outfile, "SAC_ND_READ_ARRAY(%s, %s__destptr)", a, res), "modarray");
 
     DBUG_VOID_RETURN;
 }

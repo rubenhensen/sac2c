@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.1  1999/02/23 12:44:02  sacbase
  * new release made
  *
@@ -420,7 +425,7 @@
  ***/
 
 #define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_scalar, bound1, bound2)                    \
-    SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
+    SAC_ND_READ_ARRAY (idx_vec, dim) = idx_scalar;
 
 /*****************************************************************************/
 

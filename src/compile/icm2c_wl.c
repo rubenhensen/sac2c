@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/12 09:37:48  cg
+ * All accesses to C arrays are now performed through the new ICMs
+ * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
+ * of cache simulation as well as boundary checking.
+ *
  * Revision 2.1  1999/02/23 12:42:43  sacbase
  * new release made
  *
@@ -309,9 +314,11 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
 
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_A_FIELD( %s)[ %s__destptr++] = "
-                 "SAC_ND_A_FIELD( %s)[ SAC_i];\n",
+                 "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = "
+                 "SAC_ND_READ_ARRAY( %s, SAC_i);\n",
                  target, target, expr);
+        INDENT;
+        fprintf (outfile, "%s__destptr++;\n", target);
 
         indent--;
         INDENT;
@@ -335,8 +342,10 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
         fprintf (outfile, ", %s__destptr));\n", target);
 
         INDENT;
-        fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr++] = %s;\n", target, target,
+        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = %s;\n", target, target,
                  expr);
+        INDENT;
+        fprintf (outfile, "%s__destptr++;\n", target);
     }
 
     DBUG_VOID_RETURN;
@@ -393,7 +402,10 @@ ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec, int dims
     }
 
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr++] = 0;\n", target, target);
+    fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = 0;\n", target, target);
+
+    INDENT;
+    fprintf (outfile, "%s__destptr++;\n", target);
 
     if (dims_target > dims) {
 
@@ -463,8 +475,8 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
 
     INDENT;
     fprintf (outfile,
-             "SAC_ND_A_FIELD( %s)[ %s__destptr] = "
-             "SAC_ND_A_FIELD( %s)[ %s__destptr];\n",
+             "SAC_ND_WRITE_ARRAY( %s, %s__destptr) = "
+             "SAC_ND_READ_ARRAY( %s, %s__destptr);\n",
              target, target, source, target);
 
     INDENT;
