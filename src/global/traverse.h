@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/07/07 14:58:38  asi
+ * Revision 1.20  1995/07/24 11:47:35  asi
+ * added ae_tab for array elimination
+ *
+ * Revision 1.19  1995/07/07  14:58:38  asi
  * added loop unswitching - basic version
  *
  * Revision 1.18  1995/06/06  15:19:36  sbs
@@ -113,5 +116,9 @@ extern funptr unroll_tab[];
 extern funptr unswitch_tab[];
 
 extern funptr idx_tab[];
+
+extern funptr fusion_tab[];
+
+extern funptr ae_tab[];
 
 #endif /* _sac_traverse_h */

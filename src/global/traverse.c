@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/07/07 14:58:38  asi
+ * Revision 1.27  1995/07/24 11:47:35  asi
+ * added ae_tab for array elimination
+ *
+ * Revision 1.26  1995/07/07  14:58:38  asi
  * added loop unswitching - basic version
  *
  * Revision 1.25  1995/06/23  12:04:13  hw
@@ -108,6 +111,7 @@
 #include "Inline.h"
 #include "Unroll.h"
 #include "Unswitch.h"
+#include "ArrayElimination.h"
 #include "index.h"
 
 #include "traverse.h"
@@ -122,7 +126,7 @@ funptr *act_tab;
 **
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) f
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) f
 
 funptr flat_tab[] = {
 #include "node_info.mac"
@@ -134,7 +138,7 @@ funptr flat_tab[] = {
 **  2) print_tab
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) p
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) p
 
 funptr print_tab[] = {
 #include "node_info.mac"
@@ -146,7 +150,7 @@ funptr print_tab[] = {
  * 3) type_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) t
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) t
 
 funptr type_tab[] = {
 #include "node_info.mac"
@@ -158,7 +162,7 @@ funptr type_tab[] = {
  * 4) opt_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) o
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) o
 
 funptr opt_tab[] = {
 #include "node_info.mac"
@@ -170,7 +174,7 @@ funptr opt_tab[] = {
  * 5) imp_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) i
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) i
 
 funptr imp_tab[] = {
 #include "node_info.mac"
@@ -182,7 +186,7 @@ funptr imp_tab[] = {
  * 6) dead_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) x
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) x
 
 funptr dead_tab[] = {
 #include "node_info.mac"
@@ -194,7 +198,7 @@ funptr dead_tab[] = {
  * 7) wr_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) y
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) y
 
 funptr wr_tab[] = {
 #include "node_info.mac"
@@ -206,7 +210,7 @@ funptr wr_tab[] = {
  * 8) free_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) z
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) z
 
 funptr free_tab[] = {
 #include "node_info.mac"
@@ -218,7 +222,7 @@ funptr free_tab[] = {
  * 9) cf_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) a
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) a
 
 funptr cf_tab[] = {
 #include "node_info.mac"
@@ -230,7 +234,7 @@ funptr cf_tab[] = {
  * 10) refcnt_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) b
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) b
 
 funptr refcnt_tab[] = {
 #include "node_info.mac"
@@ -242,7 +246,7 @@ funptr refcnt_tab[] = {
  * 11) comp_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) c
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) c
 
 funptr comp_tab[] = {
 #include "node_info.mac"
@@ -254,7 +258,7 @@ funptr comp_tab[] = {
  * 12) lir_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) d
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) d
 
 funptr lir_tab[] = {
 #include "node_info.mac"
@@ -266,7 +270,7 @@ funptr lir_tab[] = {
  * 13) dup_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) e
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) e
 
 funptr dup_tab[] = {
 #include "node_info.mac"
@@ -278,7 +282,7 @@ funptr dup_tab[] = {
  * 14) inline_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) g
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) g
 
 funptr inline_tab[] = {
 #include "node_info.mac"
@@ -290,7 +294,7 @@ funptr inline_tab[] = {
  * 15) unroll_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) h
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) h
 
 funptr unroll_tab[] = {
 #include "node_info.mac"
@@ -302,7 +306,7 @@ funptr unroll_tab[] = {
  * 16) lir_mov_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) j
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) j
 
 funptr lir_mov_tab[] = {
 #include "node_info.mac"
@@ -314,7 +318,7 @@ funptr lir_mov_tab[] = {
  * 17) idx_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) k
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) k
 
 funptr idx_tab[] = {
 #include "node_info.mac"
@@ -326,9 +330,33 @@ funptr idx_tab[] = {
  * 18) unswitch_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) l
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) l
 
 funptr unswitch_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 19) fusion_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) m
+
+funptr fusion_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 20) ae_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q) q
+
+funptr ae_tab[] = {
 #include "node_info.mac"
 };
 
