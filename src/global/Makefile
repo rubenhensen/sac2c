@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.47  1997/11/19 19:41:19  dkr
+# added include-path ../Old2NewWith
+#
 # Revision 1.46  1997/11/12 19:17:59  dkr
 # build main.o now with -g!!
 #
@@ -154,7 +157,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects
+     -I../psi-opt -I../objects -I../Old2NewWith
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
      internal_lib.o tree_basic.o tree_compound.o types.h
@@ -204,24 +207,26 @@ clean:
 	$(RM) *.o *.bak
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/stdio.h
+Error.o: /usr/include/stdarg.h /usr/include/varargs.h
+Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
 Error.o: /usr/include/sys/feature_tests.h /usr/include/string.h Error.h
 Error.o: /usr/include/stdlib.h types.h globals.h tree_basic.h
 Error.o: ../../inc/dbug.h internal_lib.h ../modules/filemgr.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-free.o: /usr/include/stdio.h ../../inc/dbug.h my_debug.h types.h tree_basic.h
-free.o: tree_compound.h Error.h /usr/include/string.h globals.h traverse.h
-free.o: free.h /usr/include/malloc.h
+free.o: /usr/include/stdio.h /usr/include/sys/va_list.h ../../inc/dbug.h
+free.o: my_debug.h types.h tree_basic.h tree_compound.h Error.h
+free.o: /usr/include/string.h globals.h traverse.h free.h
+free.o: /usr/include/malloc.h
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/math.h /usr/include/string.h
-internal_lib.o: /usr/include/stdarg.h /usr/include/varargs.h Error.h
-internal_lib.o: /usr/include/stdio.h types.h globals.h ../../inc/dbug.h
-internal_lib.o: my_debug.h internal_lib.h
+internal_lib.o: /usr/include/stdarg.h /usr/include/varargs.h
+internal_lib.o: /usr/include/sys/va_list.h Error.h /usr/include/stdio.h
+internal_lib.o: types.h globals.h ../../inc/dbug.h my_debug.h internal_lib.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
-main.o: /usr/include/sys/feature_tests.h tree.h types.h tree_basic.h
-main.o: tree_compound.h Error.h /usr/include/string.h /usr/include/stdlib.h
-main.o: globals.h internal_lib.h free.h my_debug.h /usr/include/malloc.h
-main.o: usage.h ../flatten/flatten.h ../print/print.h
+main.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h tree.h
+main.o: types.h tree_basic.h tree_compound.h Error.h /usr/include/string.h
+main.o: /usr/include/stdlib.h globals.h internal_lib.h free.h my_debug.h
+main.o: /usr/include/malloc.h usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
 main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
 main.o: ../scanparse/y.tab.h ../compile/trace.h ../compile/profile.h
@@ -230,46 +235,49 @@ main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
 main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 main.o: ../compile/precompile.h ../modules/cccall.h
+main.o: ../Old2NewWith/Old2NewWith.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-my_debug.o: /usr/include/string.h /usr/include/stdlib.h globals.h
-my_debug.o: internal_lib.h ../print/convert.h node_info.mac prf_node_info.mac
-my_debug.o: type_info.mac
-print.o: ../compile/libsac.h ../compile/icm2c.h /usr/include/malloc.h
-print.o: /usr/include/memory.h
+my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h
+my_debug.o: /usr/include/stdlib.h globals.h internal_lib.h ../print/convert.h
+my_debug.o: node_info.mac prf_node_info.mac type_info.mac
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-traverse.o: /usr/include/stdlib.h tree.h types.h tree_basic.h tree_compound.h
-traverse.o: Error.h /usr/include/string.h globals.h internal_lib.h
-traverse.o: ../../inc/dbug.h my_debug.h ../flatten/flatten.h ../print/print.h
-traverse.o: ../typecheck/typecheck.h ../optimize/optimize.h free.h
-traverse.o: /usr/include/malloc.h ../optimize/ConstantFolding.h
-traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/WorkReduction.h
-traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
-traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
-traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
-traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
-traverse.o: ../psi-opt/index.h ../modules/writesib.h ../modules/readsib.h
+traverse.o: /usr/include/sys/va_list.h /usr/include/stdlib.h tree.h types.h
+traverse.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h
+traverse.o: globals.h internal_lib.h ../../inc/dbug.h my_debug.h
+traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
+traverse.o: ../optimize/optimize.h free.h /usr/include/malloc.h
+traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
+traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
+traverse.o: ../optimize/CSE.h ../modules/import.h ../refcount/refcount.h
+traverse.o: ../compile/compile.h ../optimize/DupTree.h ../optimize/Inline.h
+traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
+traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
+traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-traverse.o: ../compile/precompile.h ../modules/cccall.h traverse.h
-traverse.o: node_info.mac
+traverse.o: ../compile/precompile.h ../modules/cccall.h
+traverse.o: ../Old2NewWith/Old2NewWith.h traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
-tree.o: /usr/include/string.h globals.h internal_lib.h ../../inc/dbug.h
-tree.o: my_debug.h ../scanparse/scnprs.h ../scanparse/y.tab.h
-tree.o: ../optimize/optimize.h free.h /usr/include/malloc.h
-tree_basic.o: /usr/include/malloc.h types.h tree_basic.h Error.h
-tree_basic.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h
+tree.o: internal_lib.h ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
+tree.o: ../scanparse/y.tab.h ../optimize/optimize.h free.h
+tree.o: /usr/include/malloc.h
+tree_basic.o: types.h tree_basic.h Error.h /usr/include/stdio.h
+tree_basic.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 tree_basic.o: /usr/include/string.h /usr/include/stdlib.h globals.h
 tree_basic.o: ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
-tree_basic.o: ../scanparse/y.tab.h free.h internal_lib.h prf_node_info.mac
+tree_basic.o: ../scanparse/y.tab.h free.h /usr/include/malloc.h
+tree_basic.o: internal_lib.h prf_node_info.mac
 tree_compound.o: types.h tree_basic.h tree_compound.h Error.h
 tree_compound.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-tree_compound.o: /usr/include/string.h /usr/include/stdlib.h globals.h
-tree_compound.o: ../../inc/dbug.h my_debug.h free.h /usr/include/malloc.h
+tree_compound.o: /usr/include/sys/va_list.h /usr/include/string.h
+tree_compound.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
+tree_compound.o: free.h /usr/include/malloc.h
 usage.o: usage.h /usr/include/stdio.h /usr/include/sys/feature_tests.h
-usage.o: globals.h types.h ../../inc/dbug.h tree.h tree_basic.h
-usage.o: tree_compound.h Error.h /usr/include/string.h /usr/include/stdlib.h
-usage.o: internal_lib.h ../optimize/optimize.h free.h my_debug.h
-usage.o: /usr/include/malloc.h
+usage.o: /usr/include/sys/va_list.h globals.h types.h ../../inc/dbug.h tree.h
+usage.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h
+usage.o: /usr/include/stdlib.h internal_lib.h ../optimize/optimize.h free.h
+usage.o: my_debug.h /usr/include/malloc.h
