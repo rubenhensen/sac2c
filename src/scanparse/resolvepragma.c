@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/02/16 22:29:13  sah
+ * fixed handling of pragmas
+ *
  * Revision 1.8  2005/01/10 16:59:45  cg
  * Converted error messages from Error.h to ctinfo.c
  *
@@ -299,6 +302,10 @@ RSPret (node *arg_node, info *arg_info)
         INFO_RSP_NUMS (arg_info) = NUMS_NEXT (INFO_RSP_NUMS (arg_info));
     }
 
+    if (RET_NEXT (arg_node) != 0) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -319,6 +326,10 @@ RSParg (node *arg_node, info *arg_info)
         ARG_HASLINKSIGNINFO (arg_node) = TRUE;
 
         INFO_RSP_NUMS (arg_info) = NUMS_NEXT (INFO_RSP_NUMS (arg_info));
+    }
+
+    if (ARG_NEXT (arg_node) != 0) {
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
