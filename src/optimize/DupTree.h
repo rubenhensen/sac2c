@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/04/23 17:32:36  dkr
+ * added DupSync
+ *
  * Revision 1.27  1998/04/20 01:11:54  dkr
  * added DupOneIds
  *
@@ -9,9 +12,6 @@
  *
  * Revision 1.25  1998/04/17 11:42:17  srs
  * added DupNcode()
- *
- * Revision 1.24  1998/04/14 22:50:16  dkr
- * *** empty log message ***
  *
  * Revision 1.23  1998/04/11 15:16:54  srs
  * inserted DupNwith()
@@ -143,6 +143,7 @@ extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
 extern node *DupSPMD (node *arg_node, node *arg_info);
+extern node *DupSync (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);
