@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2005/03/04 21:21:42  cg
+ * Removed UPcheckAndDupSpecialFundef.
+ * Added DUPgetCopiedSpecialFundefs.
+ *
  * Revision 3.44  2005/01/20 14:16:06  ktr
  * some bugfixing
  *
@@ -194,7 +198,7 @@ extern node *DUPdupExprsNt (node *exprs);
  * Other functions for external use
  */
 /* handling of multiple used special functions */
-extern node *DUPcheckAndDupSpecialFundef (node *module, node *fundef, node *assign);
+extern node *DUPgetCopiedSpecialFundefs ();
 
 /*
  * Functions for internal use during AST traversal only!
