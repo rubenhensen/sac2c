@@ -29,4 +29,3 @@ ast2serialize_buildstack_h.xsl
 ast2serialize_link_c.xsl
 ast2serialize_link_h.xsl
 ast2check_c.xsl
-ast2check_h.xsl
