@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/07/10 15:49:32  dkr
+ * minor changes done
+ *
  * Revision 1.10  2000/07/05 15:18:02  mab
  * added Shpseg2Array
  *
@@ -258,10 +261,8 @@ LookupIds (char *name, ids *ids_chain)
  *   int IsNonUniqueHidden(types *type)
  *
  * description:
- *
  *   These functions may be used to check for particular properties
  *   of a given data type.
- *
  *
  ******************************************************************************/
 
@@ -493,9 +494,10 @@ AllocConstVec (simpletype vectype, int veclen)
  *
  * description:
  *   modifies const_vec at position idx by inserting the value stored in
- *   const_node. It is assumed (!!!) that simpletype is compatible to the const_node;
- *   if this requires a cast (e.g. NODE_TYPE(const_node) == N_num && vectype==T_double)
- *   it will be done implicitly.
+ *   const_node.
+ *   It is assumed (!!!) that simpletype is compatible to the const_node;
+ *   if this requires a cast (e.g. NODE_TYPE(const_node) == N_num &&
+ *   vectype==T_double) it will be done implicitly.
  *
  ******************************************************************************/
 
@@ -1163,7 +1165,7 @@ FindVardec_Varno (int varno, node *fundef)
  *
  * description:
  *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *    chain.
+ *   chain.
  *
  ******************************************************************************/
 
@@ -1228,7 +1230,6 @@ MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
  *                                    node *arg4, node *arg5, node *arg6)
  *
  * description:
- *
  *   These functions generate an N_assign node with a complete ICM
  *   representations including arguments as body.
  *   Each function argument may be an arbitrary list of single ICM arguments.
