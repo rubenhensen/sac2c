@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2004/12/05 17:51:24  sah
+ * bugfix
+ *
  * Revision 1.42  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -1902,7 +1905,8 @@ HDspap (node *arg_node, info *arg_info)
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel)
         && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_MOD (arg_node) == NULL) && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array)) {
+        && (SPAP_MOD (arg_node) == NULL)
+        && (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array)) {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
 
         if (info->dotcnt != 0) {
@@ -1946,7 +1950,7 @@ HDspap (node *arg_node, info *arg_info)
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
         && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_MOD (arg_node) == NULL) && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array))
+        && (SPAP_MOD (arg_node) == NULL) && (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array))
 
     {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
@@ -2155,10 +2159,9 @@ HDsetwl (node *arg_node, info *arg_info)
         node *newids = MakeSpids (ILIBstringCopy (SPID_NAME (ids)), NULL);
 
         result
-          = TBmakeWith (TBmakePart (TBmakeWithid (newids, NULL),
+          = TBmakeWith (TBmakePart (NULL, TBmakeWithid (newids, NULL),
                                     TBmakeGenerator (TBmakeDot (1), TBmakeDot (1), F_le,
-                                                     F_le, NULL, NULL),
-                                    NULL),
+                                                     F_le, NULL, NULL)),
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                  NULL)),
