@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2005/03/10 09:41:09  cg
+ * Added some missing includes.
+ *
  * Revision 1.10  2005/03/04 21:21:42  cg
  * Added application of function inlining after LaC2Fun.
  *
@@ -67,6 +70,8 @@
 #include "UndoSSATransform.h"
 #include "string.h"
 #include "tree_basic.h"
+#include "inlining.h"
+
 #include "ssa.h"
 
 /** <!--********************************************************************-->
