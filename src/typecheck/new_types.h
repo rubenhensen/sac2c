@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/09/03 13:19:56  dkr
+ * signature of TYCreateWrapperCode() modified
+ *
  * Revision 3.8  2002/08/13 15:59:35  dkr
  * signature of TYCreateWrapper...() functions modified
  *
@@ -336,6 +339,6 @@ extern ntype *TYSplitWrapperType (ntype *type, bool *finished);
 extern ntype *TYGetWrapperRetType (ntype *type);
 extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
 extern node *TYCreateWrapperVardecs (node *fundef);
-extern node *TYCreateWrapperCode (node *fundef, node *vardecs);
+extern node *TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
 
 #endif /* _new_types_h */
