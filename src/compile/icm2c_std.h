@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2003/09/19 15:38:50  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.26  2003/09/17 14:17:18  dkr
  * some function parameters renamed
  *
@@ -114,26 +117,26 @@ extern void ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg);
 
 #ifdef TAGGED_ARRAYS
 
-extern void ICMCompileND_OBJDEF (char *nt, char *basetype, int sdim, int *shp);
+extern void ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp);
 
-extern void ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim);
+extern void ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim);
 
-extern void ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp);
+extern void ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp);
 
-extern void ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim);
+extern void ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim);
 
-extern void ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp);
+extern void ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp);
 
-extern void ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp);
+extern void ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp);
 
-extern void ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim);
+extern void ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim);
 
 extern void ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT,
                                       int from_sdim, char *copyfun);
 
 extern void ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY);
 
-extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
+extern void ICMCompileND_REFRESH_MIRROR (char *var_NT, int sdim);
 
 extern void ICMCompileND_CHECK_MIRROR (char *to_NT, int to_sdim, char *from_NT,
                                        int from_sdim);

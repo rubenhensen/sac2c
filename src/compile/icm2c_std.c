@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/09/19 15:39:10  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.48  2003/09/17 14:17:20  dkr
  * some function parameters renamed
  *
@@ -427,17 +430,17 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_OBJDEF( char *nt, char *basetype, int sdim, int *shp)
+ *   void ICMCompileND_OBJDEF( char *var_NT, char *basetype, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_OBJDEF( nt, basetype, sdim, [ shp ]* )
+ *   ND_OBJDEF( var_NT, basetype, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_OBJDEF (char *nt, char *basetype, int sdim, int *shp)
+ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp)
 {
     DBUG_ENTER ("ICMCompileND_OBJDEF");
 
@@ -447,9 +450,9 @@ ICMCompileND_OBJDEF (char *nt, char *basetype, int sdim, int *shp)
 #undef ND_OBJDEF
 
     if (print_objdef_for_header_file) {
-        ICMCompileND_DECL_EXTERN (nt, basetype, sdim);
+        ICMCompileND_DECL_EXTERN (var_NT, basetype, sdim);
     } else {
-        ICMCompileND_DECL (nt, basetype, sdim, shp);
+        ICMCompileND_DECL (var_NT, basetype, sdim, shp);
     }
 
     DBUG_VOID_RETURN;
@@ -458,17 +461,17 @@ ICMCompileND_OBJDEF (char *nt, char *basetype, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_OBJDEF_EXTERN( char *nt, char *basetype, int sdim)
+ *   void ICMCompileND_OBJDEF_EXTERN( char *var_NT, char *basetype, int sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_OBJDEF_EXTERN( nt, basetype, sdim)
+ *   ND_OBJDEF_EXTERN( var_NT, basetype, sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim)
+ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim)
 {
     DBUG_ENTER ("ICMCompileND_OBJDEF_EXTERN");
 
@@ -477,7 +480,7 @@ ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim)
 #include "icm_trace.c"
 #undef ND_OBJDEF_EXTERN
 
-    ICMCompileND_DECL_EXTERN (nt, basetype, sdim);
+    ICMCompileND_DECL_EXTERN (var_NT, basetype, sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -485,17 +488,17 @@ ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL( char *nt, char *basetype, int sdim, int *shp)
+ *   void ICMCompileND_DECL( char *var_NT, char *basetype, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL( nt, basetype, sdim, [ shp ]* )
+ *   ND_DECL( var_NT, basetype, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp)
+ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 {
     DBUG_ENTER ("ICMCompileND_DECL");
 
@@ -505,12 +508,12 @@ ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp)
 #undef ND_DECL
 
     INDENT;
-    fprintf (outfile, "SAC_ND_DECL__DATA( %s, %s, )\n", nt, basetype);
+    fprintf (outfile, "SAC_ND_DECL__DATA( %s, %s, )\n", var_NT, basetype);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_DECL__DESC( %s, )\n", nt);
+    fprintf (outfile, "SAC_ND_DECL__DESC( %s, )\n", var_NT);
 
-    ICMCompileND_DECL__MIRROR (nt, sdim, shp);
+    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
 
     DBUG_VOID_RETURN;
 }
@@ -518,17 +521,17 @@ ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL_EXTERN( char *nt, char *basetype, int sdim)
+ *   void ICMCompileND_DECL_EXTERN( char *var_NT, char *basetype, int sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL_EXTERN( nt, basetype, sdim)
+ *   ND_DECL_EXTERN( var_NT, basetype, sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim)
+ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim)
 {
     DBUG_ENTER ("ICMCompileND_DECL_EXTERN");
 
@@ -538,12 +541,12 @@ ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim)
 #undef ND_DECL_EXTERN
 
     INDENT;
-    fprintf (outfile, "SAC_ND_DECL__DATA( %s, %s, extern)\n", nt, basetype);
+    fprintf (outfile, "SAC_ND_DECL__DATA( %s, %s, extern)\n", var_NT, basetype);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_DECL__DESC( %s, extern)\n", nt);
+    fprintf (outfile, "SAC_ND_DECL__DESC( %s, extern)\n", var_NT);
 
-    ICMCompileND_DECL__MIRROR_EXTERN (nt, sdim);
+    ICMCompileND_DECL__MIRROR_EXTERN (var_NT, sdim);
 
     DBUG_VOID_RETURN;
 }
@@ -551,20 +554,20 @@ ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL__MIRROR( char *nt, int sdim, int *shp)
+ *   void ICMCompileND_DECL__MIRROR( char *var_NT, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL__MIRROR( nt, sdim, [ shp ]* )
+ *   ND_DECL__MIRROR( var_NT, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
+ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 {
     int size, i;
-    shape_class_t sc = ICUGetShapeClass (nt);
+    shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
     DBUG_ENTER ("ICMCompileND_DECL__MIRROR");
@@ -585,33 +588,33 @@ ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", nt, i,
-                     shp[i]);
+            fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", var_NT,
+                     i, shp[i]);
             size *= shp[i];
         }
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", nt, size);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
         break;
 
     case C_akd:
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n", nt, i);
+            fprintf (outfile, "int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n", var_NT, i);
         }
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", nt);
+        fprintf (outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", var_NT);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", nt);
+        fprintf (outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", var_NT);
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_MIRROR_DIM( %s);\n", nt);
+        fprintf (outfile, "int SAC_ND_A_MIRROR_DIM( %s);\n", var_NT);
         break;
 
     default:
@@ -625,20 +628,20 @@ ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL__MIRROR_PARAM( char *nt, int sdim, int *shp)
+ *   void ICMCompileND_DECL__MIRROR_PARAM( char *var_NT, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL__MIRROR_PARAM( nt, sdim, [ shp ]* )
+ *   ND_DECL__MIRROR_PARAM( var_NT, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
+ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
 {
     int size, i;
-    shape_class_t sc = ICUGetShapeClass (nt);
+    shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
     DBUG_ENTER ("ICMCompileND_DECL__MIRROR_PARAM");
@@ -659,14 +662,14 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", nt, i,
-                     shp[i]);
+            fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", var_NT,
+                     i, shp[i]);
             size *= shp[i];
         }
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", nt, size);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
         break;
 
     case C_akd:
@@ -676,15 +679,15 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
             fprintf (outfile,
                      "int SAC_ND_A_MIRROR_SHAPE( %s, %d) "
                      "= SAC_ND_A_DESC_SHAPE( %s, %d);\n",
-                     nt, i, nt, i);
+                     var_NT, i, var_NT, i);
         }
         INDENT;
         fprintf (outfile,
                  "int SAC_ND_A_MIRROR_SIZE( %s)"
                  " = SAC_ND_A_DESC_SIZE( %s);\n",
-                 nt, nt);
+                 var_NT, var_NT);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
         break;
 
     case C_aud:
@@ -692,12 +695,12 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
         fprintf (outfile,
                  "int SAC_ND_A_MIRROR_SIZE( %s)"
                  " = SAC_ND_A_DESC_SIZE( %s);\n",
-                 nt, nt);
+                 var_NT, var_NT);
         INDENT;
         fprintf (outfile,
                  "int SAC_ND_A_MIRROR_DIM( %s)"
                  " = SAC_ND_A_DESC_DIM( %s);\n",
-                 nt, nt);
+                 var_NT, var_NT);
         break;
 
     default:
@@ -711,20 +714,20 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DECL__MIRROR_EXTERN( char *nt, int sdim)
+ *   void ICMCompileND_DECL__MIRROR_EXTERN( char *var_NT, int sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DECL__MIRROR_EXTERN( nt, sdim)
+ *   ND_DECL__MIRROR_EXTERN( var_NT, sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
+ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
 {
     int i;
-    shape_class_t sc = ICUGetShapeClass (nt);
+    shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
     DBUG_ENTER ("ICMCompileND_DECL__MIRROR_EXTERN");
@@ -747,18 +750,18 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
             fprintf (outfile,
                      "extern "
                      "const int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n",
-                     nt, i);
+                     var_NT, i);
         }
         INDENT;
         fprintf (outfile,
                  "extern "
                  "const int SAC_ND_A_MIRROR_SIZE( %s);\n",
-                 nt);
+                 var_NT);
         INDENT;
         fprintf (outfile,
                  "extern "
                  "const int SAC_ND_A_MIRROR_DIM( %s);\n",
-                 nt);
+                 var_NT);
         break;
 
     case C_akd:
@@ -768,18 +771,18 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
             fprintf (outfile,
                      "extern "
                      "int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n",
-                     nt, i);
+                     var_NT, i);
         }
         INDENT;
         fprintf (outfile,
                  "extern "
                  "int SAC_ND_A_MIRROR_SIZE( %s);\n",
-                 nt);
+                 var_NT);
         INDENT;
         fprintf (outfile,
                  "extern "
                  "const int SAC_ND_A_MIRROR_DIM( %s);\n",
-                 nt);
+                 var_NT);
         break;
 
     case C_aud:
@@ -787,12 +790,12 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
         fprintf (outfile,
                  "extern "
                  "int SAC_ND_A_MIRROR_SIZE( %s);\n",
-                 nt);
+                 var_NT);
         INDENT;
         fprintf (outfile,
                  "extern "
                  "int SAC_ND_A_MIRROR_DIM( %s);\n",
-                 nt);
+                 var_NT);
         break;
 
     default:
@@ -967,20 +970,20 @@ ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_REFRESH_MIRROR( char *nt, int sdim)
+ *   void ICMCompileND_REFRESH_MIRROR( char *var_NT, int sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_REFRESH_MIRROR( nt, sdim)
+ *   ND_REFRESH_MIRROR( var_NT, sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
+ICMCompileND_REFRESH_MIRROR (char *var_NT, int sdim)
 {
     int i;
-    shape_class_t sc = ICUGetShapeClass (nt);
+    shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
     DBUG_ENTER ("ICMCompileND_REFRESH_MIRROR");
@@ -1008,13 +1011,13 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
             fprintf (outfile,
                      "SAC_ND_A_MIRROR_SHAPE( %s, %d) "
                      "= SAC_ND_A_DESC_SHAPE( %s, %d);\n",
-                     nt, i, nt, i);
+                     var_NT, i, var_NT, i);
         }
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_MIRROR_SIZE( %s)"
                  " = SAC_ND_A_DESC_SIZE( %s);\n",
-                 nt, nt);
+                 var_NT, var_NT);
         break;
 
     case C_aud:
@@ -1022,12 +1025,12 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
         fprintf (outfile,
                  "SAC_ND_A_MIRROR_SIZE( %s)"
                  " = SAC_ND_A_DESC_SIZE( %s);\n",
-                 nt, nt);
+                 var_NT, var_NT);
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_MIRROR_DIM( %s)"
                  " = SAC_ND_A_DESC_DIM( %s);\n",
-                 nt, nt);
+                 var_NT, var_NT);
         break;
 
     default:

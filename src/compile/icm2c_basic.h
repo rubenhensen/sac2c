@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/09/19 15:39:21  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.14  2003/09/17 12:57:54  dkr
  * postfixes _nt, _any renamed into _NT, _ANY
  *
@@ -183,7 +186,7 @@ extern int print_comment; /* bool */
 
 #ifdef TAGGED_ARRAYS
 
-extern void ReadId (void *nt, char *idx_str, int idx);
+extern void ReadId (void *var_NT, char *idx_str, int idx);
 
 extern void ReadScalar (void *scl, char *idx_str, int idx);
 
@@ -191,11 +194,11 @@ extern void ReadScalar_Check (void *scl, char *idx_str, int idx);
 
 extern void ReadConstArray (void *v, char *idx_str, int idx);
 
-extern void DimId (void *nt);
+extern void DimId (void *var_NT);
 
-extern void ShapeId (void *nt, char *idx_str, int idx);
+extern void ShapeId (void *var_NT, char *idx_str, int idx);
 
-extern void SizeId (void *nt);
+extern void SizeId (void *var_NT);
 
 extern void GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2003/09/19 15:39:19  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 1.17  2003/09/17 12:57:59  dkr
  * postfixes _nt, _any renamed into _NT, _ANY
  *
@@ -96,7 +99,7 @@ WriteScalar (char *scl)
 /******************************************************************************
  *
  * Function:
- *   void ReadId( void *nt, char *idx_str, int idx)
+ *   void ReadId( void *var_NT, char *idx_str, int idx)
  *
  * Description:
  *
@@ -104,17 +107,17 @@ WriteScalar (char *scl)
  ******************************************************************************/
 
 void
-ReadId (void *nt, char *idx_str, int idx)
+ReadId (void *var_NT, char *idx_str, int idx)
 {
     DBUG_ENTER ("ReadId");
 
-    DBUG_ASSERT ((((char *)nt)[0] == '('), "no tag found!");
+    DBUG_ASSERT ((((char *)var_NT)[0] == '('), "no tag found!");
 
     if (idx_str != NULL) {
-        fprintf (outfile, "SAC_ND_READ( %s, %s)", (char *)nt, idx_str);
+        fprintf (outfile, "SAC_ND_READ( %s, %s)", (char *)var_NT, idx_str);
     } else {
         DBUG_ASSERT ((idx >= 0), "illegal index found!");
-        fprintf (outfile, "SAC_ND_READ( %s, %d)", (char *)nt, idx);
+        fprintf (outfile, "SAC_ND_READ( %s, %d)", (char *)var_NT, idx);
     }
 
     DBUG_VOID_RETURN;
@@ -227,7 +230,7 @@ ReadConstArray (void *v, char *idx_str, int idx)
 /******************************************************************************
  *
  * Function:
- *   void DimId( void *nt)
+ *   void DimId( void *var_NT)
  *
  * Description:
  *
@@ -235,11 +238,11 @@ ReadConstArray (void *v, char *idx_str, int idx)
  ******************************************************************************/
 
 void
-DimId (void *nt)
+DimId (void *var_NT)
 {
     DBUG_ENTER ("DimId");
 
-    fprintf (outfile, "SAC_ND_A_DIM( %s)", (char *)nt);
+    fprintf (outfile, "SAC_ND_A_DIM( %s)", (char *)var_NT);
 
     DBUG_VOID_RETURN;
 }
@@ -247,7 +250,7 @@ DimId (void *nt)
 /******************************************************************************
  *
  * Function:
- *   void ShapeId( void *nt, char *idx_str, int idx)
+ *   void ShapeId( void *var_NT, char *idx_str, int idx)
  *
  * Description:
  *
@@ -255,14 +258,14 @@ DimId (void *nt)
  ******************************************************************************/
 
 void
-ShapeId (void *nt, char *idx_str, int idx)
+ShapeId (void *var_NT, char *idx_str, int idx)
 {
     DBUG_ENTER ("ShapeId");
 
     if (idx_str != NULL) {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %s)", (char *)nt, idx_str);
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %s)", (char *)var_NT, idx_str);
     } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", (char *)nt, idx);
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", (char *)var_NT, idx);
     }
 
     DBUG_VOID_RETURN;
@@ -271,7 +274,7 @@ ShapeId (void *nt, char *idx_str, int idx)
 /******************************************************************************
  *
  * Function:
- *   void SizeId( void *nt)
+ *   void SizeId( void *var_NT)
  *
  * Description:
  *
@@ -279,11 +282,11 @@ ShapeId (void *nt, char *idx_str, int idx)
  ******************************************************************************/
 
 void
-SizeId (void *nt)
+SizeId (void *var_NT)
 {
     DBUG_ENTER ("SizeId");
 
-    fprintf (outfile, "SAC_ND_A_SIZE( %s)", (char *)nt);
+    fprintf (outfile, "SAC_ND_A_SIZE( %s)", (char *)var_NT);
 
     DBUG_VOID_RETURN;
 }
