@@ -40,3 +40,4 @@ wlpragma_funs.mac
 wltransform.c
 wltransform.h
 blir.c
+blir.h
