@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/01/29 13:17:49  srs
+ * modified TmpVar(). Now the compiler phase is inserted
+ * in the variable name.
+ *
  * Revision 1.22  1997/12/08 19:19:34  dkr
  * no arithmetic on void-pointers anymore (Malloc())
  *
@@ -89,6 +93,7 @@
 #include "my_debug.h"
 #include "internal_lib.h"
 #include "globals.h"
+#include "traverse.h"
 
 #define MAX_SYSCALL 1000
 
@@ -366,21 +371,127 @@ SystemTest (char *format, ...)
  *  macros        : DBUG...
  *
  *  remarks       : The variable name is different in each call of TmpVar.
- *                  The actual name "tmp__cg_??" was chosen to avoid
- *                  conflicts with so far used artificial variables.
- *
+ *                  The string has the form "__tmp_" plus compiler phase
+ *                  plus consecutive number.
  */
 
 char *
 TmpVar ()
 {
     static int counter = 0;
-    char *result;
+    char *result, *s;
 
     DBUG_ENTER ("TmpVar");
 
     result = (char *)Malloc (sizeof (char) * 20);
-    sprintf (result, "__tmp_cg_%d", counter);
+
+    if (act_tab == imp_tab) {
+        s = "imp";
+    }
+    if (act_tab == flat_tab) {
+        s = "flat";
+    }
+    if (act_tab == print_tab) {
+        s = "print";
+    }
+    if (act_tab == type_tab) {
+        s = "type";
+    }
+    if (act_tab == opt_tab) {
+        s = "opt";
+    }
+    if (act_tab == active_tab) {
+        s = "active";
+    }
+    if (act_tab == dcr_tab) {
+        s = "dcr";
+    }
+    if (act_tab == cf_tab) {
+        s = "cf";
+    }
+    if (act_tab == wr_tab) {
+        s = "wr";
+    }
+    if (act_tab == free_tab) {
+        s = "free";
+    }
+    if (act_tab == refcnt_tab) {
+        s = "refcnt";
+    }
+    if (act_tab == comp_tab) {
+        s = "comp";
+    }
+    if (act_tab == lir_tab) {
+        s = "lir";
+    }
+    if (act_tab == lir_mov_tab) {
+        s = "lir_mov";
+    }
+    if (act_tab == dup_tab) {
+        s = "dup";
+    }
+    if (act_tab == inline_tab) {
+        s = "inline";
+    }
+    if (act_tab == unroll_tab) {
+        s = "unroll";
+    }
+    if (act_tab == unswitch_tab) {
+        s = "unswitch";
+    }
+    if (act_tab == idx_tab) {
+        s = "idx";
+    }
+    if (act_tab == fusion_tab) {
+        s = "fusion";
+    }
+    if (act_tab == ae_tab) {
+        s = "ae";
+    }
+    if (act_tab == writesib_tab) {
+        s = "writesib";
+    }
+    if (act_tab == obj_tab) {
+        s = "obj";
+    }
+    if (act_tab == impltype_tab) {
+        s = "impltype";
+    }
+    if (act_tab == objinit_tab) {
+        s = "objinit";
+    }
+    if (act_tab == analy_tab) {
+        s = "analy";
+    }
+    if (act_tab == checkdec_tab) {
+        s = "checkdec";
+    }
+    if (act_tab == writedec_tab) {
+        s = "writedec";
+    }
+    if (act_tab == unique_tab) {
+        s = "unique";
+    }
+    if (act_tab == rmvoid_tab) {
+        s = "rmvoid";
+    }
+    if (act_tab == precomp_tab) {
+        s = "precomp";
+    }
+    if (act_tab == readsib_tab) {
+        s = "readsib";
+    }
+    if (act_tab == cse_tab) {
+        s = "cse";
+    }
+    if (act_tab == dfr_tab) {
+        s = "dfr";
+    }
+    if (act_tab == o2nWith_tab) {
+        s = "o2nWith";
+    }
+
+    sprintf (result, "__tmp_%s_%d", s, counter);
     counter++;
 
     DBUG_RETURN (result);
