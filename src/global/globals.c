@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/08/06 10:47:56  skt
+ * executionmodes_available added
+ *
  * Revision 3.56  2004/08/05 15:17:04  sbs
  * ssaform_phase added.
  *
@@ -457,6 +460,12 @@ int min_parallel_size_per_thread = 8;
  * minimum generator size per thread for parallel execution of with-loops
  * e.g., max_threads = 4, min_parallel_size_per_thread=8
  *       => generator size must be >= 32 to be executed parallel
+ */
+
+bool executionmodes_available = FALSE;
+/*
+ * flag showing if the sourcecode is tagged with executionmodes or not
+ * this information is important for printing it
  */
 
 /*

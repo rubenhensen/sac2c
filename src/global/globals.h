@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/08/06 10:47:56  skt
+ * executionmodes_available added
+ *
  * Revision 3.45  2004/08/05 15:17:04  sbs
  * ssaform_phase added.
  *
@@ -264,6 +267,7 @@ extern int min_parallel_size;
 extern int max_replication_size;
 extern int max_schedulers;
 extern int min_parallel_size_per_thread;
+extern bool executionmodes_available;
 
 #define MAX_CPP_VARS 32
 #define MAX_CPP_INCS 32
