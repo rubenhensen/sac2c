@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1996/04/25 11:31:36  cg
+ * Revision 1.15  1997/03/18 14:43:08  cg
+ * The attribute of N_id nodes is now set correctly:
+ * ST_regular, ST_global, ST_reference, ST_readonly_reference
+ *
+ * Revision 1.14  1996/04/25  11:31:36  cg
  * bug fixed, now even in bodies of with-loops new return values are bound to new
  * variables.
  *
@@ -665,6 +669,14 @@ OBJid (node *arg_node, node *arg_info)
  *                  in different ways in the two traversals of the function
  *                  body.
  *
+ *                  N_id nodes which are arguments in a function application
+ *                  get an attribute:
+ *                  ST_reference if the respective function parameter is a
+ *                  reference parameter.
+ *                  ST_readonly_reference if the respective function
+ *                  parameter is a readonly-reference parameter.
+ *                  This attribute is used by the uniqueness checker.
+ *
  */
 
 node *
@@ -689,6 +701,7 @@ OBJlet (node *arg_node, node *arg_info)
             while ((params != NULL) && (ARG_BASETYPE (params) != T_dots)) {
                 if (ARG_ATTRIB (params) == ST_was_reference) {
                     new_ids_name = StringCopy (ID_NAME (EXPRS_EXPR (args)));
+                    ID_ATTRIB (EXPRS_EXPR (args)) = ST_reference;
 
                     if (new_ids == NULL) {
                         new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
@@ -720,7 +733,13 @@ OBJlet (node *arg_node, node *arg_info)
 
                     DBUG_PRINT ("OBJ",
                                 ("New return value bound to %s", IDS_NAME (last_ids)));
+
+                } else {
+                    if (ARG_ATTRIB (params) == ST_readonly_reference) {
+                        ID_ATTRIB (EXPRS_EXPR (args)) = ST_readonly_reference;
+                    }
                 }
+
                 args = EXPRS_NEXT (args);
                 params = ARG_NEXT (params);
             }
