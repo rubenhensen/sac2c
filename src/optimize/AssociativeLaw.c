@@ -89,14 +89,47 @@ ALassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ALassign");
 
-    if (ContainOptInformation (arg_info) == 1) {
-        /* include new N_assign nodes from arg_info behind actual N_assign node
-         * modify old successor
-         * delete arg_info nodes
-         */
-    }
     if (ASSIGN_NEXT (arg_node) != NULL) {
+
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+
+        if (ContainOptInformation (arg_info) == 1) {
+
+            nodelist *nodelist1;
+            node *old_succ, *akt_nassign;
+
+            /* include new N_assign nodes from arg_info behind actual N_assign node
+             * modify old successor
+             * delete arg_info nodes
+             */
+
+            old_succ = ASSIGN_NEXT (arg_node);
+            akt_nassign = arg_node;
+
+            nodelist1 = (nodelist *)(arg_info->info2);
+
+            while (NODELIST_NEXT (nodelist1) != NULL) {
+
+                ASSIGN_NEXT (akt_nassign) = NODELIST_NODE (nodelist1);
+                akt_nassign = ASSIGN_NEXT (akt_nassign);
+                nodelist1 = NODELIST_NEXT (nodelist1);
+            }
+            ASSIGN_NEXT (akt_nassign) = NODELIST_NODE (nodelist1);
+            akt_nassign = ASSIGN_NEXT (akt_nassign);
+
+            nodelist1 = (nodelist *)(arg_info->info3);
+
+            while (NODELIST_NEXT (nodelist1) != NULL) {
+
+                ASSIGN_NEXT (akt_nassign) = NODELIST_NODE (nodelist1);
+                akt_nassign = ASSIGN_NEXT (akt_nassign);
+                nodelist1 = NODELIST_NEXT (nodelist1);
+            }
+            ASSIGN_NEXT (akt_nassign) = NODELIST_NODE (nodelist1);
+            akt_nassign = ASSIGN_NEXT (akt_nassign);
+
+            ASSIGN_NEXT (akt_nassign) = old_succ;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -120,7 +153,7 @@ ALinstr (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_info);
 }
 
 /*****************************************************************************
@@ -141,7 +174,7 @@ ALprf (node *arg_node, node *arg_info)
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_info);
 }
 
 /*****************************************************************************
@@ -163,17 +196,30 @@ AssociativeLawOptimize (node *arg_node, node *arg_info)
     int anz_all;
     DBUG_ENTER ("AssociativeLawOptimize");
     if (IsAssociativeAndCommutative (arg_node) == 1) {
+
+        (*arg_info).varno = 0;
+        (*arg_info).counter = 0;
+        (*arg_info).info.prf = PRF_PRF (arg_node);
+
         arg_info = TravElems (PRF_ARGS (arg_node), arg_info);
 
         arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
 
         anz_const = CountConst (arg_info);
-        anz_all = CountAll (arg_info);
+        anz_all = CountVar (arg_info) + anz_const;
 
         if ((anz_const > 1) && (anz_all > 2)) {
+
             SortList (arg_info);
             CreateNAssignNodes (arg_info);
             CommitNAssignNodes (arg_info);
+        } else {
+
+            /* nothing to optimize */
+            FreeNodelist ((nodelist *)(arg_info->info2));
+            FreeNodelist ((nodelist *)(arg_info->info3));
+            (*arg_info).varno = 0;
+            (*arg_info).counter = 0;
         }
     }
     DBUG_RETURN (arg_info);
@@ -228,12 +274,18 @@ TravElems (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("TravElems");
 
-    if (IsConstant (EXPRS_EXPR (arg_node)))
+    if (IsConstant (EXPRS_EXPR (arg_node))) {
+
         arg_info = AddNode (arg_node, arg_info, 1);
-    else {
+
+    } else {
+
         if (OtherPrfOp (arg_node, arg_info)) {
+
             arg_info = AddNode (arg_node, arg_info, 0);
+
         } else {
+
             arg_info = TravElems (PRF_ARGS (LET_EXPR (ID_DEF (EXPRS_EXPR (arg_node)))),
                                   arg_info);
             arg_info = TravElems (EXPRS_NEXT (
@@ -296,7 +348,9 @@ AddNode (node *arg_node, node *arg_info, bool constant)
     if (constant == 1) {
         nl = ((nodelist *)(arg_info->info2));
         (*arg_info).counter = (*arg_info).counter + 1;
-    } else {
+    }
+
+    else {
         nl = ((nodelist *)(arg_info->info3));
         (*arg_info).varno = (*arg_info).varno + 1;
     }
@@ -327,6 +381,7 @@ OtherPrfOp (node *arg_node, node *arg_info)
     int otherOp;
     prf otherPrf;
     DBUG_ENTER ("OtherPrfOp");
+
     otherPrf = PRF_PRF (LET_EXPR (ID_DEF (EXPRS_EXPR (arg_node))));
 
     if ((*arg_info).info.prf == otherPrf)
@@ -370,13 +425,12 @@ CountConst (node *arg_info)
  ****************************************************************************/
 
 int
-CountAll (node *arg_info)
+CountVar (node *arg_info)
 {
     int count = 0;
     DBUG_ENTER ("CountALL");
 
-    count = (*arg_info).counter;
-    count = count + (*arg_info).varno;
+    count = (*arg_info).varno;
 
     DBUG_RETURN (count);
 }
@@ -416,7 +470,126 @@ SortList (node *arg_info)
 node *
 CreateNAssignNodes (node *arg_info)
 {
+    int zaehl;
+    node *listElem, *listElem2, *newvardec, *newnode;
+    char *newname, mod;
+    statustype status;
+    ids *newids;
+    nodelist *aktElem, *secElem;
+
     DBUG_ENTER ("CreateNAssignNodes");
+
+    aktElem = (nodelist *)(arg_info->info2); /*Pointer on first list element*/
+
+    for (zaehl = 0; zaehl < CountConst (arg_info); zaehl++) {
+        listElem = NODELIST_NODE (aktElem); /*pointer on actual node stored in nodelist*/
+        listElem = DupNode (listElem);      /*pointer on duplicated node */
+        listElem = MakeExprs (listElem, NULL); /* create N_expr-node */
+        NODELIST_NODE (aktElem) = listElem;
+    }
+    /* all elements of the nodelist are N_expr nodes*/
+
+    aktElem = (nodelist *)(arg_info->info2); /*pointer on first list element*/
+    for (zaehl = 0; zaehl < (div (CountConst (arg_info), 2).quot); zaehl++) {
+        secElem = NODELIST_NEXT (aktElem); /*pointer on next list element*/
+        listElem = NODELIST_NODE (aktElem);
+        listElem2 = NODELIST_NODE (secElem);
+
+        EXPRS_NEXT (listElem) = listElem2; /*concatenate first with second N_expr-node*/
+        listElem = MakePrf ((*arg_info).info.prf, listElem);
+
+        /* to do: create new vardec node
+         *        create new ids
+         *        create new name    */
+
+        listElem = MakeLet (listElem, newids);
+        listElem = MakeAssignLet (newname, newvardec, listElem);
+
+        NODELIST_NEXT (aktElem) = NODELIST_NEXT (secElem); /* remove second node*/
+        secElem = aktElem; /* store pointer on last element */
+        aktElem = NODELIST_NEXT (aktElem);
+    }
+
+    if (div (CountConst (arg_info), 2).rem == 1) { /*concatenate last nodelist-element*/
+
+        listElem = NODELIST_NODE (secElem);  /* pointer on last N_assign-node */
+        listElem2 = NODELIST_NODE (aktElem); /* pointer on last node in list */
+                                             /* to do: create new name, mod, statustype */
+
+        newnode = MakeId (newname, mod, status);
+
+        /* to do: connect new N_id-node with correct N_AVIS */
+        newnode = MakeExprs (newnode, listElem2); /* create new N_Expr-node */
+        newnode = MakePrf ((*arg_info).info.prf, newnode);
+
+        /* to do: create new vardec node
+         *        create new ids
+         *        create new name       */
+
+        newnode = MakeLet (newnode, newids);
+        newnode = MakeAssignLet (newname, newvardec, newnode);
+
+        NODELIST_NODE (secElem) = newnode; /* store new node */
+        NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
+    }
+
+    /* nodelist for constant nodes ready */
+
+    aktElem = (nodelist *)(arg_info->info3); /*Pointer on first list element*/
+
+    for (zaehl = 0; zaehl < (CountVar (arg_info)); zaehl++) {
+        listElem = NODELIST_NODE (aktElem); /*pointer on actual node stored in nodelist*/
+        listElem = DupNode (listElem);      /*pointer on duplicated node */
+        listElem = MakeExprs (listElem, NULL); /* create N_expr-node */
+        NODELIST_NODE (aktElem) = listElem;
+    }
+    /* all elements of the nodelist are N_expr nodes*/
+
+    aktElem = (nodelist *)(arg_info->info3); /*pointer on first list element*/
+    for (zaehl = 0; zaehl < (div (CountVar (arg_info), 2).quot); zaehl++) {
+        secElem = NODELIST_NEXT (aktElem); /*pointer on next list element*/
+        listElem = NODELIST_NODE (aktElem);
+        listElem2 = NODELIST_NODE (secElem);
+
+        EXPRS_NEXT (listElem) = listElem2; /*concatenate first with second N_expr-node*/
+        listElem = MakePrf ((*arg_info).info.prf, listElem);
+
+        /* to do: create new vardec node
+         *        create new ids
+         *        create new name    */
+
+        listElem = MakeLet (listElem, newids);
+        listElem = MakeAssignLet (newname, newvardec, listElem);
+
+        NODELIST_NEXT (aktElem) = NODELIST_NEXT (secElem); /* remove second node*/
+        secElem = aktElem; /* store pointer on last element */
+        aktElem = NODELIST_NEXT (aktElem);
+    }
+
+    if (div (CountVar (arg_info), 2).rem == 1) { /*concatenate last nodelist-element*/
+
+        listElem = NODELIST_NODE (secElem);  /* pointer on last N_assign-node */
+        listElem2 = NODELIST_NODE (aktElem); /* pointer on last node in list */
+                                             /* to do: create new name, mod, statustype */
+
+        newnode = MakeId (newname, mod, status);
+
+        /* to do: connect new N_id-node with correct N_AVIS */
+        newnode = MakeExprs (newnode, listElem2); /* create new N_Expr-node */
+        newnode = MakePrf ((*arg_info).info.prf, newnode);
+
+        /* to do: create new vardec node
+         *        create new ids
+         *        create new name       */
+
+        newnode = MakeLet (newnode, newids);
+        newnode = MakeAssignLet (newname, newvardec, newnode);
+
+        NODELIST_NODE (secElem) = newnode; /* store new node */
+        NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
+    }
+
+    /* nodelist for 'variable' nodes ready */
 
     DBUG_RETURN (arg_info);
 }
@@ -434,15 +607,132 @@ CreateNAssignNodes (node *arg_info)
 node *
 CommitNAssignNodes (node *arg_info)
 {
+
+    ids *newids;
+    node *newnode, *newvardec, *elem1, *elem2;
+    char *newname1, *newname2, *newmod1, *newmod2;
+    nodelist *lastListElem, *aktListElem;
+    statustype status1, status2;
+
     DBUG_ENTER ("CommitNAssignNodes");
+
+    aktListElem = (nodelist *)(arg_info->info2);
+    lastListElem = aktListElem;
+
+    while (NODELIST_NEXT (lastListElem) != NULL) {
+        lastListElem = NODELIST_NEXT (lastListElem);
+    }
+
+    while (aktListElem != lastListElem) {
+        elem1 = NODELIST_NODE (aktListElem);
+        aktListElem = NODELIST_NEXT (aktListElem);
+        elem2 = NODELIST_NODE (aktListElem);
+
+        /* to do: create new name, mod , statustype */
+
+        newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                             MakeId (newname2, newmod2, status2));
+
+        newnode = MakePrf ((*arg_info).info.prf, newnode);
+
+        /* to do: create new name
+         *        create new ids node
+         *        create new vardec node  */
+
+        newnode = MakeLet (newnode, newids);
+
+        newnode = MakeAssignLet (newname1, newvardec, newnode);
+
+        NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+        lastListElem = NODELIST_NEXT (lastListElem);
+
+        aktListElem = NODELIST_NEXT (aktListElem);
+    }
+
+    /* constant nodes ready  */
+
+    aktListElem = (nodelist *)(arg_info->info3);
+    lastListElem = aktListElem;
+
+    while (NODELIST_NEXT (lastListElem) != NULL) {
+        lastListElem = NODELIST_NEXT (lastListElem);
+    }
+
+    while (aktListElem != lastListElem) {
+        elem1 = NODELIST_NODE (aktListElem);
+        aktListElem = NODELIST_NEXT (aktListElem);
+        elem2 = NODELIST_NODE (aktListElem);
+
+        /* to do: create new name, mod , statustype */
+
+        newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                             MakeId (newname2, newmod2, status2));
+
+        newnode = MakePrf ((*arg_info).info.prf, newnode);
+
+        /* to do: create new name
+         *        create new ids node
+         *        create new vardec node  */
+
+        newnode = MakeLet (newnode, newids);
+
+        newnode = MakeAssignLet (newname1, newvardec, newnode);
+
+        NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+        lastListElem = NODELIST_NEXT (lastListElem);
+
+        aktListElem = NODELIST_NEXT (aktListElem);
+    }
+
+    /* variable nodes ready  */
+
+    lastListElem = (nodelist *)(arg_info->info2);
+
+    while (NODELIST_NEXT (lastListElem) != NULL) {
+        lastListElem = NODELIST_NEXT (lastListElem);
+    }
+
+    elem1 = NODELIST_NODE (aktListElem);
+    elem2 = NODELIST_NODE (lastListElem);
+
+    /* to do create new name, mod, statustype */
+
+    newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                         MakeId (newname2, newmod2, status2));
+
+    newnode = MakePrf ((*arg_info).info.prf, newnode);
+
+    /* to do: create new name
+     *        create new ids node
+     *        create new vardec node   */
+
+    newnode = MakeLet (newnode, newids);
+
+    newnode = MakeAssignLet (newname1, newvardec, newnode);
+
+    NODELIST_NEXT (aktListElem) = MakeNodelistNode (newnode, NULL);
 
     DBUG_RETURN (arg_info);
 }
+
+/*****************************************************************************
+ *
+ * function:
+ *   ContainOptInformation(node *arg_info)
+ *
+ * description:
+ *   returns 1 (true) if the arg_info-node contains N_assign-nodes to include
+ *   in the tree
+ *
+ ****************************************************************************/
 
 int
 ContainOptInformation (node *arg_info)
 {
     DBUG_ENTER ("ContainOptInformation");
 
-    DBUG_RETURN (1);
+    if ((CountConst (arg_info) > 1) && (CountVar (arg_info) > 1))
+        DBUG_RETURN (1);
+    else
+        DBUG_RETURN (0);
 }

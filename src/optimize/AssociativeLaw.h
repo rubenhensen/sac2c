@@ -14,7 +14,7 @@ extern int IsConstant (node *);
 extern node *AddNode (node *, node *, bool);
 extern bool OtherPrfOp (node *, node *);
 extern int CountConst (node *);
-extern int CountAll (node *);
+extern int CountVar (node *);
 extern node *SortList (node *);
 extern node *CreateNAssignNodes (node *);
 extern node *CommitNAssignNodes (node *);
