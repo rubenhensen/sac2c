@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/03/15 18:16:34  dkr
+ * CalcSV replaced by GetLcmUnroll
+ * ComputeIndexMinMax moved to here from wlpragma_funs.c
+ * code brushed
+ *
  * Revision 2.13  2000/03/10 12:06:08  dkr
  * FitWL brushed and corrected
  *
@@ -164,7 +169,27 @@
  *
  * Revision 1.1  1998/04/29 17:17:15  dkr
  * Initial revision
+ *
  */
+
+#include "tree.h"
+#include "free.h"
+
+#include "internal_lib.h"
+#include "traverse.h"
+#include "DataFlowMask.h"
+#include "wlpragma_funs.h"
+
+#include "DupTree.h"
+#include "dbug.h"
+
+#include <limits.h> /* INT_MAX */
+
+/*
+ * here we store the lineno of the current with-loop
+ *  (for creating error-messages ...)
+ */
+static int line;
 
 /*****************************************************************************
 
@@ -1376,23 +1401,6 @@ Internal representation in the abstract syntax tree:
 
 
 *****************************************************************************/
-
-#include "tree.h"
-#include "free.h"
-
-#include "internal_lib.h"
-#include "traverse.h"
-#include "DataFlowMask.h"
-#include "wlpragma_funs.h"
-
-#include "DupTree.h"
-#include "dbug.h"
-
-/*
- * here we store the lineno of the current with-loop
- *  (for creating error-messages ...)
- */
-static int line;
 
 /*
  * these macros are used in 'Parts2Strides' to manage
@@ -2730,7 +2738,7 @@ SplitWL (node *strides)
 /******************************************************************************
  *
  * Function:
- *   node *BlockStride( node *stride, long *bv, int unroll)
+ *   node *BlockStride( node *stride, int *bv, int unroll)
  *
  * Description:
  *   returns 'stride' with corrected bounds, blocking levels and
@@ -2740,7 +2748,7 @@ SplitWL (node *strides)
  ******************************************************************************/
 
 node *
-BlockStride (node *stride, long *bv, int unroll)
+BlockStride (node *stride, int *bv, int unroll)
 {
     node *curr_stride, *curr_grid, *grids;
 
@@ -2787,7 +2795,7 @@ BlockStride (node *stride, long *bv, int unroll)
 /******************************************************************************
  *
  * Function:
- *   node *BlockWL( node *stride, int dims, long *bv, int unroll)
+ *   node *BlockWL( node *stride, int dims, int *bv, int unroll)
  *
  * Description:
  *   returns with blocking-vector 'bv' blocked 'stride'.
@@ -2802,7 +2810,7 @@ BlockStride (node *stride, long *bv, int unroll)
  ******************************************************************************/
 
 node *
-BlockWL (node *stride, int dims, long *bv, int unroll)
+BlockWL (node *stride, int dims, int *bv, int unroll)
 {
     node *curr_block, *curr_dim, *curr_stride, *curr_grid, *contents, *lastdim,
       *last_block, *block;
@@ -5489,193 +5497,235 @@ ComputeCubes (node *strides)
 /******************************************************************************
  ******************************************************************************
  **
- **   functions for InferParams()
+ **   functions for InferSegParams()
+ **
+ **/
+
+/******************************************************************************
+ *
+ * function:
+ *   void ComputeIndexMinMax( int *idx_min, int *idx_max,
+ *                            int dims, node *strides)
+ *
+ * description:
+ *   Computes the minimum and maximum of the index-vector found in 'strides'.
+ *
+ * remark:
+ *   if 'strides' is a N_WLstride-node, this must be a sequence of cubes.
+ *   if 'strides' is a N_WLstriVar-node, this must be a fully optimized
+ *     nested stride/grid-tree.
+ *   (see wltransform.c)
+ *
+ ******************************************************************************/
+
+void
+ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
+{
+    node *stride;
+    int min, max, d;
+
+    DBUG_ENTER ("ComputeIndexMinMax");
+
+    switch (NODE_TYPE (strides)) {
+
+    case N_WLstride:
+        /*
+         * initialize 'idx_min', 'idx_max'.
+         */
+        for (d = 0; d < dims; d++) {
+            idx_min[d] = INT_MAX;
+            idx_max[d] = 0;
+        }
+
+        /*
+         * we must visit every dim in every stride.
+         */
+        while (strides != NULL) {
+            stride = strides;
+            for (d = 0; d < dims; d++) {
+                DBUG_ASSERT ((stride != NULL), "no stride found");
+
+                min = WLSTRIDE_BOUND1 (stride);
+                max = WLSTRIDE_BOUND2 (stride);
+                stride = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (stride));
+
+                if (min < idx_min[d]) {
+                    idx_min[d] = min;
+                }
+                if (max > idx_max[d]) {
+                    idx_max[d] = max;
+                }
+            }
+            strides = WLSTRIDE_NEXT (strides);
+        }
+        break;
+
+    case N_WLstriVar:
+        /*
+         * we have not a cube, but a fully optimized stride/grid-tree.
+         *  -> we need to traverse the first stride only.
+         */
+        for (d = 0; d < dims; d++) {
+            DBUG_ASSERT ((strides != NULL), "no stride found");
+
+            if (NODE_TYPE (strides) == N_WLstride) {
+                idx_min[d] = WLSTRIDE_BOUND1 (strides);
+            } else { /* N_WLstriVar */
+                if (NODE_TYPE (WLSTRIVAR_BOUND1 (strides)) == N_num) {
+                    idx_min[d] = NUM_VAL (WLSTRIVAR_BOUND1 (strides));
+                } else {
+                    idx_min[d] = 0; /* *** caution! *** */
+                }
+            }
+
+            /*
+             * we will find the maximum in the last stride of current dim
+             */
+            stride = strides;
+            while (WLSTRIVAR_NEXT (stride) != NULL) {
+                stride = WLSTRIVAR_NEXT (stride);
+            }
+
+            if (NODE_TYPE (stride) == N_WLstride) {
+                idx_max[d] = WLSTRIDE_BOUND2 (stride);
+            } else { /* N_WLstriVar */
+                if (NODE_TYPE (WLSTRIVAR_BOUND2 (stride)) == N_num) {
+                    idx_max[d] = NUM_VAL (WLSTRIVAR_BOUND2 (stride));
+                } else {
+                    idx_max[d] = INT_MAX; /* *** caution!!!! LONG_MAX??? *** */
+                }
+            }
+
+            strides = (NODE_TYPE (WLSTRIVAR_CONTENTS (strides)) == N_WLgridVar)
+                        ? WLGRIDVAR_NEXTDIM (WLSTRIVAR_CONTENTS (strides))
+                        : WLGRID_NEXTDIM (WLSTRIVAR_CONTENTS (strides));
+        }
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "wrong node type found");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node* InferSegParams( node *seg)
+ *
+ * Description:
+ *   Infers the temporary attributes SV, IDX_MIN, IDX_MAX of a single segment.
+ *
+ ******************************************************************************/
+
+node *
+InferSegParams (node *seg)
+{
+    int d;
+
+    DBUG_ENTER ("InferSegParams");
+
+    DBUG_ASSERT (((NODE_TYPE (seg) == N_WLseg) || (NODE_TYPE (seg) == N_WLsegVar)),
+                 "no segment found!");
+
+    WLSEGX_SV (seg) = (int *)MALLOC (WLSEGX_DIMS (seg) * sizeof (int));
+    for (d = 0; d < WLSEGX_DIMS (seg); d++) {
+        if (NODE_TYPE (seg) == N_WLseg) {
+            (WLSEG_SV (seg))[d] = GetLcmUnroll (WLSEG_CONTENTS (seg), d);
+        } else {
+            (WLSEGVAR_SV (seg))[d] = 0;
+        }
+    }
+
+    /*
+     * compute the infimum and supremum of the index-vector.
+     */
+    WLSEGX_IDX_MIN (seg) = (int *)MALLOC (WLSEGX_DIMS (seg) * sizeof (int));
+    WLSEGX_IDX_MAX (seg) = (int *)MALLOC (WLSEGX_DIMS (seg) * sizeof (int));
+    ComputeIndexMinMax (WLSEGX_IDX_MIN (seg), WLSEGX_IDX_MAX (seg), WLSEGX_DIMS (seg),
+                        WLSEGX_CONTENTS (seg));
+
+    DBUG_RETURN (seg);
+}
+
+/**
+ **
+ **   functions for InferSegParams()
+ **
+ ******************************************************************************
+ ******************************************************************************/
+
+/******************************************************************************
+ ******************************************************************************
+ **
+ **   functions for InferSchedulingParams()
  **
  **/
 
 /******************************************************************************
  *
  * Function:
- *   node *InferInnerStep( node *nodes, int curr_dim, int dims)
+ *   int InferHomSV( node *nodes, int dim, int sv)
  *
  * Description:
- *   Infers for each outer WLblock-, WLublock- or WLstride-node the
- *   the unroll-information (max(ublock,step)) and stores it in INNERSTEP.
- *
- ******************************************************************************/
-
-node *
-InferInnerStep (node *nodes, int curr_dim, int dims)
-{
-    node *grids, *node;
-
-    DBUG_ENTER ("InferInnerStep");
-
-    if (curr_dim < dims) {
-        /*
-         * traverse the whole chain of the current dimension
-         */
-        node = nodes;
-        while (node != NULL) {
-
-            switch (NODE_TYPE (node)) {
-            case N_WLblock:
-                if (WLBLOCK_NEXTDIM (node) != NULL) {
-                    /*
-                     * inspect next dimension;
-                     * compute unrolling information and store it in WLBLOCK_INNERSTEP
-                     */
-                    DBUG_ASSERT ((WLBLOCK_CONTENTS (node) == NULL),
-                                 "next blocking *and* inner of block found");
-
-                    WLBLOCK_NEXTDIM (node)
-                      = InferInnerStep (WLBLOCK_NEXTDIM (node), curr_dim + 1, dims);
-
-                    WLBLOCK_INNERSTEP (node)
-                      = GetLcmUnroll (WLBLOCK_NEXTDIM (node), curr_dim);
-                } else {
-                    /*
-                     * compute unrolling information and store it in WLBLOCK_INNERSTEP.
-                     */
-                    DBUG_ASSERT ((WLBLOCK_CONTENTS (node) != NULL),
-                                 "inner of block not found");
-
-                    WLBLOCK_INNERSTEP (node)
-                      = GetLcmUnroll (WLBLOCK_CONTENTS (node), curr_dim);
-                }
-                break;
-
-            case N_WLublock:
-                if (WLUBLOCK_NEXTDIM (node) != NULL) {
-                    /*
-                     * inspect next dimension
-                     */
-                    DBUG_ASSERT ((WLUBLOCK_CONTENTS (node) == NULL),
-                                 "next ublocking *and* inner of ublock found");
-                    WLUBLOCK_NEXTDIM (node)
-                      = InferInnerStep (WLUBLOCK_NEXTDIM (node), curr_dim + 1, dims);
-                }
-
-                /*
-                 * compute unroll-information and store it in WLUBLOCK_INNERSTEP
-                 */
-                WLUBLOCK_INNERSTEP (node) = WLUBLOCK_STEP (node);
-                break;
-
-            case N_WLstride:
-                grids = WLSTRIDE_CONTENTS (node);
-                if (curr_dim < dims - 1) {
-                    /*
-                     * inspect all grids in next dimension;
-                     *   get unrolling information
-                     */
-                    while (grids != NULL) {
-                        WLGRID_NEXTDIM (grids)
-                          = InferInnerStep (WLGRID_NEXTDIM (grids), curr_dim + 1, dims);
-                        grids = WLGRID_NEXT (grids);
-                    }
-                }
-
-                /*
-                 * get unroll-information and store it in WL..._INNERSTEP
-                 */
-                WLSTRIDE_INNERSTEP (node) = WLSTRIDE_STEP (node);
-                break;
-
-            default:
-                DBUG_ASSERT ((0), "wrong node type");
-            }
-            node = WLNODE_NEXT (node);
-        }
-    }
-
-    DBUG_RETURN (nodes);
-}
-
-/******************************************************************************
- *
- * Function:
- *   int IsHom( node *wlnode, int sv_d)
- *
- * Description:
- *   Infers, whether 'wlnode' has a homogenous grid or not.
+ *   Infers HOMSV of the given wlnode tree in dimension 'dim'.
+ *   'sv' contains the step factor of the given wlnode tree in this dimension.
  *
  ******************************************************************************/
 
 int
-IsHom (node *wlnode, int sv_d)
+InferHomSV (node *nodes, int dim, int sv)
 {
-    int width;
+    int homsv = 0;
 
-    DBUG_ENTER ("IsHom");
+    DBUG_ENTER ("InferHomSV");
 
-    width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
-
-    DBUG_ASSERT ((WLNODE_INNERSTEP (wlnode) > 0), "illegal INNERSTEP found");
 #if 0
-  DBUG_ASSERT( (WLNODE_INNERSTEP( wlnode) % sv_d == 0),
-               "INNERSTEP is not a multiple of SV");
+  if (nodes != NULL) {
+    homsv = InferHomSV( WLNODE_NEXT( nodes), dim, sv);
+
+    if ((WLNODE_DIM( nodes) == dim) &&
+        ((NODE_TYPE( nodes) == N_WLublock) || (NODE_TYPE( nodes) == N_WLstride))) {
+      /*
+       * we have found a node with unrolling information
+       */
+      homsv = lcm( homsv, WLNODE_STEP( nodes));
+    }
+    else {
+      /*
+       * search in whole tree for nodes with unrolling information
+       */
+      switch (NODE_TYPE( nodes)) {
+        case N_WLblock:
+          /* here is no break missing! */
+        case N_WLublock:
+          homsv = lcm( homsv, InferHomSV( WLBLOCK_NEXTDIM( nodes), dim, sv));
+          homsv = lcm( homsv, InferHomSV( WLBLOCK_CONTENTS( nodes), dim, sv));
+          break;
+
+        case N_WLstride:
+          homsv = lcm( homsv, InferHomSV( WLSTRIDE_CONTENTS( nodes), dim, sv));
+          break;
+
+        case N_WLgrid:
+          homsv = lcm( homsv, InferHomSV( WLBLOCK_NEXTDIM( nodes), dim, sv));
+          break;
+
+        default:
+          DBUG_ASSERT( (0), "wrong node type");
+      }
+    }
+  }
 #endif
 
-    DBUG_RETURN ((width % sv_d == 0));
+    DBUG_RETURN (homsv);
 }
 
 /******************************************************************************
  *
  * Function:
- *   int InferMaxHomDim( node *wlnode, int *sv, int max_hom_dim)
- *
- * Description:
- *   Infers the maximal homogenous dimension of the given wlnode-tree 'wlnode'.
- *
- ******************************************************************************/
-
-int
-InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
-{
-    node *grid;
-
-    DBUG_ENTER ("InferMaxHomDim");
-
-    if (wlnode != NULL) {
-
-        if (IsHom (wlnode, sv[WLNODE_DIM (wlnode)])) {
-            max_hom_dim = InferMaxHomDim (WLNODE_NEXT (wlnode), sv, max_hom_dim);
-
-            if (max_hom_dim > WLNODE_DIM (wlnode)) {
-                switch (NODE_TYPE (wlnode)) {
-                case N_WLblock:
-                    /* here is no break missing */
-                case N_WLublock:
-                    max_hom_dim
-                      = InferMaxHomDim (WLNODE_NEXTDIM (wlnode), sv, max_hom_dim);
-                    break;
-
-                case N_WLstride:
-                    grid = WLSTRIDE_CONTENTS (wlnode);
-                    do {
-                        max_hom_dim
-                          = InferMaxHomDim (WLGRID_NEXTDIM (grid), sv, max_hom_dim);
-                        grid = WLGRID_NEXT (grid);
-                    } while ((grid != NULL) && (max_hom_dim > WLSTRIDE_DIM (wlnode)));
-                    break;
-
-                default:
-                    DBUG_ASSERT ((0), "wrong node type found");
-                }
-            }
-        } else {
-            max_hom_dim = WLNODE_DIM (wlnode) - 1;
-        }
-    }
-
-    DBUG_RETURN (max_hom_dim);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *InferParams( node *seg)
+ *   node *InferSchedulingParams( node *seg)
  *
  * Description:
  *   infers WLSEGX_MAXHOMDIM for the given segment 'seg' and WL..._INNERSTEP
@@ -5685,19 +5735,31 @@ InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
  ******************************************************************************/
 
 node *
-InferParams (node *seg)
+InferSchedulingParams (node *seg)
 {
-    DBUG_ENTER ("InferParams");
+    int homsv, d;
+
+    DBUG_ENTER ("InferSchedulingParams");
 
     DBUG_ASSERT (((NODE_TYPE (seg) == N_WLseg) || (NODE_TYPE (seg) == N_WLsegVar)),
                  "no segment found");
 
     if (NODE_TYPE (seg) == N_WLseg) {
+        WLSEG_HOMSV (seg) = (int *)MALLOC (WLSEG_DIMS (seg) * sizeof (int));
 
-        WLSEG_CONTENTS (seg) = InferInnerStep (WLSEG_CONTENTS (seg), 0, WLSEG_DIMS (seg));
+        for (d = 0; d < WLSEG_DIMS (seg); d++) {
+            homsv = InferHomSV (WLSEG_CONTENTS (seg), d, (WLSEG_SV (seg))[d]);
+            if (homsv >= 1) {
+                (WLSEG_HOMSV (seg))[d] = homsv;
+            } else {
+                break;
+            }
+        }
+        for (; d < WLSEG_DIMS (seg); d++) {
+            (WLSEG_HOMSV (seg))[d] = 0;
+        }
 
-        WLSEG_MAXHOMDIM (seg)
-          = InferMaxHomDim (WLSEG_CONTENTS (seg), WLSEG_SV (seg), WLSEG_DIMS (seg) - 1);
+        WLSEG_MAXHOMDIM (seg) = d;
     }
 
     DBUG_RETURN (seg);
@@ -5705,7 +5767,7 @@ InferParams (node *seg)
 
 /**
  **
- **   functions for InferParams()
+ **   functions for InferSchedulingParams()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -5889,7 +5951,14 @@ WLTRANwith (node *arg_node, node *arg_info)
 
             seg = segs;
             while (seg != NULL) {
-                /* check params of segment */
+                /*
+                 * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+                 */
+                seg = InferSegParams (seg);
+
+                /*
+                 * check params of segment
+                 */
                 CheckParams (seg);
 
                 /* splitting */
@@ -5943,7 +6012,7 @@ WLTRANwith (node *arg_node, node *arg_info)
                       = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
                 }
 
-                seg = InferParams (seg);
+                seg = InferSchedulingParams (seg);
 
                 seg = WLSEG_NEXT (seg);
             }
@@ -5953,6 +6022,10 @@ WLTRANwith (node *arg_node, node *arg_info)
              *  -> build one segment containing all cubes.
              */
             segs = All (NULL, NULL, cubes, dims, line);
+            /*
+             * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+             */
+            segs = InferSegParams (segs);
         }
     } else {
         /*
@@ -5960,6 +6033,10 @@ WLTRANwith (node *arg_node, node *arg_info)
          *  -> build one segment containing the strides.
          */
         segs = All (NULL, NULL, strides, dims, line);
+        /*
+         * compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV
+         */
+        segs = InferSegParams (segs);
     }
 
     NWITH2_SEGS (new_node) = segs;
