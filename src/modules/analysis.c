@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/11/01 16:29:55  cg
+ * Revision 1.7  1995/12/01 17:20:31  cg
+ * objinitfuns are now analysed as well.
+ *
+ * Revision 1.6  1995/11/01  16:29:55  cg
  * bug fixed in function ANAap. Now, functions are stored for all
  * functions, not only inline functions, which is necessary for finding
  * all needed global objects.
@@ -185,7 +188,8 @@ ANAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAfundef");
 
-    if (FUNDEF_STATUS (arg_node) == ST_regular) {
+    if ((FUNDEF_STATUS (arg_node) == ST_regular)
+        || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
         Trav (FUNDEF_BODY (arg_node), arg_node);
         FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
