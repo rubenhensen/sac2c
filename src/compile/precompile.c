@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/12/29 10:44:10  cg
+ * Revision 1.8  1996/01/09 09:19:43  cg
+ * implemented pragma linkname for global objects
+ *
+ * Revision 1.7  1995/12/29  10:44:10  cg
  * some DBUG_PRINTs added.
  *
  * Revision 1.6  1995/12/18  16:30:55  cg
@@ -359,7 +362,7 @@ PRECobjdef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PREC", ("precompiling object %s", ItemName (arg_node)));
 
     if (OBJDEF_MOD (arg_node) == NULL) {
-        if ((OBJDEF_PRAGMA (arg_node) != NULL) && (OBJDEF_LINKNAME (arg_node) != NULL)) {
+        if (OBJDEF_LINKNAME (arg_node) != NULL) {
             FREE (OBJDEF_NAME (arg_node));
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
         }
