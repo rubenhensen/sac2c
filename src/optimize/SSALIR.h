@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/26 21:59:14  mwe
+ * LIRids, LIRMOVids added
+ *
  * Revision 1.6  2004/11/22 18:33:19  ktr
  * SACDevCamp 04 Ismop
  *
@@ -53,6 +56,7 @@ extern node *LIRreturn (node *arg_node, info *arg_info);
 extern node *LIRwith (node *arg_node, info *arg_info);
 extern node *LIRwithid (node *arg_node, info *arg_info);
 extern node *LIRexprs (node *arg_node, info *arg_info);
+extern node *LIRids (node *arg_node, info *arg_info);
 
 /*****************************************************************************
  *
@@ -69,5 +73,5 @@ extern node *LIRMOVblock (node *arg_node, info *arg_info);
 extern node *LIRMOVassign (node *arg_node, info *arg_info);
 extern node *LIRMOVlet (node *arg_node, info *arg_info);
 extern node *LIRMOVreturn (node *arg_node, info *arg_info);
-
+extern node *LIRMOVids (node *arg_node, info *arg_info);
 #endif /* _SAC_SSALIR_H_ */
