@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2004/12/01 14:17:41  sah
+ * fixed usage of AP_NAME
+ *
  * Revision 1.38  2004/11/25 22:26:47  sah
  * COMPILES!
  *
@@ -993,7 +996,7 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
 
     ap = TBmakeAp (NULL, TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (array), NULL)));
 
-    AP_NAME (ap) = ILIBstringCopy ("sel");
+    AP_SPNAME (ap) = ILIBstringCopy ("sel");
 
     ids = TBmakeIds (NULL, NULL);
     IDS_SPNAME (ids) = ILIBstringCopy (ID_SPNAME (iv));
@@ -1086,7 +1089,7 @@ IdTableContains (char *id, idtable *ids)
     DBUG_ENTER ("IdTableContains");
 
     while (ids != NULL) {
-        if (strcmp (id, ids->id) == 0) {
+        if (ILIBstringCompare (id, ids->id)) {
             result = 1;
             break;
         }
@@ -1160,7 +1163,7 @@ ScanVector (node *vector, node **array, info *arg_info)
 
             while (handle != NULL) {
                 if ((handle->type == ID_scalar)
-                    && (strcmp (handle->id, ID_NAME (EXPRS_EXPR (vector))) == 0)) {
+                    && (ILIBstringCompare (handle->id, ID_NAME (EXPRS_EXPR (vector))))) {
                     node *position = NULL;
                     node *shape = NULL;
                     shpchain *chain = NULL;
@@ -1237,7 +1240,7 @@ ScanId (node *id, node **array, info *arg_info)
     DBUG_ENTER ("ScanId");
 
     while (ids != NULL) {
-        if ((ids->type == ID_vector) && (strcmp (ids->id, ID_NAME (id)) == 0)) {
+        if ((ids->type == ID_vector) && (ILIBstringCompare (ids->id, ID_NAME (id)))) {
             node *id = MakeTmpId ("setassign");
             node *code = MakeAssignLetNV (ILIBstringCopy (ID_NAME (id)), *array);
             node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (id), NULL));
@@ -1873,7 +1876,7 @@ HDap (node *arg_node, info *arg_info)
     /* is no possibility to find any dot...                     */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel)
-        && (strcmp (AP_NAME (arg_node), "sel") == 0)
+        && (ILIBstringCompare (AP_SPNAME (arg_node), "sel"))
         && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array)) {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
 
@@ -1901,7 +1904,7 @@ HDap (node *arg_node, info *arg_info)
     /* if in HD_scan mode, scan for shapes */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan)
-        && (strcmp (AP_NAME (arg_node), "sel") == 0)) {
+        && (ILIBstringCompare (AP_SPNAME (arg_node), "sel"))) {
         if (NODE_TYPE (AP_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), &AP_ARG2 (arg_node), arg_info);
         }
@@ -1915,7 +1918,7 @@ HDap (node *arg_node, info *arg_info)
     /* if in HD_default mode, rebuild selection */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
-        && (strcmp (AP_NAME (arg_node), "sel") == 0)
+        && (ILIBstringCompare (AP_SPNAME (arg_node), "sel"))
         && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array))
 
     {
