@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.7  1994/12/20 13:12:29  sbs
- * some typos corrected
+ * Revision 1.8  1994/12/20 14:46:25  hw
+ * added information about references to the variable declaration
  *
+# Revision 1.7  1994/12/20  13:12:29  sbs
+# some typos corrected
+#
 # Revision 1.6  1994/12/16  14:50:49  sbs
 # N_moduldec, N_classdec & N_explist inserted
 #
@@ -128,6 +131,7 @@ info.ids   : names of variables to assign to.
 	     The structure of ids is:
               typedef struct IDS{
                        id          *id;
+                       node        *node; /* will be set while typechecking */
                        struct IDS  *next;
                        } ids;
 
@@ -169,6 +173,10 @@ node[1]    : body of with-statement
 N_id:
 =====
 info.id    : name of identificator
+node[0]    : pointer to the belonging variable declaration.
+             it will be set while typechecking. 
+             nnode is still 0 !!!! 
+             
 
 N_float:
 ========
@@ -214,11 +222,15 @@ N_post:
 ======
 node[0]     : indicates whether it is a postincrement or postdecrement
 info.id     : name of the identificator to be modified
+node[1]     : will be set to belonging varaiable declaration while typechecking
+              !!! nnode is still 1 !!!
 
 N_pre:
 ======
 node[0]     : indicates wheter it is a preincrement or predecrement
 info.id     : name of modified identifikator
+node[1]     : will be set to belonging varaiable declaration while typechecking
+              !!! nnode is still 1 !!!
 
 N_inc:
 ======
