@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/12/13 18:45:45  ktr
+ * suballocated arrays are now given new types.
+ *
  * Revision 1.22  2004/11/28 22:14:30  ktr
  * added MMVblock
  *
@@ -149,6 +152,8 @@
 #include "free.h"
 #include "scheduling.h"
 #include "DataFlowMask.h"
+#include "new_types.h"
+
 #include <string.h>
 
 /**
@@ -599,11 +604,10 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
      * if no vardec was found we need to create one
      */
     if (vardec == NULL) {
-        avis = TBmakeAvis (subname, NULL);
+        avis = TBmakeAvis (subname, TYeliminateAKV (IDS_NTYPE (INFO_MMV_LHS (arg_info))));
 
         vardec = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
 
-        VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (INFO_MMV_LHS (arg_info)));
         FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)) = vardec;
 
         /*
