@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.96  2000/10/16 13:56:00  dkr
+ * INFO_PREC_LASTASSIGN added
+ *
  * Revision 1.95  2000/10/16 11:29:59  dkr
  * INFO_PREC_LASTASSIGN added
  *
@@ -2529,9 +2532,10 @@ extern node *MakeInfo ();
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
+#define INFO_PREC_FUNDEF(n) (n->node[1])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
-#define INFO_PREC_OBJINITFUNDEF(n) (n->node[1])
-#define INFO_PREC_LASTASSIGN(n) (n->node[2])
+#define INFO_PREC_OBJINITFUNDEF(n) (n->node[2])
+#define INFO_PREC_LASTASSIGN(n) (n->node[3])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
