@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/02/06 14:26:21  mwe
+ * PHIASSIGN removed
+ *
  * Revision 3.85  2003/12/23 10:43:58  khf
  * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
  * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
@@ -2402,7 +2405,6 @@ DupAvis (node *arg_node, node *arg_info)
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
     }
 
-    AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));
     AVIS_SSAUNDOFLAG (new_node) = AVIS_SSAUNDOFLAG (arg_node);
