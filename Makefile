@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.81  1998/05/13 07:12:25  cg
+# added linking of file icm2c_mt.o
+#
 # Revision 1.80  1998/05/05 15:56:26  cg
 # added linking of file src/optimize/DataFlowMask.c
 #
@@ -309,8 +312,8 @@ CONCURRENT= src/concurrent/spmdregions.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
-          src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_wl.o \
-          src/compile/Old2NewWith.o
+          src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
+          src/compile/icm2c_wl.o src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
