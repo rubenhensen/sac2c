@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.24  1994/12/09 15:19:14  hw
+ * Revision 1.25  1994/12/14 10:09:04  sbs
+ * modul, imports and typedefs inserted;
+ * typedeclarations with user defined types
+ * are not yet possible:-(
+ *
+ * Revision 1.24  1994/12/09  15:19:14  hw
  * added rule expr -> expr EQ expr  (this one was missing :-(  )
  *
  * Revision 1.23  1994/12/08  17:46:57  sbs
@@ -102,7 +107,7 @@ node *syntax_tree;
        }
 
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC, COMMA,
-       INLINE, LET,
+       INLINE, LET, TYPEDEF
        AND, OR, EQ, NEQ, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
@@ -114,14 +119,16 @@ node *syntax_tree;
 %token <cint> NUM;
 %token <cfloat> FLOAT;
 
-%type <ids> ids;
+%type <ids> ids,
 %type <nums> nums;
 %type <types> type, types, simpletype, complextype;
-%type <node> vardec, vardecs, arg, args, funs, fundef, main, prg,
-             exprblock, assign, assigns, assignblock, letassign, retassign,
+%type <node> vardec, vardecs, arg, args, fundefs, fundef, main, prg, modimp,
+             typedefs, typedef, defs, def2, def3, fundef2, exprblock, exprblock2,
+             exprblock3, assign, assigns, assignblock, letassign, retassign,
              selassign, forassign, retassignblock, let, 
              expr, exprs, monop, binop, triop, 
-             conexpr, generator, unaryop;
+             conexpr, generator, unaryop,
+             import, imports, impdesc, impdesc2, impdesc3;
 
 %left OR
 %left AND
@@ -137,67 +144,160 @@ node *syntax_tree;
 
 %%
 
-file: moddec
-	| modimp
-	| prg
+file:   prg {syntax_tree=$1;}
+	| modimp {syntax_tree=$1;}
 	;
 
-moddec: MODDEC ID COLON OWN COLON eidesc
-	| MODDEC ID COLON imports OWN COLON eidesc
-	| CLASSDEC ID COLON OWN COLON eidesc
-	| CLASSDEC ID COLON imports OWN COLON eidesc
+/*
+moddec: MODDEC ID COLON OWN COLON expdesc
+	| MODDEC ID COLON imports OWN COLON expdesc
+	| CLASSDEC ID COLON OWN COLON expdesc
+	| CLASSDEC ID COLON imports OWN COLON expdesc
+	;
+*/
+
+imports: import imports { $1->node[0]=$2;
+                          $1->nnode+=1;
+                          $$=$1;
+                        }
+
+	| import { $$=$1; }
 	;
 
-eidesc: ALL
-	| BRACE_L impty eidesc2
-	| BRACE_L eidesc2
+import: IMPORT ID COLON impdesc { $$=$4; $$->info.id=$2; }
 	;
 
-impty: IMPLICIT TYPES COLON ID SEMIC
+impdesc: ALL
+            { $$=MakeNode( N_implist );
 
-eidesc2: expty eidesc3
-	| eidesc3
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
+            }
+	| BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
+            { $$=$7;
+              $$->node[1]=(node *)$5; /* dirty trick for keeping ids !*/
+            }
+	| BRACE_L impdesc2 { $$=$2; }
 	;
 
-expty: EXPLICIT TYPES COLON ID SEMIC
+impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
+            { $$=$6;
+              $$->node[2]=(node *)$4; /* dirty trick for keeping ids !*/
+            }
+	| impdesc3 { $$=$1; }
+	;
 
-eidesc3: fundecls BRACE_R
+impdesc3: FUNS COLON ids SEMIC BRACE_R
+            { $$=MakeNode( N_implist );
+              $$->node[3]=(node *)$3; /* dirty trick for keeping ids !*/
+
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
+            }
 	| BRACE_R
+            { $$=MakeNode( N_implist );
+
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
+            }
 	;
 
-fundecls: FUNS COLON ID SEMIC
+/*
+expdesc: BRACE_L IMPLICIT TYPES COLON ids SEMIC expdesc2
+        | BRACE_L expdesc2
+        ;
 
-imports: import SEMIC imports
-	| import SEMIC
+expdesc2: EXPLICIT TYPES COLON exptypes SEMIC expdesc3
+        | expdesc3
+        ;
+
+expdesc3: FUNS COLON fundecs SEMIC BRACE_R
+        | BRACE_R
+        ;
+
+exptypes: exptype exptypes
+	| exptype
 	;
 
-import: IMPORT ID COLON eidesc
+exptype: ID LET type SEMIC
 
-modimp: MODIMP ID imports
-	| MODIMP ID imports fundefs
-	| MODIMP ID fundefs
+fundecs: fundec fundecs
+	| fundec
 	;
 
-fundefs: fundef fundefs 
-	| fundef
+fundec: types ID BRACKET_L args BRACKET_R SEMIC
+	| types ID BRACKET_L BRACKET_R SEMIC
 	;
+*/
 
-prg: funs {syntax_tree=$1;} ;
+defs: imports def2 {$$=$2;
+                    $$->node[0]=$1;
+                   }
+	| def2 {$$=$1;}
 
-funs:  fundef funs  { $1->node[1]=$2;
-                      $1->nnode+=1;
-                      $$=$1;
+def2: typedefs def3 {$$=$2;
+                     $$->node[1]=$1;
                     }
-     | main  {$$=$1;}
-      ;
+	|def3 {$$=$1;}
 
-fundef:  types ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
+def3: fundefs { $$=MakeNode(N_modul);
+                $$->info.id=NULL;
+                $$->node[2]=$1;
+
+                DBUG_PRINT("GENTREE",
+                           ("%s:"P_FORMAT"  %s"P_FORMAT,
+                            mdb_nodetype[ $$->nodetype ], $$, 
+                            mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
+              }
+	;
+
+modimp: MODIMP ID defs
+          { $$=$3;
+            $$->info.id=$2;
+          }
+	;
+
+prg: defs { $$=$1; }
+        ;
+
+typedefs: typedef typedefs {$$=$1;
+                            $1->node[0]=$2;
+                            $1->nnode+=1;
+                           }
+	| typedef {$$=$1; }
+	;
+
+typedef: TYPEDEF type ID SEMIC 
+          { $$=MakeNode(N_typedef);
+            $$->info.types=$2;
+            $$->info.types->id=$3;
+
+            DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s",
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id));
+          }
+
+fundefs: fundef fundefs { $1->node[1]=$2;
+                          $1->nnode+=1;
+                          $$=$1;
+                        }
+	| fundef {$$=$1;}
+	| main {$$=$1;}
+	;
+
+fundef: types fundef2 {$$=$2;
+                       $$->info.types=$1;          /*  Typ der Funktion */
+                      }
+	| types INLINE {warn("inline not yet implemented!");} fundef2
+            {$$=$4;
+             $$->info.types=$1;          /*  Typ der Funktion */
+            }
+
+fundef2: ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
           { 
-            $$=$<node>6;
-            $$->node[0]=$7;             /* Funktionsrumpf  */
-            $$->node[2]=$4;             /* Funktionsargumente */
-            $$->info.types=$1;          /*  Typ der Funktion */
-            $$->info.types->id=$2;      /* Name der Funktion */
+            $$=$<node>5;
+            $$->node[0]=$6;             /* Funktionsrumpf  */
+            $$->node[2]=$3;             /* Funktionsargumente */
             $$->nnode=2;
          
             DBUG_PRINT("GENTREE",
@@ -207,27 +307,10 @@ fundef:  types ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
           }
 
-       | types INLINE {warn("inline not yet implemented!");} ID BRACKET_L
-         args BRACKET_R  {$$=MakeNode(N_fundef);} exprblock 
-          { $$=$<node>8;
-            $$->node[0]=$9;              /* Funktionsrumpf  */
-            $$->node[2]=$6;              /* Funktionsargumente */
-            $$->info.types=$1;        /*  Typ der Funktion */
-            $$->info.types->id=$4;    /* Name der Funktion */
-            $$->nnode=2;
-            
-            DBUG_PRINT("GENTREE",
-                       ("%s: "P_FORMAT", Id: %s , %s "P_FORMAT" %s, "P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
-                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
-                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
-          }
-       | types ID BRACKET_L BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
+       | ID BRACKET_L BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
           { 
-            $$=$<node>5;
-            $$->node[0]=$6;             /* Funktionsrumpf  */
-            $$->info.types=$1;          /*  Typ der Funktion */
-            $$->info.types->id=$2;      /* Name der Funktion */
+            $$=$<node>4;
+            $$->node[0]=$5;             /* Funktionsrumpf  */
             $$->nnode=1;
          
             DBUG_PRINT("GENTREE",
@@ -235,20 +318,8 @@ fundef:  types ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
          }
-       | types INLINE {warn("inline not yet implemented!");} ID BRACKET_L
-         BRACKET_R  {$$=MakeNode(N_fundef);} exprblock 
-          { $$=$<node>7;
-            $$->node[0]=$8;              /* Funktionsrumpf  */
-            $$->info.types=$1;        /*  Typ der Funktion */
-            $$->info.types->id=$4;    /* Name der Funktion */
-            $$->nnode=1;
-            
-            DBUG_PRINT("GENTREE",
-                       ("%s: "P_FORMAT", Id: %s , %s "P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
-                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
-          }
         ;
+
 
 args:   arg COMMA args  {$1->node[0]=$3;
                          $1->nnode=1;
@@ -292,30 +363,16 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
        }
       ;
 
-exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign 
+exprblock: BRACE_L exprblock2 {$$=$2;}
+	;
+
+exprblock2:vardecs exprblock3
            SEMIC BRACE_R 
             { 
-               $$=$<node>2;
-               $$->node[1]=$3;  /* declarations of variables */
+               $$=MakeNode(N_block);
+               $$->node[0]=$2;  /* assignments */
+               $$->node[1]=$1;  /* declarations of variables */
                $$->nnode=2;              /* set number of child nodes */
-               if (NULL != $4)
-               {  DBUG_PRINT("GENTREE",
-                             (" assigns:"P_FORMAT,$4));
-                  /* append retassign node($5) to assigns nodes */
-                  $$->node[0]=Append($4,$5);
-               }
-               else /* no assign */
-               {
-                 $$->node[0]=MakeNode(N_assign);
-                 $$->node[0]->node[0]=$5;  /* Returnanweisung */
-                 $$->node[0]->nnode=1;
-              
-                 DBUG_PRINT("GENTREE",
-                            ("%s "P_FORMAT", %s " P_FORMAT ,
-                             mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
-                             mdb_nodetype[$$->node[0]->node[0]->nodetype],
-                             $$->node[0]->node[0]));
-               }
                                  
                DBUG_PRINT("GENTREE",
                           ("%s "P_FORMAT", %s "P_FORMAT,
@@ -323,40 +380,38 @@ exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign
                            mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
                            mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
             }
-         | BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R 
+         | exprblock3
             { 
-              $$=$<node>2;
-              if (NULL != $3)
-              {
-                 /* append retassign node($4) to assigns nodes */
-                 $$->node[0]=Append($3,$4); 
+              $$=MakeNode(N_block);
+              $$->node[0]=$1;
+              $$->nnode=1;
+
+              DBUG_PRINT("GENTREE",
+                         ("%s "P_FORMAT", %s"P_FORMAT,
+                          mdb_nodetype[$$->nodetype], $$,
+                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
+           }
+           ;
+
+exprblock3: assigns retassign SEMIC BRACE_R
+              {if (NULL != $2) {
+                 /* append retassign node($2) to assigns nodes */
+                 $$=Append($1,$2);
+               }
+               else { /* no assigns */
+                 $$=MakeNode(N_assign);
+                 $$->node[0]=$2;  /* Returnanweisung */
                  $$->nnode=1;
 
                  DBUG_PRINT("GENTREE",
-                            ("%s "P_FORMAT", %s"P_FORMAT,
-                             mdb_nodetype[$$->nodetype], $$,
-                             mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
+                            ("%s "P_FORMAT", %s "P_FORMAT ,
+                             mdb_nodetype[$$->nodetype],$$,
+                             mdb_nodetype[$$->node[0]->nodetype],
+                             $$->node[0]));
+               }
               }
-              else /* no assigns */
-              {
-                 $$->node[0]=MakeNode(N_assign);
-                 $$->node[0]->node[0]=$4;  /* Returnanweisung */
-                 $$->node[0]->nnode=1;
-                 $$->nnode=1;
-              
-                 DBUG_PRINT("GENTREE",
-                            ("%s "P_FORMAT", %s " P_FORMAT ,
-                             mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
-                             mdb_nodetype[$$->node[0]->node[0]->nodetype],
-                             $$->node[0]->node[0]));
+	;
                  
-                 DBUG_PRINT("GENTREE",
-                            ("%s "P_FORMAT", %s " P_FORMAT ,
-                             mdb_nodetype[$$->nodetype], $$,
-                             mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
-              }
-           }
-           ;
 
 assignblock: SEMIC     
               {  $$=MakeEmptyBlock();
@@ -1058,6 +1113,15 @@ simpletype: TYPE_INT
                  $$->next=NULL;
                  $$->id=NULL;     /* not used in this case */
                }
+/*
+            | ID
+               { $$=GEN_NODE(types);
+                 $$->simpletype=T_unknown;
+                 $$->dim=0;
+                 $$->next=NULL;
+                 $$->id=$1;
+               }
+*/
             ;
 
 %%
