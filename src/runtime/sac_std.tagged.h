@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/10/15 17:25:01  dkrHH
+ * some comments corrected
+ *
  * Revision 3.51  2003/10/14 14:56:30  cg
  * some superfluous calls of SAC_TR_REF_PRINT_RC removed.
  * some calls of SAC_TR_MEM_PRINT corrected.
@@ -531,11 +534,11 @@ typedef int *SAC_array_descriptor_t;
  *
  * ND_DESC_TYPE( var_NT)           : type of descriptor
  *
- * ND_TYPE_NT( basetype_NT)    : type implementation
+ * ND_TYPE_NT( basetype_NT)        : type implementation
  *     (basetype must be tagged)
  * ND_TYPE( var_NT, basetype)      : type implementation
  *     (basetype not tagged, separate tagged identifier at hand instead)
- * ND_TYPE__<CLASS>( basetype) : type implementation
+ * ND_TYPE__<CLASS>( basetype)     : type implementation
  *
  ******************************************************************************/
 
