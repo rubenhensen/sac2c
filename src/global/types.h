@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/10/20 08:04:09  khf
+ * modified wl_info
+ *
  * Revision 3.33  2004/09/30 19:53:49  sah
  * made rc_counter visible
  *
@@ -469,16 +472,15 @@ typedef types shapes; /* this definition is primarily needed for
                        */
 
 typedef struct WL_INFO {
-    int referenced;                         /* number of references in function */
-    int referenced_fold;                    /* number of foldable references */
-    int references_folded;                  /* number of refs eliminated by WLF */
-    int parts;                              /* number of N_part nodes */
-    int complex;                            /* indicator of fold complexity */
-    bool foldable;                          /* has constant generator */
-    bool no_chance;                         /* 1 if WL is defined within loop/cond */
-    bool dependent;                         /* dependent on fusionable withloop */
-    struct NODE *fusionable_wl;             /* current fusionable withloop */
-    struct NODELIST *references_fusionable; /* references to fusionable withloop */
+    int referenced;         /* number of references in function */
+    int referenced_fold;    /* number of foldable references */
+    int references_folded;  /* number of refs eliminated by WLF */
+    int parts;              /* number of N_part nodes */
+    int complex;            /* indicator of fold complexity */
+    bool foldable;          /* has constant generator */
+    bool no_chance;         /* 1 if WL is defined within loop/cond */
+    bool dependent;         /* depends on fusionable withloop */
+    bool mto_offset_needed; /* more than one offset needed */
 } wl_info;
 
 typedef struct FUN_NAME {
