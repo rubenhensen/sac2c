@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/07/22 14:48:15  ktr
+ * markmemvals.h added.
+ *
  * Revision 3.79  2004/07/22 14:13:50  ktr
  * - DO_SKIP is traversed by new traversal function PRECdo
  * - Third traversal now lifts constant args from funp
@@ -258,6 +261,7 @@
 #include "scheduling.h"
 #include "compile.h"
 #include "precompile.h"
+#include "markmemvals.h"
 
 /*
  * INFO structure
