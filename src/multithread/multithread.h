@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/08/16 16:53:09  skt
+ * SPLITPHASE flag added
+ *
  * Revision 3.9  2004/08/06 17:20:24  skt
  * some adaptions for creating the dataflowgraph
  *
@@ -59,6 +62,8 @@
 #define MUTH_EXCLUSIVE 1
 #define MUTH_SINGLE 2
 #define MUTH_MULTI 3
+
+#define MUTH_SPLITPHASE_ENABLED = 1;
 
 extern node *BuildMultiThread (node *syntax_tree);
 
