@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/17 14:19:11  asi
+ * Revision 1.5  1996/02/13 10:15:11  sbs
+ * counting of eliminations inserted.
+ *
+ * Revision 1.4  1996/01/17  14:19:11  asi
  * added globals.h and removed optimize.h
  *
  * Revision 1.3  1995/10/05  14:55:52  sbs
@@ -27,6 +30,8 @@
 #include "psi-opt.h"
 #include "globals.h"
 
+int ive_expr, ive_op;
+
 /*
  *
  *  functionname  : PsiOpt
@@ -48,8 +53,14 @@ PsiOpt (node *arg_node)
     if (psi_optimize && optimize) {
         NOTE (("Optimizing arrays: ...\n"));
         if (psi_opt_ive) {
+            ive_expr = 0;
+            ive_op = 0;
+
             act_tab = idx_tab;
             arg_node = Trav (arg_node, NULL);
+
+            NOTE (("  %d index-vector(s) eliminated", ive_expr));
+            NOTE (("  %d index-vector-operation(s) eliminated", ive_op));
         }
     }
     DBUG_RETURN (arg_node);

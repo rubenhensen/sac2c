@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.8  1996/02/12 15:44:46  sbs
+ * Revision 1.9  1996/02/13 10:15:11  sbs
+ * counting of eliminations inserted.
+ *
+ * Revision 1.8  1996/02/12  15:44:46  sbs
  * bug in idxLet fixed; now we have different code for args and vardecs:-)
  *
  * Revision 1.7  1996/02/11  20:17:07  sbs
@@ -36,6 +39,7 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "index.h"
+#include "psi-opt.h"
 #include "free.h"
 
 #include "access_macros.h"
@@ -49,18 +53,12 @@
  * OPEN PROBLEMS:
  *
  * I) not yet solved:
- * - Arrays in idx-pos of psi
- *   => ** 19: Generating C-code: ...
- *      Assertion 'expr' failed: file 'compile.c', line 3533
- *      ** wrong first arg of idx_psi
  *
  * II) to be fixed here:
  * - idx-ops on vects with non-max. shapes for psi
  * - integration of prf modarray
  *
  * III) to be fixed somewhere else:
- * - missing backref in Const-array in genarray
- * - refcnting when proper backref in ND_KS_USE_GENVAR_OFFSET
  */
 
 /*
@@ -779,7 +777,7 @@ IdxLet (node *arg_node, node *arg_info)
  *                    psi   : SetIdx
  *                    binop : SetVect
  *                    others: SetVect
- *  global vars   :
+ *  global vars   : ive_op
  *  internal funs :
  *  external funs :
  *  macros        :
@@ -822,6 +820,7 @@ IdxPrf (node *arg_node, node *arg_info)
         if (arg_info != NULL)
             PRF_PRF (arg_node) = F_add;
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        ive_op++;
         break;
     case F_sub_SxA:
     case F_sub_AxS:
@@ -829,28 +828,34 @@ IdxPrf (node *arg_node, node *arg_info)
         if (arg_info != NULL)
             PRF_PRF (arg_node) = F_sub;
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        ive_op++;
         break;
     case F_mul_SxA:
         if (arg_info != NULL)
             PRF_PRF (arg_node) = F_mul;
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        ive_op++;
         break;
     case F_mul_AxS:
         if (arg_info != NULL)
             PRF_PRF (arg_node) = F_mul;
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        ive_op++;
         break;
     case F_div_SxA:
         if (arg_info != NULL)
             PRF_PRF (arg_node) = F_div;
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        ive_op++;
         break;
     case F_div_AxS:
         if (arg_info != NULL)
             PRF_PRF (arg_node) = F_div;
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        ive_op++;
         break;
     default:
+        DBUG_ASSERT ((arg_info == NULL), "Inconsistency between IdxLet and IdxPrf");
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         break;
     }
@@ -939,7 +944,7 @@ IdxId (node *arg_node, node *arg_info)
  *                  Since we may have identifyers as components, this calculation
  *                  is not done, but generated as syntax-tree!!!
  *                  WARNING!  this penetrates the flatten-consistency!!
- *  global vars   :
+ *  global vars   : ive_expr
  *  internal funs :
  *  external funs : MakeNode
  *  macros        :
@@ -978,6 +983,7 @@ IdxArray (node *arg_node, node *arg_info)
             }
         }
         arg_node = idx;
+        ive_expr++;
     }
     DBUG_RETURN (arg_node);
 }
@@ -1115,11 +1121,9 @@ IdxGenerator (node *arg_node, node *arg_info)
                 break;
             case N_genarray:
                 block = GENARRAY_BODY (body);
-#if 0
-          DBUG_ASSERT((NODE_TYPE( GENARRAY_ARRAY( body)) == N_array),
-                "array of genarray is not N_array!");
-          artype = ARRAY_TYPE( GENARRAY_ARRAY( body));
-#endif
+                DBUG_ASSERT ((NODE_TYPE (GENARRAY_ARRAY (body)) == N_array),
+                             "array of genarray is not N_array!");
+                artype = ARRAY_TYPE (GENARRAY_ARRAY (body));
                 DBUG_ASSERT ((artype != NULL), "missing type-info in genarray!");
                 break;
             case N_foldprf:
@@ -1132,54 +1136,53 @@ IdxGenerator (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((0 != 0), "unknown generator type in IdxGenerator");
             }
 
-#if 0
-      if( ((NODE_TYPE( body) == N_modarray) || (NODE_TYPE( body) == N_genarray))
-          && EqTypes( VINFO_TYPE( vinfo), artype)) {
-#else
-            if ((NODE_TYPE (body) == N_modarray)
+            if (((NODE_TYPE (body) == N_modarray) || (NODE_TYPE (body) == N_genarray))
                 && EqTypes (VINFO_TYPE (vinfo), artype)) {
-#endif
-            /*
-             * we can reuse the genvar as index directly!
-             * therefore we create an ICM of the form:
-             * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
-             */
-            newid = MakeId (ChgId (GEN_ID (arg_node), artype), NULL, ST_regular);
-            colvinfo = FindIdx (VARDEC_COLCHN (vardec), artype);
-            DBUG_ASSERT (((colvinfo != NULL) && (VINFO_VARDEC (colvinfo) != NULL)),
-                         "missing vardec for IDX variable!");
-            ID_VARDEC (newid) = VINFO_VARDEC (colvinfo);
-            arrayid = MakeId (LET_NAME (arg_info), NULL, ST_regular);
-#if 0
-        ID_VARDEC( arrayid) = LET_VARDEC( arg_info);
-#else
+                /*
+                 * we can reuse the genvar as index directly!
+                 * therefore we create an ICM of the form:
+                 * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
+                 */
+                newid = MakeId (ChgId (GEN_ID (arg_node), artype), NULL, ST_regular);
+                colvinfo = FindIdx (VARDEC_COLCHN (vardec), artype);
+                DBUG_ASSERT (((colvinfo != NULL) && (VINFO_VARDEC (colvinfo) != NULL)),
+                             "missing vardec for IDX variable!");
+                ID_VARDEC (newid) = VINFO_VARDEC (colvinfo);
+                arrayid = MakeId (LET_NAME (arg_info), NULL, ST_regular);
+                /*
+                 * The backref of the arrayid is set wrongly to the actual
+                 * integer index-variable. This is done on purpose for
+                 * fooling the refcount-inference system.
+                 * The "correct" backref would be LET_VARDEC( arg_info) !
+                 */
                 ID_VARDEC (arrayid) = VINFO_VARDEC (colvinfo);
-#endif
 
-            CREATE_2_ARY_ICM (newassign, "ND_KS_USE_GENVAR_OFFSET", newid, arrayid);
-        } else {
-            /*
-             * we have to instanciate the idx-variable by an ICM of the form:
-             * ND_KS_VECT2OFFSET( <var-name>, <dim of var>, <dim of array>, shape_elems)
-             */
-            name_node = MakeId (GEN_ID (arg_node), NULL, ST_regular);
-            ID_VARDEC (name_node) = vardec;
-            dim_node = MakeNum (VARDEC_SHAPE (vardec, 0));
-            dim_node2 = MakeNum (VINFO_DIM (vinfo));
+                CREATE_2_ARY_ICM (newassign, "ND_KS_USE_GENVAR_OFFSET", newid, arrayid);
+            } else {
+                /*
+                 * we have to instanciate the idx-variable by an ICM of the form:
+                 * ND_KS_VECT2OFFSET( <var-name>, <dim of var>, <dim of array>,
+                 * shape_elems)
+                 */
+                name_node = MakeId (GEN_ID (arg_node), NULL, ST_regular);
+                ID_VARDEC (name_node) = vardec;
+                dim_node = MakeNum (VARDEC_SHAPE (vardec, 0));
+                dim_node2 = MakeNum (VINFO_DIM (vinfo));
 
-            CREATE_3_ARY_ICM (newassign, "ND_KS_VECT2OFFSET", name_node, /* var-name */
-                              dim_node,                                  /* dim of var*/
-                              dim_node2);                                /* dim of array*/
+                CREATE_3_ARY_ICM (newassign, "ND_KS_VECT2OFFSET",
+                                  name_node,  /* var-name */
+                                  dim_node,   /* dim of var*/
+                                  dim_node2); /* dim of array*/
 
-            /* Now, we append the shape elems to the ND_KS_VECT2OFFSET-ICM ! */
-            for (i = 0; i < VINFO_DIM (vinfo); i++)
-                MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
+                /* Now, we append the shape elems to the ND_KS_VECT2OFFSET-ICM ! */
+                for (i = 0; i < VINFO_DIM (vinfo); i++)
+                    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
+            }
+            ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
+            newassign->nnode = 2;
+            BLOCK_INSTR (block) = newassign;
         }
-        ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
-        newassign->nnode = 2;
-        BLOCK_INSTR (block) = newassign;
+        vinfo = VINFO_NEXT (vinfo);
     }
-    vinfo = VINFO_NEXT (vinfo);
-}
-DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_node);
 }
