@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/03/05 15:53:33  sbs
+ * in sbs mode print is called on the ast before exiting
+ *
  * Revision 3.37  2002/02/22 11:44:20  dkr
  * works with simplified TYPES structure now :-))
  *
@@ -124,156 +127,6 @@
  * Revision 3.1  2000/11/20 18:00:18  sacbase
  * new release made
  *
- * Revision 2.57  2000/11/15 14:24:59  sbs
- * added {}'s in order to please gcc ambitious else warning
- *
- * Revision 2.56  2000/10/26 14:30:29  dkr
- * MakeShpseg used instead of MALLOC
- *
- * Revision 2.55  2000/10/26 12:47:58  dkr
- * DupIds renamed into DupAllIds
- *
- * Revision 2.54  2000/10/24 13:22:43  dkr
- * MakeTypes renamed into MakeTypes1
- * MakeType renamed into MakeTypes
- *
- * Revision 2.53  2000/10/24 09:45:59  dkr
- * GetSimpletype renamed into GetBasetype
- *
- * Revision 2.52  2000/10/20 15:38:12  dkr
- * macros GET_DIM, GET_LENGTH, GET_BASIC_SIMPLETYPE replaced by
- * equivalent functions in tree_compound.[ch]
- *
- * Revision 2.51  2000/10/18 09:42:26  dkr
- * bug in UpdateType() fixed
- *
- * Revision 2.50  2000/10/18 09:04:32  sbs
- * ID_OR_CAST_TYPE's inserted.
- *
- * Revision 2.49  2000/09/12 14:37:29  dkr
- * some errors in combination with (dynamic_shapes == 1) corrected
- *
- * Revision 2.48  2000/08/07 14:57:43  dkr
- * FindFun: handling of [.] types corrected
- *
- * Revision 2.47  2000/08/07 14:09:09  dkr
- * ST_independent replaced by ST_shp_indep and ST_dim_indep
- *
- * Revision 2.46  2000/08/04 17:22:32  dkr
- * NEWTREE removed
- * comment about TT1, TT2, TT3 updated
- *
- * Revision 2.45  2000/07/21 14:44:48  nmw
- * typechecker calls import specializations first
- * generates fundefs with specified shaped
- *
- * Revision 2.44  2000/07/14 11:43:07  dkr
- * FUNDEF_INLINE==1 replaced by FUNDEF_INLINE
- *
- * Revision 2.43  2000/07/12 15:10:32  dkr
- * function DuplicateTypes renamed into DupTypes
- *
- * Revision 2.42  2000/06/25 01:44:49  dkr
- * limits of floating-point-numbers: values.h is not portable, therefore
- * float.h is used now.
- *
- * Revision 2.41  2000/06/23 15:25:44  dkr
- * signature of DupTree changed
- *
- * Revision 2.40  2000/06/07 15:53:33  dkr
- * pseudo-fold-fundefs are no longer inserted into the AST directly
- * during the traversal (*very* error prone!!).
- * Now, they are accumulated in an extra node-chain which is
- * inserted into the AST when the traversal is finished.
- *
- * Revision 2.39  2000/05/30 14:14:07  dkr
- * TypecheckFunctionDeclarations() is called for pseudo-fold-functions,
- * too, in order to get the correct back references to corresponding
- * N_typedef nodes!
- *
- * Revision 2.38  2000/05/30 12:35:50  dkr
- * functions for old with-loop removed
- *
- * Revision 2.37  2000/05/11 10:36:33  dkr
- * Bug in ReduceGenarrayShape fixed: arg_info is no longer dumped.
- * Macro SHAPE_2_ARRAY replaced by function Types2Array.
- *
- * Revision 2.36  2000/05/03 06:07:01  sbs
- * warning inserted when maxspecialize is exceeded!
- *
- * Revision 2.35  2000/02/23 20:16:34  cg
- * Node status ST_imported replaced by ST_imported_mod and
- * ST_imported_class in order to allow distinction between enteties
- * that are imported from a module and those that are imported from a
- * class.
- *
- * Revision 2.34  2000/02/23 17:27:01  cg
- * The entry TYPES_TDEF of the TYPES data structure now contains a
- * reference to the corresponding N_typedef node for all user-defined
- * types.
- * Therefore, most calls to LookupType() are eliminated.
- * Please, keep the back references up to date!!
- *
- * Revision 2.33  2000/02/22 15:41:02  jhs
- * Adapted NODE_TEXT.
- * Filled some comments for functions I wrote months ago ...
- * Done some brushings.
- *
- * Revision 2.32  2000/02/17 16:17:53  cg
- * Function DuplicateTypes() moved to DupTree.c.
- *
- * Revision 2.31  2000/01/26 13:45:35  jhs
- * problem for eliminating withloops with empty shape fixed:
- * -iv is set to []
- * -does not break if the WL is the first assignment within its block.
- *
- * Revision 2.30  1999/10/19 17:08:02  sbs
- * new secret -sbs switch integrated 8-)
- *
- * Revision 2.29  1999/10/17 13:32:23  sbs
- * sbs-mechanism included - but still commented out...
- *
- * Revision 2.28  1999/09/10 14:27:22  jhs
- * Removed those ugly MAKENODE_xxx macros.
- *
- * Revision 2.27  1999/07/15 20:57:26  sbs
- * some bugs concerning missing CONSTVEC decls eliminated.
- * In particular BuildCatWIthLoop1/2 had to be improved!
- *
- * Revision 2.26  1999/07/08 14:21:40  sbs
- * Now in modules . in NGeneratoras are kept!
- *
- * Revision 2.25  1999/07/06 16:16:33  jhs
- * Removed ABORT in isBoundEmpty and inserted a DBUG_ASSERT instead.
- *
- * Revision 2.24  1999/06/24 15:40:28  sbs
- * non-scalar predicate-types for conditionals will no longer be accepted!
- *
- * Revision 2.23  1999/06/24 15:14:42  sbs
- * eliminated an error in BuildPsiWithLoop
- *
- * Revision 2.22  1999/06/17 14:29:22  sbs
- * patched the typechecker in order to accept programs which only require
- * the dimensionality rather than the exact shape of all arrays to be
- * known statically.
- * This only will be done in case "dynamic_shapes == 1" which can be
- * achieved by calling sac2c -ds!
- *
- * Revision 2.21  1999/06/02 13:51:16  sbs
- * fixed a nasty bug in TI_Ngenarray
- * in[] nowalso matches int[.]
- * (so does int[?].... 8-))
- *
- * Revision 2.20  1999/05/31 16:55:48  sbs
- * constant-folding for wls extended
- * Now, with(...) genarray( [2+2,3],...);
- * works as well.
- *
- * Revision 2.19  1999/05/18 07:51:42  sbs
- * some bugs concerning user-defined types eliminated.
- *
- * Revision 2.18  1999/05/17 11:22:58  jhs
- * with-loops with empty bounds will be rebuild to direct let's.
  *
  * ... [eliminated] ...
  *
@@ -3346,6 +3199,7 @@ Typecheck (node *arg_node)
 
     if (sbs == 1) {
         NewTypeCheck (arg_node);
+        Print (arg_node);
         exit (0);
     }
 
