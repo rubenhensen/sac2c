@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2003/11/28 09:33:41  sbs
+ * major code rewrite. Now, code inspection and code modification are better separated.
+ * However, since the tricky code modification sections are copied from the old
+ * code, some functions are stll pretty ugly. Furthermore, CreateFullPartition
+ * contains some redundancy as the "full range" case is taken care of separately.
+ * The major contribution of the code is the proper (hopefully 8-) treatment
+ * of the default case in genarray WLs!!!
+ *
  * Revision 1.25  2003/09/25 18:37:16  dkr
  * some code brushing done
  *
@@ -114,6 +122,8 @@
 
  ******************************************************************************/
 
+#define INFO_WLT_GENPROP(n) (n->counter)
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -132,7 +142,7 @@
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
 
-#define FORBID_EMPTY_GENARRAY_WLS 0
+typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
 
 /******************************************************************************
  *
@@ -464,7 +474,15 @@ CreateFullPartition (node *wln, node *arg_info)
         /* create code for all new parts */
         if (NWITH_TYPE (wln) == WO_genarray) {
             /* create a zero of the correct type */
-            coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+            if (sbs == 1) {
+                if (NWITHOP_DEFAULT (NWITH_WITHOP (wln)) == NULL) {
+                    coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+                } else {
+                    coden = DupTree (NWITHOP_DEFAULT (NWITH_WITHOP (wln)));
+                }
+            } else {
+                coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+            }
         } else { /* modarray */
             /*
              * we build NO with-loop here in order to ease optimizations
@@ -512,6 +530,273 @@ CreateFullPartition (node *wln, node *arg_info)
     array_shape = Free (array_shape);
 
     DBUG_RETURN (wln);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateEmptyGenWLReplacement( node *wl, node *arg_info)
+ *
+ * description:
+ *   computes the replacement for the given WL under the assumption that
+ *   the generator is empty, i.e.,
+ *
+ *    with( lb <= iv < ub)              =>     with( 0*shp <= iv <shp)
+ *    genarray( shp, exp, dexp)                genarray( shp, dexp, ---)
+ *
+ *    with( lb <= iv < ub)              =>     a
+ *    modarray( a, NULL, exp)
+ *
+ *    with( lb <= iv < ub)              =>     neutral
+ *    fold( fun, neutral, exp)
+ *
+ *   NOTE HERE, that wl is either MODIFIED in place or FREED entirely!!
+ *
+ ******************************************************************************/
+
+node *
+CreateEmptyGenWLReplacement (node *wl, node *arg_info)
+{
+    ids *let_ids;
+    int dim, i;
+    node *lb, *ub, *lbe, *ube;
+    node *code;
+    node *tmpn, *assignn, *idn, *blockn;
+    ids *_ids;
+    char *varname;
+    types *type;
+
+    node *res;
+
+    DBUG_ENTER ("CreateEmptyGenWLReplacement");
+
+    switch (NWITH_TYPE (wl)) {
+    case WO_genarray:
+        res = wl;
+        /*
+         * First, we change the generator to full scope.
+         */
+        let_ids = LET_IDS (INFO_WLI_LET (arg_info));
+        dim = GetDim (IDS_TYPE (let_ids));
+        lb = NWITH_BOUND1 (wl);
+        ub = NWITH_BOUND2 (wl);
+        lbe = ARRAY_AELEMS (lb);
+        ube = ARRAY_AELEMS (ub);
+
+        i = 0;
+        while ((i < dim) && (lbe != NULL)) {
+            NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+            NUM_VAL (EXPRS_EXPR (ube)) = IDS_SHAPE (let_ids, i);
+
+            lbe = EXPRS_NEXT (lbe);
+            ube = EXPRS_NEXT (ube);
+            i++;
+        }
+
+        if (NWITH_STEP (wl)) {
+            NWITH_STEP (wl) = FreeTree (NWITH_STEP (wl));
+        }
+        if (NWITH_WIDTH (wl)) {
+            NWITH_WIDTH (wl) = FreeTree (NWITH_WIDTH (wl));
+        }
+
+        /*
+         * Now we have to change the code. Either we can use DEAFAULT (easy)
+         * or we have to create zeros (ugly).
+         */
+        code = NWITH_CODE (wl);
+        if (NWITH_DEFAULT (wl) != NULL) {
+            NCODE_CBLOCK (code) = FreeTree (NCODE_CBLOCK (code));
+            NCODE_CBLOCK (code) = MakeEmpty ();
+
+            NCODE_CEXPR (code) = FreeTree (NCODE_CEXPR (code));
+            NCODE_CEXPR (code) = DupTree (NWITH_DEFAULT (wl));
+
+        } else {
+            blockn = NCODE_CBLOCK (code);
+            tmpn = BLOCK_INSTR (blockn);
+
+            if (N_empty == NODE_TYPE (tmpn)) {
+                /* there is no instruction in the block right now. */
+                BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
+                /* first, introduce a new variable */
+                varname = TmpVar ();
+                _ids = MakeIds (varname, NULL, ST_regular);
+                /* determine type of expr in the operator (result of body) */
+                type = ID_TYPE (NWITH_CEXPR (INFO_WLI_WL (arg_info)));
+                IDS_VARDEC (_ids)
+                  = SSACreateVardec (varname, type,
+                                     &(FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info))));
+                IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
+
+                tmpn = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+
+                /* replace N_empty with new assignment "_ids = [0,..,0]" */
+                assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
+                BLOCK_INSTR (blockn) = assignn;
+
+                /* set correct backref to defining assignment */
+                AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
+
+                /* replace CEXPR */
+                idn = MakeId (StringCopy (varname), NULL, ST_regular);
+                ID_VARDEC (idn) = IDS_VARDEC (_ids);
+                ID_AVIS (idn) = IDS_AVIS (_ids);
+                tmpn = NWITH_CODE (INFO_WLI_WL (arg_info));
+                NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
+                NCODE_CEXPR (tmpn) = idn;
+
+            } else {
+                /* we have a non-empty block.
+                   search last assignment and make it the only one in the block. */
+                while (ASSIGN_NEXT (tmpn)) {
+                    tmpn = ASSIGN_NEXT (tmpn);
+                }
+                assignn = DupTree (tmpn);
+                FreeTree (BLOCK_INSTR (blockn));
+                FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+                BLOCK_INSTR (blockn) = assignn;
+                _ids = LET_IDS (ASSIGN_INSTR (assignn));
+                type = IDS_TYPE (_ids);
+
+                tmpn = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+                NCODE_FLAG (NWITH_CODE (INFO_WLI_WL (arg_info))) = TRUE;
+
+                LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
+            }
+        }
+        break;
+    case WO_modarray:
+        res = DupTree (NWITH_ARRAY (wl));
+        wl = FreeTree (wl);
+        break;
+    default:
+        res = DupTree (NWITH_NEUTRAL (wl));
+        wl = FreeTree (wl);
+        break;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool PropagateArrayConstants( node **expr)
+ *
+ * description:
+ *   expects (*expr) to point either to a scalar constant, to an array,
+ *   or to an identifyer.
+ *   If (**expr) is constant or structural constant, the according node
+ *   (N_array / scalar) is freshly generated and (*expr) is modified to point
+ *   to the new node. The old one is freed!
+ *   returns TRUE iff (**expr) is constant or (*expr) == NULL!!
+ *
+ ******************************************************************************/
+
+static bool
+PropagateArrayConstants (node **expr)
+{
+    constant *const_expr;
+    struct_constant *sco_expr;
+    bool res = FALSE;
+
+    DBUG_ENTER ("PropagateArrayConstants");
+
+    if ((*expr) != NULL) {
+        const_expr = COAST2Constant ((*expr));
+        if (const_expr != NULL) {
+            res = TRUE;
+            (*expr) = FreeTree (*expr);
+            (*expr) = COConstant2AST (const_expr);
+            const_expr = COFreeConstant (const_expr);
+
+        } else {
+            sco_expr = SCOExpr2StructConstant ((*expr));
+            if (sco_expr != NULL) {
+                (*expr) = FreeTree (*expr);
+                (*expr) = SCODupStructConstant2Expr (sco_expr);
+                sco_expr = SCOFreeStructConstant (sco_expr);
+            }
+        }
+    } else {
+        res = TRUE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   gen_prop_t CheckGeneratorBounds( node *wl, shape *max_shp)
+ *
+ * description:
+ *   expects the bound expression for lb and ub to be constants!
+ *   checks, whether these fit into the shape given by max_shp.
+ *   If they exceed max_shp, they are "fitted"!
+ *   Furthermore, it is checked whether the generator is empty (GPT_empty is
+ *   returned) or may cover the entire range (GPT_full is returned).
+ *   Otherwise GPT_partial is returned.
+ *
+ ******************************************************************************/
+
+static gen_prop_t
+CheckGeneratorBounds (node *wl, shape *max_shp)
+{
+    node *lbe, *ube;
+    int dim;
+    int lbnum, ubnum, tnum;
+    gen_prop_t res;
+
+    DBUG_ENTER ("CheckGeneratorBounds");
+
+    lbe = ARRAY_AELEMS (NWITH_BOUND1 (wl));
+    ube = ARRAY_AELEMS (NWITH_BOUND2 (wl));
+    res = GPT_full;
+
+    dim = 0;
+    while (lbe) {
+        DBUG_ASSERT ((ube != NULL), "dimensionality differs in lower and upper bound!");
+        DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
+                      && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
+                     "generator bounds must be constant!");
+        lbnum = NUM_VAL (EXPRS_EXPR (lbe));
+        ubnum = NUM_VAL (EXPRS_EXPR (ube));
+
+        if ((NWITH_TYPE (wl) == WO_modarray) || (NWITH_TYPE (wl) == WO_genarray)) {
+            DBUG_ASSERT ((dim < SHGetDim (max_shp)),
+                         "dimensionality of lb greater than that of the result!");
+            tnum = SHGetExtent (max_shp, dim);
+            if (lbnum < 0) {
+                lbnum = NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+                WARN (NODE_LINE (wl),
+                      ("lower bound of WL-generator in dim %d below zero: set to 0",
+                       dim));
+            } else if (lbnum > 0) {
+                res = GPT_partial;
+            }
+            if (ubnum > tnum) {
+                ubnum = NUM_VAL (EXPRS_EXPR (ube)) = tnum;
+                WARN (NODE_LINE (wl),
+                      ("upper bound of WL-generator in dim %d greater than shape:"
+                       " set to %d",
+                       dim, tnum));
+            } else if (ubnum < tnum) {
+                res = GPT_partial;
+            }
+        }
+
+        if (lbnum >= ubnum) {
+            /* empty set of indices */
+            res = GPT_empty;
+        }
+
+        dim++;
+        lbe = EXPRS_NEXT (lbe);
+        ube = EXPRS_NEXT (ube);
+    }
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -840,78 +1125,92 @@ SSAWLTlet (node *arg_node, node *arg_info)
 node *
 SSAWLTNwith (node *arg_node, node *arg_info)
 {
-    node *tmpn, *old_assignn;
+    node *tmpn;
+    bool replace_wl = FALSE;
 
     DBUG_ENTER ("SSAWLTNwith");
 
-    /*
-     * inside the body of this WL we may find another WL. So we better
-     * save the old arg_info information.
+    /**
+     * Once a full partition has been created, we do not need to inspect
+     * the generators anymore. The indicator for this is the PARTS attribute.
+     * Initially, it is set to -1; if we have successfully generated a full
+     * partition, it carries a positive value.
+     * However, the WITHOP sons and the CODEs have to be inspected anyways.
+     * The WITHOP sons have to be inspected because they may allow for some
+     * constant propagation (to be utilized later).
+     * The CODEs have to be traversed as they may contain further (nested) WLs.
      */
-    tmpn = MakeInfo ();
-    INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
-    INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
-    INFO_WLI_NEXT (tmpn) = arg_info;
-    arg_info = tmpn;
-
-    /*
-     * initialize WL traversal
-     */
-    INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
-    INFO_WLI_LET (arg_info) = ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info));
-    INFO_WLI_REPLACE (arg_info) = NULL;
-
-    tmpn = NWITH_CODE (arg_node);
-    while (tmpn) { /* reset traversal flag for each code */
-        NCODE_FLAG (tmpn) = FALSE;
-        tmpn = NCODE_NEXT (tmpn);
-    }
-
-    NWITH_FOLDABLE (arg_node) = TRUE;
-
-    /*
-     * traverse all parts (and implicitely bodies).
-     */
-    old_assignn = INFO_WLI_ASSIGN (arg_info);
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-    }
-    INFO_WLI_ASSIGN (arg_info) = old_assignn;
-
-    if (INFO_WLI_REPLACE (arg_info)) {
+    if (NWITH_PARTS (arg_node) == -1) {
         /*
-         * This WL has to be removed. Replace it by INFO_WLI_REPLACE().
+         * initialize WL traversal
          */
-        FreeTree (arg_node);
-        arg_node = INFO_WLI_REPLACE (arg_info);
-    } else {
+        INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
+        INFO_WLI_LET (arg_info) = ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info));
+
+        NWITH_FOLDABLE (arg_node) = TRUE;
+
         /*
-         * traverse N_Nwithop
+         * traverse the one and only (!) PART.
+         * Besides minor changes in the generator, two values are computed
+         * during this traversal:
+         *
+         *  NWITH_FOLDABLE( arg_node)   and  INFO_WLT_GENPROP(arg_info) !!
+         */
+        if (NWITH_PART (arg_node) != NULL) {
+            DBUG_ASSERT ((NPART_NEXT (NWITH_PART (arg_node)) == NULL),
+                         "PARTS is -1 although more than one PART is available!");
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        if (INFO_WLT_GENPROP (arg_info) == GPT_empty) {
+            arg_node = CreateEmptyGenWLReplacement (arg_node, arg_info);
+            replace_wl = TRUE;
+
+        } else if (INFO_WLT_GENPROP (arg_info) == GPT_full) {
+            NWITH_PARTS (arg_node) = 1;
+            if (NWITH_TYPE (arg_node) == WO_genarray) {
+                if (NWITH_DEFAULT (arg_node) != NULL) {
+                    NWITH_DEFAULT (arg_node) = FreeTree (NWITH_DEFAULT (arg_node));
+                }
+            }
+
+        } else if ((INFO_WLT_GENPROP (arg_info) == GPT_partial)
+                   && NWITH_FOLDABLE (arg_node)) {
+            arg_node = CreateFullPartition (arg_node, arg_info);
+        }
+    }
+
+    if (!replace_wl) { /* The WL still exists 8-) */
+        /*
+         * Now, we traverse the WITHOP sons for propagating (structural) constants.
          */
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
         /*
-         * generate full partition.
+         * Finally, we check for "inner" WLs, i.e., we traverse the codes.
+         * As the index vector optimizations need to have access to ALL genvars,
+         * we have to stack the arg_info before traversing the code chain!
          */
-        if (NWITH_FOLDABLE (arg_node)) {
-            if (NWITH_IS_FOLD (arg_node)) {
-                /*
-                 * If withop is fold, we cannot create additional N_Npart nodes
-                 * (based on what?)
-                 */
-                NWITH_PARTS (arg_node) = 1;
-            } else {
-                arg_node = CreateFullPartition (arg_node, arg_info);
-            }
+        tmpn = MakeInfo ();
+        INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
+        INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
+        INFO_WLI_NEXT (tmpn) = arg_info;
+        arg_info = tmpn;
+
+        if (NWITH_CODE (arg_node) != NULL) {
+            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
         }
+
+        /*
+         * pop arg_info again!
+         */
+        tmpn = arg_info;
+        arg_info = INFO_WLI_NEXT (arg_info);
+        tmpn = Free (tmpn);
     }
 
-    /*
-     * restore arg_info
-     */
-    tmpn = arg_info;
-    arg_info = INFO_WLI_NEXT (arg_info);
-    tmpn = Free (tmpn);
+    INFO_WLI_WL (arg_info) = NULL;
+    INFO_WLI_LET (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -929,7 +1228,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
 node *
 SSAWLTNwithop (node *arg_node, node *arg_info)
 {
-    node **son;
+    bool is_const;
 
     DBUG_ENTER ("SSAWLTNwithop");
 
@@ -938,14 +1237,13 @@ SSAWLTNwithop (node *arg_node, node *arg_info)
         if (NWITHOP_SHAPE (arg_node) != NULL) {
             NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
         }
-        son = &(NWITHOP_SHAPE (arg_node));
+        is_const = PropagateArrayConstants (&(NWITHOP_SHAPE (arg_node)));
         break;
 
     case WO_modarray:
         if (NWITHOP_ARRAY (arg_node) != NULL) {
             NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         }
-        son = NULL;
         break;
 
     case WO_foldfun:
@@ -954,39 +1252,11 @@ SSAWLTNwithop (node *arg_node, node *arg_info)
         if (NWITHOP_NEUTRAL (arg_node) != NULL) {
             NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         }
-        son = NULL;
         break;
 
     default:
         DBUG_ASSERT ((0), "illegal NWITHOP_TYPE found!");
-        son = NULL;
         break;
-    }
-
-    if (son != NULL) {
-        constant *son_const = COAST2Constant (*son);
-        node *tmp;
-
-        if (son_const != NULL) {
-            /* substitute son */
-            tmp = *son;
-            (*son) = COConstant2AST (son_const);
-            DBUG_ASSERT ((NODE_TYPE (*son) == N_array), "illegal node found!");
-            tmp = FreeTree (tmp);
-            son_const = COFreeConstant (son_const);
-        } else {
-            /* non-constant son found */
-            struct_constant *son_sco = SCOExpr2StructConstant (*son);
-
-            /* it is a (non-constant) array -> substitute son */
-            if (son_sco != NULL) {
-                tmp = *son;
-                (*son) = SCODupStructConstant2Expr (son_sco);
-                DBUG_ASSERT ((NODE_TYPE (*son) == N_array), "illegal node found!");
-                tmp = FreeTree (tmp);
-                son_sco = SCOFreeStructConstant (son_sco);
-            }
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1010,15 +1280,6 @@ SSAWLTNpart (node *arg_node, node *arg_info)
 
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
-    /* traverse code. But do this only once, even if there are more than
-       one referencing generators.
-       This is just a cross reference, so just traverse, do not assign the
-       resulting node.
-    */
-    if ((!NCODE_FLAG (NPART_CODE (arg_node))) && (!INFO_WLI_REPLACE (arg_info))) {
-        Trav (NPART_CODE (arg_node), arg_info);
-    }
-
     if (NPART_NEXT (arg_node) != NULL) {
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
     }
@@ -1037,282 +1298,64 @@ SSAWLTNpart (node *arg_node, node *arg_info)
  *   to FALSE.
  *   Generators that surmount the array bounds (like [-5,3] or [11,10] >
  *   [maxdim1,maxdim2] = [10,10]) are changed to fitting gens.
+ *   Via INFO_WLT_GENPROP( arg_info) the status of the generator is
+ *   returned. Possible values are (poss. ambiguities are resolved top
+ *   to bottom):
+ *     GPT_empty   : the generator is empty!
+ *     GPT_full    : the generator covers the entire range!
+ *     GPT_partial : the generator has constant upper and lower bounds,
+ *                   but  - most likely  - only a part is covered!
+ *     GPT_unknown : we don't know anything !
  *
  ******************************************************************************/
 
 node *
 SSAWLTNgenerator (node *arg_node, node *arg_info)
 {
-    node *tmpn, **bound, *lb, *ub, *lbe, *ube, *wln;
-    int i, check_bounds, empty, warning;
-    int lbnum, ubnum, tnum, dim;
+    node *wln;
     ids *let_ids;
-#if !FORBID_EMPTY_GENARRAY_WLS
-    node *assignn, *blockn, *idn;
-    ids *_ids;
-    char *varname;
-    types *type;
-#endif
+    shape *shp;
+    bool is_const, check_bounds, foldable;
+    gen_prop_t res;
 
     DBUG_ENTER ("SSAWLTNgenerator");
 
-    /*
-     * All this work has only to be done once for every WL:
-     *  - inserting N_array bounds (done here),
-     *  - check bounds (done here),
-     *  - creating full partition (WLTNwith).
-     * If only one of these points was not successful, another call of WLT
-     * will try it again (NWITH_PARTS == -1).
-     *
-     * (OptimizeSel() and OptimizeArray() have to be called multiple
-     * times!)
-     */
-
     wln = INFO_WLI_WL (arg_info);
-    if (-1 == NWITH_PARTS (wln)) {
-        /*
-         * try to propagate a N_array node in all sons
-         */
-        check_bounds = 1;
-        for (i = 1; i <= 4; i++) {
-            switch (i) {
-            case 1:
-                bound = &(NGEN_BOUND1 (arg_node));
-                break;
-            case 2:
-                bound = &(NGEN_BOUND2 (arg_node));
-                break;
-            case 3:
-                bound = &(NGEN_STEP (arg_node));
-                break;
-            case 4:
-                bound = &(NGEN_WIDTH (arg_node));
-                break;
-            default: /* just to please the compiler 8-) */
-                bound = NULL;
-                DBUG_ASSERT ((0), "How is this supposed to happen?");
-                break;
-            }
+    /*
+     * First, we try to propagate (structural) constants into all sons:
+     */
+    check_bounds = TRUE;
+    is_const = PropagateArrayConstants (&(NGEN_BOUND1 (arg_node)));
+    check_bounds = (check_bounds && is_const);
 
-            /*
-             * wltransform.[ch] (compiler phase 16) can handle with-loop bounds
-             * of the form '[1,2,3]', '[a,b,c]' and 'A'.
-             *                        ^^^^^^^^^ :-))
-             */
-            if ((*bound) != NULL) {
-                constant *bound_const = COAST2Constant (*bound);
-                node *tmp;
+    is_const = PropagateArrayConstants (&(NGEN_BOUND2 (arg_node)));
+    check_bounds = (check_bounds && is_const);
 
-                if (bound_const != NULL) {
-                    /* substitute bound */
-                    tmp = *bound;
-                    (*bound) = COConstant2AST (bound_const);
-                    DBUG_ASSERT ((NODE_TYPE (*bound) == N_array), "illegal node found!");
-                    tmp = FreeTree (tmp);
-                    bound_const = COFreeConstant (bound_const);
-                } else {
-                    /* non-constant son found */
-                    struct_constant *bound_sco = SCOExpr2StructConstant (*bound);
+    foldable = check_bounds;
+    is_const = PropagateArrayConstants (&(NGEN_STEP (arg_node)));
+    foldable = (foldable && is_const);
 
-                    /* it is a (non-constant) array -> substitute bound */
-                    if (bound_sco != NULL) {
-                        tmp = *bound;
-                        (*bound) = SCODupStructConstant2Expr (bound_sco);
-                        DBUG_ASSERT ((NODE_TYPE (*bound) == N_array),
-                                     "illegal node found!");
-                        tmp = FreeTree (tmp);
-                        bound_sco = SCOFreeStructConstant (bound_sco);
-                    }
+    is_const = PropagateArrayConstants (&(NGEN_WIDTH (arg_node)));
+    foldable = (foldable && is_const);
 
-                    if (i <= 2) {
-                        /* non-constant lower or upper bound found */
-                        check_bounds = 0;
-                    }
-                    NWITH_FOLDABLE (wln) = FALSE;
-                }
-            } else {
-                DBUG_ASSERT ((i > 2), "Unspecified bound (.) in generator found!");
-            }
+    NWITH_FOLDABLE (wln) = foldable;
+
+    /*
+     * check bound ranges
+     */
+    let_ids = LET_IDS (INFO_WLI_LET (arg_info));
+    if (check_bounds && (GetShapeDim (IDS_TYPE (let_ids)) >= 0)) {
+        shp = SHOldTypes2Shape (IDS_TYPE (let_ids));
+        res = CheckGeneratorBounds (wln, shp);
+        shp = SHFreeShape (shp);
+        if ((res == GPT_full) && (NGEN_STEP (arg_node) != NULL)) {
+            res = GPT_partial;
         }
-
-        /*
-         * check bound ranges
-         */
-        let_ids = LET_IDS (INFO_WLI_LET (arg_info));
-        if (check_bounds && (GetShapeDim (IDS_TYPE (let_ids)) >= 0)) {
-            empty = 0;
-            warning = 0;
-            lb = NGEN_BOUND1 (arg_node);
-            ub = NGEN_BOUND2 (arg_node);
-            lbe = ARRAY_AELEMS (lb);
-            ube = ARRAY_AELEMS (ub);
-
-            dim = 0;
-            while (lbe) {
-                DBUG_ASSERT ((ube != NULL),
-                             "dimensionality differs in lower and upper bound!");
-                DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
-                              && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
-                             "generator bounds must be constant!");
-                lbnum = NUM_VAL (EXPRS_EXPR (lbe));
-                ubnum = NUM_VAL (EXPRS_EXPR (ube));
-
-                if ((NWITH_TYPE (wln) == WO_modarray)
-                    || (NWITH_TYPE (wln) == WO_genarray)) {
-                    tnum = IDS_SHAPE (let_ids, dim);
-                    if (lbnum < 0) {
-                        warning = 1;
-                        lbnum = NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-                        WARN (
-                          NODE_LINE (arg_node),
-                          ("lower bound of WL-generator in dim %d below zero: set to 0",
-                           dim));
-                    }
-                    if (ubnum > tnum) {
-                        warning = 1;
-                        ubnum = NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-                        WARN (NODE_LINE (arg_node),
-                              ("upper bound of WL-generator in dim %d greater than shape:"
-                               " set to %d",
-                               dim, tnum));
-                    }
-                }
-
-                if (lbnum >= ubnum) {
-                    /* empty set of indices */
-                    empty = 1;
-                    break;
-                }
-
-                dim++;
-                lbe = EXPRS_NEXT (lbe);
-                ube = EXPRS_NEXT (ube);
-            }
-
-            /* the one and only N_Npart is empty. Transform WL. */
-            if (empty) {
-                if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
-#if FORBID_EMPTY_GENARRAY_WLS
-                    /*
-                     * genarray wls with empty index set are not allowed!!!
-                     *
-                     * Example:
-                     *    A = with( ... < iv < ...)
-                     *        genarray( [10], val( iv));
-                     *
-                     *    That means:  shape(A) = [10] ++ shape( val( iv))
-                     *                                    ^^^^^^^^^^^^^^^^
-                     *                 (should be identical for all 'iv' of index set)
-                     *
-                     *    If the index set is empty, 'val(iv)' may is undefined.
-                     *    Thus, the shape of A is undefined!!!!
-                     */
-                    ERROR (NODE_LINE (arg_node),
-                           ("Genarray-with-loop with empty index set found"));
-#else
-                    WARN (NODE_LINE (arg_node),
-                          ("With-loop generator specifies empty index set"));
-
-                    /* change generator: full scope.  */
-                    dim = GetDim (IDS_TYPE (let_ids));
-                    lb = NGEN_BOUND1 (arg_node);
-                    ub = NGEN_BOUND2 (arg_node);
-                    lbe = ARRAY_AELEMS (lb);
-                    ube = ARRAY_AELEMS (ub);
-
-                    i = 0;
-                    while ((i < dim) && (lbe != NULL)) {
-                        NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-                        NUM_VAL (EXPRS_EXPR (ube)) = IDS_SHAPE (let_ids, i);
-
-                        lbe = EXPRS_NEXT (lbe);
-                        ube = EXPRS_NEXT (ube);
-                        i++;
-                    }
-
-                    if (NGEN_STEP (arg_node)) {
-                        NGEN_STEP (arg_node) = FreeTree (NGEN_STEP (arg_node));
-                    }
-                    if (NGEN_WIDTH (arg_node)) {
-                        NGEN_WIDTH (arg_node) = FreeTree (NGEN_WIDTH (arg_node));
-                    }
-
-                    /* now modify the code. Only one N_Npart/N_Ncode exists.
-                       All elements have to be 0. */
-                    blockn = NWITH_CBLOCK (INFO_WLI_WL (arg_info));
-                    tmpn = BLOCK_INSTR (blockn);
-                    if (N_empty == NODE_TYPE (tmpn)) {
-                        /* there is no instruction in the block right now. */
-                        BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
-                        /* first, introduce a new variable */
-                        varname = TmpVar ();
-                        _ids = MakeIds (varname, NULL, ST_regular);
-                        /* determine type of expr in the operator (result of body) */
-                        type = ID_TYPE (NWITH_CEXPR (INFO_WLI_WL (arg_info)));
-                        IDS_VARDEC (_ids)
-                          = SSACreateVardec (varname, type,
-                                             &(FUNDEF_VARDEC (
-                                               INFO_WLI_FUNDEF (arg_info))));
-                        IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
-
-                        tmpn
-                          = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
-
-                        /* replace N_empty with new assignment "_ids = [0,..,0]" */
-                        assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
-                        BLOCK_INSTR (blockn) = assignn;
-
-                        /* set correct backref to defining assignment */
-                        AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
-
-                        /* replace CEXPR */
-                        idn = MakeId (StringCopy (varname), NULL, ST_regular);
-                        ID_VARDEC (idn) = IDS_VARDEC (_ids);
-                        ID_AVIS (idn) = IDS_AVIS (_ids);
-                        tmpn = NWITH_CODE (INFO_WLI_WL (arg_info));
-                        NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
-                        NCODE_CEXPR (tmpn) = idn;
-                    } else {
-                        /* we have a non-empty block.
-                           search last assignment and make it the only one in the block.
-                         */
-                        while (ASSIGN_NEXT (tmpn)) {
-                            tmpn = ASSIGN_NEXT (tmpn);
-                        }
-                        assignn = DupTree (tmpn);
-                        FreeTree (BLOCK_INSTR (blockn));
-                        FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
-                        BLOCK_INSTR (blockn) = assignn;
-                        _ids = LET_IDS (ASSIGN_INSTR (assignn));
-                        type = IDS_TYPE (_ids);
-
-                        tmpn
-                          = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
-                        NCODE_FLAG (NWITH_CODE (INFO_WLI_WL (arg_info))) = TRUE;
-
-                        LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
-                    }
-#endif
-                } else {
-                    WARN (NODE_LINE (arg_node),
-                          ("With-loop generator specifies empty index set"));
-
-                    if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
-                        /* replace WL with the base array (modarray). */
-                        tmpn = NWITH_ARRAY (INFO_WLI_WL (arg_info));
-                    } else {
-                        /* replace WL with neutral element (fold). */
-                        tmpn = NWITH_NEUTRAL (INFO_WLI_WL (arg_info));
-                    }
-                    /* the INFO_WLI_REPLACE-mechanism is used to insert the
-                       new id or constant. */
-                    INFO_WLI_REPLACE (arg_info) = DupTree (tmpn);
-                }
-            }
-        } /* check_bounds */
-
-        arg_node = TravSons (arg_node, arg_info);
+    } else {
+        res = GPT_unknown;
     }
+
+    INFO_WLT_GENPROP (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1332,15 +1375,7 @@ SSAWLTNcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAWLTNcode");
 
-    DBUG_ASSERT ((!NCODE_FLAG (arg_node)), "Body traversed a second time in WLT");
-
-    /*
-     * this body has been traversed and all information has been gathered.
-     */
-    NCODE_FLAG (arg_node) = TRUE;
-
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
