@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/11/18 12:51:57  bs
+ * FEATURE_UNKNOWN added.
+ *
  * Revision 2.19  1999/10/19 17:10:41  sbs
  * .mac format changed for type_info.mac  and typedef for usertype added.
  *
@@ -254,8 +257,10 @@ typedef int bool;
 #define FEATURE_CAT 128 /* primitive function cat */
 #define FEATURE_ROT 256 /* primitive function rotate */
 #define FEATURE_AARI                                                                     \
-    512 /* primitive arithmetic operation on arrays (not index vectors) */
-#define FEATURE_COND 1024 /* conditional containing array accesses */
+    512                      /* primitive arithmetic operation on arrays                 \
+                                (not index vectors) */
+#define FEATURE_COND 1024    /* conditional containing array accesses */
+#define FEATURE_UNKNOWN 2048 /* no special features but offset not iferable */
 
 #define TYP_IFname(name) name
 typedef enum {
