@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/07/21 12:46:12  khf
+ * set flag FUNDEF_INLINE true
+ *
  * Revision 3.11  2003/06/17 20:26:27  sbs
  * changed the generation of fold funs for the new TC.
  * Now, a SSA safe form is generated (no surplus assignment).
@@ -176,6 +179,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
                  NULL),
       NULL);
     FUNDEF_STATUS (new_fundef) = ST_foldfun;
+    FUNDEF_INLINE (new_fundef) = TRUE;
 
     DBUG_RETURN (new_fundef);
 }
@@ -283,6 +287,7 @@ CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name
                     NULL);
     FUNDEF_STATUS (new_fundef) = ST_foldfun;
     FUNDEF_RETURN (new_fundef) = ret_ass;
+    FUNDEF_INLINE (new_fundef) = TRUE;
 
     DBUG_RETURN (new_fundef);
 }
