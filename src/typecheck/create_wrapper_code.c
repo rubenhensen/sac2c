@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2003/05/29 14:39:09  dkr
+ * bug in CorrectFundefPointer() fixed
+ *
  * Revision 1.13  2003/05/29 12:44:48  dkr
  * SearchWrapper() renamed into CorrectFundefPointer()
  *
@@ -387,7 +390,7 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
                              "no appropriate wrapper function found!");
             } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
 
-            DBUG_ASSERT ((FUNDEF_BODY (fundef) == NULL),
+            DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL),
                          "static dispatch of empty wrapper failed");
         }
 
