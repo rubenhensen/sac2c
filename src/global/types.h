@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/09/27 15:13:26  cg
+ * Revision 1.2  1995/10/06 17:15:46  cg
+ * new type nodelist added.
+ * some new statuses inserted into statustype.
+ *
+ * Revision 1.1  1995/09/27  15:13:26  cg
  * Initial revision
  *
  *
@@ -54,8 +58,15 @@ typedef enum {
     ST_prototype,          /* function on array that is not type-    */
                            /* checked so far.                        */
     ST_duplicate,          /* duplicate derived from prototype       */
-    ST_inline_import       /* inline function imported from other    */
-                           /* module                                 */
+    ST_resolved,           /* objects from called function are       */
+                           /* analysed.                              */
+    ST_unresolved,         /* objects from called function are not   */
+                           /* yet analysed.                          */
+    ST_local,              /* identifier is local                    */
+    ST_global,             /* identifier is global object            */
+    ST_imported            /* function, type, or object imported     */
+                           /* from other module                      */
+
 } statustype;
 
 typedef enum { VECT, IDX } useflag;
@@ -80,8 +91,16 @@ typedef struct NUMS {
     struct NUMS *next;
 } nums;
 
+typedef struct NODELIST {
+    struct NODE *node;
+    statustype attrib;
+    statustype status;
+    struct NODELIST *next;
+} nodelist;
+
 typedef struct IDS {
     char *id;
+    char *mod;
     int refcnt;
     int flag;          /* the flag is used for ids-status */
                        /* (loop invariant/not loop invariant , ...) */
