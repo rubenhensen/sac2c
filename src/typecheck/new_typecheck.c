@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/03/06 14:30:40  sbs
+ * changed phi targets into funcond nodes.
+ *
  * Revision 3.39  2004/03/05 19:32:28  sbs
  * NTCfuncond added.
  *
@@ -937,9 +940,8 @@ NTCcond (node *arg_node, node *arg_info)
 node *
 NTCfuncond (node *arg_node, node *arg_info)
 {
-    ids *lhs;
-    node *avis, *rhs1, *rhs2;
-    ntype *rhs1_type, *rhs2_type;
+    node *rhs1, *rhs2;
+    ntype *rhs1_type, *rhs2_type, *res;
     bool ok;
 
 #ifndef DBUG_OFF
@@ -948,15 +950,8 @@ NTCfuncond (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NTCfuncond");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let)
-                   && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-                   && (PRF_PRF (LET_EXPR (arg_node)) == F_phi),
-                 "illegal call of NTCfcond!");
-
-    lhs = LET_IDS (arg_node);
-    avis = IDS_AVIS (lhs);
-    rhs1 = PRF_ARG1 (LET_EXPR (arg_node));
-    rhs2 = PRF_ARG2 (LET_EXPR (arg_node));
+    rhs1 = EXPRS_EXPR (FUNCOND_THEN (arg_node));
+    rhs2 = EXPRS_EXPR (FUNCOND_ELSE (arg_node));
 
     /**
      * collect the first phi-type => rhs1_type!
@@ -993,43 +988,29 @@ NTCfuncond (node *arg_node, node *arg_info)
     }
 
     /**
-     * Now, we make the LHS a type var:
+     * Now, we compute the result type, i.e., lub( rhs1_type, rhs2_type)
      */
-    if (AVIS_TYPE (avis) == NULL) {
-        AVIS_TYPE (avis) = TYMakeAlphaType (NULL);
+    res = TYMakeAlphaType (NULL);
 
-        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
-        DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-    }
-
-    /**
-     * introduce the following constraint:
-     *   rhs1_type <= lhs_type
-     */
-    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
-    DBUG_EXECUTE ("NTC", tmp2_str = TYType2String (rhs1_type, FALSE, 0););
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (res, FALSE, 0);
+                  tmp2_str = TYType2String (rhs1_type, FALSE, 0););
     DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
-    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-    DBUG_EXECUTE ("NTC", tmp2_str = Free (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str); tmp2_str = Free (tmp_str););
 
-    ok = SSINewTypeRel (rhs1_type, AVIS_TYPE (avis));
+    ok = SSINewTypeRel (rhs1_type, res);
 
-    /**
-     * introduce the following constraint:
-     *   rhs2_type <= lhs_type
-     */
-    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (avis), FALSE, 0););
-    DBUG_EXECUTE ("NTC", tmp2_str = TYType2String (rhs2_type, FALSE, 0););
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (res, FALSE, 0);
+                  tmp2_str = TYType2String (rhs2_type, FALSE, 0););
     DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
-    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-    DBUG_EXECUTE ("NTC", tmp2_str = Free (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str); tmp2_str = Free (tmp_str););
 
-    ok = ok && SSINewTypeRel (rhs2_type, AVIS_TYPE (avis));
+    ok = ok && SSINewTypeRel (rhs2_type, res);
 
     if (!ok) {
         ABORT (linenum, ("nasty type error"));
     }
+
+    INFO_NTC_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1059,120 +1040,107 @@ NTClet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NTClet");
 
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_phi)) {
-        /*
-         * we are dealing with a PHI target here:
-         */
-        arg_node = NTCfcond (arg_node, arg_info);
+    /*
+     * Infer the RHS type :
+     */
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    rhs_type = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
 
+    /**
+     * attach the RHS type(s) to the var(s) on the LHS:
+     *
+     * However, the LHS may have a type already. This can be due to
+     * a) a vardec
+     * b) an funcond node that combines this var with another one in another
+     *    branch of a conditional!
+     * In both cases, we add the RHS type as a new <= constraint!
+     */
+    lhs = LET_IDS (arg_node);
+
+    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
+        || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+            DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
+                         "fun ap yields more return values  than lhs vars available!");
+        } else {
+            if (CountIds (lhs) != 1) {
+                ABORT (linenum,
+                       ("%s yields 1 instead of %d return values",
+                        prf_string[PRF_PRF (LET_EXPR (arg_node))], CountIds (lhs)));
+            }
+        }
+        i = 0;
+        while (lhs) {
+            existing_type = AVIS_TYPE (IDS_AVIS (lhs));
+            if (i < TYGetProductSize (rhs_type)) {
+
+                inferred_type = TYGetProductMember (rhs_type, i);
+
+                if (existing_type == NULL) {
+                    AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
+                } else {
+                    DBUG_ASSERT (TYIsAlpha (existing_type),
+                                 "non-alpha type for LHS found!");
+                    ok = SSINewTypeRel (inferred_type, existing_type);
+                    if (!ok) {
+                        ABORT (
+                          NODE_LINE (arg_node),
+                          ("component #%d of inferred RHS type (%s) does not match %s", i,
+                           TYType2String (inferred_type, FALSE, 0),
+                           TYType2String (existing_type, FALSE, 0)));
+                    }
+                }
+
+                DBUG_EXECUTE ("NTC", tmp_str = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)),
+                                                              FALSE, 0););
+                DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+                DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+            } else {
+                if (existing_type == NULL) {
+                    ABORT (linenum,
+                           ("cannot infer type of \"%s\" as it corresponds to \"...\" "
+                            "return type -- missing type declaration",
+                            IDS_NAME (lhs)));
+                } else {
+                    DBUG_ASSERT (TYIsAlpha (existing_type),
+                                 "non-alpha type for LHS found!");
+                    max = SSIGetMax (TYGetAlpha (existing_type));
+                    DBUG_ASSERT (max != NULL, "null max for LHS type found!");
+                    ok = SSINewMin (TYGetAlpha (existing_type), TYCopyType (max));
+                }
+            }
+
+            i++;
+            lhs = IDS_NEXT (lhs);
+        }
+        TYFreeTypeConstructor (rhs_type);
     } else {
 
-        /*
-         * Infer the RHS type :
-         */
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-        rhs_type = INFO_NTC_TYPE (arg_info);
+        /* lhs must be one ids only since rhs is not a function application! */
+        DBUG_ASSERT ((CountIds (lhs) == 1),
+                     "more than one lhs var without a function call on the rhs");
 
-        /**
-         * attach the RHS type(s) to the var(s) on the LHS:
-         *
-         * However, the LHS may have a type already. This can be due to
-         * a) a vardec
-         * b) an fcond node that combines this var with another one in another
-         *    branch of a conditional!
-         * In both cases, we add the RHS type as a new <= constraint!
-         */
-        lhs = LET_IDS (arg_node);
+        existing_type = AVIS_TYPE (IDS_AVIS (lhs));
+        inferred_type = rhs_type;
 
-        if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
-            || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
-            if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-                DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
-                             "fun ap yields more return values  than lhs vars "
-                             "available!");
-            } else {
-                if (CountIds (lhs) != 1) {
-                    ABORT (linenum,
-                           ("%s yields 1 instead of %d return values",
-                            prf_string[PRF_PRF (LET_EXPR (arg_node))], CountIds (lhs)));
-                }
-            }
-            i = 0;
-            while (lhs) {
-                existing_type = AVIS_TYPE (IDS_AVIS (lhs));
-                if (i < TYGetProductSize (rhs_type)) {
-
-                    inferred_type = TYGetProductMember (rhs_type, i);
-
-                    if (existing_type == NULL) {
-                        AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
-                    } else {
-                        DBUG_ASSERT (TYIsAlpha (existing_type),
-                                     "non-alpha type for LHS found!");
-                        ok = SSINewTypeRel (inferred_type, existing_type);
-                        if (!ok) {
-                            ABORT (NODE_LINE (arg_node),
-                                   ("component #%d of inferred RHS type (%s) does not "
-                                    "match %s",
-                                    i, TYType2String (inferred_type, FALSE, 0),
-                                    TYType2String (existing_type, FALSE, 0)));
-                        }
-                    }
-
-                    DBUG_EXECUTE ("NTC",
-                                  tmp_str = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)),
-                                                           FALSE, 0););
-                    DBUG_PRINT ("NTC",
-                                ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-                    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-                } else {
-                    if (existing_type == NULL) {
-                        ABORT (
-                          linenum,
-                          ("cannot infer type of \"%s\" as it corresponds to \"...\" "
-                           "return type -- missing type declaration",
-                           IDS_NAME (lhs)));
-                    } else {
-                        DBUG_ASSERT (TYIsAlpha (existing_type),
-                                     "non-alpha type for LHS found!");
-                        max = SSIGetMax (TYGetAlpha (existing_type));
-                        DBUG_ASSERT (max != NULL, "null max for LHS type found!");
-                        ok = SSINewMin (TYGetAlpha (existing_type), TYCopyType (max));
-                    }
-                }
-
-                i++;
-                lhs = IDS_NEXT (lhs);
-            }
-            TYFreeTypeConstructor (rhs_type);
+        if (existing_type == NULL) {
+            AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
         } else {
-
-            /* lhs must be one ids only since rhs is not a function application! */
-            DBUG_ASSERT ((CountIds (lhs) == 1),
-                         "more than one lhs var without a function call on the rhs");
-
-            existing_type = AVIS_TYPE (IDS_AVIS (lhs));
-            inferred_type = rhs_type;
-
-            if (existing_type == NULL) {
-                AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
-            } else {
-                DBUG_ASSERT (TYIsAlpha (existing_type), "non-alpha type for LHS found!");
-                ok = SSINewTypeRel (inferred_type, existing_type);
-                if (!ok) {
-                    ABORT (NODE_LINE (arg_node),
-                           ("component #%d of inferred RHS type (%s) does not match %s",
-                            i, TYType2String (inferred_type, FALSE, 0),
-                            TYType2String (existing_type, FALSE, 0)));
-                }
+            DBUG_ASSERT (TYIsAlpha (existing_type), "non-alpha type for LHS found!");
+            ok = SSINewTypeRel (inferred_type, existing_type);
+            if (!ok) {
+                ABORT (NODE_LINE (arg_node),
+                       ("component #%d of inferred RHS type (%s) does not match %s", i,
+                        TYType2String (inferred_type, FALSE, 0),
+                        TYType2String (existing_type, FALSE, 0)));
             }
-
-            DBUG_EXECUTE ("NTC", tmp_str
-                                 = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
-            DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-            DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
         }
+
+        DBUG_EXECUTE ("NTC",
+                      tmp_str = TYType2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
+        DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
+        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
     }
 
     DBUG_RETURN (arg_node);
