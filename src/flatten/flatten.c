@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/02/26 10:53:04  bs
+ * FltnPrf() modified: the primitive functions take, drop, reshape and genarray
+ * will be flattened like the other primitive functions.
+ *
  * Revision 2.2  1999/02/24 20:24:09  bs
  * Function CopyIntArray moved to internal_lib.c .
  *
@@ -1163,12 +1167,7 @@ FltnPrf (node *arg_node, node *arg_info)
 
     if (PRF_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-        if ((PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)
-            || (PRF_PRF (arg_node) == F_reshape) || (PRF_PRF (arg_node) == F_genarray))
-            INFO_FLTN_CONTEXT (arg_info) = CT_normal;
-        else
-            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
-
+        INFO_FLTN_CONTEXT (arg_info) = CT_ap;
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
