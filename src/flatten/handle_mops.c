@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/11/25 14:17:53  khf
+ * SacDevCamp04
+ *
  * Revision 1.18  2004/11/25 10:58:49  khf
  * SacDecCamp04: COMPILES!
  *
@@ -278,7 +281,7 @@ Mop2Ap (node *op, node *mop)
             EXPRS_EXPRS3 (exprs) = NULL;
 
             ap = TBmakeAp (NULL, exprs);
-            AP_NAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
+            AP_SPNAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
 
             MOP_EXPRS (mop) = TBmakeExprs (ap, exprs3);
             MOP_OPS (mop) = FREEdoFreeNode (fun_ids);
@@ -294,7 +297,7 @@ Mop2Ap (node *op, node *mop)
             ap = TBmakeAp (NULL,
                            TBmakeExprs (EXPRS_EXPR (exprs),
                                         TBmakeExprs (EXPRS_EXPR (exprs_prime), NULL)));
-            AP_NAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
+            AP_SPNAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
 
             EXPRS_EXPR (exprs_prime) = ap;
 
