@@ -3,6 +3,12 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/10/26 12:51:29  cg
+ * key words exchanged:
+ * new_with -> with
+ * with     -> old_with
+ * The new with-loop is now the default.
+ *
  * Revision 1.53  1998/04/09 21:32:40  dkr
  * new tokens DEFAULT, WLCOMP for wlcomp-pragmas
  *
@@ -387,8 +393,8 @@ int start_token;
 "do"				{FILTER( DO );}
 "while"				{FILTER( WHILE );}
 "for"				{FILTER( FOR );}
-"with" 				{FILTER( WITH );}
-"new_with" 			{FILTER( NWITH );}
+"old_with" 		       	{FILTER( WITH );}
+"with" 	  	 	       	{FILTER( NWITH );}
 "step" 				{FILTER( STEP );}
 "width" 			{FILTER( WIDTH );}
 "genarray"			{FILTER7( GENARRAY,prf_name_str[F_genarray] );}
