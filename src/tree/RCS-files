@@ -13,6 +13,8 @@ LookUpTable.h
 Makefile
 SSATransform.c
 SSATransform.h
+UndoSSATransform.c
+UndoSSATransform.h
 access_macros.h
 adjust_ids.c
 adjust_ids.h
