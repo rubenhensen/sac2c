@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.67  1995/10/22 17:34:40  cg
+ * Revision 1.68  1995/10/24 13:12:39  cg
+ * Now, all file names in error messages are written with "
+ *
+ * Revision 1.67  1995/10/22  17:34:40  cg
  * new break parameter -bd to stop after checkdec
  * new compiler phase checkdec inserted between parse and
  * import
@@ -606,7 +609,7 @@ MAIN
 
     ABORT_ON_ERROR;
 
-    NOTE (("\nParsing file '%s` : ...", *argv));
+    NOTE (("\nParsing file \"%s\" : ...", *argv));
     compiler_phase++;
     start_token = PARSE_PRG;
     yyparse ();
