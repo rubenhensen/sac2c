@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/10/19 17:09:50  sbs
+ * ntc_tab added
+ *
  * Revision 2.11  1999/08/27 11:05:59  jhs
  * Added spmdco_tab.
  * Deleted hundreds of disgusting blank lines making the code totally
@@ -145,7 +148,8 @@
 #include "schedule.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
-#include "scnprs.h" /* needed for linenum only!!! */
+#include "globals.h" /* needed for linenum only!!! */
+#include "new_typecheck.h"
 
 #include "traverse.h"
 
@@ -616,6 +620,14 @@ funptr spmdpm_tab[] = {
  */
 #define NIFspmdco(it_spmdco) it_spmdco
 funptr spmdco_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  (59) ntc_tab
+ */
+#define NIFntc(it_ntc) it_ntc
+funptr ntc_tab[] = {
 #include "node_info.mac"
 };
 

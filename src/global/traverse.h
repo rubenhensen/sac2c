@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/10/19 17:09:50  sbs
+ * ntc_tab added
+ *
  * Revision 2.8  1999/08/27 11:05:59  jhs
  * Added spmdco_tab.
  * Deleted hundreds of disgusting blank lines making the code totally
@@ -260,6 +263,7 @@ extern funptr spmdlc_tab[];
 extern funptr spmddn_tab[];
 extern funptr spmdpm_tab[];
 extern funptr spmdco_tab[];
+extern funptr ntc_tab[];
 
 extern int nnode[];
 

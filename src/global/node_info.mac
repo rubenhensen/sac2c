@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/10/19 17:09:50  sbs
+ * ntc_tab added
+ *
  * Revision 2.18  1999/08/27 11:04:49  jhs
  * Added spmdco_tab and adjusted names of functions out of spmd_trav.
  *
@@ -98,36 +101,6 @@
  * Revision 1.211  1998/05/21 13:30:12  dkr
  * added SPMDLiftNwith2
  *
- * Revision 1.210  1998/05/20 20:14:57  sbs
- * FltnBlock and FltnArray inserted in fltntab!!
- *
- * Revision 1.209  1998/05/15 15:11:45  dkr
- * added WLTRALet
- *
- * Revision 1.208  1998/05/12 15:00:04  srs
- * new functions for ae_tab
- *
- * Revision 1.207  1998/05/12 13:19:19  cg
- * added function TCvardec for type_tab
- *
- * Revision 1.206  1998/05/12 11:26:08  dkr
- * added SPMDLiftLet, SPMDLiftNwithid
- *
- * Revision 1.205  1998/05/11 13:43:21  dkr
- * added RCicm
- *
- * Revision 1.204  1998/05/11 09:43:44  cg
- * added syntax tree traversal for generating startup code.
- *
- * Revision 1.203  1998/05/07 16:15:05  dkr
- * added IdxNwith, IdxNcode
- *
- * Revision 1.202  1998/05/06 22:20:15  dkr
- * removed WLTRALet
- *
- * Revision 1.201  1998/05/06 21:42:10  dkr
- * added WLTRALet
- *
  * ... [eliminated]
  *
  * Revision 1.3  1994/11/10  15:44:34  sbs
@@ -162,7 +135,7 @@
  *   o2nWith_tab     sched_tab       conc_tab        opt_tab
  *   wlaa_tab        freemask_tab    smpdrmtrav_tab  spmdrotrav_tav
  *   spmdcons_tab    tsi_tab         spmdlc_tab      spmddn_tab
- *   spmdpm_tab      spmdco_tab      unused1_tab     unused2_tab
+ *   spmdpm_tab      spmdco_tab      ntc_tab         unused2_tab
  *   nnode
  *
  * usage (in this file):
@@ -394,8 +367,8 @@
 #ifndef NIFspmdco
 #define NIFspmdco(it_spmdco)
 #endif
-#ifndef NIFunused1
-#define NIFunused1(it_unused1)
+#ifndef NIFntc
+#define NIFntc(it_ntc)
 #endif
 #ifndef NIFunused2
 #define NIFunused2(it_unused2)
@@ -419,7 +392,7 @@
                                                                                          \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_o2nWith, it_sched, it_conc, it_opt,       \
   it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_spmdlc, it_spmddn, \
-  it_spmdpm, it_spmdco, it_unused1, it_unused2,                                          \
+  it_spmdpm, it_spmdco, it_ntc, it_unused2,                                              \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -448,11 +421,10 @@
                                         NIFspmdro (it_spmdro) NIFspmdcons (it_spmdcons)  \
                                           NIFtsi (it_tsi) NIFspmdlc (it_spmdlc)          \
                                             NIFspmddn (it_spmddn) NIFspmdpm (it_spmdpm)  \
-                                              NIFspmdco (it_spmdco)                      \
-                                                NIFunused1 (it_unused1)                  \
-                                                  NIFunused2 (it_unused2)                \
+                                              NIFspmdco (it_spmdco) NIFntc (it_ntc)      \
+                                                NIFunused2 (it_unused2)                  \
                                                                                          \
-                                                    NIFnnode (nnode)
+                                                  NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -554,7 +526,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       TravSons, TravSons, NTCtypedef, TravSons, 1),
 
   NIF (N_objdef, "N_objdef", IMobjdef, TravSons, PrintObjdef, TCobjdef, TravSons,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, COMPObjdef, TravSons, TravSons,
@@ -578,7 +550,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, CONCmodul, OPTmodul,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, NTCmodul, TravSons, 4),
 
   NIF (N_moddec, "N_moddec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FreeModdec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1353,7 +1325,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFspmdpm
 #undef NIFspmdco
-#undef NIFunused1
+#undef NIFntc
 #undef NIFunused2
 
 #undef NIFnnode
