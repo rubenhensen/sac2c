@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2000/06/29 16:07:05  mab
+ * added Array2Shpseg
+ *
  * Revision 1.21  2000/06/23 14:16:59  dkr
  * macros for old with-loop removed
  *
@@ -1384,6 +1387,8 @@ extern double *Array2DblVec (node *aelems, int *length);
  *   result is not defined.
  *   If the length of the vector is not of interest, length may be NULL.
  */
+
+extern shpseg *Array2Shpseg (node *array);
 
 /*--------------------------------------------------------------------------*/
 
