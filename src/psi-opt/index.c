@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/03/25 17:16:16  sbs
+ * further doxygen
+ *
  * Revision 3.42  2003/03/25 16:30:20  sbs
  * ...
  *
@@ -632,7 +635,7 @@ int ive_expr, ive_op;
 
 /**
  *
- * @name Some functions for handling N_vinfo nodes
+ * @name Some functions for handling N_vinfo nodes:
  *
  * <!--
  * node * FindVect( node *N_vinfo_chain)        : checks whether VECT is in
@@ -876,8 +879,15 @@ AppendVinfoChn (node *ca, node *cb)
  *
  * @fn node *MergeVinfoChn( node *ca, node *cb)
  *
- *   Expects ca to contain one chain only. If that assumption holds the entries
- *   of that chain are merged into the topmost chain of cb.
+ *   @brief merges the entries of the topmost chain from ca with the elements
+ *          of the topmost chain of cb.
+ *
+ *          Expects ca to contain one chain only. If that assumption holds the
+ *          entries of that chain are merged into the topmost chain of cb.
+ *          Otherwise, a DBUG_ASSERT is issued.
+ *   @param ca vinfo chain that contains one chain only (i.e. one $)
+ *   @param cb vinfo chain
+ *   @return returns ca.
  *
  ******************************************************************************/
 
@@ -903,20 +913,23 @@ MergeVinfoChn (node *ca, node *cb)
 
 /*@}*/
 
-/*
+/**
  *
- * functions that are applied to the entire vardec chain:
- * ------------------------------------------------------
+ * @name functions that are applied to the entire vardec chain:
  *
+ * <!--
  * node *DuplicateTop( node * actchn)
  * node *SwitchTop( node * actchn)
  * node *MergeTop( node * actchn)
  * node *FreeTop( node * actchn)
  * node *MergeCopyTop( node * actchn)
+ * -->
  *
  * all these functions can be applied to the entire vardec-chain
- * by using the following "higher-order-function":
+ * by using the macro MAP_TO_ALL_VARDEC_ACTCHNS as a
+ * "higher-order-function"
  */
+/*@{*/
 
 #define MAP_TO_ALL_VARDEC_ACTCHNS(fun, vardecin)                                         \
     {                                                                                    \
@@ -1073,10 +1086,13 @@ MergeCopyTop (node *actchn)
     DBUG_RETURN (res);
 }
 
-/*
- * "helper" functions used by the traversal functions:
- * ---------------------------------------------------
+/*@}*/
+
+/**
  *
+ * @name "helper" functions used by the traversal functions:
+ *
+ * <!--
  *  char *IdxChangeId( char *varname, types *type) :
  *            for creating "shapely" names for indexing vectors
  *
@@ -1088,7 +1104,9 @@ MergeCopyTop (node *actchn)
  *
  *  node *CreateVect2OffsetIcm(node *vardec, types *type) :
  *            for creating Vect2Offset that initialize "shapely" iv's.
+ * -->
  */
+/*@{*/
 
 /******************************************************************************
  *
@@ -1314,12 +1332,19 @@ CreateVect2OffsetIcm (node *vardec, types *type)
     DBUG_RETURN (MakeAssign (icm, NULL));
 }
 
+/*@}*/
+
 /******************************************************************************
  ***
  ***          Here, the traversal functions start!
  ***          ------------------------------------
  ***
  ******************************************************************************/
+/**
+ *
+ * @name Traversal Functions for IVE:
+ */
+/*@{*/
 
 /******************************************************************************
  *
@@ -2646,14 +2671,22 @@ IdxDo (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+/*@}*/
 
-/******************************************************************************
+/**
  *
- * Function:
- *   node *IndexVectorElimination( node *syntax_tree)
+ * @name Entry Function for Calling IVE:
  *
- * Description:
+ */
+/*@{*/
+
+/** <!--*********************************************************************-->
  *
+ * @fn  node *IndexVectorElimination( node *syntax_tree)
+ *
+ *   @brief call this function for applying IVE to the given node.
+ *   @param part of the AST (usually the entire tree) IVE is to be applied on.
+ *   @return modified AST.
  *
  ******************************************************************************/
 
@@ -2684,3 +2717,4 @@ IndexVectorElimination (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+/*@}*/
