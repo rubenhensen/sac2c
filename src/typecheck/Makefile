@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2002/08/09 13:01:37  dkr
+# create_wrapper_code.o added
+#
 # Revision 3.20  2002/08/07 20:14:10  dkr
 # some .mac dependencies added
 #
@@ -64,8 +67,8 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o user_types.o create_wrappers.o \
-     ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o ct_with.o type_errors.o\
-     specialize.o new2old.o
+     ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o ct_with.o type_errors.o \
+     specialize.o new2old.o create_wrapper_code.o
 
 
 #
