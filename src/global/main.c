@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.102  1997/11/20 14:45:48  dkr
+ * added a converter "OldWithLoop -> NewWithLoop" (function Old2NewWith())
+ * the new sac2c flag -2 activates the converter
+ * sac2c calls the converter between compilerphases 19 and 20 (before Compile())
+ *
  * Revision 1.101  1997/10/29 14:18:04  srs
  * removed HAVE_MALLOC_O
  * changed output for memory allocation statistics
@@ -366,6 +371,7 @@
 #include "rmvoidfun.h"
 #include "precompile.h"
 #include "cccall.h"
+#include "Old2NewWith.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -409,6 +415,7 @@ int num_cpp_vars = 0;
 
 int Ccodeonly = 0;
 int break_compilation = 0;
+int Make_Old2NewWith = 0;
 
 int optimize = 1;
 int sac_optimize = 1;
@@ -963,6 +970,10 @@ MAIN
         }
     }
     NEXTOPT
+    ARG '2':
+    {
+        Make_Old2NewWith = 1;
+    }
     OTHER
     {
         SYSWARN (("Unknown command line option '%s`", *argv));
@@ -1187,6 +1198,11 @@ MAIN
                                                                       !breakprecompile) {
                                                                         NOTE_COMPILER_PHASE;
                                                                         CHECK_DBUG_START;
+                                                                        if (
+                                                                          Make_Old2NewWith)
+                                                                            syntax_tree
+                                                                              = Old2NewWith (
+                                                                                syntax_tree);
                                                                         syntax_tree
                                                                           = Compile (
                                                                             syntax_tree);
