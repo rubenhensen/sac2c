@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/06/07 14:30:06  asi
+ * Revision 1.29  1995/06/14 13:44:41  asi
+ * added unrnum and unr_expr
+ *
+ * Revision 1.28  1995/06/07  14:30:06  asi
  * added GenerateMasks
  *
  * Revision 1.27  1995/06/02  11:36:15  asi
@@ -115,6 +118,7 @@ extern int opt_inl;
 extern int opt_unr;
 extern int optvar;
 extern int inlnum;
+extern int unrnum;
 /* main.c end */
 
 extern int dead_expr;
@@ -123,6 +127,7 @@ extern int cf_expr;
 extern int wr_expr;
 extern int lir_expr;
 extern int inl_fun;
+extern int unr_expr;
 extern int optvar_counter;
 
 #define INC_VAR(mask, var) mask[var] += 1
