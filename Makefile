@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.132  2004/11/02 14:42:02  ktr
+# Added src/refcount/datareuse.o, src/refcount/loopreuseopt.o.
+#
 # Revision 3.131  2004/10/28 19:47:30  sah
 # added NEWASTFLAGS to efence as well
 #
@@ -423,7 +426,8 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/alloc.o src/refcount/refcounting.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
           src/refcount/staticreuse.o src/refcount/reuseelimination.o \
-          src/refcount/interfaceanalysis.o
+          src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
+          src/refcount/datareuse.o
 REFCOUNT_OLD=
 
 CONCURRENT=
