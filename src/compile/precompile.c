@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2003/04/15 12:29:17  dkr
+ * bug in MakeMergeAssigns() fixed:
+ * assignments in INFO_PREC2_PRE_ASSIGNS are in correct order now
+ *
  * Revision 3.68  2003/04/14 14:57:11  sbs
  * comparison partner for strlen result casted to size_t
  *
@@ -1739,16 +1743,24 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
                     ID_UNQCONV (expr) = TO_UNQ;
 
                     /* a:-1 = to_unq( b:3); */
-                    pre_assigns = MakeAssign (MakeLet (expr, out_ids), pre_assigns);
+                    /*
+                     * append at tail of 'pre_assigns'!!!
+                     */
+                    pre_assigns
+                      = AppendAssign (pre_assigns,
+                                      MakeAssign (MakeLet (expr, out_ids), NULL)),
 
-                    /* a:4 */
-                    out_ids = DupOneIds (argtab->ptr_out[i]);
+                      /* a:4 */
+                      out_ids = DupOneIds (argtab->ptr_out[i]);
 
                     /* from_unq( a:-1) */
                     expr = DupIds_Id (argtab->ptr_out[i]);
                     ID_REFCNT (expr) = RC_INACTIVE;
                     ID_UNQCONV (expr) = FROM_UNQ;
 
+                    /*
+                     * append at head of 'post_assigns'!!!
+                     */
                     post_assigns = MakeAssign (MakeLet (expr, out_ids), post_assigns);
 
                     DBUG_PRINT ("PREC", ("Assignments %s = to_unq(...) added",
