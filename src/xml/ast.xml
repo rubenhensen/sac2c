@@ -2820,6 +2820,7 @@
         <son name="Expr" mandatory="yes">
           <target>
             <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
         <son name="Next" mandatory="no">
