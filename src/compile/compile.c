@@ -1,6 +1,13 @@
 /*
- *
  * $Log$
+ * Revision 2.57  2000/05/26 11:32:57  dkr
+ * Function GetFoldCode() renamed into GetUnadjustedFoldCode()
+ * Function GetAdjustedFoldCode() added
+ * Code for with-loop brushed
+ * Names of variables in code for fold-with-loops are always correct now
+ * :-)
+ * new compound macros for with-loop used
+ *
  * Revision 2.56  2000/05/26 11:11:39  jhs
  * Added infrastructure for mt2-compiling
  *
@@ -122,21 +129,10 @@
  * Revision 2.28  1999/08/30 16:07:19  jhs
  * Handling of non-with-loop-code in sync-blocks added.
  *
- * Revision 2.27  1999/08/27 11:49:33  jhs
- * Brushed COMPSync.
- *
- * Revision 2.26  1999/08/02 08:47:39  jhs
- * Added some comments.
- *
- * Revision 2.25  1999/07/30 13:51:47  jhs
- * Brushed.
- *
- * eliminated ....
+ * [ eliminated ]
  *
  * Revision 1.1  1995/03/29  12:38:10  hw
  * Initial revision
- *
- *
  */
 
 #include <stdlib.h>
@@ -159,6 +155,7 @@
 #include "ReuseWithArrays.h"
 #include "free.h"
 #include "scheduling.h"
+#include "precompile.h"
 #include "typecheck.h" /* to use some ugly old macros ... */
 
 /******************************************************************************
@@ -166,7 +163,6 @@
  * global variable:  int barrier_id
  *
  * description:
- *
  *   An unambigious barrier identification is required because of the use of
  *   labels in the barrier implementation and the fact that several
  *   synchronisation blocks may be found within a single spmd block which
@@ -175,6 +171,16 @@
  ******************************************************************************/
 
 static int barrier_id = 0;
+
+/******************************************************************************
+ *
+ * global variables for the compilation of the new with-loop
+ *
+ ******************************************************************************/
+
+static ids *wl_ids = NULL;
+static node *wl_node = NULL;
+static node *wl_seg = NULL;
 
 #define TYP_IFsize(sz) sz
 int basetype_size[] = {
@@ -206,6 +212,15 @@ int basetype_size[] = {
 #define ICMPARAM_TAG(expr) ID_NAME (EXPRS_EXPR (expr))
 #define ICMPARAM_ARG1(expr) EXPRS_EXPR (EXPRS_NEXT (expr))
 #define ICMPARAM_ARG2(expr) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (expr)))
+
+/*
+ * This macro indicates whether there are multiple segments present or not.
+ * It uses the global variable 'wl_seg'.
+ */
+#define MULTIPLE_SEGS                                                                    \
+    ((wl_seg != NULL)                                                                    \
+     && ((NODE_TYPE (wl_seg) == N_WLseg) ? (WLSEG_NEXT (wl_seg) != NULL)                 \
+                                         : (WLSEGVAR_NEXT (wl_seg) != NULL)))
 
 /*
  ********** PLEASE DO NOT USE THE FOLLOWING MACROS FOR NEW CODE!!!! ***********
@@ -392,7 +407,7 @@ static int label_nr = 0;
  *
  */
 
-char *
+static char *
 GenericFun (int which, types *type)
 {
     node *tdef;
@@ -444,7 +459,7 @@ GenericFun (int which, types *type)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeAdjustRcICM (ids *varname, int num)
 {
     node *result;
@@ -477,7 +492,7 @@ MakeAdjustRcICM (ids *varname, int num)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeExprsNum (int num)
 {
     node *result;
@@ -499,7 +514,7 @@ MakeExprsNum (int num)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeAssignIcm (char *name, node *args)
 {
     node *result;
@@ -522,7 +537,7 @@ MakeAssignIcm (char *name, node *args)
  *
  ******************************************************************************/
 
-node *
+static node *
 AppendAssignIcm (node *assign, char *name, node *args)
 {
     node *result;
@@ -548,7 +563,7 @@ AppendAssignIcm (node *assign, char *name, node *args)
  *
  ******************************************************************************/
 
-node *
+static node *
 AppendVardecs (node *vardecs, node *append)
 {
     node *tmp;
@@ -577,19 +592,32 @@ AppendVardecs (node *vardecs, node *append)
 /******************************************************************************
  *
  * function:
- *   node *GetFoldCode( node *fundef)
+ *   node *GetUnadjustedFoldCode( node *fundef)
  *
  * description:
- *   returns the foldop-code of the pseudo fold-fun 'fundef'.
+ *   Returns the foldop-code of the pseudo fold-fun 'fundef'.
+ *
+ *   This function simply extract the assignments of the fundef-body.
+ *   It is assumed that the names of the variables are the same is in the
+ *   context of the corresponding with-loop!
+ *   This property is *not* hold before the compilation has been started!
+ *   (Note that Precompile() calls the function AdjustFoldFundef() for each
+ *   fold-fundef)
+ *
+ *   Before the compilation phase the function GetAdjustedFoldCode() should be
+ *   used instead!
  *
  ******************************************************************************/
 
 node *
-GetFoldCode (node *fundef)
+GetUnadjustedFoldCode (node *fundef)
 {
     node *fold_code, *tmp;
 
-    DBUG_ENTER ("GetFoldCode");
+    DBUG_ENTER ("GetUnadjustedFoldCode");
+
+    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
 
     /*
      * get code of the pseudo fold-fun
@@ -614,6 +642,37 @@ GetFoldCode (node *fundef)
         tmp = ASSIGN_NEXT (tmp);
     }
     ASSIGN_NEXT (tmp) = FreeNode (ASSIGN_NEXT (tmp));
+
+    DBUG_RETURN (fold_code);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *GetAdjustedFoldCode( node *fundef,
+ *                              ids *acc, char *funname, node *cexpr)
+ *
+ * description:
+ *   Returns the given fold-fun definition 'fundef' with adjusted var-names:
+ *
+ *   ...
+ *
+ * parameters:
+ *   'acc' is the accumulator variable.
+ *   'funname' is the name of the artificially introduced fold-fun.
+ *   'cexpr' is the expression in the operation part.
+ *
+ ******************************************************************************/
+
+node *
+GetAdjustedFoldCode (node *fundef, ids *acc, char *funname, node *cexpr)
+{
+    node *fold_code;
+
+    DBUG_ENTER ("GetAdjustedFoldCode");
+
+    fundef = AdjustFoldFundef (fundef, acc, funname, cexpr);
+    fold_code = GetUnadjustedFoldCode (fundef);
 
     DBUG_RETURN (fold_code);
 }
@@ -655,7 +714,7 @@ GetFoldVardecs (node *fundef)
  *
  ******************************************************************************/
 
-ids *
+static ids *
 GetIndexIds (ids *index_ids, int dim)
 {
     int i;
@@ -685,7 +744,7 @@ GetIndexIds (ids *index_ids, int dim)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeAllocArrayICMs (ids *mm_ids, node *next)
 {
     simpletype s_type;
@@ -735,7 +794,7 @@ MakeAllocArrayICMs (ids *mm_ids, node *next)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
 {
     simpletype s_type;
@@ -783,7 +842,7 @@ MakeAllocArrayICMs_reuse (ids *mm_ids, node *next)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeIncRcICMs (ids *mm_ids, node *next)
 {
     node *assign;
@@ -829,7 +888,7 @@ MakeIncRcICMs (ids *mm_ids, node *next)
  *
  ******************************************************************************/
 
-node *
+static node *
 MakeDecRcICMs (ids *mm_ids, node *next)
 {
     node *assign;
@@ -890,7 +949,7 @@ MakeDecRcICMs (ids *mm_ids, node *next)
  *
  ******************************************************************************/
 
-node *
+static node *
 IdOrNumToIndex (node *id_or_num, int dim)
 {
     node *index;
@@ -918,7 +977,7 @@ IdOrNumToIndex (node *id_or_num, int dim)
  *
  */
 
-node *
+static node *
 AddVardec (node *vardec, types *type, char *name, node *fundef)
 {
     node *tmp = vardec;
@@ -926,17 +985,18 @@ AddVardec (node *vardec, types *type, char *name, node *fundef)
 
     DBUG_ENTER ("AddVardec");
 
-    /* look if there is matching vardec */
+    /* look if there is already a matching vardec */
     if (NULL != tmp) {
         while ((NULL != VARDEC_NEXT (tmp)) && (1 == insert)) {
-            if (!strcmp (VARDEC_NAME (tmp), name))
+            if (!strcmp (VARDEC_NAME (tmp), name)) {
                 insert = 0;
+            }
             tmp = VARDEC_NEXT (tmp);
         }
     }
 
     /* now insert new vardec node */
-    if ((1 == insert) ? ((NULL != tmp) ? strcmp (VARDEC_NAME (tmp), name) : 1) : 0) {
+    if (insert && (tmp != NULL) && strcmp (VARDEC_NAME (tmp), name)) {
         types *new_type = DuplicateTypes (type, 0);
         node *new_vardec = MakeVardec (StringCopy (name), new_type, NULL);
 
@@ -971,7 +1031,7 @@ AddVardec (node *vardec, types *type, char *name, node *fundef)
  *
  */
 
-void
+static void
 AdjustAddedAssigns (node *before, node *after)
 {
     char *new_id, *old_id;
@@ -1065,7 +1125,7 @@ AdjustAddedAssigns (node *before, node *after)
  *
  */
 
-int
+static int
 BasetypeSize (types *type)
 {
     int ret;
@@ -1098,7 +1158,7 @@ BasetypeSize (types *type)
  *
  */
 
-char *
+static char *
 MakeTypeString (types *fulltype)
 {
     char *ret;
@@ -1131,7 +1191,7 @@ MakeTypeString (types *fulltype)
  *
  */
 
-node *
+static node *
 MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
 {
     node *new_assign, *icm_arg;
@@ -1246,7 +1306,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
  *
  */
 
-void
+static void
 MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, int line)
 {
     DBUG_ENTER ("MergeIcmsFundef");
@@ -1333,7 +1393,7 @@ ReorganizeReturnIcm (node *icm_arg)
  *
  */
 
-node *
+static node *
 CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
 {
     int i, cnt_icm = 0;
@@ -1541,7 +1601,7 @@ CreateIcmMT_SPMD_FUN_DEC (char *name, char *from, node **icm_tab, int tab_size)
  *
  */
 
-void
+static void
 InsertApDotsParam (node **icm_tab, node *icm_arg)
 {
     DBUG_ENTER ("InsertApDotsParam");
@@ -1561,7 +1621,7 @@ InsertApDotsParam (node **icm_tab, node *icm_arg)
  *
  */
 
-void
+static void
 InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc,
                   node *collect_assigns, int *linksign, int cnt_param)
 {
@@ -1606,7 +1666,7 @@ InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc,
  *
  */
 
-void
+static void
 InsertApReturnParam (node **icm_tab, node *icm_arg, types *type, int *linksign,
                      int cnt_param)
 {
@@ -1645,7 +1705,7 @@ InsertApReturnParam (node **icm_tab, node *icm_arg, types *type, int *linksign,
  *
  */
 
-void
+static void
 InsertDefDotsParam (node **icm_tab, node *icm_arg)
 {
     DBUG_ENTER ("InsertDefDotsParam");
@@ -1665,7 +1725,7 @@ InsertDefDotsParam (node **icm_tab, node *icm_arg)
  *
  */
 
-void
+static void
 InsertDefArgParam (node **icm_tab, node *icm_arg, types **type_tab, types *type_arg,
                    int *linksign, int cnt_param, int line)
 {
@@ -1709,7 +1769,7 @@ InsertDefArgParam (node **icm_tab, node *icm_arg, types **type_tab, types *type_
  *
  */
 
-void
+static void
 InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *type_arg,
                       int *linksign, int cnt_param, int line)
 {
@@ -1756,6 +1816,7 @@ InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *ty
  *   puts '__tmp' behind 'string'.
  *
  ******************************************************************************/
+
 static char *
 RenameVar (char *string, int i)
 {
@@ -2007,12 +2068,10 @@ node *
 COMPFundef (node *arg_node, node *arg_info)
 {
     node *return_node, *return_icm, *icm_arg, *type_id_node, *var_name_node, *tag_node,
-      **icm_tab, *icm_tab_entry;
+      *icm_tab_entry, *old_fundef, **icm_tab;
     types *rettypes, *fulltype, **type_tab;
-    int cnt_param, tab_size, i;
-
-    node *old_fundef;
     statustype old_actualattrib;
+    int cnt_param, tab_size, i;
 
     DBUG_ENTER ("COMPFundef");
 
@@ -4531,7 +4590,7 @@ COMPAp (node *arg_node, node *arg_info)
 node *
 COMPNormalFunReturn (node *arg_node, node *arg_info)
 {
-    node /* *tmp, */ *next, *exprs, *last, *ret;
+    node *next, *exprs, *last, *ret;
     int cnt_param;
 
     DBUG_ENTER ("COMPNormalFunReturn");
@@ -5653,14 +5712,13 @@ COMPSync (node *arg_node, node *arg_info)
             /*
              * <tmp_var>, <fold_op>
              */
-            DBUG_ASSERT ((NWITHOP_FUNDEF (NWITH2_WITHOP (with)) != NULL),
-                         "no fundef found");
+            DBUG_ASSERT ((NWITH2_FUNDEF (with) != NULL), "no fundef found");
             barrier_args
               = AppendExprs (barrier_args,
                              MakeExprs (MakeId1 (
                                           ID_NAME (NCODE_CEXPR (NWITH2_CODE (with)))),
-                                        MakeExprs (MakeId1 (FUNDEF_NAME (NWITHOP_FUNDEF (
-                                                     NWITH2_WITHOP (with)))),
+                                        MakeExprs (MakeId1 (
+                                                     FUNDEF_NAME (NWITH2_FUNDEF (with))),
                                                    NULL)));
         }
 
@@ -5970,11 +6028,6 @@ COMPSync (node *arg_node, node *arg_info)
     DBUG_RETURN (assigns);
 }
 
-ids *wl_ids = NULL;
-node *wl_node = NULL;
-node *wl_seg = NULL;
-int multiple_segs = 0;
-
 /******************************************************************************
  *
  * function:
@@ -5988,18 +6041,17 @@ int multiple_segs = 0;
  * remarks:
  *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_Nwith2-node.
- *   - 'multiple_segs' indicates whether there are multiple segments or not.
  *
  ******************************************************************************/
 
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
+    node *rc_icms_wl_ids = NULL, *assigns = NULL;
     node *fundef, *vardec, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
-      *old_wl_node, *rc_icms_wl_ids = NULL, *assigns = NULL;
+      *old_wl_node, *fold_vardecs;
     ids *old_wl_ids;
     char *icm_name1, *icm_name2, *profile_name;
-    int old_multiple_segs;
 
     DBUG_ENTER ("COMPNwith2");
 
@@ -6011,8 +6063,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
     wl_ids = INFO_COMP_LASTIDS (arg_info);
     old_wl_node = wl_node; /* stack 'wl_node' */
     wl_node = arg_node;
-    old_multiple_segs = multiple_segs; /* stack 'multiple_segs' */
-    multiple_segs = 0;
 
     /*
      * When update-in-place is active:
@@ -6055,21 +6105,25 @@ COMPNwith2 (node *arg_node, node *arg_info)
          */
         assigns = AppendAssign (assigns, MakeAllocArrayICMs_reuse (wl_ids, NULL));
     } else {
+        /* fold-with-loop */
+
         fundef = INFO_COMP_FUNDEF (arg_info);
 
-        /*
-         * insert vardecs of pseudo fold-fun
-         */
-        FUNDEF_VARDEC (fundef)
-          = AppendVardecs (FUNDEF_VARDEC (fundef),
-                           GetFoldVardecs (NWITHOP_FUNDEF (NWITH2_WITHOP (arg_node))));
+        fold_vardecs = GetFoldVardecs (NWITH2_FUNDEF (arg_node));
+        if (fold_vardecs != NULL) {
 
-        /*
-         * update DFM-base
-         */
-        FUNDEF_DFM_BASE (fundef)
-          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                               FUNDEF_VARDEC (fundef));
+            /*
+             * insert vardecs of pseudo fold-fun
+             */
+            FUNDEF_VARDEC (fundef) = AppendVardecs (FUNDEF_VARDEC (fundef), fold_vardecs);
+
+            /*
+             * update DFM-base
+             */
+            FUNDEF_DFM_BASE (fundef)
+              = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                                   FUNDEF_VARDEC (fundef));
+        }
     }
 
     /*
@@ -6223,11 +6277,10 @@ COMPNwith2 (node *arg_node, node *arg_info)
     arg_node = FreeTree (arg_node);
 
     /*
-     * pop 'wl_ids', 'wl_node', 'multiple_segs'.
+     * pop 'wl_ids', 'wl_node'.
      */
     wl_ids = old_wl_ids;
     wl_node = old_wl_node;
-    multiple_segs = old_multiple_segs;
 
     DBUG_RETURN (assigns);
 }
@@ -6295,7 +6348,6 @@ COMPNcode (node *arg_node, node *arg_info)
  *
  * remark:
  *   - 'wl_seg' points to the current with-loop segment.
- *   - 'multiple_segs' indicates whether there are multiple segments or not.
  *
  ******************************************************************************/
 
@@ -6312,14 +6364,6 @@ COMPWLseg (node *arg_node, node *arg_info)
      */
     old_wl_seg = wl_seg;
     wl_seg = arg_node;
-
-    /*
-     * multiple segments found?
-     *  => modify 'multiple_segs'
-     */
-    if (WLSEG_NEXT (arg_node) != NULL) {
-        multiple_segs = 1;
-    }
 
     /*
      * compile the contents of the segment
@@ -6726,8 +6770,7 @@ COMPWLstride (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   int GetDim_WL_ADJUST_OFFSET( node *grid, node *wl, node *seg,
- *                                int multi_segs)
+ *   int GetDim_WL_ADJUST_OFFSET( node *grid, node *wl, node *seg)
  *
  * Description:
  *   'wl' is a pointer to the current N_Nwith2-node,
@@ -6749,7 +6792,7 @@ COMPWLstride (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 int
-GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg, int multi_segs)
+GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg)
 {
     int first_block_dim, d;
     int icm_dim = -1;
@@ -6779,7 +6822,7 @@ GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg, int multi_segs)
         /*
          * check whether 'WL_ADJUST_OFFSET' is needed or not
          */
-        if (multiple_segs == 0) {
+        if (MULTIPLE_SEGS == 0) {
 
             /*
              * is the next dim the last one and blocking activ?
@@ -6789,7 +6832,7 @@ GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg, int multi_segs)
                 icm_dim = first_block_dim;
             }
         } else {
-            /* 'multiple_segs' == 1 */
+            /* MULTIPLE_SEGS == 1 */
 
             /*
              * is the next dim the last one?
@@ -6823,8 +6866,8 @@ GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg, int multi_segs)
 node *
 COMPWLgrid (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *cexpr, *new_assigns, *fold_code, *assigns = NULL,
-                                                                  *dec_rc_cexpr = NULL;
+    node *assigns = NULL, *dec_rc_cexpr = NULL;
+    node *icm_args, *icm_args2, *cexpr, *new_assigns;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
     int num_args, cnt_unroll, adjust_dim, i;
@@ -6854,7 +6897,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
 
-        adjust_dim = GetDim_WL_ADJUST_OFFSET (arg_node, wl_node, wl_seg, multiple_segs);
+        adjust_dim = GetDim_WL_ADJUST_OFFSET (arg_node, wl_node, wl_seg);
         if (adjust_dim >= 0) {
             assigns = MakeAssignIcm3 ("WL_ADJUST_OFFSET", MakeNum (WLGRID_DIM (arg_node)),
                                       MakeNum (adjust_dim), icm_args2);
@@ -6917,74 +6960,11 @@ COMPWLgrid (node *arg_node, node *arg_info)
                  */
                 icm_args2 = FreeTree (icm_args2);
 
-                /******************************************************************
-                 * get code of the pseudo fold-fun
-                 */
-
-                fold_code = GetFoldCode (NWITHOP_FUNDEF (NWITH2_WITHOP (wl_node)));
-                /*
-                 * CAUTION: If the current with-loop is inlined, we must generate
-                 *          an inline-specific instance of the pseudo fold-fun,
-                 *          to get the right var-names.
-                 *          It seems to be a good idea to do this not here in the
-                 *          backend, but during the inlining.
-                 *          For that we must patch the inline-traversal of DupTree,
-                 *          to generate a renamed instance of NWITHOP_FUNDEF.
-                 *          This is not yet implemented!!
-                 */
-
-#if 0
-          /*
-           * This is code is only needed, if there does not exist a inline-specific
-           * instance of the pseudo fold-fun.
-           * In this case we must rename the var-names in the fold-code by hand.
-           * Note, that the following code is even incorrect :(
-           */
-
-          /*
-           * first, we create a function application of the form:
-           *    <acc> = <fun>( <acc>, <cexpr>);
-           * where
-           *    <acc> is the accumulator variable
-           *          & can be found via 'wl_ids'
-           *    <fun> is the name of the (artificially introduced) folding-fun
-           *          & can be found via 'NWITH2_WITHOP( wl_node)'
-           *    <cexpr> is the expression in the operation part
-           *            & can be found via 'NCODE_CEXPR( WLGRID_CODE( arg_node))'
-           */
- 
-          fun = NWITH2_WITHOP( wl_node);
-          accvar = MakeId( StringCopy( IDS_NAME( wl_ids)),
-                           StringCopy( IDS_MOD( wl_ids)),
-                           ST_regular);
-          ID_VARDEC( accvar) = IDS_VARDEC( wl_ids);
- 
-          funap = MakeAp( StringCopy( NWITHOP_FUN( fun)),
-                          StringCopy( NWITHOP_MOD( fun)),
-                          MakeExprs( accvar,
-                                     MakeExprs( DupTree( cexpr, NULL),
-                                                NULL)));
-          AP_FUNDEF( funap) = NWITHOP_FUNDEF( fun);
- 
-          fold_code = MakeAssign( MakeLet( funap,
-                                           DupOneIds( wl_ids, NULL)),
-                                  NULL);
-
-          /*
-           * Inlining of the fold-pseudo-fun.
-           */
-          fold_code = InlineSingleApplication( ASSIGN_INSTR( fold_code),
-                                               INFO_COMP_FUNDEF( arg_info));
-#endif
-
-                /*
-                 * get code of the pseudo fold-fun
-                 ******************************************************************/
-
                 /*
                  * insert code of the pseudo fold-fun
                  */
-                assigns = AppendAssign (assigns, fold_code);
+                assigns = AppendAssign (assigns,
+                                        GetUnadjustedFoldCode (NWITH2_FUNDEF (wl_node)));
 
                 icm_name = NULL;
                 break;
@@ -7119,7 +7099,6 @@ COMPWLgrid (node *arg_node, node *arg_info)
  *
  * remark:
  *   - 'wl_seg' points to the current with-loop segment.
- *   - 'multiple_segs' indicates whether there are multiple segments or not.
  *
  ******************************************************************************/
 
@@ -7136,14 +7115,6 @@ COMPWLsegVar (node *arg_node, node *arg_info)
      */
     old_wl_seg = wl_seg;
     wl_seg = arg_node;
-
-    /*
-     * multiple segments found?
-     *  => modify 'multiple_segs'
-     */
-    if ((multiple_segs == 0) && (WLSEGVAR_NEXT (arg_node) != NULL)) {
-        multiple_segs = 1;
-    }
 
     /*
      * compile the contents of the segment
@@ -7279,7 +7250,8 @@ COMPWLstriVar (node *arg_node, node *arg_info)
 node *
 COMPWLgridVar (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *cexpr, *fold_code, *assigns = NULL, *dec_rc_cexpr = NULL;
+    node *assigns = NULL, *dec_rc_cexpr = NULL;
+    node *icm_args, *icm_args2, *cexpr;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
     int num_args;
@@ -7368,13 +7340,10 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                 icm_args2 = FreeTree (icm_args2);
 
                 /*
-                 * get code of the pseudo fold-fun
-                 */
-                fold_code = GetFoldCode (NWITHOP_FUNDEF (NWITH2_WITHOP (wl_node)));
-                /*
                  * insert code of the pseudo fold-fun
                  */
-                assigns = AppendAssign (assigns, fold_code);
+                assigns = AppendAssign (assigns,
+                                        GetUnadjustedFoldCode (NWITH2_FUNDEF (wl_node)));
 
                 icm_name = NULL;
                 break;
@@ -7384,7 +7353,6 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             }
 
         } else {
-
             /*
              * no code found.
              *  => init/copy/noop
@@ -7474,6 +7442,38 @@ COMPWLgridVar (node *arg_node, node *arg_info)
     DBUG_RETURN (assigns);
 }
 
+/* move to tree_compound  !!! #### */
+
+node *
+MakeAssigns1 (node *part1)
+{
+    return (MakeAssign (part1, NULL));
+}
+
+node *
+MakeAssigns2 (node *part1, node *part2)
+{
+    return (MakeAssign (part1, MakeAssigns1 (part2)));
+}
+
+node *
+MakeAssigns3 (node *part1, node *part2, node *part3)
+{
+    return (MakeAssign (part1, MakeAssigns2 (part2, part3)));
+}
+
+node *
+MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
+{
+    return (MakeAssign (part1, MakeAssigns3 (part2, part3, part4)));
+}
+
+node *
+MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
+{
+    return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
+}
+
 node *
 COMPMt (node *arg_node, node *arg_info)
 {
@@ -7508,38 +7508,6 @@ COMPMTsignal (node *arg_node, node *arg_info)
     FreeTree (arg_node);
 
     DBUG_RETURN (assigns);
-}
-
-/* move to tree_compound  !!! #### */
-
-node *
-MakeAssigns1 (node *part1)
-{
-    return (MakeAssign (part1, NULL));
-}
-
-node *
-MakeAssigns2 (node *part1, node *part2)
-{
-    return (MakeAssign (part1, MakeAssigns1 (part2)));
-}
-
-node *
-MakeAssigns3 (node *part1, node *part2, node *part3)
-{
-    return (MakeAssign (part1, MakeAssigns2 (part2, part3)));
-}
-
-node *
-MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
-{
-    return (MakeAssign (part1, MakeAssigns3 (part2, part3, part4)));
-}
-
-node *
-MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
-{
-    return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
 }
 
 node *
