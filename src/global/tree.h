@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.62  1995/12/04 13:08:02  hw
+ * Revision 1.63  1995/12/28 10:31:18  cg
+ * Malloc is used instead of malloc in GEN_NODE
+ *
+ * Revision 1.62  1995/12/04  13:08:02  hw
  * changed makro MODEMODE_ID(no, str) ( str will be copied now)
  *
  * Revision 1.61  1995/11/01  16:24:16  cg
@@ -220,7 +223,7 @@
  *  You will find equivalent ones in tree_basic.h and tree_compound.h
  */
 
-#define GEN_NODE(type) (type *)malloc (sizeof (type))
+#define GEN_NODE(type) (type *)Malloc (sizeof (type))
 
 #define MAKENODE_NUM(no, nr)                                                             \
     no = MakeNode (N_num);                                                               \
