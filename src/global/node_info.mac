@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.190  1998/04/25 12:33:30  dkr
+ * added DupNwith2
+ *
  * Revision 1.189  1998/04/24 17:14:06  dkr
  * renamed Comp...() to COMP...()
  *
@@ -998,11 +1001,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, TravSons,
-       TravSons, TravSons, FreeNwith2, TravSons, TravSons, COMPNwith2, TravSons, DupChain,
+       TravSons, TravSons, FreeNwith2, TravSons, TravSons, COMPNwith2, TravSons,
+       DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
        TravSons, FreeWLseg, TravSons, TravSons, COMPWLseg, TravSons, DupWLseg, TravSons,

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/04/25 12:33:56  dkr
+ * added DupNwith2
+ *
  * Revision 1.28  1998/04/23 17:32:36  dkr
  * added DupSync
  *
@@ -153,6 +156,7 @@ extern node *DupNcode (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
 extern node *DupNgen (node *arg_node, node *arg_info);
 
+extern node *DupNwith2 (node *arg_node, node *arg_info);
 extern node *DupWLseg (node *arg_node, node *arg_info);
 extern node *DupWLblock (node *arg_node, node *arg_info);
 extern node *DupWLublock (node *arg_node, node *arg_info);
