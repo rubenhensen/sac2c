@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/11/08 13:29:45  cg
+ * Removed TRACE_OWL macro since old with-loops left sac2c several
+ * years ago.  :-))))
+ *
  * Revision 3.4  2002/07/03 17:29:48  dkr
  * some ; shifted in macros
  *
@@ -117,16 +121,6 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_REF_PRINT_RC(name)
 
 #endif /* SAC_DO_TRACE_REF */
-
-#if SAC_DO_TRACE_OWL
-
-#define SAC_TR_OWL_PRINT(msg) SAC_TR_PRINT (msg)
-
-#else /* SAC_DO_TRACE_OWL */
-
-#define SAC_TR_OWL_PRINT(msg)
-
-#endif /* SAC_DO_TRACE_OWL */
 
 #if SAC_DO_TRACE_WL
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/11/08 13:29:45  cg
+ * Removed TRACE_OWL macro since old with-loops left sac2c several
+ * years ago.  :-))))
+ *
  * Revision 3.21  2002/10/25 15:59:29  mwe
  * enforce_ieee added
  * changed DLAW to DL
@@ -273,7 +277,6 @@ extern unsigned int traceflag;
 
 #define TRACE_FUN 0x0001  /* trace user-defined fun apps */
 #define TRACE_PRF 0x0002  /* trace prim fun apps */
-#define TRACE_OWL 0x0004  /* trace old with-loop execution */
 #define TRACE_REF 0x0008  /* trace reference counting operations */
 #define TRACE_MEM 0x0010  /* trace malloc/free operations */
 #define TRACE_WL 0x0020   /* trace new with-loop execution */

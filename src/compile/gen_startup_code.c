@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/11/08 13:29:45  cg
+ * Removed TRACE_OWL macro since old with-loops left sac2c several
+ * years ago.  :-))))
+ *
  * Revision 3.21  2002/10/04 14:12:15  cg
  * Non-existent or unspecified caches are now specified by cache size -1
  * instead of 0. This avoids nasty warnings on the Alpha system.
@@ -236,8 +240,6 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_PRF) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_FUN       %d\n",
              (traceflag & TRACE_FUN) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_OWL       %d\n",
-             (traceflag & TRACE_OWL) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_WL        %d\n",
              (traceflag & TRACE_WL) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",

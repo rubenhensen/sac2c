@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/11/08 13:29:45  cg
+ * Removed TRACE_OWL macro since old with-loops left sac2c several
+ * years ago.  :-))))
+ *
  * Revision 3.31  2002/10/25 16:00:51  mwe
  * option enforce_ieee added
  * rename DLAW to DL
@@ -330,7 +334,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("aplimit", { ARG_RANGE (padding_overhead_limit, 0, 100); });
 
-    ARGS_OPTION ("apdiaglimit", ARG_NUM (apdiag_limit));
+    ARGS_OPTION ("apdiagsize", ARG_NUM (apdiag_limit));
 
     ARGS_OPTION ("b", {
         char *break_arg = StringCopy (ARG);
@@ -652,11 +656,11 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("maxwlur", ARG_NUM (wlunrnum));
 
-    ARGS_OPTION ("maxspecialize", ARG_NUM (max_overload));
+    ARGS_OPTION ("maxspec", ARG_NUM (max_overload));
 
     ARGS_OPTION ("maxthreads", ARG_NUM (max_threads));
 
-    ARGS_OPTION ("maxsyncfold", ARG_RANGE (max_sync_fold, -1, 64));
+    ARGS_OPTION ("maxsync", ARG_RANGE (max_sync_fold, -1, 64));
 
     ARGS_OPTION ("maxae", ARG_NUM (minarray));
 
@@ -837,7 +841,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('r', traceflag |= TRACE_REF);
         ARG_FLAGMASK ('f', traceflag |= TRACE_FUN);
         ARG_FLAGMASK ('p', traceflag |= TRACE_PRF);
-        ARG_FLAGMASK ('o', traceflag |= TRACE_OWL);
         ARG_FLAGMASK ('w', traceflag |= TRACE_WL);
         ARG_FLAGMASK ('t', traceflag |= TRACE_MT);
         ARG_FLAGMASK ('c', traceflag |= TRACE_CENV);
