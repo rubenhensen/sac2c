@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/10/24 13:13:53  cg
+ * Revision 1.11  1995/10/26 15:59:54  cg
+ * macro MOD_NAME_CON replaced by new global variable mod_name_con
+ * Now, different strings can be used for combining module name and
+ * item name with respect to the compilation phase.
+ *
+ * Revision 1.10  1995/10/24  13:13:53  cg
  * function CmpDomain now considers argument attributes
  *
  * Revision 1.9  1995/10/22  17:29:59  cg
@@ -50,6 +55,16 @@
 
 #include "dbug.h"
 #include "my_debug.h"
+
+/***
+ ***  mod_name_con
+ ***/
+
+char mod_name_con_1[] = "__";
+
+char mod_name_con_2[] = ":";
+
+char *mod_name_con = mod_name_con_1;
 
 /***
  ***  CmpDomain
