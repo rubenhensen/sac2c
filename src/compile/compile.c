@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.73  2000/07/13 13:33:46  jhs
+ * Modified creation of allocs for new mt.
+ *
  * Revision 2.72  2000/07/13 11:59:07  jhs
  * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
  *
@@ -7594,6 +7597,33 @@ MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
                                               part8, part9)));
 }
 
+node *
+MakeAllocs (DFMmask_t mask)
+{
+    char *name;
+    node *result;
+    node *icm;
+
+    DBUG_ENTER ("MakeAllocs");
+
+    if (DFMTestMask (mask) != 0) {
+
+        result = NULL;
+
+        name = DFMGetMaskEntryNameSet (mask);
+        while (name != NULL) {
+            icm = MakeIcm1 ("ND_ALLOC_ARRAY", MakeId1 (name));
+            result = MakeAssign (icm, result);
+            name = DFMGetMaskEntryNameSet (NULL);
+        }
+
+    } else {
+        result = MakeAssigns1 (MakeIcm1 ("COMMENT", MakeId1 ("NO ALLOCS")));
+    }
+
+    DBUG_RETURN (result);
+}
+
 /*
  *  jhs ####
  */
@@ -7627,8 +7657,14 @@ COMPMt (node *arg_node, node *arg_info)
     /*
      *  Part 1 - Allocate
      */
-    allocate = MakeIcm2 ("MT2_ALLOCATE", MakeNum (DFMTestMask (MT_ALLOC (arg_node))),
-                         BuildParamsByDFM (MT_ALLOC (arg_node), "alloc", NULL, NULL));
+    /*
+      allocate  = MakeIcm2( "MT2_ALLOCATE",
+                            MakeNum( DFMTestMask( MT_ALLOC( arg_node))),
+                            BuildParamsByDFM( MT_ALLOC( arg_node), "alloc", NULL, NULL));
+
+    */
+    allocate = MakeAllocs (MT_ALLOC (arg_node));
+
     /*
      *  Part 2 - Broadcast
      */
@@ -7824,7 +7860,7 @@ COMPMTalloc (node *arg_node, node *arg_info)
     }
 
     if_ = MakeIcm0 ("MT2_IF_I_AM_FIRST");
-    alloc = MakeIcm0 ("ALLOC");
+    alloc = MakeIcm0 ("MT2_ALLOCATE");
     broadcast
       = MakeIcm3 (broadcast_icm, MakeId1 ("ALLOC"),
                   MakeNum (DFMTestMask (MTALLOC_IDSET (arg_node))),
