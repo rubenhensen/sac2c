@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/26 16:39:02  sbs
+ * done
+ *
  * Revision 3.6  2004/11/22 16:34:41  sbs
  * SacDevCamp04
  *
@@ -36,6 +39,8 @@
 
 #ifndef _SAC_INDEX_H_
 #define _SAC_INDEX_H_
+
+#include "types.h"
 
 extern node *IDXdoIndexVectorElimination (node *syntax_tree);
 
