@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2003/12/11 11:15:50  sah
+ * once upon a time, there was a small
+ * withloop sitting in the forrest of dots
+ * having lost its default value...
+ *
  * Revision 1.33  2003/12/10 23:00:07  sah
  * lots of code cleanup and modularization and
  * default values for set notation.
@@ -2131,7 +2136,8 @@ HDprf (node *arg_node, node *arg_info)
 #endif
     }
 
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default) && (PRF_PRF (arg_node) == F_sel)) {
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default) && (PRF_PRF (arg_node) == F_sel)
+        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array)) {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (PRF_ARG1 (arg_node)));
 
         node *defexpr = BuildSetNotationDefault (PRF_ARG2 (arg_node), info);
@@ -2308,6 +2314,8 @@ HDsetwl (node *arg_node, node *arg_info)
         node *selvector = BuildPermutatedVector (SETWL_IDS (arg_node), withid);
         node *shape = MakePrf (F_shape, MakeExprs (DupTree (setid), NULL));
         node *shapevector = BuildPermutatedVector (SETWL_IDS (arg_node), shape);
+        node *defexpr = NULL;
+        node *defshape = NULL;
 
         /* put the intermediate result into the assigns chain */
 
@@ -2324,6 +2332,12 @@ HDsetwl (node *arg_node, node *arg_info)
                             MakeNCode (MAKE_EMPTY_BLOCK (),
                                        MAKE_BIN_PRF (F_sel, selvector, setid)),
                             MakeNWithOp (WO_genarray, shapevector));
+
+        /* build the default value */
+        defshape = MAKE_BIN_PRF (F_drop_SxV, MakeNum (CountExprs (ids)),
+                                 MakePrf (F_shape, MakeExprs (DupTree (setid), NULL)));
+
+        defexpr = BuildDefaultWithloop (setid, defshape);
 
         NCODE_USED (NWITH_CODE (result))++;
         NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
