@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.187  1998/04/16 11:41:53  srs
+ * fixed bug which resulted from printing the return node of the old WLs.
+ * inserted new INFO* macros and renamed the already used ones.
+ *
  * Revision 1.186  1998/04/09 20:38:10  dkr
  * changed output in PrintNodeTree
  *
@@ -603,15 +607,14 @@
 
 /*
  * use of arg_info in this file:
- * - node[0] is used while printing the old WLs to return the main
- *   expr from the block.
- * - arg_info is not NULL if only function definitions (without bodies) should
- *   be printed.
- * - node[1]: profile macros
+ * - node[0] is used for storing the current fundef node.
+ * - node[1]: profile macros  (????)
  * - node[2] determines which syntax of the new WLs is printed. If it's
  *   NULL then the intermal syntax is uses which allows to state more than
  *   one Npart. Else the last (and hopefully only) Npart returns the
  *   last expr in node[2].
+ * - node[3] is used while printing the old WLs to return the main
+ *   expr from the block.
  */
 
 #include <stdio.h>
@@ -783,8 +786,8 @@ PrintBlock (node *arg_node, node *arg_info)
     }
 
     if (not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
-        && (INFO_FUNDEF (arg_info) != NULL)
-        && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+        && (INFO_PRINT_FUNDEF (arg_info) != NULL)
+        && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
         && (compiler_phase == PH_genccode)) {
         GSCPrintMainBegin ();
         not_yet_done_print_main_begin = 0;
@@ -1146,10 +1149,10 @@ PrintFundef (node *arg_node, node *arg_info)
 
     new_info = MakeNode (N_info);
     new_info->varno = arg_node->varno;
-    INFO_FUNDEF (new_info) = arg_node; /* needed for the introduction
-                                        * of PROFILE_... MACROS in the
-                                        * function body
-                                        */
+    INFO_PRINT_FUNDEF (new_info) = arg_node; /* needed for the introduction
+                                              * of PROFILE_... MACROS in the
+                                              * function body
+                                              */
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
                   PrintMasks (arg_node, new_info););
 
@@ -1402,8 +1405,8 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if (RETURN_EXPRS (arg_node) && (!RETURN_INWITH (arg_node))) {
-        if ((NODE_TYPE (arg_info) = N_info) && (INFO_FUNDEF (arg_info) != NULL)
-            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+        if ((NODE_TYPE (arg_info) = N_info) && (INFO_PRINT_FUNDEF (arg_info) != NULL)
+            && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
             && (compiler_phase == PH_genccode)) {
             GSCPrintMainEnd ();
             INDENT;
@@ -1415,7 +1418,7 @@ PrintReturn (node *arg_node, node *arg_info)
     }
 
     if (RETURN_INWITH (arg_node)) {
-        arg_info->node[0] = arg_node;
+        INFO_PRINT_WITH_RET (arg_info) = arg_node;
     }
 
     DBUG_RETURN (arg_node);
@@ -1670,12 +1673,12 @@ PrintGenarray (node *arg_node, node *arg_info)
     INDENT;
 
     if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)))) != N_return) {
-        /* right now arg_info->node[0] is NULL, but in PrintReturn it
+        /* right now INFO_PRINT_WITH_RET(arg_info) is NULL, but in PrintReturn it
            will be replaced by a pointer to an N_return node instead of
            printing it. */
         fprintf (outfile, "\n");
         Trav (GENARRAY_BODY (arg_node), arg_info);
-        ret_node = arg_info->node[0];
+        ret_node = INFO_PRINT_WITH_RET (arg_info);
 
         INDENT;
     } else {
@@ -1707,7 +1710,7 @@ PrintModarray (node *arg_node, node *arg_info)
     if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (MODARRAY_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (MODARRAY_BODY (arg_node), arg_info);
-        ret_node = arg_info->node[0];
+        ret_node = INFO_PRINT_WITH_RET (arg_info);
 
         INDENT;
     } else {
@@ -1739,7 +1742,7 @@ PrintFoldfun (node *arg_node, node *arg_info)
     if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDFUN_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (FOLDFUN_BODY (arg_node), arg_info);
-        ret_node = arg_info->node[0];
+        ret_node = INFO_PRINT_WITH_RET (arg_info);
 
         INDENT;
     } else {
@@ -1777,7 +1780,7 @@ PrintFoldprf (node *arg_node, node *arg_info)
     if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (FOLDPRF_BODY (arg_node)))) != N_return) {
         fprintf (outfile, "\n");
         Trav (FOLDPRF_BODY (arg_node), arg_info);
-        ret_node = arg_info->node[0];
+        ret_node = INFO_PRINT_WITH_RET (arg_info);
 
         INDENT;
     } else {
@@ -1919,7 +1922,7 @@ PrintIcm (node *arg_node, node *arg_info)
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
-            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
+            && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
             && (compiler_phase == PH_genccode)) {
             GSCPrintMainEnd ();
             INDENT;
@@ -2083,7 +2086,7 @@ PrintNwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintNwith");
 
     DBUG_ASSERT (arg_info, "arg_info is NULL");
-    buffer = arg_info->node[2];
+    buffer = INFO_PRINT_INT_SYN (arg_info);
 
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
@@ -2095,19 +2098,19 @@ PrintNwith (node *arg_node, node *arg_info)
 
     /*
      * check wether to use output format 1 (multiple NParts)
-     * or 2 (only one NPart) and use arg_info->node[2]
+     * or 2 (only one NPart) and use INFO_PRINT_INT_SYN(arg_info)
      * as flag for traversal.
      */
     if (NPART_NEXT (NWITH_PART (arg_node))) {
         /* output format 1 */
-        arg_info->node[2] = NULL;
+        INFO_PRINT_INT_SYN (arg_info) = NULL;
         fprintf (outfile, "new_with\n");
         indent++;
         Trav (NWITH_PART (arg_node), arg_info);
         indent--;
     } else {
         /* output format 2 */
-        arg_info->node[2] = (node *)!NULL; /* set != NULL */
+        INFO_PRINT_INT_SYN (arg_info) = (node *)!NULL; /* set != NULL */
         fprintf (outfile, "new_with ");
         Trav (NWITH_PART (arg_node), arg_info);
     }
@@ -2116,13 +2119,13 @@ PrintNwith (node *arg_node, node *arg_info)
 
     if (!NPART_NEXT (NWITH_PART (arg_node))) {
         /* output format 2: now we have in
-           arg_info->node[2] the last expr. */
+           INFO_PRINT_INT_SYN(arg_info) the last expr. */
         fprintf (outfile, ", ");
-        Trav (arg_info->node[2], arg_info);
+        Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
     }
     fprintf (outfile, ")");
 
-    arg_info->node[2] = buffer;
+    INFO_PRINT_INT_SYN (arg_info) = buffer;
     DBUG_RETURN (arg_node);
 }
 
@@ -2250,10 +2253,10 @@ PrintNcode (node *arg_node, node *arg_info)
     fprintf (outfile, "}");
 
     /* print the expression if internal syntax should be used.
-       else return expr in arg_info->node[2] */
+       else return expr in INFO_PRINT_INT_SYN(arg_info) */
     if (NCODE_CEXPR (arg_node) != NULL) {
-        if (arg_info->node[2] != NULL) {
-            arg_info->node[2] = NCODE_CEXPR (arg_node);
+        if (INFO_PRINT_INT_SYN (arg_info) != NULL) {
+            INFO_PRINT_INT_SYN (arg_info) = NCODE_CEXPR (arg_node);
         } else {
             fprintf (outfile, " : ");
             NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
@@ -2281,7 +2284,7 @@ PrintNpart (node *arg_node, node *arg_info)
                   PrintMasks (arg_node, arg_info););
 
     /* print generator */
-    if (!arg_info->node[2])
+    if (!INFO_PRINT_INT_SYN (arg_info))
         INDENT; /* each gen in a new line. */
     PrintNgenerator (NPART_GEN (arg_node), NPART_WITHID (arg_node), arg_info);
 
