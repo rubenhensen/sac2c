@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/06/04 17:00:54  cg
+ * information about refcounted variables in the context of loops,
+ * conditionals and the old with-loop are now stored in ids-chains
+ * instead of N_exprs lists.
+ *
  * Revision 1.67  1998/06/03 14:53:41  cg
  * Now, all identifiers including local ones are systematically renamed.
  *
@@ -325,23 +330,23 @@ RenameId (node *idnode)
 /******************************************************************************
  *
  * function:
- *   ids *PRECids(ids *id)
+ *   ids *PrecompileIds(ids *id)
  *
  * description:
  *
- *   This function performs the renaming of identifiers on the right hand
- *   side of assignments, i.e. the original identifiers are prefixed with
- *   SACl or SACp or are renamed according to the renaming conventions of
- *   global objects.
+ *   This function performs the renaming of identifiers stored within ids-chains.
+ *   It also removes those identifiers from the chain which are marked as
+ *   'artificial'.
+ *
  *
  ******************************************************************************/
 
 static ids *
-PRECids (ids *id)
+PrecompileIds (ids *id)
 {
     char *new_name;
 
-    DBUG_ENTER ("PRECids");
+    DBUG_ENTER ("PrecompileIds");
 
     while ((id != NULL) && (IDS_STATUS (id) == ST_artificial)) {
         id = FreeOneIds (id);
@@ -379,7 +384,7 @@ PRECids (ids *id)
         }
 
         if (IDS_NEXT (id) != NULL) {
-            IDS_NEXT (id) = PRECids (IDS_NEXT (id));
+            IDS_NEXT (id) = PrecompileIds (IDS_NEXT (id));
         }
     }
 
@@ -1062,7 +1067,7 @@ PREClet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREClet");
 
-    LET_IDS (arg_node) = PRECids (LET_IDS (arg_node));
+    LET_IDS (arg_node) = PrecompileIds (LET_IDS (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -1172,6 +1177,7 @@ PRECexprs_return (node *ret_exprs, node *ret_node)
 
             tmp = ret_exprs;
             ret_exprs = EXPRS_NEXT (ret_exprs);
+            EXPRS_EXPR (tmp) = RenameId (EXPRS_EXPR (tmp));
             EXPRS_NEXT (tmp) = RETURN_REFERENCE (ret_node);
             RETURN_REFERENCE (ret_node) = tmp;
         }
@@ -1211,6 +1217,7 @@ PRECap (node *arg_node, node *arg_info)
 
         if (0 == strncmp (AP_NAME (ap), "to_", 3)) {
             if (NODE_TYPE (arg_node) == N_id) {
+                arg_node = RenameId (arg_node);
                 if ((ID_REFCNT (arg_node) != -1)
                     && (!IsUnique (VARDEC_TYPE (ID_VARDEC (arg_node))))) {
                     /*
@@ -1226,9 +1233,10 @@ PRECap (node *arg_node, node *arg_info)
         } else {
             /*
              *  This must be a "from" function. So, the argument is of a class
-             *  type which implies that it is am identifier.
+             *  type which implies that it is an identifier.
              */
 
+            arg_node = RenameId (arg_node);
             ID_MAKEUNIQUE (arg_node) = 0;
         }
 
@@ -1324,7 +1332,7 @@ PRECgenerator (node *arg_node, node *arg_info)
     GEN_LEFT (arg_node) = Trav (GEN_LEFT (arg_node), arg_info);
     GEN_RIGHT (arg_node) = Trav (GEN_RIGHT (arg_node), arg_info);
 
-    GEN_IDS (arg_node) = PRECids (GEN_IDS (arg_node));
+    GEN_IDS (arg_node) = PrecompileIds (GEN_IDS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1346,8 +1354,8 @@ PRECNwithid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PRECNwithid");
 
-    NWITHID_VEC (arg_node) = PRECids (NWITHID_VEC (arg_node));
-    NWITHID_IDS (arg_node) = PRECids (NWITHID_IDS (arg_node));
+    NWITHID_VEC (arg_node) = PrecompileIds (NWITHID_VEC (arg_node));
+    NWITHID_IDS (arg_node) = PrecompileIds (NWITHID_IDS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1375,13 +1383,9 @@ PRECdo (node *arg_node, node *arg_info)
 
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
 
-    if (DO_USEVARS (arg_node) != NULL) {
-        DO_USEVARS (arg_node) = Trav (DO_USEVARS (arg_node), arg_info);
-    }
+    DO_USEVARS (arg_node) = PrecompileIds (DO_USEVARS (arg_node));
 
-    if (DO_DEFVARS (arg_node) != NULL) {
-        DO_DEFVARS (arg_node) = Trav (DO_DEFVARS (arg_node), arg_info);
-    }
+    DO_DEFVARS (arg_node) = PrecompileIds (DO_DEFVARS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1412,13 +1416,9 @@ PRECwhile (node *arg_node, node *arg_info)
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
-    if (WHILE_USEVARS (arg_node) != NULL) {
-        WHILE_USEVARS (arg_node) = Trav (WHILE_USEVARS (arg_node), arg_info);
-    }
+    WHILE_USEVARS (arg_node) = PrecompileIds (WHILE_USEVARS (arg_node));
 
-    if (WHILE_DEFVARS (arg_node) != NULL) {
-        WHILE_DEFVARS (arg_node) = Trav (WHILE_DEFVARS (arg_node), arg_info);
-    }
+    WHILE_DEFVARS (arg_node) = PrecompileIds (WHILE_DEFVARS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1451,13 +1451,9 @@ PRECcond (node *arg_node, node *arg_info)
 
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
-    if (COND_THENVARS (arg_node) != NULL) {
-        COND_THENVARS (arg_node) = Trav (COND_THENVARS (arg_node), arg_info);
-    }
+    COND_THENVARS (arg_node) = PrecompileIds (COND_THENVARS (arg_node));
 
-    if (COND_ELSEVARS (arg_node) != NULL) {
-        COND_ELSEVARS (arg_node) = Trav (COND_ELSEVARS (arg_node), arg_info);
-    }
+    COND_ELSEVARS (arg_node) = PrecompileIds (COND_ELSEVARS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1488,42 +1484,7 @@ PRECwith (node *arg_node, node *arg_info)
 
     WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
 
-    if (WITH_USEVARS (arg_node) != NULL) {
-        WITH_USEVARS (arg_node) = Trav (WITH_USEVARS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PRECNwith(node *arg_node, node *arg_info)
- *
- * description:
- *
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- *
- *
- *
- ******************************************************************************/
-
-node *
-PRECNwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PRECNwith");
-
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-
-    NWITH_DEC_RC_IDS (arg_node) = PRECids (NWITH_DEC_RC_IDS (arg_node));
+    WITH_USEVARS (arg_node) = PrecompileIds (WITH_USEVARS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1558,7 +1519,7 @@ PRECNwith2 (node *arg_node, node *arg_info)
 
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
-    NWITH2_DEC_RC_IDS (arg_node) = PRECids (NWITH2_DEC_RC_IDS (arg_node));
+    NWITH2_DEC_RC_IDS (arg_node) = PrecompileIds (NWITH2_DEC_RC_IDS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1591,7 +1552,7 @@ PRECNcode (node *arg_node, node *arg_info)
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     }
 
-    NCODE_INC_RC_IDS (arg_node) = PRECids (NCODE_INC_RC_IDS (arg_node));
+    NCODE_INC_RC_IDS (arg_node) = PrecompileIds (NCODE_INC_RC_IDS (arg_node));
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);

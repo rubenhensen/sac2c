@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/06/04 17:00:54  cg
+ * information about refcounted variables in the context of loops,
+ * conditionals and the old with-loop are now stored in ids-chains
+ * instead of N_exprs lists.
+ *
  * Revision 1.59  1998/06/03 14:54:47  cg
  * Attribute WITH_USEDVARS renamed to WITH_USEVARS and built correctly
  *
@@ -988,10 +993,11 @@ RCassign (node *arg_node, node *arg_info)
 node *
 RCloop (node *arg_node, node *arg_info)
 {
-    node *usevars, *defvars, *vardec, *id_node, *id_exprs;
+    node *vardec;
     long *defined_mask, *used_mask;
     int i, again = 0, use_old = 0;
     int *ref_dump;
+    ids *usevars, *defvars, *new_ids;
 
     DBUG_ENTER ("RCloop");
 
@@ -1025,59 +1031,66 @@ RCloop (node *arg_node, node *arg_info)
                     /* store refcount of defined variables in defvars (v2)
                      */
                     if (0 == use_old) {
-                        VARDEC_2_ID_NODE (id_node, vardec);
-                        ID_REFCNT (id_node) = ref_dump[i];
-                        /* insert 'id_node' at the begining of 'defvars' */
-                        defvars = MakeExprs (id_node, defvars);
+                        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                           ST_regular);
+                        IDS_REFCNT (new_ids) = ref_dump[i];
+                        IDS_VARDEC (new_ids) = vardec;
+                        IDS_NEXT (new_ids) = defvars;
+                        defvars = new_ids;
+                        /* insert 'new_ids' at the begining of 'defvars' */
                         DBUG_PRINT ("RC", ("store defined var (v2) %s:%d",
-                                           ID_NAME (id_node), ID_REFCNT (id_node)));
+                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids)));
                     } else {
-                        id_node = LookupId (vardec->info.types->id, defvars);
-                        DBUG_ASSERT ((NULL != id_node), "var not found");
-                        ID_REFCNT (id_node) = ref_dump[i];
+                        new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), defvars);
+                        DBUG_ASSERT ((NULL != new_ids), "var not found");
+                        IDS_REFCNT (new_ids) = ref_dump[i];
                         DBUG_PRINT ("RC", ("changed defined var (v2) %s:%d",
-                                           ID_NAME (id_node), ID_REFCNT (id_node)));
+                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids)));
                     }
                 }
                 if ((used_mask[i] > 0) && (0 < vardec->refcnt)) {
                     /* store refcount of used variables in usevars (v1)
                      */
                     if (0 == use_old) {
-                        VARDEC_2_ID_NODE (id_node, vardec);
-                        /* insert 'id_node' at the begining of 'usevars' */
-                        usevars = MakeExprs (id_node, usevars);
-                        DBUG_PRINT ("RC", ("store used var (v1) %s:%d", ID_NAME (id_node),
-                                           ID_REFCNT (id_node)));
+                        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                           ST_regular);
+                        IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                        IDS_VARDEC (new_ids) = vardec;
+                        IDS_NEXT (new_ids) = usevars;
+                        usevars = new_ids;
+                        /* insert 'new_ids' at the begining of 'usevars' */
+                        DBUG_PRINT ("RC", ("store used var (v2) %s:%d",
+                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids)));
                     } else {
-                        id_node = LookupId (vardec->info.types->id, usevars);
-                        DBUG_ASSERT ((NULL != id_node), "var not found");
-                        ID_REFCNT (id_node) = vardec->refcnt;
-                        DBUG_PRINT ("RC", ("changed used var (v1) %s:%d",
-                                           ID_NAME (id_node), ID_REFCNT (id_node)));
+                        new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), usevars);
+                        DBUG_ASSERT ((NULL != new_ids), "var not found");
+                        IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                        DBUG_PRINT ("RC", ("changed used var (v2) %s:%d",
+                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids)));
                     }
                 }
             }
         }
 
     if (NULL != usevars) {
-        id_exprs = usevars;
-        while ((0 == again) && (NULL != id_exprs)) {
-            if ((0 < VARDEC_REFCNT (ID_VARDEC (EXPRS_EXPR (id_exprs))))
-                && (0 == ref_dump[VARDEC_VARNO (ID_VARDEC (EXPRS_EXPR (id_exprs)))])) {
+        new_ids = usevars;
+        while ((0 == again) && (NULL != new_ids)) {
+            if ((0 < VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids)))
+                && (0 == ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (new_ids))])) {
                 again = 1;
             } else {
-                id_exprs = EXPRS_NEXT (id_exprs);
+                new_ids = IDS_NEXT (new_ids);
             }
         }
         if (1 == again) {
             DBUG_PRINT ("RC", ("while  loop again "));
             RestoreRC (ref_dump);
             ref_dump = StoreAndInitRC (1);
-            id_exprs = usevars;
+            new_ids = usevars;
             /* init all variables that are member of v1 with refcount 1 */
-            while (NULL != id_exprs) {
-                VARDEC_REFCNT (ID_VARDEC (EXPRS_EXPR (id_exprs))) = 1;
-                id_exprs = EXPRS_NEXT (id_exprs);
+            while (NULL != new_ids) {
+                VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids)) = 1;
+                new_ids = IDS_NEXT (new_ids);
             }
 
             /* refcount body of while loop again */
@@ -1085,33 +1098,38 @@ RCloop (node *arg_node, node *arg_info)
         }
     }
 
-    /* compute new refcounts because of 'virtuell function application' */
+    /* compute new refcounts because of 'virtual function application' */
     for (i = 0; i < varno; i++) {
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             vardec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "variable not found");
-            if (MUST_REFCOUNT (VARDEC_TYPE (vardec))) {
-                if ((used_mask[i] > 0) && (0 < vardec->refcnt) && (1 == again)) {
-                    /* update refcount of used variables  (v1)
+            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+                if ((used_mask[i] > 0) && (0 < VARDEC_OR_ARG_REFCNT (vardec))
+                    && (1 == again)) {
+                    /*
+                     * update refcount of used variables  (v1)
                      */
-                    id_node = LookupId (vardec->info.types->id, usevars);
-                    DBUG_ASSERT ((NULL != id_node), "var not found");
+                    new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), usevars);
+                    DBUG_ASSERT ((NULL != new_ids), "var not found");
 
-                    ID_REFCNT (id_node) = vardec->refcnt;
+                    IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
                     DBUG_PRINT ("RC",
-                                ("(v1) %s:%d", ID_NAME (id_node), ID_REFCNT (id_node)));
+                                ("(v1) %s:%d", IDS_NAME (new_ids), IDS_REFCNT (new_ids)));
                 }
-                /* now compute new refcounts, because of 'virtuall function
+                /*
+                 * now compute new refcounts, because of 'virtual function
                  * application'
                  */
                 if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
                     /* these will be the return-values of the virtual function */
                     if (N_do == NODE_TYPE (arg_node)) {
-                        /* check whether current variable is an argument of
+                        /*
+                         * check whether current variable is an argument of
                          * 'virtual function'
                          */
-                        if (0 == vardec->refcnt) {
-                            /* in this case the variable will be defined before it
+                        if (0 == VARDEC_OR_ARG_REFCNT (vardec)) {
+                            /*
+                             * in this case the variable will be defined before it
                              * will be used, so we don't need it as argument of
                              * the virtual function (it can be freed earlier)
                              */
@@ -1124,13 +1142,13 @@ RCloop (node *arg_node, node *arg_info)
                     }
 
                     DBUG_PRINT ("RC", ("set refcount of %s(%d) to: %d",
-                                       vardec->info.types->id, i, ref_dump[i]));
+                                       VARDEC_OR_ARG_NAME (vardec), i, ref_dump[i]));
                 } else {
-                    if ((used_mask[i] > 0) && (0 < vardec->refcnt)) {
+                    if ((used_mask[i] > 0) && (0 < VARDEC_OR_ARG_REFCNT (vardec))) {
                         /* these variables are arguments of the virtual function */
                         ref_dump[i]++;
                         DBUG_PRINT ("RC", ("increased  refcount of %s(%d) to: %d",
-                                           vardec->info.types->id, i, ref_dump[i]));
+                                           VARDEC_OR_ARG_NAME (vardec), i, ref_dump[i]));
                     }
                 }
             }
@@ -1341,8 +1359,10 @@ RClet (node *arg_node, node *arg_info)
 node *
 RCcond (node *arg_node, node *arg_info)
 {
-    node *thenvars, *elsevars, *vardec, *id_node;
+    node *vardec;
+    ids *thenvars, *elsevars, *new_ids;
     int *rest_dump, *then_dump, *else_dump, i, use_old = 0;
+
     DBUG_ENTER ("RCcond");
 
     /* store current vardec refcounts in rest_dump */
@@ -1380,43 +1400,49 @@ RCcond (node *arg_node, node *arg_info)
             vardec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), " var not found");
             if (0 == use_old) {
-                VARDEC_2_ID_NODE (id_node, vardec);
-                ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
-                /* insert 'id_node' at the begining of 'thenvars' */
-                thenvars = MakeExprs (id_node, thenvars);
-                DBUG_PRINT ("RC", ("append %s :%d to then-part", ID_NAME (id_node),
-                                   ID_REFCNT (id_node)));
+                new_ids
+                  = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
+                IDS_REFCNT (new_ids) = else_dump[i] - then_dump[i];
+                IDS_VARDEC (new_ids) = vardec;
+                IDS_NEXT (new_ids) = thenvars;
+                thenvars = new_ids;
+                /* insert 'new_ids' at the begining of 'defvars' */
+                DBUG_PRINT ("RC", ("append %s :%d to then-part", IDS_NAME (new_ids),
+                                   IDS_REFCNT (new_ids)));
             } else {
-                id_node = LookupId (vardec->info.types->id, thenvars);
-                DBUG_ASSERT ((NULL != id_node), "var not found");
-                ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
-                DBUG_PRINT ("RC", ("changed %s :%d in then-part", ID_NAME (id_node),
-                                   ID_REFCNT (id_node)));
+                new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), thenvars);
+                DBUG_ASSERT ((NULL != new_ids), "var not found");
+                IDS_REFCNT (new_ids) = else_dump[i] - then_dump[i];
+                DBUG_PRINT ("RC", ("changed %s :%d in then-part", IDS_NAME (new_ids),
+                                   IDS_REFCNT (new_ids)));
             }
-            vardec->refcnt = else_dump[i];
-            DBUG_PRINT ("RC",
-                        ("set refcount of %s to %d", ID_NAME (id_node), vardec->refcnt));
+            VARDEC_OR_ARG_REFCNT (vardec) = else_dump[i];
+            DBUG_PRINT ("RC", ("set refcount of %s to %d", IDS_NAME (new_ids),
+                               VARDEC_OR_ARG_REFCNT (vardec)));
         } else {
             if (else_dump[i] < then_dump[i]) {
                 vardec = FindVardec (i, fundef_node);
                 DBUG_ASSERT ((NULL != vardec), " var not found");
                 if (0 == use_old) {
-                    VARDEC_2_ID_NODE (id_node, vardec);
-                    ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
-                    /* insert 'id_node' at the begining of 'elsevars' */
-                    elsevars = MakeExprs (id_node, elsevars);
-                    DBUG_PRINT ("RC", ("append %s :%d to else-part", ID_NAME (id_node),
-                                       ID_REFCNT (id_node)));
+                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                       ST_regular);
+                    IDS_REFCNT (new_ids) = then_dump[i] - else_dump[i];
+                    IDS_VARDEC (new_ids) = vardec;
+                    IDS_NEXT (new_ids) = elsevars;
+                    elsevars = new_ids;
+                    /* insert 'new_ids' at the begining of 'elsevars' */
+                    DBUG_PRINT ("RC", ("append %s :%d to else-part", IDS_NAME (new_ids),
+                                       IDS_REFCNT (new_ids)));
                 } else {
-                    id_node = LookupId (vardec->info.types->id, elsevars);
-                    DBUG_ASSERT ((NULL != id_node), "var not found");
-                    ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
-                    DBUG_PRINT ("RC", ("changed %s :%d in then-part", ID_NAME (id_node),
-                                       ID_REFCNT (id_node)));
+                    new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), elsevars);
+                    DBUG_ASSERT ((NULL != new_ids), "var not found");
+                    IDS_REFCNT (new_ids) = then_dump[i] - else_dump[i];
+                    DBUG_PRINT ("RC", ("changed %s :%d in else-part", IDS_NAME (new_ids),
+                                       IDS_REFCNT (new_ids)));
                 }
-                vardec->refcnt = then_dump[i];
-                DBUG_PRINT ("RC", ("set refcount of %s to %d", ID_NAME (id_node),
-                                   vardec->refcnt));
+                VARDEC_OR_ARG_REFCNT (vardec) = then_dump[i];
+                DBUG_PRINT ("RC", ("set refcount of %s to %d", IDS_NAME (new_ids),
+                                   VARDEC_OR_ARG_REFCNT (vardec)));
             }
         }
     }
@@ -1468,8 +1494,9 @@ node *
 RCwith (node *arg_node, node *arg_info)
 {
     int *ref_dump, *with_dump, index_vec_varno, i, mod_array_varno;
-    node *vardec, *id_node;
+    node *vardec;
     long *used_mask;
+    ids *new_ids;
 
     DBUG_ENTER ("RCwith");
 
@@ -1501,14 +1528,18 @@ RCwith (node *arg_node, node *arg_info)
         if (used_mask[i] > 0) {
             vardec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "variable not found");
-            if (MUST_REFCOUNT (VARDEC_TYPE (vardec))) {
-                if (0 < VARDEC_REFCNT (vardec)) {
+            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+                if (0 < VARDEC_OR_ARG_REFCNT (vardec)) {
                     /* store refcount of used variables in WITH_USEDVARS() */
-                    VARDEC_2_ID_NODE (id_node, vardec);
-                    WITH_USEVARS (arg_node)
-                      = MakeExprs (id_node, WITH_USEVARS (arg_node));
-                    DBUG_PRINT ("RC", ("store used variables %s:%d", ID_NAME (id_node),
-                                       ID_REFCNT (id_node)));
+                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
+                                       ST_regular);
+                    IDS_VARDEC (new_ids) = vardec;
+                    IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                    IDS_NEXT (new_ids) = WITH_USEVARS (arg_node);
+                    WITH_USEVARS (arg_node) = new_ids;
+
+                    DBUG_PRINT ("RC", ("store used variables %s:%d", IDS_NAME (new_ids),
+                                       IDS_REFCNT (new_ids)));
                 }
             }
         }
@@ -1522,10 +1553,10 @@ RCwith (node *arg_node, node *arg_info)
         if ((with_dump[i] > 0) && (i != index_vec_varno) && (i != mod_array_varno)) {
             vardec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != vardec), "var not found");
-            if (0 < vardec->refcnt) {
+            if (0 < VARDEC_OR_ARG_REFCNT (vardec)) {
                 ref_dump[i]++;
-                DBUG_PRINT ("RC", ("set refcount of %s to %d:", vardec->info.types->id,
-                                   ref_dump[i]));
+                DBUG_PRINT ("RC", ("set refcount of %s to %d:",
+                                   VARDEC_OR_ARG_NAME (vardec), ref_dump[i]));
             }
         }
     }
@@ -1535,7 +1566,7 @@ RCwith (node *arg_node, node *arg_info)
         vardec = FindVardec (mod_array_varno, fundef_node);
         DBUG_ASSERT ((NULL != vardec), "var not found");
         ref_dump[mod_array_varno]++;
-        DBUG_PRINT ("RC", ("set refcount of %s to %d:", vardec->info.types->id,
+        DBUG_PRINT ("RC", ("set refcount of %s to %d:", VARDEC_OR_ARG_NAME (vardec),
                            ref_dump[mod_array_varno]));
     }
 

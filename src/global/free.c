@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/06/04 16:57:07  cg
+ * information about refcounted variables in the context of loops,
+ * conditionals and the old with-loop are now stored in ids-chains
+ * instead of N_exprs lists.
+ *
  * Revision 1.67  1998/06/03 14:23:43  cg
  *  free now handles attribute FUNDEF_LIFTEDFROM correctly
  *
@@ -1016,15 +1021,8 @@ FreeCond (node *arg_node, node *arg_info)
     FREETRAV (COND_THEN (arg_node));
     FREETRAV (COND_ELSE (arg_node));
 
-    /*
-     * N_info does not fit into virtual syntax tree.
-     */
-
-    if (arg_node->node[3] != NULL) {
-        FREETRAV (COND_THENVARS (arg_node));
-        FREETRAV (COND_ELSEVARS (arg_node));
-        FREE (arg_node->node[3]);
-    }
+    FreeAllIds (COND_THENVARS (arg_node));
+    FreeAllIds (COND_ELSEVARS (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_cond node ..."));
 
@@ -1047,12 +1045,8 @@ FreeDo (node *arg_node, node *arg_info)
     FREETRAV (DO_BODY (arg_node));
     FREETRAV (DO_COND (arg_node));
 
-    /*
-     * N_info does not fit into virtual syntax tree.
-     */
-
-    FREETRAV (DO_USEVARS (arg_node));
-    FREETRAV (DO_DEFVARS (arg_node));
+    FreeAllIds (DO_USEVARS (arg_node));
+    FreeAllIds (DO_DEFVARS (arg_node));
 
     FREEMASK (DO_MASK);
 
@@ -1077,12 +1071,8 @@ FreeWhile (node *arg_node, node *arg_info)
     FREETRAV (WHILE_BODY (arg_node));
     FREETRAV (WHILE_COND (arg_node));
 
-    /*
-     * N_info does not fit into virtual syntax tree.
-     */
-
-    FREETRAV (WHILE_USEVARS (arg_node));
-    FREETRAV (WHILE_DEFVARS (arg_node));
+    FreeAllIds (WHILE_USEVARS (arg_node));
+    FreeAllIds (WHILE_DEFVARS (arg_node));
 
     FREEMASK (WHILE_MASK);
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/06/04 17:00:54  cg
+ * information about refcounted variables in the context of loops,
+ * conditionals and the old with-loop are now stored in ids-chains
+ * instead of N_exprs lists.
+ *
  * Revision 1.17  1998/06/03 14:53:41  cg
  * Now, all identifiers including local ones are systematically renamed.
  *
@@ -84,7 +89,6 @@ extern node *PRECdo (node *arg_node, node *arg_info);
 extern node *PRECwhile (node *arg_node, node *arg_info);
 extern node *PRECcond (node *arg_node, node *arg_info);
 extern node *PRECwith (node *arg_node, node *arg_info);
-extern node *PRECNwith (node *arg_node, node *arg_info);
 extern node *PRECNwith2 (node *arg_node, node *arg_info);
 extern node *PRECNcode (node *arg_node, node *arg_info);
 
