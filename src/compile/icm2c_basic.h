@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/12/01 18:58:26  dkrHH
+ * SET_SHAPE: runtime check added (size>=0 ?)
+ *
  * Revision 3.17  2003/09/30 19:29:41  dkr
  * Set_Shape() added
  *
@@ -127,55 +130,57 @@ extern int print_comment; /* bool */
     fprintf (outfile, "else ");                                                          \
     BLOCK__NOINDENT (else_ass)
 
-#define SET_SIZE(to_NT, set_ass)                                                         \
+#define SET_SIZE(to_NT, set_expr)                                                        \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_NT,   \
              to_NT);                                                                     \
-    set_ass fprintf (outfile, ";\n")
+    set_expr fprintf (outfile, ";\n");                                                   \
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_MIRROR( %s) >= 0", to_NT);              \
+                     , fprintf (outfile, "Array with size <0 found!"););
 
-#define SET_SHAPE_AUD(to_NT, idx_expr, set_ass)                                          \
+#define SET_SHAPE_AUD(to_NT, idx_expr, set_expr)                                         \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                               \
     idx_expr fprintf (outfile, ") = ");                                                  \
-    set_ass fprintf (outfile, ";\n")
+    set_expr fprintf (outfile, ";\n")
 
-#define SET_SHAPE_AUD__NUM(to_NT, idx_num, set_ass)                                      \
+#define SET_SHAPE_AUD__NUM(to_NT, idx_num, set_expr)                                     \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
-    set_ass fprintf (outfile, ";\n")
+    set_expr fprintf (outfile, ";\n")
 
-#define SET_SHAPE_AKD(to_NT, idx_num, set_ass)                                           \
+#define SET_SHAPE_AKD(to_NT, idx_num, set_expr)                                          \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_NT, idx_num);            \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
-    set_ass fprintf (outfile, ";\n")
+    set_expr fprintf (outfile, ";\n")
 
 #define SET_SHAPES_AUD(to_NT, idx_var, idx_start_expr, idx_stop_expr, prolog_ass,        \
-                       set_ass)                                                          \
+                       set_expr)                                                         \
     FOR_LOOP_INC (idx_var, idx_start_expr, idx_stop_expr,                                \
-                  prolog_ass SET_SHAPE_AUD (to_NT, idx_var, set_ass);)
+                  prolog_ass SET_SHAPE_AUD (to_NT, idx_var, set_expr);)
 
-#define SET_SHAPES_AUD__NUM(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_ass)    \
+#define SET_SHAPES_AUD__NUM(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_expr)   \
     DBUG_ASSERT ((idx_start >= 0), "illegal dimension found!");                          \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
     for (idx_var = idx_start; idx_var < idx_stop; i++) {                                 \
-        prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx_var, set_ass);                         \
+        prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx_var, set_expr);                        \
     }
 
 #define SET_SHAPES_AUD__XXX(to_NT, idx_var, idx_var2, idx_start, idx_start_expr2,        \
-                            idx_stop, idx_stop_expr2, prolog_ass, set_ass, set_ass2)     \
+                            idx_stop, idx_stop_expr2, prolog_ass, set_expr, set_expr2)   \
     if ((idx_start >= 0) && (idx_stop >= 0)) {                                           \
-        SET_SHAPES_AUD__NUM (to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_ass);  \
+        SET_SHAPES_AUD__NUM (to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_expr); \
     } else {                                                                             \
         SET_SHAPES_AUD (to_NT, idx_var2, idx_start_expr2, idx_stop_expr2, prolog_ass,    \
-                        set_ass2);                                                       \
+                        set_expr2);                                                      \
     }
 
-#define SET_SHAPES_AKD(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_ass)         \
+#define SET_SHAPES_AKD(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_expr)        \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
     for (idx_var = idx_start; idx_var < idx_stop; i++) {                                 \
-        prolog_ass SET_SHAPE_AKD (to_NT, idx_var, set_ass);                              \
+        prolog_ass SET_SHAPE_AKD (to_NT, idx_var, set_expr);                             \
     }
 
 #ifdef TAGGED_ARRAYS
