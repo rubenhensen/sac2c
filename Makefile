@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2001/03/02 14:42:34  sbs
+# integrated constants?
+#
 # Revision 3.15  2001/02/23 13:40:15  nmw
 # SSADeadCodeRemoval added
 #
@@ -180,12 +183,13 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o
+CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
+           src/constants/constants_struct_ops.o src/constants/constants_ari_ops.o \
+           src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
-           src/typecheck/shape.o src/typecheck/user_types.o \
-           src/typecheck/constants.o src/typecheck/cv2cv.o \
-           src/typecheck/cv2scalar.o src/typecheck/cv2str.o
+           src/typecheck/user_types.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
@@ -234,7 +238,7 @@ CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
 
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-    $(MULTITHREAD) $(CINTERFACE)
+    $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS)
 
 
 #
@@ -274,6 +278,7 @@ dummy:
 	(cd src/print; $(MAKE_NORM) )
 	(cd src/flatten; $(MAKE_NORM) )
 	(cd src/typecheck; $(MAKE_NORM) )
+	(cd src/constants; $(MAKE_NORM) )
 	(cd src/optimize; $(MAKE_NORM) )
 	(cd src/modules; $(MAKE_NORM) )
 	(cd src/objects; $(MAKE_NORM) )
@@ -304,6 +309,7 @@ prod:
 	(cd src/print; $(MAKE_PROD) )
 	(cd src/flatten; $(MAKE_PROD) )
 	(cd src/typecheck; $(MAKE_PROD) )
+	(cd src/constants; $(MAKE_PROD) )
 	(cd src/optimize; $(MAKE_PROD) )
 	(cd src/modules; $(MAKE_PROD) )
 	(cd src/objects; $(MAKE_PROD) )
@@ -335,6 +341,7 @@ deps:
 	(cd src/print; $(MAKE) deps)
 	(cd src/flatten; $(MAKE) deps)
 	(cd src/typecheck; $(MAKE) deps)
+	(cd src/constants; $(MAKE) deps)
 	(cd src/optimize; $(MAKE) deps)
 	(cd src/modules; $(MAKE) deps)
 	(cd src/objects; $(MAKE) deps)
@@ -357,6 +364,7 @@ clean:
 	(cd src/print; $(MAKE) clean)
 	(cd src/flatten; $(MAKE) clean)
 	(cd src/typecheck; $(MAKE) clean)
+	(cd src/constants; $(MAKE) clean)
 	(cd src/optimize; $(MAKE) clean)
 	(cd src/modules; $(MAKE) clean)
 	(cd src/objects; $(MAKE) clean)
