@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.87  2000/07/28 17:17:10  cg
+ * Added temporary attribute VARDEC_ICM.
+ *
  * Revision 1.86  2000/07/28 12:37:09  cg
  * Added temporary attribute TYPEDEF_ICM.
  *
@@ -1177,6 +1180,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***    int         FLAG                       (ael  -> dcr2 !! )
  ***    bool        PADDED                     (ap -> )
+ ***    node*       ICM      (O)  (N_icm)      (compile -> )
  ***/
 
 /*
@@ -1213,6 +1217,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_ACTCHN(n) (n->node[2])
 #define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_OBJDEF(n) (n->node[4])
+#define VARDEC_ICM(n) (n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
