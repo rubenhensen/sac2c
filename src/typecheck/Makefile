@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1996/01/04 18:11:08  cg
+# Revision 1.13  1996/02/16 09:46:49  sbs
+# make deps done
+#
+# Revision 1.12  1996/01/04  18:11:08  cg
 # make deps done
 #
 # Revision 1.11  1995/12/15  10:41:09  cg
@@ -66,7 +69,8 @@ prim_fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 prim_fun.o: /usr/include/string.h ../global/globals.h
 prim_fun.o: ../global/internal_lib.h prim_fun.h ../../inc/dbug.h
 prim_fun.o: ../global/my_debug.h typecheck.h ../global/access_macros.h
-prim_fun.o: ../print/convert.h prim_fun_tt.mac prim_fun_ft.mac
+prim_fun.o: ../print/convert.h ../global/free.h /usr/include/malloc.h
+prim_fun.o: prim_fun_tt.mac prim_fun_ft.mac
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 typecheck.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
 typecheck.o: ../global/types.h ../global/tree_basic.h

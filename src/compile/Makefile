@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.19  1996/01/18 13:05:43  asi
+# Revision 1.20  1996/02/16 09:46:54  sbs
+# make deps done
+#
+# Revision 1.19  1996/01/18  13:05:43  asi
 # make deps done
 #
 # Revision 1.18  1996/01/09  09:19:14  cg
@@ -101,25 +104,25 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
-compile.o: /usr/include/string.h ../print/print.h ../global/tree.h
-compile.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-compile.o: ../global/Error.h /usr/include/stdio.h ../global/globals.h
+compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
+compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+compile.o: ../global/globals.h ../print/print.h ../global/tree.h
 compile.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-compile.o: ../global/access_macros.h ../global/traverse.h compile.h
-compile.o: ../print/convert.h ../refcount/refcount.h ../typecheck/typecheck.h
-compile.o: ../global/free.h /usr/include/malloc.h
+compile.o: ../global/traverse.h compile.h ../print/convert.h
+compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ../global/free.h
+compile.o: /usr/include/malloc.h ../global/type_info.mac
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
 icm2c.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 icm2c.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
 icm2c.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
 icm2c.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
-icm2c.o: ../global/my_debug.h ../../inc/main.h trace.h icm_decl.c icm.data
-icm2c.o: icm_args.c icm_comment.c icm_trace.c
+icm2c.o: ../global/my_debug.h ../../inc/main.h trace.h ../print/convert.h
+icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c icm_trace.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
 icm_trace.o: icm.data
-libsac.o: /usr/include/stdio.h /usr/include/malloc.h ../../inc/dbug.h
+libsac.o: /usr/include/stdio.h /usr/include/malloc.h
 precompile.o: ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/string.h
@@ -127,4 +130,4 @@ precompile.o: /usr/include/sys/stdtypes.h /usr/include/stdlib.h
 precompile.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
-precompile.o: ../global/traverse.h
+precompile.o: ../global/traverse.h ../refcount/refcount.h

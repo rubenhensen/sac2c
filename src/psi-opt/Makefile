@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1996/01/18 13:05:44  asi
+# Revision 1.10  1996/02/16 09:46:57  sbs
+# make deps done
+#
+# Revision 1.9  1996/01/18  13:05:44  asi
 # make deps done
 #
 # Revision 1.8  1996/01/17  14:19:52  asi
@@ -70,7 +73,8 @@ index.o: /usr/include/sys/stdtypes.h ../../inc/dbug.h ../global/tree.h
 index.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 index.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 index.o: ../global/internal_lib.h ../global/traverse.h ../optimize/DupTree.h
-index.o: index.h ../global/access_macros.h ../compile/compile.h
+index.o: index.h psi-opt.h ../global/free.h ../global/my_debug.h
+index.o: /usr/include/malloc.h ../global/access_macros.h ../compile/compile.h
 psi-opt.o: /usr/include/stdio.h /usr/include/stdlib.h
 psi-opt.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
 psi-opt.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h

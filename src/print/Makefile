@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.15  1996/01/05 12:31:29  cg
+# Revision 1.16  1996/02/16 09:46:46  sbs
+# make deps done
+#
+# Revision 1.15  1996/01/05  12:31:29  cg
 # Now, we look even in ../modules for include files
 #
 # Revision 1.14  1996/01/04  18:11:06  cg
@@ -60,10 +63,12 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 convert.o: /usr/include/string.h /usr/include/sys/stdtypes.h
-convert.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
-convert.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-convert.o: /usr/include/stdio.h ../global/globals.h ../global/internal_lib.h
-convert.o: ../../inc/dbug.h convert.h ../global/type_info.mac
+convert.o: /usr/include/stdlib.h /usr/include/math.h
+convert.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h
+convert.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+convert.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+convert.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
+convert.o: convert.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/stdlib.h
 print.o: /usr/include/sys/stdtypes.h /usr/include/string.h ../global/types.h
 print.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
