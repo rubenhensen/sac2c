@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  1999/09/20 11:37:12  jhs
+ * Added USE/DEFVARS to do-loop.
+ *
  * Revision 2.31  1999/09/10 14:26:03  jhs
  * Added printing of NAIVE_VARS of loops and conds.
  *
@@ -1444,6 +1447,14 @@ PrintDo (node *arg_node, node *arg_info)
                   PrintMasks (DO_BODY (arg_node), arg_info););
 
     fprintf (outfile, "do\n");
+
+    DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
+                  PrintIds (DO_DEFVARS (arg_node)); fprintf (outfile, "\n");
+                  PrintIds (DO_NAIVE_DEFVARS (arg_node));
+                  fprintf (outfile, "\n**(NAIVE)USEVARS\n");
+                  PrintIds (DO_USEVARS (arg_node)); fprintf (outfile, "\n");
+                  PrintIds (DO_NAIVE_USEVARS (arg_node)); fprintf (outfile, "\n"););
+
     if (NULL != DO_BODY (arg_node)) {
         indent++;
         Trav (DO_BODY (arg_node), arg_info); /* traverse body of loop */
