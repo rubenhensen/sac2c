@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.98  1995/12/04 16:12:24  hw
+ * Revision 1.99  1995/12/18 16:19:52  cg
+ * added some DBUG_PRINTs
+ *
+ * Revision 1.98  1995/12/04  16:12:24  hw
  * - changed parsing of primitive function genarray
  * - added primitive functions toi, tod & tof
  *
@@ -821,8 +824,10 @@ fundec: varreturntypes id BRACKET_L fundec2
                 $$->info.types->status=ST_imported;
                 
             DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
+                       ("%s:"P_FORMAT" Id: %s"P_FORMAT", NULL body,  %s"
+                        P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                        $$->info.types->id,
                         mdb_nodetype[ ($$->node[2]==NULL)
                                       ?T_void:($$->node[2]->nodetype) ],
                         $$->node[2]));
@@ -998,6 +1003,14 @@ fundef: returntypes fun_name BRACKET_L fundef2
            $$->info.types=$1;          		/*  result type(s) */
            $$->info.types->id=$2;      		/*  function name */
            $$->info.types->id_mod=mod_name;     /*  module name */
+
+           DBUG_PRINT("GENTREE",
+                      ("%s: %s:%s "P_FORMAT,
+                       mdb_nodetype[ $$->nodetype ],
+                       $$->info.types->id_mod,
+                       $$->info.types->id,
+                       $$->info.types->id));
+
         }
 	| INLINE returntypes fun_name BRACKET_L fundef2
             {id *function_name;
@@ -1009,6 +1022,14 @@ fundef: returntypes fun_name BRACKET_L fundef2
              $$->flag=1;                 /* flag to sign, that this function
                                           * should be inlined
                                           */             
+
+           DBUG_PRINT("GENTREE",
+                      ("%s: %s:%s "P_FORMAT,
+                       mdb_nodetype[ $$->nodetype ],
+                       $$->info.types->id_mod,
+                       $$->info.types->id,
+                       $$->info.types->id));
+
             }
 
 fundef2: args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
@@ -1019,7 +1040,7 @@ fundef2: args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
             $$->nnode=2;
          
             DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" %s"P_FORMAT" %s," P_FORMAT,
+                       ("%s:"P_FORMAT", Id: %s"P_FORMAT" %s," P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, 
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
@@ -1189,13 +1210,15 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
         $$->node[0]=$6;                 /* Funktionsrumpf */
 
         $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
-        $$->info.types->id=(char *)malloc(5); 
-        strcpy($$->info.types->id,"main");   /* Funktionsnamen eintragen */
+        $$->info.types->id=(char *)malloc(sizeof(char)*5); 
+        strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
 
         $$->nnode=1;  /* ein Nachfolgeknoten  */
 
-        DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main %s (" P_FORMAT ") ",
+        DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main "P_FORMAT
+                              "  %s (" P_FORMAT ") ",
                               mdb_nodetype[$$->nodetype], $$, 
+                              $$->info.types->id,
                               mdb_nodetype[ $$->node[0]->nodetype], 
                               $$->node[0]));
         
