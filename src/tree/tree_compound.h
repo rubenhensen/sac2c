@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.130  2004/11/24 12:41:05  khf
+ * removed macros concerning CODE_CEXPR
+ *
  * Revision 3.129  2004/11/24 12:33:33  ktr
  * TCappendRets added.
  *
@@ -1707,7 +1710,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
  *  e.g. before with-loop-folding)
  */
 #define WITH_CBLOCK(n) (CODE_CBLOCK (WITH_CODE (n)))
-#define WITH_CEXPR(n) (CODE_CEXPR (WITH_CODE (n)))
+#define WITH_CEXPRS(n) (CODE_CEXPRS (WITH_CODE (n)))
 
 extern node *TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr,
                                  node *fundef);
@@ -1732,7 +1735,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 #define PART_STEP(n) (GENERATOR_STEP (PART_GENERATOR (n)))
 #define PART_WIDTH(n) (GENERATOR_WIDTH (PART_GENERATOR (n)))
 
-#define PART_CEXPR(n) (CODE_CEXPR (PART_CODE (n)))
+#define PART_CEXPRS(n) (CODE_CEXPRS (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
@@ -1742,7 +1745,6 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
  ***/
 
 #define CODE_CBLOCK_INSTR(n) (BLOCK_INSTR (CODE_CBLOCK (n)))
-#define CODE_CEXPR(n) EXPRS_EXPR (CODE_CEXPRS (n))
 
 #define CODE_WLAA_ACCESS(n) (CODE_WLAA_INFO (n)->access)
 #define CODE_WLAA_ACCESSCNT(n) (CODE_WLAA_INFO (n)->accesscnt)
@@ -1793,7 +1795,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
  *  e.g. before with-loop-folding)
  */
 #define WITH2_CBLOCK(n) (CODE_CBLOCK (WITH2_CODE (n)))
-#define WITH2_CEXPR(n) (CODE_CEXPR (WITH2_CODE (n)))
+#define WITH2_CEXPRS(n) (CODE_CEXPRS (WITH2_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
