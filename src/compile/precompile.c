@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/04 13:34:45  dkr
+ * PREC2array added: ARRAY_TYPE renamed correctly now
+ *
  * Revision 3.2  2000/12/01 18:34:51  dkr
  * no cc warnings '... might be used uninitialized' anymore
  * global comment added
@@ -1657,6 +1660,30 @@ PREC2id (node *arg_node, node *arg_info)
             ID_CLSCONV (arg_node) = NO_CLSCONV;
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC2array(node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC2array (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC2array");
+
+    if (ARRAY_AELEMS (arg_node) != NULL) {
+        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+    }
+
+    ARRAY_TYPE (arg_node) = RenameTypes (ARRAY_TYPE (arg_node));
 
     DBUG_RETURN (arg_node);
 }
