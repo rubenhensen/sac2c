@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.3  2003/03/20 23:12:59  sah
+dnl cpu sparc now matches sac SPARC setting
+dnl
 dnl Revision 1.2  2003/03/20 22:28:07  sah
 dnl os solaris* os now matched to SOLARIS
 dnl
@@ -37,6 +40,12 @@ dnl match autoconf os names to
 dnl the ususal sac ones
 case $target_os in
  *solaris*) target_os=SOLARIS;;
+esac
+
+dnl match autoconf arch names to
+dnl the usual sac ones
+case $target_cpu in
+ sparc) target_cpu=SPARC;;
 esac
 
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
@@ -172,7 +181,7 @@ rmdir .ar_magic_file_test
 
 dnl when not using bison, we need to
 dnl reference YYLABELS
-if test $YACC = yacc; then
+if test "$YACC" = "yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
 fi
 
