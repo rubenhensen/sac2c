@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2002/09/06 10:36:09  sah
+ * added DupSetWL
+ *
  * Revision 3.72  2002/09/05 19:20:52  dkr
  * DupAllTypes(), DupAllIds(), DupNodelist(), DupShpseg() can applied
  * to NULL now
@@ -726,6 +729,23 @@ DupDot (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupDot");
 
     new_node = MakeDot (DOT_NUM (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupSetWL (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupSetWL");
+
+    new_node = MakeSetWL (DupIds_ (SETWL_IDS (arg_node), arg_info),
+                          Trav (SETWL_EXPR (arg_node), arg_info));
 
     CopyCommonNodeData (new_node, arg_node);
 

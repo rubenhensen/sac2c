@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/09/06 10:36:09  sah
+ * added DupSetWL
+ *
  * Revision 3.24  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -140,6 +143,7 @@ extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupChar (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
 extern node *DupDot (node *arg_node, node *arg_info);
+extern node *DupSetWL (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
 extern node *DupCast (node *arg_node, node *arg_info);
 extern node *DupReturn (node *arg_node, node *arg_info);
