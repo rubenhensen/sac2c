@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2004/11/25 23:11:10  jhb
+ * on the road again
+ *
  * Revision 1.18  2004/11/16 16:35:08  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -104,6 +107,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -114,19 +118,18 @@
 #include "globals.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
 #include "constants.h"
 #include "ssa.h"
 #include "SSAWithloopFolding.h"
-#include "SSAWLT.h"
 #include "SSAWLI.h"
+#include "SSAWLT.h"
 
 /******************************************************************************
  *
  * function:
- *   index_info *SSACreateIndex(int vector)
+ *   index_info *WLFcreateIndex(int vector)
  *
  * description:
  *   create an incarnation of INDEX_INFO.
@@ -139,19 +142,19 @@
  *
  ******************************************************************************/
 index_info *
-SSACreateIndex (int vector)
+WLFcreateIndex (int vector)
 {
     index_info *pindex;
-    DBUG_ENTER ("SSACreateInfoInfo");
+    DBUG_ENTER ("WLFcreateInfoInfo");
 
-    pindex = Malloc (sizeof (index_info));
+    pindex = ILIBmalloc (sizeof (index_info));
     pindex->vector = vector;
 
     if (!vector)
         vector = 1;
-    pindex->permutation = Malloc (sizeof (int) * vector);
-    pindex->last = Malloc (sizeof (index_info *) * vector);
-    pindex->const_arg = Malloc (sizeof (int) * vector);
+    pindex->permutation = ILIBmalloc (sizeof (int) * vector);
+    pindex->last = ILIBmalloc (sizeof (index_info *) * vector);
+    pindex->const_arg = ILIBmalloc (sizeof (int) * vector);
 
     pindex->arg_no = 0;
 
@@ -161,21 +164,21 @@ SSACreateIndex (int vector)
 /******************************************************************************
  *
  * function:
- *   index_info *SSADuplicateIndexInfo(index_info *iinfo)
+ *   index_info *WLFduplicateIndexInfo(index_info *iinfo)
  *
  * description:
  *   duplicates struct
  *
  ******************************************************************************/
 index_info *
-SSADuplicateIndexInfo (index_info *iinfo)
+WLFduplicateIndexInfo (index_info *iinfo)
 {
     index_info *new;
     int i, to;
-    DBUG_ENTER ("SSADuplicateIndexInfo");
+    DBUG_ENTER ("WLFduplicateIndexInfo");
     DBUG_ASSERT (iinfo, ("parameter NULL"));
 
-    new = SSACreateIndex (iinfo->vector);
+    new = WLFcreateIndex (iinfo->vector);
 
     to = iinfo->vector ? iinfo->vector : 1;
     for (i = 0; i < to; i++) {
@@ -193,7 +196,7 @@ SSADuplicateIndexInfo (index_info *iinfo)
 /******************************************************************************
  *
  * function:
- *   node *SSAValidLocalId(node *idn)
+ *   node *WLFvalidLocalId(node *idn)
  *
  * description:
  *   returns pointer to index_info if Id (idn) is a valid variable within
@@ -201,11 +204,11 @@ SSADuplicateIndexInfo (index_info *iinfo)
  *
  ******************************************************************************/
 index_info *
-SSAValidLocalId (node *idn)
+WLFvalidLocalId (node *idn)
 {
     index_info *iinfo;
 
-    DBUG_ENTER ("SSAValidLocalId");
+    DBUG_ENTER ("WLFvalidLocalId");
     DBUG_ASSERT (N_id == NODE_TYPE (idn), ("not an id node"));
 
     /* get defining assignment via avis_ssaassign link */
@@ -221,7 +224,7 @@ SSAValidLocalId (node *idn)
 /******************************************************************************
  *
  * function:
- *   void SSADbugIndexInfo(index info *iinfo)
+ *   void WLFdbugIndexInfo(index info *iinfo)
  *
  * description:
  *   prints history of iinfo.
@@ -230,12 +233,12 @@ SSAValidLocalId (node *idn)
  ******************************************************************************/
 
 void
-SSADbugIndexInfo (index_info *iinfo)
+WLFdbugIndexInfo (index_info *iinfo)
 {
     int i, sel;
     index_info *tmpii;
 
-    DBUG_ENTER ("SSADbugIndexInfo");
+    DBUG_ENTER ("WLFdbugIndexInfo");
 
     printf (
       "\n|-------------------------INDEX-INFO----------------------------------------\n");
@@ -257,9 +260,11 @@ SSADbugIndexInfo (index_info *iinfo)
                 sel = tmpii->vector ? i : 0;
                 if (tmpii->arg_no) {
                     if (1 == tmpii->arg_no)
-                        printf ("|   %d%s. ", tmpii->const_arg[sel], mdb_prf[tmpii->prf]);
+                        printf ("|   %d%s. ", tmpii->const_arg[sel],
+                                global.mdb_prf[tmpii->prf]);
                     else
-                        printf ("|   .%s%d ", mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
+                        printf ("|   .%s%d ", global.mdb_prf[tmpii->prf],
+                                tmpii->const_arg[sel]);
                 } else
                     printf ("|   no prf ");
                 printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
@@ -273,9 +278,9 @@ SSADbugIndexInfo (index_info *iinfo)
         sel = 0;
         if (tmpii->arg_no) {
             if (1 == tmpii->arg_no)
-                printf ("|   %d%s. ", tmpii->const_arg[sel], mdb_prf[tmpii->prf]);
+                printf ("|   %d%s. ", tmpii->const_arg[sel], global.mdb_prf[tmpii->prf]);
             else
-                printf ("|   %s%d. ", mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
+                printf ("|   %s%d. ", global.mdb_prf[tmpii->prf], tmpii->const_arg[sel]);
             printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
         }
     }
@@ -288,11 +293,11 @@ SSADbugIndexInfo (index_info *iinfo)
 /******************************************************************************
  *
  * function:
- *   int SSALocateIndexVar(node *idn, node* wln)
+ *   int WLFlocateIndexVar(node *idn, node* wln)
  *
  * description:
  *   Searches for the Id (idn) in the WL generator (index var).
- *   The N_Nwith node has to be available to find the index vars.
+ *   The N_With node has to be available to find the index vars.
  *
  * return:
  *   -1: Id is the index vector
@@ -300,27 +305,27 @@ SSADbugIndexInfo (index_info *iinfo)
  *    x with x gt 0: Id is the x'th scalar index variable.
  *
  * remark:
- *   we exploit here that the index variables of all N_Nwithid nodes in
+ *   we exploit here that the index variables of all N_Withid nodes in
  *   one WL have the same names.
  *
  ******************************************************************************/
 int
-SSALocateIndexVar (node *idn, node *wln)
+WLFlocateIndexVar (node *idn, node *wln)
 {
-    ids *_ids;
+    node *_ids;
     int result = 0, i;
 
-    DBUG_ENTER ("SSALocateIndexVar");
-    DBUG_ASSERT (N_Nwith == NODE_TYPE (wln), ("wln is not N_Nwith node"));
+    DBUG_ENTER ("WLFlocateIndexVar");
+    DBUG_ASSERT (N_with == NODE_TYPE (wln), ("wln is not N_with node"));
 
-    wln = NPART_WITHID (NWITH_PART (wln));
-    _ids = NWITHID_VEC (wln);
+    wln = PART_WITHID (WITH_PART (wln));
+    _ids = WITHID_VEC (wln);
 
     if (!strcmp (IDS_NAME (_ids), ID_NAME (idn)))
         result = -1;
 
     i = 1;
-    _ids = NWITHID_IDS (wln);
+    _ids = WITHID_IDS (wln);
     while (_ids && !result) {
         if (!strcmp (IDS_NAME (_ids), ID_NAME (idn)))
             result = i;
@@ -334,7 +339,7 @@ SSALocateIndexVar (node *idn, node *wln)
 /******************************************************************************
  *
  * function:
- *   intern_gen *SSACreateInternGen(int shape, int stepwidth)
+ *   intern_gen *WLFcreateInternGen(int shape, int stepwidth)
  *
  * description:
  *   allocate memory for an intern_gen struct. The parameter shape is needed
@@ -343,22 +348,22 @@ SSALocateIndexVar (node *idn, node *wln)
  *
  ******************************************************************************/
 intern_gen *
-SSACreateInternGen (int shape, int stepwidth)
+WLFcreateInternGen (int shape, int stepwidth)
 {
     intern_gen *ig;
 
-    DBUG_ENTER ("SSACreateInternGen");
+    DBUG_ENTER ("WLFcreateInternGen");
 
-    ig = Malloc (sizeof (intern_gen));
+    ig = ILIBmalloc (sizeof (intern_gen));
     ig->shape = shape;
     ig->code = NULL;
     ig->next = NULL;
 
-    ig->l = Malloc (sizeof (int) * shape);
-    ig->u = Malloc (sizeof (int) * shape);
+    ig->l = ILIBmalloc (sizeof (int) * shape);
+    ig->u = ILIBmalloc (sizeof (int) * shape);
     if (stepwidth) {
-        ig->step = Malloc (sizeof (int) * shape);
-        ig->width = Malloc (sizeof (int) * shape);
+        ig->step = ILIBmalloc (sizeof (int) * shape);
+        ig->width = ILIBmalloc (sizeof (int) * shape);
     } else {
         ig->step = NULL;
         ig->width = NULL;
@@ -370,7 +375,7 @@ SSACreateInternGen (int shape, int stepwidth)
 /******************************************************************************
  *
  * function:
- *   intern_gen *SSAAppendInternGen(...)
+ *   intern_gen *WLFappendInternGen(...)
  *
  * description:
  *   this function creates an intern_gen struct and inserts it in a
@@ -384,14 +389,14 @@ SSACreateInternGen (int shape, int stepwidth)
  *
  ******************************************************************************/
 intern_gen *
-SSAAppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
+WLFappendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
 {
     intern_gen *ig;
     int i;
 
-    DBUG_ENTER ("SSAAppendInternGen");
+    DBUG_ENTER ("WLFappendInternGen");
 
-    ig = SSACreateInternGen (shape, stepwidth);
+    ig = WLFcreateInternGen (shape, stepwidth);
 
     if (stepwidth)
         for (i = 0; i < shape; i++)
@@ -410,7 +415,7 @@ SSAAppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
 /******************************************************************************
  *
  * function:
- *   intern_gen *SSACopyInternGen(intern_gen *source)
+ *   intern_gen *WLFcopyInternGen(intern_gen *source)
  *
  * description:
  *   Copy the struct source and return it's pointer. Only the first struct
@@ -421,14 +426,14 @@ SSAAppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
  *
  ******************************************************************************/
 intern_gen *
-SSACopyInternGen (intern_gen *source)
+WLFcopyInternGen (intern_gen *source)
 {
     intern_gen *ig;
     int i;
 
-    DBUG_ENTER ("SSACopyInternGen");
+    DBUG_ENTER ("WLFcopyInternGen");
 
-    ig = SSACreateInternGen (source->shape, NULL != source->step);
+    ig = WLFcreateInternGen (source->shape, NULL != source->step);
     ig->code = source->code;
 
     for (i = 0; i < ig->shape; i++) {
@@ -446,7 +451,7 @@ SSACopyInternGen (intern_gen *source)
 /******************************************************************************
  *
  * function:
- *   int SSANormalizeInternGen(intern_gen *ig)
+ *   int WLFnormalizeInternGen(intern_gen *ig)
  *
  * description:
  *   normalizes step and width. There are several forbidden and ambiguous
@@ -472,11 +477,11 @@ SSACopyInternGen (intern_gen *source)
  *
  ******************************************************************************/
 int
-SSANormalizeInternGen (intern_gen *ig)
+WLFnormalizeInternGen (intern_gen *ig)
 {
     int error = 0, i = 0, is_1 = 1;
 
-    DBUG_ENTER ("SSANormalizeInternGen");
+    DBUG_ENTER ("WLFnormalizeInternGen");
 
     if (ig->width && !ig->step)
         error = 3;
@@ -495,8 +500,8 @@ SSANormalizeInternGen (intern_gen *ig)
 
         /* if both vectors are 1 this is equivalent to no grid. */
         if (!error && is_1) {
-            ig->step = Free (ig->step);
-            ig->width = Free (ig->width);
+            ig->step = ILIBfree (ig->step);
+            ig->width = ILIBfree (ig->width);
         }
     }
 
@@ -506,7 +511,7 @@ SSANormalizeInternGen (intern_gen *ig)
 /******************************************************************************
  *
  * function:
- *   void SSAArrayST2ArrayInt(node *arrayn, int **iarray, int shape)
+ *   void WLFarrayST2ArrayInt(node *arrayn, int **iarray, int shape)
  *
  * description:
  *   copies 'shape' numbers of given constant array node (1 dimension) to
@@ -516,18 +521,18 @@ SSANormalizeInternGen (intern_gen *ig)
  *
  ******************************************************************************/
 void
-SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
+WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
 {
     constant *tmp_co;
     int *tmp;
     int i;
 
-    DBUG_ENTER ("SSAArrayST2ArrayInt");
+    DBUG_ENTER ("WLFarrayST2ArrayInt");
 
     DBUG_ASSERT ((iarray != NULL), "no iarray found!");
 
     if (*iarray == NULL) {
-        *iarray = Malloc (shape * sizeof (int));
+        *iarray = ILIBmalloc (shape * sizeof (int));
     }
 
     if (arrayn == NULL) {
@@ -535,26 +540,26 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
             (*iarray)[i] = 0;
         }
     } else if (NODE_TYPE (arrayn) == N_array) {
-        tmp_co = COAST2Constant (arrayn);
+        tmp_co = COaST2Constant (arrayn);
         if (tmp_co != NULL) {
-            tmp = COGetDataVec (tmp_co);
+            tmp = COgetDataVec (tmp_co);
             for (i = 0; i < shape; i++) {
                 (*iarray)[i] = tmp[i];
             }
-            tmp_co = COFreeConstant (tmp_co);
+            tmp_co = COfreeConstant (tmp_co);
         } else {
-            *iarray = Free (*iarray);
+            *iarray = ILIBfree (*iarray);
         }
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
         DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
 
         if (AVIS_SSACONST (ID_AVIS (arrayn)) != NULL) {
-            tmp = COGetDataVec (AVIS_SSACONST (ID_AVIS (arrayn)));
+            tmp = COgetDataVec (AVIS_SSACONST (ID_AVIS (arrayn)));
             for (i = 0; i < shape; i++) {
                 (*iarray)[i] = tmp[i];
             }
         } else {
-            *iarray = Free (*iarray);
+            *iarray = ILIBfree (*iarray);
         }
     }
 
@@ -564,7 +569,7 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
 /******************************************************************************
  *
  * function:
- *   intern_gen *SSATree2InternGen(node *wln)
+ *   intern_gen *WLFTree2InternGen(node *wln)
  *
  * description:
  *   copies generators of given WL to intern_gen struct. If filter is not
@@ -572,39 +577,40 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
  *
  ******************************************************************************/
 intern_gen *
-SSATree2InternGen (node *wln, node *filter)
+WLFtree2InternGen (node *wln, node *filter)
 {
     intern_gen *root, *tmp_ig;
     node *partn, *genn;
     int shape;
 
-    DBUG_ENTER ("SSATree2InternGen");
+    DBUG_ENTER ("WLFtree2InternGen");
 
-    partn = NWITH_PART (wln);
+    partn = WITH_PART (wln);
     root = NULL;
     tmp_ig = NULL;
 
     while (partn) {
-        if (!filter || NPART_CODE (partn) == filter) {
-            genn = NPART_GEN (partn);
-            shape = IDS_SHAPE (NPART_VEC (partn), 0);
-            tmp_ig = SSAAppendInternGen (tmp_ig, shape, NPART_CODE (partn),
-                                         (NGEN_STEP (genn) != NULL)
-                                           || (NGEN_WIDTH (genn) != NULL));
+        if (!filter || PART_CODE (partn) == filter) {
+            genn = PART_GENERATOR (partn);
+            shape = IDS_SHAPE (PART_VEC (partn), 0);
+            tmp_ig = WLFappendInternGen (tmp_ig, shape, PART_CODE (partn),
+                                         (GENERATOR_STEP (genn) != NULL)
+                                           || (GENERATOR_WIDTH (genn) != NULL));
             if (!root)
                 root = tmp_ig;
 
             /* copy vector information to intern_gen */
-            SSAArrayST2ArrayInt (NGEN_BOUND1 (genn), &tmp_ig->l, shape); /* l */
-            SSAArrayST2ArrayInt (NGEN_BOUND2 (genn), &tmp_ig->u, shape); /* u */
-            if (NGEN_STEP (genn))
-                SSAArrayST2ArrayInt (NGEN_STEP (genn), &tmp_ig->step, shape); /* step */
-            if (NGEN_WIDTH (genn))
-                SSAArrayST2ArrayInt (NGEN_WIDTH (genn), &tmp_ig->width,
+            WLFarrayST2ArrayInt (GENERATOR_BOUND1 (genn), &tmp_ig->l, shape); /* l */
+            WLFarrayST2ArrayInt (GENERATOR_BOUND2 (genn), &tmp_ig->u, shape); /* u */
+            if (GENERATOR_STEP (genn))
+                WLFarrayST2ArrayInt (GENERATOR_STEP (genn), &tmp_ig->step,
+                                     shape); /* step */
+            if (GENERATOR_WIDTH (genn))
+                WLFarrayST2ArrayInt (GENERATOR_WIDTH (genn), &tmp_ig->width,
                                      shape); /* width */
 
             /* normalize step and width */
-            switch (SSANormalizeInternGen (tmp_ig)) {
+            switch (WLFnormalizeInternGen (tmp_ig)) {
             case 1:
                 ABORT (NODE_LINE (wln), ("component of width greater than step"));
             case 2:
@@ -614,17 +620,17 @@ SSATree2InternGen (node *wln, node *filter)
             }
         }
 
-        partn = NPART_NEXT (partn);
+        partn = PART_NEXT (partn);
     }
 
     DBUG_RETURN (root);
 }
 
-#ifdef MWE_NTYPE_READY
+#ifdef MWE_TYPE_READY
 /******************************************************************************
  *
  * function:
- *   node *SSACreateArrayFromInternGen( int *source, int number, ntype *type)
+ *   node *WLFcreateArrayFromInternGen( int *source, int number, ntype *type)
  *
  * description:
  *   copies 'number' elements of the array source to an N_array struct and
@@ -632,19 +638,19 @@ SSATree2InternGen (node *wln, node *filter)
  *
  ******************************************************************************/
 static node *
-SSACreateArrayFromInternGen (int *source, int number, ntype *type)
+WLFcreateArrayFromInternGen (int *source, int number, ntype *type)
 {
     node *arrayn, *tmpn;
     int i;
 
-    DBUG_ENTER ("SSACreateArrayFromInternGen");
+    DBUG_ENTER ("WLFcreateArrayFromInternGen");
 
     tmpn = NULL;
     for (i = number - 1; i >= 0; i--) {
-        tmpn = MakeExprs (MakeNum (source[i]), tmpn);
+        tmpn = TBmakeExprs (TBmakeNum (source[i]), tmpn);
     }
-    arrayn = MakeFlatArray (tmpn);
-    ARRAY_NTYPE (arrayn) = TYCopyType (type);
+    arrayn = TCmakeFlatArray (tmpn);
+    ARRAY_TYPE (arrayn) = TYcopyType (type);
 
     DBUG_RETURN (arrayn);
 }
@@ -652,7 +658,7 @@ SSACreateArrayFromInternGen (int *source, int number, ntype *type)
 /******************************************************************************
  *
  * function:
- *   node *SSACreateArrayFromInternGen( int *source, int number, types *type)
+ *   node *WLFcreateArrayFromInternGen( int *source, int number, types *type)
  *
  * description:
  *   copies 'number' elements of the array source to an N_array struct and
@@ -660,19 +666,19 @@ SSACreateArrayFromInternGen (int *source, int number, ntype *type)
  *
  ******************************************************************************/
 static node *
-SSACreateArrayFromInternGen (int *source, int number, types *type)
+WLFcreateArrayFromInternGen (int *source, int number, types *type)
 {
     node *arrayn, *tmpn;
     int i;
 
-    DBUG_ENTER ("SSACreateArrayFromInternGen");
+    DBUG_ENTER ("WLFcreateArrayFromInternGen");
 
     tmpn = NULL;
     for (i = number - 1; i >= 0; i--) {
-        tmpn = MakeExprs (MakeNum (source[i]), tmpn);
+        tmpn = TBmakeExprs (TBmakeNum (source[i]), tmpn);
     }
-    arrayn = MakeFlatArray (tmpn);
-    ARRAY_TYPE (arrayn) = DupAllTypes (type);
+    arrayn = TCmakeFlatArray (tmpn);
+    ARRAY_TYPE (arrayn) = DUPdupAllTypes (type);
 
     DBUG_RETURN (arrayn);
 }
@@ -681,22 +687,22 @@ SSACreateArrayFromInternGen (int *source, int number, types *type)
 /******************************************************************************
  *
  * function:
- *   node *SSAInternGen2Tree(node *arg_node, intern_gen *ig)
+ *   node *WLFInternGen2Tree(node *arg_node, intern_gen *ig)
  *
  * description:
  *   copy intern_gen struct to the generators of the given WL. All existing
  *   N_Npart nodes are deleted before. Count number of N_Npart nodes and
- *   set NWITH_PARTS. Return wln.
+ *   set WITH_PARTS. Return wln.
  *
  * remark:
  *  don't forget to free intern_gen chain.
  *
  ******************************************************************************/
 node *
-SSAInternGen2Tree (node *wln, intern_gen *ig)
+WLFinternGen2Tree (node *wln, intern_gen *ig)
 {
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
-#ifdef MWE_NTYPE_READY
+#ifdef MWE_TYPE_READY
     shape *shp;
     ntype *type;
 #else
@@ -705,57 +711,57 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
 #endif
     int no_parts; /* number of N_Npart nodes */
 
-    DBUG_ENTER ("SSAInternGen2Tree");
+    DBUG_ENTER ("WLFinternGen2Tree");
 
-    withidn = DupTree (NPART_WITHID (NWITH_PART (wln)));
-    FreeTree (NWITH_PART (wln));
-    part = &(NWITH_PART (wln));
+    withidn = DUPdoDupTree (PART_WITHID (WITH_PART (wln)));
+    FREEdoFreeTree (WITH_PART (wln));
+    part = &(WITH_PART (wln));
     no_parts = 0;
 
     /* create type for N_array nodes*/
-#ifdef MWE_NTYPE_READY
-    shp = SHCreateShape (1, ig->shape);
-    type = TYMakeAKS (TYMakeSimpleType (T_int), shp);
+#ifdef MWE_TYPE_READY
+    shp = SHcreateShape (1, ig->shape);
+    type = TYmakeAKS (TYmakeSimpleType (T_int), shp);
     while (ig) {
         /* create generator components */
-        b1n = SSACreateArrayFromInternGen (ig->l, ig->shape, type);
-        b2n = SSACreateArrayFromInternGen (ig->u, ig->shape, type);
-        stepn = ig->step ? SSACreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
+        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape, type);
+        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape, type);
+        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
         widthn
-          = ig->width ? SSACreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
+          = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
 #else
-    shpseg = MakeShpseg (MakeNums (ig->shape, NULL));
+    shpseg = TBmakeShpseg (TBmakeNums (ig->shape, NULL));
 
-    /* nums struct is freed inside MakeShpseg. */
+    /* nums struct is freed inside TBmakeShpseg. */
 
-    type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
+    type = TBmakeTypes (T_int, 1, shpseg, NULL, NULL);
 
     while (ig) {
         /* create generator components */
-        b1n = SSACreateArrayFromInternGen (ig->l, ig->shape, type);
-        b2n = SSACreateArrayFromInternGen (ig->u, ig->shape, type);
-        stepn = ig->step ? SSACreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
+        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape, type);
+        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape, type);
+        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
         widthn
-          = ig->width ? SSACreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
+          = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
 #endif
         /* create tree structures */
-        genn = MakeNGenerator (b1n, b2n, F_le, F_lt, stepn, widthn);
-        *part = MakeNPart (DupTree (withidn), genn, ig->code);
-        NCODE_INC_USED (ig->code);
+        genn = TBmakeGenerator (F_le, F_lt, b1n, b2n, stepn, widthn);
+        *part = TBmakePart (DUPdoDupTree (withidn), genn, ig->code);
+        CODE_INC_USED (ig->code);
 
         ig = ig->next;
-        part = &(NPART_NEXT ((*part)));
+        part = &(PART_NEXT ((*part)));
         no_parts++;
     }
 
-    NWITH_PARTS (wln) = no_parts;
+    WITH_PARTS (wln) = no_parts;
 
-    FreeTree (withidn);
-#ifdef MWE_NTYPE_READY
-    type = TYFreeType (type);
-    shp = SHFreeShape (shp);
+    FREEdoFreeTree (withidn);
+#ifdef MWE_TYPE_READY
+    type = TYfreeType (type);
+    shp = SHfreeShape (shp);
 #else
-    FreeOneTypes (type);
+    FREEfreeOneTypes (type);
 #endif
 
     DBUG_RETURN (wln);
@@ -764,7 +770,7 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
 /******************************************************************************
  *
  * function:
- *   void SSAFreeInternGenChain(intern_gen *ig)
+ *   void WLFFreeInternGenChain(intern_gen *ig)
  *
  * description:
  *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
@@ -772,20 +778,20 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
  ******************************************************************************/
 
 intern_gen *
-SSAFreeInternGen (intern_gen *tmp)
+WLFfreeInternGen (intern_gen *tmp)
 {
-    DBUG_ENTER ("SSAFreeInternGen");
+    DBUG_ENTER ("WLFfreeInternGen");
 
     DBUG_PRINT ("FREE", ("Removing intern gen (WLF)"));
 
     DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
 
-    tmp->l = Free (tmp->l);
-    tmp->u = Free (tmp->u);
-    tmp->step = Free (tmp->step);
-    tmp->width = Free (tmp->width);
+    tmp->l = ILIBfree (tmp->l);
+    tmp->u = ILIBfree (tmp->u);
+    tmp->step = ILIBfree (tmp->step);
+    tmp->width = ILIBfree (tmp->width);
 
-    tmp = Free (tmp);
+    tmp = ILIBfree (tmp);
 
     DBUG_RETURN (tmp);
 }
@@ -793,7 +799,7 @@ SSAFreeInternGen (intern_gen *tmp)
 /******************************************************************************
  *
  * function:
- *   void SSAFreeInternGenChain(intern_gen *ig)
+ *   void WLFFreeInternGenChain(intern_gen *ig)
  *
  * description:
  *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
@@ -801,26 +807,26 @@ SSAFreeInternGen (intern_gen *tmp)
  ******************************************************************************/
 
 intern_gen *
-SSAFreeInternGenChain (intern_gen *ig)
+WLFfreeInternGenChain (intern_gen *ig)
 {
     intern_gen *tmpig;
 
-    DBUG_ENTER ("SSAFreeInternGenChain");
+    DBUG_ENTER ("WLFfreeInternGenChain");
 
     while (ig) {
         tmpig = ig;
         ig = ig->next;
-        SSAFreeInternGen (tmpig);
+        WLFfreeInternGen (tmpig);
     }
 
     DBUG_RETURN (ig);
 }
 
-#ifdef MWE_NTYPE_READY
+#ifdef MWE_TYPE_READY
 /******************************************************************************
  *
  * function:
- *   node *SSACreateVardec(char *name, ntype *type, node **vardecs)
+ *   node *WLFcreateVardec(char *name, ntype *type, node **vardecs)
  *
  * description:
  *   creates a new Vardec with 'name' of type 'type' at the beginning of
@@ -836,28 +842,28 @@ SSAFreeInternGenChain (intern_gen *ig)
  *
  ******************************************************************************/
 node *
-SSACreateVardec (char *name, ntype *type, node **vardecs)
+WLFcreateVardec (char *name, ntype *type, node **vardecs)
 {
     node *vardecn;
     char *c;
 
-    DBUG_ENTER ("SSACreateVardec");
+    DBUG_ENTER ("WLFcreateVardec");
 
     /* search for already existing vardec for this name. */
-    vardecn = SearchDecl (name, *vardecs);
+    vardecn = TCsearchDecl (name, *vardecs);
 
     /* if not found, create vardec. */
     if (!vardecn) {
         if (!type) {
-            c = Malloc (50);
+            c = ILIBmalloc (50);
             c[0] = 0;
             c = strcat (c, "parameter type is NULL for variable ");
             c = strcat (c, name);
             DBUG_ASSERT (0, (c));
         }
 
-        type = TYCopyType (type);
-        vardecn = MakeVardec (StringCopy (name), NULL, type, *vardecs);
+        type = TYcopyType (type);
+        vardecn = TBmakeVardec (ILIBstringCopy (name), NULL, type, *vardecs);
         VARDEC_VARNO (vardecn) = -1;
 
         /* create ssacnt node: to be implemented */
@@ -871,7 +877,7 @@ SSACreateVardec (char *name, ntype *type, node **vardecs)
 /******************************************************************************
  *
  * function:
- *   node *SSACreateVardec(char *name, types *type, node **vardecs)
+ *   node *WLFcreateVardec(char *name, types *type, node **vardecs)
  *
  * description:
  *   creates a new Vardec with 'name' of type 'type' at the beginning of
@@ -887,28 +893,28 @@ SSACreateVardec (char *name, ntype *type, node **vardecs)
  *
  ******************************************************************************/
 node *
-SSACreateVardec (char *name, types *type, node **vardecs)
+WLFcreateVardec (char *name, types *type, node **vardecs)
 {
     node *vardecn;
     char *c;
 
-    DBUG_ENTER ("SSACreateVardec");
+    DBUG_ENTER ("WLFcreateVardec");
 
     /* search for already existing vardec for this name. */
-    vardecn = SearchDecl (name, *vardecs);
+    vardecn = TCsearchDecl (name, *vardecs);
 
     /* if not found, create vardec. */
     if (!vardecn) {
         if (!type) {
-            c = Malloc (50);
+            c = ILIBmalloc (50);
             c[0] = 0;
             c = strcat (c, "parameter type is NULL for variable ");
             c = strcat (c, name);
             DBUG_ASSERT (0, (c));
         }
 
-        type = DupAllTypes (type);
-        vardecn = MakeVardec (StringCopy (name), type, *vardecs);
+        type = DUPdupAllTypes (type);
+        vardecn = TBmakeVardec (ILIBstringCopy (name), type, *vardecs);
         VARDEC_VARNO (vardecn) = -1;
 
         /* create ssacnt node: to be implemented */
@@ -923,7 +929,7 @@ SSACreateVardec (char *name, types *type, node **vardecs)
 /******************************************************************************
  *
  * function:
- *   node *SSAWithloopFolding( node *arg_node, int loop)
+ *   node *WLFwithloopFolding( node *arg_node, int loop)
  *
  * description:
  *   starting point for the withloop folding. it traverses the AST two times
@@ -934,32 +940,32 @@ SSACreateVardec (char *name, types *type, node **vardecs)
  *   needed for correct handling of break specifiers.
  *
  *   after folding withloops the ssaform is restored by calling CheckAvis and
- *   SSATransform.
+ *   WLFTransform.
  *
  ******************************************************************************/
 node *
-SSAWithloopFolding (node *arg_node, int loop)
+WLFwithloopFolding (node *arg_node, int loop)
 {
-    DBUG_ENTER ("SSAWithloopFolding");
+    DBUG_ENTER ("WLFwithloopFolding");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "SSAWithloopFolding called for non fundef node");
+                 "WLFwithloopFolding called for non fundef node");
 
-    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+    if (!(FUNDEF_ISLACFUN (arg_node))) {
 
-        /* SSAWLI traversal */
-        DoSSAWLI (arg_node);
+        /* WLISSA traversal */
+        WLIdoWLI (arg_node);
 
         /* break after WLI? */
-        if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
-            || strcmp (break_specifier, "wli")) {
+        if ((global.break_after != PH_sacopt) || (global.break_cycle_specifier != loop)
+            || strcmp (global.break_specifier, "wli")) {
 
             /* SSAWLF traversal: fold WLs */
-            DoSSAWLT (arg_node);
+            WLTdoWLT (arg_node);
         }
 
         /* restore ssa form */
-        arg_node = RestoreSSAOneFunction (arg_node);
+        arg_node = SSArestoreSsaOneFunction (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -968,7 +974,7 @@ SSAWithloopFolding (node *arg_node, int loop)
 /******************************************************************************
  *
  * function:
- *   node *SSAWithloopFoldingWLT( node *arg_node)
+ *   node *WLFwithloopFoldingWLT( node *arg_node)
  *
  * description:
  *   executes only SSAWLT phase, not SSAWLI and SSAWLF.
@@ -977,21 +983,21 @@ SSAWithloopFolding (node *arg_node, int loop)
  *
  ******************************************************************************/
 node *
-SSAWithloopFoldingWLT (node *arg_node)
+WLFwithloopFoldingWLT (node *arg_node)
 {
-    DBUG_ENTER ("SSAWithloopFoldingWLT");
+    DBUG_ENTER ("WLIwithloopFoldingWLT");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "SSAWithloopFoldingWLT not called for fundef node");
+                 "WLIwithloopFoldingWLT not called for fundef node");
 
-    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+    if (!(FUNDEF_ISLACFUN (arg_node))) {
         /* start ssawlt traversal only in non-special fundefs */
 
         /* SSAWLT traversal: transform WLs */
-        DoSSAWLT (arg_node);
+        WLTdoWLT (arg_node);
 
         /* restore ssa form */
-        arg_node = RestoreSSAOneFunction (arg_node);
+        arg_node = SSArestoreSsaOneFunction (arg_node);
     }
 
     DBUG_RETURN (arg_node);
