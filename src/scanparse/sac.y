@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1994/12/08 17:46:57  sbs
+ * Revision 1.24  1994/12/09 15:19:14  hw
+ * added rule expr -> expr EQ expr  (this one was missing :-(  )
+ *
+ * Revision 1.23  1994/12/08  17:46:57  sbs
  * modules inserted
  *
  * Revision 1.22  1994/12/08  14:15:04  hw
@@ -777,6 +780,9 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
       | expr OR expr
         { $$=GenPrfNode(F_or ,$1,$3);
         } 
+      | expr EQ expr
+         { $$=GenPrfNode(F_eq,$1,$3);
+         }
       | expr NEQ expr
         { $$=GenPrfNode(F_neq,$1,$3);
         } 
