@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/08 19:07:05  sah
+ * added typedef for pragmalist
+ *
  * Revision 1.4  2004/11/07 18:03:59  sah
  * added external functions support
  *
@@ -167,7 +170,7 @@ static int prf_arity[] = {
 /* pragmas */
 %type <id> pragmacachesim
 %type <node> wlcomp_pragma_global  wlcomp_pragma_local  wlcomp_conf
-%type <node> pragmas pragma
+%type <node> pragmas pragma pragmalist
 /*
 %type <node> pragmas 
 */
