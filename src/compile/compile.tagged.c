@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.69  2003/06/12 17:22:54  dkr
+ * support for multi-dimensional constant arrays added:
+ * COMPArray() modified.
+ *
  * Revision 1.68  2003/04/15 15:28:14  dkr
  * COMPApIds(): WARNing is an ERROR now
  *
@@ -3248,8 +3252,14 @@ COMP2Array (node *arg_node, node *arg_info)
                                           MakeStr (StringCopy (ARRAY_STRING (arg_node))),
                                           ret_node));
     } else {
-        node *icm_args;
+        shape *shp;
+        int dim;
+        node *icm_args, *icm_args2;
         int val0_sdim;
+        int i;
+
+        shp = ARRAY_SHAPE (arg_node);
+        dim = SHGetDim (shp);
 
         icm_args = MakeExprs (MakeSizeArg (arg_node, TRUE),
                               DupExprs_NT (ARRAY_AELEMS (arg_node)));
@@ -3265,16 +3275,22 @@ COMP2Array (node *arg_node, node *arg_info)
             val0_sdim = -815; /* array is empty */
         }
 
+        icm_args2 = NULL;
+        for (i = dim - 1; i >= 0; i--) {
+            icm_args2 = MakeExprs (MakeNum (SHGetExtent (shp, i)), icm_args2);
+            icm_args2 = MakeExprs (MakeNum (dim), icm_args2);
+        }
+
         ret_node
           = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                           RC_INIT (IDS_REFCNT (let_ids)),
-                          MakeIcm1 ("ND_CREATE__VECT__DIM", icm_args),
-                          MakeIcm2 ("ND_CREATE__VECT__SHAPE",
+                          MakeIcm2 ("ND_CREATE__ARRAY__DIM", MakeNum (dim), icm_args),
+                          MakeIcm3 ("ND_CREATE__ARRAY__SHAPE",
                                     MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                  FALSE, TRUE, FALSE, DupTree (icm_args)),
-                                    MakeNum (val0_sdim)),
+                                                  FALSE, TRUE, FALSE, icm_args2),
+                                    DupTree (icm_args), MakeNum (val0_sdim)),
                           NULL,
-                          MakeAssignIcm2 ("ND_CREATE__VECT__DATA",
+                          MakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
                                           MakeTypeArgs (IDS_NAME (let_ids),
                                                         IDS_TYPE (let_ids), FALSE, TRUE,
                                                         FALSE, DupTree (icm_args)),
@@ -3452,7 +3468,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
                      "2nd arg of F_reshape is neither N_id nor N_array!");
 
         ret_node
-          = MakeAssignIcm2 ("ND_CREATE__VECT__DATA",
+          = MakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
                             MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                           TRUE, FALSE,
                                           MakeExprs (MakeSizeArg (arg2, TRUE),
