@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/04/02 16:12:02  dkr
+ * added new traverse tabular concregs_tab
+ *
  * Revision 1.40  1998/03/22 18:07:09  srs
  * added wlt_tab
  *
@@ -174,6 +177,7 @@ extern funptr readsib_tab[];
 extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
+extern funptr concregs_tab[];
 extern funptr o2nWith_tab[];
 
 extern int nnode[];
