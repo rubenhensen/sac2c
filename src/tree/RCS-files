@@ -47,3 +47,4 @@ deserialize.h
 deserialize.c
 deserialize_info.h
 check.c
+check.h
