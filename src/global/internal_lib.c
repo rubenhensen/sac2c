@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/07/17 11:15:13  jhs
+ * Added blkli at TmpVar().
+ *
  * Revision 2.21  2000/07/14 15:36:08  nmw
  * oops, big crash ... MALLOC reverted to Malloc
  *
@@ -647,6 +650,8 @@ TmpVar ()
         s = "apc";
     } else if (act_tab == apt_tab) {
         s = "apt";
+    } else if (act_tab == blkli_tab) {
+        s = "blkli";
     } else {
         s = "unknown";
     }
