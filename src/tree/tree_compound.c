@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/06/27 13:32:04  dkr
+ * - Ids2Array() added
+ * - CreateSel() modified
+ *
  * Revision 3.60  2002/06/27 11:01:55  dkr
  * - CreateScalarWith() and CreateSel() added
  * - bug in CreateScalarWith() fixed
@@ -441,7 +445,6 @@ Array2Shpseg (node *array, int *ret_dim)
 node *
 Shpseg2Array (shpseg *shape, int dim)
 {
-
     int i;
     node *next;
     node *array_node;
@@ -3265,6 +3268,63 @@ IsConstArray (node *array)
     DBUG_RETURN (isconst);
 }
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *Ids2Array( ids *ids_arg)
+ *
+ * description:
+ *   convert ids into array
+ *
+ *****************************************************************************/
+
+node *
+Ids2Array (ids *ids_arg)
+{
+    node *array;
+    node *tmp;
+    ids *tmp_ids;
+    types *array_type;
+    shpseg *array_shape;
+    int len, i;
+
+    DBUG_ENTER ("Ids2Array");
+
+    if (ids_arg != NULL) {
+        len = 1;
+        array = MakeExprs (DupIds_Id (ids_arg), NULL);
+        tmp = array;
+
+        tmp_ids = IDS_NEXT (ids_arg);
+        while (tmp_ids != NULL) {
+            len++;
+            tmp = EXPRS_NEXT (tmp) = MakeExprs (DupIds_Id (tmp_ids), NULL);
+            tmp_ids = IDS_NEXT (tmp_ids);
+        }
+
+        array = MakeArray (array);
+    } else {
+        len = 0;
+        array = MakeArray (NULL);
+    }
+
+    ARRAY_ISCONST (array) = FALSE;
+
+    array_type = DupOneTypes (IDS_TYPE (ids_arg));
+    if (TYPES_SHPSEG (array_type) == NULL) {
+        TYPES_SHPSEG (array_type) = MakeShpseg (NULL);
+    }
+    array_shape = TYPES_SHPSEG (array_type);
+    for (i = TYPES_DIM (array_type); i > 0; i--) {
+        SHPSEG_SHAPE (array_shape, i) = SHPSEG_SHAPE (array_shape, (i - 1));
+    }
+    (TYPES_DIM (array_type))++;
+    SHPSEG_SHAPE (array_shape, 0) = len;
+    ARRAY_TYPE (array) = array_type;
+
+    DBUG_RETURN (array);
+}
+
 node *
 IntVec2Array (int length, int *intvec)
 {
@@ -3850,7 +3910,8 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *CreateSel( node *sel_index, node *sel_array, node *fundef)
+ *   node *CreateSel( ids *sel_vec, ids *sel_ids, node *sel_array,
+ *                    node *fundef)
  *
  * Description:
  *   Creates an array of zeros.
@@ -3858,17 +3919,16 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
  ******************************************************************************/
 
 node *
-CreateSel (node *sel_index, node *sel_array, node *fundef)
+CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, node *fundef)
 {
     node *sel;
     int len_index, dim_array;
 
     DBUG_ENTER ("CreateSel");
 
-    DBUG_ASSERT ((NODE_TYPE (sel_index) == N_id), "no N_id node found!");
     DBUG_ASSERT ((NODE_TYPE (sel_array) == N_id), "no N_id node found!");
 
-    len_index = GetTypesLength (ID_TYPE (sel_index));
+    len_index = GetTypesLength (IDS_TYPE (sel_vec));
     DBUG_ASSERT ((len_index > 0), "illegal index length found!");
 
     dim_array = GetDim (ID_TYPE (sel_array));
@@ -3877,19 +3937,22 @@ CreateSel (node *sel_index, node *sel_array, node *fundef)
     if (len_index > dim_array) {
         DBUG_ASSERT ((0), "illegal array selection found!");
     } else if (len_index == dim_array) {
-        sel = MakePrf (F_sel, MakeExprs (sel_index, MakeExprs (sel_array, NULL)));
+        sel = MakePrf (F_sel, MakeExprs (DupIds_Id (sel_vec),
+                                         MakeExprs (DupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */
-        node *new_index;
+        node *new_index, *id, *vardec, *ass;
+        ids *tmp_ids;
         shpseg *shape, *shape2;
         simpletype btype;
         int dim, i;
 
+        /*
+         * compute basetype/dim/shape of WL
+         */
         btype = GetBasetype (ID_TYPE (sel_array));
 
-        /*
-         * compute shape of
-         */
         dim = (dim_array - len_index);
+
         shape = Type2Shpseg (ID_TYPE (sel_array), NULL);
         shape2 = Type2Shpseg (ID_TYPE (sel_array), NULL);
         for (i = 0; i < dim; i++) {
@@ -3897,10 +3960,43 @@ CreateSel (node *sel_index, node *sel_array, node *fundef)
         }
         shape2 = FreeShpseg (shape2);
 
+        /*
+         * create WL without expression
+         */
         sel = CreateScalarWith (dim, shape, btype, NULL, fundef);
-        new_index = NULL;
+
+        /*
+         * create index vector for F_sel
+         */
+        tmp_ids = sel_ids;
+        while (IDS_NEXT (tmp_ids) != NULL) {
+            tmp_ids = IDS_NEXT (tmp_ids);
+        }
+        IDS_NEXT (tmp_ids) = NWITH_IDS (sel); /* concat ids chains */
+        new_index = Ids2Array (sel_ids);
+        IDS_NEXT (tmp_ids) = NULL; /* restore ids chains */
+
+        /*
+         * create new id
+         */
+        id = MakeId (TmpVar (), NULL, ST_regular);
+        vardec = MakeVardec (StringCopy (ID_NAME (id)),
+                             DupOneTypes (ARRAY_TYPE (new_index)), NULL);
+        ID_VARDEC (id) = vardec;
+        fundef = AddVardecs (fundef, vardec);
+
+        /*
+         * create expression 'sel( tmp, A)' and insert it into WL
+         */
         ASSIGN_RHS (BLOCK_INSTR (NWITH_CBLOCK (sel)))
-          = MakePrf (F_sel, MakeExprs (new_index, MakeExprs (sel_array, NULL)));
+          = MakePrf (F_sel, MakeExprs (id, MakeExprs (DupNode (sel_array), NULL)));
+
+        /*
+         * create assignment 'tmp = [...];' and insert it into WL
+         */
+        ass = MakeAssignLet (StringCopy (ID_NAME (id)), vardec, new_index);
+        ASSIGN_NEXT (ass) = BLOCK_INSTR (NWITH_CBLOCK (sel));
+        BLOCK_INSTR (NWITH_CBLOCK (sel)) = ass;
     }
 
     DBUG_RETURN (sel);
