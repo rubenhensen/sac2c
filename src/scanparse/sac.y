@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.124  1997/04/25 12:13:52  sbs
+ * Revision 1.125  1997/04/25 13:22:19  sbs
+ * sibarg: CHECK_NULL inserted
+ *
+ * Revision 1.124  1997/04/25  12:13:52  sbs
  * malloc replaced by Malloc
  *
  * Revision 1.123  1997/04/25  08:53:07  sbs
@@ -3080,16 +3083,16 @@ sibarg: type sibreference sibparam
               DBUG_PRINT("GENSIB",
                          ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
                           mdb_nodetype[ $$->nodetype ], $$, 
-                          ARG_NAME($$), ARG_ATTRIB($$), ARG_STATUS($$)));
+                          CHECK_NULL( ARG_NAME($$)), ARG_ATTRIB($$), ARG_STATUS($$)));
           }
       | TYPE_DOTS
           {
             $$=MakeArg(NULL, MakeTypes(T_dots), ST_regular, ST_regular, NULL); 
 
               DBUG_PRINT("GENSIB",
-                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                         ("%s: "P_FORMAT", ... , Attrib: %d, Status: %d  ",
                           mdb_nodetype[ $$->nodetype ], $$, 
-                          ARG_NAME($$), ARG_ATTRIB($$), ARG_STATUS($$)));
+                          ARG_ATTRIB($$), ARG_STATUS($$)));
           }
       ;
 
