@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.29  2000/07/26 18:30:35  dkr
+# Ups! Special rule for build.o restored
+#
 # Revision 2.28  2000/07/24 14:46:52  dkr
 # suffix rule for .c.o added
 #
@@ -145,6 +148,10 @@ build.c:
 	echo "char build_host[] = \"$(HOST)\";" >> build.c
 	echo "char build_os[]   = \"$(OS)\";"   >> build.c
 	cat build.c
+
+build.o: build.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o build.o -c build.c $(INCS)
+	$(RM) build.c
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
