@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/09/22 13:27:03  cg
+ * Converted memory allocation macro to command postion (syntactically)
+ * rather than expression position. This allows for more flexibility
+ * in code generation as alloc and free operations may now be implemented
+ * in a similar way.
+ *
  * Revision 2.6  1999/07/16 09:36:57  cg
  * Fixed serious bug in call of FIXED_SIZE memory allocation /
  * de-allocation macros.
@@ -190,7 +196,7 @@
     SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
 /*
- *  Lock for comment on SECURE_ALLOC_FREE at SAC_ND_ALLOC_ARRAY.
+ *  Look for comment on SECURE_ALLOC_FREE at SAC_ND_ALLOC_ARRAY.
  */
 
 #ifdef SECURE_ALLOC_FREE
@@ -285,8 +291,8 @@
 #define SAC_ND_KS_COPY_ARRAY(old, new, basetypesize)                                     \
     {                                                                                    \
         int __i;                                                                         \
-        SAC_ND_A_FIELD (new)                                                             \
-          = SAC_HM_MALLOC_FIXED_SIZE (basetypesize * SAC_ND_A_SIZE (old));               \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (new),                                  \
+                                  basetypesize *SAC_ND_A_SIZE (old));                    \
         SAC_CS_REGISTER_ARRAY (new);                                                     \
         for (__i = 0; __i < SAC_ND_A_SIZE (old); __i++) {                                \
             SAC_ND_WRITE_ARRAY (new, __i) = SAC_ND_READ_ARRAY (old, __i);                \
@@ -322,7 +328,7 @@
  */
 
 #define SAC_ND_ALLOC_RC(name)                                                            \
-    SAC_ND_A_RCP (name) = (int *)SAC_HM_MALLOC_FIXED_SIZE (sizeof (int));
+    SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));
 
 /*  If SECURE_ALLOC_FREE is defined an extra check wheater the requested size is 0
  *  is done. In that case no call for malloc(0) is executed, but directly NULL set for
@@ -336,12 +342,12 @@
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
         if (SAC_ND_A_SIZE (name) != 0) {                                                 \
-            SAC_ND_A_FIELD (name) = (basetype *)SAC_HM_MALLOC_FIXED_SIZE (               \
-              sizeof (basetype) * SAC_ND_A_SIZE (name));                                 \
+            SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (name),                             \
+                                      sizeof (basetype) * SAC_ND_A_SIZE (name));         \
         } else {                                                                         \
             SAC_ND_A_FIELD (name) = NULL;                                                \
         }                                                                                \
-        SAC_ND_A_RCP (name) = (int *)SAC_HM_MALLOC_FIXED_SIZE (sizeof (int));            \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                    \
         SAC_ND_A_RC (name) = rc;                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \
@@ -352,9 +358,10 @@
 #else
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
-        SAC_ND_A_FIELD (name) = (basetype *)SAC_HM_MALLOC_FIXED_SIZE (                   \
-          sizeof (basetype) * SAC_ND_A_SIZE (name));                                     \
-        SAC_ND_A_RCP (name) = (int *)SAC_HM_MALLOC_FIXED_SIZE (sizeof (int));            \
+                                                                                         \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (name),                                 \
+                                  sizeof (basetype) * SAC_ND_A_SIZE (name));             \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                    \
         SAC_ND_A_RC (name) = rc;                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \

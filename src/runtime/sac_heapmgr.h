@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1999/09/22 13:27:03  cg
+ * Converted memory allocation macro to command postion (syntactically)
+ * rather than expression position. This allows for more flexibility
+ * in code generation as alloc and free operations may now be implemented
+ * in a similar way.
+ *
  * Revision 1.5  1999/09/17 14:33:34  cg
  * New version of SAC heap manager:
  *  - no special API functions for top arena.
@@ -228,6 +234,17 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 #define SAC_HM_UNITS(size) ((((size)-1) / UNIT_SIZE) + 3)
 
 #if 0
+/*
+ * Although for small examples the following allocator code in expression
+ * position yields the same assembler code results as the current version
+ * in command position, the new form has proved to be more efficient in
+ * large applications for a still unknown reason.
+ * 
+ * The new form, however, is also more handy for introducing combined 
+ * allocation facilities for data structures and their associated data
+ * structures.
+ */
+
 #define SAC_HM_MALLOC_FIXED_SIZE(size)                                                   \
     (((size) <= ARENA_4_MAXCS_BYTES)                                                     \
        ? (((size) <= ARENA_2_MAXCS_BYTES)                                                \
@@ -245,8 +262,47 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
                  ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[7])))  \
                  : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                        \
                                              &(SAC_HM_arenas[8]))))))
+#endif
+
+#if 1
+#define SAC_HM_MALLOC_FIXED_SIZE(var, size)                                              \
+    {                                                                                    \
+        if ((size) <= ARENA_4_MAXCS_BYTES) {                                             \
+            if ((size) <= ARENA_2_MAXCS_BYTES) {                                         \
+                if ((size) <= ARENA_1_MAXCS_BYTES) {                                     \
+                    var = SAC_HM_MallocSmallChunkPresplit (2, &(SAC_HM_arenas[1]), 16);  \
+                } else {                                                                 \
+                    var = SAC_HM_MallocSmallChunkPresplit (4, &(SAC_HM_arenas[2]), 16);  \
+                }                                                                        \
+            } else {                                                                     \
+                if ((size) <= ARENA_3_MAXCS_BYTES) {                                     \
+                    var = SAC_HM_MallocSmallChunk (8, &(SAC_HM_arenas[3]));              \
+                } else {                                                                 \
+                    var = SAC_HM_MallocSmallChunk (16, &(SAC_HM_arenas[4]));             \
+                }                                                                        \
+            }                                                                            \
+        } else {                                                                         \
+            if (SAC_HM_UNITS (size) < ARENA_7_MINCS) {                                   \
+                if (SAC_HM_UNITS (size) < ARENA_6_MINCS) {                               \
+                    var = SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                  \
+                                                   &(SAC_HM_arenas[5]));                 \
+                } else {                                                                 \
+                    var = SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                  \
+                                                   &(SAC_HM_arenas[6]));                 \
+                }                                                                        \
+            } else {                                                                     \
+                if (SAC_HM_UNITS (size) < ARENA_8_MINCS) {                               \
+                    var = SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                  \
+                                                   &(SAC_HM_arenas[7]));                 \
+                } else {                                                                 \
+                    var = SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                  \
+                                                   &(SAC_HM_arenas[8]));                 \
+                }                                                                        \
+            }                                                                            \
+        }                                                                                \
+    }
 #else
-#define SAC_HM_MALLOC_FIXED_SIZE(size) SAC_HM_MALLOC (size)
+#define SAC_HM_MALLOC_FIXED_SIZE(var, size) var = SAC_HM_MALLOC (size)
 #endif
 
 /*
@@ -319,7 +375,7 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 #define SAC_HM_SETUP()
 #define SAC_HM_PRINT()
-#define SAC_HM_MALLOC_FIXED_SIZE(size) SAC_HM_MALLOC (size)
+#define SAC_HM_MALLOC_FIXED_SIZE(var, size) var = SAC_HM_MALLOC (size)
 #define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
 
 #if SAC_DO_CHECK_MALLOC
