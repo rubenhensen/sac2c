@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/12 14:39:40  cg
+ * added new flags to be defined for extended capabilities of
+ * cache simulator.
+ *
  * Revision 2.3  1999/04/14 09:20:40  cg
  * Settings for cache simulation improved.
  *
@@ -193,8 +197,15 @@ PrintGlobalSwitches ()
 
     fprintf (outfile, "\n\n/*\n *  Global Switches\n */\n\n");
 
-    fprintf (outfile, "#define SAC_DO_MALLOCCHECK     %d\n", check_malloc ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_BOUNDCHECK      %d\n", check_boundary ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK           %d\n", runtimecheck ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
+             (runtimecheck & RUNTIMECHECK_MALLOC) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
+             (runtimecheck & RUNTIMECHECK_BOUNDARY) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
+             (runtimecheck & RUNTIMECHECK_ERRNO) ? 1 : 0);
+    fprintf (outfile, "\n");
+
     fprintf (outfile, "#define SAC_DO_PROFILE         %d\n", profileflag ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_PROFILE_WITH    %d\n",
              (profileflag & PROFILE_WITH) ? 1 : 0);
@@ -204,6 +215,8 @@ PrintGlobalSwitches ()
              (profileflag & PROFILE_INL) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
              (profileflag & PROFILE_LIB) ? 1 : 0);
+    fprintf (outfile, "\n");
+
     fprintf (outfile, "#define SAC_DO_TRACE           %d\n", traceflag ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_REF       %d\n",
              (traceflag & TRACE_REF) ? 1 : 0);
@@ -219,11 +232,17 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_WL) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",
              (traceflag & TRACE_MT) ? 1 : 0);
+    fprintf (outfile, "\n");
+
     fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n", cachesim ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
              (cachesim & CACHESIM_ADVANCED) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_PRAGMA %d\n",
              (cachesim & CACHESIM_PRAGMA) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM_FILE   %d\n",
+             (cachesim & CACHESIM_FILE) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM_PIPE   %d\n",
+             (cachesim & CACHESIM_PIPE) ? 1 : 0);
 
     fprintf (outfile, "\n#ifndef SAC_DO_MULTITHREAD\n");
     fprintf (outfile, "#define SAC_DO_MULTITHREAD     %d\n", (num_threads == 1) ? 0 : 1);
