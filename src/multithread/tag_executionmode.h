@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/07/07 13:17:47  skt
+ * parameter of IsGeneratorBigEnough changed from node* to ids*
+ *
  * Revision 1.5  2004/07/06 12:37:54  skt
  * TEMreturn removed
  * several functions new implemented
@@ -66,7 +69,7 @@ extern node *TEMarray (node *arg_node, node *arg_info);
 
 int IsMTAllowed (node *withloop);
 
-int IsGeneratorBigEnough (node *exprs);
+int IsGeneratorBigEnough (ids *test_variables);
 
 int IsMTClever (ids *test_variables);
 
