@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/06/29 08:55:51  cg
+ * added new multi-threaded versions of new with-loop begin/end ICMs
+ * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
+ *
  * Revision 1.19  1998/06/24 10:37:07  dkr
  * WL_(NON)FOLD_BEGIN/END are now h-icms
  *
@@ -93,6 +97,239 @@
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileWL_MT_NONFOLD_BEGIN( char *target, char *idx_vec, int dims)
+ *
+ * description:
+ *
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_MT_NONFOLD_BEGIN(target, idx_vec, dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_MT_NONFOLD_BEGIN (char *target, char *idx_vec, int dims)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileWL_MT_NONFOLD_BEGIN");
+
+#define WL_MT_NONFOLD_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_MT_NONFOLD_BEGIN
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "int %s__destptr;\n", target);
+
+    for (i = 0; i < dims; i++) {
+        INDENT;
+        fprintf (outfile, "int SAC_WL_MT_SCHEDULE_START(%d);\n", i);
+        INDENT;
+        fprintf (outfile, "int SAC_WL_MT_SCHEDULE_STOP(%d);\n", i);
+    }
+
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_MT_FOLD_BEGIN( char *target, char *idx_vec, int dims)
+ *
+ * description:
+ *
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_MT_FOLD_BEGIN(target, idx_vec, dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_MT_FOLD_BEGIN (char *target, char *idx_vec, int dims)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileWL_MT_FOLD_BEGIN");
+
+#define WL_MT_FOLD_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_MT_FOLD_BEGIN
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    for (i = 0; i < dims; i++) {
+        INDENT;
+        fprintf (outfile, "int SAC_WL_MT_SCHEDULE_START(%d);\n", i);
+        INDENT;
+        fprintf (outfile, "int SAC_WL_MT_SCHEDULE_STOP(%d);\n", i);
+    }
+
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_MT_NONFOLD_END( char *target, char *idx_vec, int dims)
+ *
+ * description:
+ *
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_MT_NONFOLD_END(target, idx_vec, dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_MT_NONFOLD_END (char *target, char *idx_vec, int dims)
+{
+    DBUG_ENTER ("ICMCompileWL_MT_NONFOLD_END");
+
+#define WL_MT_NONFOLD_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_MT_NONFOLD_END
+
+    indent--;
+    fprintf (outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_MT_FOLD_END( char *target, char *idx_vec, int dims)
+ *
+ * description:
+ *
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_MT_FOLD_END(target, idx_vec, dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_MT_FOLD_END (char *target, char *idx_vec, int dims)
+{
+    DBUG_ENTER ("ICMCompileWL_MT_FOLD_END");
+
+#define WL_MT_FOLD_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_MT_FOLD_END
+
+    indent--;
+    fprintf (outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_MT_SCHEDULER_SET_OFFSET( char *target, char *idx_vec,
+ *                                              int dims_wl, int dims_target)
+ *
+ * description:
+ *
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_MT_SCHEDULER_SET_OFFSET(target, idx_vec, dims_wl, dims_target)
+ *
+ ******************************************************************************/
+
+static void
+PrintShapeFactor (int current_dim, int target_dim, char *target)
+{
+    int j;
+
+    DBUG_ENTER ("PrintShapeFactor");
+
+    indent += 2;
+
+    switch (target_dim - current_dim) {
+    case 0:
+    case 1:
+        fprintf (outfile, "\n");
+        break;
+    case 2:
+        fprintf (outfile, " * SAC_ND_KD_A_SHAPE(%s, %d)\n", target, target_dim - 1);
+        break;
+    default:
+        fprintf (outfile, "\n");
+        INDENT;
+        fprintf (outfile, "* ( SAC_ND_KD_A_SHAPE(%s, %d)\n", target, current_dim + 1);
+        indent += 2;
+
+        for (j = current_dim + 2; j < target_dim; j++) {
+            INDENT;
+            fprintf (outfile, "* SAC_ND_KD_A_SHAPE(%s, %d)\n", target, j);
+        }
+
+        indent--;
+        INDENT;
+        fprintf (outfile, ")\n");
+
+        indent--;
+    }
+
+    indent -= 2;
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileWL_MT_SCHEDULER_SET_OFFSET (char *target, char *idx_vec, int dims_wl,
+                                      int dims_target)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileWL_MT_SCHEDULER_SET_OFFSET");
+
+#define WL_MT_SCHEDULER_SET_OFFSET
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_MT_SCHEDULER_SET_OFFSET
+
+    INDENT;
+    fprintf (outfile, "%s__destptr = \n", target);
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(0)");
+
+    PrintShapeFactor (0, dims_target, target);
+
+    for (i = 1; i < dims_wl; i++) {
+        INDENT;
+        fprintf (outfile, "+ SAC_WL_MT_SCHEDULE_START(%d)", i);
+
+        PrintShapeFactor (i, dims_target, target);
+    }
+
+    INDENT;
+    fprintf (outfile, ";\n");
+    indent--;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileWL_ASSIGN( int dims_expr, char *expr,
  *                             int dims_target, char *target,
  *                             char *idx_vec,
@@ -149,6 +386,12 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
         fprintf (outfile, "}\n");
 
     } else {
+
+        INDENT;
+        fprintf (outfile,
+                 "SAC_TR_WL_PRINT((\"Assigning scalar element to %s at offset %%d.\","
+                 " %s__destptr));",
+                 target, target);
 
         INDENT;
         fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr++] = %s;\n", target, target,

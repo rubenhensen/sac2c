@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.176  1998/06/29 08:54:08  cg
+ * added new multi-threaded versions of new with-loop begin/end ICMs
+ * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
+ *
  * Revision 1.175  1998/06/23 12:45:19  cg
  * Now, those with-loops marked to be in top-level position within
  * an spmd-block and hence have to be executed in multi-threaded mode,
@@ -6256,8 +6260,8 @@ COMPSync (node *arg_node, node *arg_info)
              * begin of with-loop code found?
              *  -> prolog finished; skip with-loop code
              */
-            if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
-                || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
+            if ((strcmp (ICM_NAME (instr), "WL_MT_FOLD_BEGIN") == 0)
+                || (strcmp (ICM_NAME (instr), "WL_MT_NONFOLD_BEGIN") == 0)) {
                 DBUG_ASSERT (((prolog == 1) && (epilog == 0)), "wrong ICM order");
                 prolog = 0;
             } else {
@@ -6266,8 +6270,8 @@ COMPSync (node *arg_node, node *arg_info)
                  * end of with-loop code found?
                  *  -> start of epilog
                  */
-                if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
-                    || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
+                if ((strcmp (ICM_NAME (instr), "WL_MT_FOLD_END") == 0)
+                    || (strcmp (ICM_NAME (instr), "WL_MT_NONFOLD_END") == 0)) {
                     DBUG_ASSERT (((prolog == 0) && (epilog == 0)), "wrong ICM order");
                     epilog = 1;
                 } else {
@@ -6545,6 +6549,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
      */
 
     icm_args = NULL;
+    icm_args = MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), icm_args);
     icm_args
       = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
                    icm_args);
@@ -6554,8 +6559,13 @@ COMPNwith2 (node *arg_node, node *arg_info)
     case WO_genarray:
         /* here is no break missing! */
     case WO_modarray:
-        icm_name1 = "WL_NONFOLD_BEGIN";
-        icm_name2 = "WL_NONFOLD_END";
+        if (NWITH2_MT (arg_node)) {
+            icm_name1 = "WL_MT_NONFOLD_BEGIN";
+            icm_name2 = "WL_MT_NONFOLD_END";
+        } else {
+            icm_name1 = "WL_NONFOLD_BEGIN";
+            icm_name2 = "WL_NONFOLD_END";
+        }
         break;
 
     case WO_foldfun:
@@ -6617,8 +6627,13 @@ COMPNwith2 (node *arg_node, node *arg_info)
          */
         assigns = AppendAssign (assigns, neutral);
 
-        icm_name1 = "WL_FOLD_BEGIN";
-        icm_name2 = "WL_FOLD_END";
+        if (NWITH2_MT (arg_node)) {
+            icm_name1 = "WL_MT_FOLD_BEGIN";
+            icm_name2 = "WL_MT_FOLD_END";
+        } else {
+            icm_name1 = "WL_FOLD_BEGIN";
+            icm_name2 = "WL_FOLD_END";
+        }
         break;
 
     default:
@@ -6748,13 +6763,33 @@ COMPWLseg (node *arg_node, node *arg_info)
          * the respective scheduler ICMs.
          */
         assigns
-          = MakeAssign (SCHCompileSchedulingBegin (WLSEG_SCHEDULING (arg_node), arg_node),
-                        assigns);
-        assigns
           = AppendAssign (assigns, MakeAssign (SCHCompileSchedulingEnd (WLSEG_SCHEDULING (
                                                                           arg_node),
                                                                         arg_node),
                                                NULL));
+
+        if ((NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_genarray)
+            || (NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_modarray)) {
+            assigns = MakeAssign (
+              MakeIcm ("WL_MT_SCHEDULER_SET_OFFSET",
+                       MakeExprs (MakeId (StringCopy (IDS_NAME (wl_ids)), NULL,
+                                          ST_regular),
+                                  MakeExprs (MakeId (StringCopy (IDS_NAME (NWITHID_VEC (
+                                                       NWITH2_WITHID (wl_node)))),
+                                                     NULL, ST_regular),
+                                             MakeExprs (MakeNum (NWITH2_DIMS (wl_node)),
+                                                        MakeExprs (MakeNum (TYPES_DIM (
+                                                                     VARDEC_OR_ARG_TYPE (
+                                                                       IDS_VARDEC (
+                                                                         wl_ids)))),
+                                                                   NULL)))),
+                       NULL),
+              assigns);
+        }
+
+        assigns
+          = MakeAssign (SCHCompileSchedulingBegin (WLSEG_SCHEDULING (arg_node), arg_node),
+                        assigns);
     }
 
     if (WLSEG_NEXT (arg_node) != NULL) {

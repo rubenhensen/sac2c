@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/06/29 08:55:51  cg
+ * added new multi-threaded versions of new with-loop begin/end ICMs
+ * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
+ *
  * Revision 1.13  1998/06/24 10:37:11  dkr
  * WL_(NON)FOLD_BEGIN/END are now h-icms
  *
@@ -46,6 +50,14 @@
 
 #ifndef _icm2c_wl_h
 #define _icm2c_wl_h
+
+extern void ICMCompileWL_MT_NONFOLD_BEGIN (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_MT_FOLD_BEGIN (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_MT_NONFOLD_END (char *target, char *idx_vec, int dims);
+extern void ICMCompileWL_MT_FOLD_END (char *target, char *idx_vec, int dims);
+
+extern void ICMCompileWL_MT_SCHEDULER_SET_OFFSET (char *target, char *idx_vec,
+                                                  int dims_wl, int dims_target);
 
 extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
                                  char *idx_vec, int dims, char **idx_scalars);

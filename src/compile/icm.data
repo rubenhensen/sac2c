@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/06/29 08:55:51  cg
+ * added new multi-threaded versions of new with-loop begin/end ICMs
+ * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
+ *
  * Revision 1.44  1998/06/24 10:36:59  dkr
  * WL_(NON)FOLD_BEGIN/END are now h-icms
  *
@@ -166,7 +170,7 @@ ICM_END( ND_FUN_DEC, (name, rettype, narg, tyarg))
 #endif
 
 #if defined(ND_FUN_AP) || defined(ICM_ALL)
-ICM_DEF( ND_FUN_AP, TRACE_UDF)
+ICM_DEF( ND_FUN_AP, TRACE_FUN)
   ICM_STR(name)
   ICM_STR(retname)
   ICM_INT(narg)
@@ -175,7 +179,7 @@ ICM_END( ND_FUN_AP, (name, retname, narg, arg))
 #endif
 
 #if defined(ND_FUN_RET) || defined(ICM_ALL)
-ICM_DEF( ND_FUN_RET, TRACE_UDF)
+ICM_DEF( ND_FUN_RET, TRACE_FUN)
   ICM_STR(retname)
   ICM_INT(narg)
   ICM_VAR((2*narg), arg)
@@ -410,7 +414,7 @@ ICM_END( ND_PRF_MODARRAY_AxCxA, (line,res_type,dimres,res,old,val,dimv,vi) )
 #endif
 
 #if defined(ND_BEGIN_GENARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_GENARRAY, TRACE_WST)
+ICM_DEF( ND_BEGIN_GENARRAY, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( from)
@@ -421,7 +425,7 @@ ICM_END( ND_BEGIN_GENARRAY, (res, dimres, from, to, idx, idxlen) )
 #endif
 
 #if defined(ND_END_GENARRAY_S) || defined(ICM_ALL)
-ICM_DEF( ND_END_GENARRAY_S, TRACE_WST)
+ICM_DEF( ND_END_GENARRAY_S, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_VAR( 1, valstr)
@@ -429,7 +433,7 @@ ICM_END( ND_END_GENARRAY_S, (res, dimres, valstr) )
 #endif
 
 #if defined(ND_END_GENARRAY_A) || defined(ICM_ALL)
-ICM_DEF( ND_END_GENARRAY_A, TRACE_WST)
+ICM_DEF( ND_END_GENARRAY_A, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( reta)
@@ -438,7 +442,7 @@ ICM_END( ND_END_GENARRAY_A, (res, dimres, reta, idxlen) )
 #endif
 
 #if defined(ND_BEGIN_MODARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_MODARRAY, TRACE_WST)
+ICM_DEF( ND_BEGIN_MODARRAY, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( a)
@@ -450,7 +454,7 @@ ICM_END( ND_BEGIN_MODARRAY, (res, dimres, a, from, to, idx, idxlen) )
 #endif
 
 #if defined(ND_END_MODARRAY_S) || defined(ICM_ALL)
-ICM_DEF( ND_END_MODARRAY_S, TRACE_WST)
+ICM_DEF( ND_END_MODARRAY_S, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( a)
@@ -459,7 +463,7 @@ ICM_END( ND_END_MODARRAY_S, (res, dimres, a, valstr) )
 #endif
 
 #if defined(ND_END_MODARRAY_A) || defined(ICM_ALL)
-ICM_DEF( ND_END_MODARRAY_A, TRACE_WST)
+ICM_DEF( ND_END_MODARRAY_A, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( a)
@@ -469,7 +473,7 @@ ICM_END( ND_END_MODARRAY_A, (res, dimres, a, reta, idxlen) )
 #endif
 
 #if defined(ND_BEGIN_FOLDPRF) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_FOLDPRF, TRACE_WST)
+ICM_DEF( ND_BEGIN_FOLDPRF, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( from)
@@ -483,13 +487,13 @@ ICM_END( ND_BEGIN_FOLDPRF, (res, dimres, from, to, idx, idxlen, n_neutral, neutr
 
 
 #if defined(ND_END_FOLD) || defined(ICM_ALL)
-ICM_DEF( ND_END_FOLD, TRACE_WST)
+ICM_DEF( ND_END_FOLD, NO_TRACE)
    ICM_INT( idxlen)
 ICM_END( ND_END_FOLD, (idxlen))
 #endif
 
 #if defined(ND_BEGIN_FOLDFUN) || defined(ICM_ALL)
-ICM_DEF( ND_BEGIN_FOLDFUN, TRACE_WST)
+ICM_DEF( ND_BEGIN_FOLDFUN, NO_TRACE)
   ICM_STR( res)
   ICM_INT(dimres)
   ICM_STR( from)
@@ -516,8 +520,49 @@ ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
  * ICMs for compilation of new with-loop
  */
 
+#if defined(WL_MT_NONFOLD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_MT_NONFOLD_BEGIN, NO_TRACE)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+ICM_END( WL_MT_NONFOLD_BEGIN, (target, idx_vec, dims))
+#endif
+
+#if defined(WL_MT_FOLD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_MT_FOLD_BEGIN, NO_TRACE)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+ICM_END( WL_MT_FOLD_BEGIN, (target, idx_vec, dims))
+#endif
+
+#if defined(WL_MT_NONFOLD_END) || defined(ICM_ALL)
+ICM_DEF( WL_MT_NONFOLD_END, NO_TRACE)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+ICM_END( WL_MT_NONFOLD_END, (target, idx_vec, dims))
+#endif
+
+#if defined(WL_MT_FOLD_END) || defined(ICM_ALL)
+ICM_DEF( WL_MT_FOLD_END, NO_TRACE)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+ICM_END( WL_MT_FOLD_END, (target, idx_vec, dims))
+#endif
+
+#if defined(WL_MT_SCHEDULER_SET_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_MT_SCHEDULER_SET_OFFSET, NO_TRACE)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims_wl)
+  ICM_INT(dims_target)
+ICM_END( WL_MT_SCHEDULER_SET_OFFSET, (target, idx_vec, dims_wl, dims_target))
+#endif
+
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN, TRACE_UDF)
+ICM_DEF( WL_ASSIGN, NO_TRACE)
   ICM_INT(dims_expr)
   ICM_STR(expr)
   ICM_INT(dims_target)
@@ -529,7 +574,7 @@ ICM_END( WL_ASSIGN, (dims_expr, expr, dims_target, target, idx_vec, dims, idx_sc
 #endif
 
 #if defined(WL_ASSIGN_INIT) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN_INIT, TRACE_UDF)
+ICM_DEF( WL_ASSIGN_INIT, NO_TRACE)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
@@ -539,7 +584,7 @@ ICM_END( WL_ASSIGN_INIT, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_ASSIGN_COPY) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN_COPY, TRACE_UDF)
+ICM_DEF( WL_ASSIGN_COPY, NO_TRACE)
   ICM_STR(source)
   ICM_INT(dims_target)
   ICM_STR(target)
@@ -550,7 +595,7 @@ ICM_END( WL_ASSIGN_COPY, (source, dims_target, target, idx_vec, dims, idx_scalar
 #endif
 
 #if defined(WL_FOLD_NOOP) || defined(ICM_ALL)
-ICM_DEF( WL_FOLD_NOOP, TRACE_UDF)
+ICM_DEF( WL_FOLD_NOOP, NO_TRACE)
   ICM_INT(dim)
   ICM_INT(dims_target)
   ICM_STR(target)
@@ -564,7 +609,7 @@ ICM_END( WL_FOLD_NOOP, (dim, dims_target, target, idx_vec, dims, idx_scalars,
 #endif
 
 #if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_ADJUST_OFFSET, TRACE_UDF)
+ICM_DEF( WL_ADJUST_OFFSET, NO_TRACE)
   ICM_INT(dim)
   ICM_INT(dims_target)
   ICM_STR(target)
