@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.79  2000/07/19 15:41:58  nmw
+ * flag ICM_END_OF_STATEMENT added, forces printing of ;
+ *
  * Revision 1.78  2000/07/14 13:17:14  nmw
  * macro for precompile added, comments updated
  *
@@ -1888,6 +1891,7 @@ extern node *MakePre (nodetype incdec, char *id);
  ***    char*  NAME
  ***    int    INDENT_BEFORE
  ***    int    INDENT_AFTER
+ ***    bool   END_OF_STATEMENT (if true, adds a semicolon after ICM )
  ***
  *** remarks:
  ***    NEXT at least (!) is used for the compilation of N_typedef's
@@ -1895,6 +1899,7 @@ extern node *MakePre (nodetype incdec, char *id);
  ***
  ***    INDENT is used for indenting ICMs in output. This value is set
  ***    by 'MakeIcm' and used by 'PrintIcm'.
+ ***
  ***/
 
 extern node *MakeIcm (char *name, node *args, node *next);
@@ -1904,6 +1909,7 @@ extern node *MakeIcm (char *name, node *args, node *next);
 #define ICM_INDENT_AFTER(n) (n->int_data)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_NEXT(n) (n->node[1])
+#define ICM_END_OF_STATEMENT(n) ((bool)(n->counter))
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2000/07/19 15:42:42  nmw
+ * flag ICM_END_OF_STATEMENT added, forces printing of ;
+ *
  * Revision 1.22  2000/07/13 11:58:12  jhs
  * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
  *
@@ -1260,6 +1263,7 @@ MakeIcm (char *name, node *args, node *next)
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
+    ICM_END_OF_STATEMENT (tmp) = FALSE;
 
     if (name != NULL) {
         if (strcmp (name, "WL_NONFOLD_BEGIN") == 0) {
