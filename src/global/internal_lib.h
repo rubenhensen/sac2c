@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/04/24 09:59:30  dkr
+ * macro STR_OR_UNKNOWN added
+ *
  * Revision 3.9  2001/04/24 09:34:42  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  * STR_OR_NULL moved from my_debug.h to internal_lib.h
@@ -125,6 +128,7 @@ extern void ComputeMallocAlignStep (void);
 
 #define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
 #define STR_OR_EMPTY(str) STR_OR_NULL (str, "")
+#define STR_OR_UNKNOWN(str) STR_OR_NULL (str, "?")
 
 /*
  * swapping two pointers
