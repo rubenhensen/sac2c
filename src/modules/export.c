@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/26 23:29:39  jhb
+ * DoExport changed to EXPdoExport
+ *
  * Revision 1.8  2004/11/25 21:14:38  sah
  * COMPILES
  *
@@ -291,9 +294,9 @@ EXPtypedef (node *arg_node, info *arg_info)
 }
 
 node *
-EXPObjdef (node *arg_node, info *arg_info)
+EXPobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPObjdef");
+    DBUG_ENTER ("EXPobjdef");
 
     INFO_EXP_SYMBOL (arg_info) = OBJDEF_NAME (arg_node);
     INFO_EXP_EXPORTED (arg_info) = FALSE;
@@ -376,9 +379,9 @@ StartExpTraversal (node *modul)
 }
 
 void
-DoExport (node *syntax_tree)
+EXPdoExport (node *syntax_tree)
 {
-    DBUG_ENTER ("DoExport");
+    DBUG_ENTER ("EXPdoExport");
 
     syntax_tree = StartExpTraversal (syntax_tree);
 
