@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/11/22 13:09:21  skt
+ * modul -> module in comments
+ *
  * Revision 1.13  2004/11/22 12:49:31  skt
  * code brushing in SACDevCampDK 2005
  *
@@ -209,9 +212,9 @@ ASMRAdoAssignmentsRearrange (node *arg_node)
     old_tab = act_tab;
     act_tab = asmra_tab;
 
-    DBUG_PRINT ("ASMRA", ("trav into modul-funs"));
+    DBUG_PRINT ("ASMRA", ("trav into module-funs"));
     MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from modul-funs"));
+    DBUG_PRINT ("ASMRA", ("trav from module-funs"));
 
     /* pop info ... */
     act_tab = old_tab;
