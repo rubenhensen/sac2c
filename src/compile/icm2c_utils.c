@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/06/25 15:22:32  rob
+ * Don't gen if not TAGGED_ARRAYS
+ *
  * Revision 1.2  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -30,6 +33,7 @@
 #include "icm2c_utils.h"
 #include "dbug.h"
 
+#ifdef TAGGED_ARRAYS
 /******************************************************************************
  *
  * function:
@@ -114,3 +118,5 @@ ICUUniClass (char *nt)
 
     DBUG_RETURN (z);
 }
+
+#endif /* TAGGED_ARRAYS */

@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/06/25 15:24:08  rob
+ * Don't gen if not TAGGED_ARRAYS
+ *
  * Revision 1.2  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -27,7 +30,11 @@
 #ifndef _icm2c_utils_h
 #define _icm2c_utils_h
 
+#ifdef TAGGED_ARRAYS
+
 extern data_class_t ICUNameClass (char *nt);
 extern uniqueness_class_t ICUUniClass (char *nt);
+
+#endif /* TAGGED_ARRAYS */
 
 #endif /* _icm2c_utils_h */
