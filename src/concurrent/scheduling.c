@@ -1,3 +1,13 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1998/06/18 14:19:41  cg
+ * file now only contains implementation of abstract data type
+ * for the representation of schedulings
+ *
+ *
+ */
+
 /*****************************************************************************
  *
  * file:   scheduling.c
@@ -13,10 +23,15 @@
  *   space onto the threads available.
  *
  *   For this purpose, an abstract data type is defined which stores different
- *   kinds of schedulings requiring different parameter sets.
+ *   kinds of schedulings requiring different parameter sets. This file also
+ *   provides the required routines for generating different kinds of
+ *   schedulings as well as copying or removing them. Nevertheless, functions
+ *   are provided that directly compile scheduling representations to the
+ *   respective ICMs.
  *
  *****************************************************************************/
 
+#include <stdio.h>
 #include <string.h>
 #include <varargs.h>
 
@@ -29,6 +44,38 @@
 #include "precompile.h" /* for PRECRenameLocalIdentifier() */
 #include "dbug.h"
 
+/******************************************************************************
+ *
+ * data type: sched_class_t
+ *            sched_arg_type_t
+ *            sched_arg_t
+ *            sched_t
+ *
+ * description:
+ *
+ *   These data types are used for the representation of schedulings. Each
+ *   scheduling consists of a name called 'discipline', a class, a line
+ *   number, and an argument specification.
+ *
+ *   Currently, three different scheduler classes are supported. Those for
+ *   entire synchronisation blocks (SC_syncblock), for segments with constant
+ *   bounds (SC_const_seg), and for segments with variable bounds (SC_var_seg).
+ *
+ *   The line number is useful for error messages in those cases where the
+ *   actual scheduling is defined by the programmer using the wlcomp pragma.
+ *
+ *   The argument specification consists of the exact number of arguments
+ *   along with an array of arguments. Each argument is either a number,
+ *   an identifier, a number replacing an identifier, or an entire vector
+ *   of one of these.
+ *
+ *   Please observe:
+ *   The vector argument types are not yet fully implemented.
+ *
+ ******************************************************************************/
+
+typedef enum { SC_const_seg, SC_var_seg, SC_syncblock } sched_class_t;
+
 typedef enum {
     AT_num,
     AT_id,
@@ -37,8 +84,6 @@ typedef enum {
     AT_id_vec,
     AT_num_for_id_vec
 } sched_arg_type_t;
-
-typedef enum { SC_const_seg, SC_var_seg, SC_syncblock } sched_class_t;
 
 typedef struct {
     sched_arg_type_t arg_type;
@@ -60,18 +105,49 @@ typedef struct {
 
 typedef sched_t *SCHsched_t;
 
-typedef struct {
+/******************************************************************************
+ *
+ * global variable: scheduler_table[]
+ *
+ * description:
+ *
+ *   This global variable defines a table of scheduling specifications. Each
+ *   scheduling is described by four entries: the scheduling name, the number
+ *   of its arguments, a type specification of the arguments, and the scheduling
+ *   class. The argument type specification is a comma separated string where
+ *   'n' stands for number, 'i' for identifier, 'x' for number or identifier,
+ *   and 'nv', 'iv', and 'xv' for the respective vector types. Schedulings
+ *   may be defined for synchronisation blocks/with-loops as well as for
+ *   variable or constant segments. Note that schedulings for variable segments
+ *   may also be applied to constant segments but not vice versa.
+ *
+ ******************************************************************************/
+
+static struct {
     char *discipline;
     int num_args;
     char *arg_spec;
     sched_class_t class;
-} scheduler_table_t;
-
-static scheduler_table_t scheduler_table[] = {
+} scheduler_table[] = {
   /* Name            Args           Class */
   {"Block", 0, "", SC_const_seg},   {"BlockVar", 0, "", SC_var_seg},
   {"AllByOne", 1, "i", SC_var_seg}, {"BlockBySome", 2, "i,i", SC_const_seg},
   {"Static", 0, "", SC_syncblock},  {"", 0, "", SC_const_seg}};
+
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *CheckSchedulingArgs(sched_t *sched, char *spec, node *exprs, int line)
+ *
+ * description:
+ *
+ *   This function produces the arguments of a scheduling specification that
+ *   is derived from a wlcomp pragma. All given arguments are compared with
+ *   the respective argument specification from the scheduler table. The line
+ *   number of the pragma in the original source code is required to produce
+ *   sufficient error messages.
+ *
+ ******************************************************************************/
 
 static sched_t *
 CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
@@ -167,6 +243,21 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
     DBUG_RETURN (sched);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHMakeSchedulingByPragma(node *ap_node, int line)
+ *
+ * description:
+ *
+ *   This function constructs a scheduling specification from a 'ScheduleWL'
+ *   or 'ScheduleSeg' entry of the wlcomp pragma. The pragma information is
+ *   compared with the scheduling specification table. The line number of
+ *   the pragma in the original source code is required to produce sufficient
+ *   error messages.
+ *
+ ******************************************************************************/
+
 sched_t *
 SCHMakeSchedulingByPragma (node *ap_node, int line)
 {
@@ -197,6 +288,75 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
 
     DBUG_RETURN (sched);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void SCHCheckSuitabilityConstSeg(sched_t *sched)
+ *   void SCHCheckSuitabilityVarSeg(sched_t *sched)
+ *   void SCHCheckSuitabilitySyncblock(sched_t *sched)
+ *
+ * description:
+ *
+ *   These functions check whether the given scheduling is suitable for the
+ *   respective case. If not, an error message is produced and the compilation
+ *   is stopped automatically after the current compilation phase.
+ *
+ ******************************************************************************/
+
+void
+SCHCheckSuitabilityConstSeg (sched_t *sched)
+{
+    DBUG_ENTER ("SCHCheckSuitabilityConstSeg");
+
+    if ((sched->class != SC_const_seg) && (sched->class != SC_var_seg)) {
+        ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
+                             "constant segments",
+                             sched->discipline));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SCHCheckSuitabilityVarSeg (sched_t *sched)
+{
+    DBUG_ENTER ("SCHCheckSuitabilityVarSeg");
+
+    if (sched->class != SC_var_seg) {
+        ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
+                             "variable segments",
+                             sched->discipline));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SCHCheckSuitabilitySyncblock (sched_t *sched)
+{
+    DBUG_ENTER ("SCHCheckSuitabilitySyncblock");
+
+    if (sched->class != SC_syncblock) {
+        ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
+                             "synchronisation blocks",
+                             sched->discipline));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHRemoveScheduling(sched_t *sched)
+ *
+ * description:
+ *
+ *   This function may be used to release the resources bound to a data object
+ *   of the abstract data type for the representation of schedulings.
+ *
+ ******************************************************************************/
 
 sched_t *
 SCHRemoveScheduling (sched_t *sched)
@@ -233,7 +393,168 @@ SCHRemoveScheduling (sched_t *sched)
     DBUG_RETURN ((sched_t *)NULL);
 }
 
-static sched_t *MakeScheduling (va_alist) va_dcl
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHCopyScheduling(sched_t *sched)
+ *
+ * description:
+ *
+ *   This function may be used to copy a data object
+ *   of the abstract data type for the representation of schedulings.
+ *
+ ******************************************************************************/
+
+sched_t *
+SCHCopyScheduling (sched_t *sched)
+{
+    int i;
+    sched_t *new_sched;
+
+    DBUG_ENTER ("SCHCopyScheduling");
+
+    new_sched = (sched_t *)Malloc (sizeof (sched_t));
+
+    new_sched->discipline = sched->discipline;
+    /*
+     * The discipline string must not be copied since it is only a pointer
+     * to the respective entry of the scheduler table.
+     */
+
+    new_sched->class = sched->class;
+    new_sched->line = sched->line;
+    new_sched->num_args = sched->num_args;
+
+    if (sched->num_args > 0) {
+        new_sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+
+        for (i = 0; i < sched->num_args; i++) {
+            new_sched->args[i].arg_type = sched->args[i].arg_type;
+            switch (sched->args[i].arg_type) {
+            case AT_num_vec:
+            case AT_num_for_id_vec:
+                new_sched->args[i].arg.num = sched->args[i].arg.num;
+                break;
+            case AT_id_vec:
+                new_sched->args[i].arg.id = sched->args[i].arg.id;
+                break;
+            default:
+                break;
+            }
+        }
+
+    } else {
+        new_sched->args = NULL;
+    }
+
+    DBUG_RETURN ((sched_t *)NULL);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SCHPrintScheduling(FILE *handle, sched_t *sched)
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+void
+SCHPrintScheduling (FILE *outfile, sched_t *sched)
+{
+    int i;
+
+    DBUG_ENTER ("SCHPrintScheduling");
+
+    fprintf (outfile, "%s(", sched->discipline);
+
+    for (i = 0; i < sched->num_args - 1; i++) {
+        switch (sched->args[i].arg_type) {
+        case AT_num:
+        case AT_num_for_id:
+            fprintf (outfile, "%d, ", sched->args[i].arg.num);
+            break;
+        case AT_id:
+            fprintf (outfile, "%s, ", sched->args[i].arg.id);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (sched->num_args > 0) {
+        switch (sched->args[sched->num_args - 1].arg_type) {
+        case AT_num:
+        case AT_num_for_id:
+            fprintf (outfile, "%d)", sched->args[sched->num_args - 1].arg.num);
+            break;
+        case AT_id:
+            fprintf (outfile, "%s)", sched->args[sched->num_args - 1].arg.id);
+            break;
+        default:
+            break;
+        }
+    } else {
+        fprintf (outfile, ")");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHMakeCompatibleSyncblockScheduling(sched_t *old_sched, sched_t *new_sched
+ *
+ * description:
+ *
+ *   This function checks whether two schedulings tied to with-loops fit together
+ *   wihtin a single synchronisation block.
+ *
+ *
+ ******************************************************************************/
+
+sched_t *
+SCHMakeCompatibleSyncblockScheduling (sched_t *old_sched, sched_t *new_sched)
+{
+    DBUG_ENTER ("SCHMakeCompatibleSyncblockScheduling");
+
+    if (0 != strcmp (old_sched->discipline, new_sched->discipline)) {
+        ERROR (new_sched->line,
+               ("Syncblock scheduling discipline '%s` incompatible "
+                "with '%s` defined in line %d",
+                new_sched->discipline, old_sched->discipline, old_sched->line));
+    }
+
+    new_sched = SCHRemoveScheduling (new_sched);
+
+    DBUG_RETURN (old_sched);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHMakeScheduling(va_alist)
+ *
+ * description:
+ *
+ *   This may be used to generate arbitray schedulings. The first paramter in
+ *   the variable parameter list must always be of type 'char*' and provide the
+ *   name of the scheduling discipline. The following parameters must be defined
+ *   according to the scheduling specification table. For a scheduling argument
+ *   of type 'n' a paramater of type 'int' is required, for 'i' a parameter of
+ *   type 'char*'. A scheduling argument specification of 'x' requires to 2
+ *   parameters to be given to SCHMakeScheduling(). The first must be of type
+ *   'char*' and the second og type 'int'. If the first argument given is NULL,
+ *   the the intger argument is used, otherwise the identifier specification.
+ *
+ ******************************************************************************/
+
+sched_t *SCHMakeScheduling (va_alist) va_dcl
 {
     va_list args;
     char *discipline, *arg_spec, *tmp_id;
@@ -323,168 +644,19 @@ static sched_t *MakeScheduling (va_alist) va_dcl
     DBUG_RETURN (sched);
 }
 
-static sched_t *
-MakeDefaultSchedulingConstSegment ()
-{
-    sched_t *sched;
-
-    DBUG_ENTER ("MakeDefaultSchedulingConstSegment");
-
-    sched = MakeScheduling ("Block");
-
-    DBUG_RETURN (sched);
-}
-
-static sched_t *
-MakeDefaultSchedulingVarSegment ()
-{
-    sched_t *sched;
-
-    DBUG_ENTER ("MakeDefaultSchedulingVarSegment");
-
-    sched = MakeScheduling ("BlockVar");
-
-    DBUG_RETURN (sched);
-}
-
-static sched_t *
-MakeDefaultSchedulingSyncblock ()
-{
-    sched_t *sched;
-
-    DBUG_ENTER ("MakeDefaultSchedulingSyncblock");
-
-    sched = MakeScheduling ("Static");
-
-    DBUG_RETURN (sched);
-}
-
-static sched_t *
-InferSchedulingConstSegment (node *wlseg, node *arg_info)
-{
-    sched_t *sched;
-
-    DBUG_ENTER ("InferSchedulingConstSegment");
-
-    sched = MakeDefaultSchedulingConstSegment ();
-
-    DBUG_RETURN (sched);
-}
-
-static sched_t *
-InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
-{
-    sched_t *sched;
-
-    DBUG_ENTER ("InferSchedulingVarSegment");
-
-    sched = MakeDefaultSchedulingVarSegment ();
-
-    DBUG_RETURN (sched);
-}
-
-static sched_t *
-InferSchedulingSyncblock (node *sync, node *arg_info)
-{
-    sched_t *sched;
-
-    DBUG_ENTER ("InferSchedulingSyncblock");
-
-    sched = MakeDefaultSchedulingSyncblock ();
-
-    DBUG_RETURN (sched);
-}
-
-node *
-GenerateSchedulings (node *syntax_tree)
-{
-    DBUG_ENTER ("GenerateSchedulings");
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-SCHmodul (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SCHmodul");
-
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-SCHfundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SCHfundef");
-
-    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-SCHwlseg (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SCHwlseg");
-
-    if (WLSEG_SCHEDULING (arg_node) == NULL) {
-        WLSEG_SCHEDULING (arg_node) = InferSchedulingConstSegment (arg_node, arg_info);
-    } else {
-        if ((WLSEG_SCHEDULING (arg_node)->class != SC_const_seg)
-            && (WLSEG_SCHEDULING (arg_node)->class != SC_var_seg)) {
-            ERROR (WLSEG_SCHEDULING (arg_node)->line,
-                   ("Scheduling discipline '%s` not suitable for constant segments",
-                    WLSEG_SCHEDULING (arg_node)->discipline));
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-SCHwlsegvar (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SCHwlsegvar");
-
-    if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
-        WLSEGVAR_SCHEDULING (arg_node) = InferSchedulingVarSegment (arg_node, arg_info);
-    } else {
-        if (WLSEGVAR_SCHEDULING (arg_node)->class != SC_var_seg) {
-            ERROR (WLSEGVAR_SCHEDULING (arg_node)->line,
-                   ("Scheduling deiscipline '%s` not suitable for variable segments",
-                    WLSEGVAR_SCHEDULING (arg_node)->discipline));
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-SCHsync (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SCHsync");
-
-    if (SYNC_SCHEDULING (arg_node) == NULL) {
-        SYNC_SCHEDULING (arg_node) = InferSchedulingSyncblock (arg_node, arg_info);
-    } else {
-        if (SYNC_SCHEDULING (arg_node)->class != SC_syncblock) {
-            ERROR (SYNC_SCHEDULING (arg_node)->line,
-                   ("Scheduling deiscipline '%s` not suitable for with-loops/syncblocks",
-                    SYNC_SCHEDULING (arg_node)->discipline));
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHPrecompileScheduling(sched_t *sched)
+ *
+ * description:
+ *
+ *   Since identifier names are stored within the abstract scheduling
+ *   representations, these are subject to renaming during the precompilation
+ *   compiler phase. The actual renaming is done by the help of the function
+ *   PRECRenameLocalIdentifier().
+ *
+ ******************************************************************************/
 
 sched_t *
 SCHPrecompileScheduling (sched_t *sched)
@@ -501,6 +673,19 @@ SCHPrecompileScheduling (sched_t *sched)
 
     DBUG_RETURN (sched);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileSchedulingArgs(sched_t *sched, node *args)
+ *
+ * description:
+ *
+ *   This function converts the arguments of an abstract scheduling specification
+ *   into ICM arguments. Numbers in the case of type 'x' scheduling arguments
+ *   are transformed into string representations.
+ *
+ ******************************************************************************/
 
 static node *
 CompileSchedulingArgs (sched_t *sched, node *args)
@@ -531,6 +716,21 @@ CompileSchedulingArgs (sched_t *sched, node *args)
 
     DBUG_RETURN (args);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileConstSegSchedulingArgs(node *wlseg)
+ *
+ * description:
+ *
+ *   In addition to their individual arguments, scheduling ICMs have addtional
+ *   arguments depending on their position. Schedulings for constant segments
+ *   are equipped with detailed segment information. These are the segment's
+ *   dimensionality, its bounds, its outermost blocking vector, and its
+ *   unrolling blocking vector.
+ *
+ ******************************************************************************/
 
 static node *
 CompileConstSegSchedulingArgs (node *wlseg)
@@ -563,6 +763,19 @@ CompileConstSegSchedulingArgs (node *wlseg)
     DBUG_RETURN (args);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *   In addition to their individual arguments, scheduling ICMs have addtional
+ *   arguments depending on their position. Currently, schedulings for variable
+ *   segments do not have general arguments.
+ *
+ ******************************************************************************/
+
 static node *
 CompileVarSegSchedulingArgs (node *wlseg)
 {
@@ -574,6 +787,19 @@ CompileVarSegSchedulingArgs (node *wlseg)
 
     DBUG_RETURN (args);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileSyncblockSchedulingArgs(node *wlseg)
+ *
+ * description:
+ *
+ *   In addition to their individual arguments, scheduling ICMs have addtional
+ *   arguments depending on their position. Currently, schedulings for synchronisation
+ *   blocks do not have general arguments.
+ *
+ ******************************************************************************/
 
 static node *
 CompileSyncblockSchedulingArgs (node *wlseg)
@@ -587,6 +813,20 @@ CompileSyncblockSchedulingArgs (node *wlseg)
     DBUG_RETURN (args);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileScheduling(sched_t *sched, node *arg_node, char *suffix)
+ *
+ * description:
+ *
+ *   This function compiles abstract scheduling specifications to ICMs
+ *    "SAC_MT_SCHEDULER_<discipline>_BEGIN"
+ *    "SAC_MT_SCHEDULER_<discipline>_END"
+ *   depending on the parameter 'suffix'.
+ *
+ ******************************************************************************/
+
 static node *
 CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
 {
@@ -595,8 +835,8 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
 
     DBUG_ENTER ("CompileScheduling");
 
-    name = (char *)Malloc (sizeof (char) * (strlen (sched->discipline) + 24));
-    sprintf (name, "SAC_MT_SCHEDULER_%s_%s", sched->discipline, suffix);
+    name = (char *)Malloc (sizeof (char) * (strlen (sched->discipline) + 20));
+    sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
 
     switch (sched->class) {
     case SC_const_seg:
@@ -615,6 +855,19 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
     DBUG_RETURN (icm);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *SCHCompileSchedulingBegin(sched_t *sched, node *arg_node)
+ *   node *SCHCompileSchedulingEnd(sched_t *sched, node *arg_node)
+ *
+ * description:
+ *
+ *   These two functions initiate the compilation of abstract scheduling
+ *   specifications into ICMs.
+ *
+ ******************************************************************************/
+
 node *
 SCHCompileSchedulingBegin (sched_t *sched, node *arg_node)
 {
@@ -630,121 +883,3 @@ SCHCompileSchedulingEnd (sched_t *sched, node *arg_node)
 
     DBUG_RETURN (CompileScheduling (sched, arg_node, "END"));
 }
-
-/***********************************************************************************/
-
-#if 0
-
-scheduling_t *SCHMakeConstantSegmentScheduling(node *ap_node, int line)
-{
-  scheduling_t *sched;
-  
-  DBUG_ENTER("SCHMakeConstantSegmentScheduling");
-  
-  sched = MakeSchedulingByPragma(ap_node, constant_segment_scheduler_table, line);
-  
-  if (sched==NULL) {
-    ABORT(line, ("Scheduling discipline '%s` unknown for constant segments", 
-                 AP_NAME(ap_node)));
-  }
-  
-  DBUG_RETURN(sched);
-}
-
-
-scheduling_t *SCHMakeVariableSegmentScheduling(node *ap_node, int line)
-{
-  scheduling_t *sched;
-  
-  DBUG_ENTER("SCHMakeVariableSegmentScheduling");
-  
-  sched = MakeSchedulingByPragma(ap_node, variable_segment_scheduler_table, line);
-    
-  if (sched==NULL) {
-    ABORT(line, ("Scheduling discipline '%s` unknown for variable segments", 
-                 AP_NAME(ap_node)));
-  }
-  
-  DBUG_RETURN(sched);
-}
-
-
-scheduling_t *SCHMakeSyncblockScheduling(node *ap_node, int line)
-{
-  scheduling_t *sched;
-  
-  DBUG_ENTER("SCHMakeSyncblockScheduling");
-  
-  sched = MakeSchedulingByPragma(ap_node, syncblock_scheduler_table, line);
-    
-  if (sched==NULL) {
-    ABORT(line, ("Scheduling discipline '%s` unknown for syncblocks", 
-                 AP_NAME(ap_node)));
-  }
-  
-  DBUG_RETURN(sched);
-}
-
-
-static
-sched_t *MakeScheduling(char *name, int num_args, sched_class_t class)
-{
-  sched_t *sched;
-  
-  DBUG_ENTER("MakeScheduling");
-  
-  sched = (sched_t*)Malloc(sizeof(sched_t));
-  
-  sched->discipline = name;
-  sched->class = class;
-  sched->line = -1;
-
-  sched->num_args = num_args;
-  
-  if (num_args==0) {
-    sched->args=NULL;
-  }
-  else {
-    sched->args=(sched_arg_t*)Malloc(num_args*sizeof(sched_arg_t));
-  }
-    
-  DBUG_RETURN(sched);
-}
-  
-
-static
-sched_arg_t *SetSchedulingArgNum(sched_arg_t *args, int arg, int num)
-{
-  DBUG_ENTER("SetSchedulingArgNum");
-  
-  args[arg].arg_type=AT_num;
-  args[arg].arg.num=num;
-  
-  DBUG_RETURN(args);
-}
-  
-
-static
-sched_arg_t *SetSchedulingArgNumForId(sched_arg_t *args, int arg, int num)
-{
-  DBUG_ENTER("SetSchedulingArgNumForId");
-  
-  args[arg].arg_type=AT_num_for_id;
-  args[arg].arg.num=num;
-  
-  DBUG_RETURN(args);
-}
-  
-
-static
-sched_arg_t *SetSchedulingArgId(sched_arg_t *args, int arg, char *id)
-{
-  DBUG_ENTER("SetSchedulingArgId");
-  
-  args[arg].arg_type=AT_id;
-  args[arg].arg.num=id;
-  
-  DBUG_RETURN(args);
-}
-
-#endif

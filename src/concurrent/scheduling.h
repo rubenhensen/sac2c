@@ -1,3 +1,13 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1998/06/18 14:19:41  cg
+ * file now only contains implementation of abstract data type
+ * for the representation of schedulings
+ *
+ *
+ */
+
 /*****************************************************************************
  *
  * file:   scheduling.h
@@ -11,7 +21,7 @@
  *   element selected by a generator is calculated by exactly one thread.
  *   In other words, the scheduling defines a partitioning of the iteration
  *   space onto the threads available.
- *
+ *     TravSons,
  *   For this purpose, an abstract data type is defined which stores different
  *   kinds of schedulings requiring different parameter sets.
  *   See file scheduling.c for additional information.
@@ -22,19 +32,26 @@
 
 #define SCHEDULING_H
 
+#include <stdio.h>
+
 typedef void *SCHsched_t;
 
-extern sched_t *SCHMakeSchedulingByPragma (node *ap_node, int line);
-extern sched_t *SCHRemoveScheduling (sched_t *sched);
-extern sched_t *SCHPrecompileScheduling (sched_t *sched);
-extern node *SCHCompileSchedulingEnd (sched_t *sched, node *arg_node);
-extern node *SCHCompileSchedulingBegin (sched_t *sched, node *arg_node);
+extern SCHsched_t SCHMakeSchedulingByPragma (node *ap_node, int line);
+extern SCHsched_t SCHMakeScheduling (char *discipline, ...);
 
-extern node *GenerateSchedulings (node *syntax_tree);
-extern node *SCHmodul (node *arg_node, node *arg_info);
-extern node *SCHfundef (node *arg_node, node *arg_info);
-extern node *SCHwlseg (node *arg_node, node *arg_info);
-extern node *SCHwlsegvar (node *arg_node, node *arg_info);
-extern node *SCHsync (node *arg_node, node *arg_info);
+extern SCHsched_t SCHRemoveScheduling (SCHsched_t sched);
+extern SCHsched_t SCHCopyScheduling (SCHsched_t sched);
+extern SCHsched_t SCHPrecompileScheduling (SCHsched_t sched);
+extern void SCHPrintScheduling (FILE *outfile, SCHsched_t *sched);
+
+extern void SCHCheckSuitabilityConstSeg (SCHsched_t *sched);
+extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
+extern void SCHCheckSuitabilitySyncblock (SCHsched_t *sched);
+
+extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,
+                                                         SCHsched_t *new_sched);
+
+extern node *SCHCompileSchedulingEnd (SCHsched_t sched, node *arg_node);
+extern node *SCHCompileSchedulingBegin (SCHsched_t sched, node *arg_node);
 
 #endif /* SCHEDULING_H */
