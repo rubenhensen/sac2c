@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/05/02 10:11:52  hw
+ * Revision 1.26  1995/05/03 13:20:52  hw
+ * - deleted ND_KD_ROT_SxSxA_A
+ * - bug fixed in compilation of primitive function 'rotate'
+ *   ( added N_icm ND_ALLOC_ARRAY for result of 'rotate' )
+ * - refcounts of results of userdefined functions will be increased
+ *
+ * Revision 1.25  1995/05/02  10:11:52  hw
  *  bug fixed in CompReturn ( ND_END_MODARRAY and  ND_END_GENARRAY have correct
  *   parameters now)
  *
@@ -16,7 +22,8 @@
  *   - refcount of index_vector will be decremented after with_loop
  *
  * Revision 1.22  1995/04/28  09:02:38  hw
- * bug fixed in creation of N_icm ND_BEGIN_MODARRAY ( now 3. argument is set correctly)
+ * bug fixed in creation of N_icm ND_BEGIN_MODARRAY ( now 3. argument is set
+ *  correctly)
  *
  * Revision 1.21  1995/04/27  14:44:10  hw
  * bug fixed in CompWith (renamed N_icm for genarray)
@@ -116,8 +123,9 @@ extern int malloc_verify ();
 extern int malloc_debug (int level);
 
 #define DUMMY_NAME "__OUT_"
-#define LABEL_NAME "__Label"
+#define LABEL_NAME "__Label" /* basic-name for goto label */
 
+/* the following macros are used to generate N_icms */
 #define MAKE_ICM_ARG(var, new_node)                                                      \
     var = MakeNode (N_exprs);                                                            \
     var->node[0] = new_node;                                                             \
@@ -229,7 +237,7 @@ extern int malloc_debug (int level);
     }
 
 #define DEC_OR_FREE_RC_ND(array, num_node)                                               \
-    if (1 < num_node->info.cint) { /* create ND_DEC_RC */                                \
+    if (1 < array->refcnt) { /* create ND_DEC_RC */                                      \
         CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", array, num_node);                    \
         APPEND_ASSIGNS (first_assign, next_assign);                                      \
     } else {                                                                             \
@@ -369,12 +377,13 @@ static int label_nr = 0;
  *  functionname  : GenName
  *  arguments     : 1) number of variable
  *                  2) name
- *  description   :
+ *  description   : allocates memory for a new string , copies name to this
+ *                  string and appends a number 1) to it
  *  global vars   :
  *  internal funs :
- *  external funs : strlen, sizeof, Malloc
- *  macros        : DBUG..., NULL,DUMMY_NAME
- *  remarks       : ----
+ *  external funs : strlen, sizeof, Malloc, sprintf
+ *  macros        : DBUG..., NULL
+ *  remarks       : 1) <= 99
  *
  */
 char *
@@ -395,7 +404,9 @@ GenName (int i, char *name)
  *  functionname  : GenFunName
  *  arguments     : 1) fun_name
  *                  2) mod_name
- *  description   :
+ *  description   : allocates memory for a new string and makes a new function
+ *                  name out of 1), MOD_NAME_CON and 2)
+ *
  *  global vars   :
  *  internal funs :
  *  external funs : strlen, sizeof, Malloc
@@ -1243,21 +1254,21 @@ CompPrf (node *arg_node, node *arg_info)
                 GET_DIM (dim, arg3->TYPES); /* dim will be used later */
                 DECL_ARRAY (first_assign, arg3->node[0], "__TMP1", tmp_array1);
                 arg_node = first_assign;
-                CREATE_CONST_ARRAY (arg3, tmp_array1, type_id_node, res_ref);
+                CREATE_CONST_ARRAY (arg3, tmp_array1, type_id_node, n_node);
                 arg3 = tmp_array1;
+                CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res,
+                                  res_ref);
+                APPEND_ASSIGNS (first_assign, next_assign);
             }
             /* store dimension of arg3 */
             MAKENODE_NUM (dim_node, dim);
-            if (N_id == arg1->nodetype) {
-                CREATE_5_ARY_ICM (next_assign, "ND_KD_ROT_SxSxA_A", arg1, arg2, dim_node,
-                                  arg3, res);
-            } else {
-                CREATE_5_ARY_ICM (next_assign, "ND_KD_ROT_CxSxA_A", arg1, arg2, dim_node,
-                                  arg3, res);
-            }
+            DBUG_ASSERT ((N_num == arg1->nodetype), "wrong 1.arg of 'rotate'");
+            CREATE_5_ARY_ICM (next_assign, "ND_KD_ROT_CxSxA_A", arg1, arg2, dim_node,
+                              arg3, res);
             APPEND_ASSIGNS (first_assign, next_assign);
             if (0 == array_is_const) {
-                DEC_RC_FREE_ND (arg3, n_node);
+
+                DEC_OR_FREE_RC_ND (arg3, n_node);
                 INSERT_ASSIGN;
             } else {
                 DEC_RC_FREE_ND (arg3, n_node);
@@ -1447,7 +1458,9 @@ CompId (node *arg_node, node *arg_info)
  *  functionname  : CompAp
  *  arguments     : 1) N_Ap node
  *                  2) info node
- *  description   :
+ *  description   : - creates N_icm for function application
+ *                  - insert N_icm to decrement the refcount of functions
+ *                    arguments
  *  global vars   :
  *  internal funs :
  *  external funs :
@@ -1460,13 +1473,19 @@ CompId (node *arg_node, node *arg_info)
 node *
 CompAp (node *arg_node, node *arg_info)
 {
-    int n = 0, str_length;
-    node *tmp, *last, *next, *exprs, *icm_arg, *id_node, *tag_node, *outs, *fun_args;
+    int n = 0;
+    node *tmp, *last, *next, *exprs, *icm_arg, *id_node, *tag_node, *outs, *fun_args,
+      *next_assign, *first_assign, *refs_node, *n_node;
     ids *ids;
-    char *fun_name;
 
     DBUG_ENTER ("CompAp");
     fun_args = arg_node->node[0];
+
+    refs_node = MakeNode (N_assign); /* refs_node will be used to store N_icms
+                                      * for incrementation and decremantation
+                                      * of refcounts
+                                      */
+    first_assign = refs_node;
 
     /* first take Let ids (variables assigned to) */
     ids = arg_info->node[1]->IDS;
@@ -1474,6 +1493,12 @@ CompAp (node *arg_node, node *arg_info)
     ids = ids->next;
     id_node->IDS_NEXT = NULL;
     if (1 == IsArray (id_node->IDS_NODE->TYPES)) {
+        MAKENODE_NUM (n_node, ids->refcnt);
+        INC_RC_ND (id_node, n_node); /* create N_icm to increment refcount of
+                                      * function result. It will be stored in
+                                      * refs_node->node[1]->.. and will be
+                                      * inserted later.
+                                      */
         MAKENODE_ID (tag_node, "out_a");
     } else {
         MAKENODE_ID (tag_node, "out");
@@ -1484,9 +1509,19 @@ CompAp (node *arg_node, node *arg_info)
     n += 1;
     while (NULL != ids) {
         MAKENODE_ID_REUSE_IDS (id_node, ids);
-        ids = ids->next;
         id_node->IDS_NEXT = NULL;
         if (1 == IsArray (id_node->IDS_NODE->TYPES)) {
+            node *icm_arg; /* icm_arg is used in INC_RC_ND, but should not be the
+                            * same as icm_arg in outer scope (name clash)
+                            */
+
+            /* create N_icm to increment refcount of function result.
+             * It will be stored in refs_node->node[1]->.. and will be
+             * inserted later.
+             */
+            MAKENODE_NUM (n_node, ids->refcnt);
+            INC_RC_ND (id_node, n_node);
+
             MAKENODE_ID (tag_node, "out_a");
         } else {
             MAKENODE_ID (tag_node, "out");
@@ -1494,12 +1529,13 @@ CompAp (node *arg_node, node *arg_info)
         MAKE_NEXT_ICM_ARG (icm_arg, tag_node);
         MAKE_NEXT_ICM_ARG (icm_arg, id_node);
         n += 1;
+        ids = ids->next;
     }
 
     /* now do the arguments of the function */
     exprs = arg_node->node[0];
     last = icm_arg;
-
+    MAKENODE_NUM (n_node, 1);
     while (NULL != exprs) {
         next = exprs->node[1];
         if (N_id == exprs->node[0]->nodetype)
@@ -1525,16 +1561,7 @@ CompAp (node *arg_node, node *arg_info)
 
     /* put function_name in front */
     exprs = MakeNode (N_exprs);
-    if (NULL == arg_node->FUN_MOD_NAME) {
-        MAKENODE_ID (id_node, arg_node->FUN_NAME);
-    } else {
-        str_length = strlen (arg_node->FUN_MOD_NAME) + strlen (arg_node->FUN_NAME);
-        fun_name = (char *)Malloc (sizeof (char) * (str_length + 3));
-        strcat (fun_name, arg_node->FUN_MOD_NAME);
-        strcat (fun_name, MOD_NAME_CON);
-        strcat (fun_name, arg_node->FUN_NAME);
-        MAKENODE_ID (id_node, fun_name);
-    }
+    MAKENODE_ID (id_node, GenFunName (arg_node->FUN_NAME, arg_node->FUN_MOD_NAME));
     exprs->node[0] = id_node;
     exprs->node[1] = outs;
     exprs->nnode = 2;
@@ -1544,6 +1571,16 @@ CompAp (node *arg_node, node *arg_info)
     arg_info->node[1]->nodetype = N_icm;
     MAKE_ICM_NAME (arg_info->node[1], "ND_FUN_AP");
 
+    /* now insert N_icms for incrementation of refcounts of function results
+     * if any
+     */
+    if (NULL != refs_node->node[1]) {
+        first_assign->node[1] = arg_info->node[0]->node[1];
+        first_assign->nnode = 2;
+        arg_info->node[0]->node[1] = refs_node->node[1];
+    }
+    FREE (refs_node); /* refs_node will not be used anymore */
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1552,12 +1589,15 @@ CompAp (node *arg_node, node *arg_info)
  *  functionname  : CompReturn
  *  arguments     : 1) N_return node
  *                  2) info node
- *  description   :
+ *  description   : generates N_icms for N_return of a function or of a
+ *                  with-loop
  *  global vars   :
  *  internal funs :
  *  external funs :
  *  macros        : DBUG...,
- *  remarks       :
+ *  remarks       : if N_return node contains to a with_loop, then
+ *                   arg_info->node[2] will point to the first argument(N_exprs)
+ *                   of corresponding N_icm for start of with_loop
  *
  */
 node *
@@ -1570,7 +1610,7 @@ CompReturn (node *arg_node, node *arg_info)
 
     exprs = arg_node->node[0];
     if (NULL == arg_info->node[2]) {
-
+        /* this is a N_return of a function-body */
         last = arg_node;
         /* the new N_exprs chain will be stored in arg_node->node[1]
          * temporaryly
@@ -1597,11 +1637,20 @@ CompReturn (node *arg_node, node *arg_info)
         arg_node->node[0] = exprs;
         arg_node->node[1] = NULL;
     } else {
-        node *tmp_node, *with_icm_arg, *icm_arg, *index_length;
+        /* this is a N_return of a with_loop.
+         * arg_info->node[2] points to the N_icm that desribes the begin of
+         * a with_loop.
+         * The arguments of this N_icm are usefull to get the name of
+         * the resulting array, the dimension of this array, and the
+         * length of the index_vector.
+         * The name of the N_icm is used to detect wheather N_return node is part
+         * of a 'genarray' or 'modarray' with-loop.
+         */
+        node *ret_val, *with_icm_arg, *icm_arg, *index_length;
         int is_array = IsArray (exprs->node[0]->IDS_NODE->TYPES);
 
-        arg_node->nodetype = N_icm;
-        tmp_node = arg_node->node[0];
+        arg_node->nodetype = N_icm;  /* N_return will be converted to N_icm node */
+        ret_val = arg_node->node[0]; /* store return_value node */
         with_icm_arg = arg_info->node[2]->node[0];
         MAKE_ICM_ARG (arg_node->node[0], with_icm_arg->node[0]);
         icm_arg = arg_node->node[0];
@@ -1620,12 +1669,13 @@ CompReturn (node *arg_node, node *arg_info)
         }
 
         if ('M' == arg_info->node[2]->info.id[9]) {
+            /* N_return belongs to a 'modarray' with-loop */
             /* add name of modified array */
             with_icm_arg = with_icm_arg->node[1];
             MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
 
             /* add name of return value */
-            icm_arg->node[1] = tmp_node;
+            icm_arg->node[1] = ret_val;
             icm_arg->nnode = 2;
             icm_arg = icm_arg->node[1];
 
@@ -1638,8 +1688,9 @@ CompReturn (node *arg_node, node *arg_info)
                 MAKE_NEXT_ICM_ARG (icm_arg, index_length->node[0]);
             }
         } else if ('G' == arg_info->node[2]->info.id[9]) {
+            /* N_return belongs to a 'genarray' with-loop */
             /* add name of return value */
-            icm_arg->node[1] = tmp_node;
+            icm_arg->node[1] = ret_val;
             icm_arg->nnode = 2;
             icm_arg = icm_arg->node[1];
             if (0 == is_array) {
