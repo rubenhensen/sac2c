@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2000/06/08 12:15:38  jhs
+ * Added some INFO_DFA_XXX stuff
+ * /
+ *
  * Revision 1.45  2000/05/29 14:30:18  dkr
  * minor error in comment of N_Ncode corrected
  *
@@ -2400,6 +2404,9 @@ extern node *MakeInfo ();
 #define INFO_DFA_NEEDBLOCK(n) (n->dfmask[3])
 #define INFO_DFA_CONT(n) (n->node[3])
 #define INFO_DFA_THISASSIGN(n) (n->node[4])
+#define INFO_DFA_INFER_LET_DEFMASK(n) (n->dfmask[4])
+#define INFO_DFA_INFER_LET_USEMASK(n) (n->dfmask[5])
+#define INFO_DFA_INFER_LET_LHSDONE(n) (n->flag)
 
 /* multithread - barriers_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
