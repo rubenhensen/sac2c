@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/27 11:49:20  ben
+ *  SAC_MT_SCHEDULER_Afs_next_task() added
+ *
  * Revision 3.14  2001/03/23 13:33:29  ben
  *  SAC_MT_SCHEDULER_Reset_Tasks modified
  *
@@ -821,6 +824,43 @@ typedef union {
             for (i = 0; i < SAC_MT_THREADS () + 1; i++)                                  \
                 SAC_MT_TASK (i) = 0;                                                     \
             SAC_TR_MT_PRINT (("SAC_MT_TASK reseted"));                                   \
+        }                                                                                \
+    }
+
+#define SAC_MT_SCHEDULER_Afs_next_task()                                                 \
+    {                                                                                    \
+        worktodo = 0;                                                                    \
+                                                                                         \
+        /* first look if MYTHREAD has work to do */                                      \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (SAC_MT_MYTHREAD ()));                      \
+        if (SAC_MT_TASK (SAC_MT_MYTHREAD ()) < 5) {                                      \
+            taskid = (5 * SAC_MT_MYTHREAD ()) + SAC_MT_TASK (SAC_MT_MYTHREAD ());        \
+            SAC_MT_TASK (SAC_MT_MYTHREAD ())++;                                          \
+            worktodo = 1;                                                                \
+        }                                                                                \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (SAC_MT_MYTHREAD ()));                      \
+                                                                                         \
+        /* if there was no work to do find the task, which has done,                     \
+           the smallest work till now*/                                                  \
+        if (worktodo == 0) {                                                             \
+            maxloadthread = 0;                                                           \
+            mintask = SAC_MT_TASK (0);                                                   \
+            for (task = 1; task < SAC_MT_THREADS (); task++)                             \
+                if (SAC_MT_TASK (task) < mintask) {                                      \
+                    mintask = SAC_MT_TASK (task);                                        \
+                    maxloadthread = task;                                                \
+                }                                                                        \
+                                                                                         \
+            /* if there was a thread with work to do,get his next task */                \
+            if (mintask < 5) {                                                           \
+                SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (maxloadthread));                   \
+                if (SAC_MT_TASK (maxloadthread) < 5) {                                   \
+                    taskid = 5 * maxloadthread + SAC_MT_TASK (maxloadthread);            \
+                    SAC_MT_TASK (maxloadthread)++;                                       \
+                    worktodo = 1;                                                        \
+                }                                                                        \
+                SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (maxloadthread));                   \
+            }                                                                            \
         }                                                                                \
     }
 
