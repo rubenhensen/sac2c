@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1997/11/13 16:25:14  srs
+ * added enum WithOpType
+ * removed struct with_ids
+ * added new component info2 (universal infoslot)
+ *  to struct NODE
+ *
  * Revision 1.21  1997/11/07 15:43:23  srs
  * added alternative with_ids to infotype.
  * with_ids is used in N_withid
@@ -116,12 +122,7 @@ typedef enum {
 
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 
-#if 0 /* 10.02.97 unused type */
-typedef enum {
-               C_gen, C_mod
-             }
-             contype;
-#endif
+typedef enum { WO_genarray, WO_modarray, WO_foldfun, WO_foldprf } WithOpType;
 
 typedef enum {
     ST_regular,            /* normal types */
@@ -279,11 +280,6 @@ typedef struct {
     int tc;  /* type class */
 } prf_tag;
 
-typedef struct {
-    int type;
-    ids *ids;
-} with_ids;
-
 typedef union {
     ids *ids;          /* list  of identifiers               */
     char *id;          /* identifier                         */
@@ -299,8 +295,7 @@ typedef union {
                         * this declarations are used to look for argument
                         * and result type of primitive functions
                         */
-    with_ids with_ids; /* here is stored the form of the index vector
-                          which is used in the respective generator*/
+    WithOpType withop; /* used in N_Nwith node */
 } infotype;
 
 /*
@@ -310,6 +305,7 @@ typedef union {
 typedef struct NODE {
     nodetype nodetype;    /* type of node */
     infotype info;        /* node dependent information */
+    void *info2;          /* any node dependent information */
     int refcnt;           /* reference count information */
     int flag;             /* the flag is used for node-status */
                           /* (loop invariant/not loop invariant,...) */
