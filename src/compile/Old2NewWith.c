@@ -8,111 +8,6 @@
 
 static int error = 1;
 
-/******************************************************************************
- *
- * function:
- *   node *ReadOneGenPart(FILE *infile, node *id_node)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-node *
-ReadOneGenPart (FILE *infile, node *id_node)
-{
-    node *arr_node, *aelem1, *aelems = NULL;
-    int val, i;
-
-    DBUG_ENTER ("ReadOneGenPart");
-
-    for (i = 0; i < SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (ID_VARDEC (id_node))), 0);
-         i++) {
-        if ((error = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF)
-                      || ferror (infile))))
-            break;
-        if (aelems == NULL) {
-            aelem1 = aelems = MakeExprs (MakeNum (val), NULL);
-        } else {
-            EXPRS_NEXT (aelem1) = MakeExprs (MakeNum (val), NULL);
-            aelem1 = EXPRS_NEXT (aelem1);
-        }
-    }
-    if (error) {
-        if (aelems != NULL)
-            FreeTree (aelems);
-        arr_node = NULL;
-    } else {
-        arr_node = MakeArray (aelems);
-        ARRAY_TYPE (arr_node) = DuplicateTypes (VARDEC_TYPE (ID_VARDEC (id_node)), 1);
-    }
-
-    DBUG_RETURN (arr_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *BuildNpart(FILE *infile, node *arg_node)
- *
- * description:
- *   reads the file 'infile' and generates with this data a more complex
- *   N_Npart-syntaxtree based on 'arg_node'.
- *
- *   syntax of the inputfile:
- *       a1 b1 s1 w1
- *       a2 b2 s2 w2
- *       ...
- *     (the values must have the type [int, int, ...] or int)
- *
- ******************************************************************************/
-
-node *
-BuildNpart (FILE *infile, node *arg_node)
-{
-    node *tmp_node, *new_node = NULL;
-
-    DBUG_ENTER ("BuildNpart");
-
-    error = 0;
-
-    do {
-        tmp_node = new_node;
-        new_node
-          = DupTree (arg_node, NULL); /* arg_node is the base of the new syntaxtree */
-        NPART_NEXT (new_node) = tmp_node;
-
-        /* replace now the generator-nodes */
-        if (!error)
-            NGEN_BOUND1 (NPART_GEN (new_node))
-              = ReadOneGenPart (infile, NGEN_BOUND1 (NPART_GEN (arg_node)));
-        if (!error)
-            NGEN_BOUND2 (NPART_GEN (new_node))
-              = ReadOneGenPart (infile, NGEN_BOUND2 (NPART_GEN (arg_node)));
-        if (!error)
-            NGEN_STEP (NPART_GEN (new_node))
-              = ReadOneGenPart (infile, NGEN_STEP (NPART_GEN (arg_node)));
-        if (!error)
-            NGEN_WIDTH (NPART_GEN (new_node))
-              = ReadOneGenPart (infile, NGEN_WIDTH (NPART_GEN (arg_node)));
-    } while (!error);
-
-    if (error) {
-        /* remove uncompleted part of the new Npart-syntaxtree */
-        tmp_node = new_node;
-        new_node = NPART_NEXT (new_node);
-        NPART_NEXT (tmp_node) = NULL;
-        FreeTree (tmp_node);
-    }
-    /* if generation was succesful, only use new Npart-syntaxtree */
-    if (new_node != NULL) {
-        FreeTree (arg_node);
-        arg_node = new_node;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 /*
  *
  *  functionname  : SeperateBlockReturn
@@ -120,11 +15,6 @@ BuildNpart (FILE *infile, node *arg_node)
  *  description   : seperates the return-expr of a block from the rest.
  *                  (returns the return-expr [return value] and the rest of the block
  * [block])
- *
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : FreeAssign
- *  macros        : ---
  *
  *  remarks       : as a matter of course, the return-expr should be the last expr of the
  * block
@@ -167,22 +57,6 @@ SeperateBlockReturn (node **block_node)
 
     DBUG_RETURN (return_node);
 }
-
-/*
- *
- *  functionname  : O2Nwith
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : converts N_with-nodes to N_Nwith
- *
- *  global vars   : ---
- *  internal funs : SeperateBlockReturn
- *  external funs : MakeNWith(), ..., FreeWith()
- *  macros        : ---
- *
- *  remarks       :
- *
- */
 
 node *
 O2Nwith (node *arg_node, node *arg_info)
@@ -264,23 +138,116 @@ O2Nwith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+ReadOneGenPart (FILE *infile, types *type)
+{
+    node *arr_node, *aelem1, *aelems = NULL;
+    int val, i;
+
+    DBUG_ENTER ("ReadOneGenPart");
+
+    for (i = 0; i < SHPSEG_SHAPE (TYPES_SHPSEG (type), 0); i++) {
+        if ((error = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF)
+                      || ferror (infile))))
+            break;
+        if (aelems == NULL) {
+            aelem1 = aelems = MakeExprs (MakeNum (val), NULL);
+        } else {
+            EXPRS_NEXT (aelem1) = MakeExprs (MakeNum (val), NULL);
+            aelem1 = EXPRS_NEXT (aelem1);
+        }
+    }
+    if (error) {
+        if (aelems != NULL)
+            FreeTree (aelems);
+        arr_node = NULL;
+    } else {
+        arr_node = MakeArray (aelems);
+        ARRAY_TYPE (arr_node) = DuplicateTypes (type, 1);
+    }
+
+    DBUG_RETURN (arr_node);
+}
+
 /******************************************************************************
  *
  * function:
- *   node *O2NNpart(node *arg_node, node *arg_info)
+ *   node *BuildNpart(FILE *infile, node *arg_node)
  *
  * description:
- *   generates a more complex N_Npart syntaxtree (reads data from stdin)
+ *   reads the file 'infile' and generates with this data a more complex
+ *   N_Npart-syntaxtree based on 'arg_node'.
  *
+ *   syntax of the inputfile:
+ *       a1 b1 s1 w1
+ *       a2 b2 s2 w2
+ *       ...
+ *     (the values must have the type [int, int, ...] or int)
  *
  ******************************************************************************/
 
 node *
-O2NNpart (node *arg_node, node *arg_info)
+BuildNpart (FILE *infile, node *arg_node)
+{
+    node *tmp_node, *new_node = NULL;
+    types *type;
+
+    DBUG_ENTER ("BuildNpart");
+
+    error = 0;
+
+    do {
+        tmp_node = new_node;
+        new_node
+          = DupTree (arg_node, NULL); /* arg_node is the source of the new syntaxtree */
+        NPART_NEXT (new_node) = tmp_node;
+
+        type = VARDEC_TYPE (ID_VARDEC (NGEN_BOUND1 (NPART_GEN (arg_node))));
+
+        /* replace now the generator-nodes */
+        if (!error)
+            NGEN_BOUND1 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        if (!error)
+            NGEN_BOUND2 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        if (!error)
+            NGEN_STEP (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        if (!error)
+            NGEN_WIDTH (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+    } while (!error);
+
+    if (error) {
+        /* remove uncompleted part of the new Npart-syntaxtree */
+        tmp_node = new_node;
+        new_node = NPART_NEXT (new_node);
+        NPART_NEXT (tmp_node) = NULL;
+        FreeTree (tmp_node);
+    }
+
+    /* if generation was succesful, only use new Npart-syntaxtree */
+    if (new_node != NULL) {
+        FreeTree (arg_node);
+        arg_node = new_node;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *O2Nnpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   generates a more complex N_Npart syntaxtree (reads data from stdin)
+ *
+ ******************************************************************************/
+
+node *
+O2Nnpart (node *arg_node, node *arg_info)
 {
     FILE *infile;
 
-    DBUG_ENTER ("O2NNpart");
+    DBUG_ENTER ("O2Nnpart");
 
     infile = stdin; /* use standard input */
     if (infile != NULL) {
@@ -291,19 +258,44 @@ O2NNpart (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- *
- *  functionname  : Old2NewWith
- *  arguments     : 1) syntax tree
- *  description   : initializes o2nWith_tab and starts the conversion
- *
- *  global vars   : act_tab
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG...,
- *  remarks       : ----
- *
- */
+node *
+O2Nnwith (node *arg_node, node *arg_info)
+{
+    node *tmp_node, *shape, *bound2_el, *shape_el;
+
+    DBUG_ENTER ("O2Nnwith");
+
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    /* modify the genarray-shape */
+    if (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray) {
+        /* shape is the maximum of all bound2-values */
+        shape = DupTree (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node))), NULL);
+        ARRAY_TYPE (shape)
+          = DuplicateTypes (ARRAY_TYPE (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node)))),
+                            1);
+        tmp_node = NPART_NEXT (NWITH_PART (arg_node));
+        while (tmp_node != NULL) {
+            bound2_el = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (tmp_node)));
+            shape_el = ARRAY_AELEMS (shape);
+            while (bound2_el != NULL) {
+                if (NUM_VAL (EXPRS_EXPR (bound2_el)) > NUM_VAL (EXPRS_EXPR (shape_el))) {
+                    NUM_VAL (EXPRS_EXPR (shape_el)) = NUM_VAL (EXPRS_EXPR (bound2_el));
+                }
+                bound2_el = EXPRS_NEXT (bound2_el);
+                shape_el = EXPRS_NEXT (shape_el);
+            }
+            tmp_node = NPART_NEXT (tmp_node);
+        }
+
+        tmp_node = NWITHOP_SHAPE (NWITH_WITHOP (arg_node));
+        NWITHOP_SHAPE (NWITH_WITHOP (arg_node)) = shape;
+        FreeTree (tmp_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 Old2NewWith (node *arg_node)
