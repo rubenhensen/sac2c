@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/07/07 13:42:55  cg
+ *  implemented the command line option -mt-all
+ *
  * Revision 1.16  1998/06/23 15:06:55  cg
  * Command line option -dcccall implemented.
  *
@@ -86,6 +89,7 @@
 #include "filemgr.h"
 #include "traverse.h"
 #include "resource.h"
+#include "gen_startup_code.h"
 
 /*
  *
@@ -534,10 +538,6 @@ InvokeCC ()
         char *linklist = GenLinklist (dependencies);
         FILE *shellscript;
 
-        SystemCall ("%s %s %s -L%s %s -o %s %s %s %s", config.cc, config.ccflags,
-                    config.ccdir, tmp_dirname, opt_buffer, outfilename, cfilename,
-                    linklist, config.cclink);
-
         if (gen_cccall) {
             shellscript = WriteOpen (".sac2c");
             fprintf (shellscript, "#!/bin/sh -v\n\n");
@@ -547,7 +547,54 @@ InvokeCC ()
             fclose (shellscript);
             SystemCall ("chmod a+x .sac2c");
         }
+
+        if (all_threads == 0) {
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s", config.cc, config.ccflags,
+                        config.ccdir, tmp_dirname, opt_buffer, outfilename, cfilename,
+                        linklist, config.cclink);
+
+        } else {
+            SystemCall ("%s %s %s -L%s %s -o %s.1 "
+                        "-DSAC_DO_MULTITHREAD=0 "
+                        "-DSAC_DO_THREADS_STATIC=1 "
+                        "-DSAC_SET_THREADS_MAX=1 "
+                        "-DSAC_SET_THREADS=1 "
+                        "-DSAC_SET_MASTERCLASS=0 "
+                        "%s %s %s",
+                        config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                        outfilename, cfilename, linklist, config.cclink);
+
+            NOTEDOT;
+            SystemCall ("%s %s %s -L%s %s -o %s.d%d "
+                        "-DSAC_DO_MULTITHREAD=1 "
+                        "-DSAC_DO_THREADS_STATIC=0 "
+                        "-DSAC_SET_THREADS_MAX=%d "
+                        "-DSAC_SET_THREADS=0 "
+                        "-DSAC_SET_MASTERCLASS=0 "
+                        "%s %s %s",
+                        config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                        outfilename, all_threads, all_threads, cfilename, linklist,
+                        config.cclink);
+
+            for (i = 2; i <= all_threads; i++) {
+                NOTEDOT;
+                SystemCall ("%s %s %s -L%s %s -o %s.%d "
+                            "-DSAC_DO_MULTITHREAD=1 "
+                            "-DSAC_DO_THREADS_STATIC=1 "
+                            "-DSAC_SET_THREADS_MAX=%d "
+                            "-DSAC_SET_THREADS=%d "
+                            "-DSAC_SET_MASTERCLASS=%d "
+                            "%s %s %s",
+                            config.cc, config.ccflags, config.ccdir, tmp_dirname,
+                            opt_buffer, outfilename, i, i, i, GSCCalcMasterclass (i),
+                            cfilename, linklist, config.cclink);
+            }
+        }
+
     } else {
+        SYSWARN (("Command line option '-mt-all <num>` not allowed for"
+                  " compiling module/class implementations."));
+
         if (linkstyle == 1) {
             SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
                         config.ccdir, opt_buffer, tmp_dirname, modulename, tmp_dirname,
