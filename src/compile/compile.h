@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/10/16 16:46:15  dkr
+ * names of local vars in macros have a prefix '_' now
+ *
  * Revision 2.12  2000/10/16 11:11:13  dkr
  * IS_REFCOUNTED moved from compile.c to compile.h
  *
@@ -89,10 +92,10 @@ extern node *GetFoldVardecs (node *fundef);
 
 #define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
     {                                                                                    \
-        node *tmp;                                                                       \
-        tmp = MakeExprs (new_node, NULL);                                                \
-        EXPRS_NEXT (prev) = tmp;                                                         \
-        prev = tmp;                                                                      \
+        node *_tmp;                                                                      \
+        _tmp = MakeExprs (new_node, NULL);                                               \
+        EXPRS_NEXT (prev) = _tmp;                                                        \
+        prev = _tmp;                                                                     \
     }
 
 #define APPEND_ICM_ARG(prev, new)                                                        \
@@ -167,13 +170,13 @@ extern node *GetFoldVardecs (node *fundef);
  */
 #define COUNT_ELEMS(n, exprs)                                                            \
     {                                                                                    \
-        node *tmp;                                                                       \
+        node *_tmp;                                                                      \
         n = 0;                                                                           \
-        tmp = exprs;                                                                     \
-        do {                                                                             \
+        _tmp = exprs;                                                                    \
+        while (_tmp != NULL) {                                                           \
             n++;                                                                         \
-            tmp = EXPRS_NEXT (tmp);                                                      \
-        } while (NULL != tmp);                                                           \
+            _tmp = EXPRS_NEXT (_tmp);                                                    \
+        }                                                                                \
     }
 
 #endif /* _sac_compile_h */
