@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.17  1997/11/11 16:49:24  sbs
+# make deps done
+#
 # Revision 1.16  1997/10/29 14:36:13  srs
 # added CFLAGS to compilerarguments for CCL
 #
@@ -86,19 +89,18 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 lex.yy.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-lex.yy.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
-lex.yy.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-lex.yy.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-lex.yy.o: ../global/internal_lib.h y.tab.h
+lex.yy.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
+lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+lex.yy.o: y.tab.h
 scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-scnprs.o: /usr/include/sys/va_list.h ../global/types.h ../global/tree_basic.h
-scnprs.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-scnprs.o: ../global/globals.h ../../inc/dbug.h ../modules/filemgr.h scnprs.h
-scnprs.o: y.tab.h
+scnprs.o: ../global/types.h ../global/tree_basic.h ../global/Error.h
+scnprs.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+scnprs.o: ../../inc/dbug.h ../modules/filemgr.h scnprs.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-y.tab.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
-y.tab.o: /usr/include/memory.h ../../inc/dbug.h ../global/tree.h
-y.tab.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-y.tab.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-y.tab.o: ../global/internal_lib.h ../global/my_debug.h ../global/free.h
-y.tab.o: /usr/include/malloc.h ../modules/readsib.h /usr/include/values.h
+y.tab.o: /usr/include/stdlib.h /usr/include/memory.h ../../inc/dbug.h
+y.tab.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+y.tab.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
+y.tab.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
+y.tab.o: ../global/free.h /usr/include/malloc.h ../modules/readsib.h
+y.tab.o: /usr/include/values.h

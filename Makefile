@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.54  1997/11/11 16:49:20  sbs
+# make deps done
+#
 # Revision 1.53  1997/10/28 19:20:13  srs
 # now make can have a macro definition CFALGS which adds
 # parameters to the call of the c-compiler:
@@ -172,7 +175,7 @@
 # Currently, these are popen(), pclose(), tempnam(), and strdup().
 #
 
-CC=gcc -ansi -Wall -g -D__EXTENSIONS__ $(CFLAGS)
+CC=cc -g -D__EXTENSIONS__ $(CFLAGS)
 CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3 -D__EXTENSIONS__
 MAKE=make CC="$(CC)"
 MAKEPROD=make CC="$(CCPROD)"
