@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.3  1994/12/09 10:44:24  sbs
+# Revision 1.4  1995/01/04 16:04:37  hw
+# added -I../modules to INCS
+# make deps done
+#
+# Revision 1.3  1994/12/09  10:44:24  sbs
 # make deps done
 #
 # Revision 1.2  1994/12/06  16:31:12  hw
@@ -14,7 +18,7 @@
 
 CC=gcc -ansi -g
 RM=rm -f
-INCS=-I../global -I../../inc -I../print
+INCS=-I../global -I../../inc -I../print -I../modules
 
 all: typecheck.o
 
@@ -30,7 +34,8 @@ clean:
 
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 typecheck.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
-typecheck.o: ../global/node_info.mac ../global/prf_node_info.mac
-typecheck.o: ../global/my_debug.h ../../inc/dbug.h /usr/include/stdio.h
-typecheck.o: ../global/traverse.h typecheck.h ../global/Error.h
-typecheck.o: ../print/convert.h
+typecheck.o: ../global/type_info.mac ../global/node_info.mac
+typecheck.o: ../global/prf_node_info.mac ../global/my_debug.h
+typecheck.o: ../../inc/dbug.h /usr/include/stdio.h ../global/traverse.h
+typecheck.o: typecheck.h ../global/Error.h ../print/convert.h
+typecheck.o: ../modules/import.h
