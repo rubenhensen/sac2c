@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.85  2004/04/27 10:17:11  skt
+# target assignments_rearrange.o added
+#
 # Revision 3.84  2004/04/21 16:42:30  ktr
 # added SSARefCount.o
 #
@@ -250,7 +253,7 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/blocks_propagate.o \
              src/multithread/dataflow_analysis.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
-             src/multithread/adjust_calls.o
+             src/multithread/adjust_calls.o src/multithread/assignments_rearrange.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \
