@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/09/20 18:20:00  dkr
+ * enum type clsconv_t added
+ *
  * Revision 2.35  2000/08/17 10:09:32  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *
@@ -227,6 +230,8 @@ typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
 typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t;
 
 typedef enum { ADIR_read, ADIR_write } accessdir_t;
+
+typedef enum { NO_CLSCONV, TO_CLASS, FROM_CLASS } clsconv_t;
 
 /*
  * new nodes for yacc and the syntax tree
