@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 3.7  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -113,7 +116,7 @@ ICUGetShapeClass (char *var_NT)
     i = 0;
     z = C_unknowns;
     while ((i != C_unknowns) && (z == C_unknowns)) {
-        if (!strncmp (var_NT + nc, nt_shape_string[i], 3)) {
+        if (!strncmp (var_NT + nc, global.nt_shape_string[i], 3)) {
             z = i;
         }
         i++;
@@ -146,7 +149,7 @@ ICUGetHiddenClass (char *var_NT)
     i = 0;
     z = C_unknownh;
     while ((i != C_unknownh) && (z == C_unknownh)) {
-        if (!strncmp (var_NT + nc, nt_hidden_string[i], 3)) {
+        if (!strncmp (var_NT + nc, global.nt_hidden_string[i], 3)) {
             z = i;
         }
         i++;
@@ -179,7 +182,7 @@ ICUGetUniqueClass (char *var_NT)
     i = 0;
     z = C_unknownu;
     while ((i != C_unknownu) && (z == C_unknownu)) {
-        if (!strncmp (var_NT + nc, nt_unique_string[i], 3)) {
+        if (!strncmp (var_NT + nc, global.nt_unique_string[i], 3)) {
             z = i;
         }
         i++;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 3.6  2002/10/10 23:51:08  dkr
  * ICM_STR added
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 1.15  2004/11/24 15:50:42  jhb
  * removed include my_dbug.h
  *
@@ -56,6 +59,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "icm2c_basic.h"
 #include "icm2c_utils.h"
@@ -63,17 +67,18 @@
 #include "icm2c_prf.h"
 
 #include "dbug.h"
-/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
 #include "gen_startup_code.h"
+#include "free.h"
+#include "internal_lib.h"
 
 #ifdef BEtest
-#define Free(x)                                                                          \
+#define ILIBfree(x)                                                                      \
     x;                                                                                   \
     free (x)
-#define Malloc(x) malloc (x)
+#define ILIBmalloc(x) malloc (x)
 #endif /* BEtest */
 
 /******************************************************************************
@@ -109,7 +114,7 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
     DBUG_ASSERT ((to_hc == C_nhd), "result of F_shape must be non-hidden!");
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SHAPE__DATA( %s, %d, %s, %d)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
@@ -117,7 +122,7 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
     switch (from_sc) {
     case C_scl:
         INDENT;
-        fprintf (outfile, "SAC_NOOP()\n");
+        fprintf (global.outfile, "SAC_NOOP()\n");
         break;
 
     case C_aks:
@@ -126,7 +131,7 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
         DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
         for (i = 0; i < from_dim; i++) {
             INDENT; /* is NHD -> no copyfun needed */
-            fprintf (outfile,
+            fprintf (global.outfile,
                      "SAC_ND_WRITE_COPY( %s, %d, "
                      "SAC_ND_A_SHAPE( %s, %d), );\n",
                      to_NT, i, from_NT, i);
@@ -134,10 +139,11 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
         break;
 
     case C_aud:
-        FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", from_NT);
+        FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                             , fprintf (global.outfile, "0");
+                             , fprintf (global.outfile, "SAC_ND_A_DIM( %s)", from_NT);
                              , INDENT; /* is NHD -> no copyfun needed */
-                             fprintf (outfile,
+                             fprintf (global.outfile,
                                       "SAC_ND_WRITE_COPY( %s, SAC_i,"
                                       " SAC_ND_A_SHAPE( %s, SAC_i), );\n",
                                       to_NT, from_NT););
@@ -175,14 +181,14 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 #undef ND_PRF_RESHAPE__SHAPE_id
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_RESHAPE__SHAPE( %s, %d, ...)\"))\n",
              to_NT, to_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
-                     , fprintf (outfile, "1st argument of %s is not a vector!",
-                                prf_string[F_reshape]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
+                     , fprintf (global.outfile, "1st argument of %s is not a vector!",
+                                global.prf_string[F_reshape]););
 
     ICMCompileND_SET__SHAPE_id (to_NT, to_sdim, shp_NT);
 
@@ -222,16 +228,18 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_RESHAPE__SHAPE( %s, %d, ...)\"))\n",
              to_NT, to_sdim);
 
     for (i = 0; i < shp_size; i++) {
         if (shp_ANY[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", shp_ANY[i]);
-                             , fprintf (outfile, "1st argument of %s is not a vector!",
-                                        prf_string[F_reshape]););
+            ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
+                                      shp_ANY[i]);
+                             , fprintf (global.outfile,
+                                        "1st argument of %s is not a vector!",
+                                        global.prf_string[F_reshape]););
         }
     }
 
@@ -272,17 +280,17 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
 #undef ND_PRF_SEL__SHAPE_id
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile,
+    ASSURE_TYPE_ASS (fprintf (global.outfile,
                               "SAC_ND_A_DIM( %s) =="
                               " SAC_ND_A_DIM( %s) + SAC_ND_A_SIZE( %s)",
                               from_NT, to_NT, idx_NT);
-                     , fprintf (outfile, "Inconsistant call of %s found!",
-                                prf_string[F_sel]););
+                     , fprintf (global.outfile, "Inconsistant call of %s found!",
+                                global.prf_string[F_sel]););
 
     switch (to_sc) {
     case C_scl:
@@ -293,9 +301,9 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
         /* here is no break missing */
     case C_akd:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        shp = (char **)Malloc (to_dim * sizeof (char *));
+        shp = (char **)ILIBmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)Malloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)ILIBmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -306,9 +314,9 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
-            shp[i] = Free (shp[i]);
+            shp[i] = ILIBfree (shp[i]);
         }
-        shp = Free (shp);
+        shp = ILIBfree (shp);
         break;
 
     case C_aud:
@@ -320,10 +328,11 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
          *
          * Hence, F_sel is implemented for scalar results only!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
-                                  from_NT, idx_NT);
-                         , fprintf (outfile, "Result of %s is not a scalar!",
-                                    prf_string[F_sel]););
+        ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                  "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)", from_NT,
+                                  idx_NT);
+                         , fprintf (global.outfile, "Result of %s is not a scalar!",
+                                    global.prf_string[F_sel]););
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
         break;
 
@@ -373,15 +382,16 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
-                              from_NT, to_NT, idx_size);
-                     , fprintf (outfile, "Inconsistant call of %s found!",
-                                prf_string[F_sel]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile,
+                              "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d", from_NT,
+                              to_NT, idx_size);
+                     , fprintf (global.outfile, "Inconsistant call of %s found!",
+                                global.prf_string[F_sel]););
 
     switch (to_sc) {
     case C_scl:
@@ -392,9 +402,9 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
         /* here is no break missing */
     case C_akd:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        shp = (char **)Malloc (to_dim * sizeof (char *));
+        shp = (char **)ILIBmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)Malloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)ILIBmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -405,9 +415,9 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
-            shp[i] = Free (shp[i]);
+            shp[i] = ILIBfree (shp[i]);
         }
-        shp = Free (shp);
+        shp = ILIBfree (shp);
         break;
 
     case C_aud:
@@ -419,9 +429,10 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
          *
          * Hence, F_sel is implemented for scalar results only!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", from_NT, idx_size);
-                         , fprintf (outfile, "Result of %s is not a scalar!",
-                                    prf_string[F_sel]););
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
+                                  idx_size);
+                         , fprintf (global.outfile, "Result of %s is not a scalar!",
+                                    global.prf_string[F_sel]););
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
         break;
 
@@ -459,25 +470,27 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
     DBUG_ENTER ("PrfSel_Data");
 
     if (to_dim == 0) {
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_idx;");
+        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
                        , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
                                       idx_read_fun, from_NT, from_dim);
                        INDENT;
-                       fprintf (outfile,
+                       fprintf (global.outfile,
                                 "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
                                 to_NT, from_NT, copyfun););
     } else {
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_idx, SAC_i;");
+        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx, SAC_i;");
                        , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
                                       idx_read_fun, from_NT, from_dim);
-                       FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_NT);
+                       FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");
+                                     , fprintf (global.outfile, "0");
+                                     , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)",
+                                                to_NT);
                                      , INDENT;
-                                     fprintf (outfile,
+                                     fprintf (global.outfile,
                                               "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
                                               " %s, SAC_idx, %s)\n",
                                               to_NT, from_NT, copyfun);
-                                     INDENT; fprintf (outfile, "SAC_idx++;\n");););
+                                     INDENT; fprintf (global.outfile, "SAC_idx++;\n");););
     }
 
     DBUG_VOID_RETURN;
@@ -511,18 +524,18 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from
 #undef ND_PRF_SEL__DATA_id
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__DATA( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
-                     , fprintf (outfile, "1st argument of %s is not a vector!",
-                                prf_string[F_sel]););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_NT,
-                              idx_NT);
-                     , fprintf (outfile, "1st argument of %s has illegal size!",
-                                prf_string[F_sel]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
+                     , fprintf (global.outfile, "1st argument of %s is not a vector!",
+                                global.prf_string[F_sel]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)",
+                              from_NT, idx_NT);
+                     , fprintf (global.outfile, "1st argument of %s has illegal size!",
+                                global.prf_string[F_sel]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
@@ -566,21 +579,24 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__DATA( %s, %d, %s, %d, ...)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim);
 
     for (i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]);
-                             , fprintf (outfile, "1st argument of %s is not a vector!",
-                                        prf_string[F_sel]););
+            ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
+                                      idxs_ANY[i]);
+                             , fprintf (global.outfile,
+                                        "1st argument of %s is not a vector!",
+                                        global.prf_string[F_sel]););
         }
     }
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size);
-                     , fprintf (outfile, "1st argument of %s has illegal size!",
-                                prf_string[F_sel]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT,
+                              idx_size);
+                     , fprintf (global.outfile, "1st argument of %s has illegal size!",
+                                global.prf_string[F_sel]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
                  ReadConstArray_Str, copyfun);
@@ -624,99 +640,104 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
         (ICUGetShapeClass (val_ANY) == C_scl)) {
         /* 'val_ANY' is scalar */
         INDENT;
-        fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_NT, from_NT);
-        indent++;
+        fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_NT, from_NT);
+        global.indent++;
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_TR_MEM_PRINT("
                  " (\"reuse memory of %s at %%p for %s\","
                  " SAC_ND_A_FIELD( %s)))\n",
                  from_NT, to_NT, from_NT);
-        indent--;
+        global.indent--;
         INDENT;
-        fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_NT, from_NT);
-        indent++;
+        fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_NT, from_NT);
+        global.indent++;
         INDENT;
-        fprintf (outfile, "int SAC_i;\n");
-        FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                      , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_NT);, INDENT;
-                      fprintf (outfile,
+        fprintf (global.outfile, "int SAC_i;\n");
+        FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");, fprintf (global.outfile, "0");
+                      , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)", to_NT);, INDENT;
+                      fprintf (global.outfile,
                                "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_i, %s)\n",
                                to_NT, from_NT, copyfun););
-        indent--;
+        global.indent--;
         INDENT;
-        fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_NT, from_NT);
+        fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_NT, from_NT);
 
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_idx;");
+        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
                        ,
                        if (idx_unrolled) {
                            INDENT;
-                           fprintf (outfile, "SAC_idx = ");
+                           fprintf (global.outfile, "SAC_idx = ");
                            idx_read_fun (idx, NULL, 0);
-                           fprintf (outfile, ";\n");
+                           fprintf (global.outfile, ";\n");
                        } else {
                            Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
                                         idx_read_fun, to_NT, to_dim);
                        } INDENT;
-                       fprintf (outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
+                       fprintf (global.outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ",
+                                to_NT);
                        ReadScalar (val_ANY, NULL, 0);
-                       fprintf (outfile, " , %s)\n", copyfun););
+                       fprintf (global.outfile, " , %s)\n", copyfun););
     } else {
         /* 'val_ANY' is a tagged identifier representing a non-scalar array */
-        BLOCK_VARDECS (fprintf (outfile, "int SAC_i, SAC_j, SAC_idx;");
+        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_i, SAC_j, SAC_idx;");
                        ,
                        if (idx_unrolled) {
                            INDENT;
-                           fprintf (outfile, "SAC_idx = ");
+                           fprintf (global.outfile, "SAC_idx = ");
                            idx_read_fun (idx, NULL, 0);
-                           fprintf (outfile, ";\n");
+                           fprintf (global.outfile, ";\n");
                        } else {
                            Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
                                         idx_read_fun, to_NT, to_dim);
                        } INDENT;
-                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_NT,
-                                from_NT);
-                       indent++; INDENT;
-                       fprintf (outfile,
+                       fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n",
+                                to_NT, from_NT);
+                       global.indent++; INDENT;
+                       fprintf (global.outfile,
                                 "SAC_TR_MEM_PRINT("
                                 " (\"reuse memory of %s at %%p for %s\","
                                 " SAC_ND_A_FIELD( %s)))\n",
                                 from_NT, to_NT, from_NT);
-                       FOR_LOOP (fprintf (outfile, "SAC_i = SAC_idx, SAC_j = 0");
-                                 ,
-                                 fprintf (outfile, "SAC_j < SAC_ND_A_SIZE( %s)", val_ANY);
-                                 , fprintf (outfile, "SAC_i++, SAC_j++");, INDENT;
-                                 fprintf (outfile,
+                       FOR_LOOP (fprintf (global.outfile, "SAC_i = SAC_idx, SAC_j = 0");
+                                 , fprintf (global.outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
+                                            val_ANY);
+                                 , fprintf (global.outfile, "SAC_i++, SAC_j++");, INDENT;
+                                 fprintf (global.outfile,
                                           "SAC_ND_WRITE_READ_COPY("
                                           " %s, SAC_i, %s, SAC_j, %s)\n",
                                           to_NT, val_ANY, copyfun););
-                       indent--; INDENT;
-                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_NT,
-                                from_NT);
-                       indent++;
-                       FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                                     , fprintf (outfile, "SAC_idx");, INDENT;
-                                     fprintf (outfile,
+                       global.indent--; INDENT;
+                       fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n",
+                                to_NT, from_NT);
+                       global.indent++;
+                       FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");
+                                     , fprintf (global.outfile, "0");
+                                     , fprintf (global.outfile, "SAC_idx");, INDENT;
+                                     fprintf (global.outfile,
                                               "SAC_ND_WRITE_READ_COPY("
                                               " %s, SAC_i, %s, SAC_i, %s)\n",
                                               to_NT, from_NT, copyfun););
-                       FOR_LOOP_INC (fprintf (outfile, "SAC_j");, fprintf (outfile, "0");
-                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", val_ANY);
-                                     , INDENT; fprintf (outfile,
+                       FOR_LOOP_INC (fprintf (global.outfile, "SAC_j");
+                                     , fprintf (global.outfile, "0");
+                                     , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)",
+                                                val_ANY);
+                                     , INDENT; fprintf (global.outfile,
                                                         "SAC_ND_WRITE_READ_COPY("
                                                         " %s, SAC_i, %s, SAC_j, %s)\n",
                                                         to_NT, val_ANY, copyfun);
-                                     INDENT; fprintf (outfile, "SAC_i++;\n"););
-                       FOR_LOOP (fprintf (outfile, " ");
-                                 , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_NT);
-                                 , fprintf (outfile, "SAC_i++");, INDENT;
-                                 fprintf (outfile,
+                                     INDENT; fprintf (global.outfile, "SAC_i++;\n"););
+                       FOR_LOOP (fprintf (global.outfile, " ");
+                                 , fprintf (global.outfile, "SAC_i < SAC_ND_A_SIZE( %s)",
+                                            to_NT);
+                                 , fprintf (global.outfile, "SAC_i++");, INDENT;
+                                 fprintf (global.outfile,
                                           "SAC_ND_WRITE_READ_COPY("
                                           " %s, SAC_i, %s, SAC_i, %s)\n",
                                           to_NT, from_NT, copyfun););
-                       indent--; INDENT;
-                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_NT,
-                                from_NT););
+                       global.indent--; INDENT;
+                       fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n",
+                                to_NT, from_NT););
     }
 
     DBUG_VOID_RETURN;
@@ -756,18 +777,18 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_MODARRAY__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
-                     , fprintf (outfile, "2nd argument of %s is not a vector!",
-                                prf_string[F_modarray]););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_NT,
-                              idx_NT);
-                     , fprintf (outfile, "2nd argument of %s has illegal size!",
-                                prf_string[F_modarray]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
+                     , fprintf (global.outfile, "2nd argument of %s is not a vector!",
+                                global.prf_string[F_modarray]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)",
+                              from_NT, idx_NT);
+                     , fprintf (global.outfile, "2nd argument of %s has illegal size!",
+                                global.prf_string[F_modarray]););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT, idx_size, SizeId,
                       ReadId, val_ANY, copyfun);
@@ -815,21 +836,24 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_MODARRAY__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
     for (i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]);
-                             , fprintf (outfile, "2nd argument of %s is not a vector",
-                                        prf_string[F_modarray]););
+            ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
+                                      idxs_ANY[i]);
+                             , fprintf (global.outfile,
+                                        "2nd argument of %s is not a vector",
+                                        global.prf_string[F_modarray]););
         }
     }
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size);
-                     , fprintf (outfile, "2nd argument of %s has illegal size!",
-                                prf_string[F_modarray]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT,
+                              idx_size);
+                     , fprintf (global.outfile, "2nd argument of %s has illegal size!",
+                                global.prf_string[F_modarray]););
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY, idx_size, NULL,
                       ReadConstArray_Str, val_ANY, copyfun);
@@ -875,15 +899,15 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_IDX_SEL__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) <= SAC_ND_A_DIM( %s)", to_NT,
-                              from_NT);
-                     , fprintf (outfile, "result of %s has illegal dimension!",
-                                prf_string[F_idx_sel]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) <= SAC_ND_A_DIM( %s)",
+                              to_NT, from_NT);
+                     , fprintf (global.outfile, "result of %s has illegal dimension!",
+                                global.prf_string[F_idx_sel]););
 
     switch (to_sc) {
     case C_scl:
@@ -894,9 +918,9 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         /* here is no break missing */
     case C_akd:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        shp = (char **)Malloc (to_dim * sizeof (char *));
+        shp = (char **)ILIBmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)Malloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)ILIBmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -907,9 +931,9 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
-            shp[i] = Free (shp[i]);
+            shp[i] = ILIBfree (shp[i]);
         }
-        shp = Free (shp);
+        shp = ILIBfree (shp);
         break;
 
     case C_aud:
@@ -962,15 +986,15 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_IDX_SEL__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
-                         , fprintf (outfile, "1st argument of %s is not a scalar!",
-                                    prf_string[F_idx_sel]););
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
+                         , fprintf (global.outfile, "1st argument of %s is not a scalar!",
+                                    global.prf_string[F_idx_sel]););
     }
 
     if (to_dim == 0) {
@@ -978,19 +1002,19 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
          * 'to_NT' is scalar
          */
         INDENT;
-        fprintf (outfile, "SAC_ND_WRITE_READ_COPY( %s, 0, %s, ", to_NT, from_NT);
+        fprintf (global.outfile, "SAC_ND_WRITE_READ_COPY( %s, 0, %s, ", to_NT, from_NT);
         ReadScalar (idx_ANY, NULL, 0);
-        fprintf (outfile, ", %s)\n", copyfun);
+        fprintf (global.outfile, ", %s)\n", copyfun);
     } else {
         /*
          * 'to_NT' is array
          */
-        FOR_LOOP_VARDECS (fprintf (outfile, "int SAC_i, SAC_j;");
-                          , fprintf (outfile, "SAC_i = 0, SAC_j = ");
+        FOR_LOOP_VARDECS (fprintf (global.outfile, "int SAC_i, SAC_j;");
+                          , fprintf (global.outfile, "SAC_i = 0, SAC_j = ");
                           ReadScalar (idx_ANY, NULL, 0);
-                          , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_NT);
-                          , fprintf (outfile, "SAC_i++, SAC_j++");, INDENT;
-                          fprintf (outfile,
+                          , fprintf (global.outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_NT);
+                          , fprintf (global.outfile, "SAC_i++, SAC_j++");, INDENT;
+                          fprintf (global.outfile,
                                    "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n",
                                    to_NT, from_NT, copyfun););
     }
@@ -1035,15 +1059,15 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_IDX_MODARRAY__DATA( %s, %d, %s, %d, %s, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_ANY);
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
-                         , fprintf (outfile, "2nd argument of %s is not a scalar!",
-                                    prf_string[F_modarray]););
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
+                         , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
+                                    global.prf_string[F_modarray]););
     }
 
     PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
@@ -1086,31 +1110,31 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_TAKE__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     if (cnt_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
-                         , fprintf (outfile, "1st argument of %s is not a scalar!",
-                                    prf_string[F_take_SxV]););
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
+                         , fprintf (global.outfile, "1st argument of %s is not a scalar!",
+                                    global.prf_string[F_take_SxV]););
     }
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
-                     , fprintf (outfile, "2nd argument of %s is not a vector!",
-                                prf_string[F_take_SxV]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
+                     , fprintf (global.outfile, "2nd argument of %s is not a vector!",
+                                global.prf_string[F_take_SxV]););
 
-    shp = (char **)Malloc (sizeof (char *));
-    shp[0] = (char *)Malloc ((strlen (cnt_ANY) + 30) * sizeof (char));
+    shp = (char **)ILIBmalloc (sizeof (char *));
+    shp[0] = (char *)ILIBmalloc ((strlen (cnt_ANY) + 30) * sizeof (char));
     if (cnt_ANY[0] == '(') {
         sprintf (shp[0], "SAC_ABS( SAC_ND_A_FIELD( %s))", cnt_ANY);
     } else {
         sprintf (shp[0], "SAC_ABS( %s)", cnt_ANY);
     }
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
-    shp[0] = Free (shp[0]);
-    shp = Free (shp);
+    shp[0] = ILIBfree (shp[0]);
+    shp = ILIBfree (shp);
 
     DBUG_VOID_RETURN;
 }
@@ -1148,32 +1172,32 @@ ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_TAKE__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
-    BLOCK_VARDECS (fprintf (outfile, "int SAC_cnt, SAC_off;");, INDENT;
-                   fprintf (outfile, "SAC_cnt = "); ReadScalar (cnt_ANY, NULL, 0);
-                   fprintf (outfile, ";\n");
+    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
+                   fprintf (global.outfile, "SAC_cnt = "); ReadScalar (cnt_ANY, NULL, 0);
+                   fprintf (global.outfile, ";\n");
 
-                   COND2 (fprintf (outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
-                          fprintf (outfile, " < 0)");, INDENT;
-                          fprintf (outfile, "SAC_cnt = - SAC_cnt;\n"); INDENT;
-                          fprintf (outfile, "SAC_off = SAC_ND_A_SIZE( %s) - SAC_cnt;\n",
-                                   from_NT);
-                          , INDENT; fprintf (outfile, "SAC_off = 0;\n"););
+                   COND2 (fprintf (global.outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
+                          fprintf (global.outfile, " < 0)");, INDENT;
+                          fprintf (global.outfile, "SAC_cnt = - SAC_cnt;\n"); INDENT;
+                          fprintf (global.outfile,
+                                   "SAC_off = SAC_ND_A_SIZE( %s) - SAC_cnt;\n", from_NT);
+                          , INDENT; fprintf (global.outfile, "SAC_off = 0;\n"););
 
-                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_A_SIZE( %s)",
-                                             from_NT);
-                                    , fprintf (outfile,
+                   ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                             "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
+                                    , fprintf (global.outfile,
                                                "1st argument of %s is out of range!",
-                                               prf_string[F_take_SxV]););
+                                               global.prf_string[F_take_SxV]););
 
-                   FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");
-                                        , fprintf (outfile, "0");
-                                        , fprintf (outfile, "SAC_cnt");, INDENT;
-                                        fprintf (outfile,
+                   FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                                        , fprintf (global.outfile, "0");
+                                        , fprintf (global.outfile, "SAC_cnt");, INDENT;
+                                        fprintf (global.outfile,
                                                  "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
                                                  " %s, SAC_off + SAC_i, %s);\n",
                                                  to_NT, from_NT, copyfun);););
@@ -1215,23 +1239,24 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_DROP__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     if (cnt_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
-                         , fprintf (outfile, "1st argument of %s is not a scalar!",
-                                    prf_string[F_drop_SxV]););
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", cnt_ANY);
+                         , fprintf (global.outfile, "1st argument of %s is not a scalar!",
+                                    global.prf_string[F_drop_SxV]););
     }
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
-                     , fprintf (outfile, "2nd argument of %s is not a vector!",
-                                prf_string[F_drop_SxV]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from_NT);
+                     , fprintf (global.outfile, "2nd argument of %s is not a vector!",
+                                global.prf_string[F_drop_SxV]););
 
-    shp = (char **)Malloc (sizeof (char *));
-    shp[0] = (char *)Malloc ((strlen (from_NT) + strlen (cnt_ANY) + 50) * sizeof (char));
+    shp = (char **)ILIBmalloc (sizeof (char *));
+    shp[0]
+      = (char *)ILIBmalloc ((strlen (from_NT) + strlen (cnt_ANY) + 50) * sizeof (char));
     if (cnt_ANY[0] == '(') {
         sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( SAC_ND_A_FIELD( %s))", from_NT,
                  cnt_ANY);
@@ -1239,8 +1264,8 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
         sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( %s)", from_NT, cnt_ANY);
     }
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
-    shp[0] = Free (shp[0]);
-    shp = Free (shp);
+    shp[0] = ILIBfree (shp[0]);
+    shp = ILIBfree (shp);
 
     DBUG_VOID_RETURN;
 }
@@ -1278,33 +1303,34 @@ ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_DROP__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
-    BLOCK_VARDECS (fprintf (outfile, "int SAC_cnt, SAC_off;");, INDENT;
-                   fprintf (outfile, "SAC_off = "); ReadScalar (cnt_ANY, NULL, 0);
-                   fprintf (outfile, ";\n");
+    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
+                   fprintf (global.outfile, "SAC_off = "); ReadScalar (cnt_ANY, NULL, 0);
+                   fprintf (global.outfile, ";\n");
 
-                   COND2 (fprintf (outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
-                          fprintf (outfile, " < 0)");, INDENT;
-                          fprintf (outfile, "SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n",
-                                   from_NT);
-                          INDENT; fprintf (outfile, "SAC_off = 0;\n");, INDENT;
-                          fprintf (outfile, "SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n",
+                   COND2 (fprintf (global.outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
+                          fprintf (global.outfile, " < 0)");, INDENT;
+                          fprintf (global.outfile,
+                                   "SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n", from_NT);
+                          INDENT; fprintf (global.outfile, "SAC_off = 0;\n");, INDENT;
+                          fprintf (global.outfile,
+                                   "SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n",
                                    from_NT););
 
-                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_A_SIZE( %s)",
-                                             from_NT);
-                                    , fprintf (outfile,
+                   ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                             "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
+                                    , fprintf (global.outfile,
                                                "1st argument of %s is out of range!",
-                                               prf_string[F_drop_SxV]););
+                                               global.prf_string[F_drop_SxV]););
 
-                   FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");
-                                        , fprintf (outfile, "0");
-                                        , fprintf (outfile, "SAC_cnt");, INDENT;
-                                        fprintf (outfile,
+                   FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                                        , fprintf (global.outfile, "0");
+                                        , fprintf (global.outfile, "SAC_cnt");, INDENT;
+                                        fprintf (global.outfile,
                                                  "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
                                                  " %s, SAC_off + SAC_i, %s);\n",
                                                  to_NT, from_NT, copyfun);););
@@ -1346,25 +1372,25 @@ ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1
      */
 
     INDENT;
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_CAT__SHAPE( %s, %d, %s, %d, %s, %d)\"))\n",
              to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from1_NT);
-                     , fprintf (outfile, "1st argument of %s is not a vector!",
-                                prf_string[F_cat_VxV]););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", from2_NT);
-                     , fprintf (outfile, "2nd argument of %s is not a vector!",
-                                prf_string[F_cat_VxV]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from1_NT);
+                     , fprintf (global.outfile, "1st argument of %s is not a vector!",
+                                global.prf_string[F_cat_VxV]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", from2_NT);
+                     , fprintf (global.outfile, "2nd argument of %s is not a vector!",
+                                global.prf_string[F_cat_VxV]););
 
-    shp = (char **)Malloc (sizeof (char *));
+    shp = (char **)ILIBmalloc (sizeof (char *));
     shp[0]
-      = (char *)Malloc ((strlen (from1_NT) + strlen (from2_NT) + 40) * sizeof (char));
+      = (char *)ILIBmalloc ((strlen (from1_NT) + strlen (from2_NT) + 40) * sizeof (char));
     sprintf (shp[0], "SAC_ND_A_SIZE( %s) + SAC_ND_A_SIZE( %s)", from1_NT, from2_NT);
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
-    shp[0] = Free (shp[0]);
-    shp = Free (shp);
+    shp[0] = ILIBfree (shp[0]);
+    shp = ILIBfree (shp);
 
     DBUG_VOID_RETURN;
 }

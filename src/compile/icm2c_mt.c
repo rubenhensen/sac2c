@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 3.46  2004/11/24 15:53:39  jhb
  * removed include my_dbug.c
  *
@@ -291,10 +294,11 @@
 #include "icm2c_mt.h"
 
 #include "dbug.h"
-/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
+#include "tree_basic.h"
+#include "internal_lib.h"
 
 #ifndef BEtest
 #include "scnprs.h"   /* for big magic access to syntax tree      */
@@ -324,7 +328,7 @@ SearchFoldImplementation (char *foldop)
 
     DBUG_ENTER ("SearchFoldImplementation");
 
-    fundef = MODUL_FOLDFUNS (syntax_tree);
+    fundef = MODULE_FOLDFUNS (global.syntax_tree);
 
     while ((fundef != NULL) && (strcmp (FUNDEF_NAME (fundef), foldop))) {
         fundef = FUNDEF_NEXT (fundef);
@@ -333,7 +337,7 @@ SearchFoldImplementation (char *foldop)
     DBUG_ASSERT ((fundef != NULL),
                  "Unknown fold operation specified in synchronisation ICM");
 
-    DBUG_RETURN (GetFoldCode (fundef));
+    DBUG_RETURN (COMPgetFoldCode (fundef));
 }
 #endif /* BEtest */
 
@@ -367,31 +371,31 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int vararg_cnt, char **vararg
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_DEC
 
-    fprintf (outfile, "#undef SAC_MT_CURRENT_FUN\n");
-    fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", from);
+    fprintf (global.outfile, "#undef SAC_MT_CURRENT_FUN\n");
+    fprintf (global.outfile, "#define SAC_MT_CURRENT_FUN() %s\n", from);
 
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#undef SAC_MT_CURRENT_SPMD\n");
-    fprintf (outfile, "#define SAC_MT_CURRENT_SPMD() %s\n", name);
+    fprintf (global.outfile, "#undef SAC_MT_CURRENT_SPMD\n");
+    fprintf (global.outfile, "#define SAC_MT_CURRENT_SPMD() %s\n", name);
 
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_MT_SPMD_FUN_REAL_RETTYPE()"
              " %s( SAC_MT_SPMD_FUN_REAL_PARAM_LIST())\n",
              name);
-    fprintf (outfile, "{\n");
+    fprintf (global.outfile, "{\n");
 
-    indent++;
+    global.indent++;
 
     INDENT;
-    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+    fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
-                 vararg[i + 2]);
+        fprintf (global.outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i],
+                 vararg[i + 1], vararg[i + 2]);
     }
 
     DBUG_VOID_RETURN;
@@ -428,36 +432,36 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < 2 * vararg_cnt; i += 2) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_RET_%s( %s);\n", vararg[i], vararg[i + 1]);
+        fprintf (global.outfile, "SAC_MT_SPMD_RET_%s( %s);\n", vararg[i], vararg[i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n"),
+    fprintf (global.outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n"),
 
-      indent--;
+      global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
-
-    INDENT;
-    fprintf (outfile, "{\n");
-
-    indent++;
+    fprintf (global.outfile, "}\n");
 
     INDENT;
-    fprintf (outfile, "label_worker_continue_%d:\n", barrier_id);
+    fprintf (global.outfile, "{\n");
+
+    global.indent++;
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n");
+    fprintf (global.outfile, "label_worker_continue_%d:\n", barrier_id);
 
-    indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n");
 
-    indent--;
+    global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
 
-    fprintf (outfile, "\n");
+    global.indent--;
+    INDENT;
+    fprintf (global.outfile, "}\n");
+
+    fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -498,20 +502,20 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
 #undef MT_SYNCBLOCK_BEGIN
 
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (!strcmp (vararg[i], "in")) {
             INDENT;
-            fprintf (outfile, "SAC_MT_DECL_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
+            fprintf (global.outfile, "SAC_MT_DECL_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
                      vararg[i + 2]);
         }
     }
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
     INDENT;
-    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
+    fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (!strcmp (vararg[i], "in")) {
@@ -526,8 +530,8 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
     }
 
     INDENT;
-    fprintf (outfile, "SAC_TR_MT_PRINT("
-                      " (\"Starting execution of synchronisation block\"));\n");
+    fprintf (global.outfile, "SAC_TR_MT_PRINT("
+                             " (\"Starting execution of synchronisation block\"));\n");
 
     DBUG_VOID_RETURN;
 }
@@ -570,7 +574,7 @@ ICMCompileMT_SYNCBLOCK_CLEANUP (int barrier_id, int vararg_cnt, char **vararg)
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (!strcmp (vararg[i], "in")) {
             INDENT;
-            fprintf (outfile, "SAC_MT_FREE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
+            fprintf (global.outfile, "SAC_MT_FREE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
                      vararg[i + 2]);
         }
     }
@@ -612,9 +616,9 @@ ICMCompileMT_SYNCBLOCK_END
 #include "icm_trace.c"
 #undef MT_SYNCBLOCK_END
 
-    indent--;
+    global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
@@ -661,7 +665,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
      * fetch code-elements for all fold-operations
      */
 #ifndef BEtest
-    foldcodes = (node **)Malloc (vararg_cnt * sizeof (node *));
+    foldcodes = (node **)ILIBmalloc (vararg_cnt * sizeof (node *));
     for (i = 0; i < vararg_cnt; i++) {
         foldop = vararg[4 * i + 3];
         foldcodes[i] = SearchFoldImplementation (foldop);
@@ -669,135 +673,136 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1A( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_1A( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
                  " \"Pure thread fold result:\");\n",
                  vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1B( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_1B( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_MT_SET_BARRIER_RESULT("
                  " SAC_MT_MYTHREAD(), %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1C( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_1C( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
                  " \"Partial thread fold result:\");\n",
                  vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1D( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_1D( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s, %s)\n",
-                 i + 1, vararg[4 * i], vararg[4 * i + 2]);
+        fprintf (global.outfile,
+                 "SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s, %s)\n", i + 1,
+                 vararg[4 * i], vararg[4 * i + 2]);
 #ifndef BEtest
         INDENT;
-        fprintf (outfile, "{\n");
-        indent++;
-        Trav (foldcodes[i], NULL);
-        indent--;
+        fprintf (global.outfile, "{\n");
+        global.indent++;
+        TRAVdo (foldcodes[i], NULL);
+        global.indent--;
         INDENT;
-        fprintf (outfile, "}\n");
+        fprintf (global.outfile, "}\n");
 #else  /* BEtest */
         INDENT;
-        fprintf (outfile, "/* fold operation: %s */\n", foldop);
+        fprintf (global.outfile, "/* fold operation: %s */\n", foldop);
 #endif /* BEtest */
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2A( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_2A( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_MT_SET_BARRIER_RESULT("
                  " SAC_MT_MYTHREAD(), %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2B( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_2B( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
                  " \"Partial thread fold result:\");\n",
                  vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2C( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_2C( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_MT_GET_BARRIER_RESULT("
                  " SAC_MT_son_id, %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 2]);
 
 #ifndef BEtest
         INDENT;
-        fprintf (outfile, "{\n");
-        indent++;
-        Trav (foldcodes[i], NULL);
-        indent--;
+        fprintf (global.outfile, "{\n");
+        global.indent++;
+        TRAVdo (foldcodes[i], NULL);
+        global.indent--;
         INDENT;
-        fprintf (outfile, "}\n");
+        fprintf (global.outfile, "}\n");
 #else  /* BEtest */
         INDENT;
-        fprintf (outfile, "/* fold operation: %s */\n", foldop);
+        fprintf (global.outfile, "/* fold operation: %s */\n", foldop);
 #endif /* BEtest */
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3A( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_3A( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_MT_SET_BARRIER_RESULT("
                  " SAC_MT_MYTHREAD(), %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3B( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_3B( %d)\n", barrier_id);
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_TR_MT_PRINT_FOLD_RESULT( %s, %s,"
                  " \"Partial thread fold result:\");\n",
                  vararg[4 * i], vararg[4 * i + 1]);
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3C( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_MULTIFOLD_3C( %d)\n", barrier_id);
 
 #ifndef BEtest
     for (i = 0; i < vararg_cnt; i++) {
-        foldcodes[i] = FreeTree (foldcodes[i]);
+        foldcodes[i] = FREEdoFreeTree (foldcodes[i]);
     }
-    foldcodes = Free (foldcodes);
+    foldcodes = ILIBfree (foldcodes);
 #endif /* BEtest */
 
     DBUG_VOID_RETURN;
@@ -846,45 +851,45 @@ ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var, char 
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype, accu_var,
-             tmp_var, barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype,
+             accu_var, tmp_var, barrier_id);
 
 #ifndef BEtest
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
-    Trav (fold_code, NULL);
-    indent--;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
+    TRAVdo (fold_code, NULL);
+    global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
 #else  /* BEtest */
     INDENT;
-    fprintf (outfile, "/* fold operation: %s */\n", foldop);
+    fprintf (global.outfile, "/* fold operation: %s */\n", foldop);
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype, accu_var,
-             tmp_var, barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype,
+             accu_var, tmp_var, barrier_id);
 
 #ifndef BEtest
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
-    Trav (fold_code, NULL);
-    indent--;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
+    TRAVdo (fold_code, NULL);
+    global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
 #else  /* BEtest */
     INDENT;
-    fprintf (outfile, "/* fold operation: %s */\n", foldop);
+    fprintf (global.outfile, "/* fold operation: %s */\n", foldop);
 #endif /* BEtest */
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype, accu_var,
-             tmp_var, barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype,
+             accu_var, tmp_var, barrier_id);
 
 #ifndef BEtest
-    fold_code = FreeTree (fold_code);
+    fold_code = FREEdoFreeTree (fold_code);
 #endif /* BEtest */
 
     DBUG_VOID_RETURN;
@@ -916,7 +921,7 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
 #undef MT_SYNC_NONFOLD
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_NONFOLD_1( %d)\n", barrier_id);
+    fprintf (global.outfile, "SAC_MT_SYNC_NONFOLD_1( %d)\n", barrier_id);
 
     DBUG_VOID_RETURN;
 }
@@ -1025,7 +1030,8 @@ ICMCompileMT_MASTER_SEND_FOLDRESULTS (int foldargs_cnt, char **foldargs)
 
     if (foldargs_cnt > 0) {
         INDENT;
-        fprintf (outfile, "/* all needed values are already stored in the barrier */");
+        fprintf (global.outfile,
+                 "/* all needed values are already stored in the barrier */");
     }
 
     DBUG_VOID_RETURN;
@@ -1064,8 +1070,8 @@ ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int foldargs_cnt, char **foldargs)
 
     for (i = 0, j = 1; i < 2 * foldargs_cnt; i += 2, j++) {
         INDENT;
-        fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j, foldargs[i],
-                 foldargs[i + 1]);
+        fprintf (global.outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j,
+                 foldargs[i], foldargs[i + 1]);
     }
 
     DBUG_VOID_RETURN;
@@ -1101,7 +1107,7 @@ ICMCompileMT_MASTER_SEND_SYNCARGS (int syncargs_cnt, char **syncargs)
 
     for (i = 0; i < syncargs_cnt; i++) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_RET_shared( %s);\n", syncargs[i]);
+        fprintf (global.outfile, "SAC_MT_SPMD_RET_shared( %s);\n", syncargs[i]);
     }
 
     DBUG_VOID_RETURN;
@@ -1137,7 +1143,7 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int syncargs_cnt, char **syncargs)
 
     for (i = 0; i < syncargs_cnt; i++) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_GET_shared( %s);\n", syncargs[i]);
+        fprintf (global.outfile, "SAC_MT_SPMD_GET_shared( %s);\n", syncargs[i]);
     }
 
     DBUG_VOID_RETURN;
@@ -1180,7 +1186,7 @@ ICMCompileMT_SPMD_SETUP (char *name, int vararg_cnt, char **vararg)
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if ((!strcmp (vararg[i], "in")) || (!strcmp (vararg[i], "out"))) {
             INDENT;
-            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
+            fprintf (global.outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
                      vararg[i + 2]);
         }
     }
@@ -1210,15 +1216,15 @@ ICMCompileMT_SPMD_BEGIN (char *name)
 #include "icm_trace.c"
 #undef MT_SPMD_BEGIN
 
-    fprintf (outfile, "\n"
-                      "#if SAC_DO_MULTITHREAD\n");
+    fprintf (global.outfile, "\n"
+                             "#if SAC_DO_MULTITHREAD\n");
     INDENT;
-    fprintf (outfile, "if (SAC_MT_not_yet_parallel)\n");
+    fprintf (global.outfile, "if (SAC_MT_not_yet_parallel)\n");
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
     INDENT;
-    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+    fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1228,7 +1234,7 @@ ICMCompileMT_SPMD_ALTSEQ (char *name)
 {
     DBUG_ENTER ("ICMCompileMT_SPMD_ALTSEQ");
 
-    indent--;
+    global.indent--;
 
 #define MT_SPMD_ALTSEQ
 #include "icm_comment.c"
@@ -1236,17 +1242,17 @@ ICMCompileMT_SPMD_ALTSEQ (char *name)
 #undef MT_SPMD_ALTSEQ
 
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
     INDENT;
-    fprintf (outfile, "else\n");
+    fprintf (global.outfile, "else\n");
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
     INDENT;
-    fprintf (outfile, "SAC_MT_DETERMINE_THREAD_ID()\n");
+    fprintf (global.outfile, "SAC_MT_DETERMINE_THREAD_ID()\n");
     INDENT;
-    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
-    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
+    fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
+    fprintf (global.outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1261,13 +1267,13 @@ ICMCompileMT_SPMD_END (char *name)
 #include "icm_trace.c"
 #undef MT_SPMD_END
 
-    fprintf (outfile, "\n"
-                      "#if SAC_DO_MULTITHREAD\n");
-    indent--;
+    fprintf (global.outfile, "\n"
+                             "#if SAC_DO_MULTITHREAD\n");
+    global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
 
-    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
+    fprintf (global.outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1298,7 +1304,7 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
 #undef MT_CREATE_LOCAL_DESC
 
     INDENT;
-    fprintf (outfile, "/* init local descriptors */\n");
+    fprintf (global.outfile, "/* init local descriptors */\n");
 
     switch (sc) {
     case C_scl:
@@ -1310,11 +1316,11 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
     case C_akd:
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", var_NT,
-                 var_NT);
+        fprintf (global.outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n",
+                 var_NT, var_NT);
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile,
+            fprintf (global.outfile,
                      "SAC_ND_A_DESC_SHAPE( %s, %d)"
                      " = SAC_ND_A_SHAPE( %s, %d);\n",
                      var_NT, i, var_NT, i);
@@ -1324,20 +1330,23 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
     case C_aud:
         /* 'dim' is unknown! */
         INDENT;
-        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, SAC_ND_A_DIM( %s))\n", var_NT, var_NT);
+        fprintf (global.outfile, "SAC_ND_ALLOC__DESC( %s, SAC_ND_A_DIM( %s))\n", var_NT,
+                 var_NT);
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_ND_A_DESC_DIM( %s)"
                  " = DESC_DIM( CAT0( orig_, SAC_ND_A_DESC( %s)));\n",
                  var_NT, var_NT);
         INDENT;
-        fprintf (outfile,
+        fprintf (global.outfile,
                  "SAC_ND_A_DESC_SIZE( %s)"
                  " = DESC_SIZE( CAT0( orig_, SAC_ND_A_DESC( %s)));\n",
                  var_NT, var_NT);
-        FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", var_NT);, INDENT;
-                             fprintf (outfile,
+        FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                             , fprintf (global.outfile, "0");
+                             , fprintf (global.outfile, "SAC_ND_A_DIM( %s)", var_NT);
+                             , INDENT;
+                             fprintf (global.outfile,
                                       "SAC_ND_A_DESC_SHAPE( %s, SAC_i)"
                                       " = DESC_SHAPE( CAT0( orig_, SAC_ND_A_DESC( %s)),"
                                       " SAC_i);\n",
@@ -1356,7 +1365,7 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
      * neutral element multiple times.
      */
     INDENT;
-    fprintf (outfile, "SAC_ND_SET__RC( %s, 1 + SAC_SET_MAX_SYNC_FOLD)\n", var_NT);
+    fprintf (global.outfile, "SAC_ND_SET__RC( %s, 1 + SAC_SET_MAX_SYNC_FOLD)\n", var_NT);
 
     DBUG_VOID_RETURN;
 }

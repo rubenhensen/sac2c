@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 1.6  2003/09/17 12:56:52  dkr
  * postfix _any renamed into _ANY
  *
@@ -58,24 +61,24 @@ ICMCompileTYPE_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
 
     INDENT;
 #if 0
-  fprintf( outfile, "SAC_RuntimeError_Mult( ");
-  fprintf( outfile, "%i", cnt_from + 1);
-  fprintf( outfile, ", ");
-  fprintf( outfile, "\"No appropriate instance of function \\\"\" %s"
+  fprintf( global.outfile, "SAC_RuntimeError_Mult( ");
+  fprintf( global.outfile, "%i", cnt_from + 1);
+  fprintf( global.outfile, ", ");
+  fprintf( global.outfile, "\"No appropriate instance of function \\\"\" %s"
                     " \"\\\" found!\"", funname);
-  fprintf( outfile, ", ");
-  fprintf( outfile, "\"Types of arguments:\"");
-  fprintf( outfile, ", ");
+  fprintf( global.outfile, ", ");
+  fprintf( global.outfile, "\"Types of arguments:\"");
+  fprintf( global.outfile, ", ");
   for (i = 0; i < cnt_from; i++) {
-    fprintf( outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
+    fprintf( global.outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
                       from_ANY[i]);
     if (i < cnt_from - 1) {
-      fprintf( outfile, ", ");
+      fprintf( global.outfile, ", ");
     }
   }
-  fprintf( outfile, ");\n");
+  fprintf( global.outfile, ");\n");
 #else
-    fprintf (outfile,
+    fprintf (global.outfile,
              "SAC_RuntimeError( "
              "\"No appropriate instance of function"
              " \\\"\" %s \"\\\" found!\");\n",
@@ -92,7 +95,7 @@ ICMCompileTYPE_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
      * instruction simply prevents some optimizations of the c compiler???
      */
     INDENT;
-    fprintf (outfile, "return; /* dummy; is this really a good idea??? */\n");
+    fprintf (global.outfile, "return; /* dummy; is this really a good idea??? */\n");
 
     DBUG_VOID_RETURN;
 }

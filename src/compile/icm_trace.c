@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 3.6  2004/11/24 18:02:39  jhb
  * compile! only outfile changed to global
  *
@@ -59,8 +62,12 @@
         fprintf (global.outfile, "SAC_Print( \", \");\n");                               \
     }
 
+#define ICM_TRACE_NONE FALSE
+
+#define ICM_TRACE(flag) global.trace.flag
+
 #define ICM_DEF(prf, trf)                                                                \
-    if (trf & traceflag) {                                                               \
+    if (trf) {                                                                           \
         int sep = 0;                                                                     \
         INDENT;                                                                          \
         fprintf (global.outfile, "SAC_Print( \"%s( \");\n", #prf);
@@ -142,3 +149,5 @@
 #undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END
+#undef ICM_TRACE_NONE
+#undef ICM_TRACE

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 3.8  2002/10/10 23:51:08  dkr
  * ICM_STR added
  *
@@ -59,20 +62,20 @@
 
 #define SEP                                                                              \
     if (sep) {                                                                           \
-        fprintf (outfile, ", ");                                                         \
+        fprintf (global.outfile, ", ");                                                  \
     }
 
 #define ICM_DEF(prf, trf)                                                                \
     if (print_comment) {                                                                 \
         int sep = 0;                                                                     \
         print_comment = 0;                                                               \
-        fprintf (outfile, "/*\n");                                                       \
+        fprintf (global.outfile, "/*\n");                                                \
         INDENT;                                                                          \
-        fprintf (outfile, " * %s( ", #prf);
+        fprintf (global.outfile, " * %s( ", #prf);
 
 #define ICM_ANY(name)                                                                    \
     SEP;                                                                                 \
-    fprintf (outfile, "%s", name);                                                       \
+    fprintf (global.outfile, "%s", name);                                                \
     sep = 1;
 
 #define ICM_ICM(name) ICM_ANY (name)
@@ -85,7 +88,7 @@
 
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
-    fprintf (outfile, "%d", name);                                                       \
+    fprintf (global.outfile, "%d", name);                                                \
     sep = 1;
 
 #define ICM_VARANY(dim, name)                                                            \
@@ -121,9 +124,9 @@
     }
 
 #define ICM_END(prf, args)                                                               \
-    fprintf (outfile, ")\n");                                                            \
+    fprintf (global.outfile, ")\n");                                                     \
     INDENT;                                                                              \
-    fprintf (outfile, " */\n");                                                          \
+    fprintf (global.outfile, " */\n");                                                   \
     }
 
 #include "icm.data"

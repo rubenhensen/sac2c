@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/11/25 10:26:46  jhb
+ * compile SACdevCamp 2k4
+ *
  * Revision 3.19  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -75,7 +78,15 @@
 
 #include "icm2c_basic.h"
 
+#include "types.h"
+#include "free.h"
+#include "internal_lib.h"
 #include "print.h"
+#include "tree_compound.h"
+#include "tree_basic.h"
+#include "convert.h"
+
+#include <string.h>
 
 #define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs, node *arg_info)                                        \
@@ -141,13 +152,13 @@ GetNextIcm (char **ret, node *exprs)
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_icm), "wrong icm-arg: N_icm expected");
 
-    cnt = CountExprs (ICM_ARGS (expr));
+    cnt = TCcountExprs (ICM_ARGS (expr));
 
     GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));
     len += strlen (ICM_NAME (expr));
     len += 8 + 2 * cnt;
 
-    (*ret) = (char *)Malloc (len * sizeof (char));
+    (*ret) = (char *)ILIBmalloc (len * sizeof (char));
     (*ret)[0] = '\0';
     strcat ((*ret), "SAC_");
     strcat ((*ret), ICM_NAME (expr));
@@ -158,11 +169,11 @@ GetNextIcm (char **ret, node *exprs)
     for (i = 1; i < cnt; i++) {
         strcat ((*ret), ", ");
         strcat ((*ret), v[i]);
-        v[i] = Free (v[i]);
+        v[i] = ILIBfree (v[i]);
     }
     strcat ((*ret), ")");
 
-    v = Free (v);
+    v = ILIBfree (v);
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -194,14 +205,14 @@ node *GetNextPrf( char **ret, node *exprs)
 
   DBUG_ASSERT( (NODE_TYPE( expr) == N_prf), "wrong icm-arg: N_prf expected");
 
-  cnt = CountExprs( PRF_ARGS( expr));
+  cnt = TCcountExprs( PRF_ARGS( expr));
   DBUG_ASSERT( (cnt == 2), "icm-arg N_prf: only infix notation implemented!");
 
   GetNextVarAny( &v, &len, cnt, PRF_ARGS( expr));
   len += strlen( prf_symbol[ PRF_PRF( expr)]);
   len += 5;
 
-  (*ret) = (char *) Malloc( len * sizeof( char));
+  (*ret) = (char *) ILIBmalloc( len * sizeof( char));
   (*ret)[0] = '\0';
   strcat( (*ret), "(");
   strcat( (*ret), v[0]);
@@ -211,7 +222,7 @@ node *GetNextPrf( char **ret, node *exprs)
   strcat( (*ret), v[1]);
   strcat( (*ret), ")");
 
-  v = Free( v);
+  v = ILIBfree( v);
 
   DBUG_PRINT( "PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -238,9 +249,9 @@ GetNextNt (char **ret, node *exprs)
 
     if ((ID_NAME (expr))[0] != '\0') {
         DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
-        (*ret) = StringCopy (ID_NT_TAG (expr));
+        (*ret) = ILIBstringCopy (ID_NT_TAG (expr));
     } else {
-        (*ret) = StringCopy ("");
+        (*ret) = ILIBstringCopy ("");
     }
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
@@ -265,7 +276,7 @@ GetNextId (char **ret, node *exprs)
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
     DBUG_ASSERT ((ID_NT_TAG (expr) == NULL), "wrong icm-arg: tag found");
-    (*ret) = StringCopy (ID_NAME (expr));
+    (*ret) = ILIBstringCopy (ID_NAME (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -288,7 +299,7 @@ GetNextString (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_str), "wrong icm-arg: N_str expected");
-    (*ret) = Malloc (strlen (STR_STRING (expr)) + 3);
+    (*ret) = ILIBmalloc (strlen (STR_STRING (expr)) + 3);
     sprintf ((*ret), "\"%s\"", STR_STRING (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
@@ -448,17 +459,17 @@ GetNextAny (char **ret, node *exprs)
         exprs = GetNextString (ret, exprs);
         break;
     case N_num:
-        (*ret) = (char *)Malloc (sizeof (char) * 50);
+        (*ret) = (char *)ILIBmalloc (sizeof (char) * 50);
         exprs = GetNextInt (&ival, exprs);
         sprintf ((*ret), "%d", ival);
         break;
     case N_char:
-        (*ret) = (char *)Malloc (sizeof (char) * 5);
+        (*ret) = (char *)ILIBmalloc (sizeof (char) * 5);
         exprs = GetNextChar (&cval, exprs);
         sprintf ((*ret), "%d", cval);
         break;
     case N_bool:
-        (*ret) = (char *)Malloc (sizeof (char) * 6);
+        (*ret) = (char *)ILIBmalloc (sizeof (char) * 6);
         exprs = GetNextBool (&bval, exprs);
         if (bval) {
             sprintf ((*ret), "true");
@@ -468,11 +479,11 @@ GetNextAny (char **ret, node *exprs)
         break;
     case N_float:
         exprs = GetNextFloat (&fval, exprs);
-        (*ret) = Float2String (fval);
+        (*ret) = CVfloat2String (fval);
         break;
     case N_double:
         exprs = GetNextDouble (&dval, exprs);
-        (*ret) = Double2String (dval);
+        (*ret) = CVdouble2String (dval);
         break;
     default:
         DBUG_ASSERT ((0), "illegal icm-arg found!");
@@ -489,7 +500,7 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarAny");
 
-    (*ret) = (char **)Malloc (cnt * sizeof (char *));
+    (*ret) = (char **)ILIBmalloc (cnt * sizeof (char *));
 
     DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
@@ -515,7 +526,7 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarNt");
 
-    (*ret) = (char **)Malloc (cnt * sizeof (char *));
+    (*ret) = (char **)ILIBmalloc (cnt * sizeof (char *));
 
     DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
@@ -537,7 +548,7 @@ node *GetNextVarId( char ***ret, int cnt, node *exprs)
 
   DBUG_ENTER( "GetNextVarId");
 
-  (*ret) = (char **) Malloc( cnt * sizeof( char*));
+  (*ret) = (char **) ILIBmalloc( cnt * sizeof( char*));
 
   DBUG_ASSERT( (exprs != NULL), "wrong icm-arg: NULL found!");
   DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
@@ -560,7 +571,7 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarInt");
 
-    (*ret) = (int *)Malloc (cnt * sizeof (int));
+    (*ret) = (int *)ILIBmalloc (cnt * sizeof (int));
 
     DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
