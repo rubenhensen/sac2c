@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.59  2000/07/21 14:37:58  mab
+ * added APCcode and APCwithop
+ *
  * Revision 1.58  2000/07/21 08:21:42  nmw
  * N_modspec added, impspec_tab added
  *
@@ -1561,7 +1564,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, APTwithop,
+       TravSons, TravSons, APCwithop, APTwithop,
 
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1579,7 +1582,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIcode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, APTcode,
+       TravSons, TravSons, APCcode, APTcode,
 
        TravSons, TravSons, TravSons, TravSons, 3),
 
