@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/06/08 09:55:13  asi
+ * Revision 1.5  1995/06/15 15:32:37  asi
+ * DupTree generates arg_info if not present
+ *
+ * Revision 1.4  1995/06/08  09:55:13  asi
  * if arg_info->flag is set to INLINE variables will be renamed
  *
  * Revision 1.3  1995/06/02  11:25:48  asi
@@ -40,6 +43,9 @@ DupTree (node *arg_node, node *arg_info)
 
     tmp_tab = act_tab;
     act_tab = dup_tab;
+
+    if (NULL == arg_info)
+        arg_info = MakeNode (N_info);
 
     LEVEL = 0;
     new_node = Trav (arg_node, arg_info);
