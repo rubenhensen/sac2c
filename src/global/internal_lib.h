@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/03/01 13:37:31  dkr
+ * minor changes done
+ *
  * Revision 3.17  2001/07/13 13:23:41  cg
  * DBUG tag MEM_LEAK_CHECK renamed to MEM_LEAK
  *
@@ -155,16 +158,16 @@ extern void DbugMemoryLeakCheck ();
 
 /* handling of strings */
 #define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
-#define STR_OR_EMPTY(str) STR_OR_NULL (str, "")
-#define STR_OR_UNKNOWN(str) STR_OR_NULL (str, "?")
+#define STR_OR_EMPTY(str) STR_OR_NULL ((str), "")
+#define STR_OR_UNKNOWN(str) STR_OR_NULL ((str), "?")
 
 /* swapping two pointers */
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
         void *tmp;                                                                       \
-        tmp = (void *)ptr1;                                                              \
-        ptr1 = (void *)ptr2;                                                             \
-        ptr2 = (void *)tmp;                                                              \
+        tmp = (void *)(ptr1);                                                            \
+        (ptr1) = (void *)(ptr2);                                                         \
+        (ptr2) = (void *)(tmp);                                                          \
     }
 
 /* min, max */
