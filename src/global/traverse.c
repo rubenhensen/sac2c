@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/04/23 18:58:33  dkr
+ * added tabs
+ * changed usage of NIF
+ *
  * Revision 1.61  1998/04/17 17:28:29  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -243,86 +247,87 @@
 funptr *act_tab;
 
 /*
-**
-**  global definitions of all funtabs needed for Trav
-**
-**  1) flat_tab
-**
-*/
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    f
-
-funptr flat_tab[] = {
-#include "node_info.mac"
-};
-
-#undef NIF
-
-/*
-**  2) print_tab
-*/
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    p
-
-funptr print_tab[] = {
-#include "node_info.mac"
-};
-
-#undef NIF
-
-/*
- * 3) type_tab
+ *
+ * global definitions of all funtabs needed for Trav
+ *
+ *
+ * 1) imp_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    t
-
-funptr type_tab[] = {
-#include "node_info.mac"
-};
-
-#undef NIF
-
-/*
- * 4) opt_tab
- */
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    o
-
-funptr opt_tab[] = {
-#include "node_info.mac"
-};
-
-#undef NIF
-
-/*
- * 5) imp_tab
- */
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    i
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t1
 
 funptr imp_tab[] = {
 #include "node_info.mac"
 };
+#undef NIF
 
+/*
+ * 2) flat_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t2
+
+funptr flat_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 3) print_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t3
+
+funptr print_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 4) type_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t4
+
+funptr type_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 5) opt_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t5
+
+funptr opt_tab[] = {
+#include "node_info.mac"
+};
 #undef NIF
 
 /*
  * 6) dead_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    x
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t6
 
 funptr dcr_tab[] = {
 #include "node_info.mac"
@@ -333,9 +338,10 @@ funptr dcr_tab[] = {
  * 7) wlf_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, wlf, z, a, b, c, d, e, g, h, j, k, l, wli, q, aa,    \
-            ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)          \
-    wlf
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t7
 
 funptr wlf_tab[] = {
 #include "node_info.mac"
@@ -346,373 +352,374 @@ funptr wlf_tab[] = {
  * 8) free_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    z
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t8
 
 funptr free_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 9) cf_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    a
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t9
 
 funptr cf_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 10) refcnt_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    b
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t10
 
 funptr refcnt_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 11) comp_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    c
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t11
 
 funptr comp_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 12) lir_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    d
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t12
 
 funptr lir_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 13) dup_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    e
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t13
 
 funptr dup_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 14) inline_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    g
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t14
 
 funptr inline_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 15) unroll_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    h
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t15
 
 funptr unroll_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 16) lir_mov_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    j
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t16
 
 funptr lir_mov_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 17) idx_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    k
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t17
 
 funptr idx_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 18) unswitch_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    l
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t18
 
 funptr unswitch_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 19) wli_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, wlf, z, a, b, c, d, e, g, h, j, k, l, wli, q, aa,    \
-            ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)          \
-    wli
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t19
 
 funptr wli_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 20) ae_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    q
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t20
 
 funptr ae_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 21) writesib_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    aa
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t21
 
 funptr writesib_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 22) obj_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ab
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t22
 
 funptr obj_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 23) impltype_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ac
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t23
 
 funptr impltype_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 24) objinit_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ad
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t24
 
 funptr objinit_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 25) analy_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ae
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t25
 
 funptr analy_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 26) checkdec_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    af
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t26
 
 funptr checkdec_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 27) writedec_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ag
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t27
 
 funptr writedec_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 28) unique_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ah
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t28
 
 funptr unique_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 29) rmvoid_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ai
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t29
 
 funptr rmvoid_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 30) precomp_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    aj
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t30
 
 funptr precomp_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 31) active_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ak
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t31
 
 funptr active_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 32) readsib_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    al
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t32
 
 funptr readsib_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 33) wlt_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, wlf, z, a, b, c, d, e, g, h, j, k, l, wli, q, aa,    \
-            ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, wlt, an, ao, ap, aq, nn)         \
-    wlt
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t33
 
 funptr wlt_tab[] = {
 #include "node_info.mac"
 };
-
 #undef NIF
 
 /*
  * 34) cse_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    an
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t34
 
 funptr cse_tab[] = {
 #include "node_info.mac"
@@ -723,47 +730,113 @@ funptr cse_tab[] = {
  * 35) dfr_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ao
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t35
 
 funptr dfr_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF
 
+#if 0
 /*
- * 36) spmdregions_tab
+ * 36) *unused*
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    ap
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t36
 
-funptr spmdregions_tab[] = {
+funptr ???[]={
+#include "node_info.mac"
+                  };
+#undef NIF
+#endif
+
+/*
+ * 37) spmdinit_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t37
+
+funptr spmdinit_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF
 
 /*
- * 37) o2nWith_tab
+ * 38) spmdopt_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
-    aq
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t38
+
+funptr spmdopt_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+#if 0
+/*
+ * 39) *unused*
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t39
+
+funptr ???[]={
+#include "node_info.mac"
+                  };
+#undef NIF
+#endif
+
+#if 0
+/*
+ * 40) *unused*
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t40
+
+funptr ???[]={
+#include "node_info.mac"
+                  };
+#undef NIF
+#endif
+
+/*
+ * 41) o2nWith_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+    t41
 
 funptr o2nWith_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF
 
-/***
- ***  nnode
- ***/
+/*
+ *  nnode
+ */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
     nn
 
 int nnode[] = {

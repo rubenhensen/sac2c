@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/04/23 18:58:25  dkr
+ * added tabs
+ * changed usage of NIF
+ *
  * Revision 1.43  1998/04/17 17:28:32  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -183,7 +187,8 @@ extern funptr readsib_tab[];
 extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
-extern funptr spmdregions_tab[];
+extern funptr spmdinit_tab[];
+extern funptr spmdopt_tab[];
 extern funptr o2nWith_tab[];
 
 extern int nnode[];
