@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.215  2004/08/13 14:02:56  khf
+ * new flag NWITHOP_OFFSET_NEEDED added
+ *
  * Revision 3.214  2004/08/13 12:00:42  skt
  * ASSIGN_CELLID added
  *
@@ -3968,6 +3971,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    node*  FUNDEF    (N_fundef)  (typecheck -> precompile -> compile -> )
  ***    long*  MASK                  (optimize -> )
  ***    node*  MEM                   (emalloc -> )
+ ***    bool   OFFSET_NEEDED         (wltransform -> compile -> )
  ***
  ***  remarks:
  ***
@@ -3991,6 +3995,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 #define NWITHOP_FUNDEF(n) ((n)->node[4])
 #define NWITHOP_MEM(n) ((n)->node[3])
 #define NWITHOP_MASK(n, x) ((n)->mask[x])
+#define NWITHOP_OFFSET_NEEDED(n) ((bool)((n)->int_data))
 
 /*--------------------------------------------------------------------------*/
 
