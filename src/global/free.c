@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/11/16 19:33:24  cg
+ * Revision 1.12  1995/12/01 16:14:27  cg
+ * added function FreePragma for new node type N_pragma.
+ * renamed function FreeTypes to FreeOneTypes in contrast to FreeAllTypes.
+ * same with other free functions for non-node structures.
+ *
+ * Revision 1.11  1995/11/16  19:33:24  cg
  * The free module was entirely rewritten.
  * Each node type now has its own free function.
  * Functions FreeTree and FreeNode for deleting single nodes and
@@ -56,6 +61,8 @@
 
 #include "traverse.h"
 
+#include "free.h"
+
 /*
  *  Important Remark:
  *
@@ -73,13 +80,6 @@
 /*--------------------------------------------------------------------------*/
 /*  Basic Free-Macros    (internal use only)                                */
 /*--------------------------------------------------------------------------*/
-
-#define FREE(address)                                                                    \
-    if (address != NULL) {                                                               \
-        DBUG_PRINT ("MEM", ("Free memory at adress: %08x", address));                    \
-        free (address);                                                                  \
-        address = NULL;                                                                  \
-    }
 
 #define FREEMASK(mac)                                                                    \
     {                                                                                    \
@@ -134,31 +134,33 @@ FreeShpseg (shpseg *fr)
 }
 
 types *
-FreeTypes (types *fr)
+FreeOneTypes (types *fr)
 {
     types *tmp;
 
     DBUG_ENTER ("FreeTypes");
 
-    DBUG_PRINT ("FREE", ("Removing types: %s", mdb_type[TYPES_BASETYPE (fr)]));
+    if (fr != NULL) {
+        DBUG_PRINT ("FREE", ("Removing types: %s", mdb_type[TYPES_BASETYPE (fr)]));
 
-    tmp = fr;
-    fr = TYPES_NEXT (fr);
+        tmp = fr;
+        fr = TYPES_NEXT (fr);
 
-    if (TYPES_DIM (tmp) > 0) {
-        FreeShpseg (TYPES_SHPSEG (tmp));
+        if (TYPES_DIM (tmp) > 0) {
+            FreeShpseg (TYPES_SHPSEG (tmp));
+        }
+
+        FREE (TYPES_NAME (tmp));
+
+        FREE (tmp->id);
+
+        /*
+         *  Last FREE is necessary due to the real data structure behind the
+         *  virtual syntax tree.
+         */
+
+        FREE (tmp);
     }
-
-    FREE (TYPES_NAME (tmp));
-
-    FREE (tmp->id);
-
-    /*
-     *  Last FREE is necessary due to the real data structure behind the
-     *  virtual syntax tree.
-     */
-
-    FREE (tmp);
 
     DBUG_RETURN (fr);
 }
@@ -169,27 +171,29 @@ FreeAllTypes (types *fr)
     DBUG_ENTER ("FreeAllTypes");
 
     while (fr != NULL) {
-        fr = FreeTypes (fr);
+        fr = FreeOneTypes (fr);
     }
 
     DBUG_RETURN (fr);
 }
 
 ids *
-FreeIds (ids *fr)
+FreeOneIds (ids *fr)
 {
     ids *tmp;
 
     DBUG_ENTER ("FreeIds");
 
-    DBUG_PRINT ("FREE", ("Removing ids: %s", IDS_NAME (fr)));
+    if (fr != NULL) {
+        DBUG_PRINT ("FREE", ("Removing ids: %s", IDS_NAME (fr)));
 
-    tmp = fr;
-    fr = IDS_NEXT (fr);
+        tmp = fr;
+        fr = IDS_NEXT (fr);
 
-    FREE (IDS_NAME (tmp));
+        FREE (IDS_NAME (tmp));
 
-    FREE (tmp);
+        FREE (tmp);
+    }
 
     DBUG_RETURN (fr);
 }
@@ -200,24 +204,26 @@ FreeAllIds (ids *fr)
     DBUG_ENTER ("FreeAllIds");
 
     while (fr != NULL) {
-        fr = FreeIds (fr);
+        fr = FreeOneIds (fr);
     }
 
     DBUG_RETURN (fr);
 }
 
 nums *
-FreeNums (nums *fr)
+FreeOneNums (nums *fr)
 {
     nums *tmp;
 
     DBUG_ENTER ("FreeNums");
 
-    DBUG_PRINT ("FREE", ("Removing Nums: %d", NUMS_NUM (fr)));
+    if (fr != NULL) {
+        DBUG_PRINT ("FREE", ("Removing Nums: %d", NUMS_NUM (fr)));
 
-    tmp = fr;
-    fr = NUMS_NEXT (fr);
-    FREE (tmp);
+        tmp = fr;
+        fr = NUMS_NEXT (fr);
+        FREE (tmp);
+    }
 
     DBUG_RETURN (fr);
 }
@@ -228,27 +234,29 @@ FreeAllNums (nums *fr)
     DBUG_ENTER ("FreeAllNums");
 
     while (fr != NULL) {
-        fr = FreeNums (fr);
+        fr = FreeOneNums (fr);
     }
 
     DBUG_RETURN (fr);
 }
 
 strings *
-FreeStrings (strings *fr)
+FreeOneStrings (strings *fr)
 {
     strings *tmp;
 
     DBUG_ENTER ("FreeStrings");
 
-    DBUG_PRINT ("FREE", ("Removing strings: %s", STRINGS_STRING (fr)));
+    if (fr != NULL) {
+        DBUG_PRINT ("FREE", ("Removing strings: %s", STRINGS_STRING (fr)));
 
-    tmp = fr;
-    fr = STRINGS_NEXT (fr);
+        tmp = fr;
+        fr = STRINGS_NEXT (fr);
 
-    FREE (STRINGS_STRING (tmp));
+        FREE (STRINGS_STRING (tmp));
 
-    FREE (tmp);
+        FREE (tmp);
+    }
 
     DBUG_RETURN (fr);
 }
@@ -259,7 +267,7 @@ FreeAllStrings (strings *fr)
     DBUG_ENTER ("FreeAllStrings");
 
     while (fr != NULL) {
-        fr = FreeStrings (fr);
+        fr = FreeOneStrings (fr);
     }
 
     DBUG_RETURN (fr);
@@ -347,6 +355,12 @@ FreeTree (node *free_node)
  *  The first argument points to the node to be freed, while the second
  *  argument is used as a flag whether removing the given node alone (==NULL)
  *  or removing the whole sub tree behind it (!=NULL).
+ *
+ *  Since the N_info node may look very different depending on its specific
+ *  task, separate free functions are necessary for each kind of usage.
+ *  For these, the universal traversal mechanism may not be used because
+ *  it is unable to distinguish between deiiferent kinds of nodes which do
+ *  have the same type.
  *
  *  Normally, it is easier to use the general free functions described above.
  *
@@ -503,6 +517,7 @@ FreeTypedef (node *arg_node, node *arg_info)
 
     FREE (TYPEDEF_NAME (arg_node));
     FreeAllTypes (TYPEDEF_TYPE (arg_node));
+    FREETRAV (TYPEDEF_PRAGMA (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_typedef node ..."));
 
@@ -524,10 +539,11 @@ FreeObjdef (node *arg_node, node *arg_info)
     tmp = FREECONT (OBJDEF_NEXT (arg_node));
 
     FREETRAV (OBJDEF_EXPR (arg_node));
+    FREETRAV (OBJDEF_PRAGMA (arg_node));
 
     FREE (OBJDEF_NAME (arg_node));
     FREE (OBJDEF_VARNAME (arg_node));
-    FreeTypes (OBJDEF_TYPE (arg_node));
+    FreeOneTypes (OBJDEF_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_objdef node ..."));
 
@@ -550,6 +566,7 @@ FreeFundef (node *arg_node, node *arg_info)
 
     FREETRAV (FUNDEF_BODY (arg_node));
     FREETRAV (FUNDEF_ARGS (arg_node));
+    FREETRAV (FUNDEF_PRAGMA (arg_node));
 
     if ((FUNDEF_ICM (arg_node) != NULL) && (NODE_TYPE (FUNDEF_ICM (arg_node)) == N_icm)) {
         FREETRAV (FUNDEF_ICM (arg_node));
@@ -561,8 +578,6 @@ FreeFundef (node *arg_node, node *arg_info)
     }
 
     FREE (FUNDEF_NAME (arg_node));
-    FREE (FUNDEF_ALIAS (arg_node));
-
     FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
 
     FREEMASK (FUNDEF_MASK);
@@ -586,7 +601,7 @@ FreeArg (node *arg_node, node *arg_info)
     tmp = FREECONT (ARG_NEXT (arg_node));
 
     FREE (ARG_NAME (arg_node));
-    FreeTypes (ARG_TYPE (arg_node));
+    FreeOneTypes (ARG_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_arg node ..."));
 
@@ -630,7 +645,7 @@ FreeVardec (node *arg_node, node *arg_info)
     tmp = FREECONT (VARDEC_NEXT (arg_node));
 
     FREE (VARDEC_NAME (arg_node));
-    FreeTypes (VARDEC_TYPE (arg_node));
+    FreeOneTypes (VARDEC_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_vardec node ..."));
 
@@ -689,7 +704,7 @@ FreeCast (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_cast node ..."));
 
     FREETRAV (CAST_EXPR (arg_node));
-    FreeTypes (CAST_TYPE (arg_node));
+    FreeOneTypes (CAST_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_cast node ..."));
 
@@ -976,7 +991,7 @@ FreeArray (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_array node ..."));
 
     FREETRAV (ARRAY_AELEMS (arg_node));
-    FreeTypes (ARRAY_TYPE (arg_node));
+    FreeOneTypes (ARRAY_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_array node ..."));
 
@@ -1209,6 +1224,35 @@ FreeIcm (node *arg_node, node *arg_info)
     FREE (ICM_NAME (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+FreePragma (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreePragma");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_pragma node ..."));
+
+    FreeAllNums (PRAGMA_LINKSIGN (arg_node));
+    FreeAllNums (PRAGMA_READONLY (arg_node));
+    FreeAllNums (PRAGMA_REFCOUNTING (arg_node));
+    FreeAllIds (PRAGMA_EFFECT (arg_node));
+    FreeAllIds (PRAGMA_TOUCH (arg_node));
+    FREE (PRAGMA_LINKNAME (arg_node));
+    FREE (PRAGMA_COPYFUN (arg_node));
+    FREE (PRAGMA_FREEFUN (arg_node));
+    /*
+    FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
+    FREETRAV(PRAGMA_NEEDFUNS(arg_node));
+    */
+
+    DBUG_PRINT ("FREE", ("Removing N_pragma node ..."));
 
     FREE (arg_node);
 
