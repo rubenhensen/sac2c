@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/08 20:14:00  dkr
+ * CT_prf added
+ *
  * Revision 3.15  2002/07/03 17:12:29  dkr
  * unqconv_t added again ...
  *
@@ -219,7 +222,7 @@ typedef enum {
     F_modspec
 } file_type;
 
-typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
+typedef enum { CT_normal, CT_ap, CT_prf, CT_array, CT_return, CT_wl } contextflag;
 
 typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t;
 
