@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/11/15 14:07:44  sbs
+ * additional {}'s added to please muttering gcc on ALPHA.
+ *
  * Revision 2.20  2000/10/26 14:30:23  dkr
  * MakeShpseg used instead of MALLOC
  *
@@ -1599,16 +1602,16 @@ Rot (node *s_node, types *array)
     DBUG_ENTER ("Rot");
 
     if (SAC_PRG == kind_of_file) {
-        if (N_num == s_node->nodetype)
-            if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
+        if (N_num == s_node->nodetype) {
+            if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim)) {
                 ret_type = DupTypes (array);
-            else {
+            } else {
                 ERROR (s_node->lineno, ("1.argument of function 'rotate` is constant %d "
                                         "but rotated array has dimension %d",
                                         s_node->info.cint, array->dim));
                 GEN_TYPE_NODE (ret_type, T_unknown);
             }
-        else {
+        } else {
             ret_type = DupTypes (array);
         }
     } else {
