@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.46  1999/08/09 11:29:54  jhs
+ * Cleaned up info-macros for concurrent phase.
+ *
  * Revision 2.45  1999/08/05 13:34:57  jhs
  * Added some INFO_SPMDI_... macros.
  *
@@ -2259,13 +2262,55 @@ extern node *MakePragma ();
  ***    int        INFO_IVE_NON_SCAL_LEN
  ***
  ***  when used in managing spmd- and sync blocks :
- ***  also when used in spmd traversal (spmd_trav.[ch]) :
- ***  also when used in sync optimization (sync_opt.[ch]) :
+ ***    (a) concurrent.[ch]
+ ***    (b) spmd_init.[ch]
+ ***    (c) spmd_opt.[ch]
+ ***    (d) spmd_lift.[ch]
+ ***    (e) sync_init.[ch]
+ ***    (f) sync_opt.[ch]
+ ***    (g) spmd_cons.[ch]
+ ***    (h) spmd_trav.[ch]
  ***
- ***    node*      INFO_SPMD_FUNDEF   (N_fundef)
- ***    int        INFO_SPMD_FIRST
- ***    int        INFO_SPMD_LAST
- ***    int        INFO_SPMD_MT
+ ***  in all:
+ ***    node*      INFO_CONC_FUNDEF   (N_fundef)
+ ***
+ ***  in (a), (b):
+ ***    boolean    INFO_SPMDI_LASTSPMD(n)
+ ***    boolean    INFO_SPMDI_NEXTSPMD(n)
+ ***    nodetype   INFO_SPMDI_CONTEXT(n)
+ ***    boolean    INFO_SPMDI_EXPANDCONTEXT(n)
+ ***    boolean    INFO_SPMDI_EXPANDSTEP(n)
+ ***
+ ***  in (a), (c):
+ ***    node*      INFO_SPMDO_THISASSIGN(n)          (N_assign)
+ ***    node*      INFO_SPMDO_NEXTASSIGN(n)          (N_assign)
+ ***
+ ***  in (a), (d):
+ ***    boolean    INFO_SPMDL_MT(n)
+ ***
+ ***  in (a), (e):
+ ***    boolean    INFO_SYNCI_FIRST(n)
+ ***    boolean    INFO_SYNCI_LAST(n)
+ ***
+ ***  in (a), (f):
+ ***    node*      INFO_SYNCO_THISASSIGN(n)          (N_assign)
+ ***    node*      INFO_SYNCO_NEXTASSIGN(n)          (N_assign)
+ ***
+ ***  in (a), (g):
+ ***    node*      INFO_SPMDC_FIRSTSYNC(n)           (N_sync)
+ ***
+ ***  in (a), (h) in different traversals:
+ ***    DFM_mask_t INFO_SPMDRM_RESULT(n)
+ ***    DFM_mask_t INFO_SPMDRM_CHECK(n)
+ ***    DFM_mask_t INFO_SPMDRO_CHECK(n)
+ ***    int*       INFO_SPMDRO_COUNTERS(n)
+ ***    boolean    INFO_SPMDLC_APPLICATION(n)
+ ***    boolean    INFO_SPMDDN_NESTED(n)
+ ***    DFM_mask_t INFO_SPMDPM_IN(n)
+ ***    DFM_mask_t INFO_SPMDPM_INOUT(n)
+ ***    DFM_mask_t INFO_SPMDPM_OUT(n)
+ ***    DFM_mask_t INFO_SPMDPM_LOCAL(n)
+ ***    DFM_mask_t INFO_SPMDPM_SHARED(n)
  ***
  ***    node*      ACTUAL_FUNDEF
  ***    DFMmask_t  INFO_SPMDT_RESULT
@@ -2389,29 +2434,65 @@ extern node *MakeInfo ();
 /* wltransform */
 #define INFO_WL_SHPSEG(n) ((shpseg *)(n->node[0]))
 
-/* spmdregions */
-#define INFO_SPMD_FUNDEF(n) (n->node[0])
-#define INFO_SPMD_FIRST(n) (n->flag)
-#define INFO_SPMD_LAST(n) (n->int_data)
-#define INFO_SPMD_MT(n) (n->counter)
+/* concurrent */
+#define INFO_CONC_FUNDEF(n) (n->node[0])
 
+/* concurrent - spmdinit */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
 #define INFO_SPMDI_LASTSPMD(n) (n->flag)
 #define INFO_SPMDI_NEXTSPMD(n) (n->counter)
 #define INFO_SPMDI_CONTEXT(n) (n->int_data)
 #define INFO_SPMDI_EXPANDCONTEXT(n) (n->varno)
 #define INFO_SPMDI_EXPANDSTEP(n) (n->refcnt)
 
-#define INFO_SPMDT_ACTUAL_FUNDEF(n) (n->node[0])
-#define INFO_SPMDT_RESULT(n) (n->dfmask[0])
-#define INFO_SPMDT_CHECK(n) (n->dfmask[1])
-#define INFO_SPMDT_COUNTERS(n) ((int *)(n->node[0]))
-#define INFO_SPMDT_APPLICATION(n) (n->int_data) /* never used together! */
-#define INFO_SPMDT_NESTED(n) (n->int_data)
+/* concurrent-spmdopt */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDO_THISASSIGN(n) (n->node[1])
+#define INFO_SPMDO_NEXTASSIGN(n) (n->node[2])
 
-#define INFO_SYNCO_THISASSIGN(n) (n->node[0])
-#define INFO_SYNCO_NEXTASSIGN(n) (n->node[1])
+/* concurrent-spmdlift */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDL_MT(n) (n->counter)
 
-#define INFO_SPMDC_FIRSTSYNC(n) (n->node[0])
+/* concurrent-syncinit */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SYNCI_FIRST(n) (n->flag)
+#define INFO_SYNCI_LAST(n) (n->int_data)
+
+/* concurrent-syncopt */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SYNCO_THISASSIGN(n) (n->node[1])
+#define INFO_SYNCO_NEXTASSIGN(n) (n->node[2])
+
+/* concurrent-spmdcons */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDC_FIRSTSYNC(n) (n->node[1])
+
+/* concurrent-spmdtrav-reducemasks */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDRM_RESULT(n) (n->dfmask[0])
+#define INFO_SPMDRM_CHECK(n) (n->dfmask[1])
+
+/* concurrent-spmdtrav-reduceoccurences */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDRO_CHECK(n) (n->dfmask[1])
+#define INFO_SPMDRO_COUNTERS(n) ((int *)(n->node[1]))
+
+/* concurrent-spmdtrav-lc */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDLC_APPLICATION(n) (n->int_data)
+
+/* concurrent-spmdtrav-deletenested */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDDN_NESTED(n) (n->int_data)
+
+/* concurrent-spmdtrav-producemasks */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDPM_IN(n) ((DFMmask_t) (n->dfmask[0]))
+#define INFO_SPMDPM_INOUT(n) ((DFMmask_t) (n->dfmask[1]))
+#define INFO_SPMDPM_OUT(n) ((DFMmask_t) (n->dfmask[2]))
+#define INFO_SPMDPM_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
+#define INFO_SPMDPM_SHARED(n) ((DFMmask_t) (n->dfmask[4]))
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
@@ -2532,10 +2613,6 @@ extern node *MakeInfo ();
 #define INFO_TSI_CACHESIZE(n) ((int *)(n->node[4]))[0]
 #define INFO_TSI_LINESIZE(n) ((int *)(n->node[4]))[1]
 #define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
-
-#define INFO_SPMDO_LASTASSIGN(n) (n->node[0])
-#define INFO_SPMDO_THISASSIGN(n) (n->node[1])
-#define INFO_SPMDO_NEXTASSIGN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
