@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/09 07:32:30  cg
+ * Executables are now linked with customized versions of the
+ * SAC runtime library:
+ *   sequential vs multi-threaded
+ *   private heap manager vs public heap manager
+ *
  * Revision 2.4  1999/07/08 12:41:19  cg
  * Implementation of old command line optio -mt_all removed.
  * Prepared linking with several selected parts of the SAC runtime
@@ -609,7 +615,7 @@ InvokeCC ()
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
-                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s -lsac_mt %s %s %s",
+                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
                          config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                          outfilename, cfilename, linklist, "-lsac_noheapmgr_mt",
                          config.ccmtlink, (use_efence ? lib_efence : ""));
@@ -617,7 +623,7 @@ InvokeCC ()
                 SystemCall ("chmod a+x .sac2c");
             }
 
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s -lsac_mt %s %s %s", config.cc,
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s", config.cc,
                         config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                         outfilename, cfilename, linklist, "-lsac_noheapmgr_mt",
                         config.ccmtlink, (use_efence ? lib_efence : ""));
@@ -625,17 +631,19 @@ InvokeCC ()
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
-                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s -lsac %s %s %s",
+                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s -lsac %s %s",
                          config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                         outfilename, cfilename, linklist, "-lsac_noheapmgr",
+                         outfilename, cfilename, linklist,
+                         optimize & OPT_PHM ? "-lsac_heapmgr" : "-lsac_noheapmgr",
                          config.cclink, (use_efence ? lib_efence : ""));
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
             }
 
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s -lsac %s %s %s", config.cc,
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s -lsac %s %s", config.cc,
                         config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist, "-lsac_noheapmgr",
+                        outfilename, cfilename, linklist,
+                        optimize & OPT_PHM ? "-lsac_heapmgr" : "-lsac_noheapmgr",
                         config.cclink, (use_efence ? lib_efence : ""));
         }
 
