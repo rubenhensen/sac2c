@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/04/18 14:00:48  jhs
+ * Added DBUGs.
+ *
  * Revision 2.8  2000/03/23 16:04:49  dkr
  * DBUG_ASSERT in RenameId() added
  *
@@ -202,6 +205,7 @@ RenameId (node *idnode)
     DBUG_ENTER ("RenameId");
 
     DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
+    DBUG_PRINT ("PRECjhs", ("id-name == %s", ID_NAME (idnode)));
     DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
 
     if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
@@ -650,6 +654,7 @@ PRECfundef (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("PRECfundef");
+    DBUG_PRINT ("PRECjhs", ("entering %s", FUNDEF_NAME (arg_node)));
 
     /*
      *  The body of an imported inline function is removed.

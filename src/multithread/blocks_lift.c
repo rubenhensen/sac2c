@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/04/18 14:02:01  jhs
+ * Added DBUGs.
+ *
  * Revision 1.3  2000/03/30 15:11:29  jhs
  * fixed lifting
  * .,
@@ -49,7 +52,8 @@
  *   node *BlocksLift( node *arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Init the lifting of blocks, where each mt-block will be lifted into a
+ *   function.
  *
  ******************************************************************************/
 node *
@@ -78,6 +82,15 @@ BlocksLift (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *DupNodeVardec( node *vardec, node *next)
+ *
+ * description:
+ *   Duplicates a N_vardec and concatenates next to it and returns the copy.
+ *
+ ******************************************************************************/
 node *
 DupNodeVardec (node *vardec, node *next)
 {
@@ -91,6 +104,16 @@ DupNodeVardec (node *vardec, node *next)
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *DupNodeArgToVardec( node *arg, node *next)
+ *
+ * description:
+ *   Takes a N_arg "casts" it into an N_vardec concenates next to it and
+ *   returns the copy.
+ *
+ ******************************************************************************/
 node *
 DupNodeArgToVardec (node *arg, node *next)
 {
@@ -106,6 +129,18 @@ DupNodeArgToVardec (node *arg, node *next)
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *BLKLIfundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Traverses the body only.
+ *
+ * attention:
+ *   DO NOT TRAVERSE NEXT HERE!!!
+ *
+ ******************************************************************************/
 node *
 BLKLIfundef (node *arg_node, node *arg_info)
 {
@@ -118,7 +153,15 @@ BLKLIfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *BLKLImt(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
 node *
 BLKLImt (node *arg_node, node *arg_info)
 {
@@ -163,8 +206,9 @@ BLKLImt (node *arg_node, node *arg_info)
     }
 
     /*
-     *  ... now we have to copy the args, that is tricky,
-     *  so we hide the main part in DupNodeArgToVardec( old_arg) ...
+     *  ... now we have to copy the args, that is tricky, because we need
+     *  to make N_vardec's out of the N_args ...
+     *  ... so we hide the main part in DupNodeArgToVardec( old_arg) ...
      */
     while (old_args != NULL) {
         if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_args)) {
