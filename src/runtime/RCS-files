@@ -1,5 +1,6 @@
 Makefile
 icm_test.C
+icm_test.sed
 sac.h
 sac2crc.ALPHA
 sac2crc.MAC
