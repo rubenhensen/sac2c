@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.68  2000/03/23 14:05:55  jhs
+ * Added printing of all attributes of N_MTsync.
+ *
  * Revision 2.67  2000/03/22 17:35:18  jhs
  * Added PrintMT(sync|alloc|signal).
  *
@@ -2210,14 +2213,41 @@ PrintMTsignal (node *arg_node, node *arg_info)
 node *
 PrintMTsync (node *arg_node, node *arg_info)
 {
+    DFMfoldmask_t *foldmask;
+
     DBUG_ENTER ("PrintMTsync");
 
     /* PrintAssign already indents and prints \n */
     fprintf (outfile, "MTsync (");
 
-    DFMPrintMask (outfile, " %s", MTSYNC_WAIT (arg_node));
+    if (MTSYNC_WAIT (arg_node) != NULL) {
+        DFMPrintMask (outfile, " %s", MTSYNC_WAIT (arg_node));
+    } else {
+        fprintf (outfile, " NULL");
+    }
+    fprintf (outfile, ",");
 
-    fprintf (outfile, ", ####, ####);");
+    if (MTSYNC_FOLD (arg_node) != NULL) {
+        fprintf (outfile, " [");
+        foldmask = MTSYNC_FOLD (arg_node);
+        while (foldmask != NULL) {
+
+            fprintf (outfile, " %s:%s", DFMFM_NAME (foldmask),
+                     FUNDEF_NAME (NWITHOP_FUNDEF (DFMFM_FOLDOP (foldmask))));
+
+            foldmask = DFMFM_NEXT (foldmask);
+        }
+        fprintf (outfile, "]");
+    } else {
+        fprintf (outfile, " NULL");
+    }
+    fprintf (outfile, ",");
+    if (MTSYNC_ALLOC (arg_node) != NULL) {
+        DFMPrintMask (outfile, " %s", MTSYNC_ALLOC (arg_node));
+    } else {
+        fprintf (outfile, " NULL");
+    }
+    fprintf (outfile, ");");
 
     DBUG_RETURN (arg_node);
 }
