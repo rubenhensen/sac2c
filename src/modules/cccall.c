@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/04 11:10:04  sbs
+ * fixed a bug in GenLibStat:
+ * HOST, PWD, and USER are not mandatory for compiling
+ * modules anymore.
+ *
  * Revision 2.1  1999/02/23 12:41:59  sacbase
  * new release made
  *
@@ -198,6 +203,8 @@ GenLibStat ()
     FILE *statusfile;
     deps *tmp;
     long int current;
+    char *env_entry;
+    char unknown[4] = "???";
 
     DBUG_ENTER ("GenLibStat");
 
@@ -207,9 +214,22 @@ GenLibStat ()
 
     fprintf (statusfile, "\n***  Status Report - %s.lib  ***\n\n", modulename);
     fprintf (statusfile, "Call : %s\n", commandline);
-    fprintf (statusfile, "From : %s\n", getenv ("PWD"));
-    fprintf (statusfile, "On   : %s\n", getenv ("HOST"));
-    fprintf (statusfile, "By   : %s\n", getenv ("USER"));
+
+    env_entry = getenv ("PWD");
+    if (env_entry == NULL)
+        env_entry = unknown;
+    fprintf (statusfile, "From : %s\n", env_entry);
+
+    env_entry = getenv ("HOST");
+    if (env_entry == NULL)
+        env_entry = unknown;
+    fprintf (statusfile, "On   : %s\n", env_entry);
+
+    env_entry = getenv ("USER");
+    if (env_entry == NULL)
+        env_entry = unknown;
+    fprintf (statusfile, "By   : %s\n", env_entry);
+
     fprintf (statusfile, "Date : %s", ctime (&current));
 
     fprintf (statusfile, "\nDependencies from imported modules and classes :\n");
