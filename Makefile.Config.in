@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.4  2003/03/21 10:24:37  sbs
+# YYDEBUG now set to 1 explicitly!
+#
 # Revision 1.3  2003/03/20 23:21:39  sah
 # now architecture and os
 # are seperated again ;)
@@ -135,7 +138,7 @@ LEX          :=@LEX@ -n
 YACC         :=@YACC@ -dv
 
 ifeq ($(OS),SOLARIS)
-  YYFLAGS   := -DYYDEBUG
+  YYFLAGS   := -DYYDEBUG=1
 else
   YYFLAGS   :=
 endif
