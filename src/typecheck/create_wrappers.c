@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2003/09/08 13:14:33  sbs
+ * some more debug prints added
+ *
  * Revision 1.13  2002/10/31 13:41:51  sbs
  * ... args are tagged IS_REFERENCE FALSE now.
  *
@@ -434,6 +437,8 @@ CRTWRPfundef (node *arg_node, node *arg_info)
                          : CountArgs (FUNDEF_ARGS (arg_node)));
     num_rets = (dot_rets ? CountTypes (FUNDEF_TYPES (arg_node)) - 1
                          : CountTypes (FUNDEF_TYPES (arg_node)));
+    DBUG_PRINT ("CRTWRP", ("----- Processing function %s:%s: -----",
+                           FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
     wrapper = FindWrapper (FUNDEF_NAME (arg_node), num_args, num_rets,
                            INFO_CRTWRP_WRAPPERFUNS (arg_info));
     if (wrapper == NULL) {
@@ -488,6 +493,8 @@ CRTWRPfundef (node *arg_node, node *arg_info)
     INFO_CRTWRP_EXPRETS (arg_info) = 1;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("CRTWRP", ("----- Processing body of %s:%s: -----",
+                               FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
