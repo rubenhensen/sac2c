@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1999/02/15 13:34:09  sbs
+ * added -noDLAW opt_dlaw;
+ *
  * Revision 1.41  1999/01/26 14:24:46  cg
  * Added INTRINSIC_PSI
  *
@@ -215,6 +218,7 @@ extern int opt_ae;
 extern int opt_ive;
 extern int opt_rco;
 extern int opt_uip;
+extern int opt_dlaw;
 extern int opt_tile;
 
 extern int optvar;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.88  1999/02/15 13:34:09  sbs
+ * added -noDLAW opt_dlaw;
+ *
  * Revision 1.87  1999/02/15 10:33:12  sbs
  * added some .... bugs
  *
@@ -139,10 +142,9 @@
 
 #include <stdio.h>
 
+#include "usage.h"
 #include "globals.h"
 #include "dbug.h"
-
-extern char build_date_time[];
 
 /*
  * This variable contains the build information of sac2c, i.e. build date
@@ -303,6 +305,7 @@ usage ()
             "\t -noCSE\t\tno common subexpression elimination \n"
             "\t -noWLT\t\tno withloop transformations (implies -noWLF) \n"
             "\t -noWLF\t\tno withloop folding \n"
+            "\t -noDLAW\tno applications of the distributive law\n"
             "\t -noIVE\t\tno index vector elimination \n"
             "\t -noAE \t\tno array elimination \n"
             "\t -noRCO\t\tno refcount optimization \n"
@@ -359,121 +362,117 @@ usage ()
             "\t\t\t\t  Default: -minparsize %d.\n",
             max_sync_fold, min_parallel_size);
 
-    printf (
-      "\n\nDEBUG OPTIONS:\n\n"
+    printf ("\n\nDEBUG OPTIONS:\n\n"
 
-      "\t -dcheck_boundary\tcheck boundary of arrays upon access\n"
-      "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
-      "\t -dshow_syscall\t\tshow all system calls during compilation\n"
-      "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
-      "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C\n"
-      "\t\t\t\tcompiler call. This implies option -dnocleanup.\n"
-      "\t -# <str>\t\toptions (string) for DBUG information\n"
-      "\t\t\t\t(\"-#<str>\" is equivalent to \"-_DBUG//<str>\")\n"
-      "\t -_DBUG<from>/<to>/<str>\n"
-      "\t\t\t\tDBUG information only in compiler phases\n"
-      "\t\t\t\t<from>..<to>\n"
-      "\t\t\t\t  Default: <from> = 1,\n"
-      "\t\t\t\t           <to> = last compiler phase\n"
+            "\t -dcheck_boundary\tcheck boundary of arrays upon access\n"
+            "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
+            "\t -dshow_syscall\t\tshow all system calls during compilation\n"
+            "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
+            "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C\n"
+            "\t\t\t\tcompiler call. This implies option -dnocleanup.\n"
+            "\t -# <str>\t\toptions (string) for DBUG information\n"
+            "\t\t\t\t(\"-#<str>\" is equivalent to \"-_DBUG//<str>\")\n"
+            "\t -_DBUG<from>/<to>/<str>\n"
+            "\t\t\t\tDBUG information only in compiler phases\n"
+            "\t\t\t\t<from>..<to>\n"
+            "\t\t\t\t  Default: <from> = 1,\n"
+            "\t\t\t\t           <to> = last compiler phase\n"
 
-      "\n\nTRACE OPTIONS:\n\n"
+            "\n\nTRACE OPTIONS:\n\n"
 
-      "\t -trace [amrfpowt]+ \ttrace program execution\n"
-      "\t\t\t\t  a: trace all (same as mrfpowt)\n"
-      "\t\t\t\t  m: trace memory operations\n"
-      "\t\t\t\t  r: trace refcount operations\n"
-      "\t\t\t\t  f: trace user defined function calls\n"
-      "\t\t\t\t  p: trace primitive function calls\n"
-      "\t\t\t\t  o: trace old with-loop execution\n"
-      "\t\t\t\t  w: trace new with-loop execution\n"
-      "\t\t\t\t  t: trace multi-threading specific operations\n"
+            "\t -trace [amrfpowt]+ \ttrace program execution\n"
+            "\t\t\t\t  a: trace all (same as mrfpowt)\n"
+            "\t\t\t\t  m: trace memory operations\n"
+            "\t\t\t\t  r: trace refcount operations\n"
+            "\t\t\t\t  f: trace user defined function calls\n"
+            "\t\t\t\t  p: trace primitive function calls\n"
+            "\t\t\t\t  o: trace old with-loop execution\n"
+            "\t\t\t\t  w: trace new with-loop execution\n"
+            "\t\t\t\t  t: trace multi-threading specific operations\n"
 
-      "\n\nPROFILING OPTIONS:\n\n"
+            "\n\nPROFILING OPTIONS:\n\n"
 
-      "\t -profile [afilw]+ \tinclude runtime analysis\n"
-      "\t\t\t\t  a: analyse all (same as filw)\n"
-      "\t\t\t\t  f: analyse time spent in non-inline functions\n"
-      "\t\t\t\t  i: analyse time spent in inline functions\n"
-      "\t\t\t\t  l: analyse time spent in library functions\n"
-      "\t\t\t\t  w: analyse time spent in with-loops\n"
+            "\t -profile [afilw]+ \tinclude runtime analysis\n"
+            "\t\t\t\t  a: analyse all (same as filw)\n"
+            "\t\t\t\t  f: analyse time spent in non-inline functions\n"
+            "\t\t\t\t  i: analyse time spent in inline functions\n"
+            "\t\t\t\t  l: analyse time spent in library functions\n"
+            "\t\t\t\t  w: analyse time spent in with-loops\n"
 
-      "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
+            "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-      "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations\n"
-      "\t\t\t\t\t  a: use all intrinsic operations\n"
-      "\t\t\t\t\t     available (same as +-x/tdcrpo)\n"
-      "\t\t\t\t\t  +: use intrinsic add\n"
-      "\t\t\t\t\t  -: use intrinsic sub\n"
-      "\t\t\t\t\t  x: use intrinsic mul\n"
-      "\t\t\t\t\t  /: use intrinsic div\n"
-      "\t\t\t\t\t  t: use intrinsic take\n"
-      "\t\t\t\t\t  d: use intrinsic drop\n"
-      "\t\t\t\t\t  c: use intrinsic cat\n"
-      "\t\t\t\t\t  r: use intrinsic rotate\n"
-      "\t\t\t\t\t  p: use intrinsic psi\n"
-      "\t\t\t\t\t  o: use intrinsic type conversion\n"
+            "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations\n"
+            "\t\t\t\t\t  a: use all intrinsic operations\n"
+            "\t\t\t\t\t     available (same as +-x/tdcrpo)\n"
+            "\t\t\t\t\t  +: use intrinsic add\n"
+            "\t\t\t\t\t  -: use intrinsic sub\n"
+            "\t\t\t\t\t  x: use intrinsic mul\n"
+            "\t\t\t\t\t  /: use intrinsic div\n"
+            "\t\t\t\t\t  t: use intrinsic take\n"
+            "\t\t\t\t\t  d: use intrinsic drop\n"
+            "\t\t\t\t\t  c: use intrinsic cat\n"
+            "\t\t\t\t\t  r: use intrinsic rotate\n"
+            "\t\t\t\t\t  p: use intrinsic psi\n"
+            "\t\t\t\t\t  o: use intrinsic type conversion\n"
 
-      "\n\nLINK OPTIONS:\n\n"
+            "\n\nLINK OPTIONS:\n\n"
 
-      "\t -l <n>\t\t\tlink level for generating SAC library\n"
-      "\t\t\t\t  1: compile to one large object file\n"
-      "\t\t\t\t  2: compile to archive of object files\n"
-      "\t\t\t\t     (default)\n"
+            "\t -l <n>\t\t\tlink level for generating SAC library\n"
+            "\t\t\t\t  1: compile to one large object file\n"
+            "\t\t\t\t  2: compile to archive of object files\n"
+            "\t\t\t\t     (default)\n"
 
-      "\n\nC-COMPILER OPTIONS:\n\n"
+            "\n\nC-COMPILER OPTIONS:\n\n"
 
-      "\t -g \t\t\tinclude debug information into object code\n"
-      "\t -O [0123] \t\tC compiler level of optimization\n"
-      "\t\t\t\t  default: 0\n"
-      "\n\tThe actual effects of the above options are C compiler specific!\n"
+            "\t -g \t\t\tinclude debug information into object code\n"
+            "\t -O [0123] \t\tC compiler level of optimization\n"
+            "\t\t\t\t  default: 0\n"
+            "\n\tThe actual effects of the above options are C compiler specific!\n"
 
-      "\n\nCUSTOMIZATION\n\n"
+            "\n\nCUSTOMIZATION\n\n"
 
-      "\t-target <name>\tspecify a particular compilation target.\n"
-      "\t\t\tCompilation targets are used to customize sac2c for\n"
-      "\t\t\tvarious target architectures, operating systems, and C\n"
-      "\t\t\tcompilers.\n"
-      "\t\t\tThe target description is read either from the\n"
-      "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
-      "\t\t\tfrom a file named .sac2crc within the user's home\n"
-      "\t\t\tdirectory.\n"
+            "\t-target <name>\tspecify a particular compilation target.\n"
+            "\t\t\tCompilation targets are used to customize sac2c for\n"
+            "\t\t\tvarious target architectures, operating systems, and C\n"
+            "\t\t\tcompilers.\n"
+            "\t\t\tThe target description is read either from the\n"
+            "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
+            "\t\t\tfrom a file named .sac2crc within the user's home\n"
+            "\t\t\tdirectory.\n"
 
-      "\n\nENVIRONMENT VARIABLES:\n\n"
+            "\n\nENVIRONMENT VARIABLES:\n\n"
 
-      "\t SACBASE\t\tbase directory of SAC installation\n"
-      "\t SAC_PATH\t\tsearch paths for program source\n"
-      "\t SAC_DEC_PATH\t\tsearch paths for declarations\n"
-      "\t SAC_LIBRARY_PATH\tsearch paths for libraries\n"
+            "\t SACBASE\t\tbase directory of SAC installation\n"
+            "\t SAC_PATH\t\tsearch paths for program source\n"
+            "\t SAC_DEC_PATH\t\tsearch paths for declarations\n"
+            "\t SAC_LIBRARY_PATH\tsearch paths for libraries\n"
 
-      "\n\nAUTHORS:\n\n"
+            "\n\nAUTHORS:\n\n"
 
-      "\t Sven-Bodo Scholz\n"
-      "\t Henning Wolf\n"
-      "\t Arne Sievers\n"
-      "\t Clemens Grelck\n"
-      "\t Dietmar Kreye\n"
-      "\t Soeren Schwartz\n"
+            "\t Sven-Bodo Scholz\n"
+            "\t Henning Wolf\n"
+            "\t Arne Sievers\n"
+            "\t Clemens Grelck\n"
+            "\t Dietmar Kreye\n"
+            "\t Soeren Schwartz\n"
 
-      "\n\nCONTACT:\n\n"
+            "\n\nCONTACT:\n\n"
 
-      "\t World Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
-      "\t E-Mail: sacbase@informatik.uni-kiel.de\n"
+            "\t World Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
+            "\t E-Mail: sacbase@informatik.uni-kiel.de\n"
 
-      "\n\nBUGS:\n\n"
+            "\n\nBUGS:\n\n"
 
-      "\t Bugs ??  We ????\n"
-      "\n"
-      "- Do not annotate functions \"inline\" which contain fold-with-loops!\n"
-      "  It leads to the creation of C-code which does not compile properly!\n"
-      "\n"
-      "- Do not write function whose performance relies on the application\n"
-      "  of the distributive law. Due to some problems we had to turn that\n"
-      "  optimization off 8-(\n"
-      "\n"
-      "- Do not write programs whose performance relies on loop-invariant-removal.\n"
-      "  Due to some problems we decided to turn that optimization off as well 8-(\n"
+            "\t Bugs ??  We ????\n"
+            "\n"
+            "\t Do not annotate functions \"inline\" which contain fold-with-loops!\n"
+            "\t It leads to the creation of C-code which does not compile properly!\n"
+            "\n"
+            "\t Unfortunately, two of our optimizations are quite buggy 8-(\n"
+            "\t Therefore, we decided to preset -noLIR and -noDLAW in the current\n"
+            "\t compiler release!\n"
 
-      "\n");
+            "\n");
 
     DBUG_VOID_RETURN;
 }

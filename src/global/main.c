@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.149  1999/02/15 13:34:09  sbs
+ * added -noDLAW opt_dlaw;
+ *
  * Revision 1.148  1999/01/26 14:26:44  cg
  * -noopt now includes -noUIP
  *
@@ -617,6 +620,7 @@ MAIN
             opt_ae = 0;
             opt_ive = 0;
             opt_rco = 0;
+            opt_dlaw = 0;
             opt_tile = 0;
             opt_uip = 0;
         }
@@ -652,6 +656,8 @@ MAIN
             opt_wlf = 0;
         else if (OptCmp (*argv, "oRCO"))
             opt_rco = 0;
+        else if (OptCmp (*argv, "oDLAW"))
+            opt_dlaw = 0;
         else if (OptCmp (*argv, "oUIP"))
             opt_uip = 0;
         else if (OptCmp (*argv, "oTILE"))

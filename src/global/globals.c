@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1999/02/15 13:34:09  sbs
+ * added -noDLAW opt_dlaw;
+ *
  * Revision 1.28  1999/01/14 14:25:54  cg
  * added variable opt_tile to enable/disable tiling,
  * set current sac2c version to v0.8.
@@ -322,6 +325,9 @@ int opt_ive = 1;
 
 int opt_ae = 1;
 /* enable/disable array elimination */
+
+int opt_dlaw = 1;
+/* enable/disable distributive law optimization */
 
 int opt_rco = 1;
 /* enable/disable refcount optimization */
