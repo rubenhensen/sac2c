@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.210  1999/01/27 16:01:52  dkr
+ * comment about NWITH_PRAGMA changed
+ *
  * Revision 1.209  1999/01/19 20:31:40  srs
  * inserted NWITH_REFERENCES_FOLDED
  *
@@ -2282,7 +2285,7 @@ extern node *MakeSync (node *region, int first);
  ***
  ***  temporary attributes:
  ***
- ***    node*      PRAGMA     (N_pragma)  (scanparse -> precompile ! )
+ ***    node*      PRAGMA     (N_pragma)  (scanparse -> wltransform ! )
  ***    int        REFERENCED             (wlt -> wlf !!
  ***    int        REFERENCED_FOLD        (wlt -> wlf !!)
  ***    int        REFERENCES_FOLDED      (wlt -> wlf !!)
